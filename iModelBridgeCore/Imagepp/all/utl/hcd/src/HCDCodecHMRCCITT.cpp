@@ -2,15 +2,16 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecHMRCCITT.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecHMRCCITT
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HCDCodecHMRCCITT.h>
+
 
 
 bool HCDCodecHMRCCITT::m_TablesBuilded = false;
@@ -52,7 +53,7 @@ HCDCodecHMRCCITT::HCDCodecHMRCCITT()
 
     m_yresolution = 0;
     m_resolutionunit = CCITT_RESUNIT_NONE;
-    m_photometric = ImagePP::CCITT_PHOTOMETRIC_MINISWHITE;
+    m_photometric = CCITT_PHOTOMETRIC_MINISWHITE;
     m_group3options = 0;
     m_options = CCITT_FAX3_CLASSF;
     m_bitrevtable = false;
@@ -73,7 +74,7 @@ HCDCodecHMRCCITT::HCDCodecHMRCCITT(uint32_t pi_Width,
 
     m_yresolution = 0;
     m_resolutionunit = CCITT_RESUNIT_NONE;
-    m_photometric = ImagePP::CCITT_PHOTOMETRIC_MINISWHITE;
+    m_photometric = CCITT_PHOTOMETRIC_MINISWHITE;
     m_group3options = 0;
     m_options = CCITT_FAX3_CLASSF;
     m_bitrevtable = false;
@@ -677,7 +678,7 @@ void HCDCodecHMRCCITT::Fax3SetupState(size_t space)
 
     sp->bitmap = m_bitrevtable ? BitRevTable : NoBitRevTable;
 
-    sp->white = (m_photometric == ImagePP::CCITT_PHOTOMETRIC_MINISBLACK);
+    sp->white = (m_photometric == CCITT_PHOTOMETRIC_MINISBLACK);
 
     if (is2DEncoding() || !m_CCITT3)
         {
@@ -1725,7 +1726,7 @@ done:
         skiptoeol(0);
     if (m_options & CCITT_FAX3_BYTEALIGN)
         sp->b.bit = 0;
-    if ((m_options & CCITT_FAX3_WORDALIGN) && ((size_t)m_prawcp & 1))   //DM-Android
+    if ((m_options & CCITT_FAX3_WORDALIGN) && ((size_t)m_prawcp & 1))   
         (void) fetchByte(sp);
     return (x == npels);
     }

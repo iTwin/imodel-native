@@ -3,26 +3,53 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
     <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. Also deliver my license notice. -->
-    <Part Name="PublicApi" BMakeFile="ImagePP.prewire.mke">
+    <Part Name="PublicApi" BentleyBuildMakeFile="ImagePP.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ImagePP" />
         </Bindings>
     </Part>
 
     <!-- ////////////////////////////// IPP external libs  ////////////////////////////////////// -->
-    <Part Name="Base64Lib"  BMakeFile="ext/Base64/Base64.mke" ExcludePlatforms="Android*"> </Part>
+    <Part Name="Base64Lib"  BentleyBuildMakeFile="ext/Base64/Base64.mke"> </Part>
     
-    <Part Name="GdalLib"  BMakeFile="ext/gdal/gdal.mke" ExcludePlatforms="Android*">
+    <Part Name="GdalLib"  BentleyBuildMakeFile="ext/gdal/gdal.mke">
         <SubPart PartName="png"             PartFile="png"              Repository="libsrc-png"/>
         <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
         <SubPart PartName="BeLibJpegTurbo"  PartFile="BeLibJpegTurbo"   Repository="libsrc-libjpegturbo"/>
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcBsiCommon}CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
         <Bindings>
+            <VendorAPI Domain="ImagePP-GdalLib" />
+            <Libs>Delivery/$(stlibprefix)IppGdalLib$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)IppGdalLib$(stlibdebugext)</Libs>
             <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/gdal-notice.txt</Files>
         </Bindings>
 
     </Part>
+    <!-- The following parts allow to share gdal with Vortex using older compilers -->
+    <Part Name="GdalLibVC11"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2012=1" ExcludePlatforms="Android*">
+        <SubPart PartName="ZLib" />
+        <SubPart PartName="JpegLib" />
+        <SubPart PartName="PngLib" />
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcBsiCommon}CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <Bindings>
+            <VendorAPI Domain="ImagePP-GdalLib" />
+            <Libs>Delivery/$(stlibprefix)IppGdalLibVC11$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)IppGdalLibVC11$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
+    <Part Name="GdalLibVC8"  BentleyBuildMakeFile="ext/gdal/gdal.mke" BMakeOptions="+dBUILD_USING_VS2005=1" ExcludePlatforms="Android*">
+        <SubPart PartName="ZLib" />
+        <SubPart PartName="JpegLib" />
+        <SubPart PartName="PngLib" />
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcBsiCommon}CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <Bindings>
+            <VendorAPI Domain="ImagePP-GdalLib" />
+            <Libs>Delivery/$(stlibprefix)IppGdalLibVC8$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)IppGdalLibVC8$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
 
-    <Part Name="GdalData" BMakeFile="ext/gdal/GdalData.mke">
+    <Part Name="GdalData" BentleyBuildMakeFile="ext/gdal/GdalData.mke">
         <Bindings>
             <Directory  ProductDirectoryName="GdalData"  SourceName="Delivery\GdalData"    />
         </Bindings>
@@ -43,25 +70,30 @@
         </Bindings>
     </Part-->
 
-    <Part Name="Jpeg12BitsLib" BMakeFile="ext/jpeg/jpeg.mke" BMakeOptions="+dJPEGLIB_SUPPORT_12BITS" ExcludePlatforms="Android*"> </Part>
+    <Part Name="Jpeg12BitsLib" BentleyBuildMakeFile="ext/jpeg/jpeg.mke" BMakeOptions="+dJPEGLIB_SUPPORT_12BITS"> </Part>
     
-    <Part Name="MatrixFromTiePtsLib" BMakeFile="ext/MatrixFromTiePts/MatrixFromTiePts.mke" ExcludePlatforms="Android*"> </Part>
+    <Part Name="MatrixFromTiePtsLib" BentleyBuildMakeFile="ext/MatrixFromTiePts/MatrixFromTiePts.mke"> </Part>
    
     <!-- //////////////////////////////  Imagepp Part ////////////////////////////////////// -->
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="IppUtlDll" BentleyBuildMakeFile="All/utl/utl.mke" BMakeOptions="+dIMAGEPP_DLLMODE=1" ApiNumber="G">
+    <Part Name="ImagePPDll" BentleyBuildMakeFile="All/ImagePP.mke" ApiNumber="G">
         <SubPart PartName="PublicApi" />
-        <SubPart PartName="BentleyDll"                      PartFile="Bentley"                              Repository="Bentley" />
-        <SubPart PartName="GeoCoordData"                    PartFile="csmap"                                Repository="libsrc-csmap" />
-        <SubPart PartName="GeoCoord"                        PartFile="GeoCoord"                             Repository="GeoCoord" />
-        <SubPart PartName="BeSQLite"                        PartFile="BeSQLite"                             Repository="BeSQLite" />
-        <SubPart PartName="RmgrToolsDll"                    PartFile="RmgrTools"                            Repository="RmgrTools"/>
-        <SubPart PartName="BeLibJpegTurbo"                  PartFile="BeLibJpegTurbo"                       Repository="libsrc-libjpegturbo"/>
-        <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
+        <SubPart PartName="ImagePPThirdPartsDll" />
+        <SubPart PartName="BeXmlDll"                        PartFile="BeLibxml2"            Repository="libsrc-libxml2" />
+        <SubPart PartName="BentleyDll"                      PartFile="Bentley"              Repository="Bentley" />
+        <SubPart PartName="GeoCoordData"                    PartFile="csmap"                Repository="libsrc-csmap" />
+        <SubPart PartName="GeoCoord"                        PartFile="GeoCoord"             Repository="GeoCoord" />
+        <SubPart PartName="BeSQLite"                        PartFile="BeSQLite"             Repository="BeSQLite" />
+        <SubPart PartName="BeLibJpegTurbo"                  PartFile="BeLibJpegTurbo"       Repository="libsrc-libjpegturbo"/>
+        <SubPart PartName="Zlib"                            PartFile="Zlib"                 Repository="Libsrc-Compress" />
+        <SubPart PartName="png"                             PartFile="png"                  Repository="libsrc-png"/>
         <SubPart PartName="Jpeg12BitsLib" />
+        <SubPart PartName="GdalLib" />
+        <SubPart PartName="GdalData" />
+        <SubPart PartName="MatrixFromTiePtsLib" />
         <Bindings>
-            <Libs>Delivery/$(shlibprefix)IppUtlLibs$(libext)</Libs>
-            <Assemblies ProductDirectoryName="ImagePPAssemblies">Delivery/$(shlibprefix)IppUtlLibs$(ApiNumber)$(shlibext)
+            <Libs>Delivery/$(shlibprefix)Imagepp$(libext)</Libs>
+            <Assemblies ProductDirectoryName="ImagePPAssemblies">Delivery/$(shlibprefix)Imagepp$(ApiNumber)$(shlibext)
                 <!--TransKit SourceDirectory="Delivery/ImagePP/Transkit" /-->
             </Assemblies>
             <Files ProductDirectoryName="xliffs" Required="false" SubPartDirectory="xliffs">
@@ -70,145 +102,56 @@
             </Files>
         </Bindings>
     </Part>
-
-    <Part Name="IppUtlStaticLib" BMakeFile="All/utl/utl.mke" BMakeOptions="+dCREATE_STATIC_LIBRARIES">
-        <SubPart PartName="PublicApi" />
-        <SubPart PartName="BentleyDll"                      PartFile="Bentley"                              Repository="Bentley" />
-        <SubPart PartName="RmgrToolsDll"                    PartFile="RmgrTools"                            Repository="RmgrTools"/>
-        <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
-        <SubPart PartName="BeLibJpegTurbo"                  PartFile="BeLibJpegTurbo"                       Repository="libsrc-libjpegturbo"/>
-        <SubPart PartName="Jpeg12BitsLib" />
-        <Bindings>
-            <Libs>Delivery/$(stlibprefix)IppUtlStaticLib$(stlibext)</Libs>
-            <Libs>Delivery/$(stlibprefix)IppUtlStaticLib$(stlibdebugext)</Libs>
-            <Files ProductDirectoryName="xliffs" Required="false" SubPartDirectory="xliffs">
-                Delivery/xliffs/ImagePPMessages_en-US.xliff
-                Delivery/xliffs/ImagePPExceptionMessages_en-US.xliff
-            </Files>
-        </Bindings>
-    </Part>
-
-    <!-- Disable nothig is used from this lib. Restore if required.
-        Part Name="IppNetDll" BMakeFile="All/net/net.mke" ApiNumber="3">
-        <SubPart PartName="PublicApi" />
-        <SubPart PartName="IppUtlDll" />
-        <Bindings>
-            <Libs>Delivery/IppNetLibs.lib</Libs>
-            <Assemblies ProductDirectoryName="ImagePPAssemblies">Delivery/IppNetLibs$(ApiNumber).dll</Assemblies>
-        </Bindings>
-    </Part>
     
-    <Part Name="IppNetStaticLib" BMakeFile="All/net/net.mke" BMakeOptions="+dCREATE_STATIC_LIBRARIES">
-        <SubPart PartName="PublicApi" />
-        <SubPart PartName="IppUtlStaticLib" />
-        <Bindings>
-            <Libs>Delivery/Delivery/IppNetStaticLib.lib</Libs>
-            <Libs>Delivery/Delivery/IppNetStaticLib.pdb</Libs>
-        </Bindings>
-    </Part-->
-
-    <!--See the %if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED) in the gra.mke file.-->
-    <Part Name="IPPGraThirdPartsDll" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ErMapperEcw"             PartFile="${SrcBsiCommon}CvsPartfiles/ermapperecw"  Repository="Bin-ErMapperEcw" />
+    <Part Name="ImagePPThirdPartsDll" OnlyPlatforms="x86,x64">
         <SubPart PartName="MrSid"                   PartFile="${SrcBsiCommon}CvsPartfiles/mrsid"        Repository="Bin-MrSid" />
-        <SubPart PartName="OracleSDK11.2"           PartFile="${SrcBsiCommon}CvsPartfiles/oracle"       Repository="bin-oracle" />
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcBsiCommon}CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <!--SubPart PartName="OracleSDK12.1"           PartFile="${SrcBsiCommon}CvsPartfiles/oracle"       Repository="bin-oracle" />
+        <SubPart PartName="PdfLibInitializer"       PartFile="PdfLibInitializer"                        Repository="PdfLibInterface"/>
+        <SubPart PartName="Adobe11.0"               PartFile="${SrcBsiCommon}CvsPartfiles/adobe"        Repository="bin-adobe11.0"/-->
     </Part>
 
+   
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="IppGraDll" BMakeFile="All/gra/gra.mke" BMakeOptions="+dIMAGEPP_DLLMODE=1" ApiNumber="G">
-        <!--<SubPart PartName="PdfLibInitializer"       PartFile="PdfLibInitializer"                        Repository="PdfLibInterface" />-->
-        <!--<SubPart PartName="Adobe9.1"                PartFile="${SrcBsiCommon}CvsPartfiles/adobe"        Repository="bin-adobe9.1" />-->
-        <!--<SubPart PartName="IPPGraThirdPartsDll" />-->
-        <SubPart PartName="BeXmlDll"                PartFile="BeLibxml2"                                Repository="libsrc-libxml2" />
-        <SubPart PartName="PublicApi" />
-        <SubPart PartName="IppUtlDll" />
-        <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
-        <SubPart PartName="BeLibJpegTurbo"       PartFile="BeLibJpegTurbo"      Repository="libsrc-libjpegturbo"/>
-        <SubPart PartName="png"                  PartFile="png"                 Repository="libsrc-png"/>
-        <SubPart PartName="GdalLib" />
-        <SubPart PartName="MatrixFromTiePtsLib" />
-        <Bindings>
-            <Libs>Delivery/$(shlibprefix)IppGraLibs$(libext)</Libs>
-            <Assemblies ProductDirectoryName="ImagePPAssemblies">Delivery/$(shlibprefix)IppGraLibs$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
-    
-    <Part Name="IppGraStaticLib" BMakeFile="All/gra/gra.mke" BMakeOptions="+dCREATE_STATIC_LIBRARIES">
-        <!--<SubPart PartName="PdfLibInitializer"       PartFile="PdfLibInitializer"                        Repository="PdfLibInterface" />-->
-        <!--<SubPart PartName="Adobe9.1"                PartFile="${SrcBsiCommon}CvsPartfiles/adobe"        Repository="bin-adobe9.1" />-->
-        <!--<SubPart PartName="IPPGraThirdPartsDll" />-->
-        <SubPart PartName="BeXmlDll"                PartFile="BeLibxml2"                                Repository="libsrc-libxml2" />
-        <SubPart PartName="PublicApi" />
-        <SubPart PartName="IppUtlStaticLib" />
-        <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
-        <SubPart PartName="BeLibJpegTurbo"          PartFile="BeLibJpegTurbo"                           Repository="libsrc-libjpegturbo"/>
-        <SubPart PartName="png"                     PartFile="png"                                      Repository="libsrc-png"/>
-        <SubPart PartName="GdalLib" />
-        <SubPart PartName="MatrixFromTiePtsLib" />
-        <Bindings>
-            <Libs>Delivery/$(stlibprefix)IppGraStaticLib$(stlibext)</Libs>
-            <Libs>Delivery/$(stlibprefix)IppGraStaticLib$(stlibdebugext)</Libs>
-        </Bindings>
-    </Part>
-
-    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="IppImagingDll" BMakeFile="IppImaging/IppImaging.mke" BMakeOptions="+dIMAGEPP_DLLMODE=1" ApiNumber="G">
-        <SubPart PartName="IppUtlDll" />
-        <SubPart PartName="IppGraDll" />        
+    <Part Name="IppImagingDll" BentleyBuildMakeFile="IppImaging/IppImaging.mke" ApiNumber="G" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePPDll" />       
         <Bindings>
             <Libs>Delivery/$(shlibprefix)IppImaging$(libext)</Libs>
             <Assemblies ProductDirectoryName="ImagePPAssemblies">Delivery/$(shlibprefix)IppImaging$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="IppWinDll" BMakeFile="win/win.mke" BMakeOptions="+dIMAGEPP_DLLMODE=1" ApiNumber="G">
-        <SubPart PartName="IppUtlDll" />
-        <SubPart PartName="IppGraDll" />
-        <Bindings>               
-            <Libs>Delivery/$(shlibprefix)IppWinLibs$(libext)</Libs>
-            <Assemblies ProductDirectoryName="ImagePPAssemblies">Delivery/$(shlibprefix)IppWinLibs$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
+    <!-- All ImagePP dlls -->
+    <Part Name="ImagePP" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePPDll" />
+        <SubPart PartName="IppImagingDll" />
+    </Part>
+
+    <Part Name="ImagePP-Android">
+        <SubPart PartName="ImagePPDll" LibType="Static"/>
+        <SubPart PartName="IppImagingDll" LibType="Static"/>-->
+    </Part>    
+    
+    <Part Name="ImagePP-Tested" PrgOutputDir="ImagePP" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ImagePP"/>
+        <SubPart PartName="ImagePPUnitTests"    PartFile="ImagePPTest"  Repository="Imagepp"/>
+        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />        
+    </Part>
+
+    <Part Name="ImagePP-Dev" OnlyPlatforms="x86,x64">
+        <SubPart PartName= "ImagePP-Tested" />
+        <SubProduct ProductName="ImageppApps"           PartFile="ImageppApps"          Repository="ImageppApps" />
+    </Part>
+
+    <!-- Use this part to validate that everything that use(and we maintain) IPP build
+       PULL>  bb -r imagepp -f imagepp -p AllImagePPDependant pull 
+       BUILD> bb -r imagepp -f imagepp -p AllImagePPDependant build /-->
+    <Part Name="AllImagePPDependant">
+        <SubPart    PartName="ImagePP-Tested" />
+        <SubProduct ProductName="ImageppApps"           PartFile="ImageppApps"          Repository="ImageppApps" />
+        <!--SubProduct ProductName="HugeDataTest"          PartFile="HugeDataTest"         Repository="HugeDataTest" /-->
+        <!--SubProduct ProductName="HugeDataWinShellExt"   PartFile="HugeDataWinShellExt"  Repository="HugeDataWinShellExt" /-->
+        <!--SubProduct ProductName="PlatformProducts"      PartFile="PlatformProducts"     Repository="MstnPlatform" /-->
     </Part>
     
-    <Part Name="IppWinStaticLib" BMakeFile="win/win.mke" BMakeOptions="+dCREATE_STATIC_LIBRARIES">
-        <SubPart PartName="IppUtlStaticLib" />
-        <SubPart PartName="IppGraStaticLib" />
-        <Bindings>
-            <Libs>Delivery/$(stlibprefix)IppWinStaticLib$(stlibext)</Libs>
-            <Libs>Delivery/$(stlibprefix)IppWinStaticLib$(stlibdebugext)</Libs>
-        </Bindings>
-    </Part>
-
-    <Part Name="DllsUnicode" OnlyPlatforms="x86,x64">
-        <SubPart PartName="PublicApi" />
-        <SubPart PartName="IppUtlDll" />
-        <!-- No export from this dll 
-            SubPart PartName="IppNetDll" /-->
-        <SubPart PartName="IppGraDll" />
-        <SubPart PartName="IppWinDll" />
-        <SubPart PartName="IppImagingDll" />        
-        <SubPart PartName="GdalData" />
-    </Part>
-
-    <Part Name="ImageppStaticLib" OnlyPlatforms="x86,x64">
-        <SubPart PartName="PublicApi" />
-        <SubPart PartName="IppUtlStaticLib" />
-        <!-- restore if neeeded 
-            SubPart PartName="IppNetStaticLib" /-->
-        <SubPart PartName="IppGraStaticLib" />
-        <SubPart PartName="IppWinStaticLib" />
-        <SubPart PartName="GdalData" />
-    </Part>
-
-    <Part Name="ImagePP" ExcludePlatforms="Android*,LinuxX86,iOS*">
-        <SubPart PartName= "DllsUnicode" />
-    </Part>
-            
-    <Part Name="ImagePPTested" PrgOutputDir="ImagePP" ExcludePlatforms="Android*,LinuxX86,iOS*">
-        <SubPart PartName= "ImagePP" />
-        <!-- NOT_NOW test are failing in release. 
-        SubPart PartName="RunImageppTest" PartFile="ImageppTest" Repository="ImageppTest" /-->
-    </Part>
-
 </BuildContext>

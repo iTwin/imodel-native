@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMessages.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,6 +15,7 @@
 
 #include "HMGMessage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 // Forward declarations
 class HMGMessageSender;
 
@@ -24,15 +25,16 @@ class HMGMessageSender;
 
 class HRPPaletteChangedMsg : public HMGAsynchronousMessage
     {
-    HDECLARE_CLASS_ID(1097, HMGAsynchronousMessage)
+    HDECLARE_CLASS_ID(HRPMsgId_PaletteChanged, HMGAsynchronousMessage)
 
 public:
     HRPPaletteChangedMsg();
-    _HDLLg virtual ~HRPPaletteChangedMsg();
+    IMAGEPP_EXPORT virtual ~HRPPaletteChangedMsg();
 
-    _HDLLg virtual HMGMessage* Clone() const override;
+    IMAGEPP_EXPORT virtual HMGMessage* Clone() const override;
 protected:
     HRPPaletteChangedMsg(const HRPPaletteChangedMsg& pi_rObj);
     HRPPaletteChangedMsg& operator=(const HRPPaletteChangedMsg& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 

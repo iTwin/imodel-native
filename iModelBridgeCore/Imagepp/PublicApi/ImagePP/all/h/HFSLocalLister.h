@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFSLocalLister.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -23,12 +23,13 @@
 // HFS
 #include "HFSDirectoryLister.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HFSLocalLister : public HFSDirectoryLister
     {
 public:
 
-    HDECLARE_CLASS_ID(5002, HFSDirectoryLister);
+    HDECLARE_CLASS_ID(HFSListerId_Local, HFSDirectoryLister);
 
     // Construction - Destruction
     HFSLocalLister(HFCPtr<HFCConnection>& pi_pConnection,
@@ -55,5 +56,6 @@ private:
     HFSLocalLister& operator=(const HFSLocalLister&);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HFSLocalLister.hpp"
 

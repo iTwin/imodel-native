@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPaletteOctreeR8G8B8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #pragma once
 
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Node class that is used in the internal tree of the
     HRPPaletteOctreeR8G8B8 class.
@@ -19,8 +20,6 @@
 struct HRPPaletteOctreeR8G8B8Node
     {
     bool  IsLeaf;
-
-    uint32_t PixelCount;
 
     Byte Red;
     Byte Green;
@@ -47,15 +46,15 @@ class HRPPaletteOctreeR8G8B8
     {
 public:
     // Primary methods
-    _HDLLg                 HRPPaletteOctreeR8G8B8();
+    IMAGEPP_EXPORT                 HRPPaletteOctreeR8G8B8();
 
-    _HDLLg virtual         ~HRPPaletteOctreeR8G8B8();
+    IMAGEPP_EXPORT virtual         ~HRPPaletteOctreeR8G8B8();
 
-    _HDLLg void                AddCompositeValue(const void* pi_pValue, Byte pi_Index);
+    IMAGEPP_EXPORT void                AddCompositeValue(const void* pi_pValue, Byte pi_Index);
 
-    _HDLLg void                AddRGBValue(Byte pi_Red, Byte pi_Green, Byte pi_Blue, Byte pi_Index);
+    IMAGEPP_EXPORT void                AddRGBValue(Byte pi_Red, Byte pi_Green, Byte pi_Blue, Byte pi_Index);
 
-    _HDLLg Byte           GetIndex(Byte pi_Red, Byte pi_Green, Byte pi_Blue) const;
+    IMAGEPP_EXPORT Byte           GetIndex(Byte pi_Red, Byte pi_Green, Byte pi_Blue) const;
 
     void            FlushEntries();
 
@@ -76,3 +75,4 @@ private:
 
     void            DeleteTree(struct HRPPaletteOctreeR8G8B8Node* pi_pNode);
     };
+END_IMAGEPP_NAMESPACE

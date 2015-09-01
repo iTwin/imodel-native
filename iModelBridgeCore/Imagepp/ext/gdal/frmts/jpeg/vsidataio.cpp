@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vsidataio.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: vsidataio.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement JPEG read/write io indirection through VSI.
@@ -28,12 +28,11 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_vsi.h"
+#include "vsidataio.h"
 
-CPL_CVSID("$Id: vsidataio.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: vsidataio.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 CPL_C_START
-#include "jpeglib.h"
 #include "jerror.h"
 CPL_C_END
 
@@ -241,7 +240,7 @@ skip_input_data (j_decompress_ptr cinfo, long num_bytes)
  */
 
 METHODDEF(void)
-term_source (j_decompress_ptr cinfo)
+term_source (CPL_UNUSED j_decompress_ptr cinfo)
 {
   /* no work necessary here */
 }

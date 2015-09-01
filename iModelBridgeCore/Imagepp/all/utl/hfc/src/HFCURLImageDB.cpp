@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLImageDB.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLImageDB
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCURLImageDB.h>
 #include <Imagepp/all/h/HFCException.h>
 
@@ -18,7 +18,6 @@
 
 
 // This is the creator that registers itself in the scheme list.
-
 struct URLImageDBCreator : public HFCURL::Creator
     {
     URLImageDBCreator()
@@ -32,7 +31,6 @@ struct URLImageDBCreator : public HFCURL::Creator
     } g_URLImageDBCreator;
 
 
-
 //-----------------------------------------------------------------------------
 // This constructor configures the object from the detached parts of the
 // scheme-specific part of the URL string.
@@ -43,22 +41,22 @@ HFCURLImageDB::HFCURLImageDB(const WString& pi_rURL)
     HPRECONDITION(!pi_rURL.empty());
 
     if (BeStringUtilities::Wcsicmp(GetSchemeType().c_str(), s_SchemeName().c_str()) != 0)
-        throw(HFCException());
+        throw(HFCUnknownException());
 
     WString SchemeSpecificPart = GetSchemeSpecificPart();
 
     // must be start with "//"
     if (SchemeSpecificPart.length() < 2)
-        throw(HFCException());
+        throw(HFCUnknownException());
 
     if (wcscmp(SchemeSpecificPart.substr(0, 2).c_str(), L"//") != 0)
-        throw(HFCException());
+        throw(HFCUnknownException());
 
     WString::size_type FirstPos;
     WString::size_type NextPos;
 
     if ((FirstPos = SchemeSpecificPart.find_first_of(L"/", 2)) == WString::npos)
-        throw(HFCException()); // invalid URL
+        throw(HFCUnknownException()); // invalid URL
 
     WString Database = SchemeSpecificPart.substr(2, FirstPos - 2);
 
@@ -73,7 +71,7 @@ HFCURLImageDB::HFCURLImageDB(const WString& pi_rURL)
 
     // Database
     if (Database.length() == 0)
-        throw(HFCException()); // we need a database
+        throw(HFCUnknownException()); // we need a database
 
     // Check if we have an InternalName
     if ((FirstPos = Database.find_first_of(L":")) == WString::npos)
@@ -84,7 +82,7 @@ HFCURLImageDB::HFCURLImageDB(const WString& pi_rURL)
 
         // Extract the Usr
         if ((NextPos = Database.find_first_of(L":", ++FirstPos)) == WString::npos)
-            throw(HFCException()); // we need 2 ":" for Usr and Pwd
+            throw(HFCUnknownException()); // we need 2 ":" for Usr and Pwd
 
         m_Usr = Database.substr(FirstPos, NextPos - FirstPos);
 
@@ -140,7 +138,7 @@ HFCURLImageDB::HFCURLImageDB(const WString& pi_rInternalName,
     HPRECONDITION(!pi_rDriveName.empty());
 
     if (!m_Path.empty() && m_Path[0] != L'/')
-        throw(HFCException());
+        throw(HFCUnknownException());
 
     if (m_Path.empty())
         m_Path = L"/";

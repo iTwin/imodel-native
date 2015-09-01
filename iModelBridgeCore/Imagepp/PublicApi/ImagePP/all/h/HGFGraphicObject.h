@@ -19,10 +19,9 @@
 
 #include "HPMPersistentObject.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HGFMappedSurface;
-class HGFDrawOptions;
-class HMDMetaDataContainerList;
-class HPMAttributeSet;
 
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -40,7 +39,7 @@ class HNOVTABLEINIT HGFGraphicObject : public HPMPersistentObject,
     public HMGMessageDuplex
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg, 1010)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT, HGFGraphicObjectId)
 
 public:
     enum Location
@@ -51,16 +50,16 @@ public:
         };
 
     // Primary methods
-    _HDLLg                     HGFGraphicObject ();
-    _HDLLg                     HGFGraphicObject(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
-    _HDLLg                     HGFGraphicObject(const HGFGraphicObject& pi_rObj);
-    _HDLLg virtual             ~HGFGraphicObject();
-    _HDLLg HGFGraphicObject&   operator=(const HGFGraphicObject& pi_rObj);
+    IMAGEPP_EXPORT                     HGFGraphicObject ();
+    IMAGEPP_EXPORT                     HGFGraphicObject(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
+    IMAGEPP_EXPORT                     HGFGraphicObject(const HGFGraphicObject& pi_rObj);
+    IMAGEPP_EXPORT virtual             ~HGFGraphicObject();
+    IMAGEPP_EXPORT HGFGraphicObject&   operator=(const HGFGraphicObject& pi_rObj);
 
     // Coordinate system management
-    _HDLLg const HFCPtr<HGF2DCoordSys>&
+    IMAGEPP_EXPORT const HFCPtr<HGF2DCoordSys>&
     GetCoordSys () const;
-    _HDLLg virtual void        SetCoordSys (const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
+    IMAGEPP_EXPORT virtual void        SetCoordSys (const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
 
     // Extent management
 
@@ -106,7 +105,7 @@ public:
                               const HGF2DLocation& pi_rOrigin) = 0;
 
     // Debug function.
-    _HDLLg virtual void        PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT virtual void        PrintState(ostream& po_rOutput) const;
 
     // Information
     /** -----------------------------------------------------------------------------
@@ -122,30 +121,25 @@ public:
         @see HGF2DLocation
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual Location
+    IMAGEPP_EXPORT virtual Location
     Locate(const HGF2DLocation& pi_rPoint) const = 0;
 
-    _HDLLg virtual bool   IsOpaque() const;
+    IMAGEPP_EXPORT virtual bool   IsOpaque() const;
 
+#ifdef IPP_HPM_ATTRIBUTES_ON_HRA
     // Attributes
-
-    _HDLLg /*IppImaging_Needs*/ const HPMAttributeSet& GetAttributes() const;
+    HPMAttributeSet const& GetAttributes() const;
 
     void            SetAttributes(const HPMAttributeSet&   pi_rAttributes);
     void            SetAttributes(HFCPtr<HPMAttributeSet>& pi_rpAttributes);
 
-
-    HPMAttributeSet&
-    LockAttributes() const;
+    HPMAttributeSet& LockAttributes() const;
     void            UnlockAttributes() const;
+#endif
 
-    // MetaData
-    _HDLLg const HFCPtr<HMDMetaDataContainerList>& GetMetaDataContainerList() const;
-    _HDLLg void                                    SetMetaDataContainerList(const HFCPtr<HMDMetaDataContainerList>& pi_rpMDContainers);
-
-    // BEIJING_WIP_IPP_HGS &&MM review what a graphic is. HVE shape and HRA are child class. We cannot draw shapes but still
+    // &&Backlog review what a graphic is. HVE shape and HRA are child class. We cannot draw shapes but still
     // want the coordSys stuff. Maybe we should call it HGFSpatialObject and move the draw to HRARaster?
-    _HDLLg virtual void LinkTo(HMGMessageSender* pi_pSender, bool pi_ReceiveMessagesInCurrentThread = false) const;
+    IMAGEPP_EXPORT virtual void LinkTo(HMGMessageSender* pi_pSender, bool pi_ReceiveMessagesInCurrentThread = false) const;
 
 protected:
 
@@ -154,9 +148,9 @@ protected:
 private:
 
     HFCPtr<HGF2DCoordSys>            m_pSysCoord;
-
+#ifdef IPP_HPM_ATTRIBUTES_ON_HRA
     HFCPtr<HPMAttributeSet>          m_pAttributes;
-
-    HFCPtr<HMDMetaDataContainerList> m_pMetaDataContainerList;
+#endif
     };
 
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFilePageDecorator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFilePageDecorator
@@ -16,22 +16,23 @@
 #include "HRFPageFile.h"
 #include "HRFRasterFileExtender.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HGF2DTransfoModel;
 
 class HRFRasterFilePageDecorator : public HRFRasterFileExtender
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1430, HRFRasterFileExtender)
+    HDECLARE_CLASS_ID(HRFRasterFileId_PageDecorator, HRFRasterFileExtender)
 
     // allow to Open an image file
-    _HDLLg                                       HRFRasterFilePageDecorator(HFCPtr<HRFRasterFile>&   pi_rpOriginalFile,
+    IMAGEPP_EXPORT                                       HRFRasterFilePageDecorator(HFCPtr<HRFRasterFile>&   pi_rpOriginalFile,
                                                                             const HRFPageFileCreator* pi_pCreator);
     // allow to Open an image file
-    _HDLLg                                       HRFRasterFilePageDecorator(HFCPtr<HRFRasterFile>&   pi_rpOriginalFile,
+    IMAGEPP_EXPORT                                       HRFRasterFilePageDecorator(HFCPtr<HRFRasterFile>&   pi_rpOriginalFile,
                                                                             HFCPtr<HRFPageFile>&      pi_rpPageFile);
 
-    _HDLLg virtual                               ~HRFRasterFilePageDecorator();
+    IMAGEPP_EXPORT virtual                               ~HRFRasterFilePageDecorator();
 
     // File capabilities
     virtual const HFCPtr<HRFRasterFileCapabilities>&
@@ -83,4 +84,5 @@ private:
     HRFRasterFilePageDecorator(const HRFRasterFilePageDecorator& pi_rObj);
     HRFRasterFilePageDecorator&  operator=(const HRFRasterFilePageDecorator& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 

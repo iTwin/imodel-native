@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCEvent.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HFCEvent
 //-----------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 
 //-----------------------------------------------------------------------------
 // Internal stuff.  Since the key in HFCEvent is allocated and initialised
@@ -128,3 +130,4 @@ inline void HFCEvent::Pulse()
 
 
 
+END_IMAGEPP_NAMESPACE

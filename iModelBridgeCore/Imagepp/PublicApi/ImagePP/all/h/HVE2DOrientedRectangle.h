@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DOrientedRectangle.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DOrientedRectangle
@@ -13,12 +13,13 @@
 
 #include "HVE2DSimpleShape.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HVEShapeRasterLine;
 
 class HVE2DOrientedRectangle : public HVE2DSimpleShape
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1117)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DOrientedRectangleId)
 
 public:
 
@@ -115,6 +116,7 @@ private:
     HGF2DLocation   m_ThirdCorner;
     HGF2DLocation   m_FourthCorner;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DOrientedRectangle.hpp"

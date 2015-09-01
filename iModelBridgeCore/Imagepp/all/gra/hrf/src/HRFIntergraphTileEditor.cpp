@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphTileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFIntergraphTileEditor.h>
 #include <Imagepp/all/h/HRFIntergraphFile.h>
 #include <Imagepp/all/h/HCDCodecIdentity.h>
@@ -18,6 +18,7 @@
 #include <Imagepp/all/h/HCDPacket.h>
 #include <Imagepp/all/h/HGFTileIDDescriptor.h>
 #include <Imagepp/all/h/HCDCodecIJG.h>
+#include <Imagepp/all/h/HFCMath.h>
 
 const unsigned int JPegTileTrailerSize     =   2;
 const unsigned int JPegColorTileHeaderSize =  33;
@@ -104,8 +105,8 @@ HRFIntergraphTileEditor::~HRFIntergraphTileEditor()
 // ReadBlock: Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFIntergraphTileEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                           uint32_t pi_PosBlockY,
+HSTATUS HRFIntergraphTileEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                           uint64_t pi_PosBlockY,
                                            Byte* po_pData,
                                            HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -114,6 +115,7 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint32_t pi_PosBlockX,
     HPRECONDITION(m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
     HPRECONDITION(pi_PosBlockX <= m_pResolutionDescriptor->GetWidth());
     HPRECONDITION(pi_PosBlockY <= m_pResolutionDescriptor->GetHeight());
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     // For performance reason and code clarity, we initialize Status to success
     // because we dont have many event who will invalidate it.
@@ -157,13 +159,13 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint32_t pi_PosBlockX,
         {
         // Theses values must be recalculate each time we have a tile read and we have a compress
         // raster file.
-        if ((pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth()) > m_pResolutionDescriptor->GetWidth())
-            RealTileWidthPixel = (uint32_t)m_pResolutionDescriptor->GetWidth() - pi_PosBlockX;
+        if (((uint32_t)pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth()) > m_pResolutionDescriptor->GetWidth())
+            RealTileWidthPixel = (uint32_t)m_pResolutionDescriptor->GetWidth() - (uint32_t)pi_PosBlockX;
         else
             RealTileWidthPixel = m_pResolutionDescriptor->GetBlockWidth();
 
-        if ((pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight()) > m_pResolutionDescriptor->GetHeight())
-            RealTileHeightPixel = (uint32_t)m_pResolutionDescriptor->GetHeight() - pi_PosBlockY;
+        if (((uint32_t)pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight()) > m_pResolutionDescriptor->GetHeight())
+            RealTileHeightPixel = (uint32_t)m_pResolutionDescriptor->GetHeight() - (uint32_t)pi_PosBlockY;
         else
             RealTileHeightPixel = m_pResolutionDescriptor->GetBlockHeight();
 
@@ -181,7 +183,7 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint32_t pi_PosBlockX,
 
     // Check if we have a un-instantiated tile
     if (TileEntryInformation->S == 0)
-        memset(po_pData, LOWORD(TileEntryInformation->U), m_TileSizeInByte);
+        memset(po_pData, TileEntryInformation->U, m_TileSizeInByte);
     else
         {
         // Positionnate the cursor in the file according the tile position.
@@ -195,7 +197,7 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint32_t pi_PosBlockX,
             if (m_IntergraphResolutionDescriptor.pCodec == 0)
                 {
                 // Read the available data into the temp buffer.
-                if (m_pIntergraphFile->Read((void*)pTempBuffer, TileEntryInformation->U) != TileEntryInformation->U)
+                if (m_pIntergraphFile->Read(pTempBuffer, TileEntryInformation->U) != TileEntryInformation->U)
                     goto WRAPUP;    // H_ERROR
 
                 uint32_t NewTileWidthInByte = (uint32_t)((m_pResolutionDescriptor->GetWidth() - pi_PosBlockX) * ((float)m_BitPerPixel / 8.0));
@@ -216,7 +218,7 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint32_t pi_PosBlockX,
             // If the tile is enterely full, simply read it directly into the buffer
             if (m_IntergraphResolutionDescriptor.pCodec == 0)
                 {
-                if (m_pIntergraphFile->Read((void*)po_pData, TileEntryInformation->U) != TileEntryInformation->U)
+                if (m_pIntergraphFile->Read(po_pData, TileEntryInformation->U) != TileEntryInformation->U)
                     goto WRAPUP;    // H_ERROR
                 }
             else
@@ -274,7 +276,7 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint32_t pi_PosBlockX,
                                                        BufferSize,
                                                        BufferSize);
 
-                    if (m_pIntergraphFile->Read((void*)pTempBuffer.get(), BufferSize) != BufferSize)
+                    if (m_pIntergraphFile->Read(pTempBuffer.get(), BufferSize) != BufferSize)
                         goto WRAPUP;    // H_ERROR
                     }
 
@@ -305,8 +307,8 @@ WRAPUP:
 // ReadBlock: Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFIntergraphTileEditor::ReadBlock(uint32_t           pi_PosBlockX,
-                                           uint32_t           pi_PosBlockY,
+HSTATUS HRFIntergraphTileEditor::ReadBlock(uint64_t           pi_PosBlockX,
+                                           uint64_t           pi_PosBlockY,
                                            HFCPtr<HCDPacket>& po_rpPacket,
                                            HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -341,9 +343,9 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint32_t           pi_PosBlockX,
 // Public
 // WriteBlock: Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFIntergraphTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                            uint32_t     pi_PosBlockY,
-                                            const Byte* pi_pData,
+HSTATUS HRFIntergraphTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                            uint64_t     pi_PosBlockY,
+                                            const Byte*  pi_pData,
                                             HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -351,6 +353,7 @@ HSTATUS HRFIntergraphTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
     HPRECONDITION (pi_pData != 0);
     HPRECONDITION (pi_PosBlockX <= m_pResolutionDescriptor->GetWidth());
     HPRECONDITION (pi_PosBlockY <= m_pResolutionDescriptor->GetHeight());
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     HSTATUS Status = H_ERROR;
 
@@ -381,13 +384,13 @@ HSTATUS HRFIntergraphTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
 
     if (m_IntergraphResolutionDescriptor.pCodec != 0)
         {
-        if ((pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth()) > m_pResolutionDescriptor->GetWidth())
-            RealTileWidthPixel = (uint32_t)m_pResolutionDescriptor->GetWidth() - pi_PosBlockX;
+        if (((uint32_t)pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth()) > m_pResolutionDescriptor->GetWidth())
+            RealTileWidthPixel = (uint32_t)m_pResolutionDescriptor->GetWidth() - (uint32_t)pi_PosBlockX;
         else
             RealTileWidthPixel = m_pResolutionDescriptor->GetBlockWidth();
 
-        if ((pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight()) > m_pResolutionDescriptor->GetHeight())
-            RealTileHeightPixel = (uint32_t)m_pResolutionDescriptor->GetHeight() - pi_PosBlockY;
+        if (((uint32_t)pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight()) > m_pResolutionDescriptor->GetHeight())
+            RealTileHeightPixel = (uint32_t)m_pResolutionDescriptor->GetHeight() - (uint32_t)pi_PosBlockY;
         else
             RealTileHeightPixel = m_pResolutionDescriptor->GetBlockHeight();
 
@@ -413,7 +416,7 @@ HSTATUS HRFIntergraphTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
         }
     else
         {
-        TileSizeInByte = GetCurrentTileSizeInByte( pi_PosBlockX, pi_PosBlockY);
+        TileSizeInByte = GetCurrentTileSizeInByte((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
         FindFileFreeSpace(TileEntryInformation.S, TileEntryInformation.A, TileSizeInByte);
 
         m_pIntergraphFile->SeekToPos(TileEntryInformation.S + (static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->GetBlockNumInHeader() * HRF_INTERGRAGH_HEADER_BLOCK_LENGTH));
@@ -421,15 +424,15 @@ HSTATUS HRFIntergraphTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
 
     // Check if we have an incomplete tile and if the missing portion
     // is on the right side (actually we dont care of the bottom side).
-    if ( ((pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth ()) > m_pResolutionDescriptor->GetWidth ()) )
+    if ( (((uint32_t)pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth ()) > m_pResolutionDescriptor->GetWidth ()) )
         {
-        IncompleteTileWidth = __min((uint32_t)m_pResolutionDescriptor->GetWidth(), (uint32_t)m_pResolutionDescriptor->GetWidth() - pi_PosBlockX);
+        IncompleteTileWidth = MIN((uint32_t)m_pResolutionDescriptor->GetWidth(), (uint32_t)m_pResolutionDescriptor->GetWidth() - (uint32_t)pi_PosBlockX);
         IncompleteTileWidth = (uint32_t)ceil((float)(IncompleteTileWidth) * ((float)m_BitPerPixel / 8.0));
 
         HASSERT( IncompleteTileWidth > 0);
 
-        if (pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight() > m_pResolutionDescriptor->GetHeight())
-            IncompleteTileHeight = (uint32_t)m_pResolutionDescriptor->GetHeight() - pi_PosBlockY;
+        if ((uint32_t)pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight() > m_pResolutionDescriptor->GetHeight())
+            IncompleteTileHeight = (uint32_t)m_pResolutionDescriptor->GetHeight() - (uint32_t)pi_PosBlockY;
         else
             IncompleteTileHeight = m_pResolutionDescriptor->GetBlockHeight();
 
@@ -580,7 +583,7 @@ HSTATUS HRFIntergraphTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
     FileOffset += (sizeof(HRFIntergraphFile::TileDirectoryInfo) + (sizeof(HRFIntergraphFile::TileEntry) * TileIndex));
     m_pIntergraphFile->SeekToPos(FileOffset);
 
-    if (m_pIntergraphFile->Write((void*)&(m_IntergraphResolutionDescriptor.pTileDirectoryEntry[TileIndex]),
+    if (m_pIntergraphFile->Write(&(m_IntergraphResolutionDescriptor.pTileDirectoryEntry[TileIndex]),
                                  sizeof(Byte) * sizeof(HRFIntergraphFile::TileEntry)) !=
         sizeof(Byte) * sizeof(HRFIntergraphFile::TileEntry))
         goto WRAPUP;
@@ -885,15 +888,15 @@ void HRFIntergraphTileEditor::InitializeJpegDecompTable(double pi_QualityFactor,
 
         // Initialise Tile height within the Tile Header, warning,
         // do not forget to set the HI/LOW WORD order properly.
-        Byte SizeHI  = (Byte)(m_pResolutionDescriptor->GetBlockHeight() >> 8);
-        Byte SizeLOW = (Byte)m_pResolutionDescriptor->GetBlockHeight();
+        Byte SizeHI  = CONVERT_TO_BYTE(m_pResolutionDescriptor->GetBlockHeight() >> 8);
+        Byte SizeLOW = CONVERT_TO_BYTE(m_pResolutionDescriptor->GetBlockHeight());
         memcpy(po_pTileBuffer + JpegGrayTablesSize + 5, &SizeHI , 1);
         memcpy(po_pTileBuffer + JpegGrayTablesSize + 6, &SizeLOW, 1);
 
         // Initialise Tile width within the Tile Header, warning,
         // do not forget to set the HI/LOW WORD order properly.
-        SizeHI  = (Byte)(m_pResolutionDescriptor->GetBlockWidth() >> 8);
-        SizeLOW = (Byte)m_pResolutionDescriptor->GetBlockWidth();
+        SizeHI  = CONVERT_TO_BYTE(m_pResolutionDescriptor->GetBlockWidth() >> 8);
+        SizeLOW = CONVERT_TO_BYTE(m_pResolutionDescriptor->GetBlockWidth());
         memcpy(po_pTileBuffer + JpegGrayTablesSize + 7, &SizeHI , 1);
         memcpy(po_pTileBuffer + JpegGrayTablesSize + 8, &SizeLOW, 1);
 
@@ -912,15 +915,15 @@ void HRFIntergraphTileEditor::InitializeJpegDecompTable(double pi_QualityFactor,
 
         // Initialise Tile height within the Tile Header, warning,
         // do not forget to set the HI/LOW WORD order properly.
-        Byte SizeHI  = (Byte)(m_pResolutionDescriptor->GetBlockHeight() >> 8);
-        Byte SizeLOW = (Byte)m_pResolutionDescriptor->GetBlockHeight();
+        Byte SizeHI  = CONVERT_TO_BYTE(m_pResolutionDescriptor->GetBlockHeight() >> 8);
+        Byte SizeLOW = CONVERT_TO_BYTE(m_pResolutionDescriptor->GetBlockHeight());
         memcpy(po_pTileBuffer + JpegColorTablesSize + 5, &SizeHI , 1);
         memcpy(po_pTileBuffer + JpegColorTablesSize + 6, &SizeLOW, 1);
 
         // Initialise Tile width within the Tile Header, warning,
         // do not forget to set the HI/LOW WORD order properly.
-        SizeHI  = (Byte)(m_pResolutionDescriptor->GetBlockWidth() >> 8);
-        SizeLOW = (Byte)(m_pResolutionDescriptor->GetBlockWidth());
+        SizeHI  = CONVERT_TO_BYTE(m_pResolutionDescriptor->GetBlockWidth() >> 8);
+        SizeLOW = CONVERT_TO_BYTE(m_pResolutionDescriptor->GetBlockWidth());
         memcpy(po_pTileBuffer + JpegColorTablesSize + 7, &SizeHI , 1);
         memcpy(po_pTileBuffer + JpegColorTablesSize + 8, &SizeLOW, 1);
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMath.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -11,7 +11,7 @@
 //
 //----------------------------------------------------------------------------
 
-#include <limits.h>
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     DivideBy255
@@ -29,7 +29,10 @@ inline int32_t HFCMath::DivideBy255(int32_t pi_Numerator) const
 
 inline Byte HFCMath::DivideBy255ToByte(int32_t pi_Numerator) const
     {
-    return CONVERT_TO_BYTE(DivideBy255(pi_Numerator));
+    // Do not mask becauss we want to detect "Run-Time Check Failure #1 - A cast to a smaller data type has caused a loss of data."
+    // If we have overflows we should evalute the performance impact of doing something like max(0,min(255, result)
+    //return CONVERT_TO_BYTE(DivideBy255(pi_Numerator));
+    return (Byte)DivideBy255(pi_Numerator);
     }
 
 
@@ -50,3 +53,5 @@ inline uint32_t HFCMath::MultiplyBy0X01010101 (Byte pi_Value) const
     {
     return m_MultiBy0X01010101[pi_Value];
     }
+
+END_IMAGEPP_NAMESPACE

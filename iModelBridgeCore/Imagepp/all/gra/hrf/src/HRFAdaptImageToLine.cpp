@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptImageToLine.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptImageToLine
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCAccessMode.h>
 
@@ -103,10 +103,10 @@ HRFAdaptImageToLine::~HRFAdaptImageToLine()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptImageToLine::ReadBlock (uint32_t pi_PosBlockX,
-                                        uint32_t pi_PosBlockY,
-                                        Byte* po_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFAdaptImageToLine::ReadBlock(uint64_t pi_PosBlockX,
+                                       uint64_t pi_PosBlockY,
+                                       Byte*  po_pData,
+                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HSTATUS Status = H_SUCCESS;
@@ -124,7 +124,7 @@ HSTATUS HRFAdaptImageToLine::ReadBlock (uint32_t pi_PosBlockX,
             pi_pSisterFileLock = &SisterFileLock;
             }
 
-        Status = m_pAdaptedResolutionEditor->ReadBlock((uint64_t)0, (uint64_t)0, m_pImage, pi_pSisterFileLock);
+        Status = m_pAdaptedResolutionEditor->ReadBlock(0, 0, m_pImage, pi_pSisterFileLock);
         }
     HASSERT(m_pImage != 0);
 
@@ -141,8 +141,8 @@ HSTATUS HRFAdaptImageToLine::ReadBlock (uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptImageToLine::WriteBlock(uint32_t    pi_PosBlockX,
-                                        uint32_t     pi_PosBlockY,
+HSTATUS HRFAdaptImageToLine::WriteBlock(uint64_t    pi_PosBlockX,
+                                        uint64_t    pi_PosBlockY,
                                         const Byte* pi_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -169,7 +169,7 @@ HSTATUS HRFAdaptImageToLine::WriteBlock(uint32_t    pi_PosBlockX,
             pi_pSisterFileLock = &SisterFileLock;
             }
 
-        Status = m_pAdaptedResolutionEditor->WriteBlock((uint64_t)0, (uint64_t)0, m_pImage, pi_pSisterFileLock);
+        Status = m_pAdaptedResolutionEditor->WriteBlock(0, 0, m_pImage, pi_pSisterFileLock);
 
         m_pTheTrueOriginalFile->SharingControlIncrementCount();
         }

@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFImgRGBLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>                //:> must be first for PreCompiledHeader Option
+#include <ImagePPInternal/hstdcpp.h>
+                //:> must be first for PreCompiledHeader Option
 
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRFImgRGBFile.h>
@@ -55,7 +55,9 @@ HRFImgRGBLineEditor::~HRFImgRGBLineEditor()
     @return HSTATUS.
     ---------------------------------------------------------------------------
  */
-HSTATUS HRFImgRGBLineEditor::ReadBlock(uint32_t pi_PosBlockX, uint32_t pi_PosBlockY, Byte* po_pData,
+HSTATUS HRFImgRGBLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                       uint64_t pi_PosBlockY, 
+                                       Byte*  po_pData,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (po_pData != 0);
@@ -72,7 +74,7 @@ HSTATUS HRFImgRGBLineEditor::ReadBlock(uint32_t pi_PosBlockX, uint32_t pi_PosBlo
 
         {
         uint32_t    channelLineLength = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth() / 3;
-        uint32_t    Offset            = pi_PosBlockY * channelLineLength;
+        uint64_t     Offset            = pi_PosBlockY * channelLineLength;
 
         HArrayAutoPtr<Byte> pBuffRed(new Byte[channelLineLength*3]);
         Byte* pBuffGreen = &(pBuffRed[channelLineLength]);
@@ -95,9 +97,9 @@ HSTATUS HRFImgRGBLineEditor::ReadBlock(uint32_t pi_PosBlockX, uint32_t pi_PosBlo
             static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pBlueFile->SeekToPos(Offset);
 
         //:> Read each channel
-        if(static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pRedFile->Read((void*)pBuffRed, channelLineLength) != channelLineLength ||
-           static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pGreenFile->Read((void*)pBuffGreen, channelLineLength) != channelLineLength ||
-           static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pBlueFile->Read((void*)pBuffBlue, channelLineLength) != channelLineLength)
+        if(static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pRedFile->Read(pBuffRed, channelLineLength) != channelLineLength ||
+           static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pGreenFile->Read(pBuffGreen, channelLineLength) != channelLineLength ||
+           static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pBlueFile->Read(pBuffBlue, channelLineLength) != channelLineLength)
             goto WRAPUP;
 
         //:> Unlock the sister file
@@ -128,7 +130,9 @@ WRAPUP:
     @return HSTATUS H_SUCCESS.
     ---------------------------------------------------------------------------
  */
-HSTATUS HRFImgRGBLineEditor::WriteBlock(uint32_t pi_PosBlockX, uint32_t pi_PosBlockY, const Byte* pi_pData,
+HSTATUS HRFImgRGBLineEditor::WriteBlock(uint64_t      pi_PosBlockX,
+                                        uint64_t      pi_PosBlockY,
+                                        const Byte*   pi_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -137,7 +141,7 @@ HSTATUS HRFImgRGBLineEditor::WriteBlock(uint32_t pi_PosBlockX, uint32_t pi_PosBl
     HSTATUS     Status = H_SUCCESS;
 
     uint32_t    channelLineLength = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth() / 3;
-    uint32_t    Offset            = pi_PosBlockY * channelLineLength;
+    uint64_t     Offset            = pi_PosBlockY * channelLineLength;
 
     HArrayAutoPtr<Byte> pBuffRed(new Byte[channelLineLength*3]);
     Byte* pBuffGreen = &(pBuffRed [channelLineLength]);
@@ -169,9 +173,9 @@ HSTATUS HRFImgRGBLineEditor::WriteBlock(uint32_t pi_PosBlockX, uint32_t pi_PosBl
         static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pBlueFile->SeekToPos(Offset);
 
     //:> Write each channel
-    if (static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pRedFile->Write((void*)pBuffRed, channelLineLength) != channelLineLength ||
-        static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pGreenFile->Write((void*)pBuffGreen, channelLineLength)  != channelLineLength ||
-        static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pBlueFile->Write((void*)pBuffBlue, channelLineLength) != channelLineLength)
+    if (static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pRedFile->Write(pBuffRed, channelLineLength) != channelLineLength ||
+        static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pGreenFile->Write(pBuffGreen, channelLineLength)  != channelLineLength ||
+        static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pBlueFile->Write(pBuffBlue, channelLineLength) != channelLineLength)
         Status = H_ERROR;
 
     //:> Increment the counters for sharing control

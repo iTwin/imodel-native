@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDLZWEncoder.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDLZWEncoder
@@ -11,9 +11,10 @@
 // See : http://www.libtiff.org/
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HCDLZWEncoder.h>
+#include <Imagepp/all/h/HFCMath.h>
 
 HCDLZWEncoder::HCDLZWEncoder()
     {
@@ -36,11 +37,11 @@ void HCDLZWEncoder::ClearHashTable()
     {                                                       \
         nextdata = (nextdata << nbits) | code;              \
         nextbits += nbits;                                  \
-        *output++ = (Byte)(nextdata >> (nextbits-8));      \
+        *output++ = CONVERT_TO_BYTE(nextdata >> (nextbits-8));      \
         nextbits -= 8;                                      \
         if (nextbits >= 8)                                  \
         {                                                   \
-            *output++ = (Byte)(nextdata >> (nextbits-8));  \
+            *output++ = CONVERT_TO_BYTE(nextdata >> (nextbits-8));  \
             nextbits -= 8;                                  \
         }                                                   \
         outputcount+=nbits;                                 \
@@ -50,11 +51,11 @@ void HCDLZWEncoder::ClearHashTable()
     {                                                       \
         nextdata = (nextdata << nbits) | code;              \
         nextbits += nbits;                                  \
-        *output++ = (Byte)(nextdata >> (nextbits-8));      \
+        *output++ = CONVERT_TO_BYTE(nextdata >> (nextbits-8));      \
         nextbits -= 8;                                      \
         if (nextbits >= 8)                                  \
         {                                                   \
-            *output++ = (Byte)(nextdata >> (nextbits-8));  \
+            *output++ = CONVERT_TO_BYTE(nextdata >> (nextbits-8));  \
             nextbits -= 8;                                  \
         }                                                   \
     }
@@ -159,7 +160,8 @@ size_t HCDLZWEncoder::Encode(Byte* pi_pInputBuffer, size_t pi_inputBytesCount, B
             PutNextCode(pOutputBufferItr, entry);
 
             entry = (hcode_t)code;
-            pHashEntry->code = (hcode_t)freeEntry++;
+            pHashEntry->code = (hcode_t)(freeEntry); 
+            ++freeEntry;
             pHashEntry->hash = fcode;
 
             if(freeEntry == LZW_CODE_MAX-1)
@@ -239,7 +241,7 @@ HIT:
         PutNextCode(pOutputBufferItr, LZW_CODE_EOI);
         if(nextbits > 0)
             {
-            *pOutputBufferItr++ = (Byte)(nextdata << (8-nextbits));
+            *pOutputBufferItr++ = CONVERT_TO_BYTE(nextdata << (8-nextbits));
             }
         }
 

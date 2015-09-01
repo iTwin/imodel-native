@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTDEMRasterXYZPointsExtractor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HCPGCoordModel.h>
 #include <Imagepp/all/h/HFCException.h>
@@ -17,9 +17,6 @@
 #include <Imagepp/all/h/HGF2DStretch.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 #include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
-#include <Imagepp/all/h/HGSBlitter.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HGSToolbox.h>
 #include <Imagepp/all/h/HRFRasterFileFactory.h>
 #include <Imagepp/all/h/HRPPixelType.h>
 #include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
@@ -32,10 +29,10 @@
 #include <Imagepp/all/h/HRFException.h>
 
 
-USING_NAMESPACE_IMAGEPP
 
-HFCPtr<HGFHMRStdWorldCluster>
-HUTDEMRasterXYZPointsExtractor::m_spWorldCluster = new HGFHMRStdWorldCluster();
+
+HFCPtr<HGFHMRStdWorldCluster>   HUTDEMRasterXYZPointsExtractor::m_spWorldCluster;
+
 
 /** ---------------------------------------------------------------------------
     Public
@@ -49,7 +46,7 @@ HUTDEMRasterXYZPointsExtractor::HUTDEMRasterXYZPointsExtractor(const WString&   
                                                                     true)),
 
     //Ouput the horizontal coordinate (i.e. : x-y) of the 3D point to the HMR coordinate system for now.
-    m_pXYCoordSys(m_spWorldCluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr())
+    m_pXYCoordSys(GetHMRWorldCluster()->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr())
     {
     HFCPtr<HRPPixelType> pPixelType(m_pRasterFile->
                                     GetPageDescriptor(0)->
@@ -60,8 +57,7 @@ HUTDEMRasterXYZPointsExtractor::HUTDEMRasterXYZPointsExtractor(const WString&   
         (pPixelType->IsCompatibleWith(HRPPixelTypeV16Int16::CLASS_ID) == false)  &&
         (pPixelType->IsCompatibleWith(HRPPixelTypeV32Float32::CLASS_ID) == false))
         {
-        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION,
-                           pi_rDEMRasterFileName);
+        throw HRFPixelTypeNotSupportedException(pi_rDEMRasterFileName);
         }
 
     LoadRasterFile(m_pRasterFile, pi_rpMemPool, m_pRaster);    
@@ -82,7 +78,7 @@ HUTDEMRasterXYZPointsExtractor::HUTDEMRasterXYZPointsExtractor (const WString&  
                                                                     TRUE)),
 
         //Ouput the horizontal coordinate (i.e. : x-y) of the 3D point to the HMR coordinate system for now.
-        m_pXYCoordSys(m_spWorldCluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr())
+        m_pXYCoordSys(GetHMRWorldCluster()->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr())
     {     
     HFCPtr<HRPPixelType> pPixelType(m_pRasterFile->
                                     GetPageDescriptor(0)->
@@ -98,8 +94,7 @@ HUTDEMRasterXYZPointsExtractor::HUTDEMRasterXYZPointsExtractor (const WString&  
             (pPixelType->IsCompatibleWith(HRPPixelTypeV16Int16::CLASS_ID) == false)  &&
             (pPixelType->IsCompatibleWith(HRPPixelTypeV32Float32::CLASS_ID) == false))
             {
-            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, 
-                               pi_rDEMRasterFileName);
+            throw HRFPixelTypeNotSupportedException(pi_rDEMRasterFileName);
             }
         }
     else
@@ -109,8 +104,7 @@ HUTDEMRasterXYZPointsExtractor::HUTDEMRasterXYZPointsExtractor (const WString&  
             (pPixelType->IsCompatibleWith(HRPPixelTypeV16Int16::CLASS_ID) == false)  &&
             (pPixelType->IsCompatibleWith(HRPPixelTypeV32Float32::CLASS_ID) == false))
             {
-            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, 
-                               pi_rDEMRasterFileName);
+            throw HRFPixelTypeNotSupportedException(pi_rDEMRasterFileName);
             }
         }
 
@@ -213,7 +207,7 @@ void HUTDEMRasterXYZPointsExtractor::Get2DCoordMinMaxValues(double* po_pXMin, do
 
     HFCPtr<HRFPageDescriptor> pPageDescriptor(m_pRasterFile->GetPageDescriptor(0));
 
-    HFCPtr<HGF2DCoordSys>     pCoordSys(m_spWorldCluster->
+    HFCPtr<HGF2DCoordSys>     pCoordSys(GetHMRWorldCluster()->
                                         GetCoordSysReference(m_pRasterFile->
                                                              GetWorldIdentificator()));
 
@@ -248,10 +242,10 @@ void HUTDEMRasterXYZPointsExtractor::Get2DCoordMinMaxValues(double* po_pXMin, do
                                          &LogicCoordinateX,
                                          &LogicCoordinateY);
 
-            *po_pXMin = min(*po_pXMin, LogicCoordinateX);
-            *po_pXMax = max(*po_pXMax, LogicCoordinateX);
-            *po_pYMin = min(*po_pYMin, LogicCoordinateY);
-            *po_pYMax = max(*po_pYMax, LogicCoordinateY);
+            *po_pXMin = MIN(*po_pXMin, LogicCoordinateX);
+            *po_pXMax = MAX(*po_pXMax, LogicCoordinateX);
+            *po_pYMin = MIN(*po_pYMin, LogicCoordinateY);
+            *po_pYMax = MAX(*po_pYMax, LogicCoordinateY);
 
             PhysicalCoordinateY += m_HeightInPixels - 1;
             }
@@ -294,26 +288,11 @@ bool HUTDEMRasterXYZPointsExtractor::GetZCoordMinMaxValues(double* po_pZMin, dou
     GetDEMRasterCoordSys
     ---------------------------------------------------------------------------
 */
-IRasterBaseGcsPtr HUTDEMRasterXYZPointsExtractor::GetDEMRasterCoordSys() const
+IRasterBaseGcsCP HUTDEMRasterXYZPointsExtractor::GetDEMRasterCoordSysCP() const
     {
-    return m_pRasterFile->GetPageDescriptor(0)->GetGeocoding();
+    return m_pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
     }
 
-#if (0)
-
-/** ---------------------------------------------------------------------------
-    Public    
-    GetGeoTiffKeys
-    ---------------------------------------------------------------------------
-*/
-const HCPGeoTiffKeys* HUTDEMRasterXYZPointsExtractor::GetGeoTiffKeys () const
-{
-    return static_cast<HCPGeoTiffKeys*>(m_pRasterFile->
-                                               GetPageDescriptor(0)->
-                                               GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO).GetPtr());
-}
-
-#endif
 /** ---------------------------------------------------------------------------
     Public    
     GetXYCoordSysPtr
@@ -406,7 +385,7 @@ void HUTDEMRasterXYZPointsExtractor::LoadRasterFile(HFCPtr<HRFRasterFile>& pi_rp
 
     HFCPtr<HRARaster> pRaster;
 
-    pLogical = m_spWorldCluster->GetCoordSysReference(pi_rpRasterFile->GetPageWorldIdentificator(0));
+    pLogical = GetHMRWorldCluster()->GetCoordSysReference(pi_rpRasterFile->GetPageWorldIdentificator(0));
     HFCPtr<HRSObjectStore> pStore = new HRSObjectStore(pi_rpMemPool, pi_rpRasterFile, 0, pLogical);
 
     // Get the raster from the store
@@ -425,7 +404,7 @@ double HUTDEMRasterXYZPointsExtractor::GetFactorToMeterForZ() const
     {
     double FactorToMeterForZ = 1.0;
 
-    IRasterBaseGcsPtr baseGCS = m_pRasterFile->GetPageDescriptor(0)->GetGeocoding();
+    IRasterBaseGcsCP baseGCS = m_pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
 
     if (baseGCS != 0) // Validity is not required
         FactorToMeterForZ = baseGCS->GetVerticalUnits();
@@ -441,4 +420,13 @@ double HUTDEMRasterXYZPointsExtractor::GetFactorToMeterForZ() const
 const HFCPtr<HGF2DCoordSys>& HUTDEMRasterXYZPointsExtractor::GetXYCoordSystP() const
     {
     return m_pXYCoordSys;
+    }
+
+
+HFCPtr<HGFHMRStdWorldCluster>&  HUTDEMRasterXYZPointsExtractor::GetHMRWorldCluster()
+    {
+    if (0 != m_spWorldCluster)
+        m_spWorldCluster = new HGFHMRStdWorldCluster();
+
+    return m_spWorldCluster;
     }

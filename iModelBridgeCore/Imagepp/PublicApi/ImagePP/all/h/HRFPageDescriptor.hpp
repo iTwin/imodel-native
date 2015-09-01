@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPageDescriptor.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRFPageDescriptor
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Public
 // GetCapabilities
@@ -28,29 +29,6 @@ inline bool HRFPageDescriptor::IsUnlimitedResolution() const
     HPRECONDITION(!m_EmptyPage);
     return m_UnlimitedResolution;
     }
-
-//-----------------------------------------------------------------------------
-// Public
-// GetGeocoding
-// Get the page descriptor geocoding
-//-----------------------------------------------------------------------------
-inline IRasterBaseGcsPtr  HRFPageDescriptor::GetGeocoding() const
-    {
-    return m_pGeocoding;
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// SetGeocoding
-// Set the page descriptor geocoding
-// Geo coding given can be null or invalid indicating that there is no geo coding
-//-----------------------------------------------------------------------------
-inline void HRFPageDescriptor::SetGeocoding(IRasterBaseGcsPtr pi_pGeocoding)
-    {
-    m_pGeocoding = pi_pGeocoding;
-    }
-
-
 
 //-----------------------------------------------------------------------------
 // Public
@@ -536,3 +514,4 @@ inline const HFCPtr<HMDMetaDataContainerList>& HRFPageDescriptor::GetListOfMetaD
     return m_pListOfMetaDataContainer;
     }
 
+END_IMAGEPP_NAMESPACE

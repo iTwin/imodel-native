@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecFlashpix.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecFlashpix
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HCDCodecFlashpix.h>
 #include <Imagepp/all/h/HFCMath.h>
 #include <Imagepp/all/h/HCDCodecIJG.h>
@@ -117,9 +117,9 @@ size_t HCDCodecFlashpix::CompressSubset(    const void* pi_pInData,
             TmpData[2] = 255 - pData[2];
 
             // convert from RGB to YCC
-            pData[0] = (Byte)(max(0, min(255, TmpData[0] * 0.29900 + TmpData[1] * 0.58700 + TmpData[2] * 0.11400)));
-            pData[1] = (Byte)(max(0, min(255, TmpData[0] * (- 0.16874) + TmpData[1] * (- 0.33126) + TmpData[2] * 0.5 + 127.5)));
-            pData[2] = (Byte)(max(0, min(255, TmpData[0] * 0.5 + TmpData[1] * (-0.41869) + TmpData[2] * (-0.08131) + 127.5)));
+            pData[0] = (Byte)(MAX(0, MIN(255, TmpData[0] * 0.29900 + TmpData[1] * 0.58700 + TmpData[2] * 0.11400)));
+            pData[1] = (Byte)(MAX(0, MIN(255, TmpData[0] * (- 0.16874) + TmpData[1] * (- 0.33126) + TmpData[2] * 0.5 + 127.5)));
+            pData[2] = (Byte)(MAX(0, MIN(255, TmpData[0] * 0.5 + TmpData[1] * (-0.41869) + TmpData[2] * (-0.08131) + 127.5)));
 
             BytesCount -= 4;
             pData += 4;
@@ -177,9 +177,9 @@ size_t HCDCodecFlashpix::DecompressSubset(  const void* pi_pInData,
         while(BytesCount != 0)
             {
             // convert from YCC to RGB
-            TmpData[0] = (Byte)(max(0, min(255, pData[0] + 1.40200 * pData[2] - 178.55)));
-            TmpData[1] = (Byte)(max(0, min(255, pData[0] - 0.34313 * pData[1] - 0.71414 * pData[2] + 134.9307)));
-            TmpData[2] = (Byte)(max(0, min(255, pData[0] + 1.77200 * pData[1] - 225.93)));
+            TmpData[0] = (Byte)(MAX(0, MIN(255, pData[0] + 1.40200 * pData[2] - 178.55)));
+            TmpData[1] = (Byte)(MAX(0, MIN(255, pData[0] - 0.34313 * pData[1] - 0.71414 * pData[2] + 134.9307)));
+            TmpData[2] = (Byte)(MAX(0, MIN(255, pData[0] + 1.77200 * pData[1] - 225.93)));
 
             // invert the RGBs
             pData[0] = 255 - TmpData[0];
@@ -193,9 +193,9 @@ size_t HCDCodecFlashpix::DecompressSubset(  const void* pi_pInData,
 
             if(pData[3] != 0)
                 {
-                pData[0] = pQuotients->DivideBy255ToByte(min(pData[0] * 255 / pData[3], 255) * pData[3]);
-                pData[1] = pQuotients->DivideBy255ToByte(min(pData[1] * 255 / pData[3], 255) * pData[3]);
-                pData[2] = pQuotients->DivideBy255ToByte(min(pData[2] * 255 / pData[3], 255) * pData[3]);
+                pData[0] = pQuotients->DivideBy255ToByte(MIN(pData[0] * 255 / pData[3], 255) * pData[3]);
+                pData[1] = pQuotients->DivideBy255ToByte(MIN(pData[1] * 255 / pData[3], 255) * pData[3]);
+                pData[2] = pQuotients->DivideBy255ToByte(MIN(pData[2] * 255 / pData[3], 255) * pData[3]);
                 }
             else
                 {
@@ -344,6 +344,7 @@ void HCDCodecFlashpix::SetColorMode(HCDCodecFlashpix::ColorModes pi_Mode)
 
         case RGB:
         default:
+            HASSERT(RGB == pi_Mode);
             ColorMode = HCDCodecIJG::RGB;
             BitsPerPixel = 24;
             break;

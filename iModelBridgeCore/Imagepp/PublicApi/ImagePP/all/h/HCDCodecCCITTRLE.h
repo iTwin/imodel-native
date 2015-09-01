@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecCCITTRLE.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -12,17 +12,19 @@
 
 #include "HCDCodecCCITT.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecHMRRLE1;
 class HCDPacketRLE;
 
 class HCDCodecCCITTRLE : public HCDCodecCCITT, HCDCodecRLEInterface
     {
-    HDECLARE_CLASS_ID(1310, HCDCodecCCITT)
+    HDECLARE_CLASS_ID(HCDCodecId_CCITTRLE, HCDCodecCCITT)
 
 public:
-    _HDLLu         HCDCodecCCITTRLE();
+    IMAGEPP_EXPORT         HCDCodecCCITTRLE();
 
-    _HDLLu         HCDCodecCCITTRLE(uint32_t pi_Width, uint32_t pi_Height);
+    IMAGEPP_EXPORT         HCDCodecCCITTRLE(uint32_t pi_Width, uint32_t pi_Height);
 
 
     HCDCodecCCITTRLE(const HCDCodecCCITTRLE& pi_rObj);
@@ -37,8 +39,8 @@ public:
 
     // Binary optimization: Speed up read when codec support direct decompression to RLE format.
     virtual HCDCodecRLEInterface*   GetRLEInterface();
-    _HDLLu virtual void             DecompressSubsetToRLE(const void* pi_pInData, size_t pi_InDataSize, HFCPtr<HCDPacketRLE>& pio_rpRLEPacket) override;
-    _HDLLu virtual size_t           CompressSubsetFromRLE(HFCPtr<HCDPacketRLE> const& pi_rpPacketRLE, void* po_pOutBuffer, size_t po_OutBufferSize) override;
+    IMAGEPP_EXPORT virtual void             DecompressSubsetToRLE(const void* pi_pInData, size_t pi_InDataSize, HFCPtr<HCDPacketRLE>& pio_rpRLEPacket) override;
+    IMAGEPP_EXPORT virtual size_t           CompressSubsetFromRLE(HFCPtr<HCDPacketRLE> const& pi_rpPacketRLE, void* po_pOutBuffer, size_t po_OutBufferSize) override;
 
     bool           HasLineAccess() const;
 
@@ -160,4 +162,6 @@ private:
 
     CCITTRLEState     m_CCITTRLEState;
     };
+
+END_IMAGEPP_NAMESPACE
 

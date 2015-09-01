@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFLUVCube.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Inline methods for class HGFLUVSet
 //---------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -70,12 +70,17 @@ inline HGFLUVCube::~HGFLUVCube()
 
 inline HGFLUVCube& HGFLUVCube::operator=(const HGFLUVCube& pi_rSrc)
     {
-    m_Lmin = pi_rSrc.m_Lmin;
-    m_Lmax = pi_rSrc.m_Lmax;
-    m_Umin = pi_rSrc.m_Umin;
-    m_Umax = pi_rSrc.m_Umax;
-    m_Vmin = pi_rSrc.m_Vmin;
-    m_Vmax = pi_rSrc.m_Vmax;
+     if (this != &pi_rSrc)
+        {
+        m_Lmin = pi_rSrc.m_Lmin;
+        m_Lmax = pi_rSrc.m_Lmax;
+        m_Umin = pi_rSrc.m_Umin;
+        m_Umax = pi_rSrc.m_Umax;
+        m_Vmin = pi_rSrc.m_Vmin;
+        m_Vmax = pi_rSrc.m_Vmax;
+        }
+
+    return *this;
     }
 
 //---------------------------------------------------------------------------
@@ -174,3 +179,4 @@ inline bool HGFLUVCube::IsIn(Byte pi_Red, Byte pi_Green, Byte pi_Blue) const
               && ((ColorU >= m_Umin) && (ColorU <= m_Umax))
               && ((ColorV >= m_Vmin) && (ColorV <= m_Vmax));
     }
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFThumbnail.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16,17 +16,18 @@
 #include "HFCPtr.h"
 #include "HFCAccessMode.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelType;
 class HRPPixelPalette;
 
 class HRFThumbnail : public HFCShareableObject<HRFThumbnail>
     {
-    HDECLARE_SEALEDCLASS_ID(1461)
+    HDECLARE_SEALEDCLASS_ID(HRFThumbnailId_Base)
 
 public:
     // Thumbnail creation et destruction
-    _HDLLg HRFThumbnail();
-    _HDLLg HRFThumbnail(uint32_t                     pi_Width,
+    IMAGEPP_EXPORT HRFThumbnail();
+    IMAGEPP_EXPORT HRFThumbnail(uint32_t                     pi_Width,
                  uint32_t                     pi_Height,
                  const HFCPtr<HRPPixelType>&  pi_rpPixelType,
                  const Byte*                 pi_pData,
@@ -36,24 +37,26 @@ public:
 
     HRFThumbnail(const HRFThumbnail& pi_rObj);
 
-    _HDLLg ~HRFThumbnail();
+    IMAGEPP_EXPORT ~HRFThumbnail();
 
     // Thumbnail data size
-    _HDLLg uint32_t                GetWidth         () const;
-    _HDLLg uint32_t                GetHeight        () const;
+    IMAGEPP_EXPORT uint32_t                GetWidth         () const;
+    IMAGEPP_EXPORT uint32_t                GetHeight        () const;
     unsigned short                  GetBitsAlignment () const;
     size_t                          GetBytesPerWidth () const;
-    _HDLLg size_t                          GetSizeInBytes   () const;
+    IMAGEPP_EXPORT size_t                          GetSizeInBytes   () const;
 
     // Color Space
-    _HDLLg const HFCPtr<HRPPixelType>&     GetPixelType  () const;
+    IMAGEPP_EXPORT const HFCPtr<HRPPixelType>&     GetPixelType  () const;
     const HRPPixelPalette&          GetPalette    () const;
     void                            SetPalette    (const HRPPixelPalette& pi_rPalette);
 
     // Editor Read-Write
     HFCAccessMode                   GetAccessMode () const;
-    _HDLLg bool                     Read          (Byte*                 po_pData) const;
-    _HDLLg bool                     Write         (const Byte*           pi_pData);
+    IMAGEPP_EXPORT bool                     Read          (Byte*                 po_pData) const;
+    IMAGEPP_EXPORT bool                     Write         (const Byte*           pi_pData);
+
+    IMAGEPP_EXPORT Byte const* GetDataP() const;
 
     // data State
     bool                           IsComposed() const;
@@ -81,5 +84,6 @@ private:
     // Not implemented
     HRFThumbnail& operator=(const HRFThumbnail& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 
 

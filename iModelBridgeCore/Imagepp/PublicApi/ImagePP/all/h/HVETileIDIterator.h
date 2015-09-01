@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVETileIDIterator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,11 +15,12 @@
 #include "HVE2DRectangle.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HVEShape;
 
 class HVETileIDIterator
     {
-    HDECLARE_SEALEDCLASS_ID(1253)
+    HDECLARE_SEALEDCLASS_ID(HVETileIDIteratorId_Base)
 
 public:
 
@@ -69,6 +70,7 @@ private:
     // Index on the iteration in the raster.
     uint64_t       m_Index;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HVETileIDIterator.hpp"
 

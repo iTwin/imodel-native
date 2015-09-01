@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fitdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: fitdataset.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  FIT Driver
  * Purpose:  Implement FIT Support - not using the SGI iflFIT library.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Keyhole, Inc.
+ * Copyright (c) 2007-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +33,7 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: fitdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: fitdataset.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 CPL_C_START
  
@@ -1065,6 +1066,11 @@ GDALDataset *FITDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
+/* -------------------------------------------------------------------- */
+/*      Check for external overviews.                                   */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
+
     return guard.take();
 }
 
@@ -1361,7 +1367,7 @@ void GDALRegister_FIT()
 #ifdef FIT_WRITE
         poDriver->pfnCreateCopy = FITCreateCopy;
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Byte uint16_t int16_t uint32_t int32_t Float32 Float64" );
+                                   "Byte UInt16 Int16 UInt32 Int32 Float32 Float64" );
 #endif // FIT_WRITE
 
         GetGDALDriverManager()->RegisterDriver( poDriver );

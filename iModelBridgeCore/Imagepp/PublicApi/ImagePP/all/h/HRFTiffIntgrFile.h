@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTiffIntgrFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFTiffIntgrFile
@@ -19,6 +19,7 @@
 #include "HRFRasterFileCapabilities.h"
 #include "HRFCacheFileSharing.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFTiffIntgrCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -35,7 +36,7 @@ public:
     friend class HRFiTiffStripEditor;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1431, HRFTiffFile)
+    HDECLARE_CLASS_ID(HRFFileId_TiffIntgr, HRFTiffFile)
 
     // allow to Open an image file
     HRFTiffIntgrFile      (const HFCPtr<HFCURL>&          pi_rpURL,
@@ -104,10 +105,11 @@ struct HRFTiffIntgrCreator : public HRFRasterFileCreator
 
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFTiffIntgrCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFTiffIntgrCreator)
 
     // Disabled methodes
     HRFTiffIntgrCreator();
     };
+END_IMAGEPP_NAMESPACE
 
 

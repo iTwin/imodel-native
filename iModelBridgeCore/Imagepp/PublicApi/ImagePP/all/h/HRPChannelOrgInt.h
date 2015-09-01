@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelOrgInt.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRPChannelOrgInt
@@ -11,6 +11,7 @@
 
 #include "HRPChannelOrg.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPChannelOrgInt : public HRPChannelOrg
     {
 public:
@@ -33,3 +34,4 @@ public:
 
     virtual ~HRPChannelOrgInt() { };
     };
+END_IMAGEPP_NAMESPACE

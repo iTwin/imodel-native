@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXIndexable.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HIDXIndexable
 //-----------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
@@ -95,3 +95,5 @@ template<class T> inline bool HIDXIndexable<T>::IndexesSameObjectAs(const HIDXIn
     // Checking the address is enough
     return m_Object == pi_rOtherIndexable.m_Object;
     }
+
+END_IMAGEPP_NAMESPACE

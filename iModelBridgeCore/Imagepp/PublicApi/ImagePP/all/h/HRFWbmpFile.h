@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFWbmpFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -19,6 +19,7 @@
 #include "HRFRasterFileCapabilities.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFWBMPCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -40,7 +41,7 @@ class HRFWbmpFile : public HRFRasterFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1953, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Wbmp, HRFRasterFile)
 
     friend class HRFWbmpLineEditor;
 
@@ -132,10 +133,11 @@ struct HRFWbmpCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFWbmpCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFWbmpCreator)
 
 
     // Disabled methodes
     HRFWbmpCreator();
     };
+END_IMAGEPP_NAMESPACE
 

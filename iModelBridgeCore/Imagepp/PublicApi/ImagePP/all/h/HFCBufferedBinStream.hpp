@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCBufferedBinStream.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Inline methods for class HFCBufferedBinStream
 //---------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 inline uint64_t HFCBufferedBinStream::GetSize() const
@@ -59,3 +60,4 @@ inline uint64_t HFCBufferedBinStream::GetCurrentPos()
     {
     return m_CurrentPos;
     }
+END_IMAGEPP_NAMESPACE

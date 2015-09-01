@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DGridModel.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -15,6 +15,7 @@
 #include <Imagepp/all/h/HGF2DLiteExtent.h>
 #include <Imagepp/all/h/HGF2DPieceWiseModel.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     HGF2DGridModel
     -----------------------------------------------------------------------------
@@ -23,7 +24,7 @@ class HGF2DGridModel : public HGF2DPieceWiseModel
     {
 public:
     // Primary methods
-    _HDLLg HGF2DGridModel  (const HGF2DTransfoModel&   pi_pModel,
+    IMAGEPP_EXPORT HGF2DGridModel  (const HGF2DTransfoModel&   pi_pModel,
                             const HGF2DLiteExtent&     pi_directExtent,
                             uint32_t                   pi_numOfTilesX,
                             uint32_t                   pi_numOfTilesY);
@@ -52,7 +53,7 @@ public:
     uint32_t                    GetNumberOfColumns() const;
     uint32_t                    GetNumberOfRows() const;
 
-    _HDLLg void                 ConvertDirect(double pi_XIn, double pi_YIn, double*   po_pXOut, double*   po_pYOut) const;
+    IMAGEPP_EXPORT void                 ConvertDirect(double pi_XIn, double pi_YIn, double*   po_pXOut, double*   po_pYOut) const;
 
     void                        Dump(ofstream& outStream) const;
 
@@ -119,6 +120,6 @@ private:
 
 
     };
-
+END_IMAGEPP_NAMESPACE
 
 #include <Imagepp/all/h/HGF2DGridModel.hpp>

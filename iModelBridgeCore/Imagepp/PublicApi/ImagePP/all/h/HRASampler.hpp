@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRASampler.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -10,6 +10,7 @@
 //:>-----------------------------------------------------------------------------
 
 
+BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------
  Destructor for this class
 -----------------------------------------------------------------------------*/
@@ -25,8 +26,7 @@ inline HRASampler::~HRASampler()
 
  @return void* A void pointer to the pixel
 -----------------------------------------------------------------------------*/
-inline void* HRASampler::GetPixel(double     pi_PosX,
-                                  double     pi_PosY) const
+inline void const* HRASampler::GetPixel(double pi_PosX, double pi_PosY) const
     {
     return m_pSampler->GetPixel(pi_PosX,
                                 pi_PosY);
@@ -105,3 +105,4 @@ inline void HRASampler::SetScale(double pi_ScaleX, double pi_ScaleY)
     {
     m_pSampler->SetScale(pi_ScaleX, pi_ScaleY);
     }
+END_IMAGEPP_NAMESPACE

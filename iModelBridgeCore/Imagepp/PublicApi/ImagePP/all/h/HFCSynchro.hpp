@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCSynchro.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HFCSynchro
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------
  The constructor for this class.
 
@@ -282,3 +283,4 @@ inline const HFCHandle* HFCSynchroContainer::GetHandleArray() const
     return (m_pHandles.get());
     }
 #endif
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/OCIGeoRasterWrapper.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a oracle SDOGeoRaster.
@@ -11,6 +11,7 @@
 
 #include "SDOGeoRasterWrapper.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class OCIConnection;
 typedef OCIConnection* OracleOCIConnectionP;
 
@@ -71,4 +72,5 @@ private:
     OracleOCIConnectionP       m_pConnection; 
     WString                    m_getBlockRequest;
     };
+END_IMAGEPP_NAMESPACE
 

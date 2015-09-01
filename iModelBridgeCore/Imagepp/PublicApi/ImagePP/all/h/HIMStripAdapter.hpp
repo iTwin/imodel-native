@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMStripAdapter.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Copy the object's members
     -----------------------------------------------------------------------------
@@ -66,3 +67,4 @@ inline void HIMStripAdapter::ClipStripsBasedOnSource(bool pi_Clip)
     {
     m_ApplyClipping = pi_Clip;
     }
+END_IMAGEPP_NAMESPACE

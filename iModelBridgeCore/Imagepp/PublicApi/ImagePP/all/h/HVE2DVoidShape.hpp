@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DVoidShape.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // operator=
 // Assignment operator.  It duplicates another polygon object.
@@ -376,7 +377,7 @@ inline size_t HVE2DVoidShape::Intersect(const HVE2DVector& pi_rVector,
 // at specified point.
 //-----------------------------------------------------------------------------
 inline bool HVE2DVoidShape::AreContiguousAt(const HVE2DVector& pi_rVector,
-                                             const HGF2DLocation& pi_rPoint) const
+                                            const HGF2DLocation& pi_rPoint) const
     {
     return(false);
     }
@@ -450,25 +451,4 @@ inline void HVE2DVoidShape::Drop(HGF2DLocationCollection* po_pPoints,
 
     // Nothing to do
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+END_IMAGEPP_NAMESPACE

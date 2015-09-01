@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBmpCompressLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
@@ -13,8 +13,8 @@
 //* This editor is not used for now *
 //***********************************
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFBmpFile.h>
 #include <Imagepp/all/h/HCDPacket.h>
@@ -60,7 +60,7 @@ HRFBmpCompressLineEditor::HRFBmpCompressLineEditor(HFCPtr<HRFRasterFile> pi_rpRa
     if(m_pRasterFile->m_pBmpFile->GetCurrentPos() != m_PosInFile)
         m_pRasterFile->m_pBmpFile->SeekToPos(m_PosInFile);
 
-    m_pRasterFile->m_pBmpFile->Read((void*)m_pCompressBuffer, sizeof(Byte) * m_BufferSize);
+    m_pRasterFile->m_pBmpFile->Read(m_pCompressBuffer, sizeof(Byte) * m_BufferSize);
     m_PosInFile = m_pRasterFile->m_pBmpFile->GetCurrentPos();
 
     m_MaxOffsetInBuffer = m_BufferSize-1;
@@ -80,8 +80,8 @@ HRFBmpCompressLineEditor::~HRFBmpCompressLineEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFBmpCompressLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
-                                            uint32_t           pi_PosBlockY,
+HSTATUS HRFBmpCompressLineEditor::ReadBlock(uint64_t           pi_PosBlockX,
+                                            uint64_t           pi_PosBlockY,
                                             HFCPtr<HCDPacket>& po_rpPacket)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -110,7 +110,7 @@ HSTATUS HRFBmpCompressLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
 
                 m_pRasterFile->m_pBmpFile->SeekToPos(m_pRasterFile->m_BmpFileHeader.m_OffBitsToData +
                                                      m_pLinesOffsetBuffer[pi_PosBlockY]);
-                m_pRasterFile->m_pBmpFile->Read((void*)pReturnBytes, m_pLinesOffsetBuffer[pi_PosBlockY+1] -
+                m_pRasterFile->m_pBmpFile->Read(pReturnBytes, m_pLinesOffsetBuffer[pi_PosBlockY+1] -
                                                 m_pLinesOffsetBuffer[pi_PosBlockY]);
 
                 // Reset the file pointer to where it were.
@@ -124,7 +124,7 @@ HSTATUS HRFBmpCompressLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
                 HASSERT(IndexInBuffer+1 <= po_rpPacket->GetBufferSize());
 
                 m_pRasterFile->m_pBmpFile->SeekToPos(m_pRasterFile->m_BmpFileHeader.m_OffBitsToData + m_pLinesOffsetBuffer[pi_PosBlockY]);
-                m_pRasterFile->m_pBmpFile->Read((void*)po_rpPacket->GetBufferAddress(),
+                m_pRasterFile->m_pBmpFile->Read(po_rpPacket->GetBufferAddress(),
                                                 m_pLinesOffsetBuffer[pi_PosBlockY+1] - m_pLinesOffsetBuffer[pi_PosBlockY]);
                 // Reset the file pointer to where it were.
                 m_pRasterFile->m_pBmpFile->SeekToPos(m_pRasterFile->m_BmpFileHeader.m_OffBitsToData + m_pLinesOffsetBuffer[m_NumberOfLineRead]);
@@ -165,7 +165,7 @@ HSTATUS HRFBmpCompressLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
                         if(m_pRasterFile->m_pBmpFile->GetCurrentPos() != m_PosInFile)
                             m_pRasterFile->m_pBmpFile->SeekToPos(m_PosInFile);
 
-                        m_pRasterFile->m_pBmpFile->Read((void*)(m_pCompressBuffer + m_MaxOffsetInBuffer + 1), sizeof(Byte) *
+                        m_pRasterFile->m_pBmpFile->Read((m_pCompressBuffer + m_MaxOffsetInBuffer + 1), sizeof(Byte) *
                                                         (m_BufferSize   - (m_MaxOffsetInBuffer+1)));
                         m_PosInFile = m_pRasterFile->m_pBmpFile->GetCurrentPos();
 
@@ -230,7 +230,7 @@ HSTATUS HRFBmpCompressLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
                     if(m_pRasterFile->m_pBmpFile->GetCurrentPos() != m_PosInFile)
                         m_pRasterFile->m_pBmpFile->SeekToPos(m_PosInFile);
 
-                    m_pRasterFile->m_pBmpFile->Read((void*)(m_pCompressBuffer + m_MaxOffsetInBuffer + 1), sizeof(Byte) *
+                    m_pRasterFile->m_pBmpFile->Read((m_pCompressBuffer + m_MaxOffsetInBuffer + 1), sizeof(Byte) *
                                                     (m_BufferSize   - (m_MaxOffsetInBuffer+1)));
 
                     m_PosInFile         = m_pRasterFile->m_pBmpFile->GetCurrentPos();
@@ -282,9 +282,9 @@ HSTATUS HRFBmpCompressLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS  HRFBmpCompressLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                              uint32_t     pi_PosBlockY,
-                                              const Byte* pi_pData)
+HSTATUS  HRFBmpCompressLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                              uint64_t     pi_PosBlockY,
+                                              const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetCodec() != 0);
@@ -331,8 +331,8 @@ HSTATUS  HRFBmpCompressLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFBmpCompressLineEditor::WriteBlock(uint32_t                 pi_PosBlockX,
-                                             uint32_t                 pi_PosBlockY,
+HSTATUS HRFBmpCompressLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                             uint64_t                 pi_PosBlockY,
                                              const HFCPtr<HCDPacket>& pi_rpPacket)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -352,7 +352,7 @@ HSTATUS HRFBmpCompressLineEditor::WriteBlock(uint32_t                 pi_PosBloc
     if (pi_PosBlockY == 0)
         m_pRasterFile->m_pBmpFile->SeekToPos(m_pRasterFile->m_BmpFileHeader.m_OffBitsToData);
 
-    m_pRasterFile->m_pBmpFile->Write((void*)pi_rpPacket->GetBufferAddress(), sizeof(Byte) * pi_rpPacket->GetDataSize());
+    m_pRasterFile->m_pBmpFile->Write(pi_rpPacket->GetBufferAddress(), sizeof(Byte) * pi_rpPacket->GetDataSize());
 
     return Status;
     }

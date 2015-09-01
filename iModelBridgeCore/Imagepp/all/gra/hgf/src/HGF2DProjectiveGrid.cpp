@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DProjectiveGrid.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DProjectiveGrid
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HGF2DSimilitude.h>
@@ -252,8 +252,8 @@ HGF2DProjectiveGrid& HGF2DProjectiveGrid::operator=(const HGF2DProjectiveGrid& p
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveGrid::ConvertDirect(double* pio_pXInOut,
-                                        double* pio_pYInOut) const
+StatusInt HGF2DProjectiveGrid::ConvertDirect(double* pio_pXInOut,
+                                             double* pio_pYInOut) const
     {
     HINVARIANTS;
 
@@ -261,17 +261,17 @@ void HGF2DProjectiveGrid::ConvertDirect(double* pio_pXInOut,
     HPRECONDITION(pio_pYInOut != 0);
 
     // Check if stats are compulsed
-    GetDirectModelFromCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertDirect(pio_pXInOut, pio_pYInOut);
+    return GetDirectModelFromCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertDirect(pio_pXInOut, pio_pYInOut);
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveGrid::ConvertDirect(double pi_XIn,
-                                        double pi_YIn,
-                                        double* po_pXOut,
-                                        double* po_pYOut) const
+StatusInt HGF2DProjectiveGrid::ConvertDirect(double pi_XIn,
+                                             double pi_YIn,
+                                             double* po_pXOut,
+                                             double* po_pYOut) const
     {
     HINVARIANTS;
 
@@ -279,22 +279,24 @@ void HGF2DProjectiveGrid::ConvertDirect(double pi_XIn,
     HPRECONDITION(po_pYOut != 0);
 
 
-    GetDirectModelFromCoordinate(pi_XIn, pi_YIn)->ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
+    return GetDirectModelFromCoordinate(pi_XIn, pi_YIn)->ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
     }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveGrid::ConvertDirect(double    pi_YIn,
-                                        double    pi_XInStart,
-                                        size_t     pi_NumLoc,
-                                        double    pi_XInStep,
-                                        double*   po_pXOut,
-                                        double*   po_pYOut) const
+StatusInt HGF2DProjectiveGrid::ConvertDirect(double    pi_YIn,
+                                             double    pi_XInStart,
+                                             size_t    pi_NumLoc,
+                                             double    pi_XInStep,
+                                             double*   po_pXOut,
+                                             double*   po_pYOut) const
     {
     // Make sure recipient arrays are provided
     HPRECONDITION(po_pXOut != 0);
     HPRECONDITION(po_pYOut != 0);
+
+    StatusInt status = SUCCESS;
 
     double  X;
     uint32_t Index;
@@ -304,60 +306,86 @@ void HGF2DProjectiveGrid::ConvertDirect(double    pi_YIn,
     for (Index = 0, X = pi_XInStart;
          Index < pi_NumLoc ; ++Index, X+=pi_XInStep, ++pCurrentX, ++pCurrentY)
         {
-        ConvertDirect(X, pi_YIn, pCurrentX, pCurrentY);
+        StatusInt tempStatus = ConvertDirect(X, pi_YIn, pCurrentX, pCurrentY);
+
+        // We will return the first non SUCCESS return status only yet continue on with all coordinates
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
         }
+    return status;
     }
 
+//-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DProjectiveGrid::ConvertDirect(size_t    pi_NumLoc,
+                                             double*   pio_aXInOut,
+                                             double*   pio_aYInOut) const
+    {
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
 
+    StatusInt status = SUCCESS;
 
+    for (uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        StatusInt tempStatus = ConvertDirect(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
 
+        // We will return the first non SUCCESS return status only yet continue on with all coordinates
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
+        }
+    return status;
+    }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveGrid::ConvertInverse(double* pio_pXInOut,
-                                         double* pio_pYInOut) const
+StatusInt HGF2DProjectiveGrid::ConvertInverse(double* pio_pXInOut,
+                                              double* pio_pYInOut) const
     {
     HINVARIANTS;
 
     HPRECONDITION(pio_pXInOut != 0);
     HPRECONDITION(pio_pYInOut != 0);
 
-    GetInverseModelFromCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertDirect(pio_pXInOut, pio_pYInOut);
+    return GetInverseModelFromCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertDirect(pio_pXInOut, pio_pYInOut);
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveGrid::ConvertInverse(double pi_XIn,
-                                         double pi_YIn,
-                                         double* po_pXOut,
-                                         double* po_pYOut) const
+StatusInt HGF2DProjectiveGrid::ConvertInverse(double pi_XIn,
+                                              double pi_YIn,
+                                              double* po_pXOut,
+                                              double* po_pYOut) const
     {
     HINVARIANTS;
 
     HPRECONDITION(po_pXOut != 0);
     HPRECONDITION(po_pYOut != 0);
 
-    GetInverseModelFromCoordinate(pi_XIn, pi_YIn)->ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
+    return GetInverseModelFromCoordinate(pi_XIn, pi_YIn)->ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
 
     }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveGrid::ConvertInverse(double    pi_YIn,
-                                         double    pi_XInStart,
-                                         size_t    pi_NumLoc,
-                                         double    pi_XInStep,
-                                         double*   po_pXOut,
-                                         double*   po_pYOut) const
+StatusInt HGF2DProjectiveGrid::ConvertInverse(double    pi_YIn,
+                                              double    pi_XInStart,
+                                              size_t    pi_NumLoc,
+                                              double    pi_XInStep,
+                                              double*   po_pXOut,
+                                              double*   po_pYOut) const
     {
     // Make sure recipient arrays are provided
     HPRECONDITION(po_pXOut != 0);
     HPRECONDITION(po_pYOut != 0);
+
+    StatusInt status = SUCCESS;
 
     double  X;
     uint32_t Index;
@@ -367,12 +395,38 @@ void HGF2DProjectiveGrid::ConvertInverse(double    pi_YIn,
     for (Index = 0, X = pi_XInStart;
          Index < pi_NumLoc ; ++Index, X+=pi_XInStep, ++pCurrentX, ++pCurrentY)
         {
-        ConvertInverse(X, pi_YIn, pCurrentX, pCurrentY);
+        StatusInt tempStatus = ConvertInverse(X, pi_YIn, pCurrentX, pCurrentY);
+
+        // We will return the first non SUCCESS return status only yet continue on with all coordinates
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
         }
+    return status;
     }
 
 
+//-----------------------------------------------------------------------------
+// Converter (inverse)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DProjectiveGrid::ConvertInverse(size_t    pi_NumLoc,
+                                              double*   pio_aXInOut,
+                                              double*   pio_aYInOut) const
+    {
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
 
+    StatusInt status = SUCCESS;
+
+    for (uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        StatusInt tempStatus = ConvertInverse(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
+
+        // We will return the first non SUCCESS return status only yet continue on with all coordinates
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
+        }
+    return status;
+    }
 
 
 //-----------------------------------------------------------------------------

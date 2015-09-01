@@ -1,8 +1,15 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicApi/ImagePP/all/h/HGF3DExtent.hpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class : Extent3D
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default constructor
 // The initial extrent is puntual at coordinate (0,0,0)
@@ -569,12 +576,12 @@ template <class DataType> void HGF3DExtent<DataType>::Add(const HGF3DCoord<DataT
     {
     HINVARIANTS;
 
-    m_XMin  = min(i_rPoint.GetX(), m_XMin);
-    m_YMin  = min(i_rPoint.GetY(), m_YMin);
-    m_ZMin  = min(i_rPoint.GetZ(), m_ZMin);
-    m_XMax  = max(i_rPoint.GetX(), m_XMax);
-    m_YMax  = max(i_rPoint.GetY(), m_YMax);
-    m_ZMax  = max(i_rPoint.GetZ(), m_ZMax);
+    m_XMin  = MIN(i_rPoint.GetX(), m_XMin);
+    m_YMin  = MIN(i_rPoint.GetY(), m_YMin);
+    m_ZMin  = MIN(i_rPoint.GetZ(), m_ZMin);
+    m_XMax  = MAX(i_rPoint.GetX(), m_XMax);
+    m_YMax  = MAX(i_rPoint.GetY(), m_YMax);
+    m_ZMax  = MAX(i_rPoint.GetZ(), m_ZMax);
     }
 
 //-----------------------------------------------------------------------------
@@ -585,12 +592,12 @@ template <class DataType> void HGF3DExtent<DataType>::Add(const HGF3DExtent<Data
     {
     HINVARIANTS;
 
-    m_XMin  = min(i_rExtent.m_XMin, m_XMin);
-    m_YMin  = min(i_rExtent.m_YMin, m_YMin);
-    m_ZMin  = min(i_rExtent.m_ZMin, m_ZMin);
-    m_XMax  = max(i_rExtent.m_XMax, m_XMax);
-    m_YMax  = max(i_rExtent.m_YMax, m_YMax);
-    m_ZMax  = max(i_rExtent.m_ZMax, m_ZMax);
+    m_XMin  = MIN(i_rExtent.m_XMin, m_XMin);
+    m_YMin  = MIN(i_rExtent.m_YMin, m_YMin);
+    m_ZMin  = MIN(i_rExtent.m_ZMin, m_ZMin);
+    m_XMax  = MAX(i_rExtent.m_XMax, m_XMax);
+    m_YMax  = MAX(i_rExtent.m_YMax, m_YMax);
+    m_ZMax  = MAX(i_rExtent.m_ZMax, m_ZMax);
     }
 
 
@@ -710,3 +717,4 @@ template <class DataType> bool HGF3DExtent<DataType>::OuterContains(const HGF3DE
 
 
 
+END_IMAGEPP_NAMESPACE

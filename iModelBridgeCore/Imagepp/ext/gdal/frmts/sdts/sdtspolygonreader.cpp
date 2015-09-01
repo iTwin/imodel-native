@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtspolygonreader.cpp 19952 2010-07-02 05:44:18Z warmerdam $
+ * $Id: sdtspolygonreader.cpp 25138 2012-10-15 23:12:05Z rouault $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSPolygonReader and SDTSRawPolygon classes.
@@ -29,7 +29,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtspolygonreader.cpp 19952 2010-07-02 05:44:18Z warmerdam $");
+CPL_CVSID("$Id: sdtspolygonreader.cpp 25138 2012-10-15 23:12:05Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -376,6 +376,12 @@ int SDTSRawPolygon::AssembleRings()
             dfMaxArea = ABS(padfRingArea[iRing]);
             iBiggestRing = iRing;
         }
+    }
+
+    if( iBiggestRing < 0 )
+    {
+        CPLFree(padfRingArea);
+        return FALSE;
     }
 
 /* ==================================================================== */

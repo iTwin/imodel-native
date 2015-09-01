@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DArc.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DArc
@@ -15,6 +15,7 @@
 #include "HGFBearing.h"
 #include "HGF2DLocation.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HVE2DComplexLinear;
 class HVE2DSegment;
 class HGF2DLine;
@@ -38,7 +39,7 @@ class HVE2DCircle;
 class HVE2DArc : public HVE2DBasicLinear
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1119)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DArcId)
 
 public:
 
@@ -223,6 +224,7 @@ private:
     HGF2DLocation   m_Center;
     HGFAngle::AngleDirection m_RotationDirection;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DArc.hpp"

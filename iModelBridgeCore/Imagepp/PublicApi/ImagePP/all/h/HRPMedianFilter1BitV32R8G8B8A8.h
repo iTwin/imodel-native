@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMedianFilter1BitV32R8G8B8A8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16,15 +16,16 @@
 //
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPMedianFilter1BitV32R8G8B8A8 : public HRPMedianFilter
     {
-    HDECLARE_CLASS_ID(1569, HRPMedianFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_Median1BitV32R8G8B8A8, HRPMedianFilter)
     
 
 public:
 
     // Primary methods
-    HRPMedianFilter1BitV32R8G8B8A8();
+    IMAGEPP_EXPORT HRPMedianFilter1BitV32R8G8B8A8();
     HRPMedianFilter1BitV32R8G8B8A8(const HRPPixelNeighbourhood& pi_rNeighbourhood);
 
     virtual         ~HRPMedianFilter1BitV32R8G8B8A8();
@@ -45,5 +46,6 @@ private:
 
 
     };
+END_IMAGEPP_NAMESPACE
 
 

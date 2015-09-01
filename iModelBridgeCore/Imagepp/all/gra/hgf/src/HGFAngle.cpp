@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFAngle.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 // All methods are declared inline and are defined in HGFAngle.hpp
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 // The class declaration must be the last include file.
 #include <Imagepp/all/h/HGFAngle.h>
@@ -19,7 +19,7 @@
 // Convert an angle in degree, minute second to an angle in decimal degree
 // Returns true if the conversion succeeded, otherwise false
 //-----------------------------------------------------------------------------
-bool ConvertDegMinSecToDeg(WString& pi_rDegMinSec,
+bool ImagePP::ConvertDegMinSecToDeg(WString& pi_rDegMinSec,
                             double& po_rResultigDegreeValue)
     {
     unsigned short ValueComponentInd   = 0;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCEvent.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,6 +13,8 @@
 
 #include <Imagepp/all/h/HFCSynchro.h>
 
+
+BEGIN_IMAGEPP_NAMESPACE
 
 /**
 
@@ -51,12 +53,12 @@ public:
 
     //:> Construction - Destruction
 
-    _HDLLu                 HFCEvent(bool          pi_ManualReset = true,
+    IMAGEPP_EXPORT                 HFCEvent(bool          pi_ManualReset = true,
                                     bool          pi_Signaled    = true);
-    _HDLLu                 HFCEvent(const WString& pi_rName,
+    IMAGEPP_EXPORT                 HFCEvent(const WString& pi_rName,
                                     bool          pi_ManualReset = true,
                                     bool          pi_Signaled    = true);
-    _HDLLu virtual         ~HFCEvent();
+    IMAGEPP_EXPORT virtual         ~HFCEvent();
 
 
     //:> Open a named event - must have been
@@ -78,7 +80,7 @@ protected:
 
     //:> Creates the actual object or gives the handle
     //:> to it.
-    _HDLLu virtual HFCHandle
+    IMAGEPP_EXPORT virtual HFCHandle
     GetHandle() const;
 
 
@@ -115,6 +117,8 @@ private:
     friend struct EventKeyCreator;
 #endif
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCEvent.hpp"
 

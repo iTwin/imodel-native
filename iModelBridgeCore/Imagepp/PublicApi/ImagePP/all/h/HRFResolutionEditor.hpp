@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFResolutionEditor.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HRFResolutionEditor
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // GetFileRaster
@@ -101,5 +102,4 @@ inline uint32_t HRFResolutionEditor::GetPage() const
     {
     return m_Page;
     }
-
-
+END_IMAGEPP_NAMESPACE

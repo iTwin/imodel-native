@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLine.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DLine
@@ -16,6 +16,7 @@
 #include "HGFBearing.h"
 #include "HGF2DLocation.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -126,5 +127,6 @@ private:
     bool           m_InvertSlope;
     };
 
+END_IMAGEPP_NAMESPACE
 
-#include "hgf2dline.hpp"
+#include "HGF2DLine.hpp"

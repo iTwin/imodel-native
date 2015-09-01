@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPConvFilter.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,6 +11,7 @@
 // Inline methods
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // protected
 // GetDivisionFactor
@@ -116,3 +117,4 @@ inline bool HRPConvFilter::IsVerticallySymetric() const
     else
         return false;
     }
+END_IMAGEPP_NAMESPACE

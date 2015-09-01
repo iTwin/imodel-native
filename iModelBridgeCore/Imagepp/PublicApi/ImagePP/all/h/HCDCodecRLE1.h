@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecRLE1.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,11 @@
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecRLE1 : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1151, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_RLE1, HCDCodecImage)
 
 public:
 
@@ -27,7 +29,7 @@ public:
 
     size_t          GetSubsetMaxCompressedSize() const;
 
-    _HDLLu virtual double GetEstimatedCompressionRatio() const;
+    IMAGEPP_EXPORT virtual double GetEstimatedCompressionRatio() const;
 
 
 protected:
@@ -42,3 +44,4 @@ protected:
                  size_t pi_Height);
     };
 
+END_IMAGEPP_NAMESPACE

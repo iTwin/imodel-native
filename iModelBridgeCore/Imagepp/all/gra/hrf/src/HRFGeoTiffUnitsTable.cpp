@@ -9,8 +9,8 @@
 //:> Methods for class HRFGeoTiffUnitsTable
 //:>-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFGeoTiffUnitsTable.h>
 #include <Imagepp/all/h/HCDCodecZlib.h>
 #include <Imagepp/all/h/HFCURL.h>

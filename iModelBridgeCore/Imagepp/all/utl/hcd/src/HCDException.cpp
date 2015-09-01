@@ -2,49 +2,23 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDException.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // methods for HCD exception
 //-----------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HCDException.h>
-
-HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(HCDException)
-HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(HCDIJLErrorException)
-
 //-----------------------------------------------------------------------------
 // public
 // Constructor
 //-----------------------------------------------------------------------------
 HCDException::HCDException()
-    : HFCException(HCD_EXCEPTION)
+    : HFCException()
     {
     }
-
-//-----------------------------------------------------------------------------
-// public
-// Constructor
-//-----------------------------------------------------------------------------
-HCDException::HCDException(ExceptionID        pi_ExceptionID)
-    : HFCException(pi_ExceptionID)
-    {
-    HPRECONDITION((pi_ExceptionID >= HCD_BASE) && (pi_ExceptionID < HCD_SEPARATOR_ID));
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// Copy Constructor
-//-----------------------------------------------------------------------------
-HCDException::HCDException(const HCDException& pi_rObj)
-    : HFCException(pi_rObj)
-    {
-    }
-
-
 //-----------------------------------------------------------------------------
 // public
 // Destructor
@@ -52,51 +26,34 @@ HCDException::HCDException(const HCDException& pi_rObj)
 HCDException::~HCDException()
     {
     }
-
 //-----------------------------------------------------------------------------
 // public
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-void HCDException::FormatExceptionMessage(WString& pio_rMessage) const
+WString HCDException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
     {
+    WString exceptionName(pi_rsID.m_str, true/*isUtf8*/);
+    WPrintfString message(L"%ls - [%ls]", GetRawMessageFromResource(pi_rsID).c_str(), exceptionName.c_str());
+    return message;
     }
-
 //-----------------------------------------------------------------------------
 // public
-// operator=
+// Copy Constructor
 //-----------------------------------------------------------------------------
-HCDException& HCDException::operator=(const HCDException& pi_rObj)
-    {
-    if (this != &pi_rObj)
-        {
-        HFCException::operator=(pi_rObj);
-        }
-
-    return *this;
-    }
+ HCDException::HCDException(const HCDException&     pi_rObj) : HFCException(pi_rObj)
+ {
+ }
 
 //-----------------------------------------------------------------------------
 // public
 // Constructor
 //-----------------------------------------------------------------------------
 HCDIJLErrorException::HCDIJLErrorException(short pi_IJLErrorCode)
-    : HCDException(HCD_IJL_ERROR_EXCEPTION)
+    : HCDException()
     {
-    m_pInfo = new HCDIJLErrorExInfo;
-    ((HCDIJLErrorExInfo*)m_pInfo)->m_IJLErrorCode = pi_IJLErrorCode;
+    m_IJLErrorCode = pi_IJLErrorCode;
     }
-
-//-----------------------------------------------------------------------------
-// public
-// Copy Constructor
-//-----------------------------------------------------------------------------
-HCDIJLErrorException::HCDIJLErrorException(const HCDIJLErrorException& pi_rObj)
-    : HCDException(pi_rObj)
-    {
-    COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HCDIJLErrorExInfo)
-    }
-
 
 //-----------------------------------------------------------------------------
 // public
@@ -105,28 +62,37 @@ HCDIJLErrorException::HCDIJLErrorException(const HCDIJLErrorException& pi_rObj)
 HCDIJLErrorException::~HCDIJLErrorException()
     {
     }
+//-----------------------------------------------------------------------------
+// public
+// Copy Constructor
+//-----------------------------------------------------------------------------
+ HCDIJLErrorException::HCDIJLErrorException(const HCDIJLErrorException&     pi_rObj) : HCDException(pi_rObj)
+ {
+     m_IJLErrorCode = pi_rObj.m_IJLErrorCode;
+ }
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCException* HCDIJLErrorException::Clone() const
+    {
+    return new HCDIJLErrorException(*this);;
+    }
 
 //-----------------------------------------------------------------------------
 // public
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-
-void HCDIJLErrorException::FormatExceptionMessage(WString& pio_rMessage) const
+WString HCDIJLErrorException::GetExceptionMessage() const
     {
+     return HCDException::_BuildMessage(ImagePPExceptions::HCDIJLError());
     }
 
 //-----------------------------------------------------------------------------
 // public
-// operator=
+// Get the exception information, if any.
 //-----------------------------------------------------------------------------
-HCDIJLErrorException& HCDIJLErrorException::operator=(const HCDIJLErrorException& pi_rObj)
+const short HCDIJLErrorException::GetErrorCode() const
     {
-    if (this != &pi_rObj)
-        {
-        HCDException::operator=(pi_rObj);
-        COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HCDIJLErrorExInfo)
-        }
-
-    return *this;
+    return m_IJLErrorCode;
     }

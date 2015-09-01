@@ -2,71 +2,75 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAWarper.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-// Class : HRAWarper
-//-----------------------------------------------------------------------------
-// General class for Warper.
-//-----------------------------------------------------------------------------
+
 #pragma once
 
-#include "HGSWarperImplementation.h"
-#include "HGSMacros.h"
-#include "HRPFilter.h"
-#include "HRASurface.h"
+#include <Imagepp/all/h/HGSTypes.h>
 
-
+BEGIN_IMAGEPP_NAMESPACE
 class HRATransaction;
+class HGSResampling;
+class HRASurface;
+class HRPFilter;
+class HRPPixelType;
+class HGF2DTransfoModel;
 
-HGS_DECLARE_GRAPHICTOOL_DLL(_HDLLg, HRAWarper)
-
-class HRAWarper : public HGSWarperImplementation
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+class HRAWarper
     {
-    HDECLARE_CLASS_ID(1782, HGSWarperImplementation)
-
-    HGS_DECLARE_GRAPHICCAPABILITIES()
-
 public:
 
     // Primary methods
-    HRAWarper(const HGSGraphicToolAttributes*   pi_pAttributes,
-              HGSSurfaceImplementation*         pi_pSurfaceImplementation);
+    HRAWarper(HRASurface& pi_destSurface);
 
-    virtual         ~HRAWarper();
+    ~HRAWarper();
 
 
-    virtual void    WarpFrom(const HGSSurfaceImplementation*    pi_pSrcSurfaceImp,
-                             const HGF2DTransfoModel&           pi_rTransfoModel,
-                             HRATransaction*                    pi_pTransaction = 0);
+    void    WarpFrom(const HRASurface&                  pi_srcSurface,
+                     const HGF2DTransfoModel&           pi_rTransfoModel,
+                     HRATransaction*                    pi_pTransaction = 0);
 
+    void SetAlphaBlend(bool alphaBlend);
+    void SetGridMode(bool gridMode);
+    void SetSamplingMode(HGSResampling const& samplingMode);
+    void SetFilter(HFCPtr<HRPFilter> const& pFilter);
 
 protected:
 
 private:
+    HRASurface& GetDestSurface() const {return m_destSurface;}
 
-    // Members
-    bool               m_ComposeRequired;
-    bool               m_ApplyGrid;
-
-    void                Optimized8BitsWarp(const HGSSurfaceImplementation*  pi_pSrcSurfaceImp,
+    void                Optimized8BitsWarp(const HRASurface&                pi_srcSurface,
                                            const HGF2DTransfoModel&         pi_rTransfoModel,
                                            HRATransaction*                  pi_pTransaction);
 
-    void                NormalWarp(const HGSSurfaceImplementation*          pi_pSrcSurfaceImp,
+    void                NormalWarp(const HRASurface&                        pi_srcSurface,
                                    const HGF2DTransfoModel&                 pi_rTransfoModel,
                                    HRATransaction*                          pi_pTransaction);
 
-    HRASurface*         ApplyFilter(const HRASurface*                       pi_pSurface,
+    HRASurface*         ApplyFilter(const HRASurface&                       pi_srcSurface,
                                     const HFCPtr<HRPFilter>&                pi_rpFilter) const;
 
     Byte*              CreateWorkingBuffer(const HRPPixelType&             pi_rPixelType,
                                             uint32_t                        pi_Width,
                                             uint32_t                        pi_Height) const;
 
+    // Members
+    HRASurface&    m_destSurface;
+
+    bool           m_ComposeRequired;
+    bool           m_ApplyGrid;
+    HGSResampling  m_samplingMode;
+    HFCPtr<HRPFilter>   m_pFilter;
+
     // disabled methods
     HRAWarper();
     HRAWarper(const HRAWarper& pi_rObj);
     HRAWarper&      operator=(const HRAWarper& pi_rObj);
-
     };
+END_IMAGEPP_NAMESPACE

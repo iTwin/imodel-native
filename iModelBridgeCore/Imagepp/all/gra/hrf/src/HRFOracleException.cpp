@@ -2,18 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFOracleException.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Implementation for HRFOracleException
 //-----------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFOracleException.h>
 
-typedef map<HRFOracleException::ErrorCode, ExceptionID>     ErrorMap;
-typedef ErrorMap::value_type                                ErrorMapItem;
+typedef map<HRFOracleException::ErrorCode, ImagePPExceptions::StringId> ErrorMap;
+typedef ErrorMap::value_type                                            ErrorMapItem;
 
 //-----------------------------------------------------------------------------
 // Mapping that relates common Oracle library errors to HMR exceptions ID
@@ -21,8 +21,8 @@ typedef ErrorMap::value_type                                ErrorMapItem;
 //-----------------------------------------------------------------------------
 static const ErrorMap::value_type s_ErrorMappingArray[] =
     {
-    ErrorMapItem(12154, HRF_AUTHENTICATION_INVALID_SERVICE_EXCEPTION), // Original Oracle Msg: "TNS:could not resolve the connect identifier specified"
-    ErrorMapItem(1017, HRF_AUTHENTICATION_INVALID_LOGIN_EXCEPTION), // Original Oracle Msg: "invalid username/password; logon denied"
+    ErrorMapItem(12154, ImagePPExceptions::HRFOracleCouldNotResolverIndetifier()), // Original Oracle Msg: "TNS:could not resolve the connect identifier specified"
+    ErrorMapItem(1017, ImagePPExceptions::HRFOracleInvalidLoginInformation()), // Original Oracle Msg: "invalid username/password; logon denied" 
     };
 
 static const ErrorMap s_ErrorMap(s_ErrorMappingArray,
@@ -30,45 +30,26 @@ static const ErrorMap s_ErrorMap(s_ErrorMappingArray,
                                  sizeof(s_ErrorMappingArray)/sizeof(s_ErrorMappingArray[0]));
 
 
-HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(HRFOracleException)
-
-HRFOracleException::HRFOracleException  (const WString&      pi_rFileName,
-                                                const WString&      pi_rOriginalErrorMsg,
-                                                const ErrorCode     pi_ErrorCode)
-    :   HRFException(GetExceptionIDForCode(pi_ErrorCode), pi_rFileName, false)
+HRFOracleException::HRFOracleException  (const WString&      pi_rFileName, const WString&      pi_rOriginalErrorMsg,
+                                         const ErrorCode     pi_ErrorCode) :   HRFException(pi_rFileName)
     {
-    m_pInfo = new HRFOracleErrorExInfo(pi_rFileName, pi_rOriginalErrorMsg, pi_ErrorCode);
-
-    if (GetID() == HRF_ORACLE_EXCEPTION)
-        {
-        GENERATE_FORMATTED_EXCEPTION_MSG();
-        }
+    m_ErrorMsg = pi_rOriginalErrorMsg;
+    m_ErrorCode =  pi_ErrorCode;
     }
 
 HRFOracleException::~HRFOracleException()
     {
 
     }
-
-HRFOracleException& HRFOracleException::operator=(const HRFOracleException& pi_rObj)
+//-----------------------------------------------------------------------------
+// public
+// Copy Constructor
+//-----------------------------------------------------------------------------
+ HRFOracleException::HRFOracleException(const HRFOracleException&     pi_rObj) : HRFException(pi_rObj)
     {
-    if (this != &pi_rObj)
-        {
-        HFCException::operator=(pi_rObj);
-        COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HRFOracleErrorExInfo)
-        }
-
-    return *this;
+    m_ErrorMsg =pi_rObj.m_ErrorMsg;
+    m_ErrorCode =pi_rObj.m_ErrorCode;
     }
-
-
-HRFOracleException::HRFOracleException(const HRFOracleException& pi_rObj)
-    : HRFException(static_cast<ExceptionID>(pi_rObj.GetID()), L"", false)
-    {
-    COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HRFOracleErrorExInfo)
-    COPY_FORMATTED_ERR_MSG(m_pFormattedErrMsg, pi_rObj.m_pFormattedErrMsg)
-    }
-
 //-----------------------------------------------------------------------------
 // Static Private
 // Returns the appropriate HMR exception ID for the specified error code
@@ -76,31 +57,56 @@ HRFOracleException::HRFOracleException(const HRFOracleException& pi_rObj)
 // exception ID is found for the specified code, the general HRF_ORACLE_EXCEPTION
 // is returned.
 //-----------------------------------------------------------------------------
-ExceptionID  HRFOracleException::GetExceptionIDForCode(ErrorCode pi_ErrorCode)
+ImagePPExceptions::StringId HRFOracleException::GetExceptionIDForCode(ErrorCode pi_ErrorCode)
     {
     ErrorMap::const_iterator HMRErrorIt = s_ErrorMap.find(pi_ErrorCode);
 
     if (HMRErrorIt != s_ErrorMap.end())
         return HMRErrorIt->second;
     else
-        return HRF_ORACLE_EXCEPTION;
+        return ImagePPExceptions::HRFOracleGeneric(); //HRF oracle exception
     }
 
-
-void HRFOracleException::FormatExceptionMessage(WString& pio_rMessage) const
+//-----------------------------------------------------------------------------
+// public
+// Get the exception message
+//-----------------------------------------------------------------------------
+WString HRFOracleException::GetExceptionMessage() const
     {
-    HPRECONDITION(0 != m_pInfo);
-    HPRECONDITION(GetID() == HRF_ORACLE_EXCEPTION);
-
-    const HRFOracleErrorExInfo* pExInfo = static_cast<const HRFOracleErrorExInfo*>(m_pInfo);
-
     wostringstream ErrorCodeSS;
-    if (NO_ERROR_CODE != pExInfo->m_ErrorCode)
-        ErrorCodeSS << pExInfo->m_ErrorCode;
+    if (NO_ERROR_CODE != m_ErrorCode)
+        ErrorCodeSS << m_ErrorCode;
     else
         ErrorCodeSS << L"?";
 
-    FORMAT_EXCEPTION_MSG(pio_rMessage,
-                         ErrorCodeSS.str().c_str(),
-                         pExInfo->m_ErrorMsg.c_str());
+    ImagePPExceptions::StringId exceptionID = GetExceptionIDForCode(m_ErrorCode);
+    WPrintfString rawMessage(GetRawMessageFromResource(exceptionID).c_str(), ErrorCodeSS.str().c_str(), m_ErrorMsg.c_str());
+
+    BeStringUtilities::Utf8ToWChar(exceptionNameWChar, exceptionID.m_str, 100);
+
+    WString exceptionName(exceptionID.m_str, true/*isUtf8*/);
+    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    return message;
+    }
+//-----------------------------------------------------------------------------
+// public
+// Get the exception information, if any.
+//-----------------------------------------------------------------------------
+const HRFOracleException::ErrorCode HRFOracleException::GetErrorCode() const
+    {
+    return m_ErrorCode;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR HRFOracleException::GetOriginalErrorMsg() const
+{
+    return m_ErrorMsg;
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCException* HRFOracleException::Clone() const
+    {
+    return new HRFOracleException(*this);;
     }

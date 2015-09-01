@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMBlendCorridorIterator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -13,6 +13,8 @@
 #include "HRAReferenceToRaster.h"
 #include "HIMBlendCorridor.h"
 #include "HVETileIDIterator.h"
+
+BEGIN_IMAGEPP_NAMESPACE''
 
 /** -----------------------------------------------------------------------------
     Iterator class for blend corridors.
@@ -66,3 +68,4 @@ private:
     static double  s_BlendUtilityTreshold;
     };
 
+END_IMAGEPP_NAMESPACE

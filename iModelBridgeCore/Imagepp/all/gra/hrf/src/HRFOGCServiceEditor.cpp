@@ -2,18 +2,17 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFOGCServiceEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFOGCServiceEditor
 //----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFOGCServiceEditor.h>
 #include <Imagepp/all/h/HRFOGCService.h>
-#include <Imagepp/all/h/HFCInternetConnection.h>
 
 #include <Imagepp/all/h/HCDCodecImage.h>
 #include <Imagepp/all/h/HCDCodecIJG.h>
@@ -24,7 +23,6 @@
 #include <Imagepp/all/h/HRFJpegFile.h>
 #include <Imagepp/all/h/HRFGeoTiffFile.h>
 #include <Imagepp/all/h/HFCURLMemFile.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/HFCExceptionHandler.h>
 #include <Imagepp/all/h/HCDCodecZlib.h>
 #include <Imagepp/all/h/HCDCodecIdentity.h>
@@ -36,8 +34,8 @@
 #include <Imagepp/all/h/HMDLayerInfoWMS.h>
 #include <Imagepp/all/h/HMDVolatileLayers.h>
 
-#include <Imagepp/all/h/HGSBlitter.h>
-#include <Imagepp/all/h/HGSSurface.h>
+#include <Imagepp/all/h/HRABlitter.h>
+#include <Imagepp/all/h/HRASurface.h>
 #include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
 
 #include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
@@ -80,10 +78,10 @@ HRFOGCServiceEditor::~HRFOGCServiceEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFOGCServiceEditor::ReadBlock64(uint64_t             pi_PosBlockX,
-                                         uint64_t             pi_PosBlockY,
-                                         Byte*                po_pData,
-                                         HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFOGCServiceEditor::ReadBlock(uint64_t             pi_PosBlockX,
+                                       uint64_t             pi_PosBlockY,
+                                       Byte*                po_pData,
+                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
@@ -139,12 +137,7 @@ HSTATUS HRFOGCServiceEditor::ReadBlock64(uint64_t             pi_PosBlockX,
             memcpy(po_pData, pTile->GetData(), pTile->GetDataSize());
             Status = H_SUCCESS;
             }
-        else if (pTile->GetException() != 0)
-            {
-            HFCExceptionHandler::HandleException(pTile->GetException());
-            }
         }
-
     return Status;
     }
 
@@ -155,9 +148,9 @@ HSTATUS HRFOGCServiceEditor::ReadBlock64(uint64_t             pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFOGCServiceEditor::WriteBlock(uint32_t              pi_PosBlockX,
-                                        uint32_t              pi_PosBlockY,
-                                        const Byte*          pi_pData,
+HSTATUS HRFOGCServiceEditor::WriteBlock(uint64_t              pi_PosBlockX,
+                                        uint64_t              pi_PosBlockY,
+                                        const Byte*           pi_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HASSERT(0); // not supported
@@ -252,18 +245,6 @@ HRFOGCServiceEditor::HRFOGCServiceEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
     }
 
 //-----------------------------------------------------------------------------
-// SetException
-// protected
-//-----------------------------------------------------------------------------
-void HRFOGCServiceEditor::SetException(HFCException& pi_rException)
-    {
-    HFCMonitor Monitor(m_ExceptionKey);
-    if (m_pException == 0)  // keep only the first one
-        m_pException = pi_rException.Clone();
-    }
-
-
-//-----------------------------------------------------------------------------
 // protected
 // RequestLookAhead
 //-----------------------------------------------------------------------------
@@ -326,10 +307,10 @@ void HRFOGCServiceEditor::RequestLookAhead(const HGFTileIDList&    pi_rTileIDLis
             {
             m_TilePool.CreateTile(*Itr, m_TileIDDescriptor.GetIndex(*Itr), PosX, PosY, 0);
 
-            XMin = min(XMin, PosX);
-            YMin = min(YMin, PosY);
-            XMax = max(XMax, PosX + m_pResolutionDescriptor->GetBlockWidth());
-            YMax = max(YMax, PosY + m_pResolutionDescriptor->GetBlockHeight());
+            XMin = MIN(XMin, PosX);
+            YMin = MIN(YMin, PosY);
+            XMax = MAX(XMax, PosX + m_pResolutionDescriptor->GetBlockWidth());
+            YMax = MAX(YMax, PosY + m_pResolutionDescriptor->GetBlockHeight());
             NewTile = true;
             }
         Itr++;
@@ -520,7 +501,6 @@ void BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
                                              uint64_t pi_MaxY)
     {
     bool ServerError = false;
-    HAutoPtr<HFCException> pException;
 
     if (m_pConnection->ValidateConnect(m_pConnection->GetTimeOut()))
         {
@@ -535,8 +515,8 @@ void BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
         CHECK_HUINT64_TO_HDOUBLE_CONV(pi_MaxX)
         CHECK_HUINT64_TO_HDOUBLE_CONV(pi_MaxY)
 
-        pi_MaxX = min(pi_MaxX, m_pEditor->GetResolutionDescriptor()->GetWidth());
-        pi_MaxY = min(pi_MaxY, m_pEditor->GetResolutionDescriptor()->GetHeight());
+        pi_MaxX = MIN(pi_MaxX, m_pEditor->GetResolutionDescriptor()->GetWidth());
+        pi_MaxY = MIN(pi_MaxY, m_pEditor->GetResolutionDescriptor()->GetHeight());
         m_pTransfoModel->ConvertDirect((double)pi_MinX, (double)pi_MaxY, &XMin, &YMin);
         m_pTransfoModel->ConvertDirect((double)pi_MaxX, (double)pi_MinY, &XMax, &YMax);
 
@@ -554,10 +534,10 @@ void BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
         Request << "&width=" << MapWidth << "&height=" << MapHeight;
         Request << "&BBOX=";
         // snape the BBOX on the map BBOX
-        Request << max(XMin, pRasterFile->m_BBoxMinX) << ",";
-        Request << max(YMin, pRasterFile->m_BBoxMinY) << ",";
-        Request << min(XMax, pRasterFile->m_BBoxMaxX) << ",";
-        Request << min(YMax, pRasterFile->m_BBoxMaxY) << "\r\n";
+        Request << MAX(XMin, pRasterFile->m_BBoxMinX) << ",";
+        Request << MAX(YMin, pRasterFile->m_BBoxMinY) << ",";
+        Request << MIN(XMax, pRasterFile->m_BBoxMaxX) << ",";
+        Request << MIN(YMax, pRasterFile->m_BBoxMaxY) << "\r\n";
 
         bool ProxyAuthorized = false;
         bool ConnectionAuthorized = false;
@@ -599,13 +579,10 @@ void BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
                     }
                 else
                     ServerError = true;
-
-                if (ServerError)
-                    pException = rException.Clone();
                 }
             catch(...)
                 {
-                pException = new HFCException();
+		        //pException = new HFCUnknownException();
                 ServerError = true;
                 }
             }
@@ -691,7 +668,7 @@ void BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
             else
                 {
                 HDEBUGTEXT(L"HRFOGCServiceEditor::BlockReaderThread::ReadBlocksFromServer(): Cannot uncompress data returned by OGC Server\n");
-                pException = new HRFWMSException(HRF_WMS_CANNOT_UNCOMPRESS_DATA, m_pEditor->GetRasterFile()->GetURL()->GetURL());
+                //pException = new HRFWMSException(HRF_WMS_CANNOT_UNCOMPRESS_DATA, m_pEditor->GetRasterFile()->GetURL()->GetURL());
                 ServerError = true;
                 }
             }
@@ -702,7 +679,7 @@ void BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
     else
         {
         HDEBUGTEXT(L"HRFOGCServiceEditor::BlockReaderThread::ReadBlocksFromServer(): Cannot connect to OGC server\n");
-        pException = new HRFWMSException(HRF_WMS_CANNOT_CONNECT_TO_SERVER, m_pEditor->GetRasterFile()->GetURL()->GetURL());
+        //pException = new HRFWMSException(HRF_WMS_CANNOT_CONNECT_TO_SERVER, m_pEditor->GetRasterFile()->GetURL()->GetURL());
         ServerError = true;
         }
 
@@ -813,17 +790,15 @@ void BlockReaderThread::InvalidateTiles(uint64_t pi_MinX,
 
 
         // Init the surface
-        HFCPtr<HGSSurface> pDstSurface(new HGSSurface(pDstDescriptor));
-        HFCPtr<HGSBlitter> pBlitter(new HGSBlitter());
-        pBlitter->SetFor(pDstSurface);
-        HFCPtr<HGSSurface> pSrcSurface(pDstSurface->CreateCompatibleSurface(pSrcDescriptor));
+        HRASurface destSurface(pDstDescriptor);
 
-        HFCPtr<HGF2DTransfoModel> pBlitModel(new HGF2DStretch(HGF2DDisplacement(),
-                                                              Scale,
-                                                              Scale));
+        HRABlitter blitter(destSurface);
 
-        pBlitter->BlitFrom(pSrcSurface,
-                           *pBlitModel);
+        HRASurface srcSurface(pSrcDescriptor);
+
+        HFCPtr<HGF2DTransfoModel> pBlitModel(new HGF2DStretch(HGF2DDisplacement(), Scale, Scale));
+
+        blitter.BlitFrom(srcSurface, *pBlitModel);
 
         pInvalidBlockData = pStretchedInvalidBlockData;
         }
@@ -890,7 +865,7 @@ bool BlockReaderThread::UncompressBuffer(HFCPtr<HFCBuffer>&         pi_rpBuffer,
         // tiling is not supported
         HPRECONDITION(pResDesc->GetBlockWidth() == pResDesc->GetWidth());
 
-        if (*pResDesc->GetPixelType() != *m_pEditor->GetResolutionDescriptor()->GetPixelType())
+        if (!pResDesc->GetPixelType()->HasSamePixelInterpretation(*m_pEditor->GetResolutionDescriptor()->GetPixelType()))
             {
             // need to convert the data
             HFCPtr<HRPPixelConverter> pConverter;

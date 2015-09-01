@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRADrawOptions.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // inline methods for class : HRADrawOptions
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // GetShape
@@ -83,37 +83,73 @@ inline void HRADrawOptions::SetReplacingPixelType(const HFCPtr<HRPPixelType>& pi
 
 //-----------------------------------------------------------------------------
 // public
-// ApplyMosaicSupersampling
+// GetAlphaBlend
 //-----------------------------------------------------------------------------
-inline bool HRADrawOptions::ApplyMosaicSupersampling() const
+inline bool HRADrawOptions::ApplyAlphaBlend() const
     {
-    return m_ApplyMosaicSupersampling;
+    return m_ApplyAlphaBlend;
+    }
+
+//-----------------------------------------------------------------------------
+// public
+// SetAlphaBlend
+//-----------------------------------------------------------------------------
+inline void HRADrawOptions::SetAlphaBlend(bool pi_ApplyAlphaBlend)
+    {
+    m_ApplyAlphaBlend = pi_ApplyAlphaBlend;
     }
 
 
 //-----------------------------------------------------------------------------
 // public
-// SetMosaicSupersampling
+// SetAveraging
 //-----------------------------------------------------------------------------
-inline void HRADrawOptions::SetMosaicSupersampling(bool pi_Quality)
+inline void HRADrawOptions::SetResamplingMode(const HGSResampling& pi_rResampling)
     {
-    m_ApplyMosaicSupersampling = pi_Quality;
+    m_Resampling = pi_rResampling;
     }
 
 //-----------------------------------------------------------------------------
 // public
-// SetTransaction
+// ApplyAveraging
 //-----------------------------------------------------------------------------
-inline void HRADrawOptions::SetTransaction(const HFCPtr<HRATransaction>& pi_rpTransaction)
+inline const HGSResampling& HRADrawOptions::GetResamplingMode() const
     {
-    m_pTransaction = pi_rpTransaction;
+    return m_Resampling;
+    }
+
+//-----------------------------------------------------------------------------
+// GetAttributes
+//-----------------------------------------------------------------------------
+inline const HPMAttributeSet& HRADrawOptions::GetAttributes() const
+    {
+    return m_Attributes;
+    }
+
+//-----------------------------------------------------------------------------
+// SetAttributes
+//-----------------------------------------------------------------------------
+inline void HRADrawOptions::SetAttributes(const HPMAttributeSet& pi_rAttributes)
+    {
+    m_Attributes = pi_rAttributes;
     }
 
 //-----------------------------------------------------------------------------
 // public
-// GetTransaction
+// SetOverviewMode
 //-----------------------------------------------------------------------------
-inline HFCPtr<HRATransaction> HRADrawOptions::GetTransaction() const
+inline void HRADrawOptions::SetOverviewMode(bool pi_mode)
     {
-    return m_pTransaction;
+    m_OverviewMode = pi_mode;
     }
+
+//-----------------------------------------------------------------------------
+// public
+// GetOverviewMode
+//-----------------------------------------------------------------------------
+inline bool HRADrawOptions::GetOverviewMode() const
+    {
+    return m_OverviewMode;
+    }
+
+END_IMAGEPP_NAMESPACE

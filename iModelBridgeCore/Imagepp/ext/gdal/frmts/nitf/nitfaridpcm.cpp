@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitfaridpcm.cpp 16416 2009-02-25 21:13:08Z rouault $
+ * $Id: nitfaridpcm.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  ARIDPCM reading code.
@@ -7,6 +7,7 @@
  *
  **********************************************************************
  * Copyright (c) 2007, Frank Warmerdam 
+ * Copyright (c) 2009, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "nitflib.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: nitfaridpcm.cpp 16416 2009-02-25 21:13:08Z rouault $");
+CPL_CVSID("$Id: nitfaridpcm.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 static const int neighbourhood_size_75[4] = { 23, 47, 74, 173 };
 static const int bits_per_level_by_busycode_75[4/*busy code*/][4/*level*/] = { 
@@ -200,8 +201,8 @@ get_bits( unsigned char *buffer, int first_bit, int num_bits )
 static int
 get_delta( unsigned char *srcdata, 
            int nInputBytes,
-           int busy_code, int comrat,
-           int block_offset, int block_size, 
+           int busy_code, CPL_UNUSED int comrat,
+           int block_offset, CPL_UNUSED int block_size, 
            int i, int j, int *pbError )
 
 {
@@ -421,7 +422,7 @@ int NITFUncompressARIDPCM( NITFImage *psImage,
             CPLFree(full_image);
             return FALSE;
         }
-        L00[i] = get_bits( pabyInputData, block_offset[i], 8 );
+        L00[i] = (unsigned char) get_bits( pabyInputData, block_offset[i], 8 );
 
         total += block_size[i];
     }

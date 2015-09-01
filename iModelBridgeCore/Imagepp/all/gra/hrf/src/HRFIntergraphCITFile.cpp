@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphCITFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphCitFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFIntergraphFile.h>
@@ -31,7 +31,6 @@
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HRFException.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //-----------------------------------------------------------------------------
@@ -169,8 +168,7 @@ HRFIntergraphCitCreator::HRFIntergraphCitCreator()
 
 WString HRFIntergraphCitCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_CIT); // Intergraph cit File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_CIT()); // Intergraph cit File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -219,21 +217,21 @@ bool HRFIntergraphCitCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     (const_cast<HRFIntergraphCitCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock(GetLockManager());
 
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
         // Check if the file was a valid Intergraph Cit...
         pFile->SeekToBegin();
-        if (pFile->Read((void*)&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+        if (pFile->Read(&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
             goto WRAPUP;
 
         if (HeaderTypeCode == 0x0908)
             {
-            if (pFile->Read((void*)&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short))
                 goto WRAPUP;
 
-            if (pFile->Read((void*)&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
                 goto WRAPUP;
 
             if (DataTypeCode == 24) // && (pi_Offset || !IsMultiPage(*pFile, (WordToFollow + 2)/256)))
@@ -343,7 +341,7 @@ void HRFIntergraphCitFile::CreateDescriptors()
                 {
                 WString CurrentFileName(GetURL()->GetURL());
 
-                throw HRFException(HRF_SUB_RES_ACCESS_DIFFER_READ_ONLY_EXCEPTION, CurrentFileName);
+                throw HRFSubResAccessDifferReadOnlyException(CurrentFileName);
                 }
 
             // Do not support invalid sub res.  Any res smaller than 32 x 32 should be consider as invalid.
@@ -363,8 +361,8 @@ void HRFIntergraphCitFile::CreateDescriptors()
         HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
         for (unsigned short Resolution=0; Resolution < ValidResolutionCount; Resolution++)
             {
-            HASSERT( GetWidth (Resolution) >= 32);
-            HASSERT( GetHeight(Resolution) >= 32);
+            HASSERT_DATA(Resolution > 0 ? GetWidth(Resolution) >= 32 : true);
+            HASSERT_DATA(Resolution > 0 ? GetHeight(Resolution) >= 32 : true);
 
             uint32_t BlockWidth  = GetWidth(Resolution);
             uint32_t BlockHeight = 1;
@@ -385,7 +383,7 @@ void HRFIntergraphCitFile::CreateDescriptors()
                 BlockType   = HRFBlockType::LINE;
                 }
 
-            HASSERT( BlockWidth  >= 32);
+            HASSERT_DATA(Resolution > 0 ? BlockWidth >= 32 : true);
 
             // Obtain Resolution Information
             // resolution dimension

@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPictFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPictFile
 //-----------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFPictFile.h>
 #include <Imagepp/all/h/HRFPictLineEditor.h>
@@ -35,7 +35,6 @@
 
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //-----------------------------------------------------------------------------
@@ -70,11 +69,11 @@ public:
     HRFPictBlockCapabilities()
         : HRFRasterFileCapabilities()
         {
-        HASSERT(_I16_MAX == 32767);
+        HASSERT((numeric_limits<int16_t>::max()) == 32767);
 
         // Block Capability
         Add(new HRFLineCapability(  HFC_READ_WRITE_CREATE,          // AccessMode
-                                    _I16_MAX,                       // MaxLineWidthInBytes
+                                    (numeric_limits<int16_t>::max()),                       // MaxLineWidthInBytes
                                     HRFBlockAccess::SEQUENTIAL));   // BlockAccess
         }
     };
@@ -184,7 +183,7 @@ HRFPictCreator::HRFPictCreator()
 //-----------------------------------------------------------------------------
 WString HRFPictCreator::GetLabel() const
     {
-    return HFCResourceLoader::GetInstance()->GetString(IDS_FILEFORMAT_PICT); // Pict File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_PICT()); // Pict File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -246,9 +245,9 @@ bool HRFPictCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the BMP File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
 
@@ -942,7 +941,7 @@ HRFPictFile::HRFPictFile               (const HFCPtr<HFCURL>&       pi_rURL,
         {
         // Create Page and Res Descriptors.
         if(!Open())
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, pi_rURL->GetURL());
+            throw HFCCorruptedFileException(pi_rURL->GetURL());
         else
             CreateDescriptors();
         }
@@ -1034,9 +1033,9 @@ bool HRFPictFile::AddPage                     (HFCPtr<HRFPageDescriptor>   pi_pP
     memcpy(&m_ColorTable, &s_DefaultColorTable, sizeof m_ColorTable);
 
 
-    HASSERT(_I16_MAX >= pResolutionDescriptor->GetWidth());
+    HASSERT((numeric_limits<int16_t>::max()) >= pResolutionDescriptor->GetWidth());
     HASSERT(0 < pResolutionDescriptor->GetWidth());
-    HASSERT(_I16_MAX >= pResolutionDescriptor->GetHeight());
+    HASSERT((numeric_limits<int16_t>::max()) >= pResolutionDescriptor->GetHeight());
     HASSERT(0 < pResolutionDescriptor->GetHeight());
 
     unsigned short Width    = static_cast<unsigned short>(pResolutionDescriptor->GetWidth());
@@ -1120,9 +1119,7 @@ bool HRFPictFile::Open()
     if (!m_IsOpen)
         {
         // Open the actual PICT file.
-        m_pPictFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetPhysicalAccessMode());
-
-        ThrowFileExceptionIfError(m_pPictFile, GetURL()->GetURL());
+        m_pPictFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetPhysicalAccessMode(), 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -1162,7 +1159,7 @@ void HRFPictFile::CreateDescriptors ()
         // NOTE(TR#249202): This pixel type is now Read-Only. See other note in capability section for further
         // Explanation. This will have to be removed if write/create access mode reimplemented.
         if(pPixelType->IsCompatibleWith(HRPPixelTypeI4R8G8B8::CLASS_ID))
-            throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, GetURL()->GetURL());
+            throw HFCFileReadOnlyException(GetURL()->GetURL());
         }
 
 
@@ -1354,9 +1351,7 @@ void HRFPictFile::Save()
 bool HRFPictFile::Create()
     {
     // Open the file.
-    m_pPictFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pPictFile, GetURL()->GetURL());
+    m_pPictFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
 
     // This creates the sister file for file sharing control if necessary.
     SharingControlCreate();

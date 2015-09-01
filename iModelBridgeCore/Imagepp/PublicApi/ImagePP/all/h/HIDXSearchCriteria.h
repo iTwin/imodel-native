@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXSearchCriteria.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIDXSearchCriteria
@@ -13,6 +13,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HIDXCriteria;
 class HIDXIndex;
@@ -21,17 +22,17 @@ class HIDXIndex;
 class HNOVTABLEINIT HIDXSearchCriteria
     {
 public:
-    _HDLLu                 HIDXSearchCriteria();
-    _HDLLu                 HIDXSearchCriteria(void const* pi_Index, HIDXCriteria* pi_pNewCriteria);
+    IMAGEPP_EXPORT                 HIDXSearchCriteria();
+    IMAGEPP_EXPORT                 HIDXSearchCriteria(void const* pi_Index, HIDXCriteria* pi_pNewCriteria);
 
     // Not virtual since this class should not have children
-    _HDLLu                 ~HIDXSearchCriteria();
+    IMAGEPP_EXPORT                 ~HIDXSearchCriteria();
 
     // Give new criteria (possessed by SearchCriteria)
-    _HDLLu void            AddCriteria(void const* pi_Index, HIDXCriteria* pi_pNewCriteria);
+    IMAGEPP_EXPORT void            AddCriteria(void const* pi_Index, HIDXCriteria* pi_pNewCriteria);
 
     // Retrieve a criteria
-    _HDLLu HIDXCriteria*   GetCriteria(void const* pi_Index) const;
+    IMAGEPP_EXPORT HIDXCriteria*   GetCriteria(void const* pi_Index) const;
 
 
 private:
@@ -48,3 +49,4 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE

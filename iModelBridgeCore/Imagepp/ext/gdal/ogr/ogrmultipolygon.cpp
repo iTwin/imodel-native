@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmultipolygon.cpp 19208 2010-03-27 11:40:00Z rouault $
+ * $Id: ogrmultipolygon.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRMultiPolygon class.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrmultipolygon.cpp 19208 2010-03-27 11:40:00Z rouault $");
+CPL_CVSID("$Id: ogrmultipolygon.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                          OGRMultiPolygon()                           */
@@ -51,6 +52,16 @@ OGRwkbGeometryType OGRMultiPolygon::getGeometryType() const
         return wkbMultiPolygon25D;
     else
         return wkbMultiPolygon;
+}
+
+/************************************************************************/
+/*                            getDimension()                            */
+/************************************************************************/
+
+int OGRMultiPolygon::getDimension() const
+
+{
+    return 2;
 }
 
 /************************************************************************/

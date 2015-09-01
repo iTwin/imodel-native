@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCNode.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Class : HFCNode
@@ -11,7 +11,7 @@
 
 #include "HFCPtr.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author  Ghislain Tardif (${mailto:Ghislain.Tardif@Bentley.com})
@@ -29,31 +29,31 @@ class HFCNodeIterator;
 class HFCNode : public HFCShareableObject<HFCNode>
     {
 public:
-    HDECLARE_BASECLASS_ID (1340);
+    HDECLARE_BASECLASS_ID (HFCNodeId_Base);
 
     // data type
     typedef list< HFCPtr<HFCNode> > ChildList;
 
     // Primary methods
-    _HDLLu                             HFCNode     (const HFCPtr<HFCNode>& pi_rpParent);
-    _HDLLu virtual                     ~HFCNode    ();
+    IMAGEPP_EXPORT                             HFCNode     (const HFCPtr<HFCNode>& pi_rpParent);
+    IMAGEPP_EXPORT virtual                     ~HFCNode    ();
 
     virtual bool               HasParent   () const;
     virtual void                SetParent   (const HFCPtr<HFCNode>& pi_rpParent);
     virtual const HFCPtr<HFCNode>&
     GetParent   () const;
 
-    _HDLLu virtual bool               IsAChildOf(const HFCPtr<HFCNode>& pi_rpParent) const;
+    IMAGEPP_EXPORT virtual bool               IsAChildOf(const HFCPtr<HFCNode>& pi_rpParent) const;
 
-    _HDLLu virtual uint32_t            GetLevel    () const;
+    IMAGEPP_EXPORT virtual uint32_t            GetLevel    () const;
 
-    _HDLLu virtual bool               AddChild    (const HFCPtr<HFCNode>& pi_rpNode);
-    _HDLLu virtual bool               RemoveChild (const HFCPtr<HFCNode>& pi_rpNode);
-    _HDLLu virtual void                RemoveAllChild();
-    _HDLLu virtual size_t              CountChild() const;
+    IMAGEPP_EXPORT virtual bool               AddChild    (const HFCPtr<HFCNode>& pi_rpNode);
+    IMAGEPP_EXPORT virtual bool               RemoveChild (const HFCPtr<HFCNode>& pi_rpNode);
+    IMAGEPP_EXPORT virtual void                RemoveAllChild();
+    IMAGEPP_EXPORT virtual size_t              CountChild() const;
 
-    _HDLLu virtual HFCNodeIterator*    CreateIterator() const;
-    _HDLLu virtual uint32_t            CountIterator() const;
+    IMAGEPP_EXPORT virtual HFCNodeIterator*    CreateIterator() const;
+    IMAGEPP_EXPORT virtual uint32_t            CountIterator() const;
 
     virtual const ChildList&           GetChildList() const;
 
@@ -76,5 +76,7 @@ private:
     HFCNode(const HFCNode&);
     HFCNode& operator=(const HFCNode&);
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCNode.hpp"

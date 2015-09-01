@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: EnvisatFile.h 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: EnvisatFile.h 27098 2014-03-27 00:16:11Z rouault $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Low Level Envisat file access (read/write) API.
@@ -101,6 +101,11 @@ int EnvisatFile_SetDatasetInfo( EnvisatFile *self,
                                 int num_dsr,
                                 int dsr_size );
                               
+int EnvisatFile_ReadDatasetRecordChunk( EnvisatFile *self, 
+                                    int ds_index,
+                                    int record_index,
+                                    void *buffer, 
+                                    int offset, int size ) ;
 int EnvisatFile_ReadDatasetRecord( EnvisatFile *self, 
                                    int ds_index,
                                    int record_index, 

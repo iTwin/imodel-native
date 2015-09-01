@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCSynchro.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCSynchro
@@ -11,6 +11,8 @@
 #pragma once
 
 #include "HFCHandle.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 #define HFC_SYNCHRO_TIMEOUT     (ULONG_MAX    )
 #define HFC_SYNCHRO_ALL         (ULONG_MAX - 1)
@@ -108,6 +110,7 @@ private:
     HFCSynchro& operator=(const HFCSynchro&);
     };
 
+END_IMAGEPP_NAMESPACE
 
 #include "HFCSynchro.hpp"
 

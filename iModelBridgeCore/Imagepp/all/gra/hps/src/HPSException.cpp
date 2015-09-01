@@ -2,58 +2,32 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSException.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPSParser
 //---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HPSException.h>
 #include <Imagepp/all/h/HPAnode.h>
-
-//-----------------------------------------------------------------------------
-// public
-// Implementation of functions common to all exception classes
-//-----------------------------------------------------------------------------
-HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(HPSException)
-HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(HPSTypeMismatchException)
-HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(HPSOutOfRangeException)
-HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(HPSAlreadyDefinedException)
 
 //-----------------------------------------------------------------------------
 // public
 // Constructor
 //-----------------------------------------------------------------------------
 HPSException::HPSException(HFCPtr<HPANode> pi_pOffendingNode)
-    : HPAException(HPS_EXCEPTION, pi_pOffendingNode)
+    : HPAException(pi_pOffendingNode)
     {
     }
-
-//-----------------------------------------------------------------------------
-// public
-// Constructor
-//-----------------------------------------------------------------------------
-HPSException::HPSException(ExceptionID        pi_ExceptionID,
-                                  HFCPtr<HPANode>    pi_pOffendingNode,
-                                  bool                pi_CreateExInfo)
-    : HPAException(pi_ExceptionID, pi_pOffendingNode, pi_CreateExInfo)
-    {
-    HPRECONDITION((pi_ExceptionID >= HPS_BASE) && (pi_ExceptionID < HPS_SEPARATOR_ID));
-    }
-
-
 //-----------------------------------------------------------------------------
 // public
 // Copy Constructor
 //-----------------------------------------------------------------------------
-HPSException::HPSException(const HPSException& pi_rObj)
-    : HPAException(pi_rObj)
-    {
-    }
-
-
+ HPSException::HPSException(const HPSException&     pi_rObj) : HPAException(pi_rObj)
+ {
+ }
 //-----------------------------------------------------------------------------
 // public
 // Destructor
@@ -67,67 +41,29 @@ HPSException::~HPSException()
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-void HPSException::FormatExceptionMessage(WString& pio_rMessage) const
+WString HPSException::_BuildMessage(const ImagePPExceptions::StringId& rsID) const
     {
-    HPAException::FormatExceptionMessage(pio_rMessage);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// operator=
-//-----------------------------------------------------------------------------
-HPSException& HPSException::operator=(const HPSException& pi_rObj)
-    {
-    if (this != &pi_rObj)
-        HPAException::operator=(pi_rObj);
-
-    return *this;
+    return HPAException::_BuildMessage(rsID);
     }
 
 //-----------------------------------------------------------------------------
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HPSTypeMismatchException::HPSTypeMismatchException(HFCPtr<HPANode>    pi_pOffendingNode,
-                                                          ExpectedType        pi_ExpectedType)
-    : HPSException(HPS_TYPE_MISMATCH_EXCEPTION, pi_pOffendingNode, false)
+HPSTypeMismatchException::HPSTypeMismatchException(HFCPtr<HPANode>    pi_pOffendingNode, ExpectedType        pi_ExpectedType)
+    : HPSException(pi_pOffendingNode)
     {
-    m_pInfo = new HPSTypeMismatchExInfo();
-    ((HPSTypeMismatchExInfo*)m_pInfo)->m_pOffendingNode = pi_pOffendingNode;
-    ((HPSTypeMismatchExInfo*)m_pInfo)->m_ExpectedType   = (unsigned short)pi_ExpectedType;
-
-    GENERATE_FORMATTED_EXCEPTION_MSG()
+    m_ExpectedType   = pi_ExpectedType;
     }
-
-//-----------------------------------------------------------------------------
-// public
-// Constructor
-//-----------------------------------------------------------------------------
-HPSTypeMismatchException::HPSTypeMismatchException(ExceptionID        pi_ExceptionID,
-                                                          HFCPtr<HPANode>    pi_pOffendingNode,
-                                                          ExpectedType      pi_ExpectedType)
-    : HPSException(pi_ExceptionID, pi_pOffendingNode, false)
-    {
-    m_pInfo = new HPSTypeMismatchExInfo();
-    ((HPSTypeMismatchExInfo*)m_pInfo)->m_pOffendingNode = pi_pOffendingNode;
-    ((HPSTypeMismatchExInfo*)m_pInfo)->m_ExpectedType   = (unsigned short)pi_ExpectedType;
-
-    GENERATE_FORMATTED_EXCEPTION_MSG()
-    }
-
 
 //-----------------------------------------------------------------------------
 // public
 // Copy Constructor
 //-----------------------------------------------------------------------------
-HPSTypeMismatchException::HPSTypeMismatchException(const HPSTypeMismatchException& pi_rObj)
-    : HPSException((ExceptionID)pi_rObj.GetID(), HFCPtr<HPANode>(), false)
-    {
-    COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HPSTypeMismatchExInfo)
-    COPY_FORMATTED_ERR_MSG(m_pFormattedErrMsg, pi_rObj.m_pFormattedErrMsg)
-    }
-
-
+ HPSTypeMismatchException::HPSTypeMismatchException(const HPSTypeMismatchException&     pi_rObj) : HPSException(pi_rObj)
+ {
+     m_ExpectedType = pi_rObj.m_ExpectedType;
+ }
 //-----------------------------------------------------------------------------
 // public
 // Destructor
@@ -135,32 +71,32 @@ HPSTypeMismatchException::HPSTypeMismatchException(const HPSTypeMismatchExceptio
 HPSTypeMismatchException::~HPSTypeMismatchException()
     {
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCException* HPSTypeMismatchException::Clone() const
+    {
+    return new HPSTypeMismatchException(*this);
+    }
 
 //-----------------------------------------------------------------------------
 // public
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-void HPSTypeMismatchException::FormatExceptionMessage(WString& pio_rMessage) const
+WString HPSTypeMismatchException::GetExceptionMessage() const
     {
-    HPAException::FormatExceptionMessage(pio_rMessage);
+    return HPSException::_BuildMessage(ImagePPExceptions::HPSTypeMismatch());
     }
 
 //-----------------------------------------------------------------------------
 // public
-// operator=
+// Get the exception information, if any.
 //-----------------------------------------------------------------------------
-HPSTypeMismatchException& HPSTypeMismatchException::operator=(const HPSTypeMismatchException& pi_rObj)
+const HPSTypeMismatchException::ExpectedType HPSTypeMismatchException::GetExpectedType() const
     {
-    if (this != &pi_rObj)
-        {
-        HFCException::operator=(pi_rObj);
-        COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HPSTypeMismatchExInfo)
-        }
-
-    return *this;
+    return m_ExpectedType;
     }
-
 //-----------------------------------------------------------------------------
 // public
 // Constructor
@@ -168,29 +104,20 @@ HPSTypeMismatchException& HPSTypeMismatchException::operator=(const HPSTypeMisma
 HPSOutOfRangeException::HPSOutOfRangeException(HFCPtr<HPANode>    pi_pOffendingNode,
                                                       double            pi_Lower,
                                                       double           pi_Upper)
-    : HPSException(HPS_OUT_OF_RANGE_EXCEPTION, pi_pOffendingNode, false)
+    : HPSException(pi_pOffendingNode)
     {
-    m_pInfo = new HPSOutOfRangeExInfo();
-    ((HPSOutOfRangeExInfo*)m_pInfo)->m_pOffendingNode = pi_pOffendingNode;
-    ((HPSOutOfRangeExInfo*)m_pInfo)->m_Lower            = pi_Lower;
-    ((HPSOutOfRangeExInfo*)m_pInfo)->m_Upper            = pi_Upper;
-
-    GENERATE_FORMATTED_EXCEPTION_MSG()
+    m_Lower            = pi_Lower;
+    m_Upper            = pi_Upper; 
     }
-
-
 //-----------------------------------------------------------------------------
 // public
 // Copy Constructor
 //-----------------------------------------------------------------------------
-HPSOutOfRangeException::HPSOutOfRangeException(const HPSOutOfRangeException& pi_rObj)
-    : HPSException((ExceptionID)pi_rObj.GetID(), HFCPtr<HPANode>(), false)
-    {
-    COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HPSOutOfRangeExInfo)
-    COPY_FORMATTED_ERR_MSG(m_pFormattedErrMsg, pi_rObj.m_pFormattedErrMsg)
-    }
-
-
+ HPSOutOfRangeException::HPSOutOfRangeException(const HPSOutOfRangeException&     pi_rObj) : HPSException(pi_rObj)
+ {
+     m_Lower = pi_rObj.m_Lower;
+     m_Upper = pi_rObj.m_Upper;
+ }
 //-----------------------------------------------------------------------------
 // public
 // Destructor
@@ -198,60 +125,58 @@ HPSOutOfRangeException::HPSOutOfRangeException(const HPSOutOfRangeException& pi_
 HPSOutOfRangeException::~HPSOutOfRangeException()
     {
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCException* HPSOutOfRangeException::Clone() const
+    {
+    return new HPSOutOfRangeException(*this);
+    }
 
 //-----------------------------------------------------------------------------
 // public
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-void HPSOutOfRangeException::FormatExceptionMessage(WString& pio_rMessage) const
+WString HPSOutOfRangeException::GetExceptionMessage() const
     {
-    HPAException::FormatExceptionMessage(pio_rMessage);
+    return HPSException::_BuildMessage(ImagePPExceptions::HPSOutOfRange());
     }
 
 //-----------------------------------------------------------------------------
 // public
-// operator=
+// Get the exception information, if any.
 //-----------------------------------------------------------------------------
-HPSOutOfRangeException& HPSOutOfRangeException::operator=(const HPSOutOfRangeException& pi_rObj)
+const double HPSOutOfRangeException::GetLower() const
     {
-    if (this != &pi_rObj)
-        {
-        HFCException::operator=(pi_rObj);
-        COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HPSOutOfRangeExInfo)
-        }
-
-    return *this;
+    return m_Lower;
     }
-
+//-----------------------------------------------------------------------------
+// public
+// Get the exception information, if any.
+//-----------------------------------------------------------------------------
+const double HPSOutOfRangeException::GetUpper() const
+    {
+    return m_Upper;
+    }
 //-----------------------------------------------------------------------------
 // public
 // Constructor
 //-----------------------------------------------------------------------------
 HPSAlreadyDefinedException::HPSAlreadyDefinedException(HFCPtr<HPANode>    pi_pOffendingNode,
                                                               const WString&    pi_rName)
-    : HPSException(HPS_ALREADY_DEFINED_EXCEPTION, pi_pOffendingNode, false)
+    : HPSException(pi_pOffendingNode)
     {
-    m_pInfo = new HPSAlreadyDefinedExInfo();
-    ((HPSAlreadyDefinedExInfo*)m_pInfo)->m_pOffendingNode = pi_pOffendingNode;
-    ((HPSAlreadyDefinedExInfo*)m_pInfo)->m_Name              = pi_rName;
-
-    GENERATE_FORMATTED_EXCEPTION_MSG()
+    m_Name              = pi_rName;   
     }
-
-
 //-----------------------------------------------------------------------------
 // public
 // Copy Constructor
 //-----------------------------------------------------------------------------
-HPSAlreadyDefinedException::HPSAlreadyDefinedException(const HPSAlreadyDefinedException& pi_rObj)
-    : HPSException((ExceptionID)pi_rObj.GetID(), HFCPtr<HPANode>(), false)
-    {
-    COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HPSAlreadyDefinedExInfo)
-    COPY_FORMATTED_ERR_MSG(m_pFormattedErrMsg, pi_rObj.m_pFormattedErrMsg)
-    }
-
-
+ HPSAlreadyDefinedException::HPSAlreadyDefinedException(const HPSAlreadyDefinedException&     pi_rObj) : HPSException(pi_rObj)
+ {
+     m_Name = pi_rObj.m_Name;
+ }
 //-----------------------------------------------------------------------------
 // public
 // Destructor
@@ -259,28 +184,29 @@ HPSAlreadyDefinedException::HPSAlreadyDefinedException(const HPSAlreadyDefinedEx
 HPSAlreadyDefinedException::~HPSAlreadyDefinedException()
     {
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCException* HPSAlreadyDefinedException::Clone() const
+    {
+    return new HPSAlreadyDefinedException(*this);
+    }
 
 //-----------------------------------------------------------------------------
 // public
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-void HPSAlreadyDefinedException::FormatExceptionMessage(WString& pio_rMessage) const
+WString HPSAlreadyDefinedException::GetExceptionMessage() const
     {
-    HPAException::FormatExceptionMessage(pio_rMessage);
+    return HPAException::_BuildMessage(ImagePPExceptions::HPSAlreadyDefined());
     }
 
 //-----------------------------------------------------------------------------
 // public
-// operator=
+// Get the exception information, if any.
 //-----------------------------------------------------------------------------
-HPSAlreadyDefinedException& HPSAlreadyDefinedException::operator=(const HPSAlreadyDefinedException& pi_rObj)
+WStringCR HPSAlreadyDefinedException::GetName() const
     {
-    if (this != &pi_rObj)
-        {
-        HFCException::operator=(pi_rObj);
-        COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HPSAlreadyDefinedExInfo)
-        }
-
-    return *this;
+    return m_Name;
     }

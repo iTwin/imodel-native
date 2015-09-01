@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DLinear.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Default constructor for linear.
     The interpretation coordinate system is dynamically allocated.
@@ -298,7 +299,7 @@ inline bool HVE2DLinear::ConnectsTo(const HVE2DVector& pi_rVector) const
     bool   Answer;
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
     if (GetCoordSys() == pi_rVector.GetCoordSys())
         Answer = (pi_rVector.IsPointOnSCS(m_StartPoint, HVE2DVector::INCLUDE_EXTREMITIES, Tolerance) ||
@@ -366,13 +367,4 @@ inline HVE2DVectorTypeId HVE2DLinear::GetMainVectorType() const
     }
 
 
-
-
-
-
-
-
-
-
-
-
+END_IMAGEPP_NAMESPACE

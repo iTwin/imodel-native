@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFLRDLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFLRDLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFLRDLineEditor.h>
 #include <Imagepp/all/h/HRFLRDFile.h>
 #include <Imagepp/all/h/HCDPacket.h>
@@ -61,9 +61,9 @@ HRFLRDLineEditor::~HRFLRDLineEditor()
 // Edition by block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFLRDLineEditor::ReadBlock(uint32_t              pi_PosBlockX,
-                                    uint32_t              pi_PosBlockY,
-                                    Byte*                po_pData,
+HSTATUS HRFLRDLineEditor::ReadBlock(uint64_t              pi_PosBlockX,
+                                    uint64_t              pi_PosBlockY,
+                                    Byte*                 po_pData,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     // We assume that we have check the header file integrity in the
@@ -92,7 +92,7 @@ HSTATUS HRFLRDLineEditor::ReadBlock(uint32_t              pi_PosBlockX,
         }
 
     // Move to the needed line
-    for (uint32_t Line = m_CurrentReadLine; Line <= pi_PosBlockY; Line++)
+    for (uint64_t Line = m_CurrentReadLine; Line <= pi_PosBlockY; Line++)
         {
         if (Line == 0)
             {
@@ -125,7 +125,7 @@ HSTATUS HRFLRDLineEditor::ReadBlock(uint32_t              pi_PosBlockX,
             // Read the entire compressed pixels in memory
             Byte* pCompressedData = new Byte[m_ResSizeInBytes];
 
-            if(m_pLRDFile->Read((void*)pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
+            if(m_pLRDFile->Read(pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
                 goto WRAPUP;
 
             // Unlock the sister file
@@ -170,9 +170,9 @@ WRAPUP:
 // Edition by block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFLRDLineEditor::WriteBlock(uint32_t              pi_PosBlockX,
-                                     uint32_t              pi_PosBlockY,
-                                     const Byte*          pi_pData,
+HSTATUS HRFLRDLineEditor::WriteBlock(uint64_t              pi_PosBlockX,
+                                     uint64_t              pi_PosBlockY,
+                                     const Byte*           pi_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION((pi_PosBlockY == m_CurrentReadLine + 1) || (pi_PosBlockY == 0));
@@ -254,13 +254,13 @@ HSTATUS HRFLRDLineEditor::WriteBlock(uint32_t              pi_PosBlockX,
                     AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
                     }
                 }
-            if (m_pLRDFile->Write((void*)Compress.GetBufferAddress(), sizeof(Byte) * CompressedSize) != (sizeof(Byte) * CompressedSize))
+            if (m_pLRDFile->Write(Compress.GetBufferAddress(), sizeof(Byte) * CompressedSize) != (sizeof(Byte) * CompressedSize))
                 goto WRAPUP;    // H_ERROR
 
             if (pi_PosBlockY == m_pResolutionDescriptor->GetHeight() - 1)
                 {
                 unsigned short EndOfRasterMarker = 0x8000;
-                if (m_pLRDFile->Write((void*)&EndOfRasterMarker, sizeof(unsigned short)) != sizeof(unsigned short))
+                if (m_pLRDFile->Write(&EndOfRasterMarker, sizeof(unsigned short)) != sizeof(unsigned short))
                     goto WRAPUP;
                 }
 

@@ -1,4 +1,4 @@
-/* $Id: tif_fax3.c,v 1.72 2010-06-09 17:17:13 bfriesen Exp $ */
+/* $Id: tif_fax3.c,v 1.74 2012-06-21 02:01:31 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1990-1997 Sam Leffler
@@ -70,8 +70,8 @@ typedef struct {
 
 	/* Decoder state info */
 	const unsigned char* bitmap;	/* bit reversal table */
-	uint32	data;			/* current i/o Byte/word */
-	int	bit;			/* current i/o bit in Byte */
+	uint32	data;			/* current i/o byte/word */
+	int	bit;			/* current i/o bit in byte */
 	int	EOLcnt;			/* count of EOL codes recognized */
 	TIFFFaxFillFunc fill;		/* fill routine */
 	uint32*	runs;			/* b&w runs for current/previous row */
@@ -108,7 +108,7 @@ typedef struct {
     uint32 BitAcc;			/* bit accumulator */		\
     int BitsAvail;			/* # valid bits in BitAcc */	\
     int RunLength;			/* length of current run */	\
-    unsigned char* cp;			/* next Byte of input data */	\
+    unsigned char* cp;			/* next byte of input data */	\
     unsigned char* ep;			/* end of input data */		\
     uint32* pa;				/* place to stuff next run */	\
     uint32* thisrun;			/* current row's run array */	\
@@ -385,7 +385,7 @@ _TIFFFax3fillruns(unsigned char* buf, uint32* runs, uint32* erun, uint32 lastx)
 		cp = buf + (x>>3);
 		bx = x&7;
 		if (run > 8-bx) {
-		    if (bx) {			/* align to Byte boundary */
+		    if (bx) {			/* align to byte boundary */
 			*cp++ &= 0xff << (8-bx);
 			run -= 8-bx;
 		    }
@@ -420,7 +420,7 @@ _TIFFFax3fillruns(unsigned char* buf, uint32* runs, uint32* erun, uint32 lastx)
 		cp = buf + (x>>3);
 		bx = x&7;
 		if (run > 8-bx) {
-		    if (bx) {			/* align to Byte boundary */
+		    if (bx) {			/* align to byte boundary */
 			*cp++ |= 0xff >> bx;
 			run -= 8-bx;
 		    }
@@ -443,7 +443,7 @@ _TIFFFax3fillruns(unsigned char* buf, uint32* runs, uint32* erun, uint32 lastx)
 			run &= 7;
 		    }
 		    if (run)
-			cp[0] |= 0xff >> run;
+			cp[0] |= 0xff00 >> run;
 		} else
 		    cp[0] |= _fillmasks[run]>>bx;
 		x += runs[1];
@@ -526,6 +526,7 @@ Fax3SetupState(TIFF* tif)
 					       "for Group 3/4 run arrays");
 	if (dsp->runs == NULL)
 		return (0);
+	memset( dsp->runs, 0, TIFFSafeMultiply(uint32,nruns,2)*sizeof(uint32));
 	dsp->curruns = dsp->runs;
 	if (needsRefLine)
 		dsp->refruns = dsp->runs + nruns;
@@ -819,7 +820,7 @@ find0span(unsigned char* bp, int32 bs, int32 be)
 			span = 8-n;
 		if (span > bits)	/* constrain span to bit range */
 			span = bits;
-		if (n+span < 8)		/* doesn't extend to edge of Byte */
+		if (n+span < 8)		/* doesn't extend to edge of byte */
 			return (span);
 		bits -= span;
 		bp++;
@@ -878,7 +879,7 @@ find1span(unsigned char* bp, int32 bs, int32 be)
 			span = 8-n;
 		if (span > bits)	/* constrain span to bit range */
 			span = bits;
-		if (n+span < 8)		/* doesn't extend to edge of Byte */
+		if (n+span < 8)		/* doesn't extend to edge of byte */
 			return (span);
 		bits -= span;
 		bp++;
@@ -961,7 +962,7 @@ Fax3Encode1DRow(TIFF* tif, unsigned char* bp, uint32 bits)
 			break;
 	}
 	if (sp->b.mode & (FAXMODE_BYTEALIGN|FAXMODE_WORDALIGN)) {
-		if (sp->bit != 8)			/* Byte-align */
+		if (sp->bit != 8)			/* byte-align */
 			Fax3FlushBits(tif, sp);
 		if ((sp->b.mode&FAXMODE_WORDALIGN) &&
 		    !isAligned(tif->tif_rawcp, uint16))

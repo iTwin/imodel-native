@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRawFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -19,6 +19,7 @@
 #include "HFCBinStream.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 //--------------------------------------------------
 // class HRFRawCapabilities
 //--------------------------------------------------
@@ -53,33 +54,33 @@ public :
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 
-    _HDLLg void                              SetImageData          (uint32_t              pi_Width,
+    IMAGEPP_EXPORT void                              SetImageData          (uint32_t              pi_Width,
                                                                     uint32_t              pi_Height,
                                                                     uint64_t             pi_Offset);
-    _HDLLg void                              SetImagePixelType     (HFCPtr<HRPPixelType>  pi_pPixelType);
-    _HDLLg HFCPtr<HRPPixelType>              GetImagePixelType     () const;
-    _HDLLg uint64_t                         GetOffset             () const;
-    _HDLLg uint64_t                         GetFileSize           () const;
-    _HDLLg uint32_t                          GetBestFitWidth       (uint32_t              pi_Height,
+    IMAGEPP_EXPORT void                              SetImagePixelType     (HFCPtr<HRPPixelType>  pi_pPixelType);
+    IMAGEPP_EXPORT HFCPtr<HRPPixelType>              GetImagePixelType     () const;
+    IMAGEPP_EXPORT uint64_t                         GetOffset             () const;
+    IMAGEPP_EXPORT uint64_t                         GetFileSize           () const;
+    IMAGEPP_EXPORT uint32_t                          GetBestFitWidth       (uint32_t              pi_Height,
                                                                     uint64_t             pi_Offset,
                                                                     size_t                pi_Footer) const;
-    _HDLLg uint32_t                          GetBestFitHeight      (uint32_t              pi_Width,
+    IMAGEPP_EXPORT uint32_t                          GetBestFitHeight      (uint32_t              pi_Width,
                                                                     uint64_t             pi_Offset,
                                                                     size_t                pi_Footer) const;
 
-    _HDLLg HFCPtr<HRPPixelType>              AutoDetectPixelType   (const HFCPtr<HFCURL>& pi_rpURL,
+    IMAGEPP_EXPORT HFCPtr<HRPPixelType>              AutoDetectPixelType   (const HFCPtr<HFCURL>& pi_rpURL,
                                                                     uint64_t             pi_Offset,
                                                                     uint32_t              pi_Footer,
                                                                     uint32_t              pi_Width,
                                                                     uint32_t              pi_Height);
-    _HDLLg void                              AutoDetectFileSize    (const HFCPtr<HFCURL>& pi_rpURL,
+    IMAGEPP_EXPORT void                              AutoDetectFileSize    (const HFCPtr<HFCURL>& pi_rpURL,
                                                                     uint64_t             pi_Offset,
                                                                     uint32_t              pi_Foter,
                                                                     uint32_t              pi_BitsPerPixel,
                                                                     uint32_t&               po_Width,
                                                                     uint32_t&               po_Height);
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFRawCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFRawCreator)
 
 private:
 
@@ -104,7 +105,7 @@ class HRFRawFile : public HRFRasterFile
     friend HRFRawLineEditor;
 
 public:
-    HDECLARE_CLASS_ID(1444, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Raw, HRFRasterFile)
 
     // allow to Open or to create an empty file
     HRFRawFile       (const HFCPtr<HFCURL>& pi_rpURL,
@@ -160,5 +161,6 @@ private:
     // Methods
     bool                               Create                  ();
     };
+END_IMAGEPP_NAMESPACE
 
 

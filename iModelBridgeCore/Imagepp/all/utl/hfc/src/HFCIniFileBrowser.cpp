@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCIniFileBrowser.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Implementation of the HFCIniFileBrowser class.
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCIniFileBrowser.h>
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HFCBinStream.h>
@@ -394,10 +394,9 @@ void HFCIniFileBrowser::ReadLine(WString& po_rString,
                 EndOfLine = Buffer[i] == '\n' || m_pFile->EndOfFile();
                 }
             }
-        else    //#define min(a,b) (a<b?a:b)
-
+        else    
             {
-            unsigned short ReadSize = (unsigned short)min(BufferSize, (long unsigned int)(pi_MaxSize - CurrentLine.length() - 1));
+            unsigned short ReadSize = (unsigned short)MIN(BufferSize, (long unsigned int)(pi_MaxSize - CurrentLine.length() - 1));
             for (unsigned short i = 0; i < ReadSize && !EndOfLine; i++)
                 {
                 m_pFile->Read(&Buffer[i], 1);

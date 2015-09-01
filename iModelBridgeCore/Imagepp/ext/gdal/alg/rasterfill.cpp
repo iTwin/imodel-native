@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rasterfill.cpp 22396 2011-05-17 21:27:47Z warmerdam $
+ * $Id: rasterfill.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Interpolate in nodata areas.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2008, Frank Warmerdam
+ * Copyright (c) 2009-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: rasterfill.cpp 22396 2011-05-17 21:27:47Z warmerdam $");
+CPL_CVSID("$Id: rasterfill.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 /************************************************************************/
 /*                           GDALFilterLine()                           */
@@ -335,8 +336,9 @@ target_x, target_y, origin_x, origin_y, target_value )			\
 									\
 if( quad_value != nNoDataVal ) 						\
 {									\
-    double dfDistSq = ((target_x-origin_x) * (target_x-origin_x))       \
-                    + ((target_y-origin_y) * (target_y-origin_y));      \
+    double dfDx = (double)target_x - (double)origin_x;			\
+    double dfDy = (double)target_y - (double)origin_y;			\
+    double dfDistSq = dfDx * dfDx + dfDy * dfDy;			\
     									\
     if( dfDistSq < quad_dist*quad_dist )				\
     {									\
@@ -387,9 +389,9 @@ CPLErr CPL_STDCALL
 GDALFillNodata( GDALRasterBandH hTargetBand, 
                 GDALRasterBandH hMaskBand,
                 double dfMaxSearchDist, 
-                int bDeprecatedOption,
+                CPL_UNUSED int bDeprecatedOption,
                 int nSmoothingIterations,
-                char **papszOptions,
+                CPL_UNUSED char **papszOptions,
                 GDALProgressFunc pfnProgress, 
                 void * pProgressArg )
 
@@ -568,7 +570,7 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
                 pafThisValue[iX] = pafScanline[iX];
                 panThisY[iX] = iY;
             }
-            else if( iY - panLastY[iX] <= dfMaxSearchDist )
+            else if( iY <= dfMaxSearchDist + panLastY[iX] )
             {
                 pafThisValue[iX] = pafLastValue[iX];
                 panThisY[iX] = panLastY[iX];
@@ -695,7 +697,10 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
             double adfQuadValue[4];
 
             for( iQuad = 0; iQuad < 4; iQuad++ )
+            {
                 adfQuadDist[iQuad] = dfMaxSearchDist + 1.0;
+                adfQuadValue[iQuad] = 0.0;
+            }
             
             // Step left and right by one pixel searching for the closest 
             // target value for each quadrant. 

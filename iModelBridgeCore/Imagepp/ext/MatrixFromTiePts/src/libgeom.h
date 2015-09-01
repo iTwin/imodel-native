@@ -1,8 +1,10 @@
-/*----------------------------------------------------------------------+
-|                                                                       |
-|       $Source: ext/MatrixFromTiePts/src/libgeom.h $
-|                                                                       |
-+----------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ext/MatrixFromTiePts/src/libgeom.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 /*====================================================================
 **
 **  geometry library header file
@@ -259,7 +261,7 @@ typedef DCOORD_2D * pDCOORD_2D;
 **
 **====================================================================*/
 #if defined (__HMR_MDL)
-typedef Dpoint3d  DCOORD_3D;
+typedef DPoint3d  DCOORD_3D;
 #else
 typedef struct tagDCOORD_3D
 {

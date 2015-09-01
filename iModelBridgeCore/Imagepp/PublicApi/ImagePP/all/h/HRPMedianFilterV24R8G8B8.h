@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMedianFilterV24R8G8B8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -12,6 +12,7 @@
 
 #include "HRPMedianFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HGFLuvColorSpace;
 //-----------------------------------------------------------------------------
 //
@@ -19,7 +20,7 @@ class HGFLuvColorSpace;
 
 class HRPMedianFilterV24R8G8B8 : public HRPMedianFilter
     {
-    HDECLARE_CLASS_ID(1570, HRPMedianFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_MedianV24R8G8B8, HRPMedianFilter)
     
 
 public:
@@ -48,5 +49,6 @@ private:
 
 
     };
+END_IMAGEPP_NAMESPACE
 
 

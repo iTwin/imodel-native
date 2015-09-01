@@ -1,4 +1,4 @@
-/* $Id: tif_lzma.c,v 1.2 2010-12-23 13:07:38 dron Exp $ */
+/* $Id: tif_lzma.c,v 1.4 2011-12-22 00:29:29 bfriesen Exp $ */
 
 /*
  * Copyright (c) 2010, Andrey Kiselev <dron@ak4719.spb.edu>
@@ -171,6 +171,9 @@ LZMADecode(TIFF* tif, uint8* op, tmsize_t occ, uint16 s)
 	assert(sp != NULL);
 	assert(sp->state == LSTATE_INIT_DECODE);
 
+        sp->stream.next_in = tif->tif_rawcp;
+        sp->stream.avail_in = (size_t) tif->tif_rawcc;
+
 	sp->stream.next_out = op;
 	sp->stream.avail_out = (size_t) occ;
 	if ((tmsize_t)sp->stream.avail_out != occ) {
@@ -216,6 +219,10 @@ LZMADecode(TIFF* tif, uint8* op, tmsize_t occ, uint16 s)
 		    (unsigned long) tif->tif_row, (unsigned long) sp->stream.avail_out);
 		return 0;
 	}
+
+        tif->tif_rawcp = (uint8 *)sp->stream.next_in; /* cast away const */
+        tif->tif_rawcc = sp->stream.avail_in;
+        
 	return 1;
 }
 

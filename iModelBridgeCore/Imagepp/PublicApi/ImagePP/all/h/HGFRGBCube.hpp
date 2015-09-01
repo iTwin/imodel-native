@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFRGBCube.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Inline methods for class HGFRGBSet
 //---------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 inline HGFRGBCube::HGFRGBCube()
@@ -70,3 +70,5 @@ inline bool HGFRGBCube::IsIn(Byte pi_R, Byte pi_G, Byte pi_B) const
               && ((pi_G >= m_Gmin) && (pi_G <= m_Gmax))
               && ((pi_B >= m_Bmin) && (pi_B <= m_Bmax));
     }
+
+END_IMAGEPP_NAMESPACE

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURL.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURL
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCURL.h>
 
 // Static member initialization
@@ -20,7 +20,6 @@ HFCURL::SchemeList* HFCURL::s_pSchemeList = 0;
 
 // The destroyer that frees the scheme list.  The creators registered in it are
 // not deleted because these are static objects.
-
 static struct SchemeListDestroyer
     {
     ~SchemeListDestroyer()

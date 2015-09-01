@@ -35,6 +35,7 @@
 #define STRIPCHOP_DEFAULT TIFF_STRIPCHOP
 
 #define CHUNKY_STRIP_READ_SUPPORT 1
+#define DEFER_STRILE_LOAD 1
 
 /* Default size of the strip in bytes (when strip chopping enabled) */
 #define STRIP_SIZE_DEFAULT 8192
@@ -83,4 +84,8 @@
 
 #ifdef JPEG_DUAL_MODE_8_12
 #  define LIBJPEG_12_PATH "../../jpeg/libjpeg12/jpeglib.h"
+#endif
+
+#ifdef RENAME_INTERNAL_LIBTIFF_SYMBOLS
+#include "gdal_libtiff_symbol_rename.h"
 #endif

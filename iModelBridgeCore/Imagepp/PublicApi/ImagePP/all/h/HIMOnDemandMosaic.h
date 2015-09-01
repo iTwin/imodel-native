@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMOnDemandMosaic.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -18,6 +18,9 @@
 #include "HRAPyramidRaster.h"
 
 #include "HVEVSRelativeIndex.h"
+#include "HRAReferenceToRaster.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DTransfoModel;
 class HRPPixelType;
@@ -43,7 +46,7 @@ class HIMMosaicIterator;
 */
 class HIMOnDemandMosaic : public HRARaster
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1267)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HIMMosaicId_OnDemand)
 
     friend class HIMMosaicEditor;
     friend class HIMMosaicIterator;
@@ -62,15 +65,15 @@ public:
 
     //:> Primary methods
 
-    _HDLLg HIMOnDemandMosaic();
-        _HDLLg HIMOnDemandMosaic(const HFCPtr<HGF2DCoordSys>&    pi_rpCoordSys, 
+    IMAGEPP_EXPORT HIMOnDemandMosaic();
+        IMAGEPP_EXPORT HIMOnDemandMosaic(const HFCPtr<HGF2DCoordSys>&    pi_rpCoordSys, 
                                  const HFCPtr<HFCURL>&           pi_pPSSCacheFileUrl,
                                  const HFCPtr<HRAPyramidRaster>&           pi_rpSubRes, 
                                  HRFDownSamplingMethod::DownSamplingMethod pi_cacheFileDownSamplingMethod);        
                
-    _HDLLg HIMOnDemandMosaic(const HIMOnDemandMosaic& pi_rObj);
+    IMAGEPP_EXPORT HIMOnDemandMosaic(const HIMOnDemandMosaic& pi_rObj);
 
-    _HDLLg virtual ~HIMOnDemandMosaic();
+    IMAGEPP_EXPORT virtual ~HIMOnDemandMosaic();
 
     HIMOnDemandMosaic& operator=(const HIMOnDemandMosaic& pi_rObj);
 
@@ -89,10 +92,6 @@ public:
                           double pi_ScaleFactorY,
                           const HGF2DLocation& pi_rOrigin);
 
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions);
-
-    virtual void    Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface, const HGFDrawOptions* pi_pOptions) const;
-
     //Context Methods
     virtual void                      SetContext(const HFCPtr<HMDContext>& pi_rpContext);
     virtual HFCPtr<HMDContext>        GetContext();
@@ -100,10 +99,9 @@ public:
     virtual void                      InvalidateRaster();
 
     //:> Overriden from HRARaster
-    virtual void    CopyFrom(  const HFCPtr<HRARaster>& pi_pSrcRaster,
-                               const HRACopyFromOptions& pi_rOptions);
+    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions);
 
-    virtual void    CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster);
+    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster);
 
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
@@ -118,8 +116,6 @@ public:
 
     virtual bool   ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role,
                                               Byte                      pi_Id = 0) const;
-
-    virtual const void*     GetRawDataPtr () const;
 
     virtual HFCPtr<HVEShape>    GetEffectiveShape () const;
 
@@ -137,9 +133,7 @@ public:
 
     virtual HPMPersistentObject* Clone () const;
 
-    virtual HRARaster*
-    Clone (HPMObjectStore* pi_pStore,
-           HPMPool*        pi_pLog=0) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
     void            SetPixelTypeInfo(bool                        pi_HasSinglePixelType,
                                      const HFCPtr<HRPPixelType>& pi_rpRepresentativePixelType);
@@ -156,12 +150,12 @@ public:
 
     //:> Iteration on full rasters composing the mosaic
 
-    _HDLLg IteratorHandle  StartIteration(void) const;
-    _HDLLg const HFCPtr<HRARaster>    Iterate(IteratorHandle pi_Handle) const;
-    _HDLLg const HFCPtr<HRARaster>    GetElement(IteratorHandle pi_Handle) const;
+    IMAGEPP_EXPORT IteratorHandle  StartIteration(void) const;
+    IMAGEPP_EXPORT const HFCPtr<HRARaster>    Iterate(IteratorHandle pi_Handle) const;
+    IMAGEPP_EXPORT const HFCPtr<HRARaster>    GetElement(IteratorHandle pi_Handle) const;
     const HFCPtr<HVEShape>    GetVisiblePart(IteratorHandle pi_Handle) const;
-    _HDLLg void     StopIteration(IteratorHandle pi_Handle) const;
-    _HDLLg uint32_t CountElements(IteratorHandle pi_Handle) const;
+    IMAGEPP_EXPORT void     StopIteration(IteratorHandle pi_Handle) const;
+    IMAGEPP_EXPORT uint32_t CountElements(IteratorHandle pi_Handle) const;
 
     //:> LookAhead Methods
     virtual bool   HasLookAhead() const;
@@ -175,44 +169,49 @@ public:
     bool NotifyPaletteChanged (const HMGMessage& pi_rMessage);
 
     //:> Serialization Methods
-    _HDLLg void  GetOnDemandRastersInfo(string* po_pOnDemandRastersInfoUTF8) const;
+    IMAGEPP_EXPORT void  GetOnDemandRastersInfo(Utf8String* po_pOnDemandRastersInfoUTF8) const;
 
     void  SetRepresentativePSSForWorlds(WString& pi_rPSSDescriptiveNode);
 
     //:> Cache Methods
-        _HDLLg bool                                     GetSourceFileURLs(ListOfRelatedURLs& po_rRelatedURLs);
+        IMAGEPP_EXPORT bool                                     GetSourceFileURLs(ListOfRelatedURLs& po_rRelatedURLs);
 
-        _HDLLg void CreateCacheFile(const WString&                            pi_rCacheFileName, 
+        IMAGEPP_EXPORT void CreateCacheFile(const WString&                            pi_rCacheFileName, 
                                     const HFCPtr<HGF2DWorldCluster>&          pi_pWorldCluster, 
                                     HPMPool*                                  pi_pMemoryPool, 
                                     HRFDownSamplingMethod::DownSamplingMethod pi_DownSamplingMethod);
 
-        _HDLLg HRFDownSamplingMethod::DownSamplingMethod GetCacheFileDownSamplingMethod() const;
+        IMAGEPP_EXPORT HRFDownSamplingMethod::DownSamplingMethod GetCacheFileDownSamplingMethod() const;
 
                bool                                      HasCache();
 
-        _HDLLg bool                                      IsCacheFileUpToDate();        
+        IMAGEPP_EXPORT bool                                      IsCacheFileUpToDate();        
                 
-        _HDLLg bool                                      IsSupportingCacheFile();                        
+        IMAGEPP_EXPORT bool                                      IsSupportingCacheFile();                        
 
                void  RemoveCache();        
 
-    _HDLLg bool  SetCacheFile(const WString&                   pi_rCacheFileName,
+    IMAGEPP_EXPORT bool  SetCacheFile(const WString&                   pi_rCacheFileName,
                                   const HFCPtr<HGF2DWorldCluster>& pi_rpWorldCluster, 
                                   HPMPool*                         pi_pMemoryPool);
 
     //:> Miscellaneous Methods
-    _HDLLg void  CreatePssFile(const WString& pi_rFileName) const;
+    IMAGEPP_EXPORT void  CreatePssFile(const WString& pi_rFileName) const;
 
-    _HDLLg void  GetRasterList(HIMOnDemandMosaic::RasterList& po_rRasters) const;
+    IMAGEPP_EXPORT void  GetRasterList(HIMOnDemandMosaic::RasterList& po_rRasters) const;
         
            bool  IsDataChangingWithResolution() const;
 
-    _HDLLg bool  HasUnlimitedRasterSource() const;
+    IMAGEPP_EXPORT bool  HasUnlimitedRasterSource() const;
 
-    _HDLLg void  RemoveAll();
+    IMAGEPP_EXPORT void  RemoveAll();
 
 protected:
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
+
+    virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
+    
+    virtual ImagePPStatus _CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options) override;
 
     static bool    HasSinglePixelType(const HFCPtr<HRARaster>& pi_rpSourceRaster,
                                       HFCPtr<HRPPixelType>&    pio_rpPrevFoundPixelType);
@@ -243,7 +242,7 @@ private:
     // Unlink from all rasters in the mosaic
     void              UnlinkFromAll(void);
 
-    _HDLLg HFCPtr<HRARaster> GetRaster(const HFCPtr<HRAOnDemandRaster>& pi_rpOnDemandRaster) const;
+    IMAGEPP_EXPORT HFCPtr<HRARaster> GetRaster(const HFCPtr<HRAOnDemandRaster>& pi_rpOnDemandRaster) const;
 
     // Cached effective shape
     mutable HFCPtr<HVEShape>      m_pEffectiveShape;
@@ -275,8 +274,8 @@ private:
     mutable int32_t m_hasUnlimitedRasterSource;
 
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLg)
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT)
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HIMOnDemandMosaic.hpp"

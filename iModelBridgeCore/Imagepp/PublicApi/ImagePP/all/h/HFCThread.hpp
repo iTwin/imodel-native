@@ -2,13 +2,15 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCThread.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HFCThread
 //-----------------------------------------------------------------------------
 
 #include "HFCMonitor.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 /**----------------------------------------------------------------------------
  Returns the current priority of the thread
@@ -157,3 +159,4 @@ inline bool HFCThread::CanRun() const
     {
     return (!m_StopEvent.WaitUntilSignaled(0));
     }
+END_IMAGEPP_NAMESPACE

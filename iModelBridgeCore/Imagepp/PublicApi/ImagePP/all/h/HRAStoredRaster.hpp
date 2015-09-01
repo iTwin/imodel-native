@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAStoredRaster.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // HasSinglePixelType - Raster has a single pixel type.
@@ -98,39 +99,4 @@ inline void HRAStoredRaster::InvalidateRaster()
     HASSERT(0);
     }
 
-//-----------------------------------------------------------------------------
-// public
-// SetCurrentTransaction
-//-----------------------------------------------------------------------------
-inline void HRAStoredRaster::SetCurrentTransaction(HFCPtr<HRATransaction>& pi_rpTransaction)
-    {
-    m_pCurrentTransaction = pi_rpTransaction;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// GetCurrentTransaction
-//-----------------------------------------------------------------------------
-inline HFCPtr<HRATransaction>& HRAStoredRaster::GetCurrentTransaction()
-    {
-    return m_pCurrentTransaction;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// CanUndo
-//-----------------------------------------------------------------------------
-inline bool HRAStoredRaster::CanUndo() const
-    {
-    return !m_UndoStack.IsEmpty();
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// GetCurrentTransaction
-//-----------------------------------------------------------------------------
-inline bool HRAStoredRaster::CanRedo() const
-    {
-    return !m_RedoStack.IsEmpty();
-    }
-
+END_IMAGEPP_NAMESPACE

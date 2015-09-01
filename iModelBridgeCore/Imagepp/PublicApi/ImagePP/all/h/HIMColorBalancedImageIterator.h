@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMColorBalancedImageIterator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,6 +10,7 @@
 
 #include "HRARasterIterator.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRARaster;
 class HRPPixelBuffer;
 class HIMColorBalancedImage;
@@ -147,3 +148,4 @@ private:
                                                         int32_t pi_DisplacementY) ;
 
     };
+END_IMAGEPP_NAMESPACE

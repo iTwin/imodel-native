@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWebFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,8 +15,8 @@
 //-----------------------------------------------------------------------------
 
 // Precompiled Header
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 // HRFWebFile class
 #include <ImagePP/all/h/HRFWebFile.h>
@@ -230,11 +230,10 @@ HRFWebFile::HRFWebFile
     //  URLOSTRM_USECACHEDCOPY          Download the resource from the cache if it is available; otherwise, download it from the Internet.
     //  URLOSTRM_USECACHEDCOPY_ONLY     Only download the resource from the cache.
 #ifdef _WIN32
-    if(0 != URLDownloadToCacheFileW(NULL, pi_rpURL->GetURL().c_str(), filename, URLOSTRM_GETNEWESTVERSION, NULL, NULL))
+    if(0 != URLDownloadToCacheFileW(NULL, pi_rpURL->GetURL().c_str(), filename, URLOSTRM_GETNEWESTVERSION, 0, NULL))
 #endif
         {
-        throw HRFException(HRF_CANNOT_DOWNLOAD_TO_INTERNET_CACHE_EXCEPTION,
-                           pi_rpURL->GetURL());
+        throw HRFCannotDownloadToInternetCacheException(pi_rpURL->GetURL());
         }
 
     // compute local URL
@@ -260,7 +259,7 @@ HRFWebFile::HRFWebFile
         }
     else
         {
-        throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, pi_rpURL->GetURL());
+        throw HFCFileNotSupportedException(pi_rpURL->GetURL());
         }
     }
 
@@ -419,7 +418,7 @@ bool HRFWebFileCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     {
     return ((pi_rpURL->GetSchemeType() == HFCURLHTTP::s_SchemeName()) &&
             !(HRFURLInternetImagingHTTP::IsURLInternetImaging(pi_rpURL) ||
-              HRFVirtualEarthFile::IsURLVirtualEarth(pi_rpURL)));
+              HRFVirtualEarthFile::IsURLVirtualEarth(*pi_rpURL)));
     }
 
 
@@ -455,242 +454,10 @@ HFCPtr<HRFRasterFile> HRFWebFileCreator::Create
     return (pFile);
     }
 
-///-----------------------------------------------------------------------------
-// Internet Imaging HFCStat Implementation Declaration
-//-----------------------------------------------------------------------------
-
-class HRFWebStatImpl : public HFCStatImpl
-    {
-public:
-    //--------------------------------------
-    // Construction / Destruction
-    //--------------------------------------
-
-    HRFWebStatImpl();
-    virtual             ~HRFWebStatImpl();
-
-
-    //--------------------------------------
-    // Methods
-    //--------------------------------------
-
-    // Indicates if an impl can handle an URL
-    virtual bool       CanHandle(const HFCURL& pi_rURL) const override;
-
-    // Resource time
-    virtual time_t      GetCreationTime     (const HFCURL& pi_rURL) const override;
-    virtual time_t      GetLastAccessTime   (const HFCURL& pi_rURL) const override;
-    virtual time_t      GetModificationTime (const HFCURL& pi_rURL) const override;
-    virtual void        SetModificationTime (const HFCURL& pi_rURL,
-                                             time_t        pi_NewTime) const override;
-
-    // Resource size
-    virtual uint64_t   GetSize(const HFCURL& pi_rURL) const override;
-
-    virtual HFCStat::AccessStatus
-    DetectAccess(const HFCURL& pi_rURL) const override;
-
-    // Resource access mode
-    virtual HFCAccessMode
-    GetAccessMode(const HFCURL& pi_rURL) const override;
-    };
 
 //-----------------------------------------------------------------------------
 // Instantiate the file implementation
 //-----------------------------------------------------------------------------
-
-static HRFWebStatImpl      s_FileImpl;
-
-
-//-----------------------------------------------------------------------------
-// Internet Imaging HFCStat Implementation Definition
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Public
-//
-//-----------------------------------------------------------------------------
-HRFWebStatImpl::HRFWebStatImpl()
-    {
-    RegisterImpl(this);
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-//
-//-----------------------------------------------------------------------------
-HRFWebStatImpl::~HRFWebStatImpl()
-    {
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Indicates if an impl can handle an URL
-//-----------------------------------------------------------------------------
-bool HRFWebStatImpl::CanHandle(const HFCURL& pi_rURL) const
-    {
-    return (((pi_rURL.GetSchemeType() == HFCURLHTTP::s_SchemeName()) ||
-             (pi_rURL.GetSchemeType() == HFCURLECWP::s_SchemeName()) ||
-             (pi_rURL.GetSchemeType() == HFCURLECWPS::s_SchemeName())) &&
-            (!HRFURLInternetImagingHTTP::IsURLInternetImaging(&pi_rURL))) ;
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Resource modification time
-//-----------------------------------------------------------------------------
-time_t HRFWebStatImpl::GetCreationTime(const HFCURL& pi_rURL) const
-    {
-    HPRECONDITION(CanHandle(pi_rURL));
-    time_t Result = 0;
-
-    /* NEEDS_WORK
-        It looks like there is no easy/safe way to retrieve file information without downloading the file.
-
-    try
-    {
-        // Copy the URL
-        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
-        HASSERT(pURL != 0);
-
-        // Create an web file but use the cache copy only. i.e. do not download the file
-        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetCreationTime();
-    }
-    catch(...)
-    {
-        HASSERT(false);
-    }
-    */
-
-    return Result;
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Resource modification time
-//-----------------------------------------------------------------------------
-time_t HRFWebStatImpl::GetLastAccessTime(const HFCURL& pi_rURL) const
-    {
-    HPRECONDITION(CanHandle(pi_rURL));
-    time_t Result = 0;
-
-    /* NEEDS_WORK
-        It seems like there is no easy/safe way to retrieve file information without downloading the file.
-
-    try
-    {
-        // Copy the URL
-        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
-        HASSERT(pURL != 0);
-
-        // Create an web file but use the cache copy only. i.e. do not download the file
-        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetLastAccessTime();
-    }
-    catch(...)
-    {
-        HASSERT(false);
-    }
-    */
-
-    return Result;
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Resource modification time
-//-----------------------------------------------------------------------------
-time_t HRFWebStatImpl::GetModificationTime(const HFCURL& pi_rURL) const
-    {
-    HPRECONDITION(CanHandle(pi_rURL));
-    time_t Result = 0;
-
-    /* NEEDS_WORK
-        It looks like there is no easy/safe way to retrieve file information without downloading the file.
-
-    try
-    {
-        // Copy the URL
-        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
-        HASSERT(pURL != 0);
-
-        // Create an web file but use the cache copy only. i.e. do not download the file
-        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetModificationTime();
-    }
-    catch(...)
-    {
-        HASSERT(false);
-    }
-    */
-
-    return Result;
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-//
-//-----------------------------------------------------------------------------
-void HRFWebStatImpl::SetModificationTime(const HFCURL& pi_rURL, time_t pi_NewTime) const
-    {
-    HPRECONDITION(CanHandle(pi_rURL));
-
-    // Cannot so do nothing
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Resource size
-//-----------------------------------------------------------------------------
-uint64_t HRFWebStatImpl::GetSize(const HFCURL& pi_rURL) const
-    {
-    HPRECONDITION(CanHandle(pi_rURL));
-    uint64_t Result = 0;
-
-    /* NEEDS_WORK
-        It looks like there is no easy/safe way to retrieve file information without downloading the file.
-
-    try
-    {
-        // Copy the URL
-        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
-        HASSERT(pURL != 0);
-
-        // Create an web file but use the cache copy only. i.e. do not download the file
-        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetSize();
-    }
-    catch(...)
-    {
-        HASSERT(false);
-    }
-    */
-
-    return Result;
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Detect existence
-//-----------------------------------------------------------------------------
-HFCStat::AccessStatus HRFWebStatImpl::DetectAccess(const HFCURL& pi_rURL) const
-    {
-    HPRECONDITION(CanHandle(pi_rURL));
-
-    return HFCStat::AccessGranted;
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Resource access mode
-//-----------------------------------------------------------------------------
-HFCAccessMode HRFWebStatImpl::GetAccessMode(const HFCURL& pi_rURL) const
-    {
-    HPRECONDITION(CanHandle(pi_rURL));
-
-    return (HFC_READ_ONLY);
-    }
 
 //-----------------------------------------------------------------------------
 // Public

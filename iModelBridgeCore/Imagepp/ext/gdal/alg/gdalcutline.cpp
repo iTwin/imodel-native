@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalcutline.cpp 17041 2009-05-17 22:35:15Z warmerdam $
+ * $Id: gdalcutline.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implement cutline/blend mask generator.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2008, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,7 +35,7 @@
 #include "ogr_geometry.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdalcutline.cpp 17041 2009-05-17 22:35:15Z warmerdam $");
+CPL_CVSID("$Id: gdalcutline.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 /************************************************************************/
 /*                         BlendMaskGenerator()                         */
@@ -88,6 +89,30 @@ BlendMaskGenerator( int nXOff, int nYOff, int nXSize, int nYSize,
 
     if( poClipRect )
     {
+
+        /***** if it doesnt intersect the polym zero the mask and return *****/
+
+        if ( ! ((OGRGeometry *) hPolygon)->Intersects( poClipRect ) )
+        {
+            
+            memset( pafValidityMask, 0, sizeof(float) * nXSize * nYSize );
+
+            delete poLines;
+            delete poClipRect;
+
+            return CE_None;
+        }
+
+        /***** if it doesnt intersect the line at all just return *****/
+         
+        else if ( ! ((OGRGeometry *) poLines)->Intersects( poClipRect ) )
+        {
+            delete poLines;
+            delete poClipRect;
+
+            return CE_None;
+        }
+
         OGRGeometry *poClippedLines = 
             poLines->Intersection( poClipRect );
         delete poLines;
@@ -101,19 +126,25 @@ BlendMaskGenerator( int nXOff, int nYOff, int nXSize, int nYSize,
 /* -------------------------------------------------------------------- */
     OGREnvelope sEnvelope;
     int iXMin, iYMin, iXMax, iYMax;
+    GEOSContextHandle_t hGEOSCtxt = OGRGeometry::createGEOSContext();
     GEOSGeom poGEOSPoly;
 
-    poGEOSPoly = poLines->exportToGEOS();
+    poGEOSPoly = poLines->exportToGEOS(hGEOSCtxt);
     OGR_G_GetEnvelope( hPolygon, &sEnvelope );
 
     delete poLines;
 
-    if( sEnvelope.MinY - dfBlendDist > nYOff+nYSize 
+    /***** this check was already done in the calling *****/
+    /***** function and should never be true          *****/
+
+    /*if( sEnvelope.MinY - dfBlendDist > nYOff+nYSize 
         || sEnvelope.MaxY + dfBlendDist < nYOff 
         || sEnvelope.MinX - dfBlendDist > nXOff+nXSize
         || sEnvelope.MaxX + dfBlendDist < nXOff )
         return CE_None;
-    
+    */
+
+
     iXMin = MAX(0,(int) floor(sEnvelope.MinX - dfBlendDist - nXOff));
     iXMax = MIN(nXSize, (int) ceil(sEnvelope.MaxX + dfBlendDist - nXOff));
     iYMin = MAX(0,(int) floor(sEnvelope.MinY - dfBlendDist - nYOff));
@@ -148,10 +179,10 @@ BlendMaskGenerator( int nXOff, int nYOff, int nXSize, int nYSize,
             GEOSGeom poGEOSPoint;
 
             osPointWKT.Printf( "POINT(%d.5 %d.5)", iX + nXOff, iY + nYOff );
-            poGEOSPoint = GEOSGeomFromWKT( osPointWKT );
+            poGEOSPoint = GEOSGeomFromWKT_r( hGEOSCtxt, osPointWKT );
 
-            GEOSDistance( poGEOSPoly, poGEOSPoint, &dfDist );
-            GEOSGeom_destroy( poGEOSPoint );
+            GEOSDistance_r( hGEOSCtxt, poGEOSPoly, poGEOSPoint, &dfDist );
+            GEOSGeom_destroy_r( hGEOSCtxt, poGEOSPoint );
 
             dfLastDist = dfDist;
 
@@ -174,14 +205,15 @@ BlendMaskGenerator( int nXOff, int nYOff, int nXSize, int nYSize,
                 dfRatio = 0.5 + (dfDist / dfBlendDist) * 0.5;
             }                
 
-            pafValidityMask[iX + iY * nXSize] *= dfRatio;
+            pafValidityMask[iX + iY * nXSize] *= (float)dfRatio;
         }
     }
 
 /* -------------------------------------------------------------------- */
 /*      Cleanup                                                         */
 /* -------------------------------------------------------------------- */
-    GEOSGeom_destroy( poGEOSPoly );
+    GEOSGeom_destroy_r( hGEOSCtxt, poGEOSPoly );
+    OGRGeometry::freeGEOSContext( hGEOSCtxt );
 
     return CE_None;
 
@@ -197,13 +229,12 @@ BlendMaskGenerator( int nXOff, int nYOff, int nXSize, int nYSize,
 
 static int CutlineTransformer( void *pTransformArg, int bDstToSrc, 
                                int nPointCount, 
-                               double *x, double *y, double *z, 
-                               int *panSuccess )
+                               double *x, double *y, CPL_UNUSED double *z, 
+                               CPL_UNUSED int *panSuccess )
 
 {
     int nXOff = ((int *) pTransformArg)[0];
     int nYOff = ((int *) pTransformArg)[1];				
-    int i;
 
     if( bDstToSrc )
     {
@@ -211,7 +242,7 @@ static int CutlineTransformer( void *pTransformArg, int bDstToSrc,
         nYOff *= -1;
     }
 
-    for( i = 0; i < nPointCount; i++ )
+    for( int i = 0; i < nPointCount; i++ )
     {
         x[i] -= nXOff;
         y[i] -= nYOff;
@@ -229,7 +260,7 @@ static int CutlineTransformer( void *pTransformArg, int bDstToSrc,
 /************************************************************************/
 
 CPLErr 
-GDALWarpCutlineMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
+GDALWarpCutlineMasker( void *pMaskFuncArg, CPL_UNUSED int nBandCount, CPL_UNUSED GDALDataType eType,
                        int nXOff, int nYOff, int nXSize, int nYSize,
                        GByte ** /*ppImageData */,
                        int bMaskIsFloat, void *pValidityMask )
@@ -279,6 +310,7 @@ GDALWarpCutlineMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
     }
 
     OGR_G_GetEnvelope( hPolygon, &sEnvelope );
+
     if( sEnvelope.MaxX + psWO->dfCutlineBlendDist < nXOff
         || sEnvelope.MinX - psWO->dfCutlineBlendDist > nXOff + nXSize
         || sEnvelope.MaxY + psWO->dfCutlineBlendDist < nYOff

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddffielddefn.cpp 12706 2007-11-10 22:11:39Z rouault $
+ * $Id: ddffielddefn.cpp 25820 2013-03-30 20:07:35Z rouault $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFFieldDefn class.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: ddffielddefn.cpp 12706 2007-11-10 22:11:39Z rouault $");
+CPL_CVSID("$Id: ddffielddefn.cpp 25820 2013-03-30 20:07:35Z rouault $");
 
 #define CPLE_DiscardedFormat   1301
 
@@ -162,13 +162,14 @@ int DDFFieldDefn::Create( const char *pszTag, const char *pszFieldName,
     this->pszTag = CPLStrdup( pszTag );
     _fieldName = CPLStrdup( pszFieldName );
     _arrayDescr = CPLStrdup( pszDescription );
-    _formatControls = CPLStrdup( "" );
     
     _data_struct_code = eDataStructCode;
     _data_type_code = eDataTypeCode;
 
     if( pszFormat != NULL )
         _formatControls = CPLStrdup( pszFormat );
+    else
+        _formatControls = CPLStrdup( "" );
 
     if( pszDescription != NULL && *pszDescription == '*' )
         bRepeatingSubfields = TRUE;
@@ -621,11 +622,11 @@ char *DDFFieldDefn::ExpandFormat( const char * pszSrc )
                 
             for( int i = 0; i < nRepeat; i++ )
             {
-                if( (int) (strlen(pszExpandedContents) + strlen(pszDest) + 1)
+                if( (int) (strlen(pszExpandedContents) + strlen(pszDest) + 1 + 1)
                     > nDestMax )
                 {
                     nDestMax = 
-                        2 * (strlen(pszExpandedContents) + strlen(pszDest));
+                        2 * (strlen(pszExpandedContents) + strlen(pszDest) + 1);
                     pszDest = (char *) CPLRealloc(pszDest,nDestMax+1);
                 }
 
@@ -732,7 +733,10 @@ int DDFFieldDefn::ApplyFormats()
         }
         
         if( !papoSubfields[iFormatItem]->SetFormat(pszPastPrefix) )
+        {
+            CSLDestroy( papszFormatItems );
             return FALSE;
+        }
     }
 
 /* -------------------------------------------------------------------- */

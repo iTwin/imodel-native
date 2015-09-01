@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFCameraData.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 /**----------------------------------------------------------------------------
  This method returns Omega rotation is radians
@@ -83,6 +83,6 @@ inline const HGF3DPoint& HGFCameraData::GetPerspectiveCenter() const
 
 
 
-
+END_IMAGEPP_NAMESPACE
 
 

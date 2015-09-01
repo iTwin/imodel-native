@@ -2,10 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DExtent.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+#include <Imagepp/h/HNumeric.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Constructor
 
@@ -169,6 +172,70 @@ inline bool HGF2DExtent::IsPointIn (const HGF2DLocation& pi_rPoint,
     return(ReturnValue);
     }
 
+//-----------------------------------------------------------------------------
+// IsPointInnerIn
+// Indicates if a point is inside the extent
+//-----------------------------------------------------------------------------
+inline bool HGF2DExtent::IsPointInnerIn (const HGF2DLocation& pi_rPoint) const
+{
+    // Check if point lies inside
+    return (HNumeric<double>::GREATER_EPSILON(pi_rPoint.GetX(), m_XMin) &&
+            HNumeric<double>::SMALLER_EPSILON(pi_rPoint.GetX(), m_XMax) &&
+            HNumeric<double>::GREATER_EPSILON(pi_rPoint.GetY(), m_YMin) &&
+            HNumeric<double>::SMALLER_EPSILON(pi_rPoint.GetY(), m_YMax));
+
+}
+
+
+//-----------------------------------------------------------------------------
+// IsPointOutterIn
+// Indicates if a point is inside the extent
+//-----------------------------------------------------------------------------
+inline bool HGF2DExtent::IsPointOutterIn (const HGF2DLocation& pi_rPoint) const
+{
+    // Check if point lies inside (Borders are inclusive here)
+    return (HNumeric<double>::GREATER_OR_EQUAL_EPSILON(pi_rPoint.GetX(), m_XMin) &&
+            HNumeric<double>::SMALLER_OR_EQUAL_EPSILON(pi_rPoint.GetX(), m_XMax) &&
+            HNumeric<double>::GREATER_OR_EQUAL_EPSILON(pi_rPoint.GetY(), m_YMin) &&
+            HNumeric<double>::SMALLER_OR_EQUAL_EPSILON(pi_rPoint.GetY(), m_YMax));
+}
+
+
+//-----------------------------------------------------------------------------
+// IsPointInnerIn
+// Indicates if a point is inside the extent
+//-----------------------------------------------------------------------------
+inline bool HGF2DExtent::IsPointInnerIn(const HGF2DLocation& pi_rPoint, 
+                                             double pi_Tolerance) const
+{
+    // Tolerance provided must be positive or null
+    HPRECONDITION(pi_Tolerance >= 0.0);
+
+    // Check if point lies inside
+    return (HNumeric<double>::GREATER(pi_rPoint.GetX(), m_XMin, pi_Tolerance) &&
+            HNumeric<double>::SMALLER(pi_rPoint.GetX(), m_XMax, pi_Tolerance) &&
+            HNumeric<double>::GREATER(pi_rPoint.GetY(), m_YMin, pi_Tolerance) &&
+            HNumeric<double>::SMALLER(pi_rPoint.GetY(), m_YMax, pi_Tolerance));
+
+}
+
+
+//-----------------------------------------------------------------------------
+// IsPointOutterIn
+// Indicates if a point is inside the extent
+//-----------------------------------------------------------------------------
+inline bool HGF2DExtent::IsPointOutterIn(const HGF2DLocation& pi_rPoint, 
+                                              double pi_Tolerance) const
+{
+    // Tolerance provided must be positive or null
+    HPRECONDITION(pi_Tolerance >= 0.0);
+
+    // Check if point lies inside (Borders are inclusive here)
+    return (HNumeric<double>::GREATER_OR_EQUAL(pi_rPoint.GetX(), m_XMin, pi_Tolerance) &&
+            HNumeric<double>::SMALLER_OR_EQUAL(pi_rPoint.GetX(), m_XMax, pi_Tolerance) &&
+            HNumeric<double>::GREATER_OR_EQUAL(pi_rPoint.GetY(), m_YMin, pi_Tolerance) &&
+            HNumeric<double>::SMALLER_OR_EQUAL(pi_rPoint.GetY(), m_YMax, pi_Tolerance));
+}
 
 /** -----------------------------------------------------------------------------
     Returns the Xmin numeric value of the coordinate of this extent.
@@ -266,6 +333,69 @@ inline HGF2DLocation HGF2DExtent::GetCorner() const
     return (HGF2DLocation(m_XMax, m_YMax, m_pCoordSys));
     }
 
+/** -----------------------------------------------------------------------------
+Returns the location of the origin which represents the point at
+coordinate (Xmin, Ymin). To use this method, the extent must be
+defined (IsDefined()).
+
+@return A location object that describes the physical position of the origin
+expressed in the same coordinate system as the Extent
+-----------------------------------------------------------------------------
+*/
+inline HGF2DLocation HGF2DExtent::GetLowerLeft() const
+    {
+    HPRECONDITION(IsDefined());
+
+    return (HGF2DLocation(m_XMin, m_YMin, m_pCoordSys));
+    }
+
+/** -----------------------------------------------------------------------------
+    Returns the location of the lower right corner which represents the point at
+    coordinate (Xmax, Ymin). To use this method, the extent must be
+    defined (IsDefined()).
+
+    @return A location object that describes the physical position of the lower right corner
+            expressed in the same coordinate system as the Extent
+    -----------------------------------------------------------------------------
+*/
+inline HGF2DLocation HGF2DExtent::GetLowerRight() const
+    {
+    HPRECONDITION(IsDefined());
+
+    return (HGF2DLocation (m_XMax, m_YMin, m_pCoordSys));
+    }
+
+/** -----------------------------------------------------------------------------
+    Returns the location of the upper left corner which represents the point at
+    coordinate (Xmin, Ymax). To use this method, the extent must be
+    defined (IsDefined()).
+
+    @return A location object that describes the physical position of the upper left corner
+            expressed in the same coordinate system as the Extent
+    -----------------------------------------------------------------------------
+*/
+inline HGF2DLocation HGF2DExtent::GetUpperLeft() const
+    {
+    HPRECONDITION(IsDefined());
+
+    return (HGF2DLocation (m_XMin, m_YMax, m_pCoordSys));
+    }
+
+/** -----------------------------------------------------------------------------
+Returns the location of the corner which represents the point at
+coordinate (Xmax, Ymax). To use this method, the extent must
+be defined (IsDefined()).
+
+@return A location object that describes the physical position of the corner
+expressed in the same coordinate system as the Extent.
+-----------------------------------------------------------------------------
+*/
+inline HGF2DLocation HGF2DExtent::GetUpperRight() const
+    {
+    HPRECONDITION(IsDefined());
+
+    return (HGF2DLocation(m_XMax, m_YMax, m_pCoordSys));
+    }
 
 /** -----------------------------------------------------------------------------
     Returns the width of the extent, which correspond to the absolute value of
@@ -451,3 +581,4 @@ inline void HGF2DExtent::Union(const HGF2DExtent& pi_rExtent)
     Add(pi_rExtent);
     }
 
+END_IMAGEPP_NAMESPACE

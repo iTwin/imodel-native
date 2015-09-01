@@ -8,8 +8,8 @@
 // Methods for class HVE2DComplexShape
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 
 #include <Imagepp/all/h/HVE2DComplexShape.h>
@@ -79,6 +79,24 @@ HVE2DComplexShape::HVE2DComplexShape(const HVE2DShape::SimpleShapeList& pi_rList
         }
     }
 
+
+/** -----------------------------------------------------------------------------
+    Constructor for a complex shape from a ligh complex shape
+    -----------------------------------------------------------------------------
+*/
+HVE2DComplexShape::HVE2DComplexShape(const HGF2DComplexShape& pi_rShape, const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
+    : HVE2DShape(pi_rpCoordSys)
+    {
+    // We copy all shapes to current list
+    const HGF2DShape::ShapeList& rShapeList = pi_rShape.GetShapeList();
+    HGF2DShape::ShapeList::const_iterator   shapeItr = rShapeList.begin();
+    for ( ; shapeItr != rShapeList.end() ; ++shapeItr)
+        {
+        // We add shape
+        m_ShapeList.push_back(HVE2DShape::fCreateShapeFromLightShape(**shapeItr, pi_rpCoordSys));
+        }
+    }
+
 //-----------------------------------------------------------------------------
 // operator=
 // Assignment operator.  It duplicates another complex shape object.
@@ -112,9 +130,8 @@ HGF2DLocation HVE2DComplexShape::CalculateClosestPoint(const HGF2DLocation& pi_r
     {
     HGF2DLocation       ClosestPoint(GetCoordSys());
     HGF2DLocation       WorkPoint(GetCoordSys());
-    double              WorkDistance=0.0;
-    double              TheMinimalDistance=0.0;
-    bool                TheMinimalDistanceSet = false;
+    double              WorkDistance;
+    double              TheMinimalDistance = DBL_MAX;
 
     // For each shape in complex shape
     HVE2DShape::ShapeList::const_iterator   MyIterator;
@@ -126,13 +143,11 @@ HGF2DLocation HVE2DComplexShape::CalculateClosestPoint(const HGF2DLocation& pi_r
         WorkPoint = (*MyIterator)->CalculateClosestPoint(pi_rPoint);
 
         // Check if the distance to this point is smaller than previous point
-        if ((!TheMinimalDistanceSet) ||
-            (TheMinimalDistance > (WorkDistance = (pi_rPoint - WorkPoint).CalculateLength())))
+        if (TheMinimalDistance > (WorkDistance = (pi_rPoint - WorkPoint).CalculateLength()))
             {
             // This work point is closer ... it becomes the new point
             TheMinimalDistance = WorkDistance;
             ClosestPoint = WorkPoint;
-            TheMinimalDistanceSet = true;
             }
         }
 
@@ -1082,7 +1097,7 @@ void HVE2DComplexShape::PrintState(ostream& po_rOutput) const
     HDUMP0("Object is a HVE2DComplexShape\n");
 
     po_rOutput << "The complex shape contains " << m_ShapeList.size() << " shapes" << endl;
-    HDUMP1("The complex shape contains %lld shapes\n", (uint64_t)m_ShapeList.size());
+    HDUMP1("The complex shape contains %" PRIu64 " shapes\n", (uint64_t)m_ShapeList.size());
 
     po_rOutput << "Begin component listing" << endl;
     HDUMP0("Begin component listing\n");

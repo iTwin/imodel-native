@@ -2,13 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DSegment.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include "HGFDrawOptions.h"
-#include "HGFMappedSurface.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -386,10 +385,12 @@ inline double HVE2DSegment::CalculateRelativePosition(const HGF2DLocation& pi_rP
     // from start point
 
     // Check if segment is vertical or close but not perfectly horizontal
-    return((HDOUBLE_EQUAL(m_StartPoint.GetX(), m_EndPoint.GetX(), GetTolerance()) &&
-            (m_StartPoint.GetY() != m_EndPoint.GetY())) ?
-           ((pi_rPointOnLinear.GetY() - m_StartPoint.GetY()) / (m_EndPoint.GetY() - m_StartPoint.GetY())) :
-           ((pi_rPointOnLinear.GetX() - m_StartPoint.GetX()) / (m_EndPoint.GetX() - m_StartPoint.GetX())));
+    const double result = ((HDOUBLE_EQUAL(m_StartPoint.GetX(), m_EndPoint.GetX(), GetTolerance()) && 
+                           (m_StartPoint.GetY() != m_EndPoint.GetY())) ?
+                           ((pi_rPointOnLinear.GetY() - m_StartPoint.GetY()) / (m_EndPoint.GetY() - m_StartPoint.GetY())) :
+                           ((pi_rPointOnLinear.GetX() - m_StartPoint.GetX()) / (m_EndPoint.GetX() - m_StartPoint.GetX())));
+
+    return (result <= 1.0 ? result : 1.0);
     }
 
 //-----------------------------------------------------------------------------
@@ -555,10 +556,10 @@ inline size_t HVE2DSegment::AutoIntersect(HGF2DLocationCollection* po_pPoints) c
 //-----------------------------------------------------------------------------
 inline HGF2DExtent HVE2DSegment::GetExtent() const
     {
-    return(HGF2DExtent(min(m_StartPoint.GetX(), m_EndPoint.GetX()),
-                       min(m_StartPoint.GetY(), m_EndPoint.GetY()),
-                       max(m_StartPoint.GetX(), m_EndPoint.GetX()),
-                       max(m_StartPoint.GetY(), m_EndPoint.GetY()),
+    return(HGF2DExtent(MIN(m_StartPoint.GetX(), m_EndPoint.GetX()),
+                       MIN(m_StartPoint.GetY(), m_EndPoint.GetY()),
+                       MAX(m_StartPoint.GetX(), m_EndPoint.GetX()),
+                       MAX(m_StartPoint.GetY(), m_EndPoint.GetY()),
                        GetCoordSys()));
     }
 
@@ -585,7 +586,7 @@ inline bool HVE2DSegment::AreSegmentsTouching(const HVE2DSegment& pi_rSegment) c
 
     // For two segments to be touching, they must first have extents which overlap
     // then one must be connected to the other, or they must cross each other
-    return (GetExtent().OutterOverlaps(pi_rSegment.GetExtent(), min(GetTolerance(), pi_rSegment.GetTolerance())) &&
+    return (GetExtent().OutterOverlaps(pi_rSegment.GetExtent(), MIN(GetTolerance(), pi_rSegment.GetTolerance())) &&
             (AreSegmentsCrossing(pi_rSegment) ||
              ConnectsTo(pi_rSegment) ||
              pi_rSegment.ConnectsTo(*this) ||
@@ -607,7 +608,7 @@ inline bool HVE2DSegment::AreSegmentsCrossing(const HVE2DSegment& pi_rSegment) c
 
     // For two segments to be crossing, they must first have extents which overlap
     // then they must intersect
-    return (GetExtent().InnerOverlaps(pi_rSegment.GetExtent(), min(GetTolerance(), pi_rSegment.GetTolerance())) &&
+    return (GetExtent().InnerOverlaps(pi_rSegment.GetExtent(), MIN(GetTolerance(), pi_rSegment.GetTolerance())) &&
             (IntersectSegment(pi_rSegment, &DummyPoint) == HVE2DSegment::CROSS_FOUND));
     }
 
@@ -624,7 +625,7 @@ inline bool HVE2DSegment::AreSegmentsCrossingSCS(const HVE2DSegment& pi_rSegment
 
     // For two segments to be crossing, they must first have extents which overlap
     // then they must intersect
-    return (GetExtent().InnerOverlaps(pi_rSegment.GetExtent(), min(GetTolerance(), pi_rSegment.GetTolerance())) &&
+    return (GetExtent().InnerOverlaps(pi_rSegment.GetExtent(), MIN(GetTolerance(), pi_rSegment.GetTolerance())) &&
             (IntersectSegmentSCS(pi_rSegment, &DummyPoint) == HVE2DSegment::CROSS_FOUND));
     }
 
@@ -644,7 +645,7 @@ inline bool HVE2DSegment::AreSegmentsAdjacent(const HVE2DSegment& pi_rSegment) c
     // To be adjacent, two segments must first have extents which overlap and
     // share the same line
     // and be connected on each other at any point
-    return (GetExtent().OutterOverlaps(pi_rSegment.GetExtent(), min(GetTolerance(), pi_rSegment.GetTolerance())) &&
+    return (GetExtent().OutterOverlaps(pi_rSegment.GetExtent(), MIN(GetTolerance(), pi_rSegment.GetTolerance())) &&
             (HGF2DLine(m_StartPoint, m_EndPoint) == HGF2DLine(pi_rSegment.m_StartPoint, pi_rSegment.m_EndPoint)) &&
             (ConnectsTo(pi_rSegment) || pi_rSegment.ConnectsTo(*this)));
     }
@@ -660,7 +661,7 @@ inline bool HVE2DSegment::AreSegmentsAdjacentSCS(const HVE2DSegment& pi_rSegment
     // To be adjacent, two segments must first have extents which overlap and
     // share the same line
     // and be connected on each other at any point
-    return (GetExtent().OutterOverlaps(pi_rSegment.GetExtent(), min(GetTolerance(), pi_rSegment.GetTolerance())) &&
+    return (GetExtent().OutterOverlaps(pi_rSegment.GetExtent(), MIN(GetTolerance(), pi_rSegment.GetTolerance())) &&
             (HGF2DLine(m_StartPoint, m_EndPoint) == HGF2DLine(pi_rSegment.m_StartPoint, pi_rSegment.m_EndPoint)) &&
             (ConnectsTo(pi_rSegment) || pi_rSegment.ConnectsTo(*this)));
     }
@@ -769,17 +770,14 @@ inline void HVE2DSegment::ResetTolerance()
         // If coordinates are greater than global tolerance divided by
         // float precision (~= 1E-8 / 1E-15 -> 1E7 ... 1E6 for all cases)
         // Then we use global epsilon * coordinate
-        Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_StartPoint.GetX()));
-        Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_StartPoint.GetY()));
-        Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_EndPoint.GetX()));
-        Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_EndPoint.GetY()));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_StartPoint.GetX()));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_StartPoint.GetY()));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_EndPoint.GetX()));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_EndPoint.GetY()));
 
-        SetTolerance(min(HMAX_EPSILON, Tolerance));
+        SetTolerance(MIN(HMAX_EPSILON, Tolerance));
         }
     }
 
 
-
-
-
-
+END_IMAGEPP_NAMESPACE

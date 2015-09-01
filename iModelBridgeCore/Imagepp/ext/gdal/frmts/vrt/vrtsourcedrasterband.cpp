@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtsourcedrasterband.cpp 21179 2010-11-28 16:18:00Z rouault $
+ * $Id: vrtsourcedrasterband.cpp 27542 2014-07-22 21:25:37Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTSourcedRasterBand
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: vrtsourcedrasterband.cpp 21179 2010-11-28 16:18:00Z rouault $");
+CPL_CVSID("$Id: vrtsourcedrasterband.cpp 27542 2014-07-22 21:25:37Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -94,7 +95,8 @@ void VRTSourcedRasterBand::Initialize( int nXSize, int nYSize )
     nSources = 0;
     papoSources = NULL;
     bEqualAreas = FALSE;
-    bAlreadyInIRasterIO = FALSE;
+    nRecursionCounter = 0;
+    papszSourceList = NULL;
 }
 
 /************************************************************************/
@@ -104,11 +106,8 @@ void VRTSourcedRasterBand::Initialize( int nXSize, int nYSize )
 VRTSourcedRasterBand::~VRTSourcedRasterBand()
 
 {
-    for( int i = 0; i < nSources; i++ )
-        delete papoSources[i];
-
-    CPLFree( papoSources );
-    nSources = 0;
+    CloseDependentDatasets();
+    CSLDestroy(papszSourceList);
 }
 
 /************************************************************************/
@@ -135,7 +134,9 @@ CPLErr VRTSourcedRasterBand::IRasterIO( GDALRWFlag eRWFlag,
     /* When using GDALProxyPoolDataset for sources, the recusion will not be */
     /* detected at VRT opening but when doing RasterIO. As the proxy pool will */
     /* return the already opened dataset, we can just test a member variable. */
-    if ( bAlreadyInIRasterIO )
+    /* We allow 1, since IRasterIO() can be called from ComputeStatistics(), which */
+    /* itselfs increments the recursion counter */
+    if ( nRecursionCounter > 1 )
     {
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "VRTSourcedRasterBand::IRasterIO() called recursively on the same band. "
@@ -161,18 +162,18 @@ CPLErr VRTSourcedRasterBand::IRasterIO( GDALRWFlag eRWFlag,
 /*      nodata value if available.                                      */
 /* -------------------------------------------------------------------- */
     if ( nPixelSpace == GDALGetDataTypeSize(eBufType)/8 &&
-         (!bNoDataValueSet || dfNoDataValue == 0) )
+         (!bNoDataValueSet || (!CPLIsNan(dfNoDataValue) && dfNoDataValue == 0)) )
     {
         if (nLineSpace == nBufXSize * nPixelSpace)
         {
-             memset( pData, 0, nBufYSize * nLineSpace );
+             memset( pData, 0, (GIntBig)nBufYSize * nLineSpace );
         }
         else
         {
             int    iLine;
             for( iLine = 0; iLine < nBufYSize; iLine++ )
             {
-                memset( ((GByte*)pData) + iLine * nLineSpace, 0, nBufXSize * nPixelSpace );
+                memset( ((GByte*)pData) + (GIntBig)iLine * nLineSpace, 0, nBufXSize * nPixelSpace );
             }
         }
     }
@@ -187,26 +188,12 @@ CPLErr VRTSourcedRasterBand::IRasterIO( GDALRWFlag eRWFlag,
         for( iLine = 0; iLine < nBufYSize; iLine++ )
         {
             GDALCopyWords( &dfWriteValue, GDT_Float64, 0, 
-                           ((GByte *)pData) + nLineSpace * iLine, 
+                           ((GByte *)pData) + (GIntBig)nLineSpace * iLine, 
                            eBufType, nPixelSpace, nBufXSize );
         }
     }
-
-
-/* -------------------------------------------------------------------- */
-/*      Do we have overviews that would be appropriate to satisfy       */
-/*      this request?                                                   */
-/* -------------------------------------------------------------------- */
-    if( (nBufXSize < nXSize || nBufYSize < nYSize)
-        && GetOverviewCount() > 0 )
-    {
-        if( OverviewRasterIO( eRWFlag, nXOff, nYOff, nXSize, nYSize, 
-                              pData, nBufXSize, nBufYSize, 
-                              eBufType, nPixelSpace, nLineSpace ) == CE_None )
-            return CE_None;
-    }
     
-    bAlreadyInIRasterIO = TRUE;
+    nRecursionCounter ++;
 
 /* -------------------------------------------------------------------- */
 /*      Overlay each source in turn over top this.                      */
@@ -219,7 +206,7 @@ CPLErr VRTSourcedRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                                             eBufType, nPixelSpace, nLineSpace);
     }
     
-    bAlreadyInIRasterIO = FALSE;
+    nRecursionCounter --;
     
     return eErr;
 }
@@ -250,6 +237,404 @@ CPLErr VRTSourcedRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                       nReadXSize, nReadYSize, 
                       pImage, nReadXSize, nReadYSize, eDataType, 
                       nPixelSize, nPixelSize * nBlockXSize );
+}
+
+
+/************************************************************************/
+/*                    CanUseSourcesMinMaxImplementations()              */
+/************************************************************************/
+
+int VRTSourcedRasterBand::CanUseSourcesMinMaxImplementations()
+{
+    const char* pszUseSources = CPLGetConfigOption("VRT_MIN_MAX_FROM_SOURCES", NULL);
+    if( pszUseSources )
+        return CSLTestBoolean(pszUseSources);
+
+    // Use heuristics to determine if we are going to use the source GetMinimum()
+    // or GetMaximum() implementation: all the sources must be "simple" sources
+    // with a dataset description that match a "regular" file on the filesystem,
+    // whose open time and GetMinimum()/GetMaximum() implementations we hope to
+    // be fast enough.
+    // In case of doubt return FALSE
+    for( int iSource = 0; iSource < nSources; iSource++ )
+    {
+        if( !(papoSources[iSource]->IsSimpleSource()) )
+            return FALSE;
+        VRTSimpleSource* poSimpleSource = (VRTSimpleSource*) papoSources[iSource];
+        GDALRasterBand* poBand = poSimpleSource->GetBand();
+        if( poBand == NULL )
+            return FALSE;
+        if( poBand->GetDataset() == NULL )
+            return FALSE;
+        const char* pszFilename = poBand->GetDataset()->GetDescription();
+        if( pszFilename == NULL )
+            return FALSE;
+        /* /vsimem/ should be fast */
+        if( strncmp(pszFilename, "/vsimem/", 8) == 0 )
+            continue;
+        /* but not other /vsi filesystems */
+        if( strncmp(pszFilename, "/vsi", 4) == 0 )
+            return FALSE;
+        int i = 0;
+        char ch;
+        /* We will assume that filenames that are only with ascii characters */
+        /* are real filenames and so we will not try to 'stat' them */
+        for( i = 0; (ch = pszFilename[i]) != '\0'; i++ )
+        {
+            if( !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+                  (ch >= '0' && ch <= '9') || ch == ':' || ch == '/' || ch == '\\' ||
+                  ch == ' ' || ch == '.') )
+                break;
+        }
+        if( ch != '\0' )
+        {
+            /* Otherwise do a real filesystem check */
+            VSIStatBuf sStat;
+            if( VSIStat(pszFilename, &sStat) != 0 )
+                return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+/************************************************************************/
+/*                             GetMinimum()                             */
+/************************************************************************/
+
+double VRTSourcedRasterBand::GetMinimum( int *pbSuccess )
+{
+    const char *pszValue = NULL;
+
+    if( !CanUseSourcesMinMaxImplementations() )
+        return GDALRasterBand::GetMinimum(pbSuccess);
+
+    if( (pszValue = GetMetadataItem("STATISTICS_MINIMUM")) != NULL )
+    {
+        if( pbSuccess != NULL )
+            *pbSuccess = TRUE;
+
+        return CPLAtofM(pszValue);
+    }
+
+    if ( nRecursionCounter > 0 )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "VRTSourcedRasterBand::GetMinimum() called recursively on the same band. "
+                  "It looks like the VRT is referencing itself." );
+        if( pbSuccess != NULL )
+            *pbSuccess = FALSE;
+        return 0.0;
+    }
+    nRecursionCounter ++;
+
+    double dfMin = 0;
+    for( int iSource = 0; iSource < nSources; iSource++ )
+    {
+        int bSuccess = FALSE;
+        double dfSourceMin = papoSources[iSource]->GetMinimum(GetXSize(), GetYSize(), &bSuccess);
+        if (!bSuccess)
+        {
+            dfMin = GDALRasterBand::GetMinimum(pbSuccess);
+            nRecursionCounter --;
+            return dfMin;
+        }
+
+        if (iSource == 0 || dfSourceMin < dfMin)
+            dfMin = dfSourceMin;
+    }
+
+    nRecursionCounter --;
+
+    if( pbSuccess != NULL )
+        *pbSuccess = TRUE;
+
+    return dfMin;
+}
+
+/************************************************************************/
+/*                             GetMaximum()                             */
+/************************************************************************/
+
+double VRTSourcedRasterBand::GetMaximum(int *pbSuccess )
+{
+    const char *pszValue = NULL;
+
+    if( !CanUseSourcesMinMaxImplementations() )
+        return GDALRasterBand::GetMaximum(pbSuccess);
+
+    if( (pszValue = GetMetadataItem("STATISTICS_MAXIMUM")) != NULL )
+    {
+        if( pbSuccess != NULL )
+            *pbSuccess = TRUE;
+
+        return CPLAtofM(pszValue);
+    }
+
+    if ( nRecursionCounter > 0 )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "VRTSourcedRasterBand::GetMaximum() called recursively on the same band. "
+                  "It looks like the VRT is referencing itself." );
+        if( pbSuccess != NULL )
+            *pbSuccess = FALSE;
+        return 0.0;
+    }
+    nRecursionCounter ++;
+
+    double dfMax = 0;
+    for( int iSource = 0; iSource < nSources; iSource++ )
+    {
+        int bSuccess = FALSE;
+        double dfSourceMax = papoSources[iSource]->GetMaximum(GetXSize(), GetYSize(), &bSuccess);
+        if (!bSuccess)
+        {
+            dfMax = GDALRasterBand::GetMaximum(pbSuccess);
+            nRecursionCounter --;
+            return dfMax;
+        }
+
+        if (iSource == 0 || dfSourceMax > dfMax)
+            dfMax = dfSourceMax;
+    }
+
+    nRecursionCounter --;
+
+    if( pbSuccess != NULL )
+        *pbSuccess = TRUE;
+
+    return dfMax;
+}
+
+/************************************************************************/
+/*                       ComputeRasterMinMax()                          */
+/************************************************************************/
+
+CPLErr VRTSourcedRasterBand::ComputeRasterMinMax( int bApproxOK, double* adfMinMax )
+{
+    double  dfMin = 0.0;
+    double  dfMax = 0.0;
+
+/* -------------------------------------------------------------------- */
+/*      Does the driver already know the min/max?                       */
+/* -------------------------------------------------------------------- */
+    if( bApproxOK )
+    {
+        int          bSuccessMin, bSuccessMax;
+
+        dfMin = GetMinimum( &bSuccessMin );
+        dfMax = GetMaximum( &bSuccessMax );
+
+        if( bSuccessMin && bSuccessMax )
+        {
+            adfMinMax[0] = dfMin;
+            adfMinMax[1] = dfMax;
+            return CE_None;
+        }
+    }
+    
+/* -------------------------------------------------------------------- */
+/*      If we have overview bands, use them for min/max.                */
+/* -------------------------------------------------------------------- */
+    if ( bApproxOK && GetOverviewCount() > 0 && !HasArbitraryOverviews() )
+    {
+        GDALRasterBand *poBand;
+
+        poBand = GetRasterSampleOverview( GDALSTAT_APPROX_NUMSAMPLES );
+
+        if ( poBand != this )
+            return poBand->ComputeRasterMinMax( FALSE, adfMinMax );
+    }
+    
+/* -------------------------------------------------------------------- */
+/*      Try with source bands.                                          */
+/* -------------------------------------------------------------------- */
+    if ( nRecursionCounter > 0 )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "VRTSourcedRasterBand::ComputeRasterMinMax() called recursively on the same band. "
+                  "It looks like the VRT is referencing itself." );
+        return CE_Failure;
+    }
+    nRecursionCounter ++;
+
+    adfMinMax[0] = 0.0;
+    adfMinMax[1] = 0.0;
+    for( int iSource = 0; iSource < nSources; iSource++ )
+    {
+        double adfSourceMinMax[2];
+        CPLErr eErr = papoSources[iSource]->ComputeRasterMinMax(GetXSize(), GetYSize(), bApproxOK, adfSourceMinMax);
+        if (eErr != CE_None)
+        {
+            eErr = GDALRasterBand::ComputeRasterMinMax(bApproxOK, adfMinMax);
+            nRecursionCounter --;
+            return eErr;
+        }
+
+        if (iSource == 0 || adfSourceMinMax[0] < adfMinMax[0])
+            adfMinMax[0] = adfSourceMinMax[0];
+        if (iSource == 0 || adfSourceMinMax[1] > adfMinMax[1])
+            adfMinMax[1] = adfSourceMinMax[1];
+    }
+
+    nRecursionCounter --;
+
+    return CE_None;
+}
+
+/************************************************************************/
+/*                         ComputeStatistics()                          */
+/************************************************************************/
+
+CPLErr 
+VRTSourcedRasterBand::ComputeStatistics( int bApproxOK,
+                                   double *pdfMin, double *pdfMax, 
+                                   double *pdfMean, double *pdfStdDev,
+                                   GDALProgressFunc pfnProgress, 
+                                   void *pProgressData )
+
+{
+    if( nSources != 1 || bNoDataValueSet )
+        return GDALRasterBand::ComputeStatistics(  bApproxOK,  
+                                              pdfMin, pdfMax, 
+                                              pdfMean, pdfStdDev,
+                                              pfnProgress, pProgressData );
+
+    if( pfnProgress == NULL )
+        pfnProgress = GDALDummyProgress;
+
+/* -------------------------------------------------------------------- */
+/*      If we have overview bands, use them for statistics.             */
+/* -------------------------------------------------------------------- */
+    if( bApproxOK && GetOverviewCount() > 0 && !HasArbitraryOverviews() )
+    {
+        GDALRasterBand *poBand;
+
+        poBand = GetRasterSampleOverview( GDALSTAT_APPROX_NUMSAMPLES );
+
+        if( poBand != this )
+            return poBand->ComputeStatistics( FALSE,  
+                                              pdfMin, pdfMax, 
+                                              pdfMean, pdfStdDev,
+                                              pfnProgress, pProgressData );
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Try with source bands.                                          */
+/* -------------------------------------------------------------------- */
+    if ( nRecursionCounter > 0 )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "VRTSourcedRasterBand::ComputeStatistics() called recursively on the same band. "
+                  "It looks like the VRT is referencing itself." );
+        return CE_Failure;
+    }
+    nRecursionCounter ++;
+    
+    double dfMin = 0.0, dfMax = 0.0, dfMean = 0.0, dfStdDev = 0.0;
+
+    CPLErr eErr = papoSources[0]->ComputeStatistics(GetXSize(), GetYSize(), bApproxOK,  
+                                                    &dfMin, &dfMax, 
+                                                    &dfMean, &dfStdDev,
+                                                    pfnProgress, pProgressData);
+    if (eErr != CE_None)
+    {
+        eErr = GDALRasterBand::ComputeStatistics(bApproxOK,  
+                                                 pdfMin, pdfMax, 
+                                                 pdfMean, pdfStdDev,
+                                                 pfnProgress, pProgressData);
+        nRecursionCounter --;
+        return eErr;
+    }
+
+    nRecursionCounter --;
+
+    SetStatistics( dfMin, dfMax, dfMean, dfStdDev );
+
+/* -------------------------------------------------------------------- */
+/*      Record results.                                                 */
+/* -------------------------------------------------------------------- */
+    if( pdfMin != NULL )
+        *pdfMin = dfMin;
+    if( pdfMax != NULL )
+        *pdfMax = dfMax;
+
+    if( pdfMean != NULL )
+        *pdfMean = dfMean;
+
+    if( pdfStdDev != NULL )
+        *pdfStdDev = dfStdDev;
+
+    return CE_None;
+}
+
+/************************************************************************/
+/*                            GetHistogram()                            */
+/************************************************************************/
+
+CPLErr VRTSourcedRasterBand::GetHistogram( double dfMin, double dfMax, 
+                                     int nBuckets, int *panHistogram, 
+                                     int bIncludeOutOfRange, int bApproxOK,
+                                     GDALProgressFunc pfnProgress, 
+                                     void *pProgressData )
+
+{
+    if( nSources != 1 )
+        return GDALRasterBand::GetHistogram( dfMin, dfMax,
+                                             nBuckets, panHistogram,
+                                             bIncludeOutOfRange, bApproxOK,
+                                             pfnProgress, pProgressData );
+
+    if( pfnProgress == NULL )
+        pfnProgress = GDALDummyProgress;
+
+/* -------------------------------------------------------------------- */
+/*      If we have overviews, use them for the histogram.               */
+/* -------------------------------------------------------------------- */
+    if( bApproxOK && GetOverviewCount() > 0 && !HasArbitraryOverviews() )
+    {
+        // FIXME: should we use the most reduced overview here or use some
+        // minimum number of samples like GDALRasterBand::ComputeStatistics()
+        // does?
+        GDALRasterBand *poBestOverview = GetRasterSampleOverview( 0 );
+        
+        if( poBestOverview != this )
+        {
+            return poBestOverview->GetHistogram( dfMin, dfMax, nBuckets,
+                                                 panHistogram,
+                                                 bIncludeOutOfRange, bApproxOK,
+                                                 pfnProgress, pProgressData );
+        }
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Try with source bands.                                          */
+/* -------------------------------------------------------------------- */
+    if ( nRecursionCounter > 0 )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "VRTSourcedRasterBand::GetHistogram() called recursively on the same band. "
+                  "It looks like the VRT is referencing itself." );
+        return CE_Failure;
+    }
+    nRecursionCounter ++;
+
+    CPLErr eErr = papoSources[0]->GetHistogram(GetXSize(), GetYSize(), dfMin, dfMax, nBuckets,
+                                               panHistogram,
+                                               bIncludeOutOfRange, bApproxOK,
+                                               pfnProgress, pProgressData);
+    if (eErr != CE_None)
+    {
+        eErr = GDALRasterBand::GetHistogram( dfMin, dfMax,
+                                                  nBuckets, panHistogram,
+                                                  bIncludeOutOfRange, bApproxOK,
+                                                  pfnProgress, pProgressData );
+        nRecursionCounter --;
+        return eErr;
+    }
+
+    nRecursionCounter --;
+
+    return CE_None;
 }
 
 /************************************************************************/
@@ -375,17 +760,16 @@ CPLXMLNode *VRTSourcedRasterBand::SerializeToXML( const char *pszVRTPath )
 }
 
 /************************************************************************/
-/*                          AddSimpleSource()                           */
+/*                          ConfigureSource()                           */
 /************************************************************************/
 
-CPLErr VRTSourcedRasterBand::AddSimpleSource( GDALRasterBand *poSrcBand, 
-                                       int nSrcXOff, int nSrcYOff, 
-                                       int nSrcXSize, int nSrcYSize, 
-                                       int nDstXOff, int nDstYOff, 
-                                       int nDstXSize, int nDstYSize,
-                                       const char *pszResampling, 
-                                       double dfNoDataValue )
-
+void VRTSourcedRasterBand::ConfigureSource(VRTSimpleSource *poSimpleSource,
+                                           GDALRasterBand *poSrcBand,
+                                           int bAddAsMaskBand,
+                                           int nSrcXOff, int nSrcYOff,
+                                           int nSrcXSize, int nSrcYSize,
+                                           int nDstXOff, int nDstYOff,
+                                           int nDstXSize, int nDstYSize)
 {
 /* -------------------------------------------------------------------- */
 /*      Default source and dest rectangles.                             */
@@ -406,6 +790,41 @@ CPLErr VRTSourcedRasterBand::AddSimpleSource( GDALRasterBand *poSrcBand,
         nDstYSize = nRasterYSize;
     }
 
+    if( bAddAsMaskBand )
+        poSimpleSource->SetSrcMaskBand( poSrcBand );
+    else
+        poSimpleSource->SetSrcBand( poSrcBand );
+    poSimpleSource->SetSrcWindow( nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize );
+    poSimpleSource->SetDstWindow( nDstXOff, nDstYOff, nDstXSize, nDstYSize );
+
+/* -------------------------------------------------------------------- */
+/*      Default source and dest rectangles.                             */
+/* -------------------------------------------------------------------- */
+    if ( nSrcXOff == nDstXOff && nSrcYOff == nDstYOff &&
+         nSrcXSize == nDstXSize && nSrcYSize == nRasterYSize )
+        bEqualAreas = TRUE;
+
+/* -------------------------------------------------------------------- */
+/*      If we can get the associated GDALDataset, add a reference to it.*/
+/* -------------------------------------------------------------------- */
+    if( poSrcBand->GetDataset() != NULL )
+        poSrcBand->GetDataset()->Reference();
+
+}
+
+/************************************************************************/
+/*                          AddSimpleSource()                           */
+/************************************************************************/
+
+CPLErr VRTSourcedRasterBand::AddSimpleSource( GDALRasterBand *poSrcBand, 
+                                       int nSrcXOff, int nSrcYOff, 
+                                       int nSrcXSize, int nSrcYSize, 
+                                       int nDstXOff, int nDstYOff, 
+                                       int nDstXSize, int nDstYSize,
+                                       const char *pszResampling, 
+                                       double dfNoDataValue )
+
+{
 /* -------------------------------------------------------------------- */
 /*      Create source.                                                  */
 /* -------------------------------------------------------------------- */
@@ -423,25 +842,16 @@ CPLErr VRTSourcedRasterBand::AddSimpleSource( GDALRasterBand *poSrcBand,
                 "neighbour sampled simple sources on Virtual Datasources." );
     }
 
-    poSimpleSource->SetSrcBand( poSrcBand );
-    poSimpleSource->SetSrcWindow( nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize );
-    poSimpleSource->SetDstWindow( nDstXOff, nDstYOff, nDstXSize, nDstYSize );
+    ConfigureSource(poSimpleSource,
+                    poSrcBand,
+                    FALSE,
+                    nSrcXOff, nSrcYOff,
+                    nSrcXSize, nSrcYSize,
+                    nDstXOff, nDstYOff,
+                    nDstXSize, nDstYSize);
 
     if( dfNoDataValue != VRT_NODATA_UNSET )
         poSimpleSource->SetNoDataValue( dfNoDataValue );
-
-/* -------------------------------------------------------------------- */
-/*      Default source and dest rectangles.                             */
-/* -------------------------------------------------------------------- */
-    if ( nSrcXOff == nDstXOff && nSrcYOff == nDstYOff &&
-         nSrcXSize == nDstXSize && nSrcYSize == nRasterYSize )
-        bEqualAreas = TRUE;
-
-/* -------------------------------------------------------------------- */
-/*      If we can get the associated GDALDataset, add a reference to it.*/
-/* -------------------------------------------------------------------- */
-    if( poSrcBand->GetDataset() != NULL )
-        poSrcBand->GetDataset()->Reference();
 
 /* -------------------------------------------------------------------- */
 /*      add to list.                                                    */
@@ -461,44 +871,17 @@ CPLErr VRTSourcedRasterBand::AddMaskBandSource( GDALRasterBand *poSrcBand,
                                                 int nDstXSize, int nDstYSize )
 {
 /* -------------------------------------------------------------------- */
-/*      Default source and dest rectangles.                             */
-/* -------------------------------------------------------------------- */
-    if( nSrcYSize == -1 )
-    {
-        nSrcXOff = 0;
-        nSrcYOff = 0;
-        nSrcXSize = poSrcBand->GetXSize();
-        nSrcYSize = poSrcBand->GetYSize();
-    }
-
-    if( nDstYSize == -1 )
-    {
-        nDstXOff = 0;
-        nDstYOff = 0;
-        nDstXSize = nRasterXSize;
-        nDstYSize = nRasterYSize;
-    }
-
-/* -------------------------------------------------------------------- */
 /*      Create source.                                                  */
 /* -------------------------------------------------------------------- */
     VRTSimpleSource* poSimpleSource = new VRTSimpleSource();
-    poSimpleSource->SetSrcMaskBand( poSrcBand );
-    poSimpleSource->SetSrcWindow( 0, 0, poSrcBand->GetXSize(), poSrcBand->GetYSize() );
-    poSimpleSource->SetDstWindow( 0, 0, nRasterXSize, nRasterYSize );
 
-/* -------------------------------------------------------------------- */
-/*      Default source and dest rectangles.                             */
-/* -------------------------------------------------------------------- */
-    if ( nSrcXOff == nDstXOff && nSrcYOff == nDstYOff &&
-         nSrcXSize == nDstXSize && nSrcYSize == nRasterYSize )
-        bEqualAreas = TRUE;
-
-/* -------------------------------------------------------------------- */
-/*      If we can get the associated GDALDataset, add a reference to it.*/
-/* -------------------------------------------------------------------- */
-    if( poSrcBand->GetDataset() != NULL )
-        poSrcBand->GetDataset()->Reference();
+    ConfigureSource(poSimpleSource,
+                    poSrcBand,
+                    TRUE,
+                    nSrcXOff, nSrcYOff,
+                    nSrcXSize, nSrcYSize,
+                    nDstXOff, nDstYOff,
+                    nDstXSize, nDstYSize);
 
 /* -------------------------------------------------------------------- */
 /*      add to list.                                                    */
@@ -550,34 +933,19 @@ CPLErr VRTSourcedRasterBand::AddComplexSource( GDALRasterBand *poSrcBand,
 
 {
 /* -------------------------------------------------------------------- */
-/*      Default source and dest rectangles.                             */
-/* -------------------------------------------------------------------- */
-    if( nSrcYSize == -1 )
-    {
-        nSrcXOff = 0;
-        nSrcYOff = 0;
-        nSrcXSize = poSrcBand->GetXSize();
-        nSrcYSize = poSrcBand->GetYSize();
-    }
-
-    if( nDstYSize == -1 )
-    {
-        nDstXOff = 0;
-        nDstYOff = 0;
-        nDstXSize = nRasterXSize;
-        nDstYSize = nRasterYSize;
-    }
-
-/* -------------------------------------------------------------------- */
 /*      Create source.                                                  */
 /* -------------------------------------------------------------------- */
     VRTComplexSource *poSource;
 
     poSource = new VRTComplexSource();
 
-    poSource->SetSrcBand( poSrcBand );
-    poSource->SetSrcWindow( nSrcXOff, nSrcYOff, nSrcXSize, nSrcYSize );
-    poSource->SetDstWindow( nDstXOff, nDstYOff, nDstXSize, nDstYSize );
+    ConfigureSource(poSource,
+                    poSrcBand,
+                    FALSE,
+                    nSrcXOff, nSrcYOff,
+                    nSrcXSize, nSrcYSize,
+                    nDstXOff, nDstYOff,
+                    nDstXSize, nDstYSize);
 
 /* -------------------------------------------------------------------- */
 /*      Set complex parameters.                                         */
@@ -586,20 +954,9 @@ CPLErr VRTSourcedRasterBand::AddComplexSource( GDALRasterBand *poSrcBand,
         poSource->SetNoDataValue( dfNoDataValue );
 
     if( dfScaleOff != 0.0 || dfScaleRatio != 1.0 )
-    {
-        poSource->bDoScaling = TRUE;
-        poSource->dfScaleOff = dfScaleOff;
-        poSource->dfScaleRatio = dfScaleRatio;
-          
-    }
+        poSource->SetLinearScaling(dfScaleOff, dfScaleRatio);
 
-    poSource->nColorTableComponent = nColorTableComponent;
-
-/* -------------------------------------------------------------------- */
-/*      If we can get the associated GDALDataset, add a reference to it.*/
-/* -------------------------------------------------------------------- */
-    if( poSrcBand->GetDataset() != NULL )
-        poSrcBand->GetDataset()->Reference();
+    poSource->SetColorTableComponent(nColorTableComponent);
 
 /* -------------------------------------------------------------------- */
 /*      add to list.                                                    */
@@ -681,6 +1038,16 @@ CPLErr CPL_STDCALL VRTAddFuncSource( VRTSourcedRasterBandH hVRTBand,
 
 
 /************************************************************************/
+/*                      GetMetadataDomainList()                         */
+/************************************************************************/
+
+char **VRTSourcedRasterBand::GetMetadataDomainList()
+{
+    return CSLAddString(GDALRasterBand::GetMetadataDomainList(), "LocationInfo");
+}
+
+
+/************************************************************************/
 /*                          GetMetadataItem()                           */
 /************************************************************************/
 
@@ -753,6 +1120,10 @@ const char *VRTSourcedRasterBand::GetMetadataItem( const char * pszName,
         {
             int nReqXOff, nReqYOff, nReqXSize, nReqYSize;
             int nOutXOff, nOutYOff, nOutXSize, nOutYSize;
+
+            if (!papoSources[iSource]->IsSimpleSource())
+                continue;
+
             VRTSimpleSource *poSrc = (VRTSimpleSource *) papoSources[iSource];
 
             if( !poSrc->GetSrcDstWindow( iPixel, iLine, 1, 1, 1, 1,
@@ -807,7 +1178,8 @@ char **VRTSourcedRasterBand::GetMetadata( const char *pszDomain )
 /* ==================================================================== */
     if( pszDomain != NULL && EQUAL(pszDomain,"vrt_sources") )
     {
-        char **papszSourceList = NULL;
+        CSLDestroy(papszSourceList);
+        papszSourceList = NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Process SimpleSources.                                          */
@@ -977,4 +1349,23 @@ void VRTSourcedRasterBand::GetFileList(char*** ppapszFileList, int *pnSize,
 
     VRTRasterBand::GetFileList( ppapszFileList, pnSize,
                                 pnMaxSize, hSetFiles);
+}
+
+/************************************************************************/
+/*                        CloseDependentDatasets()                      */
+/************************************************************************/
+
+int VRTSourcedRasterBand::CloseDependentDatasets()
+{
+    if (nSources == 0)
+        return FALSE;
+
+    for( int i = 0; i < nSources; i++ )
+        delete papoSources[i];
+
+    CPLFree( papoSources );
+    papoSources = NULL;
+    nSources = 0;
+
+    return TRUE;
 }

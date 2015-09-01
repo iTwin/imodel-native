@@ -2,7 +2,7 @@
 #
 #     $Source: ImagePP.prewire.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 PolicyFile = $(_MakeFilePath)mki/AssertImagePPPolicy.mki 
@@ -28,10 +28,6 @@ ippExternalLibDir   = $(SrcImagepp)ext/
 # Wire in header files of private libs.
 always:
    @CreateSymLinks.py   -m"$(ippOutPrivateApi)ImagePPInternal/ext/Base64=$(ippExternalLibDir)Base64/h/base64.h" \
-                        -m"$(ippOutPrivateApi)ImagePPInternal/ext/MatrixFromTiePts=$(ippExternalLibDir)MatrixFromTiePts/h/MatrixFromTiePts.h" \
-                        -m"$(ippOutPrivateApi)ImagePPInternal/ext/gdal=$(ippExternalLibDir)gdal/gcore/*.h" \
-                        -m"$(ippOutPrivateApi)ImagePPInternal/ext/gdal=$(ippExternalLibDir)gdal/port/*.h" \
-                        -m"$(ippOutPrivateApi)ImagePPInternal/ext/gdal=$(ippExternalLibDir)gdal/port/cpl_config.h.vc" \
-                        -m"$(ippOutPrivateApi)ImagePPInternal/ext/gdal=$(ippExternalLibDir)gdal/ogr/*.h"
+                        -m"$(ippOutPrivateApi)ImagePPInternal/ext/MatrixFromTiePts=$(ippExternalLibDir)MatrixFromTiePts/h/MatrixFromTiePts.h"
 
 

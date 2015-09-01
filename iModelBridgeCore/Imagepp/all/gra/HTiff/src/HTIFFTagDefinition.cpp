@@ -2,19 +2,19 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFTagDefinition.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HTIFFTagDefinition
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HTIFFTagDefinition.h>
 #include <Imagepp/all/h/HTIFFUtils.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 
 bool HTIFFTagInfo::IsBigTiffTag  (uint32_t FileTagNumber) const
@@ -575,7 +575,7 @@ const HTagInfo::Info HTIFFTagInfo::sTagInfo[] = {
         {   TIFFTAG_GEOTIEPOINTS, GEOTIEPOINTS,       TAG_IO_VARIABLE,TAG_IO_VARIABLE,
         DOUBLE, true, true, "GeoTiePoints"
         },
-        {   TIFFTAG_GEOTRANSMATRIX, GEOTRANSMATRIX,   TAG_IO_VARIABLE,TAG_IO_VARIABLE,
+        {   HTIFFTAG_GEOTRANSMATRIX, GEOTRANSMATRIX,   TAG_IO_VARIABLE,TAG_IO_VARIABLE,
         DOUBLE, true, true, "GeoTransformationMatrix"
         },
 
@@ -607,13 +607,13 @@ const HTagInfo::Info HTIFFTagInfo::sTagInfo[] = {
         },
 
 // GeoTiff  2/2
-        {   TIFFTAG_GEOKEYDIRECTORY, GEOKEYDIRECTORY, TAG_IO_VARIABLE,TAG_IO_VARIABLE,
+        {   HTIFFTAG_GEOKEYDIRECTORY, GEOKEYDIRECTORY, TAG_IO_VARIABLE,TAG_IO_VARIABLE,
         SHORT, true,  true, "GeoKeyDirectory"
         },
-        {   TIFFTAG_GEODOUBLEPARAMS, GEODOUBLEPARAMS, TAG_IO_VARIABLE,TAG_IO_VARIABLE,
+        {   HTIFFTAG_GEODOUBLEPARAMS, GEODOUBLEPARAMS, TAG_IO_VARIABLE,TAG_IO_VARIABLE,
         DOUBLE,true,  true, "GeoDoubleParams"
         },
-        {   TIFFTAG_GEOASCIIPARAMS, GEOASCIIPARAMS,   TAG_IO_VARIABLE,TAG_IO_VARIABLE,
+        {   HTIFFTAG_GEOASCIIPARAMS, GEOASCIIPARAMS,   TAG_IO_VARIABLE,TAG_IO_VARIABLE,
         ASCII, true,  false, "GeoASCIIParams"
         },
 
@@ -792,10 +792,10 @@ const HTagInfo::Info HTIFFTagInfo::sTagInfo[] = {
         {   TIFFTAG_EXIF_IMAGEUNIQUEID, EXIF_IMAGEUNIQUEID, 33, 33,
         ASCII, false, false, "ImageUniqueID"
         },
-
-
-
-
+    //GDAL_NODATA tag
+        { TIFFTAG_GDAL_NODATA, GDALNODATA,   TAG_IO_VARIABLE,TAG_IO_VARIABLE,
+          ASCII, true,  false, "GDAL_NoData" 
+		},      
 //
 // These tags are not saved in file
 //

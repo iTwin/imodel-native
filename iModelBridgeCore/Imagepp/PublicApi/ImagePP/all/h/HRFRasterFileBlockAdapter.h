@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFileBlockAdapter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFileBlockAdapter
@@ -18,6 +18,7 @@
 #include "HRFRasterFileExtender.h"
 #include "HRFCombinedRasterFileCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFCacheFileCreator;
 
 class HRFRasterFileBlockAdapterBlockCapabilities : public HRFRasterFileCapabilities
@@ -39,13 +40,13 @@ public:
     friend class HRFResolutionEditorDecorator;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1453, HRFRasterFileExtender)
+    HDECLARE_CLASS_ID(HRFRasterFileId_BlockAdapter, HRFRasterFileExtender)
 
     // This methods allow to Create the best adapter for the specified raster file.
     // If it is not possible to adapt the raster file we return the original raster file.
-    _HDLLg static HFCPtr<HRFRasterFile> CreateBestAdapterFor(HFCPtr<HRFRasterFile>  pi_rpForRasterFile);
+    IMAGEPP_EXPORT static HFCPtr<HRFRasterFile> CreateBestAdapterFor(HFCPtr<HRFRasterFile>  pi_rpForRasterFile);
 
-    _HDLLg static HFCPtr<HRFRasterFile> CreateBestAdapterBasedOnCacheFor(HFCPtr<HRFRasterFile> pi_rpForRasterFile,
+    IMAGEPP_EXPORT static HFCPtr<HRFRasterFile> CreateBestAdapterBasedOnCacheFor(HFCPtr<HRFRasterFile> pi_rpForRasterFile,
                                                                          const HRFCacheFileCreator* pi_pCreator);
 
     struct BlockDescriptor
@@ -67,20 +68,20 @@ public:
                                         uint32_t*                po_ToBlockHeight);
 
     // This methods allow to if it is possible to adapt this raster file.
-    _HDLLg static bool             CanAdapt(const HFCPtr<HRFRasterFile>&   pi_rpFromRasterFile,
+    IMAGEPP_EXPORT static bool             CanAdapt(const HFCPtr<HRFRasterFile>&   pi_rpFromRasterFile,
                                              const BlockDescriptorMap&      pi_rBlockDescMap);
 
-    _HDLLg static bool             CanAdapt(HFCPtr<HRFRasterFile>  pi_rpFromRasterFile,
+    IMAGEPP_EXPORT static bool             CanAdapt(HFCPtr<HRFRasterFile>  pi_rpFromRasterFile,
                                              HRFBlockType           pi_ToBlockType,
                                              uint32_t               pi_ToWidth,
                                              uint32_t               pi_ToHeight);
 
 
     // allow to Open an image file
-    _HDLLg                  HRFRasterFileBlockAdapter(HFCPtr<HRFRasterFile>&    pi_rpAdaptedFile,
+    IMAGEPP_EXPORT                  HRFRasterFileBlockAdapter(HFCPtr<HRFRasterFile>&    pi_rpAdaptedFile,
                                                       const BlockDescriptorMap& pi_rBlockDescMap);
 
-    _HDLLg                  HRFRasterFileBlockAdapter(HFCPtr<HRFRasterFile>&  pi_rpAdaptedFile,
+    IMAGEPP_EXPORT                  HRFRasterFileBlockAdapter(HFCPtr<HRFRasterFile>&  pi_rpAdaptedFile,
                                                       HRFBlockType            pi_AdaptToBlockType = HRFBlockType::STRIP,
                                                       uint32_t                pi_AdaptToBlockWidth  = 0,
                                                       uint32_t                pi_AdaptToBlockHeight = 1024);
@@ -132,4 +133,5 @@ private:
     HRFRasterFileBlockAdapter(const HRFRasterFileBlockAdapter& pi_rObj);
     HRFRasterFileBlockAdapter&  operator=(const HRFRasterFileBlockAdapter& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 

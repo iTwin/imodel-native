@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTypes.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,10 +13,11 @@
 #include "HVEShape.h"
 
 // Resolution Block Type
+BEGIN_IMAGEPP_NAMESPACE
 class HRFBlockType
     {
 public:
-    HDECLARE_SEALEDCLASS_ID(1455)
+    HDECLARE_SEALEDCLASS_ID(HRFBlockTypeId_Base)
 
     // File Type
     enum Block
@@ -38,9 +39,9 @@ public:
         return !operator==(pi_rObj);
         };
 
-    _HDLLg HRFBlockType();
-    _HDLLg HRFBlockType(Block pi_BlockType);
-    _HDLLg HRFBlockType(const HRFBlockType& pi_rObj);
+    IMAGEPP_EXPORT HRFBlockType();
+    IMAGEPP_EXPORT HRFBlockType(Block pi_BlockType);
+    IMAGEPP_EXPORT HRFBlockType(const HRFBlockType& pi_rObj);
 
     Block m_BlockType;
     };
@@ -50,7 +51,7 @@ public:
 class HRFDownSamplingMethod
     {
 public:
-    HDECLARE_SEALEDCLASS_ID(1404)
+    HDECLARE_SEALEDCLASS_ID(HRFDownSamplingMethodId_Base)
 
     // File Type
     enum DownSamplingMethod
@@ -63,12 +64,12 @@ public:
         NONE                = 0x05
         };
 
-    _HDLLg bool operator==(const HRFDownSamplingMethod& pi_rObj) const;
+    IMAGEPP_EXPORT bool operator==(const HRFDownSamplingMethod& pi_rObj) const;
     bool operator!=(const HRFDownSamplingMethod& pi_rObj) const;
 
-    _HDLLg HRFDownSamplingMethod(int32_t pi_ForegroundIndex = -1);
-    _HDLLg HRFDownSamplingMethod(DownSamplingMethod pi_DownSamplingMethod, int32_t pi_ForegroundIndex = -1);
-    _HDLLg HRFDownSamplingMethod(const HRFDownSamplingMethod& pi_rObj);
+    IMAGEPP_EXPORT HRFDownSamplingMethod(int32_t pi_ForegroundIndex = -1);
+    IMAGEPP_EXPORT HRFDownSamplingMethod(DownSamplingMethod pi_DownSamplingMethod, int32_t pi_ForegroundIndex = -1);
+    IMAGEPP_EXPORT HRFDownSamplingMethod(const HRFDownSamplingMethod& pi_rObj);
 
     DownSamplingMethod m_DownSamplingMethod;
     int32_t            m_ForegroundIndex;
@@ -79,7 +80,7 @@ public:
 class HRFEncodingType
     {
 public:
-    HDECLARE_SEALEDCLASS_ID(1405)
+    HDECLARE_SEALEDCLASS_ID(HRFEncodingTypeId_Base)
 
     // File Type
     enum EncodingType
@@ -89,12 +90,12 @@ public:
         PROGRESSIVE     = 0x02
         };
 
-    _HDLLg bool operator==(const HRFEncodingType& pi_rObj) const;
-    _HDLLg bool operator!=(const HRFEncodingType& pi_rObj) const;
+    IMAGEPP_EXPORT bool operator==(const HRFEncodingType& pi_rObj) const;
+    IMAGEPP_EXPORT bool operator!=(const HRFEncodingType& pi_rObj) const;
 
-    _HDLLg HRFEncodingType();
-    _HDLLg HRFEncodingType(EncodingType pi_EncodingType);
-    _HDLLg HRFEncodingType(const HRFEncodingType& pi_rObj);
+    IMAGEPP_EXPORT HRFEncodingType();
+    IMAGEPP_EXPORT HRFEncodingType(EncodingType pi_EncodingType);
+    IMAGEPP_EXPORT HRFEncodingType(const HRFEncodingType& pi_rObj);
 
     EncodingType m_EncodingType;
     };
@@ -103,7 +104,7 @@ public:
 class HRFImageSizeMode
     {
 public:
-    HDECLARE_SEALEDCLASS_ID(1406)
+    HDECLARE_SEALEDCLASS_ID(HRFImageSizeModeId_Base)
 
     // File Type
     enum ImageSizeMode
@@ -116,9 +117,9 @@ public:
     bool operator==(const HRFImageSizeMode& pi_rObj) const;
     bool operator!=(const HRFImageSizeMode& pi_rObj) const;
 
-    _HDLLg HRFImageSizeMode();
-    _HDLLg HRFImageSizeMode(ImageSizeMode pi_ImageSizeMode);
-    _HDLLg HRFImageSizeMode(const HRFImageSizeMode& pi_rObj);
+    IMAGEPP_EXPORT HRFImageSizeMode();
+    IMAGEPP_EXPORT HRFImageSizeMode(ImageSizeMode pi_ImageSizeMode);
+    IMAGEPP_EXPORT HRFImageSizeMode(const HRFImageSizeMode& pi_rObj);
 
     ImageSizeMode m_ImageSizeMode;
     };
@@ -128,7 +129,7 @@ public:
 class HRFGeoreferenceFormat
     {
 public:
-    HDECLARE_SEALEDCLASS_ID(1407)
+    HDECLARE_SEALEDCLASS_ID(HRFGeoreferenceFormatId_Base)
 
     // File Type
     enum GeoreferenceFormat
@@ -138,12 +139,12 @@ public:
         GEOREFERENCE_IN_WORLD_FILE  = 0x02,
         };
 
-    _HDLLg bool operator==(const HRFGeoreferenceFormat& pi_rObj) const;
+    IMAGEPP_EXPORT bool operator==(const HRFGeoreferenceFormat& pi_rObj) const;
     bool operator!=(const HRFGeoreferenceFormat& pi_rObj) const;
 
-    _HDLLg HRFGeoreferenceFormat();
-    _HDLLg HRFGeoreferenceFormat(GeoreferenceFormat pi_GeoreferenceFormat);
-    _HDLLg HRFGeoreferenceFormat(const HRFGeoreferenceFormat& pi_rObj);
+    IMAGEPP_EXPORT HRFGeoreferenceFormat();
+    IMAGEPP_EXPORT HRFGeoreferenceFormat(GeoreferenceFormat pi_GeoreferenceFormat);
+    IMAGEPP_EXPORT HRFGeoreferenceFormat(const HRFGeoreferenceFormat& pi_rObj);
 
     GeoreferenceFormat m_GeoreferenceFormat;
     };
@@ -153,7 +154,7 @@ public:
 class HRFBlockAccess
     {
 public:
-    HDECLARE_SEALEDCLASS_ID(1456)
+    HDECLARE_SEALEDCLASS_ID(HRFBlockAccessId_Base)
 
     // File Type
     enum Access
@@ -173,9 +174,9 @@ public:
         return !operator==(pi_rObj);
         };
 
-    _HDLLg HRFBlockAccess();
-    _HDLLg HRFBlockAccess(Access pi_BlockAccess);
-    _HDLLg HRFBlockAccess(const HRFBlockAccess& pi_rObj);
+    IMAGEPP_EXPORT HRFBlockAccess();
+    IMAGEPP_EXPORT HRFBlockAccess(Access pi_BlockAccess);
+    IMAGEPP_EXPORT HRFBlockAccess(const HRFBlockAccess& pi_rObj);
 
     Access m_BlockAccess;
     };
@@ -193,7 +194,7 @@ public:
 class HRFScanlineOrientation
     {
 public:
-    HDECLARE_SEALEDCLASS_ID(1457)
+    HDECLARE_SEALEDCLASS_ID(HRFScanlineOrientationId_Base)
 
     // File Type
     enum Scanline
@@ -219,16 +220,16 @@ public:
         return !operator==(pi_rObj);
         };
 
-    _HDLLg bool IsScanlineVertical() const;
-    _HDLLg bool IsScanlineHorizontal() const;
-    _HDLLg bool IsUpper() const;
-    _HDLLg bool IsLower() const;
-    _HDLLg bool IsRight() const;
-    _HDLLg bool IsLeft() const;
+    IMAGEPP_EXPORT bool IsScanlineVertical() const;
+    IMAGEPP_EXPORT bool IsScanlineHorizontal() const;
+    IMAGEPP_EXPORT bool IsUpper() const;
+    IMAGEPP_EXPORT bool IsLower() const;
+    IMAGEPP_EXPORT bool IsRight() const;
+    IMAGEPP_EXPORT bool IsLeft() const;
 
-    _HDLLg HRFScanlineOrientation();
-    _HDLLg HRFScanlineOrientation(Scanline pi_ScanlineOrientation);
-    _HDLLg HRFScanlineOrientation(const HRFScanlineOrientation& pi_rObj);
+    IMAGEPP_EXPORT HRFScanlineOrientation();
+    IMAGEPP_EXPORT HRFScanlineOrientation(Scanline pi_ScanlineOrientation);
+    IMAGEPP_EXPORT HRFScanlineOrientation(const HRFScanlineOrientation& pi_rObj);
 
     Scanline m_ScanlineOrientation;
     };
@@ -237,7 +238,7 @@ public:
 class HRFInterleaveType
     {
 public:
-    HDECLARE_SEALEDCLASS_ID(1458)
+    HDECLARE_SEALEDCLASS_ID(HRFInterleaveTypeId_Base)
 
     // File Type
     enum InterleaveType
@@ -258,9 +259,9 @@ public:
         return !operator==(pi_rObj);
         };
 
-    _HDLLg HRFInterleaveType();
-    _HDLLg HRFInterleaveType(InterleaveType pi_InterleaveType);
-    _HDLLg HRFInterleaveType(const HRFInterleaveType& pi_rObj);
+    IMAGEPP_EXPORT HRFInterleaveType();
+    IMAGEPP_EXPORT HRFInterleaveType(InterleaveType pi_InterleaveType);
+    IMAGEPP_EXPORT HRFInterleaveType(const HRFInterleaveType& pi_rObj);
 
     InterleaveType m_InterleaveType;
     };
@@ -269,7 +270,7 @@ public:
 class HRFCoordinateType
     {
 public:
-    HDECLARE_SEALEDCLASS_ID(1459)
+    HDECLARE_SEALEDCLASS_ID(HRFCoordinateTypeId_Base)
 
     // File Type
     enum CoordinateType
@@ -289,9 +290,9 @@ public:
         return !operator==(pi_rObj);
         };
 
-    _HDLLg HRFCoordinateType();
-    _HDLLg HRFCoordinateType(CoordinateType pi_CoordinateType);
-    _HDLLg HRFCoordinateType(const HRFCoordinateType& pi_rObj);
+    IMAGEPP_EXPORT HRFCoordinateType();
+    IMAGEPP_EXPORT HRFCoordinateType(CoordinateType pi_CoordinateType);
+    IMAGEPP_EXPORT HRFCoordinateType(const HRFCoordinateType& pi_rObj);
 
     CoordinateType m_CoordinateType;
     };
@@ -299,23 +300,23 @@ public:
 // HRFClipShape
 class HRFClipShape : public HVEShape // first step to move to the HGF2DFence<double>
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1449)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRFClipShapeId)
 public:
     // Constructor
-    _HDLLg HRFClipShape(); // for persistence
-    _HDLLg HRFClipShape(const HRFClipShape&  pi_rClipShape);
-    _HDLLg HRFClipShape(const HRFClipShape&  pi_rClipShape,
+    IMAGEPP_EXPORT HRFClipShape(); // for persistence
+    IMAGEPP_EXPORT HRFClipShape(const HRFClipShape&  pi_rClipShape);
+    IMAGEPP_EXPORT HRFClipShape(const HRFClipShape&  pi_rClipShape,
                         HRFCoordinateType    pi_CoordinateType);
 
-    _HDLLg HRFClipShape(const HVEShape&      pi_rObj,
+    IMAGEPP_EXPORT HRFClipShape(const HVEShape&      pi_rObj,
                         HRFCoordinateType    pi_CoordinateType); // allow to give a rectangle
 
-    _HDLLg HRFClipShape(size_t*                        po_pBufferLength,
+    IMAGEPP_EXPORT HRFClipShape(size_t*                        po_pBufferLength,
                         double*                       pi_pBuffer,
                         HRFCoordinateType              pi_CoordinateType);
 
 
-    _HDLLg HRFCoordinateType  GetCoordinateType() const;
+    IMAGEPP_EXPORT HRFCoordinateType  GetCoordinateType() const;
 
 protected:
     HRFCoordinateType  m_CoordinateType;
@@ -335,9 +336,6 @@ typedef Byte   HRFDataFlag;
 
 #define HRF_EQUAL_TO_RESOLUTION_WIDTH    0
 #define HRF_EQUAL_TO_RESOLUTION_HEIGHT   LONG_MAX
-
-
-
-
+END_IMAGEPP_NAMESPACE
 
 

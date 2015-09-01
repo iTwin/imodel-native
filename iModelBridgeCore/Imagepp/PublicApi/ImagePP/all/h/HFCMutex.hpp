@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMutex.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HFCMutex
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Internal stuff.  Since the key in HFCMutex is allocated and initialised
 // at first usage, we must prevent double initialisation that may occur
@@ -62,3 +62,5 @@ inline void HFCMutex::ReleaseKey()
     ReleaseMutex(GetHandle());
 #endif
     }
+
+END_IMAGEPP_NAMESPACE

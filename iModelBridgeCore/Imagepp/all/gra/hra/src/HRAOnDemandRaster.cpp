@@ -2,15 +2,14 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAOnDemandRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCMemoryLineStream.h>
 #include <Imagepp/all/h/HFCURLMemFile.h>
 #include <Imagepp/all/h/HGF2DCoordSys.h>
 #include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
@@ -18,15 +17,23 @@
 //#include <all/gra/hps/src/HPSUtility.h>
 #include <Imagepp/all/h/HRAOnDemandRaster.h>
 #include <Imagepp/all/h/HRAReferenceToRaster.h>
+#include <Imagepp/all/h/HRFRasterFileFactory.h>
 
-#include <Imagepp/all/h/HRFPDFFile.h>
-#include <Imagepp/all/h/HRFVirtualEarthFile.h>
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HRFWMSFile.h>
 
 #include "../../hps/src/HPSParserScope.h"
 
 #include <BeXml/BeXml.h>
+
+#define ODMO_XML_SERIALIZATION_SIGNIFICANT_DIGITS 10
+
+void ImagePP::GetDoubleFormatting(WChar* format, size_t maxNbChars)
+    {
+    size_t nbCharWritten = swprintf(format, maxNbChars, L"%s.%df", L"%", ODMO_XML_SERIALIZATION_SIGNIFICANT_DIGITS);
+    assert(nbCharWritten < maxNbChars);
+    }
+
 
 //-----------------------------------------------------------------------------
 // Default Constructor.
@@ -70,8 +77,8 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
   m_CurrentWorldId(pi_CurrentWorldId),
   m_pPSSUrl(pi_rpPSSUrl), 
   m_hasLastLoadFailed(false)
-{           
-    HPRECONDITION(0 != BeStringUtilities::Stricmp (pi_pOnDemandRasterXMLNode->GetName(), "ODR"));    
+  {           
+    HPRECONDITION(0 == BeStringUtilities::Stricmp (pi_pOnDemandRasterXMLNode->GetName(), "ODR"));    
 
     BeXmlNodeP pEffectiveShapeChildNode;
       
@@ -86,13 +93,13 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
 
     while (0 != pEffectiveShapePointNode) 
         {        
-        HASSERT(0 != BeStringUtilities::Stricmp(pEffectiveShapePointNode->GetName(), "D"));    
+        HASSERT(0 == BeStringUtilities::Stricmp(pEffectiveShapePointNode->GetName(), "D"));    
         
         XmlStatus = pEffectiveShapePointNode->GetAttributeDoubleValue(EffectivePointCoord, "V"); 
 
         EffectiveShapePts.push_back(EffectivePointCoord);
                                               
-        pEffectiveShapePointNode = pEffectiveShapeChildNode->GetNextSibling();
+        pEffectiveShapePointNode = pEffectiveShapePointNode->GetNextSibling();
         }
     
     HRFClipShape* pClipShape = ImportShapeFromArrayOfDouble(&(*EffectiveShapePts.begin()), 
@@ -110,13 +117,13 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
     
     pChildNode->GetContent(NodeContent);         
 
-    if (0 == NodeContent.Equals(L"1"))
+    if (true == NodeContent.Equals(L"1"))
         {
         m_hasLookAhead = true;
         }
     else
         {
-        HASSERT(0 == NodeContent.Equals(L"0"));
+        HASSERT(true == NodeContent.Equals(L"0"));
         m_hasLookAhead = false;
         }          
   
@@ -126,13 +133,13 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
 
     pChildNode->GetContent(NodeContent);         
                
-    if (0 == NodeContent.Equals(L"1"))
+    if (true == NodeContent.Equals(L"1"))
         {
         m_IsOpaque = true;
         }
     else
         {
-        HASSERT(0 == NodeContent.Equals(L"0"));
+        HASSERT(true == NodeContent.Equals(L"0"));
         m_IsOpaque = false;
         }      
 
@@ -154,13 +161,13 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
     {
         pChildNode->GetContent(NodeContent);     
 
-        if (0 == NodeContent.Equals(L"1"))
+        if (true == NodeContent.Equals(L"1"))
         {
             m_isDataChangingWithResolution = true;
         }
         else
         {
-            HASSERT(0 == NodeContent.Equals(L"0"));
+            HASSERT(true == NodeContent.Equals(L"0"));
             m_isDataChangingWithResolution = false;
         }      
     }
@@ -175,8 +182,8 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
     
         while (relatedURLIter != relatedURLIterEnd)
         {    
-            if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(*relatedURLIter) || 
-                HRFWMSCreator::GetInstance()->IsKindOfFile(*relatedURLIter))
+            if (HRFRasterFileFactory::GetInstance()->IsKindOfFile(HRFFileId_VirtualEarth, *relatedURLIter) || 
+                HRFRasterFileFactory::GetInstance()->IsKindOfFile(HRFFileId_WMS, *relatedURLIter))
             {
                 m_isDataChangingWithResolution = true;
                 break;
@@ -192,13 +199,13 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
     {
         pChildNode->GetContent(NodeContent);     
 
-        if (0 == NodeContent.Equals(L"1"))
+        if (true == NodeContent.Equals(L"1"))
         {
             m_hasUnlimitedRasterSource = TRUE;
         }
         else
         {
-            HASSERT(0 == NodeContent.Equals(L"0"));
+            HASSERT(true == NodeContent.Equals(L"0"));
             m_hasUnlimitedRasterSource = FALSE;
         }      
     }
@@ -209,16 +216,18 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
             GetSourceFileURLs(relatedURLs);
         }
 
+        m_hasUnlimitedRasterSource = false;
+
+#if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
         ListOfRelatedURLs::const_iterator relatedURLIter(relatedURLs.begin());
         ListOfRelatedURLs::const_iterator relatedURLIterEnd(relatedURLs.end());
 
-        m_hasUnlimitedRasterSource = false;
-    
-#if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
+        HRFRasterFileFactory* pRasterFileFactory = HRFRasterFileFactory::GetInstance();
+
         while (relatedURLIter != relatedURLIterEnd)
         {    
-            if (HRFPDFCreator::GetInstance()->IsKindOfFile(*relatedURLIter) || 
-                HRFWMSCreator::GetInstance()->IsKindOfFile(*relatedURLIter))
+            if (pRasterFileFactory->IsKindOfFile(HRFFileId_PDF, *relatedURLIter) || 
+                pRasterFileFactory->IsKindOfFile(HRFFileId_WMS, *relatedURLIter))
             {
                 m_hasUnlimitedRasterSource = true;
                 break;
@@ -263,7 +272,7 @@ HFCPtr<HRARaster> HRAOnDemandRaster::LoadRaster() const
             GetHPSObjectStore(pPSSObjectStore);
 
             // Get the raster from the store
-            HFCPtr<HRARaster> pRaster = pPSSObjectStore->LoadRaster(0);
+            pRaster = pPSSObjectStore->LoadRaster(0);
 
             HASSERT(pRaster != NULL);
             //The two shapes define the same area
@@ -284,12 +293,14 @@ HFCPtr<HRARaster> HRAOnDemandRaster::LoadRaster() const
 //-----------------------------------------------------------------------------
 void HRAOnDemandRaster::GetHPSObjectStore(HFCPtr<HPSObjectStore>& po_rpHPSObjectStore) const
     {
-    size_t NbBytesInPSS = m_RepresentativePSS.size() * sizeof(WChar);
+    Utf8String representativePSS_UTF8(m_RepresentativePSS.c_str());
 
+    size_t NbBytesInPSS = representativePSS_UTF8.size();
+    
     HFCPtr<HFCBuffer> pBuffer(new HFCBuffer(NbBytesInPSS));
-    pBuffer->AddData((Byte*)m_RepresentativePSS.data(), NbBytesInPSS);
-
-    HFCPtr<HFCURL> pURLMemFile = new HFCURLMemFile(L"", L"Raster", pBuffer);
+    pBuffer->AddData((const Byte*)representativePSS_UTF8.c_str(), NbBytesInPSS);
+    
+    HFCPtr<HFCURL> pURLMemFile = new HFCURLMemFile(HFCURLMemFile::s_SchemeName() + L"://Raster", pBuffer);
 
     po_rpHPSObjectStore = new HPSObjectStore(m_pMemPool,
                                              pURLMemFile,
@@ -335,7 +346,7 @@ bool HRAOnDemandRaster::GetSourceFileURLs(ListOfRelatedURLs& po_rRelatedURLs)
 void HRAOnDemandRaster::GetURLsFromChildrenNode(const HPANode*     pi_pParentNode,
                                                 ListOfRelatedURLs& po_rRelatedURLs) const
 {   
-    HPSGetURLsFromChildrenNode(pi_pParentNode, po_rRelatedURLs); 
+    HPSObjectStore::GetURLsFromChildrenNode(pi_pParentNode, po_rRelatedURLs); 
 }
 
 /*-----------------------------------------------------------------------------
@@ -380,12 +391,18 @@ void HRAOnDemandRaster::GetSerializationXMLNode(const HFCPtr<HGF2DCoordSys>& pi_
     string serializationString;
     
     size_t shapePointInd = 0; 
+
+    WChar doubleValueBuffer[DOUBLE_VALUE_BUFFER_LENGTH];
+    WChar format[DOUBLE_FORMATTING_BUFFER_LENGTH];
+
+    GetDoubleFormatting(format, DOUBLE_FORMATTING_BUFFER_LENGTH);
     
     while (shapePointInd  < serializedShapeNbPts)
         {              
         BeXmlNodeP pDoubleXMLNode = pEffectiveShapeXMLNode->AddEmptyElement("D");    
-        
-        pDoubleXMLNode->AddAttributeDoubleValue("V", pSerializedShapePts[shapePointInd]);       
+         
+        swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, pSerializedShapePts[shapePointInd]);  
+        pDoubleXMLNode->AddAttributeStringValue("V", doubleValueBuffer);       
 
         shapePointInd++;
         }                            

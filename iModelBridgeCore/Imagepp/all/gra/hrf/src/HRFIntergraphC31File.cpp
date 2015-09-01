@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphC31File.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphC31File
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFIntergraphC31File.h>
@@ -28,8 +28,8 @@
 #include <Imagepp/all/h/HGF2DAffine.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
 #include <Imagepp/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HFCException.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //-----------------------------------------------------------------------------
@@ -160,8 +160,7 @@ HRFIntergraphC31Creator::HRFIntergraphC31Creator()
 
 WString HRFIntergraphC31Creator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_C31); //Intergraph C31
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_C31()); //Intergraph C31
     }
 
 //-----------------------------------------------------------------------------
@@ -212,21 +211,21 @@ bool HRFIntergraphC31Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock (GetLockManager());
 
     // Open the Cot31 File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
         // Check if the file was a valid Intergraph Cot31...
         pFile->SeekToBegin();
-        if (pFile->Read((void*)&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+        if (pFile->Read(&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
             goto WRAPUP;
 
         if (HeaderTypeCode == 0x0908)
             {
-            if (pFile->Read((void*)&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short))
                 goto WRAPUP;
 
-            if (pFile->Read((void*)&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
                 goto WRAPUP;
 
             if ((DataTypeCode == 31) && (pi_Offset || !IsMultiPage(*pFile, (WordToFollow + 2)/256)))
@@ -240,7 +239,7 @@ bool HRFIntergraphC31Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                         HeaderLen = ((WordToFollow + 2) /256) * 512;
                         HeaderLen += 18;
                         pFile->SeekToPos(HeaderLen);
-                        if (pFile->Read((void*)&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+                        if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
                             goto WRAPUP;
 
                         if ((DataTypeCode == 31) && (pi_Offset || !IsMultiPage(*pFile, (WordToFollow + 2)/256)))
@@ -288,7 +287,7 @@ HRFIntergraphC31File::HRFIntergraphC31File(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
     else
         {
@@ -316,7 +315,7 @@ HRFIntergraphC31File::HRFIntergraphC31File(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
     }
 

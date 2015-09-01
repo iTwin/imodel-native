@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFFileCoDec.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HTIFFFileCoDec
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HTIFFFile.h>
 #include <ImagePP/all/h/HTIFFTag.h>
 #include <Imagepp/all/h/HCDCodecZlib.h>
@@ -28,7 +28,7 @@
 
 #include <zlib/zlib.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 //-----------------------------------------------------------------------------
 // private
@@ -93,7 +93,7 @@ void HTIFFFile::SetDeflateAlgo()
 //                                               m_pUncompressFunc
 //-----------------------------------------------------------------------------
 
-void HTIFFFile::SetLZWAlgo(uint32_t pi_BitsPerPixel, unsigned short pi_Predictor)
+void HTIFFFile::SetLZWAlgo(uint32_t pi_BitsPerPixel, unsigned short pi_Predictor, uint32_t pi_SamplesPerPixel)
     {
     HFCMonitor Monitor(m_Key);
 
@@ -102,7 +102,15 @@ void HTIFFFile::SetLZWAlgo(uint32_t pi_BitsPerPixel, unsigned short pi_Predictor
     ExtractWidthHeight (&Width, &Height);
     Byte LinePaddingBits = (Byte)((8 - ((Width * pi_BitsPerPixel) % 8)) % 8);
 
-    m_pPacket->SetCodec(new HCDCodecLZW(Width, Height,pi_BitsPerPixel, pi_Predictor));
+    //Special case to fix TFS 88368.
+    if (1 == pi_SamplesPerPixel && 2 == pi_Predictor && 32 == pi_BitsPerPixel)
+        {
+        m_pPacket->SetCodec(new HCDCodecLZWPredicateExt(Width, Height,pi_BitsPerPixel, pi_Predictor, pi_SamplesPerPixel));
+        }
+    else
+        {
+        m_pPacket->SetCodec(new HCDCodecLZW(Width, Height,pi_BitsPerPixel, pi_Predictor));
+        }        
 
     if (LinePaddingBits != 0)
         ((HFCPtr<HCDCodecLZW>&)(m_pPacket->GetCodec()))->SetLinePaddingBits(LinePaddingBits);
@@ -344,12 +352,12 @@ void HTIFFFile::SetCCITTAlgo(uint32_t pi_CompressMode, bool pi_BitRev)
         switch(ShortVal)
             {
             case PHOTOMETRIC_MINISBLACK:
-                pCCITTCodec->SetPhotometric(ImagePP::CCITT_PHOTOMETRIC_MINISBLACK);
+                pCCITTCodec->SetPhotometric(CCITT_PHOTOMETRIC_MINISBLACK);
                 break;
 
             case PHOTOMETRIC_MINISWHITE:
             default:
-                pCCITTCodec->SetPhotometric(ImagePP::CCITT_PHOTOMETRIC_MINISWHITE);
+                pCCITTCodec->SetPhotometric(CCITT_PHOTOMETRIC_MINISWHITE);
                 break;
             }
         }

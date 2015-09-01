@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPMapFilter8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPMapFilter8
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPMapFilter8.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
@@ -93,7 +93,7 @@ HRPFilter* HRPMapFilter8::ComposeWith(const HRPFilter* pi_pFilter)
 
     // verify if the parameter is a convolution filter
     if(!pi_pFilter->IsCompatibleWith(HRPMapFilter8::CLASS_ID) ||
-       *((HRPTypedFilter*)pi_pFilter)->GetFilterPixelType() != *GetFilterPixelType())
+       !((HRPTypedFilter*)pi_pFilter)->GetFilterPixelType()->HasSamePixelInterpretation(*GetFilterPixelType()))
         {
         // if not, call the parent method
         pFilter = HRPFunctionFilter::ComposeWith(pi_pFilter);

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFLocalCacheFileCreator.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,61 +11,15 @@
 // This class describes the CacheFile implementation
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRFLocalCacheFileCreator.h>
 #include <Imagepp/all/h/HRFiTiffFile.h>
-#include <Imagepp/all/h/HRFInternetImagingFile.h>
 #include <Imagepp/all/h/HFCStat.h>
 #include <Imagepp/all/h/HRFRasterFileCache.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFUtility.h>
-
-USING_NAMESPACE_IMAGEPP
-
-//-----------------------------------------------------------------------------
-// Static Member Initialization
-//-----------------------------------------------------------------------------
-
-#define HRF_CACHE_CREATOR_TEMP_FILE L"~hrfcm_tmp_delete_me"
-
-//-----------------------------------------------------------------------------
-// Private static
-bool ValidateFolderAccess(const HFCPtr<HFCURL> & pi_pDirectory)
-    {
-    HPRECONDITION(pi_pDirectory->IsCompatibleWith(HFCURLFile::CLASS_ID));
-
-    bool           Result(false);
-    HFCPtr<HFCURL>  pURLTempFile(HFCURL::Instanciate(pi_pDirectory->GetURL() + L"\\" + HRF_CACHE_CREATOR_TEMP_FILE));
-    // Build temp file path for windows function
-    WString TempFile(((HFCURLFile&)*pURLTempFile).GetHost());
-    TempFile += L"\\";
-    TempFile += ((HFCURLFile&)*pURLTempFile).GetPath();
-
-#ifdef _WIN32
-    HFCStat PathStat(pURLTempFile);
-    if(PathStat.IsExistent())
-        {
-        if(_wremove(TempFile.c_str()) != 0)
-            {
-            return false;
-            }
-        }
-
-    // Create temp file with write access.
-    FILE* pFileHandle = _wfopen (TempFile.c_str(), L"w+bD");         // The 'D' option will delete the file when closed.
-    if(pFileHandle != NULL)
-        {
-        Byte dummyByte(0xff);
-        Result = fwrite(&dummyByte, 1, 1, pFileHandle) == 1;
-        fclose(pFileHandle);
-        }
-#endif
-
-    return Result;
-    }
-
 
 //-----------------------------------------------------------------------------
 // This is a helper class to instantiate an implementation object
@@ -127,7 +81,7 @@ HFCPtr<HFCURL> HRFLocalCacheFileCreator::ComposeURLFor(
 
     // Add the path to the Booster url
     BeFileName localPath;
-    ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetLocalCacheDirPath(localPath);
+    ImageppLib::GetHost().GetImageppLibAdmin()._GetLocalCacheDirPath(localPath);
     localPath.AppendToPath(ComposedFileName.c_str());
 
     return HFCURL::CreateFrom(localPath);
@@ -172,12 +126,12 @@ void HRFLocalCacheFileCreator::SetCacheTags(HFCPtr<HRFRasterFile>& pi_rpFile)
         if (!pPage->IsEmpty())
             {
             ImageppLibAdmin::CompatibleSoftware softwareName;
-            ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetCacheCompatibleSoftwareNames(softwareName);
+            ImageppLib::GetHost().GetImageppLibAdmin()._GetCacheCompatibleSoftwareNames(softwareName);
             if (!softwareName.empty())
                 pPage->SetTag(new HRFAttributeSoftware(*softwareName.begin()));
                 
             WString description;
-            ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetCacheDescription(description);
+            ImageppLib::GetHost().GetImageppLibAdmin()._GetCacheDescription(description);
             if (!description.empty())
                 pPage->SetTag(new HRFAttributeDocumentName(description));
 }
@@ -223,7 +177,7 @@ bool HRFLocalCacheFileCreator::IsValidCache(const HFCPtr<HRFRasterFile>& pi_rpFi
 
         // verify if the software name was set on the extender (this)
         ImageppLibAdmin::CompatibleSoftware softwareName;
-        ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetCacheCompatibleSoftwareNames(softwareName);
+        ImageppLib::GetHost().GetImageppLibAdmin()._GetCacheCompatibleSoftwareNames(softwareName);
 
         if (Result && !softwareName.empty())
             {
@@ -249,7 +203,7 @@ bool HRFLocalCacheFileCreator::IsValidCache(const HFCPtr<HRFRasterFile>& pi_rpFi
 
         // verify if the document name was set on the extender (this)
         WString description;
-        ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetCacheDescription(description);
+        ImageppLib::GetHost().GetImageppLibAdmin()._GetCacheDescription(description);
         if (Result && !description.empty())
             {
             // The document name tag is set for this application, we can now assume

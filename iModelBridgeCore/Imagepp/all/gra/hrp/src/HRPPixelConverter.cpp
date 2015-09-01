@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelConverter.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelConverter
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRPPixelConverter.h>
 #include <Imagepp/all/h/HRPPixelType.h>
 
@@ -70,70 +70,12 @@ HRPPixelConverter& HRPPixelConverter::operator=(const HRPPixelConverter& pi_rObj
 //-----------------------------------------------------------------------------
 // Convert
 //-----------------------------------------------------------------------------
-void HRPPixelConverter::Convert(const void* pi_pSourceRawData,
-                                void*       pio_pDestRawData) const
-    {
-    // HLXXX should become a pure virtual method eventually
-
-    HASSERT(false);
-    }
-
-
-//-----------------------------------------------------------------------------
-// Convert
-//-----------------------------------------------------------------------------
-void HRPPixelConverter::Convert(const void* pi_pSourceRawData,
-                                void*       pio_pDestRawData,
-                                size_t      pi_PixelsCount) const
-    {
-    // HLXXX should become a pure virtual method eventually
-
-    HASSERT(false);
-    }
-
-//-----------------------------------------------------------------------------
-// Convert
-//-----------------------------------------------------------------------------
-void HRPPixelConverter::Convert(const void*  pi_pSourceRawData,
+void HRPPixelConverter::ConvertLostChannel(const void*  pi_pSourceRawData,
                                 void*        pio_pDestRawData,
                                 size_t        pi_PixelsCount,
                                 const bool* pi_pChannelsMask) const
     {
     // does nothing by default. this is normal
-    }
-
-
-//-----------------------------------------------------------------------------
-// ConvertToValue
-//-----------------------------------------------------------------------------
-void HRPPixelConverter::ConvertToValue( const void* pi_pSourceRawData,
-                                        void*       pio_pDestRawData) const
-    {
-    // this method must be implemented in the child pixel type if the
-    // destination is not already by value (if it is by index)
-
-    HPRECONDITION(pi_pSourceRawData != 0);
-    HPRECONDITION(pio_pDestRawData != 0);
-
-    // test if the destination pixel type is by index
-    HASSERT(m_pDestPixelType->CountIndexBits() == 0);
-
-    // use the normal convert
-    Convert(pi_pSourceRawData, pio_pDestRawData);
-    }
-
-//-----------------------------------------------------------------------------
-// Compose
-//-----------------------------------------------------------------------------
-void HRPPixelConverter::Compose(const void* pi_pSourceRawData,
-                                void*       pio_pDestRawData) const
-    {
-    // this method must be implemented in the child pixel type
-    // if there is alpha in the source pixel type
-    HPRECONDITION(m_pSourcePixelType->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) == HRPChannelType::FREE);
-
-    // by default, call the convert method
-    Convert(pi_pSourceRawData, pio_pDestRawData);
     }
 
 //-----------------------------------------------------------------------------

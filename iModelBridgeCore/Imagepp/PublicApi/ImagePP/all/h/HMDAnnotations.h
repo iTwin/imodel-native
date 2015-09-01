@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDAnnotations.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,23 +10,25 @@
 #include "HMDMetaDataContainer.h"
 #include "HMDAnnotationInfo.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HMDAnnotations : public HMDMetaDataContainer
     {
-    HDECLARE_CLASS_ID(7011, HMDMetaDataContainer);
+    HDECLARE_CLASS_ID(HMDAnnotationsId_Base, HMDMetaDataContainer);
 
 public :
-    _HDLLu HMDAnnotations();
-    _HDLLu virtual ~HMDAnnotations();
+    IMAGEPP_EXPORT HMDAnnotations();
+    IMAGEPP_EXPORT virtual ~HMDAnnotations();
 
-    _HDLLu HMDAnnotations(const HMDAnnotations& pi_rObj);
+    IMAGEPP_EXPORT HMDAnnotations(const HMDAnnotations& pi_rObj);
 
-    _HDLLu void                         AddAnnotation  (const HMDAnnotationInfo* pi_pAnnotations);
+    IMAGEPP_EXPORT void                         AddAnnotation  (const HMDAnnotationInfo* pi_pAnnotations);
 
-    _HDLLu const HMDAnnotationInfo*     GetAnnotation  (uint32_t pi_Index) const;
-    _HDLLu virtual const HMDAnnotationInfo*     GetAnnotation   (double pi_PosX,
+    IMAGEPP_EXPORT const HMDAnnotationInfo*     GetAnnotation  (uint32_t pi_Index) const;
+    IMAGEPP_EXPORT virtual const HMDAnnotationInfo*     GetAnnotation   (double pi_PosX,
                                                           double pi_PosY) const = 0;
 
-    _HDLLu uint32_t                             GetNbAnnotations() const;
+    IMAGEPP_EXPORT uint32_t                             GetNbAnnotations() const;
 
 protected:
 
@@ -40,3 +42,4 @@ private :
     void CopyMemberData(const HMDAnnotations& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

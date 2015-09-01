@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFCameraData.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFCameraData
@@ -17,6 +17,7 @@
 #include "HGF2DTransfoModel.h"
 #include "HGFMatrixOps.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HGFCameraData
     {
@@ -80,6 +81,6 @@ private:
 
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HGFCameraData.hpp"
 

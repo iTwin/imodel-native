@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGSSurfaceDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,19 +14,15 @@
 #pragma once
 
 #include "HFCPtr.h"
-#include "HGSSurfaceCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HGSSurfaceDescriptor : public HFCShareableObject<HGSSurfaceDescriptor>
     {
-    // HChk HL Change the ID
-    HDECLARE_BASECLASS_ID(1721)
+    HDECLARE_BASECLASS_ID(HGSSurfaceId_Descriptor)
 
 public:
 
     virtual         ~HGSSurfaceDescriptor();
-
-    virtual HGSSurfaceCapabilities*
-    GetRequiredSurfaceCapabilities() const;
 
     uint32_t        GetWidth() const;
     uint32_t        GetHeight() const;
@@ -68,5 +64,6 @@ private:
     operator=(const HGSSurfaceDescriptor& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGSSurfaceDescriptor.hpp"
 

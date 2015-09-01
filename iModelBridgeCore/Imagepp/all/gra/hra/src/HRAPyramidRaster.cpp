@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAPyramidRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRAPyramidRaster
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRAPyramidRaster.h>
 #include <Imagepp/all/h/HRAPyramidRasterIterator.h>
@@ -30,9 +30,12 @@
 #include <Imagepp/all/h/HRAMessages.h>
 #include <Imagepp/all/h/HRPQuantizedPalette.h>
 #include <ImagePP/all/h/HGFMappedSurface.h>
-
-#include <Imagepp/all/h/HGSBlitter.h>
-#include <Imagepp/all/h/HGSToolbox.h>
+#include <Imagepp/all/h/HGSRegion.h>
+#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
+#include <Imagepp/all/h/HRATransaction.h>
+#include <Imagepp/all/h/HRABlitter.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
 
 HPM_REGISTER_CLASS(HRAPyramidRaster, HRAStoredRaster)
 
@@ -45,6 +48,8 @@ HMG_REGISTER_MESSAGE(HRAPyramidRaster, HGFGeometryChangedMsg, NotifyGeometryChan
 HMG_REGISTER_MESSAGE(HRAPyramidRaster, HRAEffectiveShapeChangedMsg, NotifyEffectiveShapeChanged)
 HMG_REGISTER_MESSAGE(HRAPyramidRaster, HRAModifiedTileNotSavedMsg, NotifyModifiedTileNotSaved)
 HMG_END_MESSAGE_MAP()
+
+
 
 //-----------------------------------------------------------------------------
 // public
@@ -68,14 +73,14 @@ HRAPyramidRaster::HRAPyramidRaster ()
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRAPyramidRaster::HRAPyramidRaster  (HFCPtr<HRAStoredRaster>& pi_pRasterModel,
+HRAPyramidRaster::HRAPyramidRaster  (HFCPtr<HRATiledRaster>& pi_pRasterModel,
                                      uint64_t                pi_WidthPixels,
                                      uint64_t                pi_HeightPixels,
                                      SubImageDescription*     pi_pSubImageDesc,
                                      unsigned short          pi_NumberOfSubImage,
                                      HPMObjectStore*          pi_pStore,
                                      HPMPool*                 pi_pLog,
-                                     HFCPtr<HRAStoredRaster>  pi_pMainImageRasterModel,
+                                     HFCPtr<HRATiledRaster>  pi_pMainImageRasterModel,
                                      bool                    pi_DisableTileStatus)
 
     : HRAStoredRaster (pi_WidthPixels, pi_HeightPixels,
@@ -455,7 +460,7 @@ bool HRAPyramidRaster::StartHistogramEditMode()
             m_HistogramEditMode = true;
 
             // Compute all tile histograms (on full resolution)
-            ((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[0])->EngageTileHistogramComputing();
+            m_pSubImageList.pData[0].m_pSubImage->EngageTileHistogramComputing();
 
             return true;
             }
@@ -478,7 +483,6 @@ bool HRAPyramidRaster::HasLookAhead() const
 
 //-----------------------------------------------------------------------------
 // Public
-// Function for setting the look ahead when the PreDraw concept isn't used.
 //-----------------------------------------------------------------------------
 void HRAPyramidRaster::SetLookAhead(const HVEShape& pi_rShape,
                                     uint32_t        pi_ConsumerID,
@@ -537,21 +541,7 @@ void HRAPyramidRaster::SetLookAheadImpl(const HVEShape& pi_rShape,
     HFCPtr<HVEShape> pShape(new HVEShape(pi_rShape));
     pShape->ChangeCoordSys(GetSubImage(ResIndex)->GetPhysicalCoordSys());
 
-    if (GetSubImage(ResIndex)->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-        {
-        (static_cast<HRATiledRaster*>(GetSubImage(ResIndex).GetPtr()))->SetLookAhead(*pShape,
-                                                                       pi_ConsumerID,
-                                                                       pi_Async);
-        }
-    else
-        {
-        // Send the LookAhead
-        Propagate(HRALookAheadMsg(*pShape,
-                                  ResIndex,
-                                  pi_ConsumerID,
-                                  pi_Async));
-        }
-
+    GetSubImage(ResIndex)->SetLookAhead(*pShape, pi_ConsumerID, pi_Async);
     }
 
 
@@ -622,104 +612,6 @@ void HRAPyramidRaster::Clear(const HRAClearOptions& pi_rOptions)
     //UpdateDirtyFlags(*pClearOptions->GetShape(), 0);
     }
 
-
-//-----------------------------------------------------------------------------
-// Public
-// Pass the request to the source
-//-----------------------------------------------------------------------------
-void HRAPyramidRaster::PreDraw(HRADrawOptions* pio_pOptions)
-    {
-    HPRECONDITION(pio_pOptions->GetPreDrawOptions() != 0);
-
-    HRAPyramidRaster::DrawingData* pDrawingData = new HRAPyramidRaster::DrawingData;
-    HFCDataWarehouse& rDataWarehouse = pio_pOptions->GetPreDrawOptions()->GetPrecomputedDataStorage();
-    m_StoringID = rDataWarehouse.GetNewStoringId();
-    rDataWarehouse.AddData(m_StoringID, (void*)pDrawingData);
-
-    // find the best resolution for the coord sys of the extent
-    double Resolution = FindTheBestResolution(pio_pOptions->GetShape()->GetCoordSys(),
-                                               pio_pOptions->GetReplacingCoordSys());
-
-    // if the resolution is bigger than the first one use the first one
-    if (HDOUBLE_GREATER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[0].m_PhysicalImageResolution) ||
-        (m_UseOnlyFirstRes == true))
-        {
-        pDrawingData->m_ResolutionIndex = 0;
-        }
-    else
-        {
-        // find at what index is that resolution
-        pDrawingData->m_ResolutionIndex = (unsigned short)m_pSubImageList.BufSize - 1;   // last res of the pyramid
-        bool   ResFound = false;
-        for (unsigned short Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
-            {
-            // if the res is between the current res and the next, use that res
-            if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[Res].m_PhysicalImageResolution) &&
-                HDOUBLE_GREATER_EPSILON(Resolution, m_pSubImageList.pData[Res + 1].m_PhysicalImageResolution))
-                {
-                pDrawingData->m_ResolutionIndex = Res;
-                ResFound = true;
-                }
-            }
-        }
-
-    if (pDrawingData->m_ResolutionIndex > 0)
-        {
-        HVEShape SurfaceShape = *pio_pOptions->GetShape();
-
-        // Set the stroking tolerance for the shape
-        // Set a quarter of a pixel tolerance
-        double CenterX = SurfaceShape.GetExtent().GetWidth() / 2.0;
-        double CenterY = SurfaceShape.GetExtent().GetHeight() / 2.0;
-        HFCPtr<HGFTolerance> pTol = new HGFTolerance (CenterX - DEFAULT_PIXEL_TOLERANCE,
-                                                      CenterY - DEFAULT_PIXEL_TOLERANCE,
-                                                      CenterX + DEFAULT_PIXEL_TOLERANCE,
-                                                      CenterY + DEFAULT_PIXEL_TOLERANCE,
-                                                      SurfaceShape.GetExtent().GetCoordSys());
-
-        SurfaceShape.SetStrokeTolerance(pTol);
-
-        if (pio_pOptions->GetReplacingCoordSys() != 0)
-            {
-            SurfaceShape.ChangeCoordSys(pio_pOptions->GetReplacingCoordSys());
-            SurfaceShape.SetCoordSys(GetCoordSys());
-            }
-
-        HFCProgressListener* pProgressListener = pio_pOptions->GetPreDrawOptions()->GetUpdateSubResProgressListener();
-        uint64_t               TilesToUpdate = 0;
-        HGF2DExtent             SurfaceExtent = SurfaceShape.GetExtent();
-
-        if (pProgressListener != 0)
-            {
-            TilesToUpdate = GetNbSubResTilesToUpdate(pDrawingData->m_ResolutionIndex, SurfaceExtent);
-
-            if (TilesToUpdate > 0)
-                {
-                HRAUpdateSubResProgressIndicator::GetInstance()->AddListener(pProgressListener);
-                HRAUpdateSubResProgressIndicator::GetInstance()->Restart(TilesToUpdate);
-                }
-            }
-
-        ((HRAPyramidRaster*)this)->UpdateSubResolution(pDrawingData->m_ResolutionIndex, &SurfaceExtent);
-
-        if (TilesToUpdate > 0)
-            {
-            HRAUpdateSubResProgressIndicator::GetInstance()->RemoveListener(pProgressListener);
-            }
-        }
-
-    if ((m_pSubImageList.pData[pDrawingData->m_ResolutionIndex].m_pSubImage->IsCompatibleWith(HRATiledRaster::CLASS_ID) == false) &&
-        (HasLookAhead() == true))
-        {
-        uint32_t ConsumerId = 0;
-        bool  Async = false;
-        pio_pOptions->GetPreDrawOptions()->GetLookAheadOptions(ConsumerId, Async);
-        SetLookAheadImpl(*(pio_pOptions->GetShape()), ConsumerId, Async, pDrawingData->m_ResolutionIndex);
-        }
-    // Draw the selected resolution
-    m_pSubImageList.pData[pDrawingData->m_ResolutionIndex].m_pSubImage->PreDraw(pio_pOptions);
-    }
-
 //-----------------------------------------------------------------------------
 // Mark as "dirty" all tiles in all resolutions corresponding to specified
 // shape, in order to force a further update of sub-res for them.
@@ -733,7 +625,7 @@ void HRAPyramidRaster::UpdateDirtyFlags(const HVEShape& pi_rShape, short pi_Res)
 
     for (size_t i = pi_Res; i < m_pSubImageList.BufSize; i++)
         {
-        HFCPtr<HRATiledRaster> pDestTiledRaster = (HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[i];
+        HFCPtr<HRATiledRaster> pDestTiledRaster = m_pSubImageList.pData[i].m_pSubImage;
         HGFTileIDDescriptor DestTileDescriptor(*(pDestTiledRaster->GetPtrTileDescription()));
         HRATileStatus& rDestTileStatus = pDestTiledRaster->GetInternalTileStatusList();
         Shape.ChangeCoordSys(pDestTiledRaster->GetPhysicalCoordSys());
@@ -774,7 +666,7 @@ bool HRAPyramidRaster::NotifyContentChanged (const HMGMessage& pi_rMessage)
             HVEShape Shape(((HRAContentChangedMsg&)pi_rMessage).GetShape());
             HGF2DExtent UpdateExtent;
 
-            HFCPtr<HRATiledRaster> pTiledRaster = (HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[0];
+            HFCPtr<HRATiledRaster> pTiledRaster = m_pSubImageList.pData[0].m_pSubImage;
             HGFTileIDDescriptor TileDescriptor(*(pTiledRaster->GetPtrTileDescription()));
             Shape.ChangeCoordSys(pTiledRaster->GetPhysicalCoordSys());
             UpdateExtent = Shape.GetExtent();
@@ -784,7 +676,7 @@ bool HRAPyramidRaster::NotifyContentChanged (const HMGMessage& pi_rMessage)
 
             while (TileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND)
                 {
-                const HFCPtr<HRAStoredRaster> pTile = pTiledRaster->GetTile(TileIndex)->GetTile();
+                const HFCPtr<HRABitmapBase> pTile = pTiledRaster->GetTileByIndex(TileIndex)->GetTile();
 
                 // Tile histograms (old and new)
                 HRAHistogramOptions OldTileHistogramOptions(pTile->GetPixelType());
@@ -857,34 +749,30 @@ bool HRAPyramidRaster::NotifyProgressImageChanged (const HMGMessage& pi_rMessage
     {
     HPRECONDITION(pi_rMessage.IsCompatibleWith(HRFProgressImageChangedMsg::CLASS_ID));
 
-    if (m_pRasterModel->IsCompatibleWith(HRATiledRaster::CLASS_ID))
+
+    HRFProgressImageChangedMsg& rMessage((HRFProgressImageChangedMsg&)pi_rMessage);
+    unsigned short Res = ((HRFProgressImageChangedMsg&)pi_rMessage).GetSubResolution();
+
+    HFCPtr<HRATiledRaster> pResRaster(m_pSubImageList.pData[Res].m_pSubImage);
+
+    // Propagate the message to a specific TiledRaster
+    if ((Res < m_pSubImageList.BufSize) &&
+        (m_pSubImageList.pData[Res].m_pSubImage != 0))
         {
-        HRFProgressImageChangedMsg& rMessage((HRFProgressImageChangedMsg&)pi_rMessage);
-        uint32_t Res = ((HRFProgressImageChangedMsg&)pi_rMessage).GetSubResolution();
-
-        HPRECONDITION(((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[Res])->IsCompatibleWith(HRATiledRaster::CLASS_ID));
-        HFCPtr<HRATiledRaster> pResRaster((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[Res]);
-
-
-        // Propagate the message to a specific TiledRaster
-        if ((Res < m_pSubImageList.BufSize) &&
-            (m_pSubImageList.pData[Res].m_pSubImage != 0))
-            {
-            ((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[Res].m_pSubImage)->NotifyProgressImageChanged (pi_rMessage);
-            }
-
-        CHECK_HUINT64_TO_HDOUBLE_CONV(rMessage.GetPosX() + pResRaster->GetTileSizeX())
-        CHECK_HUINT64_TO_HDOUBLE_CONV(rMessage.GetPosY() + pResRaster->GetTileSizeY())
-
-        HVEShape TileShape((double)rMessage.GetPosX(),
-                           (double)rMessage.GetPosY(),
-                           (double)rMessage.GetPosX() + pResRaster->GetTileSizeX(),
-                           (double)rMessage.GetPosY() + pResRaster->GetTileSizeY(),
-                           pResRaster->GetPhysicalCoordSys());
-
-        UpdateDirtyFlags(TileShape, (short)Res);
-        SetModificationState();
+        m_pSubImageList.pData[Res].m_pSubImage->NotifyProgressImageChanged (pi_rMessage);
         }
+
+    CHECK_HUINT64_TO_HDOUBLE_CONV(rMessage.GetPosX() + pResRaster->GetTileSizeX())
+    CHECK_HUINT64_TO_HDOUBLE_CONV(rMessage.GetPosY() + pResRaster->GetTileSizeY())
+
+    HVEShape TileShape((double)rMessage.GetPosX(),
+                        (double)rMessage.GetPosY(),
+                        (double)rMessage.GetPosX() + pResRaster->GetTileSizeX(),
+                        (double)rMessage.GetPosY() + pResRaster->GetTileSizeY(),
+                        pResRaster->GetPhysicalCoordSys());
+
+    UpdateDirtyFlags(TileShape, (short)Res);
+    SetModificationState();
 
     return false;
     }
@@ -929,41 +817,39 @@ bool HRAPyramidRaster::NotifyModifiedTileNotSaved(const HMGMessage& pi_rMessage)
     {
     HPRECONDITION(pi_rMessage.IsCompatibleWith(HRAModifiedTileNotSavedMsg::CLASS_ID));
 
-    if (m_pRasterModel->IsCompatibleWith(HRATiledRaster::CLASS_ID))
+    HRAModifiedTileNotSavedMsg& rMessage((HRAModifiedTileNotSavedMsg&)pi_rMessage);
+    uint32_t Res = rMessage.GetResolution();
+    HPRECONDITION(Res < m_pSubImageList.BufSize);
+    if (Res > 0)
         {
-        HRAModifiedTileNotSavedMsg& rMessage((HRAModifiedTileNotSavedMsg&)pi_rMessage);
-        uint32_t Res = rMessage.GetResolution();
-        HPRECONDITION(Res < m_pSubImageList.BufSize);
-        if (Res > 0)
+        // first, get the extent of the modified tile
+        HFCPtr<HRATiledRaster> pTiledRaster(m_pSubImageList.pData[Res].m_pSubImage);
+        HGFTileIDDescriptor TileDescriptor(*pTiledRaster->GetPtrTileDescription());
+        HRATileStatus& rTileStatus = pTiledRaster->GetInternalTileStatusList();
+        HASSERT(rTileStatus.GetDirtyForSubResFlag(rMessage.GetTileIndex()));
+
+        uint64_t PosX;
+        uint64_t PosY;
+        TileDescriptor.GetPositionFromIndex(rMessage.GetTileIndex(), &PosX, &PosY);
+        HVEShape TileShape((double)PosX,
+                            (double)PosY,
+                            (double)(PosX + TileDescriptor.GetTileWidth()),
+                            (double)(PosY + TileDescriptor.GetTileHeight()),
+                            pTiledRaster->GetPhysicalCoordSys());
+
+        HFCPtr<HRATiledRaster> pPrevTiledRaster(m_pSubImageList.pData[Res-1].m_pSubImage);
+        HGFTileIDDescriptor PrevTileDescriptor(*pPrevTiledRaster->GetPtrTileDescription());
+        HRATileStatus& rPrevTileStatus = pPrevTiledRaster->GetInternalTileStatusList();
+
+        TileShape.ChangeCoordSys(pPrevTiledRaster->GetPhysicalCoordSys());
+        uint64_t TileIndex = PrevTileDescriptor.GetFirstTileIndex(TileShape.GetExtent());
+        while (TileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND)
             {
-            // first, get the extent of the modified tile
-            HFCPtr<HRATiledRaster> pTiledRaster((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[Res]);
-            HGFTileIDDescriptor TileDescriptor(*pTiledRaster->GetPtrTileDescription());
-            HRATileStatus& rTileStatus = pTiledRaster->GetInternalTileStatusList();
-            HASSERT(rTileStatus.GetDirtyForSubResFlag(rMessage.GetTileIndex()));
-
-            uint64_t PosX;
-            uint64_t PosY;
-            TileDescriptor.GetPositionFromIndex(rMessage.GetTileIndex(), &PosX, &PosY);
-            HVEShape TileShape((double)PosX,
-                               (double)PosY,
-                               (double)(PosX + TileDescriptor.GetTileWidth()),
-                               (double)(PosY + TileDescriptor.GetTileHeight()),
-                               pTiledRaster->GetPhysicalCoordSys());
-
-            HFCPtr<HRATiledRaster> pPrevTiledRaster((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[Res - 1]);
-            HGFTileIDDescriptor PrevTileDescriptor(*pPrevTiledRaster->GetPtrTileDescription());
-            HRATileStatus& rPrevTileStatus = pPrevTiledRaster->GetInternalTileStatusList();
-
-            TileShape.ChangeCoordSys(pPrevTiledRaster->GetPhysicalCoordSys());
-            uint64_t TileIndex = PrevTileDescriptor.GetFirstTileIndex(TileShape.GetExtent());
-            while (TileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND)
-                {
-                rPrevTileStatus.SetDirtyForSubResFlag(TileIndex, true);
-                TileIndex = PrevTileDescriptor.GetNextTileIndex();
-                }
+            rPrevTileStatus.SetDirtyForSubResFlag(TileIndex, true);
+            TileIndex = PrevTileDescriptor.GetNextTileIndex();
             }
         }
+
     return true;
     }
 
@@ -980,7 +866,7 @@ void HRAPyramidRaster::UpdateNextRes(int32_t       pi_SubResolution,
 
     if (pi_SubResolution < (int32_t)(m_pSubImageList.BufSize - 1)) // update only if we aren't on the last resolution
         {
-        HFCPtr<HRATiledRaster> pSrcTiledRaster((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[pi_SubResolution]);
+        HFCPtr<HRATiledRaster> pSrcTiledRaster(m_pSubImageList.pData[pi_SubResolution].m_pSubImage);
         HRATileStatus& rSrcTileStatus = pSrcTiledRaster->GetInternalTileStatusList();
 
         // update only of the tile status is dirty
@@ -990,41 +876,29 @@ void HRAPyramidRaster::UpdateNextRes(int32_t       pi_SubResolution,
             HFCPtr<HGF2DCoordSys> pSrcPhysicalCoordSys = pSrcTiledRaster->GetPhysicalCoordSys();
 
             // get destination resolution
-            HFCPtr<HRATiledRaster> pDestTiledRaster((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[pi_SubResolution + 1]);
+            HFCPtr<HRATiledRaster> pDestTiledRaster(m_pSubImageList.pData[pi_SubResolution + 1].m_pSubImage);
             HGFTileIDDescriptor DestTileDescriptor(*(pDestTiledRaster->GetPtrTileDescription()));
             HFCPtr<HGF2DCoordSys> pDestPhysicalCoordSys(pDestTiledRaster->GetPhysicalCoordSys());
-
-            // create blitter
-            HFCPtr<HGSBlitter> pDstBlitter(new HGSBlitter());
-
+            
             // set resampling option
+            HGSResampling samplingMode(HGSResampling::AVERAGE);
             switch(m_pSubImageList.pData[pi_SubResolution].m_ResamplingType)
                 {
                 case HGSResampling::NEAREST_NEIGHBOUR:
-                    pDstBlitter->AddAttribute(HGSResamplingAttribute(HGSResampling(HGSResampling::NEAREST_NEIGHBOUR)));
+                    samplingMode = HGSResampling::NEAREST_NEIGHBOUR;
                     break;
                 case HGSResampling::AVERAGE:
-                    pDstBlitter->AddAttribute(HGSResamplingAttribute(HGSResampling(HGSResampling::AVERAGE)));
+                    samplingMode = HGSResampling::AVERAGE;
                     break;
                 case HGSResampling::ORING4:
-                    pDstBlitter->AddAttribute(HGSResamplingAttribute(HGSResampling(HGSResampling::NEAREST_NEIGHBOUR)));
+                    samplingMode = HGSResampling::NEAREST_NEIGHBOUR;
                     break;
                 default:
-                    pDstBlitter->AddAttribute(HGSResamplingAttribute(HGSResampling(HGSResampling::AVERAGE)));
+                    samplingMode = HGSResampling::AVERAGE;
                     break;
                 }
 
-            HGSToolbox DstToolbox((HFCPtr<HGSGraphicTool>&)pDstBlitter);
-
-            // test if the destination surface is compatible, otherwise HASSERT
-            // ????
             HFCPtr<HGSSurfaceDescriptor> pSrcSurfaceDesc(pi_pTile->GetSurfaceDescriptor());
-#if 0
-#ifdef __HMR_DEBUG
-            HAutoPtr<HGSSurfaceCapabilities> pSrcRequiredSurfaceCapabilities(pSrcSurfaceDesc->GetRequiredSurfaceCapabilities());
-            pio_pSurface->RequestCompatibility(&DstToolbox, pSrcRequiredSurfaceCapabilities);
-#endif
-#endif
 
             double Resolution = GetSubImagesResolution((unsigned short)pi_SubResolution) / GetSubImagesResolution((unsigned short)pi_SubResolution + 1);
 
@@ -1037,8 +911,8 @@ void HRAPyramidRaster::UpdateNextRes(int32_t       pi_SubResolution,
             uint64_t PosY;
             SrcTileDescriptor.GetPositionFromIndex(pi_TileIndex, &PosX, &PosY);
 
-            pSrcSurfaceDesc->SetDataDimensions((uint32_t)min(SrcTileDescriptor.GetImageWidth() - PosX, SrcTileDescriptor.GetTileWidth()),
-                                               (uint32_t)min(SrcTileDescriptor.GetImageHeight() - PosY, SrcTileDescriptor.GetTileHeight()));
+            pSrcSurfaceDesc->SetDataDimensions((uint32_t)MIN(SrcTileDescriptor.GetImageWidth() - PosX, SrcTileDescriptor.GetTileWidth()),
+                                               (uint32_t)MIN(SrcTileDescriptor.GetImageHeight() - PosY, SrcTileDescriptor.GetTileHeight()));
 
             CHECK_HUINT64_TO_HDOUBLE_CONV(PosX + SrcTileDescriptor.GetTileWidth());
             CHECK_HUINT64_TO_HDOUBLE_CONV(PosX + SrcTileDescriptor.GetTileWidth());
@@ -1084,9 +958,9 @@ void HRAPyramidRaster::UpdateNextRes(int32_t       pi_SubResolution,
 
             while (DestTileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND)
                 {
-                pDestTile = static_cast<HRATiledRaster::HRATile*>(pDestTiledRaster->GetTile(DestTileIndex, true).GetPtr());  // true = not in pool.
-                HFCPtr<HGSSurfaceDescriptor> pDstSurfaceDesc(((HFCPtr<HRABitmap>&)pDestTile->GetTile())->GetSurfaceDescriptor());
-                HFCPtr<HGSSurface> pDstSurface = new HGSSurface(pDstSurfaceDesc);
+                pDestTile = pDestTiledRaster->GetTileByIndex(DestTileIndex, true);  // true = not in pool.
+                HFCPtr<HGSSurfaceDescriptor> pDstSurfaceDesc(pDestTile->GetTile()->GetSurfaceDescriptor());
+                HRASurface destSurface(pDstSurfaceDesc);
 
                 DestTileDescriptor.GetPositionFromIndex(DestTileIndex, &PosX, &PosY);
                 CHECK_HUINT64_TO_HDOUBLE_CONV(PosX);
@@ -1098,8 +972,8 @@ void HRAPyramidRaster::UpdateNextRes(int32_t       pi_SubResolution,
                                       &DstPosXInSrc,
                                       &DstPosYInSrc);
 
-                DstDataWidth = min(DestTileDescriptor.GetTileWidth(), DestTileDescriptor.GetImageWidth() - PosX);
-                DstDataHeight = min(DestTileDescriptor.GetTileHeight(), DestTileDescriptor.GetImageHeight() - PosY);
+                DstDataWidth = MIN(DestTileDescriptor.GetTileWidth(), DestTileDescriptor.GetImageWidth() - PosX);
+                DstDataHeight = MIN(DestTileDescriptor.GetTileHeight(), DestTileDescriptor.GetImageHeight() - PosY);
 
                 Stretch.SetTranslation(HGF2DDisplacement(DstPosXInSrc - SrcPosX, DstPosYInSrc - SrcPosY));
 
@@ -1108,22 +982,23 @@ void HRAPyramidRaster::UpdateNextRes(int32_t       pi_SubResolution,
                 SrcPosYInDst -= DstPosY;
                 HFCPtr<HVEShape> pShape(new HVEShape(SrcPosXInDst,
                                                      SrcPosYInDst,
-                                                     min(SrcPosXInDst + SrcTileWidthInDst, DstDataWidth),
-                                                     min(SrcPosYInDst + SrcTileHeightInDst, DstDataHeight),
+                                                     MIN(SrcPosXInDst + SrcTileWidthInDst, DstDataWidth),
+                                                     MIN(SrcPosYInDst + SrcTileHeightInDst, DstDataHeight),
                                                      pDestTiledRaster->GetPhysicalCoordSys()));
 
                 HFCPtr<HGSRegion> pTheRegion(new HGSRegion(pShape, pShape->GetCoordSys()));
-                pDstSurface->SetOption((const HFCPtr<HGSSurfaceOption>&)pTheRegion);
+                destSurface.SetRegion(pTheRegion);
 
                 // create the src surfaces
-                HFCPtr<HGSSurface> pSrcSurface = pDstSurface->CreateCompatibleSurface(pSrcSurfaceDesc);
+                HRASurface srcSurface(pSrcSurfaceDesc);
 
-                // set the surfaces on the toolboxes
-                DstToolbox.SetFor(pDstSurface);
+                // create blitter
+                HRABlitter blitter(destSurface);
+                blitter.SetSamplingMode(samplingMode);
 
-                pDstBlitter->BlitFrom(pSrcSurface, Stretch);
+                blitter.BlitFrom(srcSurface, Stretch);
 
-                ((HFCPtr<HRABitmap>&)pDestTile->GetTile())->Updated(pShape);
+                pDestTile->GetTile()->Updated(pShape);
 
                 DestTileList.push_back(pDestTile);
                 DestTileIndex = DestTileDescriptor.GetNextTileIndex();
@@ -1138,7 +1013,7 @@ void HRAPyramidRaster::UpdateNextRes(int32_t       pi_SubResolution,
                 rSrcTileStatus.SetDirtyForSubResFlag(pi_TileIndex, false);
                 if (pi_SubResolution > 0)
                     {
-                    HFCPtr<HRATiledRaster> pPrevTiledRaster = (HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[pi_SubResolution-1];
+                    HFCPtr<HRATiledRaster> pPrevTiledRaster = m_pSubImageList.pData[pi_SubResolution-1].m_pSubImage;
                     HGFTileIDDescriptor PrevTileDescriptor(*(pPrevTiledRaster->GetPtrTileDescription()));
                     HRATileStatus& rPrevTileStatus = pPrevTiledRaster->GetInternalTileStatusList();
 
@@ -1205,11 +1080,8 @@ void HRAPyramidRaster::SaveAndFlushAllTiles
     {
     for (size_t i(0); i < m_pSubImageList.BufSize; ++i)
         {
-        if (m_pSubImageList.pData[i].m_pSubImage != 0 && m_pSubImageList.pData[i].m_pSubImage->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-            {
-            HFCPtr<HRATiledRaster> pTiledRaster(reinterpret_cast<HFCPtr<HRATiledRaster>&>(m_pSubImageList.pData[i].m_pSubImage));
-            pTiledRaster->SaveAndFlushTiles();
-            }
+        if (m_pSubImageList.pData[i].m_pSubImage != 0)
+            m_pSubImageList.pData[i].m_pSubImage->SaveAndFlushTiles();
         }
     }
 
@@ -1251,34 +1123,30 @@ void HRAPyramidRaster::UpdateSubResolution (int32_t            pi_SubResolution,
 
             IncrementRef();  // Sometimes this raster is not smart-pointed
 
-            HFCPtr<HRATiledRaster> pSrcTiledRaster = (HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[pi_SubResolution - 1].m_pSubImage;
+            HFCPtr<HRATiledRaster> pSrcTiledRaster = m_pSubImageList.pData[pi_SubResolution - 1].m_pSubImage;
             HGFTileIDDescriptor SrcTileDescriptor(*(pSrcTiledRaster->GetPtrTileDescription()));
             HRATileStatus& rSrcTileStatus = pSrcTiledRaster->GetInternalTileStatusList();
 
-            HFCPtr<HRATiledRaster> pDestTiledRaster = (HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[pi_SubResolution].m_pSubImage;
+            HFCPtr<HRATiledRaster> pDestTiledRaster = m_pSubImageList.pData[pi_SubResolution].m_pSubImage;
             HGFTileIDDescriptor DestTileDescriptor(*(pDestTiledRaster->GetPtrTileDescription()));
 
-
-            HFCPtr<HGSBlitter> pDstBlitter(new HGSBlitter());
-
             // set resampling option
+            HGSResampling samplingMode(HGSResampling::AVERAGE);
             switch(m_pSubImageList.pData[pi_SubResolution].m_ResamplingType)
                 {
                 case HGSResampling::NEAREST_NEIGHBOUR:
-                    pDstBlitter->AddAttribute(HGSResamplingAttribute(HGSResampling(HGSResampling::NEAREST_NEIGHBOUR)));
+                    samplingMode = HGSResampling::NEAREST_NEIGHBOUR;
                     break;
                 case HGSResampling::AVERAGE:
-                    pDstBlitter->AddAttribute(HGSResamplingAttribute(HGSResampling(HGSResampling::AVERAGE)));
+                    samplingMode = HGSResampling::AVERAGE;
                     break;
                 case HGSResampling::ORING4:
-                    pDstBlitter->AddAttribute(HGSResamplingAttribute(HGSResampling(HGSResampling::NEAREST_NEIGHBOUR)));
+                    samplingMode = HGSResampling::NEAREST_NEIGHBOUR;
                     break;
                 default:
-                    pDstBlitter->AddAttribute(HGSResamplingAttribute(HGSResampling(HGSResampling::AVERAGE)));
+                    samplingMode = HGSResampling::AVERAGE;
                     break;
                 }
-
-            HGSToolbox DstToolbox((HFCPtr<HGSGraphicTool>&)pDstBlitter);
 
             // Finding first tile in requested resolution
 
@@ -1330,6 +1198,7 @@ void HRAPyramidRaster::UpdateSubResolution (int32_t            pi_SubResolution,
             double DstDataWidth;
             double DstDataHeight;
 
+
             // For each tile in requested resolution...
             uint64_t DestTileIndex = DestTileDescriptor.GetFirstTileIndex(Extent);
             while (Continue && (DestTileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND) &&
@@ -1338,7 +1207,7 @@ void HRAPyramidRaster::UpdateSubResolution (int32_t            pi_SubResolution,
                 // Getting that tile, and checking tiles in previous resolution
                 // to make them ready to be copied
 
-                HFCPtr<HRATiledRaster::HRATile> pDestTile(static_cast<HRATiledRaster::HRATile*>(pDestTiledRaster->GetTile(DestTileIndex).GetPtr()));
+                HFCPtr<HRATiledRaster::HRATile> pDestTile(pDestTiledRaster->GetTileByIndex(DestTileIndex).GetPtr());
 
                 DestTileDescriptor.GetPositionFromIndex(DestTileIndex, &PosX, &PosY);
 
@@ -1369,16 +1238,17 @@ void HRAPyramidRaster::UpdateSubResolution (int32_t            pi_SubResolution,
                                       DstPosYInSrc + DstTileHeightInSrc,
                                       pSrcTiledRaster->GetPhysicalCoordSys());
 
-                DstDataWidth = (double)min(DestTileDescriptor.GetTileWidth(), DestTileDescriptor.GetImageWidth() - PosX);
-                DstDataHeight = (double)min(DestTileDescriptor.GetTileHeight(), DestTileDescriptor.GetImageHeight() - PosY);
+                DstDataWidth = (double)MIN(DestTileDescriptor.GetTileWidth(), DestTileDescriptor.GetImageWidth() - PosX);
+                DstDataHeight = (double)MIN(DestTileDescriptor.GetTileHeight(), DestTileDescriptor.GetImageHeight() - PosY);
 
                 uint64_t SrcTileIndex = SrcTileDescriptor.GetFirstTileIndex(SrcExtent);
 
-                HFCPtr<HGSSurfaceDescriptor> pDstSurfaceDesc(((HFCPtr<HRABitmap>&)pDestTile->GetTile())->GetSurfaceDescriptor());
-                HFCPtr<HGSSurface> pDstSurface = new HGSSurface(pDstSurfaceDesc);
+                HFCPtr<HGSSurfaceDescriptor> pDstSurfaceDesc(pDestTile->GetTile()->GetSurfaceDescriptor());
+                HRASurface destSurface(pDstSurfaceDesc);
 
                 // set the surfaces on the toolboxes
-                DstToolbox.SetFor(pDstSurface);
+                HRABlitter blitter(destSurface);
+                blitter.SetSamplingMode(samplingMode);
 
                 HFCPtr<HVEShape> pShape;
 
@@ -1386,17 +1256,17 @@ void HRAPyramidRaster::UpdateSubResolution (int32_t            pi_SubResolution,
                     {
                     if (rSrcTileStatus.GetDirtyForSubResFlag(SrcTileIndex))
                         {
-                        HFCPtr<HRATiledRaster::HRATile> pSrcTile(static_cast<HRATiledRaster::HRATile*>(pSrcTiledRaster->GetTile(SrcTileIndex).GetPtr()));
+                        HFCPtr<HRATiledRaster::HRATile> pSrcTile(pSrcTiledRaster->GetTileByIndex(SrcTileIndex));
                         SrcTileDescriptor.GetPositionFromIndex(SrcTileIndex, &PosX, &PosY);
                         CHECK_HUINT64_TO_HDOUBLE_CONV(PosX)
                         CHECK_HUINT64_TO_HDOUBLE_CONV(PosY)
                         SrcPosX = (double)PosX;
                         SrcPosY = (double)PosY;
 
-                        HFCPtr<HGSSurfaceDescriptor> pSrcSurfaceDesc(((HFCPtr<HRABitmap>&)pSrcTile->GetTile())->GetSurfaceDescriptor());
+                        HFCPtr<HGSSurfaceDescriptor> pSrcSurfaceDesc(pSrcTile->GetTile()->GetSurfaceDescriptor());
 
-                        pSrcSurfaceDesc->SetDataDimensions((uint32_t)min(SrcTileDescriptor.GetImageWidth() - PosX, SrcTileDescriptor.GetTileWidth()),
-                                                           (uint32_t)min(SrcTileDescriptor.GetImageHeight() - PosY, SrcTileDescriptor.GetTileHeight()));
+                        pSrcSurfaceDesc->SetDataDimensions((uint32_t)MIN(SrcTileDescriptor.GetImageWidth() - PosX, SrcTileDescriptor.GetTileWidth()),
+                                                           (uint32_t)MIN(SrcTileDescriptor.GetImageHeight() - PosY, SrcTileDescriptor.GetTileHeight()));
 
                         // compute the position of the src tile into the destination
                         Stretch.ConvertInverse(SrcPosX,
@@ -1411,15 +1281,15 @@ void HRAPyramidRaster::UpdateSubResolution (int32_t            pi_SubResolution,
                         // set the destination shape in physical
                         HFCPtr<HVEShape> pDestShape(new HVEShape(SrcPosXInDst,
                                                                  SrcPosYInDst,
-                                                                 min(SrcPosXInDst + SrcTileWidthInDst, DstDataWidth),
-                                                                 min(SrcPosYInDst + SrcTileHeightInDst, DstDataHeight),
+                                                                 MIN(SrcPosXInDst + SrcTileWidthInDst, DstDataWidth),
+                                                                 MIN(SrcPosYInDst + SrcTileHeightInDst, DstDataHeight),
                                                                  pDestTiledRaster->GetPhysicalCoordSys()));
 
                         HFCPtr<HGSRegion> pTheRegion(new HGSRegion(pDestShape, pDestShape->GetCoordSys()));
-                        pDstSurface->SetOption((const HFCPtr<HGSSurfaceOption>&)pTheRegion);
+                        destSurface.SetRegion(pTheRegion);
 
                         // create the src surfaces
-                        HFCPtr<HGSSurface> pSrcSurface = pDstSurface->CreateCompatibleSurface(pSrcSurfaceDesc);
+                        HRASurface srcSurface(pSrcSurfaceDesc);
 
                         // copy the translation between the src and dest tile
                         Stretch.ConvertDirect(SrcPosXInDst,
@@ -1428,9 +1298,9 @@ void HRAPyramidRaster::UpdateSubResolution (int32_t            pi_SubResolution,
                                               &SrcPosYInDst);
                         Stretch.SetTranslation(HGF2DDisplacement(-SrcPosXInDst, -SrcPosYInDst));
 
-                        pDstBlitter->BlitFrom(pSrcSurface, Stretch);
+                        blitter.BlitFrom(srcSurface, Stretch);
 
-                        ((HFCPtr<HRABitmap>&)pDestTile->GetTile())->Updated(pDestShape);
+                        pDestTile->GetTile()->Updated(pDestShape);
 
                         // If the Copyfrom is complete.(no esc-key, to stop draw), set the tile not dirty
                         if((Continue = !HRADrawProgressIndicator::GetInstance()->IsIterationStopped()))
@@ -1450,10 +1320,9 @@ void HRAPyramidRaster::UpdateSubResolution (int32_t            pi_SubResolution,
                         pDestTile->NotifyPool();
                     }
 
-                DstToolbox.SetFor(0);
                 DestTileIndex = DestTileDescriptor.GetNextTileIndex();
                 }
-
+				
             DecrementRef();
             }
 
@@ -1509,102 +1378,89 @@ void HRAPyramidRaster::UpdateResolution (int32_t           pi_Resolution,
 
                 // Specify we're in overview mode.
                 // This has the effect that HRABlitter will not use the center of the pixel for the pixel coordinate.
-                Options.SetOverviewMode(true);
+                // *** The new copyFrom fill everything it touches. So no need to hack the pixel selection strategy with 0.3 instead of 0.5.
+                // Options.SetOverviewMode(true);
 
-                HFCPtr<HRAStoredRaster> pDestRaster = (HFCPtr<HRAStoredRaster>&)m_pSubImageList.pData[i + 1].m_pSubImage;
+                HFCPtr<HRATiledRaster> pDestRaster = m_pSubImageList.pData[i + 1].m_pSubImage;
                 HGF2DExtent Extent;
                 if (pi_pExtent)
                     Extent = *pi_pExtent;
                 else
                     Extent = pDestRaster->GetPhysicalExtent();
 
-                if (m_pRasterModel->IsCompatibleWith(HRATiledRaster::CLASS_ID))
+                HFCPtr<HRATiledRaster> pSrcTiledRaster = m_pSubImageList.pData[i].m_pSubImage;
+
+                HGFTileIDDescriptor SrcTileDescriptor(*(pSrcTiledRaster->GetPtrTileDescription()));
+                HRATileStatus& rSrcTileStatus = pSrcTiledRaster->GetInternalTileStatusList();
+
+                HVEShape Shape(Extent);
+                Shape.ChangeCoordSys(pSrcTiledRaster->GetPhysicalCoordSys());
+                Extent = Shape.GetExtent();
+
+                uint64_t SrcTileIndex = SrcTileDescriptor.GetFirstTileIndex(Extent);
+                while (Continue && (SrcTileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND))
                     {
-                    HFCPtr<HRATiledRaster> pSrcTiledRaster = (HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[i].m_pSubImage;
-
-                    HGFTileIDDescriptor SrcTileDescriptor(*(pSrcTiledRaster->GetPtrTileDescription()));
-                    HRATileStatus& rSrcTileStatus = pSrcTiledRaster->GetInternalTileStatusList();
-
-                    HVEShape Shape(Extent);
-                    Shape.ChangeCoordSys(pSrcTiledRaster->GetPhysicalCoordSys());
-                    Extent = Shape.GetExtent();
-
-                    uint64_t SrcTileIndex = SrcTileDescriptor.GetFirstTileIndex(Extent);
-                    while (Continue && (SrcTileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND))
+                    if (rSrcTileStatus.GetDirtyForSubResFlag(SrcTileIndex))
                         {
-                        if (rSrcTileStatus.GetDirtyForSubResFlag(SrcTileIndex))
-                            {
-                            HFCPtr<HRATiledRaster::HRATile> pSrcTile(static_cast<HRATiledRaster::HRATile*>(pSrcTiledRaster->GetTile(SrcTileIndex).GetPtr()));
-                            pDestRaster->CopyFrom((HFCPtr<HRARaster>&)pSrcTile->GetTile(), Options);
+                        HFCPtr<HRATiledRaster::HRATile> pSrcTile(pSrcTiledRaster->GetTileByIndex(SrcTileIndex));
+                        pDestRaster->CopyFrom(*pSrcTile->GetTile().GetPtr(), Options);
 
-                            if ((Continue = !HRADrawProgressIndicator::GetInstance()->IsIterationStopped()))
-                                rSrcTileStatus.SetDirtyForSubResFlag(SrcTileIndex, false); // Done with that data
-                            }
+                        if ((Continue = !HRADrawProgressIndicator::GetInstance()->IsIterationStopped()))
+                            rSrcTileStatus.SetDirtyForSubResFlag(SrcTileIndex, false); // Done with that data
+                        }
+                    SrcTileIndex = SrcTileDescriptor.GetNextTileIndex();
+                    }
+
+                // m_pRasterModel is compatible with HRATiledRaster, pDestRaster can be cast in HRATiledRaster
+                HFCPtr<HRATiledRaster> pDstTiledRaster = pDestRaster;
+                // convert the shape from src coordsys to dst coordsys
+                Shape.ChangeCoordSys(pDstTiledRaster->GetPhysicalCoordSys());
+                HGFTileIDDescriptor DstTileDescriptor(*(pDstTiledRaster->GetPtrTileDescription()));
+
+                uint64_t DstTileIndex = DstTileDescriptor.GetFirstTileIndex(Shape.GetExtent());
+                uint64_t PosX;
+                uint64_t PosY;
+                HFCPtr<HRATiledRaster::HRATile> pDstTile;
+                while (DstTileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND)
+                    {
+                    // build the dst tile shape
+                    DstTileDescriptor.GetPositionFromID(DstTileIndex, &PosX, &PosY);
+
+                    CHECK_HUINT64_TO_HDOUBLE_CONV(PosX + DstTileDescriptor.GetTileWidth())
+                    CHECK_HUINT64_TO_HDOUBLE_CONV(PosY + DstTileDescriptor.GetTileHeight())
+
+                    HVEShape TileExtent((double)PosX,
+                                        (double)PosY,
+                                        (double)PosX + DstTileDescriptor.GetTileWidth(),
+                                        (double)PosY + DstTileDescriptor.GetTileHeight(),
+                                        pDstTiledRaster->GetPhysicalCoordSys());
+                    // convert the dst tile shape into the src coordsys
+                    TileExtent.ChangeCoordSys(pSrcTiledRaster->GetPhysicalCoordSys());
+
+                    // verify if all src tile is up to date
+                    SrcTileIndex = SrcTileDescriptor.GetFirstTileIndex(TileExtent.GetExtent());
+                    bool TileReady = true;
+                    while (SrcTileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND && TileReady)
+                        {
+                        TileReady = !rSrcTileStatus.GetDirtyForSubResFlag(SrcTileIndex);
                         SrcTileIndex = SrcTileDescriptor.GetNextTileIndex();
                         }
 
-                    // m_pRasterModel is compatible with HRATiledRaster, pDestRaster can be cast in HRATiledRaster
-                    HFCPtr<HRATiledRaster> pDstTiledRaster = (HFCPtr<HRATiledRaster>&)pDestRaster;
-                    // convert the shape from src coordsys to dst coordsys
-                    Shape.ChangeCoordSys(pDstTiledRaster->GetPhysicalCoordSys());
-                    HGFTileIDDescriptor DstTileDescriptor(*(pDstTiledRaster->GetPtrTileDescription()));
-
-                    uint64_t DstTileIndex = DstTileDescriptor.GetFirstTileIndex(Shape.GetExtent());
-                    uint64_t PosX;
-                    uint64_t PosY;
-                    HFCPtr<HRATiledRaster::HRATile> pDstTile;
-                    while (DstTileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND)
+                    // all src tiles is up to date, the dst tile can discartable
+                    if (TileReady)
                         {
-                        // build the dst tile shape
-                        DstTileDescriptor.GetPositionFromID(DstTileIndex, &PosX, &PosY);
-
-                        CHECK_HUINT64_TO_HDOUBLE_CONV(PosX + DstTileDescriptor.GetTileWidth())
-                        CHECK_HUINT64_TO_HDOUBLE_CONV(PosY + DstTileDescriptor.GetTileHeight())
-
-                        HVEShape TileExtent((double)PosX,
-                                            (double)PosY,
-                                            (double)PosX + DstTileDescriptor.GetTileWidth(),
-                                            (double)PosY + DstTileDescriptor.GetTileHeight(),
-                                            pDstTiledRaster->GetPhysicalCoordSys());
-                        // convert the dst tile shape into the src coordsys
-                        TileExtent.ChangeCoordSys(pSrcTiledRaster->GetPhysicalCoordSys());
-
-                        // verify if all src tile is up to date
-                        SrcTileIndex = SrcTileDescriptor.GetFirstTileIndex(TileExtent.GetExtent());
-                        bool TileReady = true;
-                        while (SrcTileIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND && TileReady)
+                        // get tile from tiledraster only if the tile is already loaded
+                        if ((pDstTile = pDstTiledRaster->GetTileFromLoaded(DstTileIndex)) != 0)
                             {
-                            TileReady = !rSrcTileStatus.GetDirtyForSubResFlag(SrcTileIndex);
-                            SrcTileIndex = SrcTileDescriptor.GetNextTileIndex();
+                            pDstTile->NotifyPool();
+                            pDstTile->Discartable(true);
                             }
-
-                        // all src tiles is up to date, the dst tile can discartable
-                        if (TileReady)
-                            {
-                            // get tile from tiledraster only if the tile is already loaded
-                            if ((pDstTile = pDstTiledRaster->GetTileFromLoaded(DstTileIndex)) != 0)
-                                {
-                                pDstTile->NotifyPool();
-                                pDstTile->Discartable(true);
-                                }
-                            }
-                        DstTileIndex = DstTileDescriptor.GetNextTileIndex();
                         }
-
-                    if ((!pi_pExtent) && Continue)
-                        m_pSubImageList.pData[i].m_SubResolutionIsDirty = false;
+                    DstTileIndex = DstTileDescriptor.GetNextTileIndex();
                     }
-                else
-                    {
-                    // Gathering information for source and destination rasters
-                    HFCPtr<HRARaster>  pSrcRaster  = &*m_pSubImageList.pData[i].m_pSubImage;
 
-                    HVEShape Shape(Extent);
-                    Options.SetDestShape(&Shape);
-                    pDestRaster->CopyFrom(pSrcRaster, Options);
-                    if ((Continue = !HRADrawProgressIndicator::GetInstance()->IsIterationStopped()))
-                        m_pSubImageList.pData[i].m_SubResolutionIsDirty = false;
-                    }
+                if ((!pi_pExtent) && Continue)
+                    m_pSubImageList.pData[i].m_SubResolutionIsDirty = false;
                 }
             }
         DecrementRef();
@@ -1723,7 +1579,7 @@ bool HRAPyramidRaster::SetResamplingForSubResolution(HGSResampling::ResamplingMe
                     m_pSubImageList.pData[res].m_SubResolutionIsDirty = true;
 
                     uint64_t CountTiles;
-                    HRATileStatus& rSrcTileStatus = ((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[res].m_pSubImage)->GetInternalTileStatusList(&CountTiles);
+                    HRATileStatus& rSrcTileStatus = m_pSubImageList.pData[res].m_pSubImage->GetInternalTileStatusList(&CountTiles);
                     for (uint32_t j=0; j<CountTiles; j++)
                         rSrcTileStatus.SetDirtyForSubResFlag(j, true);
                     }
@@ -1743,8 +1599,8 @@ bool HRAPyramidRaster::SetResamplingForSubResolution(HGSResampling::ResamplingMe
 // private
 // Constructor
 //-----------------------------------------------------------------------------
-void HRAPyramidRaster::Constructor (const HFCPtr<HRAStoredRaster>&  pi_rpRasterModel,
-                                    const HFCPtr<HRAStoredRaster>&  pi_rpMainImageRasterModel,
+void HRAPyramidRaster::Constructor (const HFCPtr<HRATiledRaster>&  pi_rpRasterModel,
+                                    const HFCPtr<HRATiledRaster>&  pi_rpMainImageRasterModel,
                                     uint64_t                       pi_WidthPixels,
                                     uint64_t                       pi_HeightPixels,
                                     SubImageDescription*            pi_pSubImageDesc,
@@ -1758,10 +1614,10 @@ void HRAPyramidRaster::Constructor (const HFCPtr<HRAStoredRaster>&  pi_rpRasterM
         // Make a copy of the RasterModel.
         // Set CoordSys and Extent (1,1)
         //
-        m_pRasterModel = (HRAStoredRaster*)pi_rpRasterModel->Clone();
+        m_pRasterModel = (HRATiledRaster*)pi_rpRasterModel->Clone();
         if (GetTransfoModel () != 0)
             {
-            m_pRasterModel->SetTransfoModel (*GetTransfoModel (), GetCoordSys ());
+            m_pRasterModel->HRAStoredRaster::SetTransfoModel (*GetTransfoModel (), GetCoordSys ());
             }
 
         m_pRasterModel->InitSize (1, 1);
@@ -1782,7 +1638,7 @@ void HRAPyramidRaster::Constructor (const HFCPtr<HRAStoredRaster>&  pi_rpRasterM
 
         if (m_pSubImageList.BufSize > 0)
             {
-            HFCPtr<HRAStoredRaster> pRasterModel;
+            HFCPtr<HRATiledRaster> pRasterModel;
 
             pRasterModel = pi_rpMainImageRasterModel == 0 ?  pi_rpRasterModel :
                            pi_rpMainImageRasterModel;
@@ -1802,6 +1658,8 @@ void HRAPyramidRaster::Constructor (const HFCPtr<HRAStoredRaster>&  pi_rpRasterM
 
             m_pSubImageList.pData[0].m_ImageResolution = 1.0;
             m_pSubImageList.pData[0].m_PhysicalImageResolution = 1.0;
+            m_pSubImageList.pData[0].m_ScaleFromMainX = 1.0;
+            m_pSubImageList.pData[0].m_ScaleFromMainY = 1.0;
             m_pSubImageList.pData[0].m_ResamplingType = HGSResampling::UNDEFINED;
             m_pSubImageList.pData[0].m_ComputeResWithOptimizedMethod = true; // not use
 
@@ -1830,9 +1688,7 @@ void HRAPyramidRaster::Constructor (const HFCPtr<HRAStoredRaster>&  pi_rpRasterM
 
                 // Associate each image at the Store
 
-                pRasterModel = pi_pSubImageDesc[ImageNumber-1].pRasterModel == 0 ?
-                               pi_rpRasterModel :
-                               pi_pSubImageDesc[ImageNumber-1].pRasterModel;
+                pRasterModel = pi_pSubImageDesc[ImageNumber-1].pTiledRaster == 0 ? pi_rpRasterModel : pi_pSubImageDesc[ImageNumber-1].pTiledRaster;
 
                 m_pSubImageList.pData[ImageNumber].m_pSubImage =
                     CreateSubResRaster(pRasterModel,
@@ -1850,56 +1706,57 @@ void HRAPyramidRaster::Constructor (const HFCPtr<HRAStoredRaster>&  pi_rpRasterM
                 // SubImages
                 m_pSubImageList.pData[ImageNumber].m_ImageResolution = pi_pSubImageDesc[ImageNumber-1].Resolution;
 
+
+                // Compute physical resolution
+                m_pSubImageList.pData[ImageNumber].m_ScaleFromMainX = (double)(pi_WidthPixels)  / (double)pi_pSubImageDesc[ImageNumber - 1].DimX;
+                m_pSubImageList.pData[ImageNumber].m_ScaleFromMainY = (double)(pi_HeightPixels) / (double)pi_pSubImageDesc[ImageNumber - 1].DimY;
+
                 // Take the better resolution between X and Y.
-                m_pSubImageList.pData[ImageNumber].m_PhysicalImageResolution = max (pi_pSubImageDesc[ImageNumber-1].DimX / (double)(pi_WidthPixels),
+                m_pSubImageList.pData[ImageNumber].m_PhysicalImageResolution = MAX (pi_pSubImageDesc[ImageNumber-1].DimX / (double)(pi_WidthPixels),
                                                                                     pi_pSubImageDesc[ImageNumber-1].DimY / (double)(pi_HeightPixels));
 
                 m_pSubImageList.pData[ImageNumber].m_ResamplingType = pi_pSubImageDesc[ImageNumber-1].ResamplingType;
 
-                if (!m_pSubImageList.pData[ImageNumber].m_pSubImage->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-                    m_pSubImageList.pData[ImageNumber].m_ComputeResWithOptimizedMethod = false;
-                else
-                    {
-                    // CreateSubResRaster create a raster in the same type of pRasterModel. In this case,
-                    // the resolution before is necessary in the same type of the current resolution
-                    // so, we have a HRATiledRaster
+                
+                // CreateSubResRaster create a raster in the same type of pRasterModel. In this case,
+                // the resolution before is necessary in the same type of the current resolution
+                // so, we have a HRATiledRaster
 
-                    uint64_t MainWidth;
-                    uint64_t MainHeight;
-                    uint64_t ResWidth;
-                    uint64_t ResHeight;
-                    ((const HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[ImageNumber - 1])->GetSize(&MainWidth, &MainHeight);
-                    ((const HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[ImageNumber])->GetSize(&ResWidth, &ResHeight);
+                uint64_t MainWidth;
+                uint64_t MainHeight;
+                uint64_t ResWidth;
+                uint64_t ResHeight;
+                m_pSubImageList.pData[ImageNumber - 1].m_pSubImage->GetSize(&MainWidth, &MainHeight);
+                m_pSubImageList.pData[ImageNumber].m_pSubImage->GetSize(&ResWidth, &ResHeight);
 
-                    uint64_t MainBlockSizeX = ((const HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[ImageNumber - 1])->GetTileSizeX();
-                    uint64_t MainBlockSizeY = ((const HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[ImageNumber - 1])->GetTileSizeY();
-                    uint64_t ResBlockSizeX  = ((const HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[ImageNumber])->GetTileSizeX();
-                    uint64_t ResBlockSizeY  = ((const HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[ImageNumber])->GetTileSizeY();
+                uint64_t MainBlockSizeX = m_pSubImageList.pData[ImageNumber - 1].m_pSubImage->GetTileSizeX();
+                uint64_t MainBlockSizeY = m_pSubImageList.pData[ImageNumber - 1].m_pSubImage->GetTileSizeY();
+                uint64_t ResBlockSizeX  = m_pSubImageList.pData[ImageNumber].m_pSubImage->GetTileSizeX();
+                uint64_t ResBlockSizeY  = m_pSubImageList.pData[ImageNumber].m_pSubImage->GetTileSizeY();
 
-                    double MainResolution = (ImageNumber == 1 ? 1.0 : pi_pSubImageDesc[ImageNumber-2].Resolution);
-                    double ResResolution  = pi_pSubImageDesc[ImageNumber-1].Resolution;
+                double MainResolution = (ImageNumber == 1 ? 1.0 : pi_pSubImageDesc[ImageNumber-2].Resolution);
+                double ResResolution  = pi_pSubImageDesc[ImageNumber-1].Resolution;
 
-                    double RemainderX;
-                    RemainderX = fmod((double)MainBlockSizeX * MainResolution,
-                                      (double)ResBlockSizeX * ResResolution);
+                double RemainderX;
+                RemainderX = fmod((double)MainBlockSizeX * MainResolution,
+                                    (double)ResBlockSizeX * ResResolution);
 
-                    double RemainderY;
-                    RemainderY = fmod((double)MainBlockSizeY * MainResolution,
-                                      (double)ResBlockSizeY * ResResolution);
+                double RemainderY;
+                RemainderY = fmod((double)MainBlockSizeY * MainResolution,
+                                    (double)ResBlockSizeY * ResResolution);
 
-                    // Guaranty that the source data will not be discard before all output data will use it.
-                    //  ok if modulo == 0
-                    //  ok if only 1 source data for 1 output data
-                    //  ok if only 1 output data
-                    m_pSubImageList.pData[ImageNumber].m_ComputeResWithOptimizedMethod =
-                        ((HDOUBLE_EQUAL_EPSILON(RemainderX, 0.0) ||
-                          (MainWidth == MainBlockSizeX && ResWidth == ResBlockSizeX) ||
-                          (ResWidth == ResBlockSizeX))     // TR 176702
-                         &&
-                         (HDOUBLE_EQUAL_EPSILON(RemainderY, 0.0) ||
-                          (MainHeight == MainBlockSizeY && ResHeight == ResBlockSizeY) ||
-                          (ResHeight == ResBlockSizeY)));  // TR 176702
-                    }
+                // Guaranty that the source data will not be discard before all output data will use it.
+                //  ok if modulo == 0
+                //  ok if only 1 source data for 1 output data
+                //  ok if only 1 output data
+                m_pSubImageList.pData[ImageNumber].m_ComputeResWithOptimizedMethod =
+                    ((HDOUBLE_EQUAL_EPSILON(RemainderX, 0.0) ||
+                        (MainWidth == MainBlockSizeX && ResWidth == ResBlockSizeX) ||
+                        (ResWidth == ResBlockSizeX))     // TR 176702
+                        &&
+                        (HDOUBLE_EQUAL_EPSILON(RemainderY, 0.0) ||
+                        (MainHeight == MainBlockSizeY && ResHeight == ResBlockSizeY) ||
+                        (ResHeight == ResBlockSizeY)));  // TR 176702
 
                 // Create scaling transfo
                 // Set scaling to the SubImages.
@@ -1933,31 +1790,27 @@ void HRAPyramidRaster::Constructor (const HFCPtr<HRAStoredRaster>&  pi_rpRasterM
 // private
 // DeepCopy
 //-----------------------------------------------------------------------------
-HFCPtr<HRAStoredRaster> HRAPyramidRaster::CreateSubResRaster
-(const HFCPtr<HRAStoredRaster>& pi_rpRasterModel,
- uint64_t                      pi_Width,
- uint64_t                      pi_Height,
- uint64_t                      pi_BlockWidth,
- uint64_t                      pi_BlockHeight,
- bool                          pi_UseBlockSize,
- uint64_t                      pi_TileID) const
+HFCPtr<HRATiledRaster> HRAPyramidRaster::CreateSubResRaster (const HFCPtr<HRATiledRaster>& pi_rpRasterModel,
+                                                             uint64_t                      pi_Width,
+                                                             uint64_t                      pi_Height,
+                                                             uint64_t                      pi_BlockWidth,
+                                                             uint64_t                      pi_BlockHeight,
+                                                             bool                          pi_UseBlockSize,
+                                                             uint64_t                      pi_TileID) const
     {
     HPRECONDITION(pi_rpRasterModel != 0);
-    HFCPtr<HRAStoredRaster> pResult;
+    HPRECONDITION(pi_rpRasterModel->IsCompatibleWith(HRATiledRaster::CLASS_ID));
+    HFCPtr<HRATiledRaster> pResult;
 
+    uint64_t BlockHeight = pi_UseBlockSize? pi_BlockHeight : pi_rpRasterModel->GetTileSizeY();
 
     if (pi_rpRasterModel->IsCompatibleWith(HRAStripedRaster::CLASS_ID))
         {
-        HFCPtr<HRAStripedRaster>
-        pRaster((HFCPtr<HRAStripedRaster>&)pi_rpRasterModel);
-
-        uint64_t BlockHeight = pi_UseBlockSize? pi_BlockHeight : pRaster->GetTileSizeY();
-
         HASSERT(pi_Width <= ULONG_MAX);
         HASSERT(pi_Height <= ULONG_MAX);
         HASSERT(BlockHeight <= ULONG_MAX);
 
-        pResult = new HRAStripedRaster(pRaster->m_pRasterModel,
+        pResult = new HRAStripedRaster(pi_rpRasterModel->m_pBitmapModel,
                                        (uint32_t)BlockHeight,
                                        (uint32_t)pi_Width,
                                        (uint32_t)pi_Height,
@@ -1968,14 +1821,11 @@ HFCPtr<HRAStoredRaster> HRAPyramidRaster::CreateSubResRaster
         // Set RasterID, only use for the moment if a TiledRaster
         pResult->SetID(pi_TileID);
         }
-    else if (pi_rpRasterModel->IsCompatibleWith(HRATiledRaster::CLASS_ID))
+    else
         {
-        HFCPtr<HRATiledRaster>
-        pRaster((HFCPtr<HRAStripedRaster>&)pi_rpRasterModel);
-
-        uint64_t BlockWidth = pi_UseBlockSize? pi_BlockWidth : pRaster->GetTileSizeX();
-        uint64_t BlockHeight = pi_UseBlockSize? pi_BlockHeight : pRaster->GetTileSizeY();
-        pResult = new HRATiledRaster(pRaster->m_pRasterModel,
+        uint64_t BlockWidth = pi_UseBlockSize? pi_BlockWidth : pi_rpRasterModel->GetTileSizeX();
+        
+        pResult = new HRATiledRaster(pi_rpRasterModel->m_pBitmapModel,
                                      BlockWidth,
                                      BlockHeight,
                                      pi_Width,
@@ -1986,15 +1836,6 @@ HFCPtr<HRAStoredRaster> HRAPyramidRaster::CreateSubResRaster
 
         // Set RasterID, only use for the moment if a TiledRaster
         pResult->SetID(pi_TileID);
-        }
-    else
-        {
-        pResult = (HRAStoredRaster*)pi_rpRasterModel->Clone (GetStore(), m_pLog);
-
-        // Set RasterID, only use for the moment if a TiledRaster
-        pResult->SetID(pi_TileID);
-
-        pResult->InitSize (pi_Width, pi_Height);
         }
 
     return pResult;
@@ -2014,7 +1855,7 @@ void HRAPyramidRaster::DeepCopy(const HRAPyramidRaster& pi_rRaster,
     try
         {
         // Copy the model
-        m_pRasterModel = (HRAStoredRaster*)pi_rRaster.m_pRasterModel->Clone();
+        m_pRasterModel = (HRATiledRaster*)pi_rRaster.m_pRasterModel->Clone();
 
         m_SinglePixelType = pi_rRaster.m_SinglePixelType;
 
@@ -2025,12 +1866,14 @@ void HRAPyramidRaster::DeepCopy(const HRAPyramidRaster& pi_rRaster,
             {
             m_pSubImageList.pData[i].m_ImageResolution = pi_rRaster.m_pSubImageList.pData[i].m_ImageResolution;
             m_pSubImageList.pData[i].m_PhysicalImageResolution = pi_rRaster.m_pSubImageList.pData[i].m_PhysicalImageResolution;
+            m_pSubImageList.pData[i].m_ScaleFromMainX = pi_rRaster.m_pSubImageList.pData[i].m_ScaleFromMainX;
+            m_pSubImageList.pData[i].m_ScaleFromMainY = pi_rRaster.m_pSubImageList.pData[i].m_ScaleFromMainY;
             m_pSubImageList.pData[i].m_ComputeResWithOptimizedMethod = pi_rRaster.m_pSubImageList.pData[i].m_ComputeResWithOptimizedMethod;
             m_pSubImageList.pData[i].m_SubResolutionIsDirty = false;
             m_pSubImageList.pData[i].m_ResamplingType = pi_rRaster.m_pSubImageList.pData[i].m_ResamplingType;
 
             // Copy sub-resolution.
-            m_pSubImageList.pData[i].m_pSubImage     = (HRAStoredRaster*)pi_rRaster.m_pSubImageList.pData[i].m_pSubImage->Clone (pi_pStore, pi_pLog);
+            m_pSubImageList.pData[i].m_pSubImage = static_cast<HRATiledRaster*>(pi_rRaster.m_pSubImageList.pData[i].m_pSubImage->Clone (pi_pStore, pi_pLog).GetPtr());
 
             // Link ourselves to the Sub-Resolution Raster, to receive notifications
             LinkTo(m_pSubImageList.pData[i].m_pSubImage);
@@ -2117,116 +1960,28 @@ void HRAPyramidRaster::ReplaceObject (HFCPtr<HRAPyramidRaster>& pio_pRaster)
 double HRAPyramidRaster::FindTheBestResolution (const HFCPtr<HGF2DCoordSys>& pi_rPhysicalCoordSys,
                                                  const HFCPtr<HGF2DCoordSys>  pi_pNewLogicalCoordSys) const
     {
-    double            Res(1.0);
-
     // Do you have sub-resolution ?
     if ((m_pSubImageList.BufSize > 1) && pi_rPhysicalCoordSys != 0)
         {
-        double            ScaleFactorX;
-        double            ScaleFactorY;
-        HGF2DDisplacement  Displacement;
-
-        HFCPtr<HGF2DTransfoModel> pTransfo;
+        HFCPtr<HGF2DCoordSys> pEffPhysicalCs = GetPhysicalCoordSys();
         if (pi_pNewLogicalCoordSys != 0)
             {
-            pTransfo = pi_rPhysicalCoordSys->GetTransfoModelTo (pi_pNewLogicalCoordSys);
+            HFCPtr<HGF2DTransfoModel> pTransfo = pi_rPhysicalCoordSys->GetTransfoModelTo(pi_pNewLogicalCoordSys);
             pTransfo = pTransfo->ComposeInverseWithDirectOf(*GetCoordSys()->GetTransfoModelTo(GetPhysicalCoordSys()));
+            pTransfo->Reverse();
+            pEffPhysicalCs = new HGF2DCoordSys(*pTransfo, pi_rPhysicalCoordSys);
             }
-        else
-            {
-            pTransfo = pi_rPhysicalCoordSys->GetTransfoModelTo (GetPhysicalCoordSys());
-            }
+        HVEShape extent(GetExtent());
+        extent.ChangeCoordSys(GetPhysicalCoordSys());
+        extent.SetCoordSys(pEffPhysicalCs);
 
-        // Check if we can extract Scaling
-        // Here we check if the model represents a parallelism preserving relation
-        // With parallelism preserving relation, even though the model cannot be properly
-        // represented by a stretch, insures that the scaling factors are not dependant upon the
-        // position into space.
-        if (pTransfo->PreservesParallelism())
-            {
-            pTransfo->GetStretchParams (&ScaleFactorX, &ScaleFactorY, &Displacement);
-            Res = 1.0 / min (fabs(ScaleFactorX), fabs(ScaleFactorY));
-            }
-        else
-            {
-            // The model does not preserve parallelism, therefore the scaling factors
-            // are dependant upon the position into space of the application
-            // Fortunately, we know where the current pyramid raster is located
-
-            // We will simply use the extent
-            HGF2DExtent RasterExtent(GetExtent());
-
-            // Check if raster has a size
-            if (RasterExtent.IsDefined())
-                {
-                // Raster is sizeable
-                // Obtain extent four corners
-                HGF2DLocation LowerLeft(RasterExtent.GetXMin(), RasterExtent.GetYMin(), RasterExtent.GetCoordSys());
-                HGF2DLocation LowerRight(RasterExtent.GetXMax(), RasterExtent.GetYMin(), RasterExtent.GetCoordSys());
-                HGF2DLocation UpperLeft(RasterExtent.GetXMin(), RasterExtent.GetYMax(), RasterExtent.GetCoordSys());
-                HGF2DLocation UpperRight(RasterExtent.GetXMax(), RasterExtent.GetYMax(), RasterExtent.GetCoordSys());
-
-                // Change to the raster physical coordinate system
-                LowerLeft.ChangeCoordSys(GetPhysicalCoordSys());
-                LowerRight.ChangeCoordSys(GetPhysicalCoordSys());
-                UpperLeft.ChangeCoordSys(GetPhysicalCoordSys());
-                UpperRight.ChangeCoordSys(GetPhysicalCoordSys());
-
-                HGF2DLocation OtherLowerLeft(LowerLeft, GetCoordSys());
-                HGF2DLocation OtherLowerRight(LowerRight, GetCoordSys());
-                HGF2DLocation OtherUpperLeft(UpperLeft, GetCoordSys());
-                HGF2DLocation OtherUpperRight(UpperRight, GetCoordSys());
-
-                if (pi_pNewLogicalCoordSys != 0)
-                    {
-
-                    OtherLowerLeft.SetCoordSys(pi_pNewLogicalCoordSys);
-                    OtherLowerRight.SetCoordSys(pi_pNewLogicalCoordSys);
-                    OtherUpperLeft.SetCoordSys(pi_pNewLogicalCoordSys);
-                    OtherUpperRight.SetCoordSys(pi_pNewLogicalCoordSys);
-                    }
-
-                OtherLowerLeft.ChangeCoordSys(pi_rPhysicalCoordSys);
-                OtherLowerRight.ChangeCoordSys(pi_rPhysicalCoordSys);
-                OtherUpperLeft.ChangeCoordSys(pi_rPhysicalCoordSys);
-                OtherUpperRight.ChangeCoordSys(pi_rPhysicalCoordSys);
-
-                // Create these four corners into other coordinate system
-
-                // Compute scales
-
-                // Extent may not be undefined
-                HASSERT((LowerLeft - LowerRight).CalculateLength() != 0.0);
-                HASSERT((UpperLeft - UpperRight).CalculateLength() != 0.0);
-                HASSERT((UpperLeft - LowerLeft).CalculateLength() != 0.0);
-                HASSERT((UpperRight - LowerRight).CalculateLength() != 0.0);
-
-                double LowerScale = (OtherLowerLeft - OtherLowerRight).CalculateLength() / (LowerLeft - LowerRight).CalculateLength();
-                double UpperScale  = (OtherUpperLeft - OtherUpperRight).CalculateLength() / (UpperLeft - UpperRight).CalculateLength();
-                double LeftScale = (OtherUpperLeft - OtherLowerLeft).CalculateLength() / (UpperLeft - LowerLeft).CalculateLength();
-                double RightScale = (OtherUpperRight - OtherLowerRight).CalculateLength() / (UpperRight - LowerRight).CalculateLength();
-
-                double Scale = max(fabs(LowerScale), max(fabs(UpperScale), max(fabs(LeftScale), fabs(RightScale))));
-
-                HASSERT(Scale != 0.0);
-
-                Res = Scale;
-                }
-            else
-                {
-                // Raster has no size
-
-                // Give anything valid
-                Res = 1.0;
-                }
-
-            }
+        double scale = 1.0 / EvaluateScaleFactor(pi_rPhysicalCoordSys, pEffPhysicalCs, extent);
+        
+        return (scale);
         }
 
-    return (Res);
+    return 1.0;
     }
-
-
 
 //-----------------------------------------------------------------------------
 // private
@@ -2253,14 +2008,12 @@ void HRAPyramidRaster::SetSubImageNotComputed (SubImageDescription*  pi_pSubImag
                 // If the Raster is a TileRaster
                 //      Change State of each tile in the previous image, to force to recompute
                 //      the Sub-Images
-                if (m_pSubImageList.pData[i].m_pSubImage->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-                    {
-                    uint64_t CountTiles;
-                    HRATileStatus& rSrcTileStatus = ((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[i])->GetInternalTileStatusList(&CountTiles);
+                
+                uint64_t CountTiles;
+                HRATileStatus& rSrcTileStatus = m_pSubImageList.pData[i].m_pSubImage->GetInternalTileStatusList(&CountTiles);
 
-                    for (uint32_t j = 0; j < CountTiles; j++)
-                        rSrcTileStatus.SetDirtyForSubResFlag(j, true);
-                    }
+                for (uint32_t j = 0; j < CountTiles; j++)
+                    rSrcTileStatus.SetDirtyForSubResFlag(j, true);
 
                 // Set the previous image is Dirty --> compute the Sub-Resolution.
                 m_pSubImageList.pData[i].m_SubResolutionIsDirty = true;
@@ -2273,146 +2026,185 @@ void HRAPyramidRaster::SetSubImageNotComputed (SubImageDescription*  pi_pSubImag
         }
     }
 
-void HRAPyramidRaster::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
-                                const HRACopyFromOptions& pi_rOptions)
+void HRAPyramidRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
     {
+    HRAStoredRaster::CopyFromLegacy(pi_pSrcRaster, pi_rOptions);
+    }
 
-#if 0
-// HChk MR: The pyramid test should be more precise
-    HASSERT( !(pi_pSrcRaster->GetClassID() == HRAPyramidRaster::CLASS_ID &&
-               (m_ResamplingType == HGSResampling::ResamplingMethod::UNDEFINED)) );
+void HRAPyramidRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
+    {
+    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
+    }
 
-    // test if the source is a pyramid and that it has the same resampling method
-    if(pi_pSrcRaster->GetClassID() == HRAPyramidRaster::CLASS_ID &&
-       (m_ResamplingType == HGSResampling::ResamplingMethod::UNDEFINED))
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageSinkNodePtr HRAPyramidRaster::_GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType)
+    {
+    //&&OPTIMIZATION: We need to do better and avoid cloning the shape. pyramid and resolution 0 do not have the same CS. why? For now change CS, to accommodate tiledRaster.
+    HVEShape shapeInTiledRasterCS(sinkShape);
+    shapeInTiledRasterCS.ChangeCoordSys(m_pSubImageList.pData[0].m_pSubImage->GetPhysicalCoordSys());
+
+    // Editing always occurs on the main res.
+    return m_pSubImageList.pData[0].m_pSubImage->GetSinkNode(status, shapeInTiledRasterCS, pReplacingPixelType);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRAPyramidRaster::_BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR pi_Options)
+    {
+    BeAssert(NULL != pi_Options.GetShape()); // Required to update sub-res
+    BeAssert(NULL != pi_Options.GetShape()->GetShapePtr()); // Required to update sub-res
+
+    unsigned short resolutionIndex = -1;
+
+    // Do you have sub-resolution and the image is not a binary image
+    //completely loaded in memory (optimization)
+    if ((m_pSubImageList.BufSize > 1) && (m_UseOnlyFirstRes == false))
         {
-        for(uint32_t ImageIndex = 0; ImageIndex < m_pSubImageList.BufSize; ImageIndex++)
+        // find the best resolution for the surface
+        double Resolution = FindTheBestResolution(imageNode.GetPhysicalCoordSys(), pi_Options.GetReplacingCoordSys());
+
+        // if the resolution is bigger than the first one use the first one
+        if (HDOUBLE_GREATER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[0].m_PhysicalImageResolution))
             {
-            // if yes, copy directly the data
-
-            m_pSubImageList.pData[ImageIndex]->CopyFrom(pi_pSrcRaster, pi_rOptions);
-
-            // Signal... All sub-resolutions are up-to-date..
-            //
-            m_SubResolutionIsDirty.pData[ImageIndex] = false;
-
-            uint32_t CountTiles;
-            HRATileStatus& rSrcTileStatus = ((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[ImageIndex])->GetInternalTileStatusList(&CountTiles);
-
-            if (!HRADrawProgressIndicator::GetInstance()->IsIterationStopped())
+            resolutionIndex = 0;
+            }
+        else
+            {
+            // find at what index is that resolution
+            resolutionIndex  = (unsigned short)m_pSubImageList.BufSize - 1;   // last res of the pyramid
+            bool   ResFound = false;
+            for (unsigned short Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
                 {
-                for (uint32_t j=0; j<CountTiles; j++)
-                    rSrcTileStatus.SetDirtyForSubResFlag(j, false);
+                // if the res is between the current res and the next, use that res
+                if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[Res].m_PhysicalImageResolution) &&
+                    HDOUBLE_GREATER_EPSILON(Resolution, m_pSubImageList.pData[Res + 1].m_PhysicalImageResolution))
+                    {
+                    resolutionIndex = Res;
+                    ResFound = true;
+                    }
                 }
-            else
-                ImageIndex = m_pSubImageList.BufSize;
             }
         }
     else
+        resolutionIndex = 0;
+
+    //&&Backlog update resolution must take the neighbourhood into account. Can we test and update tiles as we request them? We should! 
+    //  >>> If we request physical tiles we would not need all this CS stuff below.
+    //  >>> Old way of doing flags is slow. See new tiledraster prototype.
+    if (resolutionIndex > 0)
         {
-        HRAStoredRaster::CopyFrom(pi_pSrcRaster, pi_rOptions);
+        HGF2DExtent destExtent(pi_Options.GetShape()->GetExtent());
+
+        // If a replacing coord sys is provided, move the shape over the source as seen from the destination.
+        if (pi_Options.GetReplacingCoordSys() != 0)
+            {
+            // Set the stroking tolerance for the shape
+            // Set a quarter of a pixel tolerance
+            double CenterX = ((destExtent.GetXMin() + destExtent.GetXMax()) / 2.0);
+            double CenterY = ((destExtent.GetYMin() + destExtent.GetYMax()) / 2.0);
+            HFCPtr<HGFTolerance> pTol = new HGFTolerance (CenterX - DEFAULT_PIXEL_TOLERANCE, CenterY - DEFAULT_PIXEL_TOLERANCE,
+                                                          CenterX + DEFAULT_PIXEL_TOLERANCE, CenterY + DEFAULT_PIXEL_TOLERANCE,
+                                                          pi_Options.GetShape()->GetCoordSys());
+
+            HFCPtr<HVEShape> pDestShape = new HVEShape(*pi_Options.GetShape());
+            pDestShape->SetStrokeTolerance(pTol);
+
+            pDestShape->ChangeCoordSys(pi_Options.GetReplacingCoordSys());
+            pDestShape->SetCoordSys(GetCoordSys());
+
+            destExtent = pDestShape->GetExtent();
+            }
+
+        UpdateSubResolution(resolutionIndex, &destExtent);
         }
-#else
-    HRAStoredRaster::CopyFrom(pi_pSrcRaster, pi_rOptions);
-#endif
-    }
 
-void HRAPyramidRaster::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster)
-    {
-    CopyFrom(pi_pSrcRaster, HRACopyFromOptions());
-    }
+    ImagePPStatus status = m_pSubImageList.pData[resolutionIndex].m_pSubImage->BuildCopyToContext(imageNode, pi_Options);
 
+    if (status != IMAGEPP_STATUS_Success)
+        return status;
+
+    BeAssert(NULL != imageNode.GetSourceNodeP());
+    BeAssert(0.0 != m_pSubImageList.pData[resolutionIndex].m_ScaleFromMainX);
+    BeAssert(0.0 != m_pSubImageList.pData[resolutionIndex].m_ScaleFromMainY);
+    imageNode.GetSourceNodeP()->SetScaleFactorFromMain(m_pSubImageList.pData[resolutionIndex].m_ScaleFromMainX, m_pSubImageList.pData[resolutionIndex].m_ScaleFromMainY);
+
+    return status;
+    }
 
 //-----------------------------------------------------------------------------
 // public
 // Draw
 //-----------------------------------------------------------------------------
-void HRAPyramidRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface, const HGFDrawOptions* pi_pOptions) const
+void HRAPyramidRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
     {
-    HPRECONDITION(pio_rpSurface != 0);
-    HPRECONDITION(pi_pOptions != 0);
+    HRADrawOptions Options(pi_Options);
 
-    HRADrawOptions                 Options(pi_pOptions);
-    const HGFPreDrawOptions*       pPreDrawOptions = pi_pOptions->GetPreDrawOptions();
-    HRAPyramidRaster::DrawingData* pDrawingData = 0;
-
-    if (pPreDrawOptions != 0)
+    int32_t resolutionIndex = 0;
+    
+    // Do you have sub-resolution and the image is not a binary image
+    //completely loaded in memory (optimization)
+    if ((m_pSubImageList.BufSize > 1) && (m_UseOnlyFirstRes == false))
         {
-        pDrawingData = (HRAPyramidRaster::DrawingData*)((const_cast<HGFPreDrawOptions*>(pPreDrawOptions))->GetPrecomputedDataStorage().GetData(m_StoringID));
-        }
-    else
-        {
-        pDrawingData = new HRAPyramidRaster::DrawingData;
+        // find the best resolution for the surface
+        double Resolution = FindTheBestResolution(pio_destSurface.GetCoordSys(), Options.GetReplacingCoordSys());
 
-        // Do you have sub-resolution and the image is not a binary image
-        //completely loaded in memory (optimization)
-        if ((m_pSubImageList.BufSize > 1) && (m_UseOnlyFirstRes == false))
+        // if the resolution is bigger than the first one use the first one
+        if (HDOUBLE_GREATER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[0].m_PhysicalImageResolution))
             {
-            // find the best resolution for the surface
-            double Resolution = FindTheBestResolution(pio_rpSurface->GetCoordSys(),
-                                                       Options.GetReplacingCoordSys());
-
-            // if the resolution is bigger than the first one use the first one
-            if (HDOUBLE_GREATER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[0].m_PhysicalImageResolution))
+            resolutionIndex = 0;
+            }
+        else
+            {
+            // find at what index is that resolution
+            resolutionIndex  = (unsigned short)m_pSubImageList.BufSize - 1;   // last res of the pyramid
+            bool   ResFound = false;
+            for (unsigned short Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
                 {
-                pDrawingData->m_ResolutionIndex = 0;
-                }
-            else
-                {
-                // find at what index is that resolution
-                pDrawingData->m_ResolutionIndex  = (unsigned short)m_pSubImageList.BufSize - 1;   // last res of the pyramid
-                bool   ResFound = false;
-                for (unsigned short Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
+                // if the res is between the current res and the next, use that res
+                if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[Res].m_PhysicalImageResolution) &&
+                    HDOUBLE_GREATER_EPSILON(Resolution, m_pSubImageList.pData[Res + 1].m_PhysicalImageResolution))
                     {
-                    // if the res is between the current res and the next, use that res
-                    if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[Res].m_PhysicalImageResolution) &&
-                        HDOUBLE_GREATER_EPSILON(Resolution, m_pSubImageList.pData[Res + 1].m_PhysicalImageResolution))
-                        {
-                        pDrawingData->m_ResolutionIndex = Res;
-                        ResFound = true;
-                        }
+                    resolutionIndex = Res;
+                    ResFound = true;
                     }
                 }
             }
-        else
-            pDrawingData->m_ResolutionIndex = 0;
+        }
+    else
+        resolutionIndex = 0;
 
-        if (pDrawingData->m_ResolutionIndex > 0)
+    if (resolutionIndex > 0)
+        {
+        HFCPtr<HGSSurfaceDescriptor> pDstDescriptor(pio_destSurface.GetSurfaceDescriptor());
+        HVEShape SurfaceExtent(0.0, 0.0, pDstDescriptor->GetWidth(), pDstDescriptor->GetHeight(), pio_destSurface.GetSurfaceCoordSys());
+
+        // Set the stroking tolerance for the shape
+        // Set a quarter of a pixel tolerance
+        double CenterX = pDstDescriptor->GetWidth() / 2.0;
+        double CenterY = pDstDescriptor->GetHeight() / 2.0;
+        HFCPtr<HGFTolerance> pTol = new HGFTolerance (CenterX - DEFAULT_PIXEL_TOLERANCE,
+                                                        CenterY - DEFAULT_PIXEL_TOLERANCE,
+                                                        CenterX + DEFAULT_PIXEL_TOLERANCE,
+                                                        CenterY + DEFAULT_PIXEL_TOLERANCE,
+                                                        pio_destSurface.GetSurfaceCoordSys());
+
+        SurfaceExtent.SetStrokeTolerance(pTol);
+
+        if (Options.GetReplacingCoordSys() != 0)
             {
-            HFCPtr<HGSSurfaceDescriptor> pDstDescriptor(pio_rpSurface->GetSurfaceDescriptor());
-            HVEShape SurfaceExtent(0.0, 0.0, pDstDescriptor->GetWidth(), pDstDescriptor->GetHeight(), pio_rpSurface->GetSurfaceCoordSys());
-
-            // Set the stroking tolerance for the shape
-            // Set a quarter of a pixel tolerance
-            double CenterX = pDstDescriptor->GetWidth() / 2.0;
-            double CenterY = pDstDescriptor->GetHeight() / 2.0;
-            HFCPtr<HGFTolerance> pTol = new HGFTolerance (CenterX - DEFAULT_PIXEL_TOLERANCE,
-                                                          CenterY - DEFAULT_PIXEL_TOLERANCE,
-                                                          CenterX + DEFAULT_PIXEL_TOLERANCE,
-                                                          CenterY + DEFAULT_PIXEL_TOLERANCE,
-                                                          pio_rpSurface->GetSurfaceCoordSys());
-
-            SurfaceExtent.SetStrokeTolerance(pTol);
-
-            if (Options.GetReplacingCoordSys() != 0)
-                {
-                SurfaceExtent.ChangeCoordSys(Options.GetReplacingCoordSys());
-                SurfaceExtent.SetCoordSys(GetCoordSys());
-                }
-
-            // Do not update sub-resolution, if we are working on the 1:1
-            HGF2DExtent Extent(SurfaceExtent.GetExtent());
-            ((HRAPyramidRaster*)this)->UpdateSubResolution(pDrawingData->m_ResolutionIndex, &Extent);
+            SurfaceExtent.ChangeCoordSys(Options.GetReplacingCoordSys());
+            SurfaceExtent.SetCoordSys(GetCoordSys());
             }
+
+        HGF2DExtent Extent(SurfaceExtent.GetExtent());
+        ((HRAPyramidRaster*)this)->UpdateSubResolution(resolutionIndex, &Extent);
         }
 
     // Draw the selected resolution
-    m_pSubImageList.pData[pDrawingData->m_ResolutionIndex].m_pSubImage->Draw(pio_rpSurface, pi_pOptions);
-
-    if (pPreDrawOptions == 0)
-        {
-        delete pDrawingData;
-        }
+    m_pSubImageList.pData[resolutionIndex].m_pSubImage->Draw(pio_destSurface, pi_Options);
     }
 
 //-----------------------------------------------------------------------------
@@ -2430,7 +2222,7 @@ uint64_t HRAPyramidRaster::GetNbSubResTilesToUpdate(unsigned short pi_ResIndex, 
 
     for (int SubResInd = pi_ResIndex; SubResInd > 0; SubResInd--)
         {
-        pDestTiledRaster = (HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[SubResInd];
+        pDestTiledRaster = m_pSubImageList.pData[SubResInd].m_pSubImage;
 
         HVEShape Shape(RequestedExtent);
         Shape.ChangeCoordSys(pDestTiledRaster->GetPhysicalCoordSys());
@@ -2486,3 +2278,52 @@ void HRAPyramidRaster::SetContext(const HFCPtr<HMDContext>& pi_rpContext)
         m_pSubImageList.pData[ResInd].m_pSubImage->SetContext(pi_rpContext);
         }
     }
+
+//-----------------------------------------------------------------------------
+// public
+// Clone -
+//-----------------------------------------------------------------------------
+HFCPtr<HRARaster> HRAPyramidRaster::Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog) const
+    {
+    // Make a tmp Raster
+    HRAPyramidRaster* pTmpRaster = new HRAPyramidRaster();
+
+    pTmpRaster->HRAStoredRaster::operator=(*this);
+
+    pTmpRaster->DeepDelete();
+    pTmpRaster->DeepCopy (*this, pi_pStore, pi_pLog);
+
+    return pTmpRaster;
+    }
+//-----------------------------------------------------------------------------
+// public
+// Clone -
+//-----------------------------------------------------------------------------
+HPMPersistentObject* HRAPyramidRaster::Clone () const
+    {
+    // Make a tmp Raster
+    return new HRAPyramidRaster(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+unsigned short HRAPyramidRaster::EvaluateResolution(double Resolution) const
+    {
+    // if the resolution is bigger than the first one use the first one
+    if (HDOUBLE_GREATER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[0].m_PhysicalImageResolution))
+        return 0;
+
+    // find at what index is that resolution
+    for (unsigned short Res = 0; Res < m_pSubImageList.BufSize - 1; ++Res)
+        {
+        // if the res is between the current res and the next, use that res
+        if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[Res].m_PhysicalImageResolution) &&
+            HDOUBLE_GREATER_EPSILON(Resolution, m_pSubImageList.pData[Res + 1].m_PhysicalImageResolution))
+            return Res;
+        }
+
+    return (unsigned short)m_pSubImageList.BufSize - 1;   // last res of the pyramid
+    }
+
+

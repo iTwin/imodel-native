@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTImportFromRasterExportToFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HUTImportFromRasterExportToFile
@@ -25,37 +25,38 @@
 #include "HVEShape.h"
 #include "HGSTypes.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HUTImportFromRasterExportToFile : public HRFImportExport
     {
 public:
     // Creation and destruction interface
-    _HDLLg HUTImportFromRasterExportToFile (HFCPtr<HRARaster>                  pi_pRaster,
+    IMAGEPP_EXPORT HUTImportFromRasterExportToFile (HFCPtr<HRARaster>                  pi_pRaster,
                                             const HVEShape&                    pi_rClipShape,
                                             const HFCPtr<HGF2DWorldCluster>&   pi_pWorldCluster);
 
-    _HDLLg virtual ~HUTImportFromRasterExportToFile();
+    IMAGEPP_EXPORT virtual ~HUTImportFromRasterExportToFile();
 
     // Export interface
-    _HDLLg virtual HFCPtr<HRFRasterFile>    StartExport();
+    IMAGEPP_EXPORT virtual HFCPtr<HRFRasterFile>    StartExport();
 
     // BestMatch interface
     virtual void                            BestMatchSelectedValues();
 
-    _HDLLg void                             SelectBestPixelType(const HFCPtr<HRPPixelType>& pPixelType);
+    IMAGEPP_EXPORT void                             SelectBestPixelType(const HFCPtr<HRPPixelType>& pPixelType);
 
     // Set number of color, if dest to palette
     //  0 --> MaxEntries
-    _HDLLg void                             SetNumberOfColorDestination(uint32_t pi_NbColors);
+    IMAGEPP_EXPORT void                             SetNumberOfColorDestination(uint32_t pi_NbColors);
     uint32_t                                GetNumberOfColorDestination() const;
 
-    _HDLLg void                                    SetBlendAlpha(bool pi_BlendAlpha);
+    IMAGEPP_EXPORT void                                    SetBlendAlpha(bool pi_BlendAlpha);
     bool                                   GetBlendAlpha() const;
 
     const HGSResampling&                    GetResamplingMode() const;
-    _HDLLg void                                    SetResamplingMode(const HGSResampling& pi_rResampling);
+    IMAGEPP_EXPORT void                                    SetResamplingMode(const HGSResampling& pi_rResampling);
 
-    _HDLLg HRASamplingOptions                      GetRepresentativePaletteSamplingOptions() const;
-    _HDLLg void                                    SetRepresentativePaletteSamplingOptions(const HRASamplingOptions& pi_rRepPalSamplingOptions);
+    IMAGEPP_EXPORT HRASamplingOptions                      GetRepresentativePaletteSamplingOptions() const;
+    IMAGEPP_EXPORT void                                    SetRepresentativePaletteSamplingOptions(const HRASamplingOptions& pi_rRepPalSamplingOptions);
 
 protected:
     HFCPtr<HRARaster>   m_pRaster;
@@ -71,3 +72,4 @@ private:
     HUTImportFromRasterExportToFile(const HUTImportFromRasterExportToFile&);
     HUTImportFromRasterExportToFile& operator=(const HUTImportFromRasterExportToFile&);
     };
+END_IMAGEPP_NAMESPACE

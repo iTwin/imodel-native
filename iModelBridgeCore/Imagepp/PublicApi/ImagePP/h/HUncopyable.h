@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HUncopyable.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HUncopyable
@@ -10,6 +10,7 @@
 #pragma once
 
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // HUncopyable
 //
@@ -39,3 +40,5 @@ private:
     HUncopyable(const HUncopyable&);
     HUncopyable& operator=(const HUncopyable&);
     };
+
+END_IMAGEPP_NAMESPACE

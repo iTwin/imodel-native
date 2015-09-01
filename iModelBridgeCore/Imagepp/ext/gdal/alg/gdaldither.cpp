@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldither.cpp 13342 2007-12-14 20:58:31Z rouault $
+ * $Id: gdaldither.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  CIETMap Phase 2
  * Purpose:  Convert RGB (24bit) to a pseudo-colored approximation using
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam
+ * Copyright (c) 2007, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -50,7 +51,7 @@
 #include "gdal_priv.h"
 #include "gdal_alg.h"
 
-CPL_CVSID("$Id: gdaldither.cpp 13342 2007-12-14 20:58:31Z rouault $");
+CPL_CVSID("$Id: gdaldither.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 #define C_LEVELS	32
 

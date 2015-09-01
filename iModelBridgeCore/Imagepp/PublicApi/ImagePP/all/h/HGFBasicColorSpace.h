@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFBasicColorSpace.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,6 +10,12 @@
 //-----------------------------------------------------------------------------
 
 #pragma once
+
+// Some color space conversion need a Gamma value. Provide the standard default
+// gamma factor for the PC world. (MAC is 1.8)
+#define  DEFAULT_GAMMA_FACTOR   2.2
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HGFBasicColorSpace
     {
@@ -43,11 +49,11 @@ public:
     double Whitness  (double pi_X, double pi_Y, double pi_Z);
 
     // Color difference evaluation
-    _HDLLg double EuclideanColorDifference(double  pi_X1, double  pi_Y1, double  pi_Z1,
+    IMAGEPP_EXPORT double EuclideanColorDifference(double  pi_X1, double  pi_Y1, double  pi_Z1,
                                             double  pi_X2, double  pi_Y2, double  pi_Z2,
                                             double* po_dX, double* po_dY, double* po_dZ);
 
-    _HDLLg double EuclideanColorDifference(double  pi_X1, double  pi_Y1, double  pi_Z1,
+    IMAGEPP_EXPORT double EuclideanColorDifference(double  pi_X1, double  pi_Y1, double  pi_Z1,
                                             double  pi_X2, double  pi_Y2, double  pi_Z2);
 
 protected:
@@ -85,7 +91,7 @@ protected:
     bool   m_UseGammaCorrection;
 
     unsigned short m_BitsPerPixel;
-    unsigned short m_ChannelSize;
+    uint32_t m_ChannelSize;
 
 private:
 
@@ -93,5 +99,7 @@ private:
     HGFBasicColorSpace(const HGFBasicColorSpace& pi_rSource);
     HGFBasicColorSpace& operator=(const HGFBasicColorSpace& pi_rSource);
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HGFBasicColorSpace.hpp"

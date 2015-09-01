@@ -8,8 +8,8 @@
 // Class HRFTgaFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCMath.h>
 #include <Imagepp/all/h/HRFTgaFile.h>
@@ -25,7 +25,6 @@
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #ifndef DIVROUNDUP
@@ -206,8 +205,7 @@ HRFTgaCreator::HRFTgaCreator()
 ------------------------------------------------------------------------------*/
 WString HRFTgaCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_Targa); // TGA Targa TrueVision
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_Targa()); // TGA Targa TrueVision
     }
 
 /**-----------------------------------------------------------------------------
@@ -272,20 +270,20 @@ bool HRFTgaCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the TGA File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
     // read header
-    if (sizeof(HRFTgaFile::TgaFileHeader) != pFile->Read ((void*)&TgaHdr, sizeof(HRFTgaFile::TgaFileHeader)))
+    if (sizeof(HRFTgaFile::TgaFileHeader) != pFile->Read (&TgaHdr, sizeof(HRFTgaFile::TgaFileHeader)))
         goto WRAPUP;
 
     // seek for the footer
     pFile->SeekToPos(pFile->GetSize() - (long)(sizeof(HRFTgaFile::TgaFileFooter)));
 
     // read footer
-    if (sizeof(HRFTgaFile::TgaFileFooter) != pFile->Read ((void*)&TgaFtr, sizeof(HRFTgaFile::TgaFileFooter)))
+    if (sizeof(HRFTgaFile::TgaFileFooter) != pFile->Read (&TgaFtr, sizeof(HRFTgaFile::TgaFileFooter)))
         goto WRAPUP;
 
     if (TgaHdr.m_ImageType == 2 || TgaHdr.m_ImageType == 3 ||
@@ -392,9 +390,7 @@ bool HRFTgaFile::Open()
     {
     if (!m_IsOpen)
         {
-        m_pTgaFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(m_pTgaFile, GetURL()->GetURL());
+        m_pTgaFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -416,7 +412,7 @@ bool HRFTgaFile::Open()
         if ((m_pTgaFileHeader->m_ImageType >= 9) && (m_pTgaFileHeader->m_ImageType <= 11) &&
             ( GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess ))
             {
-            throw HRFException(HRF_ACCESS_MODE_FOR_CODEC_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFAccessModeForCodeNotSupportedException(GetURL()->GetURL());
             }
 
         m_IsOpen = true;
@@ -450,12 +446,12 @@ void HRFTgaFile::CreateDescriptors ()
 
     // Scanline Orientation
     if (0 != (m_pTgaFileHeader->m_ImageDescriptor & 0x10))
-        throw HRFException(HRF_SLO_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFSloNotSupportedException(GetURL()->GetURL());
 
     // Validate the alpha channel bits
     Byte AlphaChannelBits = m_pTgaFileHeader->m_ImageDescriptor & 0x0F;
     if (AlphaChannelBits != 0 && (AlphaChannelBits != 8 && !(AlphaChannelBits == 1 && m_pTgaFileHeader->m_PixelDepth == 16)))
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+        throw HFCCorruptedFileException(GetURL()->GetURL());
 
     // Pixel type
     pPixelType = CreatePixelTypeFromFile();
@@ -793,7 +789,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                     {
                     float temp;
                     BE_STRING_UTILITIES_SWSCANF (((HFCPtr<HRFAttributeVersion>&)pTag)->GetData().c_str(),
-                                                L"%f%hhu",
+                                                L"%f%hc",
                                                 &temp,
                                                 &m_pTgaExtentionArea->m_SoftwareVersionLetter);
                     //temp = (float)atof (((HFCPtr<HRFAttributeVersion>&)pTag)->GetData().c_str());
@@ -1027,7 +1023,7 @@ HFCPtr<HRPPixelType> HRFTgaFile::CreatePixelTypeFromFile() const
         }
 
     if (pPixelType == 0)
-        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
 
     return pPixelType;
     }
@@ -1075,8 +1071,8 @@ void HRFTgaFile::GetFileHeaderFromFile()
 
     m_pTgaFile->SeekToPos(0);
     m_pTgaFileHeader = new HRFTgaFile::TgaFileHeader;
-    if (sizeof(HRFTgaFile::TgaFileHeader) != m_pTgaFile->Read((void*)m_pTgaFileHeader, sizeof(HRFTgaFile::TgaFileHeader)))
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+    if (sizeof(HRFTgaFile::TgaFileHeader) != m_pTgaFile->Read(m_pTgaFileHeader, sizeof(HRFTgaFile::TgaFileHeader)))
+        throw HFCCorruptedFileException(m_pURL->GetURL());
 
     m_RasterDataOffset = sizeof(HRFTgaFile::TgaFileHeader);
     m_RasterDataEndOffset = (uint32_t)m_pTgaFile->GetSize();
@@ -1096,8 +1092,8 @@ void HRFTgaFile::GetFileFooterFromFile()
 
     m_pTgaFileFooter = new TgaFileFooter;
 
-    if (sizeof(TgaFileFooter) != m_pTgaFile->Read((void*)m_pTgaFileFooter, sizeof(TgaFileFooter)))
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+    if (sizeof(TgaFileFooter) != m_pTgaFile->Read(m_pTgaFileFooter, sizeof(TgaFileFooter)))
+        throw HFCCorruptedFileException(m_pURL->GetURL());
 
     // If the file footer area is not present, we will not find the standard signature
     if (0 != (strcmp ((const char*)m_pTgaFileFooter->m_Signature, TGA_SIGNATURE)))
@@ -1132,8 +1128,8 @@ void HRFTgaFile::GetMapInfoFromFile()
         m_pTgaImageData->m_pImageId = new char[m_pTgaFileHeader->m_IdLength+1];
         m_pTgaImageData->m_pImageId[m_pTgaFileHeader->m_IdLength] = 0x00;
 
-        if (0 == m_pTgaFile->Read ((void*)m_pTgaImageData->m_pImageId, m_pTgaFileHeader->m_IdLength))
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+        if (0 == m_pTgaFile->Read (m_pTgaImageData->m_pImageId, m_pTgaFileHeader->m_IdLength))
+            throw HFCCorruptedFileException(m_pURL->GetURL());
 
         m_RasterDataOffset += m_pTgaFileHeader->m_IdLength;
         }
@@ -1161,8 +1157,8 @@ void HRFTgaFile::GetMapInfoFromFile()
                 pBuffer = new unsigned short[ColorMapSizeInPixel];
                 m_pTgaImageData->m_pColorMap = new Byte[ColorMapSizeInPixel * PixelSizeInByte];
 
-                if (sizeof(unsigned short)*ColorMapSizeInPixel != m_pTgaFile->Read ((void*)pBuffer, ColorMapSizeInPixel * sizeof(unsigned short)))
-                    throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+                if (sizeof(unsigned short)*ColorMapSizeInPixel != m_pTgaFile->Read (pBuffer, ColorMapSizeInPixel * sizeof(unsigned short)))
+                    throw HFCCorruptedFileException(m_pURL->GetURL());
 
                 // Conversion
                 for (i = 0, j = 0; i < ColorMapSizeInPixel; i++)
@@ -1178,8 +1174,8 @@ void HRFTgaFile::GetMapInfoFromFile()
                 PixelSizeInByte = m_pTgaFileHeader->m_ColorMapEntrySize / 8;
                 m_pTgaImageData->m_pColorMap = new Byte[ColorMapSizeInPixel * PixelSizeInByte];
 
-                if ((ColorMapSizeInPixel * PixelSizeInByte) != m_pTgaFile->Read ((void*)m_pTgaImageData->m_pColorMap, ColorMapSizeInPixel * PixelSizeInByte))
-                    throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+                if ((ColorMapSizeInPixel * PixelSizeInByte) != m_pTgaFile->Read (m_pTgaImageData->m_pColorMap, ColorMapSizeInPixel * PixelSizeInByte))
+                    throw HFCCorruptedFileException(m_pURL->GetURL());
 
                 // Conversion
                 for (i = 0, j = 0; i < ColorMapSizeInPixel; i++, j += PixelSizeInByte)
@@ -1190,7 +1186,7 @@ void HRFTgaFile::GetMapInfoFromFile()
                     }
                 break;
             default :
-                throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+                throw HFCCorruptedFileException(m_pURL->GetURL());
             }
 
         m_RasterDataOffset += ColorMapSizeInPixel * DIVROUNDUP (m_pTgaFileHeader->m_ColorMapEntrySize, 8);
@@ -1216,8 +1212,8 @@ void HRFTgaFile::GetExtensionAreaFromFile()
 
         m_pTgaExtentionArea = new TgaExtensionArea;
         m_pTgaFile->SeekToPos(m_pTgaFileFooter->m_ExtensionAreaOffset);
-        if (sizeof (TgaExtensionArea) != m_pTgaFile->Read((void*)m_pTgaExtentionArea, sizeof (TgaExtensionArea)))
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+        if (sizeof (TgaExtensionArea) != m_pTgaFile->Read(m_pTgaExtentionArea, sizeof (TgaExtensionArea)))
+            throw HFCCorruptedFileException(GetURL()->GetURL());
 
         m_pTgaExtTableArea = new TgaExtTableArea;
 
@@ -1226,8 +1222,8 @@ void HRFTgaFile::GetExtensionAreaFromFile()
             {
             m_pTgaExtTableArea->m_pScanLineTable = new uint32_t[m_pTgaFileHeader->m_ImageHeight];
             m_pTgaFile->SeekToPos(m_pTgaExtentionArea->m_ScanLineOffset);
-            if ((m_pTgaFileHeader->m_ImageHeight * 4) != m_pTgaFile->Read((void*)m_pTgaExtTableArea->m_pScanLineTable, m_pTgaFileHeader->m_ImageHeight * 4))
-                throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+            if ((m_pTgaFileHeader->m_ImageHeight * 4) != m_pTgaFile->Read(m_pTgaExtTableArea->m_pScanLineTable, m_pTgaFileHeader->m_ImageHeight * 4))
+                throw HFCCorruptedFileException(GetURL()->GetURL());
 
             if (m_pTgaExtentionArea->m_ScanLineOffset < m_RasterDataEndOffset)
                 m_RasterDataEndOffset = m_pTgaExtentionArea->m_ScanLineOffset;
@@ -1246,8 +1242,8 @@ void HRFTgaFile::GetExtensionAreaFromFile()
             HArrayAutoPtr<unsigned short>   pBuffer;
 
             m_pTgaFile->SeekToPos (m_pTgaExtentionArea->m_PostageStampOffset);
-            m_pTgaFile->Read ((void*)&m_pTgaExtTableArea->m_StampWidth, sizeof(unsigned char));
-            m_pTgaFile->Read ((void*)&m_pTgaExtTableArea->m_StampHeight, sizeof(unsigned char));
+            m_pTgaFile->Read (&m_pTgaExtTableArea->m_StampWidth, sizeof(unsigned char));
+            m_pTgaFile->Read (&m_pTgaExtTableArea->m_StampHeight, sizeof(unsigned char));
 
             StampSizeInPixel = m_pTgaExtTableArea->m_StampWidth * m_pTgaExtTableArea->m_StampHeight;
 
@@ -1255,8 +1251,8 @@ void HRFTgaFile::GetExtensionAreaFromFile()
                 {
                 case 8 :
                     m_pTgaExtTableArea->m_pStampData = new Byte[StampSizeInPixel];
-                    if (StampSizeInPixel != m_pTgaFile->Read ((void*)m_pTgaExtTableArea->m_pStampData, StampSizeInPixel))
-                        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                    if (StampSizeInPixel != m_pTgaFile->Read (m_pTgaExtTableArea->m_pStampData, StampSizeInPixel))
+                        throw HFCCorruptedFileException(GetURL()->GetURL());
 
                     // No Conversion
                     break;
@@ -1265,8 +1261,8 @@ void HRFTgaFile::GetExtensionAreaFromFile()
                     pBuffer = new unsigned short[StampSizeInPixel];
                     m_pTgaExtTableArea->m_pStampData = new Byte[StampSizeInPixel * 3];
 
-                    if ((StampSizeInPixel * sizeof(unsigned short)) != m_pTgaFile->Read ((void*)pBuffer, StampSizeInPixel * sizeof(unsigned short)))
-                        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                    if ((StampSizeInPixel * sizeof(unsigned short)) != m_pTgaFile->Read (pBuffer, StampSizeInPixel * sizeof(unsigned short)))
+                        throw HFCCorruptedFileException(GetURL()->GetURL());
 
                     // Conversion
                     for (i = 0, j = 0; i < StampSizeInPixel; i++)
@@ -1281,8 +1277,8 @@ void HRFTgaFile::GetExtensionAreaFromFile()
                     PixelSizeInByte = m_pTgaFileHeader->m_PixelDepth / 8;
                     m_pTgaExtTableArea->m_pStampData = new Byte[StampSizeInPixel * PixelSizeInByte];
 
-                    if ((StampSizeInPixel * PixelSizeInByte) != m_pTgaFile->Read ((void*)m_pTgaExtTableArea->m_pStampData, StampSizeInPixel * PixelSizeInByte))
-                        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                    if ((StampSizeInPixel * PixelSizeInByte) != m_pTgaFile->Read (m_pTgaExtTableArea->m_pStampData, StampSizeInPixel * PixelSizeInByte))
+                        throw HFCCorruptedFileException(GetURL()->GetURL());
 
                     // Conversion
                     for (i = 0, j = 0; i < StampSizeInPixel; i++, j += PixelSizeInByte)
@@ -1293,7 +1289,7 @@ void HRFTgaFile::GetExtensionAreaFromFile()
                         }
                     break;
                 default :
-                    throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                    throw HFCCorruptedFileException(GetURL()->GetURL());
 
                 }
 
@@ -1306,9 +1302,9 @@ void HRFTgaFile::GetExtensionAreaFromFile()
             {
             m_pTgaFile->SeekToPos(m_pTgaExtentionArea->m_ColorCorrectionOffset);
             m_pTgaExtTableArea->m_pColorCorrectionTable = new unsigned short[COLOR_CORECTION_TABLE_ENTRY_SIZE];
-            if ((COLOR_CORECTION_TABLE_ENTRY_SIZE*2) != m_pTgaFile->Read((void*)m_pTgaExtTableArea->m_pColorCorrectionTable,
+            if ((COLOR_CORECTION_TABLE_ENTRY_SIZE*2) != m_pTgaFile->Read(m_pTgaExtTableArea->m_pColorCorrectionTable,
                                                                          COLOR_CORECTION_TABLE_ENTRY_SIZE * 2))
-                throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                throw HFCCorruptedFileException(GetURL()->GetURL());
 
             if (m_pTgaExtentionArea->m_ColorCorrectionOffset < m_RasterDataEndOffset)
                 m_RasterDataEndOffset = m_pTgaExtentionArea->m_ColorCorrectionOffset;
@@ -1329,9 +1325,7 @@ void HRFTgaFile::GetExtensionAreaFromFile()
 bool HRFTgaFile::Create()
     {
     // Open the file
-    m_pTgaFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pTgaFile, GetURL()->GetURL());
+    m_pTgaFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
 
     // Instanciate the SharingControl object for file sharing
     SharingControlCreate();
@@ -1475,14 +1469,14 @@ void HRFTgaFile::SetFileHeaderToFile()
 
     // Write header
     m_pTgaFile->SeekToPos(0);
-    m_pTgaFile->Write ((void*)m_pTgaFileHeader, sizeof(TgaFileHeader));
+    m_pTgaFile->Write (m_pTgaFileHeader, sizeof(TgaFileHeader));
     m_RasterDataOffset = sizeof(TgaFileHeader);
 
     // Write the image ID
     // Only in case of rewriting... New created files do not support this section.
     if (0 != m_pTgaFileHeader->m_IdLength)
         {
-        m_pTgaFile->Write ((void*)m_pTgaImageData->m_pImageId, m_pTgaFileHeader->m_IdLength);
+        m_pTgaFile->Write (m_pTgaImageData->m_pImageId, m_pTgaFileHeader->m_IdLength);
         m_RasterDataOffset += m_pTgaFileHeader->m_IdLength;
         }
 
@@ -1550,23 +1544,23 @@ void HRFTgaFile::SetFileFooterToFile(bool pi_HasExt)
 
     if (m_pTgaExtentionArea && m_pTgaExtentionArea->m_PostageStampOffset != 0)
         {
-        m_pTgaFile->Write ((void*)&m_pTgaExtTableArea->m_StampWidth, sizeof (Byte));
-        m_pTgaFile->Write ((void*)&m_pTgaExtTableArea->m_StampHeight, sizeof (Byte));
-        m_pTgaFile->Write ((void*)m_pTgaExtTableArea->m_pStampData, m_pTgaExtTableArea->m_StampWidth *
+        m_pTgaFile->Write (&m_pTgaExtTableArea->m_StampWidth, sizeof (Byte));
+        m_pTgaFile->Write (&m_pTgaExtTableArea->m_StampHeight, sizeof (Byte));
+        m_pTgaFile->Write (m_pTgaExtTableArea->m_pStampData, m_pTgaExtTableArea->m_StampWidth *
                            m_pTgaExtTableArea->m_StampHeight *
                            DIVROUNDUP (m_pTgaFileHeader->m_PixelDepth, 8));
         }
 
     if (m_pTgaFileFooter->m_ExtensionAreaOffset != 0)
-        m_pTgaFile->Write ((void*)m_pTgaExtentionArea, m_pTgaExtentionArea->m_ExtensionSize);
+        m_pTgaFile->Write (m_pTgaExtentionArea, m_pTgaExtentionArea->m_ExtensionSize);
 
     if (m_pTgaExtentionArea && m_pTgaExtentionArea->m_ScanLineOffset != 0)
-        m_pTgaFile->Write ((void*)m_pTgaExtTableArea->m_pScanLineTable, m_pTgaFileHeader->m_ImageHeight * 4);
+        m_pTgaFile->Write (m_pTgaExtTableArea->m_pScanLineTable, m_pTgaFileHeader->m_ImageHeight * 4);
 
     if (m_pTgaExtentionArea && m_pTgaExtentionArea->m_ColorCorrectionOffset != 0)
-        m_pTgaFile->Write ((void*)m_pTgaExtTableArea->m_pColorCorrectionTable, 2048);
+        m_pTgaFile->Write (m_pTgaExtTableArea->m_pColorCorrectionTable, 2048);
 
-    m_pTgaFile->Write ((void*)m_pTgaFileFooter, sizeof(TgaFileFooter));
+    m_pTgaFile->Write (m_pTgaFileFooter, sizeof(TgaFileFooter));
     }
 
 /**-----------------------------------------------------------------------------
@@ -1596,18 +1590,25 @@ void HRFTgaFile::SetPaletteToFile()
         // Convert from I8R8G8B8 to I8B8G8R8 or from I8R8G8B8A8 TO I8B8G8R8A8
         for (i = 0, j = 0; i < m_pTgaFileHeader->m_ColorMapLength; i++, j += BytesPerPixel)
             {
-            memcpy (m_pTgaImageData->m_pColorMap+j, (Byte*)rPalette.GetCompositeValue(i), BytesPerPixel);
-            Swap = m_pTgaImageData->m_pColorMap[j];
-            m_pTgaImageData->m_pColorMap[j] = m_pTgaImageData->m_pColorMap[j+2];
-            m_pTgaImageData->m_pColorMap[j+2] = Swap;
+            if (i < rPalette.CountUsedEntries())
+                {
+                memcpy (m_pTgaImageData->m_pColorMap+j, (Byte*)rPalette.GetCompositeValue(i), BytesPerPixel);
+                Swap = m_pTgaImageData->m_pColorMap[j];
+                m_pTgaImageData->m_pColorMap[j] = m_pTgaImageData->m_pColorMap[j+2];
+                m_pTgaImageData->m_pColorMap[j+2] = Swap;
+                }
+            else
+                {
+                memset (m_pTgaImageData->m_pColorMap+j, i, BytesPerPixel);
+                }
             }
         }
     else
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+        throw HFCCorruptedFileException(m_pURL->GetURL());
 
     Offset = sizeof(TgaFileHeader) + m_pTgaFileHeader->m_IdLength;
     m_pTgaFile->SeekToPos (Offset);
-    m_pTgaFile->Write ((void*)m_pTgaImageData->m_pColorMap, sizeof(Byte) *
+    m_pTgaFile->Write (m_pTgaImageData->m_pColorMap, sizeof(Byte) *
                        m_pTgaFileHeader->m_ColorMapLength *
                        DIVROUNDUP (m_pTgaFileHeader->m_ColorMapEntrySize,8));
     }
@@ -1677,7 +1678,7 @@ bool HRFTgaFile::SetThumbnailToFile()
                 break;
                 }
             default :
-                throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                throw HFCCorruptedFileException(GetURL()->GetURL());
 
             }
         }
@@ -1810,7 +1811,7 @@ bool HRFTgaFile::RunLengthsSpanScanlines()
         SizeToProcess = SizeToProcess < BLOCKSIZE ? SizeToProcess : BLOCKSIZE;
         m_pTgaFile->SeekToPos (PosFromLastBlock);
 
-        m_pTgaFile->Read ((void*)pBlockOfData, SizeToProcess);
+        m_pTgaFile->Read (pBlockOfData, SizeToProcess);
 
         LastValidPos = 0;
         Pos = 0;

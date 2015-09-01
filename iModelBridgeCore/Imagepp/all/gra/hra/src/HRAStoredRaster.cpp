@@ -2,20 +2,19 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAStoredRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRAStoredRaster
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCMath.h>
 #include <Imagepp/all/h/HRAStoredRaster.h>
 #include <Imagepp/all/h/HRARasterIterator.h>
-#include <Imagepp/all/h/HRAStoredRasterEditor.h>
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
@@ -35,30 +34,49 @@
 #include <Imagepp/all/h/HRATransaction.h>
 #include <Imagepp/all/h/HRATransactionRecorder.h>
 #include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HGSEditor.h>
+#include <Imagepp/all/h/HRAEditor.h>
 #include <Imagepp/all/h/HRABitmapEditor.h>
 #include <Imagepp/all/h/HRSObjectStore.h>
 #include <Imagepp/all/h/HMDContext.h>
 #include <Imagepp/all/h/HGFMappedSurface.h>
 #include <Imagepp/all/h/HVE2DRectangle.h>
-
-
-// Static function used by the Creator
-//
-static
-HFCPtr<HGF2DCoordSys> sCreateCoordSys(const HGF2DTransfoModel*     pi_pModelCSp_CSl,
-                                      const HFCPtr<HGF2DCoordSys>& pi_rpLogicalCoordSys);
-
+#include <Imagepp/all/h/HGSSurfaceDescriptor.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
+#include <ImagePPInternal/gra/ImageAllocator.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
 
 HPM_REGISTER_ABSTRACT_CLASS(HRAStoredRaster, HRARaster)
-
-
-
-
 
 //-----------------------------------------------------------------------------
 // class HRAStoredRasterTransaction
 //-----------------------------------------------------------------------------
+class ImagePP::HRAStoredRasterTransaction : public HFCShareableObject<HRAStoredRasterTransaction>
+    {
+    public:
+        HRAStoredRasterTransaction(const HFCPtr<HRATransaction>& pi_pUndo, const HFCPtr<HRATransaction>& pi_pRedo = 0);
+        virtual ~HRAStoredRasterTransaction();
+
+        bool                    HasUndoTransaction() const;
+        HFCPtr<HRATransaction>  GetUndoTransaction() const;
+        void                    SetUndoTransaction(const HFCPtr<HRATransaction>& pi_rpUndo);
+
+        bool                    HasRedoTransaction() const;
+        HFCPtr<HRATransaction>  GetRedoTransaction() const;
+        void                    SetRedoTransaction(const HFCPtr<HRATransaction>& pi_rpRedo);
+
+        void                    Clear();
+
+        void                    SetSaveBookmark();
+        void                    RemoveSaveBookmark();
+        bool                    GetSaveBookmark() const;
+
+    private:
+
+        bool                        m_SavedBookmark;
+        HFCPtr<HRATransaction>      m_pUndo;
+        HFCPtr<HRATransaction>      m_pRedo;
+    };
+
 
 //-----------------------------------------------------------------------------
 // public : HRAStoredRasterTransaction
@@ -70,8 +88,7 @@ HPM_REGISTER_ABSTRACT_CLASS(HRAStoredRaster, HRARaster)
 //-----------------------------------------------------------------------------
 HRAStoredRasterTransaction::HRAStoredRasterTransaction(const HFCPtr<HRATransaction>& pi_pUndo,
                                                        const HFCPtr<HRATransaction>& pi_pRedo)
-    : HFCStackItem(),
-      m_pUndo(pi_pUndo),
+    : m_pUndo(pi_pUndo),
       m_pRedo(pi_pRedo),
       m_SavedBookmark(false)
     {
@@ -269,45 +286,21 @@ HRAStoredRaster::HRAStoredRaster   (uint64_t                    pi_WidthPixels,
     CHECK_HUINT64_TO_HDOUBLE_CONV(pi_WidthPixels)
     CHECK_HUINT64_TO_HDOUBLE_CONV(pi_HeightPixels)
 
-    m_pPhysicalRect = new HVEShape(0.0,
-                                   0.0,
-                                   (double)pi_WidthPixels,
-                                   (double)pi_HeightPixels,
-                                   sCreateCoordSys(pi_pModelCSp_CSl,
-                                                   pi_rpLogicalCoordSys));
+    // Save model between Logical and physical CoordSys
+    m_pTransfoModel = pi_pModelCSp_CSl == 0 ? new HGF2DIdentity() : pi_pModelCSp_CSl->Clone();
+        
+    m_pPhysicalCoordSys = new HGF2DCoordSys (*m_pTransfoModel, pi_rpLogicalCoordSys);
 
-    if (pi_Resizable == true)
+    m_pPhysicalRect = new HVEShape(0.0, 0.0, (double)pi_WidthPixels, (double)pi_HeightPixels, m_pPhysicalCoordSys);
+
+    if (pi_Resizable)
         {
-        m_pRasterPhysicalRect = new HVEShape(0.0,
-                                             0.0,
-                                             (double)pi_WidthPixels,
-                                             (double)pi_HeightPixels,
-                                             sCreateCoordSys(pi_pModelCSp_CSl,
-                                                             pi_rpLogicalCoordSys));
+        m_pRasterPhysicalRect = new HVEShape(0.0, 0.0, (double)pi_WidthPixels, (double)pi_HeightPixels, m_pPhysicalCoordSys);
         }
     else
         {
         m_pRasterPhysicalRect = m_pPhysicalRect;
-        }
-
-    m_pPhysicalCoordSys = m_pPhysicalRect->GetCoordSys();
-
-    // Save model between Logical and physical CoordSys
-    if (pi_pModelCSp_CSl == 0)
-        {
-        if (m_pPhysicalCoordSys->GetReference() != 0)
-            {
-            const HFCPtr<HGF2DCoordSys> pRefCoordSys(m_pPhysicalCoordSys->GetReference());
-            m_pTransfoModel = m_pPhysicalCoordSys->GetTransfoModelTo(pRefCoordSys)->Clone();
-            m_pPhysicalCoordSys = pRefCoordSys;
-            }
-        else
-            {
-            m_pTransfoModel = new HGF2DIdentity();
-            }
-        }
-    else
-        m_pTransfoModel = pi_pModelCSp_CSl->Clone();
+        }       
 
     // Set a quarter of a pixel tolerance
     double CenterX = pi_WidthPixels / 2.0;
@@ -359,18 +352,19 @@ HRAStoredRaster::~HRAStoredRaster()
     if (m_pTransactionRecorder != 0)
         {
         // save the transaction stack into the recorder
-        size_t UndoStackSize = 2 * m_UndoStack.Size() + 1;  // add 1 entry for the stack size
+        size_t UndoStackSize = 2 * m_UndoStack.size()+ 1;  // add 1 entry for the stack size
         HArrayAutoPtr<uint32_t> pTransactionStack(new uint32_t[UndoStackSize]);
-        *pTransactionStack = (uint32_t)m_UndoStack.Size();   // save the stack size
+        *pTransactionStack = (uint32_t)m_UndoStack.size();   // save the stack size
         uint32_t* pTransaction = pTransactionStack + 1;
         HFCPtr<HRAStoredRasterTransaction> pStoredRasterTransaction;
 
-        if (!m_UndoStack.IsEmpty())
+        if (!m_UndoStack.empty())
             {
             // serialize the undo stack
             for (size_t i = 0; i < *pTransactionStack; i++)
                 {
-                 pStoredRasterTransaction = static_cast<HRAStoredRasterTransaction*>(m_UndoStack.Pop().GetPtr());
+                pStoredRasterTransaction = m_UndoStack.top();
+                m_UndoStack.pop();
                 *pTransaction++ = pStoredRasterTransaction->GetUndoTransaction()->GetID();
                 *pTransaction++ = (pStoredRasterTransaction->HasRedoTransaction() ? pStoredRasterTransaction->GetRedoTransaction()->GetID() : -1);
                 }
@@ -382,23 +376,24 @@ HRAStoredRaster::~HRAStoredRaster()
                                                     UndoStackSize * sizeof(uint32_t));
 
         // serialize the redo stack
-        size_t RedoStackSize = 2 * m_RedoStack.Size() + 2;  // add 2 entries, stack size and saved bookmark
+        size_t RedoStackSize = 2 * m_RedoStack.size() + 2;  // add 2 entries, stack size and saved bookmark
         if (UndoStackSize < RedoStackSize)
             pTransactionStack = new uint32_t[RedoStackSize];
 
-        *pTransactionStack = (uint32_t)m_RedoStack.Size();   // save the stack size
+        *pTransactionStack = (uint32_t)m_RedoStack.size();   // save the stack size
         *(pTransactionStack + 1) = -1;                      // initialize save bookmark
         pTransaction = pTransactionStack + 2;
 
-        if (!m_RedoStack.IsEmpty())
+        if (!m_RedoStack.empty())
             {
             for (size_t i = 0; i < *pTransactionStack; i++)
                 {
-                pStoredRasterTransaction = static_cast<HRAStoredRasterTransaction*>(m_RedoStack.Pop().GetPtr());
+                pStoredRasterTransaction = m_RedoStack.top();
+                m_RedoStack.pop();
                 HPRECONDITION(pStoredRasterTransaction->HasUndoTransaction() && pStoredRasterTransaction->HasRedoTransaction());
 
                 if (*(pTransactionStack + 1) == -1 && pStoredRasterTransaction->GetSaveBookmark())
-                    *(pTransactionStack + 1) = (uint32_t)m_RedoStack.Size();     // write the save bookmark
+                    *(pTransactionStack + 1) = (uint32_t)m_RedoStack.size();     // write the save bookmark
 
                 *pTransaction++ = pStoredRasterTransaction->GetUndoTransaction()->GetID();  // write the undo transaction
                 *pTransaction++ = pStoredRasterTransaction->GetRedoTransaction()->GetID();  // write the redo transaction
@@ -419,9 +414,9 @@ HRAStoredRaster::~HRAStoredRaster()
 //-----------------------------------------------------------------------------
 void HRAStoredRaster::Saved()
     {
-    if (!m_RedoStack.IsEmpty())
+    if (!m_RedoStack.empty())
         {
-        ((HFCPtr<HRAStoredRasterTransaction>&)m_RedoStack.Top())->SetSaveBookmark();
+        m_RedoStack.top()->SetSaveBookmark();
         }
     }
 
@@ -590,25 +585,69 @@ void HRAStoredRaster::SetRasterExtent(const HGF2DExtent& pi_rRasterExtent)
 
     if (pStore != 0 && pStore->IsCompatibleWith(HRSObjectStore::CLASS_ID))
         ((HRSObjectStore*)pStore)->RasterSizeChanged(Top, Bottom, Left, Right);
-    }
+    }       
 
-//-----------------------------------------------------------------------------
-// public
-// PreDraw
-//-----------------------------------------------------------------------------
-void HRAStoredRaster::PreDraw(HRADrawOptions* pio_pOptions)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRAStoredRaster::_CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& pi_rOptions)
     {
-    HASSERT(0);    //Should be defined by its immediate derived classes.
-    }
+    HPRECONDITION(pi_rOptions.GetEffectiveCopyRegion() != NULL);
+    HPRECONDITION(!pi_rOptions.GetEffectiveCopyRegion()->IsEmpty());
 
+    // Intersect copy region with physical extent. 
+    HFCPtr<HVEShape> totalCopyRegion(new HVEShape(GetPhysicalExtent()));
+    totalCopyRegion->Intersect(*pi_rOptions.GetEffectiveCopyRegion());
+    if(totalCopyRegion->IsEmpty())
+        return COPYFROM_STATUS_VoidRegion;
+
+    HASSERT(totalCopyRegion->GetCoordSys().GetPtr() == GetPhysicalCoordSys().GetPtr());
+        
+    HRACopyToOptions copyToOpts;
+    copyToOpts.SetAlphaBlend(pi_rOptions.ApplyAlphaBlend());    
+    copyToOpts.SetShape(totalCopyRegion.GetPtr());
+    copyToOpts.SetResamplingMode(pi_rOptions.GetResamplingMode());
+    
+    ImagePPStatus status = IMAGEPP_STATUS_UnknownError;
+
+    // Create destination root node.
+    ImageSinkNodePtr pSinkNode = GetSinkNode(status, *totalCopyRegion, pi_rOptions.GetDestReplacingPixelType());
+    if (IMAGEPP_STATUS_Success != status)
+        return status;
+   
+    // undo/redo recording.
+    if (GetCurrentTransaction() != NULL)
+        pSinkNode->SetTransaction(GetCurrentTransaction());
+   
+    // Convert to destination physical coordinates  //&&OPTIMIZATION can we avoid change CS??
+    totalCopyRegion->ChangeCoordSys(pSinkNode->GetPhysicalCoordSys());
+
+    ImageTransformNodePtr pTrfNode = ImageTransformNode::CreateAndLink(status, *pSinkNode, totalCopyRegion);
+    if(pTrfNode == NULL || status != IMAGEPP_STATUS_Success)
+        return status;
+
+    pTrfNode->SetResamplingMode(copyToOpts.GetResamplingMode());
+    pTrfNode->SetAlphaBlend(pi_rOptions.ApplyAlphaBlend());
+ 
+    if(IMAGEPP_STATUS_Success != (status = srcRaster.BuildCopyToContext(*pTrfNode, copyToOpts)))
+        return status;
+
+    ImageAllocatorRefPtr allocatorRefPtr = ImagePool::GetDefaultPool().GetAllocatorRef();
+
+    if (allocatorRefPtr == NULL || pTrfNode->GetChildCount() == 0)
+        return IMAGEPP_STATUS_UnknownError;
+
+    status = pSinkNode->Execute(allocatorRefPtr->GetAllocator());
+
+    return status;
+    }
 
 
 //-----------------------------------------------------------------------------
 // public
-// CopyFrom
+// CopyFromLegacy
 //-----------------------------------------------------------------------------
-void HRAStoredRaster::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
-                               const HRACopyFromOptions& pi_rOptions)
+void HRAStoredRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
     {
     HRADrawOptions Options(pi_rOptions);
     Options.SetTransaction(GetCurrentTransaction());
@@ -649,12 +688,9 @@ void HRAStoredRaster::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
                 pDescriptor = pBitmap->GetSurfaceDescriptor();
 
             // create a surface for the destination
-            HFCPtr<HGFMappedSurface> pSurface(new HGFMappedSurface(pDescriptor,
-                                                                   0,
-                                                                   0,
-                                                                   pBitmap->GetPhysicalCoordSys()));
+            HGFMappedSurface desSurface(pDescriptor, pBitmap->GetPhysicalCoordSys());
 
-            pi_pSrcRaster->Draw(pSurface, &Options);
+            pi_pSrcRaster->Draw(desSurface, Options);
 
             // Notify the bitmap of its change
             pBitmap->Updated(Options.GetShape().GetPtr());
@@ -669,11 +705,11 @@ void HRAStoredRaster::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
 
 //-----------------------------------------------------------------------------
 // public
-// CopyFrom
+// CopyFromLegacy
 //-----------------------------------------------------------------------------
-void HRAStoredRaster::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster)
+void HRAStoredRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
     {
-    CopyFrom(pi_pSrcRaster, HRACopyFromOptions());
+    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
     }
 
 //-----------------------------------------------------------------------------
@@ -789,7 +825,7 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                 if (pSrcType->CountIndexBits() <= pPixelType->CountIndexBits() &&
                     pio_pRepPalParms->GetMaxEntries() == 0 ||
                     pSrcType->GetPalette().GetMaxEntries() <=
-                    min(pPixelType->GetPalette().GetMaxEntries(), pio_pRepPalParms->GetMaxEntries()))
+                    MIN(pPixelType->GetPalette().GetMaxEntries(), pio_pRepPalParms->GetMaxEntries()))
                     {
                     // get the palette of the raster
                     const HRPPixelPalette& rSrcPalette = pSrcType->GetPalette();
@@ -797,13 +833,11 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                     // get the number of entries in the palette
                     CountUsed = (unsigned short)rSrcPalette.CountUsedEntries();
 
-                    // a variable that contains each composite value converted
-                    // 32 is an arbitrary number larger enough to contain any kind of
-                    // composite value
-                    Byte Value[32];
+                    Byte Value[HRPPixelType::MAX_PIXEL_BYTES];
 
                     // Copy entries from source to destination palette, with conversion
-                    HFCPtr<HRPPixelConverter> pConverter = pSrcType->GetConverterTo(pPixelType);
+                    HFCPtr<HRPPixelType> pDestPalettePixelType = HRPPixelTypeFactory::GetInstance()->Create(pPixelType->GetPalette().GetChannelOrg(), 0);
+                    HFCPtr<HRPPixelConverter> pSrcIndexToDestCompositeValue = pSrcType->GetConverterTo(pDestPalettePixelType);
                     HRPPixelPalette* pPaletteToUpdate = &pPixelType->LockPalette();
                     uint32_t DstCountUsed = pPaletteToUpdate->CountUsedEntries();
 
@@ -826,7 +860,7 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                         for (; IndexToConvert < 2; ++IndexToConvert,++IndexDst)
                             {
                             unsigned short SourceRawValue = IndexToConvert ? 0 : 1;
-                            pConverter->ConvertToValue((void*)&SourceRawValue, (void*)Value);
+                            pSrcIndexToDestCompositeValue->Convert(&SourceRawValue, Value);
 
                             // Palette destination has a locked entry ?
                             // If the value of the locked entry is not present in the source
@@ -836,7 +870,7 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                                 // If the current Value == the lock entry
                                 // we do possibly nothing, because the locked entry already have
                                 // the good value, and  can't be changed.
-                                if (memcmp((void*)Value, pEntryLockData, EntryLockSize) == 0)
+                                if (memcmp(Value, pEntryLockData, EntryLockSize) == 0)
                                     {
                                     // If the entry is not the locked entry
                                     // keep the same index for the next look.
@@ -851,11 +885,11 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
 
                                     if (IndexDst >= DstCountUsed)
                                         --IndexDst;
-                                    pPaletteToUpdate->SetCompositeValue(IndexDst, (void*)Value);
+                                    pPaletteToUpdate->SetCompositeValue(IndexDst, Value);
                                     }
                                 }
                             else
-                                pPaletteToUpdate->SetCompositeValue(IndexDst, (void*)Value);
+                                pPaletteToUpdate->SetCompositeValue(IndexDst, Value);
                             }
                         }
                     else if (pSrcType->CountIndexBits() < 8)
@@ -865,7 +899,7 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                         for (; IndexToConvert < CountUsed; ++IndexToConvert,++IndexDst)
                             {
                             Byte SourceRawValue = CONVERT_TO_BYTE(IndexToConvert << (8 - pSrcType->CountIndexBits()));
-                            pConverter->ConvertToValue((void*)&SourceRawValue, (void*)Value);
+                            pSrcIndexToDestCompositeValue->Convert(&SourceRawValue, Value);
 
                             // Palette destination has a locked entry ?
                             // If the value of the locked entry is not present in the source
@@ -875,7 +909,7 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                                 // If the current Value == the lock entry
                                 // we do possibly nothing, because the locked entry already have
                                 // the good value, and  can't be changed.
-                                if (memcmp((void*)Value, pEntryLockData, EntryLockSize) == 0)
+                                if (memcmp(Value, pEntryLockData, EntryLockSize) == 0)
                                     {
                                     // If the entry is not the locked entry
                                     // keep the same index for the next look.
@@ -890,11 +924,11 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
 
                                     if (IndexDst >= DstCountUsed)
                                         --IndexDst;
-                                    pPaletteToUpdate->SetCompositeValue(IndexDst, (void*)Value);
+                                    pPaletteToUpdate->SetCompositeValue(IndexDst, Value);
                                     }
                                 }
                             else
-                                pPaletteToUpdate->SetCompositeValue(IndexDst, (void*)Value);
+                                pPaletteToUpdate->SetCompositeValue(IndexDst, Value);
                             }
                         }
                     else
@@ -903,7 +937,7 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                         unsigned short IndexDst = 0;
                         for (; IndexToConvert < CountUsed; ++IndexToConvert,++IndexDst)
                             {
-                            pConverter->ConvertToValue((void*)&IndexToConvert, (void*)Value);
+                            pSrcIndexToDestCompositeValue->Convert(&IndexToConvert, Value);
 
                             // Palette destination has a locked entry ?
                             // If the value of the locked entry is not present in the source
@@ -913,7 +947,7 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                                 // If the current Value == the lock entry
                                 // we do possibly nothing, because the locked entry already have
                                 // the good value, and  can't be changed.
-                                if (memcmp((void*)Value, pEntryLockData, EntryLockSize) == 0)
+                                if (memcmp(Value, pEntryLockData, EntryLockSize) == 0)
                                     {
                                     // If the entry is not the locked entry
                                     // keep the same index for the next loop.
@@ -928,11 +962,11 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
 
                                     if (IndexDst >= DstCountUsed)
                                         --IndexDst;
-                                    pPaletteToUpdate->SetCompositeValue(IndexDst, (void*)Value);
+                                    pPaletteToUpdate->SetCompositeValue(IndexDst, Value);
                                     }
                                 }
                             else
-                                pPaletteToUpdate->SetCompositeValue(IndexDst, (void*)Value);
+                                pPaletteToUpdate->SetCompositeValue(IndexDst, Value);
                             }
                         }
                     pPixelType->UnlockPalette();
@@ -961,7 +995,7 @@ unsigned short HRAStoredRaster::GetRepresentativePalette(
                     if(pValuePixelType)
                         {
                         HFCPtr<HRPPixelConverter> pConverter = pValuePixelType->GetConverterFrom(pSrcType.GetPtr());
-                        HArrayAutoPtr<Byte>     outCompValue(new Byte[(pPixelType->CountPixelRawDataBits() + 7) / 8]);
+                        HArrayAutoPtr<Byte>     outCompValue(new Byte[(pValuePixelType->CountPixelRawDataBits() + 7) / 8]);
                         Byte                    srcValue;
 
                         srcValue = 0x00;    // first bit OFF
@@ -1036,8 +1070,7 @@ void HRAStoredRaster::SetTransactionRecorder(HFCPtr<HRATransactionRecorder>& pi_
                                                                          *pTransaction--);
 
             // push the transaction on the undo stack
-            m_UndoStack.Push(new HRAStoredRasterTransaction(pUndoTransaction,
-                                                            pRedoTransaction));
+            m_UndoStack.push(new HRAStoredRasterTransaction(pUndoTransaction, pRedoTransaction));
             }
         }
 
@@ -1065,18 +1098,17 @@ void HRAStoredRaster::SetTransactionRecorder(HFCPtr<HRATransactionRecorder>& pi_
                                                                          *pTransaction--);
 
             // push the transactio on the redo stack
-            m_RedoStack.Push(new HRAStoredRasterTransaction(pUndoTransaction,
-                                                            pRedoTransaction));
+            m_RedoStack.push(new HRAStoredRasterTransaction(pUndoTransaction, pRedoTransaction));
 
             if (i == SavedBookmark)
-                ((HFCPtr<HRAStoredRasterTransaction>&)m_RedoStack.Top())->SetSaveBookmark();
+                m_RedoStack.top()->SetSaveBookmark();
             }
         }
 
     // apply redo transaciton until the save bookmark has reached
-    while (!m_RedoStack.IsEmpty())
+    while (!m_RedoStack.empty())
         {
-        if (((HFCPtr<HRAStoredRasterTransaction>&)m_RedoStack.Top())->GetSaveBookmark())
+        if (m_RedoStack.top()->GetSaveBookmark())
             break;
 
         Redo();
@@ -1120,12 +1152,15 @@ HSTATUS HRAStoredRaster::EndTransaction()
         {
         m_pCurrentTransaction->Commit();
 
-        if (!m_RedoStack.IsEmpty())
-            while (m_RedoStack.Size() != 0)
-                (static_cast<HRAStoredRasterTransaction*>(m_RedoStack.Pop().GetPtr()))->Clear();
+        if (!m_RedoStack.empty())
+            while (m_RedoStack.size() != 0)
+                {
+                m_RedoStack.top()->Clear();
+                m_RedoStack.pop();
+                }
+                
 
-        HFCPtr<HRAStoredRasterTransaction> pTransaction(new HRAStoredRasterTransaction(m_pCurrentTransaction));
-        m_UndoStack.Push((const HFCPtr<HFCStackItem>&)pTransaction);
+        m_UndoStack.push(new HRAStoredRasterTransaction(m_pCurrentTransaction));
 
         RetValue = H_SUCCESS;
         }
@@ -1144,9 +1179,10 @@ void HRAStoredRaster::Undo(bool pi_RecordRedo)
     {
     HPRECONDITION(m_pCurrentTransaction == 0);
 
-    if (!m_UndoStack.IsEmpty())
+    if (!m_UndoStack.empty())
         {
-            HFCPtr<HRAStoredRasterTransaction> pTransaction(static_cast<HRAStoredRasterTransaction*>(m_UndoStack.Pop().GetPtr()));
+        HFCPtr<HRAStoredRasterTransaction> pTransaction(m_UndoStack.top());
+        m_UndoStack.pop();
 
         if (pi_RecordRedo && !pTransaction->HasRedoTransaction())
             {
@@ -1160,7 +1196,7 @@ void HRAStoredRaster::Undo(bool pi_RecordRedo)
         else
             ApplyTransaction(pTransaction->GetUndoTransaction());
 
-        m_RedoStack.Push((const HFCPtr<HFCStackItem>&)pTransaction);
+        m_RedoStack.push(pTransaction);
         }
     }
 
@@ -1173,12 +1209,13 @@ void HRAStoredRaster::Redo()
     {
     HPRECONDITION(m_pCurrentTransaction == 0);
 
-    if (!m_RedoStack.IsEmpty())
+    if (!m_RedoStack.empty())
         {
-            HFCPtr<HRAStoredRasterTransaction> pTransaction(static_cast<HRAStoredRasterTransaction*>(m_RedoStack.Pop().GetPtr()));
+        HFCPtr<HRAStoredRasterTransaction> pTransaction(m_RedoStack.top());
+        m_RedoStack.pop();
         HPOSTCONDITION(pTransaction->HasRedoTransaction());
         ApplyTransaction(pTransaction->GetRedoTransaction());
-        m_UndoStack.Push((const HFCPtr<HFCStackItem>&)pTransaction);
+        m_UndoStack.push(pTransaction);
         }
     }
 
@@ -1286,30 +1323,6 @@ void HRAStoredRaster::SetModelCSp_CSl (const HGF2DTransfoModel& pi_rModel,
     m_pTransfoModel = pi_rModel.Clone();
     }
 
-
-
-//-----------------------------------------------------------------------------
-// Static Function
-// sCreateCoordSys :
-//-----------------------------------------------------------------------------
-static
-HFCPtr<HGF2DCoordSys> sCreateCoordSys(const HGF2DTransfoModel*     pi_pModelCSp_CSl,
-                                      const HFCPtr<HGF2DCoordSys>& pi_rpLogicalCoordSys)
-    {
-    HGF2DCoordSys* pNewPhysical;
-
-    // Save model between Logical and physical CoordSys
-    if (pi_pModelCSp_CSl == 0)
-        pNewPhysical = new HGF2DCoordSys (HGF2DIdentity(), pi_rpLogicalCoordSys);
-    else
-        pNewPhysical = new HGF2DCoordSys (*pi_pModelCSp_CSl , pi_rpLogicalCoordSys);
-
-    return HFCPtr<HGF2DCoordSys>(pNewPhysical);
-    }
-
-
-
-
 //-----------------------------------------------------------------------------
 // private
 // ApplyTransaction
@@ -1318,8 +1331,8 @@ void HRAStoredRaster::ApplyTransaction(const HFCPtr<HRATransaction>& pi_rpTransa
     {
     uint64_t PosX;
     uint64_t PosY;
-    size_t  Width;
-    size_t  Height;
+    uint32_t Width;
+    uint32_t Height;
     size_t  DataSize;
 
     if (pi_rpTransaction->PopEntry(&PosX,
@@ -1340,7 +1353,7 @@ void HRAStoredRaster::ApplyTransaction(const HFCPtr<HRATransaction>& pi_rpTransa
         HAutoPtr<HGF2DExtent> pLastBitmapExtent;
         HFCPtr<HRARaster> pDstRaster;
         HAutoPtr<HRARasterEditor> pBitmapEditor;
-        HFCPtr<HGSEditor> pEditor;
+        HRAEditor* pEditor = NULL;
 
         do
             {
@@ -1495,11 +1508,11 @@ void HRAStoredRaster::ClearAllRecordedData()
     HPRECONDITION(m_pTransactionRecorder != 0);
 
     m_pTransactionRecorder->ClearAllRecordedData();
-    while (m_UndoStack.Size() != 0)
-        m_UndoStack.Pop();
+    while (m_UndoStack.size() != 0)
+        m_UndoStack.pop();
 
-    while (m_RedoStack.Size() != 0)
-        m_RedoStack.Pop();
+    while (m_RedoStack.size() != 0)
+        m_RedoStack.pop();
     }
 
 //-----------------------------------------------------------------------------
@@ -1535,4 +1548,129 @@ void HRAStoredRaster::GetRasterSize(uint64_t*     po_pWidthPixels,
         if (po_pPosY != 0)
             *po_pPosY = (uint64_t)(m_pRasterPhysicalRect->GetExtent().GetYMin() + 0.5); // Do not use standard round as it trunk with type long.
         }
+    }
+
+//-----------------------------------------------------------------------------
+// public
+// SetCurrentTransaction
+//-----------------------------------------------------------------------------
+void HRAStoredRaster::SetCurrentTransaction(HFCPtr<HRATransaction>& pi_rpTransaction)
+    {
+    m_pCurrentTransaction = pi_rpTransaction;
+    }
+
+//-----------------------------------------------------------------------------
+// public
+// GetCurrentTransaction
+//-----------------------------------------------------------------------------
+HFCPtr<HRATransaction>& HRAStoredRaster::GetCurrentTransaction()
+    {
+    return m_pCurrentTransaction;
+    }
+
+//-----------------------------------------------------------------------------
+// public
+// CanUndo
+//-----------------------------------------------------------------------------
+bool HRAStoredRaster::CanUndo() const
+    {
+    return !m_UndoStack.empty();
+    }
+
+//-----------------------------------------------------------------------------
+// public
+// GetCurrentTransaction
+//-----------------------------------------------------------------------------
+bool HRAStoredRaster::CanRedo() const
+    {
+    return !m_RedoStack.empty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Stephane.Poulin                 08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+double HRAStoredRaster::EvaluateScaleFactor(HFCPtr<HGF2DCoordSys> const& srcCS, HFCPtr<HGF2DCoordSys> const& dstCS, HVEShape const& shape)
+    {
+    HFCPtr<HGF2DTransfoModel> pTransfo = srcCS->GetTransfoModelTo(dstCS);
+    double factor = 1.0;
+
+    // Check if we can extract Scaling
+    // Here we check if the model represents a parallelism preserving relation
+    // With parallelism preserving relation, even though the model cannot be properly
+    // represented by a stretch, insures that the scaling factors are not dependant upon the
+    // position into space.
+    if (pTransfo->PreservesParallelism())
+        {
+        double scaleFactorX, scaleFactorY;
+        HGF2DDisplacement displacement;
+        pTransfo->GetStretchParams(&scaleFactorX, &scaleFactorY, &displacement);
+        factor = MIN(fabs(scaleFactorX), fabs(scaleFactorY));
+        }
+    else
+        {
+        // We will simply use the extent
+        HGF2DExtent shapeExtent(shape.GetExtent());
+
+        // Check if raster has a size
+        if (shapeExtent.IsDefined())
+            {
+            // Obtain extent four corners
+            HGF2DLocation lowerLeft(shapeExtent.GetLowerLeft(), srcCS);
+            HGF2DLocation lowerRight(shapeExtent.GetLowerRight(), srcCS);
+            HGF2DLocation upperLeft(shapeExtent.GetUpperLeft(), srcCS);
+            HGF2DLocation upperRight(shapeExtent.GetUpperRight(), srcCS);
+
+            HGF2DLocation otherLowerLeft(lowerLeft, dstCS);
+            HGF2DLocation otherLowerRight(lowerRight, dstCS);
+            HGF2DLocation otherUpperLeft(upperLeft, dstCS);
+            HGF2DLocation otherUpperRight(upperRight, dstCS);
+
+            // Compute scales
+            // Extent may not be undefined
+            HASSERT((lowerLeft - lowerRight).CalculateLength() != 0.0);
+            HASSERT((upperLeft - upperRight).CalculateLength() != 0.0);
+            HASSERT((upperLeft - lowerLeft).CalculateLength() != 0.0);
+            HASSERT((upperRight - lowerRight).CalculateLength() != 0.0);
+
+            double lowerScale = (otherLowerLeft - otherLowerRight).CalculateLength() / (lowerLeft - lowerRight).CalculateLength();
+            double upperScale = (otherUpperLeft - otherUpperRight).CalculateLength() / (upperLeft - upperRight).CalculateLength();
+            double leftScale = (otherUpperLeft - otherLowerLeft).CalculateLength() / (upperLeft - lowerLeft).CalculateLength();
+            double rightScale = (otherUpperRight - otherLowerRight).CalculateLength() / (upperRight - lowerRight).CalculateLength();
+
+            double scale = MAX(fabs(lowerScale), MAX(fabs(upperScale), MAX(fabs(leftScale), fabs(rightScale))));
+
+            BeAssert(scale != 0.0);
+
+            factor = scale;
+            }
+        }
+
+    return factor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Stephane.Poulin                 08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t HRAStoredRaster::EvaluateScaleFactorPowerOf2(HFCPtr<HGF2DCoordSys> const& srcCS, HFCPtr<HGF2DCoordSys> const& dstCS, HVEShape const& shape)
+    {
+    double scaleFactor = EvaluateScaleFactor(srcCS, dstCS, shape);
+    double logBase2 = floor(log(fabs(scaleFactor)) / log(2.0));
+    uint32_t shift = logBase2 > 0 ? (uint32_t)logBase2 : 0;
+
+    return shift;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageSinkNodePtr HRAStoredRaster::GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType> pReplacingPixelType)
+    {
+    if (pReplacingPixelType != NULL && GetPixelType()->CountPixelRawDataBits() != pReplacingPixelType->CountPixelRawDataBits())
+        {
+        BeAssert(GetPixelType()->CountPixelRawDataBits() == pReplacingPixelType->CountPixelRawDataBits());
+        status = COPYFROM_STATUS_IncompatiblePixelTypeReplacer;
+        return NULL;
+        }    
+   
+    return _GetSinkNode(status, sinkShape, pReplacingPixelType); 
     }

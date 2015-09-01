@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCProgressIndicator.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Inline methods for progression indicator classes
 //----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //----------------------------------------------------------------------------
 // Reset the duration values and iteration count
 //----------------------------------------------------------------------------
@@ -330,3 +331,4 @@ inline bool HFCProgressIndicator::HasEvaluator()
     return m_Evaluators.size() > 0;
     }
 
+END_IMAGEPP_NAMESPACE

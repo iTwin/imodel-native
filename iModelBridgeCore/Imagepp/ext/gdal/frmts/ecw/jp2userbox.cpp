@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jp2userbox.cpp 21325 2010-12-28 23:44:31Z warmerdam $
+ * $Id: jp2userbox.cpp 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  GDAL ECW Driver
  * Purpose:  JP2UserBox implementation - arbitrary box read/write.
@@ -27,9 +27,9 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "jp2userbox.h"
+#include "gdal_ecw.h"
 
-CPL_CVSID("$Id: jp2userbox.cpp 21325 2010-12-28 23:44:31Z warmerdam $");
+CPL_CVSID("$Id: jp2userbox.cpp 27739 2014-09-25 18:49:52Z goatbar $");
 
 #if defined(HAVE_COMPRESS)
 
@@ -94,15 +94,15 @@ void JP2UserBox::UpdateXLBox()
 /************************************************************************/
 
 #if ECWSDK_VERSION >= 40
-CNCSError JP2UserBox::Parse( NCS::JP2::CFile &JP2File, 
-                             NCS::CIOStream &Stream )
+CNCSError JP2UserBox::Parse( CPL_UNUSED NCS::SDK::CFileBase &JP2File,
+                             CPL_UNUSED NCS::CIOStream &Stream )
 #else
-CNCSError JP2UserBox::Parse( class CNCSJP2File &JP2File, 
-                             CNCSJPCIOStream &Stream )
+CNCSError JP2UserBox::Parse( CPL_UNUSED class CNCSJP2File &JP2File,
+                             CPL_UNUSED CNCSJPCIOStream &Stream )
 #endif
 {
     CNCSError Error = NCS_SUCCESS;
-    
+
     return Error;
 }
 
@@ -113,7 +113,7 @@ CNCSError JP2UserBox::Parse( class CNCSJP2File &JP2File,
 /************************************************************************/
 
 #if ECWSDK_VERSION >= 40
-CNCSError JP2UserBox::UnParse( NCS::JP2::CFile &JP2File, 
+CNCSError JP2UserBox::UnParse( NCS::SDK::CFileBase &JP2File, 
                                NCS::CIOStream &Stream )
 #else
 CNCSError JP2UserBox::UnParse( class CNCSJP2File &JP2File, 
@@ -129,9 +129,11 @@ CNCSError JP2UserBox::UnParse( class CNCSJP2File &JP2File,
                   "No box type set in JP2UserBox::UnParse()" );
         return Error;
     }
-
+#if ECWSDK_VERSION<50
     Error = CNCSJP2Box::UnParse(JP2File, Stream);
-
+#else 
+    Error = CNCSSDKBox::UnParse(JP2File, Stream);
+#endif
 //    NCSJP2_CHECKIO_BEGIN(Error, Stream);
     Stream.Write(pabyData, nDataLength);
 //    NCSJP2_CHECKIO_END();

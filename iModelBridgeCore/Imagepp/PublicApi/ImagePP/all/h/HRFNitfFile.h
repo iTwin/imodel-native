@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFNitfFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFNitfFile
@@ -23,6 +23,7 @@
 //--------------------------------------------------
 // class HRFDoqCapabilities
 //--------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
 class HRFNitfCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -52,7 +53,7 @@ struct HRFNitfCreator : public HRFRasterFileCreator
                                              uint64_t             pi_Offset = 0) const;
 
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFNitfCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFNitfCreator)
 private:
 
 
@@ -71,7 +72,7 @@ public:
 
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1954, HRFGdalSupportedFile)
+    HDECLARE_CLASS_ID(HRFFileId_Nitf, HRFGdalSupportedFile)
 
     // allow to Open an image file
     HRFNitfFile          (const HFCPtr<HFCURL>&          pi_rpURL,
@@ -109,3 +110,4 @@ private:
     HRFNitfFile(const HRFNitfFile& pi_rObj);
     HRFNitfFile& operator=(const HRFNitfFile& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

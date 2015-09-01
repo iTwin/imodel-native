@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFGraphicObject.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HGFGraphicObject
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 
 #include <Imagepp/all/h/HGF2DCoordSys.h>
@@ -52,8 +52,9 @@ HGFGraphicObject::HGFGraphicObject(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys)
 HGFGraphicObject::HGFGraphicObject(const HGFGraphicObject& pi_rObj)
     {
     m_pSysCoord              = pi_rObj.m_pSysCoord;
+#ifdef IPP_HPM_ATTRIBUTES_ON_HRA
     m_pAttributes            = pi_rObj.m_pAttributes;
-    m_pMetaDataContainerList = pi_rObj.m_pMetaDataContainerList;
+#endif
     }
 
 /** -----------------------------------------------------------------------------
@@ -72,8 +73,9 @@ HGFGraphicObject::~HGFGraphicObject()
 HGFGraphicObject& HGFGraphicObject::operator=(const HGFGraphicObject& pi_rObj)
     {
     m_pSysCoord              = pi_rObj.m_pSysCoord;
+#ifdef IPP_HPM_ATTRIBUTES_ON_HRA
     m_pAttributes            = pi_rObj.m_pAttributes;
-    m_pMetaDataContainerList = pi_rObj.m_pMetaDataContainerList;
+#endif
     return *this;
     }
 
@@ -147,29 +149,7 @@ void HGFGraphicObject::PrintState(ostream& po_rOutput) const
 #endif
     }
 
-
-/** -----------------------------------------------------------------------------
-This method returns the list of metadata containers
-
-@see GetMetaDataContainerList()
------------------------------------------------------------------------------
-*/
-const HFCPtr<HMDMetaDataContainerList>& HGFGraphicObject::GetMetaDataContainerList() const
-    {
-    return m_pMetaDataContainerList;
-    }
-
-/** -----------------------------------------------------------------------------
-This method sets the list of metadata containers
-
-@see SetMetaDataContainerList()
------------------------------------------------------------------------------
-*/
-void HGFGraphicObject::SetMetaDataContainerList(const HFCPtr<HMDMetaDataContainerList>& pi_rpMDContainers)
-    {
-    m_pMetaDataContainerList = pi_rpMDContainers;
-    }
-
+#ifdef IPP_HPM_ATTRIBUTES_ON_HRA
 /** -----------------------------------------------------------------------------
     Returns the graphic object attributes
 
@@ -178,7 +158,7 @@ void HGFGraphicObject::SetMetaDataContainerList(const HFCPtr<HMDMetaDataContaine
     @see HPMAttributeSet
     -----------------------------------------------------------------------------
 */
-const HPMAttributeSet& HGFGraphicObject::GetAttributes() const
+HPMAttributeSet const& HGFGraphicObject::GetAttributes() const
     {
     if (m_pAttributes == 0)
         (const_cast<HGFGraphicObject*>(this))->m_pAttributes = new HPMAttributeSet();
@@ -268,6 +248,7 @@ void HGFGraphicObject::UnlockAttributes() const
     //HChk MRx
 //    Propagate();
     }
+#endif
 
 const HFCPtr<HGF2DCoordSys>& HGFGraphicObject::GetCoordSys () const
     {

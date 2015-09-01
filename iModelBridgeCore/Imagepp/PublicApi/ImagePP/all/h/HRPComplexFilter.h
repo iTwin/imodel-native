@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPComplexFilter.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPComplexFilter
@@ -14,9 +14,10 @@
 
 #include "HRPFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPComplexFilter : public HRPFilter
     {
-    HDECLARE_CLASS_ID(1135, HRPFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_Complex, HRPFilter)
 
 public:
 
@@ -26,12 +27,12 @@ public:
 
     // Primary methods
 
-    _HDLLg                 HRPComplexFilter();
+    IMAGEPP_EXPORT                 HRPComplexFilter();
 
-    _HDLLg                 HRPComplexFilter(
+    IMAGEPP_EXPORT                 HRPComplexFilter(
         const HRPComplexFilter& pi_rComplexFilter);
 
-    _HDLLg virtual            ~HRPComplexFilter();
+    IMAGEPP_EXPORT virtual            ~HRPComplexFilter();
 
 
     // Cloning
@@ -57,9 +58,9 @@ public:
 
     void            Clear();
 
-    _HDLLg void            Insert(const HRPFilter* pi_pFilter);
+    IMAGEPP_EXPORT void            Insert(const HRPFilter* pi_pFilter);
 
-    _HDLLg const ListFilters&
+    IMAGEPP_EXPORT const ListFilters&
     GetList() const;
 
     // Pixel types
@@ -77,3 +78,4 @@ private:
     ListFilters::iterator
     m_Itr;
     };
+END_IMAGEPP_NAMESPACE

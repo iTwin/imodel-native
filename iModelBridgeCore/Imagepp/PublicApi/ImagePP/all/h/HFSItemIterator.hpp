@@ -2,19 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFSItemIterator.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>---------------------------------------------------------------------------
 //:> Methods for class HFSItemIterator
 //:>---------------------------------------------------------------------------
 
-
-
-//:>-----------------------------------------------------------------------------
-//:> public section
-//:>-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------
  Destructor.
 -----------------------------------------------------------------------------*/
@@ -99,3 +94,4 @@ inline const HFCPtr<HFSItem>& HFSItemIterator::GetItem() const
 #endif
 
     }
+END_IMAGEPP_NAMESPACE

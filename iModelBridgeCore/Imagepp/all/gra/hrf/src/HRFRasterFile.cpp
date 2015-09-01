@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRasterFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
+#include <ImagePPInternal/hstdcpp.h>
 
-#include <ImagePP/h/HDllSupport.h>
+
 
 #include <Imagepp/all/h/HRFRasterFile.h>
 #include <Imagepp/all/h/HRFResolutionEditor.h>
@@ -451,7 +451,6 @@ uint64_t HRFRasterFile::GetFileCurrentSize(HFCBinStream* pi_pBinStream) const
 void HRFRasterFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                            uint32_t pi_Page,
                                            bool   pi_CheckSpecificUnitSpec,
-                                           bool   pi_GeoModelDefaultUnit,
                                            bool   pi_InterpretUnitINTGR)
     {
     HPRECONDITION(pi_Page < CountPages());
@@ -468,17 +467,15 @@ void HRFRasterFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
 
         m_DefaultRatioToMeter[pi_Page] = pi_RatioToMeter;
 
-        IRasterBaseGcsPtr pBaseGCS = pPageDescriptor->GetGeocoding();
+        IRasterBaseGcsCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
         if (pBaseGCS != NULL && pBaseGCS->IsValid())
             {
 
-            HFCPtr<HGF2DTransfoModel> pTransfoModel = HCPGeoTiffKeys::TranslateToMeter(pPageDescriptor->GetTransfoModel(),
+            HFCPtr<HGF2DTransfoModel> pTransfoModel = pPageDescriptor->GetRasterFileGeocoding().TranslateToMeter(pPageDescriptor->GetTransfoModel(),
                                                                                      RatioToMeter,
-                                                                                     pi_GeoModelDefaultUnit,
                                                                                      pi_CheckSpecificUnitSpec,
-                                                                                     &DefaultUnitWasFound,
-                                                                                     pBaseGCS);
+                                                                                     &DefaultUnitWasFound);
 
             if (DefaultUnitWasFound == false)
                 {
@@ -879,7 +876,7 @@ bool HRFRasterFile::CanCancelLookAhead(uint32_t        pi_Page,
 
                 // If there is less blocks in the pool that it takes to cancel,
                 // it is not useful to check all the tiles
-                if (PoolSize > ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetLookAheadCancelThreshold())
+                if (PoolSize > ImageppLib::GetHost().GetImageppLibAdmin()._GetLookAheadCancelThreshold())
                     {
                     BlocksInPool = 0;
 
@@ -900,7 +897,7 @@ bool HRFRasterFile::CanCancelLookAhead(uint32_t        pi_Page,
 
                     // If the number of blocks in the pool that are not needed exceeds the threshold,
                     // cancel is needed
-                    Result = ((PoolSize - BlocksInPool) > ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetLookAheadCancelThreshold());
+                    Result = ((PoolSize - BlocksInPool) > ImageppLib::GetHost().GetImageppLibAdmin()._GetLookAheadCancelThreshold());
                     }
                 }
             }
@@ -1138,5 +1135,22 @@ const HFCMemoryBinStream* HRFRasterFile::GetMemoryFilePtr() const
     {
     HASSERT(0);
     return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  11/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void HRFRasterFile::GetFileStatistics(time_t* pCreated, time_t* pModified, time_t* pAccessed) const
+    {
+    HFCStat FileStat(GetURL());
+
+    if(pCreated != NULL)
+        *pCreated = FileStat.GetCreationTime();
+
+    if(pModified != NULL)
+        *pModified = FileStat.GetModificationTime();
+
+    if(pAccessed != NULL)
+        *pAccessed = FileStat.GetLastAccessTime();
     }
 

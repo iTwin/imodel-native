@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelPalette.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -12,18 +12,19 @@
 
 #include "HRPChannelOrg.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelPalette : public HFCShareableObject<HRPPixelPalette>
     {
-    HDECLARE_BASECLASS_ID(1005)
+    HDECLARE_BASECLASS_ID(HRPPixelPaletteId_Base)
 
 public:
 
     // Primary methods
-    _HDLLg                 HRPPixelPalette ();
-    _HDLLg                 HRPPixelPalette(uint32_t pi_MaxEntries,
+    IMAGEPP_EXPORT                 HRPPixelPalette ();
+    IMAGEPP_EXPORT                 HRPPixelPalette(uint32_t pi_MaxEntries,
                                            const HRPChannelOrg& pi_rChannelOrg);
-    _HDLLg                 HRPPixelPalette(const HRPPixelPalette& pi_rObj);
-    _HDLLg virtual         ~HRPPixelPalette();
+    IMAGEPP_EXPORT                 HRPPixelPalette(const HRPPixelPalette& pi_rObj);
+    IMAGEPP_EXPORT virtual         ~HRPPixelPalette();
     HRPPixelPalette&   operator=(const HRPPixelPalette& pi_rObj);
 
     // Comparison methods
@@ -31,17 +32,17 @@ public:
     bool           operator!=(const HRPPixelPalette& pi_rObj) const;
 
     // Palette management methods
-    void            SetReadOnly(bool pi_ReadOnly);
-    bool           IsReadOnly() const;
+    void             SetReadOnly(bool pi_ReadOnly);
+    bool             IsReadOnly() const;
     uint32_t        GetMaxEntries() const;
     uint32_t        CountUsedEntries() const;
-    _HDLLg uint32_t AddEntry(const void* pi_pValue);
+    IMAGEPP_EXPORT uint32_t AddEntry(const void* pi_pValue);
 
     const HRPChannelOrg&
     GetChannelOrg() const;
 
     const void*     GetCompositeValue(uint32_t pi_EntryIndex) const;
-    _HDLLg bool    SetCompositeValue(uint32_t pi_EntryIndex,
+    IMAGEPP_EXPORT bool    SetCompositeValue(uint32_t pi_EntryIndex,
                                       const void* pi_pValue);
 
     // Utilities
@@ -51,7 +52,7 @@ public:
     void            LockEntry(int32_t pi_Index);
     int32_t        GetLockedEntryIndex() const;
 
-    uint32_t        GetPixelEntrySize() const;
+    uint32_t       GetPixelEntrySize() const;
 
     void            GetPalette(Byte* po_ppPalette) const;
     void            SetPalette(const Byte* pi_pPalette, uint32_t pi_EntriesUsed);
@@ -93,13 +94,14 @@ private:
 
     // Info, not persistent
     // Number of byte to save an entry.
-    uint32_t                    m_PixelEntrySize;
+    uint32_t                   m_PixelEntrySize;
 
-    bool                       m_ReadOnly;
+    bool                        m_ReadOnly;
 
     // Methods
     void           DeepDelete();
     void           DeepCopy(const HRPPixelPalette& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRPPixelPalette.hpp"

@@ -2,19 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUSgsSDTSDEMEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFUSgsSDTSDEMEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFUSgsSDTSDEMEditor.h>
 
 /*
-#include <ImagePPInternal/ext/gdal_priv.h>
+#include <ImagePP-GdalLib_priv.h>
 
 #define BAND_1 0
 #define BAND_2 1
@@ -78,10 +78,10 @@ HRFUSgsSDTSDEMEditor::~HRFUSgsSDTSDEMEditor()
 // Read uncompressed Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFUSgsSDTSDEMEditor::ReadBlock (uint32_t                 pi_PosBlockX,
-                                         uint32_t                 pi_PosBlockY,
-                                         Byte*                   po_pData,
-                                         HFCLockMonitor const*    pi_pSisterFileLock)
+HSTATUS HRFUSgsSDTSDEMEditor::ReadBlock(uint64_t                 pi_PosBlockX,
+                                        uint64_t                 pi_PosBlockY,
+                                        Byte*                   po_pData,
+                                        HFCLockMonitor const*    pi_pSisterFileLock)
     {
     HSTATUS ReadStatus = T_Super::ReadBlock(pi_PosBlockX, pi_PosBlockY, po_pData, pi_pSisterFileLock);
     if(ReadStatus != H_SUCCESS)

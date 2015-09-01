@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoTiffCompressedTable.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
 //:> Methods for class HRFGeoTiffCompressedTable
 //:>-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFGeoTiffCompressedTable.h>
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HFCBinStream.h>
@@ -403,7 +403,7 @@ size_t HRFGeoTiffCompressedTable::ReadTextLine(HFCBinStream* pi_pFile, unsigned 
     //:> skip all not printable character
     while (!pi_pFile->EndOfFile() && !EndOfRead)
         {
-        pi_pFile->Read((void*)&ReadChar, 1);
+        pi_pFile->Read(&ReadChar, 1);
         EndOfRead = PRINTABLE_CHARACTER(ReadChar);
         }
 
@@ -415,7 +415,7 @@ size_t HRFGeoTiffCompressedTable::ReadTextLine(HFCBinStream* pi_pFile, unsigned 
 
         while (!pi_pFile->EndOfFile() && !EndOfRead)
             {
-            pi_pFile->Read((void*)&ReadChar, 1);
+            pi_pFile->Read(&ReadChar, 1);
             if (PRINTABLE_CHARACTER(ReadChar))
                 *pOutputPtr++ = ReadChar;
             else
@@ -434,9 +434,7 @@ HFCPtr<HCDPacket> HRFGeoTiffCompressedTable::ReadDataFile()
     {
     HPRECONDITION(m_RecordSize != 0);
 
-    HAutoPtr<HFCBinStream> pFile(HFCBinStream::Instanciate(m_pCompressedTableFile, HFC_READ_ONLY));
-
-    ThrowFileExceptionIfError(pFile, m_pCompressedTableFile->GetURL());
+    HAutoPtr<HFCBinStream> pFile(HFCBinStream::Instanciate(m_pCompressedTableFile, HFC_READ_ONLY, 0, true));
 
     uint64_t FileSize = pFile->GetSize();
 
@@ -450,7 +448,7 @@ HFCPtr<HCDPacket> HRFGeoTiffCompressedTable::ReadDataFile()
     size_t ReadSize;
     ReadSize = ReadTextLine(pFile, pTableData);
     if (ReadSize != m_RecordSize)
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pCompressedTableFile->GetURL());
+        throw HFCCorruptedFileException(m_pCompressedTableFile->GetURL());
 
     while (ReadSize > 0)
         {
@@ -459,7 +457,7 @@ HFCPtr<HCDPacket> HRFGeoTiffCompressedTable::ReadDataFile()
         ReadSize = ReadTextLine(pFile, pTableData);
 
         if (ReadSize > 0 && ReadSize != m_RecordSize)
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pCompressedTableFile->GetURL());
+            throw HFCCorruptedFileException(m_pCompressedTableFile->GetURL());
         }
 
     pPacket->SetDataSize(pTableData - pPacket->GetBufferAddress());
@@ -565,7 +563,7 @@ void HRFGeoTiffCompressedTable::ReleaseTable()
 void HRFGeoTiffCompressedTable::SetTableFile(const HFCPtr<HFCURL>& pi_rpCompressedTableFile)
     {
     if (m_RefCount != 0)
-        throw HRFException(HRF_GEOTIFF_COMPRESSED_TABLE_LOCK_EXCEPTION, pi_rpCompressedTableFile->GetURL());
+        throw HRFGeotiffCompressedTableLockException(pi_rpCompressedTableFile->GetURL());
 
     m_pCompressedTableFile = pi_rpCompressedTableFile;
     }

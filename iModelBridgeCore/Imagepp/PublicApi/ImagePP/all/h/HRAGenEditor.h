@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAGenEditor.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAGenEditor
@@ -12,12 +12,13 @@
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRATransaction;
 class HCDPacket;
 
 class HNOVTABLEINIT HRAGenEditor
     {
-    HDECLARE_BASECLASS_ID(1742)
+    HDECLARE_BASECLASS_ID(HRAGenEditorId_Base)
 
 public:
 
@@ -94,3 +95,4 @@ private:
     HRAGenEditor&    operator=(const HRAGenEditor& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

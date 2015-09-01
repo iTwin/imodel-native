@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMColorBalancedImage.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>    //:> must be first
+#include <ImagePPInternal/hstdcpp.h>
+    //:> must be first
 
 #include <Imagepp/all/h/HIMColorBalancedImage.h>
 #include <Imagepp/all/h/HRARepPalParms.h>
@@ -21,9 +21,9 @@
 #include <Imagepp/all/h/HRADrawOptions.h>
 #include <Imagepp/all/h/HGFMappedSurface.h>
 #include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HGSEditor.h>
+#include <Imagepp/all/h/HRAEditor.h>
 #include <Imagepp/all/h/HFCGrid.h>
-#include <Imagepp/all/h/HGSBlitter.h>
+#include <Imagepp/all/h/HRABlitter.h>
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRPHistogram.h>
 
@@ -541,7 +541,7 @@ void HIMColorBalancedImage::ComputePrimeBasedOnHistogram(HFCPtr<HRPHistogram>& p
     int i;
     for (i = 0 ; i < 256 ; i++)
         {
-        NewValue = (uint32_t) min( max(((((double)i) - pi_rLocalDispersionForGlobal.MeanRed) * PrecomputedFactorRed + m_AllGlobal.MeanRed),
+        NewValue = (uint32_t) MIN( MAX(((((double)i) - pi_rLocalDispersionForGlobal.MeanRed) * PrecomputedFactorRed + m_AllGlobal.MeanRed),
                                      0.0),
                                  255.0);
         pHistogramPrime->IncrementEntryCount(NewValue, pi_rpHistogram->GetEntryCount(i));
@@ -556,14 +556,14 @@ void HIMColorBalancedImage::ComputePrimeBasedOnHistogram(HFCPtr<HRPHistogram>& p
 
         for (i = 0 ; i < 256 ; i++)
             {
-            NewValue = (uint32_t) min( max(((((double)i) - pi_rLocalDispersionForGlobal.MeanGreen) * PrecomputedFactorGreen + m_AllGlobal.MeanGreen),
+            NewValue = (uint32_t) MIN( MAX(((((double)i) - pi_rLocalDispersionForGlobal.MeanGreen) * PrecomputedFactorGreen + m_AllGlobal.MeanGreen),
                                          0.0),
                                      255.0);
             pHistogramPrime->IncrementEntryCount(256+NewValue, pi_rpHistogram->GetEntryCount(256+i));
             }
         for (i = 0 ; i < 256 ; i++)
             {
-            NewValue = (uint32_t) min( max(((((double)i) - pi_rLocalDispersionForGlobal.MeanBlue) * PrecomputedFactorBlue + m_AllGlobal.MeanBlue),
+            NewValue = (uint32_t) MIN( MAX(((((double)i) - pi_rLocalDispersionForGlobal.MeanBlue) * PrecomputedFactorBlue + m_AllGlobal.MeanBlue),
                                          0.0),
                                      255.0);
             pHistogramPrime->IncrementEntryCount(512+NewValue, pi_rpHistogram->GetEntryCount(512+i));
@@ -642,13 +642,13 @@ void HIMColorBalancedImage::ComputeGlobalMap()
 
         for (int i = 0 ; i < 256 ; ++i)
             {
-            m_GlobalMap.Red[i]   = (Byte) min( max(((((double)i) - MyGlobal.MeanRed) * PrecomputedFactorRed + m_AllGlobal.MeanRed),
+            m_GlobalMap.Red[i]   = (Byte) MIN( MAX(((((double)i) - MyGlobal.MeanRed) * PrecomputedFactorRed + m_AllGlobal.MeanRed),
                                                      0.0),
                                                  255.0);
-            m_GlobalMap.Green[i] = (Byte) min( max(((((double)i) - MyGlobal.MeanGreen) * PrecomputedFactorGreen + m_AllGlobal.MeanGreen),
+            m_GlobalMap.Green[i] = (Byte) MIN( MAX(((((double)i) - MyGlobal.MeanGreen) * PrecomputedFactorGreen + m_AllGlobal.MeanGreen),
                                                      0.0),
                                                  255.0);
-            m_GlobalMap.Blue[i]  = (Byte) min( max(((((double)i) - MyGlobal.MeanBlue) * PrecomputedFactorBlue + m_AllGlobal.MeanBlue),
+            m_GlobalMap.Blue[i]  = (Byte) MIN( MAX(((((double)i) - MyGlobal.MeanBlue) * PrecomputedFactorBlue + m_AllGlobal.MeanBlue),
                                                      0.0),
                                                  255.0);
             }
@@ -662,7 +662,7 @@ void HIMColorBalancedImage::ComputeGlobalMap()
 
         for (int i = 0 ; i < 256 ; ++i)
             {
-            m_GlobalMap.Gray[i]   = (Byte) min( max(((((double)i) - MyGlobal.MeanRed) * PrecomputedFactorGray + m_AllGlobal.MeanRed),
+            m_GlobalMap.Gray[i]   = (Byte) MIN( MAX(((((double)i) - MyGlobal.MeanRed) * PrecomputedFactorGray + m_AllGlobal.MeanRed),
                                                       0.0),
                                                   255.0);
             }
@@ -790,35 +790,23 @@ bool HIMColorBalancedImage::IsStoredRaster () const
     return (true);
     }
 
-
 //-----------------------------------------------------------------------------
 // Draw
 //-----------------------------------------------------------------------------
-void HIMColorBalancedImage::PreDraw(HRADrawOptions* pio_pOptions)
+void HIMColorBalancedImage::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
     {
-    GetSource()->PreDraw(pio_pOptions);
-    }
-
-//-----------------------------------------------------------------------------
-// Draw
-//-----------------------------------------------------------------------------
-void HIMColorBalancedImage::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
-                                 const HGFDrawOptions* pi_pOptions) const
-    {
-    HPRECONDITION(pio_rpSurface != 0);
-
     bool DrawDone = false;
 
     if (GetNumberOfNeighbors() > 0)
         {
-        HRADrawOptions Options(pi_pOptions);
+        HRADrawOptions Options(pi_Options);
 
         HVEShape RegionToDraw(Options.GetShape() != 0 ? *Options.GetShape() : HRARaster::GetShape());
         RegionToDraw.ChangeCoordSys(GetCoordSys());
         if (Options.GetReplacingCoordSys() != 0)
             RegionToDraw.SetCoordSys(Options.GetReplacingCoordSys());
 
-        HFCPtr<HGSRegion> pClipRegion(static_cast<HGSRegion*>(pio_rpSurface->GetOption(HGSRegion::CLASS_ID).GetPtr()));
+        HFCPtr<HGSRegion> pClipRegion(pio_destSurface.GetRegion());
         if (pClipRegion != 0)
             {
             // Intersect it with the destination
@@ -829,178 +817,156 @@ void HIMColorBalancedImage::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
             {
             // Create a rectangular clip region to stay
             // inside the destination surface.
-            HVEShape DestSurfaceShape(0.0, 0.0, pio_rpSurface->GetSurfaceDescriptor()->GetWidth(), pio_rpSurface->GetSurfaceDescriptor()->GetHeight(), pio_rpSurface->GetSurfaceCoordSys());
+            HVEShape DestSurfaceShape(0.0, 0.0, pio_destSurface.GetSurfaceDescriptor()->GetWidth(), pio_destSurface.GetSurfaceDescriptor()->GetHeight(), pio_rpSurface->GetSurfaceCoordSys());
             RegionToDraw.Intersect(DestSurfaceShape);
             }
 
         if (!RegionToDraw.IsEmpty())
             {
             // Create memory surface like destination.
-            HFCPtr<HGSSurfaceDescriptor> pSourceDataDescriptor(new HGSMemorySurfaceDescriptor(pio_rpSurface->GetWidth(),
-                                                               pio_rpSurface->GetHeight(),
+            HFCPtr<HGSSurfaceDescriptor> pSourceDataDescriptor(new HGSMemorySurfaceDescriptor(pio_destSurface.GetWidth(),
+                                                               pio_destSurface.GetHeight(),
                                                                GetPixelType(),
-                                                               (pio_rpSurface->GetWidth() * GetPixelType()->CountPixelRawDataBits() + 7) / 8));
-            HASSERT(pSourceDataDescriptor != 0);
+                                                               (pio_destSurface.GetWidth() * GetPixelType()->CountPixelRawDataBits() + 7) / 8));
+ 
+            HRASurface sourceDataSurface(pSourceDataDescriptor);
 
-            HFCPtr<HGSSurface> pSourceDataSurface(pio_rpSurface->CreateCompatibleSurface(pSourceDataDescriptor));
-
-            if (pSourceDataSurface != 0)
+            try
                 {
-                try
+                // place the surface so it maps the same space
+                // as the original destination surface.
+                HGFMappedSurface mappedSourceDataSurface(sourceDataSurface.GetSurfaceDescriptor(), pio_destSurface.GetSurfaceCoordSys());
+                    
+                // Editor must be destroyed to finalize edition.
                     {
-                    // place the surface so it maps the same space
-                    // as the original destination surface.
-                    HFCPtr<HGFMappedSurface> pMappedSourceDataSurface(new HGFMappedSurface(pSourceDataSurface->GetSurfaceDescriptor(),
-                                                                                           0,
-                                                                                           0,
-                                                                                           pio_rpSurface->GetSurfaceCoordSys()));
-                    HASSERT(pMappedSourceDataSurface != 0);
+                    HRAEditor editor(sourceDataSurface);
+                    editor.Clear(GetPixelType()->GetDefaultRawData());
+                    }
 
-                    HFCPtr<HGSEditor> pEditor = new HGSEditor();
-                    pEditor->SetFor(pSourceDataSurface);
-                    pEditor->Clear(GetPixelType()->GetDefaultRawData());
-                    pEditor = 0;
+                // Fill the temp. surface with our source. Don't clip...
+                Options.SetShape(0);
+                GetSource()->Draw(mappedSourceDataSurface, &Options);
 
-                    // Fill the temp. surface with our source. Don't clip...
-                    Options.SetShape(0);
-                    GetSource()->Draw(pMappedSourceDataSurface, &Options);
+                // Create memory surface like destination.
+                HFCPtr<HGSSurfaceDescriptor> pBalancedDescriptor(new HGSMemorySurfaceDescriptor(pio_destSurface.GetWidth(),
+                                                                                                pio_destSurface.GetHeight(),
+                                                                                                GetPixelType(),
+                                                                                                (pio_destSurface.GetWidth() * GetPixelType()->CountPixelRawDataBits() + 7) / 8));
+                HASSERT(pBalancedDescriptor != 0);
 
-                    // Create memory surface like destination.
-                    HFCPtr<HGSSurfaceDescriptor> pBalancedDescriptor(new HGSMemorySurfaceDescriptor(pio_rpSurface->GetWidth(),
-                                                                                                    pio_rpSurface->GetHeight(),
-                                                                                                    GetPixelType(),
-                                                                                                    (pio_rpSurface->GetWidth() * GetPixelType()->CountPixelRawDataBits() + 7) / 8));
-                    HASSERT(pBalancedDescriptor != 0);
+                HRASurface balancedSurface(pBalancedDescriptor);
 
-                    HFCPtr<HGSSurface> pBalancedSurface(pSourceDataSurface->CreateCompatibleSurface(pBalancedDescriptor));
+                // place the surface so it maps the same space
+                // as the original destination surface.
+                HGFMappedSurface mappedBalancedSurface(balancedSurface.GetSurfaceDescriptor(), 0, 0, pio_destSurface.GetSurfaceCoordSys());
 
-                    if (pBalancedSurface != 0)
+                HASSERT(sourceDataSurface.GetSurfaceDescriptor()->IsCompatibleWith(HGSMemorySurfaceDescriptor::CLASS_ID));
+                HASSERT(balancedSurface.GetSurfaceDescriptor()->IsCompatibleWith(HGSMemorySurfaceDescriptor::CLASS_ID));
+
+                // create the source pixel buffer
+                HRPPixelBuffer SrcPixelBuffer(*GetPixelType(),
+                                                ((HFCPtr<HGSMemorySurfaceDescriptor>&)sourceDataSurface.GetSurfaceDescriptor())->GetPacket()->GetBufferAddress(),
+                                                pio_destSurface.GetWidth(),
+                                                pio_destSurface.GetHeight());
+
+                // create the destination pixel buffer
+                HRPPixelBuffer DstPixelBuffer(*GetPixelType(),
+                                                ((HFCPtr<HGSMemorySurfaceDescriptor>&)balancedSurface.GetSurfaceDescriptor())->GetPacket()->GetBufferAddress(),
+                                                pio_destSurface.GetWidth(),
+                                                pio_destSurface.GetHeight());
+
+                HFCPtr<HVEShape> pSourceTotalShape(new HVEShape(*GetSource()->GetEffectiveShape()));
+                pSourceTotalShape->ChangeCoordSys(pio_destSurface.GetSurfaceCoordSys());
+                RegionToDraw.ChangeCoordSys(pio_destSurface.GetSurfaceCoordSys());
+                HGF2DExtent ToDrawExtent(RegionToDraw.GetExtent());
+                HGF2DExtent TotalExtent(pSourceTotalShape->GetExtent());
+                HFCGrid ToDrawGrid(ToDrawExtent.GetXMin(),
+                                    ToDrawExtent.GetYMin(),
+                                    ToDrawExtent.GetXMax(),
+                                    ToDrawExtent.GetYMax());
+
+                HASSERT(ToDrawGrid.GetXMin() <= LONG_MAX);
+                HASSERT(ToDrawGrid.GetYMin() <= LONG_MAX);
+
+                int32_t X = (int32_t)ToDrawGrid.GetXMin();
+                int32_t Y = (int32_t)ToDrawGrid.GetYMin();
+                int32_t SrcDisplacementX = 0;
+                int32_t SrcDisplacementY = 0;
+
+                // Balance the data
+                if (m_ApplyPositional)
+                    {
+                    if (m_ColorMode == HIMColorBalancedImage::COLORMODE_RGB)
                         {
-                        // place the surface so it maps the same space
-                        // as the original destination surface.
-                        HFCPtr<HGFMappedSurface> pMappedBalancedSurface(new HGFMappedSurface(pBalancedSurface->GetSurfaceDescriptor(),
-                                                                                             0,
-                                                                                             0,
-                                                                                             pio_rpSurface->GetSurfaceCoordSys()));
-                        HASSERT(pMappedBalancedSurface != 0);
-                        HASSERT(pSourceDataSurface->GetSurfaceDescriptor()->IsCompatibleWith(HGSMemorySurfaceDescriptor::CLASS_ID));
-                        HASSERT(pBalancedSurface->GetSurfaceDescriptor()->IsCompatibleWith(HGSMemorySurfaceDescriptor::CLASS_ID));
-
-                        // create the source pixel buffer
-                        HRPPixelBuffer SrcPixelBuffer(*GetPixelType(),
-                                                      ((HFCPtr<HGSMemorySurfaceDescriptor>&)pSourceDataSurface->GetSurfaceDescriptor())->GetPacket()->GetBufferAddress(),
-                                                      pio_rpSurface->GetWidth(),
-                                                      pio_rpSurface->GetHeight());
-
-                        // create the destination pixel buffer
-                        HRPPixelBuffer DstPixelBuffer(*GetPixelType(),
-                                                      ((HFCPtr<HGSMemorySurfaceDescriptor>&)pBalancedSurface->GetSurfaceDescriptor())->GetPacket()->GetBufferAddress(),
-                                                      pio_rpSurface->GetWidth(),
-                                                      pio_rpSurface->GetHeight());
-
-                        HFCPtr<HVEShape> pSourceTotalShape(new HVEShape(*GetSource()->GetEffectiveShape()));
-                        pSourceTotalShape->ChangeCoordSys(pio_rpSurface->GetSurfaceCoordSys());
-                        RegionToDraw.ChangeCoordSys(pio_rpSurface->GetSurfaceCoordSys());
-                        HGF2DExtent ToDrawExtent(RegionToDraw.GetExtent());
-                        HGF2DExtent TotalExtent(pSourceTotalShape->GetExtent());
-                        HFCGrid ToDrawGrid(ToDrawExtent.GetXMin(),
-                                           ToDrawExtent.GetYMin(),
-                                           ToDrawExtent.GetXMax(),
-                                           ToDrawExtent.GetYMax());
-
-                        HASSERT(ToDrawGrid.GetXMin() <= LONG_MAX);
-                        HASSERT(ToDrawGrid.GetYMin() <= LONG_MAX);
-
-                        int32_t X = (int32_t)ToDrawGrid.GetXMin();
-                        int32_t Y = (int32_t)ToDrawGrid.GetYMin();
-                        int32_t SrcDisplacementX = 0;
-                        int32_t SrcDisplacementY = 0;
-
-                        // Balance the data
-                        if (m_ApplyPositional)
+                        if (m_ApplyGlobal)
                             {
-                            if (m_ColorMode == HIMColorBalancedImage::COLORMODE_RGB)
-                                {
-                                if (m_ApplyGlobal)
-                                    {
-                                    if (GetNumberOfNeighbors() == 4)
-                                        ApplyColorBalanceRGB4(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
-                                    else
-                                        ApplyColorBalanceRGB(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
-                                    }
-                                else
-                                    {
-                                    if (GetNumberOfNeighbors() == 4)
-                                        ApplyColorBalanceRGB4PositionalOnly(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
-                                    else
-                                        ApplyColorBalanceRGBPositionalOnly(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
-                                    }
-                                }
+                            if (GetNumberOfNeighbors() == 4)
+                                ApplyColorBalanceRGB4(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
                             else
-                                {
-                                // COLORMODE_GRAY
-
-                                if (m_ApplyGlobal)
-                                    {
-                                    if (GetNumberOfNeighbors() == 4)
-                                        ApplyColorBalanceGray4(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
-                                    else
-                                        ApplyColorBalanceGray(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
-                                    }
-                                else
-                                    {
-                                    if (GetNumberOfNeighbors() == 4)
-                                        ApplyColorBalanceGray4PositionalOnly(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
-                                    else
-                                        ApplyColorBalanceGrayPositionalOnly(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
-                                    }
-                                }
+                                ApplyColorBalanceRGB(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
                             }
                         else
                             {
-                            if (m_ColorMode == HIMColorBalancedImage::COLORMODE_RGB)
-                                ApplyColorBalanceRGBGlobalOnly(&SrcPixelBuffer, &DstPixelBuffer, SrcDisplacementX, SrcDisplacementY);
+                            if (GetNumberOfNeighbors() == 4)
+                                ApplyColorBalanceRGB4PositionalOnly(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
                             else
-                                ApplyColorBalanceGrayGlobalOnly(&SrcPixelBuffer, &DstPixelBuffer, SrcDisplacementX, SrcDisplacementY);
+                                ApplyColorBalanceRGBPositionalOnly(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
                             }
-
-                        // Draw temp. surface in destination. This is where
-                        // the filter really gets applied.
-
-                        HFCPtr<HGSRegion> pOldClipRegion(static_cast<HGSRegion*>(pio_rpSurface->GetOption(HGSRegion::CLASS_ID).GetPtr()));
-                        pio_rpSurface->SetOption(new HGSRegion(new HVEShape(RegionToDraw), pio_rpSurface->GetSurfaceCoordSys()));
-
-                        HFCPtr<HGSBlitter> pBlitter(new HGSBlitter());
-                        if(Options.ApplyAlphaBlend())
-                            pBlitter->AddAttribute(HGSColorConversionAttribute(HGSColorConversion::COMPOSE));
-
-                        HFCPtr<HGF2DTransfoModel> pTransfoModel = pio_rpSurface->GetSurfaceCoordSys()->GetTransfoModelTo (pMappedBalancedSurface->GetSurfaceCoordSys());
-
-                        pBlitter->SetFor((HFCPtr<HGSSurface>&)pio_rpSurface);
-
-                        // We're assuming
-                        // 1. Surfaces are compatible, since the super surface is the result of a CreateCompatibleSurface
-                        //    on the destination.
-                        // 2. The model is an identity
-
-                        pBlitter->BlitFrom(pMappedBalancedSurface, *pTransfoModel);
-
-                        if (pOldClipRegion == 0)
-                            pio_rpSurface->RemoveOption(HGSRegion::CLASS_ID);
-                        else
-                            pio_rpSurface->SetOption((const HFCPtr<HGSSurfaceOption>&)pOldClipRegion);
-
-                        DrawDone = true;
                         }
-                    }
-                catch(HFCException Exception)
-                    {
-                    // We will fall through in the standard case
-                    if (Exception.GetID() != HFC_OUT_OF_MEMORY_EXCEPTION)
+                    else
                         {
-                        throw Exception;
+                        // COLORMODE_GRAY
+
+                        if (m_ApplyGlobal)
+                            {
+                            if (GetNumberOfNeighbors() == 4)
+                                ApplyColorBalanceGray4(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
+                            else
+                                ApplyColorBalanceGray(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
+                            }
+                        else
+                            {
+                            if (GetNumberOfNeighbors() == 4)
+                                ApplyColorBalanceGray4PositionalOnly(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
+                            else
+                                ApplyColorBalanceGrayPositionalOnly(&SrcPixelBuffer, &DstPixelBuffer, X, Y, TotalExtent, SrcDisplacementX, SrcDisplacementY);
+                            }
                         }
                     }
+                else
+                    {
+                    if (m_ColorMode == HIMColorBalancedImage::COLORMODE_RGB)
+                        ApplyColorBalanceRGBGlobalOnly(&SrcPixelBuffer, &DstPixelBuffer, SrcDisplacementX, SrcDisplacementY);
+                    else
+                        ApplyColorBalanceGrayGlobalOnly(&SrcPixelBuffer, &DstPixelBuffer, SrcDisplacementX, SrcDisplacementY);
+                    }
+
+                // Draw temp. surface in destination. This is where
+                // the filter really gets applied.
+
+                HFCPtr<HGSRegion> pOldClipRegion(pio_destSurface.GetRegion());
+                pio_destSurface.SetRegion(new HGSRegion(new HVEShape(RegionToDraw), pio_destSurface.GetSurfaceCoordSys()));
+
+                HRABlitter blitter(pio_destSurface);
+                if(Options.ApplyAlphaBlend())
+                    blitter.SetAlphaBlend(true);
+
+                HFCPtr<HGF2DTransfoModel> pTransfoModel = pio_destSurface.GetSurfaceCoordSys()->GetTransfoModelTo (mappedSourceDataSurface.GetSurfaceCoordSys());
+
+                // We're assuming
+                // 1. Surfaces are compatible, since the super surface is the result of a CreateCompatibleSurface
+                //    on the destination.
+                // 2. The model is an identity
+
+                blitter.BlitFrom(mappedSourceDataSurface.GetImplementation(), *pTransfoModel);
+
+                pio_destSurface.SetRegion(pOldClipRegion);                        
+
+                DrawDone = true;
+                }
+            catch(HFCOutOfMemoryException& Exception)
+                {
+                //if HFCOutOfMemoryException do nothing
                 }
             }
         }
@@ -1010,7 +976,7 @@ void HIMColorBalancedImage::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
         {
         HWARNING(GetNumberOfNeighbors() <= 0, L"HIMColorBalancedImage::Draw out of memory. Color balancing will not be applied.");
 
-        GetSource()->Draw(pio_rpSurface, pi_pOptions);
+        GetSource()->Draw(pio_destSurface, pi_Options);
         }
     }
 
@@ -1170,9 +1136,9 @@ void HIMColorBalancedImage::ApplyColorBalanceRGB(HRPPixelBuffer* pi_pSourcePixel
                 }
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Red, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Green, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Blue, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Red, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Green, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Blue, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + 3 * (pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth());
@@ -1285,9 +1251,9 @@ void HIMColorBalancedImage::ApplyColorBalanceRGB4(HRPPixelBuffer* pi_pSourcePixe
                       WeightBottom * ((RGBDeltas*)m_pBottomDeltas)->Blue[SourceBlue] ) * 0.5;
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Red, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Green, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Blue, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Red, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Green, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Blue, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + 3 * (pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth());
@@ -1445,9 +1411,9 @@ void HIMColorBalancedImage::ApplyColorBalanceRGBPositionalOnly(HRPPixelBuffer* p
                 }
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Red, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Green, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Blue, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Red, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Green, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Blue, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + 3 * (pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth());
@@ -1560,9 +1526,9 @@ void HIMColorBalancedImage::ApplyColorBalanceRGB4PositionalOnly(HRPPixelBuffer* 
                       WeightBottom * ((RGBDeltas*)m_pBottomDeltas)->Blue[SourceBlue] ) * 0.5;
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Red, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Green, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Blue, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Red, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Green, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Blue, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + 3 * (pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth());
@@ -1742,7 +1708,7 @@ void HIMColorBalancedImage::ApplyColorBalanceGray(HRPPixelBuffer* pi_pSourcePixe
                 }
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Gray, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Gray, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth();
@@ -1839,7 +1805,7 @@ void HIMColorBalancedImage::ApplyColorBalanceGray4(HRPPixelBuffer* pi_pSourcePix
                       WeightBottom * m_pBottomDeltas->Gray[SourceGray] ) * 0.5;
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Gray, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Gray, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth();
@@ -1981,7 +1947,7 @@ void HIMColorBalancedImage::ApplyColorBalanceGrayPositionalOnly(HRPPixelBuffer* 
                 }
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Gray, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Gray, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth();
@@ -2078,7 +2044,7 @@ void HIMColorBalancedImage::ApplyColorBalanceGray4PositionalOnly(HRPPixelBuffer*
                       WeightBottom * m_pBottomDeltas->Gray[SourceGray] ) * 0.5;
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Gray, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Gray, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth();

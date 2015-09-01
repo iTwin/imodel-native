@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_ptstream.c 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: dted_ptstream.c 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  DTED Translator
  * Purpose:  DTED Point Stream Writer.
@@ -29,7 +29,7 @@
 
 #include "dted_api.h"
 
-CPL_CVSID("$Id: dted_ptstream.c 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: dted_ptstream.c 27729 2014-09-24 00:40:16Z goatbar $");
 
 typedef struct {
     char     *pszFilename;
@@ -187,7 +187,7 @@ static int DTEDPtStreamNewTile( DTEDPtStream *psStream,
 /*                           DTEDWritePtLL()                            */
 /************************************************************************/
 
-static int DTEDWritePtLL( DTEDPtStream *psStream, 
+static int DTEDWritePtLL( CPL_UNUSED DTEDPtStream *psStream, 
                           DTEDCachedFile *psCF, 
                           double dfLong, double dfLat, double dfElev )
 
@@ -563,7 +563,7 @@ void DTEDPtStreamSetMetadata( void *hStream, DTEDMetaDataCode eCode,
 {
     DTEDPtStream *psStream = (DTEDPtStream *) hStream;
 
-    if( eCode >= 0 && eCode < DTEDMD_MAX+1 )
+    if( (int)eCode >= 0 && eCode < DTEDMD_MAX+1 )
     {
         CPLFree( psStream->apszMetadata[eCode] );
         psStream->apszMetadata[eCode] = CPLStrdup( pszValue );

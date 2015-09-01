@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCThread.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCThread
@@ -20,7 +20,7 @@
 #include "HFCInterlockedValue.h"
 #include <Imagepp/all/h/HFCExclusiveKey.h>
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /**
 
     This class is used to create threads.  A thread is a single path of
@@ -145,23 +145,23 @@ public:
 
     //:> Construction/destruction
 
-    _HDLLu                HFCThread(bool           pi_AutoDelete = false,
+    IMAGEPP_EXPORT                HFCThread(bool           pi_AutoDelete = false,
                                     const  string&  pi_rThreadName = "");
-    _HDLLu virtual         ~HFCThread() = 0;
+    IMAGEPP_EXPORT virtual         ~HFCThread() = 0;
 
     //:> Thread Control
 
     //:> Changes the priority settings of the thread
-    _HDLLu virtual void        SetPriority     (HFCThreadPriority pi_Priority);
-    _HDLLu virtual void        IncreasePriority();
-    _HDLLu virtual void        DecreasePriority();
-    _HDLLu virtual HFCThreadPriority
+    IMAGEPP_EXPORT virtual void        SetPriority     (HFCThreadPriority pi_Priority);
+    IMAGEPP_EXPORT virtual void        IncreasePriority();
+    IMAGEPP_EXPORT virtual void        DecreasePriority();
+    IMAGEPP_EXPORT virtual HFCThreadPriority
     GetPriority() const;
 
     //:> Suspends/resumes the thread
-    _HDLLu virtual uint32_t    Suspend();
-    _HDLLu virtual uint32_t    Resume();
-    _HDLLu bool               IsSuspended() const;
+    IMAGEPP_EXPORT virtual uint32_t    Suspend();
+    IMAGEPP_EXPORT virtual uint32_t    Resume();
+    IMAGEPP_EXPORT bool               IsSuspended() const;
 
     //:> Sleep in the calling thread.  Default value relinquishes
     //:> the context to another thread.
@@ -181,8 +181,8 @@ public:
     //:> Thread execution
 
     //:> These methods starts & stops the execution of the thread
-    _HDLLu virtual bool       StartThread(size_t pi_StackSize = 0);
-    _HDLLu virtual void        StopThread ();
+    IMAGEPP_EXPORT virtual bool       StartThread(size_t pi_StackSize = 0);
+    IMAGEPP_EXPORT virtual void        StopThread ();
 
     //:> Main thread algorithm (MUST be overridden)
     virtual void        Go() = 0;
@@ -237,7 +237,7 @@ private:
     // Indicates if the thread will destroy itself once terminated.
     bool                   m_AutoDelete;
 
-    uint32_t              m_ThreadID;
+    unsigned long          m_ThreadID;
     HArrayAutoPtr<char>    m_pThreadName;
 
     // Disabled Methods
@@ -246,5 +246,6 @@ private:
     HFCThread&          operator=(const HFCThread&);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HFCThread.hpp"
 

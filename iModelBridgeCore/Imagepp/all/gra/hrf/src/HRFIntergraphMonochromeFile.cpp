@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphMonochromeFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphMonochromeFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFIntergraphMonochromeFile.h>
@@ -188,9 +188,9 @@ void HRFIntergraphMonochromeFile::GetTransfoModel()
 
 
         // The absolute scale is the maximum in absolute value of all 4 scaling factor
-        double AbsoluteScale = max(fabs(m_IntergraphHeader.IBlock1.trn[0]),
-                                    max(fabs(m_IntergraphHeader.IBlock1.trn[1]),
-                                        max(fabs(m_IntergraphHeader.IBlock1.trn[4]),
+        double AbsoluteScale = MAX(fabs(m_IntergraphHeader.IBlock1.trn[0]),
+                                    MAX(fabs(m_IntergraphHeader.IBlock1.trn[1]),
+                                        MAX(fabs(m_IntergraphHeader.IBlock1.trn[4]),
                                             fabs(m_IntergraphHeader.IBlock1.trn[5]))));
 
         // Compute scale X

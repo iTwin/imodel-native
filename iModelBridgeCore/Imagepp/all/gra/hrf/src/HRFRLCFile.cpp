@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRLCFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRLCFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFRLCFile.h>
 #include <Imagepp/all/h/HRFRLCLineEditor.h>
@@ -35,7 +35,6 @@
 
 #include <Imagepp/all/h/HTIFFUtils.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //-----------------------------------------------------------------------------
@@ -128,8 +127,7 @@ HRFRLCCreator::HRFRLCCreator()
 //-----------------------------------------------------------------------------
 WString HRFRLCCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_RLC);  //RLC File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_RLC());  //RLC File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -175,7 +173,6 @@ bool HRFRLCCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                   uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
 
     bool Result = false;
 
@@ -218,7 +215,7 @@ HRFRLCFile::HRFRLCFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
     else
         {
@@ -241,7 +238,7 @@ HRFRLCFile::HRFRLCFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
 
     // Initialise internal members...
@@ -317,9 +314,7 @@ bool HRFRLCFile::Open()
     HPRECONDITION(!m_pRLCFile);
 
     // Be sure the RLC raster file is NOT already open.
-    m_pRLCFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pRLCFile, GetURL()->GetURL());
+    m_pRLCFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     m_IsOpen = true;
 
@@ -337,7 +332,7 @@ void HRFRLCFile::CreateDescriptors ()
     {
     // read the image size
     unsigned short aBuffer[2];
-    m_pRLCFile->Read((void*)aBuffer, 2 * sizeof(unsigned short));
+    m_pRLCFile->Read(aBuffer, 2 * sizeof(unsigned short));
 
     // The file was write in little endian, we must swap bytes for big endian
     // this method come from HTIFFUtils

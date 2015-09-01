@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfaentry.cpp 22538 2011-06-15 15:53:17Z warmerdam $
+ * $Id: hfaentry.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFAEntry class for reading and relating
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Intergraph Corporation
+ * Copyright (c) 2008-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -37,7 +38,7 @@
 #include "hfa_p.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: hfaentry.cpp 22538 2011-06-15 15:53:17Z warmerdam $");
+CPL_CVSID("$Id: hfaentry.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 /************************************************************************/
 /*                              HFAEntry()                              */
@@ -102,10 +103,14 @@ HFAEntry::HFAEntry( HFAInfo_t * psHFAIn, GUInt32 nPos,
     if( VSIFReadL( szName, 1, 64, psHFA->fp ) < 1
         || VSIFReadL( szType, 1, 32, psHFA->fp ) < 1 )
     {
+        szName[sizeof(szName)-1] = '\0';
+        szType[sizeof(szType)-1] = '\0';
         CPLError( CE_Failure, CPLE_FileIO,
                   "VSIFReadL() failed in HFAEntry()." );
         return;
     }
+    szName[sizeof(szName)-1] = '\0';
+    szType[sizeof(szType)-1] = '\0';
 }
 
 /************************************************************************/
@@ -247,8 +252,8 @@ HFAEntry* HFAEntry::BuildEntryFromMIFObject( HFAEntry *poContainer, const char *
 /*      Create a pseudo-HFAEntry wrapping a MIFObject.                  */
 /************************************************************************/
 
-HFAEntry::HFAEntry( HFAEntry * poContainer,
-                    const char *pszMIFObjectPath,
+HFAEntry::HFAEntry( CPL_UNUSED HFAEntry * poContainer,
+                    CPL_UNUSED const char *pszMIFObjectPath,
                     const char * pszDictionnary, 
                     const char * pszTypeName,
                     int nDataSizeIn,
@@ -520,9 +525,9 @@ GByte *HFAEntry::MakeData( int nSize )
     //IPP TR 303431. It appears that sometime the data has not yet been loaded, which often makes
     //the MakeData caller to crash when it assumes that the function returns a not null pointer.
     if ((pabyData == 0) && (nDataSize > 0))
-        {
-        LoadData();
-        }
+    {
+        LoadData ();
+    }
 
     if( (int) nDataSize < nSize && nSize > 0 )
     {
@@ -585,11 +590,19 @@ void HFAEntry::DumpFieldValues( FILE * fp, const char * pszPrefix )
 /************************************************************************/
 
 std::vector<HFAEntry*> HFAEntry::FindChildren( const char *pszName,
-                                               const char *pszType )
+                                               const char *pszType,
+                                               int nRecLevel )
 
 {
     std::vector<HFAEntry*> apoChildren;
     HFAEntry *poEntry;
+
+    if( nRecLevel == 50 )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Bad entry structure: recursion detected !");
+        return apoChildren;
+    }
 
     if( this == NULL )
         return apoChildren;
@@ -603,7 +616,7 @@ std::vector<HFAEntry*> HFAEntry::FindChildren( const char *pszName,
             && (pszType == NULL || EQUAL(poEntry->GetType(),pszType)) )
             apoChildren.push_back( poEntry );
 
-        apoEntryChildren = poEntry->FindChildren( pszName, pszType );
+        apoEntryChildren = poEntry->FindChildren( pszName, pszType, nRecLevel + 1 );
 
         for( i = 0; i < apoEntryChildren.size(); i++ )
             apoChildren.push_back( apoEntryChildren[i] );
@@ -704,7 +717,7 @@ int HFAEntry::GetFieldValue( const char * pszFieldPath,
 /*                           GetFieldCount()                            */
 /************************************************************************/
 
-int HFAEntry::GetFieldCount( const char * pszFieldPath, CPLErr *peErr )
+int HFAEntry::GetFieldCount( const char * pszFieldPath, CPL_UNUSED CPLErr *peErr )
 
 {
     HFAEntry	*poEntry = this;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCBufferedBinStream.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCBufferedBinStream
@@ -12,13 +12,16 @@
 
 #include <Imagepp/all/h/HFCBinStream.h>
 #include <Imagepp/all/h/HFCExclusiveKey.h>
+
+BEGIN_IMAGEPP_NAMESPACE
+
 class HFCTimer;
 
 class HFCBufferedBinStream : public HFCBinStream
     {
 public:
 
-    HDECLARE_CLASS_ID(1292, HFCBinStream);
+    HDECLARE_CLASS_ID(HFCBinStreamId_Buffered, HFCBinStream);
 
     // Primary methods
 
@@ -111,5 +114,7 @@ private:
     HFCTimer*               m_pTimer;
 
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCBufferedBinStream.hpp"

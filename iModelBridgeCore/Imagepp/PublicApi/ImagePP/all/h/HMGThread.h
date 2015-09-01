@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMGThread.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HMGThread
@@ -12,6 +12,8 @@
 #pragma once
 
 #include "HFCExclusiveKey.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 typedef int HMGThreadID;
 
@@ -30,22 +32,22 @@ public:
     // Primary methods
     ///////////////////
 
-    _HDLLu HMGThread();
-    _HDLLu ~HMGThread();
+    IMAGEPP_EXPORT HMGThread();
+    IMAGEPP_EXPORT ~HMGThread();
 
 
     // Retrieve a thread's ID
-    _HDLLu HMGThreadID     GetThreadID() const;
+    IMAGEPP_EXPORT HMGThreadID     GetThreadID() const;
 
     // Ask thread to dispatch its received messages
-    _HDLLu void            DispatchMessages();
+    IMAGEPP_EXPORT void            DispatchMessages();
 
     // Post a message to a thread
     static void     PostMessage(HMGThreadID            pi_DestinationThread,
                                 const HFCPtr<HMGSink>& pi_rpSink,
                                 const HMGMessage&      pi_rMessage);
 
-    _HDLLu static HMGThreadID GetCurrentThreadID();
+    IMAGEPP_EXPORT static HMGThreadID GetCurrentThreadID();
 
 
 protected:
@@ -107,3 +109,4 @@ private:
     };
 
 
+END_IMAGEPP_NAMESPACE

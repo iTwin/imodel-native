@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFTileIDDescriptor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HGFTileIDDescriptor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DExtent.h>
 #include <Imagepp/all/h/HFCGrid.h>
@@ -140,10 +140,10 @@ uint64_t HGFTileIDDescriptor::GetFirstTileIndex (const HGF2DExtent& pi_rExtent)
         HPRECONDITION((uint64_t)Grid.GetXMin() <= UINT64_MAX);
         HPRECONDITION((uint64_t)Grid.GetYMin() <= UINT64_MAX);
 
-        uint64_t xMin = (uint64_t)max (0L, Grid.GetXMin());
-        uint64_t yMin = (uint64_t)max (0L, Grid.GetYMin());
-        uint64_t xMax = (uint64_t)min (m_ImageWidth - 1L, (uint64_t)max(0L, Grid.GetXMax()));
-        uint64_t yMax = (uint64_t)min (m_ImageHeight - 1L, (uint64_t)max(0, Grid.GetYMax()));
+        uint64_t xMin = (uint64_t)MAX (0L, Grid.GetXMin());
+        uint64_t yMin = (uint64_t)MAX (0L, Grid.GetYMin());
+        uint64_t xMax = (uint64_t)MIN (m_ImageWidth - 1L, (uint64_t)MAX(0L, Grid.GetXMax()));
+        uint64_t yMax = (uint64_t)MIN (m_ImageHeight - 1L, (uint64_t)MAX(0, Grid.GetYMax()));
 
         // Not tile in the image
         if ((xMin > xMax) || (yMin > yMax))
@@ -197,10 +197,10 @@ uint64_t HGFTileIDDescriptor::GetFirstTileIndex (uint64_t pi_XMin,   uint64_t pi
     else
         {
         // Compute index;
-        pi_XMin = (uint64_t)max (0L, pi_XMin);
-        pi_YMin = (uint64_t)max (0L, pi_YMin);
-        uint64_t xMax = (uint64_t)min (m_ImageWidth - 1, max(0L, pi_XMin + pi_XCount-1));
-        uint64_t yMax = (uint64_t)min (m_ImageHeight- 1, max(0L, pi_YMin + pi_YCount-1));
+        pi_XMin = (uint64_t)MAX (0L, pi_XMin);
+        pi_YMin = (uint64_t)MAX (0L, pi_YMin);
+        uint64_t xMax = (uint64_t)MIN (m_ImageWidth - 1, MAX(0L, pi_XMin + pi_XCount-1));
+        uint64_t yMax = (uint64_t)MIN (m_ImageHeight- 1, MAX(0L, pi_YMin + pi_YCount-1));
 
         m_FirstCurIndex     = ComputeIndex (pi_XMin, pi_YMin);
         m_LastCurIndex      = ComputeIndex (xMax, pi_YMin);
@@ -237,10 +237,10 @@ uint64_t HGFTileIDDescriptor::GetTileCount(HGF2DExtent& pi_rExtent) const
     HPRECONDITION((uint64_t)Grid.GetXMin() <= UINT64_MAX);
     HPRECONDITION((uint64_t)Grid.GetYMin() <= UINT64_MAX);
 
-    uint64_t xMin = (uint64_t)max (0L, Grid.GetXMin());
-    uint64_t yMin = (uint64_t)max (0L, Grid.GetYMin());
-    uint64_t xMax = (uint64_t)min (m_ImageWidth - 1L, (uint64_t)max(0L, Grid.GetXMax()));
-    uint64_t yMax = (uint64_t)min (m_ImageHeight - 1L, (uint64_t)max(0, Grid.GetYMax()));
+    uint64_t xMin = (uint64_t)MAX (0L, Grid.GetXMin());
+    uint64_t yMin = (uint64_t)MAX (0L, Grid.GetYMin());
+    uint64_t xMax = (uint64_t)MIN (m_ImageWidth - 1L, (uint64_t)MAX(0L, Grid.GetXMax()));
+    uint64_t yMax = (uint64_t)MIN (m_ImageHeight - 1L, (uint64_t)MAX(0, Grid.GetYMax()));
 
     //Extent is located on the image
     if ((xMin < xMax) && (yMin < yMax))

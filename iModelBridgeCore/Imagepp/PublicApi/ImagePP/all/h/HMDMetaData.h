@@ -2,19 +2,20 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDMetaData.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 class HMDMetaData
     {
-    HDECLARE_BASECLASS_ID (7004);
+    HDECLARE_BASECLASS_ID (HMDMetaDataId_Base);
 
 public :
 
-    _HDLLu HMDMetaData();
-    _HDLLu virtual ~HMDMetaData();
+    IMAGEPP_EXPORT HMDMetaData();
+    IMAGEPP_EXPORT virtual ~HMDMetaData();
 
 private :
 
@@ -22,3 +23,4 @@ private :
     HMDMetaData& operator=(const HMDMetaData& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXAListRelativeAttribute.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,6 +15,8 @@
 
 
 #include "HIDXAList.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 template<class T, int C> class HIDXAListRelativeAttribute : public HIDXAttribute
     {
@@ -50,6 +52,7 @@ private:
     uint32_t        m_AbsolutePosition;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HIDXAListRelativeAttribute.hpp"
 
 

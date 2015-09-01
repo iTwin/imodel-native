@@ -2,19 +2,18 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCURLFile.h>
 
 //:Ignore
 // This is the creator that registers itself in the scheme list.
-
 struct URLFileCreator : public HFCURL::Creator
     {
     URLFileCreator()
@@ -186,7 +185,7 @@ WString HFCURLFile::GetURL() const
 WString HFCURLFile::GetAbsoluteFileName() const
     {
     if (m_Host.length () != 0)
-        return m_Host + L"\\" + m_Path;
+        return m_Host + WCSDIR_SEPARATOR + m_Path;
     else
         return m_Path;
     }

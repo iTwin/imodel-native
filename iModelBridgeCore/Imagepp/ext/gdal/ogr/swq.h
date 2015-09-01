@@ -6,6 +6,7 @@
  * 
  ******************************************************************************
  * Copyright (C) 2001 Information Interoperability Institute (3i)
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
  * Permission to use, copy, modify and distribute this software and
  * its documentation for any purpose and without fee is hereby granted,
  * provided that the above copyright notice appear in all copies, that
@@ -22,6 +23,7 @@
 
 #include "cpl_conv.h"
 #include "cpl_string.h"
+#include "ogr_core.h"
 
 #if defined(_WIN32) && !defined(_WIN32_WCE)
 #  define strcasecmp stricmp
@@ -68,6 +70,7 @@ typedef enum {
     SWQ_DATE,     // string
     SWQ_TIME,     // string
     SWQ_TIMESTAMP,// string
+    SWQ_GEOMETRY,
     SWQ_NULL,
     SWQ_OTHER,
     SWQ_ERROR
@@ -83,6 +86,7 @@ typedef enum {
 class swq_field_list;
 class swq_expr_node;
 class swq_select;
+class OGRGeometry;
 
 typedef swq_expr_node *(*swq_field_fetcher)( swq_expr_node *op,
                                              void *record_handle );
@@ -91,21 +95,22 @@ typedef swq_expr_node *(*swq_op_evaluator)(swq_expr_node *op,
 typedef swq_field_type (*swq_op_checker)( swq_expr_node *op );
 
 class swq_expr_node {
-    static void   Quote( CPLString & );
+    static void   Quote( CPLString &, char chQuote = '\'' );
 public:
     swq_expr_node();
 
     swq_expr_node( const char * );
     swq_expr_node( int );
     swq_expr_node( double );
+    swq_expr_node( OGRGeometry* );
     swq_expr_node( swq_op );
 
     ~swq_expr_node();
 
     void           Initialize();
-    char          *Unparse( swq_field_list * );
+    char          *Unparse( swq_field_list *, char chColumnQuote );
     void           Dump( FILE *fp, int depth );
-    swq_field_type Check( swq_field_list * );
+    swq_field_type Check( swq_field_list *, int bAllowFieldsInSecondaryTables );
     swq_expr_node* Evaluate( swq_field_fetcher pfnFetcher, 
                              void *record );
 
@@ -128,28 +133,20 @@ public:
     char        *string_value;
     int         int_value;
     double      float_value;
+    OGRGeometry *geometry_value;
 };
 
-class swq_operation {
-public:
-    swq_operation() {}
-    ~swq_operation() {}
-
+typedef struct {
+    const char*      pszName;
     swq_op           eOperation;
-    CPLString        osName;
     swq_op_evaluator pfnEvaluator;
     swq_op_checker   pfnChecker;
-};
+} swq_operation;
 
 class swq_op_registrar {
 public:
     static const swq_operation *GetOperator( const char * );
     static const swq_operation *GetOperator( swq_op eOperation );
-    static void  Initialize();
-    static void  DeInitialize();
-    static void  AddOperator( const char *pszName, swq_op eOpCode,
-                              swq_op_evaluator pfnEvaluator = NULL,
-                              swq_op_checker pfnChecker = NULL );
 };
 
 typedef struct {
@@ -172,15 +169,16 @@ public:
 
 class swq_parse_context {
 public:
-    swq_parse_context() : nStartToken(0), poRoot(NULL), poSelect(NULL) {}
+    swq_parse_context() : nStartToken(0), poRoot(NULL), poCurSelect(NULL) {}
 
     int        nStartToken;
     const char *pszInput;
     const char *pszNext;
+    const char *pszLastValid;
 
     swq_expr_node *poRoot;
 
-    swq_select    *poSelect;
+    swq_select    *poCurSelect;
 };
 
 /* Compile an SQL WHERE clause into an internal form.  The field_list is
@@ -189,6 +187,7 @@ public:
 */
 int swqparse( swq_parse_context *context );
 int swqlex( swq_expr_node **ppNode, swq_parse_context *context );
+void swqerror( swq_parse_context *context, const char *msg );
 
 int swq_identify_field( const char *token, swq_field_list *field_list,
                         swq_field_type *this_type, int *table_id );
@@ -212,6 +211,7 @@ swq_expr_node *SWQGeneralEvaluator( swq_expr_node *, swq_expr_node **);
 swq_field_type SWQGeneralChecker( swq_expr_node *node );
 swq_expr_node *SWQCastEvaluator( swq_expr_node *, swq_expr_node **);
 swq_field_type SWQCastChecker( swq_expr_node *node );
+const char*    SWQFieldTypeToString( swq_field_type field_type );
 
 /****************************************************************************/
 
@@ -242,16 +242,20 @@ typedef struct {
     int          field_length;
     int          field_precision;
     int          distinct_flag;
+    OGRwkbGeometryType eGeomType;
+    int          nSRID;
     swq_expr_node *expr;
 } swq_col_def;
 
 typedef struct {
     int         count;
     
-    char        **distinct_list;
+    char        **distinct_list; /* items of the list can be NULL */
     double      sum;
     double      min;
     double      max;
+    char        szMin[32];
+    char        szMax[32];
 } swq_summary;
 
 typedef struct {
@@ -305,9 +309,13 @@ public:
 
     void        PushOrderBy( const char *pszFieldName, int bAscending );
     int         order_specs;
-    swq_order_def *order_defs;    
+    swq_order_def *order_defs;
+
+    swq_select *poOtherSelect;
+    void        PushUnionAll( swq_select* poOtherSelectIn );
 
     CPLErr      preparse( const char *select_statement );
+    void        postpreparse();
     CPLErr      expand_wildcard( swq_field_list *field_list );
     CPLErr      parse( swq_field_list *field_list, int parse_flags );
 
@@ -322,5 +330,7 @@ const char *swq_select_finish_summarize( swq_select *select_info );
 const char *swq_select_summarize( swq_select *select_info, 
                                   int dest_column, 
                                   const char *value );
+
+int swq_is_reserved_keyword(const char* pszStr);
 
 #endif /* def _SWQ_H_INCLUDED_ */

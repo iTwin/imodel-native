@@ -2,22 +2,24 @@
 |
 |     $Source: all/gra/hra/src/HRABitmapEditor.cpp $
 |
-|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //-----------------------------------------------------------------------------
 // Methods for class HRABitmapEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRABitmapEditor.h>
 #include <Imagepp/all/h/HRABitmapBase.h>
-#include <Imagepp/all/h/HGSToolbox.h>
+#include <Imagepp/all/h/HRASurface.h>
 #include <Imagepp/all/h/HGSSurfaceDescriptor.h>
 #include <Imagepp/all/h/HGF2DGrid.h>
-#include <Imagepp/all/h/HGSEditor.h>
+#include <Imagepp/all/h/HRAEditor.h>
+#include <Imagepp/all/h/HGSRegion.h>
+
 
 //-----------------------------------------------------------------------------
 // Constructor
@@ -25,7 +27,7 @@
 HRABitmapEditor::HRABitmapEditor(const HFCPtr<HRABitmapBase>&   pi_pRaster,
                                  const HFCAccessMode        pi_Mode)
 
-    : HRAStoredRasterEditor ((HFCPtr<HRAStoredRaster>&) pi_pRaster, pi_Mode)
+    : HRARasterEditor ((HFCPtr<HRARaster>&) pi_pRaster, pi_Mode)
     {
     InitObject(pi_pRaster->GetSurfaceDescriptor());
     }
@@ -36,7 +38,7 @@ HRABitmapEditor::HRABitmapEditor(const HFCPtr<HRABitmapBase>&   pi_pRaster,
 HRABitmapEditor::HRABitmapEditor(const HFCPtr<HRABitmapBase>& pi_pRaster,
                                  const HVEShape&          pi_rShape,
                                  const HFCAccessMode      pi_Mode)
-    : HRAStoredRasterEditor ((HFCPtr<HRAStoredRaster>&) pi_pRaster, pi_Mode)
+    : HRARasterEditor ((HFCPtr<HRARaster>&) pi_pRaster, pi_Mode)
     {
     InitObject(pi_pRaster->GetSurfaceDescriptor(), &pi_rShape);
     }
@@ -47,7 +49,7 @@ HRABitmapEditor::HRABitmapEditor(const HFCPtr<HRABitmapBase>& pi_pRaster,
 HRABitmapEditor::HRABitmapEditor(const HFCPtr<HRABitmapBase>& pi_pRaster,
                                  const HGFScanLines&      pi_rScanLines,
                                  const HFCAccessMode      pi_Mode)
-    : HRAStoredRasterEditor ((HFCPtr<HRAStoredRaster>&) pi_pRaster, pi_Mode)
+    : HRARasterEditor ((HFCPtr<HRARaster>&) pi_pRaster, pi_Mode)
     {
     InitObject(pi_pRaster->GetSurfaceDescriptor(), 0, &pi_rScanLines);
     }
@@ -58,12 +60,15 @@ HRABitmapEditor::HRABitmapEditor(const HFCPtr<HRABitmapBase>& pi_pRaster,
 HRABitmapEditor::~HRABitmapEditor()
     {
     // update the bitmap if required
-    if(GetLockMode().m_HasWriteAccess)
-        {
-        // assure to complete the buffer
-        HFCPtr<HGSSurface> pSurface(m_pEditor->GetSurface());
-        m_pEditor->SetFor(0);
-        }
+//     if(GetLockMode().m_HasWriteAccess)
+//         {
+//         m_pEditor.reset();
+//         m_pSurface.reset();
+//         }
+
+    // assure to complete the buffer
+    m_pEditor.reset();
+    m_pSurface.reset();
     }
 
 //-----------------------------------------------------------------------------
@@ -104,26 +109,22 @@ void HRABitmapEditor::InitObject(const HFCPtr<HGSSurfaceDescriptor>& pi_rpSurDes
         {
         pClipRegion = new HGSRegion(pi_pScanlines);
         }
+        
+    // create a surface from the descriptor and toolbox
+    m_pSurface.reset(new HRASurface(pi_rpSurDescriptor.GetPtr()));
+    if (pClipRegion != 0)
+        m_pSurface->SetRegion(pClipRegion);
 
     // create an editor on this surface
-    m_pEditor = new HGSEditor();
-    HGSToolbox Toolbox((HFCPtr<HGSGraphicTool>&)m_pEditor);
-
-    // create a surface from the descriptor and toolbox
-    HFCPtr<HGSSurface> pSurface(new HGSSurface(pi_rpSurDescriptor, &Toolbox));
-    if (pClipRegion != 0)
-        pSurface->SetOption((const HFCPtr<HGSSurfaceOption>&)pClipRegion);
-
-    // assign the toolbox to the surface
-    Toolbox.SetFor(pSurface);
+    m_pEditor.reset(new HRAEditor(*m_pSurface));
     }
 
 //-----------------------------------------------------------------------------
 // public
 // GetSurfaceEditor
 //-----------------------------------------------------------------------------
-HFCPtr<HGSEditor> HRABitmapEditor::GetSurfaceEditor()
+HRAEditor* HRABitmapEditor::GetSurfaceEditor()
     {
-    return m_pEditor;
+    return m_pEditor.get();
     }
 

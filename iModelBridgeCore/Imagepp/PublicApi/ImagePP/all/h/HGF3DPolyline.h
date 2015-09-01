@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF3DPolyline.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE3DPolyLine
@@ -12,12 +12,14 @@
 
 #pragma once
 
-class HGF2DCoordSys;
-class HVE2DPolySegment;
 #include "HVE2DPolySegment.h"
 #include "HGF3DPoint.h"
 #include "HFCPtr.h"
 #include "HGF2DExtent.h"
+
+BEGIN_IMAGEPP_NAMESPACE
+class HGF2DCoordSys;
+class HVE2DPolySegment;
 
 /** -----------------------------------------------------------------------------
 
@@ -113,6 +115,6 @@ private:
 
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HGF3DPolyLine.hpp"
 

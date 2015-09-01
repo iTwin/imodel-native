@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTClassIDDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HUTClassIDDescriptor
@@ -11,7 +11,9 @@
 
 #include "HFCMacros.h"
 #include "HPMClassKey.h"
+#include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HCDCodec;
 class HRPPixelType;
 class HGF2DTransfoModel;
@@ -29,16 +31,15 @@ class HRFGeoreferenceFormat;
 class HFCClassDescriptor
     {
 public:
-    HFCClassDescriptor(uint32_t pi_ID, WString pi_ClassCode);
+    HFCClassDescriptor(ImagePPMessages::StringId const& pi_ID, WCharCP pi_ClassCode);
     HFCClassDescriptor(const HFCClassDescriptor& pi_rObj);
 
-    const WString& GetClassLabel() const;
     const WString& GetClassCode()  const;
-    uint32_t GetStringID() const;
+    ImagePPMessages::StringId const& GetStringID() const;
 
 private:
 
-    uint32_t m_ID;
+    ImagePPMessages::StringId m_ID;
     WString m_ClassCode;
 
     // Disable unusable operator= and default constructor.
@@ -55,7 +56,7 @@ inline const WString& HFCClassDescriptor::GetClassCode () const
 // Inline standard constructor
 //-----------------------------------------------------------------------------
 
-inline HFCClassDescriptor::HFCClassDescriptor(uint32_t pi_ID, WString pi_ClassCode)
+inline HFCClassDescriptor::HFCClassDescriptor(ImagePPMessages::StringId const& pi_ID, WCharCP pi_ClassCode)
     {
     m_ID = pi_ID;
     m_ClassCode  = pi_ClassCode;
@@ -74,7 +75,7 @@ inline HFCClassDescriptor::HFCClassDescriptor(const HFCClassDescriptor& pi_rObj)
 //  Inline Get the ID.
 //-----------------------------------------------------------------------------
 
-inline uint32_t HFCClassDescriptor::GetStringID() const
+inline ImagePPMessages::StringId const& HFCClassDescriptor::GetStringID() const
     {
     return m_ID;
     }
@@ -88,37 +89,37 @@ inline uint32_t HFCClassDescriptor::GetStringID() const
 
 class HUTClassIDDescriptor
     {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HUTClassIDDescriptor)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HUTClassIDDescriptor)
 
 public:
     HUTClassIDDescriptor();
     ~HUTClassIDDescriptor();
 
-    _HDLLg WString GetClassLabelCodec           (HCLASS_ID          pi_ClassID) const;
-    _HDLLg WString GetClassLabelCodec           (const HCDCodec&    pi_rCodec) const;
-    _HDLLg WString GetClassLabelPixelType       (HCLASS_ID          pi_ClassID) const;
-    _HDLLg WString GetClassLabelPixelType       (const HRPPixelType&
+    IMAGEPP_EXPORT WString GetClassLabelCodec           (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT WString GetClassLabelCodec           (const HCDCodec&    pi_rCodec) const;
+    IMAGEPP_EXPORT WString GetClassLabelPixelType       (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT WString GetClassLabelPixelType       (const HRPPixelType&
                                                  pi_rPixelType) const;
-    _HDLLg WString GetClassLabelTransfoModel    (HCLASS_ID          pi_ClassID) const;
-    _HDLLg WString GetClassLabelTransfoModel    (const HGF2DTransfoModel&
+    IMAGEPP_EXPORT WString GetClassLabelTransfoModel    (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT WString GetClassLabelTransfoModel    (const HGF2DTransfoModel&
                                                  pi_rTransfoModel) const;
-    _HDLLg WString GetClassLabelFilter          (HCLASS_ID          pi_ClassID) const;
-    _HDLLg WString GetClassLabelFilter          (const HRPFilter&   pi_rFilter) const;
-    _HDLLg WString GetClassLabelSLO       (const HRFScanlineOrientation&
+    IMAGEPP_EXPORT WString GetClassLabelFilter          (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT WString GetClassLabelFilter          (const HRPFilter&   pi_rFilter) const;
+    IMAGEPP_EXPORT WString GetClassLabelSLO       (const HRFScanlineOrientation&
                                            pi_rScanlineO) const;
-    _HDLLg WString GetClassLabelBlockType       (const HRFBlockType&
+    IMAGEPP_EXPORT WString GetClassLabelBlockType       (const HRFBlockType&
                                                  pi_rBlockT) const;
-    _HDLLg WString GetClassLabelEncodingType    (const HRFEncodingType&
+    IMAGEPP_EXPORT WString GetClassLabelEncodingType    (const HRFEncodingType&
                                                  pi_rEncodingT) const;
-    _HDLLg WString GetClassLabelResampling      (const HRFDownSamplingMethod&
+    IMAGEPP_EXPORT WString GetClassLabelResampling      (const HRFDownSamplingMethod&
                                                  pi_rSampling) const;
-    _HDLLg WString GetClassLabelGeoRef          (const HRFGeoreferenceFormat&
+    IMAGEPP_EXPORT WString GetClassLabelGeoRef          (const HRFGeoreferenceFormat&
                                                  pi_rGeoRef) const;
-    _HDLLg const WString& GetClassCodeCodec     (HCLASS_ID          pi_ClassID) const;
-    _HDLLg const WString& GetClassCodePixelType (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT const WString& GetClassCodeCodec     (HCLASS_ID          pi_ClassID) const;
+    IMAGEPP_EXPORT const WString& GetClassCodePixelType (HCLASS_ID          pi_ClassID) const;
     const WString& GetClassCodeTransfoModel     (HCLASS_ID          pi_ClassID) const;
     const WString& GetClassCodeFilter           (HCLASS_ID          pi_ClassID) const;
-    _HDLLg const WString& GetNotfoundString() const;
+    IMAGEPP_EXPORT const WString& GetNotfoundString() const;
 
 private:
     typedef map<HCLASS_ID , HFCClassDescriptor, less<HCLASS_ID>, allocator<HFCClassDescriptor> > IDDescriptorMap;
@@ -135,4 +136,5 @@ private:
 
 
     };
+END_IMAGEPP_NAMESPACE
 

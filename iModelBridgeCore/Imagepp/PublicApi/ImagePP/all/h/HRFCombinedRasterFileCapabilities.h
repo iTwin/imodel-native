@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFCombinedRasterFileCapabilities.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFCombinedRasterFileCapabilities
@@ -14,6 +14,7 @@
 
 #include "HRFRasterFileCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFCombinedRasterFileCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -60,3 +61,4 @@ private:
     HRFCombinedRasterFileCapabilities(const HRFCombinedRasterFileCapabilities& pi_rObj);
     HRFCombinedRasterFileCapabilities& operator=(const HRFCombinedRasterFileCapabilities& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

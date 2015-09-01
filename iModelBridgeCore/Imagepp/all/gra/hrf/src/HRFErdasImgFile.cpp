@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFErdasImgFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFErdasImgFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/ImageppLib.h>
 
@@ -44,15 +44,14 @@
 #include <Imagepp/all/h/HGF2DSimilitude.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 
 //GDAL
-#include <ImagePPInternal/ext/gdal/gdal_priv.h>
-#include <ImagePPInternal/ext/gdal/cpl_string.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
+#include <ImagePP-GdalLib/cpl_string.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 //-----------------------------------------------------------------------------
 // HRFErdasImgBlockCapabilities
@@ -268,7 +267,7 @@ HRFErdasImgCreator::HRFErdasImgCreator()
 // Identification information
 WString HRFErdasImgCreator::GetLabel() const
     {
-    return HFCResourceLoader::GetInstance()->GetString(IDS_FILEFORMAT_ErdasImg); // "Erdas IMG"
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_ErdasImg()); // "Erdas IMG"
     }
 
 // Identification information
@@ -306,7 +305,9 @@ bool HRFErdasImgCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                        uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
+
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
 
     //Will initialize GDal if not already initialize
     HRFGdalSupportedFile::Initialize();
@@ -319,10 +320,12 @@ bool HRFErdasImgCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     GDALDriver* pHFADriver = GetGDALDriverManager()->GetDriverByName("HFA");
     if(pHFADriver != NULL && pHFADriver->pfnIdentify != NULL) 
         {
-        AString filenameA;
-        BeStringUtilities::WCharToCurrentLocaleChar (filenameA, static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName().c_str());
+        // TFS#86887: GDAL_FILENAME_IS_UTF8
+        Utf8String filenameUtf8;
+        BeStringUtilities::WCharToUtf8(filenameUtf8, static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName().c_str());
 
-        GDALOpenInfo oOpenInfo(filenameA.c_str(), GA_ReadOnly);
+
+        GDALOpenInfo oOpenInfo(filenameUtf8.c_str(), GA_ReadOnly);
         Result = (0 != pHFADriver->pfnIdentify(&oOpenInfo));
         }
 
@@ -420,12 +423,12 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFErdasImgFile::GetCapabilities () con
 
 //-----------------------------------------------------------------------------
 // Protected
-// GetGeocodingInformation
+// ExtractGeocodingInformation
 //
 //-----------------------------------------------------------------------------
-IRasterBaseGcsPtr HRFErdasImgFile::GetGeocodingInformation()
+RasterFileGeocodingPtr HRFErdasImgFile::ExtractGeocodingInformation()
     {
-    IRasterBaseGcsPtr pGeocodingInfo;
+    RasterFileGeocodingPtr pGeocodingInfo(RasterFileGeocoding::Create());
     char pLocalCS[] = "LOCAL_CS[\"Unknown\"";
 
     CHECK_ERR(string sProj = m_poDataset->GetProjectionRef();)
@@ -433,7 +436,7 @@ IRasterBaseGcsPtr HRFErdasImgFile::GetGeocodingInformation()
     //TR 205873 and TR 230951
     if ((BeStringUtilities::Strnicmp(sProj.c_str(), pLocalCS, sizeof(pLocalCS)) != 0))
         {
-        pGeocodingInfo = HRFGdalSupportedFile::GetGeocodingInformation();
+        pGeocodingInfo = HRFGdalSupportedFile::ExtractGeocodingInformation();
         }
 
     if ((GetNbBands() == 1) && (m_GrayBandInd != -1))
@@ -459,14 +462,16 @@ IRasterBaseGcsPtr HRFErdasImgFile::GetGeocodingInformation()
 
             UnitNameToEPSGCodeMap::iterator UnitToNameIter = m_pUnitToNameToEPSGCodeMap->find(pUnitName);
 
-            if ((pGeocodingInfo != 0) && UnitToNameIter != m_pUnitToNameToEPSGCodeMap->end())
+            if (pGeocodingInfo->GetGeocodingCP()!= NULL && UnitToNameIter != m_pUnitToNameToEPSGCodeMap->end())
                 {
+                IRasterBaseGcsPtr pGcs(pGeocodingInfo->GetGeocodingCP()->Clone());
                 if (UnitToNameIter->second == 9001)   // Meter
-                    pGeocodingInfo->SetVerticalUnits(1.0);
+                    pGcs->SetVerticalUnits(1.0);
                 else if (UnitToNameIter->second == 9002)  // International foot
-                    pGeocodingInfo->SetVerticalUnits(0.3048);
+                    pGcs->SetVerticalUnits(0.3048);
                 else if (UnitToNameIter->second == 9003)  // US Survey foot
-                    pGeocodingInfo->SetVerticalUnits(12.0/39.37);
+                    pGcs->SetVerticalUnits(12.0/39.37);
+                pGeocodingInfo = RasterFileGeocoding::Create(pGcs.get());
                 }
             }
         }
@@ -504,12 +509,12 @@ void HRFErdasImgFile::DetectPixelType()
     {
     //Discard RRD files
     if(GetNbBands() == 0)
-        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
 
     m_IsBandSpecValid = false;
 
     ChannelToBandIndexMapping specifiedBand;
-    bool IsBandSpecDefined = ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetChannelToBandIndexMapping(specifiedBand);
+    bool IsBandSpecDefined = ImageppLib::GetHost().GetImageppLibAdmin()._GetChannelToBandIndexMapping(specifiedBand);
 
 
     if (IsBandSpecDefined)
@@ -690,8 +695,11 @@ void HRFErdasImgFile::CreateDescriptors()
 
     // Create Page and resolution Description/Capabilities for this file.
     HPMAttributeSet       TagList;
+    HFCPtr<HRPHistogram>  pHistogram;
+
+    GetHistogramFromImgHeader(pHistogram);
     
-    HRFGdalSupportedFile::CreateDescriptorsWith(new HCDCodecIdentity(), TagList);
+    HRFGdalSupportedFile::CreateDescriptorsWith(new HCDCodecIdentity(), TagList, pHistogram);
     }
 
 
@@ -724,13 +732,13 @@ void HRFErdasImgFile::GetHistogramFromImgHeader(HFCPtr<HRPHistogram>& po_rHistog
         const char*         pHistogramInImg;
         char                FreqSeparator[] = "|";
         int32_t               NbFrequencyVals = (int)pow(2.0, m_BitsPerPixelPerBand);
-        unsigned short      NbHistoCh = (unsigned short)min(3, m_NbBands);
+        unsigned short      NbHistoCh = (unsigned short)MIN(3, m_NbBands);
 
         pHistogram = new HRPHistogram(NbFrequencyVals, NbHistoCh);
 
         ChannelToBandIndexMapping specifiedBand;
         if (m_IsBandSpecValid)
-            ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetChannelToBandIndexMapping(specifiedBand);
+            ImageppLib::GetHost().GetImageppLibAdmin()._GetChannelToBandIndexMapping(specifiedBand);
 
         for (unsigned short ChannelIndex = 0; ChannelIndex < NbHistoCh; ChannelIndex++)
             {
@@ -762,7 +770,7 @@ void HRFErdasImgFile::GetHistogramFromImgHeader(HFCPtr<HRPHistogram>& po_rHistog
             if (pHistogramInImg != 0)
                 {
                 const char*          pFrequency;
-                __int64              Frequency;
+                int64_t              Frequency;
                 int                  FreqInd = 0;
                 HArrayAutoPtr<char> pHistogramInImgDup(new char[strlen(pHistogramInImg) + 1]);
 
@@ -782,7 +790,7 @@ void HRFErdasImgFile::GetHistogramFromImgHeader(HFCPtr<HRPHistogram>& po_rHistog
                         break;
                         }
 
-                    Frequency = _atoi64(pFrequency);
+                    Frequency = strtoll(pFrequency,0, 10);
 
                     //The histogram currently accepts only 32 bit frequency values
                     HASSERT(Frequency <= UINT32_MAX);

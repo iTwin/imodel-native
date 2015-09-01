@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HTIFFFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HTIFFFile.h>
@@ -39,7 +39,7 @@
 #include <Imagepp/all/h/HTIFFUtils.h>
 #include <Imagepp/all/h/HTIFFGeoKey.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 // Private Directory
 //const Int32  HTIFFFile::HMR_DIRECTORY = -1;
@@ -83,6 +83,7 @@ HTIFFFile::HTIFFFile(const WString& pi_rFilename,
 // Constructor,
 //-----------------------------------------------------------------------------
 HTIFFFile::HTIFFFile(const HFCPtr<HFCURL>&  pi_rpURL,
+                     uint64_t               pi_offset,
                      HFCAccessMode          pi_AccessMode,
                      bool                  pi_CreateBigTifFormat,
                      bool*                 po_pNewFile)
@@ -91,7 +92,7 @@ HTIFFFile::HTIFFFile(const HFCPtr<HFCURL>&  pi_rpURL,
     Initialize();
 
     // See HTagFile class documentation
-    Construct(pi_rpURL, 0, pi_AccessMode, 0L, pi_CreateBigTifFormat, true, po_pNewFile);
+    Construct(pi_rpURL, 0, pi_AccessMode, pi_offset, pi_CreateBigTifFormat, true, po_pNewFile);
     }
 
 
@@ -1265,8 +1266,8 @@ HSTATUS HTIFFFile::TileWrite (const Byte* pi_pData, uint32_t pi_PosX, uint32_t p
                 m_pCurDir->GetValues (TILELENGTH, &TileLength);
 
                 // Compute the size of the relevant data
-                uint32_t RelevantWidth  = min(TileWidth, m_ImageWidth - pi_PosX);
-                uint32_t RelevantHeight = min(TileLength, m_ImageLength - pi_PosY);
+                uint32_t RelevantWidth  = MIN(TileWidth, m_ImageWidth - pi_PosX);
+                uint32_t RelevantHeight = MIN(TileLength, m_ImageLength - pi_PosY);
 
                 // Pad the data
                 // DG note: We don't want to make a copy of the data ... so we
@@ -1509,7 +1510,7 @@ bool HTIFFFile::WriteProjectWiseBlob(uint32_t pi_Page, const Byte* pi_pData, uin
             pHMRDir->m_pDirectory->GetValues (HMR_PROJECTWISE_BLOB,  &NbEntry, &pVal);
             Offset_Size[0] = ((uint64_t*)pVal)[0];
             Offset_Size[1] = ((uint64_t*)pVal)[1];
-            pOffset_Size = (void*)pVal;
+            pOffset_Size = pVal;
             }
         else
             {
@@ -1517,7 +1518,7 @@ bool HTIFFFile::WriteProjectWiseBlob(uint32_t pi_Page, const Byte* pi_pData, uin
             pHMRDir->m_pDirectory->GetValues (HMR_PROJECTWISE_BLOB,  &NbEntry, &pVal);
             Offset_Size[0] = ((uint32_t*)pVal)[0];
             Offset_Size[1] = ((uint32_t*)pVal)[0];
-            pOffset_Size = (void*)pVal;
+            pOffset_Size = pVal;
             }
 
         // Find a space in the file, to write the Data.
@@ -1971,8 +1972,8 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
         HDEBUGTEXT(L"SimulateStripList: Image with one strip, simulate Offset/Count fields\n");
 
         // Set members
-        // Set row by strip to respect the strip capabilities, min 32 with increment of 16
-        m_RowsByStrip   = (max(DEF_MAX_SIMULATESTRIPSIZE / RowBytes, 32) / 16) * 16;  // Assert we a mutiple of 16
+        // Set row by strip to respect the strip capabilities, MIN 32 with increment of 16
+        m_RowsByStrip   = (MAX(DEF_MAX_SIMULATESTRIPSIZE / RowBytes, 32) / 16) * 16;  // Assert we a mutiple of 16
         HASSERT(m_RowsByStrip % 16 == 0);
 
         m_NbData32      = (m_ImageLength+m_RowsByStrip-1) / m_RowsByStrip;
@@ -2513,7 +2514,7 @@ HSTATUS HTIFFFile::WriteData (const Byte* pi_pData, uint32_t pi_StripTile, uint3
         ErInfo.m_Offset = GetOffset(pi_StripTile);
         ErInfo.m_Length = GetCount(pi_StripTile);
 
-        if (m_pFile->GetFilePtr()->GetLastExceptionID() == HFC_FILE_OUT_OF_RANGE_EXCEPTION)
+        if (dynamic_cast<HFCFileOutOfRangeException const*>(m_pFile->GetFilePtr()->GetLastException()) != 0)
             {
             ErrorMsg(&m_pError, HTIFFError::SIZE_OUT_OF_RANGE, 0, true);
             Ret = H_OUT_OF_RANGE;
@@ -2945,7 +2946,7 @@ bool HTIFFFile::OnCurrentDirectoryChanged (HTagFile::DirectoryID pi_DirID, bool 
         m_ByteOrder.SetBitRev(m_FillOrder != FillOrder);
 
         // Compression...
-        uint32_t Compress = COMPRESSION_NONE;
+        unsigned short Compress = COMPRESSION_NONE;
         m_pCurDir->GetValues (COMPRESSION, &Compress);
 
         // Free the list allocated internally, else do nothing.
@@ -3063,6 +3064,7 @@ bool HTIFFFile::OnCurrentDirectoryChanged (HTagFile::DirectoryID pi_DirID, bool 
                     break;
 
                 case COMPRESSION_DEFLATE:
+                case COMPRESSION_ADOBE_DEFLATE:
                     m_IsCompress = true;
                     SetDeflateAlgo();
                     break;
@@ -3079,10 +3081,10 @@ bool HTIFFFile::OnCurrentDirectoryChanged (HTagFile::DirectoryID pi_DirID, bool 
                         {
                         // In separate we have only one sample by block/packet.
                         HASSERT(IsAllSamplesWithSameBitsCount());   // Will return SEPARATE_PLANAR_CONFIGURATION_NOT_SUPPORTED below
-                        SetLZWAlgo(m_pBitsBySample[0], Predictor);
+                        SetLZWAlgo(m_pBitsBySample[0], Predictor, m_SamplesByPixel);
                         }
                     else
-                        SetLZWAlgo(m_BitsByPixel, Predictor);
+                        SetLZWAlgo(m_BitsByPixel, Predictor, m_SamplesByPixel);
 
                     break;
 
@@ -3122,8 +3124,7 @@ bool HTIFFFile::OnCurrentDirectoryChanged (HTagFile::DirectoryID pi_DirID, bool 
                     SetNoneAlgo();
                         {
                         HTIFFError::UnknownCompressionErInfo ErInfo;
-                        HASSERT(Compress <= SHRT_MAX);
-                        ErInfo.m_CompressionType = (short)Compress;
+                        ErInfo.m_CompressionType = Compress;
                         ErrorMsg(&m_pError, HTIFFError::UNKNOWN_COMPRESSION_TYPE, &ErInfo, true);
                         }
                     break;
@@ -3195,7 +3196,7 @@ void HTIFFFile::PrepareForJPEG(Byte* pio_pData,
     if (pi_RelevantWidth < pi_Width)
         {
         // compute the size of the padded width
-        uint32_t PaddingWidth = min((8 - pi_RelevantWidth % 8), (pi_Width - pi_RelevantWidth));
+        uint32_t PaddingWidth = MIN((8 - pi_RelevantWidth % 8), (pi_Width - pi_RelevantWidth));
 
         Byte* pSrc  = pio_pData + (pi_RelevantWidth - 1) * BytesPerPixel;
         Byte* pDest = pio_pData + pi_RelevantWidth * BytesPerPixel;
@@ -3214,7 +3215,7 @@ void HTIFFFile::PrepareForJPEG(Byte* pio_pData,
     if (pi_RelevantHeight < pi_Height)
         {
         // compute the size of the padded height,
-        uint32_t PaddingHeight = min((8 - pi_RelevantHeight % 8), (pi_Height - pi_RelevantHeight));
+        uint32_t PaddingHeight = MIN((8 - pi_RelevantHeight % 8), (pi_Height - pi_RelevantHeight));
 
         Byte* pSrc  = pio_pData + (pi_RelevantHeight - 1) * LineWidth;
         Byte* pDest = pio_pData + pi_RelevantHeight * LineWidth;
@@ -3357,7 +3358,7 @@ void HTIFFFile::ComputeNbBitUsed()
             {
             int RequiredBitPerPixel = (int)floor(log10( (double)(MaxSampleValue + 1)) / log10(2.0) + 0.9999);
             HASSERT((RequiredBitPerPixel <= 16) && (RequiredBitPerPixel > 0));
-            m_NbBitUsed = (unsigned short)max (min( RequiredBitPerPixel, 16), 8);
+            m_NbBitUsed = (unsigned short)MAX (MIN( RequiredBitPerPixel, 16), 8);
             }
         }
     }
@@ -3484,7 +3485,7 @@ bool HTIFFFile::ValidateAndCorrectBlocInfo()
 // Utility function to create an Undo-Redo file
 //   - Strip, LZW compression, increase dynamically
 //-----------------------------------------------------------------------------
-HTIFFFile* HTIFFFile_UndoRedoFile(const WString& pi_rFilename, HFCAccessMode pi_Mode)
+/*static*/ HTIFFFile* HTIFFFile::UndoRedoFile(const WString& pi_rFilename, HFCAccessMode pi_Mode)
     {
     HAutoPtr<HTIFFFile> pFile;
     try
@@ -3500,7 +3501,7 @@ HTIFFFile* HTIFFFile_UndoRedoFile(const WString& pi_rFilename, HFCAccessMode pi_
                 }
             pFile->SetField (SUBFILETYPE, (uint32_t)ResolutionType);
             pFile->SetField (PLANARCONFIG, (unsigned short)PLANARCONFIG_CONTIG);
-            pFile->SetField (SOFTWARE, IDENTIFY_UNDOREDO_FILE);
+            pFile->SetFieldA (SOFTWARE, IDENTIFY_UNDOREDO_FILE);
                 {
                 char aDateTime[20];
                 time_t timer;
@@ -3515,7 +3516,7 @@ HTIFFFile* HTIFFFile_UndoRedoFile(const WString& pi_rFilename, HFCAccessMode pi_
                          gm.tm_hour,
                          gm.tm_min,
                          gm.tm_sec);
-                pFile->SetField (DATETIME, aDateTime);
+                pFile->SetFieldA (DATETIME, aDateTime);
                 }
 
             unsigned short BitPerSample = 8;

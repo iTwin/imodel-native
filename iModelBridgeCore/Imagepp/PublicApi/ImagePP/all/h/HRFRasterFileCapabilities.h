@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFileCapabilities.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFileCapabilities
@@ -34,44 +34,45 @@
     <LI><a href = "../../../doc/HRFRasterFileCapabilities.doc"> HRFRasterFileCapabilities.doc </a></LI>
     -----------------------------------------------------------------------------
  */
+BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFileCapabilities : public HFCShareableObject<HRFRasterFileCapabilities>
     {
-    HDECLARE_BASECLASS_ID(2270)
+    HDECLARE_BASECLASS_ID(HRFRasterFileId_Capabilities)
 
 public:
     // creation and destruction
-    _HDLLg HRFRasterFileCapabilities();
-    _HDLLg virtual ~HRFRasterFileCapabilities();
+    IMAGEPP_EXPORT HRFRasterFileCapabilities();
+    IMAGEPP_EXPORT virtual ~HRFRasterFileCapabilities();
 
     // test if the specific capability is supported
-    _HDLLg virtual bool                           Supports(const HFCPtr<HRFCapability>& pi_rpCapability);
+    IMAGEPP_EXPORT virtual bool                           Supports(const HFCPtr<HRFCapability>& pi_rpCapability);
 
     // capabilities information "include all type of capabilities"
-    _HDLLg virtual uint32_t                        CountCapabilities    () const;
-    _HDLLg virtual const HFCPtr<HRFCapability>&    GetCapability        (uint32_t pi_Index) const;
+    IMAGEPP_EXPORT virtual uint32_t                        CountCapabilities    () const;
+    IMAGEPP_EXPORT virtual const HFCPtr<HRFCapability>&    GetCapability        (uint32_t pi_Index) const;
 
     // obtains capabilities for a specific type
-    _HDLLg virtual HRFRasterFileCapabilities*      GetCapabilitiesOfType(HCLASS_ID   pi_CapabilityType,
+    IMAGEPP_EXPORT virtual HRFRasterFileCapabilities*      GetCapabilitiesOfType(HCLASS_ID   pi_CapabilityType,
                                                                          HFCAccessMode pi_AccessMode) const;
 
-    _HDLLg virtual HRFRasterFileCapabilities*      GetCapabilitiesOfType(HCLASS_ID   pi_CapabilityType) const;
+    IMAGEPP_EXPORT virtual HRFRasterFileCapabilities*      GetCapabilitiesOfType(HCLASS_ID   pi_CapabilityType) const;
 
     // Test a capabilities is present for a specific type
-    _HDLLg virtual bool                           HasCapabilityOfType(HCLASS_ID   pi_CapabilityType,
+    IMAGEPP_EXPORT virtual bool                           HasCapabilityOfType(HCLASS_ID   pi_CapabilityType,
                                                                        HFCAccessMode pi_AccessMode) const;
 
-    _HDLLg virtual bool                           HasCapabilityOfType(HCLASS_ID   pi_CapabilityType) const;
+    IMAGEPP_EXPORT virtual bool                           HasCapabilityOfType(HCLASS_ID   pi_CapabilityType) const;
 
     // obtains the first capability found for a specific type
-    _HDLLg virtual HFCPtr<HRFCapability>           GetCapabilityOfType  (HCLASS_ID   pi_CapabilityType,
+    IMAGEPP_EXPORT virtual HFCPtr<HRFCapability>           GetCapabilityOfType  (HCLASS_ID   pi_CapabilityType,
                                                                          HFCAccessMode pi_AccessMode) const;
 
-    _HDLLg virtual HFCPtr<HRFCapability>           GetCapabilityOfType  (HCLASS_ID   pi_CapabilityType) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HRFCapability>           GetCapabilityOfType  (HCLASS_ID   pi_CapabilityType) const;
 
-    _HDLLg virtual HFCPtr<HRFCapability>           GetCapabilityOfType  (const HFCPtr<HRFCapability>& pi_rpCapability) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HRFCapability>           GetCapabilityOfType  (const HFCPtr<HRFCapability>& pi_rpCapability) const;
 
     // Add a capability (this method is public for implemantation reason only)
-    _HDLLg virtual void                            Add(const HFCPtr<HRFCapability>& pi_rpCapability);
+    IMAGEPP_EXPORT virtual void                            Add(const HFCPtr<HRFCapability>& pi_rpCapability);
 
 protected:
 
@@ -90,3 +91,4 @@ private:
     HRFRasterFileCapabilities(const HRFRasterFileCapabilities& pi_rObj);
     HRFRasterFileCapabilities& operator=(const HRFRasterFileCapabilities& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

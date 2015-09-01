@@ -2,18 +2,16 @@
 //:>
 //:>     $Source: all/gra/hrf/src/sdogeorasterwrapper.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class SDOGeoRasterWrapper
 //-----------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
+#include <ImagePPInternal/hstdcpp.h>
 
 #include <Imagepp/all/h/SDOGeoRasterWrapper.h>
 #include <Imagepp/all/h/OCIGeoRasterWrapper.h>
-
-#include <sstream>
 
 //-----------------------------------------------------------------------------
 // static method

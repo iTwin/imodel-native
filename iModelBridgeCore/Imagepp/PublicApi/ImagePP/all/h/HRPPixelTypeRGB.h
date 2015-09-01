@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeRGB.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,10 @@
 
 #include "HRPPixelType.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelTypeRGB : public HRPPixelType
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1019)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRPPixelTypeId_BaseRGB)
 
 public:
 
@@ -61,4 +62,5 @@ protected:
 
 private:
     };
+END_IMAGEPP_NAMESPACE
 

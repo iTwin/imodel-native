@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtsrasterreader.cpp 21298 2010-12-20 10:58:34Z rouault $
+ * $Id: sdtsrasterreader.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Implementation of SDTSRasterReader class.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +30,7 @@
 
 #include "sdts_al.h"
 
-CPL_CVSID("$Id: sdtsrasterreader.cpp 21298 2010-12-20 10:58:34Z rouault $");
+CPL_CVSID("$Id: sdtsrasterreader.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 /************************************************************************/
 /*                          SDTSRasterReader()                          */
@@ -105,7 +106,13 @@ int SDTSRasterReader::Open( SDTS_CATD * poCATD, SDTS_IREF * poIREF,
 /* -------------------------------------------------------------------- */
     while( (poRecord = oLDEF.ReadRecord() ) != NULL )
     {
-        if( EQUAL(poRecord->GetStringSubfield("LDEF",0,"CMNM",0), pszModule) )
+        const char* pszCandidateModule = poRecord->GetStringSubfield("LDEF",0,"CMNM",0);
+        if( pszCandidateModule == NULL )
+        {
+            poRecord = NULL;
+            break;
+        }
+        if( EQUAL(pszCandidateModule, pszModule) )
             break;
     }
 
@@ -130,7 +137,13 @@ int SDTSRasterReader::Open( SDTS_CATD * poCATD, SDTS_IREF * poIREF,
 /*      Get the point in the pixel that the origin defines.  We only    */
 /*      support top left and center.                                    */
 /* -------------------------------------------------------------------- */
-    strcpy( szINTR, poRecord->GetStringSubfield(  "LDEF", 0, "INTR", 0 ) );
+    const char* pszINTR = poRecord->GetStringSubfield(  "LDEF", 0, "INTR", 0 );
+    if( pszINTR == NULL )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined, "Can't find INTR subfield of LDEF field" );
+        return FALSE;
+    }
+    strcpy( szINTR, pszINTR );
     if( EQUAL(szINTR,"") )
         strcpy( szINTR, "CE" );
     
@@ -225,6 +238,7 @@ int SDTSRasterReader::Open( SDTS_CATD * poCATD, SDTS_IREF * poIREF,
     const char  *pszString;
     
     pszString = poRecord->GetStringSubfield( "RSDF", 0, "OBRP", 0); 
+    if( pszString == NULL ) pszString = "";
     if( !EQUAL(pszString,"G2") )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
@@ -234,6 +248,7 @@ int SDTSRasterReader::Open( SDTS_CATD * poCATD, SDTS_IREF * poIREF,
     }
     
     pszString = poRecord->GetStringSubfield( "RSDF", 0, "SCOR", 0); 
+    if( pszString == NULL ) pszString = "";
     if( !EQUAL(pszString,"TL") )
     {
         CPLError( CE_Warning, CPLE_AppDefined,
@@ -279,7 +294,13 @@ int SDTSRasterReader::Open( SDTS_CATD * poCATD, SDTS_IREF * poIREF,
 /* -------------------------------------------------------------------- */
     while( (poRecord = oDDSH.ReadRecord() ) != NULL )
     {
-        if( EQUAL(poRecord->GetStringSubfield("DDSH",0,"NAME",0),pszModule) )
+        const char* pszName = poRecord->GetStringSubfield("DDSH",0,"NAME",0);
+        if( pszName == NULL )
+        {
+            poRecord = NULL;
+            break;
+        }
+        if( EQUAL(pszName,pszModule) )
             break;
     }
 
@@ -342,8 +363,7 @@ int SDTSRasterReader::Open( SDTS_CATD * poCATD, SDTS_IREF * poIREF,
 
   */
 
-int SDTSRasterReader::GetBlock( int nXOffset, int nYOffset, void * pData )
-
+int SDTSRasterReader::GetBlock( CPL_UNUSED int nXOffset, int nYOffset, void * pData )
 {
     DDFRecord   *poRecord = NULL;
     int         nBytesPerValue;

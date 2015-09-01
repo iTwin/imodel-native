@@ -6,7 +6,7 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -16,6 +16,8 @@ appName = MatrixFromTiePts
 
 %include mdl.mki
 
+dirToSearch = $(BuildContext)PublicAPI
+%include cincapnd.mki
 
 MatrixFromTiePtsSrc = $(_MakeFilePath)src/
 

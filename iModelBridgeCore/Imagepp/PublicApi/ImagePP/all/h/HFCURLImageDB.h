@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLImageDB.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,7 +15,7 @@
 #pragma once
 
 #include "HFCURL.h"
-
+BEGIN_IMAGEPP_NAMESPACE
 // URL specification at this level is:
 // imagedb:{//internalname/driveName[/dir.../dir/imagename]}
 // imagedb:{//dbtype:ConnectString[?prompt string]/tablename[/dir.../dir/imagename]}
@@ -104,3 +104,5 @@ private:
     HFCURLImageDB& operator=(const HFCURLImageDB&);
     HFCURLImageDB(const HFCURLImageDB&);
     };
+
+END_IMAGEPP_NAMESPACE

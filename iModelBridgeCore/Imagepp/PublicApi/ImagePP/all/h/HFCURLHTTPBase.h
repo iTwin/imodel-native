@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLHTTPBase.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLHTTP
@@ -11,6 +11,7 @@
 
 #include "HFCURLCommonInternet.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //:Ignore
 // URL specification at this level is:
 // [http|https]:[//][user[:password]@]host[:port][/[Path[?SearchPart]]]
@@ -32,7 +33,7 @@ class HFCURLHTTPBase : public HFCURLCommonInternet
     {
 public:
 
-    HDECLARE_CLASS_ID(1311, HFCURLCommonInternet);
+    HDECLARE_CLASS_ID(HFCURLId_HTTPBase, HFCURLCommonInternet);
 
     // Define the Scheme label
     static const WString& s_SchemeName()
@@ -41,29 +42,29 @@ public:
         }
 
     //:> constructor
-    _HDLLu                         HFCURLHTTPBase() { } //:> required for persistence
-    _HDLLu                         HFCURLHTTPBase(const WString& pi_URL,
+    IMAGEPP_EXPORT                         HFCURLHTTPBase() { } //:> required for persistence
+    IMAGEPP_EXPORT                         HFCURLHTTPBase(const WString& pi_URL,
                                                   bool    pi_IsHTTPURL);
-    _HDLLu                         HFCURLHTTPBase(const WString& pi_User,
+    IMAGEPP_EXPORT                         HFCURLHTTPBase(const WString& pi_User,
                                                   const WString& pi_Password,
                                                   const WString& pi_Host,
                                                   const WString& pi_Port,
                                                   const WString& pi_Path,
                                                   const WString& pi_SearchPart,
                                                   bool    pi_IsHTTPURL);
-    _HDLLu virtual                 ~HFCURLHTTPBase();
+    IMAGEPP_EXPORT virtual                 ~HFCURLHTTPBase();
 
     //:> Content access methods
-    _HDLLu virtual WString         GetURL() const;
+    IMAGEPP_EXPORT virtual WString         GetURL() const;
     const WString&                 GetPath() const;
     const WString&                 GetSearchPart() const;
 
     //:> Overriden methods, used in relative path management
-    _HDLLu virtual bool           HasPathTo(HFCURL* pi_pURL);
-    _HDLLu virtual WString         FindPathTo(HFCURL* pi_pDest);
-    _HDLLu virtual HFCURL*         MakeURLTo(const WString& pi_Path);
+    IMAGEPP_EXPORT virtual bool           HasPathTo(HFCURL* pi_pURL);
+    IMAGEPP_EXPORT virtual WString         FindPathTo(HFCURL* pi_pDest);
+    IMAGEPP_EXPORT virtual HFCURL*         MakeURLTo(const WString& pi_Path);
 
-    _HDLLu virtual void            SetUTF8EscapedURLPath(const string* pi_pURLPath = 0);
+    IMAGEPP_EXPORT virtual void            SetUTF8EscapedURLPath(const string* pi_pURLPath = 0);
 
 #ifdef __HMR_DEBUG_MEMBER
     virtual void                   PrintState() const;
@@ -86,4 +87,5 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HFCURLHTTPBase.hpp"

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDPacket.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HCDPacket
 //-----------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public inline method
 // GetDataSize
@@ -49,3 +49,4 @@ inline bool HCDPacket::HasBufferOwnership() const
     return m_BufferOwner;
     }
 
+END_IMAGEPP_NAMESPACE

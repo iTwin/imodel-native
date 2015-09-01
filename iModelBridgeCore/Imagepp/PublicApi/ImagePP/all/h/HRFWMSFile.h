@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFWMSFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -14,14 +14,12 @@
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"
 #include "HRFOGCService.h"
+#include <BeXml/BeXml.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HFCURL;
 class HMDLayersWMS;
 class HMDVolatileLayers;
-
-BEGIN_BENTLEY_NAMESPACE
-struct BeXmlNode;
-END_BENTLEY_NAMESPACE
 
 class HRFWMSCapabilities : public HRFOGCServiceCapabilities
     {
@@ -33,7 +31,7 @@ class HRFWMSFile : public HRFOGCService
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1952, HRFOGCService)
+    HDECLARE_CLASS_ID(HRFFileId_WMS, HRFOGCService)
 
     HRFWMSFile              (const HFCPtr<HFCURL>&      pi_rpURL,
                              HFCAccessMode              pi_AccessMode = HFC_READ_ONLY,
@@ -68,9 +66,9 @@ private:
     string                      m_Styles;
     string                      m_CRS;
 
-    void ReadWMS_1_0(Bentley::BeXmlNode* pi_pNode);
-    void ReadWMS_1_1(Bentley::BeXmlNode* pi_pNode);
-    void ReadWMS_1_2(Bentley::BeXmlNode* pi_pNode, WString const& version);
+    void ReadWMS_1_0(BentleyApi::BeXmlNodeP pi_pNode);
+    void ReadWMS_1_1(BentleyApi::BeXmlNodeP pi_pNode);
+    void ReadWMS_1_2(BentleyApi::BeXmlNodeP pi_pNode, WString const& version);
 
     // Methods Disabled
     HRFWMSFile(const HRFWMSFile& pi_rObj);
@@ -99,8 +97,9 @@ struct HRFWMSCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFWMSCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFWMSCreator)
 
     // Disabled methodes
     HRFWMSCreator();
     };
+END_IMAGEPP_NAMESPACE

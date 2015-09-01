@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRARasterEditor.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -21,6 +21,7 @@
 
 #include "HRPFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRARaster;
 class HGF2DLocation;
 class HVEShape;
@@ -31,7 +32,7 @@ class HRARasterEditor
 public:
 
     // Class ID for this class.
-    HDECLARE_BASECLASS_ID(1086)
+    HDECLARE_BASECLASS_ID(HRARasterEditorId_Base)
 
 
     // Primary methods
@@ -120,6 +121,7 @@ private:
     HFCAccessMode   m_Mode;
 
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRARasterEditor.hpp"
 

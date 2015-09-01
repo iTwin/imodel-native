@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXAList.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,7 +14,7 @@
 // HIDXAList
 ////////////////////////
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
@@ -329,3 +329,4 @@ template<class T, int C> inline uint32_t HIDXAList<T, C>::GetBlockCount() const
     {
     return m_BlockCount;
     }
+END_IMAGEPP_NAMESPACE

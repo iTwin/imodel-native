@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2009-2010, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -352,7 +353,8 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
             strncpy( szLayout, papszTokens[1], sizeof(szLayout) );
             szLayout[sizeof(szLayout)-1] = '\0';
         }
-        else if( EQUAL(papszTokens[0],"DATATYPE") )
+        else if( EQUAL(papszTokens[0],"DATATYPE") 
+                 || EQUAL(papszTokens[0],"DATA_TYPE") )
         {
             if ( EQUAL(papszTokens[1], "U1")
                  || EQUAL(papszTokens[1], "U2") 
@@ -398,7 +400,7 @@ GDALDataset *EIRDataset::Open( GDALOpenInfo * poOpenInfo )
         else if( EQUAL(papszTokens[0],"BYTE_ORDER") )
         {
             // M for MSB, L for LSB
-            chByteOrder = toupper(papszTokens[1][0]);
+            chByteOrder = (char) toupper(papszTokens[1][0]);
         }
         else if( EQUAL(papszTokens[0],"DATA_OFFSET") )
         {

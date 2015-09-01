@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPANode.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -29,6 +29,7 @@
 #include <Imagepp/all/h/HFCURL.h>
 #include <Imagepp/all/h/HPASession.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HPANode;
 class HPAParser;
 typedef vector<HFCPtr<HPANode> > HPANodeList;
@@ -47,16 +48,16 @@ class HPANode : public HFCShareableObject<HPANode>
     {
 public:
 
-    _HDLLu              HPANode(HPAGrammarObject*         pi_pObj,
+    IMAGEPP_EXPORT              HPANode(HPAGrammarObject*         pi_pObj,
                                 const HPANodeList&        pi_rList,
                                 const HFCPtr<HPASession>& pi_pSession,
                                 bool                     pi_GetSubNodeOwnership = true);
-    _HDLLu              HPANode(HPAGrammarObject* pi_pObj,
+    IMAGEPP_EXPORT              HPANode(HPAGrammarObject* pi_pObj,
                                 const HPASourcePos& pi_rStartPos,
                                 const HPASourcePos& pi_rEndPos,
                                 const HFCPtr<HPASession>& pi_pSession);
-    _HDLLu virtual      ~HPANode();
-    _HDLLu virtual void FreeValue();
+    IMAGEPP_EXPORT virtual      ~HPANode();
+    IMAGEPP_EXPORT virtual void FreeValue();
 
     HPAGrammarObject*   GetGrammarObject() const;
     HFCPtr<HPASession>  GetSession() const;
@@ -87,7 +88,7 @@ private:
 
 #ifdef __HMR_DEBUG_MEMBER
 public:
-    _HDLLu virtual void        PrintState(int pi_Level = 0);
+    IMAGEPP_EXPORT virtual void        PrintState(int pi_Level = 0);
 #endif
     };
 
@@ -104,5 +105,6 @@ struct HPANodeCreator
                             const HFCPtr<HPASession>& pi_pSession) = 0;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HPANode.hpp"
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFExportOptions.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -38,6 +38,7 @@
 
    ----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 class HRFExportOptions : public HFCShareableObject<HRFExportOptions>
     {
 public:
@@ -71,7 +72,7 @@ public:
                      HRFGeoreferenceFormat          pi_GeoreferenceFormat,
                      uint32_t                      pi_CompressionRatio,
                      uint32_t                      pi_SubResCompressionRatio,
-                     IRasterBaseGcsPtr              pi_Geocoding);
+                     IRasterBaseGcsP                pi_Geocoding);
 
     HRFExportOptions(const HRFRasterFileCreator* pi_pFileFormat,
                      HCLASS_ID                      pi_PixelType,
@@ -98,7 +99,7 @@ public:
                      HRFGeoreferenceFormat          pi_GeoreferenceFormat,
                      uint32_t                      pi_CompressionRatio,
                      uint32_t                      pi_SubResCompressionRatio,
-                     IRasterBaseGcsPtr              pi_Geocoding);
+                     IRasterBaseGcsP                pi_Geocoding);
 
     // Basic operation.
     HRFExportOptions (const HRFExportOptions& pi_rExportOptions);
@@ -144,7 +145,7 @@ public:
 
     HRFEncodingType                 GetEncoding() const;
     HRFGeoreferenceFormat           GetGeoreferenceFormat() const;
-    IRasterBaseGcsPtr               GetGeocoding() const;
+    RasterFileGeocodingCR           GetRasterFileGeocoding() const;
 
     const HPMAttributeSet&          GetTagList() const;
 
@@ -185,7 +186,7 @@ private:
 
     void SetEncoding (HRFEncodingType pi_EncodingType);
     void SetGeoreferenceFormat (HRFGeoreferenceFormat pi_GeoreferenceFormat);
-    void SetGeocoding(IRasterBaseGcsPtr pi_pGeocoding);
+    void SetRasterFileGeocoding(RasterFileGeocodingR pi_pGeocoding);
 
     void SetResample (bool pi_Resample);
     void SetImageWidth (uint32_t pi_ImageWidth);
@@ -233,9 +234,10 @@ private:
 
     HRFEncodingType             m_Encoding;
     HRFGeoreferenceFormat       m_GeoreferenceFormat;
-    IRasterBaseGcsPtr           m_pGeocoding;
+    RasterFileGeocodingPtr      m_pGeocoding;
 
     HPMAttributeSet             m_TagList;
     HMDMetaDataContainerList    m_ListOfMetaDataContainer;
     };
+END_IMAGEPP_NAMESPACE
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPcxFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -23,6 +23,7 @@
     @see HRFRasterFileCapabilities
 ---------------------------------------------------------------------------  */
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFPcxCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -63,7 +64,7 @@ public:
 
 private:
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFPcxCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFPcxCreator)
 
     //:> Disabled methodes
     HRFPcxCreator();
@@ -85,7 +86,7 @@ class HRFPcxFile : public HRFRasterFile
     friend HRFPcxLineEditor;
 
 public:
-    HDECLARE_CLASS_ID(1445, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Pcx, HRFRasterFile)
 
     //:> allow to Open or to create an empty file
     HRFPcxFile            (const HFCPtr<HFCURL>& pi_rpURL,
@@ -171,5 +172,6 @@ private:
     HRFPcxFile& operator=(const HRFPcxFile& pi_rObj);
     HRFPcxFile();
     };
+END_IMAGEPP_NAMESPACE
 
 

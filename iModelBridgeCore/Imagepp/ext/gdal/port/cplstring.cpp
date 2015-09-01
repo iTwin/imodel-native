@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cplstring.cpp 21815 2011-02-23 22:56:54Z warmerdam $
+ * $Id: cplstring.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL 
  * Purpose:  CPLString implementation.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2005, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "cpl_string.h"
 #include <string>
 
-CPL_CVSID("$Id: cplstring.cpp 21815 2011-02-23 22:56:54Z warmerdam $");
+CPL_CVSID("$Id: cplstring.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /*
  * The CPLString class is derived from std::string, so the vast majority 
@@ -238,7 +239,12 @@ CPLString &CPLString::Recode( const char *pszSrcEncoding,
 /************************************************************************/
 
 /** 
- * Case insensitive find() alternative. 
+ * Case insensitive find() alternative.
+ *
+ * @param str substring to find.
+ * @param pos offset in the string at which the search starts.
+ * @return the position of substring in the string or std::string::npos if not found.
+ * @since GDAL 1.9.0
  */
 
 size_t CPLString::ifind( const std::string & str, size_t pos ) const
@@ -247,11 +253,20 @@ size_t CPLString::ifind( const std::string & str, size_t pos ) const
     return ifind( str.c_str(), pos );
 }
 
+/**
+ * Case insensitive find() alternative.
+ *
+ * @param s substring to find.
+ * @param nPos offset in the string at which the search starts.
+ * @return the position of the substring in the string or std::string::npos if not found.
+ * @since GDAL 1.9.0
+ */
+
 size_t CPLString::ifind( const char *s, size_t nPos ) const
 
 {
     const char *pszHaystack = c_str();
-    char chFirst = (char) tolower( s[0] );
+    char chFirst = (char) ::tolower( s[0] );
     int nTargetLen = strlen(s);
 
     if( nPos > size() )
@@ -261,7 +276,7 @@ size_t CPLString::ifind( const char *s, size_t nPos ) const
 
     while( *pszHaystack != '\0' )
     {
-        if( chFirst == tolower(*pszHaystack) )
+        if( chFirst == ::tolower(*pszHaystack) )
         {
             if( EQUALN(pszHaystack,s,nTargetLen) )
                 return nPos;
@@ -272,4 +287,161 @@ size_t CPLString::ifind( const char *s, size_t nPos ) const
     }
 
     return std::string::npos;
+}
+
+/************************************************************************/
+/*                              toupper()                               */
+/************************************************************************/
+
+/**
+ * Convert to upper case in place.
+ */
+
+CPLString &CPLString::toupper()
+
+{
+    size_t i;
+
+    for( i = 0; i < size(); i++ )
+        (*this)[i] = (char) ::toupper( (*this)[i] );
+
+    return *this;
+}
+
+/************************************************************************/
+/*                              tolower()                               */
+/************************************************************************/
+
+/**
+ * Convert to lower case in place.
+ */
+
+CPLString &CPLString::tolower()
+
+{
+    size_t i;
+
+    for( i = 0; i < size(); i++ )
+        (*this)[i] = (char) ::tolower( (*this)[i] );
+
+    return *this;
+}
+
+/************************************************************************/
+/*                         CPLURLGetValue()                             */
+/************************************************************************/
+
+/**
+ * Return the value matching a key from a key=value pair in a URL.
+ *
+ * @param pszURL the URL.
+ * @param pszKey the key to find.
+ * @return the value of empty string if not found.
+ * @since GDAL 1.9.0
+ */
+CPLString CPLURLGetValue(const char* pszURL, const char* pszKey)
+{
+    CPLString osKey(pszKey);
+    osKey += "=";
+    size_t nKeyPos = CPLString(pszURL).ifind(osKey);
+    if (nKeyPos != std::string::npos && nKeyPos > 0 &&
+        (pszURL[nKeyPos-1] == '?' || pszURL[nKeyPos-1] == '&'))
+    {
+        CPLString osValue(pszURL + nKeyPos + strlen(osKey));
+        const char* pszValue = osValue.c_str();
+        const char* pszSep = strchr(pszValue, '&');
+        if (pszSep)
+        {
+            osValue.resize(pszSep - pszValue);
+        }
+        return osValue;
+    }
+    return "";
+}
+
+/************************************************************************/
+/*                          CPLURLAddKVP()                              */
+/************************************************************************/
+
+/**
+ * Return a new URL with a new key=value pair.
+ *
+ * @param pszURL the URL.
+ * @param pszKey the key to find.
+ * @param pszValue the value of the key (may be NULL to unset an existing KVP).
+ * @return the modified URL.
+ * @since GDAL 1.9.0
+ */
+CPLString CPLURLAddKVP(const char* pszURL, const char* pszKey,
+                       const char* pszValue)
+{
+    CPLString osURL(pszURL);
+    if (strchr(osURL, '?') == NULL)
+        osURL += "?";
+    pszURL = osURL.c_str();
+
+    CPLString osKey(pszKey);
+    osKey += "=";
+    size_t nKeyPos = osURL.ifind(osKey);
+    if (nKeyPos != std::string::npos && nKeyPos > 0 &&
+        (pszURL[nKeyPos-1] == '?' || pszURL[nKeyPos-1] == '&'))
+    {
+        CPLString osNewURL(osURL);
+        osNewURL.resize(nKeyPos);
+        if (pszValue)
+        {
+            osNewURL += osKey;
+            osNewURL += pszValue;
+        }
+        const char* pszNext = strchr(pszURL + nKeyPos, '&');
+        if (pszNext)
+        {
+            if (osNewURL[osNewURL.size()-1] == '&'
+                || osNewURL[osNewURL.size()-1] == '?' )
+                osNewURL += pszNext + 1;
+            else
+                osNewURL += pszNext;
+        }
+        return osNewURL;
+    }
+    else
+    {
+        if (pszValue)
+        {
+            if (osURL[osURL.size()-1] != '&' && osURL[osURL.size()-1] != '?')
+                osURL += '&';
+            osURL += osKey;
+            osURL += pszValue;
+        }
+        return osURL;
+    }
+}
+
+/************************************************************************/
+/*                            CPLOPrintf()                              */
+/************************************************************************/
+
+CPLString CPLOPrintf( const char *pszFormat, ... )
+
+{
+    va_list args;
+    CPLString osTarget;
+
+    va_start( args, pszFormat );
+    osTarget.vPrintf( pszFormat, args );
+    va_end( args );
+
+    return osTarget;
+}
+
+/************************************************************************/
+/*                            CPLOvPrintf()                             */
+/************************************************************************/
+
+CPLString CPLOvPrintf( const char *pszFormat, va_list args )
+
+{
+    CPLString osTarget;
+    osTarget.vPrintf( pszFormat, args);
+    return osTarget;
 }

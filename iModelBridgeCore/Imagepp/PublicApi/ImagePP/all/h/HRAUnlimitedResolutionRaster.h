@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAUnlimitedResolutionRaster.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -17,14 +17,15 @@
 #include "HGF2DGrid.h"
 #include "HGSTypes.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRAUnlimitedResolutionRasterIterator;
 class HRSObjectStore;
 class HRABitmap;
-
+class HRATiledRaster;
 
 class HRAUnlimitedResolutionRaster : public HRAStoredRaster
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1379)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRAUnlimitedResolutionRasterId)
 
     friend class HRAUnlimitedResolutionRasterIterator;
     friend class HRSObjectStore;
@@ -33,7 +34,7 @@ public:
 
     // Primary methods
     HRAUnlimitedResolutionRaster ();
-    HRAUnlimitedResolutionRaster (HFCPtr<HRAStoredRaster>& pi_pRasterModel,
+    HRAUnlimitedResolutionRaster (HFCPtr<HRATiledRaster>& pi_pRasterModel,
                                   uint64_t                pi_WidthPixels,
                                   uint64_t                pi_HeightPixels,
                                   uint64_t                pi_MinWidth,
@@ -51,8 +52,6 @@ public:
 
 
     // Overriden from HRAStoredRaster
-
-    virtual const void*             GetRawDataPtr   () const;
 
     virtual HRARasterIterator*      CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
 
@@ -82,13 +81,7 @@ public:
 
     virtual HPMPersistentObject* Clone () const;
 
-    virtual HRARaster*              Clone (HPMObjectStore* pi_pStore,
-                                           HPMPool*        pi_pLog = 0) const;
-
-    virtual void                    PreDraw(HRADrawOptions* pio_pOptions);
-
-    virtual void                    Draw(const HFCPtr<HGFMappedSurface>&    pio_pSurface,
-                                         const HGFDrawOptions*              pi_pOptions) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
     //Context Methods
     virtual void                    SetContext(const HFCPtr<HMDContext>& pi_rpContext);
@@ -104,9 +97,8 @@ public:
 
 
     // CopyFrom methods
-    virtual void                    CopyFrom(const HFCPtr<HRARaster>& pi_rpSrcRaster,
-                                             const HRACopyFromOptions& pi_rOptions);
-    virtual void                    CopyFrom(const HFCPtr<HRARaster>& pi_rpSrcRaster);
+    virtual void                    CopyFromLegacy(const HFCPtr<HRARaster>& pi_rpSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions);
+    virtual void                    CopyFromLegacy(const HFCPtr<HRARaster>& pi_rpSrcRaster);
 
 
     // LookAhead Methods
@@ -114,12 +106,6 @@ public:
     virtual    void                 SetLookAhead(const HVEShape& pi_rShape,
                                                  uint32_t        pi_ConsumerID,
                                                  bool           pi_Async = false);
-
-    void                    SetLookAheadImpl(const HVEShape& pi_rShape,
-                                             uint32_t        pi_ConsumerID,
-                                             bool           pi_Async,
-                                             bool           pi_IsPredraw);
-
     // Message Handler...
     bool           NotifyContentChanged (const HMGMessage& pi_rMessage);
     bool           NotifyProgressImageChanged (const HMGMessage& pi_rMessage);
@@ -129,6 +115,13 @@ public:
 
 
 protected:
+
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
+
+    //! Editing of unlimited is not supported.
+    virtual ImageSinkNodePtr _GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType) override;
+    
+    virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
 
     // From HGFGraphicObject
     virtual void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys);
@@ -145,14 +138,14 @@ private:
 
     // No persistent
     HPMPool*                        m_pLog;
-    HFCPtr<HRAStoredRaster>         m_pCurrentResolutionRaster;
+    HFCPtr<HRATiledRaster>         m_pCurrentResolutionRaster;
 
     bool                           m_LookAheadEnabled;
     bool                           m_LookAheadByBlockEnabled;
     double                         m_CurResolution;
 
     // Copy of the Model with an Extent (1,1)
-    HFCPtr<HRAStoredRaster>         m_pRasterModel;
+    HFCPtr<HRATiledRaster>         m_pTiledRaster;
 
 
     // true--> Histogram will be updated after each content modification
@@ -170,7 +163,7 @@ private:
 
     // Methods
 
-    void                Constructor             (const HFCPtr<HRAStoredRaster>&         pi_rpRasterModel,
+    void                Constructor             (const HFCPtr<HRATiledRaster>&         pi_rpRasterModel,
                                                  uint64_t                              pi_WidthPixels,
                                                  uint64_t                              pi_HeightPixels,
                                                  uint64_t                              pi_MinWidth,
@@ -190,7 +183,8 @@ private:
     HFCPtr<HRARaster>   CreateSubImage          (double pi_Resolution) const;
 
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLg)
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT)
 
     };
+END_IMAGEPP_NAMESPACE
 

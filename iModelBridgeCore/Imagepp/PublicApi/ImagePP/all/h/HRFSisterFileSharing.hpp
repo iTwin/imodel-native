@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSisterFileSharing.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSisterFileSharing
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** ---------------------------------------------------------------------------
     GetLockManager
     Public
@@ -65,3 +66,5 @@ inline void HRFSisterFileSharing::SetSharingBypass(bool pi_BypassSharing)
         m_BypassSharing = pi_BypassSharing;
         }
     }
+END_IMAGEPP_NAMESPACE
+

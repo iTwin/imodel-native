@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPictLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPictLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFPictFile.h>
 #include <Imagepp/all/h/HRFPictLineEditor.h>
@@ -108,10 +108,10 @@ HRFPictLineEditor::~HRFPictLineEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPictLineEditor::ReadBlock(   uint32_t                 pi_PosBlockX,
-                                        uint32_t                 pi_PosBlockY,
-                                        Byte*                   po_pData,
-                                        HFCLockMonitor const*    pi_pSisterFileLock)
+HSTATUS HRFPictLineEditor::ReadBlock(uint64_t                pi_PosBlockX,
+                                     uint64_t                pi_PosBlockY,
+                                     Byte*                   po_pData,
+                                     HFCLockMonitor const*   pi_pSisterFileLock)
     {
 
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
@@ -197,10 +197,10 @@ WRAPUP:
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPictLineEditor::WriteBlock  (uint32_t                pi_PosBlockX,
-                                        uint32_t                pi_PosBlockY,
-                                        const Byte*            pi_pData,
-                                        HFCLockMonitor const*   pi_pSisterFileLock)
+HSTATUS HRFPictLineEditor::WriteBlock(uint64_t               pi_PosBlockX,
+                                      uint64_t               pi_PosBlockY,
+                                      const Byte*            pi_pData,
+                                      HFCLockMonitor const*  pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_pData != 0);

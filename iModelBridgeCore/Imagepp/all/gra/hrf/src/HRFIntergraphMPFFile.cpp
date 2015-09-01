@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphMPFFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphMPFFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFIntergraphFile.h>
@@ -36,7 +36,6 @@
 #include <Imagepp/all/h/HRFIntergraphTG4File.h>
 #include <Imagepp/all/h/HRFIntergraphRleFile.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //-----------------------------------------------------------------------------
@@ -175,8 +174,7 @@ HRFIntergraphMPFCreator::HRFIntergraphMPFCreator()
 
 WString HRFIntergraphMPFCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_MPF); // Intergraph MPF File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_MPF()); // Intergraph MPF File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -225,20 +223,20 @@ bool HRFIntergraphMPFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     (const_cast<HRFIntergraphMPFCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock(GetLockManager());
 
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
     // Check if the file was a valid Intergraph Cit...
     pFile->SeekToBegin();
-    if (pFile->Read((void*)&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+    if (pFile->Read(&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
         goto WRAPUP;
 
     if (HeaderTypeCode == 0x0908)
         {
-        if (pFile->Read((void*)&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short) ||
-            pFile->Read((void*)&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+        if (pFile->Read(&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short) ||
+            pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
             goto WRAPUP;
 
         // If it's a tiled raster retreive the proper data type code.
@@ -249,7 +247,7 @@ bool HRFIntergraphMPFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 uint32_t HeaderLen = ((WordToFollow + 2) /256) * 512;
                 HeaderLen += 18;
                 pFile->SeekToPos(HeaderLen);
-                if (pFile->Read((void*)&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+                if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
                     goto WRAPUP;
                 }
             }

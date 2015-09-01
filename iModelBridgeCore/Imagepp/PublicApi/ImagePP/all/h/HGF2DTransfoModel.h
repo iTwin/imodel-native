@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTransfoModel.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DTransfoModel
@@ -13,7 +13,10 @@
 #pragma once
 
 #include <Imagepp/all/h/HFCPtr.h>
+#include <Imagepp/all/h/HGF2DShape.h>
 #include "HFCMatrix.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DDisplacement;
 class HGF2DLiteExtent;
@@ -81,6 +84,36 @@ class HGF2DLiteExtent;
     the application to cast the model to a more precise type, to prevent
     virtual call of the conversion interface for performance reason.
 
+Updates dating June 2014
+    Due to the new support for geographic coordinate system we were forced to
+    introduce the notion of Domain. The domain is the area around which the transformation is defined
+    Defining and reporting a domain is not recommended if possible. It can be more efficient
+    to find ways to augment till infinity the domain by linear adaptation 
+    (triangular or rectangular affine or perspective mesh based transformation
+    with an external domain mean projective).
+
+    Unfortunately in some case such strategy is difficult to implement
+    and it is more efficiant to announce right away the presence of a limiting domain.
+    The domain is expressed as either direct of inverse channel coordinates. The domain
+    is the same but coordinates are expressed in either direct or inverse.
+    The domain is specified by use of a HGF2DShape.
+
+    The fact a domain can be present imposes that all calling 
+    code that performs coordinate conversion must either check the transformation
+    model has a domain or check the returned value of the convert method.
+
+    In addition to this new introduction we had loosened the definition of the transformation model.
+    The old transformation imposed that the transformation be defined for the 
+    whole cartesian plane in both direction. The introduction of domains waves off this rule.
+    The second chjange in defintion concers the already supported projective (perspective)
+    linear transformation. Even though linear, the transformation posseses inherent to 
+    the mathemnatics of the transformation a vanishing line or horizon line. Coordinates 
+    located upon this horizon line cannot be converted since an infinity of solutions are
+    then available. For the moment we will trust users not to convert coordinates located
+    on two different sides of this vanishing line a situation is usually pointless.
+    If however a coordinate close or at the vanishing line is performed we expect
+    a value to be returned.
+
     Example:
     @code
         HGF2DIdentity       MyIdentityModel();
@@ -145,13 +178,13 @@ class HGF2DLiteExtent;
 */
 class HNOVTABLEINIT HGF2DTransfoModel : public HFCShareableObject<HGF2DTransfoModel>
     {
-    HDECLARE_BASECLASS_ID(1012)
+    HDECLARE_BASECLASS_ID(HGF2DTransfoModelId_Base)
 
 public:
 
     typedef uint32_t TypeId;
 
-    _HDLLg virtual           ~HGF2DTransfoModel();
+    IMAGEPP_EXPORT virtual           ~HGF2DTransfoModel();
 
     // Conversion interface
     /** -----------------------------------------------------------------------------
@@ -174,21 +207,32 @@ public:
         @see ConvertInverse()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual void      ConvertDirect (double*   pio_pXInOut,
-                                            double*   pio_pYInOut) const = 0;
+    //! Computation intensive algorithms can call ConvertDirect/ConvertInverse concurrently.
+    //! Override this method if the descendant HGF2DTransfoModel is thread safe.
+    virtual bool IsConvertDirectThreadSafe() const = 0;
+    virtual bool IsConvertInverseThreadSafe() const = 0;
 
-    _HDLLg virtual void      ConvertDirect (double    pi_YIn,
-                                            double    pi_XInStart,
-                                            size_t     pi_NumLoc,
-                                            double    pi_XInStep,
-                                            double*   po_aXOut,
-                                            double*   po_aYOut) const;
+    IMAGEPP_EXPORT virtual StatusInt ConvertDirect (double*   pio_pXInOut,
+                                                   double*   pio_pYInOut) const = 0;
 
-    _HDLLg virtual void      ConvertDirect( double    pi_XIn,
-                                            double    pi_YIn,
-                                            double*   po_pXOut,
-                                            double*   po_pYOut) const;
+    IMAGEPP_EXPORT virtual StatusInt ConvertDirect (double    pi_YIn,
+                                                   double    pi_XInStart,
+                                                   size_t     pi_NumLoc,
+                                                   double    pi_XInStep,
+                                                   double*   po_aXOut,
+                                                   double*   po_aYOut) const;
 
+    IMAGEPP_EXPORT virtual StatusInt ConvertDirect(double    pi_XIn,
+                                                  double    pi_YIn,
+                                                  double*   po_pXOut,
+                                                  double*   po_pYOut) const;
+
+    IMAGEPP_EXPORT virtual StatusInt ConvertDirect(size_t    pi_NumLoc,
+                                                  double*   pio_aXInOut,
+                                                  double*   pio_aYInOut) const;
+
+
+    IMAGEPP_EXPORT virtual StatusInt ConvertPosDirect (HGF2DPosition* pio_rpCoord) const;
 
     /** -----------------------------------------------------------------------------
         This method converts inverse the given coordinates by the relation of the
@@ -211,27 +255,32 @@ public:
         @see ConvertDirect()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual void      ConvertInverse(double*   pio_pXInOut,
+    IMAGEPP_EXPORT virtual StatusInt ConvertInverse(double*   pio_pXInOut,
                                             double*   pio_pYInOut) const = 0;
 
-    _HDLLg virtual void      ConvertInverse(double    pi_YIn,
+    IMAGEPP_EXPORT virtual StatusInt ConvertInverse(double    pi_YIn,
                                             double    pi_XInStart,
                                             size_t     pi_NumLoc,
                                             double    pi_XInStep,
                                             double*   po_aXOut,
                                             double*   po_aYOut) const;
 
-    _HDLLg virtual void      ConvertInverse(double    pi_XIn,
+    IMAGEPP_EXPORT virtual StatusInt ConvertInverse(double    pi_XIn,
                                             double    pi_YIn,
                                             double*   po_pXOut,
                                             double*   po_pYOut) const;
 
+    IMAGEPP_EXPORT virtual StatusInt ConvertInverse(size_t    pi_NumLoc,
+                                                   double*   pio_aXInOut,
+                                                   double*   pio_aYInOut) const;
+
+    IMAGEPP_EXPORT virtual StatusInt ConvertPosInverse (HGF2DPosition* pio_rpCoord) const;
 
 
 
     // Miscalenious
-    _HDLLg virtual bool     IsIdentity() const;
-    _HDLLg virtual bool     IsStretchable(double pi_AngleTolerance = 0) const;
+    IMAGEPP_EXPORT virtual bool     IsIdentity() const;
+    IMAGEPP_EXPORT virtual bool     IsStretchable(double pi_AngleTolerance = 0) const;
 
 
     /** -----------------------------------------------------------------------------
@@ -257,10 +306,10 @@ public:
         @see IsStretchable()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual void      GetStretchParams(double*  po_pScaleFactorX,
+    IMAGEPP_EXPORT virtual void      GetStretchParams(double*  po_pScaleFactorX,
                                               double*  po_pScaleFactorY,
                                               HGF2DDisplacement* po_pDisplacement) const = 0;
-    _HDLLg virtual void      GetStretchParamsAt(double*  po_pScaleFactorX,
+    IMAGEPP_EXPORT virtual void      GetStretchParamsAt(double*  po_pScaleFactorX,
                                                 double*  po_pScaleFactorY,
                                                 HGF2DDisplacement* po_pDisplacement,
                                                 double   pi_XLocation,
@@ -270,8 +319,8 @@ public:
 
     virtual HGF2DTransfoModel* Clone() const = 0;
 
-    _HDLLg virtual HFCPtr<HGF2DTransfoModel>     ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const;
-    _HDLLg virtual HFCPtr<HGF2DTransfoModel>     ComposeInverseWithInverseOf(const HGF2DTransfoModel& pi_rModel) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>     ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>     ComposeInverseWithInverseOf(const HGF2DTransfoModel& pi_rModel) const;
 
     /** -----------------------------------------------------------------------------
         This method indicates if the transformation model can be completely
@@ -302,9 +351,9 @@ public:
         @see CanBeRepresentedByAMatrix()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual HFCMatrix<3, 3>      GetMatrix() const = 0;
+    IMAGEPP_EXPORT virtual HFCMatrix<3, 3>      GetMatrix() const = 0;
 
-    _HDLLg virtual HFCPtr<HGF2DTransfoModel>    CreateSimplifiedModel() const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>    CreateSimplifiedModel() const;
 
     // Geometric properties
 
@@ -380,7 +429,62 @@ public:
         @see PreservesLinearity()
         -----------------------------------------------------------------------------
     */
-    virtual bool     PreservesDirection() const = 0;
+    virtual bool            PreservesDirection() const = 0;
+
+    /** -----------------------------------------------------------------------------
+        This method returns true if the transformation model has a domain
+        that limits its application.
+
+        @return A Boolean value. true if the model has a limiting domain
+                and false otherwise.
+
+        @see GetDirectDomain()
+        @see GetInverseDomain()
+        -----------------------------------------------------------------------------
+    */
+    IMAGEPP_EXPORT virtual bool            HasDomain() const;
+
+    /** -----------------------------------------------------------------------------
+        This method returns the direct domain of the transformation model.
+        The method will return a shape representing the universe if there is no 
+        domain. 
+
+        Notice that no SetDomain() method is available as the domain expected
+        to limit a transformation model is assumed to be as a result of the 
+        limitations to the computations not from some desire to impose 
+        arbitrarily limitations
+
+        @return A HGF2DShape that defines the domain of the direct
+                channel expressed in direct coordinates.
+
+        @see HasDomain()
+        @see GetInverseDomain()
+        -----------------------------------------------------------------------------
+    */
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DShape> 
+                            GetDirectDomain() const;
+    
+
+    /** -----------------------------------------------------------------------------
+        This method returns the inverse domain of the transformation model.
+        The method will return a shape representing the universe if there is no 
+        domain. 
+
+        Notice that no SetDomain() method is available as the domain expected
+        to limit a transformation model is assumed to be as a result of the 
+        limitations to the computations not from some desire to impose 
+        arbitrarily limitations
+
+        @return A HGF2DShape that defines the domain of the direct
+                channel expressed in direct coordinates.
+
+        @see HasDomain()
+        @see GetDirectDomain()
+        -----------------------------------------------------------------------------
+    */
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DShape> 
+                            GetInverseDomain() const;
+
 
     // Operations
     virtual void      Reverse ();
@@ -396,12 +500,12 @@ public:
 
 protected:
     // Primary methods
-    _HDLLg                   HGF2DTransfoModel();
-    _HDLLg                   HGF2DTransfoModel(const HGF2DTransfoModel& pi_rObj);
-    _HDLLg HGF2DTransfoModel&    operator=(const HGF2DTransfoModel& pi_rObj);
+    IMAGEPP_EXPORT                   HGF2DTransfoModel();
+    IMAGEPP_EXPORT                   HGF2DTransfoModel(const HGF2DTransfoModel& pi_rObj);
+    IMAGEPP_EXPORT HGF2DTransfoModel&    operator=(const HGF2DTransfoModel& pi_rObj);
 
     // Protected methods (VIRTUAL)
-    _HDLLg virtual HFCPtr<HGF2DTransfoModel>    ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>    ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
 
 
     /** -----------------------------------------------------------------------------
@@ -422,4 +526,5 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE
 #include <Imagepp/all/h/HGF2DTransfoModel.hpp>

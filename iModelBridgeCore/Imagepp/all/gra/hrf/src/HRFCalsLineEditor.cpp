@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCalsLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFCalsLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFCalsLineEditor.h>
 #include <Imagepp/all/h/HRFCalsFile.h>
 #include <Imagepp/all/h/HCDPacket.h>
@@ -63,9 +63,9 @@ HRFCalsLineEditor::~HRFCalsLineEditor()
 // Edition by block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFCalsLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                     uint32_t pi_PosBlockY,
-                                     Byte*  po_pData,
+HSTATUS HRFCalsLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                     uint64_t pi_PosBlockY,
+                                     Byte*   po_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     // We assume that we have check the header file integrity in the
@@ -75,7 +75,6 @@ HSTATUS HRFCalsLineEditor::ReadBlock(uint32_t pi_PosBlockX,
     HPRECONDITION (pi_PosBlockY >= 0);
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (m_pCodec != 0);
-
 
     HSTATUS Status = H_ERROR;
 
@@ -94,7 +93,7 @@ HSTATUS HRFCalsLineEditor::ReadBlock(uint32_t pi_PosBlockX,
         }
 
     // Move to the needed line
-    for (uint32_t Line = m_CurrentReadLine; Line <= pi_PosBlockY; Line++)
+    for (uint64_t Line = m_CurrentReadLine; Line <= pi_PosBlockY; Line++)
         {
         if (Line == 0)
             {
@@ -127,7 +126,7 @@ HSTATUS HRFCalsLineEditor::ReadBlock(uint32_t pi_PosBlockX,
             // Read the entire compressed pixels in memory
             Byte* pCompressedData = new Byte[m_ResSizeInBytes];
 
-            if(m_pCalsFile->Read((void*)pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
+            if(m_pCalsFile->Read(pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
                 goto WRAPUP;
 
             // Unlock the sister file
@@ -169,8 +168,8 @@ WRAPUP:
 // ReadBlock
 // Edition by block
 //-----------------------------------------------------------------------------
-HSTATUS HRFCalsLineEditor::ReadBlockRLE(uint32_t              pi_PosBlockX,
-                                        uint32_t              pi_PosBlockY,
+HSTATUS HRFCalsLineEditor::ReadBlockRLE(uint64_t              pi_PosBlockX,
+                                        uint64_t              pi_PosBlockY,
                                         HFCPtr<HCDPacketRLE>& pio_rpPacketRLE,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -239,7 +238,7 @@ HSTATUS HRFCalsLineEditor::ReadBlockRLE(uint32_t              pi_PosBlockX,
         // Read the entire compressed pixels in memory
         Byte* pCompressedData = new Byte[m_ResSizeInBytes];
 
-        if(m_pCalsFile->Read((void*)pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
+        if(m_pCalsFile->Read(pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
             goto WRAPUP;    // H_ERROR;
 
         // Unlock the sister file
@@ -252,7 +251,7 @@ HSTATUS HRFCalsLineEditor::ReadBlockRLE(uint32_t              pi_PosBlockX,
         }
 
     // Move to the needed line
-    for (uint32_t Line = m_CurrentReadLine; Line <= pi_PosBlockY; Line++)
+    for (uint64_t Line = m_CurrentReadLine; Line <= pi_PosBlockY; Line++)
         {
         // Decompress directly in RLE.
         m_pCodec->GetRLEInterface()->DecompressSubsetToRLE(m_CompressPacket.GetBufferAddress() + m_pCodec->GetCompressedImageIndex(),
@@ -282,10 +281,10 @@ WRAPUP:
 // Edition by block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFCalsLineEditor::WriteBlock(uint32_t pi_PosBlockX,
-                                      uint32_t pi_PosBlockY,
-                                      const Byte* pi_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFCalsLineEditor::WriteBlock(uint64_t                pi_PosBlockX,
+                                      uint64_t                pi_PosBlockY,
+                                      const Byte*             pi_pData,
+                                      HFCLockMonitor const*   pi_pSisterFileLock)
     {
     HPRECONDITION((pi_PosBlockY == m_CurrentReadLine + 1) || (pi_PosBlockY == 0));
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -366,7 +365,7 @@ HSTATUS HRFCalsLineEditor::WriteBlock(uint32_t pi_PosBlockX,
                 pi_pSisterFileLock = &SisterFileLock;
                 }
 
-            if (m_pCalsFile->Write((void*)Compress.GetBufferAddress(), sizeof(Byte) * CompressedSize) != (sizeof(Byte) * CompressedSize))
+            if (m_pCalsFile->Write(Compress.GetBufferAddress(), sizeof(Byte) * CompressedSize) != (sizeof(Byte) * CompressedSize))
                 goto WRAPUP;    // H_ERROR
 
             // Increment the counter of the sister file.
@@ -391,10 +390,10 @@ WRAPUP:
 // WriteBlockRLE
 // Edition by block
 //-----------------------------------------------------------------------------
-HSTATUS HRFCalsLineEditor::WriteBlockRLE(uint32_t pi_PosBlockX,
-                                         uint32_t pi_PosBlockY,
-                                         HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                         HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFCalsLineEditor::WriteBlockRLE(uint64_t                pi_PosBlockX,
+                                         uint64_t                pi_PosBlockY,
+                                         HFCPtr<HCDPacketRLE>&   pi_rpPacketRLE,
+                                         HFCLockMonitor const*   pi_pSisterFileLock)
     {
     HPRECONDITION((pi_PosBlockY == m_CurrentReadLine + 1) || (pi_PosBlockY == 0));
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);

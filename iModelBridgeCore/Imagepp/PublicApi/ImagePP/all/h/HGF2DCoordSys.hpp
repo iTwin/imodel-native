@@ -2,10 +2,10 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DCoordSys.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 inline HGF2DCoordSys::HGF2DCoordSys()
     {
     m_pCoordSysImpl = new HGF2DCoordSysImpl();
@@ -148,21 +148,6 @@ inline size_t HGF2DCoordSys::GetCoordSysCount() const
 
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /** -----------------------------------------------------------------------------
     This method returns the reference coordinate system for a coordinate system.
     It returns a null pointer if the coordinate system has no reference system.
@@ -195,3 +180,5 @@ inline bool HGF2DCoordSysImpl::IsUsedAsReference() const
     {
     return(!m_ListIsRefTo.empty());
     }
+
+END_IMAGEPP_NAMESPACE

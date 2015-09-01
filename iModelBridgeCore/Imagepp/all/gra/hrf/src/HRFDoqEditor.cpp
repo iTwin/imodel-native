@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFDoqEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRawLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFDoqEditor.h>
 #include <Imagepp/all/h/HRFDoqFile.h>
 
@@ -59,9 +59,9 @@ HRFDoqEditor::~HRFDoqEditor()
 // Read uncompressed Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFDoqEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                uint32_t pi_PosBlockY,
-                                Byte* po_pData,
+HSTATUS HRFDoqEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                uint64_t pi_PosBlockY,
+                                Byte*  po_pData,
                                 HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (po_pData != 0);
@@ -97,7 +97,7 @@ HSTATUS HRFDoqEditor::ReadBlock(uint32_t pi_PosBlockX,
 
 
         uint32_t DataSize = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth();
-        if (m_pRasterFile->m_pDoqFile->Read((void*)po_pData, DataSize) != DataSize)
+        if (m_pRasterFile->m_pDoqFile->Read(po_pData, DataSize) != DataSize)
             goto WRAPUP;    // H_ERROR
 
         // Unlock the sister file.
@@ -126,9 +126,9 @@ WRAPUP:
 // Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFDoqEditor::Read24BitRgbBlock(uint32_t pi_PosBlockX,
-                                        uint32_t pi_PosBlockY,
-                                        Byte* po_pData,
+HSTATUS HRFDoqEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
+                                        uint64_t pi_PosBlockY,
+                                        Byte*  po_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(po_pData != 0);
@@ -163,17 +163,17 @@ HSTATUS HRFDoqEditor::Read24BitRgbBlock(uint32_t pi_PosBlockX,
         offSetToLine += m_LineWidth * (RedChannel - 1);
         m_pRasterFile->m_pDoqFile->SeekToPos(offSetToLine);
 
-        if(m_pRasterFile->m_pDoqFile->Read((void*)m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
+        if(m_pRasterFile->m_pDoqFile->Read(m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
 
         m_pRasterFile->m_pDoqFile->Seek((GreenChannel - RedChannel - 1) * BytesPerBandRow);
 
-        if(m_pRasterFile->m_pDoqFile->Read((void*)m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
+        if(m_pRasterFile->m_pDoqFile->Read(m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
 
         m_pRasterFile->m_pDoqFile->Seek((BlueChannel - GreenChannel - 1) * BytesPerBandRow);
 
-        if(m_pRasterFile->m_pDoqFile->Read((void*)m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
+        if(m_pRasterFile->m_pDoqFile->Read(m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
         }
     else
@@ -181,17 +181,17 @@ HSTATUS HRFDoqEditor::Read24BitRgbBlock(uint32_t pi_PosBlockX,
         m_pRasterFile->m_pDoqFile->SeekToEnd();
         m_pRasterFile->m_pDoqFile->Seek(BytesPerBandRow * (- RedChannel));
 
-        if(m_pRasterFile->m_pDoqFile->Read((void*)m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
+        if(m_pRasterFile->m_pDoqFile->Read(m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
 
         m_pRasterFile->m_pDoqFile->Seek((RedChannel - GreenChannel - 1) * BytesPerBandRow);
 
-        if(m_pRasterFile->m_pDoqFile->Read((void*)m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
+        if(m_pRasterFile->m_pDoqFile->Read(m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
 
         m_pRasterFile->m_pDoqFile->Seek((GreenChannel - BlueChannel - 1) * BytesPerBandRow);
 
-        if(m_pRasterFile->m_pDoqFile->Read((void*)m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
+        if(m_pRasterFile->m_pDoqFile->Read(m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
         }
 
@@ -229,10 +229,10 @@ WRAPUP:
 // Write uncompressed Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFDoqEditor::WriteBlock (uint32_t     pi_PosBlockX,
-                                  uint32_t     pi_PosBlockY,
-                                  const Byte* pi_pData,
-                                  HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFDoqEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                 uint64_t     pi_PosBlockY,
+                                 const Byte*  pi_pData,
+                                 HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess);
     HPRECONDITION (pi_pData != 0);

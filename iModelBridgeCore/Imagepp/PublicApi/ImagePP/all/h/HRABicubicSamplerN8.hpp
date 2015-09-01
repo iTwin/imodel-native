@@ -2,9 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABicubicSamplerN8.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 /** ---------------------------------------------------------------------------
     Constructor
     ---------------------------------------------------------------------------
@@ -70,7 +72,7 @@ inline void HRABicubicSamplerN8::Sample::TranslateX(double pi_DeltaX)
 */
 inline uint32_t HRABicubicSamplerN8::Sample::GetLine0() const
     {
-    return (uint32_t)max(m_PositionY - 2.0, 0.0);
+    return (uint32_t)MAX(m_PositionY - 2.0, 0.0);
     }
 
 
@@ -80,7 +82,7 @@ inline uint32_t HRABicubicSamplerN8::Sample::GetLine0() const
 */
 inline uint32_t HRABicubicSamplerN8::Sample::GetLine1() const
     {
-    return (uint32_t)max(m_PositionY - 1.0, 0.0);
+    return (uint32_t)MAX(m_PositionY - 1.0, 0.0);
     }
 
 inline uint32_t HRABicubicSamplerN8::Sample::GetLine2() const
@@ -99,7 +101,7 @@ inline uint32_t HRABicubicSamplerN8::Sample::GetLine3() const
 */
 inline uint32_t HRABicubicSamplerN8::Sample::GetColumn0() const
     {
-    return (uint32_t)max(m_PositionX - 2.0, 0.0);
+    return (uint32_t)MAX(m_PositionX - 2.0, 0.0);
     }
 
 
@@ -109,7 +111,7 @@ inline uint32_t HRABicubicSamplerN8::Sample::GetColumn0() const
 */
 inline uint32_t HRABicubicSamplerN8::Sample::GetColumn1() const
     {
-    return (uint32_t)max(m_PositionX - 1.0, 0.0);
+    return (uint32_t)MAX(m_PositionX - 1.0, 0.0);
     }
 
 inline uint32_t HRABicubicSamplerN8::Sample::GetColumn2() const
@@ -142,3 +144,4 @@ inline double HRABicubicSamplerN8::Sample::GetYDelta() const
     }
 
 
+END_IMAGEPP_NAMESPACE

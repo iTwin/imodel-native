@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCExclusiveKey.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HFCExclusiveKey
 //-----------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 
 /**----------------------------------------------------------------------------
  Constructor for this class. It creates an exclusive key: just after
@@ -18,7 +20,6 @@
 -----------------------------------------------------------------------------*/
 inline HFCExclusiveKey::HFCExclusiveKey()
     {
-    m_pKey = new BeCriticalSection();
     }
 
 /**----------------------------------------------------------------------------
@@ -26,7 +27,6 @@ inline HFCExclusiveKey::HFCExclusiveKey()
 -----------------------------------------------------------------------------*/
 inline HFCExclusiveKey::~HFCExclusiveKey()
     {
-    delete m_pKey;
     }
 
 /**----------------------------------------------------------------------------
@@ -41,7 +41,7 @@ inline HFCExclusiveKey::~HFCExclusiveKey()
 -----------------------------------------------------------------------------*/
 inline void HFCExclusiveKey::ClaimKey()
     {
-    m_pKey->Enter();
+    m_Key.Enter();
     }
 
 /**----------------------------------------------------------------------------
@@ -53,6 +53,7 @@ inline void HFCExclusiveKey::ClaimKey()
 -----------------------------------------------------------------------------*/
 inline void HFCExclusiveKey::ReleaseKey()
     {
-    m_pKey->Leave();
+    m_Key.Leave();
     }
 
+END_IMAGEPP_NAMESPACE

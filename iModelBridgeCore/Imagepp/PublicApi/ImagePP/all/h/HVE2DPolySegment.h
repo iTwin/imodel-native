@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DPolySegment.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -18,6 +18,7 @@
 #include "HGF2DPosition.h"
 #include "HGF2DLiteSegment.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HVE2DSegment;
 class HGF2DCoordSys;
 class HVE2DPolygonOfSegments;
@@ -27,7 +28,7 @@ class HGF2DLine;
 class HVE2DPolySegment : public HVE2DBasicLinear
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1250)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DPolySegmentId)
 
 
 public:
@@ -37,20 +38,20 @@ public:
     HVE2DPolySegment(const HGF2DLocation& pi_rStartPoint,
                      const HGF2DLocation& pi_rEndPoint);
     HVE2DPolySegment(const HGF2DLocationCollection& pi_rListOfPoints);
-    HVE2DPolySegment(const HGF2DPositionCollection& pi_rListOfPoints,
+    IMAGEPP_EXPORT HVE2DPolySegment(const HGF2DPositionCollection& pi_rListOfPoints,
                      const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     HVE2DPolySegment(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
-    _HDLLg                    HVE2DPolySegment(size_t  pi_BufferLength,
+    IMAGEPP_EXPORT                    HVE2DPolySegment(size_t  pi_BufferLength,
                                                double pi_aBuffer[],
                                                const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     HVE2DPolySegment(const HVE2DPolySegment&    pi_rObject);
-    _HDLLg virtual            ~HVE2DPolySegment();
+    IMAGEPP_EXPORT virtual            ~HVE2DPolySegment();
 
     HVE2DPolySegment&  operator=(const HVE2DPolySegment& pi_rObj);
 
     // Setting and extracting
-    void               AppendPoint(const HGF2DLocation& pi_rNewPoint);
-    _HDLLg void               AppendPosition(const HGF2DPosition& pi_rNewPoint);
+    IMAGEPP_EXPORT void               AppendPoint(const HGF2DLocation& pi_rNewPoint);
+    IMAGEPP_EXPORT void               AppendPosition(const HGF2DPosition& pi_rNewPoint);
     HGF2DLocation      GetPoint(size_t pi_Index) const;
     const HGF2DPosition&
     GetPosition(size_t pi_Index) const;
@@ -66,7 +67,7 @@ public:
     HVE2DSegment       GetClosestSegment(const HGF2DLocation& pi_rLocation) const;
 
     // Remove autocontiguousness points
-    _HDLLg void        RemoveAutoContiguousNeedles(bool pi_ClosedProcessing = false);
+    IMAGEPP_EXPORT void        RemoveAutoContiguousNeedles(bool pi_ClosedProcessing = false);
 
     // Split into non-autocrossing polysegments.
 
@@ -77,67 +78,67 @@ public:
     void               SortPointsAccordingToRelativePosition(HGF2DLocationCollection* pio_pListOfPointsOnLinear) const;
 
     // Geometry
-    _HDLLg virtual void       Rotate(double               pi_Angle,
+    IMAGEPP_EXPORT virtual void       Rotate(double               pi_Angle,
                                      const HGF2DLocation& pi_rOrigin);
 
-    _HDLLg bool               IsAutoContiguous() const;
+    IMAGEPP_EXPORT bool               IsAutoContiguous() const;
 
     // From HVE2DBasicLinear
-    _HDLLg HVE2DBasicLinearTypeId    
+    IMAGEPP_EXPORT HVE2DBasicLinearTypeId    
                               GetBasicLinearType() const;
 
     // From HVE2DLinear
-    _HDLLg virtual double     CalculateLength() const;
-    _HDLLg virtual HGF2DLocation    
+    IMAGEPP_EXPORT virtual double     CalculateLength() const;
+    IMAGEPP_EXPORT virtual HGF2DLocation    
                               CalculateRelativePoint(double pi_RelativePos) const;
-    _HDLLg virtual double     CalculateRelativePosition(const HGF2DLocation& pi_rPointOnLinear) const;
-    _HDLLg virtual double     CalculateRayArea(const HGF2DLocation& pi_rPoint) const;
-    _HDLLg virtual void       Shorten(double pi_StartRelativePos, double pi_EndRelativePos);
-    _HDLLg virtual void       Shorten(const HGF2DLocation& pi_rNewStartPoint,
+    IMAGEPP_EXPORT virtual double     CalculateRelativePosition(const HGF2DLocation& pi_rPointOnLinear) const;
+    IMAGEPP_EXPORT virtual double     CalculateRayArea(const HGF2DLocation& pi_rPoint) const;
+    IMAGEPP_EXPORT virtual void       Shorten(double pi_StartRelativePos, double pi_EndRelativePos);
+    IMAGEPP_EXPORT virtual void       Shorten(const HGF2DLocation& pi_rNewStartPoint,
                                       const HGF2DLocation& pi_rNewEndPoint);
-    _HDLLg virtual void       ShortenTo(const HGF2DLocation& pi_rNewEndPoint);
-    _HDLLg virtual void       ShortenTo(double pi_EndRelativePosition);
-    _HDLLg virtual void       ShortenFrom(const HGF2DLocation& pi_rNewStartPoint);
-    _HDLLg virtual void       ShortenFrom(double pi_StartRelativePosition);
-    _HDLLg virtual bool       AutoCrosses() const;
-    _HDLLg virtual size_t     AutoIntersect(HGF2DLocationCollection* po_pPoints) const;
-    _HDLLg virtual void       AdjustStartPointTo(const HGF2DLocation& pi_rPoint);
-    _HDLLg virtual void       AdjustEndPointTo(const HGF2DLocation& pi_rPoint);
+    IMAGEPP_EXPORT virtual void       ShortenTo(const HGF2DLocation& pi_rNewEndPoint);
+    IMAGEPP_EXPORT virtual void       ShortenTo(double pi_EndRelativePosition);
+    IMAGEPP_EXPORT virtual void       ShortenFrom(const HGF2DLocation& pi_rNewStartPoint);
+    IMAGEPP_EXPORT virtual void       ShortenFrom(double pi_StartRelativePosition);
+    IMAGEPP_EXPORT virtual bool       AutoCrosses() const;
+    IMAGEPP_EXPORT virtual size_t     AutoIntersect(HGF2DLocationCollection* po_pPoints) const;
+    IMAGEPP_EXPORT virtual void       AdjustStartPointTo(const HGF2DLocation& pi_rPoint);
+    IMAGEPP_EXPORT virtual void       AdjustEndPointTo(const HGF2DLocation& pi_rPoint);
 
-    _HDLLg virtual void       Drop(HGF2DLocationCollection* po_pPoint,
+    IMAGEPP_EXPORT virtual void       Drop(HGF2DLocationCollection* po_pPoint,
                                    double                   pi_Tolerance,
                                    EndPointProcessing       pi_EndPointProcessing = INCLUDE_END_POINT) const;
-    _HDLLg virtual void       Reverse();
+    IMAGEPP_EXPORT virtual void       Reverse();
 
 
     // From HVE2DVector
-    _HDLLg virtual HGF2DLocation
+    IMAGEPP_EXPORT virtual HGF2DLocation
                               CalculateClosestPoint(const HGF2DLocation& pi_rPoint) const;
-    _HDLLg virtual size_t     Intersect(const HVE2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual size_t     Intersect(const HVE2DVector& pi_rVector,
                                         HGF2DLocationCollection* po_pCrossPoints) const;
-    _HDLLg virtual size_t     ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual size_t     ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
                                                          HGF2DLocationCollection* po_pContiguousnessPoints) const;
-    _HDLLg virtual void       ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual void       ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
                                                            const HGF2DLocation& pi_rPoint,
                                                            HGF2DLocation* po_pFirstContiguousnessPoint,
                                                            HGF2DLocation* po_pSecondContiguousnessPoint) const;
-    _HDLLg virtual HVE2DVector*
+    IMAGEPP_EXPORT virtual HVE2DVector*
                               AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) const;
 
-    _HDLLg virtual bool       Crosses(const HVE2DVector& pi_rVector) const;
-    _HDLLg virtual bool       AreContiguous(const HVE2DVector& pi_rVector) const;
-    _HDLLg virtual bool       AreAdjacent(const HVE2DVector& pi_rVector) const;
-    _HDLLg virtual bool       IsPointOn(const HGF2DLocation& pi_rTestPoint,
+    IMAGEPP_EXPORT virtual bool       Crosses(const HVE2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual bool       AreContiguous(const HVE2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual bool       AreAdjacent(const HVE2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual bool       IsPointOn(const HGF2DLocation& pi_rTestPoint,
                                         HVE2DVector::ExtremityProcessing
                                         pi_ExtremityProcessing = HVE2DVector::INCLUDE_EXTREMITIES,
                                         double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    _HDLLg virtual bool       IsPointOnSCS(const HGF2DLocation& pi_rTestPoint,
+    IMAGEPP_EXPORT virtual bool       IsPointOnSCS(const HGF2DLocation& pi_rTestPoint,
                                            HVE2DVector::ExtremityProcessing
                                            pi_ExtremityProcessing = HVE2DVector::INCLUDE_EXTREMITIES,
                                            double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    _HDLLg virtual bool       AreContiguousAt(const HVE2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual bool       AreContiguousAt(const HVE2DVector& pi_rVector,
                                               const HGF2DLocation& pi_rPoint) const;
-    _HDLLg virtual HGFBearing CalculateBearing(const HGF2DLocation& pi_rPositionPoint,
+    IMAGEPP_EXPORT virtual HGFBearing CalculateBearing(const HGF2DLocation& pi_rPositionPoint,
                                                HVE2DVector::ArbitraryDirection
                                                pi_Direction = HVE2DVector::BETA) const;
     virtual double            CalculateAngularAcceleration(const HGF2DLocation& pi_rPositionPoint,
@@ -146,23 +147,23 @@ public:
     virtual bool              IsNull() const;
 
     // From HGFGraphicObject
-    _HDLLg virtual HGF2DExtent
+    IMAGEPP_EXPORT virtual HGF2DExtent
                               GetExtent() const;
 
-    _HDLLg virtual void       Move(const HGF2DDisplacement& pi_rDisplacement);
-    _HDLLg virtual void       Scale(double pi_ScaleFactor,
+    IMAGEPP_EXPORT virtual void       Move(const HGF2DDisplacement& pi_rDisplacement);
+    IMAGEPP_EXPORT virtual void       Scale(double pi_ScaleFactor,
                                     const HGF2DLocation& pi_rScaleOrigin);
 
     // From HPMPersistentObject
-    _HDLLg virtual HPMPersistentObject*
+    IMAGEPP_EXPORT virtual HPMPersistentObject*
                               Clone() const;
 
 
-    _HDLLg virtual void       PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT virtual void       PrintState(ostream& po_rOutput) const;
 
 protected:
 
-    _HDLLg virtual void       SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
+    IMAGEPP_EXPORT virtual void       SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
 
 
 private:
@@ -184,8 +185,8 @@ private:
     mutable HGF2DExtent m_Extent;
 
     // Private methods
-    _HDLLg void               Reserve(size_t pi_PointsToPreAllocate);
-    _HDLLg void               MakeEmpty();
+    IMAGEPP_EXPORT void               Reserve(size_t pi_PointsToPreAllocate);
+    IMAGEPP_EXPORT void               MakeEmpty();
     void                      ResetTolerance();
     bool IsContiguousToPolySegmentSCS(const HVE2DPolySegment& pi_rPolySegment) const;
     bool IsContiguousToPolySegmentLRCS(const HVE2DPolySegment& pi_rPolySegment) const;
@@ -279,6 +280,7 @@ private:
     void RecomposeClosedPolySegments(list<HFCPtr<HVE2DPolySegment> >* pio_pListOfResultPolySegments) const;
 
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DPolySegment.hpp"

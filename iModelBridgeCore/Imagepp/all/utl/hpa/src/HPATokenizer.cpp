@@ -2,20 +2,188 @@
 //:>
 //:>     $Source: all/utl/hpa/src/HPATokenizer.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPATokenizer
 //---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HPATokenizer.h>
 #include <Imagepp/all/h/HPAToken.h>
 #include <Imagepp/all/h/HPAException.h>
 #include <Imagepp/all/h/HFCBinStream.h>
 
+#if 0
+//----------------------------------------------------------------------------
+// Here's a little consumer-transformer following the STL design philosophy.
+// Notice how, since UTF-8 is bound to specific bit-patterns, our types are
+// only generic in what the input and output containers are.
+//
+// For more on the UTF-8 layout, see
+//
+//   http://en.wikipedia.org/wiki/Utf8
+//
+// Specifically,
+//   0xxxxxxx                            --> 00000000 00000000 xxxxxxxx
+//   110yyyyy 10xxxxxx                   --> 00000000 00000yyy yyxxxxxx
+//   1110zzzz 10yyyyyy 10xxxxxx          --> 00000000 zzzzyyyy yyxxxxxx
+//   11110www 10zzzzzz 10yyyyyy 10xxxxxx --> 000wwwzz zzzzyyyy yyxxxxxx
+//
+// Notice how the first form is identical to ASCII.
+//
+// This algorithm does NOT consider whether or not your wchar_t is large
+// enough to hold a 21-bit character. (UTF-8 is specified over U+0000 to
+// U+10FFFF. Most modern C++ compilers use a 32-bit wchar_t, particularly
+// on Linux, but some older ones still have a 16-bit wchar_t, truncating
+// the range to U+0000 to U+FFFF.)
+//
+template <typename InputIterator,typename OutputIterator>
+WString& utf8_to_wchar_t(InputIterator begin, InputIterator end, WString& result)
+    {
+    for (; begin != end; ++begin, ++result)
+        {
+        int      count = 0;       // the number of bytes in the UTF-8 sequence
+        unsigned c     = (unsigned char)*begin;
+        unsigned i     = 0x80;
 
+        // Skip the stupid UTF-8 BOM that Windows programs add
+        //
+        // (And yes, we have to do it here like this due to problems
+        // that iostream iterators have with multiple data accesses.)
+        //
+        // Note that 0xEF is an illegal UTF-8 code, so it is safe to have
+        // this check in the loop.
+        //
+        if (c == 0xEF)
+            c = (unsigned char)* ++ ++ ++begin;
+
+        // Resynchronize after errors (which shouldn't happen)
+        while ((c & 0xC0) == 0x80)
+            c = (unsigned char)*++begin;
+
+        // Now we count the number of bytes in the sequence...
+        for (; c & i; i >>= 1) ++count;
+        // ...and strip the high-code-bits from the character value
+        c &= i - 1;
+
+        // Now we build the resulting wchar_t by
+        // appending all the character bits together
+        for (; count > 1; --count)
+            {
+            c <<= 6;
+            c |=  (*++begin) & 0x3F;
+            }
+
+        // And we store the result in the output container
+        result += c;
+        }
+
+    // The usual generic stuff
+    return result;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+class ImagePP::HPAStreamReaderUTF8 : public HFCShareableObject<HPAStreamReaderUTF8>
+{
+public:
+    HPAStreamReaderUTF8(HFCBinStream* pStream)
+        :m_pStream(pStream)    
+        {
+        m_bufferIndex = 0;
+        m_bufferDataSize = 0;
+        m_decodedLineIndex = 0;
+        }
+
+    ~HPAStreamReaderUTF8()
+        {
+        // The memory life cycle of the HFCBinStream used by HPA* is impossible to follow.
+        // I assumed it was OK and did not change the logic so we have nothing to do here
+        // since we are not the owner of m_pStream.
+        }
+
+    bool GetNextChar(WChar& next)
+        {
+        if(!HaveCharInLine())
+            {
+            if(!GetLine(m_decodedLine))
+                return false;
+
+            m_decodedLineIndex = 0;
+            }
+
+        next = m_decodedLine[m_decodedLineIndex++];
+        return true;
+        }
+
+    HFCBinStream* GetStream() {return m_pStream;}
+
+    void FreeStream() {delete m_pStream;}
+
+private:
+    bool HaveCharInLine() const {return m_decodedLineIndex < m_decodedLine.size();}
+
+    bool HaveCharInBuffer() const {return m_bufferIndex < m_bufferDataSize;}
+
+     bool ReadNextChar(char& next)
+         {
+         if(!HaveCharInBuffer())
+             {
+             if(!ReadToBuffer())
+                 return false;            
+             }
+
+         next = m_buffer[m_bufferIndex++];
+         return true;
+         }
+
+     bool ReadToBuffer()
+         {
+         m_bufferIndex = 0;
+         m_bufferDataSize = (uint32_t)m_pStream->Read(m_buffer, sizeof(m_buffer));
+         return 0 != m_bufferDataSize;             
+         }
+
+     bool GetLine(WString& line)
+         {
+         Utf8String lineUTF8;
+
+         while(1)
+             {
+             char currentChar;
+             if(!ReadNextChar(currentChar))
+                 {
+                 break; // no more char.
+                 }             
+             else if('\n' == currentChar)
+                 {
+                 lineUTF8 += currentChar;
+                 break;
+                 }
+             else
+                 {
+                 lineUTF8 += currentChar;
+                 }
+             }
+
+         line.AssignUtf8(lineUTF8.c_str());     // Convert UTF8 to Unicode.
+
+         return !line.empty();
+         }
+
+    HFCBinStream*   m_pStream;
+
+    char            m_buffer[256];
+    uint32_t        m_bufferDataSize;
+    uint32_t        m_bufferIndex;
+
+    WString         m_decodedLine;
+    uint32_t        m_decodedLineIndex;
+    };
 // Global token descriptors
 
 //---------------------------------------------------------------------------
@@ -59,7 +227,7 @@ HPANode* HPAFloatEnabledDefaultTokenizer::GetToken()
     if (!m_StreamRefStack.size())
         return 0;
 
-    HFCBinStream* pStream = m_StreamRefStack.front();
+    HPAStreamReaderUTF8* pStream = m_StreamRefStack.front().GetPtr();
 
     // Checks first char : if numeric, we have a number, if alpha, we have
     // an ident of a symbol, other : we have a symbol.
@@ -197,7 +365,7 @@ HPANode* HPAFloatEnabledDefaultTokenizer::GetToken()
                 else
                     {
                     HFCPtr<HPANode> pExceptionNode(new HPANode(0, LeftPos, RightPos, m_pSession));
-                    throw HPAException(HPA_NO_TOKEN_EXCEPTION, pExceptionNode);
+                    throw HPANoTokenException(pExceptionNode);
                     }
                 }
             }
@@ -220,7 +388,7 @@ HPANode* HPAFloatEnabledDefaultTokenizer::GetToken()
     else {
         if (m_StreamRefStack.size() > 1)
             {
-            delete m_StreamRefStack.front();
+            m_StreamRefStack.front()->FreeStream();
             m_StreamRefStack.pop_front();
             m_StreamInfoStack.pop_front();
             pNode = GetToken();
@@ -258,7 +426,7 @@ HPADefaultTokenizer::~HPADefaultTokenizer()
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-inline bool HPADefaultTokenizer::GetChar(HFCBinStream* pi_pStream,
+inline bool HPADefaultTokenizer::GetChar(HPAStreamReaderUTF8* pi_pStream,
                                           WChar* po_pChar)
     {
     if (m_PushedChars.size())
@@ -269,7 +437,7 @@ inline bool HPADefaultTokenizer::GetChar(HFCBinStream* pi_pStream,
         }
     else
         {
-        return pi_pStream->Read(po_pChar, 1) == 1;
+        return pi_pStream->GetNextChar(*po_pChar);
         }
     }
 
@@ -287,7 +455,7 @@ HPANode* HPADefaultTokenizer::GetToken()
     if (!m_StreamRefStack.size())
         return 0;
 
-    HFCBinStream* pStream = m_StreamRefStack.front();
+    HPAStreamReaderUTF8* pStream = m_StreamRefStack.front().GetPtr();
 
     // Checks first char : if numeric, we have a number, if alpha, we have
     // an ident of a symbol, other : we have a symbol.
@@ -412,7 +580,7 @@ HPANode* HPADefaultTokenizer::GetToken()
                 else
                     {
                     HFCPtr<HPANode> pExceptionNode(new HPANode(0, LeftPos, RightPos, m_pSession));
-                    throw HPAException(HPA_NO_TOKEN_EXCEPTION, pExceptionNode);
+                    throw HPANoTokenException(pExceptionNode);
                     }
                 }
             }
@@ -435,7 +603,7 @@ HPANode* HPADefaultTokenizer::GetToken()
     else {
         if (m_StreamRefStack.size() > 1)
             {
-            delete m_StreamRefStack.front();
+            m_StreamRefStack.front()->FreeStream();
             m_StreamRefStack.pop_front();
             m_StreamInfoStack.pop_front();
             pNode = GetToken();
@@ -496,11 +664,11 @@ bool HPADefaultTokenizer::Include(HFCBinStream* pi_pStream)
     StreamRefStack::iterator itr(m_StreamRefStack.begin());
     while (itr != m_StreamRefStack.end())
         {
-        if ((*itr)->GetURL()->GetURL() == pi_pStream->GetURL()->GetURL())
+        if ((*itr)->GetStream()->GetURL()->GetURL() == pi_pStream->GetURL()->GetURL())
             return false;
         ++itr;
         }
-    m_StreamRefStack.push_front(pi_pStream);
+    m_StreamRefStack.push_front(new HPAStreamReaderUTF8(pi_pStream));
     HPASourcePos NewPos;
     NewPos.m_pURL = pi_pStream->GetURL();
     NewPos.m_Line = 1;

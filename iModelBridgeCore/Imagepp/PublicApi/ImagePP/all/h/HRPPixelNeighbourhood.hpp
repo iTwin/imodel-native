@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelNeighbourhood.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HRPPixelNeighbourhood
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // GetHeight
@@ -66,3 +67,4 @@ inline HRPPixelNeighbourhood HRPPixelNeighbourhood::operator+
                                  m_XOrigin + pi_rNeighbourhood.m_XOrigin,
                                  m_YOrigin + pi_rNeighbourhood.m_YOrigin));
     }
+END_IMAGEPP_NAMESPACE

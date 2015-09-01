@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoTiffFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFGeoTiffFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <ImagePP/all/h/ImageppLib.h>
 
@@ -36,11 +36,10 @@
 #include <Imagepp/all/h/HGF2DAffine.h>
 #include <Imagepp/all/h/HGF2DProjective.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 
-USING_NAMESPACE_IMAGEPP
+
 
 //-----------------------------------------------------------------------------
 // HRFGeoTiffCapabilities
@@ -133,8 +132,7 @@ HRFGeoTiffCreator::HRFGeoTiffCreator()
 
 WString HRFGeoTiffCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_GeoTiff); //Geo TIFF Tagged Image File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_GeoTiff()); //Geo TIFF Tagged Image File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -174,7 +172,7 @@ bool HRFGeoTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     (const_cast<HRFGeoTiffCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    pTiff = new HTIFFFile (CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pTiff = new HTIFFFile (pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
     if ((pTiff->IsValid(&pErr) || ((pErr != 0) && !pErr->IsFatal())))
         {
         // the tiff was opened successfully, verify if it is
@@ -205,7 +203,7 @@ bool HRFGeoTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 //TIFF Intergraph tags are found and have priority over GeoTIFF tags
                 ((pTiff->GetField(INTERGRAPH_MATRIX, &Count, &pMat4by4) ||
                   pTiff->GetField(INTERGRAPH_RAGBAG, &Count, &pTagRagBag)) &&
-                  (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsIgnoreGeotiffIntergraphTags() == false)))
+                  (ImageppLib::GetHost().GetImageppLibAdmin()._IsIgnoreGeotiffIntergraphTags() == false)))
                 {
                 bResult = false;
                 }
@@ -355,7 +353,6 @@ HRFGeoTiffFile::HRFGeoTiffFile(const HFCPtr<HFCURL>& pi_rURL,
     m_StoreUsingMatrix    = false;
     m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation = false;
     m_DefaultCoordSysIsIntergraphIfUnitNotResolved = false;
-    m_ModelTypeGeographicConsiderDefaultUnit       = false;
     m_RatioToMeter = 1.0;
 
 
@@ -381,7 +378,6 @@ HRFGeoTiffFile::HRFGeoTiffFile(const HFCPtr<HFCURL>& pi_rURL,
     m_StoreUsingMatrix = false;
     m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation = false;
     m_DefaultCoordSysIsIntergraphIfUnitNotResolved = false;
-    m_ModelTypeGeographicConsiderDefaultUnit       = false;
     m_RatioToMeter = 1.0;
 
     }
@@ -414,8 +410,7 @@ HRFGeoTiffFile::~HRFGeoTiffFile()
  */
 void HRFGeoTiffFile::GetDefaultInterpretationGeoRef(double* po_RatioToMeter,
                                                            bool*   po_InterpretUnit,
-                                                           bool*   po_InterpretUnitINTGR,
-                                                           bool*   po_ModelTypeGeographicConsiderDefaultUnit)
+                                                           bool*   po_InterpretUnitINTGR)
     {
     if (po_RatioToMeter)
         *po_RatioToMeter = m_RatioToMeter;
@@ -423,8 +418,6 @@ void HRFGeoTiffFile::GetDefaultInterpretationGeoRef(double* po_RatioToMeter,
         *po_InterpretUnit = m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation;
     if (po_InterpretUnitINTGR)
         *po_InterpretUnitINTGR = m_DefaultCoordSysIsIntergraphIfUnitNotResolved;
-    if (po_ModelTypeGeographicConsiderDefaultUnit)
-        *po_ModelTypeGeographicConsiderDefaultUnit = m_ModelTypeGeographicConsiderDefaultUnit;
     }
 
 //-----------------------------------------------------------------------------
@@ -477,15 +470,9 @@ bool HRFGeoTiffFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         pi_pPage->SetTransfoModel(*pModel);
         }
 
-    HFCPtr<HCPGeoTiffKeys>       pGeoTiffKeys;
+    HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys; 
 
-
-
-    pGeoTiffKeys = static_cast<HCPGeoTiffKeys*>(pi_pPage->GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO).GetPtr());
-
-    IRasterBaseGcsPtr pBaseGCS = pi_pPage->GetGeocoding();
-
-
+    IRasterBaseGcsCP pBaseGCS = pi_pPage->GetGeocodingCP();
     if ((pBaseGCS != 0) && pBaseGCS->IsValid())
         {
         pGeoTiffKeys           = new HCPGeoTiffKeys();
@@ -567,10 +554,8 @@ bool HRFGeoTiffFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
             }
         }
 
-    //HMD_GEOCODING_INFO
-    if (pGeoTiffKeys != 0)
-        pi_pPage->SetMetaDataContainer((HFCPtr<HMDMetaDataContainer>&)pGeoTiffKeys,
-                                       true);
+    pi_pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys),true);
+
 
     // Add the page descriptor to the list
     return HRFTiffFile::AddPage(pi_pPage);
@@ -631,16 +616,13 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
                 // Select the page
                 SetImageInSubImage (GetIndexOfPage(Page));
 
-                IRasterBaseGcsPtr pBaseGCS;
+                RasterFileGeocoding const& fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
+                HCPGeoTiffKeys const& inputGeoTiffKeys = fileGeocoding.GetGeoTiffKeys();
 
-                pBaseGCS = pPageDescriptor->GetGeocoding();
-
-                HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys = new HCPGeoTiffKeys();
-
-                if (pBaseGCS != NULL && pBaseGCS->IsValid())
-                    pBaseGCS->GetGeoTiffKeys(pGeoTiffKeys);
+                HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys(inputGeoTiffKeys.Clone());
 
                 uint32_t GeoKeyLongValue;
+                bool isGeoTiffKeysModified(false);
 
                 // If PROJECTED_CSTYPE is present, add all default tag related
                 pGeoTiffKeys->GetValue(ProjectedCSType, &GeoKeyLongValue);
@@ -656,6 +638,7 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
 
                         // add the tag into the page descriptor
                         pGeoTiffKeys->AddKey(PCSCitation, Text);
+                        isGeoTiffKeysModified=true;
                         }
 
                     // Look if GeographicType is present if not the a default value is set to the file.
@@ -665,6 +648,7 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
 
                         // add the tag into the page descriptor
                         pGeoTiffKeys->AddKey(GeographicType, (uint32_t)TIFFGeo_UserDefined);
+                        isGeoTiffKeysModified=true;
                         }
 
                     // Look if Projection is present if not the a default value is set to the file.
@@ -674,6 +658,7 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
 
                         // add the tag into the page descriptor
                         pGeoTiffKeys->AddKey(Projection, (uint32_t)TIFFGeo_UserDefined);
+                        isGeoTiffKeysModified=true;
                         }
                     // Look if Projection is set to used defined.
                     pGeoTiffKeys->GetValue(Projection, &GeoKeyLongValue);
@@ -687,6 +672,7 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
 
                             // add the tag into the page descriptor
                             pGeoTiffKeys->AddKey(ProjCoordTrans, (uint32_t)TIFFGeo_UserDefined);
+                            isGeoTiffKeysModified=true;
                             }
 
                         // Look if ProjLinearUnits is present if not the a default value is set to the file.
@@ -699,6 +685,7 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
 
                                 // add the tag into the page descriptor
                                 pGeoTiffKeys->AddKey(ProjLinearUnits, (uint32_t)TIFFGeo_Linear_Meter);
+                                isGeoTiffKeysModified=true;
                                 }
                             }
                         else // Projection is present look if it is used defined
@@ -715,15 +702,14 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
 
                                     // add the tag into the page descriptor
                                     pGeoTiffKeys->AddKey(ProjLinearUnitSize, (double)1.0);
+                                    isGeoTiffKeysModified=true;
                                     }
                                 }
                             }
                         }
                     }
-
-                //HMD_GEOCODING_INFO
-                pPageDescriptor->SetMetaDataContainer((HFCPtr<HMDMetaDataContainer>&)pGeoTiffKeys,
-                                                      pGeoTiffKeys->HasChanged());
+                if (isGeoTiffKeysModified)
+                    pPageDescriptor->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys.GetPtr()));
 
                 // Update the TransfoModel
                 if ((pPageDescriptor->HasTransfoModel()) && (pPageDescriptor->TransfoModelHasChanged()))
@@ -759,7 +745,7 @@ bool HRFGeoTiffFile::Open(bool pi_CreateBigTifFormat)
                   GetFilePtr()->GetField(GEOTIEPOINTS, &Count, &pMat4by4) ||
                   GetFilePtr()->GetField(GEOPIXELSCALE, &Count, &pMat4by4) ||
                   GetFilePtr()->GetField(GEOKEYDIRECTORY, &KeyCount, &pKeyDirectory)))
-                  throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                  throw HFCFileNotSupportedException(GetURL()->GetURL());
             }
         }
 
@@ -790,7 +776,7 @@ bool HRFGeoTiffFile::Open(const HFCPtr<HFCURL>& pi_rpURL)
                   GetFilePtr()->GetField(GEOTIEPOINTS, &Count, &pMat4by4) ||
                   GetFilePtr()->GetField(GEOPIXELSCALE, &Count, &pMat4by4) ||
                   GetFilePtr()->GetField(GEOKEYDIRECTORY, &KeyCount, &pKeyDirectory)))
-                  throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, pi_rpURL->GetURL());
+                  throw HFCFileNotSupportedException(pi_rpURL->GetURL());
             }
         }
 
@@ -823,7 +809,7 @@ void HRFGeoTiffFile::CreateDescriptors()
             {
             if(AccessMode.m_HasCreateAccess || AccessMode.m_HasWriteAccess)
                 {
-                throw HRFException(HRF_ACCESS_MODE_FOR_CODEC_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                throw HRFAccessModeForCodeNotSupportedException(GetURL()->GetURL());
                 }
             }
         }
@@ -929,14 +915,7 @@ void HRFGeoTiffFile::CreateDescriptors()
         GetGeoTiffKeys(pGeoTiffKeys);
 
         // TranfoModel
-        HFCPtr<HGF2DTransfoModel> pTransfoModel = CreateTransfoModelFromGeoTiff(pGeoTiffKeys,
-                                                                                Page);
-
-        IRasterBaseGcsPtr baseGCS;
-
-        // Create base GCS
-        if(pGeoTiffKeys != NULL)
-            baseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, *pGeoTiffKeys);
+        HFCPtr<HGF2DTransfoModel> pTransfoModel = CreateTransfoModelFromGeoTiff(pGeoTiffKeys.GetPtr(), Page);
 
         HFCPtr<HRFPageDescriptor> pPage;
         pPage = new HRFPageDescriptor (AccessMode,
@@ -950,18 +929,8 @@ void HRFGeoTiffFile::CreateDescriptors()
                                        0,                           // Filters
                                        &TagList);                    // Defined Tag
 
-        //Add the geocoding tags
-        HFCPtr<HMDMetaDataContainerList> pMetaDataContainers;
-
-        pMetaDataContainers = new HMDMetaDataContainerList();
-
-        //HMD_GEOCODING_INFO
-        pMetaDataContainers->SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>(pGeoTiffKeys));
-
-        pPage->SetListOfMetaDataContainer(pMetaDataContainers);
-
         // Set geocoding
-        pPage->SetGeocoding(baseGCS);
+        pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys));
 
         m_ListOfPageDescriptor.push_back(pPage);
         }
@@ -978,221 +947,42 @@ void HRFGeoTiffFile::CreateDescriptors()
     <LI><a href = "../../../doc/HRFGeoTiffFile.doc"> HRFGeoTiffFile.doc </a></LI>
     -----------------------------------------------------------------------------
  */
-HFCPtr<HGF2DTransfoModel> HRFGeoTiffFile::CreateTransfoModelFromGeoTiff(const HFCPtr<HCPGeoTiffKeys>&   pi_rpGeoTiffKeys,
-                                                                        uint32_t                       pi_PageNb)
+    HFCPtr<HGF2DTransfoModel> HRFGeoTiffFile::CreateTransfoModelFromGeoTiff(HCPGeoTiffKeys const*          pi_rpGeoTiffKeys,
+                                                                            uint32_t                       pi_PageNb)
     {
     HFCPtr<HGF2DTransfoModel> pTransfoModel = new HGF2DIdentity();
-
-    bool IsValidModel = false;
-    bool NeedFlip     = false;
 
     double*  pTiePoints;
     double*  pPixelScale;
     double*  pMatrix;    // 4 x 4
 
-    uint32_t  NbTiePoints  = 0;
+    uint32_t  NbTiePoints = 0;
     uint32_t  NbPixelScale = 0;
-    uint32_t  MatSize      = 0;
+    uint32_t  MatSize = 0;                  
 
     // Get all the geo reference tag.
     // Matrix
     GetFilePtr()->GetField(GEOTRANSMATRIX, &MatSize, &pMatrix);
+
     // TiePoint Pixel(x,y,z) System(x,y,z) ...
     GetFilePtr()->GetField(GEOTIEPOINTS, &NbTiePoints, &pTiePoints);
+    // We support more than 24 tie points only in readOnly mode.
+    if (NbTiePoints > 24 && ((GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)))
+            throw HRFMoreThan24TiePointReadOnlyException(GetURL()->GetURL());
+
     // Scale x,y,z
     GetFilePtr()->GetField(GEOPIXELSCALE, &NbPixelScale, &pPixelScale);
 
-    // Case 0 : No positionning tag in the file.
-    if (NbTiePoints == 0 && NbPixelScale == 0 && MatSize == 0)
-        {
-        IsValidModel = true;
-        NeedFlip     = true;
-        }
-
-    // Case 1: One pair of tie point present. (And Case 6)
-    else if (NbTiePoints == 6 && NbPixelScale == 0)
-        {
-        // We do not support both tie point and matrix to be present
-        // This is Case 6, so we ignore the matrix.
-        HWARNING((MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
-
-        double OffsetX = pTiePoints[3] - pTiePoints[0];
-        double OffsetY = pTiePoints[4] + pTiePoints[1];
-
-        pTransfoModel = new HGF2DTranslation (HGF2DDisplacement (OffsetX, OffsetY));
-
-        IsValidModel = true;
-        NeedFlip     = true;        // if modified see the same case in WriteTransfoModelFromGeoTiff
-        }
-
-    // Case 3: One pair of tie point present and pixelscale. (And Case 6)
-    else if (NbTiePoints == 6 && NbPixelScale == 3)
-        {
-        // We do not support both tie point and matrix to be present
-        // This is Case 6, so we ignore the matrix.
-        HWARNING((MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
-
-        double OffsetX = pTiePoints[3] - (pTiePoints[0] * pPixelScale[0]);
-        double OffsetY = pTiePoints[4] + (pTiePoints[1] * pPixelScale[1]);
-
-        pTransfoModel = new HGF2DStretch(HGF2DDisplacement (OffsetX, OffsetY),
-                                         pPixelScale[0],
-                                         pPixelScale[1]);
-        IsValidModel = true;
-        NeedFlip     = true;        // if modified see the same case in WriteTransfoModelFromGeoTiff
-        }
-
-    // Case 4: Model Transformation tag present. (And Case 7)
-    else if (NbTiePoints == 0 && MatSize == 16)
-        {
-        // We do not support both pixelscale and matrix to be present
-        // This is Case 7, so we ignore the pixelscale.
-        HASSERT(NbPixelScale == 0);
-
-        HFCMatrix<3, 3> TheMatrix;
-
-        TheMatrix[0][0] = pMatrix[0];
-        TheMatrix[0][1] = pMatrix[1];
-        TheMatrix[0][2] = pMatrix[3];
-        TheMatrix[1][0] = pMatrix[4];
-        TheMatrix[1][1] = pMatrix[5];
-        TheMatrix[1][2] = pMatrix[7];
-        TheMatrix[2][0] = pMatrix[12];
-        TheMatrix[2][1] = pMatrix[13];
-
-        // Try to not invalidate the model just because the
-        // global scale is not set. TR# 138746
-        if (!HDOUBLE_EQUAL_EPSILON(pMatrix[15], 0.0) )
-            TheMatrix[2][2] = pMatrix[15];
-        else
-            TheMatrix[2][2] = 1.0;
-
-        pTransfoModel = new HGF2DProjective(TheMatrix);
-
-        // Get the simplest model possible.
-        HFCPtr<HGF2DTransfoModel> pTempTransfoModel = pTransfoModel->CreateSimplifiedModel();
-
-        if (pTempTransfoModel != 0)
-            pTransfoModel = pTempTransfoModel;
-
-        IsValidModel = true;
-        }
-
-    // Case 5: Many pairs of tie points defined. (And Case 9, Case 6)
-    else if (NbTiePoints > 6 && NbTiePoints <= 24)
-        {
-        // We do not support both, more than one ties points and matrix to be present
-        // This is Case 6, so we ignore the matrix.
-        HWARNING((MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
-        // We do not support both, more than one ties points and pixelscale to be present
-        // This is Case 6, so we ignore the pixelscale.
-        HWARNING((NbPixelScale == 0), L"HRFGeoTiff: TiePoints are used, Pixelscale ignored...");
-
-        double pMatrix[4][4];
-
-        GetTransfoMatrixFromScaleAndTiePts (pMatrix, (unsigned short)NbTiePoints, pTiePoints, 0, 0);
-
-        HFCMatrix<3, 3> TheMatrix;
-
-        TheMatrix[0][0] = pMatrix[0][0];
-        TheMatrix[0][1] = pMatrix[0][1];
-        TheMatrix[0][2] = pMatrix[0][3];
-        TheMatrix[1][0] = pMatrix[1][0];
-        TheMatrix[1][1] = pMatrix[1][1];
-        TheMatrix[1][2] = pMatrix[1][3];
-        TheMatrix[2][0] = pMatrix[3][0];
-        TheMatrix[2][1] = pMatrix[3][1];
-        TheMatrix[2][2] = pMatrix[3][3];
-
-        pTransfoModel = new HGF2DProjective(TheMatrix);
-
-        // Get the simplest model possible.
-        HFCPtr<HGF2DTransfoModel> pTempTransfoModel = pTransfoModel->CreateSimplifiedModel();
-
-        if (pTempTransfoModel != 0)
-            pTransfoModel = pTempTransfoModel;
-
-        IsValidModel = true;
-
-        // Flip if required
-        // TR 262120
-        if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsSetFlipInY_IfModelDefinedBy7to24TiePoints())      // if modified see the same case in WriteTransfoModelFromGeoTiff
-            NeedFlip = true;
-        }
-    else if (NbTiePoints > 24)
-        {
-        // We support more than 24 tie points only in readOnly mode.
-        if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
-            throw HRFException(HRF_MORE_THAN_24_TIE_POINTS_READ_ONLY_EXCEPTION, GetURL()->GetURL());
-
-        // We do not support both, more than one ties points and matrix to be present
-        // This is Case 6, so we ignore the matrix.
-        HWARNING((MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
-        // We do not support both, more than one ties points and pixelscale to be present
-        // This is Case 6, so we ignore the pixelscale.
-        HWARNING((NbPixelScale == 0), L"HRFGeoTiff: TiePoints are used, Pixelscale ignored...");
-
-        double pMatrix[4][4];
-
-        GetTransfoMatrixFromScaleAndTiePts (pMatrix, (unsigned short)NbTiePoints, pTiePoints, (unsigned short)NbPixelScale, pPixelScale);
-        HFCMatrix<3, 3> TheMatrix;
-
-        TheMatrix[0][0] = pMatrix[0][0];
-        TheMatrix[0][1] = pMatrix[0][1];
-        TheMatrix[0][2] = pMatrix[0][3];
-        TheMatrix[1][0] = pMatrix[1][0];
-        TheMatrix[1][1] = pMatrix[1][1];
-        TheMatrix[1][2] = pMatrix[1][3];
-        TheMatrix[2][0] = pMatrix[3][0];
-        TheMatrix[2][1] = pMatrix[3][1];
-        TheMatrix[2][2] = pMatrix[3][3];
-
-        pTransfoModel = new HGF2DProjective(TheMatrix);
-
-        // Get the simplest model possible.
-        HFCPtr<HGF2DTransfoModel> pTempTransfoModel = pTransfoModel->CreateSimplifiedModel();
-
-        if (pTempTransfoModel != 0)
-            pTransfoModel = pTempTransfoModel;
-
-        IsValidModel = true;
-        NeedFlip     = false;       // if modified see the same case in WriteTransfoModelFromGeoTiff
-        }
-
-    // If pixelIsPoint(origin center of the pixel), we need to translate the origin to
-    // the upper-left corner.
-    unsigned short GeoShortValue(TIFFGeo_RasterPixelIsArea);
-    GetFilePtr()->GetGeoKeyInterpretation().GetValue(GTRasterType, &GeoShortValue);
-    if(GeoShortValue == TIFFGeo_RasterPixelIsPoint)
-        {
-        HGF2DDisplacement Depl(-0.5, -0.5);
-        HGF2DTranslation TranslateModel(Depl);
-        pTransfoModel = TranslateModel.ComposeInverseWithDirectOf(*pTransfoModel);
-        }
-
-    // Flip the model if needed
-    if (IsValidModel && NeedFlip)
-        {
-        // Flip the Y Axe because the origin of ModelSpace is lower-left
-        HFCPtr<HGF2DStretch> pFlipModel = new HGF2DStretch();
-
-        pFlipModel->SetYScaling(-1.0);
-        pTransfoModel = pFlipModel->ComposeInverseWithDirectOf(*pTransfoModel);
-        }
-
-    double                   FactorModelToMeter;
-    bool                     DefaultUnitWasFound = false;
-
+    double FactorModelToMeter;
+    bool   DefaultUnitWasFound;
     GetDefaultInterpretationGeoRef(&FactorModelToMeter);
 
-    if (pi_rpGeoTiffKeys != 0)
-        {
-        pTransfoModel = pi_rpGeoTiffKeys->TranslateToMeter(pTransfoModel,
-                                                           FactorModelToMeter,
-                                                           m_ModelTypeGeographicConsiderDefaultUnit,
-                                                           m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
-                                                           &DefaultUnitWasFound);
-        }
+    pTransfoModel = HCPGeoTiffKeys::CreateTransfoModelFromGeoTiff(pi_rpGeoTiffKeys, FactorModelToMeter,
+                                                                    pMatrix, MatSize,
+                                                                    pPixelScale, NbPixelScale,
+                                                                    pTiePoints, NbTiePoints,
+                                m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
+                                &DefaultUnitWasFound);
 
     SetUnitFoundInFile(DefaultUnitWasFound, pi_PageNb);
 
@@ -1205,7 +995,7 @@ HFCPtr<HGF2DTransfoModel> HRFGeoTiffFile::CreateTransfoModelFromGeoTiff(const HF
 // Used to call different fonction depending of the file type.
 //-----------------------------------------------------------------------------
 
-bool HRFGeoTiffFile::WriteTransfoModel(const HFCPtr<HCPGeoTiffKeys>&            pi_rpGeoTiffKeys,
+bool HRFGeoTiffFile::WriteTransfoModel(HCPGeoTiffKeys const*                    pi_rpGeoTiffKeys,
                                         const HFCPtr<HGF2DTransfoModel>&        pi_rpTransfoModel,
                                         uint32_t                               pi_Page)
     {
@@ -1219,36 +1009,23 @@ bool HRFGeoTiffFile::WriteTransfoModel(const HFCPtr<HCPGeoTiffKeys>&            
 // Private WriteTransfoModelFromGeoTiff - Write the GeoTiff Tag part of the model.
 //-----------------------------------------------------------------------------
 
-void HRFGeoTiffFile::WriteTransfoModelFromGeoTiff(const HFCPtr<HCPGeoTiffKeys>&         pi_rpGeoTiffKeys,
+void HRFGeoTiffFile::WriteTransfoModelFromGeoTiff(HCPGeoTiffKeys const*                 pi_rpGeoTiffKeys,
                                                   const HFCPtr<HGF2DTransfoModel>&      pi_pModel,
                                                   uint32_t                             pi_Page)
     {
     // Translate the model units in geotiff units.
-    bool                     DefaultUnitWasFound = false;
-    HFCPtr<HGF2DTransfoModel> pTransfoModel(pi_pModel);
+    bool    DefaultUnitWasFound = false;
 
-    if (pi_rpGeoTiffKeys != 0)
-        {
-        pTransfoModel = pi_rpGeoTiffKeys->TranslateFromMeter(pi_pModel,
-                                                             m_ModelTypeGeographicConsiderDefaultUnit,
-                                                             m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
-                                                             &DefaultUnitWasFound);
-        }
-
-    SetUnitFoundInFile(DefaultUnitWasFound, pi_Page);
-
-    double*  pTiePoints;
-    double*  pPixelScale;
-    double*  pMatrix;    // 4 x 4
-
-    uint32_t  NbTiePoints  = 0;
-    uint32_t  NbPixelScale = 0;
-    uint32_t  MatSize      = 0;
-    uint32_t  ImageWidth   = 0;
-    uint32_t  ImageHeight  = 0;
+    uint32_t NbTiePoints = 0;
+    uint32_t NbPixelScale = 0;
+    uint32_t MatSize = 0;
+    uint32_t ImageWidth = 0;
+    uint32_t ImageHeight = 0;
 
     // Get all the geo reference tag if all ready defined.
-
+    double* pTiePoints;
+    double* pPixelScale;
+    double* pMatrix;  
     // Matrix
     GetFilePtr()->GetField(GEOTRANSMATRIX, &MatSize, &pMatrix);
     // TiePoint Pixel(x,y,z) System(x,y,z) ...
@@ -1259,353 +1036,33 @@ void HRFGeoTiffFile::WriteTransfoModelFromGeoTiff(const HFCPtr<HCPGeoTiffKeys>& 
     GetFilePtr()->GetField(IMAGEWIDTH, &ImageWidth);
     GetFilePtr()->GetField(IMAGELENGTH, &ImageHeight);
 
-    // Get the simplest model possible.
-    HFCPtr<HGF2DTransfoModel> pTempTransfoModel = pTransfoModel->CreateSimplifiedModel();
-    if (pTempTransfoModel != 0)
-        pTransfoModel = pTempTransfoModel;
+    double aMatrix[16];
+    double aPixelScale[3];
+    double aTiePoints[24];
 
-    // Write a matrix, if ask for(m_StoreUsingMatrix),
-    //                 if the file already have a matrix((NbTiePoints == 0 && MatSize == 16))
-    //                 if ask for limited Tiepoints model(m_sStoreLimitedTiePoints) and
-    //                      model is not (Translation or stretch)
-    //
-    bool UseMatrix = m_StoreUsingMatrix || (NbTiePoints == 0 && MatSize == 16) ||
-                      (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsGeoTiffFileStoreLimitedTiePointsModel() &&
-                       !pTransfoModel->IsCompatibleWith(HGF2DTranslation::CLASS_ID) &&
-                       !pTransfoModel->IsCompatibleWith(HGF2DStretch::CLASS_ID)        );
+    HCPGeoTiffKeys::WriteTransfoModelFromGeoTiff(pi_rpGeoTiffKeys, pi_pModel, ImageWidth, ImageHeight, m_StoreUsingMatrix,
+                                                 aMatrix, MatSize,
+                                                 aPixelScale, NbPixelScale,
+                                                 aTiePoints, NbTiePoints,
+                                                 m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
+                                                 &DefaultUnitWasFound);
 
-    // Set the model using matix if the user had ask so or
-    // if the file already have a matrix.
-    if (UseMatrix && pTransfoModel->CanBeRepresentedByAMatrix())
-        {
-        HFCMatrix<3, 3> TheMatrix;
-        double         aFileMatrix[16];
-
-
-        // Atention: Same code in the else below
-        //
-        // If pixelIsPoint(origin center of the pixel), we need to translate the origin from
-        // the upper-left corner to center.
-        unsigned short GeoShortValue(TIFFGeo_RasterPixelIsArea);
-        GetFilePtr()->GetGeoKeyInterpretation().GetValue(GTRasterType, &GeoShortValue);
-        if(GeoShortValue == TIFFGeo_RasterPixelIsPoint)
-            {
-            HGF2DDisplacement Depl(0.5, 0.5);
-            HGF2DTranslation TranslateModel(Depl);
-            pTransfoModel = TranslateModel.ComposeInverseWithDirectOf(*pTransfoModel);
-            }
-
-        TheMatrix = pTransfoModel->GetMatrix();
-
-        // a-b-c-d
-        aFileMatrix[0]  = TheMatrix[0][0];
-        aFileMatrix[1]  = TheMatrix[0][1];
-        aFileMatrix[2]  = 0.0;
-        aFileMatrix[3]  = TheMatrix[0][2];
-
-        // e-f-g-h
-        aFileMatrix[4]  = TheMatrix[1][0];
-        aFileMatrix[5]  = TheMatrix[1][1];
-        aFileMatrix[6]  = 0.0;
-        aFileMatrix[7]  = TheMatrix[1][2];
-
-        // i-j-k-l
-        aFileMatrix[8]  = 0.0;
-        aFileMatrix[9]  = 0.0;
-        aFileMatrix[10] = 1.0;
-        aFileMatrix[11] = 0.0;
-
-        // m-n-o-p
-        aFileMatrix[12] = TheMatrix[2][0];
-        aFileMatrix[13] = TheMatrix[2][1];
-        aFileMatrix[14] = 0.0;
-        aFileMatrix[15] = TheMatrix[2][2];
-
-        GetFilePtr()->SetField(GEOTRANSMATRIX, 16, aFileMatrix);
-
-        // Remove Info from directory, to reduce redondance...
-        //
-        GetFilePtr()->RemoveTag(GEOTIEPOINTS);
-        GetFilePtr()->RemoveTag(GEOPIXELSCALE);
-        }
+    if (MatSize == 16)
+        GetFilePtr()->SetField(GEOTRANSMATRIX, 16, aMatrix);
     else
-        {
-        // TiePoints cases
+        GetFilePtr()->RemoveTag(GEOTRANSMATRIX);
 
-        bool NeedToFlip = false;
-        // Case 1: One pair of tie point present. (And Case 6)
-        if (NbTiePoints == 6 && NbPixelScale == 0)
-            NeedToFlip = true;
-        // Case 3: One pair of tie point present and pixelscale. (And Case 6)
-        else if (NbTiePoints == 6 && NbPixelScale == 3)
-            NeedToFlip = true;
-        // Case 5: Many pairs of tie points defined. (And Case 9, Case 6)
-        else if (NbTiePoints > 6 && NbTiePoints <= 24)
-            {
-            if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsSetFlipInY_IfModelDefinedBy7to24TiePoints())
-                NeedToFlip = true;
-            }
+    if (NbPixelScale == 3)
+        GetFilePtr()->SetField(GEOPIXELSCALE, 3, aPixelScale);
+    else
+        GetFilePtr()->RemoveTag(GEOPIXELSCALE);
 
-        // Flip the model if needed
-        if (NeedToFlip)
-            {
-            // Flip the Y Axe because the origin of ModelSpace is lower-left
-            HFCPtr<HGF2DStretch> pFlipModel = new HGF2DStretch();
+    if (NbTiePoints != 0)
+        GetFilePtr()->SetField(GEOTIEPOINTS, NbTiePoints, aTiePoints);
+    else
+        GetFilePtr()->RemoveTag(GEOTIEPOINTS);
 
-            pFlipModel->SetYScaling(-1.0);
-            pTransfoModel = pFlipModel->ComposeInverseWithDirectOf(*pTransfoModel);
-            }
-
-        // Atention: Same code in the if above
-        //
-        // If pixelIsPoint(origin center of the pixel), we need to translate the origin from
-        // the upper-left corner to center.
-        unsigned short GeoShortValue(TIFFGeo_RasterPixelIsArea);
-        GetFilePtr()->GetGeoKeyInterpretation().GetValue(GTRasterType, &GeoShortValue);
-        if(GeoShortValue == TIFFGeo_RasterPixelIsPoint)
-            {
-            HGF2DDisplacement Depl(0.5, 0.5);
-            HGF2DTranslation TranslateModel(Depl);
-            pTransfoModel = TranslateModel.ComposeInverseWithDirectOf(*pTransfoModel);
-            }
-
-        // Try to set the georef tag as it was originaly in the file
-
-        // Case 1: One pair of tie point present. (And Case 6)
-        if ((NbTiePoints == 6 && NbPixelScale == 0) && pTransfoModel->IsCompatibleWith(HGF2DTranslation::CLASS_ID))
-            {
-            double pPoints[6];
-
-            pPoints[0] = 0.0;
-            pPoints[1] = 0.0;
-            pPoints[2] = 0.0;
-
-            // Transfome the pixel (0,0)
-            pTransfoModel->ConvertDirect(pPoints[0], pPoints[1], &pPoints[3], &pPoints[4]);
-            pPoints[5] = 0.0;
-
-            // TiePoint Pixel(0,0,0) System(T(0),T(0),T(0)) ...
-            GetFilePtr()->SetField(GEOTIEPOINTS, 6, pPoints);
-
-            // Remove Info from directory, to reduce redondance...
-            //
-            GetFilePtr()->RemoveTag(GEOPIXELSCALE);
-            GetFilePtr()->RemoveTag(GEOTRANSMATRIX);
-            }
-
-        // Case 3: One pair of tie point present and pixelscale. (And Case 6)
-        else if ((NbTiePoints == 6 && NbPixelScale == 3) && pTransfoModel->IsCompatibleWith(HGF2DStretch::CLASS_ID))
-            {
-            double pPoints[6];
-            double pScale[3];
-            HGF2DDisplacement Displacement;
-
-            pTransfoModel->GetStretchParams(&pScale[0], &pScale[1], &Displacement);
-
-            // Scale x,y,z
-            pScale[2] = 0.0;
-            GetFilePtr()->SetField(GEOPIXELSCALE, 3, pScale);
-
-            pPoints[0] = 0.0;
-            pPoints[1] = 0.0;
-            pPoints[2] = 0.0;
-
-            // Transfome the point (0,0)
-            pTransfoModel->ConvertDirect(pPoints[0], pPoints[1], &pPoints[3], &pPoints[4]);
-            pPoints[5] = 0.0;
-
-            // TiePoint Pixel(0,0,0) System(T(0),T(0),T(0)) ...
-            GetFilePtr()->SetField(GEOTIEPOINTS, 6, pPoints);
-
-            // Remove Info from directory, to reduce redondance...
-            //
-            GetFilePtr()->RemoveTag(GEOTRANSMATRIX);
-            }
-
-        // In all other case set set the georef using the rule discribe in HRFGeoTiffFile.doc
-        else
-            {
-            if(pTransfoModel->IsCompatibleWith(HGF2DTranslation::CLASS_ID))
-                {
-                // 1 pair of tie points is needed.
-                double pPoints[6];
-
-                pPoints[0] = 0.0;
-                pPoints[1] = 0.0;
-                pPoints[2] = 0.0;
-
-                // Transfome the pixel (0,0)
-                pTransfoModel->ConvertDirect(pPoints[0], pPoints[1], &pPoints[3], &pPoints[4]);
-                pPoints[5] = 0.0;
-
-                // TiePoint Pixel(0,0,0) System(T(0),T(0),T(0)) ...
-                GetFilePtr()->SetField(GEOTIEPOINTS, 6, pPoints);
-
-                // Remove Info from directory, to reduce redondance...
-                //
-                GetFilePtr()->RemoveTag(GEOPIXELSCALE);
-                GetFilePtr()->RemoveTag(GEOTRANSMATRIX);
-                }
-            else if(pTransfoModel->IsCompatibleWith(HGF2DStretch::CLASS_ID))
-                {
-                // 1 pair of tie points + a scaling is needed.
-                double pPoints[6];
-                double pScale[3];
-                HGF2DDisplacement Displacement;
-
-                pTransfoModel->GetStretchParams(&pScale[0], &pScale[1], &Displacement);
-
-                // Scale x,y,z
-                pScale[2] = 0.0;
-                GetFilePtr()->SetField(GEOPIXELSCALE, 3, pScale);
-
-                pPoints[0] = 0.0;
-                pPoints[1] = 0.0;
-                pPoints[2] = 0.0;
-
-                // Transfome the point (0,0)
-                pTransfoModel->ConvertDirect(pPoints[0], pPoints[1], &pPoints[3], &pPoints[4]);
-                pPoints[5] = 0.0;
-
-                // TiePoint Pixel(0,0,0) System(T(0),T(0),T(0)) ...
-                GetFilePtr()->SetField(GEOTIEPOINTS, 6, pPoints);
-
-                // Remove Info from directory, to reduce redondance...
-                //
-                GetFilePtr()->RemoveTag(GEOTRANSMATRIX);
-                }
-            else if(pTransfoModel->IsCompatibleWith(HGF2DSimilitude::CLASS_ID))
-                {
-                // 2 pairs of tie points is needed.
-                double pPoints[12];
-
-                // Frist pair.
-                pPoints[0] = 0.0;
-                pPoints[1] = 0.0;
-                pPoints[2] = 0.0;
-
-                // Transfome the pixel (0,0)
-                pTransfoModel->ConvertDirect(pPoints[0], pPoints[1], &pPoints[3], &pPoints[4]);
-                pPoints[5] = 0.0;
-
-                // Second pair.
-                pPoints[6] = ImageWidth;
-                pPoints[7] = ImageHeight;
-                pPoints[8] = 0.0;
-
-                // Transfome the pixel (ImageWidth,ImageHeight)
-                pTransfoModel->ConvertDirect(pPoints[6], pPoints[7], &pPoints[9], &pPoints[10]);
-                pPoints[11] = 0.0;
-
-                // TiePoint Pixel(0,0,0)                     System(T(0),T(0),T(0)) ...
-                // TiePoint Pixel(ImageWidth,ImageHeight,0)  System(T(ImageWidth),T(ImageHeight),T(0)) ...
-                GetFilePtr()->SetField(GEOTIEPOINTS, 12, pPoints);
-
-                // Remove Info from directory, to reduce redondance...
-                //
-                GetFilePtr()->RemoveTag(GEOPIXELSCALE);
-                GetFilePtr()->RemoveTag(GEOTRANSMATRIX);
-                }
-            else if(pTransfoModel->IsCompatibleWith(HGF2DAffine::CLASS_ID))
-                {
-                // 3 pairs of tie points is needed.
-                double pPoints[18];
-
-                // Frist pair.
-                pPoints[0] = 0.0;
-                pPoints[1] = 0.0;
-                pPoints[2] = 0.0;
-
-                // Transfome the pixel (0,0)
-                pTransfoModel->ConvertDirect(pPoints[0], pPoints[1], &pPoints[3], &pPoints[4]);
-                pPoints[5] = 0.0;
-
-                // Second pair.
-                pPoints[6] = ImageWidth;
-                pPoints[7] = ImageHeight;
-                pPoints[8] = 0.0;
-
-                // Transfome the pixel (ImageWidth,ImageHeight)
-                pTransfoModel->ConvertDirect(pPoints[6], pPoints[7], &pPoints[9], &pPoints[10]);
-                pPoints[11] = 0.0;
-
-                // Third pair.
-                pPoints[12] = ImageWidth;
-                pPoints[13] = 0.0;
-                pPoints[14] = 0.0;
-
-                // Transfome the pixel (ImageWidth,ImageHeight)
-                pTransfoModel->ConvertDirect(pPoints[12], pPoints[13], &pPoints[15], &pPoints[16]);
-                pPoints[17] = 0.0;
-
-                // TiePoint Pixel(0,0,0)                     System(T(0),T(0),T(0)) ...
-                // TiePoint Pixel(ImageWidth,ImageHeight,0)  System(T(ImageWidth),T(ImageHeight),T(0)) ...
-                // TiePoint Pixel(ImageWidth,0,0)            System(T(ImageWidth),T(0),T(0)) ...
-                GetFilePtr()->SetField(GEOTIEPOINTS, 18, pPoints);
-
-                // Remove Info from directory, to reduce redondance...
-                //
-                GetFilePtr()->RemoveTag(GEOPIXELSCALE);
-                GetFilePtr()->RemoveTag(GEOTRANSMATRIX);
-                }
-            else if(pTransfoModel->IsCompatibleWith(HGF2DProjective::CLASS_ID))
-                {
-                // 3 pairs of tie points is needed.
-                double pPoints[24];
-
-                // Frist pair.
-                pPoints[0] = 0.0;
-                pPoints[1] = 0.0;
-                pPoints[2] = 0.0;
-
-                // Transfome the pixel (0,0)
-                pTransfoModel->ConvertDirect(pPoints[0], pPoints[1], &pPoints[3], &pPoints[4]);
-                pPoints[5] = 0.0;
-
-                // Second pair.
-                pPoints[6] = ImageWidth;
-                pPoints[7] = ImageHeight;
-                pPoints[8] = 0.0;
-
-                // Transfome the pixel (ImageWidth,ImageHeight)
-                pTransfoModel->ConvertDirect(pPoints[6], pPoints[7], &pPoints[9], &pPoints[10]);
-                pPoints[11] = 0.0;
-
-                // Third pair.
-                pPoints[12] = ImageWidth;
-                pPoints[13] = 0.0;
-                pPoints[14] = 0.0;
-
-                // Transfome the pixel (ImageWidth,ImageHeight)
-                pTransfoModel->ConvertDirect(pPoints[12], pPoints[13], &pPoints[15], &pPoints[16]);
-                pPoints[17] = 0.0;
-
-                // Forth pair.
-                pPoints[18] = 0.0;
-                pPoints[19] = ImageHeight;
-                pPoints[20] = 0.0;
-
-                // Transfome the pixel (ImageWidth,ImageHeight)
-                pTransfoModel->ConvertDirect(pPoints[18], pPoints[19], &pPoints[21], &pPoints[22]);
-                pPoints[23] = 0.0;
-
-                // TiePoint Pixel(0,0,0)                     System(T(0),T(0),T(0)) ...
-                // TiePoint Pixel(ImageWidth,ImageHeight,0)  System(T(ImageWidth),T(ImageHeight),T(0)) ...
-                // TiePoint Pixel(ImageWidth,0,0)            System(T(ImageWidth),T(0),T(0)) ...
-                // TiePoint Pixel(0,ImageHeight,0)           System(T(0),T(ImageHeight),T(0)) ...
-                GetFilePtr()->SetField(GEOTIEPOINTS, 24, pPoints);
-
-                // Remove Info from directory, to reduce redondance...
-                //
-                GetFilePtr()->RemoveTag(GEOPIXELSCALE);
-                GetFilePtr()->RemoveTag(GEOTRANSMATRIX);
-                }
-            else
-                {
-                HASSERT(0);
-                }
-            }
-        }
+    SetUnitFoundInFile(DefaultUnitWasFound, pi_Page);
     }
 
 
@@ -1990,12 +1447,10 @@ const HGF2DWorldIdentificator HRFGeoTiffFile::GetWorldIdentificator () const
 void HRFGeoTiffFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                             uint32_t pi_Page,
                                             bool   pi_CheckSpecificUnitSpec,
-                                            bool   pi_GeoModelDefaultUnit,
                                             bool   pi_InterpretUnitINTGR)
     {
     m_RatioToMeter = pi_RatioToMeter;
     m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation = pi_CheckSpecificUnitSpec ;
-    m_ModelTypeGeographicConsiderDefaultUnit                  = pi_GeoModelDefaultUnit;
     m_DefaultCoordSysIsIntergraphIfUnitNotResolved            = pi_InterpretUnitINTGR;
 
     // Update the model in each page
@@ -2008,14 +1463,10 @@ void HRFGeoTiffFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
         SetImageInSubImage (GetIndexOfPage(Page));
 
         // TranfoModel
-        HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys;
+        HCPGeoTiffKeys const& geoTiffKeys = pPageDescriptor->GetRasterFileGeocoding().GetGeoTiffKeys();
 
-        pGeoTiffKeys = static_cast<HCPGeoTiffKeys*>(pPageDescriptor->
-                       GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO).GetPtr());
-
-        HFCPtr<HGF2DTransfoModel> pTransfoModel = CreateTransfoModelFromGeoTiff(pGeoTiffKeys,
+        HFCPtr<HGF2DTransfoModel> pTransfoModel = CreateTransfoModelFromGeoTiff(&geoTiffKeys,
                                                                                 Page);
-
         pPageDescriptor->SetTransfoModel(*pTransfoModel);
         pPageDescriptor->SetTransfoModelUnchanged();
         }

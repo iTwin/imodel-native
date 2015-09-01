@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIntergraphColorFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -14,13 +14,14 @@
 
 #include "HRFRasterFileCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFIntergraphColorFile : public HRFIntergraphFile
     {
 public:
     friend class HRFIntergraphResolutionEditor;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1487, HRFIntergraphFile)
+    HDECLARE_CLASS_ID(HRFFileId_IntergraphColor, HRFIntergraphFile)
 
     // allow to Open an image file
     HRFIntergraphColorFile (const HFCPtr<HFCURL>&  pi_rpURL,
@@ -49,3 +50,4 @@ private:
     HRFIntergraphColorFile(const HRFIntergraphColorFile& pi_rObj);
     HRFIntergraphColorFile& operator=(const HRFIntergraphColorFile& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

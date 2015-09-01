@@ -2,177 +2,38 @@
 |
 |     $Source: all/utl/hfc/src/HFCRasterGeoCoordinateServices.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------+
 |   Header File Dependencies
 +----------------------------------------------------------------------------*/
-#include <ImagePP/h/hstdcpp.h>
+#include <ImagePPInternal/hstdcpp.h>
 
-#if defined (ANDROID) || defined (__APPLE__)
-//DM-Android
-    #include <ImagePP/all/h/HFCRasterGeoCoordinateServices.h>
+#include <GeoCoord\BaseGeoCoord.h>
+#include <ImagePP/all/h/HFCRasterGeoCoordinateServices.h>
 
-#elif defined (_WIN32)
-    #include <GeoCoord\BaseGeoCoord.h>
+HFC_IMPLEMENT_SINGLETON(HFCRasterGeoCoordinateServices)
 
-    #include <ImagePP/all/h/HFCRasterGeoCoordinateServices.h>
-
-    BEGIN_IMAGEPP_NAMESPACE
-    HFC_IMPLEMENT_SINGLETON(HFCRasterGeoCoordinateServices)
-    END_IMAGEPP_NAMESPACE
-#endif
-
-
-
-USING_NAMESPACE_IMAGEPP
-
-// BEIJING_WIP_RASTER ; EpsgTable probably need be remove
-#if 0
-const WString ProjectionData_tableName(L"projectiondata.txt");
-const WString CoordSysData_tableName(L"coordsysdata.txt");
-const WString UnitsData_tableName(L"unitsdata.txt");
-
-
-
-/*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     06/2011
-+===============+===============+===============+===============+===============+======*/
-class       EpsgTableManager
-{
-HFC_DECLARE_SINGLETON(EpsgTableManager)
-private:
-    bool m_isCoordSysTableAllocated;
-    bool m_isUnitsTableAllocated;
-    bool m_isProjectionTableAllocated;
-
-public:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Marc.Bedard                     06/2011
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    EpsgTableManager():m_isCoordSysTableAllocated(false),m_isUnitsTableAllocated(false),m_isProjectionTableAllocated(false) {}
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Marc.Bedard                     06/2011
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    ~EpsgTableManager() 
-        {
-        Terminate();
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Marc.Bedard                     06/2011
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void Init()
-        {
-        WString geotiffcs;
-        WString units_l;
-        WString projection;
-
-        try
-            {
-            //Check if an environment variable is defined
-            WString     cfgVarExpansion;
-            if (BSISUCCESS != ConfigurationManager::GetVariable (cfgVarExpansion, MS_RASTER_EPSGTABLE_PATH))
-                return;
-
-            // Found this environment variable
-            //Remove trailing backslash if found
-            size_t  strlen = cfgVarExpansion.length();
-            if (cfgVarExpansion[strlen-1] == DIR_SEPARATOR_CHAR)
-                cfgVarExpansion.erase (strlen-1);
-
-            //Append filename to path
-            geotiffcs = WString(cfgVarExpansion.c_str()) + WString(L"\\") + CoordSysData_tableName;
-            units_l = WString(cfgVarExpansion.c_str()) + WString(L"\\") + UnitsData_tableName;
-            projection = WString(cfgVarExpansion.c_str()) + WString(L"\\") + ProjectionData_tableName;
-
-            if (SUCCESS == util_findFile  (NULL,NULL,geotiffcs.c_str(),NULL,NULL,0))
-                {
-                //Create URL and set table in HRFGeotiff
-                HRFGeoTiffCoordSysTable::GetInstance()->SetTableFile(HFCURL::Instanciate(WString(L"file://") + geotiffcs));
-                m_isCoordSysTableAllocated=true;
-                }
-
-            if (SUCCESS == util_findFile  (NULL,NULL,units_l.c_str(),NULL,NULL,0))
-                {
-                //Create URL and set table in HRFGeotiff
-                HRFGeoTiffUnitsTable::GetInstance()->SetTableFile(HFCURL::Instanciate(WString(L"file://") + units_l));
-                m_isUnitsTableAllocated=true;
-                }
-
-            if (SUCCESS == util_findFile  (NULL,NULL,projection.c_str(),NULL,NULL,0))
-                {
-                //Create URL and set table in HRFGeotiff
-                HRFGeoTiffProjectionTable::GetInstance()->SetTableFile(HFCURL::Instanciate(WString(L"file://") + projection));
-                m_isProjectionTableAllocated=true;
-                }
-
-            HRFGeoTiffCoordSysTable::GetInstance()->LockTable();
-            HRFGeoTiffUnitsTable::GetInstance()->LockTable();
-            HRFGeoTiffProjectionTable::GetInstance()->LockTable();
-            }
-        catch (...)
-            {
-            BeAssert(false);
-            return;
-            }
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Marc.Bedard                     06/2011
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void Terminate()
-        {
-        try
-            {
-            if (m_isCoordSysTableAllocated)
-                {
-                HRFGeoTiffCoordSysTable::GetInstance()->ReleaseTable();
-                m_isCoordSysTableAllocated=false;
-                }
-            if (m_isUnitsTableAllocated)
-                {
-                HRFGeoTiffUnitsTable::GetInstance()->ReleaseTable();
-                m_isUnitsTableAllocated=false;
-                }
-            if (m_isProjectionTableAllocated)
-                {
-                HRFGeoTiffProjectionTable::GetInstance()->ReleaseTable();
-                m_isProjectionTableAllocated=false;
-                }
-            }
-        catch (...)
-            {
-            return;
-            }
-        }
-}; // EpsgTableManager
-
-HFC_IMPLEMENT_SINGLETON(EpsgTableManager);
-#endif
-#if defined (ANDROID) || defined (__APPLE__)
-//DM-Android
-#elif defined (_WIN32)
 /*---------------------------------------------------------------------------------**//**
 * Local wrapper over BaseGCS                           Marc.Bedard  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct  HFCRasterBaseGcs : public RefCounted <IRasterBaseGcs>
+struct  HFCRasterBaseGcs : public RefCounted <ImagePP::IRasterBaseGcs>
     {
     private:
-        GeoCoordinates::BaseGCSPtr m_pBaseGcs;
-        double                              m_VerticalUnitsRatioToMeter;
+        GeoCoordinates::BaseGCSPtr  m_pBaseGcs;
+        double                      m_VerticalUnitsRatioToMeter;
     protected:
         HFCRasterBaseGcs()
             {
             m_pBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
             m_VerticalUnitsRatioToMeter = 1.0;
             }
-        HFCRasterBaseGcs(GeoCoordinates::BaseGCSPtr& pBaseGcs):m_pBaseGcs(pBaseGcs)
+        HFCRasterBaseGcs(GeoCoordinates::BaseGCSP pBaseGcs):m_pBaseGcs(pBaseGcs)
             {
             m_VerticalUnitsRatioToMeter = 1.0;
             }
-        HFCRasterBaseGcs(GeoCoordinates::BaseGCSPtr& pBaseGcs,
+        HFCRasterBaseGcs(GeoCoordinates::BaseGCSP pBaseGcs,
                          double pi_VerticalUnitsRatioToMeter) : m_pBaseGcs(pBaseGcs)
             {
             m_VerticalUnitsRatioToMeter = pi_VerticalUnitsRatioToMeter;
@@ -194,9 +55,13 @@ struct  HFCRasterBaseGcs : public RefCounted <IRasterBaseGcs>
 
         virtual IRasterBaseGcsPtr _Clone() const override
             {
-            GeoCoordinates::BaseGCSPtr baseGCSPtr(GeoCoordinates::BaseGCS::CreateGCS(*m_pBaseGcs));
+            IRasterBaseGcsPtr pRasterBaseGcsCloned = new HFCRasterBaseGcs();
+            if (m_pBaseGcs.IsValid())
+                {
+                GeoCoordinates::BaseGCSPtr baseGCSPtr(GeoCoordinates::BaseGCS::CreateGCS(*m_pBaseGcs));
 
-            IRasterBaseGcsPtr pRasterBaseGcsCloned = new HFCRasterBaseGcs(baseGCSPtr, m_VerticalUnitsRatioToMeter);
+                pRasterBaseGcsCloned = new HFCRasterBaseGcs(baseGCSPtr.get(), m_VerticalUnitsRatioToMeter);
+                }
 
             return pRasterBaseGcsCloned;
             }
@@ -208,209 +73,6 @@ struct  HFCRasterBaseGcs : public RefCounted <IRasterBaseGcs>
             return m_pBaseGcs->InitFromGeoTiffKeys(warning, warningOrErrorMsg, geoTiffKeys);
             }
 
-        virtual StatusInt        _InitFromERSIDS(WStringCR pi_rErmProjection,
-                                                 WStringCR pi_rErmDatum,
-                                                 WStringCR pi_rErmUnits)
-            {
-                StatusInt            Status = SUCCESS;
-
-#if (0)
-                uint32_t ModelType;
-
-                // First part ... we try to set the geokeys by ourselves ...
-                if (pi_rErmProjection == L"RAW")
-                    ModelType = 0;// no geotiff info
-                else if ((pi_rErmProjection == L"GEODETIC") || (pi_rErmProjection == L"LOCAL"))
-                    ModelType = TIFFGeo_ModelTypeGeographic;
-                else if (pi_rErmProjection == L"GEOCENTRIC")
-                    {
-                    ModelType = TIFFGeo_ModelTypeGeocentric;
-                    HASSERT(ModelType != 3); // not supported for now, see next statement!
-
-                    // Should be TIFFGeo_ModelTypeGeocentric but it is not supported by HRF, so treat file as projected
-                    ModelType = TIFFGeo_ModelTypeProjected; // assure it will be accepted by HRF!
-                    }
-                else
-                    ModelType = TIFFGeo_ModelTypeProjected; // projected
-
-
-                // We try to obtain the EPSG code
-
-                size_t  destinationBuffSize = pi_rErmProjection.GetMaxLocaleCharBytes();
-                char*  szProjectionMBS= (char*)_alloca (destinationBuffSize);
-                BeStringUtilities::WCharToCurrentLocaleChar(szProjectionMBS,pi_rErmProjection.c_str(),destinationBuffSize);
-                destinationBuffSize = pi_rErmDatum.GetMaxLocaleCharBytes();
-                char*  szDatumMBS= (char*)_alloca (destinationBuffSize);
-                BeStringUtilities::WCharToCurrentLocaleChar(szDatumMBS,pi_rErmDatum.c_str(),destinationBuffSize);
-                destinationBuffSize = pi_rErmUnits.GetMaxLocaleCharBytes();
-                char*  szUnitsMBS= (char*)_alloca (destinationBuffSize);
-                BeStringUtilities::WCharToCurrentLocaleChar(szUnitsMBS,pi_rErmUnits.c_str(),destinationBuffSize);
-
-                INT32 nEPSGCode = TIFFGeo_UserDefined;
-
-            #if defined(IPP_HAVE_ERMAPPER_SUPPORT) 
-
-                if (NCS_SUCCESS != NCSGetEPSGCode(szProjectionMBS, szDatumMBS, &nEPSGCode))
-                    {
-                    if (NCS_SUCCESS != NCSGetEPSGCode(szDatumMBS, szProjectionMBS, &nEPSGCode))
-                        {
-                        nEPSGCode = TIFFGeo_UserDefined;
-                        }
-                    }
-            #endif
-
-                // We compute the unit key
-                uint32_t ProjLinearUnit = 0;
-                uint32_t GeogAngularUnit = 0;
-
-                // Set Unit field
-                if ((pi_rErmUnits == L"FEET") || (pi_rErmUnits == L"U.S. SURVEY FOOT"))
-                    ProjLinearUnit = (uint32_t)TIFFGeo_Linear_Foot_US_Survey; // US Foot
-                else if (pi_rErmUnits ==  L"IFEET")
-                    ProjLinearUnit = (uint32_t)TIFFGeo_Linear_Foot; // Foot
-                else if (pi_rErmUnits ==  L"DEGREES")
-                    GeogAngularUnit = 9102; // Degree
-                else if (pi_rErmUnits == L"METERS")
-                    ProjLinearUnit = (uint32_t)TIFFGeo_Linear_Meter; // Meter
-                else if (pi_rErmUnits == L"IMPERIAL YARD")
-                    ProjLinearUnit = (uint32_t)TIFFGeo_British_Yard_1895;
-                else
-                    {
-                    HASSERT(0); //Check if it isn't a new unit that should be handled by a special case
-                    }
-
-                if (nEPSGCode != TIFFGeo_UserDefined)
-                    {
-
-                    this->AddKey(GTModelType, ModelType);
-
-                    if (ModelType == TIFFGeo_ModelTypeGeographic)
-                        {
-                        this->AddKey(GeographicType, (uint32_t)nEPSGCode);
-                        }
-                    else
-                        {
-                        if ((uint32_t)nEPSGCode > USHRT_MAX)
-                            {
-                            this->AddKey(ProjectedCSTypeLong, (uint32_t)nEPSGCode);
-                            }
-                        else
-                            {
-                            this->AddKey(ProjectedCSType, (uint32_t)nEPSGCode);
-                            }
-                        }
-
-                    if (ProjLinearUnit != 0)
-                        {
-                        this->AddKey(ProjLinearUnits, ProjLinearUnit);
-                        }
-
-                    if (GeogAngularUnit != 0)
-                        {
-                        this->AddKey(GeogAngularUnits, GeogAngularUnit);
-                        }
-                    }
-                if (!m_pBaseGCS->IsValid())
-                    {
-                    char* wkt = 0;
-                    
-                    OGRSpatialReference oSRS;
-
-                    if (GCSServices->_IsAvailable())
-                    {
-                        // If the projection is user-defined or unknown ... we will try to use GDAL to obtain the information required to use this "user-defined"
-                        if( oSRS.importFromERM( szProjectionMBS,
-                                                szDatumMBS,
-                                                szUnitsMBS ) == OGRERR_NONE )
-                            {
-                            if (OGRERR_NONE == oSRS.exportToWkt(&wkt))
-                                {
-                                HASSERT(wkt != 0);
-
-                                char localCsPrefix[] = "LOCAL_CS";
-                    
-                                if (strncmp(localCsPrefix, wkt, strlen(localCsPrefix)) == 0)
-                                    {
-                                    delete wkt;
-
-                                    wkt = 0;
-                                    }
-                                }
-                            }
-                        }
-        
-                    if (wkt == 0)
-                        {
-                        this->AddKey(GTModelType, ModelType);
-
-                        if (ModelType == TIFFGeo_ModelTypeGeographic)
-                            {
-                            this->AddKey(GeographicType, (uint32_t)nEPSGCode);
-                            }
-                        else
-                            {
-                            HASSERT(nEPSGCode == TIFFGeo_UserDefined);
-                            this->AddKey(ProjectedCSType, (uint32_t)nEPSGCode);
-                            }
-
-                        if (ProjLinearUnit != 0)
-                            {
-                            this->AddKey(ProjLinearUnits, ProjLinearUnit);
-                            }
-
-                        if (GeogAngularUnit != 0)
-                            {
-                            this->AddKey(GeogAngularUnits, GeogAngularUnit);
-                            }
-                        }
-                    else // Fallback solution only available if baseGeoCoord is loaded
-                        {
-                        int Warning;
-                        IRasterBaseGcsPtr pBaseGeoCoord(GCSServices->_CreateRasterBaseGcs());
-
-                        Status = pBaseGeoCoord->InitFromWellKnownText(&Warning, NULL,0, WString(wkt).c_str());
-
-                        delete wkt;
-                    
-                        if (SUCCESS != Status)
-                            {
-                            this->AddKey(GTModelType, ModelType);
-
-                            if (ModelType == TIFFGeo_ModelTypeGeographic)
-                                {
-                                    this->AddKey(GeographicType, (uint32_t)nEPSGCode);
-                                }
-                            else
-                                {
-                                    if ((uint32_t)nEPSGCode > USHRT_MAX)
-                                    {   
-                                        this->AddKey(ProjectedCSTypeLong, (uint32_t)nEPSGCode);
-                                    }
-                                else
-                                    {
-                                        this->AddKey(ProjectedCSType, (uint32_t)nEPSGCode);
-                                    }                        
-                                }
-
-                            if (ProjLinearUnit != 0)
-                                {
-                                this->AddKey(ProjLinearUnits, ProjLinearUnit);
-                                }        
-
-                            if (GeogAngularUnit != 0)
-                                {
-                                this->AddKey(GeogAngularUnits, GeogAngularUnit);
-                                }  
-                            }
-                        else
-                            FinalizeInit(Status, pBaseGeoCoord, true);
-                        }
-                    }
-#endif
-            return Status;
-
-            }
-
         virtual StatusInt        _InitFromWellKnownText(StatusInt*        warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
                                                         WString* warningOrErrorMsg,  // Error message.
                                                         int32_t           wktFlavor,          // The WKT Flavor.
@@ -419,36 +81,59 @@ struct  HFCRasterBaseGcs : public RefCounted <IRasterBaseGcs>
             return m_pBaseGcs->InitFromWellKnownText(warning, warningOrErrorMsg, (GeoCoordinates::BaseGCS::WktFlavor)wktFlavor, wellKnownText);
             }
 
+        virtual StatusInt        _InitFromEPSGCode(StatusInt*        warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
+                                                   WString* warningOrErrorMsg,  // Error message.
+                                                   uint32_t          epsgCode) override
+            {
+            return m_pBaseGcs->InitFromEPSGCode(warning, warningOrErrorMsg, epsgCode);
+            }
+
         virtual StatusInt        _Reproject (double*            outCartesianX,
                                              double*            outCartesianY,
                                              double             inCartesianX,
                                              double             inCartesianY,
-                                             IRasterBaseGcs&    dstGcs) const override
+                                             IRasterBaseGcsCR    dstGcs) const override
             {
-            GeoCoordinates::BaseGCS* pBaseGcsDst = dynamic_cast<HFCRasterBaseGcs&>(dstGcs).m_pBaseGcs.get();
+            GeoCoordinates::BaseGCS* pBaseGcsDst = dynamic_cast<const HFCRasterBaseGcs&>(dstGcs).m_pBaseGcs.get();
 
             DPoint3d inCartesian;
             inCartesian.x = inCartesianX;
             inCartesian.y = inCartesianY;
             inCartesian.z = 0.0;
 
-            GeoPoint inLatLong;
-            StatusInt status = m_pBaseGcs->LatLongFromCartesian (inLatLong, inCartesian);
+            StatusInt   stat1;
+            StatusInt   stat2;
+            StatusInt   stat3;
 
-            if (status != SUCCESS)
-                return status;
+            GeoPoint inLatLong;
+            stat1 = m_pBaseGcs->LatLongFromCartesian (inLatLong, inCartesian);
 
             GeoPoint outLatLong;
-            status = m_pBaseGcs->LatLongFromLatLong(outLatLong, inLatLong, *pBaseGcsDst);
-
-            if (status != SUCCESS)
-                return status;
+            stat2 = m_pBaseGcs->LatLongFromLatLong(outLatLong, inLatLong, *pBaseGcsDst);
 
             DPoint3d outCartesian;
-            status = m_pBaseGcs->CartesianFromLatLong(outCartesian, outLatLong);
+            stat3 = pBaseGcsDst->CartesianFromLatLong(outCartesian, outLatLong);
 
-            if (status != SUCCESS)
-                return status;
+            StatusInt status = SUCCESS;
+
+            // Status returns hardest error found in the three error statuses
+            // The hardest error is the first one encountered that is not a warning (value 1 [cs_CNVRT_USFL])
+            if (SUCCESS != stat1)
+                status = stat1;
+            if ((SUCCESS != stat2) && ((SUCCESS == status) || (1 == status))) // If stat2 has error and status not already hard error
+                {
+                if (0 > stat2) // If stat2 is negative ... this is the one ...
+                    status = stat2;
+                else  // Both are positive (status may be SUCCESS) we use the highest value which is either warning or error
+                    status = (stat2 > status ? stat2 : status);
+                }
+            if ((SUCCESS != stat3) && ((SUCCESS == status) || (1 == status))) // If stat3 has error and status not already hard error
+                {
+                if (0 > stat3) // If stat3 is negative ... this is the one ...
+                    status = stat3;
+                else  // Both are positive (status may be SUCCESS) we use the highest value
+                    status = (stat3 > status ? stat3 : status);
+                }
 
             *outCartesianX = outCartesian.x;
             *outCartesianY = outCartesian.y;
@@ -465,6 +150,12 @@ struct  HFCRasterBaseGcs : public RefCounted <IRasterBaseGcs>
             {
             return m_pBaseGcs->GetEPSGUnitCode();
             }
+
+        virtual int              _GetEPSGCode() const override
+            {
+            return m_pBaseGcs->GetEPSGCode();
+            }
+
 
         virtual StatusInt        _GetGeoTiffKeys(IGeoTiffKeysList* pList) const override
             {
@@ -488,9 +179,9 @@ struct  HFCRasterBaseGcs : public RefCounted <IRasterBaseGcs>
             }
 
 
-        virtual bool             _IsEquivalent(IRasterBaseGcs& dstGcs) const override
+        virtual bool             _IsEquivalent(IRasterBaseGcsCR dstGcs) const override
             {
-            GeoCoordinates::BaseGCS* pBaseGcsDst = dynamic_cast<HFCRasterBaseGcs&>(dstGcs).m_pBaseGcs.get();
+            GeoCoordinates::BaseGCS* pBaseGcsDst = dynamic_cast<const HFCRasterBaseGcs&>(dstGcs).m_pBaseGcs.get();
             return m_pBaseGcs->IsEquivalent(*pBaseGcsDst);
             }
 
@@ -507,6 +198,20 @@ struct  HFCRasterBaseGcs : public RefCounted <IRasterBaseGcs>
 
             return status;
             }
+
+        virtual StatusInt        _GetLatLongFromCartesian(double*  pGeoPt, double*  pCartesianPt) const override
+            {
+            DPoint3d  cartesianPt = {pCartesianPt[0], pCartesianPt[1], pCartesianPt[2]};
+
+            GeoPoint  geoPt;
+            StatusInt status = m_pBaseGcs->LatLongFromCartesian (geoPt, cartesianPt);
+
+            pGeoPt[0] = geoPt.longitude;
+            pGeoPt[1] = geoPt.latitude;
+            pGeoPt[1] = geoPt.elevation;
+            return status;
+            }
+
 
         virtual StatusInt        _SetQuadrant(short quadrant) override
             {
@@ -533,6 +238,79 @@ struct  HFCRasterBaseGcs : public RefCounted <IRasterBaseGcs>
             }
 
 
+        virtual ImagePP::ProjectionCodeValue        
+                                 _GetProjectionCode() const override
+            {
+                return (ImagePP::ProjectionCodeValue)m_pBaseGcs->GetProjectionCode();
+            }
+
+        virtual ImagePP::WGS84ConvertCode        
+                                 _GetDatumConvertMethod() const override
+            {
+                return (ImagePP::WGS84ConvertCode)m_pBaseGcs->GetDatumConvertMethod();
+            }
+
+
+        virtual double           _GetCentralMeridian() const override
+            {
+                return m_pBaseGcs->GetCentralMeridian();
+            }
+
+        virtual double           _GetOriginLongitude() const override
+            {
+                return m_pBaseGcs->GetOriginLongitude();
+            }
+
+        virtual double           _GetOriginLatitude() const override
+            {
+                return m_pBaseGcs->GetOriginLatitude();
+            }
+
+        virtual int              _GetDanishSys34Region() const override
+            {
+                return m_pBaseGcs->GetDanishSys34Region();
+            }
+
+        virtual double           _GetStandardParallel1() const override
+            {
+                return m_pBaseGcs->GetStandardParallel1();
+            }
+
+        virtual double           _GetStandardParallel2() const override
+            {
+                return m_pBaseGcs->GetStandardParallel2();
+            }
+
+        virtual double           _GetMinimumUsefulLongitude() const override
+            {
+                return m_pBaseGcs->GetMinimumUsefulLongitude();
+            }
+
+        virtual double           _GetMaximumUsefulLongitude() const override
+            {
+                return m_pBaseGcs->GetMaximumUsefulLongitude();
+            }
+
+        virtual double           _GetMinimumUsefulLatitude() const override
+            {
+                return m_pBaseGcs->GetMinimumUsefulLatitude();
+            }
+
+        virtual double           _GetMaximumUsefulLatitude() const override
+            {
+                return m_pBaseGcs->GetMaximumUsefulLatitude();
+            }
+
+        virtual int              _GetUTMZone() const override
+            {
+                return m_pBaseGcs->GetUTMZone();
+            }
+
+
+
+
+
+
     public:
         static IRasterBaseGcsPtr      Create()
             {
@@ -543,12 +321,11 @@ struct  HFCRasterBaseGcs : public RefCounted <IRasterBaseGcs>
             return new HFCRasterBaseGcs(keyName);
             }
 
-        static IRasterBaseGcsPtr      CreateFromBaseGcs(GeoCoordinates::BaseGCSPtr& pBaseGcs)
+        static IRasterBaseGcsPtr      CreateFromBaseGcs(GeoCoordinates::BaseGCSP pBaseGcs)
             {
             return new HFCRasterBaseGcs(pBaseGcs);
             }
    };
-#endif // _WIN32
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2011
@@ -594,12 +371,7 @@ WCharCP  HFCRasterGeoCoordinateServices::_GetServiceName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IRasterBaseGcsPtr HFCRasterGeoCoordinateServices::_CreateRasterBaseGcs() const
     {
-#if defined (ANDROID) || defined (__APPLE__)
-    //DM-Android
-    return NULL;
-#elif defined (_WIN32)
     return HFCRasterBaseGcs::Create();
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -607,34 +379,45 @@ IRasterBaseGcsPtr HFCRasterGeoCoordinateServices::_CreateRasterBaseGcs() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IRasterBaseGcsPtr HFCRasterGeoCoordinateServices::_CreateRasterBaseGcsFromKeyName(WCharCP keyName) const
     {
-#if defined (ANDROID) || defined (__APPLE__)
-    //DM-Android
-    return NULL;
-#elif defined (_WIN32)
     return HFCRasterBaseGcs::CreateFromKeyName(keyName);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (ANDROID) || defined (__APPLE__)
-    //DM-Android
-#elif defined (_WIN32)
-IRasterBaseGcsPtr HFCRasterGeoCoordinateServices::_CreateRasterBaseGcsFromBaseGcs(GeoCoordinates::BaseGCSPtr& pBaseGcs) const
+IRasterBaseGcsPtr HFCRasterGeoCoordinateServices::_CreateRasterBaseGcsFromBaseGcs(GeoCoordinates::BaseGCS* pBaseGcs) const
     {
     return HFCRasterBaseGcs::CreateFromBaseGcs(pBaseGcs);
     }
-#endif
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HFCRasterGeoCoordinateServices::_GetErrorMessage (WStringR errorStr, int errorCode) const
 {
-#if defined (ANDROID) || defined (__APPLE__)
-    //DM-Android
-#elif defined (_WIN32)
     GeoCoordinates::BaseGCS::GetErrorMessage (errorStr, errorCode);
-#endif
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HFCRasterGeoCoordinateServices::_GetUnitsFromMeters(double& unitFromMeter, uint32_t EPSGUnitCode) const 
+    {
+    bool  isUnitWasFound(false);
+
+    unitFromMeter=1.0;
+    T_WStringVector* pAllUnitName = GeoCoordinates::BaseGCS::GetUnitNames();
+    for (T_WStringVector::const_iterator itr = pAllUnitName->begin(); itr != pAllUnitName->end(); ++itr)
+        {
+        GeoCoordinates::UnitCP pUnit(GeoCoordinates::Unit::FindUnit(itr->c_str()));
+        if (pUnit->GetEPSGCode() == EPSGUnitCode)
+            {
+            unitFromMeter = 1.0/pUnit->GetConversionFactor();
+            isUnitWasFound = true;
+            break;
+            }
+        }
+
+    return isUnitWasFound;
+    }

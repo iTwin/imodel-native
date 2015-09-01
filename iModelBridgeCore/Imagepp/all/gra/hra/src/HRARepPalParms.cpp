@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRARepPalParms.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRARepPalParms
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRARepPalParms.h>
 #include <Imagepp/all/h/HRPQuantizedPalette.h>
@@ -71,7 +71,7 @@ HRPQuantizedPalette* HRARepPalParms::CreateQuantizedPalette() const
     uint32_t MaxEntries;
 
     if (m_MaxEntries > 0)
-        MaxEntries = min(m_pPixelType->GetPalette().GetMaxEntries(), m_MaxEntries);
+        MaxEntries = MIN(m_pPixelType->GetPalette().GetMaxEntries(), m_MaxEntries);
     else
         MaxEntries = m_pPixelType->GetPalette().GetMaxEntries();
 
@@ -135,7 +135,7 @@ void HRARepPalParms::InitObject(const HFCPtr<HRPPixelType>& pi_pPixelType,
     // if the palette has not enough entries, we create them here
     uint32_t MaxEntries;
     if (pi_MaxEntries > 0)
-        MaxEntries = min((pi_pPixelType->GetPalette()).GetMaxEntries(), pi_MaxEntries);
+        MaxEntries = MIN((pi_pPixelType->GetPalette()).GetMaxEntries(), pi_MaxEntries);
     else
         MaxEntries = pi_pPixelType->GetPalette().GetMaxEntries();
 

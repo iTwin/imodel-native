@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecJBIG.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecIJG
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCBinStream.h>
 
 #include <Imagepp/all/h/HCDCodecJBIG.h>
@@ -117,7 +117,7 @@ size_t HCDCodecJBIG::CompressSubset(const void* pi_pInData,
                  1,
                  (Byte**)(&pi_pInData),
                  output_bie,
-                 (void*)this);              /* initialize encoder */
+                 this);              /* initialize encoder */
 
     jbg_enc_out(&se);                                    /* encode image */
 

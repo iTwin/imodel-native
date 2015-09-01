@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCMemcpy.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCMemcpy
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCMemcpy.h>
 
@@ -17,9 +17,7 @@
 
 #if defined(_WIN32) && !defined(_M_X64)
 
-void* HFCMemcpy (void*         po_pDst,
-                 const void*   pi_pSrc,
-                 size_t        pi_Count)
+void* ImagePP::HFCMemcpy (void* po_pDst, const void* pi_pSrc, size_t pi_Count)
     {
     __asm {
         mov     edi,[po_pDst]

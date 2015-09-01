@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLHTTPBase.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLHTTPBase
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCURLHTTPBase.h>
 #include <Imagepp/all/h/HFCURLHTTP.h>
 #include <Imagepp/all/h/HFCURLHTTPS.h>

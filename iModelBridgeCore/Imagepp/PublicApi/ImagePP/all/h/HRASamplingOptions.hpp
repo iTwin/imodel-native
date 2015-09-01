@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRASamplingOptions.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HRASamplingOptions
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Get the percentage of pixels to scan
     -----------------------------------------------------------------------------
@@ -101,3 +102,4 @@ inline void HRASamplingOptions::SetRegionToScan(const HFCPtr<HVEShape>& pi_rpReg
     m_pRegionToScan = pi_rpRegion;
     }
 
+END_IMAGEPP_NAMESPACE

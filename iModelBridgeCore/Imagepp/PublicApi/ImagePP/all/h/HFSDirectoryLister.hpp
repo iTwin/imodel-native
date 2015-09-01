@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFSDirectoryLister.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFSDirectoryLister
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------
 // HFSDirectoryLister
 //
@@ -358,3 +358,5 @@ inline WString HFSDirectoryLister::GetPatternList()
 
     return Pattern;
     }
+
+END_IMAGEPP_NAMESPACE

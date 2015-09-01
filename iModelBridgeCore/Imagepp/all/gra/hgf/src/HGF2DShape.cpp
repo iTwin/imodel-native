@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DShape.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DShape
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DShape.h>
 #include <Imagepp/all/h/HGF2DDisplacement.h>
@@ -122,7 +122,7 @@ HGF2DShape::SpatialPosition HGF2DShape::CalculateSpatialPositionOf(
 
     // Check if their extents overlap
     if (GetExtent().OutterOverlaps(pi_rVector.GetExtent(),
-                                   min(GetTolerance(), pi_rVector.GetTolerance())))
+                                   MIN(GetTolerance(), pi_rVector.GetTolerance())))
         {
 
         // Check if vector is made of multiple entities
@@ -161,7 +161,7 @@ HGF2DShape::SpatialPosition HGF2DShape::CalculateSpatialPositionOfSingleComponen
 
     // Check if their extents overlap
     if (GetExtent().OutterOverlaps(pi_rVector.GetExtent(),
-                                   min(GetTolerance(), pi_rVector.GetTolerance())))
+                                   MIN(GetTolerance(), pi_rVector.GetTolerance())))
         {
         // The extents overlap ... check if they cross ?
         if (Crosses(pi_rVector))
@@ -235,7 +235,7 @@ HGF2DShape::SpatialPosition HGF2DShape::CalculateSpatialPositionOfComplexShape(
     {
     // Their extent must overlap
     HPRECONDITION(GetExtent().OutterOverlaps(pi_rShape.GetExtent(),
-                                             min(GetTolerance(), pi_rShape.GetTolerance())));
+                                             MIN(GetTolerance(), pi_rShape.GetTolerance())));
 
     // The shape must be complex
     HPRECONDITION(pi_rShape.IsComplex());
@@ -288,7 +288,7 @@ HGF2DShape::SpatialPosition HGF2DShape::CalculateSpatialPositionOfHoledShape(
     {
     // Their extent must overlap
     HPRECONDITION(GetExtent().OutterOverlaps(pi_rHoledShape.GetExtent(),
-                                             min(GetTolerance(), pi_rHoledShape.GetTolerance())));
+                                             MIN(GetTolerance(), pi_rHoledShape.GetTolerance())));
 
     HGF2DShape::SpatialPosition     ThePosition = HGF2DShape::S_ON;
 
@@ -355,11 +355,11 @@ HGF2DShape::SpatialPosition HGF2DShape::CalculateSpatialPositionOfNonCrossingSim
 
     // Their extent must overlap
     HPRECONDITION(GetExtent().OutterOverlaps(pi_rSimpleShape.GetExtent(),
-                                             min(GetTolerance(), pi_rSimpleShape.GetTolerance())));
+                                             MIN(GetTolerance(), pi_rSimpleShape.GetTolerance())));
 
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rSimpleShape.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rSimpleShape.GetTolerance());
 
     HGF2DShape::SpatialPosition     ThePosition = HGF2DShape::S_OUT;
 
@@ -397,7 +397,7 @@ HGF2DShape::SpatialPosition HGF2DShape::CalculateSpatialPositionOfNonCrossingLin
     HGF2DShape::SpatialPosition     ThePosition = HGF2DShape::S_OUT;
 
     // Calculate Tolerance
-    double Tolerance = min(pi_rLinear.GetTolerance(), GetTolerance());
+    double Tolerance = MIN(pi_rLinear.GetTolerance(), GetTolerance());
 
     // Check if their extents overlap
     if (GetExtent().OutterOverlaps(pi_rLinear.GetExtent(), Tolerance))
@@ -554,4 +554,15 @@ void HGF2DShape::PrintState(ostream& po_rOutput) const
     HGF2DVector::PrintState(po_rOutput);
 
 #endif
+    }
+
+
+//-----------------------------------------------------------------------------
+// @bsimethod                                                   2014/06
+//-----------------------------------------------------------------------------
+HFCPtr<HGF2DShape> HGF2DShape::AllocTransformInverse(const HGF2DTransfoModel& pi_rModel) const
+    {
+    HFCPtr<HGF2DTransfoModel> pReversedModel = pi_rModel.Clone();
+    pReversedModel->Reverse();
+    return AllocTransformDirect(*pReversedModel);
     }

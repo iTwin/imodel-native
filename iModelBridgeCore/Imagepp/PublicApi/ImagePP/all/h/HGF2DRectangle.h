@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DRectangle.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DRectangle
@@ -11,7 +11,7 @@
 
 #include "HGF2DSimpleShape.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert 
@@ -35,7 +35,7 @@
 class HGF2DRectangle : public HGF2DSimpleShape
     {
 
-    HDECLARE_CLASS_ID(8305, HGF2DSimpleShape)
+    HDECLARE_CLASS_ID(HGF2DRectangleId, HGF2DSimpleShape)
 
 public:
 
@@ -79,118 +79,122 @@ public:
         @see HGF2DLiteExtent
         -----------------------------------------------------------------------------
     */
-    _HDLLg                    HGF2DRectangle();
-    _HDLLg                    HGF2DRectangle(double     pi_XMin,
-                                             double     pi_YMin,
-                                             double     pi_XMax,
-                                             double     pi_YMax);
-    _HDLLg                    HGF2DRectangle(const HGF2DPosition& pi_rFirstPoint,
-                                           const HGF2DPosition& pi_rSecondPoint);
-    _HDLLg                    HGF2DRectangle(const HGF2DLiteExtent& pi_rExtent);
-    _HDLLg                    HGF2DRectangle(const HGF2DRectangle&    pi_rObject);
-    _HDLLg virtual            ~HGF2DRectangle();
+    IMAGEPP_EXPORT                       HGF2DRectangle();
+    IMAGEPP_EXPORT                       HGF2DRectangle(double     pi_XMin,
+                                                       double     pi_YMin,
+                                                       double     pi_XMax,
+                                                       double     pi_YMax);
+    IMAGEPP_EXPORT                       HGF2DRectangle(const HGF2DPosition& pi_rFirstPoint,
+                                                       const HGF2DPosition& pi_rSecondPoint);
+    IMAGEPP_EXPORT                       HGF2DRectangle(const HGF2DLiteExtent& pi_rExtent);
+    IMAGEPP_EXPORT                       HGF2DRectangle(const HGF2DRectangle&    pi_rObject);
+    IMAGEPP_EXPORT virtual               ~HGF2DRectangle();
 
-    HGF2DRectangle&    operator=(const HGF2DRectangle& pi_rObj);
+    HGF2DRectangle&                     operator=(const HGF2DRectangle& pi_rObj);
 
     // Getting and setting
-    double             GetXMin() const;
-    double             GetYMin() const;
-    double             GetXMax() const;
-    double             GetYMax() const;
+    double                              GetXMin() const;
+    double                              GetYMin() const;
+    double                              GetXMax() const;
+    double                              GetYMax() const;
 
-    void               SetRectangle(const HGF2DPosition& pi_rFirstPoint,
-                                    const HGF2DPosition& pi_rSecondPoint);
-    void               SetRectangle(double pi_XMin,
-                                    double pi_YMin,
-                                    double pi_XMax,
-                                    double pi_YMax);
-    void               GetRectangle(HGF2DPosition* pi_pMinPoint,
-                                    HGF2DPosition* pi_pMaxPoint) const;
-    void               GetRectangle(double* po_pXMin,
-                                    double* po_pYMin,
-                                    double* po_pXMax,
-                                    double* po_pYMax) const;
-    bool               Overlaps(const HGF2DShape& pi_rShape) const;
+    void                                SetRectangle(const HGF2DPosition& pi_rFirstPoint,
+                                                     const HGF2DPosition& pi_rSecondPoint);
+    void                                SetRectangle(double pi_XMin,
+                                                     double pi_YMin,
+                                                     double pi_XMax,
+                                                     double pi_YMax);
+    void                                GetRectangle(HGF2DPosition* pi_pMinPoint,
+                                                     HGF2DPosition* pi_pMaxPoint) const;
+    void                                GetRectangle(double* po_pXMin,
+                                                     double* po_pYMin,
+                                                     double* po_pXMax,
+                                                     double* po_pYMax) const;
+    bool                                Overlaps(const HGF2DShape& pi_rShape) const;
 
     // Misc
-    _HDLLg virtual void       Scale(double              pi_ScaleFactorX,
-                                    double              pi_ScaleFactorY,
-                                    const HGF2DPosition& pi_rScaleOrigin);
+    IMAGEPP_EXPORT virtual void          Scale(double              pi_ScaleFactorX,
+                                              double              pi_ScaleFactorY,
+                                              const HGF2DPosition& pi_rScaleOrigin);
 
 
     // From HGF2DSimpleShape
-    _HDLLg virtual HFCPtr<HGF2DLinear>    GetLinear() const;
-    _HDLLg virtual HFCPtr<HGF2DLinear>    GetLinear(HGF2DSimpleShape::RotationDirection pi_DirectionDesired) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DLinear>    GetLinear() const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DLinear>    GetLinear(HGF2DSimpleShape::RotationDirection pi_DirectionDesired) const;
 
     // From HGF2DShape
 
     // Scanlines generation
-    _HDLLg virtual void       Rasterize(HGFScanLines& pio_rScanlines) const;
+    IMAGEPP_EXPORT virtual void          Rasterize(HGFScanLines& pio_rScanlines) const;
 
-    _HDLLg virtual bool             IsEmpty() const;
-    _HDLLg virtual HGF2DShapeTypeId GetShapeType() const;
-    _HDLLg virtual HGF2DShape*      DifferentiateShape(const HGF2DShape& pi_rShape) const;
-    _HDLLg virtual HGF2DShape*      DifferentiateFromShape(const HGF2DShape& pi_rShape) const;
-    _HDLLg virtual HGF2DShape*      IntersectShape(const HGF2DShape& pi_rShape) const;
-    _HDLLg virtual HGF2DShape*      UnifyShape(const HGF2DShape& pi_rShape) const;
-    _HDLLg virtual double           CalculateArea() const;
-    _HDLLg virtual double           CalculatePerimeter() const;
-    _HDLLg virtual bool             IsPointIn(const HGF2DPosition& pi_rPoint, double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
-    _HDLLg virtual void             MakeEmpty();
-    _HDLLg virtual HGF2DShape::SpatialPosition    
-                                    CalculateSpatialPositionOfSingleComponentVector(const HGF2DVector& pi_rVector) const;
-    _HDLLg virtual HGF2DShape::SpatialPosition    
-                                    CalculateSpatialPositionOfNonCrossingLinear(const HGF2DLinear& pi_rLinear) const;
+    IMAGEPP_EXPORT virtual bool          IsEmpty() const;
+    IMAGEPP_EXPORT virtual HGF2DShapeTypeId 
+                                        GetShapeType() const;
+    IMAGEPP_EXPORT virtual HGF2DShape*   DifferentiateShape(const HGF2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HGF2DShape*   DifferentiateFromShape(const HGF2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HGF2DShape*   IntersectShape(const HGF2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HGF2DShape*   UnifyShape(const HGF2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual double        CalculateArea() const;
+    IMAGEPP_EXPORT virtual double        CalculatePerimeter() const;
+    IMAGEPP_EXPORT virtual bool          IsPointIn(const HGF2DPosition& pi_rPoint, double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
+    IMAGEPP_EXPORT virtual void          MakeEmpty();
+    IMAGEPP_EXPORT virtual HGF2DShape::SpatialPosition    
+                                        CalculateSpatialPositionOfSingleComponentVector(const HGF2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual HGF2DShape::SpatialPosition    
+                                        CalculateSpatialPositionOfNonCrossingLinear(const HGF2DLinear& pi_rLinear) const;
 
-    _HDLLg virtual void             Drop(HGF2DPositionCollection* po_pPoint,
-                                         double      pi_rTolerance) const;
+    IMAGEPP_EXPORT virtual void          Drop(HGF2DPositionCollection* po_pPoint,
+                                             double      pi_rTolerance) const;
 
     // From HGF2DVector
-    _HDLLg virtual HGF2DPosition    CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
-    _HDLLg virtual size_t           Intersect(const HGF2DVector& pi_rVector,
-                                                HGF2DPositionCollection* po_pCrossPoints) const;
-    _HDLLg virtual size_t           ObtainContiguousnessPoints(const HGF2DVector& pi_rVector,
-                                                                 HGF2DPositionCollection* po_pContiguousnessPoints) const;
-    _HDLLg virtual void             ObtainContiguousnessPointsAt(const HGF2DVector& pi_rVector,
-                                                                   const HGF2DPosition& pi_rPoint,
-                                                                   HGF2DPosition* pi_pFirstContiguousnessPoint,
-                                                                   HGF2DPosition* pi_pSecondContiguousnessPoint) const;
-    _HDLLg virtual bool             Crosses(const HGF2DVector& pi_rVector) const;
-    _HDLLg virtual bool             AreContiguous(const HGF2DVector& pi_rVector) const;
-    _HDLLg virtual bool             AreAdjacent(const HGF2DVector& pi_rVector) const;
-    _HDLLg virtual bool             IsPointOn(const HGF2DPosition& pi_rTestPoint,
-                                              HGF2DVector::ExtremityProcessing
-                                              pi_ExtremityProcessing = HGF2DVector::INCLUDE_EXTREMITIES,
-                                              double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
-    _HDLLg virtual bool             AreContiguousAt(const HGF2DVector& pi_rVector,
-                                                    const HGF2DPosition& pi_rPoint) const;
-    _HDLLg virtual HGFBearing       CalculateBearing(const HGF2DPosition& pi_rPositionPoint,
-                                                     HGF2DVector::ArbitraryDirection pi_Direction = HGF2DVector::BETA) const;
-    _HDLLg virtual double           CalculateAngularAcceleration(const HGF2DPosition& pi_rPositionPoint,
-                                                                 HGF2DVector::ArbitraryDirection pi_Direction = HGF2DVector::BETA) const;
+    IMAGEPP_EXPORT virtual HGF2DPosition CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
+    IMAGEPP_EXPORT virtual size_t        Intersect(const HGF2DVector& pi_rVector,
+                                                   HGF2DPositionCollection* po_pCrossPoints) const;
+    IMAGEPP_EXPORT virtual size_t        ObtainContiguousnessPoints(const HGF2DVector& pi_rVector,
+                                                                   HGF2DPositionCollection* po_pContiguousnessPoints) const;
+    IMAGEPP_EXPORT virtual void          ObtainContiguousnessPointsAt(const HGF2DVector& pi_rVector,
+                                                                     const HGF2DPosition& pi_rPoint,
+                                                                     HGF2DPosition* pi_pFirstContiguousnessPoint,
+                                                                     HGF2DPosition* pi_pSecondContiguousnessPoint) const;
+    IMAGEPP_EXPORT virtual bool          Crosses(const HGF2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual bool          AreContiguous(const HGF2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual bool          AreAdjacent(const HGF2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual bool          IsPointOn(const HGF2DPosition& pi_rTestPoint,
+                                                  HGF2DVector::ExtremityProcessing
+                                                  pi_ExtremityProcessing = HGF2DVector::INCLUDE_EXTREMITIES,
+                                                  double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
+    IMAGEPP_EXPORT virtual bool          AreContiguousAt(const HGF2DVector& pi_rVector,
+                                                        const HGF2DPosition& pi_rPoint) const;
+    IMAGEPP_EXPORT virtual HGFBearing    CalculateBearing(const HGF2DPosition& pi_rPositionPoint,
+                                                         HGF2DVector::ArbitraryDirection pi_Direction = HGF2DVector::BETA) const;
+    IMAGEPP_EXPORT virtual double        CalculateAngularAcceleration(const HGF2DPosition& pi_rPositionPoint,
+                                                                     HGF2DVector::ArbitraryDirection pi_Direction = HGF2DVector::BETA) const;
 
     // From HGFGraphicObject
-    _HDLLg virtual HGF2DLiteExtent
-    GetExtent() const;
-    _HDLLg virtual void             Move(const HGF2DDisplacement& pi_rDisplacement);
-    _HDLLg virtual void             Scale(double              pi_ScaleFactor,
-                                            const HGF2DPosition& pi_rScaleOrigin);
+    IMAGEPP_EXPORT virtual HGF2DLiteExtent
+                                        GetExtent() const;
+    IMAGEPP_EXPORT virtual void          Move(const HGF2DDisplacement& pi_rDisplacement);
+    IMAGEPP_EXPORT virtual void          Scale(double              pi_ScaleFactor,
+                                              const HGF2DPosition& pi_rScaleOrigin);
 
     // From HPMPersistentObject
-    _HDLLg virtual HGF2DVector*     Clone() const;
+    IMAGEPP_EXPORT virtual HGF2DVector*  Clone() const;
 
 
     // Debugging
-    _HDLLg virtual void             PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT virtual void          PrintState(ostream& po_rOutput) const;
+
+
+    virtual HFCPtr<HGF2DShape>          AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
 
 protected:
 
 private:
 
     // Area oriented operations on rectangle
-    virtual HGF2DShape*    DifferentiateRectangle(const HGF2DRectangle& pi_rRectangle) const;
-    virtual HGF2DShape*    IntersectRectangle(const HGF2DRectangle& pi_rRectangle) const;
-    virtual HGF2DShape*    UnifyRectangle(const HGF2DRectangle& pi_rRectangle) const;
+    virtual HGF2DShape*                 DifferentiateRectangle(const HGF2DRectangle& pi_rRectangle) const;
+    virtual HGF2DShape*                 IntersectRectangle(const HGF2DRectangle& pi_rRectangle) const;
+    virtual HGF2DShape*                 UnifyRectangle(const HGF2DRectangle& pi_rRectangle) const;
 
     void ResetTolerance();
 
@@ -201,5 +205,5 @@ private:
     double     m_YMax;
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HGF2DRectangle.hpp"

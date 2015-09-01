@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFUSgsSDTSDEMFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFUSgsSDTSDEMFile
@@ -23,6 +23,7 @@
 //--------------------------------------------------
 // class HRFUSgsSDTSDEMCapabilities
 //--------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
 class HRFUSgsSDTSDEMCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -51,7 +52,7 @@ struct HRFUSgsSDTSDEMCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFUSgsSDTSDEMCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFUSgsSDTSDEMCreator)
 
 private:
 
@@ -67,7 +68,7 @@ public:
 
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1966, HRFGdalSupportedFile)
+    HDECLARE_CLASS_ID(HRFFileId_USgsSDTSDEM, HRFGdalSupportedFile)
 
     // allow to Open an image file
     HRFUSgsSDTSDEMFile          (const HFCPtr<HFCURL>&          pi_rpURL,
@@ -87,7 +88,7 @@ public:
                                                                unsigned short           pi_Resolution,
                                                                HFCAccessMode             pi_AccessMode);
 
-    virtual IRasterBaseGcsPtr           GetGeocodingInformation();
+    virtual RasterFileGeocodingPtr      ExtractGeocodingInformation();
 
     virtual void                        Save();
 
@@ -111,3 +112,4 @@ private:
     HRFUSgsSDTSDEMFile(const HRFUSgsSDTSDEMFile& pi_rObj);
     HRFUSgsSDTSDEMFile& operator=(const HRFUSgsSDTSDEMFile& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoTiffUnitsTable.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -31,11 +31,12 @@
     -----------------------------------------------------------------------------
 */
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFGeoTiffUnitsTable : public HRFGeoTiffCompressedTable
     {
 public:
 
-    HDECLARE_CLASS_ID(1492, HRFGeoTiffCompressedTable);
+    HDECLARE_CLASS_ID(HRFGeoTiffId_UnitsTable, HRFGeoTiffCompressedTable);
 
     /** -----------------------------------------------------------------------------
         HRFGeoTiffUnitsRecord
@@ -56,11 +57,11 @@ public:
     // this class is a singleton, use Instanciate to create the class
     virtual                 ~HRFGeoTiffUnitsTable();
 
-    _HDLLg bool                   GetRecord(short pi_Code,
+    IMAGEPP_EXPORT bool                   GetRecord(short pi_Code,
                                              HRFGeoTiffUnitsRecord*    po_pRecord) const;
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg , HRFGeoTiffUnitsTable)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT , HRFGeoTiffUnitsTable)
 
     static HRFGeoTiffCompressedTable::ColumnInfo    s_TableDef[];
     static Byte                                    s_NbColumns;
@@ -76,4 +77,5 @@ private:
     HRFGeoTiffUnitsTable(const HRFGeoTiffUnitsTable&);
     HRFGeoTiffUnitsTable& operator=(const HRFGeoTiffUnitsTable&);
     };
+END_IMAGEPP_NAMESPACE
 

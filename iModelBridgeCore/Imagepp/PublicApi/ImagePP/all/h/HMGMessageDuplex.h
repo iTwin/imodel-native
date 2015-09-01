@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMGMessageDuplex.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HMGMessageDuplex
@@ -14,7 +14,7 @@
 #include "HMGMessageSender.h"
 #include "HMGMessageReceiver.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 ///////////////////////////////////////////////
 // Declaration of class HMGMessageDuplex
@@ -28,7 +28,7 @@ public:
     // Primary methods
     ///////////////////
 
-    _HDLLu HMGMessageDuplex();
+    IMAGEPP_EXPORT HMGMessageDuplex();
     HMGMessageDuplex(const HMGMessageDuplex& pi_rObj);
 
 
@@ -41,7 +41,8 @@ protected:
     ////////////////
 
     // Make the object process a received message
-    _HDLLu virtual bool   ProcessMessage(const HMGMessage& pi_rMessage);
+    IMAGEPP_EXPORT virtual bool   ProcessMessage(const HMGMessage& pi_rMessage);
     };
 
 
+END_IMAGEPP_NAMESPACE

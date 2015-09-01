@@ -2,15 +2,19 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCExceptionHandler.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HFCExceptionHandler
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h> // Must be the first include.
+#include <ImagePPInternal/hstdcpp.h>
+ // Must be the first include.
+#include <ImagePP/all/h/HFCException.h>
 #include <Imagepp/all/h/HFCExceptionHandler.h>
+#include <Logging/bentleylogging.h>
+
+USING_NAMESPACE_BENTLEY_LOGGING
 
 // Initialisation of the static member.
 
@@ -68,7 +72,9 @@ HSTATUS HFCExceptionHandler::HandleException(const HFCException* pi_pException)
     HSTATUS Result = H_ERROR;
     if (m_pHandler != 0)
         Result = m_pHandler->LocalHandler(pi_pException);
-
+    
+    LoggingManager::GetLogger (L"ImagePP")->message (LOG_ERROR, pi_pException->GetExceptionMessage().c_str());
+    
     return Result;
     }
 

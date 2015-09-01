@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVEVSRelativeIndex.hpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVEVSRelativeIndex
@@ -11,14 +11,14 @@
 //-----------------------------------------------------------------------------
 
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
 template<class O, class SI> inline HVEVSRelativeIndex<O, SI>::HVEVSRelativeIndex(
     const Parameters& pi_rParameters,
     const SI*         pi_pSubIndex)
-    : m_Index(HIDXAListRelativeIndex<O,SI>::Parameters(), pi_pSubIndex)
+    : m_Index(typename HIDXAListRelativeIndex<O,SI>::Parameters(), pi_pSubIndex)
     {
     m_pSubIndex = pi_pSubIndex;
     }
@@ -473,3 +473,4 @@ template<class O, class SI> void HVEVSRelativeIndex<O, SI>::Invalidate(
         ++Itr;
         }
     }
+END_IMAGEPP_NAMESPACE

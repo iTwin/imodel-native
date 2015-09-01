@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPADynamicParser.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPADynamicParser
@@ -13,6 +13,8 @@
 #pragma once
 
 #include <Imagepp/all/h/HPAParser.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HPADynamicParser : public HPAParser
     {
@@ -73,3 +75,4 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE

@@ -2,18 +2,19 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRANearestSamplerN1.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRANearestSamplerN1.h>
 
 #include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
 #include <Imagepp/all/h/HRASurface.h>
 #include <Imagepp/all/h/HFCException.h>
+#include <Imagepp/all/h/HFCMath.h>
 
 
 /**----------------------------------------------------------------------------
@@ -43,7 +44,7 @@ HRANearestSamplerN1::HRANearestSamplerN1(HGSMemorySurfaceDescriptor const&     p
     m_SLO4          = pi_rMemorySurface.GetSLO() == HGF_UPPER_LEFT_HORIZONTAL;
 
     // compute a mask to extract pixels
-    m_Mask = 0xff << (8 - m_BitsPerPixel);
+    m_Mask = CONVERT_TO_BYTE(0xff << (8 - m_BitsPerPixel));
 
     HPRECONDITION(pi_rMemorySurface.GetPacket() != 0);
     m_pPacket = pi_rMemorySurface.GetPacket();
@@ -71,8 +72,7 @@ HRANearestSamplerN1::~HRANearestSamplerN1()
 
  @return const void* The current pixel.
 -----------------------------------------------------------------------------*/
-void* HRANearestSamplerN1::GetPixel(double     pi_PosX,
-                                    double     pi_PosY) const
+void const* HRANearestSamplerN1::GetPixel(double pi_PosX, double pi_PosY) const
     {
     HPRECONDITION(pi_PosX >= 0.0);
     HPRECONDITION(pi_PosY >= 0.0);
@@ -171,7 +171,7 @@ void HRANearestSamplerN1::GetPixels(double         pi_PositionX,
     HPRECONDITION(pi_PositionX >= 0.0);
     HPRECONDITION(pi_PositionY >= 0.0);
 
-    pi_PositionY = min(pi_PositionY, (double)(m_DataHeight - 1));
+    pi_PositionY = MIN(pi_PositionY, (double)(m_DataHeight - 1));
 
     // intialize the destination buffer
     size_t DstSizeInBytes = (pi_PixelCount * m_BitsPerPixel) / 8;
@@ -314,13 +314,13 @@ void HRANearestSamplerN1::ComputeAddress(HUINTX     pi_PosX,
 
     // test if we are in SLO4 or SLO6
     if(m_SLO4)
-        pRawData += min(pi_PosY, m_Height-1) * m_BytesPerLine;
+        pRawData += MIN(pi_PosY, m_Height-1) * m_BytesPerLine;
     else
-        pRawData += (m_Height - min(pi_PosY, m_Height-1) - 1) * m_BytesPerLine;
+        pRawData += (m_Height - MIN(pi_PosY, m_Height-1) - 1) * m_BytesPerLine;
 
-    *po_ppRawData = pRawData + (min(pi_PosX, m_Width-1) / m_PixelsPerByte);
+    *po_ppRawData = pRawData + (MIN(pi_PosX, m_Width-1) / m_PixelsPerByte);
 
-    *po_pBitIndex = (Byte)(min(pi_PosX, m_Width-1) % m_PixelsPerByte);
+    *po_pBitIndex = (Byte)(MIN(pi_PosX, m_Width-1) % m_PixelsPerByte);
 
     //:> This post condition is use to verify if we read a initialized data
     //:> call Clear() to initialize the buffer

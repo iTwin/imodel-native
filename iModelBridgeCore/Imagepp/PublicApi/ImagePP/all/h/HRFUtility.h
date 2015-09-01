@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFUtility.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // HRFUtility
@@ -11,6 +11,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFile;
 class HRFCacheFileCreator;
 class HRFClipShape;
@@ -19,6 +20,7 @@ class HRFRasterFileCapabilities;
 class HRFThumbnail;
 class HCDCodec;
 class HFCBinStream;
+END_IMAGEPP_NAMESPACE
 
 //----------------------------------------------------------------------------
 #include "HFCPtr.h"
@@ -29,10 +31,11 @@ class HFCBinStream;
 
 //----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFThumbnailProgressIndicator : public HFCProgressIndicator
     {
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFThumbnailProgressIndicator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFThumbnailProgressIndicator)
 
     // Disabled methodes
     HRFThumbnailProgressIndicator();
@@ -45,21 +48,21 @@ private:
 //-----------------------------------------------------------------------------
 // Shape importing
 //-----------------------------------------------------------------------------
-_HDLLg HRFClipShape* ImportShapeFromArrayOfDouble(const double*           pi_pClipShape,
+IMAGEPP_EXPORT HRFClipShape* ImportShapeFromArrayOfDouble(const double*           pi_pClipShape,
                                                   size_t                   pi_ClipShapeLength);
 
 
 //-----------------------------------------------------------------------------
 // Shape Exporting
 //-----------------------------------------------------------------------------
-_HDLLg double*    ExportClipShapeToArrayOfDouble(const HRFClipShape&  pi_ClipShape,
+IMAGEPP_EXPORT double*    ExportClipShapeToArrayOfDouble(const HRFClipShape&  pi_ClipShape,
                                                   size_t*              po_pShapeLength,
                                                   double              pi_SurfaceVersionToUse = 1.0);
 
 //-----------------------------------------------------------------------------
 // GenericImprove to redefine by your application
 //-----------------------------------------------------------------------------
-_HDLLg HFCPtr<HRFRasterFile>  GenericImprove(HFCPtr<HRFRasterFile>       pi_rpRasterFile,
+IMAGEPP_EXPORT HFCPtr<HRFRasterFile>  GenericImprove(HFCPtr<HRFRasterFile>       pi_rpRasterFile,
                                              const HRFCacheFileCreator*  pi_pCreator,
                                              bool                       pi_PageFileOverwrite=false,
                                              bool                       pi_ApplyPageFile=true);
@@ -74,15 +77,9 @@ HFCPtr<HRFRasterFile>  GenericImprove(HFCPtr<HRFRasterFile>       pi_rpRasterFil
                                       double                      pi_DefaultRatioToMeterForPageFile);
 
 //-----------------------------------------------------------------------------
-// CreateCombinedURLAndOffset
-//-----------------------------------------------------------------------------
-_HDLLg HFCPtr<HFCURL> CreateCombinedURLAndOffset(const HFCPtr<HFCURL>& pi_rpURL, uint64_t pi_Offset);
-
-
-//-----------------------------------------------------------------------------
 // HRFThumbnail
 //-----------------------------------------------------------------------------
-_HDLLg HFCPtr<HRFThumbnail> HRFThumbnailMaker(HFCPtr<HRFRasterFile>& pi_rpSource,
+IMAGEPP_EXPORT HFCPtr<HRFThumbnail> HRFThumbnailMaker(HFCPtr<HRFRasterFile>& pi_rpSource,
                                               uint32_t               pi_Page,
                                               uint32_t*                pio_pPreferedWidth,
                                               uint32_t*                pio_pPreferedHeight,
@@ -103,12 +100,8 @@ Byte* HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
 bool IsValidMatrix(const HFCMatrix<3, 3>& pi_rMatrix);
 
 //-----------------------------------------------------------------------------
-// ThrowFileException
-//-----------------------------------------------------------------------------
-_HDLLg /*IppImaging_Needs*/void ThrowFileExceptionIfError(HFCBinStream const* pi_pBinStream, const WString& pi_rURL);
-
-//-----------------------------------------------------------------------------
 // WriteEmptyFile
 //-----------------------------------------------------------------------------
-_HDLLg void WriteEmptyFile(HFCPtr<HRFRasterFile>& pi_prFile,
+IMAGEPP_EXPORT void WriteEmptyFile(HFCPtr<HRFRasterFile>& pi_prFile,
                            Byte*                 pi_pRGBDefaultColor);
+END_IMAGEPP_NAMESPACE

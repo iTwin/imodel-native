@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sar_ceosdataset.cpp 22663 2011-07-07 15:08:47Z warmerdam $
+ * $Id: sar_ceosdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  ASI CEOS Translator
  * Purpose:  GDALDataset driver for CEOS translator.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Atlantis Scientific Inc.
+ * Copyright (c) 2009-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@
 #include "cpl_string.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: sar_ceosdataset.cpp 22663 2011-07-07 15:08:47Z warmerdam $");
+CPL_CVSID("$Id: sar_ceosdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 CPL_C_START
 void	GDALRegister_SAR_CEOS(void);
@@ -161,6 +162,7 @@ class SAR_CEOSDataset : public GDALPamDataset
     virtual const char *GetGCPProjection();
     virtual const GDAL_GCP *GetGCPs();
 
+    virtual char      **GetMetadataDomainList();
     virtual char **GetMetadata( const char * pszDomain );
 
     static GDALDataset *Open( GDALOpenInfo * );
@@ -235,7 +237,7 @@ SAR_CEOSRasterBand::SAR_CEOSRasterBand( SAR_CEOSDataset *poGDS, int nBand,
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr SAR_CEOSRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
+CPLErr SAR_CEOSRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                        void * pImage )
 
 {
@@ -369,7 +371,7 @@ Im(SVV) = byte(10) ysca/127
 
 */
 
-CPLErr CCPRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
+CPLErr CCPRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                   void * pImage )
 
 {
@@ -515,7 +517,7 @@ PALSARRasterBand::PALSARRasterBand( SAR_CEOSDataset *poGDS, int nBand )
 /*      Based on ERSDAC-VX-CEOS-004                                     */
 /************************************************************************/
 
-CPLErr PALSARRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
+CPLErr PALSARRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                      void * pImage )
 
 {
@@ -726,6 +728,16 @@ const GDAL_GCP *SAR_CEOSDataset::GetGCPs()
     return pasGCPList;
 }
 
+
+/************************************************************************/
+/*                      GetMetadataDomainList()                         */
+/************************************************************************/
+
+char **SAR_CEOSDataset::GetMetadataDomainList()
+{
+    return CSLAddString(GDALDataset::GetMetadataDomainList(), "ceos-FFF-n-n-n-n:r");
+}
+
 /************************************************************************/
 /*                            GetMetadata()                             */
 /*                                                                      */
@@ -909,6 +921,26 @@ void SAR_CEOSDataset::ScanForMetadata()
 
         if( !EQUALN(szField,"            ",12) )
             SetMetadataItem( "CEOS_SOFTWARE_ID", szField );
+
+/* -------------------------------------------------------------------- */
+/*      product identifier.                                                    */
+/* -------------------------------------------------------------------- */
+        szField[8] = '\0';
+
+        GetCeosField( record, 261, "A8", szField );
+
+        if( !EQUALN(szField,"        ",8) )
+            SetMetadataItem( "CEOS_PRODUCT_ID", szField );
+    
+/* -------------------------------------------------------------------- */
+/*      volume identifier.                                                    */
+/* -------------------------------------------------------------------- */
+        szField[16] = '\0';
+
+        GetCeosField( record, 77, "A16", szField );
+
+        if( !EQUALN(szField,"                ",16) )
+            SetMetadataItem( "CEOS_VOLSET_ID", szField );
     }
 
 /* ==================================================================== */
@@ -980,6 +1012,53 @@ void SAR_CEOSDataset::ScanForMetadata()
 
         if( !EQUALN(szField,"                ",16 ) )
             SetMetadataItem( "CEOS_SEMI_MINOR", szField );
+
+/* -------------------------------------------------------------------- */
+/*      SCENE LENGTH KM                                                 */
+/* -------------------------------------------------------------------- */
+        GetCeosField( record, 341, "A16", szField );
+        szField[16] = '\0';
+
+        if( !EQUALN(szField,"                ",16 ) )
+            SetMetadataItem( "CEOS_SCENE_LENGTH_KM", szField );
+
+/* -------------------------------------------------------------------- */
+/*      SCENE WIDTH KM                                                  */
+/* -------------------------------------------------------------------- */
+        GetCeosField( record, 357, "A16", szField );
+        szField[16] = '\0';
+
+        if( !EQUALN(szField,"                ",16 ) )
+            SetMetadataItem( "CEOS_SCENE_WIDTH_KM", szField );
+
+/* -------------------------------------------------------------------- */
+/*      MISSION ID                                                      */
+/* -------------------------------------------------------------------- */
+        GetCeosField( record, 397, "A16", szField );
+        szField[16] = '\0';
+
+        if( !EQUALN(szField,"                ",16 ) )
+            SetMetadataItem( "CEOS_MISSION_ID", szField );
+
+/* -------------------------------------------------------------------- */
+/*      SENSOR ID                                                      */
+/* -------------------------------------------------------------------- */
+        GetCeosField( record, 413, "A32", szField );
+        szField[32] = '\0';
+
+        if( !EQUALN(szField,"                                ",32 ) )
+            SetMetadataItem( "CEOS_SENSOR_ID", szField );
+
+
+/* -------------------------------------------------------------------- */
+/*      ORBIT NUMBER                                                    */
+/* -------------------------------------------------------------------- */
+        GetCeosField( record, 445, "A8", szField );
+        szField[8] = '\0';
+
+        if( !EQUALN(szField,"        ",8 ) )
+            SetMetadataItem( "CEOS_ORBIT_NUMBER", szField );
+
 
 /* -------------------------------------------------------------------- */
 /*      Platform latitude                                               */
@@ -1154,6 +1233,18 @@ void SAR_CEOSDataset::ScanForMetadata()
 
     if( record != NULL )
     {
+        GetCeosField( record, 192, "A21", szField );
+        szField[21] = '\0';
+
+        if( !EQUALN(szField,"                     ",21 ) )
+            SetMetadataItem( "CEOS_PROC_START", szField );
+            
+        GetCeosField( record, 213, "A21", szField );
+        szField[21] = '\0';
+
+        if( !EQUALN(szField,"                     ",21 ) )
+            SetMetadataItem( "CEOS_PROC_STOP", szField );
+            
         GetCeosField( record, 4649, "A16", szField );
         szField[16] = '\0';
 
@@ -1617,6 +1708,7 @@ GDALDataset *SAR_CEOSDataset::Open( GDALOpenInfo * poOpenInfo )
     if( ProcessData( fp, __CEOS_IMAGRY_OPT_FILE, psVolume, 4, -1) != CE_None )
     {
         delete poDS;
+        VSIFCloseL(fp);
         return NULL;
     }
 
@@ -1761,6 +1853,8 @@ GDALDataset *SAR_CEOSDataset::Open( GDALOpenInfo * poOpenInfo )
                   "Unable to extract CEOS image description\n"
                   "from %s.", 
                   poOpenInfo->pszFilename );
+
+        VSIFCloseL(fp);
 
         return NULL;
     }
@@ -2011,6 +2105,8 @@ ProcessData( VSILFILE *fp, int fileid, CeosSARVolume_t *sar, int max_records,
             if( fileid == __CEOS_IMAGRY_OPT_FILE && iThisRecord == 2 )
             {
                 CPLDebug( "SAR_CEOS", "Ignoring CEOS file with wrong second record sequence number - likely it has padded records." );
+                CPLFree(record);
+                CPLFree(temp_body);
                 return CE_Warning;
             }
             else
@@ -2018,6 +2114,8 @@ ProcessData( VSILFILE *fp, int fileid, CeosSARVolume_t *sar, int max_records,
                 CPLError( CE_Failure, CPLE_AppDefined, 
                           "Corrupt CEOS File - got record seq# %d instead of the expected %d.",
                           record->Sequence, iThisRecord );
+                CPLFree(record);
+                CPLFree(temp_body);
                 return CE_Failure;
             }
         }
@@ -2063,9 +2161,14 @@ ProcessData( VSILFILE *fp, int fileid, CeosSARVolume_t *sar, int max_records,
             max_records--;
         if(max_bytes > 0)
         {
-            max_bytes -= record->Length;
-            if(max_bytes < 0)
+            // TODO: Make sure that this cast is safe.
+            if( (vsi_l_offset)record->Length <= max_bytes )
+                max_bytes -= record->Length;
+            else {
+                CPLDebug( "SAR_CEOS", "Partial record found.  %d > " CPL_FRMT_GUIB,
+                          record->Length, max_bytes );
                 max_bytes = 0;
+            }
         }
     }
 

@@ -2,16 +2,17 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLCommonInternet.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLCommonInternet
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLCommonInternet.h>
+#include <Imagepp/all/h/HFCEncodeDecodeASCII.h>
 
 //:Ignore
 //-----------------------------------------------------------------------------
@@ -221,10 +222,15 @@ void HFCURLCommonInternet::SplitPath(const WString& pi_rURL,
         if (PasswordColonPos != WString::npos) // Getting the password if any
             {
             *po_pPassword = TempString.substr(PasswordColonPos + 1, ArobasPos - PasswordColonPos - 1);
+            HFCEncodeDecodeASCII::EscapeToASCII (*po_pPassword);
             *po_pUser = TempString.substr(0, PasswordColonPos);
+            HFCEncodeDecodeASCII::EscapeToASCII (*po_pUser);
             }
         else
+            {
             *po_pUser = TempString.substr(0, ArobasPos);
+            HFCEncodeDecodeASCII::EscapeToASCII (*po_pUser);
+            }
         }
     else
         *po_pHost = TempString;
@@ -420,10 +426,10 @@ string HFCURLCommonInternet::EscapeURLParamValue(const string& pi_rURLPart)
         //Escaped every characters which are not alphanumeric characters and
         //are not reserved.
         if ((isalnum((Byte)*CharIter) == 0) &&
-            (UnreservedChars.find_first_of(*CharIter) == WString::npos))
+            (UnreservedChars.find_first_of(*CharIter) == string::npos))
             {
-            int ErrCode = BeStringUtilities::Snprintf(EscapedChar, sizeof(EscapedChar), "%x", (Byte)*CharIter);
-            HASSERT(ErrCode < 0);
+            int charCount = BeStringUtilities::Snprintf(EscapedChar, sizeof(EscapedChar), "%x", (Byte)*CharIter);
+            HASSERT(charCount > 0);
 
             if ((isascii(EscapedChar[0]) != 0) && (islower(EscapedChar[0]) != 0))
                 {

@@ -2,18 +2,19 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DExtent.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HGF2DExtent
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DLocation.h>
 #include <Imagepp/all/h/HGF2DCoordSys.h>
+#include <Imagepp/all/h/HGF2DRectangle.h>
 
 #include <Imagepp/all/h/HGF2DExtent.h>
 
@@ -437,31 +438,65 @@ void HGF2DExtent::ChangeCoordSys (const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
         {
         if (m_pCoordSys != pi_rpCoordSys)
             {
+            HFCPtr<HGF2DTransfoModel> transfoModel = GetCoordSys()->GetTransfoModelTo(pi_rpCoordSys);
 
-            // Compute coordinates of four corners
-            HGF2DLocation BottomLeft(m_XMin, m_YMin, m_pCoordSys);
-            HGF2DLocation TopLeft(m_XMin, m_YMax, m_pCoordSys);
-            HGF2DLocation TopRight(m_XMax, m_YMax, m_pCoordSys);
-            HGF2DLocation BottomRight(m_XMax, m_YMin, m_pCoordSys);
+            // When changing the coord sys of an extent using a transformation that prevserves linearity, 
+            // the four corner of the original extent stays the four corners of the transformed extent. 
+            // This isn't true for non-linear transforms,
+            // where the sides of the extent can curves and get out of the zone delimited by the four transformed
+            // corners of the original extent. To solve this problem, a shape HGF2DShape is used. This class
+            // supports non linear transforms.
+            if (transfoModel->PreservesLinearity())
+                {
+                // Compute coordinates of four corners
+                HGF2DLocation BottomLeft(m_XMin, m_YMin, m_pCoordSys);
+                HGF2DLocation TopLeft(m_XMin, m_YMax, m_pCoordSys);
+                HGF2DLocation TopRight(m_XMax, m_YMax, m_pCoordSys);
+                HGF2DLocation BottomRight(m_XMax, m_YMin, m_pCoordSys);
 
-            // Change coordinate sytem for these four points
-            BottomLeft.ChangeCoordSys (pi_rpCoordSys);
-            TopLeft.ChangeCoordSys (pi_rpCoordSys);
-            TopRight.ChangeCoordSys (pi_rpCoordSys);
-            BottomRight.ChangeCoordSys (pi_rpCoordSys);
+                // Change coordinate sytem for these four points
+                BottomLeft.ChangeCoordSys (pi_rpCoordSys);
+                TopLeft.ChangeCoordSys (pi_rpCoordSys);
+                TopRight.ChangeCoordSys (pi_rpCoordSys);
+                BottomRight.ChangeCoordSys (pi_rpCoordSys);
 
-            // Set coordinate system of extent
-            SetCoordSys (pi_rpCoordSys);
+                // Set coordinate system of extent
+                SetCoordSys (pi_rpCoordSys);
 
-            // Reset extent
-            m_XDefined = false;
-            m_YDefined = false;
+                // Reset extent
+                m_XDefined = false;
+                m_YDefined = false;
 
-            // Add location to empty extent
-            Add(BottomLeft);
-            Add(TopLeft);
-            Add(TopRight);
-            Add(BottomRight);
+                // Add location to empty extent
+                Add(BottomLeft);
+                Add(TopLeft);
+                Add(TopRight);
+                Add(BottomRight);
+                }
+            else
+                {
+                HGF2DRectangle currentExtent(GetXMin(), GetYMin(), GetXMax(), GetYMax());
+                HFCPtr<HGF2DShape> resultShape = currentExtent.AllocTransformDirect(*transfoModel);
+                HGF2DLiteExtent finalExtent = resultShape->GetExtent();
+
+                // Set coordinate system of extent
+                SetCoordSys (pi_rpCoordSys);
+
+                // Reset extent
+                m_XDefined = false;
+                m_YDefined = false;
+
+                HGF2DLocation BottomLeft(finalExtent.GetXMin(), finalExtent.GetYMin(), pi_rpCoordSys);
+                HGF2DLocation TopLeft(finalExtent.GetXMin(), finalExtent.GetYMax(), pi_rpCoordSys);
+                HGF2DLocation TopRight(finalExtent.GetXMax(), finalExtent.GetYMax(), pi_rpCoordSys);
+                HGF2DLocation BottomRight(finalExtent.GetXMax(), finalExtent.GetYMin(), pi_rpCoordSys);
+
+                // Add location to empty extent
+                Add(BottomLeft);
+                Add(TopLeft);
+                Add(TopRight);
+                Add(BottomRight);
+                }
             }
         }
     else

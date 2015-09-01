@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAEditorN1.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------
 // Class HRAEditorN1
 //---------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRAEditorN1.h>
 
@@ -19,6 +19,7 @@
 #include <Imagepp/all/h/HGFScanlineOrientation.h>
 #include <Imagepp/all/h/HCDPacket.h>
 #include <Imagepp/all/h/HRATransaction.h>
+#include <Imagepp/all/h/HFCMath.h>
 
 //-----------------------------------------------------------------------------
 // public
@@ -46,7 +47,7 @@ HRAEditorN1::HRAEditorN1(HGSMemorySurfaceDescriptor& pi_rDescriptor)
     m_SLO4          = pi_rDescriptor.GetSLO() == HGF_UPPER_LEFT_HORIZONTAL;
 
     // compute a mask to extract pixels
-    m_Mask = 0xff << (8 - m_BitsPerPixel);
+    m_Mask = CONVERT_TO_BYTE(0xff << (8 - m_BitsPerPixel));
 
     // create a working buffer
     m_pTmpRun = new Byte[m_BytesPerLine];
@@ -209,7 +210,7 @@ void* HRAEditorN1::GetRun(HUINTX    pi_StartPosX,
 
             ((HRATransaction*)pi_pTransaction)->PushEntry(m_XPosInRaster + StartPosX,
                                                           m_YPosInRaster + pi_StartPosY,
-                                                          PixelCount,
+                                                          (uint32_t)PixelCount,
                                                           1,
                                                           ((PixelCount * m_BitsPerPixel) + m_BitsPerPixel) / 8,
                                                           pRawData);
@@ -231,7 +232,7 @@ void* HRAEditorN1::GetRun(HUINTX    pi_StartPosX,
             {
             ((HRATransaction*)pi_pTransaction)->PushEntry(m_XPosInRaster + pi_StartPosX,
                                                           m_YPosInRaster + pi_StartPosY,
-                                                          pi_PixelCount,
+                                                          (uint32_t)pi_PixelCount,
                                                           1,
                                                           ((pi_PixelCount * m_BitsPerPixel) + m_BitsPerPixel) / 8,
                                                           pRawData);
@@ -271,7 +272,7 @@ void HRAEditorN1::SetRun(HUINTX       pi_StartPosX,
             {
             ((HRATransaction*)pi_pTransaction)->PushEntry(m_XPosInRaster + pi_StartPosX,
                                                           m_YPosInRaster + pi_StartPosY,
-                                                          pi_PixelCount,
+                                                          (uint32_t)pi_PixelCount,
                                                           1,
                                                           ((pi_PixelCount * m_BitsPerPixel) + m_BitsPerPixel) / 8,
                                                           pRawData);
@@ -284,7 +285,7 @@ void HRAEditorN1::SetRun(HUINTX       pi_StartPosX,
 
             ((HRATransaction*)pi_pTransaction)->PushEntry(m_XPosInRaster + StartPosX,
                                                           m_YPosInRaster + pi_StartPosY,
-                                                          PixelCount,
+                                                          (uint32_t)PixelCount,
                                                           1,
                                                           ((PixelCount * m_BitsPerPixel) + m_BitsPerPixel) / 8,
                                                           pRawData);
@@ -315,7 +316,7 @@ void* HRAEditorN1::GetPixel(HUINTX  pi_PosX,
                    &m_BitIndex);
 
     // copy the pixel value in the destination buffer
-    m_TmpValue = *m_pRawData << (m_BitIndex * m_BitsPerPixel);
+    m_TmpValue = CONVERT_TO_BYTE(*m_pRawData << (m_BitIndex * m_BitsPerPixel));
 
     return &m_TmpValue;
     }
@@ -428,7 +429,7 @@ void HRAEditorN1::ClearRun(HUINTX       pi_PosX,
             {
             ((HRATransaction*)pi_pTransaction)->PushEntry(m_XPosInRaster + pi_PosX,
                                                           m_YPosInRaster + pi_PosY,
-                                                          pi_PixelCount,
+                                                          (uint32_t)pi_PixelCount,
                                                           1,
                                                           ((pi_PixelCount * m_BitsPerPixel) + m_BitsPerPixel) / 8,
                                                           pData);
@@ -440,7 +441,7 @@ void HRAEditorN1::ClearRun(HUINTX       pi_PosX,
 
             ((HRATransaction*)pi_pTransaction)->PushEntry(m_XPosInRaster + pi_PosX - PixelIndex,
                                                           m_YPosInRaster + pi_PosY,
-                                                          PixelCount,
+                                                          (uint32_t)PixelCount,
                                                           1,
                                                           ((PixelCount * m_BitsPerPixel) + m_BitsPerPixel) / 8,
                                                           pData);
@@ -454,11 +455,7 @@ void HRAEditorN1::ClearRun(HUINTX       pi_PosX,
     if (PixelIndex != 0)
         {
         unsigned short PixelPos = (unsigned short)(PixelIndex * m_BitsPerPixel);
-        ClearByte = 1 << PixelPos;
-        for (BitIndex = 0; BitIndex < PixelPos; BitIndex++)
-            ClearByte |= (ClearByte << 1);
-
-        *pData &= ClearByte;
+        *pData &= ~(0xFF >> PixelIndex * m_BitsPerPixel);
 
         ClearByte = 0;
         for (BitIndex = PixelPos; BitIndex < 8; BitIndex += (unsigned short)m_BitsPerPixel)
@@ -486,11 +483,7 @@ void HRAEditorN1::ClearRun(HUINTX       pi_PosX,
 
     if (pi_PixelCount != 0)
         {
-        ClearByte = 0;
-        for (BitIndex = 0; BitIndex < pi_PixelCount * m_BitsPerPixel; BitIndex++)
-            ClearByte |= (1 << BitIndex);
-
-        *pData &= ClearByte;
+        *pData &= 0xFF >> (pi_PixelCount * m_BitsPerPixel);
 
         ClearByte = 0;
         for (BitIndex = 0; BitIndex < pi_PixelCount * m_BitsPerPixel; BitIndex += (unsigned short)m_BitsPerPixel)
@@ -537,8 +530,8 @@ void HRAEditorN1::MergeRuns(HUINTX      pi_StartPosX,
         if (pi_pTransaction)
             ((HRATransaction*)pi_pTransaction)->PushEntry(pi_StartPosX,
                                                           pi_StartPosY,
-                                                          pi_Width,
-                                                          pi_Height,
+                                                          (uint32_t)pi_Width,
+                                                          (uint32_t)pi_Height,
                                                           pi_Height * m_BytesPerLine,
                                                           pData);
 
@@ -577,7 +570,7 @@ void HRAEditorN1::MergeRuns(HUINTX      pi_StartPosX,
 
             // compute how many pixels must be copied
             size_t PixelCount = m_Width - pi_StartPosX - m_XPosInRaster;
-            PixelCount = min(pi_Width, PixelCount) - DstBitIndex;
+            PixelCount = MIN(pi_Width, PixelCount) - DstBitIndex;
             HPOSTCONDITION(PixelCount <= m_Width);
             size_t DataSize = ((PixelCount * m_BitsPerPixel) + 7) / 8;
             HPOSTCONDITION(DataSize <= m_BytesPerLine);
@@ -589,9 +582,9 @@ void HRAEditorN1::MergeRuns(HUINTX      pi_StartPosX,
                     // record data before
                     ((HRATransaction*)pi_pTransaction)->PushEntry(pi_StartPosX - DstBitIndex,
                                                                   pi_StartPosY++,
-                                                                  PixelCount + DstBitIndex,
+                                                                  (uint32_t)(PixelCount + DstBitIndex),
                                                                   1,
-                                                                  max(DataSize, 1),
+                                                                  MAX(DataSize, 1),
                                                                   pDstRawData);
                     }
 
@@ -623,7 +616,7 @@ void HRAEditorN1::MergeRuns(HUINTX      pi_StartPosX,
 
             // compute how many pixels must be copied
             size_t PixelCount = pi_Width - m_XPosInRaster - pi_StartPosX;
-            PixelCount = min(PixelCount, m_Width);
+            PixelCount = MIN(PixelCount, m_Width);
             size_t DataSize = ((PixelCount * m_BitsPerPixel) + 7) / 8;
             HPOSTCONDITION(DataSize <= m_BytesPerLine);
 
@@ -634,7 +627,7 @@ void HRAEditorN1::MergeRuns(HUINTX      pi_StartPosX,
                     // record data before
                     ((HRATransaction*)pi_pTransaction)->PushEntry(m_XPosInRaster,
                                                                   pi_StartPosY++,
-                                                                  PixelCount,
+                                                                  (uint32_t)PixelCount,
                                                                   1,
                                                                   DataSize,
                                                                   pDstRawData);

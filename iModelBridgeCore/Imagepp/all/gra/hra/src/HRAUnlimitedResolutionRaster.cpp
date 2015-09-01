@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAUnlimitedResolutionRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRAUnlimitedResolutionRaster
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCExceptionHandler.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
@@ -32,6 +32,8 @@
 #include <ImagePP/all/h/HRSObjectStore.h>
 #include <ImagePP/all/h/HGFMappedSurface.h>
 #include <ImagePP/all/h/HMDContext.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
 
 
 
@@ -55,7 +57,7 @@ HRAUnlimitedResolutionRaster::HRAUnlimitedResolutionRaster()
     : HRAStoredRaster()
     {
     m_pLog              = 0;
-    m_pRasterModel      = 0;
+    m_pTiledRaster      = 0;
     m_CurResolution     = 0.0;
 
     m_HistogramEditMode = false;
@@ -67,7 +69,7 @@ HRAUnlimitedResolutionRaster::HRAUnlimitedResolutionRaster()
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRAUnlimitedResolutionRaster::HRAUnlimitedResolutionRaster(HFCPtr<HRAStoredRaster>& pi_pRasterModel,
+HRAUnlimitedResolutionRaster::HRAUnlimitedResolutionRaster(HFCPtr<HRATiledRaster>& pi_pRasterModel,
                                                            uint64_t                pi_WidthPixels,
                                                            uint64_t                pi_HeightPixels,
                                                            uint64_t                pi_MinWidth,
@@ -185,16 +187,14 @@ void HRAUnlimitedResolutionRaster::InitSize(uint64_t pi_WidthPixels, uint64_t pi
     {
     HPRECONDITION(pi_WidthPixels <= m_MaxWidth && pi_HeightPixels <= m_MaxHeight);
 
-    HRAStoredRaster::InitSize(pi_WidthPixels,
-                              pi_HeightPixels);
-    m_pRasterModel->SetTransfoModel (*GetTransfoModel(),
-                                     GetCoordSys());
-    m_pCurrentResolutionRaster = (HRAStoredRaster*)m_pRasterModel->Clone(GetStore(), m_pLog);
+    HRAStoredRaster::InitSize(pi_WidthPixels, pi_HeightPixels);
+    m_pTiledRaster->HRAStoredRaster::SetTransfoModel (*GetTransfoModel(), GetCoordSys());
+
+    m_pCurrentResolutionRaster = static_cast<HRATiledRaster*>(m_pTiledRaster->Clone(GetStore(), m_pLog).GetPtr());
     m_pCurrentResolutionRaster->SetContext(GetContext());
     m_CurResolution = 1.0;
 
-    if (m_pCurrentResolutionRaster->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-        ((HFCPtr<HRATiledRaster>&)m_pCurrentResolutionRaster)->SetInternalTileStatusSupported(false);
+    m_pCurrentResolutionRaster->SetInternalTileStatusSupported(false);
 
     m_pCurrentResolutionRaster->InitSize(pi_WidthPixels,
                                          pi_HeightPixels);
@@ -223,7 +223,7 @@ void HRAUnlimitedResolutionRaster::SetCoordSysImplementation(const HFCPtr<HGF2DC
     HRAStoredRaster::SetCoordSysImplementation(pi_rOldCoordSys);
 
     // Set model == to the TiledRaster
-    m_pRasterModel->SetCoordSys (GetCoordSys());
+    m_pTiledRaster->SetCoordSys (GetCoordSys());
 
     m_pCurrentResolutionRaster->SetCoordSys(GetCoordSys());
     }
@@ -235,7 +235,7 @@ void HRAUnlimitedResolutionRaster::SetCoordSysImplementation(const HFCPtr<HGF2DC
 void HRAUnlimitedResolutionRaster::SetTransfoModel(const HGF2DTransfoModel& pi_rModelCSp_CSl)
     {
     // Set model == to the TiledRaster
-    m_pRasterModel->SetTransfoModel(pi_rModelCSp_CSl);
+    m_pTiledRaster->SetTransfoModel(pi_rModelCSp_CSl);
 
     // Create scaling transfo
     // Set scaling to the SubImages.
@@ -390,17 +390,14 @@ bool HRAUnlimitedResolutionRaster::StartHistogramEditMode()
         {
         if (GetHistogram()) // we need an histogram to work on
             {
-            if (m_pCurrentResolutionRaster->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-                {
-                // Set mode to ON
-                m_HistogramEditMode = true;
+            // Set mode to ON
+            m_HistogramEditMode = true;
 
-                // Compute all tile histograms (on full resolution)
-                ChangeResolution(1.0);
-                ((HFCPtr<HRATiledRaster>&)m_pCurrentResolutionRaster)->EngageTileHistogramComputing();
+            // Compute all tile histograms (on full resolution)
+            ChangeResolution(1.0);
+            m_pCurrentResolutionRaster->EngageTileHistogramComputing();
 
-                Result = true;
-                }
+            Result = true;
             }
         }
     else // mode is already ON
@@ -411,55 +408,23 @@ bool HRAUnlimitedResolutionRaster::StartHistogramEditMode()
 
 //-----------------------------------------------------------------------------
 // Public
-// Function for setting the look ahead when the PreDraw concept isn't used.
-//-----------------------------------------------------------------------------
-void HRAUnlimitedResolutionRaster::SetLookAhead(const HVEShape& pi_rShape,
-                                                uint32_t        pi_ConsumerID,
-                                                bool           pi_Async)
-    {
-    SetLookAheadImpl(pi_rShape, pi_ConsumerID, pi_Async, false);
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
 // Pass the request to the source
 //-----------------------------------------------------------------------------
-void HRAUnlimitedResolutionRaster::SetLookAheadImpl(const HVEShape& pi_rShape,
+void HRAUnlimitedResolutionRaster::SetLookAhead(const HVEShape& pi_rShape,
                                                     uint32_t        pi_ConsumerID,
-                                                    bool           pi_Async,
-                                                    bool            pi_IsPredraw)
+                                                    bool           pi_Async)
     {
     HPRECONDITION(HasLookAhead());
-    HPRECONDITION((pi_IsPredraw == false) ||
-                  (m_pCurrentResolutionRaster->IsCompatibleWith(HRATiledRaster::CLASS_ID) == false));
 
-    if (pi_IsPredraw == false)
-        {
-        // find the best resolution for the coord sys of the extent
-        double Resolution = FindTheBestResolution(pi_rShape.GetCoordSys());
+    // find the best resolution for the coord sys of the extent
+    double Resolution = FindTheBestResolution(pi_rShape.GetCoordSys());
 
-        ChangeResolution(Resolution);
-        }
-
+    ChangeResolution(Resolution);
     // Bring the extent to the found resolution's coord sys
     HFCPtr<HVEShape> pShape(new HVEShape(pi_rShape));
     pShape->ChangeCoordSys(m_pCurrentResolutionRaster->GetPhysicalCoordSys());
 
-    if (m_pCurrentResolutionRaster->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-        {
-        ((HFCPtr<HRATiledRaster>&)m_pCurrentResolutionRaster)->SetLookAhead(*pShape,
-                                                                            pi_ConsumerID,
-                                                                            pi_Async);
-        }
-    else
-        {
-        // Send the LookAhead
-        Propagate(HRALookAheadMsg(*pShape,
-                                  0,
-                                  pi_ConsumerID,
-                                  pi_Async));
-        }
+    m_pCurrentResolutionRaster->SetLookAhead(*pShape, pi_ConsumerID, pi_Async);
     }
 
 //-----------------------------------------------------------------------------
@@ -482,7 +447,7 @@ bool HRAUnlimitedResolutionRaster::NotifyContentChanged(const HMGMessage& pi_rMe
             pShape->ChangeCoordSys(m_pCurrentResolutionRaster->GetPhysicalCoordSys());
 
             // m_HistogramEditMode can be true only if m_pCurrentResolutionRaster is a HRATiledRaster
-            HFCPtr<HRATiledRaster> pTiledRaster = (HFCPtr<HRATiledRaster>&)m_pCurrentResolutionRaster;
+            HFCPtr<HRATiledRaster> pTiledRaster = m_pCurrentResolutionRaster;
 
             HAutoPtr<HRARasterIterator> pRasterIterator(pTiledRaster->CreateIterator(HRAIteratorOptions(pShape,
                                                                                      pTiledRaster->GetPhysicalCoordSys(),
@@ -564,15 +529,12 @@ bool HRAUnlimitedResolutionRaster::NotifyContentChanged(const HMGMessage& pi_rMe
 //-----------------------------------------------------------------------------
 bool HRAUnlimitedResolutionRaster::NotifyProgressImageChanged(const HMGMessage& pi_rMessage)
     {
-    if (m_pRasterModel->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-        {
-        uint32_t Res = ((HRFProgressImageChangedMsg&)pi_rMessage).GetSubResolution();
-        HPRECONDITION(Res == 0);
+    
+    uint32_t Res = ((HRFProgressImageChangedMsg&)pi_rMessage).GetSubResolution();
+    HPRECONDITION(Res == 0);
 
-        ((HFCPtr<HRATiledRaster>&)m_pCurrentResolutionRaster)->NotifyProgressImageChanged (pi_rMessage);
-        SetModificationState();
-        }
-
+    m_pCurrentResolutionRaster->NotifyProgressImageChanged (pi_rMessage);
+    SetModificationState();
     return false;
     }
 
@@ -613,72 +575,35 @@ bool HRAUnlimitedResolutionRaster::NotifyGeometryChanged(const HMGMessage& pi_rM
 
 //-----------------------------------------------------------------------------
 // public
-// CopyFrom
+// CopyFromLegacy
 //-----------------------------------------------------------------------------
-void HRAUnlimitedResolutionRaster::CopyFrom(const HFCPtr<HRARaster>&    pi_pSrcRaster,
-                                            const HRACopyFromOptions&   pi_rOptions)
+void HRAUnlimitedResolutionRaster::CopyFromLegacy(const HFCPtr<HRARaster>&    pi_pSrcRaster, const HRACopyFromLegacyOptions&   pi_rOptions)
     {
 
-    HRAStoredRaster::CopyFrom(pi_pSrcRaster, pi_rOptions);
+    HRAStoredRaster::CopyFromLegacy(pi_pSrcRaster, pi_rOptions);
     }
 
 //-----------------------------------------------------------------------------
 // public
-// CopyFrom
+// CopyFromLegacy
 //-----------------------------------------------------------------------------
-void HRAUnlimitedResolutionRaster::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster)
+void HRAUnlimitedResolutionRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
     {
-    CopyFrom(pi_pSrcRaster, HRACopyFromOptions());
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// PreDraw
-//-----------------------------------------------------------------------------
-void HRAUnlimitedResolutionRaster::PreDraw(HRADrawOptions* pio_pOptions)
-    {
-    HRADrawOptions Options(pio_pOptions);
-
-    // find the best resolution for the surface
-    double Resolution = FindTheBestResolution(pio_pOptions->GetShape()->GetCoordSys(),
-                                               Options.GetReplacingCoordSys());
-
-    (const_cast<HRAUnlimitedResolutionRaster*>(this))->ChangeResolution(Resolution);
-
-    if ((m_pCurrentResolutionRaster->IsCompatibleWith(HRATiledRaster::CLASS_ID) == false) &&
-        (HasLookAhead() == true))
-        {
-        uint32_t ConsumerId = 0;
-        bool  Async = false;
-        pio_pOptions->GetPreDrawOptions()->GetLookAheadOptions(ConsumerId, Async);
-        SetLookAhead(*(pio_pOptions->GetShape()), ConsumerId, Async);
-        }
-
-    m_pCurrentResolutionRaster->PreDraw(pio_pOptions);
+    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
     }
 
 //-----------------------------------------------------------------------------
 // public
 // Draw
 //-----------------------------------------------------------------------------
-void HRAUnlimitedResolutionRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface,
-                                        const HGFDrawOptions*           pi_pOptions) const
+void HRAUnlimitedResolutionRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
     {
-    HPRECONDITION(pio_pSurface != 0);
-    HPRECONDITION(pi_pOptions != 0);
-
-    if (pi_pOptions->GetPreDrawOptions() == 0)
-        {
-        HRADrawOptions Options(pi_pOptions);
-
-        // find the best resolution for the surface
-        double Resolution = FindTheBestResolution(pio_pSurface->GetCoordSys(),
-                                                   Options.GetReplacingCoordSys());
-
-        (const_cast<HRAUnlimitedResolutionRaster*>(this))->ChangeResolution(Resolution);
-        }
+    // find the best resolution for the surface
+    double Resolution = FindTheBestResolution(pio_destSurface.GetCoordSys(), pi_Options.GetReplacingCoordSys());
+    (const_cast<HRAUnlimitedResolutionRaster*>(this))->ChangeResolution(Resolution);
+    
     // Draw the selected resolution
-    m_pCurrentResolutionRaster->Draw(pio_pSurface, pi_pOptions);
+    m_pCurrentResolutionRaster->Draw(pio_destSurface, pi_Options);
     }
 
 //:>-----------------------------------------------------------------------------
@@ -694,7 +619,7 @@ void HRAUnlimitedResolutionRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSur
 // private
 // Constructor
 //-----------------------------------------------------------------------------
-void HRAUnlimitedResolutionRaster::Constructor(const HFCPtr<HRAStoredRaster>&   pi_rpRasterModel,
+void HRAUnlimitedResolutionRaster::Constructor(const HFCPtr<HRATiledRaster>&    pi_rpRasterModel,
                                                uint64_t                         pi_WidthPixels,
                                                uint64_t                         pi_HeightPixels,
                                                uint64_t                         pi_MinWidth,
@@ -715,25 +640,23 @@ void HRAUnlimitedResolutionRaster::Constructor(const HFCPtr<HRAStoredRaster>&   
         // Make a copy of the RasterModel.
         // Set CoordSys and Extent (1,1)
         //
-        m_pRasterModel = (HRAStoredRaster*)pi_rpRasterModel->Clone();
-        m_pRasterModel->SetTransfoModel (*GetTransfoModel (),
-                                         GetCoordSys ());
-        m_pRasterModel->InitSize (1, 1);
-        m_pCurrentResolutionRaster = (HRAStoredRaster*)m_pRasterModel->Clone(GetStore(), m_pLog);
+        m_pTiledRaster = (HRATiledRaster*)pi_rpRasterModel->Clone();
+        m_pTiledRaster->HRAStoredRaster::SetTransfoModel (*GetTransfoModel (), GetCoordSys ());
+        m_pTiledRaster->InitSize (1, 1);
+        m_pCurrentResolutionRaster = static_cast<HRATiledRaster*>(m_pTiledRaster->Clone(GetStore(), m_pLog).GetPtr());
         m_pCurrentResolutionRaster->SetContext(GetContext());
         m_pCurrentResolutionRaster->SetID(HRSObjectStore::ID_TiledRaster);
 
-        if (m_pCurrentResolutionRaster->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-            ((HFCPtr<HRATiledRaster>&)m_pCurrentResolutionRaster)->SetInternalTileStatusSupported(false);
+        m_pCurrentResolutionRaster->SetInternalTileStatusSupported(false);
 
         m_pCurrentResolutionRaster->InitSize(pi_WidthPixels,
                                              pi_HeightPixels);
 
         // calculate the minnest scalling supported
-        m_MinResolution = min((double)pi_MinWidth / (double)pi_WidthPixels, (double)pi_MinHeight / (double)pi_HeightPixels);
+        m_MinResolution = MIN((double)pi_MinWidth / (double)pi_WidthPixels, (double)pi_MinHeight / (double)pi_HeightPixels);
 
         // calculate the bigger scaling supported
-        m_MaxResolution = min((double)pi_MaxWidth / (double)pi_WidthPixels, (double)pi_MaxHeight / (double)pi_HeightPixels);
+        m_MaxResolution = MIN((double)pi_MaxWidth / (double)pi_WidthPixels, (double)pi_MaxHeight / (double)pi_HeightPixels);
 
         LinkTo (m_pCurrentResolutionRaster);
 
@@ -783,7 +706,7 @@ double HRAUnlimitedResolutionRaster::FindTheBestResolution(const HFCPtr<HGF2DCoo
         if (pTransfo->PreservesParallelism())
             {
             pTransfo->GetStretchParams (&ScaleFactorX, &ScaleFactorY, &Displacement);
-            Res = 1.0 / min (fabs(ScaleFactorX), fabs(ScaleFactorY));
+            Res = 1.0 / MIN (fabs(ScaleFactorX), fabs(ScaleFactorY));
             }
         else
             {
@@ -843,7 +766,7 @@ double HRAUnlimitedResolutionRaster::FindTheBestResolution(const HFCPtr<HGF2DCoo
                 double LeftScale = (OtherUpperLeft - OtherLowerLeft).CalculateLength() / (UpperLeft - LowerLeft).CalculateLength();
                 double RightScale = (OtherUpperRight - OtherLowerRight).CalculateLength() / (UpperRight - LowerRight).CalculateLength();
 
-                double Scale = max(fabs(LowerScale), max(fabs(UpperScale), max(fabs(LeftScale), fabs(RightScale))));
+                double Scale = MAX(fabs(LowerScale), MAX(fabs(UpperScale), MAX(fabs(LeftScale), fabs(RightScale))));
 
                 HASSERT(Scale != 0.0);
 
@@ -881,15 +804,14 @@ void HRAUnlimitedResolutionRaster::DeepCopy(const HRAUnlimitedResolutionRaster& 
         m_MaxHeight = pi_rRaster.m_MaxHeight;
 
         // Copy the model
-        m_pRasterModel = (HRAStoredRaster*)pi_rRaster.m_pRasterModel->Clone();
+        m_pTiledRaster = (HRATiledRaster*)pi_rRaster.m_pTiledRaster->Clone();
 
         m_SinglePixelType = pi_rRaster.m_SinglePixelType;
 
         SetStore((HRSObjectStore*)pi_pStore);
         m_pLog          = pi_pLog;
 
-        m_pCurrentResolutionRaster  = (HRAStoredRaster*)pi_rRaster.m_pCurrentResolutionRaster->Clone (pi_pStore,
-                                      pi_pLog);
+        m_pCurrentResolutionRaster  = static_cast<HRATiledRaster*>(pi_rRaster.m_pCurrentResolutionRaster->Clone (pi_pStore, pi_pLog).GetPtr());
         // Link ourselves to the Sub-Resolution Raster, to receive notifications
         LinkTo(m_pCurrentResolutionRaster);
         }
@@ -917,8 +839,8 @@ void HRAUnlimitedResolutionRaster::ChangeResolution(double pi_NewResolution)
     {
     // change resolution if
     //  - the new resolution is different of the current resolution
-    //  - the new resolution is smaller than the minimum resolution and the current resolution is different of the min resolution
-    //  - the new resolution is greater than the maximum resolution and the current resolution is different of the max resolution
+    //  - the new resolution is smaller than the minimum resolution and the current resolution is different of the MIN resolution
+    //  - the new resolution is greater than the maximum resolution and the current resolution is different of the MAX resolution
     if (!HDOUBLE_EQUAL_EPSILON(m_CurResolution, pi_NewResolution))
         {
         bool ChangeResolution = false;
@@ -959,22 +881,21 @@ void HRAUnlimitedResolutionRaster::ChangeResolution(double pi_NewResolution)
             pNewModel = TransfoScale.ComposeInverseWithDirectOf(*GetTransfoModel());
 
 
-            m_pCurrentResolutionRaster = (HRAStoredRaster*)m_pRasterModel->Clone(GetStore(), m_pLog);
+            m_pCurrentResolutionRaster = static_cast<HRATiledRaster*>(m_pTiledRaster->Clone(GetStore(), m_pLog).GetPtr());
             m_pCurrentResolutionRaster->SetID(HRSObjectStore::ID_TiledRaster);
             m_pCurrentResolutionRaster->SetTransfoModel(*pNewModel);
 
             m_pCurrentResolutionRaster->SetContext(GetContext());
 
-            if (m_pCurrentResolutionRaster->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-                ((HFCPtr<HRATiledRaster>&)m_pCurrentResolutionRaster)->SetInternalTileStatusSupported(false);
+            m_pCurrentResolutionRaster->SetInternalTileStatusSupported(false);
 
             m_pCurrentResolutionRaster->InitSize(Width, Height);
             LinkTo (m_pCurrentResolutionRaster);
 
 
             // TR #181278
-            if (m_LookAheadEnabled && m_pCurrentResolutionRaster->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-                ((HFCPtr<HRATiledRaster>&)m_pCurrentResolutionRaster)->EnableLookAhead(m_LookAheadByBlockEnabled);
+            if (m_LookAheadEnabled)
+                m_pCurrentResolutionRaster->EnableLookAhead(m_LookAheadByBlockEnabled);
             }
         }
     }
@@ -990,7 +911,7 @@ HFCPtr<HRARaster> HRAUnlimitedResolutionRaster::CreateSubImage(double pi_Resolut
     HPRECONDITION(HDOUBLE_GREATER_EPSILON(pi_Resolution, 0.0));
 
     // create a raster for the resolution
-    HFCPtr<HRAStoredRaster> pSubImageRaster = (HRAStoredRaster*)m_pRasterModel->Clone();
+    HFCPtr<HRATiledRaster> pSubImageRaster = (HRATiledRaster*)m_pTiledRaster->Clone();
 
     HGF2DStretch TransfoScale;
     TransfoScale.SetXScaling(1.0 / pi_Resolution);
@@ -1002,12 +923,10 @@ HFCPtr<HRARaster> HRAUnlimitedResolutionRaster::CreateSubImage(double pi_Resolut
     Width  = (uint64_t)(Width  * pi_Resolution);
     Height = (uint64_t)(Height * pi_Resolution);
 
-    if (m_pCurrentResolutionRaster->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-        ((HFCPtr<HRATiledRaster>&)m_pCurrentResolutionRaster)->SetInternalTileStatusSupported(false);
+    m_pCurrentResolutionRaster->SetInternalTileStatusSupported(false);
 
     pSubImageRaster->InitSize(Width, Height);
-    pSubImageRaster->SetTransfoModel(*TransfoScale.ComposeInverseWithDirectOf(*GetTransfoModel()),
-                                     GetCoordSys());
+    pSubImageRaster->HRAStoredRaster::SetTransfoModel(*TransfoScale.ComposeInverseWithDirectOf(*GetTransfoModel()), GetCoordSys());
 
     return (HFCPtr<HRARaster>)pSubImageRaster;
     }
@@ -1062,16 +981,6 @@ void HRAUnlimitedResolutionRaster::SetContext(const HFCPtr<HMDContext>& pi_rpCon
 
 //-----------------------------------------------------------------------------
 // public
-// GetRawDataPtr    - Get the buffer's raw data pointer
-//-----------------------------------------------------------------------------
-const void* HRAUnlimitedResolutionRaster::GetRawDataPtr () const
-    {
-    // Get buffer's raw data pointer...
-    return 0;
-    }
-
-//-----------------------------------------------------------------------------
-// public
 // CreateIterator    - Create an iterator.
 //-----------------------------------------------------------------------------
 HRARasterIterator* HRAUnlimitedResolutionRaster::CreateIterator (const HRAIteratorOptions& pi_rOptions) const
@@ -1114,8 +1023,7 @@ HRARasterEditor* HRAUnlimitedResolutionRaster::CreateEditorUnShaped (HFCAccessMo
 // public
 // Clone -
 //-----------------------------------------------------------------------------
-HRARaster* HRAUnlimitedResolutionRaster::Clone (HPMObjectStore* pi_pStore,
-                                                       HPMPool*        pi_pLog) const
+HFCPtr<HRARaster> HRAUnlimitedResolutionRaster::Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog) const
     {
     // Make a tmp Raster
     HRAUnlimitedResolutionRaster* pTmpRaster = new HRAUnlimitedResolutionRaster();
@@ -1127,6 +1035,7 @@ HRARaster* HRAUnlimitedResolutionRaster::Clone (HPMObjectStore* pi_pStore,
 
     return pTmpRaster;
     }
+
 //-----------------------------------------------------------------------------
 // Return a new copy of self
 //-----------------------------------------------------------------------------
@@ -1174,6 +1083,28 @@ void HRAUnlimitedResolutionRaster::EnableLookAhead(bool pi_ByBlock)
     m_LookAheadEnabled = true;
     m_LookAheadByBlockEnabled = pi_ByBlock;
 
-    if (m_pCurrentResolutionRaster->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-        ((HFCPtr<HRATiledRaster>&)m_pCurrentResolutionRaster)->EnableLookAhead(pi_ByBlock);
+    m_pCurrentResolutionRaster->EnableLookAhead(pi_ByBlock);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRAUnlimitedResolutionRaster::_BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options)
+    {
+    // find the best resolution for the surface
+    double Resolution = FindTheBestResolution(imageNode.GetPhysicalCoordSys(), options.GetReplacingCoordSys());
+    ChangeResolution(Resolution);
+
+    // Draw the selected resolution
+    return m_pCurrentResolutionRaster->BuildCopyToContext(imageNode, options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageSinkNodePtr HRAUnlimitedResolutionRaster::_GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType)
+    {
+    // We do not support writing of unlimitedRaster.
+    status = IMAGEPP_STATUS_NoImplementation;
+    return NULL;
     }

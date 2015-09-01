@@ -2,26 +2,28 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDContext.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HMDMetaDataContainer.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HMDContext : public HFCShareableObject<HMDContext>
     {
-    HDECLARE_BASECLASS_ID(7012)
+    HDECLARE_BASECLASS_ID(HMDContextId_Base)
 
 public :
 
-    _HDLLu HMDContext();
-    _HDLLu virtual                             ~HMDContext();
+    IMAGEPP_EXPORT HMDContext();
+    IMAGEPP_EXPORT virtual                             ~HMDContext();
 
-    _HDLLu void                                AddMetaDataContainer(HMDMetaDataContainer::Type    pi_Type,
+    IMAGEPP_EXPORT void                                AddMetaDataContainer(HMDMetaDataContainer::Type    pi_Type,
                                                                     const HFCPtr<HMDMetaDataContainer>& pi_rContainer);
 
-    _HDLLu HFCPtr<HMDMetaDataContainer> GetMetaDataContainer(HMDMetaDataContainer::Type    pi_Type);
+    IMAGEPP_EXPORT HFCPtr<HMDMetaDataContainer> GetMetaDataContainer(HMDMetaDataContainer::Type    pi_Type);
 
 private :
 
@@ -34,3 +36,4 @@ private :
     ContainerMap m_MetaDataContainerMap;
     };
 
+END_IMAGEPP_NAMESPACE

@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HNumeric.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include <limits>
 
+BEGIN_IMAGEPP_NAMESPACE
 /**
 
     The HFCNumericLimits is a template class used to encapsulate limitations
@@ -24,7 +25,7 @@
 #define HNUMERIC_local_min(a, b)  ((a)<(b)?(a):(b))
 #define HNUMERIC_local_max(a, b)  ((a)>(b)?(a):(b))
 
-template<class DataType> class HNumeric : numeric_limits<DataType>
+template<class DataType> class HNumeric : std::numeric_limits<DataType>
     {
 public:
     /**----------------------------------------------------------------------------
@@ -383,26 +384,26 @@ public:
 #endif
     };
 
-
-
-#if defined (ANDROID) || defined (__APPLE__)
-//DM-Android
-#elif defined (_WIN32)
 /**----------------------------------------------------------------------------
  double TEMPLATE OVERLOAD FOR HNumeric
 -----------------------------------------------------------------------------*/
+template<>
 inline double HNumeric<double>::GLOBAL_EPSILON()
     {
     return(HGLOBAL_EPSILON);
     }
 
+template<>
 inline double HNumeric<double>::EPSILON_MULTIPLICATOR()
     {
     return(HEPSILON_MULTIPLICATOR);
     }
 
+template<>
 inline double HNumeric<double>::MAX_EPSILON()
     {
     return(HMAX_EPSILON);
     }
-#endif
+
+
+END_IMAGEPP_NAMESPACE

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DUniverse.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DUniverse
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HVE2DUniverse.h>
 #include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
@@ -36,6 +36,16 @@ HVE2DUniverse::HVE2DUniverse()
 HVE2DUniverse::HVE2DUniverse(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
     : HVE2DSimpleShape(pi_rpCoordSys)
     {
+    }
+
+//-----------------------------------------------------------------------------
+// Constructor
+//-----------------------------------------------------------------------------
+HVE2DUniverse::HVE2DUniverse(const HGF2DUniverse& pi_rLightShape,
+                             const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
+    : HVE2DSimpleShape(pi_rpCoordSys)
+    {
+    // The given light shape does not serve a lot of purpose.
     }
 
 
@@ -251,5 +261,5 @@ void HVE2DUniverse::PrintState(ostream& po_rOutput) const
 //-----------------------------------------------------------------------------
 HGF2DShape* HVE2DUniverse::GetLightShape() const
 {
-    return(new HGF2DPolygonOfSegments());
+    return(new HGF2DUniverse());
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rawdataset.h 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: rawdataset.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  Raw Translator
  * Purpose:  Implementation of RawDataset class.  Intented to be subclassed
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2008-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -102,12 +103,15 @@ protected:
 
     CPLErr      AccessBlock( vsi_l_offset nBlockOff, int nBlockSize,
                              void * pData );
-    int         IsLineLoaded( int nLineOff, int nLines );
+    int         IsSignificantNumberOfLinesLoaded( int nLineOff, int nLines );
     void        Initialize();
 
     virtual CPLErr  IRasterIO( GDALRWFlag, int, int, int, int,
                               void *, int, int, GDALDataType,
                               int, int );
+
+    int         CanUseDirectIO(int nXOff, int nYOff, int nXSize, int nYSize,
+                               GDALDataType eBufType);
 
 public:
 
@@ -139,6 +143,11 @@ public:
     virtual CPLErr SetCategoryNames( char ** );
 
     virtual CPLErr  FlushCache();
+
+    virtual CPLVirtualMem  *GetVirtualMemAuto( GDALRWFlag eRWFlag,
+                                               int *pnPixelSpace,
+                                               GIntBig *pnLineSpace,
+                                               char **papszOptions );
 
     CPLErr          AccessLine( int iLine );
 

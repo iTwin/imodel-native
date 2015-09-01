@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMAttributeSet.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // HPMAttributeSet inline methods
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // iterator on start
 //-----------------------------------------------------------------------------
@@ -109,3 +109,4 @@ template <typename AttributeT> void HPMAttributeSet::Remove()
         m_Attributes.erase(Itr);
     }
 
+END_IMAGEPP_NAMESPACE

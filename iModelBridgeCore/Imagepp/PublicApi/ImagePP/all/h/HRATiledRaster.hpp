@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRATiledRaster.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,6 +10,7 @@
 // HRATileStatus class
 ///////////////////////////
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Find the byte position that holds flags for the specified tile.
     -----------------------------------------------------------------------------
@@ -84,39 +85,21 @@ inline bool HRATiledRaster::HRATile::IsInvalidate() const
 // public
 // GetTile
 //-----------------------------------------------------------------------------
-inline HFCPtr<HRAStoredRaster>& HRATiledRaster::HRATile::GetTile()
+inline HFCPtr<HRABitmapBase>& HRATiledRaster::HRATile::GetTile()
     {
     return m_pTile;
     }
+
 
 //-----------------------------------------------------------------------------
 // public
 // SetTile
 //-----------------------------------------------------------------------------
-inline void HRATiledRaster::HRATile::SetTile(HFCPtr<HRAStoredRaster>& pi_rpTile)
+inline void HRATiledRaster::HRATile::SetTile(HFCPtr<HRABitmapBase>& pi_rpTile)
     {
     m_pTile = pi_rpTile;
     }
 
-//-----------------------------------------------------------------------------
-// protected
-// UpdateCachedSize
-//
-// this method is called by
-//-----------------------------------------------------------------------------
-inline void HRATiledRaster::HRATile::UpdateCachedSize()
-    {
-    // m_ObjectSize is a protected member of HPMPoolItem
-    if (m_pTile != 0)
-        {
-        //  the tile is in memory and a IncrementRef was made by GetTile
-        if (m_ObjectSize == 1)
-            DecrementRef();
-        m_ObjectSize = m_pTile->GetObjectSize();
-        }
-    else
-        m_ObjectSize = 0;
-    }
 
 //-----------------------------------------------------------------------------
 // protected
@@ -200,3 +183,4 @@ inline void HRATiledRaster::SetInternalTileStatusSupported(bool pi_TileStatusSup
     {
     m_TileStatusDisabled = !pi_TileStatusSupported;
     }
+END_IMAGEPP_NAMESPACE

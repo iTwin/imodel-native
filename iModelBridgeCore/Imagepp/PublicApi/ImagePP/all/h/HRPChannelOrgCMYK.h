@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelOrgCMYK.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -12,6 +12,7 @@
 
 #include "HRPChannelOrg.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPChannelOrgCMYK : public HRPChannelOrg
     {
 public:
@@ -34,3 +35,4 @@ public:
     HRPChannelOrgCMYK(const HRPChannelOrgCMYK& pi_rObj) : HRPChannelOrg(pi_rObj) { };
     virtual ~HRPChannelOrgCMYK() { };
     };
+END_IMAGEPP_NAMESPACE

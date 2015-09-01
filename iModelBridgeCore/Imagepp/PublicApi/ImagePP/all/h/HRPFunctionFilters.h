@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPFunctionFilters.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -22,20 +22,20 @@
 // HRPColortwistFilter
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPColortwistFilter : public HRPFunctionFilter
     {
-    HDECLARE_CLASS_ID(1144, HRPFunctionFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_Colortwist, HRPFunctionFilter)
     
-
 public:
 
     // Primary methods
-    _HDLLg                 HRPColortwistFilter();
-    _HDLLg                 HRPColortwistFilter(const double pi_Matrix[4][4]);
+    IMAGEPP_EXPORT                 HRPColortwistFilter();
+    IMAGEPP_EXPORT                 HRPColortwistFilter(const double pi_Matrix[4][4]);
 
-    _HDLLg virtual         ~HRPColortwistFilter();
+    IMAGEPP_EXPORT virtual         ~HRPColortwistFilter();
 
-    _HDLLg const double*  GetMatrix() const;
+    IMAGEPP_EXPORT const double*  GetMatrix() const;
 
     // Cloning
     virtual HRPFilter* Clone() const override;
@@ -61,20 +61,24 @@ private:
 
 class HRPAlphaReplacer : public HRPFunctionFilter
     {
-    HDECLARE_CLASS_ID(1213, HRPFunctionFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_AlphaReplacer, HRPFunctionFilter)
     
 
 public:
 
     // Primary methods
-    _HDLLg                 HRPAlphaReplacer();
-    _HDLLg                 HRPAlphaReplacer(Byte pi_DefaultAlpha);
-    _HDLLg                 HRPAlphaReplacer(Byte pi_DefaultAlpha,
+    IMAGEPP_EXPORT                 HRPAlphaReplacer();
+    IMAGEPP_EXPORT                 HRPAlphaReplacer(Byte pi_DefaultAlpha);
+    IMAGEPP_EXPORT                 HRPAlphaReplacer(Byte pi_DefaultAlpha,
                                             const ListHRPAlphaRange& pi_rRanges);
 
-    _HDLLg virtual         ~HRPAlphaReplacer();
+    IMAGEPP_EXPORT virtual         ~HRPAlphaReplacer();
 
-    void            SetDefaultAlpha(Byte pi_DefaultAlpha);
+    Byte                GetDefaultAlpha() const;
+    void                SetDefaultAlpha(Byte pi_DefaultAlpha);
+
+    ListHRPAlphaRange   GetAlphaRanges() const;
+    void                SetAlphaRanges(const ListHRPAlphaRange& pi_rRanges);
 
     virtual HRPFilter* Clone() const override;
 
@@ -89,9 +93,8 @@ private:
     HRPAlphaReplacer(const HRPAlphaReplacer& pi_rObj);
     HRPAlphaReplacer& operator = (const HRPAlphaReplacer& pi_rFilter);
 
-    Byte          m_DefaultAlpha;
-    ListHRPAlphaRange
-    m_Ranges;
+    Byte                m_DefaultAlpha;
+    ListHRPAlphaRange   m_Ranges;
 
     void            DeepDelete();
     void            DeepCopy(const HRPAlphaReplacer& pi_rObj);
@@ -103,20 +106,23 @@ private:
 
 class HRPAlphaComposer : public HRPFunctionFilter
     {
-    HDECLARE_CLASS_ID(1261, HRPFunctionFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_AlphaComposer, HRPFunctionFilter)
     
 
 public:
 
     // Primary methods
-    _HDLLg                 HRPAlphaComposer();
-    _HDLLg                 HRPAlphaComposer(Byte pi_DefaultAlpha);
-    _HDLLg                 HRPAlphaComposer(Byte pi_DefaultAlpha,
+    IMAGEPP_EXPORT                 HRPAlphaComposer();
+    IMAGEPP_EXPORT                 HRPAlphaComposer(Byte pi_DefaultAlpha);
+    IMAGEPP_EXPORT                 HRPAlphaComposer(Byte pi_DefaultAlpha,
                                             const ListHRPAlphaRange& pi_rRanges);
 
-    _HDLLg virtual         ~HRPAlphaComposer();
+    IMAGEPP_EXPORT virtual         ~HRPAlphaComposer();
 
-    _HDLLg void SetDefaultAlpha(Byte pi_DefaultAlpha);
+    Byte                   GetDefaultAlpha() const;
+    IMAGEPP_EXPORT void            SetDefaultAlpha(Byte pi_DefaultAlpha);
+
+    ListHRPAlphaRange      GetAlphaRanges() const;
 
     virtual HRPFilter* Clone() const override;
 
@@ -145,7 +151,7 @@ private:
 
 class HRPColorReplacerFilter : public HRPFunctionFilter
     {
-    HDECLARE_CLASS_ID(1545, HRPFunctionFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_ColorReplacer, HRPFunctionFilter)
     
 
 public:
@@ -154,20 +160,23 @@ public:
     typedef list<HGFLUVCube> LUVCubeList;
 
     // Primary methods
-    _HDLLg HRPColorReplacerFilter();
+    IMAGEPP_EXPORT HRPColorReplacerFilter();
 
-    _HDLLg virtual  ~HRPColorReplacerFilter();
+    IMAGEPP_EXPORT virtual  ~HRPColorReplacerFilter();
 
-    _HDLLg void AddColors(const HGFRGBCube& pi_rCube);
-    _HDLLg void AddColors(const HGFRGBSet&  pi_rCube);
-    _HDLLg void AddColors(const HGFLUVCube& pi_rCube);
+    IMAGEPP_EXPORT void AddColors(const HGFRGBCube& pi_rCube);
+    IMAGEPP_EXPORT void AddColors(const HGFRGBSet&  pi_rCube);
+    IMAGEPP_EXPORT void AddColors(const HGFLUVCube& pi_rCube);
 
-    _HDLLg void RemoveColors(const HGFRGBCube& pi_rCube);
-    _HDLLg void RemoveColors(const HGFRGBSet&  pi_rCube);
-    _HDLLg void RemoveColors(const HGFLUVCube& pi_rCube);
+    IMAGEPP_EXPORT void RemoveColors(const HGFRGBCube& pi_rCube);
+    IMAGEPP_EXPORT void RemoveColors(const HGFRGBSet&  pi_rCube);
+    IMAGEPP_EXPORT void RemoveColors(const HGFLUVCube& pi_rCube);
 
 
-    _HDLLg void SetNewColor(Byte pi_Red, Byte pi_Green, Byte pi_Blue);
+    IMAGEPP_EXPORT void SetNewColor(Byte pi_Red, Byte pi_Green, Byte pi_Blue);
+    const Byte* GetNewColor() const;
+    const RGBSetList& GetSelectedRGBSet() const;
+    const RGBSetList& GetSelectedRemoveRGBSet() const;
 
     virtual HRPFilter* Clone() const override;
 
@@ -197,5 +206,4 @@ private:
     bool   m_NewColorInitialized;
 #endif
     };
-
-
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPageFileFactory.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,20 +11,12 @@
 // This class describes the PageFile implementation
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRFPageFileFactory.h>
 
 HFC_IMPLEMENT_SINGLETON(HRFPageFileFactory)
-
-#include <Imagepp/all/h/HRFTWFPageFile.h>
-#include <Imagepp/all/h/HRFHGRPageFile.h>
-#include <Imagepp/all/h/HRFERSPageFile.h>
-
-HRF_REGISTER_PAGEFILEFORMAT(HRFERSPageFileCreator)
-HRF_REGISTER_PAGEFILEFORMAT(HRFTWFPageFileCreator)
-HRF_REGISTER_PAGEFILEFORMAT(HRFHGRPageFileCreator)
 
 //-----------------------------------------------------------------------------
 // This is a helper class to instantiate an implementation object

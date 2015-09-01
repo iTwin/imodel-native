@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPLigthnessContrastStretch.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,6 +15,7 @@
 
 #include "HRPFunctionFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 // Forward declaration.
 class HGFLuvColorSpace;
 
@@ -24,7 +25,7 @@ class HGFLuvColorSpace;
 
 class HRPLigthnessContrastStretch : public HRPFunctionFilter
     {
-    HDECLARE_CLASS_ID(1351, HRPFunctionFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_LigthnessContrastStretch, HRPFunctionFilter)
     
 
 public:
@@ -38,29 +39,27 @@ public:
     virtual        ~HRPLigthnessContrastStretch();
 
     // Get/Set methods
-    virtual void    SetInterval(        int pi_ChannelIndex,
-                                        int pi_MinValue,
-                                        int pi_MaxValue);
+    IMAGEPP_EXPORT void    SetInterval(uint32_t pi_ChannelIndex,
+                        int pi_MinValue,
+                        int pi_MaxValue);
 
-    virtual void    GetInterval(        int  pi_ChannelIndex,
-                                        int* po_pMinValue,
-                                        int* po_pMaxValue) const;
+    IMAGEPP_EXPORT void    GetInterval(uint32_t pi_ChannelIndex,
+                        int* po_pMinValue,
+                        int* po_pMaxValue) const;
 
 
-    virtual void    SetContrastInterval(int pi_ChannelIndex,
-                                        int pi_MinContrastValue,
-                                        int pi_MaxContrastValue);
+    IMAGEPP_EXPORT void    SetContrastInterval(uint32_t pi_ChannelIndex,
+                                int pi_MinContrastValue,
+                                int pi_MaxContrastValue);
 
-    virtual void    GetContrastInterval(int  pi_ChannelIndex,
-                                        int* po_MinContrastValue,
-                                        int* po_MaxContrastValue) const;
+    IMAGEPP_EXPORT void    GetContrastInterval(uint32_t pi_ChannelIndex,
+                                int* po_MinContrastValue,
+                                int* po_MaxContrastValue) const;
 
-    virtual void    GetGammaFactor(     int     pi_ChannelIndex,
-                                        double* po_pGammaFactor) const;
+    IMAGEPP_EXPORT void    GetGammaFactor(uint32_t pi_ChannelIndex, double* po_pGammaFactor) const;
 
-    virtual void    SetGammaFactor(     int    pi_ChannelIndex,
-                                        double pi_GammaFactor);
-    // Cloning
+    IMAGEPP_EXPORT void    SetGammaFactor(uint32_t pi_ChannelIndex, double pi_GammaFactor);
+
     virtual HRPFilter* Clone() const override;
 
 protected:
@@ -68,7 +67,7 @@ protected:
     // methods
     virtual void    Function  (const void*  pi_pSrcRawData,
                                void*  po_pDestRawData,
-                               uint32_t pi_PixelsCount) const;
+                               uint32_t pi_PixelsCount) const override;
 
 private:
     // Disabled method.
@@ -84,7 +83,7 @@ private:
                                      void*  po_pDestRawData,
                                      uint32_t pi_PixelsCount) const;
     // members
-    unsigned short m_Channels;
+    uint32_t    m_Channels;
     unsigned short m_ChannelWidth;
     double      m_MaxSampleValue;
 
@@ -98,4 +97,5 @@ private:
     HGFLuvColorSpace*
     m_pColorSpaceConverter;
     };
+END_IMAGEPP_NAMESPACE
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFLabColorSpace.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,7 +13,7 @@
 
 #include "HGFBasicColorSpace.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 class HGFLabColorSpace : public HGFBasicColorSpace
     {
 public:
@@ -62,3 +62,4 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE

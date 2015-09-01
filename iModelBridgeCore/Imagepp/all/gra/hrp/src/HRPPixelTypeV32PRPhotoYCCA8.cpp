@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeV32PRPhotoYCCA8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeV32PRPhotoYCCA8.cpp
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeV32PRPhotoYCCA8.h>
 
@@ -21,6 +21,7 @@
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeV24PhotoYCC.h>
+#include "v24rgb.h" // for YCC conversion factor
 
 #include <Imagepp/all/h/HFCMath.h>
 
@@ -30,6 +31,12 @@ HPM_REGISTER_CLASS(HRPPixelTypeV32PRPhotoYCCA8, HRPPixelType)
 typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<HRPPixelConverter*> >
 MapHRPPixelTypeToConverter;
 
+/* Important info: newYCC
+ *  Refer to comments in HRPPixelTypeV24PhotoYcc.cpp regarding
+ *      coefficients used and alpha composition formula.
+ */
+
+#if oldYCC
 // INFORMATION:
 //
 // Matrix to convert PrYCCA -> RGBA (From FPXView sample app.)
@@ -41,11 +48,8 @@ MapHRPPixelTypeToConverter;
 //
 // Then pass through the s_LookUpTable for [0,255] range RGB.
 
-
-
 #define CLAMPTABLE(A)    ((A)<=(0) ? (0) : (A)<(343) ? (A) : (342))
 #define CLAMPINVTABLE(A) (Byte)((A)<=(0) ? (0) : (A)<(256) ? (A) : (255))
-
 // From Flashpix standards document, to convert RGB in [0, 361] to [0, 255]
 static const Byte s_LookUpTable[] =
     {
@@ -99,7 +103,6 @@ static const Byte s_LookUpTable[] =
 
    Values have been rounded.
 */
-#if 0
 static const unsigned short s_RGBGammaTable[] =
     {
     0,5,9,14,18,23,27,30,34,37,
@@ -129,6 +132,7 @@ static const unsigned short s_RGBGammaTable[] =
     247,248,248,249,249,250,251,251,252,252,
     253,253,254,254,255,255
     };
+   
 #endif
 
 
@@ -140,45 +144,59 @@ struct ConverterV32PRPhotoYCCA8_V32PRPhotoYCCA8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(   const void* pi_pSourceRawData,
-                            void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        memcpy((Byte*)pio_pDestRawData, (Byte*)pi_pSourceRawData, 4);
+        memcpy(pio_pDestRawData, pi_pSourceRawData, 4 * pi_PixelsCount);
         }
 
-    virtual void Convert(   const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount) const
-        {
-        memcpy((Byte*)pio_pDestRawData, (Byte*)pi_pSourceRawData, 4 * pi_PixelsCount);
-        }
-
-    virtual void Convert(   const void* pi_pSourceRawData,
+    virtual void ConvertLostChannel(   const void* pi_pSourceRawData,
                             void* pio_pDestRawData,
                             size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
+                            const bool* pi_pChannelsMask) const override
         {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        // Copy entire bytes
-        while(pi_PixelsCount)
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
             {
             if(pi_pChannelsMask[3])
                 {
-                pDestComposite[0] = CLAMPINVTABLE(pDestComposite[0] * pSourceComposite[3] / 255);
-                pDestComposite[1] = CLAMPINVTABLE(pDestComposite[1] * pSourceComposite[3] / 255);
-                pDestComposite[2] = CLAMPINVTABLE(pDestComposite[2] * pSourceComposite[3] / 255);
-                pDestComposite[3] = pSourceComposite[3];
+                pDestComposite[4 * pix    ] = pDestComposite[4 * pix    ] * pSourceComposite[4 * pix + 3] / 255;
+                pDestComposite[4 * pix + 1] = pDestComposite[4 * pix + 1] * pSourceComposite[4 * pix + 3] / 255;
+                pDestComposite[4 * pix + 2] = pDestComposite[4 * pix + 2] * pSourceComposite[4 * pix + 3] / 255;
+                pDestComposite[4 * pix + 3] = pSourceComposite[4 * pix + 3];
                 }
-
-            pi_PixelsCount -= 1;
-            pDestComposite +=4;
-            pSourceComposite+=4;
             }
         };
 
-    HRPPixelConverter* AllocateCopy() const {
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
+        {
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
+
+        for(uint32_t pix = 0; pix < pi_PixelsCount ; ++ pix)
+            {
+            // If transparent, do nothing
+            if (0 != pSourceComposite[4 * pix + 3])
+                {
+                if (0 == pDestComposite[4 * pix + 3] || 255 == pSourceComposite[4 * pix + 3])
+                    {
+                    // Destination pixel is fully transparent, or source pixel is fully opaque. Copy source pixel.
+                    *((uint32_t*)pDestComposite) = *((uint32_t*)pSourceComposite);
+                    }
+                else
+                    {        
+                    pDestComposite[4 * pix    ] = Blend_PRsrc_PRdst(pSourceComposite[4 * pix    ], pDestComposite[4 * pix    ], pSourceComposite[4 * pix + 3]);
+                    pDestComposite[4 * pix + 1] = Blend_PRsrc_PRdst(pSourceComposite[4 * pix + 1], pDestComposite[4 * pix + 1], pSourceComposite[4 * pix + 3]);
+                    pDestComposite[4 * pix + 2] = Blend_PRsrc_PRdst(pSourceComposite[4 * pix + 2], pDestComposite[4 * pix + 2], pSourceComposite[4 * pix + 3]);
+                    
+                    pDestComposite[4 * pix + 3] = Blend_Alpha_Channel(pSourceComposite[4 * pix + 3], pDestComposite[4 * pix + 3]);
+                    }
+                }
+            }
+        }
+
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32PRPhotoYCCA8_V32PRPhotoYCCA8(*this));
         }
 
@@ -193,28 +211,12 @@ struct ConverterV32PRPhotoYCCA8_V24PhotoYCC : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        if(((Byte*)pi_pSourceRawData)[3] != 0)
-            {
-            ((Byte*)pio_pDestRawData)[0] = CLAMPINVTABLE(((Byte*)pi_pSourceRawData)[0] * 255 / ((Byte*)pi_pSourceRawData)[3]);
-            ((Byte*)pio_pDestRawData)[1] = CLAMPINVTABLE(((Byte*)pi_pSourceRawData)[1] * 255 / ((Byte*)pi_pSourceRawData)[3]);
-            ((Byte*)pio_pDestRawData)[2] = CLAMPINVTABLE(((Byte*)pi_pSourceRawData)[2] * 255 / ((Byte*)pi_pSourceRawData)[3]);
-            }
-        else
-            {
-            ((Byte*)pio_pDestRawData)[0] = 0;
-            ((Byte*)pio_pDestRawData)[1] = 0;
-            ((Byte*)pio_pDestRawData)[2] = 0;
-            }
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        // Copy entire bytes
+#if oldYCC
         while(pi_PixelsCount)
             {
             if(pSourceComposite[3] != 0)
@@ -234,21 +236,58 @@ public:
             pDestComposite+=3;
             pSourceComposite+=4;
             }
+#else
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            if(0 != pSourceComposite[4 * pix + 3])
+                {
+                // Demultiply by alpha
+                pDestComposite[3 * pix    ] = pSourceComposite[4 * pix    ] * 255 / pSourceComposite[4 * pix + 3];
+                pDestComposite[3 * pix + 1] = pSourceComposite[4 * pix + 1] * 255 / pSourceComposite[4 * pix + 3];
+                pDestComposite[3 * pix + 2] = pSourceComposite[4 * pix + 2] * 255 / pSourceComposite[4 * pix + 3];
+                }
+            else
+                {
+                // Copy pixel as-is
+                pDestComposite[3  * pix    ] = pSourceComposite[4 * pix    ];
+                pDestComposite[3  * pix + 1] = pSourceComposite[4 * pix + 1];
+                pDestComposite[3  * pix + 2] = pSourceComposite[4 * pix + 2];
+                }
+            }
+#endif
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual const short* GetLostChannels() const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
+        {
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
+
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            // If transparent, do nothing
+            if (0 != pSourceComposite[4 * pix + 3])
+                {
+                if (255 == pSourceComposite[4 * pix + 3])
+                    {
+                    // Source pixel is fully opaque. Copy source pixel,
+                    memcpy(&pDestComposite[3 * pix], &pSourceComposite[4 * pix], 3);
+                    }
+                else
+                    {
+                    pDestComposite[3 * pix    ] = Blend_PRsrc_OPAQUEdst(pSourceComposite[4 * pix    ], pDestComposite[3 * pix    ], pSourceComposite[ 4 * pix + 3]);
+                    pDestComposite[3 * pix + 1] = Blend_PRsrc_OPAQUEdst(pSourceComposite[4 * pix + 1], pDestComposite[3 * pix + 1], pSourceComposite[ 4 * pix + 3]);
+                    pDestComposite[3 * pix + 2] = Blend_PRsrc_OPAQUEdst(pSourceComposite[4 * pix + 2], pDestComposite[3 * pix + 2], pSourceComposite[ 4 * pix + 3]);
+                    }
+                }
+            }
+        };
+
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32PRPhotoYCCA8_V24PhotoYCC(*this));
         }
 
@@ -269,20 +308,13 @@ struct ConverterV24PhotoYCC_V32PRPhotoYCCA8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        memcpy(pio_pDestRawData, pi_pSourceRawData, 3);
-
-        ((Byte*)pio_pDestRawData)[3] = 0xff;  // opaque
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
 
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        // Copy entire bytes
+#if oldYCC
         while(pi_PixelsCount)
             {
             memcpy(pDestComposite, pSourceComposite, 3);
@@ -293,16 +325,16 @@ public:
             pDestComposite+=4;
             pSourceComposite+=3;
             }
+#else
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            memcpy(&pDestComposite[4 * pix], &pSourceComposite[3 * pix], 3);
+            pDestComposite[4 * pix + 3] = 255; // opaque
+            }
+#endif
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV24PhotoYCC_V32PRPhotoYCCA8(*this));
         }
 
@@ -311,36 +343,22 @@ static struct ConverterV24PhotoYCC_V32PRPhotoYCCA8        s_V24PhotoYCC_V32PRPho
 
 //-----------------------------------------------------------------------------
 //  s_V32PRPhotoYCCA8_V24R8G8B8 - Converter
+// Templated version that works for both V24R8G8B8 and V24B8G8R8 as output
+// R, G, B values represent their relative index within a pixel
 //-----------------------------------------------------------------------------
+template<uint32_t R, uint32_t G, uint32_t B>
 struct ConverterV32PRPhotoYCCA8_V24R8G8B8 : public HRPPixelConverter
     {
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
+        
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        float PreMultY = (float)(1.3586 * pSourceComposite[0]);
-        float AlphaPercent = ((float) pSourceComposite[3]) / (float)255.0;
-
-        short R = (short)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
-        short G = (short)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
-        short B = (short)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
-
-        // (S * alpha) + (D * (1 - alpha))
-        pDestComposite[0] = ((s_LookUpTable[CLAMPTABLE(R)] * pSourceComposite[3]) +
-                             (pDestComposite[0] * (255 - pSourceComposite[3]))) / 255;
-        pDestComposite[1] = ((s_LookUpTable[CLAMPTABLE(G)] * pSourceComposite[3]) +
-                             (pDestComposite[1] * (255 - pSourceComposite[3]))) / 255;
-        pDestComposite[2] = ((s_LookUpTable[CLAMPTABLE(B)] * pSourceComposite[3]) +
-                             (pDestComposite[2] * (255 - pSourceComposite[3]))) / 255;
-
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+#if oldYCC
         short R;
         short G;
         short B;
@@ -348,10 +366,6 @@ public:
         float PreMultY;
         float AlphaPercent;
 
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
-        // Copy entire bytes
         while(pi_PixelsCount)
             {
             PreMultY = (float)(1.3586 * pSourceComposite[0]);
@@ -373,34 +387,54 @@ public:
             pDestComposite += 3;
             pSourceComposite += 4;
             }
+#else
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {  
+            // If transparent, do nothing
+            if(0 != pSourceComposite[4 * pix + 3])
+                {
+                if(255 == pSourceComposite[4 * pix + 3])
+                    {
+                    // Only conversion is required. Overwrite dest.
+                    pDestComposite[3 * pix + R] = static_cast<Byte>(Convert_YCC_to_RGB_Red  (pSourceComposite[4 * pix], pSourceComposite[4 * pix + 2]));
+                    pDestComposite[3 * pix + G] = static_cast<Byte>(Convert_YCC_to_RGB_Green(pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]));
+                    pDestComposite[3 * pix + B] = static_cast<Byte>(Convert_YCC_to_RGB_Blue (pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1]));
+                    }
+                else
+                    {
+                    // Demultiply
+                    const uint32_t Y  = (pSourceComposite[4 * pix    ] * 255) / pSourceComposite[4 * pix + 3];
+                    const uint32_t Cb = (pSourceComposite[4 * pix + 1] * 255) / pSourceComposite[4 * pix + 3];
+                    const uint32_t Cr = (pSourceComposite[4 * pix + 2] * 255) / pSourceComposite[4 * pix + 3];
+                    
+                    // Convert YCbCr to V24RGB, premultiply in RGB color space and compose
+                    const uint32_t Rsrc = Convert_YCC_to_RGB_Red  (Y, Cr);
+                    const uint32_t Gsrc = Convert_YCC_to_RGB_Green(Y, Cb, Cr);
+                    const uint32_t Bsrc = Convert_YCC_to_RGB_Blue (Y, Cb);
+                    
+                    pDestComposite[3 * pix + R] = Blend_src_OPAQUEdst(Rsrc, pDestComposite[3 * pix + R], pSourceComposite[4 * pix + 3]);
+                    pDestComposite[3 * pix + G] = Blend_src_OPAQUEdst(Gsrc, pDestComposite[3 * pix + G], pSourceComposite[4 * pix + 3]);
+                    pDestComposite[3 * pix + B] = Blend_src_OPAQUEdst(Bsrc, pDestComposite[3 * pix + B], pSourceComposite[4 * pix + 3]);
+                    }
+                }
+            }
+#endif
         };
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
+        
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        short R = (short)((1.3586 * pSourceComposite[0]) + (0.0 * pSourceComposite[1]) + (1.82187 * pSourceComposite[2]) + (-249.571 * pSourceComposite[3] / 255));
-        short G = (short)((1.3586 * pSourceComposite[0]) + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * pSourceComposite[3] / 255));
-        short B = (short)((1.3586 * pSourceComposite[0]) + (2.218 * pSourceComposite[1]) + (0.0 * pSourceComposite[2]) + (-345.94 * pSourceComposite[3] / 255));
-
-        ((Byte*)pio_pDestRawData)[0] = s_LookUpTable[CLAMPTABLE(R)];
-        ((Byte*)pio_pDestRawData)[1] = s_LookUpTable[CLAMPTABLE(G)];
-        ((Byte*)pio_pDestRawData)[2] = s_LookUpTable[CLAMPTABLE(B)];
-
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+#if oldYCC
         short R;
         short G;
         short B;
 
         float PreMultY;
         float AlphaPercent;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
+        
         // Copy entire bytes
         while(pi_PixelsCount)
             {
@@ -419,165 +453,56 @@ public:
             pDestComposite += 3;
             pSourceComposite += 4;
             }
+#else
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            uint32_t Y;
+            uint32_t Cb;
+            uint32_t Cr;
+            
+            if(0 != pSourceComposite[4 * pix + 3])
+                {
+                // Demultiply by alpha
+                Y  = (pSourceComposite[4 * pix    ] * 255) / pSourceComposite[4 * pix + 3];
+                Cb = (pSourceComposite[4 * pix + 1] * 255) / pSourceComposite[4 * pix + 3];
+                Cr = (pSourceComposite[4 * pix + 2] * 255) / pSourceComposite[4 * pix + 3];
+                }
+            else
+                {
+                // No alpha value. Treat as V24PhotoYCC.
+                Y  = pSourceComposite[4 * pix    ];
+                Cb = pSourceComposite[4 * pix + 1];
+                Cr = pSourceComposite[4 * pix + 2];
+                }
+                
+            pDestComposite[3 * pix + R] = static_cast<Byte>(Convert_YCC_to_RGB_Red  (Y, Cr));
+            pDestComposite[3 * pix + G] = static_cast<Byte>(Convert_YCC_to_RGB_Green(Y, Cb, Cr));
+            pDestComposite[3 * pix + B] = static_cast<Byte>(Convert_YCC_to_RGB_Blue (Y, Cb));
+            }
+#endif
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
-
-
-    HRPPixelConverter* AllocateCopy() const {
-        return(new ConverterV32PRPhotoYCCA8_V24R8G8B8(*this));
+    
+    HRPPixelConverter* AllocateCopy() const  override{
+        return(new ConverterV32PRPhotoYCCA8_V24R8G8B8<R,G,B>(*this));
         }
 
 private:
 
     static short m_LostChannels[];
     };
-short ConverterV32PRPhotoYCCA8_V24R8G8B8::m_LostChannels[] = {3, -1};
-static struct ConverterV32PRPhotoYCCA8_V24R8G8B8        s_V32PRPhotoYCCA8_V24R8G8B8;
+template<> short ConverterV32PRPhotoYCCA8_V24R8G8B8<0,1,2>::m_LostChannels[] = {3, -1};
+static struct ConverterV32PRPhotoYCCA8_V24R8G8B8<0,1,2>        s_V32PRPhotoYCCA8_V24R8G8B8; // RGB
 
 //-----------------------------------------------------------------------------
 //  s_V32PRPhotoYCCA8_V24B8G8R8 - Converter
 //-----------------------------------------------------------------------------
-struct ConverterV32PRPhotoYCCA8_V24B8G8R8 : public HRPPixelConverter
-    {
-public:
-    DEFINE_T_SUPER(HRPPixelConverter)
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
-        float PreMultY = (float)(1.3586 * pSourceComposite[0]);
-        float AlphaPercent = ((float) pSourceComposite[3]) / (float)255.0;
-
-        short R = (short)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
-        short G = (short)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
-        short B = (short)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
-
-        // (S * alpha) + (D * (1 - alpha))
-        pDestComposite[0] = ((s_LookUpTable[CLAMPTABLE(B)] * pSourceComposite[3]) +
-                             (pDestComposite[0] * (255 - pSourceComposite[3]))) / 255;
-        pDestComposite[1] = ((s_LookUpTable[CLAMPTABLE(G)] * pSourceComposite[3]) +
-                             (pDestComposite[1] * (255 - pSourceComposite[3]))) / 255;
-        pDestComposite[2] = ((s_LookUpTable[CLAMPTABLE(R)] * pSourceComposite[3]) +
-                             (pDestComposite[2] * (255 - pSourceComposite[3]))) / 255;
-
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
-        short R;
-        short G;
-        short B;
-
-        float PreMultY;
-        float AlphaPercent;
-
-        // Copy entire bytes
-        while(pi_PixelsCount)
-            {
-            PreMultY = (float)(1.3586 * pSourceComposite[0]);
-            AlphaPercent = (float)(pSourceComposite[3]) / (float)(255.0);
-
-            R = (short)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
-            G = (short)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
-            B = (short)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
-
-            // (S * alpha) + (D * (1 - alpha))
-            pDestComposite[0] = ((s_LookUpTable[CLAMPTABLE(B)] * pSourceComposite[3]) +
-                                 (pDestComposite[0] * (255 - pSourceComposite[3]))) / 255;
-            pDestComposite[1] = ((s_LookUpTable[CLAMPTABLE(G)] * pSourceComposite[3]) +
-                                 (pDestComposite[1] * (255 - pSourceComposite[3]))) / 255;
-            pDestComposite[2] = ((s_LookUpTable[CLAMPTABLE(R)] * pSourceComposite[3]) +
-                                 (pDestComposite[2] * (255 - pSourceComposite[3]))) / 255;
-
-            pi_PixelsCount -= 1;
-            pDestComposite += 3;
-            pSourceComposite += 4;
-            }
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-
-        short R = (short)((1.3586 * pSourceComposite[0]) + (0.0 * pSourceComposite[1]) + (1.82187 * pSourceComposite[2]) + (-249.571 * pSourceComposite[3] / 255));
-        short G = (short)((1.3586 * pSourceComposite[0]) + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * pSourceComposite[3] / 255));
-        short B = (short)((1.3586 * pSourceComposite[0]) + (2.218 * pSourceComposite[1]) + (0.0 * pSourceComposite[2]) + (-345.94 * pSourceComposite[3] / 255));
-
-        ((Byte*)pio_pDestRawData)[2] = s_LookUpTable[CLAMPTABLE(R)];
-        ((Byte*)pio_pDestRawData)[1] = s_LookUpTable[CLAMPTABLE(G)];
-        ((Byte*)pio_pDestRawData)[0] = s_LookUpTable[CLAMPTABLE(B)];
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        short R;
-        short G;
-        short B;
-
-        float PreMultY;
-        float AlphaPercent;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
-        // Copy entire bytes
-        while(pi_PixelsCount)
-            {
-            PreMultY = (float)(1.3586 * pSourceComposite[0]);
-            AlphaPercent = ((float) pSourceComposite[3]) / (float)255.0;
-
-            R = (short)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
-            G = (short)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
-            B = (short)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
-
-            pDestComposite[2] = s_LookUpTable[CLAMPTABLE(R)];
-            pDestComposite[1] = s_LookUpTable[CLAMPTABLE(G)];
-            pDestComposite[0] = s_LookUpTable[CLAMPTABLE(B)];
-
-            pi_PixelsCount -= 1;
-            pDestComposite += 3;
-            pSourceComposite += 4;
-            }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
-
-    virtual const short* GetLostChannels() const
-        {
-        return m_LostChannels;
-        }
-
-    HRPPixelConverter* AllocateCopy() const {
-        return(new ConverterV32PRPhotoYCCA8_V24B8G8R8(*this));
-        }
-
-private:
-
-    static short m_LostChannels[];
-    };
-short ConverterV32PRPhotoYCCA8_V24B8G8R8::m_LostChannels[] = {3, -1};
-static struct ConverterV32PRPhotoYCCA8_V24B8G8R8        s_V32PRPhotoYCCA8_V24B8G8R8;
+template<> short ConverterV32PRPhotoYCCA8_V24R8G8B8<2,1,0>::m_LostChannels[] = {3, -1};
+static struct ConverterV32PRPhotoYCCA8_V24R8G8B8<2,1,0>        s_V32PRPhotoYCCA8_V24B8G8R8; // BGR
 
 //-----------------------------------------------------------------------------
 //  s_V32PRPhotoYCCA8_I8R8G8B8 - Converter
@@ -593,51 +518,24 @@ public:
         {
         };
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)(GetDestinationPixelType()->GetPalette().GetCompositeValue(*((Byte*)pio_pDestRawData)));
 
-        float PreMultY = (float)(1.3586 * pSourceComposite[0]);
-        float AlphaPercent = ((float) pSourceComposite[3]) / (float)255.0;
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestRawData = (Byte*)pio_pDestRawData;
+        Byte* pDestComposite; //Used to retrieve values from our palette
 
-        short R = (short)(PreMultY + (1.82187 * pSourceComposite[2]) + (-249.571 * AlphaPercent));
-        short G = (short)(PreMultY + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * AlphaPercent));
-        short B = (short)(PreMultY + (2.218 * pSourceComposite[1]) + (-345.94 * AlphaPercent));
+        const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
-        // (S * alpha) + (D * (1 - alpha))
-        Byte Blend[3];
-
-        Blend[0] = ((s_LookUpTable[CLAMPTABLE(R)] * pSourceComposite[3]) +
-                    (pDestComposite[0] * (255 - pSourceComposite[3]))) / 255;
-        Blend[1] = ((s_LookUpTable[CLAMPTABLE(G)] * pSourceComposite[3]) +
-                    (pDestComposite[1] * (255 - pSourceComposite[3]))) / 255;
-        Blend[2] = ((s_LookUpTable[CLAMPTABLE(B)] * pSourceComposite[3]) +
-                    (pDestComposite[2] * (255 - pSourceComposite[3]))) / 255;
-
-        // get a good index for the R,G,B blend values
-        *((Byte*)pio_pDestRawData) = m_QuantizedPalette.GetIndex(
-                                           Blend[0],
-                                           Blend[1],
-                                           Blend[2]);
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+#if oldYCC
         short R;
         short G;
         short B;
 
         float PreMultY;
         float AlphaPercent;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
-
+        
         Byte Blend[3];
-        Byte* pDestComposite;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -669,35 +567,61 @@ public:
             pDest += 1;
             pSourceComposite += 4;
             }
+#else
+
+
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {  
+            pDestComposite = (Byte*)rPalette.GetCompositeValue(pDestRawData[pix]);
+            
+            // If transparent, do nothing
+            if(0 != pSourceComposite[4 * pix + 3])
+                {
+                Byte Rdest;
+                Byte Gdest;
+                Byte Bdest;
+                
+                if(255 == pSourceComposite[4 * pix + 3])
+                    {
+                    // Only conversion is required. Overwrite dest.
+                    Rdest = static_cast<Byte>(Convert_YCC_to_RGB_Red  (pSourceComposite[4 * pix], pSourceComposite[4 * pix + 2]));
+                    Gdest = static_cast<Byte>(Convert_YCC_to_RGB_Green(pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]));
+                    Bdest = static_cast<Byte>(Convert_YCC_to_RGB_Blue (pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1]));
+                    }
+                else
+                    {
+                    // Demultiply
+                    const uint32_t Y =  (pSourceComposite[4 * pix    ] * 255) / pSourceComposite[4 * pix + 3];
+                    const uint32_t Cb = (pSourceComposite[4 * pix + 1] * 255) / pSourceComposite[4 * pix + 3];
+                    const uint32_t Cr = (pSourceComposite[4 * pix + 2] * 255) / pSourceComposite[4 * pix + 3];
+                    
+                    // Convert YCbCr to V24RGB and compose
+                    Rdest = Blend_src_OPAQUEdst(Convert_YCC_to_RGB_Red  (Y, Cr),     pDestComposite[0], pSourceComposite[4 * pix + 3]);
+                    Gdest = Blend_src_OPAQUEdst(Convert_YCC_to_RGB_Green(Y, Cb, Cr), pDestComposite[1], pSourceComposite[4 * pix + 3]);
+                    Bdest = Blend_src_OPAQUEdst(Convert_YCC_to_RGB_Blue (Y, Cb),     pDestComposite[2], pSourceComposite[4 * pix + 3]);
+                    }
+                    
+                // get a good index for the R,G,B blend values
+                pDestRawData[pix] = m_QuantizedPalette.GetIndex(Rdest, Gdest, Bdest);
+                }
+            }
+#endif
         };
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+   virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
 
-        short R = (short)((1.3586 * pSourceComposite[0]) + (0.0 * pSourceComposite[1]) + (1.82187 * pSourceComposite[2]) + (-249.571 * pSourceComposite[3] / 255));
-        short G = (short)((1.3586 * pSourceComposite[0]) + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * pSourceComposite[3] / 255));
-        short B = (short)((1.3586 * pSourceComposite[0]) + (2.218 * pSourceComposite[1]) + (0.0 * pSourceComposite[2]) + (-345.94 * pSourceComposite[3] / 255));
+        Byte* const pSourceComposite = (Byte*)pi_pSourceRawData;
+        Byte* pDestRawData = (Byte*)pio_pDestRawData;
 
-        // get a good index for the R,G,B blend values
-        *((Byte*)pio_pDestRawData) = m_QuantizedPalette.GetIndex(
-                                           s_LookUpTable[CLAMPTABLE(R)],
-                                           s_LookUpTable[CLAMPTABLE(G)],
-                                           s_LookUpTable[CLAMPTABLE(B)]);
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+#if oldYCC
         short R;
         short G;
         short B;
 
         float PreMultY;
         float AlphaPercent;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
+        
         // Copy entire bytes
         while(pi_PixelsCount)
             {
@@ -717,49 +641,56 @@ public:
             pi_PixelsCount -= 1;
             pDest += 1;
             pSourceComposite += 4;
+            } 
+#else
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            uint32_t Y;
+            uint32_t Cb;
+            uint32_t Cr;
+            
+            if(0 != pSourceComposite[4 * pix + 3])
+                {
+                // Demultiply by alpha
+                Y  = (pSourceComposite[4 * pix    ] * 255) / pSourceComposite[4 * pix + 3];
+                Cb = (pSourceComposite[4 * pix + 1] * 255) / pSourceComposite[4 * pix + 3];
+                Cr = (pSourceComposite[4 * pix + 2] * 255) / pSourceComposite[4 * pix + 3];
+                }
+            else
+                {
+                // No alpha value. Treat as V24PhotoYCC.
+                Y  = pSourceComposite[4 * pix    ];
+                Cb = pSourceComposite[4 * pix + 1];
+                Cr = pSourceComposite[4 * pix + 2];
+                }
+
+            // get a good index for the R,G,B blend values
+            pDestRawData[pix] = m_QuantizedPalette.GetIndex(static_cast<Byte>(Convert_YCC_to_RGB_Red  (Y, Cr)),
+                                                            static_cast<Byte>(Convert_YCC_to_RGB_Green(Y, Cb, Cr)),
+                                                            static_cast<Byte>(Convert_YCC_to_RGB_Blue (Y, Cb)));
             }
+#endif
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    // convert to RGB without alpha
-    virtual void ConvertToValue(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-
-        short R = (short)((1.3586 * pSourceComposite[0]) + (0.0 * pSourceComposite[1]) + (1.82187 * pSourceComposite[2]) + (-249.571 * pSourceComposite[3] / 255));
-        short G = (short)((1.3586 * pSourceComposite[0]) + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * pSourceComposite[3] / 255));
-        short B = (short)((1.3586 * pSourceComposite[0]) + (2.218 * pSourceComposite[1]) + (0.0 * pSourceComposite[2]) + (-345.94 * pSourceComposite[3] / 255));
-
-        ((Byte*)pio_pDestRawData)[0] = s_LookUpTable[CLAMPTABLE(R)];
-        ((Byte*)pio_pDestRawData)[1] = s_LookUpTable[CLAMPTABLE(G)];
-        ((Byte*)pio_pDestRawData)[2] = s_LookUpTable[CLAMPTABLE(B)];
-        };
-    virtual const short* GetLostChannels() const
+   virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32PRPhotoYCCA8_I8R8G8B8(*this));
         }
 
 protected:
 
-    virtual void Update()
+    virtual void Update() override
         {
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
         // fill the octree with the destination palette entries
         int32_t NbIndex(rPalette.CountUsedEntries());
         for(int Index = 0; Index < NbIndex; Index++)
-            m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index),
-                                                 (Byte)Index);
+            m_QuantizedPalette.AddCompositeValue(rPalette.GetCompositeValue(Index), (Byte)Index);
         }
 
 private:
@@ -776,38 +707,12 @@ struct ConverterV24R8G8B8_V32PRPhotoYCCA8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-//            Byte RCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[0]];
-//            Byte GCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[1]];
-//            Byte BCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[2]];
-        Byte RCorrected = ((Byte*)pi_pSourceRawData)[0];
-        Byte GCorrected = ((Byte*)pi_pSourceRawData)[1];
-        Byte BCorrected = ((Byte*)pi_pSourceRawData)[2];
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        // Premultiply some factors (opt)
-        double RMult = 0.299 * RCorrected;
-        double GMult = 0.587 * GCorrected;
-        double BMult = 0.114 * BCorrected;
-
-        // Compute luma and chroma values
-        double L = RMult + GMult + BMult;
-        double C1 = -RMult - GMult + 0.886 * BCorrected;
-        double C2 = 0.701 * RCorrected - GMult - BMult;
-
-        // Scale in [0, 255]
-        short LS =  (short)(L / 1.402);
-        short C1S = (short)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
-        short C2S = (short)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
-
-        ((Byte*)pio_pDestRawData)[0] = CLAMPINVTABLE(LS);
-        ((Byte*)pio_pDestRawData)[1] = CLAMPINVTABLE(C1S);
-        ((Byte*)pio_pDestRawData)[2] = CLAMPINVTABLE(C2S);
-        ((Byte*)pio_pDestRawData)[3] = 0xff;
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+#if oldYCC
         Byte RCorrected;
         Byte GCorrected;
         Byte BCorrected;
@@ -823,9 +728,6 @@ public:
         short LS;
         short C1S;
         short C2S;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -861,16 +763,18 @@ public:
             pDestComposite += 4;
             pSourceComposite += 3;
             }
+#else
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            pDestComposite[4 * pix    ] = static_cast<Byte>(Convert_RGB_to_YCC_Y (pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1], pSourceComposite[3 * pix + 2]));
+            pDestComposite[4 * pix + 1] = static_cast<Byte>(Convert_RGB_to_YCC_Cb(pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1], pSourceComposite[3 * pix + 2]));
+            pDestComposite[4 * pix + 2] = static_cast<Byte>(Convert_RGB_to_YCC_Cr(pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1], pSourceComposite[3 * pix + 2]));
+            pDestComposite[4 * pix + 3] = 255; // Opaque
+            }
+#endif
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV24R8G8B8_V32PRPhotoYCCA8(*this));
         }
     };
@@ -884,32 +788,20 @@ struct ConverterV32PRPhotoYCCA8_V32R8G8B8A8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+  virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
 
-        short R = (short)((1.3586 * pSourceComposite[0]) + (0.0 * pSourceComposite[1]) + (1.82187 * pSourceComposite[2]) + (-249.571 * pSourceComposite[3] / 255));
-        short G = (short)((1.3586 * pSourceComposite[0]) + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * pSourceComposite[3] / 255));
-        short B = (short)((1.3586 * pSourceComposite[0]) + (2.218 * pSourceComposite[1]) + (0.0 * pSourceComposite[2]) + (-345.94 * pSourceComposite[3] / 255));
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        ((Byte*)pio_pDestRawData)[0] = s_LookUpTable[CLAMPTABLE(R)];
-        ((Byte*)pio_pDestRawData)[1] = s_LookUpTable[CLAMPTABLE(G)];
-        ((Byte*)pio_pDestRawData)[2] = s_LookUpTable[CLAMPTABLE(B)];
-        ((Byte*)pio_pDestRawData)[3] = pSourceComposite[3];
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+#if oldYCC
         short R;
         short G;
         short B;
 
         float PreMultY;
         float AlphaPercent;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
+        
         // Copy entire bytes
         while(pi_PixelsCount)
             {
@@ -929,68 +821,48 @@ public:
             pDestComposite += 4;
             pSourceComposite += 4;
             }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
-        // If source pixel is fully transparent, destination is unaltered
-        if (pSourceComposite[3] != 0)
+#else
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
             {
-            short R = (short)((1.3586 * pSourceComposite[0]) + (0.0 * pSourceComposite[1]) + (1.82187 * pSourceComposite[2]) + (-249.571 * pSourceComposite[3] / 255));
-            short G = (short)((1.3586 * pSourceComposite[0]) + (-0.43 * pSourceComposite[1]) + (-0.927 * pSourceComposite[2]) + (194.44 * pSourceComposite[3] / 255));
-            short B = (short)((1.3586 * pSourceComposite[0]) + (2.218 * pSourceComposite[1]) + (0.0 * pSourceComposite[2]) + (-345.94 * pSourceComposite[3] / 255));
-
-            if (pDestComposite[3] == 0 || pSourceComposite[3] == 255)
+            uint32_t Y;
+            uint32_t Cb;
+            uint32_t Cr;
+            
+            if(0 != pSourceComposite[4 * pix + 3])
                 {
-                // Destination pixel is fully transparent, or source pixel is fully opaque. Copy source pixel,
-                pDestComposite[0] = s_LookUpTable[CLAMPTABLE(R)];
-                pDestComposite[1] = s_LookUpTable[CLAMPTABLE(G)];
-                pDestComposite[2] = s_LookUpTable[CLAMPTABLE(B)];
-                pDestComposite[3] = pSourceComposite[3];
+                // Demultiply by alpha then convert
+                Y  = (pSourceComposite[4 * pix    ] * 255) / pSourceComposite[4 * pix + 3];
+                Cb = (pSourceComposite[4 * pix + 1] * 255) / pSourceComposite[4 * pix + 3];
+                Cr = (pSourceComposite[4 * pix + 2] * 255) / pSourceComposite[4 * pix + 3];
                 }
             else
                 {
-                HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-                // Cdst' = Asrc * (Csrc - (Adst * Cdst)) + (Adst * Cdst)
-                // Alphas are in [0, 255]. Tweak -> shift to divide, slight error induced.
-                Byte PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[0]);
-                pDestComposite[0] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (s_LookUpTable[CLAMPTABLE(R)] - PremultDestColor)) + PremultDestColor;
-
-                PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[1]);
-                pDestComposite[1] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (s_LookUpTable[CLAMPTABLE(G)] - PremultDestColor)) + PremultDestColor;
-
-                PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[2]);
-                pDestComposite[2] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (s_LookUpTable[CLAMPTABLE(B)] - PremultDestColor)) + PremultDestColor;
-
-                // Adst' = 1 - ( (1 - Asrc) * (1 - Adst) )
-                // --> Transparency percentages are multiplied
-                pDestComposite[3] = 255 - (pQuotients->DivideBy255ToByte((255 - pSourceComposite[3]) * (255 - pDestComposite[3])));
+                // No alpha value. Treat as V24PhotoYCC.
+                Y  = pSourceComposite[4 * pix    ];
+                Cb = pSourceComposite[4 * pix + 1];
+                Cr = pSourceComposite[4 * pix + 2];
                 }
+                
+            pDestComposite[4 * pix    ] = static_cast<Byte>(Convert_YCC_to_RGB_Red  (Y, Cr));
+            pDestComposite[4 * pix + 1] = static_cast<Byte>(Convert_YCC_to_RGB_Green(Y, Cb, Cr));
+            pDestComposite[4 * pix + 2] = static_cast<Byte>(Convert_YCC_to_RGB_Blue (Y, Cb));
+            pDestComposite[4 * pix + 3] = pSourceComposite[4 * pix + 3];
             }
+#endif
         };
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
+
+#if oldYCC
         short R;
         short G;
         short B;
 
         float PreMultY;
         float AlphaPercent;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
         HFCMath (*pQuotients) (HFCMath::GetInstance());
 
@@ -1038,9 +910,39 @@ public:
             pDestComposite += 4;
             pSourceComposite += 4;
             }
+#else
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            // If transparent, do nothing
+            if(0 != pSourceComposite[4 * pix + 3])
+                {
+                // Demultiply by alpha then convert
+                const uint32_t Y  = pSourceComposite[4 * pix    ] * 255 / pSourceComposite[4 * pix + 3];
+                const uint32_t Cb = pSourceComposite[4 * pix + 1] * 255 / pSourceComposite[4 * pix + 3];
+                const uint32_t Cr = pSourceComposite[4 * pix + 2] * 255 / pSourceComposite[4 * pix + 3];
+                
+                if (0 == pDestComposite[4 * pix + 3] || 255 == pSourceComposite[4 * pix + 3])
+                    {
+                    // Destination pixel is fully transparent, or source pixel is fully opaque. Copy source pixel.
+                    pDestComposite[4 * pix    ] = static_cast<Byte>(Convert_YCC_to_RGB_Red  (Y, Cr));
+                    pDestComposite[4 * pix + 1] = static_cast<Byte>(Convert_YCC_to_RGB_Green(Y, Cb, Cr));
+                    pDestComposite[4 * pix + 2] = static_cast<Byte>(Convert_YCC_to_RGB_Blue (Y, Cb));
+                    pDestComposite[4 * pix + 3] = pSourceComposite[4 * pix + 3];
+                    }
+                else
+                    {
+                    const uint32_t Aout = Blend_Alpha_Channel(pSourceComposite[4 * pix + 3], pDestComposite[4 * pix + 3]);                    
+                    pDestComposite[4 * pix    ] = Blend_src_dst( Convert_YCC_to_RGB_Red  (Y,Cr),    pDestComposite[4 * pix    ], pSourceComposite[4 * pix + 3], pDestComposite[4 * pix + 3], Aout);
+                    pDestComposite[4 * pix + 1] = Blend_src_dst( Convert_YCC_to_RGB_Green(Y,Cb,Cr), pDestComposite[4 * pix + 1], pSourceComposite[4 * pix + 3], pDestComposite[4 * pix + 3], Aout);
+                    pDestComposite[4 * pix + 2] = Blend_src_dst( Convert_YCC_to_RGB_Blue (Y,Cb),    pDestComposite[4 * pix + 2], pSourceComposite[4 * pix + 3], pDestComposite[4 * pix + 3], Aout);
+                    pDestComposite[4 * pix + 3] = static_cast<Byte>(Aout);
+                    }
+                }
+            }
+#endif            
         };
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32PRPhotoYCCA8_V32R8G8B8A8(*this));
         }
 
@@ -1057,38 +959,12 @@ struct ConverterV32R8G8B8A8_V32PRPhotoYCCA8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-//            Byte RCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[0]];
-//            Byte GCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[1]];
-//            Byte BCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[2]];
-        Byte RCorrected = ((Byte*)pi_pSourceRawData)[0];
-        Byte GCorrected = ((Byte*)pi_pSourceRawData)[1];
-        Byte BCorrected = ((Byte*)pi_pSourceRawData)[2];
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        // Premultiply some factors (opt)
-        double RMult = 0.299 * RCorrected;
-        double GMult = 0.587 * GCorrected;
-        double BMult = 0.114 * BCorrected;
-
-        // Compute luma and chroma values
-        double L = RMult + GMult + BMult;
-        double C1 = -RMult - GMult + 0.886 * BCorrected;
-        double C2 = 0.701 * RCorrected - GMult - BMult;
-
-        // Scale in [0, 255]
-        short LS  = (short)(L / 1.402);
-        short C1S = (short)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
-        short C2S = (short)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
-
-        ((Byte*)pio_pDestRawData)[0] = CLAMPINVTABLE(LS) * ((Byte*)pi_pSourceRawData)[3] / 255;
-        ((Byte*)pio_pDestRawData)[1] = CLAMPINVTABLE(C1S) * ((Byte*)pi_pSourceRawData)[3] / 255;
-        ((Byte*)pio_pDestRawData)[2] = CLAMPINVTABLE(C2S) * ((Byte*)pi_pSourceRawData)[3] / 255;
-        ((Byte*)pio_pDestRawData)[3] = ((Byte*)pi_pSourceRawData)[3];
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+#if oldYCC
         Byte RCorrected;
         Byte GCorrected;
         Byte BCorrected;
@@ -1104,9 +980,6 @@ public:
         short LS;
         short C1S;
         short C2S;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -1142,23 +1015,61 @@ public:
             pDestComposite += 4;
             pSourceComposite += 4;
             }
+#else
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            pDestComposite[4 * pix]     = static_cast<Byte>( (Convert_RGB_to_YCC_Y (pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]) ) * pSourceComposite[4 * pix + 3] / 255 );
+            pDestComposite[4 * pix + 1] = static_cast<Byte>( (Convert_RGB_to_YCC_Cb(pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]) ) * pSourceComposite[4 * pix + 3] / 255 ); 
+            pDestComposite[4 * pix + 2] = static_cast<Byte>( (Convert_RGB_to_YCC_Cr(pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]) ) * pSourceComposite[4 * pix + 3] / 255 ); 
+            pDestComposite[4 * pix + 3] = pSourceComposite[4 * pix + 3];
+            }
+#endif
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
+        {
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
+        
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            // If transparent, do nothing
+            if(0 != pSourceComposite[4 * pix + 3])
+                {
+                // Convert and multiply by alpha
+                const uint32_t Y  = (Convert_RGB_to_YCC_Y (pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]) ) * pSourceComposite[4 * pix + 3] / 255;
+                const uint32_t Cb = (Convert_RGB_to_YCC_Cb(pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]) ) * pSourceComposite[4 * pix + 3] / 255;
+                const uint32_t Cr = (Convert_RGB_to_YCC_Cr(pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]) ) * pSourceComposite[4 * pix + 3] / 255;
+                                    
+                if (0 == pDestComposite[4 * pix + 3] || 255 == pSourceComposite[4 * pix + 3])
+                    {
+                    // Destination pixel is fully transparent, or source pixel is fully opaque. Copy source pixel. 
+                    pDestComposite[4 * pix    ] = static_cast<Byte>(Y );
+                    pDestComposite[4 * pix + 1] = static_cast<Byte>(Cb);
+                    pDestComposite[4 * pix + 2] = static_cast<Byte>(Cr);
+                    pDestComposite[4 * pix + 3] = pSourceComposite[4 * pix + 3];
+                    }
+                else
+                    {
+                    // Compose. at this point both source and destination are in V32PRPhotoYccA8 format.
+                    pDestComposite[4 * pix    ] = Blend_PRsrc_PRdst(Y,  pDestComposite[4 * pix    ], pSourceComposite[4 * pix + 3]);
+                    pDestComposite[4 * pix + 1] = Blend_PRsrc_PRdst(Cb, pDestComposite[4 * pix + 1], pSourceComposite[4 * pix + 3]);
+                    pDestComposite[4 * pix + 2] = Blend_PRsrc_PRdst(Cr, pDestComposite[4 * pix + 2], pSourceComposite[4 * pix + 3]);
+                    
+                    pDestComposite[4 * pix + 3] = Blend_Alpha_Channel(pSourceComposite[4 * pix + 3], pDestComposite[4 * pix + 3]);  
+                    }
+                }
+            }
+        };
+
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32R8G8B8A8_V32PRPhotoYCCA8(*this));
         }
     };
 static struct ConverterV32R8G8B8A8_V32PRPhotoYCCA8        s_V32R8G8B8A8_V32PRPhotoYCCA8;
 
 //-----------------------------------------------------------------------------
-//  Dictionnary of converters from other pixel types
+//  Dictionary of converters from other pixel types
 //-----------------------------------------------------------------------------
 struct V32PRPhotoYCCA8ConvertersFrom : public MapHRPPixelTypeToConverter
     {
@@ -1172,7 +1083,7 @@ struct V32PRPhotoYCCA8ConvertersFrom : public MapHRPPixelTypeToConverter
     };
 
 //-----------------------------------------------------------------------------
-//  Dictionnary of converters from other pixel types
+//  Dictionary of converters from other pixel types
 //-----------------------------------------------------------------------------
 struct V32PRPhotoYCCA8ConvertersTo : public MapHRPPixelTypeToConverter
     {

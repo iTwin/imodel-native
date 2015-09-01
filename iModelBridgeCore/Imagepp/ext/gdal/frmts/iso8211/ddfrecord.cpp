@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddfrecord.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: ddfrecord.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFRecord class.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,9 +31,9 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddfrecord.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: ddfrecord.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
-static const size_t nLeaderSize = 24;
+static const int nLeaderSize = 24;
 
 /************************************************************************/
 /*                             DDFRecord()                              */
@@ -55,7 +56,7 @@ DDFRecord::DDFRecord( DDFModule * poModuleIn )
 
     bIsClone = FALSE;
 
-    _sizeFieldTag = 4;
+    _sizeFieldTag = poModuleIn->GetSizeFieldTag();
     _sizeFieldPos = 0;
     _sizeFieldLength = 0;
 }
@@ -304,7 +305,7 @@ int DDFRecord::ReadHeader()
 /* -------------------------------------------------------------------- */
 /*      Is there anything seemly screwy about this record?              */
 /* -------------------------------------------------------------------- */
-    if(( _recLength < 24 || _recLength > 100000000
+    if(( _recLength <= 24 || _recLength > 100000000
          || _fieldAreaStart < 24 || _fieldAreaStart > 100000 )
        && (_recLength != 0))
     {
@@ -340,7 +341,7 @@ int DDFRecord::ReadHeader()
 /*      we will read extra bytes till we get to it.                     */
 /* -------------------------------------------------------------------- */
         while( pachData[nDataSize-1] != DDF_FIELD_TERMINATOR 
-               && (nDataSize == 0 || pachData[nDataSize-2] != DDF_FIELD_TERMINATOR) )
+               && (nDataSize < 2 || pachData[nDataSize-2] != DDF_FIELD_TERMINATOR) )
         {
             nDataSize++;
             pachData = (char *) CPLRealloc(pachData,nDataSize);
@@ -354,7 +355,7 @@ int DDFRecord::ReadHeader()
                 return FALSE;
             }
             CPLDebug( "ISO8211", 
-                      "Didn't find field terminator, read one more Byte." );
+                      "Didn't find field terminator, read one more byte." );
         }
 
 /* -------------------------------------------------------------------- */
@@ -364,6 +365,13 @@ int DDFRecord::ReadHeader()
         int         nFieldEntryWidth;
       
         nFieldEntryWidth = _sizeFieldLength + _sizeFieldPos + _sizeFieldTag;
+        if( nFieldEntryWidth <= 0 )
+        {
+            CPLError( CE_Failure, CPLE_FileIO, 
+                      "Invalid entry width = %d", nFieldEntryWidth);
+            return FALSE;
+        }
+
         nFieldCount = 0;
         for( i = 0; i < nDataSize; i += nFieldEntryWidth )
         {
@@ -409,6 +417,15 @@ int DDFRecord::ReadHeader()
                 return FALSE;
             }
 
+            if (_fieldAreaStart + nFieldPos - nLeaderSize < 0 ||
+                nDataSize - (_fieldAreaStart + nFieldPos - nLeaderSize) < nFieldLength)
+            {
+                CPLError( CE_Failure, CPLE_AppDefined,
+                          "Not enough byte to initialize field `%s'.",
+                          szTag );
+                return FALSE;
+            }
+
 /* -------------------------------------------------------------------- */
 /*      Assign info the DDFField.                                       */
 /* -------------------------------------------------------------------- */
@@ -444,12 +461,21 @@ int DDFRecord::ReadHeader()
         int nFieldEntryWidth = _sizeFieldLength + _sizeFieldPos + _sizeFieldTag;
         nFieldCount = 0;
         int i=0;
+
+        if (nFieldEntryWidth == 0)
+        {
+            CPLError( CE_Failure, CPLE_OutOfMemory,
+                      "Invalid record buffer size : %d.",
+                      nFieldEntryWidth );
+            return FALSE;
+        }
+        
         char *tmpBuf = (char*)VSIMalloc(nFieldEntryWidth);
 
         if( tmpBuf == NULL )
         {
             CPLError( CE_Failure, CPLE_OutOfMemory, 
-                      "Attempt to allocate %d Byte ISO8211 record buffer failed.", 
+                      "Attempt to allocate %d byte ISO8211 record buffer failed.", 
                       nFieldEntryWidth );
             return FALSE;
         }
@@ -462,6 +488,7 @@ int DDFRecord::ReadHeader()
                (int) VSIFReadL(tmpBuf, 1, nFieldEntryWidth, poModule->GetFP())) {
                 CPLError(CE_Failure, CPLE_FileIO,
                          "Data record is short on DDF file.");
+                CPLFree(tmpBuf);
                 return FALSE;
             }
       
@@ -481,6 +508,9 @@ int DDFRecord::ReadHeader()
         }
         while(DDF_FIELD_TERMINATOR != tmpBuf[0]);
 
+        CPLFree(tmpBuf);
+        tmpBuf = NULL;
+
         // --------------------------------------------------------------------
         // Now, rewind a little.  Only the TERMINATOR should have been read
         // --------------------------------------------------------------------
@@ -497,18 +527,34 @@ int DDFRecord::ReadHeader()
             int nEntryOffset = (i*nFieldEntryWidth) + _sizeFieldTag;
             int nFieldLength = DDFScanInt(pachData + nEntryOffset,
                                           _sizeFieldLength);
-            char *tmpBuf = (char*)CPLMalloc(nFieldLength);
+            char *tmpBuf = NULL;
+            if( nFieldLength >= 0 )
+                tmpBuf = (char*)VSIMalloc(nFieldLength);
+            if( tmpBuf == NULL )
+            {
+                CPLError(CE_Failure, CPLE_OutOfMemory,
+                         "Cannot allocate %d bytes", nFieldLength);
+                return FALSE;
+            }
 
             // read an Entry:
             if(nFieldLength != 
                (int) VSIFReadL(tmpBuf, 1, nFieldLength, poModule->GetFP())) {
                 CPLError(CE_Failure, CPLE_FileIO,
                          "Data record is short on DDF file.");
+                CPLFree(tmpBuf);
                 return FALSE;
             }
       
             // move this temp buffer into more permanent storage:
-            char *newBuf = (char*)CPLMalloc(nDataSize+nFieldLength);
+            char *newBuf = (char*)VSIMalloc(nDataSize+nFieldLength);
+            if( newBuf == NULL )
+            {
+                CPLError(CE_Failure, CPLE_OutOfMemory,
+                         "Cannot allocate %d bytes", nDataSize + nFieldLength);
+                CPLFree(tmpBuf);
+                return FALSE;
+            }
             memcpy(newBuf, pachData, nDataSize);
             CPLFree(pachData);
             memcpy(&newBuf[nDataSize], tmpBuf, nFieldLength);
@@ -549,6 +595,15 @@ int DDFRecord::ReadHeader()
             {
                 CPLError( CE_Failure, CPLE_AppDefined,
                           "Undefined field `%s' encountered in data record.",
+                          szTag );
+                return FALSE;
+            }
+
+            if (_fieldAreaStart + nFieldPos - nLeaderSize < 0 ||
+                nDataSize - (_fieldAreaStart + nFieldPos - nLeaderSize) < nFieldLength)
+            {
+                CPLError( CE_Failure, CPLE_AppDefined,
+                          "Not enough byte to initialize field `%s'.",
                           szTag );
                 return FALSE;
             }

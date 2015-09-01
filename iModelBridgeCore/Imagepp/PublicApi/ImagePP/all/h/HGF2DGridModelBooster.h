@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DGridModelBooster.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -14,6 +14,7 @@
 #include <Imagepp/all/h/HGFQuadTree.h>
 #include <Imagepp/all/h/HGF2DLiteExtent.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     HGF2DGridModelBooster
     -----------------------------------------------------------------------------
@@ -62,4 +63,4 @@ private:
     // Disabled methods
     HGF2DGridModelBooster& operator=(HGF2DGridModelBooster const&);
     };
-
+END_IMAGEPP_NAMESPACE

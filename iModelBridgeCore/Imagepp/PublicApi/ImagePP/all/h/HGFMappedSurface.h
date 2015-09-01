@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFMappedSurface.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFMappedSurface
@@ -11,10 +11,12 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HGSSurface.h"
+#include "HRASurface.h"
 #include "HGF2DCoordSys.h"
 #include "HGFCoordSysContainer.h"
 #include "HGF2DExtent.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -62,31 +64,19 @@
     toutes les transformations appliquées depuis.
     -----------------------------------------------------------------------------
 */
-class HGFMappedSurface : public HGSSurface
+class HGFMappedSurface : public HRASurface
     {
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1219, HGSSurface)
+    HDECLARE_CLASS_ID(HGFMappedSurfaceId, HRASurface)
 
 public:
-
+    
     // Primary methods
-    _HDLLg                 HGFMappedSurface(const HFCPtr<HGSSurfaceDescriptor>&    pi_rpDescriptor,
-                                            const HGSToolbox*                      pi_pToolbox,
-                                            const HGSSurfaceCapabilities*          pi_pCapabilities,
-                                            const HFCPtr<HGF2DCoordSys>&           pi_rpRefCoordSys);
+    HGFMappedSurface(const HFCPtr<HGSSurfaceDescriptor>& pi_rpDescriptor, const HFCPtr<HGF2DCoordSys>& pi_rpRefCoordSys);
 
-    _HDLLg                 HGFMappedSurface(HGSSurfaceImplementation*              pi_pImplementation,
-                                            const HFCPtr<HGF2DCoordSys>&           pi_rpRefCoordSys);
+    HGFMappedSurface(const HFCPtr<HGSSurfaceDescriptor>& pi_rpDescriptor, const HGF2DExtent& pi_rExtent);
 
-    _HDLLg                 HGFMappedSurface(const HFCPtr<HGSSurfaceDescriptor>&    pi_rpDescriptor,
-                                            const HGSToolbox*                      pi_pToolbox,
-                                            const HGSSurfaceCapabilities*          pi_pCapabilities,
-                                            const HGF2DExtent&                     pi_rExtent);
-
-    _HDLLg                 HGFMappedSurface(HGSSurfaceImplementation*              pi_pImplementation,
-                                            const HGF2DExtent&                     pi_rExtent);
-
-    _HDLLg virtual         ~HGFMappedSurface();
+    virtual ~HGFMappedSurface();
 
     // Coordsys
     HFCPtr<HGF2DCoordSys>
@@ -103,7 +93,7 @@ public:
 
     // Page transformations
     void            Translate(const HGF2DDisplacement& pi_rDisplacement);
-    _HDLLg void            TranslateFromRef(const HGF2DDisplacement& pi_rDisplacement);
+    void            TranslateFromRef(const HGF2DDisplacement& pi_rDisplacement);
     void            Rotate(double pi_rRotation);
     void            RotateFromRef(double pi_rRotation);
     void            Scale(double pi_ScaleX, double pi_ScaleY);
@@ -156,4 +146,5 @@ private:
     void            InitObject(const HFCPtr<HGF2DCoordSys>& pi_rpRefCoordSys);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGFMappedSurface.hpp"

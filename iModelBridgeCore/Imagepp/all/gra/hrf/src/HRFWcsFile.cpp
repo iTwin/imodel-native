@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWcsFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFWCSFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFWCSFile.h>
 #include <Imagepp/all/h/HRFOGCServiceEditor.h>
@@ -27,14 +27,12 @@
 
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
-
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 #include <Imagepp/all/h/HRFException.h>
 
 #include <BeXml/BeXml.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 //-----------------------------------------------------------------------------
 // Static Members
@@ -89,7 +87,7 @@ HRFWCSCreator::HRFWCSCreator()
 //-----------------------------------------------------------------------------
 WString HRFWCSCreator::GetLabel() const
     {
-    return HFCResourceLoader::GetInstance()->GetString(IDS_FILEFORMAT_WCS); // WCS File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_WCS()); // WCS File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -219,7 +217,7 @@ HRFWCSFile::HRFWCSFile(const HFCPtr<HFCURL>& pi_rpURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rpURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rpURL->GetURL());
         }
 
     SharingControlCreate();
@@ -233,12 +231,12 @@ HRFWCSFile::HRFWCSFile(const HFCPtr<HFCURL>& pi_rpURL,
     BeXmlStatus xmlStatus;
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, XMLFileName.c_str());
     if (pXmlDom.IsNull() || BEXML_Success != xmlStatus)
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, pi_rpURL->GetURL());
+        throw HFCCorruptedFileException(pi_rpURL->GetURL());
 
     // Read data in XML file (strings)
     BeXmlNodeP pMainNode = pXmlDom->GetRootElement();
     if (NULL == pMainNode || BeStringUtilities::Stricmp (pMainNode->GetName(), "BentleyWCSFile") != 0)
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, pi_rpURL->GetURL());
+        throw HFCCorruptedFileException(pi_rpURL->GetURL());
              
     // default values
     m_MinImageSize.m_Width  = 16;            // see capabilities
@@ -256,16 +254,14 @@ HRFWCSFile::HRFWCSFile(const HFCPtr<HFCURL>& pi_rpURL,
     WString version;
     BeXmlNodeP pChildNode = pMainNode->SelectSingleNode("VERSION");
     if(NULL == pChildNode || BEXML_Success != pChildNode->GetContent(version))
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"VERSION");
 
     
     if (BeStringUtilities::Wcsicmp(version.c_str(), L"1.0") == 0)
         ReadWCS_1_0(pMainNode);
     else
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"VERSION");
 
     // the XML document is not longer use
@@ -362,11 +358,11 @@ HRFWCSFile::HRFWCSFile(const HFCPtr<HFCURL>& pi_rpURL,
             m_pConnection->Disconnect();    // don't keep the connection
 
             if (AUTH_PERMISSION_DENIED == Status)
-                throw HRFException(HRF_AUTHENTICATION_INVALID_LOGIN_EXCEPTION, GetURL()->GetURL());
+                throw HRFAuthenticationInvalidLoginException(GetURL()->GetURL());
             else if (AUTH_USER_CANCELLED == Status)
-                throw HRFException(HRF_AUTHENTICATION_CANCELLED_EXCEPTION, GetURL()->GetURL());
+                throw HRFAuthenticationCancelledException(GetURL()->GetURL());
             else if (AUTH_MAX_RETRY_COUNT_REACHED == Status)
-                throw HRFException(HRF_AUTHENTICATION_MAX_RETRY_COUNT_REACHED_EXCEPTION, GetURL()->GetURL());
+                throw HRFAuthenticationMaxRetryCountReachedException(GetURL()->GetURL());
             }
         else
             m_pConnection->Disconnect();    // don't keep the connection
@@ -438,8 +434,7 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
     Pos = Request.find("crs=");
 
     if (Pos == string::npos)
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"crs");
 
     IRasterBaseGcsPtr baseGCS;
@@ -525,6 +520,7 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
     if (baseGCS != NULL && !baseGCS->IsValid())
         baseGCS = NULL;
 
+
     HFCPtr<HRFPageDescriptor> pPage = new HRFPageDescriptor (GetAccessMode(),
                                                              GetCapabilities(),
                                                              pResolutionDescriptor,
@@ -532,7 +528,7 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
                                                              0,
                                                              0,
                                                              0,
-                                                             CreateTransfoModel(baseGCS, pi_Width, pi_Height),
+                                                             CreateTransfoModel(baseGCS.get(), pi_Width, pi_Height),
                                                              0,
                                                              0,
                                                              0,
@@ -543,7 +539,7 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
                                                              m_MaxImageSize.m_Width,
                                                              m_MaxImageSize.m_Height);
 
-    pPage->SetGeocoding(baseGCS);
+    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(baseGCS.get()));
 
 
     m_ListOfPageDescriptor.push_back(pPage);
@@ -577,27 +573,24 @@ void HRFWCSFile::ReadWCS_1_0(BeXmlNodeP pi_pBentleyWCSFileNode)
 
     // tag version must be present
     if ((pChildNode = pi_pBentleyWCSFileNode->SelectSingleNode("VERSION")) == 0)
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"VERSION");
 
     // tag URL
     if ((pChildNode = pi_pBentleyWCSFileNode->SelectSingleNode("URL")) == 0)
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"URL");
 
     pChildNode->GetContent(m_ServerURL);
 
     // tag REQUEST (mandatory)
     if ((pChildNode = pi_pBentleyWCSFileNode->SelectSingleNode("REQUEST")) == 0)
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"REQUEST");
 
     m_BaseRequest = "REQUEST=GetCoverage&SERVICE=WCS";
 
-    uint32_t codePage;
+    LangCodePage codePage;
     BeStringUtilities::GetCurrentCodePage (codePage);
 
     for(BeXmlNodeP pSubNode = pChildNode->GetFirstChild (); NULL != pSubNode; pSubNode = pSubNode->GetNextSibling())
@@ -638,44 +631,37 @@ void HRFWCSFile::ReadWCS_1_0(BeXmlNodeP pi_pBentleyWCSFileNode)
             else if (BeStringUtilities::Wcsicmp(content.c_str(), L"int16") == 0)
                 m_pPixelType = new HRPPixelTypeV16Gray16();
             else
-                throw HRFFileParameterException(HRF_INVALID_PARAM_VALUE_EXCEPTION,
-                                                GetURL()->GetURL(),
+                throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                                 L"GRAYPIXELTYPE");
             }
         }
 
     if (m_CSR.empty())
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"CSR");
 
     if (m_Format.empty())
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"FORMAT");
 
     if (BeStringUtilities::Stricmp(m_Format.c_str(), "geotiff") != 0 &&
         BeStringUtilities::Stricmp(m_Format.c_str(), "geotiffint16") != 0)
-        throw HRFFileParameterException(HRF_MIME_FORMAT_NOT_SUPPORTED_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMimeFormatNotSupportedException(GetURL()->GetURL(),
                                         L"FORMAT");
 
     // tag MAPEXTENT (mandatory)
     if ((pChildNode = pi_pBentleyWCSFileNode->SelectSingleNode("MAPEXTENT")) == 0)
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"MAPEXTENT");
 
     // tag BBOX (mandatory)
     if ((pSubChildNode = pChildNode->SelectSingleNode("BBOX")) == 0)
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"BBOX");
 
     bvector<double> BBoxValues;
     if(BEXML_Success != pSubChildNode->GetContentDoubleValues(BBoxValues) || BBoxValues.size() != 4)
-        throw HRFFileParameterException(HRF_INVALID_PARAM_VALUE_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                         L"BBOX");
 
     m_BBoxMinX = BBoxValues[0];
@@ -685,8 +671,7 @@ void HRFWCSFile::ReadWCS_1_0(BeXmlNodeP pi_pBentleyWCSFileNode)
 
     if (HDOUBLE_EQUAL_EPSILON(m_BBoxMaxX - m_BBoxMinX, 0.0) ||
         HDOUBLE_EQUAL_EPSILON(m_BBoxMaxY - m_BBoxMinY, 0.0))
-        throw HRFFileParameterException(HRF_INVALID_PARAM_VALUE_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                         L"BBOX invalid");
 
 
@@ -701,24 +686,21 @@ void HRFWCSFile::ReadWCS_1_0(BeXmlNodeP pi_pBentleyWCSFileNode)
         if ((pSubChildNode = pChildNode->SelectSingleNode("MAXWIDTH")) != NULL)
             {
             if (BEXML_Success != pSubChildNode->GetContentUInt64Value(m_MaxBitmapSize.m_Width) || m_MaxBitmapSize.m_Width == 0)
-                throw HRFFileParameterException(HRF_INVALID_PARAM_VALUE_EXCEPTION,
-                                                GetURL()->GetURL(),
+                throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                                 L"MaxWidth");
             }
 
         if ((pSubChildNode = pChildNode->SelectSingleNode("MAXHEIGHT")) != NULL)
             {
             if (BEXML_Success != pSubChildNode->GetContentUInt64Value(m_MaxBitmapSize.m_Height) || m_MaxBitmapSize.m_Height == 0)
-                throw HRFFileParameterException(HRF_INVALID_PARAM_VALUE_EXCEPTION,
-                                                GetURL()->GetURL(),
+                throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                                 L"MaxHeight");
             }
 
         if ((pSubChildNode = pChildNode->SelectSingleNode("LOGINREQUIRED")) != NULL)
             {
             if (BEXML_Success != pSubChildNode->GetContentBooleanValue(m_NeedAuthentification))
-                throw HRFFileParameterException(HRF_INVALID_PARAM_VALUE_EXCEPTION,
-                                                GetURL()->GetURL(),
+                throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                                 L"LoginRequired");
             }
         }
@@ -728,8 +710,7 @@ void HRFWCSFile::ReadWCS_1_0(BeXmlNodeP pi_pBentleyWCSFileNode)
     if ((pChildNode = pi_pBentleyWCSFileNode->SelectSingleNode("CONNECTIONTIMEOUT")) != NULL)
         {
         if (BEXML_Success != pSubChildNode->GetContentUInt32Value(m_ConnectionTimeOut))
-            throw HRFFileParameterException(HRF_INVALID_PARAM_VALUE_EXCEPTION,
-                                            GetURL()->GetURL(),
+            throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                             L"CONNECTIONTIMEOUT");
 
         m_ConnectionTimeOut *= 1000; // the value is in second, convert it in millisecond

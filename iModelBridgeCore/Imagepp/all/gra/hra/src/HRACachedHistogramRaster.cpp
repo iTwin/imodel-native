@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRACachedHistogramRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>    //:> must be first for PreCompiledHeader Option
+#include <ImagePPInternal/hstdcpp.h>
+    //:> must be first for PreCompiledHeader Option
 
 #include <Imagepp/all/h/HRACachedHistogramRaster.h>
 #include <Imagepp/all/h/HRAHistogramOptions.h>
@@ -106,22 +106,12 @@ HPMPersistentObject* HRACachedHistogramRaster::Clone () const
 
 //-----------------------------------------------------------------------------
 // public
-// PreDraw
-//-----------------------------------------------------------------------------
-void HRACachedHistogramRaster::PreDraw(HRADrawOptions* pio_pOptions)
-    {
-    GetSource()->PreDraw(pio_pOptions);
-    }
-
-//-----------------------------------------------------------------------------
-// public
 // Draw
 //-----------------------------------------------------------------------------
-void HRACachedHistogramRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const
+void HRACachedHistogramRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
     {
-    GetSource()->Draw(pio_pSurface, pi_pOptions);
+    GetSource()->Draw(pio_destSurface, pi_Options);
     }
-
 
 /** -----------------------------------------------------------------------------
     Receive a change notification. We handle geometry and content changes

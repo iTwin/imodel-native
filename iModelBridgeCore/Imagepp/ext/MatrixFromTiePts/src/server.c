@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ext/MatrixFromTiePts/src/server.c $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 /*mh================================================================ HMR
 **  Octimage/MicroStation - Transformation Models
 **
@@ -6,11 +13,6 @@
 **  models used in geocoding are accessible through this file.
 **
 **===========================================================================*/
-/*----------------------------------------------------------------------+
-|                                                                       |
-|       $Source: ext/MatrixFromTiePts/src/server.c $
-|                                                                       |
-+----------------------------------------------------------------------*/
 #include <string.h>
 
 #include "trfmodel.h"

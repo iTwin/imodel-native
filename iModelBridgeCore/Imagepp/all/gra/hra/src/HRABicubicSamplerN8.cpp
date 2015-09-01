@@ -2,17 +2,16 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABicubicSamplerN8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRABicubicSamplerN8.h>
 
 #include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRASurface.h>
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
@@ -106,7 +105,7 @@ HRABicubicSamplerN8::~HRABicubicSamplerN8()
 
  @return const void* The current pixel.
 -----------------------------------------------------------------------------*/
-void* HRABicubicSamplerN8::GetPixel(double     pi_PosX,
+void const* HRABicubicSamplerN8::GetPixel(double     pi_PosX,
                                     double     pi_PosY) const
     {
     HPRECONDITION(pi_PosX >= 0.0);
@@ -115,7 +114,7 @@ void* HRABicubicSamplerN8::GetPixel(double     pi_PosX,
     HPRECONDITION(pi_PosY <= (double)m_Height + 0.5);
 
     // Clear everything just in case.
-    memset((void*)m_TempData, 0, 4);
+    memset(m_TempData, 0, sizeof(m_TempData));
 
     Sample CurrentSample(pi_PosX, pi_PosY);
 
@@ -124,9 +123,9 @@ void* HRABicubicSamplerN8::GetPixel(double     pi_PosX,
 
     // Obtain pointers to start of each line
     Byte* pSrcLine0 = ComputeAddress(Column0, CurrentSample.GetLine0());
-    Byte* pSrcLine1 = ComputeAddress(Column0, min(CurrentSample.GetLine1(), m_Height-1));
-    Byte* pSrcLine2 = ComputeAddress(Column0, min(CurrentSample.GetLine2(), m_Height-1));
-    Byte* pSrcLine3 = ComputeAddress(Column0, min(CurrentSample.GetLine3(), m_Height-1));
+    Byte* pSrcLine1 = ComputeAddress(Column0, MIN(CurrentSample.GetLine1(), m_Height-1));
+    Byte* pSrcLine2 = ComputeAddress(Column0, MIN(CurrentSample.GetLine2(), m_Height-1));
+    Byte* pSrcLine3 = ComputeAddress(Column0, MIN(CurrentSample.GetLine3(), m_Height-1));
 
     // Compute byte offsets for each column
     int OffsetColumn1;
@@ -199,7 +198,7 @@ void* HRABicubicSamplerN8::GetPixel(double     pi_PosX,
 
         ChannelResult = Horiz0 * CoefY0 + Horiz1 * CoefY1 + Horiz2 * CoefY2 + Horiz3 * CoefY3;
 
-        m_TempData[Channel] = (Byte) min( max(ChannelResult, 0.0), 255.0);
+        m_TempData[Channel] = (Byte) MIN( MAX(ChannelResult, 0.0), 255.0);
         }
 
     return m_TempData;
@@ -254,9 +253,9 @@ void HRABicubicSamplerN8::GetPixels(const double*  pi_pPositionsX,
 
         // Obtain pointers to start of each line
         pSrcLine0 = ComputeAddress(Column0, CurrentSample.GetLine0());
-        pSrcLine1 = ComputeAddress(Column0, min(CurrentSample.GetLine1(), m_Height-1));
-        pSrcLine2 = ComputeAddress(Column0, min(CurrentSample.GetLine2(), m_Height-1));
-        pSrcLine3 = ComputeAddress(Column0, min(CurrentSample.GetLine3(), m_Height-1));
+        pSrcLine1 = ComputeAddress(Column0, MIN(CurrentSample.GetLine1(), m_Height-1));
+        pSrcLine2 = ComputeAddress(Column0, MIN(CurrentSample.GetLine2(), m_Height-1));
+        pSrcLine3 = ComputeAddress(Column0, MIN(CurrentSample.GetLine3(), m_Height-1));
 
         // Compute byte offsets for each column
         if (Column1 > Column0)
@@ -320,7 +319,7 @@ void HRABicubicSamplerN8::GetPixels(const double*  pi_pPositionsX,
 
             ChannelResult = Horiz0 * CoefY0 + Horiz1 * CoefY1 + Horiz2 * CoefY2 + Horiz3 * CoefY3;
 
-            *pOut++ = (Byte) min( max(ChannelResult, 0.0), 255.0);
+            *pOut++ = (Byte) MIN( MAX(ChannelResult, 0.0), 255.0);
             }
 
         ++pPosX;
@@ -370,9 +369,9 @@ void HRABicubicSamplerN8::GetPixels(double         pi_PositionX,
 
         // Obtain pointers to start of each line
         Byte* pSrcLine0 = ComputeAddress(Column0, CurrentSample.GetLine0());
-        Byte* pSrcLine1 = ComputeAddress(Column0, min(CurrentSample.GetLine1(), m_Height-1));
-        Byte* pSrcLine2 = ComputeAddress(Column0, min(CurrentSample.GetLine2(), m_Height-1));
-        Byte* pSrcLine3 = ComputeAddress(Column0, min(CurrentSample.GetLine3(), m_Height-1));
+        Byte* pSrcLine1 = ComputeAddress(Column0, MIN(CurrentSample.GetLine1(), m_Height-1));
+        Byte* pSrcLine2 = ComputeAddress(Column0, MIN(CurrentSample.GetLine2(), m_Height-1));
+        Byte* pSrcLine3 = ComputeAddress(Column0, MIN(CurrentSample.GetLine3(), m_Height-1));
 
         int BytesToAdd;
 
@@ -420,25 +419,25 @@ void HRABicubicSamplerN8::GetPixels(double         pi_PositionX,
             for (size_t Channel = 0 ; Channel < m_BytesPerPixel ; ++Channel)
                 {
                 Horiz0 = pSrcLine0[Channel] * CoefX0 +
-                         pSrcLine0[Channel + OffsetColumn1] * CoefX1 +
-                         pSrcLine0[Channel + OffsetColumn2] * CoefX2 +
-                         pSrcLine0[Channel + OffsetColumn3] * CoefX3;
+                    pSrcLine0[Channel + OffsetColumn1] * CoefX1 +
+                    pSrcLine0[Channel + OffsetColumn2] * CoefX2 +
+                    pSrcLine0[Channel + OffsetColumn3] * CoefX3;
                 Horiz1 = pSrcLine1[Channel] * CoefX0 +
-                         pSrcLine1[Channel + OffsetColumn1] * CoefX1 +
-                         pSrcLine1[Channel + OffsetColumn2] * CoefX2 +
-                         pSrcLine1[Channel + OffsetColumn3] * CoefX3;
+                    pSrcLine1[Channel + OffsetColumn1] * CoefX1 +
+                    pSrcLine1[Channel + OffsetColumn2] * CoefX2 +
+                    pSrcLine1[Channel + OffsetColumn3] * CoefX3;
                 Horiz2 = pSrcLine2[Channel] * CoefX0 +
-                         pSrcLine2[Channel + OffsetColumn1] * CoefX1 +
-                         pSrcLine2[Channel + OffsetColumn2] * CoefX2 +
-                         pSrcLine2[Channel + OffsetColumn3] * CoefX3;
+                    pSrcLine2[Channel + OffsetColumn1] * CoefX1 +
+                    pSrcLine2[Channel + OffsetColumn2] * CoefX2 +
+                    pSrcLine2[Channel + OffsetColumn3] * CoefX3;
                 Horiz3 = pSrcLine3[Channel] * CoefX0 +
-                         pSrcLine3[Channel + OffsetColumn1] * CoefX1 +
-                         pSrcLine3[Channel + OffsetColumn2] * CoefX2 +
-                         pSrcLine3[Channel + OffsetColumn3] * CoefX3;
+                    pSrcLine3[Channel + OffsetColumn1] * CoefX1 +
+                    pSrcLine3[Channel + OffsetColumn2] * CoefX2 +
+                    pSrcLine3[Channel + OffsetColumn3] * CoefX3;
 
                 ChannelResult = Horiz0 * CoefY0 + Horiz1 * CoefY1 + Horiz2 * CoefY2 + Horiz3 * CoefY3;
 
-                *pOut++ = (Byte) min( max(ChannelResult, 0.0), 255.0);
+                *pOut++ = (Byte) MIN( MAX(ChannelResult, 0.0), 255.0);
                 }
 
             CurrentSample.TranslateX(m_DeltaX);
@@ -529,8 +528,8 @@ Byte* HRABicubicSamplerN8::ComputeAddress(HUINTX  pi_PosX,
     HPRECONDITION(pi_PosX <= m_Width);
     HPRECONDITION(pi_PosY <= m_Height);
 
-    pi_PosX = min(pi_PosX, m_Width-1);
-    pi_PosY = min(pi_PosY, m_Height-1);
+    pi_PosX = MIN(pi_PosX, m_Width-1);
+    pi_PosY = MIN(pi_PosY, m_Height-1);
 
     HPRECONDITION(m_pPacket->GetBufferAddress() != 0);
 

@@ -2,24 +2,206 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPageDescriptor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFPageDescriptor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFThumbnail.h>
 #include <Imagepp/all/h/HRFResolutionDescriptor.h>
 #include <Imagepp/all/h/HRFPageDescriptor.h>
 #include <Imagepp/all/h/HGFResolutionDescriptor.h>
 #include <Imagepp/all/h/HRFCapability.h>
+#include <Imagepp/all/h/HCPGeotiffKeys.h>
+#include <Imagepp/all/h/HGF2DStretch.h>
 
 
-USING_NAMESPACE_IMAGEPP
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     06/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RasterFileGeocodingPtr RasterFileGeocoding::Create()
+    {
+    return new RasterFileGeocoding();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     06/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RasterFileGeocodingPtr RasterFileGeocoding::Create(IRasterBaseGcsP pi_pGeocoding)
+    {
+    return new RasterFileGeocoding(pi_pGeocoding);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     06/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RasterFileGeocodingPtr RasterFileGeocoding::Create(HCPGeoTiffKeys const* pi_pGeokeys)
+    {
+    return new RasterFileGeocoding(pi_pGeokeys);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     06/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RasterFileGeocoding::RasterFileGeocoding(IRasterBaseGcsP pi_pGeocoding)
+:m_isGeotiffKeysCreated(false), 
+m_pGeocoding(pi_pGeocoding)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     06/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RasterFileGeocoding::RasterFileGeocoding()
+:m_isGeotiffKeysCreated(false)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     06/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RasterFileGeocoding::RasterFileGeocoding(HCPGeoTiffKeys const* pi_pGeokeys):m_pGeoTiffKeys(pi_pGeokeys->Clone()),m_isGeotiffKeysCreated(true)
+    {
+    m_pGeocoding = HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, *m_pGeoTiffKeys);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RasterFileGeocoding::RasterFileGeocoding(const RasterFileGeocoding& object):m_isGeotiffKeysCreated(object.m_isGeotiffKeysCreated)
+    {
+    if (object.m_pGeoTiffKeys!=NULL)
+        m_pGeoTiffKeys = object.m_pGeoTiffKeys->Clone();
+    if (object.m_pGeocoding !=NULL)
+        m_pGeocoding = object.m_pGeocoding->Clone();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RasterFileGeocodingPtr RasterFileGeocoding::Clone() const
+    {
+    return new RasterFileGeocoding(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     06/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+IRasterBaseGcsCP RasterFileGeocoding::GetGeocodingCP() const
+    {
+    return m_pGeocoding.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     06/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+HCPGeoTiffKeys const& RasterFileGeocoding::GetGeoTiffKeys() const
+    {
+    //Optimization: We extract the geotiff keys only when requested
+    if (!m_isGeotiffKeysCreated)
+        {
+        m_pGeoTiffKeys  = new HCPGeoTiffKeys();
+        if (m_pGeocoding!=NULL)
+            {
+            m_isGeotiffKeysCreated=true;
+            m_pGeocoding->GetGeoTiffKeys(m_pGeoTiffKeys);
+#if 0
+            //Sanity check - can we recreate the same geocoding from geotiff keys extracted?
+            RasterFileGeocodingPtr ptemp(Create(m_pGeoTiffKeys));
+            BeAssert(m_pGeocoding->IsEquivalent(*(ptemp->GetGeocodingCP())));
+#endif
+            }
+        }
+
+    //Cannot be NULL
+    return *m_pGeoTiffKeys;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCPtr<HGF2DTransfoModel> RasterFileGeocoding::TranslateToMeter
+(
+const HFCPtr<HGF2DTransfoModel>& pi_pModel,
+double                           pi_FactorModelToMeter,
+bool                             pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
+bool*                            po_pDefaultUnitWasFound
+) const
+    {
+    HPRECONDITION(pi_pModel != 0);
+    HFCPtr<HGF2DTransfoModel> pTransfo = pi_pModel;
+
+    double effectiveFactorModelToMeter = pi_FactorModelToMeter;
+    double unitsfromMeters;
+    bool   isUnitWasFound(HRFGeoCoordinateProvider::GetUnitsFromMeters(unitsfromMeters, GetGeoTiffKeys(), pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation));
+    if (isUnitWasFound)
+        effectiveFactorModelToMeter = 1.0 / unitsfromMeters;
+
+    if (po_pDefaultUnitWasFound != NULL)
+        {
+        *po_pDefaultUnitWasFound = isUnitWasFound;
+        }
+
+    // Apply to Matrix
+    if (effectiveFactorModelToMeter != 1.0)
+        {
+        HFCPtr<HGF2DStretch> pScaleModel = new HGF2DStretch();
+
+        pScaleModel->SetXScaling(effectiveFactorModelToMeter);
+        pScaleModel->SetYScaling(effectiveFactorModelToMeter);
+
+        pTransfo = pTransfo->ComposeInverseWithDirectOf(*pScaleModel);
+        }
+
+    return pTransfo;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCPtr<HGF2DTransfoModel> RasterFileGeocoding::TranslateFromMeter
+(
+const HFCPtr<HGF2DTransfoModel>& pi_pModel,
+bool                            pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
+bool*                           po_pDefaultUnitWasFound
+) const
+    {
+    HPRECONDITION(pi_pModel != 0);
+
+    double FactorModelToMeter = 1.0;
+    double unitsfromMeters;
+    bool   isUnitWasFound(HRFGeoCoordinateProvider::GetUnitsFromMeters(unitsfromMeters, GetGeoTiffKeys(), pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation));
+    if (isUnitWasFound)
+        FactorModelToMeter = 1.0 / unitsfromMeters;
+
+
+    if (po_pDefaultUnitWasFound != NULL)
+        {
+        *po_pDefaultUnitWasFound = isUnitWasFound;
+        }
+
+
+    HFCPtr<HGF2DTransfoModel> pTransfo = pi_pModel;
+
+
+    // Apply inverse factor to Matrix
+    if (FactorModelToMeter != 1.0)
+        {
+        HASSERT(FactorModelToMeter != 0.0);
+        HFCPtr<HGF2DStretch> pScaleModel = new HGF2DStretch();
+        pScaleModel->SetXScaling(1.0 / FactorModelToMeter);
+        pScaleModel->SetYScaling(1.0 / FactorModelToMeter);
+
+        pTransfo = pTransfo->ComposeInverseWithDirectOf(*pScaleModel);
+        }
+
+    return pTransfo;
+    }
+
 
 /** -----------------------------------------------------------------------------
     This constructor should @b{not be used}.
@@ -206,41 +388,14 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
     m_pListOfTag = new HPMAttributeSet();
     if (pi_pTags)
         {
-        // loop through the vector and test each tag in the capabilities.
-        HPMAttributeSet::HPMASiterator TagIterator;
-
-        // create the universal tag capability
-        HFCPtr<HRFCapability> pTagUniverse(new HRFUniversalTagCapability(m_AccessMode));
-
-        for (TagIterator  = pi_pTags->begin();
-             TagIterator != pi_pTags->end(); TagIterator++)
-            {
-            HFCPtr<HRFCapability> pCapability   = new HRFTagCapability(m_AccessMode,  (*TagIterator));
-            HFCPtr<HRFCapability> pCapabilityRO = new HRFTagCapability(HFC_READ_ONLY, (*TagIterator));
-            if (!(m_pPageCapabilities->Supports(pCapability) || m_pPageCapabilities->Supports(pTagUniverse)))
-                {
-                // If we do not support the capability in the given access mode, check if
-                // we support it in read only access.
-                if (m_pPageCapabilities->Supports(pCapabilityRO))
-                    {
-                    // If we do, just output a message to say so.
-
-                    // HRFMessage("Tag :" + (*TagIterator)->GetLabel() + " is supported in read only);
-
-                    // Do nothing for now.
-                    }
-                else
-                    {
-                    // We do not support this capababilitie.
-                    HASSERT(m_pPageCapabilities->Supports(pCapability) || m_pPageCapabilities->Supports(pTagUniverse));
-                    }
-                }
-            }
         *m_pListOfTag = *pi_pTags;
+        HPRECONDITION(ValidateTagCapabilities());
         }
 
     HPRECONDITION(!pi_Resizable || m_pPageCapabilities->GetCapabilityOfType(HRFResizableCapability::CLASS_ID, m_AccessMode) != 0);
     m_Resizable = pi_Resizable;
+
+    m_pGeocoding = RasterFileGeocoding::Create();//No geocoding by default, HRFFile MUST set it if supported
 
     // Flag to know if the specified data has changed
     m_ClipShapeHasChanged               = false;
@@ -426,37 +581,8 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
     m_pListOfTag = new HPMAttributeSet();
     if (pi_pTags)
         {
-        // loop through the vector and test each tag in the capabilities.
-        HPMAttributeSet::HPMASiterator TagIterator;
-
-        // create the universal tag capability
-        HFCPtr<HRFCapability> pTagUniverse(new HRFUniversalTagCapability(m_AccessMode));
-
-        for (TagIterator  = pi_pTags->begin();
-             TagIterator != pi_pTags->end(); TagIterator++)
-            {
-            HFCPtr<HRFCapability> pCapability   = new HRFTagCapability(m_AccessMode,  (*TagIterator));
-            HFCPtr<HRFCapability> pCapabilityRO = new HRFTagCapability(HFC_READ_ONLY, (*TagIterator));
-            if (!(m_pPageCapabilities->Supports(pCapability) || m_pPageCapabilities->Supports(pTagUniverse)))
-                {
-                // If we do not support the capability in the given access mode, check if
-                // we support it in read only access.
-                if (m_pPageCapabilities->Supports(pCapabilityRO))
-                    {
-                    // If we do, just output a message to say so.
-
-                    // HRFMessage("Tag :" + (*TagIterator)->GetLabel() + " is supported in read only);
-
-                    // Do nothing for now.
-                    }
-                else
-                    {
-                    // We do not support this capababilitie.
-                    HASSERT(m_pPageCapabilities->Supports(pCapability) || m_pPageCapabilities->Supports(pTagUniverse));
-                    }
-                }
-            }
         *m_pListOfTag = *pi_pTags;
+        HPRECONDITION(ValidateTagCapabilities());
         }
 
     // Media type information
@@ -468,6 +594,8 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
 
     HPRECONDITION(!pi_Resizable || m_pPageCapabilities->GetCapabilityOfType(HRFResizableCapability::CLASS_ID, m_AccessMode) != 0);
     m_Resizable = pi_Resizable;
+
+    m_pGeocoding = RasterFileGeocoding::Create();//No geocoding by default, HRFFile MUST set it if supported
 
 
     // Flag to know if the specified data has changed
@@ -686,6 +814,8 @@ HRFPageDescriptor::HRFPageDescriptor (HFCAccessMode                            p
     HPRECONDITION(!pi_Resizable || m_pPageCapabilities->GetCapabilityOfType(HRFResizableCapability::CLASS_ID, m_AccessMode) != 0);
     m_Resizable = pi_Resizable;
 
+    m_pGeocoding = RasterFileGeocoding::Create();//No geocoding by default, HRFFile MUST set it if supported
+
     // Flag to know if the specified data has changed
     m_ClipShapeHasChanged               = false;
     m_TransfoModelHasChanged            = false;
@@ -751,6 +881,7 @@ HRFPageDescriptor::HRFPageDescriptor(const HRFPageDescriptor& pi_rObj)
 
         m_pListOfTag                = pi_rObj.m_pListOfTag;
         m_ListOfModifiedTag         = pi_rObj.m_ListOfModifiedTag;
+        m_pGeocoding                = pi_rObj.m_pGeocoding;
 
         // Flag to know if the specified data has changed
         m_ClipShapeHasChanged               = pi_rObj.m_ClipShapeHasChanged;
@@ -805,6 +936,7 @@ HRFPageDescriptor& HRFPageDescriptor::operator=(const HRFPageDescriptor& pi_rObj
 
         m_pListOfTag                = pi_rObj.m_pListOfTag;
         m_ListOfModifiedTag         = pi_rObj.m_ListOfModifiedTag;
+        m_pGeocoding                = pi_rObj.m_pGeocoding;
 
         // Flag to know if the specified data has changed
         m_ClipShapeHasChanged               = pi_rObj.m_ClipShapeHasChanged;
@@ -878,18 +1010,18 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
 
     if (pi_rpPriorityPage->IsUnlimitedResolution())
         {
-        m_MinHeight = max(m_MinHeight, pi_rpPriorityPage->GetMinHeight());
-        m_MinWidth  = max(m_MinWidth,  pi_rpPriorityPage->GetMinWidth());
-        m_MaxHeight = min(m_MaxHeight, pi_rpPriorityPage->GetMaxHeight());
-        m_MaxWidth  = min(m_MaxWidth,  pi_rpPriorityPage->GetMaxWidth());
+        m_MinHeight = MAX(m_MinHeight, pi_rpPriorityPage->GetMinHeight());
+        m_MinWidth  = MAX(m_MinWidth,  pi_rpPriorityPage->GetMinWidth());
+        m_MaxHeight = MIN(m_MaxHeight, pi_rpPriorityPage->GetMaxHeight());
+        m_MaxWidth  = MIN(m_MaxWidth,  pi_rpPriorityPage->GetMaxWidth());
         }
 
     if (pi_rpSecondPage->IsUnlimitedResolution())
         {
-        m_MinHeight = max(m_MinHeight, pi_rpSecondPage->GetMinHeight());
-        m_MinWidth  = max(m_MinWidth,  pi_rpSecondPage->GetMinWidth());
-        m_MaxHeight = min(m_MaxHeight, pi_rpSecondPage->GetMaxHeight());
-        m_MaxWidth  = min(m_MaxWidth,  pi_rpSecondPage->GetMaxWidth());
+        m_MinHeight = MAX(m_MinHeight, pi_rpSecondPage->GetMinHeight());
+        m_MinWidth  = MAX(m_MinWidth,  pi_rpSecondPage->GetMinWidth());
+        m_MaxHeight = MIN(m_MaxHeight, pi_rpSecondPage->GetMaxHeight());
+        m_MaxWidth  = MIN(m_MaxWidth,  pi_rpSecondPage->GetMaxWidth());
         }
 
     m_UnlimitedResolution = pi_rpPriorityPage->IsUnlimitedResolution() || pi_rpSecondPage->IsUnlimitedResolution();
@@ -1089,6 +1221,8 @@ HRFPageDescriptor::HRFPageDescriptor(HFCAccessMode                            pi
             }
         }
 
+    m_pGeocoding = RasterFileGeocoding::Create();//No geocoding by default, HRFFile MUST set it if supported
+
     // Resolution information
     m_ListOfResolutionDescriptor = pi_rResolutionDescriptors;
 
@@ -1228,84 +1362,6 @@ bool HRFPageDescriptor::SetFilter(const HRPFilter& pi_rFilters)
     }
 
 
-#if (0)
-//-----------------------------------------------------------------------------
-// Public
-// HasGeoKey
-// Return true if the requested geo key is found in the page descriptor,
-// otherwise false.
-//-----------------------------------------------------------------------------
-bool HRFPageDescriptor::HasGeoKey(TIFFGeoKey pi_GeoKey) const
-    {
-    bool                        HasKey;
-    HFCPtr<HMDMetaDataContainer> pGeoKeyContainer(GetMetaDataContainer(
-                                                      HMDMetaDataContainer::HMD_GEOCODING_INFO));
-
-    if (pGeoKeyContainer != 0)
-        {
-        HasKey = ((HFCPtr<HCPGeoTiffKeys>&)pGeoKeyContainer)->HasKey(pi_GeoKey);
-        }
-    else
-        {
-        HasKey = false;
-        }
-
-    return HasKey;
-    }
-
-#endif
-#if (0)
-//-----------------------------------------------------------------------------
-// Public
-// GetGeoKeyValue
-// Get the value of the requested geo key. Return true if the requested geo key
-// is found in the page descriptor, otherwise false.
-//-----------------------------------------------------------------------------
-bool HRFPageDescriptor::GetGeoKeyValue(TIFFGeoKey pi_Key, uint32_t* po_pVal) const
-    {
-    HPRECONDITION(GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO) != 0);
-
-    HFCPtr<HMDMetaDataContainer> pGeoKeyContainer(GetMetaDataContainer(
-                                                      HMDMetaDataContainer::HMD_GEOCODING_INFO));
-
-    return ((HFCPtr<HCPGeoTiffKeys>&)pGeoKeyContainer)->GetValue(pi_Key, po_pVal);
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// GetGeoKeyValue
-// Get the value of the requested geo key. Return true if the requested geo key
-// is found in the page descriptor, otherwise false.
-//-----------------------------------------------------------------------------
-bool HRFPageDescriptor::GetGeoKeyValue(TIFFGeoKey pi_Key, double* po_pVal) const
-    {
-    HPRECONDITION(GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO) != 0);
-
-    HFCPtr<HMDMetaDataContainer> pGeoKeyContainer(GetMetaDataContainer(
-                                                      HMDMetaDataContainer::HMD_GEOCODING_INFO));
-
-    return ((HFCPtr<HCPGeoTiffKeys>&)pGeoKeyContainer)->GetValue(pi_Key, po_pVal);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// GetGeoKeyValue
-// Get the value of the requested geo key. Return true if the requested geo key
-// is found in the page descriptor, otherwise false.
-//-----------------------------------------------------------------------------
-bool HRFPageDescriptor::GetGeoKeyValue(TIFFGeoKey pi_Key, WString* po_pVal) const
-    {
-    HPRECONDITION(GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO) != 0);
-
-    HFCPtr<HMDMetaDataContainer> pGeoKeyContainer(GetMetaDataContainer(
-                                                      HMDMetaDataContainer::HMD_GEOCODING_INFO));
-
-    return ((HFCPtr<HCPGeoTiffKeys>&)pGeoKeyContainer)->GetValue(pi_Key, po_pVal);
-    }
-
-#endif
-
 
 //-----------------------------------------------------------------------------
 // Public
@@ -1314,25 +1370,51 @@ bool HRFPageDescriptor::GetGeoKeyValue(TIFFGeoKey pi_Key, WString* po_pVal) cons
 //-----------------------------------------------------------------------------
 bool HRFPageDescriptor::GeocodingHasChanged() const
     {
-    bool HasChanged = m_GeocodingHasChanged;
+    return m_GeocodingHasChanged;
+    }
 
-    if (HasChanged == false)
-        {
-        if (m_pListOfMetaDataContainer != 0)
-            {
-            HFCPtr<HMDMetaDataContainer> pGeocodingKeys;
+//-----------------------------------------------------------------------------
+// Public
+// GetGeocoding
+// Get the page descriptor geocoding
+//-----------------------------------------------------------------------------
+IRasterBaseGcsCP  HRFPageDescriptor::GetGeocodingCP() const
+    {
+    BeAssert(m_pGeocoding!=NULL);
+    return m_pGeocoding->GetGeocodingCP();
+    }
 
-            pGeocodingKeys = m_pListOfMetaDataContainer->
-                             GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO);
+//-----------------------------------------------------------------------------
+// Public
+// SetGeocoding
+// Set the page descriptor geocoding
+// Geo coding given can be null or invalid indicating that there is no geo coding
+//-----------------------------------------------------------------------------
+void HRFPageDescriptor::SetGeocoding(IRasterBaseGcsP pi_pGeocoding)
+    {
+    m_pGeocoding = RasterFileGeocoding::Create(pi_pGeocoding);
+    m_GeocodingHasChanged=true;
+    }
 
-            if (pGeocodingKeys != 0)
-                {
-                HasChanged = pGeocodingKeys->HasChanged();
-                }
-            }
-        }
+//-----------------------------------------------------------------------------
+// Public
+// SetGeocoding
+// Set the page descriptor geocoding
+// Geo coding given can be null or invalid indicating that there is no geo coding
+//-----------------------------------------------------------------------------
+void HRFPageDescriptor::InitFromRasterFileGeocoding(RasterFileGeocoding& pi_geocoding,bool flagGeocodingAsModified)
+    {
+    m_pGeocoding = &pi_geocoding;
+    m_GeocodingHasChanged=flagGeocodingAsModified;
+    }
 
-    return HasChanged;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     06/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RasterFileGeocoding const& HRFPageDescriptor::GetRasterFileGeocoding() const
+    {
+    BeAssert(m_pGeocoding!=NULL);
+    return *m_pGeocoding;
     }
 
 //-----------------------------------------------------------------------------
@@ -1432,31 +1514,14 @@ void HRFPageDescriptor::RemoveTag (const HPMGenericAttribute& pi_rTag)
 // AddMetaDataContainer
 // Add the metadata container to the page descriptor
 //-----------------------------------------------------------------------------
-void HRFPageDescriptor::SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>& pi_rpMDContainer,
-                                             bool                         pi_IsAModification)
+void HRFPageDescriptor::SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>& pi_rpMDContainer)
     {
-    HPRECONDITION((pi_IsAModification == false) ||
-                  (pi_rpMDContainer->GetType() == HMDMetaDataContainer::HMD_GEOCODING_INFO));
-
     if (m_pListOfMetaDataContainer == 0)
         {
         m_pListOfMetaDataContainer = new HMDMetaDataContainerList();
         }
 
     m_pListOfMetaDataContainer->SetMetaDataContainer(pi_rpMDContainer);
-
-    if ((pi_rpMDContainer->GetType() == HMDMetaDataContainer::HMD_GEOCODING_INFO) &&
-        (pi_IsAModification == true))
-        {
-        m_GeocodingHasChanged = true;
-        }
-
-    //If the metadata container is set for the first time, the metadata container themselves
-    //should be set to unmodified.
-    if (pi_IsAModification == false)
-        {
-        pi_rpMDContainer->SetModificationStatus(false);
-        }
     }
 
 //-----------------------------------------------------------------------------
@@ -1662,5 +1727,44 @@ bool HRFPageDescriptor::SetThumbnail(const HRFThumbnail& pi_rThumbnail)
     m_pThumbnail = new HRFThumbnail(pi_rThumbnail);
     HASSERT(m_pThumbnail != 0);
 
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HRFPageDescriptor::ValidateTagCapabilities() const
+    {
+#ifdef __HMR_DEBUG
+    // loop through the vector and test each tag in the capabilities.
+
+    // create the universal tag capability
+    HFCPtr<HRFCapability> pTagUniverse(new HRFUniversalTagCapability(m_AccessMode));
+
+    for (HPMAttributeSet::HPMASiterator TagIterator = m_pListOfTag->begin(); TagIterator != m_pListOfTag->end(); TagIterator++)
+        {
+        HFCPtr<HRFCapability> pCapability   = new HRFTagCapability(m_AccessMode,  (*TagIterator));
+        HFCPtr<HRFCapability> pCapabilityRO = new HRFTagCapability(HFC_READ_ONLY, (*TagIterator));
+        if (!(m_pPageCapabilities->Supports(pCapability) || m_pPageCapabilities->Supports(pTagUniverse)))
+            {
+            // If we do not support the capability in the given access mode, check if
+            // we support it in read only access.
+            if (m_pPageCapabilities->Supports(pCapabilityRO))
+                {
+                // If we do, just output a message to say so.
+
+                // HRFMessage("Tag :" + (*TagIterator)->GetLabel() + " is supported in read only);
+
+                // Do nothing for now.
+                }
+             else if(!(m_pPageCapabilities->Supports(pCapability) || m_pPageCapabilities->Supports(pTagUniverse)))
+                {
+                // We do not support this capability.
+                return false;
+                }
+            }
+        }
+   
+#endif
     return true;
     }

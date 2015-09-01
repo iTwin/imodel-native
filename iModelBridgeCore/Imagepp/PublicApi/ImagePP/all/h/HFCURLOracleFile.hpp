@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLOracleFile.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HFCURLOracleFile
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Returns a reference to a string that contains the host part of the
 // URL string.
@@ -53,3 +53,4 @@ inline bool HFCURLOracleFile::HasPathTo(HFCURL* pi_pURL)
     {
     return false;
     }
+END_IMAGEPP_NAMESPACE

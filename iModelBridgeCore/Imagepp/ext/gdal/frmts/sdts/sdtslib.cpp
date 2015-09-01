@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtslib.cpp 17213 2009-06-07 11:55:50Z rouault $
+ * $Id: sdtslib.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  SDTS Translator
  * Purpose:  Various utility functions that apply to all SDTS profiles.
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2009-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "sdts_al.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: sdtslib.cpp 17213 2009-06-07 11:55:50Z rouault $");
+CPL_CVSID("$Id: sdtslib.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                            SDTSFeature()                             */
@@ -58,7 +59,7 @@ void SDTSFeature::ApplyATID( DDFField * poField )
     poMODN = poField->GetFieldDefn()->FindSubfieldDefn( "MODN" );
     if( poMODN == NULL )
     {
-        CPLAssert( FALSE );
+        //CPLAssert( FALSE );
         return;
     }
     
@@ -135,8 +136,12 @@ int SDTSModId::Set( DDFField *poField )
         szModule[sizeof(szModule)-1] = '\0';
 
         poSF = poField->GetFieldDefn()->FindSubfieldDefn( "RCID" );
-        pachData = poField->GetSubfieldData(poSF, &nBytesRemaining);
-        nRecord = poSF->ExtractIntData( pachData, nBytesRemaining, NULL);
+        if( poSF != NULL )
+        {
+            pachData = poField->GetSubfieldData(poSF, &nBytesRemaining);
+            if( pachData != NULL )
+                nRecord = poSF->ExtractIntData( pachData, nBytesRemaining, NULL);
+        }
     }
 
     if( poDefn->GetSubfieldCount() == 3 )
@@ -150,11 +155,14 @@ int SDTSModId::Set( DDFField *poField )
             const char  *pachData;
 
             pachData = poField->GetSubfieldData(poSF, &nBytesRemaining);
-            strncpy( szOBRP, 
-                     poSF->ExtractStringData( pachData, nBytesRemaining, NULL),
-                     sizeof(szOBRP) );
-            
-            szOBRP[sizeof(szOBRP)-1] = '\0';
+            if( pachData != NULL )
+            {
+                strncpy( szOBRP, 
+                        poSF->ExtractStringData( pachData, nBytesRemaining, NULL),
+                        sizeof(szOBRP) );
+                
+                szOBRP[sizeof(szOBRP)-1] = '\0';
+            }
         }
     }
 
@@ -168,8 +176,6 @@ int SDTSModId::Set( DDFField *poField )
 const char * SDTSModId::GetName()
 
 {
-    static char         szName[20];
-
     sprintf( szName, "%s:%ld", szModule, nRecord );
 
     return szName;

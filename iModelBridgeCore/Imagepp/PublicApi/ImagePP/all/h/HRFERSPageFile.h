@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFERSPageFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFHGRPageFile
@@ -19,6 +19,7 @@
 #include "HGF2DWorld.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HFCRUL;
 class HFCBinStream;
 
@@ -37,13 +38,13 @@ class HRFERSPageFile : public HRFPageFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1960, HRFPageFile)
+    HDECLARE_CLASS_ID(HRFFileId_ERSPage, HRFPageFile)
 
     // allow to Open an image file
-    _HDLLg                     HRFERSPageFile(const HFCPtr<HFCURL>&   pi_rpURL,
+    IMAGEPP_EXPORT                     HRFERSPageFile(const HFCPtr<HFCURL>&   pi_rpURL,
                                               HFCAccessMode           pi_AccessMode = HFC_READ_ONLY);
 
-    _HDLLg virtual             ~HRFERSPageFile();
+    IMAGEPP_EXPORT virtual             ~HRFERSPageFile();
 
     // File capabilities
     virtual const HFCPtr<HRFRasterFileCapabilities>&
@@ -186,7 +187,7 @@ private:
                       double                        pi_Rotation,
                       double                        pi_RegistrationX,
                       double                        pi_RegistrationY,
-                      IRasterBaseGcsPtr             pi_rpGeoTiffKeys) const;
+                      IRasterBaseGcsCP              pi_rpGeoTiffKeys) const;
 
     // Methods Disabled
     HRFERSPageFile(const HRFERSPageFile& pi_rObj);
@@ -210,6 +211,7 @@ public:
     virtual const HFCPtr<HRFRasterFileCapabilities>&
     GetCapabilities();
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFERSPageFileCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFERSPageFileCreator)
     };
+END_IMAGEPP_NAMESPACE
 

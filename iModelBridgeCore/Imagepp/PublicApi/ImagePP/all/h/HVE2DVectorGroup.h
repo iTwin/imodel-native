@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DVectorGroup.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DVectorGroup
@@ -13,12 +13,13 @@
 
 #include "HVE2DVector.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 // Type used for the main vector type
 typedef uint32_t HVE2DVectorGroupTypeId;
 
 class HVE2DVectorGroup : public HVE2DVector
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1123)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DVectorGroupId)
 
 public:
 
@@ -109,5 +110,6 @@ private:
     HGF2DExtent    m_Extent;
     bool          m_ExtentUpToDate;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HVE2DVectorGroup.hpp"

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCLocalBinStream.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCLocalBinStream
@@ -11,53 +11,56 @@
 
 #include "HFCBinStream.h"
 
-BEGIN_BENTLEY_NAMESPACE
-struct BeFile;
-END_BENTLEY_NAMESPACE
+BEGIN_IMAGEPP_NAMESPACE
+
+namespace Bentley {struct BeFile;}
 
 class HFCLocalBinStream : public HFCBinStream
     {
+
+    friend struct LocalBinStreamCreator;
+
 public:
 
-    HDECLARE_CLASS_ID (1291, HFCBinStream);
+    HDECLARE_CLASS_ID (HFCBinStreamId_Local, HFCBinStream);
 
     // Primary methods
 
     HFCLocalBinStream();
-    _HDLLu                         HFCLocalBinStream(const WString&    pi_Filename,
+    IMAGEPP_EXPORT                         HFCLocalBinStream(const WString&    pi_Filename,
                                                      HFCAccessMode     pi_AccessMode,
                                                      bool              pi_AutoRemove = false,
                                                      uint64_t          pi_OriginOffset = 0,
                                                      short pi_NbRetry = 0);
 
-    _HDLLu                         HFCLocalBinStream(const WString&    pi_Filename,
+    IMAGEPP_EXPORT                         HFCLocalBinStream(const WString&    pi_Filename,
                                                      HFCAccessMode     pi_AccessMode,
                                                      bool              pi_CreateFile,
                                                      bool              pi_AutoRemove,
                                                      uint64_t          pi_OriginOffset,
                                                      short pi_NbRetry=0);
 
-    _HDLLu                         HFCLocalBinStream(const WString&    pi_Filename,
+    IMAGEPP_EXPORT                         HFCLocalBinStream(const WString&    pi_Filename,
                                                      bool              pi_ShareWrite = false,
                                                      bool              pi_ShareRead = true,
                                                      bool              pi_CreateFile = true,
                                                      bool              pi_AutoRemove = false,
                                                      uint64_t          pi_OriginOffset = 0,
                                                      short pi_NbRetry = 0);
-    _HDLLu virtual                 ~HFCLocalBinStream();
+    IMAGEPP_EXPORT virtual                 ~HFCLocalBinStream();
 
     // Information methods
 
-    _HDLLu virtual HFCPtr<HFCURL>  GetURL() const;
-    _HDLLu virtual uint64_t        GetSize() const;
+    IMAGEPP_EXPORT virtual HFCPtr<HFCURL>  GetURL() const;
+    IMAGEPP_EXPORT virtual uint64_t        GetSize() const;
     virtual HFCAccessMode          GetAccessMode() const;
     uint64_t                       GetOriginOffset() const;
-    _HDLLu uint64_t                GetCurrentFileSize() const;
+    IMAGEPP_EXPORT uint64_t                GetCurrentFileSize() const;
 
     // Multiuser access
 
-    _HDLLu virtual void            Lock(uint64_t pi_Pos, uint64_t pi_Size, bool pi_Share);  //DM-Android
-    _HDLLu virtual void            Unlock(uint64_t pi_Pos, uint64_t pi_Size);               //DM-Android
+    IMAGEPP_EXPORT virtual void            Lock(uint64_t pi_Pos, uint64_t pi_Size, bool pi_Share);  
+    IMAGEPP_EXPORT virtual void            Unlock(uint64_t pi_Pos, uint64_t pi_Size);               
 
     // File pointer management
 
@@ -71,13 +74,9 @@ public:
 
     // Content access
 
-    _HDLLu virtual size_t    Read(void* po_pData, size_t pi_DataSize);
-    _HDLLu virtual size_t    Write(const void* pi_pData, size_t pi_DataSize);
+    IMAGEPP_EXPORT virtual size_t    Read(void* po_pData, size_t pi_DataSize);
+    IMAGEPP_EXPORT virtual size_t    Write(const void* pi_pData, size_t pi_DataSize);
 
-    // Unicode support, these method will read UTF-8 to UTF-16 and
-    // write from UTF-16 to UTF-8 in the file.
-    _HDLLu virtual size_t    Read(WChar* po_pData, size_t pi_DataSize);
-    _HDLLu virtual size_t    Write(const WChar* pi_pData, size_t pi_DataSize);
 
     virtual bool     Flush();
 
@@ -86,12 +85,12 @@ public:
         OffsetIs32Bits,
         OffsetIs64Bits
         };
-    _HDLLu void                  SetMaxFileSizeSupported(MaxOffsetBitsSupported pi_OffsetBits);
+    IMAGEPP_EXPORT void                  SetMaxFileSizeSupported(MaxOffsetBitsSupported pi_OffsetBits);
 
 
 protected:
 
-    _HDLLu void                    Open(const WString&     pi_Filename,
+    IMAGEPP_EXPORT void                    Open(const WString&     pi_Filename,
                                         HFCAccessMode      pi_AccessMode,
                                         bool              pi_ShareWrite,
                                         bool              pi_ShareRead,
@@ -103,14 +102,17 @@ protected:
 
 private:
 
-    friend struct LocalBinStreamCreator;
-
-    _HDLLu void            SetLastExceptionClassID();
+    IMAGEPP_EXPORT void            SetLastExceptionClassID();
+    void FileExceptionFromBeFileStatus(BeFileStatus pi_Status);
 
     WString                CookFilenameWithLongNameTagW() const;
 
 
     // Disabled methods
+
+    // See HFCBinStream.h as to why they are disabled.
+    size_t Read(WChar* po_pData, size_t pi_DataSize);
+    size_t Write(const WChar* pi_pData, size_t pi_DataSize);
 
     HFCLocalBinStream(const HFCLocalBinStream& pi_rObj);
     HFCLocalBinStream& operator=(const HFCLocalBinStream& pi_rObj);
@@ -129,12 +131,6 @@ private:
     uint64_t               m_CurrentFileSize;
     bool                   m_WeAreWritingAtTheEnd;
     bool                   m_HasToBeFlushed;
-
-    bool                   m_FileIsUTF8Encoded;
-    HArrayAutoPtr<WChar>   m_StackChar;
-    size_t                 m_StackSize;
-    size_t                 m_StackCharIndex;
-    HArrayAutoPtr<char>    m_BufferChar;
-    size_t                 m_BufferCharIndex;
     };
 
+END_IMAGEPP_NAMESPACE

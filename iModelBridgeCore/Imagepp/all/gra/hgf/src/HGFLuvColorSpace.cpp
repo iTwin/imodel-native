@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFLuvColorSpace.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGFLuvColorSpace
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HGFLuvColorSpace.h>
 #include <Imagepp/all/h/HFCMaths.h>
 
@@ -130,6 +130,50 @@ void HGFLuvColorSpace::BuildLookupTableLUVToRGB()
     m_VPrime = (9.0 * m_ReferenceWhiteXYZ [1])/  (m_ReferenceWhiteXYZ [0] + ( 15.0 * m_ReferenceWhiteXYZ [1] ) + (3.0 * m_ReferenceWhiteXYZ [2]));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  03/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+unsigned short HGFLuvColorSpace::GrayFromLuminance(double pi_L) const
+    {
+    double X;
+    double Y;
+    double Z;
+
+    double NormalizedColor;
+    double PRECISION_EPSILON = 0.0001999;
+
+    double ChannelMaxValue = m_ChannelSize - 1.0;
+
+    if (pi_L > CIE_E)
+        {
+        // Use a Temp value to avoid unnecessary division..
+        double TempValue = (pi_L + 16.0) / 116.0;
+
+        // Instead of using pow(TempValue, 3)...
+        Y = TempValue * TempValue * TempValue;
+        }
+    else
+        Y = pi_L / CIE_K;
+
+    //--------------------------------------------------------------
+    // Convert from L*u*v* to CIE XYZ color space
+    X = (-9.0 * Y * m_UPrime) / (((m_UPrime - 4.0) * m_VPrime) - (m_UPrime * m_VPrime));
+    Z = ((9.0 * Y) - (15.0 * m_VPrime * Y) - m_VPrime * X) / (3.0 * m_VPrime);
+
+    //--- Red ------------------------------------------------------
+    // Get the red component normalized (value within [0,1] range)
+    NormalizedColor = (m_RGBToXYZMatrix[0][0] * X) + (m_RGBToXYZMatrix[0][1] * Y) + (m_RGBToXYZMatrix[0][2] * Z);
+
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
+
+    if (m_UseGammaCorrection)
+        return (unsigned short)(ChannelMaxValue * pow( NormalizedColor, 1.0/m_GammaCorrectionFactor));
+        
+    // Convert the processed value to the standard domain
+    return (unsigned short)((NormalizedColor * ChannelMaxValue) + PRECISION_EPSILON);
+    }
+
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
@@ -150,7 +194,7 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
     double ChannelMaxValue = m_ChannelSize - 1.0;
 
     // Do not allow zero division.
-    double TempValue = 1.0 / (13.0 * max(pi_L, 0.0001));
+    double TempValue = 1.0 / (13.0 * MAX(pi_L, 0.0001));
 
     UPrime = (pi_U * TempValue) + m_UPrime;
     VPrime = (pi_V * TempValue) + m_VPrime;
@@ -175,8 +219,8 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
     // Get the red component normalized (value within [0,1] range)
     NormalizedColor = (m_RGBToXYZMatrix[0][0] * X) + (m_RGBToXYZMatrix[0][1] * Y) + (m_RGBToXYZMatrix[0][2] * Z);
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {
@@ -193,8 +237,8 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
     // Get the green component normalized (value within [0,1] range)
     NormalizedColor = (m_RGBToXYZMatrix[1][0] * X) + (m_RGBToXYZMatrix[1][1] * Y) + (m_RGBToXYZMatrix[1][2] * Z);
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {
@@ -210,8 +254,8 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
     // Get the blue component normalized (value within [0,1] range)
     NormalizedColor  = (m_RGBToXYZMatrix[2][0] * X) + (m_RGBToXYZMatrix[2][1] * Y) + (m_RGBToXYZMatrix[2][2] * Z);
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {
@@ -244,7 +288,7 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
     double ChannelMaxValue = m_ChannelSize - 1.0;
 
     // Do not allow zero division.
-    double TempValue = 1.0 / (13.0 * max(pi_L, 0.0001));
+    double TempValue = 1.0 / (13.0 * MAX(pi_L, 0.0001));
 
     UPrime = (pi_U * TempValue) + m_UPrime;
     VPrime = (pi_V * TempValue) + m_VPrime;
@@ -269,8 +313,8 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
     // Get the red component normalized (value within [0,1] range)
     NormalizedColor = (m_RGBToXYZMatrix[0][0] * X) + (m_RGBToXYZMatrix[0][1] * Y) + (m_RGBToXYZMatrix[0][2] * Z);
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {
@@ -286,8 +330,8 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
     // Get the green component normalized (value within [0,1] range)
     NormalizedColor = (m_RGBToXYZMatrix[1][0] * X) + (m_RGBToXYZMatrix[1][1] * Y) + (m_RGBToXYZMatrix[1][2] * Z);
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {
@@ -303,8 +347,8 @@ void HGFLuvColorSpace::ConvertToRGB (double   pi_L,    double   pi_U,      doubl
     // Get the blue component normalized (value within [0,1] range)
     NormalizedColor  = (m_RGBToXYZMatrix[2][0] * X) + (m_RGBToXYZMatrix[2][1] * Y) + (m_RGBToXYZMatrix[2][2] * Z);
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {
@@ -339,7 +383,7 @@ void HGFLuvColorSpace::ConvertArrayToRGB (double*  pi_L,   double*  pi_U,     do
     for (uint32_t ArrayIndex = 0; ArrayIndex < pi_ArraySize; ArrayIndex++)
         {
         // Do not allow zero division.
-        TempValue = 1.0 / (13.0 * max(*pi_L, 0.0001));
+        TempValue = 1.0 / (13.0 * MAX(*pi_L, 0.0001));
 
         UPrime = (*pi_U * TempValue) + m_UPrime;
         VPrime = (*pi_V * TempValue) + m_VPrime;
@@ -377,6 +421,24 @@ void HGFLuvColorSpace::ConvertArrayToRGB (double*  pi_L,   double*  pi_U,     do
         ++po_pGreen;
         ++po_pBlue;
         }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  03/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+double HGFLuvColorSpace::LuminanceFromGray (unsigned short pi_gray) const
+    {
+    HPRECONDITION(pi_gray < m_ChannelSize); 
+
+    // Pre-compute division wich will be used two time to avoid one.
+    double TempValue = (m_pRGBToYRed[pi_gray] + m_pRGBToYGreen[pi_gray] + m_pRGBToYBlue[pi_gray]) / m_ReferenceWhiteXYZ [1];
+
+    // Compute L value (Ligthness)
+    if (TempValue > CIE_E)
+        return 116.0 * LimitedFastCubicRoot(TempValue) - 16.0;
+    
+    return CIE_K * TempValue; // *pi_pL = (116.0 * (7.787 * (Y / ReferenceWhiteXYZ [1])) + (16.0 / 116.0)) - 16.0;
     }
 
 //----------------------------------------------------------------------------
@@ -569,7 +631,7 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double  pi_L,      double  pi_U,       
     bool  ConversionDone = true;
 
     // Do not allow zero division.
-    double TempValue = 1.0 / (13.0 * max(pi_L, 0.0001));
+    double TempValue = 1.0 / (13.0 * MAX(pi_L, 0.0001));
 
     UPrime = (pi_U * TempValue) + m_UPrime;
     VPrime = (pi_V * TempValue) + m_VPrime;
@@ -598,8 +660,8 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double  pi_L,      double  pi_U,       
     if (NormalizedColor < 0.0 || NormalizedColor > 1.0)
         ConversionDone = false;
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {
@@ -617,8 +679,8 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double  pi_L,      double  pi_U,       
     if (NormalizedColor < 0.0 || NormalizedColor > 1.0)
         ConversionDone = false;
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {
@@ -636,8 +698,8 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double  pi_L,      double  pi_U,       
     if (NormalizedColor < 0.0 || NormalizedColor > 1.0)
         ConversionDone = false;
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {
@@ -673,7 +735,7 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double   pi_L,    double   pi_U,      d
     double ChannelMaxValue = m_ChannelSize - 1.0;
 
     // Do not allow zero division.
-    double TempValue = 1.0 / (13.0 * max(pi_L, 0.001));
+    double TempValue = 1.0 / (13.0 * MAX(pi_L, 0.001));
 
     UPrime = (pi_U * TempValue) + m_UPrime;
     VPrime = (pi_V * TempValue) + m_VPrime;
@@ -703,8 +765,8 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double   pi_L,    double   pi_U,      d
         ConversionDone = false;
         }
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {
@@ -723,8 +785,8 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double   pi_L,    double   pi_U,      d
     if (NormalizedColor < 0.0 || NormalizedColor > 1.0)
         ConversionDone = false;
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {
@@ -743,8 +805,8 @@ bool HGFLuvColorSpace::SafeConvertToRGB (double   pi_L,    double   pi_U,      d
     if (NormalizedColor < 0.0 || NormalizedColor > 1.0)
         ConversionDone = false;
 
-    NormalizedColor = min(NormalizedColor, 1.0);
-    NormalizedColor = max(NormalizedColor, 0.0);
+    NormalizedColor = MIN(NormalizedColor, 1.0);
+    NormalizedColor = MAX(NormalizedColor, 0.0);
 
     if (m_UseGammaCorrection)
         {

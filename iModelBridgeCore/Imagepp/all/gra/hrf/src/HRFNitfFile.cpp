@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFNitfFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFNitfFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFNitfFile.h>
 #include <Imagepp/all/h/HFCURLFile.h>
@@ -43,15 +43,14 @@
 #include <Imagepp/all/h/HGF2DSimilitude.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 
-USING_NAMESPACE_IMAGEPP
+
 
 //GDAL
-#include <ImagePPInternal/ext/gdal/gdal_priv.h>
-#include <ImagePPInternal/ext/gdal/cpl_string.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
+#include <ImagePP-GdalLib/cpl_string.h>
 
 //-----------------------------------------------------------------------------
 // HRFNitfBlockCapabilities
@@ -215,8 +214,7 @@ HRFNitfCreator::HRFNitfCreator()
 // Identification information
 WString HRFNitfCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_NITF); // NITF File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_NITF()); // NITF File Format
     }
 
 // Identification information
@@ -253,7 +251,9 @@ bool HRFNitfCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                    uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
+
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
 
     //Will initialize GDal if not already initialize
     HRFGdalSupportedFile::Initialize();
@@ -266,9 +266,9 @@ bool HRFNitfCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock (GetLockManager());
 
     // Open the IMG File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
         pFile->Read(pLine, 4);
         //Check unique file identifier
@@ -332,7 +332,7 @@ HRFNitfFile::HRFNitfFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
     else
         {
@@ -380,24 +380,24 @@ bool HRFNitfFile::Open()
         if (GetBitsPerPixelPerBand() < NbSignificantBits && !IsReadPixelReal())
             {
             m_pPixelType = 0;
-            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
             }
         //GDAL doesn't support pixel binary image.
         else if (pNITF_PVTYPE_String != NULL && strncmp(pNITF_PVTYPE_String, "B", 1) == 0)
             {
             m_pPixelType = 0;
-            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
             }
         //GDAL doesn't support bi-level, masked vector quantization and any jpeg compressions.
         else if (pNITF_IC_String != NULL &&
                 (   (strncmp(pNITF_IC_String, "I1", 2) == 0) ||
-                    (strncmp(pNITF_IC_String, "C3", 2) == 0) ||
+//                    (strncmp(pNITF_IC_String, "C3", 2) == 0) ||       Not supported by Gdal 1.10
                     (strncmp(pNITF_IC_String, "M3", 2) == 0) ||
-                    (strncmp(pNITF_IC_String, "M4", 2) == 0) ||
+//                    (strncmp(pNITF_IC_String, "M4", 2) == 0) ||       Not supported by Gdal 1.10
                     (strncmp(pNITF_IC_String, "C5", 2) == 0) ||
                     (strncmp(pNITF_IC_String, "M5", 2) == 0)))
             {
-            throw HRFException(HRF_CODEC_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFCodecNotSupportedException(GetURL()->GetURL());
             }                
         }
 

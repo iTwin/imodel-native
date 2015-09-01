@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecFlashpixOLDForMSI10.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecFlashpixOLDForMSI10
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HCDCodecFlashpixOLDForMSI10.h>
 #include <Imagepp/all/h/HFCMath.h>
 #include <Imagepp/all/h/HCDCodecIJG.h>
@@ -171,9 +171,9 @@ size_t HCDCodecFlashpixOLDForMSI10::DecompressSubset(  const void* pi_pInData,
             // and thw two alphas are not necesseraly equal
             if(pData[3] != 0)
                 {
-                pData[0] = pQuotients->DivideBy255ToByte(min(pData[0] * 255 / pData[3], 255) * pData[3]);
-                pData[1] = pQuotients->DivideBy255ToByte(min(pData[1] * 255 / pData[3], 255) * pData[3]);
-                pData[2] = pQuotients->DivideBy255ToByte(min(pData[2] * 255 / pData[3], 255) * pData[3]);
+                pData[0] = pQuotients->DivideBy255ToByte(MIN(pData[0] * 255 / pData[3], 255) * pData[3]);
+                pData[1] = pQuotients->DivideBy255ToByte(MIN(pData[1] * 255 / pData[3], 255) * pData[3]);
+                pData[2] = pQuotients->DivideBy255ToByte(MIN(pData[2] * 255 / pData[3], 255) * pData[3]);
                 }
             else
                 {
@@ -322,6 +322,7 @@ void HCDCodecFlashpixOLDForMSI10::SetColorMode(HCDCodecFlashpixOLDForMSI10::Colo
             break;
         case RGB:
         default:
+            HASSERT(RGB == pi_Mode);
             ColorMode = HCDCodecIJG::RGB;
             BitsPerPixel = 24;
             break;

@@ -2,17 +2,15 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecRLE8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecRLE8
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
-#include <Imagepp/all/h/HCDCodecRLE8.h>
+#include <ImagePPInternal/hstdcpp.h>
 
-static const Byte s_BitMask[8]    = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
+#include <Imagepp/all/h/HCDCodecRLE8.h>
 
 #define HCD_CODEC_NAME L"RLE8bits"
 
@@ -31,13 +29,14 @@ HCDCodecRLE8::HCDCodecRLE8()
 // public
 // Default constructor
 //-----------------------------------------------------------------------------
-HCDCodecRLE8::HCDCodecRLE8(size_t pi_Width,
-                           size_t pi_Height)
+HCDCodecRLE8::HCDCodecRLE8(size_t pi_Width, size_t pi_Height, size_t pi_BitsPerPixel)
     : HCDCodecImage(HCD_CODEC_NAME,
                     pi_Width,
                     pi_Height,
-                    8)
+                    pi_BitsPerPixel)
     {
+    HPRECONDITION(pi_BitsPerPixel % 8 == 0);
+
     m_LineHeader = false;
     m_OneLineMode = false;
     }
@@ -83,6 +82,9 @@ size_t HCDCodecRLE8::CompressSubset(const void* pi_pInData,
     // done very simply. However, there are some combinations of run lenght and
     // non-run lenghts that could be smaller in length.. The algo is more complex however....
 
+    if(GetBitsPerPixel() != 8)
+        return CompressSubsetN8(pi_pInData, pi_InDataSize, po_pOutBuffer, po_OutBufferSize);
+        
     // is it the first packet?
     if(GetSubsetPosY() == 0)
         {
@@ -168,6 +170,123 @@ size_t HCDCodecRLE8::CompressSubset(const void* pi_pInData,
 
 //-----------------------------------------------------------------------------
 // public
+// CompressSubset
+//-----------------------------------------------------------------------------
+size_t HCDCodecRLE8::CompressSubsetN8(const void* pi_pInData,
+                                      size_t      pi_InDataSize,
+                                      void*       po_pOutBuffer,
+                                      size_t      po_OutBufferSize)
+    {
+    HASSERT(GetBitsPerPixel() % 8 == 0);
+
+    // HLXXX Note: The compression algorithm is not optimal. The compression has been
+    // done very simply. However, there are some combinations of run lenght and
+    // non-run lenghts that could be smaller in length.. The algo is more complex however....
+
+    // is it the first packet?
+    if(GetSubsetPosY() == 0)
+        {
+        SetCurrentState(STATE_COMPRESS);
+        }
+
+    Byte* pSrc  = (Byte*)pi_pInData;
+    int8_t* pDest = (int8_t*)po_pOutBuffer;
+
+    Byte* pColorPlan      = new Byte[GetSubsetWidth()];
+    Byte* pColorPlanBegin = pColorPlan;
+
+    unsigned short ColorPlanCount = (unsigned short)(GetBitsPerPixel() / 8);
+
+    int8_t* pLen;
+
+    size_t LinesCount = GetSubsetHeight();
+
+    size_t LineBytesCount;
+    Byte Value;
+    int32_t Len;
+
+    while(LinesCount != 0)
+        {
+        LineBytesCount = GetSubsetWidth();
+
+        // Decompress every color plan (R,G and B)
+        for(unsigned short colorPlan=0; colorPlan < ColorPlanCount; ++colorPlan)
+            {
+            // Construct the Color Plan buffer
+            for(uint32_t i = 0; i < GetSubsetWidth(); ++i)
+                pColorPlanBegin[i] = pSrc[(i*ColorPlanCount)+colorPlan];
+
+            // Move the Color Plan pointer to the beginning of the buffer
+            // for the next color plan
+            pColorPlan = pColorPlanBegin;
+
+            // loop until we compress all the bytes
+            while(LineBytesCount != 0)
+                {
+                // get the value of the byte
+                Value = *pColorPlan;
+                Len = 1;
+
+                pColorPlan++;
+                LineBytesCount--;
+
+                // compare the value with the following bytes and test if there is a repetitive pattern
+                while(LineBytesCount != 0 && Value == *pColorPlan && Len < 128)
+                    {
+                    pColorPlan++;
+                    LineBytesCount--;
+                    Len++;
+                    }
+
+                // if the len is longer than 1, store the repetitiv pattern
+                if(Len > 1)
+                    {
+                    *pDest = (int8_t)(-1 * Len);
+                    pDest++;
+                    *((Byte*)pDest) = Value;
+                    pDest++;
+                    }
+                else
+                    {
+                    // otherwise, test for the longer non-repetitive pattern
+                    pLen = pDest;
+
+                    pDest++;
+                    *pDest = Value;
+                    pDest++;
+
+                    // test for the longer non repetitive string
+                    while(Len < 127 && ((LineBytesCount == 1) || (LineBytesCount > 1 && *pColorPlan != *(pColorPlan + 1))))
+                    while(Len < 127 && LineBytesCount != 0   && ((LineBytesCount < 2 || *pColorPlan != *(pColorPlan + 1))))
+                        {
+                        *pDest = *pColorPlan;
+                        pDest++;
+                        Len++;
+                        pColorPlan++;
+                        LineBytesCount--;
+                        }
+
+                    *pLen = (int8_t)Len;
+                    }
+                }
+            LineBytesCount = GetSubsetWidth();
+            }
+        pSrc += ((GetSubsetWidth() * ColorPlanCount*8) + GetLinePaddingBits()) / 8;
+
+        LinesCount--;
+        }
+    delete[] pColorPlanBegin;
+
+    SetSubsetPosY(GetSubsetPosY() + GetSubsetHeight());
+
+    if(GetSubsetPosY() == GetHeight())
+        Reset();
+
+    return(((Byte*)pDest) - ((Byte*)po_pOutBuffer));
+    }
+
+//-----------------------------------------------------------------------------
+// public
 // DecompressSubset
 //-----------------------------------------------------------------------------
 size_t HCDCodecRLE8::DecompressSubset(const void* pi_pInData,
@@ -175,6 +294,9 @@ size_t HCDCodecRLE8::DecompressSubset(const void* pi_pInData,
                                       void* po_pOutBuffer,
                                       size_t pi_OutBufferSize)
     {
+    if(GetBitsPerPixel() != 8)
+        return DecompressSubsetN8(pi_pInData, pi_InDataSize, po_pOutBuffer, pi_OutBufferSize);
+
     // is it the first packet?
     if(GetSubsetPosY() == 0)
         {
@@ -242,6 +364,99 @@ size_t HCDCodecRLE8::DecompressSubset(const void* pi_pInData,
 
 //-----------------------------------------------------------------------------
 // public
+// DecompressSubset
+//-----------------------------------------------------------------------------
+size_t HCDCodecRLE8::DecompressSubsetN8(const void* pi_pInData,
+                                        size_t      pi_InDataSize,
+                                        void*       po_pOutBuffer,
+                                        size_t      pi_OutBufferSize)
+    {
+    HASSERT(GetBitsPerPixel() % 8 == 0);
+
+    // is it the first packet?
+    if(GetSubsetPosY() == 0)
+        {
+        SetCurrentState(STATE_DECOMPRESS);
+        }
+
+    size_t BytesCount;
+
+    int8_t* pSrc = (int8_t*)pi_pInData;
+    Byte* pDest = (Byte*)po_pOutBuffer;
+
+    Byte* pColorPlan = new Byte[GetSubsetWidth()];
+    Byte* pColorPlanBegin = pColorPlan;
+
+    int32_t Count;
+    unsigned short ColorPlanCount = (unsigned short)(GetBitsPerPixel() / 8);
+
+    size_t LinesCount = GetSubsetHeight();
+
+    while(LinesCount != 0)
+        {
+        // Decompress every color plan (R,G and B)
+        for(unsigned short colorPlan=0; colorPlan < ColorPlanCount; ++colorPlan)
+            {
+            // Get the number of pixel by Width
+            BytesCount = GetSubsetWidth();
+
+            while(BytesCount)
+                {
+                if(*pSrc < 0)
+                    {
+                    Count = -1 * (*pSrc);
+                    pSrc++;
+                    memset(pColorPlan, *((Byte*)pSrc), Count);
+
+                    pSrc++;
+                    pColorPlan += Count;
+                    BytesCount -= Count;
+                    }
+                else if(*pSrc > 0)
+                    {
+                    Count = *pSrc;
+                    pSrc++;
+                    memcpy(pColorPlan, pSrc, Count);
+
+                    pSrc += Count;
+                    pColorPlan += Count;
+                    BytesCount -= Count;
+                    }
+                else
+                    {
+                    pSrc++;
+                    }
+                }
+            // Replace the pixel in RGB order in the out buffer
+            for(uint32_t i = 0; i < GetSubsetWidth(); ++i)
+                pDest[(i*ColorPlanCount)+colorPlan] = pColorPlanBegin[i];
+
+            // Move the Color Plan pointer to the beginning of the buffer
+            // for the next color plan
+            pColorPlan = pColorPlanBegin;
+            }
+
+        pDest += ((GetSubsetWidth() * ColorPlanCount*8) + GetLinePaddingBits()) / 8;
+        LinesCount--;
+        }
+
+    // Delete the temporary buffer
+    delete[] pColorPlanBegin;
+
+    SetCompressedImageIndex(GetCompressedImageIndex() + (((Byte*)pSrc) - ((Byte*)pi_pInData)));
+
+    SetSubsetPosY(GetSubsetPosY() + GetSubsetHeight());
+
+    size_t OutDataSize = (((GetSubsetWidth() * ColorPlanCount*8) + GetLinePaddingBits()) / 8) * GetSubsetHeight();
+
+    if(GetSubsetPosY() == GetHeight())
+        Reset();
+
+    return(OutDataSize);
+    }
+
+//-----------------------------------------------------------------------------
+// public
 // HasLineAccess
 //-----------------------------------------------------------------------------
 bool HCDCodecRLE8::HasLineAccess() const
@@ -274,7 +489,7 @@ void HCDCodecRLE8::SetOneLineMode(bool pi_Enable)
 //-----------------------------------------------------------------------------
 bool HCDCodecRLE8::IsBitsPerPixelSupported(size_t pi_Bits) const
     {
-    if(pi_Bits == 8)
+    if(0 == (pi_Bits % 8))
         return true;
     else
         return false;

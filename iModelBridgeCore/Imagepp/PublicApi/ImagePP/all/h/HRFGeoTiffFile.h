@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoTiffFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGeoTiffFile
@@ -16,6 +16,7 @@
 #include "HRFRasterFileCapabilities.h"
 #include "HCPGeoTiffKeys.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFGeoTiffCapabilities : public HRFTiffCapabilities
     {
 public:
@@ -31,7 +32,7 @@ public:
     friend class HRFTiffStripEditor;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1435, HRFTiffFile)
+    HDECLARE_CLASS_ID(HRFFileId_GeoTiff, HRFTiffFile)
 
     // Allow to Open an image file
     HRFGeoTiffFile        (const HFCPtr<HFCURL>&  pi_rpURL,
@@ -62,13 +63,11 @@ public:
     virtual void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                  uint32_t pi_Page = 0,
                                                                  bool   pi_CheckSpecificUnitSpec = false,
-                                                                 bool   pi_GeoModelDefaultUnit = false,
                                                                  bool   pi_InterpretUnitINTGR = false);
 
-    _HDLLg void                           GetDefaultInterpretationGeoRef(double* po_RatioToMeter=0,
+    IMAGEPP_EXPORT void                           GetDefaultInterpretationGeoRef(double* po_RatioToMeter=0,
                                                                          bool*   po_InterpretUnit=0,
-                                                                         bool*   po_InterpretUnitINTGR=0,
-                                                                         bool*   po_ModelTypeGeographicConsiderDefaultUnit=0);
+                                                                         bool*   po_InterpretUnitINTGR=0);
 
 protected:
 
@@ -88,7 +87,7 @@ protected:
         return T_Super::WriteTransfoModel(pi_rpTransfoModel);
         }
 
-    virtual bool                         WriteTransfoModel(const HFCPtr<HCPGeoTiffKeys>&        pi_rpGeoTiffKeys,
+    virtual bool                         WriteTransfoModel(HCPGeoTiffKeys const*                pi_rpGeoTiffKeys,
                                                            const HFCPtr<HGF2DTransfoModel>&     pi_rpTransfoModel,
                                                            uint32_t                            pi_Page);
     virtual void                          StoreUsingModelTransformationTag ();
@@ -100,14 +99,13 @@ private:
     bool                       m_StoreUsingMatrix;
     bool                       m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation;
     bool                       m_DefaultCoordSysIsIntergraphIfUnitNotResolved;
-    bool                       m_ModelTypeGeographicConsiderDefaultUnit;
     // Ratio apply to the transfo model to put bak the units in meter.
     double                     m_RatioToMeter;
 
     // Methods
-    HFCPtr<HGF2DTransfoModel>   CreateTransfoModelFromGeoTiff (const HFCPtr<HCPGeoTiffKeys>&        pi_rpGeoTiffKeys,
+    HFCPtr<HGF2DTransfoModel>   CreateTransfoModelFromGeoTiff (HCPGeoTiffKeys const*                pi_rpGeoTiffKeys,
                                                                uint32_t                            pi_PageNb);
-    void                        WriteTransfoModelFromGeoTiff  (const HFCPtr<HCPGeoTiffKeys>&        pi_rpGeoTiffKeys,
+    void                        WriteTransfoModelFromGeoTiff  (HCPGeoTiffKeys const*                pi_rpGeoTiffKeys,
                                                                const HFCPtr<HGF2DTransfoModel>&     pi_pModel,
                                                                uint32_t                            pi_Page);
     void                        GetGeoTiffKeys                (HFCPtr<HCPGeoTiffKeys>&              po_rpGeoTiffKeys);
@@ -144,8 +142,9 @@ protected :
     HRFGeoTiffCreator();
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFGeoTiffCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFGeoTiffCreator)
 
 
     };
+END_IMAGEPP_NAMESPACE
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeV1GrayWhite1.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelTypeV1GrayWhite1
@@ -12,18 +12,19 @@
 #include "HRPPixelType.h"
 #include "HRPPixelType1BitInterface.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelTypeV1GrayWhite1 : public HRPPixelType,
     public HRPPixelType1BitInterface
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1247)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRPPixelTypeId_V1GrayWhite1)
 
 public:
     // Primary methods
-    _HDLLg                 HRPPixelTypeV1GrayWhite1();
+    IMAGEPP_EXPORT                 HRPPixelTypeV1GrayWhite1();
 
-    _HDLLg                 HRPPixelTypeV1GrayWhite1(const HRPPixelTypeV1GrayWhite1& pi_rObj);
+    IMAGEPP_EXPORT                 HRPPixelTypeV1GrayWhite1(const HRPPixelTypeV1GrayWhite1& pi_rObj);
 
-    _HDLLg virtual         ~HRPPixelTypeV1GrayWhite1();
+    IMAGEPP_EXPORT virtual         ~HRPPixelTypeV1GrayWhite1();
 
     virtual HPMPersistentObject*
     Clone() const;
@@ -41,3 +42,4 @@ protected:
     virtual const HRPPixelConverter*
     HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const;
     };
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecHMRGIF.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,6 +13,8 @@
 #pragma once
 
 #include "HCDCodecGIF.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 #define LARGEST_CODE       4095
 #define TABLE_SIZE         5003
@@ -61,18 +63,18 @@ typedef struct CodeEntry
 
 class HCDCodecHMRGIF : public HCDCodecGIF
     {
-    HDECLARE_CLASS_ID(1243, HCDCodecGIF)
+    HDECLARE_CLASS_ID(HCDCodecId_GIFHMR, HCDCodecGIF)
 
 public:
-    _HDLLu                HCDCodecHMRGIF();
+    IMAGEPP_EXPORT                HCDCodecHMRGIF();
 
-    _HDLLu                 HCDCodecHMRGIF(uint32_t pi_Width,
+    IMAGEPP_EXPORT                 HCDCodecHMRGIF(uint32_t pi_Width,
                                           uint32_t pi_Height,
                                           uint32_t pi_BitsPerPixel);
 
-    _HDLLu                 HCDCodecHMRGIF(const HCDCodecHMRGIF& pi_rObj);
+    IMAGEPP_EXPORT                 HCDCodecHMRGIF(const HCDCodecHMRGIF& pi_rObj);
 
-    _HDLLu                 ~HCDCodecHMRGIF();
+    IMAGEPP_EXPORT                 ~HCDCodecHMRGIF();
 
     size_t          CompressSubset(const  void* pi_pInData,
                                    size_t pi_InDataSize,
@@ -84,7 +86,7 @@ public:
                                      void*  po_pOutBuffer,
                                      size_t pi_OutBufferSize);
 
-    _HDLLu void            SetDecompressMinCodeSize(short pi_MinCodeSize);
+    IMAGEPP_EXPORT void            SetDecompressMinCodeSize(short pi_MinCodeSize);
 
     virtual void    SetDimensions(size_t pi_Width, size_t pi_Height);
 
@@ -168,3 +170,4 @@ private:
     HCDCodecHMRGIF&      operator=(const HCDCodecHMRGIF& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

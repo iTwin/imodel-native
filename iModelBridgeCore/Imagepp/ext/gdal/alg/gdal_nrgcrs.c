@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_nrgcrs.c 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: gdal_nrgcrs.c 23156 2011-10-01 15:34:16Z rouault $
  *
  * Project:  Mapinfo Image Warper
  * Purpose:  Implemention of the GDALTransformer wrapper around CRS.C functions
@@ -77,6 +77,7 @@ typedef struct
  * @param nGCPCount the number of GCPs in pasGCPList.
  * @param pasGCPList an array of GCPs to be used as input.
  * @param nReqOrder the requested polynomial order.  It should be 1, 2 or 3.
+ * @param bReversed set it to TRUE to compute the reversed transformation.
  * 
  * @return the transform argument or NULL if creation fails. 
  */

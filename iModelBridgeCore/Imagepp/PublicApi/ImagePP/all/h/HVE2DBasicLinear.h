@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DBasicLinear.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DBasicLinear
@@ -14,6 +14,7 @@
 #include "HVE2DLinear.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 typedef uint32_t HVE2DBasicLinearTypeId;
 
 /** -----------------------------------------------------------------------------
@@ -29,7 +30,7 @@ typedef uint32_t HVE2DBasicLinearTypeId;
 */
 class HNOVTABLEINIT HVE2DBasicLinear : public HVE2DLinear
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1101)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DLinearId_Basic)
 
 public:
 
@@ -66,6 +67,7 @@ protected:
 private:
 
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DBasicLinear.hpp"

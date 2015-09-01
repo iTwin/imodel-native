@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecIJG8Bits.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecIJG
@@ -15,6 +15,8 @@
 
 #include <Imagepp/all/h/HCDCodecIJG.h>
 
+BEGIN_IMAGEPP_NAMESPACE
+
 #ifndef IJG12BITS
 #define IJG12BITS(x)    x##_8bits
 #endif
@@ -22,9 +24,9 @@
 class IJG12BITS(HCDCodecIJG) : public HCDCodecJPEG
     {
 #ifdef JPEGLIB_SUPPORT_12BITS
-    HDECLARE_CLASS_ID(1188, HCDCodecJPEG)          // version 12 bits
+    HDECLARE_CLASS_ID(HCDCodecId_IJG12bits, HCDCodecJPEG)         // version 12 bits
 #else
-    HDECLARE_CLASS_ID(1189, HCDCodecJPEG)          // version 8 bits
+    HDECLARE_CLASS_ID(HCDCodecId_IJG8bits, HCDCodecJPEG)          // version 8 bits
 #endif
 
 public:
@@ -133,5 +135,7 @@ private:
     void            DeepCopy(const IJG12BITS(HCDCodecIJG)& pi_rObj);
     void            DeepDelete();
     };
+
+END_IMAGEPP_NAMESPACE
 
 #endif      // HCDCodecIJG8Bits_H

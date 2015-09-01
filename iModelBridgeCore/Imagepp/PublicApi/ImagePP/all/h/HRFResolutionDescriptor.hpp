@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFResolutionDescriptor.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRFResolutionDescriptor
@@ -10,6 +10,7 @@
 
 
 
+BEGIN_IMAGEPP_NAMESPACE
 /**
  * Public <br>
  * GetAccessMode <br><br>
@@ -432,3 +433,4 @@ inline void HRFResolutionDescriptor::BlockDataFlagSaved()
     {
     m_BlockDataFlagHasChanged = false;
     }
+END_IMAGEPP_NAMESPACE

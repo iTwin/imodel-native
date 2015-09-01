@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeI1R8G8B8A8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeI1R8G8B8A8
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8.h>
 
@@ -50,17 +50,11 @@ public:
         {
         };
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        // copy the pre-calculated destination index that fit the best
-        *((Byte*)pio_pDestRawData) = m_ConvertEntryConversion[((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01] << 7;
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        Byte* pSrc = (Byte*)pi_pSourceRawData;
+        Byte const* pSrc = (Byte const*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
-        Byte Index = 0;
+        uint32_t Index = 0;
 
         while(pi_PixelsCount)
             {
@@ -70,23 +64,27 @@ public:
             else
                 *pDest &= s_NotBitMask[Index];
 
-            Index++;
+            ++Index;
 
             if(Index == 8)
                 {
                 Index = 0;
-                pSrc++;
-                pDest++;
+                ++pSrc;
+                ++pDest;
                 }
 
-            pi_PixelsCount--;
+            --pi_PixelsCount;
             }
+
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         };
 
-    virtual void Convert(   const void* pi_pSourceRawData,
+    virtual void ConvertLostChannel(   const void* pi_pSourceRawData,
                             void* pio_pDestRawData,
                             size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
+                            const bool* pi_pChannelsMask) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -114,17 +112,11 @@ public:
             }
         };
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        // copy the pre-calculated destination index that fit the best
-        *((Byte*)pio_pDestRawData) = m_ComposeEntryConversion[((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01][((*((Byte*)pio_pDestRawData)) >> 7) & 0x01] << 7;
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        Byte* pSrc = (Byte*)pi_pSourceRawData;
+        Byte const* pSrc = (Byte const*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
-        Byte Index = 0;
+        uint32_t Index = 0;
 
         while(pi_PixelsCount)
             {
@@ -145,25 +137,21 @@ public:
 
             --pi_PixelsCount;
             }
+
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         };
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8_I1R8G8B8A8(*this));
-        };
-
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        Byte* pSrc = (Byte*)(GetSourcePixelType()->GetPalette().GetCompositeValue(*((Byte*)pi_pSourceRawData) >> 7));
-
-        *((uint32_t*)pio_pDestRawData) = *((uint32_t*)pSrc);
         };
 
 protected:
 
     // this function pre-calculates a transformation table for fast conversion
     // between two bitmap rasters
-    virtual void Update()
+    virtual void Update() override
         {
         // Get the palette of the source and destination pixel types
         const HRPPixelPalette& rSrcPixelPalette = GetSourcePixelType()->GetPalette();
@@ -279,17 +267,11 @@ public:
         {
         };
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        // copy the pre-calculated destination index that fit the best
-        *((Byte*)pio_pDestRawData) = m_ConvertEntryConversion[((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01] << 7;
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        Byte* pSrc = (Byte*)pi_pSourceRawData;
+        Byte const* pSrc = (Byte const*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
-        Byte Index = 0;
+        uint32_t Index = 0;
 
         while(pi_PixelsCount)
             {
@@ -299,23 +281,27 @@ public:
             else
                 *pDest &= s_NotBitMask[Index];
 
-            Index++;
+            ++Index;
 
             if(Index == 8)
                 {
                 Index = 0;
-                pSrc++;
-                pDest++;
+                ++pSrc;
+                ++pDest;
                 }
 
-            pi_PixelsCount--;
+            --pi_PixelsCount;
             }
+
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         };
 
-    virtual void Convert(   const void* pi_pSourceRawData,
+    virtual void ConvertLostChannel(   const void* pi_pSourceRawData,
                             void* pio_pDestRawData,
                             size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
+                            const bool* pi_pChannelsMask) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -343,17 +329,11 @@ public:
             }
         };
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        // copy the pre-calculated destination index that fit the best
-        *((Byte*)pio_pDestRawData) = m_ComposeEntryConversion[((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01][((*((Byte*)pio_pDestRawData)) >> 7) & 0x01] << 7;
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        Byte* pSrc = (Byte*)pi_pSourceRawData;
+        Byte const* pSrc = (Byte const*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
-        Byte Index = 0;
+        uint32_t Index = 0;
 
         while(pi_PixelsCount)
             {
@@ -363,39 +343,33 @@ public:
             else
                 *pDest &= s_NotBitMask[Index];
 
-            Index++;
+            ++Index;
 
             if(Index == 8)
                 {
                 Index = 0;
-                pSrc++;
-                pDest++;
+                ++pSrc;
+                ++pDest;
                 }
 
-            pi_PixelsCount--;
+            --pi_PixelsCount;
             }
+
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         };
 
 
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8_I1R8G8B8(*this));
-        };
-
-    virtual void ConvertToValue(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pDst = (Byte*)pio_pDestRawData;
-        Byte* pSrc = (Byte*)(GetSourcePixelType()->GetPalette().GetCompositeValue(*((Byte*)pi_pSourceRawData) >> 7));
-
-        pDst[0] = pSrc[0];
-        pDst[1] = pSrc[1];
-        pDst[2] = pSrc[2];
         };
 
 protected:
 
     // this function pre-calculates a transformation table for fast conversion between two bitmap rasters
-    virtual void Update()
+    virtual void Update() override
         {
         HFCMath (*pQuotients) (HFCMath::GetInstance());
 
@@ -493,19 +467,7 @@ class ConverterI1R8G8B8A8_V24R8G8B8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01);
-
-        HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-        // alpha * (S - D) + D
-        ((Byte*)pio_pDestRawData)[0] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[0] - ((Byte*)pio_pDestRawData)[0])) + ((Byte*)pio_pDestRawData)[0];
-        ((Byte*)pio_pDestRawData)[1] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[1] - ((Byte*)pio_pDestRawData)[1])) + ((Byte*)pio_pDestRawData)[1];
-        ((Byte*)pio_pDestRawData)[2] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[2] - ((Byte*)pio_pDestRawData)[2])) + ((Byte*)pio_pDestRawData)[2];
-        };
-
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc  = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -541,16 +503,7 @@ class ConverterI1R8G8B8A8_V24R8G8B8 : public HRPPixelConverter
             }
         };
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01);
-
-        ((Byte*)pio_pDestRawData)[0] = ((Byte*)pSourceComposite)[0];
-        ((Byte*)pio_pDestRawData)[1] = ((Byte*)pSourceComposite)[1];
-        ((Byte*)pio_pDestRawData)[2] = ((Byte*)pSourceComposite)[2];
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc  = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -582,20 +535,13 @@ class ConverterI1R8G8B8A8_V24R8G8B8 : public HRPPixelConverter
                 }
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override {
         return(new ConverterI1R8G8B8A8_V24R8G8B8(*this));
         }
 
@@ -613,44 +559,7 @@ class ConverterI1R8G8B8A8_V32R8G8B8A8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01);
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
-        // If source pixel is fully transparent, destination is unaltered
-        if (pSourceComposite[3] != 0)
-            {
-            if (pDestComposite[3] == 0 ||
-                pSourceComposite[3] == 255)
-                {
-                // Destination pixel is fully transparent, or source pixel
-                // is fully opaque. Copy source pixel,
-                *((uint32_t*)pDestComposite) = *((uint32_t*)pSourceComposite);
-                }
-            else
-                {
-                HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-                // Cdst' = Asrc * (Csrc - (Adst * Cdst)) + (Adst * Cdst)
-                // Alphas are in [0, 255].
-                Byte PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[0]);
-                pDestComposite[0] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[0] - PremultDestColor)) + PremultDestColor;
-
-                PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[1]);
-                pDestComposite[1] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[1] - PremultDestColor)) + PremultDestColor;
-
-                PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[2]);
-                pDestComposite[2] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[2] - PremultDestColor)) + PremultDestColor;
-
-                // Adst' = 1 - ( (1 - Asrc) * (1 - Adst) )
-                // --> Transparency percentages are multiplied
-                pDestComposite[3] = 255 - (pQuotients->DivideBy255ToByte((255 - pSourceComposite[3]) * (255 - pDestComposite[3])));
-                }
-            }
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
@@ -709,14 +618,7 @@ class ConverterI1R8G8B8A8_V32R8G8B8A8 : public HRPPixelConverter
             }
         };
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01);
-
-        *((uint32_t*)pio_pDestRawData) = *((uint32_t*)pSourceComposite);
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc  = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -747,10 +649,10 @@ class ConverterI1R8G8B8A8_V32R8G8B8A8 : public HRPPixelConverter
             }
         };
 
-    virtual void Convert(   const void* pi_pSourceRawData,
+    virtual void ConvertLostChannel(   const void* pi_pSourceRawData,
                             void* pio_pDestRawData,
                             size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
+                            const bool* pi_pChannelsMask) const override
         {
         Byte* pSrc = (Byte*) pi_pSourceRawData;
         Byte* pDest = (Byte*) pio_pDestRawData;
@@ -778,7 +680,7 @@ class ConverterI1R8G8B8A8_V32R8G8B8A8 : public HRPPixelConverter
             }
         };
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override {
         return(new ConverterI1R8G8B8A8_V32R8G8B8A8(*this));
         }
 
@@ -798,16 +700,7 @@ class ConverterI1R8G8B8A8_V24B8G8R8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01);
-
-        ((Byte*)pio_pDestRawData)[2] = ((Byte*)pSourceComposite)[0];
-        ((Byte*)pio_pDestRawData)[1] = ((Byte*)pSourceComposite)[1];
-        ((Byte*)pio_pDestRawData)[0] = ((Byte*)pSourceComposite)[2];
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc  = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -840,31 +733,8 @@ public:
             }
         };
 
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01);
-        Byte* pDest            = (Byte*)pio_pDestRawData;
-
-        // Color is opaque ?
-        if (pSourceComposite[3] == 255)
-            {
-            pDest[2] = pSourceComposite[0];
-            pDest[1] = pSourceComposite[1];
-            pDest[0] = pSourceComposite[2];
-            }
-        // Color is semi-transparent
-        else if (pSourceComposite[3] > 0)
-            {
-            HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-            // alpha * (S - D) + D
-            pDest[2] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[0] - pDest[2])) + pDest[2];
-            pDest[1] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[1] - pDest[1])) + pDest[1];
-            pDest[0] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[2] - pDest[0])) + pDest[0];
-            }
-        };
-
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+  
+    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc  = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -938,20 +808,13 @@ public:
                 }
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8_V24B8G8R8(*this));
         }
 
@@ -959,7 +822,7 @@ protected:
 
     // this function test if we are in the special case
     // black opaque and white transparent (OPTIMIZATION)
-    virtual void Update()
+    virtual void Update() override
         {
         // Get the palette of the source and destination pixel types
         const HRPPixelPalette& rSrcPixelPalette = GetSourcePixelType()->GetPalette();
@@ -993,81 +856,50 @@ public:
         {
         };
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        // get a good index for the R,G,B opaque source values
-        *((Byte*)pio_pDestRawData) = (m_QuantizedPalette.GetIndex(
-                                            ((Byte*)pi_pSourceRawData)[0],
-                                            ((Byte*)pi_pSourceRawData)[1],
-                                            ((Byte*)pi_pSourceRawData)[2],
-                                            0xff)) << 7;
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
-        Byte Index = 0;
+        uint32_t Index = 0;
 
         // convert all pixels
         while(pi_PixelsCount)
             {
             // get a good index for the R,G,B opaque source values
-            if(m_QuantizedPalette.GetIndex(
-                   pSrc[0],
-                   pSrc[1],
-                   pSrc[2],
-                   0xff) == 1)
+            if(m_QuantizedPalette.GetIndex(pSrc[0], pSrc[1], pSrc[2], 0xff) == 1)
                 *pDest |= s_BitMask[Index];
             else
                 *pDest &= s_NotBitMask[Index];
 
-
             // increment the pointer to the next 24-bit (3 bytes) composite value
             pSrc+=3;
 
-            Index++;
+            ++Index;
 
             if(Index == 8)
                 {
                 // Increment the destination
                 Index = 0;
 
-                pDest++;
+                ++pDest;
                 }
 
-            pi_PixelsCount--;
+            --pi_PixelsCount;
             }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        Byte* pSrc = (Byte*)pi_pSourceRawData;
-        Byte* pDst = (Byte*)pio_pDestRawData;
-
-        pDst[0] = pSrc[0];
-        pDst[1] = pSrc[1];
-        pDst[2] = pSrc[2];
-        pDst[3] = 0xff;
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         };
 
-
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterV24R8G8B8_I1R8G8B8A8(*this));
         }
 
 
 protected:
 
-    virtual void Update()
+    virtual void Update() override
         {
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
@@ -1094,19 +926,11 @@ public:
         {
         };
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        *((Byte*)pio_pDestRawData) = (m_QuantizedPalette.GetIndex(((Byte*)pi_pSourceRawData)[0],
-                                                                    ((Byte*)pi_pSourceRawData)[1],
-                                                                    ((Byte*)pi_pSourceRawData)[2],
-                                                                    ((Byte*)pi_pSourceRawData)[3]) << 7);
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
-        Byte Index = 0;
+        uint32_t Index = 0;
 
         // convert all pixels
         while(pi_PixelsCount)
@@ -1117,69 +941,32 @@ public:
             else
                 *pDest &= s_NotBitMask[Index];
 
-
             // Increment the pointer to the next 32-bit (4 bytes) composite value
             pSrc+=4;
 
-            Index++;
+            ++Index;
 
             if(Index == 8)
                 {
                 // Increment the destination
                 Index = 0;
 
-                pDest++;
+                ++pDest;
                 }
 
-            pi_PixelsCount--;
+            --pi_PixelsCount;
             }
+
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         };
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSourceComposite = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
-
-        // If source pixel is fully transparent, destination is unaltered
-        if (pSourceComposite[3] != 0)
-            {
-            Byte* pDestComposite = (Byte*)GetDestinationPixelType()->GetPalette().GetCompositeValue((*pDest >> 7) & 0x01);
-
-            if (pDestComposite[3] == 0 || pSourceComposite[3] == 255)
-                {
-                // Destination pixel is fully transparent, or source pixel is fully opaque. Copy source pixel.
-                *pDest = m_QuantizedPalette.GetIndex(pSourceComposite[0], pSourceComposite[1], pSourceComposite[2], pSourceComposite[3]) << 7;
-                }
-            else
-                {
-                HFCMath (*pQuotients) (HFCMath::GetInstance());
-                Byte TmpDst[4];
-
-                // Cdst' = Asrc * (Csrc - (Adst * Cdst)) + (Adst * Cdst)
-                // Alphas are in [0, 255].
-                Byte PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[0]);
-                TmpDst[0] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[0] - PremultDestColor)) + PremultDestColor;
-
-                PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[1]);
-                TmpDst[1] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[1] - PremultDestColor)) + PremultDestColor;
-
-                PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[2]);
-                TmpDst[2] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[2] - PremultDestColor)) + PremultDestColor;
-
-                // Adst' = 1 - ( (1 - Asrc) * (1 - Adst) )
-                // --> Transparency percentages are multiplied
-                TmpDst[3] = 255 - (pQuotients->DivideBy255ToByte((255 - pSourceComposite[3]) * (255 - pDestComposite[3])));
-
-                *pDest = m_QuantizedPalette.GetIndex(TmpDst[0], TmpDst[1], TmpDst[2], TmpDst[3]) << 7;
-                }
-            }
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        Byte* pSourceComposite = (Byte*)pi_pSourceRawData;
-        Byte* pDest = (Byte*)pio_pDestRawData;
-        Byte Index = 0;
+        uint32_t Index = 0;
 
         // convert all pixels
         while(pi_PixelsCount)
@@ -1227,42 +1014,33 @@ public:
             // Increment the pointer to the next 32-bit (4 bytes) composite value
             pSourceComposite+=4;
 
-            Index++;
+            ++Index;
 
             if(Index == 8)
                 {
                 // Increment the destination
                 Index = 0;
 
-                pDest++;
+                ++pDest;
                 }
 
-            pi_PixelsCount--;
+            --pi_PixelsCount;
             }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        *((uint32_t*)pio_pDestRawData) = *((uint32_t*)pi_pSourceRawData);
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         };
 
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterV32R8G8B8A8_I1R8G8B8A8(*this));
         }
 
 
 protected:
 
-    virtual void Update()
+    virtual void Update() override
         {
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
@@ -1297,13 +1075,7 @@ public:
         {
         };
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        // copy the pre-calculated destination index that fit the best
-        *((Byte*)pio_pDestRawData) = m_EntryConversion[((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01];
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -1327,47 +1099,7 @@ public:
             }
         };
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(((*((Byte*)pi_pSourceRawData)) >> 7) & 0x01);
-
-        // Color is opaque ?
-        if (pSourceComposite[3] == 255)
-            {
-            // copy the pre-calculated destination index that fit the best
-            *((Byte*)pio_pDestRawData) = m_QuantizedPalette.GetIndex(pSourceComposite[0], pSourceComposite[1], pSourceComposite[2]);
-            }
-
-        // Color is transparent
-        else if (pSourceComposite[3] == 0)
-            {
-            const HRPPixelPalette& DestPalette = GetDestinationPixelType()->GetPalette();
-            Byte* pDestComposite = (Byte*)DestPalette.GetCompositeValue(*((Byte*)pio_pDestRawData));
-
-            // copy the pre-calculated destination index that fit the best
-            *((Byte*)pio_pDestRawData) = m_QuantizedPalette.GetIndex(pDestComposite[0], pDestComposite[1], pDestComposite[2]);
-            }
-        else
-            {
-            // Blend the colors
-            //
-            const HRPPixelPalette& DestPalette = GetDestinationPixelType()->GetPalette();
-            Byte* pDestComposite = (Byte*)DestPalette.GetCompositeValue(*((Byte*)pio_pDestRawData));
-            uint32_t Blend[3];
-
-            HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-            // alpha * (S - D) + D
-            Blend[0] = pQuotients->DivideBy255(pSourceComposite[3] * (pSourceComposite[0] - pDestComposite[0])) + pDestComposite[0];
-            Blend[1] = pQuotients->DivideBy255(pSourceComposite[3] * (pSourceComposite[1] - pDestComposite[1])) + pDestComposite[1];
-            Blend[2] = pQuotients->DivideBy255(pSourceComposite[3] * (pSourceComposite[2] - pDestComposite[2])) + pDestComposite[2];
-
-            // copy the pre-calculated destination index that fit the best
-            *((Byte*)pio_pDestRawData) = m_QuantizedPalette.GetIndex((Byte)Blend[0], (Byte)Blend[1], (Byte)Blend[2]);
-            }
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -1454,25 +1186,9 @@ public:
             pi_PixelsCount--;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        memcpy( pio_pDestRawData,
-                GetSourcePixelType()->
-                GetPalette().GetCompositeValue((*(Byte*)pi_pSourceRawData) >> 7),
-                3);
 
-        };
-
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8_I8R8G8B8(*this));
         };
 
@@ -1481,7 +1197,7 @@ protected:
 
     // this function pre-calculates a transformation table for fast conversion
     // between two bitmap rasters
-    virtual void Update()
+    virtual void Update() override
         {
         // Get the palette of the source and destination pixel types
         const HRPPixelPalette& rSrcPixelPalette = GetSourcePixelType()->GetPalette();
@@ -1623,11 +1339,11 @@ HRPPixelTypeI1R8G8B8A8::HRPPixelTypeI1R8G8B8A8()
 
     // the black is opqaue
     Value = 0xFF000000;
-    rPixelPalette.AddEntry((const void*)&Value);
+    rPixelPalette.AddEntry(&Value);
 
     // the white is transparent
     Value = 0xFFFFFFFF;
-    rPixelPalette.AddEntry((const void*)&Value);
+    rPixelPalette.AddEntry(&Value);
     }
 
 

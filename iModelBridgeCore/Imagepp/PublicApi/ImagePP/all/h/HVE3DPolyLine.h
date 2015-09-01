@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE3DPolyLine.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE3DPolyLine
@@ -12,8 +12,11 @@
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 class HGF2DCoordSys;
 class HVE2DPolySegment;
+END_IMAGEPP_NAMESPACE
+
 #include "HVE2DPolySegment.h"
 #include "HGF3DPoint.h"
 #include "HGF3DExtent.h"
@@ -27,6 +30,7 @@ class HVE2DPolySegment;
     but does provide a rich set of 2D operations.
     -----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 class HVE3DPolyLine : public HFCShareableObject<HVE3DPolyLine>
     {
 
@@ -50,7 +54,7 @@ public:
 
     HVE3DPolyLine&  operator=(const HVE3DPolyLine& i_rObj);
 
-    _HDLLg const HGF3DExtent<double>&
+    IMAGEPP_EXPORT const HGF3DExtent<double>&
     GetExtent() const;
     // Setting and extracting
     void               AppendPoint(const HGF3DPoint& i_rNewPoint);
@@ -59,13 +63,13 @@ public:
 
     size_t             Intersect2D(const HVE3DPolyLine& i_rPolyLine,
                                    HGF3DPointCollection* po_pCrossPoints) const;
-    bool               Crosses2D(const HVE3DPolyLine& i_rPolyLine) const;
+    IMAGEPP_EXPORT bool Crosses2D(const HVE3DPolyLine& i_rPolyLine) const;
     bool               AutoCrosses2D() const;
 
     HVE3DPolyLine*     Clone() const;
 
-    bool               ConnectsTo2D(const HVE3DPolyLine& i_rPolyLine) const;
-    bool               LinksTo2D(const HVE3DPolyLine& i_rPolyLine) const;
+    IMAGEPP_EXPORT bool ConnectsTo2D(const HVE3DPolyLine& i_rPolyLine) const;
+    IMAGEPP_EXPORT bool LinksTo2D(const HVE3DPolyLine& i_rPolyLine) const;
 
     const HGF3DPoint&  GetStartPoint() const;
     const HGF3DPoint&  GetEndPoint() const;
@@ -81,6 +85,9 @@ public:
     bool               IsAutoToleranceActive() const;
     void               SetAutoToleranceActive(bool i_AutoToleranceActive);
     double             CalculateLength2D() const;
+
+    void                  SetCoordSys(const HFCPtr<HGF2DCoordSys>& i_rpCoordSys);
+    HFCPtr<HGF2DCoordSys> GetCoordSys();
 protected:
 
 
@@ -95,9 +102,9 @@ protected:
 
 private:
 
-    void               Create2DPolyLine() const;
-    void               UpdateInternalExtent() const;
-    _HDLLg void        ResetTolerance();
+    void                      Create2DPolyLine() const;
+    void                      UpdateInternalExtent() const;
+    IMAGEPP_EXPORT void        ResetTolerance();
 
 
     // List of points
@@ -116,8 +123,8 @@ private:
     // Private methods
     void               Reserve(unsigned long i_PointsToPreAllocate);
     void               MakeEmpty();
-
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE3DPolyLine.hpp"

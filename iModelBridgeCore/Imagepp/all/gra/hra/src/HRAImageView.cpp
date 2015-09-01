@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAImageView.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRAImageView.h>
 #include <ImagePP/all/h/HRPPixelType.h>
@@ -77,20 +77,28 @@ bool HRAImageView::ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role
     Apply the copy on our source raster.
     -----------------------------------------------------------------------------
 */
-void HRAImageView::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster)
+void HRAImageView::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
     {
-    m_pSource->CopyFrom(pi_pSrcRaster);
+    m_pSource->CopyFromLegacy(pi_pSrcRaster);
     }
 
 /** -----------------------------------------------------------------------------
     Apply the copy on our source raster.
     -----------------------------------------------------------------------------
 */
-void HRAImageView::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
-                            const HRACopyFromOptions& pi_rOptions)
+void HRAImageView::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
     {
-    m_pSource->CopyFrom(pi_pSrcRaster, pi_rOptions);
+    m_pSource->CopyFromLegacy(pi_pSrcRaster, pi_rOptions);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRAImageView::_CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options)
+    {
+    return m_pSource->CopyFrom(srcRaster, options);
+    }
+
 
 /** -----------------------------------------------------------------------------
 Clear
@@ -135,15 +143,6 @@ Invalidate raster
 void HRAImageView::InvalidateRaster()
     {
     m_pSource->InvalidateRaster();
-    }
-
-/** -----------------------------------------------------------------------------
-Call before a draw for initialization purpose.
------------------------------------------------------------------------------
-*/
-void HRAImageView::PreDraw(HRADrawOptions* pio_pOptions)
-    {
-    HASSERT(0); //Should be defined by its immediate derived classes.
     }
 
 /** -----------------------------------------------------------------------------

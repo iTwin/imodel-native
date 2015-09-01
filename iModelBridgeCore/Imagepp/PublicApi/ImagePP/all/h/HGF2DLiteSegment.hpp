@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteSegment.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -213,7 +213,7 @@ inline bool   HGF2DLiteSegment::LinksTo(const HGF2DLiteSegment& pi_rSegment) con
 
     // Tolerance is smallest of the two
 
-    double Tolerance = min(m_Tolerance, pi_rSegment.m_Tolerance);
+    double Tolerance = MIN(m_Tolerance, pi_rSegment.m_Tolerance);
 
     return ((m_EndPoint.IsEqualTo(pi_rSegment.m_StartPoint, Tolerance)) ||
             (m_EndPoint.IsEqualTo(pi_rSegment.m_EndPoint, Tolerance)) ||
@@ -221,3 +221,4 @@ inline bool   HGF2DLiteSegment::LinksTo(const HGF2DLiteSegment& pi_rSegment) con
             (m_StartPoint.IsEqualTo(pi_rSegment.m_EndPoint, Tolerance)));
     }
 
+END_IMAGEPP_NAMESPACE

@@ -2,15 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPDFFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFPDFFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
+#include <Imagepp/all/h/HRFPDFFile.h>
+
+#if defined(IPP_HAVE_PDF_SUPPORT) 
 
 #include <ImagePP/all/h/HRFMacros.h>
 
@@ -18,7 +21,6 @@
 
 #include <Imagepp/all/h/HFCCallbacks.h>
 #include <Imagepp/all/h/HFCCallbackRegistry.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 
 #include <Imagepp/all/h/HGF2DAffine.h>
@@ -37,7 +39,7 @@
 #include <Imagepp/all/h/HRFException.h>
 #include <Imagepp/all/h/HRFPDFException.h>
 #include <Imagepp/all/h/HRFPDFEditor.h>
-#include <Imagepp/all/h/HRFPDFFile.h>
+
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 #include <Imagepp/all/h/HRFRasterFileFactory.h>
 #include <Imagepp/all/h/HRFUtility.h>
@@ -51,16 +53,7 @@
 
 double HRFPDFFile::s_dpiConvertScaleFactor = (96.0 / 72.0);
 
-USING_NAMESPACE_IMAGEPP
 
-// Disable "warning C4611: interaction between '_setjmp' and C++ object destruction is non-portables"
-// Tried USE_CPLUSPLUS_EXCEPTIONS_FOR_ASEXCEPTIONS(adobe/include/CorCalls.h) but this generates C4297 because
-// miThrowExceptionToHandler(adobe/Source/PDFLInitCommon.c) is an extern "C" and it throws.
-// Disable in win32 only since mac and unix adobe should use the cpp exception model.
-#if (defined(_WIN32) && defined(_MSC_VER))
-    #pragma warning(push)
-    #pragma warning(disable:4611)
-#endif
 
 //-----------------------------------------------------------------------------
 // PDFInterfaceWrapper for MicroStation
@@ -90,7 +83,7 @@ class PDFAuthenticationError : public HFCAuthenticationError
 public:
     explicit PDFAuthenticationError(const HRFPDFException& pi_rException)
         :   m_RelatedException(pi_rException),
-            HFCAuthenticationError(static_cast<ExceptionID>(pi_rException.GetID()))
+            HFCAuthenticationError()
         {}
 
 private:
@@ -105,7 +98,7 @@ private:
         }
 
     const HRFPDFException    m_RelatedException;
-    };
+    }; 
 
 
 ASBool ClientAuthUserProc(PDDoc pdDoc, void* clientData)
@@ -138,8 +131,11 @@ ASBool ClientAuthUserProc(PDDoc pdDoc, void* clientData)
         PDPerms permsAllowed;
         DURING
         /* Requesting Open permission requires a user password */
-        permsAllowed = PDDocAuthorize(pdDoc, permsRequested, (void*)PDFAuthentication.GetPassword().c_str());
+        permsAllowed = PDDocAuthorize(pdDoc, permsRequested, const_cast<char*>(PDFAuthentication.GetPassword().c_str()));
         HANDLER
+        #if USE_CPLUSPLUS_EXCEPTIONS_FOR_ASEXCEPTIONS
+            Exception; // avoid C4101
+        #endif
         permsAllowed = 0;
         END_HANDLER
 
@@ -209,6 +205,9 @@ public:
                                          false);
 
                 HANDLER
+                    #if USE_CPLUSPLUS_EXCEPTIONS_FOR_ASEXCEPTIONS
+                        Exception; // avoid C4101
+                    #endif
                 if (ErrGetCode(ERRORCODE) != pdErrNeedPassword)
                     {
                     throw HRFPDFException(pi_rFileName, ERRORCODE);
@@ -222,15 +221,15 @@ public:
 
                     if (CallbackInfo.Canceled)
                         {
-                        throw HRFException(HRF_AUTHENTICATION_CANCELLED_EXCEPTION, pi_rFileName);
+                        throw HRFAuthenticationCancelledException( pi_rFileName);
                         }
                     else if (!CallbackInfo.HasPassword)
                         {
-                        throw HRFException(HRF_NEED_OPEN_PASSWORD_EXCEPTION, pi_rFileName);
+                        throw HRFNeedOpenPasswordException(pi_rFileName);
                         }
                     else if (CallbackInfo.RetryCount >= pCallback->RetryCount(PDFAuthentication.GetPasswordType()))
                         {
-                        throw HRFException(HRF_AUTHENTICATION_MAX_RETRY_COUNT_REACHED_EXCEPTION, pi_rFileName);
+                        throw HRFAuthenticationMaxRetryCountReachedException(pi_rFileName);
                         }
                     else
                         {
@@ -241,7 +240,7 @@ public:
                         }
                     }
                 else
-                    throw HRFException(HRF_NEED_OPEN_PASSWORD_EXCEPTION, pi_rFileName);
+                    throw HRFNeedOpenPasswordException(pi_rFileName);
 
                 END_HANDLER
                 }
@@ -251,7 +250,7 @@ public:
 
             if (HasRestrictedOp == true)
                 {
-                throw HRFException(HRF_OPERATION_RESTRICTED_PDF_NOT_SUPPORTED_EXCEPTION, pi_rFileName);
+                throw HRFOperationRestrictedPDFNotSupportedException(pi_rFileName);
                 }
 
             m_MainThreadId  = GetCurrentThreadId();
@@ -321,12 +320,12 @@ public:
                                 }
                              }
                              else
-                                throw HRFException(HRF_NEED_RESTRICTION_PASSWORD_EXCEPTION, pi_rFileName);
+                                throw HRFNeedOpenPasswordException(pi_rFileName);
 
                         } while(TryAgain && Retry < 3);
                     }
                     else
-                        throw HRFException(HRF_NEED_RESTRICTION_PASSWORD_EXCEPTION, pi_rFileName);
+                        throw HRFNeedRestrictionPasswordException(pi_rFileName);
                 }*/
         };
 
@@ -400,7 +399,7 @@ public:
         return pDocument;
         }
 
-    uint32_t CountPages()
+    uint32_t CountPages() const
         {
         HPRECONDITION(m_Document != 0);
         return HRFPDFLibInterface::CountPages(m_Document);
@@ -422,6 +421,13 @@ public:
                                      *po_pWidth,
                                      *po_pHeight,
                                      *po_pDPI);
+        };
+    void GetMaxResolutionSize(uint32_t   pi_Page, double dpiConvertScaleFactor, uint32_t&     po_maxResSize)
+        {
+        HPRECONDITION(m_Document != 0);
+        HPRECONDITION(pi_Page < CountPages());
+
+        HRFPDFLibInterface::GetMaxResolutionSize(m_Document, pi_Page, dpiConvertScaleFactor, po_maxResSize);
         };
 
     void GetLayers(uint32_t pi_Page, HFCPtr<HMDLayers>& pi_rpLayers)
@@ -478,7 +484,19 @@ public:
                                                          po_rpGeocoding,
                                                          po_rpGeoreference);
         }
-
+           
+    virtual void GetDimensionForDWGUnderlay(uint32_t pi_Page,                                                                                                          
+                                            double& po_xDimension, 
+                                            double& po_yDimension) const   
+        {   
+        HPRECONDITION(m_Document != 0);
+        HPRECONDITION(pi_Page < CountPages());
+          
+        HRFPDFLibInterface::GetDimensionForDWGUnderlay(m_Document,
+                                                       pi_Page,                                                         
+                                                       po_xDimension, 
+                                                       po_yDimension);       
+        }     
 
     uint32_t GetMainThreadId() const
         {
@@ -663,8 +681,7 @@ bool HRFPDFCreator::CanRegister() const
 // Identification information
 WString HRFPDFCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_PDF); //Adobe File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_PDF()); //Adobe File Format
     }
 
 // Identification information
@@ -779,7 +796,7 @@ int HRFPDFFile::InitializePDFLibraryInThread()
     {
     //BEIJING_WIP_THREADS.
     if (!PdfLibInitializerManager::Initialize())
-        throw HFCFileException(HFC_DLL_NOT_FOUND_EXCEPTION, L"Adobe PDF Dlls");
+        throw HFCDllNotFoundException(L"Adobe PDF Dlls");
 
     PDFLDataRec* pPDFLData = PdfLibInitializerManager::GetPDFLDataInitInfo();
     ASInt32 Status = PDFLInitHFT(pPDFLData);
@@ -915,6 +932,20 @@ uint32_t HRFPDFFile::CountPages() const
 
 //-----------------------------------------------------------------------------
 // Public
+// GetDimensionForDWGUnderlay
+//-----------------------------------------------------------------------------
+void HRFPDFFile::GetDimensionForDWGUnderlay(uint32_t pi_Page,                                                                                                          
+                                            double& po_xDimension, 
+                                            double& po_yDimension) const
+
+    {            
+    m_pPDFWrapper->GetDimensionForDWGUnderlay(pi_Page,
+                                              po_xDimension, 
+                                              po_yDimension);
+    }
+
+//-----------------------------------------------------------------------------
+// Public
 // GetPageDescriptor
 //-----------------------------------------------------------------------------
 HFCPtr<HRFPageDescriptor> HRFPDFFile::GetPageDescriptor(uint32_t pi_Page) const
@@ -932,7 +963,7 @@ HFCPtr<HRFPageDescriptor> HRFPDFFile::GetPageDescriptor(uint32_t pi_Page) const
         double PageDPI;
 
         m_pPDFWrapper->PageSize(pi_Page, &PageWidth, &PageHeight, &PageDPI);
-
+                                             
         HFCPtr<HRFResolutionDescriptor> pResolutionDescriptor =
             new HRFResolutionDescriptor(GetAccessMode(),
                                         GetCapabilities(),
@@ -950,7 +981,9 @@ HFCPtr<HRFPageDescriptor> HRFPDFFile::GetPageDescriptor(uint32_t pi_Page) const
                                         PDF_TILE_WIDTH_HEIGHT,
                                         PDF_TILE_WIDTH_HEIGHT);
 
-        uint32_t MaxResolutionSize = (uint32_t)(32767.0 / HRFPDFFile::s_dpiConvertScaleFactor);
+        //TFS#8555
+        uint32_t MaxResolutionSize;
+        m_pPDFWrapper->GetMaxResolutionSize(pi_Page, HRFPDFFile::s_dpiConvertScaleFactor, MaxResolutionSize);
 
         HPMAttributeSet             TagList;
         HFCPtr<HPMGenericAttribute> pTag;
@@ -997,6 +1030,9 @@ HFCPtr<HRFPageDescriptor> HRFPDFFile::GetPageDescriptor(uint32_t pi_Page) const
                                       1,
                                       MaxResolutionSize,
                                       MaxResolutionSize);
+
+        pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
+
 
         HFCPtr<HMDMetaDataContainerList> pMDContainers;
         HFCPtr<HMDLayers>                pLayers;
@@ -1194,10 +1230,10 @@ void HRFPDFFile::SetLookAhead(uint32_t               pi_Page,
                 HASSERT(PosX <= ULONG_MAX);
                 HASSERT(PosY <= ULONG_MAX);
 
-                MinX = min(MinX, (uint32_t)PosX);
-                MinY = min(MinY, (uint32_t)PosY);
-                MaxX = max(MaxX, (uint32_t)PosX + BlockWidth);
-                MaxY = max(MaxY, (uint32_t)PosY + BlockHeight);
+                MinX = MIN(MinX, (uint32_t)PosX);
+                MinY = MIN(MinY, (uint32_t)PosY);
+                MaxX = MAX(MaxX, (uint32_t)PosX + BlockWidth);
+                MaxY = MAX(MaxY, (uint32_t)PosY + BlockHeight);
 
                 BlockIndex = TileIterator.GetNextTileIndex();
 
@@ -1217,7 +1253,7 @@ void HRFPDFFile::SetLookAhead(uint32_t               pi_Page,
             if (pData != 0)
                 {
 
-                if (pResEditor->ReadBlock(MinX, MinY, MaxX, MaxY, pData.get()) == H_SUCCESS)
+                if (pResEditor->ReadBlockPDF(MinX, MinY, MaxX, MaxY, pData.get()) == H_SUCCESS)
                     {
                     uint32_t NbXTile = Width / BlockWidth;
                     uint32_t NbYTile = Height / BlockHeight;
@@ -1293,7 +1329,7 @@ HRFPDFFile::HRFPDFFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
 
     SharingControlCreate();
@@ -1325,7 +1361,7 @@ void HRFPDFFile::CreateDescriptors()
     {
     m_NumPages = m_pPDFWrapper->CountPages();
     /*
-        bool Success = GetAnnotations((void*)&m_Annotations);
+        bool Success = GetAnnotations(&m_Annotations);
 
         HASSERT(Success == true);*/
     }
@@ -1450,7 +1486,4 @@ bool HRFPDFFile::HasLookAheadByExtent(uint32_t  pi_Page) const
     return false;
     }
 
-// Disable "warning C4611: interaction between '_setjmp' and C++ object destruction is non-portables"
-#if (defined(_WIN32) && defined(_MSC_VER))
-    #pragma warning(pop)
-#endif
+#endif // IPP_HAVE_PDF_SUPPORT

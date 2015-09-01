@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoRasterFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -16,15 +16,17 @@
 #include "HFCURLFile.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class SDOGeoRasterWrapper;
 struct SDOObjectInfo;
 struct SDORasterInfo;
 struct SDOLayerInfo;
 struct SDOSpatialReferenceInfo;
 
-BEGIN_BENTLEY_NAMESPACE
-struct BeXmlNode;
-END_BENTLEY_NAMESPACE
+namespace Bentley
+    {
+    struct BeXmlNode;
+    }
 
 class HRFGeoRasterCapabilities : public HRFRasterFileCapabilities
     {
@@ -40,7 +42,7 @@ public:
     friend class HRFGeoRasterEditor;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1956, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_GeoRaster, HRFRasterFile)
 
     // allow to Open an image file
     HRFGeoRasterFile        (const HFCPtr<HFCURL>&          pi_rpURL,
@@ -96,7 +98,7 @@ private:
     void  ReadSpatialReferenceInfo(Bentley::BeXmlNode* pi_pLayerInfoNode, SDOSpatialReferenceInfo* po_pSDOSpatialReferenceInfo);
     void  ReadLayerInfo           (Bentley::BeXmlNode* pi_pRasterInfoNode, SDOLayerInfo* po_pSDOLayerInfo);
 
-    void  GetGeocoding            (SDOSpatialReferenceInfo const& pi_rSpatialRefInfo, IRasterBaseGcsPtr po_rpGeocoding);
+    RasterFileGeocodingPtr  ExtractGeocodingInformation  (SDOSpatialReferenceInfo const& pi_rSpatialRefInfo);
 
     // Methods Disabled
     HRFGeoRasterFile(const HRFGeoRasterFile& pi_rObj);
@@ -126,9 +128,10 @@ struct HRFGeoRasterCreator : public HRFRasterFileCreator
                                                HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                                uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFGeoRasterCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFGeoRasterCreator)
 
     // Disabled methodes
     HRFGeoRasterCreator();
     };
+END_IMAGEPP_NAMESPACE
 

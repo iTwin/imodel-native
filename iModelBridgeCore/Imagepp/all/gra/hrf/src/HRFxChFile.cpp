@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFxChFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFxChFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
+#include <ImagePPInternal/hstdcpp.h>
 
-#include <ImagePP/h/HDllSupport.h>
+
 #include <Imagepp/all/h/HRFxChFile.h>
 #include <Imagepp/all/h/HRFxChEditor.h>
 
@@ -40,12 +40,11 @@
 #include <Imagepp/all/h/HGF2DIdentity.h>
 
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include <BeXml/BeXml.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 /** ---------------------------------------------------------------------------
     URL composition utility.
@@ -347,8 +346,7 @@ HRFxChCreator::HRFxChCreator()
  */
 WString HRFxChCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_MultiChannel); // Multi Channel Image File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_MultiChannel()); // Multi Channel Image File Format
     }
 
 
@@ -435,60 +433,63 @@ bool HRFxChCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             BeXmlDomPtr pDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, XMLFileName.c_str ());
 
             //Validate pDom
-            if (pDom.IsNull() || (BEXML_Success != xmlStatus))
-                goto WRAPUP;
-
-            // Validate main node presence       
-            BeXmlNodeP pMainNode = pDom->GetRootElement ();
-            if (NULL == pMainNode || BeStringUtilities::Stricmp (pMainNode->GetName(), "MultiChannelImageFileFormat"))
-                goto WRAPUP;
-            
-            // Validate VERSION node presence (for now only validate node presence)          
-            BeXmlNodeP pVersionNode = pMainNode->SelectSingleNode ("VERSION");
-            if (!pVersionNode)
-                goto WRAPUP;
-
-            // Validate CHANNELS node presence
-            BeXmlNodeP pChannelNode = pMainNode->SelectSingleNode ("CHANNELS");
-            if (!pChannelNode)
-                goto WRAPUP;
-
-            // Validate COUNT node presence
-            BeXmlNodeP pCountNode = pChannelNode->SelectSingleNode ("COUNT");
-            if (!pCountNode)
-                goto WRAPUP;
-
-            // Validate channel count, must be 3 or 4 (type = UInt32)
-            uint32_t ChannelCount = 0;
-            if(BEXML_Success != pCountNode->GetContentUInt32Value (ChannelCount) || !(ChannelCount == 3 || ChannelCount == 4))
-                goto WRAPUP;
-
-            // Validate RED node presence
-            BeXmlNodeP pRedNode = pChannelNode->SelectSingleNode ("RED");
-            if (!pRedNode)
-                goto WRAPUP;
-
-            // Validate GREEN node presence
-            BeXmlNodeP pGreenNode = pChannelNode->SelectSingleNode ("GREEN");
-            if (!pGreenNode)
-                goto WRAPUP;
-
-            // Validate BLUE node presence
-            BeXmlNodeP pBlueNode = pChannelNode->SelectSingleNode ("BLUE");
-            if (!pBlueNode)
-                goto WRAPUP;
-
-            if (ChannelCount == 4)
+            if (pDom.IsValid() && (BEXML_Success == xmlStatus))
                 {
-                // Validate Alpha node presence    
-                BeXmlNodeP pAlphaNode = pChannelNode->SelectSingleNode ("ALPHA");
-                if (!pAlphaNode)
-                    goto WRAPUP;
+                // Validate main node presence       
+                BeXmlNodeP pMainNode = pDom->GetRootElement();
+                if (NULL != pMainNode && BeStringUtilities::Stricmp(pMainNode->GetName(), "MultiChannelImageFileFormat"))
+                {
+                    bResult = true;
+
+                    // Validate VERSION node presence (for now only validate node presence)          
+                    BeXmlNodeP pVersionNode = pMainNode->SelectSingleNode("VERSION");
+                    if (!pVersionNode)
+                        bResult = false;
+
+                    // Validate CHANNELS node presence
+                    BeXmlNodeP pChannelNode = pMainNode->SelectSingleNode("CHANNELS");
+                    if (!bResult || !pChannelNode)
+                        bResult = false;
+                    else
+                    {
+                        // Validate COUNT node presence
+                        BeXmlNodeP pCountNode = pChannelNode->SelectSingleNode("COUNT");
+                        if (!pCountNode)
+                            bResult = false;
+                        else
+                            {
+                            // Validate channel count, must be 3 or 4 (type = UInt32)
+                            uint32_t ChannelCount = 0;
+                            if (BEXML_Success != pCountNode->GetContentUInt32Value(ChannelCount) || !(ChannelCount == 3 || ChannelCount == 4))
+                                bResult = false;
+
+                            // Validate RED node presence
+                            BeXmlNodeP pRedNode = pChannelNode->SelectSingleNode("RED");
+                            if (!pRedNode)
+                                bResult = false;
+
+                            // Validate GREEN node presence
+                            BeXmlNodeP pGreenNode = pChannelNode->SelectSingleNode("GREEN");
+                            if (!pGreenNode)
+                                bResult = false;
+
+                            // Validate BLUE node presence
+                            BeXmlNodeP pBlueNode = pChannelNode->SelectSingleNode("BLUE");
+                            if (!pBlueNode)
+                                bResult = false;
+
+                            if (ChannelCount == 4)
+                                {
+                                // Validate Alpha node presence    
+                                BeXmlNodeP pAlphaNode = pChannelNode->SelectSingleNode("ALPHA");
+                                if (!pAlphaNode)
+                                    bResult = false;
+                                }
+                            }
+                        }
+                    }
                 }
 
-            bResult = true;
-
-WRAPUP:
             SisterFileLock.ReleaseKey();
             HASSERT(!(const_cast<HRFxChCreator*>(this))->m_pSharingControl->IsLocked());
             (const_cast<HRFxChCreator*>(this))->m_pSharingControl = 0;
@@ -613,7 +614,7 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rpURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rpURL->GetURL());
         }
 
 
@@ -649,7 +650,7 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpRedFileURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rpRedFileURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rpRedFileURL->GetURL());
         }
 
     // Compose a pseudo, unique, main URL (lightly modified red file URL)
@@ -667,16 +668,13 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpRedFileURL,
     HFCStat BlueFileStat(pi_rpBlueFileURL);
 
     if (!RedFileStat.IsExistent())
-        throw HRFChildFileException(HRF_CANNOT_FIND_CHILD_FILE_EXCEPTION,
-                                    GetURL()->GetURL(),
+        throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                     pi_rpRedFileURL->GetURL());
     if (!GreenFileStat.IsExistent())
-        throw HRFChildFileException(HRF_CANNOT_FIND_CHILD_FILE_EXCEPTION,
-                                    GetURL()->GetURL(),
+        throw HRFCannotOpenChildFileException( GetURL()->GetURL(),
                                     pi_rpGreenFileURL->GetURL());
     if (!BlueFileStat.IsExistent())
-        throw HRFChildFileException(HRF_CANNOT_FIND_CHILD_FILE_EXCEPTION,
-                                    GetURL()->GetURL(),
+        throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                     pi_rpBlueFileURL->GetURL());
 
     // Construct related URLs list
@@ -693,8 +691,7 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpRedFileURL,
         HFCStat AlphaFileStat(pi_rpAlphaFileURL);
 
         if (!AlphaFileStat.IsExistent())
-            throw HRFChildFileException(HRF_CANNOT_FIND_CHILD_FILE_EXCEPTION,
-                                        GetURL()->GetURL(),
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                         pi_rpAlphaFileURL->GetURL());
 
         m_ListOfRelatedURLs.push_back(pi_rpAlphaFileURL);
@@ -712,18 +709,15 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpRedFileURL,
     m_pBlueFile  = HRFRasterFileFactory::GetInstance()->OpenFile(pi_rpBlueFileURL, true);
 
     if (!m_pRedFile)
-        throw HRFChildFileException(HRF_CANNOT_OPEN_CHILD_FILE_EXCEPTION,
-                                    GetURL()->GetURL(),
+        throw HRFCannotOpenChildFileException( GetURL()->GetURL(),
                                     pi_rpRedFileURL->GetURL());
 
     if (!m_pGreenFile)
-        throw HRFChildFileException(HRF_CANNOT_OPEN_CHILD_FILE_EXCEPTION,
-                                    GetURL()->GetURL(),
+        throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                     pi_rpGreenFileURL->GetURL());
 
     if (!m_pBlueFile)
-        throw HRFChildFileException(HRF_CANNOT_OPEN_CHILD_FILE_EXCEPTION,
-                                    GetURL()->GetURL(),
+        throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                     pi_rpBlueFileURL->GetURL());
 
     if (m_ChannelCount == 4) // 32 bits - there is an alpha channel!
@@ -731,8 +725,7 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpRedFileURL,
         m_pAlphaFile = HRFRasterFileFactory::GetInstance()->OpenFile(pi_rpAlphaFileURL, true);
 
         if (!m_pAlphaFile)
-            throw HRFChildFileException(HRF_CANNOT_OPEN_CHILD_FILE_EXCEPTION,
-                                        GetURL()->GetURL(),
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                         pi_rpAlphaFileURL->GetURL());
         }
 
@@ -852,7 +845,7 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
     // Rasters must be of the same format
     if (!((pi_rpRedFile->GetClassID() == pi_rpGreenFile->GetClassID()) &&
           (pi_rpRedFile->GetClassID() == pi_rpBlueFile->GetClassID())))
-        throw HRFException(HRF_XCH_CHANNELS_ARE_NOT_OF_THE_SAME_FORMAT_EXCEPTION, GetURL()->GetURL());
+        throw HRFXCHChannelsAreNotOfTheSameFormatException(GetURL()->GetURL());
 
     // ...and same compression type
     HCLASS_ID RedFileCodecClsid   = pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetCodec()->GetClassID();
@@ -861,7 +854,7 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
 
     if (!((RedFileCodecClsid == GreenFileCodecClsid) &&
           (RedFileCodecClsid == BlueFileCodecClsid)))
-        throw HRFException(HRF_XCH_CHANNELS_DO_NOT_HAVE_THE_SAME_COMPRESSION_EXCEPTION, GetURL()->GetURL());
+        throw HRFXCHChannelsDoNotHaveSameCompressionException(GetURL()->GetURL());
 
     // All files must be grayscale
     HFCPtr<HRPPixelType> pRedChPixelType   = pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
@@ -872,42 +865,42 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
         (pi_rpRedFile->GetClassID() != HRFHMRFile::CLASS_ID) )
         {
         // not a valid pixel type!
-        throw HRFException(HRF_XCH_CHANNEL_IS_NOT_A_VALID_GRAYSCALE_EXCEPTION, pi_rpRedFile->GetURL()->GetURL());
+        throw HRFXCHChannelsIsNotAValidGrayscaleException(pi_rpRedFile->GetURL()->GetURL());
         }
     else if (pi_rpRedFile->GetClassID() == HRFHMRFile::CLASS_ID)
         {
         // OK but only for a grayscale palette
         if (!((pRedChPixelType->IsCompatibleWith(HRPPixelTypeI8R8G8B8::CLASS_ID)) &&
               (m_pRedMap = GetGrayscalePalette(pRedChPixelType))))
-            throw HRFException(HRF_XCH_CHANNEL_IS_NOT_A_VALID_GRAYSCALE_EXCEPTION, pi_rpRedFile->GetURL()->GetURL());
+            throw HRFXCHChannelsIsNotAValidGrayscaleException(pi_rpRedFile->GetURL()->GetURL());
         }
 
     if (!(pGreenChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID)) &&
         (pi_rpGreenFile->GetClassID() != HRFHMRFile::CLASS_ID) )
         {
         // not a valid pixel type!
-        throw HRFException(HRF_XCH_CHANNEL_IS_NOT_A_VALID_GRAYSCALE_EXCEPTION, pi_rpGreenFile->GetURL()->GetURL());
+        throw HRFXCHChannelsIsNotAValidGrayscaleException( pi_rpGreenFile->GetURL()->GetURL());
         }
     else if (pi_rpGreenFile->GetClassID() == HRFHMRFile::CLASS_ID)
         {
         // OK but only for a grayscale palette
         if (!((pGreenChPixelType->IsCompatibleWith(HRPPixelTypeI8R8G8B8::CLASS_ID)) &&
               (m_pGreenMap = GetGrayscalePalette(pGreenChPixelType))))
-            throw HRFException(HRF_XCH_CHANNEL_IS_NOT_A_VALID_GRAYSCALE_EXCEPTION, pi_rpGreenFile->GetURL()->GetURL());
+            throw HRFXCHChannelsIsNotAValidGrayscaleException( pi_rpGreenFile->GetURL()->GetURL());
         }
 
     if (!(pBlueChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID)) &&
         (pi_rpBlueFile->GetClassID() != HRFHMRFile::CLASS_ID) )
         {
         // not a valid pixel type!
-        throw HRFException(HRF_XCH_CHANNEL_IS_NOT_A_VALID_GRAYSCALE_EXCEPTION, pi_rpBlueFile->GetURL()->GetURL());
+        throw HRFXCHChannelsIsNotAValidGrayscaleException(pi_rpBlueFile->GetURL()->GetURL());
         }
     else if (pi_rpBlueFile->GetClassID() == HRFHMRFile::CLASS_ID)
         {
         // OK but only for a grayscale palette
         if (!((pBlueChPixelType->IsCompatibleWith(HRPPixelTypeI8R8G8B8::CLASS_ID)) &&
               (m_pBlueMap = GetGrayscalePalette(pBlueChPixelType))))
-            throw HRFException(HRF_XCH_CHANNEL_IS_NOT_A_VALID_GRAYSCALE_EXCEPTION, pi_rpBlueFile->GetURL()->GetURL());
+            throw HRFXCHChannelsIsNotAValidGrayscaleException(pi_rpBlueFile->GetURL()->GetURL());
         }
 
     // All files must have same dimensions
@@ -919,14 +912,14 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
                  == pi_rpGreenFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight())
              && (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight()
                  == pi_rpBlueFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight())))
-        throw HRFException(HRF_XCH_CHANNELS_DO_NOT_HAVE_THE_SAME_DIMENSIONS_EXCEPTION, GetURL()->GetURL());
+        throw HRFFXHChannelsDoNotHaveTheSameDimensionsException(GetURL()->GetURL());
 
     // All files must have same resolution number
     if (! (  (pi_rpRedFile->GetPageDescriptor(0)->CountResolutions()
               == pi_rpGreenFile->GetPageDescriptor(0)->CountResolutions())
              && (pi_rpRedFile->GetPageDescriptor(0)->CountResolutions()
                  == pi_rpBlueFile->GetPageDescriptor(0)->CountResolutions())))
-        throw HRFException(HRF_XCH_CHANNELS_DO_NOT_HAVE_THE_SAME_RES_COUNT_EXCEPTION, GetURL()->GetURL());
+        throw HRFFXHChannelsDoNotHaveTheSameResCountException( GetURL()->GetURL());
 
     // All files must have same block dimensions
     if (! (  (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockWidth()
@@ -937,20 +930,20 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
                  == pi_rpGreenFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight())
              && (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight()
                  == pi_rpBlueFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight())))
-        throw HRFException(HRF_XCH_CHANNELS_BLOCK_DIMENSIONS_DIFFER_EXCEPTION, GetURL()->GetURL());
+        throw HRFXCHChannelsBlockDimensionsDifferException(GetURL()->GetURL());
 
     // Verify alpha channel
     if (pi_rpAlphaFile)
         {
         // Rasters must be of the same format
         if (!(pi_rpRedFile->GetClassID() == pi_rpAlphaFile->GetClassID()))
-            throw HRFException(HRF_XCH_CHANNELS_ARE_NOT_OF_THE_SAME_FORMAT_EXCEPTION, GetURL()->GetURL());
+            throw HRFXCHChannelsAreNotOfTheSameFormatException( GetURL()->GetURL());
 
         // ...and same compression type
         HCLASS_ID AlphaFileCodecClsid = pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetCodec()->GetClassID();
 
         if (!(RedFileCodecClsid == AlphaFileCodecClsid))
-            throw HRFException(HRF_XCH_CHANNELS_DO_NOT_HAVE_THE_SAME_COMPRESSION_EXCEPTION, GetURL()->GetURL());
+            throw HRFXCHChannelsDoNotHaveSameCompressionException(GetURL()->GetURL());
 
         // All files must be grayscale
         HFCPtr<HRPPixelType> pAlphaChPixelType  = pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
@@ -959,14 +952,14 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
             (pi_rpAlphaFile->GetClassID() != HRFHMRFile::CLASS_ID) )
             {
             // not a valid pixel type!
-            throw HRFException(HRF_XCH_CHANNEL_IS_NOT_A_VALID_GRAYSCALE_EXCEPTION, pi_rpAlphaFile->GetURL()->GetURL());
+            throw HRFXCHChannelsIsNotAValidGrayscaleException(pi_rpAlphaFile->GetURL()->GetURL());
             }
         else if (pi_rpAlphaFile->GetClassID() == HRFHMRFile::CLASS_ID)
             {
             // OK but only for a grayscale palette
             if (!((pAlphaChPixelType->IsCompatibleWith(HRPPixelTypeI8R8G8B8::CLASS_ID)) &&
                   (m_pAlphaMap = GetGrayscalePalette(pAlphaChPixelType))))
-                throw HRFException(HRF_XCH_CHANNEL_IS_NOT_A_VALID_GRAYSCALE_EXCEPTION, pi_rpAlphaFile->GetURL()->GetURL());
+                throw HRFXCHChannelsIsNotAValidGrayscaleException(pi_rpAlphaFile->GetURL()->GetURL());
             }
 
         // All files must have same dimensions
@@ -974,19 +967,19 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
                  == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth())
                 && (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight()
                     == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight())))
-            throw HRFException(HRF_XCH_CHANNELS_DO_NOT_HAVE_THE_SAME_DIMENSIONS_EXCEPTION, GetURL()->GetURL());
+            throw HRFFXHChannelsDoNotHaveTheSameDimensionsException(GetURL()->GetURL());
 
         // All files must have same resolution number
         if (! (pi_rpRedFile->GetPageDescriptor(0)->CountResolutions()
                == pi_rpAlphaFile->GetPageDescriptor(0)->CountResolutions()))
-            throw HRFException(HRF_XCH_CHANNELS_DO_NOT_HAVE_THE_SAME_RES_COUNT_EXCEPTION, GetURL()->GetURL());
+            throw HRFFXHChannelsDoNotHaveTheSameResCountException(GetURL()->GetURL());
 
         // All files must have same block dimensions
         if (! ( (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockWidth()
                  == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockWidth())
                 && (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight()
                     == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight())))
-            throw HRFException(HRF_XCH_CHANNELS_BLOCK_DIMENSIONS_DIFFER_EXCEPTION, GetURL()->GetURL());
+            throw HRFXCHChannelsBlockDimensionsDifferException(GetURL()->GetURL());
         }
     }
 
@@ -1059,30 +1052,24 @@ bool HRFxChFile::Open()
 
         // Empty fields ?
         if (RedFileNameStr == L"")
-            throw HRFFileParameterException(HRF_INVALID_PARAM_VALUE_EXCEPTION,
-                                            GetURL()->GetURL(),
+            throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                             L"RED");
         if (GreenFileNameStr == L"")
-            throw HRFFileParameterException(HRF_INVALID_PARAM_VALUE_EXCEPTION,
-                                            GetURL()->GetURL(),
+            throw HRFInvalidParamValueException( GetURL()->GetURL(),
                                             L"GREEN");
         if (BlueFileNameStr == L"")
-            throw HRFFileParameterException(HRF_INVALID_PARAM_VALUE_EXCEPTION,
-                                            GetURL()->GetURL(),
+            throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                             L"BLUE");
 
         // Compose URLs
         if (!(pRedFileURL = ComposeChannelURL((HFCPtr<HFCURLFile>&)GetURL(), RedFileNameStr)))
-            throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                        GetURL()->GetURL(),
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                         RedFileNameStr);
         if (!(pGreenFileURL = ComposeChannelURL((HFCPtr<HFCURLFile>&)GetURL(), GreenFileNameStr)))
-            throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                        GetURL()->GetURL(),
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                         GreenFileNameStr);
         if (!(pBlueFileURL = ComposeChannelURL((HFCPtr<HFCURLFile>&)GetURL(), BlueFileNameStr)))
-            throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                        GetURL()->GetURL(),
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                         BlueFileNameStr);
 
         // Validate each file existence
@@ -1091,16 +1078,13 @@ bool HRFxChFile::Open()
         HFCStat BlueFileStat(pBlueFileURL);
 
         if (!RedFileStat.IsExistent())
-            throw HRFChildFileException(HRF_CANNOT_FIND_CHILD_FILE_EXCEPTION,
-                                        GetURL()->GetURL(),
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                         RedFileNameStr);
         if (!GreenFileStat.IsExistent())
-            throw HRFChildFileException(HRF_CANNOT_FIND_CHILD_FILE_EXCEPTION,
-                                        GetURL()->GetURL(),
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                         GreenFileNameStr);
         if (!BlueFileStat.IsExistent())
-            throw HRFChildFileException(HRF_CANNOT_FIND_CHILD_FILE_EXCEPTION,
-                                        GetURL()->GetURL(),
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                         BlueFileNameStr);
 
         // Construct related URLs list
@@ -1114,18 +1098,15 @@ bool HRFxChFile::Open()
         m_pBlueFile  = HRFRasterFileFactory::GetInstance()->OpenFile(pBlueFileURL, true);
 
         if (!m_pRedFile)
-            throw HRFChildFileException(HRF_CANNOT_OPEN_CHILD_FILE_EXCEPTION,
-                                        GetURL()->GetURL(),
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                         pRedFileURL->GetURL());
 
         if (!m_pGreenFile)
-            throw HRFChildFileException(HRF_CANNOT_OPEN_CHILD_FILE_EXCEPTION,
-                                        GetURL()->GetURL(),
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                         pGreenFileURL->GetURL());
 
         if (!m_pBlueFile)
-            throw HRFChildFileException(HRF_CANNOT_OPEN_CHILD_FILE_EXCEPTION,
-                                        GetURL()->GetURL(),
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                         pBlueFileURL->GetURL());
 
         if (m_ChannelCount == 4) // 32 bits - there is an alpha channel!
@@ -1136,21 +1117,18 @@ bool HRFxChFile::Open()
 
             // Empty field ?
             if (AlphaFileNameStr == L"")
-                throw HRFFileParameterException(HRF_INVALID_PARAM_VALUE_EXCEPTION,
-                                                GetURL()->GetURL(),
+                throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                                 L"ALPHA");
 
             // Compose URL
             if (!(pAlphaFileURL = ComposeChannelURL((HFCPtr<HFCURLFile>&)GetURL(), AlphaFileNameStr)))
-                throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                            GetURL()->GetURL(),
+                throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                             AlphaFileNameStr);
 
             HFCStat AlphaFileStat(pAlphaFileURL);
 
             if (!AlphaFileStat.IsExistent())
-                throw HRFChildFileException(HRF_CANNOT_FIND_CHILD_FILE_EXCEPTION,
-                                            GetURL()->GetURL(),
+                throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                             AlphaFileNameStr);
 
             m_ListOfRelatedURLs.push_back(pAlphaFileURL);
@@ -1158,8 +1136,7 @@ bool HRFxChFile::Open()
             m_pAlphaFile = HRFRasterFileFactory::GetInstance()->OpenFile(pAlphaFileURL, true);
 
             if (!m_pAlphaFile)
-                throw HRFChildFileException(HRF_CANNOT_OPEN_CHILD_FILE_EXCEPTION,
-                                            GetURL()->GetURL(),
+                throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                             pAlphaFileURL->GetURL());
             }
 

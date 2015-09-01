@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DGridModel.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DGridModel.h>
 #include <Imagepp/all/h/HGF2DTransfoModel.h>
@@ -274,9 +274,10 @@ HFCPtr<HGF2DTransfoModel> HGF2DGridModel::CreateModelFromExtent(const HGF2DLiteE
 
         return perspectiveModel;
         }
-    BEGIN_HFC_CATCH(HGF_MZ_G_COORD_EXCEPTION)
+	catch(HGFmzGCoordException&)
+	{
+	}
 
-    END_HFC_CATCH
 
     return NULL;
     }
@@ -348,9 +349,9 @@ HFCPtr<HGF2DTransfoModel> HGF2DGridModel::CreateModelFromInverseCoordinate(doubl
             return m_arrayOfDirectModels[index];
             }
         }
-    BEGIN_HFC_CATCH(HGF_MZ_G_COORD_EXCEPTION)
-
-    END_HFC_CATCH
+	catch(HGFmzGCoordException&)
+	{
+	}
 
     return NULL;
     }
@@ -394,7 +395,7 @@ HFCPtr<HGF2DTransfoModel> HGF2DGridModel::ComputeProjectionModel (vector<double>
     double denominator = (dx1 * dy2 - dy1 * dx2);
     if (denominator==0.0)
         {
-        throw HGFException(HGF_DOMAIN_EXCEPTION);
+        throw HGFDomainException();
         }
 
     // The transformation is projective
@@ -434,7 +435,7 @@ HGF2DLiteQuadrilateral HGF2DGridModel::ComputeInverseShapeFromDirectExtent(HGF2D
     {
     if (pModel == NULL)
         {
-        throw HGFException(HGF_DOMAIN_EXCEPTION);
+        throw HGFDomainException();
         }
 
     // Create a vector for 5 points
@@ -533,10 +534,10 @@ HGF2DLiteExtent HGF2DGridModel::ConvertLiteExtentWithGridModel(const HGF2DLiteEx
 
     for (x=2; x<Points.size(); x+=2)
         {
-        OriginX = min(OriginX, Points[x]);
-        OriginY = min(OriginY, Points[x+1]);
-        CornerX = max(CornerX, Points[x]);
-        CornerY = max(CornerY, Points[x+1]);
+        OriginX = MIN(OriginX, Points[x]);
+        OriginY = MIN(OriginY, Points[x+1]);
+        CornerX = MAX(CornerX, Points[x]);
+        CornerY = MAX(CornerY, Points[x+1]);
         }
 
     return HGF2DLiteExtent(OriginX, OriginY, CornerX, CornerY);
@@ -575,7 +576,7 @@ void HGF2DGridModel::ConvertDirect(double pi_XIn, double pi_YIn, double*   po_pX
 
     if (pModel == NULL)
         {
-        throw HGFException(HGF_DOMAIN_EXCEPTION);
+        throw HGFDomainException();
         }
 
     pModel->ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);

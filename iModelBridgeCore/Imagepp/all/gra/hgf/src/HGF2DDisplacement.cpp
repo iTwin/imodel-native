@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DDisplacement.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DDisplacement
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGFAngle.h>
 #include <Imagepp/all/h/HGF2DDisplacement.h>

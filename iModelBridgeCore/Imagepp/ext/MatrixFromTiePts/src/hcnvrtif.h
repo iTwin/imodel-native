@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ext/MatrixFromTiePts/src/hcnvrtif.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #ifndef __HCNVRTIF_H__
 #define __HCNVRTIF_H__
 

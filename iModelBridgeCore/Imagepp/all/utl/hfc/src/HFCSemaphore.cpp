@@ -2,22 +2,22 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCSemaphore.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCSemaphore
 //-----------------------------------------------------------------------------
 
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCSemaphore.h>
 #include <Imagepp/all/h/HFCException.h>
 
 //:Ignore
 #ifdef _WIN32
 HFCSemaphore::InternalKey* HFCSemaphore::s_pInternalKey = 0;
-static struct EventKeyCreator
+static struct ImagePP::EventKeyCreator
     {
     EventKeyCreator()
         {
@@ -29,6 +29,7 @@ static struct EventKeyCreator
     // This will cause a leak, but this is necessary to support static event keys.
     // We cannot control the order of deletion of static objects.
     } s_EventKeyCreator;
+
 #endif
 //:End Ignore
 
@@ -57,7 +58,7 @@ HFCSemaphore::HFCSemaphore(int32_t pi_InitCount,
 
     // since this is a named semaphore, create the handle now
     if (GetHandle() == 0)
-        throw HFCException();
+        throw HFCUnknownException();
     }
 
 

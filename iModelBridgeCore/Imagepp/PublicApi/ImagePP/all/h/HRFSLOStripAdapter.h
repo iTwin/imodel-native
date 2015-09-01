@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSLOStripAdapter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFSLOStripAdapter
@@ -20,6 +20,7 @@
 
 #include "HRFCombinedRasterFileCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFileSLOAdapterCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -33,7 +34,7 @@ public:
     friend class HRFSLOStripEditor;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1439, HRFRasterFileExtender)
+    HDECLARE_CLASS_ID(HRFSLOStripAdapterId, HRFRasterFileExtender)
 
     // allow to Open an image file
     HRFSLOStripAdapter(HFCPtr<HRFRasterFile>&  pi_rpAdaptedFile);
@@ -58,11 +59,11 @@ public:
     virtual void    Save();
 
     // This methods allow to know if the file need the adapter
-    _HDLLg static bool NeedSLOAdapterFor(HFCPtr<HRFRasterFile> const& pi_rpForRasterFile);
+    IMAGEPP_EXPORT static bool NeedSLOAdapterFor(HFCPtr<HRFRasterFile> const& pi_rpForRasterFile);
 
     // This methods allow to Create the best adapter for the specified raster file.
     // If it is not possible to adapt the raster file we return the original raster file.
-    _HDLLg static HFCPtr<HRFRasterFile>
+    IMAGEPP_EXPORT static HFCPtr<HRFRasterFile>
     CreateBestAdapterFor(HFCPtr<HRFRasterFile> pi_rpForRasterFile);
 
     // This methods allow to if it is possible to adapt this raster file.
@@ -98,4 +99,5 @@ private:
     HRFSLOStripAdapter(const HRFSLOStripAdapter& pi_rObj);
     HRFSLOStripAdapter&  operator=(const HRFSLOStripAdapter& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 

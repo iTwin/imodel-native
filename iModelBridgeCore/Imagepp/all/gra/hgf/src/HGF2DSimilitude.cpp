@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DSimilitude.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DSimilitude
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DComplexTransfoModel.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
@@ -186,11 +186,27 @@ HGF2DSimilitude& HGF2DSimilitude::operator=(const HGF2DSimilitude& pi_rObj)
     return (*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alexandre.Gariepy               06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HGF2DSimilitude::IsConvertDirectThreadSafe() const 
+    { 
+    return true; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alexandre.Gariepy               06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HGF2DSimilitude::IsConvertInverseThreadSafe() const 
+    { 
+    return true; 
+    }
+
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DSimilitude::ConvertDirect(double* pio_pXInOut,
-                                    double* pio_pYInOut) const
+StatusInt HGF2DSimilitude::ConvertDirect(double* pio_pXInOut,
+                                         double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(pio_pXInOut != 0);
@@ -204,17 +220,19 @@ void HGF2DSimilitude::ConvertDirect(double* pio_pXInOut,
                    m_XTranslationPrime;
     *pio_pYInOut = (X * m_PreparedDirectB2) + (Y * m_PreparedDirectA2) +
                    m_YTranslationPrime;
+
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DSimilitude::ConvertDirect (double    pi_YIn,
-                                     double    pi_XInStart,
-                                     size_t     pi_NumLoc,
-                                     double    pi_XInStep,
-                                     double*   po_aXOut,
-                                     double*   po_aYOut) const
+StatusInt HGF2DSimilitude::ConvertDirect (double    pi_YIn,
+                                          double    pi_XInStart,
+                                          size_t    pi_NumLoc,
+                                          double    pi_XInStep,
+                                          double*   po_aXOut,
+                                          double*   po_aYOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(po_aXOut != 0);
@@ -234,16 +252,49 @@ void HGF2DSimilitude::ConvertDirect (double    pi_YIn,
         *pCurrentX = (X * m_PreparedDirectA1) + ByProdY1;
         *pCurrentY = (X * m_PreparedDirectB2) + ByProdY2;
         }
-    }
 
+    return SUCCESS;
+    }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DSimilitude::ConvertDirect(double   pi_XIn,
-                                    double   pi_YIn,
-                                    double*  po_pXOut,
-                                    double*  po_pYOut) const
+StatusInt HGF2DSimilitude::ConvertDirect (size_t    pi_NumLoc,
+                                          double*   pio_aXInOut,
+                                          double*   pio_aYInOut) const
+    {
+    // Make sure that recipient variables are provided
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+
+    double X;
+    double Y;
+
+    double ByProdY1;
+    double ByProdY2;
+
+    for(uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        X = pio_aXInOut[i];
+        Y = pio_aYInOut[i];
+
+        ByProdY1 = Y * -m_PreparedDirectB1 + m_XTranslationPrime;
+        ByProdY2 = Y * m_PreparedDirectA2 + m_YTranslationPrime;
+
+        pio_aXInOut[i] = (X * m_PreparedDirectA1) + ByProdY1;
+        pio_aYInOut[i] = (X * m_PreparedDirectB2) + ByProdY2;
+        }
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DSimilitude::ConvertDirect(double   pi_XIn,
+                                         double   pi_YIn,
+                                         double*  po_pXOut,
+                                         double*  po_pYOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(po_pXOut != 0);
@@ -255,14 +306,15 @@ void HGF2DSimilitude::ConvertDirect(double   pi_XIn,
     *po_pYOut = (pi_XIn * m_PreparedDirectB2) + (pi_YIn * m_PreparedDirectA2) +
                 m_YTranslationPrime;
 
+    return SUCCESS;
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DSimilitude::ConvertInverse(double* pio_pXInOut,
-                                     double* pio_pYInOut) const
+StatusInt HGF2DSimilitude::ConvertInverse(double* pio_pXInOut,
+                                          double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(pio_pXInOut != 0);
@@ -276,18 +328,20 @@ void HGF2DSimilitude::ConvertInverse(double* pio_pXInOut,
                    m_XTranslationInversePrime;
     *pio_pYInOut = (X * m_PreparedInverseB2) + (Y * m_PreparedInverseA2) +
                    m_YTranslationInversePrime;
+
+    return SUCCESS;
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DSimilitude::ConvertInverse (double    pi_YIn,
-                                      double    pi_XInStart,
-                                      size_t     pi_NumLoc,
-                                      double    pi_XInStep,
-                                      double*   po_aXOut,
-                                      double*   po_aYOut) const
+StatusInt HGF2DSimilitude::ConvertInverse (double    pi_YIn,
+                                           double    pi_XInStart,
+                                           size_t    pi_NumLoc,
+                                           double    pi_XInStep,
+                                           double*   po_aXOut,
+                                           double*   po_aYOut) const
     {
 
     // Make sure that recipient variables are provided
@@ -308,16 +362,52 @@ void HGF2DSimilitude::ConvertInverse (double    pi_YIn,
         *pCurrentX = (X * m_PreparedInverseA1) + ByProdY1;
         *pCurrentY = (X * m_PreparedInverseB2) + ByProdY2;
         }
+
+    return SUCCESS;
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DSimilitude::ConvertInverse(double  pi_XIn,
-                                     double  pi_YIn,
-                                     double* po_pXOut,
-                                     double* po_pYOut) const
+StatusInt HGF2DSimilitude::ConvertInverse (size_t    pi_NumLoc,
+                                           double*   pio_aXInOut,
+                                           double*   pio_aYInOut) const
+    {
+
+    // Make sure that recipient variables are provided
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+
+    double X;
+    double Y;
+
+    double ByProdY1;
+    double ByProdY2;
+
+    for(uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        X = pio_aXInOut[i];
+        Y = pio_aYInOut[i];
+
+        ByProdY1 = Y * -m_PreparedInverseB1 + m_XTranslationInversePrime;
+        ByProdY2 = Y * m_PreparedInverseA2 + m_YTranslationInversePrime;
+
+        pio_aXInOut[i] = (X * m_PreparedInverseA1) + ByProdY1;
+        pio_aYInOut[i] = (X * m_PreparedInverseB2) + ByProdY2;
+        }
+
+    return SUCCESS;
+    }
+
+
+//-----------------------------------------------------------------------------
+// Converter (inverse)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DSimilitude::ConvertInverse(double  pi_XIn,
+                                          double  pi_YIn,
+                                          double* po_pXOut,
+                                          double* po_pYOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(po_pXOut != 0);
@@ -327,6 +417,8 @@ void HGF2DSimilitude::ConvertInverse(double  pi_XIn,
                 m_XTranslationInversePrime;
     *po_pYOut = (pi_XIn * m_PreparedInverseB2) + (pi_YIn * m_PreparedInverseA2) +
                 m_YTranslationInversePrime;
+
+    return SUCCESS;
     }
 
 

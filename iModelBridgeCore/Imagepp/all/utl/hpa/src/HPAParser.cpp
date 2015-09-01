@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hpa/src/HPAParser.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPAParser
 //---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HPAParser.h>
 #include <Imagepp/all/h/HPATokenizer.h>
 #include <Imagepp/all/h/HPAProduction.h>
@@ -362,7 +362,7 @@ HPANode* HPAParser::Parse(const HFCPtr<HPASession>& pi_pSession)
                         {
                         HFCPtr<HPANode> pExceptionNode(pNode);
                         pNode = 0;
-                        throw HPAException(HPA_CANNOT_FIND_PRODUCTION_EXCEPTION, pExceptionNode);    // shoot all info about the node
+                        throw HPACannotFindProductionException(pExceptionNode);    // shoot all info about the node
                         }
                     }
                 }
@@ -397,7 +397,7 @@ HPANode* HPAParser::Parse(const HFCPtr<HPASession>& pi_pSession)
     if (pLastResolution->GetGrammarObject() != m_pStartRule)
     {
         HFCPtr<HPANode> pExceptionNode(pLastResolution);
-        throw HPAException(HPA_CANNOT_RESOLVE_START_RULE_EXCEPTION, pExceptionNode);  // Shoot all info about the last resolution node.
+        throw HPACannotResolveStartRuleException(pExceptionNode);  // Shoot all info about the last resolution node.
     }
 
     // If the parsing loop completed by resolving to start rule but there are still
@@ -420,7 +420,7 @@ HPANode* HPAParser::Parse(const HFCPtr<HPASession>& pi_pSession)
             }
 
         HFCPtr<HPANode> pExceptionNode(LookAhead.front());
-        throw HPAException(HPA_NODE_LEFT_TO_PARSE_EXCEPTION, pExceptionNode);  // Shoot all info about the unexpected node.
+        throw HPANodeLeftToParseException(pExceptionNode);  // Shoot all info about the unexpected node.
         }
 
     return pLastResolution;

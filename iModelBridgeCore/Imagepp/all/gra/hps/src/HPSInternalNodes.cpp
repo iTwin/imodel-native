@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSInternalNodes.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for internal HPS nodes
 //---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCLocalBinStream.h>
 #include <Imagepp/all/h/HFCURL.h>
@@ -48,19 +48,17 @@
 #include <Imagepp/all/h/HRAReferenceToRaster.h>
 #include <Imagepp/all/h/HRASamplingOptions.h>
 #include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
-#include <Imagepp/all/h/HRFPDFFile.h>
 #include <Imagepp/all/h/HRFRasterFile.h>
 #include <Imagepp/all/h/HRFRasterFileExtender.h>
 #include <Imagepp/all/h/HRFRasterFileFactory.h>
 #include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFVirtualEarthFile.h>
-#include <Imagepp/all/h/HRFWMSFile.h>
 
 #include <Imagepp/all/h/HRPAlphaRange.h>
 #include <Imagepp/all/h/HRPCustomConvFilter.h>
 #include <Imagepp/all/h/HRPMapFilters8.h>
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
 
 #include <Imagepp/all/h/HRSObjectStore.h>
 
@@ -204,19 +202,20 @@ HPSRasterObjectValue* PageStatementNode::ComputeObject() const
     HPSRasterObjectValue* pRasterValue = dynamic_cast<HPSRasterObjectValue*>(CalculateObject(GetSubNodes()[2]));
     
     if (pRasterValue == NULL || pRasterValue->m_pObject == NULL)
-        throw HPSTypeMismatchException(HPS_IMAGE_EXPECTED_EXCEPTION,
-                                       (HPANode*)this,
-                                       HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(const_cast<PageStatementNode*>(this),
+                                       HPSTypeMismatchException::IMAGE);
     if (!pRasterValue->m_pObject->GetExtent().IsDefined())
-        throw HPSException(HPS_IMAGE_HAS_NO_SIZE_EXCEPTION, (HPANode*)this);
+        throw HPSImageHasNoSizeException(const_cast<PageStatementNode*>(this));
 
     // is there a using?  (this offset the description pos if any)
 
     if (GetSubNodes().size() == 6)  // is there a description?
         {
+#ifdef IPP_ATTRIBUTES_ON_HRA    // Do we have a client for this?
         HPMAttributeSet& Attribs = pRasterValue->m_pObject->LockAttributes();
         Attribs.Set(new HPSAttributeImageDescription(CalculateString(GetSubNodes()[4])));
         pRasterValue->m_pObject->UnlockAttributes();
+#endif
         }
 
     return pRasterValue;
@@ -233,9 +232,8 @@ WorldStatementNode::WorldStatementNode(HPAGrammarObject* pi_pObj,
     int32_t RefWorldID = (int32_t)CalculateNumber(GetSubNodes()[6], true);
 
     if (pTransoValue == NULL || pTransoValue->m_pObject == NULL)
-        throw HPSTypeMismatchException(HPS_TRANSFO_EXPECTED_EXCEPTION,
-                                       GetSubNodes()[4],
-                                       HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(GetSubNodes()[4],
+                                       HPSTypeMismatchException::TRANSFO);
     if ((WorldID < 1) || (WorldID > 255))
         throw HPSOutOfRangeException(GetSubNodes()[2], 1, 255);
     if ((RefWorldID < 0) || (RefWorldID > 255))
@@ -243,9 +241,9 @@ WorldStatementNode::WorldStatementNode(HPAGrammarObject* pi_pObj,
       
     if (SESSION->GetWorld(WorldID) != 0)
         if (SESSION->GetWorld(WorldID)->IsUsedAsReference())
-            throw HPSException(HPS_WORLD_ALREADY_USED_EXCEPTION, GetSubNodes()[2]);
+            throw HPSWorldAlreadyUsedException(GetSubNodes()[2]);
     if (!SESSION->ModifyCluster(WorldID, *pTransoValue->m_pObject, RefWorldID))
-        throw HPSException(HPS_INVALID_WORLD_EXCEPTION, GetSubNodes()[6]);
+        throw HPSInvalidWorldException(GetSubNodes()[6]);
 
     PARSER->GetWorldRelatedNodes().push_back(this);
     }
@@ -258,7 +256,7 @@ SelectWorldStatementNode::SelectWorldStatementNode(HPAGrammarObject* pi_pObj,
     {
     SESSION->ChangeCurrentWorld((HGF2DWorldIdentificator)CalculateNumber(pi_rList[2], true));
     if (SESSION->GetCurrentWorld() == 0)
-        throw HPSException(HPS_INVALID_WORLD_EXCEPTION, pi_rList[2]);
+        throw HPSInvalidWorldException(pi_rList[2]);
 
     PARSER->GetWorldRelatedNodes().push_back(this);
     }
@@ -285,9 +283,8 @@ SetLayerStatementNode::SetLayerStatementNode(HPAGrammarObject*         pi_pObj,
     HPSDecoratedHMDContext* pContext = dynamic_cast<HPSDecoratedHMDContext*>(CalculateObject(GetSubNodes()[2]));
 
     if (pContext == 0)
-        throw HPSTypeMismatchException(HPS_IMAGE_CONTEXT_EXPECTED_EXCEPTION,
-                                       GetSubNodes()[2],
-                                       HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(GetSubNodes()[2],
+                                       HPSTypeMismatchException::IMAGE_CONTEXT);
 
     //First four nodes are always "SETLAYERON ( imContext," or "SETLO ( imContext,"
     HFCPtr<HMDLayers> pLayers(new HMDLayers());
@@ -333,13 +330,11 @@ SetAnnotationIconStatementNode::SetAnnotationIconStatementNode(HPAGrammarObject*
     HPSDecoratedHMDContext* pContext = dynamic_cast<HPSDecoratedHMDContext*>(CalculateObject(GetSubNodes()[2]));
     
     if (pContext == 0)
-        throw HPSTypeMismatchException(HPS_IMAGE_CONTEXT_EXPECTED_EXCEPTION,
-                                       GetSubNodes()[2],
-                                       HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(GetSubNodes()[2],
+                                       HPSTypeMismatchException::IMAGE_CONTEXT);
 
     //SetLayerOnStatementNode can only be called once on a ImageContext object
     HASSERT(pContext->GetContext().GetMetaDataContainer(HMDMetaDataContainer::HMD_ANNOT_ICON_RASTERING_INFO) == 0);
-
     HFCPtr<HMDAnnotationIconsPDF> pAnnotationIconsPDF(new HMDAnnotationIconsPDF());
 
     double BoolVal = CalculateNumber(GetSubNodes()[4], true);
@@ -380,9 +375,8 @@ void ExpressionNode::Calculate()
             HPSRasterObjectValue* pRasterObjectValue = dynamic_cast<HPSRasterObjectValue*>(CalculateObject(GetSubNodes().front()));
 
             if (pRasterObjectValue == NULL || pRasterObjectValue->m_pObject == NULL)
-                throw HPSTypeMismatchException(HPS_IMAGE_EXPECTED_EXCEPTION,
-                                               GetSubNodes().front(),
-                                               HPSTypeMismatchException::OBJECT);
+                throw HPSTypeMismatchException(GetSubNodes().front(),
+                                               HPSTypeMismatchException::IMAGE);
 
             HFCPtr<HVEShape> pShape(new HVEShape(*(pRasterObjectValue->m_pObject->GetEffectiveShape())));
 
@@ -572,7 +566,7 @@ NumericExpressionNode::NumericExpressionNode(HPAGrammarObject* pi_pObj,
         if (pi_rList[0]->GetGrammarObject() == &PARSER->MINUS_tk)
             Value = -Value;
         else if (pi_rList[0]->GetGrammarObject() != &PARSER->PLUS_tk)
-            throw HPSException(HPS_INVALID_NUMERIC_EXCEPTION, pi_rList[0]);
+            throw HPSInvalidNumericException(pi_rList[0]);
         }
     SetValue(Value);
     }
@@ -626,7 +620,7 @@ void StatementInstanciationNode::Calculate()
         while (pNode)
             {
             if (Pos >= pStatementNode->m_pScope->GetParameterCount())
-                throw HPSException(HPS_TOO_MANY_PARAM_EXCEPTION, pNode);
+                throw HPSTooManyParamException(pNode);
             pStatementNode->m_pScope->SetParameterValue(Pos, (const HFCPtr<ExpressionNode>&)(pNode->GetSubNodes().front()));
             if (pNode->GetSubNodes().size() == 3)
                 pNode = pNode->GetSubNodes()[2];
@@ -635,7 +629,7 @@ void StatementInstanciationNode::Calculate()
             ++Pos;
             }
         if (Pos < pStatementNode->m_pScope->GetParameterCount())
-            throw HPSException(HPS_TOO_FEW_PARAM_EXCEPTION, this);
+            throw HPSTooFewParamException(this);
         }
 
     pStatementNode->m_pReturnNode->Calculate();
@@ -673,9 +667,8 @@ void ImageFileExpressionNode::Calculate()
             HPSDecoratedHMDContext* pContextValue = dynamic_cast<HPSDecoratedHMDContext*>(CalculateObject(GetSubNodes()[6]));
             
             if (pContextValue == 0)
-                throw HPSTypeMismatchException(HPS_IMAGE_CONTEXT_EXPECTED_EXCEPTION,
-                                               GetSubNodes()[6],
-                                               HPSTypeMismatchException::OBJECT);
+                throw HPSTypeMismatchException(GetSubNodes()[6],
+                                               HPSTypeMismatchException::IMAGE_CONTEXT);
 
             pContext = &pContextValue->GetContext();
 
@@ -684,11 +677,9 @@ void ImageFileExpressionNode::Calculate()
                 HPSGeoreferenceContextObjectValue* pPersistentObject = dynamic_cast<HPSGeoreferenceContextObjectValue*>(CalculateObject(GetSubNodes()[8]));
 
                 if (pPersistentObject == 0)
-                    throw HPSTypeMismatchException(HPS_INVALID_OBJECT_EXCEPTION,
-                                                   GetSubNodes()[8],
-                                                   HPSTypeMismatchException::OBJECT);
+                    throw HPSInvalidObjectException(GetSubNodes()[8]);
 
-                pGeoreferenceContext = (HRFGeoreferenceContext*)pPersistentObject;
+                pGeoreferenceContext = pPersistentObject->m_pObject;
                 }
             }
         }
@@ -698,10 +689,10 @@ void ImageFileExpressionNode::Calculate()
     GetFileURL(pURL);
 
     if (pURL == 0)
-        throw HPSException(HPS_INVALID_URL_EXCEPTION, GetSubNodes()[2]);
+        throw HPSInvalidUrlException(GetSubNodes()[2]);
     HFCPtr<HRFRasterFile> pFile = HRFRasterFileFactory::GetInstance()->OpenFile(pURL, true);
     if (pFile == 0)
-        throw HPSException(HPS_FILE_NOT_FOUND_EXCEPTION, this);
+        throw HPSFileNotFoundException(this);
 
     HFCPtr<HRFRasterFile> pImprFile;
     
@@ -725,17 +716,17 @@ void ImageFileExpressionNode::Calculate()
     HASSERT(pImprFile != 0);
 
     if (PageNumber >= pImprFile->CountPages())
-        throw HPSException(HPS_PAGE_NOT_FOUND_EXCEPTION, this);
+        throw HPSPageNotFoundException(this);
 
     HFCPtr<HGF2DCoordSys> pImageWorld = SESSION->GetWorld(pImprFile->GetWorldIdentificator());
     if (pImageWorld == 0)
-        throw HPSException(HPS_INVALID_WORLD_EXCEPTION, this);
+        throw HPSInvalidWorldException(this);
 
     HFCPtr<HRSObjectStore> pStore = new HRSObjectStore(SESSION->GetPool(), pImprFile, PageNumber, pImageWorld);
     pStore->SetThrowable(true);
     HFCPtr<HRARaster> pRaster(pStore->LoadRaster());
     if (pRaster == NULL)
-        throw HPSException(HPS_NO_IMAGE_IN_FILE_EXCEPTION, this);
+        throw HPSNoImageInFileException(this);
 
     HFCPtr<HMDContext> pRasterContext(pRaster->GetContext());
 
@@ -796,7 +787,13 @@ void ImageFileExpressionNode::Calculate()
 
 void ImageFileExpressionNode::GetFileURL(HFCPtr<HFCURL>& po_rpFileURL) const
     {
-    WString FileName(CalculateString(GetSubNodes()[2]));
+#if 0
+    // The file names in a PSS should be encoded in UTF8.
+    AString FileNameA(CalculateString(GetSubNodes()[2]).c_str());
+    WString FileName(FileNameA.c_str(), true/*isUtf8*/);
+#else
+    WString FileName(CalculateString(GetSubNodes()[2]).c_str());
+#endif
 
     po_rpFileURL = HFCURL::Instanciate(FileName);  // Is it a fully qualified URL?
     if (po_rpFileURL == 0)  // no, maybe it a fully qualified pathname with drive letter
@@ -828,9 +825,8 @@ void MosaicExpressionNode::Calculate()
         HPSRasterObjectValue* pRasterValue = dynamic_cast<HPSRasterObjectValue*>(CalculateObject(pNode->GetSubNodes().front()));
 
         if (pRasterValue == 0 || pRasterValue->m_pObject == 0)
-            throw HPSTypeMismatchException(HPS_IMAGE_EXPECTED_EXCEPTION,
-                                           pNode->GetSubNodes().front(),
-                                           HPSTypeMismatchException::OBJECT);
+            throw HPSTypeMismatchException(pNode->GetSubNodes().front(),
+                                           HPSTypeMismatchException::IMAGE);
 
         Rasters.push_back(pRasterValue->m_pObject);
 
@@ -872,7 +868,6 @@ void OnDemandMosaicExpressionNode::Calculate()
     {
     HIMOnDemandMosaic::RasterList Rasters;
     HFCPtr<HRAOnDemandRaster>     pOnDemandRaster;
-    HFCPtr<HRAStoredRaster>       pStoredRaster;
     HFCPtr<HIMOnDemandMosaic>     pMosaic;
     WString                       PSSDescriptiveNode;
     HFCPtr<HPANode>               pNode(GetSubNodes()[2]);
@@ -882,9 +877,8 @@ void OnDemandMosaicExpressionNode::Calculate()
         HPSRasterObjectValue* pRasterObjectValue = dynamic_cast<HPSRasterObjectValue*>(CalculateObject(pNode->GetSubNodes().front()));
 
         if (pRasterObjectValue == 0 || pRasterObjectValue->m_pObject == 0)
-            throw HPSTypeMismatchException(HPS_IMAGE_EXPECTED_EXCEPTION,
-                                           pNode->GetSubNodes().front(),
-                                           HPSTypeMismatchException::OBJECT);
+            throw HPSTypeMismatchException(pNode->GetSubNodes().front(),
+                                           HPSTypeMismatchException::IMAGE);
 
         PSSDescriptiveNode.clear();
 
@@ -898,7 +892,7 @@ void OnDemandMosaicExpressionNode::Calculate()
 
         //MST : Eventually we should have some service in Image++ 
         //      to allow the querying of the HRARaster for the presence of any unlimited raster.        
-        HPSGetURLsFromChildrenNode(pNode, relatedURLs);         
+        HPSObjectStore::GetURLsFromChildrenNode(pNode, relatedURLs);         
 
         bool isDataChangingWithResolution = false;
         bool hasUnlimitedRasterSource = false;
@@ -906,24 +900,25 @@ void OnDemandMosaicExpressionNode::Calculate()
         ListOfRelatedURLs::iterator urlIter(relatedURLs.begin());
         ListOfRelatedURLs::iterator urlIterEnd(relatedURLs.end());
 
+        // Use the factory to avoid direct reference to file format and thus force linking to some external libraries.
+        HRFRasterFileFactory* pRasterFileFactory = HRFRasterFileFactory::GetInstance();
+
         while ((urlIter != urlIterEnd) && 
                ((isDataChangingWithResolution == false) || 
                 (hasUnlimitedRasterSource == false)))
             {                            
-            if (HRFWMSCreator::GetInstance()->IsKindOfFile(*urlIter) == true)
+            if (pRasterFileFactory->IsKindOfFile(HRFFileId_WMS/*HRFWMSFile::CLASS_ID*/, *urlIter))
                 {
                 hasUnlimitedRasterSource = true;
                 isDataChangingWithResolution = true;
                 }
-            else
 #if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
-            if (HRFPDFCreator::GetInstance()->IsKindOfFile(*urlIter) == true)
+            else if (pRasterFileFactory->IsKindOfFile(HRFFileId_PDF/*HRFPDFFile::CLASS_ID*/, *urlIter))
                 {
                 hasUnlimitedRasterSource = true;                
                 }
-            else
 #endif
-            if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(*urlIter) == true)
+            else if (pRasterFileFactory->IsKindOfFile(HRFFileId_VirtualEarth/*HRFVirtualEarthFile::CLASS_ID*/, *urlIter))
                 {
                 isDataChangingWithResolution = true;
                 }
@@ -967,8 +962,7 @@ void OnDemandMosaicExpressionNode::Calculate()
 
     //Set the pixel type to a fixed value to avoid opening all the rasters to determine the pixel
     //type of the mosaic.
-    pMosaic->SetPixelTypeInfo(true,
-                              HFCPtr<HRPPixelType>((HRPPixelType*)new HRPPixelTypeV32R8G8B8A8()));
+    pMosaic->SetPixelTypeInfo(true, new HRPPixelTypeV32R8G8B8A8());
 
     //Get the PSS describing the world statements if at least one world statement is
     //used in the PSS file.
@@ -1021,13 +1015,13 @@ HFCMemoryLineStream& OnDemandMosaicExpressionNode::GetLineStream(WString& pi_rPS
 
     while (LineStreamIter != LineStreamIterEnd)
         {
-            HFCPtr<HFCURLMemFile> pURLMemFile(static_cast<HFCURLMemFile*>((*LineStreamIter)->GetURL().GetPtr()));
+        HASSERT((*LineStreamIter)->GetURL()->IsCompatibleWith(HFCURLMemFile::CLASS_ID));
 
-        if ((pURLMemFile->GetHost() + L"\\" + pURLMemFile->GetPath()) == pi_rPSSFileName)
-            {
+        HFCPtr<HFCURLMemFile> pURLMemFile(static_cast<HFCURLMemFile*>((*LineStreamIter)->GetURL().GetPtr()));
+
+        if (pURLMemFile->GetFilename() == pi_rPSSFileName)
             break;
-            }
-
+            
         LineStreamIter++;
         }
 
@@ -1277,14 +1271,12 @@ void TransformedImageExpressionNode::Calculate()
     HPSRasterObjectValue*  pRasterObjectValue = dynamic_cast<HPSRasterObjectValue*>(CalculateObject(GetSubNodes()[2]));
 
     if (pTransfoObjectValue == 0 || pTransfoObjectValue->m_pObject == 0)
-        throw HPSTypeMismatchException(HPS_TRANSFO_EXPECTED_EXCEPTION,
-                                       GetSubNodes()[4],
-                                       HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(GetSubNodes()[4],
+                                       HPSTypeMismatchException::TRANSFO);
 
     if (pRasterObjectValue == 0 || pRasterObjectValue->m_pObject == 0)
-        throw HPSTypeMismatchException(HPS_IMAGE_EXPECTED_EXCEPTION,
-                                       GetSubNodes()[2],
-                                       HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(GetSubNodes()[2],
+                                       HPSTypeMismatchException::IMAGE);
 
     // If a USING operator is present, choose the right world
 
@@ -1293,9 +1285,8 @@ void TransformedImageExpressionNode::Calculate()
         {
         pWorld = SESSION->GetWorld((HGF2DWorldIdentificator)CalculateNumber(GetSubNodes()[6], true));
         if (pWorld == 0)
-            throw HPSTypeMismatchException(HPS_WORLD_EXPECTED_EXCEPTION,
-                                           GetSubNodes()[6],
-                                           HPSTypeMismatchException::OBJECT);
+            throw HPSTypeMismatchException(GetSubNodes()[6],
+                                           HPSTypeMismatchException::WORLD);
         }
 
     // Building a new coordsys reflecting the wished transformation
@@ -1324,15 +1315,14 @@ void ShapedImageExpressionNode::Calculate()
     HPSRasterObjectValue*  pRasterObjectValue = dynamic_cast<HPSRasterObjectValue*>(CalculateObject(GetSubNodes()[2]));
 
     if (pShapeObjectValue == 0 || pShapeObjectValue->m_pObject == 0)
-        throw HPSException(HPS_SHAPE_EXPECTED_EXCEPTION, GetSubNodes()[4]);
+        throw HPSShapeExpectedException(GetSubNodes()[4]);
     if (pRasterObjectValue == 0 || pRasterObjectValue->m_pObject == 0)
-        throw HPSTypeMismatchException(HPS_IMAGE_EXPECTED_EXCEPTION,
-                                       GetSubNodes()[2],
-                                       HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(GetSubNodes()[2],
+                                       HPSTypeMismatchException::IMAGE);
 
     HFCPtr<HRARaster> pShaped(new HRAReferenceToRaster(pRasterObjectValue->m_pObject, *pShapeObjectValue->m_pObject));
     if (!(pShaped->GetExtent().IsDefined()))
-        throw HPSException(HPS_IMAGE_HAS_NO_SIZE_EXCEPTION, this);
+        throw HPSImageHasNoSizeException(this);
 
     HPSRasterObjectValue* pRefRasterObjectValue = new HPSRasterObjectValue(pShaped); 
     pRefRasterObjectValue->AddHFCPtr();
@@ -1347,14 +1337,12 @@ void FilteredImageExpressionNode::Calculate()
 
 
     if (pFilterObjectValue == 0 || pFilterObjectValue->m_pObject == 0)
-        throw HPSTypeMismatchException(HPS_FILTER_EXPECTED_EXCEPTION,
-                                       GetSubNodes()[4],
-                                       HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(GetSubNodes()[4],
+                                       HPSTypeMismatchException::FILTER);
 
     if (pRasterObjectValue == 0 || pRasterObjectValue->m_pObject == 0)
-        throw HPSTypeMismatchException(HPS_IMAGE_EXPECTED_EXCEPTION,
-                                       GetSubNodes()[2],
-                                       HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(GetSubNodes()[2],
+                                       HPSTypeMismatchException::IMAGE);
 
     HFCPtr<HIMFilteredImage> pFiltered(new HIMFilteredImage(pRasterObjectValue->m_pObject, pFilterObjectValue->m_pObject->Clone()));
 
@@ -1397,9 +1385,9 @@ void TranslucentImageExpressionNode::Calculate()
             if (NULL != (pRasterValue = dynamic_cast<HPSRasterObjectValue*>(pObj)))
                 {
                 if (pRaster != 0)
-                    throw HPSException(HPS_INVALID_OBJECT_EXCEPTION, this);
+                    throw HPSInvalidObjectException( this);
                 if (pAlphaPalette != 0)
-                    throw HPSException(HPS_INVALID_OBJECT_EXCEPTION, this);
+                    throw HPSInvalidObjectException( this);
                 pRaster = pRasterValue->m_pObject;
                 }
             else if (NULL != (pAlphaPaletteValue = dynamic_cast<HPSAlphaPaletteObjectValue*>(pObj)))
@@ -1414,7 +1402,7 @@ void TranslucentImageExpressionNode::Calculate()
                 AlphaRanges.push_back(pAlphaRangeValue->m_pObject);
                 }
             else
-                throw HPSException(HPS_INVALID_OBJECT_EXCEPTION, this);
+                throw HPSInvalidObjectException( this);
             }
         else
             {
@@ -1430,14 +1418,14 @@ void TranslucentImageExpressionNode::Calculate()
     if (pAlphaPalette != 0)
         {
         if (AlphaRanges.size() != 0)
-            throw HPSException(HPS_INVALID_OBJECT_EXCEPTION, this);
+            throw HPSInvalidObjectException( this);
 
         HIMTranslucentImageCreator TheCreator(pRaster);
         TheCreator.SetTranslucencyMethod(HIMTranslucentImageCreator::COMPOSE);
 
         HFCPtr<HRARaster> pTranslucentRaster = TheCreator.CreateTranslucentRaster(pAlphaPalette->GetEntries());
         if (!pTranslucentRaster)
-            throw HPSException(HPS_ALPHA_PALETTE_NOT_SUPPORTED_EXCEPTION, this);
+            throw HPSAlphaPaletteNotSupportedException( this);
 
         HPSRasterObjectValue* pRefRasterObjectValue = new HPSRasterObjectValue(pTranslucentRaster); 
         pRefRasterObjectValue->AddHFCPtr();
@@ -1465,9 +1453,7 @@ void TranslucentImageExpressionNode::Calculate()
         SetValue(pRefRasterObjectValue);
         }
     else
-        throw HPSTypeMismatchException(HPS_TRANSLUCENT_INFO_NOT_FOUND_EXCEPTION,
-                                       this,
-                                       HPSTypeMismatchException::OBJECT_OR_NUMBER);
+        throw HPSTranslucentInfoNotFoundException(this);
     }
 
 //---------------------------------------------------------------------------
@@ -1476,7 +1462,7 @@ void ColorizedBinaryImageExpressionNode::Calculate()
     HPSRasterObjectValue* pRasterObjectValue = dynamic_cast<HPSRasterObjectValue*>(CalculateObject(GetSubNodes()[2]));
 
     if (pRasterObjectValue == NULL || pRasterObjectValue->m_pObject == NULL)
-        throw HPSTypeMismatchException(HPS_IMAGE_EXPECTED_EXCEPTION, GetSubNodes()[2], HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(GetSubNodes()[2], HPSTypeMismatchException::IMAGE);
     
     // the source must be a 1Bit bitmap
     if (pRasterObjectValue->m_pObject->GetPixelType()->CountPixelRawDataBits() == 1)
@@ -1534,9 +1520,8 @@ void AlphaCubeExpressionNode::Calculate()
     HPSColorSetObjectValue* pColorSetObjectValue = dynamic_cast<HPSColorSetObjectValue*>(CalculateObject(GetSubNodes()[2]));
 
     if (pColorSetObjectValue == NULL || pColorSetObjectValue->m_pObject == NULL)
-        throw HPSTypeMismatchException(HPS_COLOR_SET_EXPECTED_EXCEPTION,
-                                       GetSubNodes()[2],
-                                       HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(GetSubNodes()[2],
+                                       HPSTypeMismatchException::COLOR_SET);
 
     double Opacity = CalculateNumber(GetSubNodes()[4]);
 
@@ -1637,14 +1622,13 @@ void GeoreferenceContextExpressionNode::Calculate()
     double defaultRatioToMeterForSisterFile = CalculateNumber(GetSubNodes()[4]);
     bool   useSisterFile = CalculateNumber(GetSubNodes()[6], true) != 0;
     bool   usePCSLinearUnit = CalculateNumber(GetSubNodes()[8], true) != 0;
-    bool   useDefaultUnitForGeoModel = CalculateNumber(GetSubNodes()[10], true) != 0;
+    //bool   useDefaultUnitForGeoModel = CalculateNumber(GetSubNodes()[10], true) != 0;  //Setting not supported anymore on vancouver 
     bool   interpretAsIntergraphUnit = CalculateNumber(GetSubNodes()[12], true) != 0;
         
     HFCPtr<HRFGeoreferenceContext> pGeoreferenceContext(new HRFGeoreferenceContext(defaultRatioToMeterForRaster, 
                                                                                    defaultRatioToMeterForSisterFile, 
                                                                                    useSisterFile, 
                                                                                    usePCSLinearUnit,
-                                                                                   useDefaultUnitForGeoModel,
                                                                                    interpretAsIntergraphUnit));        
 
     HPSGeoreferenceContextObjectValue* pObjectValue = new HPSGeoreferenceContextObjectValue(pGeoreferenceContext); 
@@ -1690,7 +1674,7 @@ void AlphaPaletteExpressionNode::Calculate()
             if ((IndexRight < 0) || (IndexRight > 255))
                 throw HPSOutOfRangeException(pNode->GetSubNodes().front()->GetSubNodes()[2], 0, 255);
             if (IndexRight < IndexLeft)
-                throw HPSException(HPS_INVALID_NUMERIC_EXCEPTION, pNode->GetSubNodes().front()->GetSubNodes()[0]);
+                throw HPSInvalidNumericException( pNode->GetSubNodes().front()->GetSubNodes()[0]);
 
             pPaletteObject->AddEntries((Byte)IndexLeft, (Byte)IndexRight);
             }
@@ -1732,9 +1716,9 @@ void RectangleExpressionNode::Calculate()
     double Y2 = CalculateNumber(GetSubNodes()[8]);
 
     if (X1 > X2)
-        throw HPSException(HPS_INVALID_COORDS_EXCEPTION, GetSubNodes()[2]);
+        throw HPSInvalidCoordsException(GetSubNodes()[2]);
     if (Y1 > Y2)
-        throw HPSException(HPS_INVALID_COORDS_EXCEPTION, GetSubNodes()[4]);
+        throw HPSInvalidCoordsException(GetSubNodes()[4]);
 
     // If a USING operator is present, choose the right coord sys
     HFCPtr<HGF2DCoordSys> pWorld = SESSION->GetCurrentWorld();
@@ -1742,9 +1726,8 @@ void RectangleExpressionNode::Calculate()
         {
         pWorld = SESSION->GetWorld((HGF2DWorldIdentificator)CalculateNumber(GetSubNodes()[10], true));
         if (pWorld == 0)
-            throw HPSTypeMismatchException(HPS_WORLD_EXPECTED_EXCEPTION,
-                                           GetSubNodes()[10],
-                                           HPSTypeMismatchException::OBJECT);
+            throw HPSTypeMismatchException(GetSubNodes()[10],
+                                           HPSTypeMismatchException::WORLD);
         }
 
     HFCPtr<HVEShape> pShape(new HVEShape(X1, Y1, X2, Y2, pWorld));
@@ -1766,9 +1749,8 @@ void PolygonExpressionNode::Calculate()
         {
         pWorld = SESSION->GetWorld((HGF2DWorldIdentificator)CalculateNumber(GetSubNodes()[4], true));
         if (pWorld == 0)
-            throw HPSTypeMismatchException(HPS_WORLD_EXPECTED_EXCEPTION,
-                                           GetSubNodes()[4],
-                                           HPSTypeMismatchException::OBJECT);
+            throw HPSTypeMismatchException(GetSubNodes()[4],
+                                           HPSTypeMismatchException::WORLD);
         }
 
     HVE2DPolySegment PolyLine(pWorld);
@@ -1782,7 +1764,7 @@ void PolygonExpressionNode::Calculate()
         else
             pNode = 0;
         if (pNode == 0)
-            throw HPSException(HPS_TOO_FEW_PARAM_EXCEPTION, this);
+            throw HPSTooFewParamException( this);
         double YCoord = CalculateNumber(pNode->GetSubNodes().front());
         if (pNode->GetSubNodes().size() == 3)
             pNode = pNode->GetSubNodes()[2];
@@ -1792,10 +1774,10 @@ void PolygonExpressionNode::Calculate()
         }
 
     if (PolyLine.GetStartPoint() != PolyLine.GetEndPoint())
-        throw HPSException(HPS_INVALID_POLYGON_EXCEPTION, this);
+        throw HPSInvalidCPolygonException( this);
 
     if ((PolyLine.AutoCrosses()) || (PolyLine.IsAutoContiguous()))
-        throw HPSException(HPS_INVALID_POLYGON_EXCEPTION, this);
+        throw HPSInvalidCPolygonException( this);
 
     HFCPtr<HVEShape> pShape(new HVEShape(HVE2DPolygonOfSegments(PolyLine)));
 
@@ -1814,7 +1796,7 @@ void HoledShapeExpressionNode::Calculate()
         {
         HPSShapeObjectValue* pShapeObjectValue = dynamic_cast<HPSShapeObjectValue*>(CalculateObject(pNode->GetSubNodes().front()));
         if (pShapeObjectValue == NULL || pShapeObjectValue->m_pObject == NULL)
-            throw HPSException(HPS_SHAPE_EXPECTED_EXCEPTION, pNode->GetSubNodes().front());
+            throw HPSShapeExpectedException(pNode->GetSubNodes().front());
 
         if (pHoledShape == 0)
             pHoledShape = new HVEShape(*pShapeObjectValue->m_pObject);
@@ -1830,7 +1812,7 @@ void HoledShapeExpressionNode::Calculate()
         }
 
     if (pHoledShape == 0)
-        throw HPSException(HPS_TOO_FEW_PARAM_EXCEPTION, this);
+        throw HPSTooFewParamException(this);
 
     HPSShapeObjectValue* pObjectValue = new HPSShapeObjectValue(pHoledShape); 
     pObjectValue->AddHFCPtr();
@@ -1847,7 +1829,7 @@ void UnifiedShapeExpressionNode::Calculate()
         {
         HPSShapeObjectValue* pShapeObjectValue = dynamic_cast<HPSShapeObjectValue*>(CalculateObject(pNode->GetSubNodes().front()));
         if (pShapeObjectValue == NULL || pShapeObjectValue->m_pObject == NULL)
-            throw HPSException(HPS_SHAPE_EXPECTED_EXCEPTION, pNode->GetSubNodes().front());
+            throw HPSShapeExpectedException(pNode->GetSubNodes().front());
 
         if (pUnifiedShape == 0)
             pUnifiedShape = new HVEShape(*pShapeObjectValue->m_pObject);
@@ -1863,7 +1845,7 @@ void UnifiedShapeExpressionNode::Calculate()
         }
 
     if (pUnifiedShape == 0)
-        throw HPSException(HPS_TOO_FEW_PARAM_EXCEPTION, this);
+        throw HPSTooFewParamException( this);
 
     HPSShapeObjectValue* pObjectValue = new HPSShapeObjectValue(pUnifiedShape); 
     pObjectValue->AddHFCPtr();
@@ -1880,7 +1862,7 @@ void CommonShapeExpressionNode::Calculate()
         {
         HPSShapeObjectValue* pShapeObjectValue = dynamic_cast<HPSShapeObjectValue*>(CalculateObject(pNode->GetSubNodes().front()));
         if (pShapeObjectValue == NULL || pShapeObjectValue->m_pObject == NULL)
-            throw HPSException(HPS_SHAPE_EXPECTED_EXCEPTION, pNode->GetSubNodes().front());
+            throw HPSShapeExpectedException(pNode->GetSubNodes().front());
 
         if (pCommonShape == 0)
             pCommonShape = new HVEShape(*pShapeObjectValue->m_pObject);
@@ -1896,7 +1878,7 @@ void CommonShapeExpressionNode::Calculate()
         }
 
     if (pCommonShape == 0)
-        throw HPSException(HPS_TOO_FEW_PARAM_EXCEPTION, this);
+        throw HPSTooFewParamException( this);
 
     HPSShapeObjectValue* pObjectValue = new HPSShapeObjectValue(pCommonShape); 
     pObjectValue->AddHFCPtr();
@@ -1948,7 +1930,7 @@ void ScalingExpressionNode::Calculate()
     // Validate scaling parameters
     if (ScaleX == 0.0 || ScaleY == 0.0)
         {
-        throw HPSException(HPS_TRANSFO_PARAMETERS_INVALID_EXCEPTION, this);
+        throw HPSTransfoParameterInvalidException(this);
         }
 
     HFCPtr<HGF2DStretch> pTransfo(new HGF2DStretch());   // units!?!!?!?!
@@ -1988,7 +1970,7 @@ void AffineExpressionNode::Calculate()
         (A1 == 0.0) && (B1 == 0.0) ||
         (A2 == 0.0) && (B2 == 0.0))
         {
-        throw HPSException(HPS_TRANSFO_PARAMETERS_INVALID_EXCEPTION, this);
+        throw HPSTransfoParameterInvalidException( this);
         }
 
     HFCPtr<HGF2DAffine> pTransfo(new HGF2DAffine());
@@ -2020,7 +2002,7 @@ void ProjectiveExpressionNode::Calculate()
         ((Matrix[0][1] == 0.0) && (Matrix[1][1] == 0.0)) ||
         ((Matrix[1][0] == 0.0) && (Matrix[1][1] == 0.0)))
         {
-        throw HPSException(HPS_TRANSFO_PARAMETERS_INVALID_EXCEPTION, this);
+        throw HPSTransfoParameterInvalidException(this);
         }
 
     HFCPtr<HGF2DProjective> pTransfo(new HGF2DProjective(Matrix));
@@ -2042,15 +2024,15 @@ void LocalProjectiveGridExpressionNode::Calculate()
 
     int32_t NbTileX = (int32_t)CalculateNumber(GetSubNodes()[10], true);
     if (NbTileX <= 0)
-        throw HPSException(HPS_TRANSFO_PARAMETERS_INVALID_EXCEPTION, this);
+        throw HPSTransfoParameterInvalidException(this);
 
     int32_t NbTileY = (int32_t)CalculateNumber(GetSubNodes()[12], true);
     if (NbTileY <= 0)
-        throw HPSException(HPS_TRANSFO_PARAMETERS_INVALID_EXCEPTION, this);
+        throw HPSTransfoParameterInvalidException(this);
 
     HPSTransfoObjectValue* pGlobalAffineObjectValue = dynamic_cast<HPSTransfoObjectValue*>(CalculateObject(GetSubNodes()[14]));
     if (pGlobalAffineObjectValue == NULL || !pGlobalAffineObjectValue->m_pObject->IsCompatibleWith(HGF2DAffine::CLASS_ID))
-        throw HPSException(HPS_TRANSFO_PARAMETERS_INVALID_EXCEPTION, this);
+        throw HPSTransfoParameterInvalidException(this);
 
     HPANode* pNode = GetSubNodes()[16];
 
@@ -2059,7 +2041,7 @@ void LocalProjectiveGridExpressionNode::Calculate()
         {
         HPSTransfoObjectValue* pProjectiveObjectValue = dynamic_cast<HPSTransfoObjectValue*>(CalculateObject(pNode->GetSubNodes().front()));
         if (pProjectiveObjectValue == NULL)
-            throw HPSException(HPS_TRANSFO_PARAMETERS_INVALID_EXCEPTION, this);
+            throw HPSTransfoParameterInvalidException(this);
 
         ProjectiveList.push_back(pProjectiveObjectValue->m_pObject);
 
@@ -2071,7 +2053,7 @@ void LocalProjectiveGridExpressionNode::Calculate()
         }
 
     if (ProjectiveList.size() != NbTileX * NbTileY)
-        throw HPSException(HPS_TRANSFO_PARAMETERS_INVALID_EXCEPTION, this);
+        throw HPSTransfoParameterInvalidException(this);
 
 
     HGF2DLocalProjectiveGrid* pTransfo =
@@ -2098,9 +2080,8 @@ void ComposedExpressionNode::Calculate()
         HPSTransfoObjectValue* pTransfoObjectValue = dynamic_cast<HPSTransfoObjectValue*>(CalculateObject(pNode->GetSubNodes().front()));
 
         if (pTransfoObjectValue == NULL || pTransfoObjectValue->m_pObject == NULL)
-            throw HPSTypeMismatchException(HPS_TRANSFO_EXPECTED_EXCEPTION,
-                                           pNode->GetSubNodes().front(),
-                                           HPSTypeMismatchException::OBJECT);
+            throw HPSTypeMismatchException(pNode->GetSubNodes().front(),
+                                           HPSTypeMismatchException::TRANSFO);
 
         if (pTransfo == 0)
             {
@@ -2182,7 +2163,7 @@ void ConvolutionRGBExpressionNode::Calculate()
     while (pNode)
         {
         if (i >= MatrixSize)
-            throw HPSException(HPS_TOO_MANY_PARAM_EXCEPTION, pNode);
+            throw HPSTooManyParamException(pNode);
         pMatrix[i++] = (int32_t)CalculateNumber(pNode->GetSubNodes().front(), true);
         if (pNode->GetSubNodes().size() == 3)
             pNode = pNode->GetSubNodes()[2];
@@ -2237,9 +2218,8 @@ void AutoContrastStretchExpressionNode::Calculate()
         HistogramPrecision = (uint32_t)CalculateNumber(GetSubNodes()[6], true);
 
     if (pRasterObjectValue == NULL || pRasterObjectValue->m_pObject == NULL)
-        throw HPSTypeMismatchException(HPS_IMAGE_EXPECTED_EXCEPTION,
-                                       GetSubNodes()[2],
-                                       HPSTypeMismatchException::OBJECT);
+        throw HPSTypeMismatchException(GetSubNodes()[2],
+                                       HPSTypeMismatchException::IMAGE);
     if ((CutOffPercentage < 0) || (CutOffPercentage > 99))
         throw HPSOutOfRangeException(GetSubNodes()[4], 0, 99);
     if ((HistogramPrecision < 1) || ( HistogramPrecision > 100))
@@ -2257,7 +2237,7 @@ void AutoContrastStretchExpressionNode::Calculate()
     for (unsigned short j = 0; j < 256; j++)
         Total += pHistogram->GetEntryCount(j);
 
-    // calculate the min range pos
+    // calculate the MIN range pos
 
     double NbPixelsToRemove = (double)Total * CutOffPercentage / 200;
     uint32_t MinValue = 0;
@@ -2267,7 +2247,7 @@ void AutoContrastStretchExpressionNode::Calculate()
     if (PixelCount > NbPixelsToRemove)
         MinValue--;
 
-    // calculate the max range pos
+    // calculate the MAX range pos
 
     uint32_t MaxValue = 255;
     PixelCount = 0;
@@ -2298,7 +2278,7 @@ void ContrastStretchExpressionNode::Calculate()
     if ((CutOffRight < 1) || (CutOffRight > 100))
         throw HPSOutOfRangeException(GetSubNodes()[4], 1, 100);
     if (CutOffLeft >= CutOffRight)
-        throw HPSException(HPS_INVALID_NUMERIC_EXCEPTION, GetSubNodes()[2]);
+        throw HPSInvalidNumericException(GetSubNodes()[2]);
 
     CutOffLeft = CutOffLeft * 255 / 100;
     CutOffRight = CutOffRight * 255 / 100;

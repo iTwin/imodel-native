@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: iso8211.h 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: iso8211.h 25841 2013-04-02 21:30:03Z rouault $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Main declarations for ISO 8211.
@@ -117,6 +117,7 @@ class CPL_ODLL DDFModule
     
     // This is just for DDFRecord.
     VSILFILE   *GetFP() { return fpDDF; }
+    int         GetSizeFieldTag() const { return (int)_sizeFieldTag; }
     
   private:
     VSILFILE    *fpDDF;
@@ -227,6 +228,11 @@ class CPL_ODLL DDFFieldDefn
     void SetRepeatingFlag( int n ) { bRepeatingSubfields = n; }
 
     char        *GetDefaultValue( int *pnSize );
+    
+    const char  *GetArrayDescr() const { return _arrayDescr; }
+    const char  *GetFormatControls() const { return _formatControls; }
+    DDF_data_struct_code GetDataStructCode() const { return _data_struct_code; }
+    DDF_data_type_code GetDataTypeCode() const { return _data_type_code; }
     
   private:
 

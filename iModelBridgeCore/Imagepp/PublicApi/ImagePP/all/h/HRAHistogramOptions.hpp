@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAHistogramOptions.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Get the palette.
     -----------------------------------------------------------------------------
@@ -93,3 +94,4 @@ inline void HRAHistogramOptions::ClearHistogram()
     if (m_pHistogram)
         m_pHistogram->Clear();
     }
+END_IMAGEPP_NAMESPACE

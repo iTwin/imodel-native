@@ -2,10 +2,10 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteLine.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     Constructor by mathematical parameters
@@ -190,3 +190,4 @@ inline bool HGF2DLiteLine::IsVertical () const
     return(m_InvertSlope && m_Slope == 0.0);
     }
 
+END_IMAGEPP_NAMESPACE

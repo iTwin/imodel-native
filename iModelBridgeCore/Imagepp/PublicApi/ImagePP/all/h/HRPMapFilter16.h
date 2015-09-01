@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMapFilter16.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,10 @@
 
 #include "HRPFunctionFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPMapFilter16 : public HRPFunctionFilter
     {
-    HDECLARE_CLASS_ID(1560, HRPFunctionFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_Map16, HRPFunctionFilter)
 
 public:
 
@@ -59,4 +60,5 @@ private:
     void Initialize();
     void DeepDelete();
     };
+END_IMAGEPP_NAMESPACE
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_spatialref.h 21467 2011-01-12 20:19:38Z warmerdam $
+ * $Id: ogr_spatialref.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes for manipulating spatial reference systems in a
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999,  Les Technologies SoftMap Inc.
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -65,8 +66,8 @@ class CPL_DLL OGR_SRSNode
 
     int         nChildren;
 
-    void        ClearChildren();
     int         NeedsQuoting() const;
+    OGRErr      importFromWkt( char **, int nRecLevel, int* pnNodes );
     
   public:
                 OGR_SRSNode(const char * = NULL);
@@ -85,6 +86,7 @@ class CPL_DLL OGR_SRSNode
     void        AddChild( OGR_SRSNode * );
     int         FindChild( const char * ) const;
     void        DestroyChild( int );
+    void        ClearChildren();
     void        StripNodes( const char * );
 
     const char  *GetValue() const { return pszValue; }
@@ -144,6 +146,9 @@ class CPL_DLL OGRSpatialReference
     static int  IsAliasFor( const char *, const char * );
     void        GetNormInfo() const;
 
+    OGRErr      importFromURNPart(const char* pszAuthority,
+                                  const char* pszCode,
+                                  const char* pszURN);
   public:
                 OGRSpatialReference(const OGRSpatialReference&);
                 OGRSpatialReference(const char * = NULL);
@@ -162,6 +167,7 @@ class CPL_DLL OGRSpatialReference
     OGRSpatialReference *Clone() const;
     OGRSpatialReference *CloneGeogCS() const;
 
+    void        dumpReadable();
     OGRErr      exportToWkt( char ** ) const;
     OGRErr      exportToPrettyWkt( char **, int = FALSE) const;
     OGRErr      exportToProj4( char ** ) const;
@@ -180,15 +186,20 @@ class CPL_DLL OGRSpatialReference
     OGRErr      importFromESRI( char ** );
     OGRErr      importFromPCI( const char *, const char * = NULL,
                                double * = NULL );
+#define USGS_ANGLE_DECIMALDEGREES 0
+#define USGS_ANGLE_PACKEDDMS      TRUE /* 1 */
+#define USGS_ANGLE_RADIANS        2
     OGRErr      importFromUSGS( long iProjSys, long iZone,
-                                double *padfPrjParams,
-                                long iDatum, int bAnglesInPackedDMSFormat = TRUE );
+                                double *padfPrjParams, long iDatum, 
+                                int nUSGSAngleFormat = USGS_ANGLE_PACKEDDMS );
     OGRErr      importFromPanorama( long, long, long, double* );
     OGRErr      importFromOzi( const char *, const char *, const char * );
+    OGRErr      importFromOzi( const char * const* papszLines );
     OGRErr      importFromWMSAUTO( const char *pszAutoDef );
     OGRErr      importFromXML( const char * );
     OGRErr      importFromDict( const char *pszDict, const char *pszCode );
     OGRErr      importFromURN( const char * );
+    OGRErr      importFromCRSURL( const char * );
     OGRErr      importFromERM( const char *pszProj, const char *pszDatum,
                                const char *pszUnits );
     OGRErr      importFromUrl( const char * );
@@ -204,6 +215,7 @@ class CPL_DLL OGRSpatialReference
     OGRErr      Fixup();
 
     int         EPSGTreatsAsLatLong();
+    int         EPSGTreatsAsNorthingEasting();
     const char *GetAxis( const char *pszTargetKey, int iAxis, 
                          OGRAxisOrientation *peOrientation ) const;
     OGRErr      SetAxes( const char *pszTargetKey, 
@@ -227,7 +239,11 @@ class CPL_DLL OGRSpatialReference
     OGRErr      SetLinearUnitsAndUpdateParameters( const char *pszName, 
                                                    double dfInMeters );
     OGRErr      SetLinearUnits( const char *pszName, double dfInMeters );
+    OGRErr      SetTargetLinearUnits( const char *pszTargetKey,
+                                      const char *pszName, double dfInMeters );
     double      GetLinearUnits( char ** = NULL ) const;
+    double      GetTargetLinearUnits( const char *pszTargetKey,
+                                      char ** ppszRetName = NULL ) const;
 
     OGRErr      SetAngularUnits( const char *pszName, double dfInRadians );
     double      GetAngularUnits( char ** = NULL ) const;
@@ -236,8 +252,10 @@ class CPL_DLL OGRSpatialReference
 
     int         IsGeographic() const;
     int         IsProjected() const;
+    int         IsGeocentric() const;
     int         IsLocal() const;
     int         IsVertical() const;
+    int         IsCompound() const;
     int         IsSameGeogCS( const OGRSpatialReference * ) const;
     int         IsSameVertCS( const OGRSpatialReference * ) const;
     int         IsSame( const OGRSpatialReference * ) const;
@@ -246,6 +264,7 @@ class CPL_DLL OGRSpatialReference
     OGRErr      SetLocalCS( const char * );
     OGRErr      SetProjCS( const char * );
     OGRErr      SetProjection( const char * );
+    OGRErr      SetGeocCS( const char * pszGeocName );
     OGRErr      SetGeogCS( const char * pszGeogName,
                            const char * pszDatumName,
                            const char * pszEllipsoidName,
@@ -256,6 +275,12 @@ class CPL_DLL OGRSpatialReference
                            double dfConvertToRadians = 0.0 );
     OGRErr      SetWellKnownGeogCS( const char * );
     OGRErr      CopyGeogCSFrom( const OGRSpatialReference * poSrcSRS );
+    OGRErr      SetVertCS( const char *pszVertCSName,
+                           const char *pszVertDatumName, 
+                           int nVertDatumClass = 2005 );
+    OGRErr      SetCompoundCS( const char *pszName, 
+                               const OGRSpatialReference *poHorizSRS,
+                               const OGRSpatialReference *poVertSRS );
 
     OGRErr      SetFromUserInput( const char * );
 
@@ -349,6 +374,9 @@ class CPL_DLL OGRSpatialReference
     OGRErr      SetGH( double dfCentralMeridian, 
                        double dfFalseEasting, double dfFalseNorthing );
 
+    /** Interrupted Goode Homolosine */
+    OGRErr      SetIGH();
+
     /** Gall Stereograpic */
     OGRErr      SetGS( double dfCentralMeridian,
                        double dfFalseEasting, double dfFalseNorthing );
@@ -373,6 +401,17 @@ class CPL_DLL OGRSpatialReference
                             double dfLat2, double dfLong2,
                             double dfScale,
                             double dfFalseEasting, double dfFalseNorthing );
+
+    OGRErr      SetOM( double dfCenterLat, double dfCenterLong,
+                       double dfAzimuth, double dfRectToSkew,
+                       double dfScale,
+                       double dfFalseEasting, double dfFalseNorthing );
+
+    /** Hotine Oblique Mercator Azimuth Center / Variant B */
+    OGRErr      SetHOMAC( double dfCenterLat, double dfCenterLong,
+                          double dfAzimuth, double dfRectToSkew,
+                          double dfScale,
+                          double dfFalseEasting, double dfFalseNorthing );
 
     /** International Map of the World Polyconic */
     OGRErr      SetIWMPolyconic( double dfLat1, double dfLat2,
@@ -502,6 +541,13 @@ class CPL_DLL OGRSpatialReference
     OGRErr      SetStatePlane( int nZone, int bNAD83 = TRUE,
                                const char *pszOverrideUnitName = NULL,
                                double dfOverrideUnit = 0.0 );
+
+    OGRErr      ImportFromESRIStatePlaneWKT( 
+        int nCode, const char* pszDatumName, const char* pszUnitsName, 
+        int nPCSCode, const char* pszCSName = 0 );
+    OGRErr      ImportFromESRIWisconsinWKT( 
+        const char* pszPrjName, double dfCentralMeridian, double dfLatOfOrigin, 
+        const char* pszUnitsName, const char* pszCSName = 0 );
 };
 
 /************************************************************************/

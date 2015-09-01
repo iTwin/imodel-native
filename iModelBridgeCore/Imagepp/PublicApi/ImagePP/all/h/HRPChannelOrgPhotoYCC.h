@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelOrgPhotoYCC.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -12,6 +12,7 @@
 
 #include "HRPChannelOrg.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPChannelOrgPhotoYCC : public HRPChannelOrg
     {
 public:
@@ -31,3 +32,4 @@ public:
     HRPChannelOrgPhotoYCC(const HRPChannelOrgPhotoYCC& pi_rObj) : HRPChannelOrg(pi_rObj) { };
     virtual ~HRPChannelOrgPhotoYCC() { };
     };
+END_IMAGEPP_NAMESPACE

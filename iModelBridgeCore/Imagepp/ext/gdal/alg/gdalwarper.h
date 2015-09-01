@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarper.h 20819 2010-10-13 15:59:44Z warmerdam $
+ * $Id: gdalwarper.h 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  GDAL High Performance Warper
  * Purpose:  Prototypes, and definitions for warping related work.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2003, Frank Warmerdam
+ * Copyright (c) 2009-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -49,7 +50,9 @@ typedef enum {
   /*! Bilinear (2x2 kernel) */                         GRA_Bilinear=1,
   /*! Cubic Convolution Approximation (4x4 kernel) */  GRA_Cubic=2,
   /*! Cubic B-Spline Approximation (4x4 kernel) */     GRA_CubicSpline=3,
-  /*! Lanczos windowed sinc interpolation (6x6 kernel) */ GRA_Lanczos=4
+  /*! Lanczos windowed sinc interpolation (6x6 kernel) */ GRA_Lanczos=4,
+  /*! Average (computes the average of all non-NODATA contributing pixels) */ GRA_Average=5, 
+  /*! Mode (selects the value which appears most often of all the sampled points) */ GRA_Mode=6
 } GDALResampleAlg;
 
 typedef int 
@@ -247,6 +250,13 @@ CPL_C_END
 /*      application.                                                    */
 /************************************************************************/
 
+// This is the number of dummy pixels that must be reserved in source arrays
+// in order to satisfy assumptions made in GWKResample(), and more specifically
+// by GWKGetPixelRow() that always read a even number of pixels. So if we are
+// in the situation to read the last pixel of the source array, we need 1 extra
+// dummy pixel to avoid reading out of bounds.
+#define WARP_EXTRA_ELTS    1
+
 class CPL_DLL GDALWarpKernel
 {
 public:
@@ -258,11 +268,11 @@ public:
 
     int                 nSrcXSize;
     int                 nSrcYSize;
-    GByte               **papabySrcImage;
+    GByte               **papabySrcImage; /* each subarray must have WARP_EXTRA_ELTS at the end */
 
-    GUInt32           **papanBandSrcValid;
-    GUInt32            *panUnifiedSrcValid;
-    float              *pafUnifiedSrcDensity;
+    GUInt32           **papanBandSrcValid; /* each subarray must have WARP_EXTRA_ELTS at the end */
+    GUInt32            *panUnifiedSrcValid; /* must have WARP_EXTRA_ELTS at the end */
+    float              *pafUnifiedSrcDensity; /* must have WARP_EXTRA_ELTS at the end */
 
     int                 nDstXSize;
     int                 nDstYSize;
@@ -328,8 +338,9 @@ private:
     CPLErr          CreateKernelMask( GDALWarpKernel *, int iBand, 
                                       const char *pszType );
 
-    void            *hThread1Mutex;
-    void            *hThread2Mutex;
+    /* Unused kept to preserve binary ABI */
+    /* CPL_UNUSED */ void            *unused1;
+    /* CPL_UNUSED */ void            *unused2;
     void            *hIOMutex;
     void            *hWarpMutex;
 

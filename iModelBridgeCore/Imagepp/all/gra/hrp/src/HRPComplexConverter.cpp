@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPComplexConverter.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPComplexConverter
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPComplexConverter.h>
 
@@ -52,40 +52,6 @@ HRPComplexConverter::~HRPComplexConverter()
     {
     }
 
-//-----------------------------------------------------------------------------
-// public
-// ConvertToValue
-//-----------------------------------------------------------------------------
-void HRPComplexConverter::ConvertToValue(const void* pi_pSourceRawData,
-                                         void* pio_pDestRawData) const
-    {
-    if (1 > m_LastConversionPixelCount)
-        {
-        m_pTransientConversionDataBuffer = new Byte[m_TransientNbBytesPerPixel];
-        m_LastConversionPixelCount = 1;
-        }
-
-    m_pConverterToStandard->Convert(pi_pSourceRawData, m_pTransientConversionDataBuffer.get());
-    m_pConverterFromStandard->ConvertToValue(m_pTransientConversionDataBuffer.get(),
-                                             pio_pDestRawData);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Convert
-//-----------------------------------------------------------------------------
-void HRPComplexConverter::Convert(const void* pi_pSourceRawData,
-                                  void* pio_pDestRawData) const
-    {
-    if (1 > m_LastConversionPixelCount)
-        {
-        m_pTransientConversionDataBuffer = new Byte[m_TransientNbBytesPerPixel];
-        m_LastConversionPixelCount = 1;
-        }
-
-    m_pConverterToStandard->Convert(pi_pSourceRawData, m_pTransientConversionDataBuffer.get());
-    m_pConverterFromStandard->Convert(m_pTransientConversionDataBuffer.get(), pio_pDestRawData);
-    }
 
 //-----------------------------------------------------------------------------
 // public
@@ -108,33 +74,6 @@ void HRPComplexConverter::Convert(const void* pi_pSourceRawData,
     m_pConverterFromStandard->Convert(m_pTransientConversionDataBuffer.get(),
                                       pio_pDestRawData,
                                       pi_PixelsCount);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Compose
-//-----------------------------------------------------------------------------
-void HRPComplexConverter::Compose(const void* pi_pSourceRawData,
-                                  void* pio_pDestRawData) const
-    {
-    if (m_Alpha)
-        {
-        if (1 > m_LastConversionPixelCount)
-            {
-            m_pTransientConversionDataBuffer = new Byte[m_TransientNbBytesPerPixel];
-            m_LastConversionPixelCount = 1;
-            }
-
-        m_pConverterToStandard->Convert(pi_pSourceRawData,
-                                        m_pTransientConversionDataBuffer.get());
-
-        m_pConverterFromStandard->Compose(m_pTransientConversionDataBuffer.get(),
-                                          pio_pDestRawData);
-        }
-    else
-        {
-        Convert(pi_pSourceRawData, pio_pDestRawData);
-        }
     }
 
 //-----------------------------------------------------------------------------

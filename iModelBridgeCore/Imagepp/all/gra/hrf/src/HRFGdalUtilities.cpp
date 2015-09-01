@@ -2,21 +2,21 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGdalUtilities.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFGdalUtilities
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
 
 #include <Imagepp/all/h/HPMAttributeSet.h>
 #include <Imagepp/all/h/HRFGdalUtilities.h>
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 
-#include <ImagePPInternal/ext/gdal/cpl_conv.h>
+#include <ImagePP-GdalLib/cpl_conv.h>
+#include <ImagePP-GdalLib/ogr_spatialref.h>
 
 
 // All this ugly stuff below exists so we do not need to add gdal internals to our search path.
@@ -558,4 +558,45 @@ bool HRFGdalUtilities::ConvertGeotiffKeysToOGCWKT(const HFCPtr<HCPGeoTiffKeys>& 
     GTIFFree(pGTIF);
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HRFGdalUtilities::ConvertERMToOGCWKT(  WStringR  po_rOGCWKT,
+                                            WStringCR pi_rErmProjection, 
+                                            WStringCR pi_rErmDatum, 
+                                            WStringCR pi_rErmUnits )
+    {
+    char* wkt = 0;
+    OGRSpatialReference oSRS;
+
+    AString szProjectionMBS(pi_rErmProjection.c_str());
+    AString szDatumMBS(pi_rErmDatum.c_str());
+    AString szUnitsMBS(pi_rErmUnits.c_str());
+
+    // If the projection is user-defined or unknown ... we will try to use GDAL to obtain the information required to use this "user-defined"
+    if( oSRS.importFromERM( szProjectionMBS.c_str(), szDatumMBS.c_str(), szUnitsMBS.c_str() ) == OGRERR_NONE )
+        {
+        if (OGRERR_NONE == oSRS.exportToWkt(&wkt))
+            {
+            HASSERT(wkt != 0);
+
+            char localCsPrefix[] = "LOCAL_CS";
+
+            if (strncmp(localCsPrefix, wkt, strlen(localCsPrefix)) == 0)
+                {
+                delete wkt;
+
+                wkt = 0;
+                }
+            }
+        }
+    if (wkt != 0)
+        {
+        po_rOGCWKT = WString(wkt, false);
+        delete wkt;
+        return true;
+        }
+    return false;
     }

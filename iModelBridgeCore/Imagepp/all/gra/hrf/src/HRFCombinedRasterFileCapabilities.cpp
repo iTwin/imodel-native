@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCombinedRasterFileCapabilities.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFCombinedRasterFileCapabilities
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h> // Must be the first include.
+#include <ImagePPInternal/hstdcpp.h>
+ // Must be the first include.
 #include <Imagepp/all/h/HRFCombinedRasterFileCapabilities.h>
 #include <Imagepp/all/h/HRFCapability.h>
 

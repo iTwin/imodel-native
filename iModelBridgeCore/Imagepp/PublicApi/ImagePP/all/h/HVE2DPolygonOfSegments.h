@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DPolygonOfSegments.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DPolygonOfSegments
@@ -14,6 +14,9 @@
 #include "HVE2DPolySegment.h"
 #include "HGF2DPolygonOfSegments.h"
 #include "HGF2DLiteSegment.h"
+
+
+BEGIN_IMAGEPP_NAMESPACE
 class HVE2DRectangle;
 class HVE2DComplexShape;
 
@@ -40,7 +43,7 @@ class HVE2DComplexShape;
 class HVE2DPolygonOfSegments : public HVE2DSimpleShape
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1108)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DPolygonOfSegmentsId)
 
 public:
 
@@ -102,16 +105,16 @@ public:
     */
     HVE2DPolygonOfSegments();
     HVE2DPolygonOfSegments(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
-    _HDLLg             HVE2DPolygonOfSegments(const HGF2DPolygonOfSegments& pi_rShape,
+    IMAGEPP_EXPORT             HVE2DPolygonOfSegments(const HGF2DPolygonOfSegments& pi_rShape,
                                               const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     HVE2DPolygonOfSegments(const HVE2DComplexLinear& pi_rComplex);
-    _HDLLg                    HVE2DPolygonOfSegments(const HVE2DPolySegment& pi_rPolySegment);
+    IMAGEPP_EXPORT                    HVE2DPolygonOfSegments(const HVE2DPolySegment& pi_rPolySegment);
     HVE2DPolygonOfSegments(const HVE2DRectangle& pi_rRectangle);
-    _HDLLg             HVE2DPolygonOfSegments(size_t  pi_BufferLength,
+    IMAGEPP_EXPORT             HVE2DPolygonOfSegments(size_t  pi_BufferLength,
                                               double pi_aBuffer[],
                                               const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
-    _HDLLg                    HVE2DPolygonOfSegments(const HVE2DPolygonOfSegments&   pi_rObject);
-    _HDLLg virtual            ~HVE2DPolygonOfSegments();
+    IMAGEPP_EXPORT                    HVE2DPolygonOfSegments(const HVE2DPolygonOfSegments&   pi_rObject);
+    IMAGEPP_EXPORT virtual            ~HVE2DPolygonOfSegments();
 
     HVE2DPolygonOfSegments&      operator=(const HVE2DPolygonOfSegments& pi_rObj);
 
@@ -119,50 +122,50 @@ public:
     CalculateRotationDirection() const;
 
     // Parallel Copy
-    _HDLLg HVE2DPolygonOfSegments*      AllocateParallelCopy(double pi_rOffset,
+    IMAGEPP_EXPORT HVE2DPolygonOfSegments*      AllocateParallelCopy(double pi_rOffset,
                                                              HVE2DVector::ArbitraryDirection
                                                              pi_DirectionToRight = HVE2DVector::BETA) const;
 
     // Setting
-    _HDLLg virtual void       SetLinear(const HVE2DLinear& pi_rLinear);
+    IMAGEPP_EXPORT virtual void       SetLinear(const HVE2DLinear& pi_rLinear);
 
     // Simplification
-    _HDLLg HVE2DRectangle*    GenerateCorrespondingRectangle() const;
-    _HDLLg bool              RepresentsARectangle() const;
+    IMAGEPP_EXPORT HVE2DRectangle*    GenerateCorrespondingRectangle() const;
+    IMAGEPP_EXPORT bool              RepresentsARectangle() const;
 
     bool              IsConvex() const;
 
     // Misc
-    _HDLLg virtual void       Rotate(double               pi_Angle,
+    IMAGEPP_EXPORT virtual void       Rotate(double               pi_Angle,
                                      const HGF2DLocation& pi_rRotationOrigin);
-    _HDLLg virtual void       Scale(double pi_ScaleFactorX,
+    IMAGEPP_EXPORT virtual void       Scale(double pi_ScaleFactorX,
                                     double pi_ScaleFactorY,
                                     const HGF2DLocation& pi_rScaleOrigin);
 
 
     // From HVE2DSimpleShape
-    _HDLLg virtual HVE2DComplexLinear    GetLinear() const;
-    _HDLLg virtual HVE2DComplexLinear    GetLinear(HVE2DSimpleShape::RotationDirection pi_DirectionDesired) const;
-    _HDLLg virtual HVE2DComplexLinear*     AllocateLinear(HVE2DSimpleShape::RotationDirection pi_DirectionDesired) const;
+    IMAGEPP_EXPORT virtual HVE2DComplexLinear    GetLinear() const;
+    IMAGEPP_EXPORT virtual HVE2DComplexLinear    GetLinear(HVE2DSimpleShape::RotationDirection pi_DirectionDesired) const;
+    IMAGEPP_EXPORT virtual HVE2DComplexLinear*     AllocateLinear(HVE2DSimpleShape::RotationDirection pi_DirectionDesired) const;
 
 
     // From HVE2DShape
 
-    _HDLLg virtual void       Rasterize(HGFScanLines& pio_rScanlines) const;
+    IMAGEPP_EXPORT virtual void       Rasterize(HGFScanLines& pio_rScanlines) const;
 
-    _HDLLg virtual bool      IsEmpty     () const;
-    _HDLLg virtual HVE2DShapeTypeId    GetShapeType() const;
-    _HDLLg virtual double              CalculateArea() const;
-    _HDLLg virtual double              CalculatePerimeter() const;
-    _HDLLg virtual bool      IsPointIn(const HGF2DLocation& pi_rPoint, double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    _HDLLg virtual void       MakeEmpty();
+    IMAGEPP_EXPORT virtual bool      IsEmpty     () const;
+    IMAGEPP_EXPORT virtual HVE2DShapeTypeId    GetShapeType() const;
+    IMAGEPP_EXPORT virtual double              CalculateArea() const;
+    IMAGEPP_EXPORT virtual double              CalculatePerimeter() const;
+    IMAGEPP_EXPORT virtual bool      IsPointIn(const HGF2DLocation& pi_rPoint, double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
+    IMAGEPP_EXPORT virtual void       MakeEmpty();
 
-    _HDLLg virtual HVE2DShape*    DifferentiateFromShapeSCS(const HVE2DShape& pi_rShape) const;
-    _HDLLg virtual HVE2DShape*    DifferentiateShapeSCS(const HVE2DShape& pi_rShape) const;
-    _HDLLg virtual HVE2DShape*    IntersectShapeSCS(const HVE2DShape& pi_rShape) const;
-    _HDLLg virtual HVE2DShape*    UnifyShapeSCS(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HVE2DShape*    DifferentiateFromShapeSCS(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HVE2DShape*    DifferentiateShapeSCS(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HVE2DShape*    IntersectShapeSCS(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HVE2DShape*    UnifyShapeSCS(const HVE2DShape& pi_rShape) const;
 
-    _HDLLg virtual void         Drop(HGF2DLocationCollection* po_pPoint,
+    IMAGEPP_EXPORT virtual void         Drop(HGF2DLocationCollection* po_pPoint,
                                      double                   pi_Tolerance) const;
 
     virtual HGF2DShape*         GetLightShape() const;
@@ -170,56 +173,63 @@ public:
     // Special
 
     // From HVE2DVector
-    _HDLLg virtual HGF2DLocation    CalculateClosestPoint(const HGF2DLocation& pi_rPoint) const;
-    _HDLLg virtual size_t           Intersect(const HVE2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual HGF2DLocation    CalculateClosestPoint(const HGF2DLocation& pi_rPoint) const;
+    IMAGEPP_EXPORT virtual size_t           Intersect(const HVE2DVector& pi_rVector,
                                               HGF2DLocationCollection* po_pCrossPoints) const;
-    _HDLLg virtual size_t     ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual size_t     ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
                                                          HGF2DLocationCollection* po_pContiguousnessPoints) const;
-    _HDLLg virtual void       ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual void       ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
                                                            const HGF2DLocation& pi_rPoint,
                                                            HGF2DLocation* pi_pFirstContiguousnessPoint,
                                                            HGF2DLocation* pi_pSecondContiguousnessPoint) const;
     virtual HPMPersistentObject*
     Clone() const;
-    _HDLLg virtual HVE2DVector*
+    IMAGEPP_EXPORT virtual HVE2DVector*
     AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) const;
-    _HDLLg virtual bool      Crosses(const HVE2DVector& pi_rVector) const;
-    _HDLLg virtual bool      AreContiguous(const HVE2DVector& pi_rVector) const;
-    _HDLLg virtual bool      AreAdjacent(const HVE2DVector& pi_rVector) const;
-    _HDLLg virtual bool      IsPointOn(const HGF2DLocation& pi_rTestPoint,
+    IMAGEPP_EXPORT virtual bool      Crosses(const HVE2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual bool      AreContiguous(const HVE2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual bool      AreAdjacent(const HVE2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual bool      IsPointOn(const HGF2DLocation& pi_rTestPoint,
                                         HVE2DVector::ExtremityProcessing
                                         pi_ExtremityProcessing = HVE2DVector::INCLUDE_EXTREMITIES,
                                         double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    _HDLLg virtual bool      IsPointOnSCS(const HGF2DLocation& pi_rTestPoint,
+    IMAGEPP_EXPORT virtual bool      IsPointOnSCS(const HGF2DLocation& pi_rTestPoint,
                                            HVE2DVector::ExtremityProcessing
                                            pi_ExtremityProcessing = HVE2DVector::INCLUDE_EXTREMITIES,
                                            double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
-    _HDLLg virtual bool      AreContiguousAt(const HVE2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual bool      AreContiguousAt(const HVE2DVector& pi_rVector,
                                               const HGF2DLocation& pi_rPoint) const;
-    _HDLLg virtual HGFBearing    CalculateBearing(const HGF2DLocation& pi_rPositionPoint,
+    IMAGEPP_EXPORT virtual HGFBearing    CalculateBearing(const HGF2DLocation& pi_rPositionPoint,
                      HVE2DVector::ArbitraryDirection
                      pi_Direction = HVE2DVector::BETA) const;
-    _HDLLg virtual double    CalculateAngularAcceleration(const HGF2DLocation& pi_rPositionPoint,
+    IMAGEPP_EXPORT virtual double    CalculateAngularAcceleration(const HGF2DLocation& pi_rPositionPoint,
                                  HVE2DVector::ArbitraryDirection
                                  pi_Direction = HVE2DVector::BETA) const;
-    _HDLLg virtual void       SetTolerance(double pi_Tolerance);
-    _HDLLg virtual void       SetStrokeTolerance(const HFCPtr<HGFTolerance> & pi_Tolerance);
-    _HDLLg virtual void       SetAutoToleranceActive(bool pi_ActiveAutoTolerance);
+    IMAGEPP_EXPORT virtual void       SetTolerance(double pi_Tolerance);
+    IMAGEPP_EXPORT virtual void       SetStrokeTolerance(const HFCPtr<HGFTolerance> & pi_Tolerance);
+    IMAGEPP_EXPORT virtual void       SetAutoToleranceActive(bool pi_ActiveAutoTolerance);
 
     // From HGFGraphicObject
-    _HDLLg virtual HGF2DExtent    GetExtent() const;
-    _HDLLg virtual void       Move(const HGF2DDisplacement& pi_rDisplacement);
-    _HDLLg virtual void       Scale(double pi_ScaleFactor,
+    IMAGEPP_EXPORT virtual HGF2DExtent    GetExtent() const;
+    IMAGEPP_EXPORT virtual void       Move(const HGF2DDisplacement& pi_rDisplacement);
+    IMAGEPP_EXPORT virtual void       Scale(double pi_ScaleFactor,
                                     const HGF2DLocation& pi_rScaleOrigin);
     // Debug method
-    _HDLLg virtual void       PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT virtual void       PrintState(ostream& po_rOutput) const;
 
     // THIS METHOD IS PUBLIC FOR DEBUG PURPOSES ONLY ... DO NOT CALL!!!!
     HVE2DShape*        AllocateComplexShapeFromAutoContiguousPolySegment(const HVE2DPolySegment& pi_rPolySegment) const;
 
+    // Helper functions
+    // Although, neither input nor result is directly related to HVE2DPolygonOfSegments
+    // It is accessible here. The simple reason is that the polygon of segments
+    // is the primary (but not sole) consumer for this function and that all
+    // result shapes are know to polygons while they remain unknown to polysegments.
+    static HVE2DShape* CreateShapeFromAutoCrossingPolySegment(const HVE2DPolySegment& pi_rAutoCrossingPolySegment);
+
 protected:
 
-    _HDLLg virtual void       SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    IMAGEPP_EXPORT virtual void       SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
 
 private:
 #ifdef HVERIFYCONTRACT
@@ -260,7 +270,7 @@ private:
         };
 
 
-    _HDLLg virtual double         CalculateRawArea() const;
+    IMAGEPP_EXPORT virtual double         CalculateRawArea() const;
 
     HVE2DShape::SpatialPosition
     CalculateSpatialPositionOfPolygonOfSegmentsSCS(const HVE2DPolygonOfSegments& pi_rPolygon) const;
@@ -361,7 +371,7 @@ private:
 
     void ResetTolerance();
 
-    _HDLLg virtual HVE2DShape*
+    IMAGEPP_EXPORT virtual HVE2DShape*
     Clip(const HVE2DRectangle& pi_rRectangle) const;
 
     PointUsage*        InsertAutoContiguousPoints(HVE2DPolySegment& pio_rPolySegment) const;
@@ -405,13 +415,7 @@ private:
     bool               m_RotationDirectionUpToDate;
     };
 
-
-// Helper functions
-// Although, neither input nor result is directly related to HVE2DPolygonOfSegments
-// It is accessible here. The simple reason is that the polygon of segments
-// is the primary (but not sole) consumer for this function and that all
-// result shapes are know to polygons while they remain unknown to polysegments.
-HVE2DShape* fCreateShapeFromAutoCrossingPolySegment(const HVE2DPolySegment& pi_rAutoCrossingPolySegment);
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DPolygonOfSegments.hpp"

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTWFPageFile.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFTWFPageFile
@@ -16,6 +16,7 @@
 #include "HRFRasterFileCapabilities.h"
 #include "HGF2DWorld.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HFCBinStream;
 class HFCURL;
 
@@ -29,7 +30,7 @@ public:
 class HRFTWFPageFile : public HRFPageFile
     {
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1499, HRFPageFile)
+    HDECLARE_CLASS_ID(HRFFileId_TWFPage, HRFPageFile)
 
 public:
 
@@ -44,9 +45,9 @@ public:
         };
 
     // Constructor and destructor.
-    _HDLLg                                            HRFTWFPageFile(const HFCPtr<HFCURL>&   pi_rpURL,
+    IMAGEPP_EXPORT                                            HRFTWFPageFile(const HFCPtr<HFCURL>&   pi_rpURL,
                                                                      HFCAccessMode           pi_AccessMode = HFC_READ_ONLY);
-    _HDLLg virtual                                    ~HRFTWFPageFile();
+    IMAGEPP_EXPORT virtual                                    ~HRFTWFPageFile();
 
     // File capabilities
     virtual const HFCPtr<HRFRasterFileCapabilities>&
@@ -54,7 +55,7 @@ public:
 
     virtual const HGF2DWorldIdentificator   GetWorldIdentificator () const;
 
-    _HDLLg virtual void                     WriteToDisk();
+    IMAGEPP_EXPORT virtual void                     WriteToDisk();
 
 private:
     // Members.
@@ -109,5 +110,6 @@ public:
     virtual const HFCPtr<HRFRasterFileCapabilities>&
     GetCapabilities();
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFTWFPageFileCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFTWFPageFileCreator)
     };
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeV24PhotoYCC.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelTypeV24PhotoYCC
@@ -11,17 +11,18 @@
 
 #include "HRPPixelType.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelTypeV24PhotoYCC : public HRPPixelType
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1036)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRPPixelTypeId_V24PhotoYCC)
 
 public:
     // Primary methods
-    _HDLLg                 HRPPixelTypeV24PhotoYCC();
+    IMAGEPP_EXPORT                 HRPPixelTypeV24PhotoYCC();
 
-    _HDLLg                 HRPPixelTypeV24PhotoYCC(const HRPPixelTypeV24PhotoYCC& pi_rObj);
+    IMAGEPP_EXPORT                 HRPPixelTypeV24PhotoYCC(const HRPPixelTypeV24PhotoYCC& pi_rObj);
 
-    _HDLLg virtual         ~HRPPixelTypeV24PhotoYCC();
+    IMAGEPP_EXPORT virtual         ~HRPPixelTypeV24PhotoYCC();
 
     virtual HPMPersistentObject*
     Clone() const;
@@ -39,5 +40,6 @@ protected:
 private:
 
     };
+END_IMAGEPP_NAMESPACE
 
 

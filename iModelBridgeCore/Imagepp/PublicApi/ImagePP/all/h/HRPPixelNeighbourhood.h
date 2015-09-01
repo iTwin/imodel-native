@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelNeighbourhood.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelNeighbourhood
@@ -11,24 +11,25 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelNeighbourhood : public HFCShareableObject<HRPPixelNeighbourhood>
     {
-    HDECLARE_BASECLASS_ID(1129)
+    HDECLARE_BASECLASS_ID(HRPPixelNeighbourhoodId_Base)
 
 public:
 
     // Primary methods
     HRPPixelNeighbourhood();
 
-    _HDLLg                 HRPPixelNeighbourhood(    uint32_t pi_Width,
+    IMAGEPP_EXPORT                 HRPPixelNeighbourhood(    uint32_t pi_Width,
                                                      uint32_t pi_Height,
                                                      uint32_t pi_XOrigin,
                                                      uint32_t pi_YOrigin);
 
-    _HDLLg                 HRPPixelNeighbourhood(const HRPPixelNeighbourhood& pi_rNeighbourhood);
+    IMAGEPP_EXPORT                 HRPPixelNeighbourhood(const HRPPixelNeighbourhood& pi_rNeighbourhood);
 
 
-    _HDLLg virtual         ~HRPPixelNeighbourhood();
+    IMAGEPP_EXPORT virtual         ~HRPPixelNeighbourhood();
 
 
     // Settings
@@ -47,7 +48,7 @@ public:
 
     HRPPixelNeighbourhood
     operator+(const HRPPixelNeighbourhood& pi_rNeighbourhood) const;
-    _HDLLg HRPPixelNeighbourhood&
+    IMAGEPP_EXPORT HRPPixelNeighbourhood&
     operator=(const HRPPixelNeighbourhood& pi_rObj);
 
 protected:
@@ -63,6 +64,7 @@ private:
     // default values
     bool             operator==(const HRPPixelNeighbourhood& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRPPixelNeighbourhood.hpp"
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMonitor.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,6 +11,7 @@
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 /**
 
     This is the class to use to obtain automatic management of exclusive
@@ -88,6 +89,8 @@ private:
 
     T*              m_pMonitor;
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCMonitor.hpp"
 

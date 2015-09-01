@@ -3,14 +3,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFJpegFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFJpegFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFJpegFile.h>
 
@@ -35,12 +35,11 @@
 
 #include <Imagepp/all/h/HTIFFFile.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include <Imagepp/all/h/HFCURLMemFile.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 // This structure is used by the error handling functions
 // of the IJG HPEG library
@@ -633,8 +632,7 @@ HRFJpegCreator::HRFJpegCreator()
 // Identification information
 WString HRFJpegCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_Jpeg); //JPEG File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_Jpeg()); //JPEG File Format
     }
 
 // Identification information
@@ -674,8 +672,14 @@ bool HRFJpegCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     HPRECONDITION(pi_rpURL != 0);
 
-    (const_cast<HRFJpegCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
+    //TFS#132036: Sharing control is not thread-safe and we do not understand why it would be required.
+
+    //            disable it for now.
+
+    //(const_cast<HRFJpegCreator*>(this))->SharingControlCreate(pi_rpURL);
+
+    //HFCLockMonitor SisterFileLock(GetLockManager());
+
 
     // A JPEG image starts with the SOI segment which contain only the
     // SOI marker, hex FF D8
@@ -683,15 +687,15 @@ bool HRFJpegCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     // So if the first three bytes are hex FF D8 FF , we know that it is
     // a JPEG file.
     // Open the JPEG File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
         // File exists. Check format
         pFile->SeekToBegin();
 
         // read the first 4 bytes of the file & close it
-        if (pFile->Read((void*)Marker, 4) != 4)
+        if (pFile->Read(Marker, 4) != 4)
             goto WRAPUP;
 
         // verify if the four bytes have the content described above
@@ -767,9 +771,16 @@ bool HRFJpegCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFJpegCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFJpegCreator*>(this))->m_pSharingControl = 0;
+    //TFS#132036: Sharing control is not thread-safe and we do not understand why it would be required.
+
+    //            disable it for now.
+
+    //SisterFileLock.Release();
+
+    //HASSERT(!(const_cast<HRFJpegCreator*>(this))->m_pSharingControl->IsLocked());
+
+    //(const_cast<HRFJpegCreator*>(this))->m_pSharingControl = 0;
+
 
     return bResult;
     }
@@ -787,12 +798,18 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFJpegCreator::GetCapabilities()
 // This macro return the number of complete elements
 #define COMPLETE_ELEMENTS(x, y)    ((x / y) + ((x%y) ? 1 : 0))
 
+
+#if defined(_WIN32)
+#pragma warning(disable: 4505)      //  since VS2013: unreferenced local function has been removed
+#endif                              // for the function HRFJpegErrorExit
+
+
 //
 //-----------------------------------------------------------------------------
 // Friend
 // JPEGErrorExit
 //-----------------------------------------------------------------------------
-METHODDEF (void) HRFJpegErrorExit(j_common_ptr cinfo)
+METHODDEF(void) ImagePP::HRFJpegErrorExit(j_common_ptr cinfo)
     {
     struct HRFJpegFileErrorManager* pErrorManager;
 
@@ -984,7 +1001,7 @@ bool HRFJpegFile::AssignPageToStruct2 (jpeg_compress_struct* pi_pTable)
 
     if ((m_Jpeg.m_pCompress->image_width  > MaxSizeInPixel) ||
         (m_Jpeg.m_pCompress->image_height > MaxSizeInPixel))
-         throw HFCFileException(HFC_FILE_NOT_CREATED_EXCEPTION, GetURL()->GetURL());
+         throw HFCFileNotCreatedException(GetURL()->GetURL());
     */
 
     // Set the default compression options (size and color space must be set)
@@ -1078,9 +1095,7 @@ bool HRFJpegFile::Open()
         {
         // Open the actual jpeg file specified in the parameters.  The library
         // uses stdio FILE*, so open the file and satisfy the library
-        m_pJpegFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(m_pJpegFile, GetURL()->GetURL());
+        m_pJpegFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         // create the decompression structure
         m_Jpeg.m_pDecompress = new struct jpeg_decompress_struct;
@@ -1313,9 +1328,7 @@ bool HRFJpegFile::Create()
 
     // Open the actual jpeg file specified in the parameters.  The library
     // uses stdio FILE*, so open the file and satisfy the library
-    m_pJpegFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pJpegFile, GetURL()->GetURL());
+    m_pJpegFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     // initialize the decompression structure to 0.
     m_Jpeg.m_pDecompress = 0;
@@ -1562,12 +1575,12 @@ void HRFJpegFile::ThrowExBasedOnJPGErrCode(uint32_t pi_GetLastErrorCode,
         case JERR_SOF_NO_SOS : //Invalid JPEG file structure: missing SOS marker
         case JERR_SOI_DUPLICATE : //Invalid JPEG file structure: two SOI markers
         case JERR_SOS_NO_SOF : //Invalid JPEG file structure: SOS before SOF
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, pi_rUrl);
+            throw HFCCorruptedFileException(pi_rUrl);
             break;
         case JERR_BAD_DCT_COEF : //DCT coefficient out of range
         case JERR_QUANT_FEW_COLORS : //Cannot quantize to fewer than %d colors
         case JERR_QUANT_MANY_COLORS : //Cannot quantize to more than %d colors
-            throw HFCFileException(HFC_FILE_OUT_OF_RANGE_EXCEPTION, pi_rUrl);
+            throw HFCFileOutOfRangeException(pi_rUrl);
             break;
         case JERR_BAD_DCTSIZE : //IDCT output block size %d not supported
         case JERR_BAD_PRECISION : //Unsupported JPEG data precision %d
@@ -1580,28 +1593,28 @@ void HRFJpegFile::ThrowExBasedOnJPGErrCode(uint32_t pi_GetLastErrorCode,
         case JERR_NO_IMAGE : //JPEG datastream contains no image
         case JERR_SOF_UNSUPPORTED : //Unsupported JPEG process: SOF type 0x%02x
         case JERR_UNKNOWN_MARKER : //Unsupported marker type 0x%02x
-            throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, pi_rUrl);
+            throw HFCFileNotSupportedException(pi_rUrl);
             break;
         case JERR_FILE_READ : //Input file read error
         case JERR_XMS_READ : //Read from XMS failed
         case JERR_EMS_READ : //Read from EMS failed
-            throw HFCFileException(HFC_READ_FAULT_EXCEPTION, pi_rUrl);
+            throw HFCReadFaultException(pi_rUrl);
             break;
         case JERR_XMS_WRITE : //Write to XMS failed
         case JERR_EMS_WRITE : //Write to EMS failed
         case JERR_FILE_WRITE : //Output file write error --- out of disk space?
-            throw HFCFileException(HFC_WRITE_FAULT_EXCEPTION, pi_rUrl);
+            throw HFCWriteFaultException(pi_rUrl);
             break;
         case JERR_HUFF_CLEN_OVERFLOW : //Huffman code size table overflow
         case JERR_IMAGE_TOO_BIG : //Maximum supported image dimension is %u pixels
         case JERR_WIDTH_OVERFLOW : //Image too wide for this implementation
-            throw HFCFileException(HFC_FILE_OUT_OF_RANGE_EXCEPTION, pi_rUrl);
+            throw HFCFileOutOfRangeException(pi_rUrl);
             break;
         case JERR_OUT_OF_MEMORY : //Insufficient memory (case %d)
-            throw HFCFileException(HFC_OUT_OF_MEMORY_EXCEPTION, pi_rUrl);
+            throw HFCOutOfMemoryException();
             break;
         case JERR_QUANT_COMPONENTS : //Cannot quantize more than %d color components
-            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_rUrl);
+            throw HRFPixelTypeNotSupportedException(pi_rUrl);
             break;
         case JERR_TFILE_CREATE : //Failed to create temporary file %s
         case JERR_TFILE_READ : //Read failed on temporary file
@@ -1634,7 +1647,7 @@ void HRFJpegFile::ThrowExBasedOnJPGErrCode(uint32_t pi_GetLastErrorCode,
         case JERR_TOO_LITTLE_DATA : //Application transferred too few scanlines
         case JERR_VIRTUAL_BUG : //Virtual array controller messed up
         default :
-            throw HRFException(HRF_EXCEPTION, pi_rUrl);
+            throw HRFGenericException(pi_rUrl);
             break;
         }
     }
@@ -1686,7 +1699,7 @@ void HRFJpegFile::GetExifTags(bool            pi_ExifTags,
                                                          false,
                                                          false));
 
-            HASSERT(pHTIFFFile->GetFilePtr()->GetLastExceptionID() == NO_EXCEPTION);
+            HASSERT(pHTIFFFile->GetFilePtr()->GetLastException() == 0);
 
             HTIFFError* pErr;
             pHTIFFFile->IsValid(&pErr);

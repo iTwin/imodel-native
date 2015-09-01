@@ -8,8 +8,8 @@
 // Class HRFPngFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFPngFile.h>
 
@@ -27,7 +27,6 @@
 #include <Imagepp/all/h/HRFRasterFileFactory.h>
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8.h>
-#include <Imagepp/all/h/HRPPixelTypeI2R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeI4R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeI4R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
@@ -38,8 +37,6 @@
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HCDCodecZlib.h>
 #include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HFCMemoryBinStream.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //**************** TO DO ******************
@@ -64,7 +61,7 @@ static void hmr_png_read_data(png_structp png_ptr, png_bytep data, png_size_t le
      * instead of an int, which is what fread() actually returns.
      */
     HASSERT_X64(length < ULONG_MAX);
-    check = (png_size_t) ((HFCBinStream*)png_ptr->io_ptr)->Read((void*)data, length);
+    check = (png_size_t) ((HFCBinStream*)png_ptr->io_ptr)->Read(data, length);
     if (check != length)
         {
         png_error(png_ptr, "Read Error");
@@ -76,7 +73,7 @@ static void hmr_png_write_data(png_structp png_ptr, png_bytep data, png_size_t l
     png_size_t check;
 
     HASSERT_X64(length < ULONG_MAX);
-    check = (png_size_t) ((HFCBinStream*)png_ptr->io_ptr)->Write((void*)data, length);
+    check = (png_size_t) ((HFCBinStream*)png_ptr->io_ptr)->Write(data, length);
     if (check != length)
         {
         png_error(png_ptr, "Write Error");
@@ -253,8 +250,7 @@ HRFPngCreator::HRFPngCreator()
 //-----------------------------------------------------------------------------
 WString HRFPngCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_PNG); // PNG File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_PNG()); // PNG File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -316,18 +312,19 @@ bool HRFPngCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     png_infop               pPngInfo       = 0;
     png_infop               pPngEndInfo    = 0;
 
-
-    (const_cast<HRFPngCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
+    //TFS#132036: Sharing control is not thread-safe and we do not understand why it would be required.
+    //            Disable it for now.
+    //(const_cast<HRFPngCreator*>(this))->SharingControlCreate(pi_rpURL);
+    //HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the PNG File & place file pointer at the start of the file
     // Read the first 8 bytes
     // Check if the file is a PNG or not
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
-        if ((pFile->Read((void*)&Buffer, 1 * 8) == 8) && (png_check_sig(Buffer, 8)))
+        if ((pFile->Read(&Buffer, 1 * 8) == 8) && (png_check_sig(Buffer, 8)))
             {
             // Get the file read struct, info struct and End Struct.
             if ((pPngFileStruct = png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0)) &&
@@ -360,12 +357,14 @@ bool HRFPngCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
             // Free the memory
             png_destroy_read_struct(&pPngFileStruct, &pPngInfo, &pPngEndInfo);
-            }
         }
+    }
 
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFPngCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFPngCreator*>(this))->m_pSharingControl = 0;
+    //TFS#132036: Sharing control is not thread-safe and we do not understand why it would be required.
+    //            disable it for now.
+    //SisterFileLock.Release();
+    //HASSERT(!(const_cast<HRFPngCreator*>(this))->m_pSharingControl->IsLocked());
+    //(const_cast<HRFPngCreator*>(this))->m_pSharingControl = 0;
 
     return Result;
     }
@@ -522,6 +521,18 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
     double XResolution = 0;
     double YResolution = 0;
 
+	// setPngText lambda
+	auto setPngText = [&](CharCP key, WCharCP text) 
+		{
+        AString textA(text);
+        png_text pngText;
+        memset(&pngText, 0, sizeof(pngText));
+        pngText.key  = const_cast<char*>(key);          // wont be modified by pnglib
+        pngText.text = const_cast<char*>(textA.c_str());// wont be modified by pnglib
+        pngText.compression = PNG_TEXT_COMPRESSION_NONE;
+        png_set_text(m_pPngFileStruct, m_pPngInfo, &pngText, 1);
+        };  
+
     for (TagIterator  = pi_pPage->GetTags().begin(); 
          TagIterator != pi_pPage->GetTags().end(); TagIterator++)
         {
@@ -538,11 +549,11 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
                 {
                     // We have a monochrome image.
                 case PNG_COLOR_TYPE_GRAY:
-                    m_pPngInfo->background.gray = (png_uint_16)((uint32_t)((HFCPtr<HRFAttributeBackground>&)pTag)->GetData());
+                    m_pPngInfo->background.gray = (png_uint_16)((HFCPtr<HRFAttributeBackground>&)pTag)->GetData();
                     break;
                     // We have a monochrome image with alpha.
                 case PNG_COLOR_TYPE_GRAY_ALPHA:
-                    m_pPngInfo->background.gray = (png_uint_16)((uint32_t)((HFCPtr<HRFAttributeBackground>&)pTag)->GetData());
+                    m_pPngInfo->background.gray = (png_uint_16)((HFCPtr<HRFAttributeBackground>&)pTag)->GetData();
                     break;
 
                     // We have an image with a palette.
@@ -565,8 +576,8 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
             {
             m_pPngInfo->valid  |= PNG_INFO_tIME;
 
-            sscanf ((char*)((HFCPtr<HRFAttributeTimeModification>&)pTag)->GetData().c_str(),
-                    "%04hu:%02hhu:%02hhu %02hhu:%02hhu:%02hhu",
+            BE_STRING_UTILITIES_SWSCANF(((HFCPtr<HRFAttributeTimeModification>&)pTag)->GetData().c_str(),
+                    L"%04hd:%02hc:%02hc %02hc:%02hc:%02hc",
                     &m_pPngInfo->mod_time.year,
                     &m_pPngInfo->mod_time.month,
                     &m_pPngInfo->mod_time.day,
@@ -577,102 +588,52 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
         // Title Tag
         else if (pTag->GetID() == HRFAttributeTitle::ATTRIBUTE_ID)
             {
-            png_text* pText = new png_text[1];
-            pText->key  = "Title";
-            pText->text = (char*)((HFCPtr<HRFAttributeTitle>&)pTag)->GetData().c_str();
-            pText->compression = PNG_TEXT_COMPRESSION_NONE;
-            png_set_text(m_pPngFileStruct, m_pPngInfo, pText, 1);
-            delete[] pText;
+            setPngText("Title", ((HFCPtr<HRFAttributeTitle>&)pTag)->GetData().c_str());
             }
         // Artist Tag
         else if (pTag->GetID() == HRFAttributeArtist::ATTRIBUTE_ID)
             {
-            png_text* pText = new png_text[1];
-            pText->key  = "Author";
-            pText->text = (char*)((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str();
-            pText->compression = PNG_TEXT_COMPRESSION_NONE;
-            png_set_text(m_pPngFileStruct, m_pPngInfo, pText, 1);
-            delete[] pText;
+            setPngText("Author", ((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str());
             }
         // Image Description Tag
         else if (pTag->GetID() == HRFAttributeImageDescription::ATTRIBUTE_ID)
             {
-            png_text* pText = new png_text[1];
-            pText->key  = "Description";
-            pText->text = (char*)((HFCPtr<HRFAttributeImageDescription>&)pTag)->GetData().c_str();
-            pText->compression = PNG_TEXT_COMPRESSION_NONE;
-            png_set_text(m_pPngFileStruct, m_pPngInfo, pText, 1);
-            delete[] pText;
+            setPngText("Description", ((HFCPtr<HRFAttributeImageDescription>&)pTag)->GetData().c_str());
             }
         // Copyright Tag (Copyright: Copyright notice)
         else if (pTag->GetID() == HRFAttributeCopyright::ATTRIBUTE_ID)
             {
-            png_text* pText = new png_text[1];
-            pText->key  = "Copyright";
-            pText->text = (char*)((HFCPtr<HRFAttributeCopyright>&)pTag)->GetData().c_str();
-            pText->compression = PNG_TEXT_COMPRESSION_NONE;
-            png_set_text(m_pPngFileStruct, m_pPngInfo, pText, 1);
-            delete[] pText;
+            setPngText("Copyright", ((HFCPtr<HRFAttributeCopyright>&)pTag)->GetData().c_str());
             }
         // Date Time Tag (Creation Time: Time of original image creation)
         else if (pTag->GetID() == HRFAttributeDateTime::ATTRIBUTE_ID)
             {
-            png_text* pText = new png_text[1];
-            pText->key  = "Creation Time";
-            pText->text = (char*)((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str();
-            pText->compression = PNG_TEXT_COMPRESSION_NONE;
-            png_set_text(m_pPngFileStruct, m_pPngInfo, pText, 1);
-            delete[] pText;
+            setPngText("Creation Time", ((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str());
             }
         // Software Tag (Software:  Software used to create the image)
         else if (pTag->GetID() == HRFAttributeSoftware::ATTRIBUTE_ID)
             {
-            png_text* pText = new png_text[1];
-            pText->key  = "Software";
-            pText->text = (char*)((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str();
-            pText->compression = PNG_TEXT_COMPRESSION_NONE;
-            png_set_text(m_pPngFileStruct, m_pPngInfo, pText, 1);
-            delete[] pText;
+            setPngText("Software", ((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str());
             }
         // Legal Disclaimer Tag (Disclaimer:  Legal disclaimer)
         else if (pTag->GetID() == HRFAttributeLegalDisclaimer::ATTRIBUTE_ID)
             {
-            png_text* pText = new png_text[1];
-            pText->key  = "Disclaimer";
-            pText->text = (char*)((HFCPtr<HRFAttributeLegalDisclaimer>&)pTag)->GetData().c_str();
-            pText->compression = PNG_TEXT_COMPRESSION_NONE;
-            png_set_text(m_pPngFileStruct, m_pPngInfo, pText, 1);
-            delete[] pText;
+            setPngText("Disclaimer", ((HFCPtr<HRFAttributeLegalDisclaimer>&)pTag)->GetData().c_str());
             }
         // Content Warning Tag (Warning: Warning of nature of content)
         else if (pTag->GetID() == HRFAttributeContentWarning::ATTRIBUTE_ID)
             {
-            png_text* pText = new png_text[1];
-            pText->key  = "Warning";
-            pText->text = (char*)((HFCPtr<HRFAttributeContentWarning>&)pTag)->GetData().c_str();
-            pText->compression = PNG_TEXT_COMPRESSION_NONE;
-            png_set_text(m_pPngFileStruct, m_pPngInfo, pText, 1);
-            delete[] pText;
+            setPngText("Warning", ((HFCPtr<HRFAttributeContentWarning>&)pTag)->GetData().c_str());
             }
         // Host Computer Tag (Source:  Device used to create the image)
         else if (pTag->GetID() == HRFAttributeHostComputer::ATTRIBUTE_ID)
             {
-            png_text* pText = new png_text[1];
-            pText->key  = "Source";
-            pText->text = (char*)((HFCPtr<HRFAttributeHostComputer>&)pTag)->GetData().c_str();
-            pText->compression = PNG_TEXT_COMPRESSION_NONE;
-            png_set_text(m_pPngFileStruct, m_pPngInfo, pText, 1);
-            delete[] pText;
+            setPngText("Source", ((HFCPtr<HRFAttributeHostComputer>&)pTag)->GetData().c_str());
             }
         // Notes Tag (Comment: Miscellaneous comment; conversion from GIF comment)
         else if (pTag->GetID() == HRFAttributeNotes::ATTRIBUTE_ID)
             {
-            png_text* pText = new png_text[1];
-            pText->key  = "Comment";
-            pText->text = (char*)((HFCPtr<HRFAttributeNotes>&)pTag)->GetData().c_str();
-            pText->compression = PNG_TEXT_COMPRESSION_NONE;
-            png_set_text(m_pPngFileStruct, m_pPngInfo, pText, 1);
-            delete[] pText;
+            setPngText("Comment", ((HFCPtr<HRFAttributeNotes>&)pTag)->GetData().c_str());
             }
         // X Resolution Tag (pHYs Chunk)
         else if (pTag->GetID() == HRFAttributeXResolution::ATTRIBUTE_ID)
@@ -779,9 +740,7 @@ bool HRFPngFile::Open()
 
         // Open the actual png file specified in the parameters.  The library
         // uses stdio FILE*, so open the file and satisfy the library
-        m_pPngFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(m_pPngFile, GetURL()->GetURL());
+        m_pPngFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -825,7 +784,7 @@ bool HRFPngFile::Open()
                 {
                 png_destroy_read_struct(&m_pPngFileStruct, &m_pPngInfo, &m_pPngEndInfo);
 
-                throw HFCFileException(HFC_READ_FAULT_EXCEPTION, GetURL()->GetURL());
+                throw HFCReadFaultException(GetURL()->GetURL());
                 }
             }
         else
@@ -834,11 +793,11 @@ bool HRFPngFile::Open()
 
             if (m_pPngFileStruct == 0)
                 {
-                //         throw HFCFileException(HFC_CANNOT_CREATE_PNG_COMP_INFO_EXCEPTION, GetURL()->GetURL());
+                //         throw HFCFileException(HFC_CANNOT_CREATE_PNG_COMP_INFO_EXCEPTION, GetURL()->GetURL()); 
                 }
             else
                 {
-                throw HFCException(HFC_MEMORY_EXCEPTION);
+                throw HFCMemoryException();
                 }
             }
         }
@@ -1104,12 +1063,23 @@ void HRFPngFile::SavePngFile(bool pi_CloseFile)
             HFCLockMonitor SisterFileLock (GetLockManager());
 
             // Free all memory allocated by the read or write process.
-            // If the number of writed rows is not equal to the number of rows
+            // If the number of written rows is not equal to the number of rows
             // we can not save the PngInfo structure.
             if (m_pPngFileStruct->num_rows == m_pPngFileStruct->height)
                 {
-                // Write the rest of the file.
-                png_write_end(m_pPngFileStruct, NULL);
+                // Set png error handeling
+                int JmpRes = setjmp(m_pPngFileStruct->jmpbuf);
+
+                if (JmpRes == 0)
+                    {
+                    // Write the rest of the file.
+                    png_write_end(m_pPngFileStruct, NULL);
+                    }
+                else
+                    {
+                    HASSERT(!"PNG Write Error.");
+                    }
+
                 }
 
             m_pPngFile->Flush();
@@ -1134,8 +1104,6 @@ void HRFPngFile::SavePngFile(bool pi_CloseFile)
             m_pPngFile = 0;
             m_IsOpen = false;
             }
-
-
         }
     }
 
@@ -1154,9 +1122,7 @@ bool HRFPngFile::Create()
     m_pPngEndInfo    = 0;
 
     // Open the file.
-    m_pPngFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pPngFile, GetURL()->GetURL());
+    m_pPngFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     // Create the sister file for file sharing control
     SharingControlCreate();
@@ -1183,7 +1149,7 @@ bool HRFPngFile::Create()
             {
             png_destroy_write_struct(&m_pPngFileStruct, &m_pPngInfo);
 
-            throw HFCFileException(HFC_WRITE_FAULT_EXCEPTION, GetURL()->GetURL());
+            throw HFCReadFaultException( GetURL()->GetURL());
             }
         }
     else
@@ -1197,7 +1163,7 @@ bool HRFPngFile::Create()
             }
         else
             {
-            throw HFCException(HFC_MEMORY_EXCEPTION);
+            throw HFCMemoryException();
             }
         }
 
@@ -1476,8 +1442,7 @@ void HRFPngFile::SetPixelTypeToPage(HFCPtr<HRFResolutionDescriptor> pi_pResoluti
                      aPalette,
                      m_pPngInfo->num_palette);
         }
-    else if (pi_pResolutionDescriptor->GetPixelType()->GetClassID() ==
-             HRPPixelTypeI2R8G8B8::CLASS_ID)
+    else if (pi_pResolutionDescriptor->GetPixelType()->GetClassID() == HRPPixelTypeId_I2R8G8B8)
         {
         Byte*                 pPaletteValue;
         const HRPPixelPalette& rPalette = pi_pResolutionDescriptor->GetPixelType()->GetPalette();

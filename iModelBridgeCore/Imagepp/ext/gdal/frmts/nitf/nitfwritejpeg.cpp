@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitfwritejpeg.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: nitfwritejpeg.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  NITF Read/Write Translator
  * Purpose:  GDALDataset/GDALRasterBand implementation on top of "nitflib".
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2002, Frank Warmerdam
+ * Copyright (c) 2009-2010, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Portions Copyright (c) Her majesty the Queen in right of Canada as
  * represented by the Minister of National Defence, 2006.

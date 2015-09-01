@@ -14,7 +14,7 @@ int TIFFReInitJPEG_12( TIFF *tif, int scheme, int is_encode )
 {
     JPEGState* sp;
 
-    HASSERT(scheme == COMPRESSION_JPEG);
+    assert(scheme == COMPRESSION_JPEG);
 
     sp = JState(tif);
     sp->tif = tif;				/* back link */

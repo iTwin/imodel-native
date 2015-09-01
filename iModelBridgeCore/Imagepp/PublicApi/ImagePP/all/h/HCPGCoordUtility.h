@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCPGCoordUtility.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -13,6 +13,9 @@
 #include <Imagepp/all/h/HFCPtr.h>
 #include <Imagepp/all/h/HFCMacros.h>
 #include <Imagepp/all/h/HGF2DWorld.h>
+#include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DWorldCluster;
 class HRFRasterFile;
@@ -24,22 +27,22 @@ class HCPGCoordModel;
 // ----------------------------------------------------------------------------
 class HCPGCoordUtility
     {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HCPGCoordUtility)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HCPGCoordUtility)
 
 public:
 
     //This method compares two coordinate systems from BaseGeoCoord pointers
-    bool AreBaseGCSEquivalent(const IRasterBaseGcsPtr& pi_rpBaseGeoCoord1, const IRasterBaseGcsPtr& pi_rpBaseGeoCoord2);
+    bool AreBaseGCSEquivalent(IRasterBaseGcsCP pi_rpBaseGeoCoord1, IRasterBaseGcsCP pi_rpBaseGeoCoord2);
 
     // This method creates a GCoord model from projection description
     HFCPtr<HCPGCoordModel>
-    CreateGCoordModel(IRasterBaseGcsPtr  pi_SourceProjection,
-                      IRasterBaseGcsPtr  pi_DestinationProjection) const;
+    CreateGCoordModel(IRasterBaseGcsR  pi_SourceProjection,
+                      IRasterBaseGcsR  pi_DestinationProjection) const;
 
     // This method creates an adapted GCoord model from projection description
     HFCPtr<HGF2DTransfoModel>
-    CreateGCoordAdaptedModel(IRasterBaseGcsPtr              pi_SourceProjection,
-                             IRasterBaseGcsPtr              pi_DestinationProjection,
+    CreateGCoordAdaptedModel(IRasterBaseGcsR                pi_SourceProjection,
+                             IRasterBaseGcsR                pi_DestinationProjection,
                              const HGF2DLiteExtent&         pi_rExtent,
                              double                         pi_Step,
                              double                         pi_ExpectedMeanError,
@@ -51,8 +54,8 @@ public:
     // This method creates an adapted GCoord model from projection description
     // raster file extent and threshold errors.
     HFCPtr<HGF2DTransfoModel>
-    CreateGCoordAdaptedModel(IRasterBaseGcsPtr              pi_SourceProjection,
-                             IRasterBaseGcsPtr              pi_DestinationProjection,
+    CreateGCoordAdaptedModel(IRasterBaseGcsR               pi_SourceProjection,
+                             IRasterBaseGcsR               pi_DestinationProjection,
                              const HFCPtr<HRFRasterFile>&   pi_rpRasterFile,
                              uint32_t                      pi_Page,
                              const HGF2DWorldCluster&       pi_rCluster,
@@ -64,6 +67,11 @@ public:
                              double*                        po_pAdaptationMaxError = 0,
                              double*                        po_pReversibilityMeanError = 0,
                              double*                        po_pReversibilityMaxError = 0) const;
+
+
+
+    static StatusInt GetGeoDomain(IRasterBaseGcsCR                rasterGcs,
+                                  vector<HGF2DCoord<double> >&    shape);
 
 
     // Destructor
@@ -86,3 +94,4 @@ private:
     HCPGCoordUtility& operator=(const HCPGCoordUtility&);
     };
 
+END_IMAGEPP_NAMESPACE

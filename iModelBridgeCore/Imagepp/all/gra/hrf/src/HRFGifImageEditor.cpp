@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGifImageEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFGifImageEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFGifImageEditor.h>
 #include <Imagepp/all/h/HRFGifLineEditor.h>
@@ -54,9 +54,9 @@ HRFGifImageEditor::~HRFGifImageEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFGifImageEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                     uint32_t pi_PosBlockY,
-                                     Byte* po_pData,
+HSTATUS HRFGifImageEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                     uint64_t pi_PosBlockY,
+                                     Byte*   po_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(po_pData != 0);
@@ -131,9 +131,9 @@ HSTATUS HRFGifImageEditor::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFGifImageEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                      uint32_t     pi_PosBlockY,
-                                      const Byte* pi_pData,
+HSTATUS HRFGifImageEditor::WriteBlock(uint64_t        pi_PosBlockX,
+                                      uint64_t        pi_PosBlockY,
+                                      const Byte*     pi_pData,
                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(pi_pData != 0);

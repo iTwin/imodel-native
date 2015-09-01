@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DLinearModelAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DLinearModelAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HGF2DSimilitude.h>
@@ -358,7 +358,7 @@ HGF2DLinearModelAdapter& HGF2DLinearModelAdapter::operator=(const HGF2DLinearMod
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DLinearModelAdapter::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DLinearModelAdapter::ConvertDirect(double* pio_pXInOut,
                                             double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -366,14 +366,14 @@ void HGF2DLinearModelAdapter::ConvertDirect(double* pio_pXInOut,
     HPRECONDITION(pio_pXInOut != 0);
     HPRECONDITION(pio_pYInOut != 0);
 
-    m_pLinearModel->ConvertDirect(pio_pXInOut, pio_pYInOut);
+    return m_pLinearModel->ConvertDirect(pio_pXInOut, pio_pYInOut);
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DLinearModelAdapter::ConvertDirect(double pi_XIn,
+StatusInt HGF2DLinearModelAdapter::ConvertDirect(double pi_XIn,
                                             double pi_YIn,
                                             double* po_pXOut,
                                             double* po_pYOut) const
@@ -384,18 +384,18 @@ void HGF2DLinearModelAdapter::ConvertDirect(double pi_XIn,
     HPRECONDITION(po_pYOut != 0);
 
 
-    m_pLinearModel->ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
+    return m_pLinearModel->ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
     }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DLinearModelAdapter::ConvertDirect(double    pi_YIn,
-                                            double    pi_XInStart,
-                                            size_t     pi_NumLoc,
-                                            double    pi_XInStep,
-                                            double*   po_pXOut,
-                                            double*   po_pYOut) const
+StatusInt HGF2DLinearModelAdapter::ConvertDirect(double    pi_YIn,
+                                                 double    pi_XInStart,
+                                                 size_t     pi_NumLoc,
+                                                 double    pi_XInStep,
+                                                 double*   po_pXOut,
+                                                 double*   po_pYOut) const
     {
     HINVARIANTS;
 
@@ -403,56 +403,66 @@ void HGF2DLinearModelAdapter::ConvertDirect(double    pi_YIn,
     HPRECONDITION(po_pXOut != 0);
     HPRECONDITION(po_pYOut != 0);
 
-    m_pLinearModel->ConvertDirect(pi_YIn, pi_XInStart, pi_NumLoc, pi_XInStep, po_pXOut, po_pYOut);
+    return m_pLinearModel->ConvertDirect(pi_YIn, pi_XInStart, pi_NumLoc, pi_XInStep, po_pXOut, po_pYOut);
     }
 
+//-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DLinearModelAdapter::ConvertDirect(size_t pi_NumLoc, 
+                                                 double* pio_aXInOut, 
+                                                 double* pio_aYInOut) const
+    {
+    HINVARIANTS;
 
+    // Make sure recipient arrays are provided
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
 
-
-
+    return m_pLinearModel->ConvertDirect(pi_NumLoc, pio_aXInOut, pio_aYInOut);
+    }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DLinearModelAdapter::ConvertInverse(double* pio_pXInOut,
-                                             double* pio_pYInOut) const
+StatusInt HGF2DLinearModelAdapter::ConvertInverse(double* pio_pXInOut,
+                                                  double* pio_pYInOut) const
     {
     HINVARIANTS;
 
     HPRECONDITION(pio_pXInOut != 0);
     HPRECONDITION(pio_pYInOut != 0);
 
-    m_pLinearModel->ConvertInverse(pio_pXInOut, pio_pYInOut);
-
+    return m_pLinearModel->ConvertInverse(pio_pXInOut, pio_pYInOut);
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DLinearModelAdapter::ConvertInverse(double pi_XIn,
-                                             double pi_YIn,
-                                             double* po_pXOut,
-                                             double* po_pYOut) const
+StatusInt HGF2DLinearModelAdapter::ConvertInverse(double pi_XIn,
+                                                  double pi_YIn,
+                                                  double* po_pXOut,
+                                                  double* po_pYOut) const
     {
     HINVARIANTS;
 
     HPRECONDITION(po_pXOut != 0);
     HPRECONDITION(po_pYOut != 0);
 
-    m_pLinearModel->ConvertInverse(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
+    return m_pLinearModel->ConvertInverse(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
     }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DLinearModelAdapter::ConvertInverse(double    pi_YIn,
-                                             double    pi_XInStart,
-                                             size_t     pi_NumLoc,
-                                             double    pi_XInStep,
-                                             double*   po_pXOut,
-                                             double*   po_pYOut) const
+StatusInt HGF2DLinearModelAdapter::ConvertInverse(double    pi_YIn,
+                                                  double    pi_XInStart,
+                                                  size_t    pi_NumLoc,
+                                                  double    pi_XInStep,
+                                                  double*   po_pXOut,
+                                                  double*   po_pYOut) const
     {
     HINVARIANTS;
 
@@ -460,11 +470,25 @@ void HGF2DLinearModelAdapter::ConvertInverse(double    pi_YIn,
     HPRECONDITION(po_pXOut != 0);
     HPRECONDITION(po_pYOut != 0);
 
-    m_pLinearModel->ConvertInverse(pi_YIn, pi_XInStart, pi_NumLoc, pi_XInStep, po_pXOut, po_pYOut);
+    return m_pLinearModel->ConvertInverse(pi_YIn, pi_XInStart, pi_NumLoc, pi_XInStep, po_pXOut, po_pYOut);
     }
 
 
+//-----------------------------------------------------------------------------
+// Converter (Inverse)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DLinearModelAdapter::ConvertInverse(size_t pi_NumLoc, 
+                                                  double* pio_aXInOut, 
+                                                  double* pio_aYInOut) const
+    {
+    HINVARIANTS;
 
+    // Make sure recipient arrays are provided
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+
+    return m_pLinearModel->ConvertInverse(pi_NumLoc, pio_aXInOut, pio_aYInOut);
+    }
 
 
 //-----------------------------------------------------------------------------

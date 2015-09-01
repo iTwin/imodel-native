@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMemcpy.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCMemcpy
@@ -17,9 +17,11 @@
 extern "C" {
 #   endif
 
-    _HDLLu void*  HFCMemcpy (void*         po_pDst,
-                             const void*   pi_pSrc,
-                             size_t        pi_Count);
+BEGIN_IMAGEPP_NAMESPACE
+
+IMAGEPP_EXPORT void*  HFCMemcpy (void* po_pDst, const void* pi_pSrc, size_t pi_Count);
+
+END_IMAGEPP_NAMESPACE
 
 #   if defined (__cplusplus)
     }
@@ -38,4 +40,3 @@ extern "C" {
 #include <stdlib.h>
 #   define HFCMemcpy memcpy
 #endif /* _WIN32 */
-

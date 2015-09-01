@@ -2,30 +2,31 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecTgaRLE.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HCDCodecTGARLE : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1262, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_TGARLE, HCDCodecImage)
 
 public:
 
-    _HDLLu                 HCDCodecTGARLE();
+    IMAGEPP_EXPORT                 HCDCodecTGARLE();
 
-    _HDLLu                 HCDCodecTGARLE( size_t pi_Width,
+    IMAGEPP_EXPORT                 HCDCodecTGARLE( size_t pi_Width,
                                            size_t pi_Height,
                                            size_t pi_BitsPerPixel,
                                            Byte pi_AlphaChannelBits);
 
-    _HDLLu                 HCDCodecTGARLE( const HCDCodecTGARLE& pi_rObj);
+    IMAGEPP_EXPORT                 HCDCodecTGARLE( const HCDCodecTGARLE& pi_rObj);
 
-    _HDLLu                 ~HCDCodecTGARLE();
+    IMAGEPP_EXPORT                 ~HCDCodecTGARLE();
 
     size_t          CompressSubset( const void* pi_pInData,
                                     size_t pi_InDataSize,
@@ -46,10 +47,10 @@ public:
     size_t          GetSubsetMaxCompressedSize() const;
 
     // alpha
-    _HDLLu void     SetAlphaChannelBits(Byte pi_AlphaChannelBits);
-    _HDLLu Byte     GetAlphaChannelBits() const;
+    IMAGEPP_EXPORT void     SetAlphaChannelBits(Byte pi_AlphaChannelBits);
+    IMAGEPP_EXPORT Byte     GetAlphaChannelBits() const;
 
-    _HDLLu void     SetNumberOfBitsPerPixelInOutput(Byte pi_BitsPerPixel);
+    IMAGEPP_EXPORT void     SetNumberOfBitsPerPixelInOutput(Byte pi_BitsPerPixel);
 
 protected:
 
@@ -60,3 +61,4 @@ private:
     };
 
 
+END_IMAGEPP_NAMESPACE

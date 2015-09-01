@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFDtedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFDtedFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFDtedFile.h>
 #include <Imagepp/all/h/HRFDtedEditor.h>
@@ -33,16 +33,15 @@
 #include <Imagepp/all/h/HGF2DSimilitude.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 //GDAL
-#include <ImagePPInternal/ext/gdal/gdal_priv.h>
-#include <ImagePPInternal/ext/gdal/cpl_string.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
+#include <ImagePP-GdalLib/cpl_string.h>
 
 
 //-----------------------------------------------------------------------------
@@ -163,7 +162,7 @@ HRFDtedCreator::HRFDtedCreator()
 // Identification information
 WString HRFDtedCreator::GetLabel() const
     {
-    return HFCResourceLoader::GetInstance()->GetString(IDS_FILEFORMAT_DTED); // DTED File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_DTED()); // DTED File Format
     }
 
 // Identification information
@@ -200,7 +199,9 @@ bool HRFDtedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                    uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
+
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
 
     //Will initialize GDal if not already initialize
     HRFGdalSupportedFile::Initialize();
@@ -213,9 +214,9 @@ bool HRFDtedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock (GetLockManager());
 
     // Open the IMG File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
         pFile->Read(pLine, 3);
         //Check if the section User Header Label can be found
@@ -272,7 +273,7 @@ HRFDtedFile::HRFDtedFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
 
     // The ancestor store the access mode
@@ -325,16 +326,18 @@ void HRFDtedFile::CreateDescriptors()
 
     HRFGdalSupportedFile::CreateDescriptorsWith(new HCDCodecIdentity(), TagList);
 
-    IRasterBaseGcsPtr pBaseGcs = GetPageDescriptor(0)->GetGeocoding();
+    IRasterBaseGcsPtr pBaseGCS;
 
-    if (pBaseGcs == NULL)
-        pBaseGcs = GCSServices->_CreateRasterBaseGcs();
-        
+    if (GetPageDescriptor(0)->GetGeocodingCP() == NULL)
+        pBaseGCS = GCSServices->_CreateRasterBaseGcs();
+    else
+		pBaseGCS = GetPageDescriptor(0)->GetGeocodingCP()->Clone();
+
     //Elevation values in a DTED file are always in meters.
-    if(pBaseGcs != NULL)
-        pBaseGcs->SetVerticalUnits(1.0);
+    if(pBaseGCS != NULL)
+        pBaseGCS->SetVerticalUnits(1.0);
 
-    GetPageDescriptor(0)->SetGeocoding(pBaseGcs);
+    GetPageDescriptor(0)->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
     }
 
 //-----------------------------------------------------------------------------
@@ -449,7 +452,6 @@ HRPChannelType::ChannelRole HRFDtedFile::GetBandRole(int32_t pi_RasterBand) cons
 void HRFDtedFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                 uint32_t pi_Page,
                                                 bool   pi_CheckSpecificUnitSpec,
-                                                bool   pi_GeoModelDefaultUnit,
                                                 bool   pi_InterpretUnitINTGR)
     {
     //The units is implicitly specified in the specification.

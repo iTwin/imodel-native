@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalallregister.cpp 21249 2010-12-13 23:43:02Z rouault $
+ * $Id: gdalallregister.cpp 27196 2014-04-16 11:41:24Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALAllRegister(), primary format registration.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1998, Frank Warmerdam
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "gdal_priv.h"
 #include "gdal_frmts.h"
 
-CPL_CVSID("$Id: gdalallregister.cpp 21249 2010-12-13 23:43:02Z rouault $");
+CPL_CVSID("$Id: gdalallregister.cpp 27196 2014-04-16 11:41:24Z rouault $");
 
 #ifdef notdef
 // we may have a use for this some day
@@ -90,6 +91,7 @@ void CPL_STDCALL GDALAllRegister()
 #ifdef FRMT_nitf
     GDALRegister_NITF();
     GDALRegister_RPFTOC();
+    GDALRegister_ECRGTOC();
 #endif
 
 #ifdef FRMT_hfa
@@ -123,6 +125,7 @@ void CPL_STDCALL GDALAllRegister()
 
 #ifdef FRMT_aaigrid
     GDALRegister_AAIGrid();
+    GDALRegister_GRASSASCIIGrid();
 #endif
 
 #ifdef FRMT_sdts
@@ -139,6 +142,14 @@ void CPL_STDCALL GDALAllRegister()
 
 #ifdef FRMT_png
     GDALRegister_PNG();
+#endif
+
+#ifdef FRMT_dds
+    GDALRegister_DDS();
+#endif
+    
+#ifdef FRMT_gta
+    GDALRegister_GTA();
 #endif
 
 #ifdef FRMT_jpeg
@@ -266,13 +277,6 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_JP2OpenJPEG();
 #endif
 
-#ifdef FRMT_jpeg2000
-// JPEG2000 support using JasPer toolkit
-// This one should always be placed after other JasPer supported formats,
-// such as BMP or PNM. In other case we will get bad side effects.
-    GDALRegister_JPEG2000();
-#endif
-
 #ifdef FRMT_l1b
     GDALRegister_L1B();
 #endif
@@ -287,6 +291,13 @@ void CPL_STDCALL GDALAllRegister()
 
 #ifdef FRMT_mrsid
     GDALRegister_MrSID();
+#endif
+
+#ifdef FRMT_jpeg2000
+// JPEG2000 support using JasPer toolkit
+// This one should always be placed after other JasPer supported formats,
+// such as BMP or PNM. In other case we will get bad side effects.
+    GDALRegister_JPEG2000();
 #endif
 
 #ifdef FRMT_mrsid_lidar
@@ -351,6 +362,10 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_R();
 #endif
 
+#ifdef FRMT_map
+    GDALRegister_MAP();
+#endif
+
 /* -------------------------------------------------------------------- */
 /*      Put raw formats at the end of the list. These drivers support   */
 /*      various ASCII-header labeled formats, so the driver could be    */
@@ -382,6 +397,14 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_GTX();
     GDALRegister_LOSLAS();
     GDALRegister_NTv2();
+    GDALRegister_CTable2();
+    GDALRegister_ACE2();
+    GDALRegister_SNODAS();
+    GDALRegister_KRO();
+#endif
+
+#ifdef FRMT_arg
+    GDALRegister_ARG();
 #endif
 
 /* -------------------------------------------------------------------- */
@@ -420,8 +443,8 @@ void CPL_STDCALL GDALAllRegister()
 #endif
 
 #ifdef FRMT_northwood
-	GDALRegister_NWT_GRD();
-	GDALRegister_NWT_GRC();
+    GDALRegister_NWT_GRD();
+    GDALRegister_NWT_GRC();
 #endif
 
 #ifdef FRMT_adrg
@@ -479,6 +502,34 @@ void CPL_STDCALL GDALAllRegister()
 
 #ifdef FRMT_ozi
     GDALRegister_OZI();
+#endif
+
+#ifdef FRMT_ctg
+    GDALRegister_CTG();
+#endif
+
+#ifdef FRMT_e00grid
+    GDALRegister_E00GRID();
+#endif
+
+#ifdef FRMT_webp
+    GDALRegister_WEBP();
+#endif
+
+#ifdef FRMT_zmap
+    GDALRegister_ZMap();
+#endif
+
+#ifdef FRMT_ngsgeoid
+    GDALRegister_NGSGEOID();
+#endif
+
+#ifdef FRMT_mbtiles
+    GDALRegister_MBTiles();
+#endif
+
+#ifdef FRMT_iris
+    GDALRegister_IRIS();
 #endif
 /* -------------------------------------------------------------------- */
 /*      Deregister any drivers explicitly marked as supressed by the    */

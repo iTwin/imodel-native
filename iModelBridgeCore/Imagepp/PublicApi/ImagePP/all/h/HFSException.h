@@ -2,97 +2,99 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFSException.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// Implementation of the exception classes.  The exception hierarchy look
-// like this:
-//
-//  HFCException
-//      HFSException                    (Info struct : -)
-//          HFSInvalidPathException        (Info struct : -)
-//----------------------------------------------------------------------------
 
 #pragma once
 
 #include "HFCException.h"
 
-//----------------------------------------------------------------------------
-// Class HFSException
-//----------------------------------------------------------------------------
-class _HDLLu HFSException : public HFCException
-    {
-    HDECLARE_CLASS_ID(5050, HFCException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
-public:
-    // Primary methods.
-    // Contructor and destructor.
-    HFSException();
-    HFSException(ExceptionID    pi_ExceptionID);
-    virtual ~HFSException();
-    HFSException& operator=(const HFSException& pi_rObj);
-    HFSException(const HFSException& pi_rObj);
-    };
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Implementation of the exception classes.  The exception hierarchy look
 // like this:
 //
-//  HFCException                                    (Info struct : -)
-//      HFSException                                (Info struct : HFCFileExInfo)
-//            HFSHIBPInvalidResponseException            (Info struct : HFSHIBPInvalidResponseExInfo)
-//            HFSHIBPErrorException                    (Info struct : HFSHIBPErrorExInfo)
+//  HFCException ABSTRACT                                 
+//      HFSException ABSTRACT                             
+//          HFSHIBPInvalidResponseException     
+//          HFSHIBPException ABSTRACT
+//              HFSHIBPErrorException
+//              HFSHIBPProtocolNotSupportedException
+//          HFSInvalidPathException ABSTRACT
+//              HFSGenericInvalidPathException
+//              HFSUrlSchemeNotSupportedException
+//              HFSInvalidDirectoryPathException 
+//          HFSCannotStartNetResourceEnumException
+//          HFSCannotEnumNextNetResourceException
 //----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
-// Class HFSInvalidPathException
+// Class HFSException ABSTRACT
 //----------------------------------------------------------------------------
-class _HDLLu HFSInvalidPathException : public HFSException
+class HFSException : public HFCException
     {
-    HDECLARE_CLASS_ID(5051, HFSException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
 public:
-    // Primary methods.
-    // Contructor and destructor.
-    HFSInvalidPathException(const WString& pi_rPath);
-    HFSInvalidPathException(ExceptionID pi_ExceptionID, const WString& pi_rPath);
-    virtual        ~HFSInvalidPathException();
-    HFSInvalidPathException& operator=(const HFSInvalidPathException& pi_rObj);
-    HFSInvalidPathException(const HFSInvalidPathException& pi_rObj);
+    IMAGEPP_EXPORT virtual ~HFSException();
+protected:
+    //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
+    IMAGEPP_EXPORT virtual WString _BuildMessage(const ImagePPExceptions::StringId& rsID) const override;
+    IMAGEPP_EXPORT HFSException();
+    IMAGEPP_EXPORT HFSException                   (const HFSException&     pi_rObj); 
     };
 
-
-/**---------------------------------------------------------------------------
-Class to use when the request respond was invalid
-----------------------------------------------------------------------------*/
-class HFSHIBPInvalidResponseException : public HFSException
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+template<ImagePPExceptions::StringId (*GetStringId)()>
+class HFSException_T : public HFSException
     {
-    HDECLARE_CLASS_ID(5070, HFSException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
-
 public:
-    // Primary methods.
-    // Contructor and destructor.
-    HFSHIBPInvalidResponseException(const WString& pi_rRequest);
-    virtual        ~HFSHIBPInvalidResponseException();
-    HFSHIBPInvalidResponseException& operator=(const HFSHIBPInvalidResponseException& pi_rObj);
-    HFSHIBPInvalidResponseException(const HFSHIBPInvalidResponseException& pi_rObj);
+    HFSException_T() : HFSException(){}
+    HFSException_T (const HFSException_T& pi_rObj) : HFSException(pi_rObj){} 
+    virtual HFCException* Clone() const override {return new HFSException_T(*this);}
+    virtual void ThrowMyself() const override {throw *this;} 
+    virtual WString GetExceptionMessage() const override
+        {
+        return HFSException::_BuildMessage(GetStringId());
+        }
+};
+typedef HFSException_T<ImagePPExceptions::HFSCannotStartNexNetResourceEnum> HFSCannotStartNetResourceEnumException;
+typedef HFSException_T<ImagePPExceptions::HFSCannotEnumNextNetResource> HFSCannotEnumNextNetResourceException;
+
+//----------------------------------------------------------------------------
+// Class HFSInvalidPathException ABSTRACT
+//----------------------------------------------------------------------------
+class HFSInvalidPathException : public HFSException 
+    {
+public:
+    IMAGEPP_EXPORT virtual ~HFSInvalidPathException();
+    IMAGEPP_EXPORT WStringCR GetPath () const;
+protected:
+    //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
+    IMAGEPP_EXPORT HFSInvalidPathException (const HFSInvalidPathException&     pi_rObj);
+    IMAGEPP_EXPORT HFSInvalidPathException(const WString& pi_rPath);
+    IMAGEPP_EXPORT virtual WString _BuildMessage(const ImagePPExceptions::StringId& rsID) const override;
+    WString  m_Path;
     };
 
-/**---------------------------------------------------------------------------
-Class to use when the protocol HIBP return an error
-----------------------------------------------------------------------------*/
-class HFSHIBPErrorException : public HFSException
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+template<ImagePPExceptions::StringId (*GetStringId)()>
+class HFSInvalidPathException_T : public HFSInvalidPathException
     {
-    HDECLARE_CLASS_ID(5071, HFSException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
-
-public:
-    // Primary methods.
-    // Contructor and destructor.
-    HFSHIBPErrorException(const WString& pi_rErrorMsg);
-    virtual        ~HFSHIBPErrorException();
-    HFSHIBPErrorException& operator=(const HFSHIBPErrorException& pi_rObj);
-    HFSHIBPErrorException(const HFSHIBPErrorException& pi_rObj);
-    };
+    public:
+    HFSInvalidPathException_T(const WString& pi_rPath) : HFSInvalidPathException(pi_rPath){}
+    HFSInvalidPathException_T (const HFSInvalidPathException_T& pi_rObj) : HFSInvalidPathException(pi_rObj){} 
+    virtual HFCException* Clone() const override {return new HFSInvalidPathException_T(*this);}
+    virtual void ThrowMyself() const override {throw *this;} 
+    virtual WString GetExceptionMessage() const override
+       {
+       return HFSInvalidPathException::_BuildMessage(GetStringId());
+       }
+};
+typedef HFSInvalidPathException_T<ImagePPExceptions::HFSGenericInvalidPath> HFSGenericInvalidPathException;
+typedef HFSInvalidPathException_T<ImagePPExceptions::HFSUrlSchemeNotSupported> HFSUrlSchemeNotSupportedException;
+typedef HFSInvalidPathException_T<ImagePPExceptions::HFSInvalidDirectory> HFSInvalidDirectoryPathException;
+END_IMAGEPP_NAMESPACE

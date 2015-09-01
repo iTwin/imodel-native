@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRATIFFFileTransactionRecorder.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Class : HRATIFFFileTransactionRecorder
 //:>---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRATIFFFileTransactionRecorder.h>
 
@@ -24,7 +24,7 @@
 // class HTIFFFileRecorder
 //---------------------------------------------------------------------------
 
-class HTIFFFileRecorder
+class ImagePP::HTIFFFileRecorder
     {
 public:
     HTIFFFileRecorder       (const WString& pi_rFileName,
@@ -75,19 +75,19 @@ public:
      uint32_t          pi_Index = -1);
     virtual ~HRATIFFFileTransaction();
 
-    void    PushEntry       (uint64_t          pi_PosX,
-                             uint64_t          pi_PosY,
-                             size_t             pi_Width,
-                             size_t             pi_Height,
+    void    PushEntry       (uint64_t           pi_PosX,
+                             uint64_t           pi_PosY,
+                             uint32_t           pi_Width,
+                             uint32_t           pi_Height,
                              size_t             pi_DataSize,
                              const void*        pi_pData) override;
 
     bool   PopEntry        (uint64_t*           po_pPosX,
-                             uint64_t*           po_pPosY,
-                             size_t*            po_pWidth,
-                             size_t*            po_pHeight,
+                             uint64_t*          po_pPosY,
+                             uint32_t*          po_pWidth,
+                             uint32_t*          po_pHeight,
                              size_t*            po_pDataSize,
-                             bool              pi_FirstCall = false) override;
+                             bool               pi_FirstCall = false) override;
 
 
     size_t  ReadEntryData   (size_t             pi_DataSize,
@@ -156,7 +156,7 @@ HRATIFFFileTransactionRecorder* HRATIFFFileTransactionRecorder::CreateFor(const 
 
     // Add the path to the Booster url
     BeFileName pathFilename;
-    ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetFileTransactionRecorderDirPath(pathFilename);
+    ImageppLib::GetHost().GetImageppLibAdmin()._GetFileTransactionRecorderDirPath(pathFilename);
     HFCPtr<HFCURL> pPath = HFCURL::CreateFrom(pathFilename);
 
     WString RecorderPath(pPath->GetURL());
@@ -391,16 +391,16 @@ HRATIFFFileTransaction::~HRATIFFFileTransaction ()
 //---------------------------------------------------------------------------
 void HRATIFFFileTransaction::PushEntry(uint64_t     pi_PosX,
                                        uint64_t     pi_PosY,
-                                       size_t        pi_Width,
-                                       size_t        pi_Height,
+                                       uint32_t     pi_Width,
+                                       uint32_t     pi_Height,
                                        size_t        pi_DataSize,
                                        const void*   pi_pData)
     {
     EntryHeader Header;
     Header.PosX     = pi_PosX;
     Header.PosY     = pi_PosY;
-    Header.Width    = (uint32_t)pi_Width;
-    Header.Height   = (uint32_t)pi_Height;
+    Header.Width    = pi_Width;
+    Header.Height   = pi_Height;
     Header.DataSize = pi_DataSize;
 
     m_pRecorder->Write(pi_pData, pi_DataSize);
@@ -417,8 +417,8 @@ void HRATIFFFileTransaction::PushEntry(uint64_t     pi_PosX,
 //---------------------------------------------------------------------------
 bool HRATIFFFileTransaction::PopEntry(uint64_t*  po_pPosX,
                                        uint64_t*  po_pPosY,
-                                       size_t*   po_pWidth,
-                                       size_t*   po_pHeight,
+                                       uint32_t*   po_pWidth,
+                                       uint32_t*   po_pHeight,
                                        size_t*   po_pDataSize,
                                        bool     pi_FirstCall)
     {
@@ -430,8 +430,8 @@ bool HRATIFFFileTransaction::PopEntry(uint64_t*  po_pPosX,
         {
         *po_pPosX = Header.PosX;
         *po_pPosY = Header.PosY;
-        *po_pWidth = (size_t)Header.Width;
-        *po_pHeight = (size_t)Header.Height;
+        *po_pWidth = Header.Width;
+        *po_pHeight = Header.Height;
         *po_pDataSize = (size_t)Header.DataSize;
 
         return true;
@@ -528,7 +528,7 @@ HTIFFFileRecorder::HTIFFFileRecorder(const WString& pi_rFileName,
     else
         AccessMode = HFC_READ_WRITE | HFC_OPEN_ALWAYS;
 
-    m_pFile = HTIFFFile_UndoRedoFile(pi_rFileName, AccessMode);
+    m_pFile = HTIFFFile::UndoRedoFile(pi_rFileName, AccessMode);
 
     m_BufferSize = 16 * 1024;
 

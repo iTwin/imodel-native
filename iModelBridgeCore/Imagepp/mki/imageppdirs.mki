@@ -2,7 +2,7 @@
 #
 #     $Source: mki/imageppdirs.mki $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__ImagePPDirs_mki__)
@@ -18,19 +18,17 @@ __ImagePPDirs_mki__=1
 # Source directories
 # ------------------------------------
 ippAllDir           = $(SrcImagepp)all/
-ippClrDir           = $(SrcImagepp)clr/
-ippWinDir           = $(SrcImagepp)win/
 
 ippGraDir           = $(ippAllDir)gra/
-ippNetDir           = $(ippAllDir)net/
 ippUtlDir           = $(ippAllDir)utl/
 
 ippPublicAPISrc     = $(SrcImagepp)PublicApi/ImagePP/
 ippInc              = $(ippPublicAPISrc)h/
 ippAllInc           = $(ippPublicAPISrc)All/h/
 ippInterfaceInc     = $(ippAllInc)interface/
-ippClrInc           = $(ippClrDir)h/
-ippWinInc           = $(ippPublicAPISrc)win/h/
+
+ippPrivateAPISrc    = $(SrcImagepp)PrivateApi/
+ippGraPrivateAPISrc = $(SrcImagepp)PrivateApi/ImagePPInternal/gra/
 
 # ------------------------------------
 # Output directories

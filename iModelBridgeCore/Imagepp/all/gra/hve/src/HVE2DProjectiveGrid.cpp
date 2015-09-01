@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DProjectiveGrid.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DProjectectiveGrid
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HGF2DSimilitude.h>
@@ -332,8 +332,22 @@ void HVE2DProjectectiveGrid::ConvertDirect(double    pi_YIn,
     }
 
 
+//-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+void HVE2DProjectectiveGrid::ConvertDirect(uint32_t  pi_NumLoc,
+                                           double*   pio_aXInOut,
+                                           double*   pio_aYInOut) const
+    {
+    // Make sure recipient arrays are provided
+    HPRECONDITION(pio_aXInOut);
+    HPRECONDITION(pio_aYInOut);
 
-
+    for(uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        ConvertDirect(pio_aXInOut + i, pio_aYInOut + i);
+        }
+    }
 
 
 //-----------------------------------------------------------------------------
@@ -395,6 +409,22 @@ void HVE2DProjectectiveGrid::ConvertInverse(double    pi_YIn,
     }
 
 
+//-----------------------------------------------------------------------------
+// Converter (inverse)
+//-----------------------------------------------------------------------------
+void HVE2DProjectectiveGrid::ConvertInverse(uint32_t  pi_NumLoc,
+                                            double*   pio_aXInOut,
+                                            double*   pio_aYInOut) const
+    {
+    // Make sure recipient arrays are provided
+    HPRECONDITION(pio_aXInOut);
+    HPRECONDITION(pio_aYInOut);
+
+    for(uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        ConvertInverse(pio_aXInOut + i, pio_aYInOut + i);
+        }
+    }
 
 
 //-----------------------------------------------------------------------------

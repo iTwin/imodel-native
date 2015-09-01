@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DPolygon.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DPolygon
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HVE2DPolygon.h>
 #include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
@@ -379,22 +379,6 @@ void HVE2DPolygon::ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
                                                  po_pFirstContiguousnessPoint,
                                                  po_pSecondContiguousnessPoint);
 
-#if (0)
-    // Check if first contiguousness point is the start point
-    if ((*po_pFirstContiguousnessPoint).IsEqualTo(m_ComplexLinear.GetStartPoint()))
-        {
-        // The contiguousness region may possibly extent in last component linear ...
-
-        // We obtain all contiguousness points
-        HGF2DLocationCollection     AllContiguousnessPoints;
-        ObtainContiguousnessPoints(pi_rVector, &AllContiguousnessPoints);
-
-        // We know from nature of method that the start point is always located
-        // in first returned contiguousness region
-        *po_pFirstContiguousnessPoint = AllContiguousnessPoints[0];
-        *po_pSecondContiguousnessPoint = AllContiguousnessPoints[1];
-        }
-#else
     // The preceeding piece of code pre-supposed that the
     // contiguousness points are returned in increasing ALPHA
     // and some other assumptions which should not have been expected ...
@@ -406,12 +390,14 @@ void HVE2DPolygon::ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
         HGF2DLocationCollection     AllContiguousnessPoints;
         ObtainContiguousnessPoints(pi_rVector, &AllContiguousnessPoints);
 
-        // We know from nature of method that the start point is always located
-        // in first returned contiguousness region
-        *po_pFirstContiguousnessPoint = AllContiguousnessPoints[0];
-        *po_pSecondContiguousnessPoint = AllContiguousnessPoints[1];
+        if(AllContiguousnessPoints.size() > 1)
+            {
+            // We know from nature of method that the start point is always located
+            // in first returned contiguousness region
+            *po_pFirstContiguousnessPoint = AllContiguousnessPoints[0];
+            *po_pSecondContiguousnessPoint = AllContiguousnessPoints[1];
+            }
         }
-#endif
     }
 
 

@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeI1R8G8B8A8RLE.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>+--------------------------------------------------------------------------
 // Methods for class HRPPixelTypeI1R8G8B8A8RLE
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
 
@@ -54,26 +54,8 @@ public:
     virtual ~ConverterI1R8G8B8A8RLE_I1R8G8B8A8RLE()
         {
         };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
-        unsigned short* pDst = (unsigned short*)pio_pDestRawData;
-
-        if(0 == m_ConvertEntryConversion[0]) // index-index mapping.
-            {
-            if(*pSrc == 0)
-                *pDst++ = 0;
-            }
-        else if(*pSrc != 0)
-            {
-            *pDst++ = 0;
-            }
-
-        *pDst = 1;
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+     
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
         unsigned short* pDst = (unsigned short*)pio_pDestRawData;
@@ -113,7 +95,7 @@ public:
                     *pDst = (unsigned short)NewValue;
                     }
 
-                pi_PixelsCount -= min(*pSrc, pi_PixelsCount);
+                pi_PixelsCount -= MIN(*pSrc, pi_PixelsCount);
                 }
 
             pSrc++;
@@ -121,21 +103,7 @@ public:
             }
         };
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        unsigned short const* pSrc = (unsigned short const*)pi_pSourceRawData;
-        unsigned short*       pDst = (unsigned short*)pio_pDestRawData;
-
-        if(m_ComposeEntryConversion[*pSrc ? 0 : 1][*pDst ? 0 : 1])
-            {
-            *pDst = 0;
-            ++pDst;
-            }
-
-        *pDst = 1;
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         // To simplify RLE algo and avoid confusion between run len and run value
         // we will assume 0 to be black and 1 to be white. This is not the real pixel value
@@ -183,7 +151,7 @@ public:
             // we write the current run and start a new one.
             if(FinalDstOnState != m_ComposeEntryConversion[SrcOnState][DstOnState])      // black runs are ON even number. 0,2,4,6...
                 {
-                // Write what is exceeding the max run len
+                // Write what is exceeding the MAX run len
                 while(FinalDstRunLen > SHRT_MAX)
                     {
                     *pFinalDst++ = SHRT_MAX;
@@ -204,8 +172,8 @@ public:
             else
                 {
                 // The FinalDstOnState won't change until SrcOnState or DstOnState change so
-                // we can safely skip the min pixel count between pSrc, pDst and pixelCount.
-                uint32_t MinRunLen((uint32_t)min(DstRunLen, min(SrcRunLen, pi_PixelsCount)));
+                // we can safely skip the MIN pixel count between pSrc, pDst and pixelCount.
+                uint32_t MinRunLen((uint32_t)MIN(DstRunLen, MIN(SrcRunLen, pi_PixelsCount)));
 
                 FinalDstRunLen += MinRunLen;
                 DstRunLen -= MinRunLen;
@@ -214,7 +182,7 @@ public:
                 }
             }
 
-        // Write what is exceeding the max run len
+        // Write what is exceeding the MAX run len
         while(FinalDstRunLen > SHRT_MAX)
             {
             *pFinalDst++ = SHRT_MAX;
@@ -228,41 +196,23 @@ public:
         //FinalDstOnState = !FinalDstOnState;
         };
 
-    virtual void Convert(   const void* pi_pSourceRawData,
+    virtual void ConvertLostChannel(   const void* pi_pSourceRawData,
                             void* pio_pDestRawData,
                             size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
+                            const bool* pi_pChannelsMask) const override
         {
         HASSERT(0);
         };
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8RLE_I1R8G8B8A8RLE(*this));
-        };
-
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        Byte* pDst = (Byte*)pio_pDestRawData;
-        unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
-
-        bool OnState;
-
-        if(*pSrc == 0)
-            OnState = true;
-        else
-            OnState = false;
-
-        uint32_t* pSrcData = (uint32_t*)(GetSourcePixelType()->GetPalette().GetCompositeValue(OnState));
-
-        *((uint32_t*)pDst) = *pSrcData;
         };
 
 protected:
 
     // this function pre-calculates a transformation table for fast conversion
     // between two bitmap rasters
-    virtual void Update()
+    virtual void Update() override
         {
         // Get the palette of the source and destination pixel types
         const HRPPixelPalette& rSrcPixelPalette = GetSourcePixelType()->GetPalette();
@@ -378,22 +328,7 @@ public:
         {
         };
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        unsigned short* pDst = (unsigned short*)pio_pDestRawData;
-
-        int OnState = 0;
-
-        if(OnState != EntryConversion[OnState])
-            {
-            *pDst = 0;
-            pDst++;
-            }
-
-        *pDst = 1;
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
         unsigned short* pDst = (unsigned short*)pio_pDestRawData;
@@ -433,7 +368,7 @@ public:
                     *pDst = (unsigned short)NewValue;
                     }
 
-                pi_PixelsCount -= min(*pSrc, pi_PixelsCount);
+                pi_PixelsCount -= MIN(*pSrc, pi_PixelsCount);
                 }
 
             pSrc++;
@@ -441,37 +376,15 @@ public:
             }
         };
 
-    virtual void Convert(   const void* pi_pSourceRawData,
+    virtual void ConvertLostChannel(   const void* pi_pSourceRawData,
                             void* pio_pDestRawData,
                             size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
+                            const bool* pi_pChannelsMask) const override
         {
         HASSERT(0);
         };
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        // To simplify RLE algo and avoid confusion between run len and run value
-        // we will assume 0 to be black and 1 to be white. This is not the real pixel value
-        // since the black and white position is determined by the pixel type.
-
-        unsigned short* pDst = (unsigned short*)pio_pDestRawData;
-
-        bool OnState = false;      // We always start on black
-
-        // If we have a white pixel
-        if(1 == m_AlphaEntryConversion[OnState][OnState])
-            {
-            // Write 0 black because we always start with black pixel
-            *pDst = 0;
-            pDst++;
-            }
-
-        // We have one pixel. A white if we entered the if above ortherwise it's a black.
-        *pDst = 1;
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         // To simplify RLE algo and avoid confusion between run len and run value
         // we will assume 0 to be black and 1 to be white. This is not the real pixel value
@@ -520,7 +433,7 @@ public:
             // we write the current run and start a new one.
             if(FinalDstOnState != m_AlphaEntryConversion[SrcOnState][DstOnState])
                 {
-                // Write what is exceeding the max run len
+                // Write what is exceeding the MAX run len
                 while(FinalDstRunLen > SHRT_MAX)
                     {
                     *pFinalDst++ = SHRT_MAX;
@@ -541,8 +454,8 @@ public:
             else
                 {
                 // The FinalDstOnState won't change until SrcOnState or DstOnState change so
-                // we can safely skip the min pixel count between pSrc, pDst and pixelCount.
-                uint32_t MinRunLen((uint32_t)min(DstRunLen, min(SrcRunLen, pi_PixelsCount)));
+                // we can safely skip the MIN pixel count between pSrc, pDst and pixelCount.
+                uint32_t MinRunLen((uint32_t)MIN(DstRunLen, MIN(SrcRunLen, pi_PixelsCount)));
 
                 FinalDstRunLen += MinRunLen;
                 DstRunLen -= MinRunLen;
@@ -551,7 +464,7 @@ public:
                 }
             }
 
-        // Write what is exceeding the max run len
+        // Write what is exceeding the MAX run len
         while(FinalDstRunLen > SHRT_MAX)
             {
             *pFinalDst++ = SHRT_MAX;
@@ -566,29 +479,11 @@ public:
         };
 
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8RLE_I1R8G8B8RLE(*this));
         };
 
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        Byte* pDst = (Byte*)pio_pDestRawData;
-        unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
-
-        bool OnState;
-
-        if(*pSrc == 0)
-            OnState = true;
-        else
-            OnState = false;
-
-        uint32_t* pSrcData = (uint32_t*)(GetSourcePixelType()->GetPalette().GetCompositeValue(OnState));
-
-        *((uint32_t*)pDst) = *pSrcData;
-        };
-
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -597,7 +492,7 @@ protected:
 
     // this function pre-calculates a transformation table for fast conversion
     // between two bitmap rasters
-    virtual void Update()
+    virtual void Update() override
         {
         // Get the palette of the source and destination pixel types
         const HRPPixelPalette& rSrcPixelPalette = GetSourcePixelType()->GetPalette();
@@ -716,15 +611,7 @@ class ConverterI1R8G8B8A8RLE_I1R8G8B8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        if(*((unsigned short*)pi_pSourceRawData) != 0)
-            *((Byte*)pio_pDestRawData) = EntryConversion[0] << 7;
-        else
-            *((Byte*)pio_pDestRawData) = EntryConversion[1] << 7;
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -732,12 +619,12 @@ public:
         bool OnState = false;
 
         size_t RunLen;
-        size_t Index = 0;
+        uint32_t Index = 0;
 
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -766,34 +653,13 @@ public:
             pSrcRun++;
             OnState = !OnState;
             }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte OnState;
-        if(*((unsigned short*)pi_pSourceRawData) != 0)
-            OnState = 0;
-        else
-            OnState = 1;
-
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        Byte Index = 0;
-
-        if(AlphaEntryConversion[OnState][(*pDest & s_BitMask[0]) >> 7] == 1)
-            *pDest = *pDest | s_BitMask[Index];
-        else
-            *pDest = *pDest & s_NotBitMask[Index];
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         };
 
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -801,12 +667,12 @@ public:
         bool OnState = false;
 
         size_t RunLen;
-        size_t Index = 0;
+        uint32_t Index = 0;
 
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -835,27 +701,18 @@ public:
             pSrcRun++;
             OnState = !OnState;
             }
+
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         }
 
-
-    // convert without alpha
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        bool OnState = (*(unsigned short*)pi_pSourceRawData == 0);
-        memcpy( pio_pDestRawData,
-                GetSourcePixelType()->
-                GetPalette().GetCompositeValue(OnState),
-                3);
-
-        };
-
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8RLE_I1R8G8B8(*this));
         }
 
@@ -863,7 +720,7 @@ protected:
 
     // this function pre-calculates a transformation table for fast conversion
     // between two bitmap rasters
-    virtual void Update()
+    virtual void Update() override
         {
         // Get the palette of the source and destination pixel types
         const HRPPixelPalette& rSrcPixelPalette = GetSourcePixelType()->GetPalette();
@@ -979,15 +836,7 @@ class ConverterI1R8G8B8A8RLE_I1R8G8B8A8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        if(*((unsigned short*)pi_pSourceRawData) != 0)
-            *((Byte*)pio_pDestRawData) = m_entryConversion[0] << 7;
-        else
-            *((Byte*)pio_pDestRawData) = m_entryConversion[1] << 7;
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -995,12 +844,12 @@ public:
         bool OnState = false;
 
         size_t RunLen;
-        size_t Index = 0;
+        uint32_t Index = 0;
 
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -1013,42 +862,28 @@ public:
                 else
                     *pDest = *pDest & s_NotBitMask[Index];
 
-                RunLen--;
+                --RunLen;
 
                 // Increment Source
-                Index++;
+                ++Index;
                 if(Index == 8)
                     {
                     // Start writing to a new destination byte
                     Index = 0;
-                    pDest++;
+                    ++pDest;
                     }
                 }
 
             pSrcRun++;
             OnState = !OnState;
             }
+        
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         };
 
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte OnState;
-        if(*((unsigned short*)pi_pSourceRawData) != 0)
-            OnState = 0;
-        else
-            OnState = 1;
-
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        Byte Index = 0;
-
-        if(m_alphaEntryConversion[OnState][(*pDest & s_BitMask[0]) >> 7] == 1)
-            *pDest = *pDest | s_BitMask[Index];
-        else
-            *pDest = *pDest & s_NotBitMask[Index];
-        };
-
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -1056,12 +891,12 @@ public:
         bool OnState = false;
 
         size_t RunLen;
-        size_t Index = 0;
+        uint32_t Index = 0;
 
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -1074,45 +909,28 @@ public:
                 else
                     *pDest = *pDest & s_NotBitMask[Index];
 
-                RunLen--;
+                --RunLen;
 
                 // Increment Source
-                Index++;
+                ++Index;
                 if(Index == 8)
                     {
                     // Start writing to a new destination byte
                     Index = 0;
-                    pDest++;
+                    ++pDest;
                     }
                 }
 
             pSrcRun++;
             OnState = !OnState;
             }
+
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         }
 
-
-    // convert without alpha
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        bool OnState = (*(unsigned short*)pi_pSourceRawData == 0);
-        memcpy( pio_pDestRawData,
-                GetSourcePixelType()->
-                GetPalette().GetCompositeValue(OnState),
-                4);
-
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
-
-
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8RLE_I1R8G8B8A8(*this));
         }
 
@@ -1120,7 +938,7 @@ protected:
 
     // this function pre-calculates a transformation table for fast conversion
     // between two bitmap rasters
-    virtual void Update()
+    virtual void Update() override
         {
         // Get the palette of the source and destination pixel types
         const HRPPixelPalette& rSrcPixelPalette = GetSourcePixelType()->GetPalette();
@@ -1227,88 +1045,79 @@ class ConverterI1R8G8B8A8_I1R8G8B8A8RLE : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        if ((*((Byte*)pi_pSourceRawData) & s_BitMask[0]) == m_entryConversion[0])
-            {
-            *((unsigned short*)pio_pDestRawData) = 1;
-            }
-        else
-            {
-            *((unsigned short*)pio_pDestRawData) = 0;
-            *(((unsigned short*)pio_pDestRawData) + 1) = 1;
-            }
-        }
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         const Byte* pSrc = (const Byte*)pi_pSourceRawData;
         unsigned short* pDest = (unsigned short*)pio_pDestRawData;
-        const Byte* pStop = pSrc + (pi_PixelsCount / 8);
+
+        // Optimize when everything map to the same entry. 
+        // Anyways normal path goes into infinite loop!
+        if(m_entryConversion[0] == m_entryConversion[1])
+            {
+            if(m_entryConversion[0])
+                {
+                *pDest = 0;
+                ++pDest;
+                }
+
+            while(pi_PixelsCount > 32767)  
+                {
+                pi_PixelsCount -= 32767;
+                pDest[0] = 32767;
+                pDest[1] = 0;
+                pDest+=2;
+                }
+
+            *pDest = (unsigned short)pi_PixelsCount;
+
+            // end on FALSE(aka BLACK) state.
+            if(m_entryConversion[0])
+                pDest[1] = 0;
+                
+            return;
+            }
+        
+        size_t PixelCount(0);
+        bool OnState(false);
         size_t Index = 0;
-        do
+
+        while (PixelCount < pi_PixelsCount)
             {
-            // counting false bits
-            *pDest = 0;
-            do
+            // Count bits
+            uint32_t BitCount(0);
+            while (PixelCount < pi_PixelsCount)
                 {
-                // Bitwise operation may returns value between [0-255] but m_entryConversion contains only 0 and 1
-                // so that's why we use a double negation.
-                if (!(*pSrc & s_BitMask[Index]) != !m_entryConversion[0])
+                if ((Byte)OnState != m_entryConversion[(*pSrc & s_BitMask[Index]) >> (7 - Index)])
                     break;
-                (*pDest)++;
-                Index++;
+
+                ++BitCount;
+                ++PixelCount;
+                ++Index;
                 if (Index == 8)
                     {
                     Index = 0;
-                    pSrc++;
+                    ++pSrc;
                     }
                 }
-            while (pSrc < pStop);
 
-            // counting true bits
-            pDest++;
-            *pDest = 0;
-            do
+            while (BitCount > 32767)
                 {
-                // Bitwise operation may returns value between [0-255] but m_entryConversion contains only 0 and 1
-                // so that's why we use a double negation.
-                if (!(*pSrc & s_BitMask[Index]) != !m_entryConversion[1])
-                    break;
-                (*pDest)++;
-                Index++;
-                if (Index == 8)
-                    {
-                    Index = 0;
-                    pSrc++;
-                    }
+                pDest[0] = 32767;
+                pDest[1] = 0;
+                pDest += 2;
+                BitCount -= 32767;
                 }
-            while (pSrc < pStop);
-            }
-        while (pSrc < pStop);
-        }
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
-
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte const* pSrc = (Byte const*)pi_pSourceRawData;
-        unsigned short*      pDest = (unsigned short*)pio_pDestRawData;
-
-        if (m_alphaEntryConversion[((*pSrc) >> 7) & 0x01][*pDest ? 0 : 1])
-            {
-            *pDest = 0;
+            *pDest = (unsigned short)BitCount;
             ++pDest;
+            OnState = !OnState;
             }
-        *pDest = 1;
+
+        // must end with black.
+        if (!OnState)
+            *pDest = 0;
         }
 
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         // To simplify RLE algo and avoid confusion between run len and run value
         // we will assume 0 to be black and 1 to be white. This is not the real pixel value
@@ -1363,7 +1172,7 @@ public:
                     }
                 else
                     {
-                    // Write what is exceeding the max run len
+                    // Write what is exceeding the MAX run len
                     while(FinalDstRunLen > SHRT_MAX)
                         {
                         *pFinalDst++ = SHRT_MAX;
@@ -1394,7 +1203,7 @@ public:
             ++DstIndex;
             }
 
-        // Write what is exceeding the max run len
+        // Write what is exceeding the MAX run len
         while(FinalDstRunLen > SHRT_MAX)
             {
             *pFinalDst++ = SHRT_MAX;
@@ -1408,17 +1217,7 @@ public:
         //FinalDstOnState = !FinalDstOnState;
         }
 
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        bool OnState = (*(unsigned short*)pi_pSourceRawData == 0);
-        memcpy( pio_pDestRawData,
-                GetSourcePixelType()->
-                GetPalette().GetCompositeValue(OnState),
-                4);
-        }
-
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8_I1R8G8B8A8RLE(*this));
         }
 
@@ -1426,7 +1225,7 @@ protected:
 
     // this function pre-calculates a transformation table for fast conversion
     // between two bitmap rasters
-    virtual void Update()
+    virtual void Update() override
         {
         // Get the palette of the source and destination pixel types
         const HRPPixelPalette& rSrcPixelPalette = GetSourcePixelType()->GetPalette();
@@ -1534,18 +1333,7 @@ class ConverterI1R8G8B8A8RLE_V32R8G8B8A8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite;
-        if(*((unsigned short*)pi_pSourceRawData) != 0)
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(0);
-        else
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(1);
-
-        *((uint32_t*)pio_pDestRawData) = *((uint32_t*)pSourceComposite);
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -1562,7 +1350,7 @@ public:
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -1581,57 +1369,8 @@ public:
             OnState = !OnState;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite;
-        if(*((unsigned short*)pi_pSourceRawData) != 0)
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(0);
-        else
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(1);
-
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        // If source pixel is fully transparent, destination is unaltered
-        if (pSourceComposite[3] != 0)
-            {
-            if (pDest[3] == 0 ||
-                pSourceComposite[3] == 255)
-                {
-                // Destination pixel is fully transparent, or source pixel
-                // is fully opaque. Copy source pixel,
-                *((uint32_t*)pDest) = *((uint32_t*)pSourceComposite);
-                }
-            else
-                {
-                HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-                // Cdst' = Asrc * (Csrc - (Adst * Cdst)) + (Adst * Cdst)
-                // Alphas are in [0, 255].
-                Byte PremultDestColor = pQuotients->DivideBy255ToByte(pDest[3] * pDest[0]);
-                pDest[0] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[0] - PremultDestColor)) + PremultDestColor;
-
-                PremultDestColor = pQuotients->DivideBy255ToByte(pDest[3] * pDest[1]);
-                pDest[1] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[1] - PremultDestColor)) + PremultDestColor;
-
-                PremultDestColor = pQuotients->DivideBy255ToByte(pDest[3] * pDest[2]);
-                pDest[2] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[2] - PremultDestColor)) + PremultDestColor;
-
-                // Adst' = 1 - ( (1 - Asrc) * (1 - Adst) )
-                // --> Transparency percentages are multiplied
-                pDest[3] = 255 - (pQuotients->DivideBy255ToByte((255 - pSourceComposite[3]) * (255 - pDest[3])));
-                }
-            }
-        };
-
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -1650,7 +1389,7 @@ public:
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -1718,19 +1457,7 @@ public:
 
         };
 
-    // convert without alpha
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        bool OnState = (*(unsigned short*)pi_pSourceRawData == 0);
-        memcpy( pio_pDestRawData,
-                GetSourcePixelType()->
-                GetPalette().GetCompositeValue(OnState),
-                4);
-
-        };
-
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8RLE_V32R8G8B8A8(*this));
         }
 
@@ -1748,20 +1475,7 @@ class ConverterI1R8G8B8A8RLE_V24B8G8R8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite;
-        if(*((unsigned short*)pi_pSourceRawData) != 0)
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(0);
-        else
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(1);
-
-        ((Byte*)pio_pDestRawData)[2] = ((Byte*)pSourceComposite)[0];
-        ((Byte*)pio_pDestRawData)[1] = ((Byte*)pSourceComposite)[1];
-        ((Byte*)pio_pDestRawData)[0] = ((Byte*)pSourceComposite)[2];
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -1778,7 +1492,7 @@ public:
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -1800,44 +1514,9 @@ public:
             OnState = !OnState;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite;
-        if(*((unsigned short*)pi_pSourceRawData) != 0)
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(0);
-        else
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(1);
 
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        // Color is opaque ?
-        if (pSourceComposite[3] == 255)
-            {
-            pDest[2] = pSourceComposite[0];
-            pDest[1] = pSourceComposite[1];
-            pDest[0] = pSourceComposite[2];
-            }
-        // Color is semi-transparent
-        else if (pSourceComposite[3] > 0)
-            {
-            HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-            // alpha * (S - D) + D
-            pDest[2] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[0] - pDest[2])) + pDest[2];
-            pDest[1] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[1] - pDest[1])) + pDest[1];
-            pDest[0] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[2] - pDest[0])) + pDest[0];
-            }
-        };
-
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -1854,7 +1533,7 @@ public:
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -1905,25 +1584,12 @@ public:
             }
         };
 
-
-    // convert without alpha
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        bool OnState = (*(unsigned short*)pi_pSourceRawData == 0);
-        memcpy( pio_pDestRawData,
-                GetSourcePixelType()->
-                GetPalette().GetCompositeValue(OnState),
-                3);
-
-        };
-
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8RLE_V24B8G8R8(*this));
         }
 
@@ -1947,20 +1613,7 @@ class ConverterI1R8G8B8A8RLE_V24R8G8B8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite;
-        if(*((unsigned short*)pi_pSourceRawData) != 0)
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(0);
-        else
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(1);
-
-        ((Byte*)pio_pDestRawData)[0] = ((Byte*)pSourceComposite)[0];
-        ((Byte*)pio_pDestRawData)[1] = ((Byte*)pSourceComposite)[1];
-        ((Byte*)pio_pDestRawData)[2] = ((Byte*)pSourceComposite)[2];
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -1977,7 +1630,7 @@ public:
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -1999,44 +1652,8 @@ public:
             OnState = !OnState;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite;
-        if(*((unsigned short*)pi_pSourceRawData) != 0)
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(0);
-        else
-            pSourceComposite = (Byte*)GetSourcePixelType()->GetPalette().GetCompositeValue(1);
-
-        Byte* pDest            = (Byte*)pio_pDestRawData;
-
-        // Color is opaque ?
-        if (pSourceComposite[3] == 255)
-            {
-            pDest[0] = pSourceComposite[0];
-            pDest[1] = pSourceComposite[1];
-            pDest[2] = pSourceComposite[2];
-            }
-        // Color is semi-transparent
-        else if (pSourceComposite[3] > 0)
-            {
-            HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-            // alpha * (S - D) + D
-            pDest[0] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[0] - pDest[0])) + pDest[0];
-            pDest[1] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[1] - pDest[1])) + pDest[1];
-            pDest[2] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[2] - pDest[2])) + pDest[2];
-            }
-        };
-
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -2055,7 +1672,7 @@ public:
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -2082,9 +1699,9 @@ public:
                 while(RunLen != 0)
                     {
                     // alpha * (S - D) + D
-                        pDest[0] = pQuotients->DivideBy255ToByte(pColor[OnState][3] * (pColor[OnState][0] - pDest[0])) + pDest[0];
-                        pDest[1] = pQuotients->DivideBy255ToByte(pColor[OnState][3] * (pColor[OnState][1] - pDest[1])) + pDest[1];
-                        pDest[2] = pQuotients->DivideBy255ToByte(pColor[OnState][3] * (pColor[OnState][2] - pDest[2])) + pDest[2];
+                    pDest[0] = pQuotients->DivideBy255ToByte(pColor[OnState][3] * (pColor[OnState][0] - pDest[0])) + pDest[0];
+                    pDest[1] = pQuotients->DivideBy255ToByte(pColor[OnState][3] * (pColor[OnState][1] - pDest[1])) + pDest[1];
+                    pDest[2] = pQuotients->DivideBy255ToByte(pColor[OnState][3] * (pColor[OnState][2] - pDest[2])) + pDest[2];
 
                     // Increment Destination by 3 bytes !
                     pDest+=3;
@@ -2106,34 +1723,17 @@ public:
 
         };
 
-
-    // convert without alpha
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        bool OnState = (*(unsigned short*)pi_pSourceRawData == 0);
-        memcpy( pio_pDestRawData,
-                GetSourcePixelType()->
-                GetPalette().GetCompositeValue(OnState),
-                3);
-
-        };
-
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterI1R8G8B8A8RLE_V24R8G8B8(*this));
         }
 
-protected:
-
 
 private:
-
-
     static short m_LostChannels[];
     };
 short ConverterI1R8G8B8A8RLE_V24R8G8B8::m_LostChannels[] = {3, -1};
@@ -2153,25 +1753,7 @@ public:
         {
         };
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        // get a good index for the R,G,B source values
-        if((m_QuantizedPalette.GetIndex(
-                ((Byte*)pi_pSourceRawData)[0],
-                ((Byte*)pi_pSourceRawData)[1],
-                ((Byte*)pi_pSourceRawData)[2],
-                0xff)) == 0)
-            {
-            *((unsigned short*)pio_pDestRawData) = 0;
-            *(((unsigned short*)pio_pDestRawData) + 1) = 1;
-            }
-        else
-            {
-            *((unsigned short*)pio_pDestRawData) = 1;
-            }
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc = (Byte*)pi_pSourceRawData;
         unsigned short* pDest = (unsigned short*)pio_pDestRawData;
@@ -2214,35 +1796,15 @@ public:
             pi_PixelsCount--;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        Byte* pSrc = (Byte*)pi_pSourceRawData;
-        Byte* pDst = (Byte*)pio_pDestRawData;
-
-        pDst[0] = pSrc[0];
-        pDst[1] = pSrc[1];
-        pDst[2] = pSrc[2];
-        pDst[3] = 0xff;
-        };
-
-
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterV24R8G8B8_I1R8G8B8A8RLE(*this));
         }
 
 
 protected:
 
-    virtual void Update()
+    virtual void Update() override
         {
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
@@ -2270,26 +1832,7 @@ public:
         {
         };
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte ColorIndex;
-
-        ColorIndex = m_QuantizedPalette.GetIndex(((Byte*)pi_pSourceRawData)[0],
-                                                 ((Byte*)pi_pSourceRawData)[1],
-                                                 ((Byte*)pi_pSourceRawData)[2],
-                                                 ((Byte*)pi_pSourceRawData)[3]);
-        if(ColorIndex == 1)
-            {
-            *((unsigned short*)pio_pDestRawData) = 0;
-            *(((unsigned short*)pio_pDestRawData) + 1) = 1;
-            }
-        else
-            {
-            *((unsigned short*)pio_pDestRawData) = 1;
-            }
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc = (Byte*)pi_pSourceRawData;
         unsigned short* pDest = (unsigned short*)pio_pDestRawData;
@@ -2332,65 +1875,8 @@ public:
             pi_PixelsCount--;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte const* pSourceComposite = (Byte const*)pi_pSourceRawData;
-        unsigned short*      pDest = (unsigned short*)pio_pDestRawData;
-
-        // If source pixel is fully transparent, destination is unaltered
-        if (pSourceComposite[3] != 0)
-            {
-            Byte* pDestComposite = (Byte*)GetDestinationPixelType()->GetPalette().GetCompositeValue(*pDest ? 0 : 1);
-
-            if (pDestComposite[3] == 0 || pSourceComposite[3] == 255)
-                {
-                // Destination pixel is fully transparent, or source pixel is fully opaque. Copy source pixel.
-                if(m_QuantizedPalette.GetIndex(pSourceComposite[0], pSourceComposite[1], pSourceComposite[2], pSourceComposite[3])/* == 1*/)
-                    {
-                    *pDest = 0; // No Black, will encode white below.
-                    ++pDest;
-                    }
-                }
-            else
-                {
-                HFCMath (*pQuotients) (HFCMath::GetInstance());
-                Byte  TmpDst[4];
-
-                // Cdst' = Asrc * (Csrc - (Adst * Cdst)) + (Adst * Cdst)
-                // Alphas are in [0, 255].
-                Byte PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[0]);
-                TmpDst[0] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[0] - PremultDestColor)) + PremultDestColor;
-
-                PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[1]);
-                TmpDst[1] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[1] - PremultDestColor)) + PremultDestColor;
-
-                PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[2]);
-                TmpDst[2] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[2] - PremultDestColor)) + PremultDestColor;
-
-                // Adst' = 1 - ( (1 - Asrc) * (1 - Adst) )
-                // --> Transparency percentages are multiplied
-                TmpDst[3] = 255 - (pQuotients->DivideBy255ToByte((255 - pSourceComposite[3]) * (255 - pDestComposite[3])));
-
-                // get a good index for the R,G,B source values
-                if(m_QuantizedPalette.GetIndex(TmpDst[0], TmpDst[1], TmpDst[2], TmpDst[3]) /* == 1*/)
-                    {
-                    *pDest = 0; // No Black, will encode white below.
-                    ++pDest;
-                    }
-                }
-            *pDest = 1;
-            }
-        }
-
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         // To simplify RLE algo and avoid confusion between run len and run value
         // we will assume 0 to be black and 1 to be white. This is not the real pixel value
@@ -2482,7 +1968,7 @@ public:
                     }
                 else
                     {
-                    // Write what is exceeding the max run len
+                    // Write what is exceeding the MAX run len
                     while(FinalDstRunLen > SHRT_MAX)
                         {
                         *pFinalDst++ = SHRT_MAX;
@@ -2507,7 +1993,7 @@ public:
             ++DstIndex;
             }
 
-        // Write what is exceeding the max run len
+        // Write what is exceeding the MAX run len
         while(FinalDstRunLen > SHRT_MAX)
             {
             *pFinalDst++ = SHRT_MAX;
@@ -2521,21 +2007,14 @@ public:
         //FinalDstOnState = !FinalDstOnState;
         }
 
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        *((uint32_t*)pio_pDestRawData) = *((uint32_t*)pi_pSourceRawData);
-        };
-
-
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterV32R8G8B8A8_I1R8G8B8A8RLE(*this));
         }
 
 
 protected:
 
-    virtual void Update()
+    virtual void Update() override
         {
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
@@ -2574,15 +2053,7 @@ public:
         {
         };
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        if(*((unsigned short*)pi_pSourceRawData) != 0)
-            *((Byte*)pio_pDestRawData) = EntryConversion[0];
-        else
-            *((Byte*)pio_pDestRawData) = EntryConversion[1];
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -2599,7 +2070,7 @@ public:
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -2619,22 +2090,8 @@ public:
             OnState = !OnState;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        bool OnState = (*((unsigned short*)pi_pSourceRawData) == 0);
-
-        *((Byte*)pio_pDestRawData) = m_EntryComposition[OnState*256 + *(unsigned char*)pio_pDestRawData];
-        }
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun =  (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -2647,7 +2104,7 @@ public:
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -2667,25 +2124,13 @@ public:
             }
         };
 
-    // convert without alpha
-    virtual void ConvertToValue(const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const
-        {
-        bool OnState = (*(unsigned short*)pi_pSourceRawData == 0);
-        memcpy( pio_pDestRawData,
-                GetSourcePixelType()->
-                GetPalette().GetCompositeValue(OnState),
-                3);
-
-        };
-
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterI1R8G8B8A8RLE_I8R8G8B8(*this));
         };
 
@@ -2694,7 +2139,7 @@ protected:
 
     // this function pre-calculates a transformation table for fast conversion
     // between two bitmap rasters
-    virtual void Update()
+    virtual void Update() override
         {
         // Get the palette of the source and destination pixel types
         const HRPPixelPalette& rSrcPixelPalette = GetSourcePixelType()->GetPalette();
@@ -2826,15 +2271,7 @@ public:
         {
         };
 
-    void Convert(const void* pi_pSourceRawDataI1, void* pio_pDestRawDataI8) const
-        {
-        if(*((unsigned short*)pi_pSourceRawDataI1) != 0)
-            *((Byte*)pio_pDestRawDataI8) = EntryConversion[0];
-        else
-            *((Byte*)pio_pDestRawDataI8) = EntryConversion[1];
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun  = (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -2851,7 +2288,7 @@ public:
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -2870,22 +2307,8 @@ public:
             OnState = !OnState;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        bool OnState = (*((unsigned short*)pi_pSourceRawData) == 0);
-
-        *((Byte*)pio_pDestRawData) = m_EntryComposition[OnState*256 + *(unsigned char*)pio_pDestRawData];
-        }
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrcRun =  (unsigned short*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -2898,7 +2321,7 @@ public:
         while(pi_PixelsCount != 0)
             {
             // get the len
-            RunLen = min(*pSrcRun, pi_PixelsCount);
+            RunLen = MIN(*pSrcRun, pi_PixelsCount);
 
             // Substract the len to the pixel count
             pi_PixelsCount -= RunLen;
@@ -2918,7 +2341,7 @@ public:
             }
         };
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const override {
         return(new ConverterI1R8G8B8A8RLE_I8R8G8B8A8(*this));
         };
 
@@ -2927,7 +2350,7 @@ protected:
 
     // this function pre-calculates a transformation table for fast conversion
     // between two bitmap rasters
-    virtual void Update()
+    virtual void Update() override
         {
         // Get the palette of the source and destination pixel types
         const HRPPixelPalette& rSrcPixelPalette = GetSourcePixelType()->GetPalette();
@@ -3061,11 +2484,11 @@ HRPPixelTypeI1R8G8B8A8RLE::HRPPixelTypeI1R8G8B8A8RLE()
 
     // the black is opqaue
     Value = 0xFF000000;
-    rPixelPalette.AddEntry((const void*)&Value);
+    rPixelPalette.AddEntry(&Value);
 
     // the white is transparent
     Value = 0xFFFFFFFF;
-    rPixelPalette.AddEntry((const void*)&Value);
+    rPixelPalette.AddEntry(&Value);
     }
 
 

@@ -2,23 +2,24 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTagIdIterator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include <ImagePP/h/HIterators.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HTIFFTagEntry;
 
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsiclass                                                  Raymond.Gauthier   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-class HTagIdIter : public ImagePP::ForwardIterator<HTagIdIter, uint32_t>
+class HTagIdIter : public BentleyApi::ImagePP::ForwardIterator<HTagIdIter, uint32_t>
     {
 public:
-    _HDLLg explicit         HTagIdIter                   ();
+    IMAGEPP_EXPORT explicit         HTagIdIter                   ();
 
     // Hide base class version in order to return by value instead than by reference
     value_type              operator*                      ()                   {
@@ -35,7 +36,7 @@ public:
 
     value_type              Dereference                    () const;
 
-    _HDLLg void             Increment                      ();
+    IMAGEPP_EXPORT void             Increment                      ();
 
     bool                    EqualTo                        (const iterator_t&               pi_rRight) const;
 
@@ -72,3 +73,4 @@ inline bool HTagIdIter::EqualTo (const iterator_t& pi_rRight) const
     {
     return m_ppTag == pi_rRight.m_ppTag;
     }
+END_IMAGEPP_NAMESPACE

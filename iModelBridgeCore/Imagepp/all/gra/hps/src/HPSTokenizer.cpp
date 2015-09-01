@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSTokenizer.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPSTokenizer
 //---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HPSTokenizer.h>
 #include <Imagepp/all/h/HPSParser.h>
 #include "HPSParserScope.h"
@@ -65,7 +65,7 @@ HPANode* HPSTokenizer::MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
             FileName = *(((HFCPtr<VariableRefNode>&)pStringNode)->m_Value.m_pString);
             }
         else
-            throw HPSException(HPS_EXPRESSION_EXPECTED_EXCEPTION, pStringNode);
+            throw HPSExpressionExpectedException(pStringNode);
 
         HFCPtr<HFCURL> pURL = HFCURL::Instanciate(FileName);  // is it a URL?
         if (pURL == 0) // no...  is it a full path name having drive spec?
@@ -77,21 +77,18 @@ HPANode* HPSTokenizer::MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
                 pURL = ((HPSSession*)pi_pSession)->GetURL()->MakeURLTo(FileName);  // no, it is a relative path
             }
         if (pURL == 0)
-            throw HPSException(HPS_INVALID_URL_EXCEPTION, HFCPtr<HPANode>(HPADefaultTokenizer::MakeNode(pi_pToken, pi_rText, pi_rLeft, pi_rRight, pi_pSession)));
+            throw HPSInvalidUrlException( HFCPtr<HPANode>(HPADefaultTokenizer::MakeNode(pi_pToken, pi_rText, pi_rLeft, pi_rRight, pi_pSession)));
 
         HFCBinStream* pBinStream = 0;
         try
             {
             try
                 {
-                pBinStream = HFCBinStream::Instanciate(pURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
-
-                ThrowFileExceptionIfError(pBinStream, pURL->GetURL());
+                pBinStream = HFCBinStream::Instanciate(pURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, 0, true);
                 }
             catch(HFCFileException& )
                 {
-                throw HPSException(HPS_INCLUDE_NOT_FOUND_EXCEPTION,
-                                   HFCPtr<HPANode>(HPADefaultTokenizer::MakeNode(pi_pToken,
+                throw HPSIncludeNotFoundException(HFCPtr<HPANode>(HPADefaultTokenizer::MakeNode(pi_pToken,
                                                                                  pi_rText,
                                                                                  pi_rLeft,
                                                                                  pi_rRight,
@@ -100,7 +97,7 @@ HPANode* HPSTokenizer::MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
 
             if (!m_pParser->GetTokenizer()->Include(pBinStream))
                 {
-                throw HPAException(HPA_RECURSIVE_INCLUSION_EXCEPTION, pStringNode);
+                throw HPARecursiveInclusionException(pStringNode);
                 }
 
             pNode = GetToken();

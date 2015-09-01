@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: xpmdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: xpmdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  XPM Driver
  * Purpose:  Implement GDAL XPM Support
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2002, Frank Warmerdam
+ * Copyright (c) 2008-2010, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@
 #include "gdal_frmts.h"						      
 
 
-CPL_CVSID("$Id: xpmdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: xpmdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 static unsigned char *ParseXPM( const char *pszInput,
                                 int *pnXSize, int *pnYSize, 
@@ -110,7 +111,7 @@ GDALDataset *XPMDataset::Open( GDALOpenInfo * poOpenInfo )
         return NULL;
 
     VSIFSeekL( fp, 0, SEEK_END );
-    nFileSize = VSIFTellL( fp );
+    nFileSize = (unsigned int) VSIFTellL( fp );
     
     pszFileContents = (char *) VSIMalloc(nFileSize+1);
     if( pszFileContents == NULL )
@@ -200,13 +201,12 @@ GDALDataset *XPMDataset::Open( GDALOpenInfo * poOpenInfo )
 
 static GDALDataset *
 XPMCreateCopy( const char * pszFilename, GDALDataset *poSrcDS, 
-               int bStrict, char ** papszOptions, 
-               GDALProgressFunc pfnProgress, void * pProgressData )
-
+               int bStrict, CPL_UNUSED char ** papszOptions, 
+               CPL_UNUSED GDALProgressFunc pfnProgress, CPL_UNUSED void * pProgressData )
 {
-    int  nBands = poSrcDS->GetRasterCount();
-    int  nXSize = poSrcDS->GetRasterXSize();
-    int  nYSize = poSrcDS->GetRasterYSize();
+    const int  nBands = poSrcDS->GetRasterCount();
+    const int  nXSize = poSrcDS->GetRasterXSize();
+    const int  nYSize = poSrcDS->GetRasterYSize();
     GDALColorTable *poCT;
 
 /* -------------------------------------------------------------------- */

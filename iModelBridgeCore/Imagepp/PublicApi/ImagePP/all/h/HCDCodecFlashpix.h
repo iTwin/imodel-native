@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecFlashpix.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecFlashpix
@@ -13,11 +13,13 @@
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecIJG;
 
 class HCDCodecFlashpix : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1237,HCDCodecImage )
+    HDECLARE_CLASS_ID(HCDCodecId_Flashpix,HCDCodecImage )
 
 public:
 
@@ -34,12 +36,12 @@ public:
 
 
     // primary methods
-    _HDLLu                 HCDCodecFlashpix();
-    _HDLLu                 HCDCodecFlashpix(   size_t      pi_Width,
+    IMAGEPP_EXPORT                 HCDCodecFlashpix();
+    IMAGEPP_EXPORT                 HCDCodecFlashpix(   size_t      pi_Width,
                                                size_t      pi_Height,
                                                ColorModes  pi_Mode);
-    _HDLLu                 HCDCodecFlashpix(const HCDCodecFlashpix& pi_rObj);
-    _HDLLu virtual         ~HCDCodecFlashpix();
+    IMAGEPP_EXPORT                 HCDCodecFlashpix(const HCDCodecFlashpix& pi_rObj);
+    IMAGEPP_EXPORT virtual         ~HCDCodecFlashpix();
 
     // overriden methods
     virtual HCDCodec* Clone() const override;
@@ -57,26 +59,26 @@ public:
     virtual void    SetLinePaddingBits(size_t pi_Bits);
 
     // added methods
-    _HDLLu void            SetQuality(Byte pi_Quality);
-    _HDLLu Byte          GetQuality() const;
-    _HDLLu void            SetTable(uint32_t pi_Table,
+    IMAGEPP_EXPORT void            SetQuality(Byte pi_Quality);
+    IMAGEPP_EXPORT Byte          GetQuality() const;
+    IMAGEPP_EXPORT void            SetTable(uint32_t pi_Table,
                                     Byte* pi_pTable,
                                     size_t pi_TableSize);
-    _HDLLu void            EnableInterleave(bool pi_Enable);
-    _HDLLu bool           IsInterleaveEnabled() const;
-    _HDLLu void            SetSubSampling(Byte pi_SubSampling);
-    _HDLLu Byte           GetSubSampling() const;
-    _HDLLu void            EnableColorConversion(bool pi_Enable);
-    _HDLLu bool           IsColorConversionEnabled() const;
-    _HDLLu ColorModes      GetColorMode() const;
-    _HDLLu void            SetColorMode(ColorModes pi_Mode);
-    _HDLLu uint32_t        GetEncoderTable() const;
-    _HDLLu uint32_t        GetTableCount() const;
-    _HDLLu const Byte*    GetTable(uint32_t pi_Index);
-    _HDLLu uint32_t        GetTableSize(uint32_t pi_Index);
-    _HDLLu void            SetCurrentTable(uint32_t pi_Index);
-    _HDLLu uint32_t        GetCurrentTable() const;
-    _HDLLu void            UpdateDefaultTable();
+    IMAGEPP_EXPORT void            EnableInterleave(bool pi_Enable);
+    IMAGEPP_EXPORT bool           IsInterleaveEnabled() const;
+    IMAGEPP_EXPORT void            SetSubSampling(Byte pi_SubSampling);
+    IMAGEPP_EXPORT Byte           GetSubSampling() const;
+    IMAGEPP_EXPORT void            EnableColorConversion(bool pi_Enable);
+    IMAGEPP_EXPORT bool           IsColorConversionEnabled() const;
+    IMAGEPP_EXPORT ColorModes      GetColorMode() const;
+    IMAGEPP_EXPORT void            SetColorMode(ColorModes pi_Mode);
+    IMAGEPP_EXPORT uint32_t        GetEncoderTable() const;
+    IMAGEPP_EXPORT uint32_t        GetTableCount() const;
+    IMAGEPP_EXPORT const Byte*    GetTable(uint32_t pi_Index);
+    IMAGEPP_EXPORT uint32_t        GetTableSize(uint32_t pi_Index);
+    IMAGEPP_EXPORT void            SetCurrentTable(uint32_t pi_Index);
+    IMAGEPP_EXPORT uint32_t        GetCurrentTable() const;
+    IMAGEPP_EXPORT void            UpdateDefaultTable();
 
 protected:
 
@@ -110,3 +112,4 @@ private:
                                 size_t pi_Height);
     };
 
+END_IMAGEPP_NAMESPACE

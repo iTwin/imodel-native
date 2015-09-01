@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFUSgsFastL7AFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -17,6 +17,7 @@
 #include "HFCBinStream.h"
 #include "HCPGeoTiffKeys.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 typedef struct FL7ASatellite
     {
     char  m_Satellite[10+1];
@@ -169,7 +170,7 @@ public :
                                                      HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                                      uint64_t             pi_Offset = 0) const;
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFUSgsFastL7ACreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFUSgsFastL7ACreator)
 
 private:
     HRFUSgsFastL7ACreator();
@@ -184,7 +185,7 @@ class HRFUSgsFastL7AFile : public HRFRasterFile
     friend HRFUSgsFastL7ALineEditor;
 
 public:
-    HDECLARE_CLASS_ID(1417, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_USgsFastL7A, HRFRasterFile)
 
     HRFUSgsFastL7AFile     (const HFCPtr<HFCURL>& pi_rpURL,
                             HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
@@ -207,7 +208,6 @@ public:
     virtual void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                  uint32_t pi_Page = 0,
                                                                  bool   pi_CheckSpecificUnitSpec = false,
-                                                                 bool   pi_GeoModelDefaultUnit = true,
                                                                  bool   pi_InterpretUnitINTGR = false);
 protected:
     HRFUSgsFastL7AFile    (const HFCPtr<HFCURL>&  pi_rpURL,
@@ -246,4 +246,5 @@ private:
 
 
     };
+END_IMAGEPP_NAMESPACE
 

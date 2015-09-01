@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalproximity.cpp 21167 2010-11-24 15:19:51Z warmerdam $
+ * $Id: gdalproximity.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Compute each pixel's proximity to a set of target pixels.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2008, Frank Warmerdam
+ * Copyright (c) 2009-2010, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdalproximity.cpp 21167 2010-11-24 15:19:51Z warmerdam $");
+CPL_CVSID("$Id: gdalproximity.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 static CPLErr
 ProcessProximityLine( GInt32 *panSrcScanline, int *panNearX, int *panNearY, 

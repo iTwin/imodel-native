@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitflib.h 21059 2010-11-03 14:18:58Z dron $
+ * $Id: nitflib.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Main GDAL independent include file for NITF support.  
@@ -7,6 +7,7 @@
  *
  **********************************************************************
  * Copyright (c) 2002, Frank Warmerdam
+ * Copyright (c) 2007-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,6 +34,7 @@
 #include "cpl_port.h"
 #include "cpl_error.h"
 #include "cpl_vsi.h"
+#include "cpl_minixml.h"
 
 CPL_C_START
 
@@ -69,6 +71,8 @@ typedef struct {
     char    *pachTRE;
 
     char    **papszMetadata;
+
+    CPLXMLNode *psNITFSpecNode;
     
 } NITFFile;
 
@@ -105,7 +109,7 @@ typedef struct {
 
 } NITFBandInfo;
 
-typedef struct {
+typedef struct { 
     GUInt16 nLocId;
     GUInt32 nLocOffset;
     GUInt32 nLocSize;
@@ -214,6 +218,8 @@ int       CPL_DLL  NITFWriteIGEOLO( NITFImage *psImage, char chICORDS,
                                     double dfURX, double dfURY,
                                     double dfLRX, double dfLRY,
                                     double dfLLX, double dfLLY );
+char      CPL_DLL **NITFReadCSEXRA( NITFImage *psImage );
+char      CPL_DLL **NITFReadPIAIMC( NITFImage *psImage );
 char      CPL_DLL **NITFReadUSE00A( NITFImage *psImage );
 char      CPL_DLL **NITFReadSTDIDC( NITFImage *psImage );
 char      CPL_DLL **NITFReadBLOCKA( NITFImage *psImage );
@@ -386,6 +392,20 @@ typedef struct
 
 /** Return not freeable (maybe NULL if no matching) */
 const NITFSeries CPL_DLL *NITFGetSeriesInfo(const char* pszFilename);
+
+/* -------------------------------------------------------------------- */
+/*                           Internal use                               */
+/* -------------------------------------------------------------------- */
+
+char **NITFGenericMetadataRead(char **papszMD,
+                               NITFFile* psFile,
+                               NITFImage *psImage,
+                               const char* pszSpecificTREName);
+
+CPLXMLNode* NITFCreateXMLTre(NITFFile* psFile,
+                             const char* pszTREName,
+                             const char *pachTRE,
+                             int nTRESize);
 
 CPL_C_END
 

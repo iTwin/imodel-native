@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelType.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRPPixelType
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Returns number of index bits (0 if no index)
 //-----------------------------------------------------------------------------
@@ -57,5 +58,6 @@ inline const HRPPixelPalette& HRPPixelType::GetPalette() const
 //-----------------------------------------------------------------------------
 inline const void* HRPPixelType::GetDefaultRawData() const
     {
-    return (void*)m_pDefaultRawData.get();
+    return m_pDefaultRawData.get();
     }
+END_IMAGEPP_NAMESPACE

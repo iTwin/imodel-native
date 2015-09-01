@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFScanlines.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -12,6 +12,7 @@
 #include "HFCPtr.h"
 #include "HGF2DPosition.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HNOVTABLEINIT IPixelSelectionStrategy
     {
 public:
@@ -31,70 +32,70 @@ protected:
 public:
     //:> Primary methods
 
-    _HDLLg HGFScanLines(bool pi_gridMode = false,
+    IMAGEPP_EXPORT HGFScanLines(bool pi_gridMode = false,
                         const HFCPtr<HGF2DCoordSys>&    pi_rpCoordSys = 0);
 
-    _HDLLg virtual ~HGFScanLines();
+    IMAGEPP_EXPORT virtual ~HGFScanLines();
 
 
     //:> Info extraction
 
-    _HDLLg double         GetYMin() const;
-    _HDLLg double         GetYMax() const;
-    _HDLLg HSINTX          GetScanLineStart() const;
-    _HDLLg HSINTX          GetScanLineEnd() const;
-    _HDLLg bool           IsRectangle() const;
-    _HDLLg size_t          GetScanlineCount() const;
+    IMAGEPP_EXPORT double         GetYMin() const;
+    IMAGEPP_EXPORT double         GetYMax() const;
+    IMAGEPP_EXPORT HSINTX          GetScanLineStart() const;
+    IMAGEPP_EXPORT HSINTX          GetScanLineEnd() const;
+    IMAGEPP_EXPORT bool           IsRectangle() const;
+    IMAGEPP_EXPORT size_t          GetScanlineCount() const;
 
-    _HDLLg const HFCPtr<HGF2DCoordSys>&
+    IMAGEPP_EXPORT const HFCPtr<HGF2DCoordSys>&
     GetScanlinesCoordSys() const;
 
     //:> Scanline usage (not reentrant)
 
-    _HDLLg bool           GotoFirstRun();
-    _HDLLg bool           GotoNextRun();
-    _HDLLg bool           NextRunIsOnSameScanline() const;
-    _HDLLg HSINTX          GetCurrentScanLine() const;
-    _HDLLg HSINTX          GetCurrentRunXMin() const;
-    _HDLLg size_t          GetCurrentRunLength() const;
-    _HDLLg void            GetCurrentRun(HSINTX* po_pXMin, HSINTX* po_pScanline, size_t* po_pLength) const;
+    IMAGEPP_EXPORT bool           GotoFirstRun();
+    IMAGEPP_EXPORT bool           GotoNextRun();
+    IMAGEPP_EXPORT bool           NextRunIsOnSameScanline() const;
+    IMAGEPP_EXPORT HSINTX          GetCurrentScanLine() const;
+    IMAGEPP_EXPORT HSINTX          GetCurrentRunXMin() const;
+    IMAGEPP_EXPORT size_t          GetCurrentRunLength() const;
+    IMAGEPP_EXPORT void            GetCurrentRun(HSINTX* po_pXMin, HSINTX* po_pScanline, size_t* po_pLength) const;
 
-    _HDLLg double         AdjustXValueForCurrentRun(double pi_X) const;
-    _HDLLg double         AdjustYValueForCurrentRun(double pi_Y) const;
+    IMAGEPP_EXPORT double         AdjustXValueForCurrentRun(double pi_X) const;
+    IMAGEPP_EXPORT double         AdjustYValueForCurrentRun(double pi_Y) const;
 
 
     //:> Range setting
 
-    _HDLLg void     SetLimits(double pi_YMin,
+    IMAGEPP_EXPORT void     SetLimits(double pi_YMin,
                               double pi_YMax,
                               size_t  pi_ProjectedMaxCrossingsPerLine,
                               bool   pi_IsRectangle = false,
                               bool   pi_Reserve = true);
 
-    _HDLLg void            ResetLimits();
+    IMAGEPP_EXPORT void            ResetLimits();
 
-    _HDLLg bool           LimitsAreSet() const;
+    IMAGEPP_EXPORT bool           LimitsAreSet() const;
 
 
     //:> Scanline construction interface
 
-    _HDLLg double         AdjustEndpointYValue(double pi_YValue) const;
+    IMAGEPP_EXPORT double         AdjustEndpointYValue(double pi_YValue) const;
 
-    _HDLLg double         GetFirstScanlinePosition() const;
+    IMAGEPP_EXPORT double         GetFirstScanlinePosition() const;
 
-    _HDLLg void            SetScanlinesCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    IMAGEPP_EXPORT void            SetScanlinesCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
 
-    _HDLLg bool           AddCrossingPoint(HSINTX pi_Scanline, double pi_XCrossingPoint);
+    IMAGEPP_EXPORT bool           AddCrossingPoint(HSINTX pi_Scanline, double pi_XCrossingPoint);
 
-    _HDLLg void            AddCrossingPointsForSegment(const HGF2DPosition& pi_rStart,
+    IMAGEPP_EXPORT void            AddCrossingPointsForSegment(const HGF2DPosition& pi_rStart,
                                                        const HGF2DPosition& pi_rEnd);
 
     void AddCrossingPointsForSegment(const HGF2DPositionCollection& pi_rPoints);
 
 
 
-    _HDLLg SpanArray*                        GetSpanArray() const;
-    _HDLLg void                              SetStrategy(IPixelSelectionStrategy* pi_pStrategy);
+    IMAGEPP_EXPORT SpanArray*                        GetSpanArray() const;
+    IMAGEPP_EXPORT void                              SetStrategy(IPixelSelectionStrategy* pi_pStrategy);
 
 protected:
 
@@ -132,5 +133,5 @@ protected:
     m_pScanLines;
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HGFScanLines.hpp"

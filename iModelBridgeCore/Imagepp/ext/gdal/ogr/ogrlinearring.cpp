@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrlinearring.cpp 22556 2011-06-22 12:17:11Z rouault $
+ * $Id: ogrlinearring.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRLinearRing geometry class.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2008-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrlinearring.cpp 22556 2011-06-22 12:17:11Z rouault $");
+CPL_CVSID("$Id: ogrlinearring.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                           OGRLinearRing()                            */
@@ -62,7 +63,7 @@ OGRLinearRing::OGRLinearRing( OGRLinearRing * poSrcRing )
         return;
     }
 
-    setNumPoints( poSrcRing->getNumPoints() );
+    setNumPoints( poSrcRing->getNumPoints(), FALSE );
 
     memcpy( paoPoints, poSrcRing->paoPoints,
             sizeof(OGRRawPoint) * getNumPoints() );
@@ -118,11 +119,13 @@ OGRErr OGRLinearRing::importFromWkb( unsigned char *pabyData, int nSize )
 /************************************************************************/
 
 OGRErr OGRLinearRing::exportToWkb( OGRwkbByteOrder eByteOrder, 
-                                   unsigned char * pabyData ) const
+                                   unsigned char * pabyData,
+                                   OGRwkbVariant eWkbVariant ) const
 
 {
     (void) eByteOrder;
     (void) pabyData;
+    (void) eWkbVariant;
 
     return OGRERR_UNSUPPORTED_OPERATION;
 }
@@ -169,7 +172,7 @@ OGRErr OGRLinearRing::_importFromWkb( OGRwkbByteOrder eByteOrder, int b3D,
     }
 
     /* (Re)Allocation of paoPoints buffer. */
-    setNumPoints( nNewNumPoints );
+    setNumPoints( nNewNumPoints, FALSE );
 
     if( b3D )
         Make3D();
@@ -351,6 +354,14 @@ int OGRLinearRing::isClockwise() const
                paoPoints[i].x > paoPoints[v].x ) )
         {
             v = i;
+            bUseFallback = FALSE;
+        }
+        else if ( paoPoints[i].y == paoPoints[v].y &&
+                  paoPoints[i].x == paoPoints[v].x )
+        {
+            /* Two vertex with same coordinates are the lowest rightmost */
+            /* vertex! We cannot use that point as the pivot (#5342) */
+            bUseFallback = TRUE;
         }
     }
 
@@ -425,15 +436,16 @@ void OGRLinearRing::reverseWindingOrder()
 
 { 
     int pos = 0; 
-    OGRPoint tempPoint; 
+    OGRPoint pointA, pointB; 
 
     for( int i = 0; i < nPointCount / 2; i++ ) 
     { 
-        getPoint( i, &tempPoint ); 
-        pos = nPointCount - i - 1; 
-        setPoint( i, getX(pos), getY(pos), getZ(pos) ); 
-        setPoint( pos, tempPoint.getX(), tempPoint.getY(), tempPoint.getZ() ); 
-    } 
+        getPoint( i, &pointA ); 
+        pos = nPointCount - i - 1;
+        getPoint( pos, &pointB );
+        setPoint( i, &pointB );
+        setPoint( pos, &pointA );
+    }
 } 
 
 /************************************************************************/
@@ -450,14 +462,9 @@ void OGRLinearRing::closeRings()
         || getY(0) != getY(nPointCount-1)
         || getZ(0) != getZ(nPointCount-1) )
     {
-        /* Avoid implicit change of coordinate dimensionality
-         * if z=0.0 and dim=2
-         */
-        if( getCoordinateDimension() == 2 )
-            addPoint( getX(0), getY(0) );
-        else
-            addPoint( getX(0), getY(0), getZ(0) );
-            
+        OGRPoint oFirstPoint;
+        getPoint( 0, &oFirstPoint );
+        addPoint( &oFirstPoint );
     }
 }
 
@@ -534,17 +541,18 @@ OGRBoolean OGRLinearRing::isPointInRing(const OGRPoint* poPoint, int bTestEnvelo
     // test if ray starting from given point crosses segment (p - 1, p)
     int iNumCrossings = 0;
 
+    double prev_diff_x = getX(0) - dfTestX;
+    double prev_diff_y = getY(0) - dfTestY;
+
     for ( int iPoint = 1; iPoint < iNumPoints; iPoint++ ) 
     {
-        const int iPointPrev = iPoint - 1;
-
         const double x1 = getX(iPoint) - dfTestX;
         const double y1 = getY(iPoint) - dfTestY;
 
-        const double x2 = getX(iPointPrev) - dfTestX;
-        const double y2 = getY(iPointPrev) - dfTestY;
+        const double x2 = prev_diff_x;
+        const double y2 = prev_diff_y;
 
-        if( ( ( y1 > 0 ) && ( y2 <= 0 ) ) || ( ( y2 > 0 ) && ( y1 <= 0 ) ) ) 
+        if( ( ( y1 > 0 ) && ( y2 <= 0 ) ) || ( ( y2 > 0 ) && ( y1 <= 0 ) ) )
         {
             // Check if ray intersects with segment of the ring
             const double dfIntersection = ( x1 * y2 - x2 * y1 ) / (y2 - y1);
@@ -554,6 +562,9 @@ OGRBoolean OGRLinearRing::isPointInRing(const OGRPoint* poPoint, int bTestEnvelo
                 iNumCrossings++;
             }
         }
+
+        prev_diff_x = x1;
+        prev_diff_y = y1;
     }
 
     // If iNumCrossings number is even, given point is outside the ring,
@@ -583,38 +594,44 @@ OGRBoolean OGRLinearRing::isPointOnRingBoundary(const OGRPoint* poPoint, int bTe
     const double dfTestY = poPoint->getY();
 
     // Fast test if point is inside extent of the ring
-    OGREnvelope extent;
-    getEnvelope(&extent);
-    if ( !( dfTestX >= extent.MinX && dfTestX <= extent.MaxX
-         && dfTestY >= extent.MinY && dfTestY <= extent.MaxY ) )
+    if( bTestEnvelope )
     {
-        return 0;
+        OGREnvelope extent;
+        getEnvelope(&extent);
+        if ( !( dfTestX >= extent.MinX && dfTestX <= extent.MaxX
+            && dfTestY >= extent.MinY && dfTestY <= extent.MaxY ) )
+        {
+            return 0;
+        }
     }
+
+    double prev_diff_x = getX(0) - dfTestX;
+    double prev_diff_y = getY(0) - dfTestY;
 
     for ( int iPoint = 1; iPoint < iNumPoints; iPoint++ ) 
     {
-        const int iPointPrev = iPoint - 1;
-
         const double x1 = getX(iPoint) - dfTestX;
         const double y1 = getY(iPoint) - dfTestY;
 
-        const double x2 = getX(iPointPrev) - dfTestX;
-        const double y2 = getY(iPointPrev) - dfTestY;
-
-        /* If iPoint and iPointPrev are the same, go on */
-        if (x1 == x2 && y1 == y2)
-        {
-            continue;
-        }
+        const double x2 = prev_diff_x;
+        const double y2 = prev_diff_y;
 
         /* If the point is on the segment, return immediatly */
         /* FIXME? If the test point is not exactly identical to one of */
         /* the vertices of the ring, but somewhere on a segment, there's */
         /* little chance that we get 0. So that should be tested against some epsilon */
+
         if ( x1 * y2 - x2 * y1 == 0 )
         {
-            return 1;
+            /* If iPoint and iPointPrev are the same, go on */
+            if( !(x1 == x2 && y1 == y2) )
+            {
+                return 1;
+            }
         }
+
+        prev_diff_x = x1;
+        prev_diff_y = y1;
     }
 
     return 0;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTransfoModel.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     This method reverses the current transformation model. The operation of
     reversing implies that results produced by the ConvertDirect() method will
@@ -39,5 +39,4 @@ inline HFCPtr<HGF2DTransfoModel> HGF2DTransfoModel::CallComposeOf(const HGF2DTra
     }
 
 
-
-
+END_IMAGEPP_NAMESPACE

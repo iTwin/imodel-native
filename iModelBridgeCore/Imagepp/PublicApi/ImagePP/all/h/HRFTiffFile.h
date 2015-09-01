@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTiffFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFTiffFile
@@ -16,6 +16,7 @@
 #include "HRFRasterFileCapabilities.h"
 #include "HTIFFFile.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //class HTIFFFile;
 class HRPPixelType;
 
@@ -157,18 +158,17 @@ public:
 
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1425, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Tiff, HRFRasterFile)
 
     // allow to Open an image file
-    HRFTiffFile           (const HFCPtr<HFCURL>&          pi_rpURL,
-                           HFCAccessMode                  pi_AccessMode = HFC_READ_ONLY,
-                           uint64_t                      pi_Offset = 0);
+     HRFTiffFile     (const HFCPtr<HFCURL>&          pi_rpURL,
+					  HFCAccessMode                  pi_AccessMode = HFC_READ_ONLY,
+					  uint64_t                       pi_Offset = 0);
 
     virtual                               ~HRFTiffFile          ();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities       () const;
+    virtual const HFCPtr<HRFRasterFileCapabilities>&    GetCapabilities       () const;
 
     // File information
     virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
@@ -189,14 +189,14 @@ public:
     void                                  ResetGeokeys(uint32_t pi_Page = 0);
 
     // Private utility method.
-    _HDLLg void                           Set1BitPhotometric(bool pi_MinIsWhite);
+    IMAGEPP_EXPORT void                           Set1BitPhotometric(bool pi_MinIsWhite);
 
-    _HDLLg HRFScanlineOrientation         GetScanLineOrientation() const;
+    IMAGEPP_EXPORT HRFScanlineOrientation         GetScanLineOrientation() const;
 
-    virtual uint64_t                      GetFileCurrentSize() const;
+    IMAGEPP_EXPORT virtual uint64_t                      GetFileCurrentSize() const;
 
     //Compact the iTIFF file, removing freeblocks
-    _HDLLg bool                          CompactITIFF();
+    IMAGEPP_EXPORT bool                          CompactITIFF();
 
 protected:
 
@@ -214,7 +214,7 @@ protected:
 
 
     // Use by the File and the Editor
-    HTIFFFile*                          GetFilePtr            () const;
+    HTIFFFile*                   GetFilePtr            () const;
     void                                SetDirectory          (uint32_t pi_DirIndex);
     void                                SetImageInSubImage    (uint32_t pi_IndexImage);
     uint32_t                            CalcNumberOfPage      () const;
@@ -242,7 +242,7 @@ protected:
 
     HFCPtr<HGF2DTransfoModel>           CreateTransfoModelFromTiffMatrix() const;
 
-    virtual bool                       WriteTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel);
+    virtual bool        WriteTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel);
     bool                       WriteTransfoModelToTiffMatrix(const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel);
 
 
@@ -322,8 +322,7 @@ struct HRFTiffCreator : public HRFRasterFileCreator
     virtual WString                   GetExtensions() const;
 
     // capabilities of Raster file.
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities();
+    virtual const HFCPtr<HRFRasterFileCapabilities>&    GetCapabilities();
 
     // allow to Open an image file READ/WRITE and CREATE
     virtual HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
@@ -337,10 +336,11 @@ struct HRFTiffCreator : public HRFRasterFileCreator
 private:
     friend struct HRFGeoTiffCreator;
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFTiffCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFTiffCreator)
 
     // Disabled methodes
     HRFTiffCreator();
 
     };
+END_IMAGEPP_NAMESPACE
 

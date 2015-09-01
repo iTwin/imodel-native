@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DPieceWiseModel.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HGF2DPieceWiseModel.h>
 
 //-----------------------------------------------------------------------------
@@ -54,10 +54,10 @@ HGF2DLiteExtent HGF2DPieceWiseModel::ScaleExtent (HGF2DLiteExtent const& pi_rExt
     PointsX[3] = ((PointsX[3] - CenterX) * pi_Scale) + CenterX;
     PointsY[3] = ((PointsY[3] - CenterY) * pi_Scale) + CenterY;
 
-    return HGF2DLiteExtent(min(min(PointsX[0], PointsX[1]), min(PointsX[2], PointsX[3])),
-                           min(min(PointsY[0], PointsY[1]), min(PointsY[2], PointsY[3])),
-                           max(max(PointsX[0], PointsX[1]), max(PointsX[2], PointsX[3])),
-                           max(max(PointsY[0], PointsY[1]), max(PointsY[2], PointsY[3])));
+    return HGF2DLiteExtent(MIN(MIN(PointsX[0], PointsX[1]), MIN(PointsX[2], PointsX[3])),
+                           MIN(MIN(PointsY[0], PointsY[1]), MIN(PointsY[2], PointsY[3])),
+                           MAX(MAX(PointsX[0], PointsX[1]), MAX(PointsX[2], PointsX[3])),
+                           MAX(MAX(PointsY[0], PointsY[1]), MAX(PointsY[2], PointsY[3])));
     }
 
 //-----------------------------------------------------------------------------
@@ -95,10 +95,10 @@ HGF2DLiteExtent HGF2DPieceWiseModel::ConvertLiteExtent(const HGF2DLiteExtent&   
         pi_rpModel.ConvertInverse(&corners_x[3], &corners_y[3]);
         }
 
-    double OriginX = min(min(corners_x[0], corners_x[1]), min(corners_x[2], corners_x[3]));
-    double OriginY = min(min(corners_y[0], corners_y[1]), min(corners_y[2], corners_y[3]));
-    double CornerX = max(max(corners_x[0], corners_x[1]), max(corners_x[2], corners_x[3]));
-    double CornerY = max(max(corners_y[0], corners_y[1]), max(corners_y[2], corners_y[3]));
+    double OriginX = MIN(MIN(corners_x[0], corners_x[1]), MIN(corners_x[2], corners_x[3]));
+    double OriginY = MIN(MIN(corners_y[0], corners_y[1]), MIN(corners_y[2], corners_y[3]));
+    double CornerX = MAX(MAX(corners_x[0], corners_x[1]), MAX(corners_x[2], corners_x[3]));
+    double CornerY = MAX(MAX(corners_y[0], corners_y[1]), MAX(corners_y[2], corners_y[3]));
 
     return HGF2DLiteExtent(OriginX, OriginY, CornerX, CornerY);
     }
@@ -199,10 +199,10 @@ HGF2DLiteExtent HGF2DPieceWiseModel::ConvertLiteExtent(const HGF2DLiteExtent&   
 
     for (x=2; x<ConvertedPoints.size(); x+=2)
         {
-        OriginX = min(OriginX, ConvertedPoints[x]);
-        OriginY = min(OriginY, ConvertedPoints[x+1]);
-        CornerX = max(CornerX, ConvertedPoints[x]);
-        CornerY = max(CornerY, ConvertedPoints[x+1]);
+        OriginX = MIN(OriginX, ConvertedPoints[x]);
+        OriginY = MIN(OriginY, ConvertedPoints[x+1]);
+        CornerX = MAX(CornerX, ConvertedPoints[x]);
+        CornerY = MAX(CornerY, ConvertedPoints[x+1]);
         }
 
     return HGF2DLiteExtent(OriginX, OriginY, CornerX, CornerY);

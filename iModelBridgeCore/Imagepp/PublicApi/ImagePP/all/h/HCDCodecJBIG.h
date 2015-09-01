@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecJBIG.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecJBIG
@@ -11,9 +11,11 @@
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecJBIG : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1365, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_JBIG, HCDCodecImage)
 
 public:
 
@@ -24,11 +26,11 @@ public:
     HUINTVectorVector;
 
     // primary methods
-    _HDLLu                  HCDCodecJBIG();
-    _HDLLu                  HCDCodecJBIG(size_t pi_Width,
+    IMAGEPP_EXPORT                  HCDCodecJBIG();
+    IMAGEPP_EXPORT                  HCDCodecJBIG(size_t pi_Width,
                                             size_t pi_Height);
-    _HDLLu                  HCDCodecJBIG(const HCDCodecJBIG& pi_rObj);
-    _HDLLu virtual          ~HCDCodecJBIG();
+    IMAGEPP_EXPORT                  HCDCodecJBIG(const HCDCodecJBIG& pi_rObj);
+    IMAGEPP_EXPORT virtual          ~HCDCodecJBIG();
 
     // overriden methods
     virtual HCDCodec*       Clone() const override;
@@ -52,3 +54,5 @@ protected:
 
     Byte*                  m_pOutBuffer;
     };
+
+END_IMAGEPP_NAMESPACE

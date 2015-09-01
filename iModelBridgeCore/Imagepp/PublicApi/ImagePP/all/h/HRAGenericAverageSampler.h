@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAGenericAverageSampler.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -13,7 +13,9 @@
 
 #include "HRAGenericSampler.h"
 #include "HGF2DRectangle.h"
+#include "HRPPixelType.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HCDPacket;
 class HRPPixelConverter;
 class HGSMemorySurfaceDescriptor;
@@ -21,7 +23,7 @@ class HGSMemorySurfaceDescriptor;
 template <class T, class TS>
 class HRAGenericAverageSampler : public HRAGenericSampler
     {
-    HDECLARE_CLASS_ID(1770, HRAGenericSampler)
+    HDECLARE_CLASS_ID(HRAGenericId_AverageSampler, HRAGenericSampler)
 
 public:
 
@@ -32,24 +34,22 @@ public:
                              double                             pi_DeltaY);
     virtual         ~HRAGenericAverageSampler();
 
-    virtual void*   GetPixel(double     pi_PosX,
-                             double     pi_PosY) const;
+    virtual void const* GetPixel(double pi_PosX, double pi_PosY) const override;
 
     virtual void    GetPixels(const double*  pi_pPositionsX,
                               const double*  pi_pPositionsY,
                               size_t          pi_PixelCount,
-                              void*           po_pBuffer) const;
+                              void*           po_pBuffer) const override;
 
     virtual void    GetPixels(double         pi_PositionX,
                               double         pi_PositionY,
                               size_t          pi_PixelCount,
-                              void*           po_pBuffer) const;
+                              void*           po_pBuffer) const override;
 
-    virtual HFCPtr<HRPPixelType>
-    GetOutputPixelType() const;
+    virtual HFCPtr<HRPPixelType> GetOutputPixelType() const override;
 
-    virtual bool   TryToUse(const HFCPtr<HRPPixelType>& pi_rpOutputPixelType);
-
+    virtual bool   TryToUse(const HFCPtr<HRPPixelType>& pi_rpOutputPixelType) override;
+     
     virtual void    StretchByTwo(uint32_t pi_PositionX,
                                  uint32_t pi_PositionY,
                                  size_t  pi_PixelCount,
@@ -61,7 +61,7 @@ protected:
     HFCPtr<HCDPacket>   m_pPacket;
 
     // Hold one pixel, used in GetPixel()
-    mutable HArrayAutoPtr<T> m_pTempData;
+    mutable Byte m_pTempData[HRPPixelType::MAX_PIXEL_BYTES];
 
     //:> Information about the source data
     uint32_t   m_SourceBytesPerLine;
@@ -104,7 +104,7 @@ private:
 template <class T, class TS>
 class HRAGenericAverageSparseDataSampler : public HRAGenericAverageSampler<T, TS>
     {
-    HDECLARE_CLASS_ID(1775, HRAGenericAverageSampler)
+    HDECLARE_CLASS_ID(HRAGenericId_AverageSparseDataSampler, HRAGenericSampler)         //DM-Android should be HRAGenericAverageSampler
 
 public:
 
@@ -115,18 +115,17 @@ public:
                                        double                             pi_DeltaY);
     virtual         ~HRAGenericAverageSparseDataSampler();
 
-    virtual void*   GetPixel(double     pi_PosX,
-                             double     pi_PosY) const;
+    virtual void const* GetPixel(double pi_PosX, double pi_PosY) const override;
 
     virtual void    GetPixels(const double*  pi_pPositionsX,
                               const double*  pi_pPositionsY,
                               size_t          pi_PixelCount,
-                              void*           po_pBuffer) const;
+                              void*           po_pBuffer) const override;
 
     virtual void    GetPixels(double         pi_PositionX,
                               double         pi_PositionY,
                               size_t          pi_PixelCount,
-                              void*           po_pBuffer) const;
+                              void*           po_pBuffer) const override;
 
 private:
 
@@ -149,7 +148,7 @@ private:
 template <class T, class TS>
 class HRAGenericAverageSamplerInteger : public HRAGenericAverageSampler<T, TS>
     {
-    HDECLARE_CLASS_ID(1771, HRAGenericAverageSampler)
+    HDECLARE_CLASS_ID(HRAGenericId_AverageSamplerInteger, HRAGenericSampler)             //DM-Android should be HRAGenericAverageSampler
 
 public:
 
@@ -164,10 +163,11 @@ protected:
     virtual void    StretchByTwo(uint32_t pi_PositionX,
                                  uint32_t pi_PositionY,
                                  size_t  pi_PixelCount,
-                                 Byte* po_pBuffer) const;
+                                 Byte* po_pBuffer) const override;
 
 private:
 
     uint32_t m_DataWidth;
     uint32_t m_DataHeight;
     };
+END_IMAGEPP_NAMESPACE

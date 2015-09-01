@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ext/MatrixFromTiePts/src/trantran.c $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 /*mh================================================================ HMR
 **  Octimage/MicroStation - Transformation Models
 **
@@ -5,12 +12,6 @@
 **      transformation of coordinates using the translation transform
 **
 **===========================================================================*/
-/*----------------------------------------------------------------------+
-|                                                                       |
-|       $Source: ext/MatrixFromTiePts/src/trantran.c $
-|                                                                       |
-+----------------------------------------------------------------------*/
-
 #include "trfmodel.h"
 
 

@@ -2,21 +2,22 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPDFLibInterface.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFPDFLibInterface
 //-----------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
+#include <Imagepp/all/h/HRFPDFFile.h>
+
+#if defined(IPP_HAVE_PDF_SUPPORT) 
 
 #include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
 
 #include <Imagepp/all/h/HFCBuffer.h>
 #include <Imagepp/all/h/HFCMemoryLineStream.h>
-
-#include <Imagepp/all/h/HCPException.h>
 
 #include <Imagepp/all/h/HGF2DProjective.h>
 
@@ -47,18 +48,9 @@
 
 #include "HRFPDFLibInterface.h"
 
-USING_NAMESPACE_IMAGEPP
+
     
 #define PAGE_PIXEL_PER_INCH        96
-
-// Disable "warning C4611: interaction between '_setjmp' and C++ object destruction is non-portables"
-// Tried USE_CPLUSPLUS_EXCEPTIONS_FOR_ASEXCEPTIONS(adobe/include/CorCalls.h) but this generates C4297 because
-// miThrowExceptionToHandler(adobe/Source/PDFLInitCommon.c) is an extern "C" and it throws. 
-// Disable in win32 only since mac and unix adobe should use the cpp exception model.
-#if (defined(_WIN32) && defined(_MSC_VER))
-    #pragma warning(push)
-    #pragma warning(disable:4611)
-#endif
 
 //-----------------------------------------------------------------------------
 // public
@@ -95,6 +87,45 @@ void HRFPDFLibInterface::PageSize(const PDDoc pi_pDoc,
                               ASFixedRoundToInt16(PageRect.bottom)));
 
     po_rDPI = PAGE_PIXEL_PER_INCH * PDPageGetUserUnitSize(Page);
+
+    PDPageRelease(Page);
+    }
+
+//-----------------------------------------------------------------------------
+// public
+// Static method that can be used to get the size of the given PDF page.
+//-----------------------------------------------------------------------------
+void HRFPDFLibInterface::GetMaxResolutionSize(const PDDoc pi_pDoc,
+                                              uint32_t   pi_Page,
+                                              double      dpiConvertScaleFactor,
+                                              uint32_t&    po_maxResSize)
+    {
+    PDPage Page =  PDDocAcquirePage(pi_pDoc, pi_Page);
+
+
+    // TFS#8555; 
+    // 16bit integer is the data type used by the PDF library API. This means that the maximum size
+    // supported by the PDF is 32767. We need to adjust with the DPI scale factor to prevent the 16 bit overflow
+    // In TFS #8555, the overflow occurred on the matrix offset y (matrix.v) when multiply by the scale matrix in ReadBlock method,
+    // thus I have compensate for that in this method...
+
+    uint32_t PageWidth;
+    uint32_t PageHeight;
+    double PageDPI;
+    PageSize(pi_pDoc,pi_Page, PageWidth, PageHeight, PageDPI);
+    uint32_t MaxPageSize = MAX(PageWidth,PageHeight);
+
+
+    ASFixedMatrix Matrix;
+    PDPageGetFlippedMatrix(Page, &Matrix);
+
+   
+    double maxOffsetSize = MAX( ASFixedToFloat(Matrix.h), ASFixedToFloat(Matrix.v));
+    if (maxOffsetSize==0)
+        maxOffsetSize=MaxPageSize;
+
+    po_maxResSize = (uint32_t)( (32767.0 * MaxPageSize / maxOffsetSize)/ dpiConvertScaleFactor);
+
 
     PDPageRelease(Page);
     }
@@ -152,8 +183,8 @@ HRFPDFLibInterface::Editor* HRFPDFLibInterface::CreateEditor(
 
     ASFixedMatrixTransformRect(&PageRect, &Matrix, &PageRect);
 
-    pEditor->m_ResWidth = (uint32_t)(abs(ASFixedTruncToInt16(PageRect.right) - ASFixedTruncToInt16(PageRect.left)));
-    pEditor->m_ResHeight = (uint32_t)(abs(ASFixedTruncToInt16(PageRect.top) - ASFixedTruncToInt16(PageRect.bottom)));
+    pEditor->m_ResWidth = (uint32_t)(abs(ASFixedRoundToInt16(PageRect.right) - ASFixedRoundToInt16(PageRect.left)));
+    pEditor->m_ResHeight = (uint32_t)(abs(ASFixedRoundToInt16(PageRect.top) - ASFixedRoundToInt16(PageRect.bottom)));
 
 #ifdef __HMR_DEBUG
 
@@ -182,7 +213,9 @@ HRFPDFLibInterface::Editor* HRFPDFLibInterface::CreateEditor(
 #endif
 
     HANDLER
-    //Nothing do to here
+#if USE_CPLUSPLUS_EXCEPTIONS_FOR_ASEXCEPTIONS
+    Exception; // avoid C4101
+#endif
     END_HANDLER
 
     if (pPDPage != 0)
@@ -192,6 +225,49 @@ HRFPDFLibInterface::Editor* HRFPDFLibInterface::CreateEditor(
 
     return pEditor.release();
     }
+
+// For debugging.
+void DisplayErrorAndWarnings(PDDoc pdDoc, ASErrorCode errCode)
+{
+	if(!pdDoc)	return;
+
+	char errStr[250], pdDocErrStr[80], outputErrStr[350];
+	ASErrorCode pdDocErrCode;
+
+	ASInt32 warningCount = 0, errorCount = 0;
+	ASBool match = false;
+	
+	ASInt32 numPDDocErr = PDDocGetNumErrors(pdDoc);
+	for(ASInt32 i = 0; i < numPDDocErr; i++)
+	{
+		PDDocGetNthError(pdDoc, i, &pdDocErrCode, pdDocErrStr, sizeof(pdDocErrStr));
+		ASGetErrorString(pdDocErrCode, errStr, sizeof(errStr));
+
+		/* errStr can sometimes be a format string and it will give detailed error
+		   information when combined with pdDocErrStr. */
+		sprintf_s(outputErrStr, sizeof(outputErrStr), errStr, pdDocErrStr);
+
+		if(pdDocErrCode == errCode)
+		{
+			fprintf(stderr, "[Error %d] %s, %s\n", errCode, outputErrStr, pdDocErrStr);
+			match = true;
+			errorCount++;
+		}
+		else
+		{
+			fprintf(stdout, "[Warning %d] %s, %s\n", pdDocErrCode, outputErrStr, pdDocErrStr);
+			warningCount++;
+		}
+	}
+
+// 	if(errCode && !match)
+// 	{
+// 		DisplayError(errCode);
+// 		errorCount++;
+// 	}
+// 
+// 	fprintf(stdout, "%d error(s), %d warning(s)\n", errorCount, warningCount);
+}
 
 //-----------------------------------------------------------------------------
 // public
@@ -209,136 +285,79 @@ bool HRFPDFLibInterface::ReadBlock(Editor*             pi_pEditor,
     bool        CommandStatus = true;
     PDPage       pPDPage;
 
+    uint32_t bufferBytes = 0;
+
     DURING
-
-    pPDPage                = PDDocAcquirePage(pi_pEditor->m_pPDDoc, pi_pEditor->m_Page);
-    pi_pEditor->m_Matrix.h = FloatToASFixed(pi_pEditor->m_OffsetX - (double)pi_PosX);
-    pi_pEditor->m_Matrix.v = FloatToASFixed(pi_pEditor->m_OffsetY - (double)pi_PosY);
-
-    ASUns32                       DrawFlags   = kPDPageDoLazyErase;
-    uint32_t                     smoothingFlags = kPDPageDrawSmoothText | kPDPageDrawSmoothLineArt | kPDPageDrawSmoothImage;
-    HFCPtr<HMDAnnotationIconsPDF> pAnnotationIconRastInfo;
-    HFCPtr<HMDDrawOptionsPDF>     pDrawOptionsPDF;
-
-    if (pi_rpContext != 0)
         {
-        pAnnotationIconRastInfo = static_cast<HMDAnnotationIconsPDF*>(pi_rpContext->GetMetaDataContainer(HMDMetaDataContainer::HMD_ANNOT_ICON_RASTERING_INFO).GetPtr());
-        pDrawOptionsPDF = static_cast<HMDDrawOptionsPDF*>(pi_rpContext->GetMetaDataContainer(HMDMetaDataContainer::HMD_PDF_DRAW_OPTIONS).GetPtr());
-        }
+        pPDPage                = PDDocAcquirePage(pi_pEditor->m_pPDDoc, pi_pEditor->m_Page);
+        pi_pEditor->m_Matrix.h = FloatToASFixed(pi_pEditor->m_OffsetX - (double)pi_PosX);
+        pi_pEditor->m_Matrix.v = FloatToASFixed(pi_pEditor->m_OffsetY - (double)pi_PosY);
 
-    if ((pAnnotationIconRastInfo == 0) ||
-        ((pAnnotationIconRastInfo != 0) &&
-         (pAnnotationIconRastInfo->GetRasterization() == true)))
-        {
-        DrawFlags |= kPDPageUseAnnotFaces;
-        }
+        ASUns32                       DrawFlags   = kPDPageDoLazyErase;
+        uint32_t                     smoothingFlags = kPDPageDrawSmoothText | kPDPageDrawSmoothLineArt | kPDPageDrawSmoothImage;
+        HFCPtr<HMDAnnotationIconsPDF> pAnnotationIconRastInfo;
+        HFCPtr<HMDDrawOptionsPDF>     pDrawOptionsPDF;
 
-    if(pDrawOptionsPDF != 0)
-        {
-        if(pDrawOptionsPDF->GetSmoothImage())
-            smoothingFlags |= kPDPageDrawSmoothImage;
-        else
-            smoothingFlags &= ~kPDPageDrawSmoothImage;
+        if (pi_rpContext != 0)
+            {
+            pAnnotationIconRastInfo = static_cast<HMDAnnotationIconsPDF*>(pi_rpContext->GetMetaDataContainer(HMDMetaDataContainer::HMD_ANNOT_ICON_RASTERING_INFO).GetPtr());
+            pDrawOptionsPDF = static_cast<HMDDrawOptionsPDF*>(pi_rpContext->GetMetaDataContainer(HMDMetaDataContainer::HMD_PDF_DRAW_OPTIONS).GetPtr());
+            }
 
-        if(pDrawOptionsPDF->GetSmoothLineArt())
-            smoothingFlags |= kPDPageDrawSmoothLineArt;
-        else
-            smoothingFlags &= ~kPDPageDrawSmoothLineArt;
+        if ((pAnnotationIconRastInfo == 0) ||
+            ((pAnnotationIconRastInfo != 0) &&
+             (pAnnotationIconRastInfo->GetRasterization() == true)))
+            {
+            DrawFlags |= kPDPageUseAnnotFaces;
+            }
 
-        if(pDrawOptionsPDF->GetSmoothText())
-            smoothingFlags |= kPDPageDrawSmoothText;
-        else
-            smoothingFlags &= ~kPDPageDrawSmoothText;
-        }
+        if(pDrawOptionsPDF != 0)
+            {
+            if(pDrawOptionsPDF->GetSmoothImage())
+                smoothingFlags |= kPDPageDrawSmoothImage;
+            else
+                smoothingFlags &= ~kPDPageDrawSmoothImage;
 
-    ASFixedMatrixInvert(&pi_pEditor->m_InvertMatrix, &pi_pEditor->m_Matrix);
-    ASFixedMatrixTransformRect(&pi_pEditor->m_UpdateRect, &pi_pEditor->m_InvertMatrix, &pi_pEditor->m_TileRect);
-    if (pi_UseDrawContentToMem == true)
-        {
+            if(pDrawOptionsPDF->GetSmoothLineArt())
+                smoothingFlags |= kPDPageDrawSmoothLineArt;
+            else
+                smoothingFlags &= ~kPDPageDrawSmoothLineArt;
+
+            if(pDrawOptionsPDF->GetSmoothText())
+                smoothingFlags |= kPDPageDrawSmoothText;
+            else
+                smoothingFlags &= ~kPDPageDrawSmoothText;
+            }
+
+        ASFixedMatrixInvert(&pi_pEditor->m_InvertMatrix, &pi_pEditor->m_Matrix);
+        ASFixedMatrixTransformRect(&pi_pEditor->m_UpdateRect, &pi_pEditor->m_InvertMatrix, &pi_pEditor->m_TileRect);
         /* Create bitmap */
-        PDPageDrawContentsToMemory(pPDPage,
-                                   DrawFlags | kPDPageSwapComponents,
-                                   &pi_pEditor->m_Matrix,
-                                   &pi_pEditor->m_UpdateRect,
-                                   smoothingFlags,
-                                   pi_pEditor->m_csAtom,
-                                   8,
-                                   &pi_pEditor->m_TileRect,
-                                   (char*)po_pData,
-                                   (ASInt32)PDF_TILE_SIZE_IN_BYTES,
-                                   NULL,
-                                   NULL);
+        bufferBytes = PDPageDrawContentsToMemory(pPDPage,
+                                    DrawFlags | kPDPageSwapComponents,
+                                    &pi_pEditor->m_Matrix,
+                                    &pi_pEditor->m_UpdateRect,
+                                    smoothingFlags,
+                                    pi_pEditor->m_csAtom,
+                                    8,
+                                    &pi_pEditor->m_TileRect,
+                                    (char*)po_pData,
+                                    (ASInt32)PDF_TILE_SIZE_IN_BYTES,
+                                    NULL,
+                                    NULL);
         }
-    else
-        {
-#if 0 //DMxx
-        //Currently nothing has been done to set the image smoothing corresponding to
-        //the application's desire because this code is no longer use.
-        HASSERT(PDPrefGetAntialiasLevel() ==
-                (kPDPageDrawSmoothImage | kPDPageDrawSmoothLineArt | kPDPageDrawSmoothText));
-
-        HDC MemDC = CreateCompatibleDC(NULL);
-
-        // Allocate enough memory for the BITMAPINFOHEADER and 256 RGBQUAD palette entries
-        LPBITMAPINFO pBitmapInfo;
-        pBitmapInfo = (LPBITMAPINFO) new BYTE[sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD*)];
-        memset(pBitmapInfo, 0, sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD*));
-
-        pBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-        pBitmapInfo->bmiHeader.biWidth = pi_Width;
-        pBitmapInfo->bmiHeader.biHeight = -((int32_t)pi_Height);
-        pBitmapInfo->bmiHeader.biPlanes = 1;
-        pBitmapInfo->bmiHeader.biBitCount = 24;
-        pBitmapInfo->bmiHeader.biCompression = BI_RGB;
-        pBitmapInfo->bmiHeader.biSizeImage = 0;
-        pBitmapInfo->bmiHeader.biXPelsPerMeter = 0;
-        pBitmapInfo->bmiHeader.biYPelsPerMeter = 0;
-        pBitmapInfo->bmiHeader.biClrUsed = 0;
-        pBitmapInfo->bmiHeader.biClrImportant = 0;
-
-        Byte* pData = 0;
-
-        HBITMAP pHBitmap = CreateDIBSection(MemDC,             // handle to DC
-                                            pBitmapInfo,       // bitmap data
-                                            DIB_RGB_COLORS,    // data type indicator
-                                            (void**)&pData,    // bit values
-                                            NULL,         // handle to file mapping object
-                                            0);
-
-        int32_t err = GetLastError();
-        HASSERT(pHBitmap != 0);
-
-        HBITMAP pOldBitmap = (HBITMAP)SelectObject(MemDC, pHBitmap);
-
-        HASSERT(pOldBitmap != 0);
-
-        //SetICMMode( MemDC, ICM_ON ); // Set colour correction on for this DC
-        PDPageDrawContentsToWindowEx(pPDPage,
-                                     NULL,
-                                     MemDC,
-                                     false,
-                                     &pi_pEditor->m_Matrix,
-                                     DrawFlags,
-                                     &pi_pEditor->m_UpdateRect,
-                                     NULL,
-                                     NULL);
-
-        err =  GetDIBits(MemDC,             // handle to DC
-                         pHBitmap,          // handle to bitmap
-                         0,                 // first scan line to set
-                         pi_Height,         // number of scan lines to copy
-                         po_pData,          // array for bitmap bits
-                         pBitmapInfo,       // bitmap data buffer
-                         DIB_RGB_COLORS);   // RGB or palette index
-#endif
-        }
-
     HANDLER
+        {
+        #if USE_CPLUSPLUS_EXCEPTIONS_FOR_ASEXCEPTIONS
+            Exception; // avoid C4101
+        #endif
 
-    memset(po_pData, 0, PDF_TILE_SIZE_IN_BYTES);
+        memset(po_pData, 0, PDF_TILE_SIZE_IN_BYTES);
 
-    CommandStatus = false;
+        CommandStatus = false;
+        }
     END_HANDLER
+
+    //DisplayErrorAndWarnings(pi_pEditor->m_pPDDoc, ERRORCODE);
 
     if (pPDPage != 0)
         {
@@ -497,7 +516,9 @@ bool HRFPDFLibInterface::ReadBlockByExtent(Editor*             pi_pEditor,
 #endif
         }
     HANDLER
-
+        #if USE_CPLUSPLUS_EXCEPTIONS_FOR_ASEXCEPTIONS
+            Exception; // avoid C4101
+        #endif
     memset(po_pData, 0, pi_Width * pi_Height * 3);
     CommandStatus = false;
     END_HANDLER
@@ -904,6 +925,9 @@ bool HRFPDFLibInterface::IsOpRestrictedPDF(const PDDoc pi_pDoc)
             }
         }
     HANDLER
+#if USE_CPLUSPLUS_EXCEPTIONS_FOR_ASEXCEPTIONS
+    Exception; // avoid C4101
+#endif
     //According to the PDF document, numerous exceptions can be thrown
     //during a permission request call.
     HASSERT(0);
@@ -1008,7 +1032,7 @@ bool HRFPDFLibInterface::GetGeocodingAndReferenceInfo(const PDDoc               
 
     //The geocoding information can be found under the following node :
     //trailer/Root/Pages/Kids/0/VP/0/Measure
-    CosObjEnum(PageCosObj, ObjQueryEnumProc, (void*)&Query);
+    CosObjEnum(PageCosObj, ObjQueryEnumProc, &Query);
 
     if (CosObjEqual(Query.ObjFound, CosNewNull()) == false)
         {
@@ -1134,7 +1158,7 @@ bool HRFPDFLibInterface::GetGeocodingAndReferenceInfo(const PDDoc               
                                 BBoxXMax,
                                 BBoxYMax,
                                 PageRotation,
-                                po_rpGeocoding,
+                                po_rpGeocoding.get(),
                                 po_rpGeoreference);
                 }
             }
@@ -1172,6 +1196,161 @@ bool HRFPDFLibInterface::GetGeocodingAndReferenceInfo(const PDDoc               
 
 //-----------------------------------------------------------------------------
 // private
+// Static method that returns the geocoding info for a given PDF page.
+//-----------------------------------------------------------------------------       
+void HRFPDFLibInterface::GetDimensionForDWGUnderlay(const PDDoc                pi_pDoc,
+                                                    uint32_t                  pi_Page,
+                                                    double&                    po_xDimension, 
+                                                    double&                    po_yDimension) 
+    {               
+    PDPage          Page       = PDDocAcquirePage(pi_pDoc, pi_Page);
+    CosObj          PageCosObj = PDPageGetCosObj(Page);
+    CosObjQueryInfo Query;
+
+    //Currently the translation is not computed.
+    CosObj        mediaBoxCosObj;
+    vector<char*> CosObjPath;
+    
+    CosObjPath.push_back("MediaBox");
+                                                    
+    bool mediaBoxFound = GetCosObj(PageCosObj, CosObjPath, mediaBoxCosObj);
+
+    HASSERT(mediaBoxFound == true);
+    HASSERT(CosObjGetType(mediaBoxCosObj) == CosArray);
+
+    CosObj rectangleCoordCosObj;
+          
+    rectangleCoordCosObj = CosArrayGet(mediaBoxCosObj, 0);        
+    double mediaBoxLowX = ASFixedToFloat(CosFixedValue(rectangleCoordCosObj));
+    
+    rectangleCoordCosObj = CosArrayGet(mediaBoxCosObj, 1);        
+    double mediaBoxLowY = ASFixedToFloat(CosFixedValue(rectangleCoordCosObj));
+    
+    rectangleCoordCosObj = CosArrayGet(mediaBoxCosObj, 2);        
+    double mediaBoxHighX = ASFixedToFloat(CosFixedValue(rectangleCoordCosObj));
+    
+    rectangleCoordCosObj = CosArrayGet(mediaBoxCosObj, 3);        
+    double mediaBoxHighY = ASFixedToFloat(CosFixedValue(rectangleCoordCosObj));
+    
+    po_xDimension = fabs(mediaBoxHighX - mediaBoxLowX);
+    po_yDimension = fabs(mediaBoxHighY - mediaBoxLowY);        
+        
+    Query.pCosObjectName = "VP";
+
+    //The geocoding information can be found under the following node :
+    //trailer/Root/Pages/Kids/0/VP/0/Measure
+    CosObjEnum(PageCosObj, ObjQueryEnumProc, &Query);
+
+    CosObj       VPArrayCosObj;
+    ASTArraySize NbOfVPs = 0;
+
+    //default scale; don't know why 72 but seems to be also in HRFPDFFile::s_dpiConvertScaleFactor
+    double scaleX = 1.0/72.0;
+    double scaleY = 1.0/72.0;
+    if (CosObjEqual(Query.ObjFound, CosNewNull()) == false)
+        {
+        VPArrayCosObj = Query.ObjFound;
+
+        //Query.ObjFound
+        NbOfVPs = CosArrayLength(Query.ObjFound);
+        
+        if (NbOfVPs == 1)
+            {            
+            CosObj        measureCosObj;            
+
+            CosObjPath.clear();
+            CosObjPath.push_back("0");
+            CosObjPath.push_back("Measure");
+                        
+            if (GetCosObj(VPArrayCosObj, CosObjPath, measureCosObj))
+                {
+                CosObjPath.clear();
+                CosObjPath.push_back("Subtype");  
+
+                CosObj      subTypeCosObj;                
+                const char* pSubType = 0;
+    
+                if (GetCosObj(measureCosObj, CosObjPath, subTypeCosObj))
+                    {                           
+                    HASSERT(CosObjGetType(subTypeCosObj) == CosName);
+                                        
+                    pSubType = ASAtomGetString(CosNameValue(subTypeCosObj));
+
+                    HASSERT(pSubType != 0);
+                    }
+
+                if ((BeStringUtilities::Stricmp(pSubType, "") == 0) ||
+                    (BeStringUtilities::Stricmp(pSubType, "RL") == 0))                    
+                    {                                           
+                    CosObjPath.clear();
+                    CosObjPath.push_back("X");  
+                    CosObjPath.push_back("0");  
+                    CosObjPath.push_back("C");
+
+                    CosObj scaleCosObj;                
+
+                    if (GetCosObj(measureCosObj, CosObjPath, scaleCosObj))
+                        {                        
+                        scaleX = ASFixedToFloat(CosFixedValue(scaleCosObj));                        
+                        }
+
+                    CosObjPath.clear();
+                    CosObjPath.push_back("Y");  
+                    CosObjPath.push_back("0");  
+                    CosObjPath.push_back("C");
+
+                    if (GetCosObj(measureCosObj, CosObjPath, scaleCosObj))
+                        {                        
+                        scaleY = ASFixedToFloat(CosFixedValue(scaleCosObj));                        
+                        }
+                    else
+                        {
+                        scaleY = scaleX;                    
+                        }
+
+                    }                
+                }
+            }                   
+        }
+
+    po_xDimension *= scaleX;
+    po_yDimension *= scaleY;        
+
+    // Get the page rotation    
+    CosObjPath.clear();
+    CosObjPath.push_back("Rotate");
+
+    CosObj PageRotationCosObj;
+
+    if (GetCosObj(PageCosObj, CosObjPath, PageRotationCosObj))
+        {               
+        double pageRotation = ASFixedToFloat(CosFixedValue(PageRotationCosObj));
+
+        // Normalized rotation will not work with values greater than 360 or smaller than -360 ... it is not a limitation but a feature (we do not want to encourage stupid values)
+        // We will support 360 though
+        double normalizedRotation = (pageRotation < 0.0 ? pageRotation + 360 : pageRotation);
+
+        // Validate normalized rotation (valid values are discrete values but we nevertheless apply a small 1 degree tolerance to accound for double error)
+        if (HDOUBLE_EQUAL (normalizedRotation, 0.0, 0.05) ||
+            HDOUBLE_EQUAL (normalizedRotation, 90, 0.05) ||
+            HDOUBLE_EQUAL (normalizedRotation, 180, 0.05) ||
+            HDOUBLE_EQUAL (normalizedRotation, 270, 0.05) ||
+            HDOUBLE_EQUAL (normalizedRotation, 360.0, 0.05))
+            {           
+            if (HDOUBLE_EQUAL (normalizedRotation, 90, 0.05) || HDOUBLE_EQUAL (normalizedRotation, 270, 0.05))
+                {
+                double tempXDimension = po_xDimension;
+                po_xDimension = po_yDimension;
+                po_yDimension = tempXDimension;
+                }
+            }
+        }
+  
+    PDPageRelease(Page); 
+    }
+  
+//-----------------------------------------------------------------------------
+// private
 //-----------------------------------------------------------------------------
 void HRFPDFLibInterface::CreateGeocodingFromWKT(const string&                  pi_rWKT,
                                                 IRasterBaseGcsPtr&             po_rpGeocoding)
@@ -1179,18 +1358,12 @@ void HRFPDFLibInterface::CreateGeocodingFromWKT(const string&                  p
     HPRECONDITION(pi_rWKT.empty() == false);
     HPRECONDITION(po_rpGeocoding == 0);
 
-    try
-        {
         WString TempWKT;
         BeStringUtilities::CurrentLocaleCharToWChar( TempWKT,pi_rWKT.c_str());
 
         //The flavor of the WKT stored in the PDF is not known yet,
         //so unknown is used.
         po_rpGeocoding = HRFGeoCoordinateProvider::CreateRasterGcsFromFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorESRI, TempWKT.c_str());
-        }
-    catch (HCPGCoordException&)
-        {
-        }
 
     if (po_rpGeocoding == 0)
         {
@@ -1222,7 +1395,7 @@ bool HRFPDFLibInterface::GetGeocodingReferenceFromImage(const PDPage&           
     if (GetCosObj(PageCosObj, CosObjPath, FoundCosObj) == true)
         {
         uint32_t NbXObject  = 0;
-        ASBool  EnumResult = CosObjEnum(FoundCosObj, ObjCounterEnumProc, (void*)&NbXObject);
+        ASBool  EnumResult = CosObjEnum(FoundCosObj, ObjCounterEnumProc, &NbXObject);
 
         HASSERT(EnumResult);
 
@@ -1363,7 +1536,7 @@ bool HRFPDFLibInterface::GetGeocodingReferenceFromImage(const PDPage&           
                         pi_RasterizePageWidth,
                         pi_RasterizePageHeight,
                         0.0,
-                        po_rpGeocoding,
+                        po_rpGeocoding.get(),
                         po_rpGeoreference);
         }
 
@@ -1385,7 +1558,7 @@ bool HRFPDFLibInterface::GetGeoreference(const CosObj&                  pi_rMeas
                                           double                        pi_VPMaxX,
                                           double                        pi_VPMaxY,
                                           double                        pi_PageRotation,
-                                          IRasterBaseGcsPtr&            pi_rpGeocoding,
+                                          IRasterBaseGcsCP              pi_rpGeocoding,
                                           HFCPtr<HGF2DTransfoModel>&    po_rpGeoreference)
     {
     HPRECONDITION(pi_rpGeocoding != 0);
@@ -1574,7 +1747,8 @@ bool HRFPDFLibInterface::GetGeoreference(const CosObj&                  pi_rMeas
                 if (pTempTransfoModel != 0)
                     po_rpGeoreference = pTempTransfoModel;
 
-                po_rpGeoreference = HCPGeoTiffKeys::TranslateToMeter(po_rpGeoreference, 1.0, true, false, NULL, pi_rpGeocoding);
+                RasterFileGeocodingPtr pFileGeocoding(RasterFileGeocoding::Create(pi_rpGeocoding->Clone().get()));
+                po_rpGeoreference = pFileGeocoding->TranslateToMeter(po_rpGeoreference, 1.0, false, NULL);
 
                 Result = true;
                 }
@@ -1609,7 +1783,7 @@ bool HRFPDFLibInterface::GetCosObj(const CosObj&  pi_rSearchRootCosObj,
 
             Query.ObjFound       = CosNewNull();
             Query.pCosObjectName = *NodeIter;
-            CosObjEnum(CurrentNode, ObjQueryEnumProc, (void*)&Query);
+            CosObjEnum(CurrentNode, ObjQueryEnumProc, &Query);
 
             if (CosObjEqual(Query.ObjFound, CosNewNull()))
                 {
@@ -1860,10 +2034,15 @@ void HRFPDFLibInterface::Create2DVectForRectAnnot(const CosObj&                p
                            pi_rTransfoMatrix,
                            Position);
 
-    po_rp2DSelectionZone = new HVE2DRectangle(X,
-                                              Position.GetY(),
-                                              Position.GetX(),
-                                              Y,
+    double XMin = X < Position.GetX() ? X : Position.GetX();
+    double YMin = Y < Position.GetY() ? Y : Position.GetY();
+    double XMax = X > Position.GetX() ? X : Position.GetX();
+    double YMax = Y > Position.GetY() ? Y : Position.GetY();
+
+    po_rp2DSelectionZone = new HVE2DRectangle(XMin,
+                                              YMin,
+                                              XMax,
+                                              YMax,
                                               pi_rpCoordSys);
     }
 
@@ -2239,7 +2418,4 @@ void HRFPDFLibInterface::SetLayerVisibility(PDDoc                      pi_pDoc,
 #include <adobe/Source/PDFLInitHFT.c>
 #include <adobe/Source/PDFLInitCommon.c>
 
-// Disable "warning C4611: interaction between '_setjmp' and C++ object destruction is non-portables"
-#if (defined(_WIN32) && defined(_MSC_VER))
-    #pragma warning(pop)
-#endif
+#endif // IPP_HAVE_PDF_SUPPORT 

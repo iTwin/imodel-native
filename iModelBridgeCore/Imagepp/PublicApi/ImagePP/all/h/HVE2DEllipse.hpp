@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DEllipse.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -449,3 +450,5 @@ inline void HVE2DEllipse::Scale(double pi_ScaleFactor, const HGF2DLocation& pi_r
 
     ResetTolerance();
     }
+
+END_IMAGEPP_NAMESPACE

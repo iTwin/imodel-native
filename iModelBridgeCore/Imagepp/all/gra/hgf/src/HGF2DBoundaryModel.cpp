@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DBoundaryModel.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DBoundaryModel.h>
 #include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
@@ -107,9 +107,9 @@ HFCPtr<HGF2DTransfoModel> HGF2DBoundaryModel::GetModelFromCoordinate(double pi_X
             return pEntry->GetTransfoModel();
             }
         }
-    BEGIN_HFC_CATCH(HGF_MZ_G_COORD_EXCEPTION)
-
-    END_HFC_CATCH
+	catch(HGFmzGCoordException&)
+	{
+	}
 
     return NULL;
     }
@@ -133,9 +133,9 @@ HFCPtr<HGF2DTransfoModel> HGF2DBoundaryModel::GetModelFromInverseCoordinate(doub
             return pTriangleEntry->GetTransfoModel();
             }
         }
-    BEGIN_HFC_CATCH(HGF_MZ_G_COORD_EXCEPTION)
-
-    END_HFC_CATCH
+	catch(HGFmzGCoordException&)
+	{
+	}
 
     return NULL;
     }
@@ -162,9 +162,9 @@ TriangleFacet* HGF2DBoundaryModel::GetFacetFromCoordinate(double pi_X, double pi
             return pFacet.release();
             }
         }
-    BEGIN_HFC_CATCH(HGF_MZ_G_COORD_EXCEPTION)
-
-    END_HFC_CATCH
+	catch(HGFmzGCoordException&)
+	{
+	}
 
     return pFacet.release();
     }
@@ -191,9 +191,9 @@ TriangleFacet* HGF2DBoundaryModel::GetFacetFromInverseCoordinate(double pi_X, do
             return pFacet.release();
             }
         }
-    BEGIN_HFC_CATCH(HGF_MZ_G_COORD_EXCEPTION)
-
-    END_HFC_CATCH
+	catch(HGFmzGCoordException&)
+	{
+	}
 
     return pFacet.release();
     }

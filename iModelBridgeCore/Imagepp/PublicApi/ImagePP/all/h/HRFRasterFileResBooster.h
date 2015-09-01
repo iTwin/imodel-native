@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFileResBooster.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFileResBooster
@@ -17,6 +17,7 @@
 #include "HRFRasterFileExtender.h"
 //#include "HRFCacheFileCreator.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class  HRFCacheFileCreator;
 class HGFResolutionDescriptor;
 
@@ -24,22 +25,22 @@ class HGFResolutionDescriptor;
 class HRFRasterFileResBooster : public HRFRasterFileExtender
     {
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1437, HRFRasterFileExtender)
+    HDECLARE_CLASS_ID(HRFSisterFileSharingId, HRFRasterFileExtender)
 
 public:
     // This methods allow to know if the specified raster file need a resolution booster.
-    _HDLLg static bool NeedResBoosterFor(HFCPtr<HRFRasterFile>& pi_rpForRasterFile);
+    IMAGEPP_EXPORT static bool NeedResBoosterFor(HFCPtr<HRFRasterFile>& pi_rpForRasterFile);
 
     // map that contain the pages to boost
     typedef map<uint32_t, HGFResolutionDescriptor> WantedResolutionsMap;
 
     // allow to Open an image file
-    _HDLLg                                       HRFRasterFileResBooster(HFCPtr<HRFRasterFile>&        pi_rpOriginalFile,
+    IMAGEPP_EXPORT                                       HRFRasterFileResBooster(HFCPtr<HRFRasterFile>&        pi_rpOriginalFile,
                                                                          const HRFCacheFileCreator*    pi_pCreator,
                                                                          const WantedResolutionsMap*   pi_pWantedResolutionsMap = 0,
                                                                          bool                         pi_AutoErase = false);
 
-    _HDLLg virtual                               ~HRFRasterFileResBooster();
+    IMAGEPP_EXPORT virtual                               ~HRFRasterFileResBooster();
 
     // File capabilities
     virtual const HFCPtr<HRFRasterFileCapabilities>&
@@ -62,8 +63,8 @@ public:
 
 
     // Auto Erase File
-    _HDLLg void                                   SetAutoErase(bool pi_autoErase);
-    _HDLLg bool                                  GetAutoErase()const;
+    IMAGEPP_EXPORT void                                   SetAutoErase(bool pi_autoErase);
+    IMAGEPP_EXPORT bool                                  GetAutoErase()const;
 
     virtual void                                  Save();
 
@@ -94,4 +95,5 @@ private:
     HRFRasterFileResBooster(const HRFRasterFileResBooster& pi_rObj);
     HRFRasterFileResBooster&  operator=(const HRFRasterFileResBooster& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 

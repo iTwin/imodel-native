@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_minizip_zip.cpp 21167 2010-11-24 15:19:51Z warmerdam $
+ * $Id: cpl_minizip_zip.cpp 27722 2014-09-22 15:37:31Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -22,6 +22,7 @@
    Modification to zipOpen2 to support globalComment retrieval.
 
    Copyright (C) 1998-2005 Gilles Vollant
+ * Copyright (c) 2010-2012, Even Rouault <even dot rouault at mines-paris dot org>
 
    Read zip.h for more info
 */
@@ -31,9 +32,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <zlib/zlib.h>
-#include "cpl_minizip_zip.h"
+#include <zlib/zlib.h>  //IPP 
 #include "cpl_conv.h"
+#include "cpl_minizip_zip.h"
+#include "cpl_port.h"
 #include "cpl_string.h"
 
 #ifdef STDC
@@ -97,7 +99,8 @@
 #  define DEF_MEM_LEVEL  MAX_MEM_LEVEL
 #endif
 #endif
-const char zip_copyright[] =
+
+CPL_UNUSED const char zip_copyright[] =
    " zip 1.01 Copyright 1998-2004 Gilles Vollant - http://www.winimage.com/zLibDll";
 
 
@@ -132,7 +135,7 @@ typedef struct
 {
     z_stream stream;            /* zLib stream structure for inflate */
     int  stream_initialised;    /* 1 is stream is initialised */
-    uInt pos_in_buffered_data;  /* last written Byte in buffered_data */
+    uInt pos_in_buffered_data;  /* last written byte in buffered_data */
 
     uLong pos_local_header;     /* offset of the local header of the file
                                      currenty writing */
@@ -316,7 +319,7 @@ local void ziplocal_putValue_inmemory (void *dest, uLong x, int nbByte)
 /****************************************************************************/
 
 
-local uLong ziplocal_TmzDateToDosDate(const tm_zip*ptm,uLong dosDate)
+local uLong ziplocal_TmzDateToDosDate(const tm_zip*ptm, CPL_UNUSED uLong dosDate)
 {
     uLong year = (uLong)ptm->tm_year;
     if (year>1980)
@@ -536,7 +539,7 @@ extern zipFile ZEXPORT cpl_zipOpen2 (
     ziinit.globalcomment = NULL;
     if (append == APPEND_STATUS_ADDINZIP)
     {
-        uLong byte_before_the_zipfile;/* Byte before the zipfile, (>0 for sfx)*/
+        uLong byte_before_the_zipfile;/* byte before the zipfile, (>0 for sfx)*/
 
         uLong size_central_dir;     /* size of the central directory  */
         uLong offset_central_dir;   /* offset of start of central directory */
@@ -696,7 +699,7 @@ extern int ZEXPORT cpl_zipOpenNewFileInZip3 (
     int memLevel,
     int strategy,
     const char* password,
-    uLong crcForCrypting )
+    CPL_UNUSED uLong crcForCrypting )
 {
     zip_internal* zi;
     uInt size_filename;
@@ -746,9 +749,9 @@ extern int ZEXPORT cpl_zipOpenNewFileInZip3 (
     zi->ci.flag = 0;
     if ((level==8) || (level==9))
       zi->ci.flag |= 2;
-    if ((level==2))
+    if (level==2)
       zi->ci.flag |= 4;
-    if ((level==1))
+    if (level==1)
       zi->ci.flag |= 6;
     if (password != NULL)
       zi->ci.flag |= 1;
@@ -1207,6 +1210,14 @@ extern int ZEXPORT cpl_zipClose (
 /* ==================================================================== */
 /************************************************************************/
 
+#include "cpl_minizip_unzip.h"
+
+typedef struct
+{
+    zipFile   hZip;
+    char    **papszFilenames;
+} CPLZip;
+
 /************************************************************************/
 /*                            CPLCreateZip()                            */
 /************************************************************************/
@@ -1217,8 +1228,41 @@ void *CPLCreateZip( const char *pszZipFilename, char **papszOptions )
     (void) papszOptions;
 
     int bAppend = CSLTestBoolean(CSLFetchNameValueDef(papszOptions, "APPEND", "FALSE"));
+    char** papszFilenames = NULL;
 
-    return cpl_zipOpen( pszZipFilename, bAppend ? APPEND_STATUS_ADDINZIP : APPEND_STATUS_CREATE);
+    if( bAppend )
+    {
+        zipFile unzF = cpl_unzOpen(pszZipFilename);
+        if( unzF != NULL )
+        {
+            if( cpl_unzGoToFirstFile(unzF) == UNZ_OK )
+            {
+                do
+                {
+                    char fileName[8193];
+                    unz_file_info file_info;
+                    cpl_unzGetCurrentFileInfo (unzF, &file_info, fileName,
+                                            sizeof(fileName) - 1, NULL, 0, NULL, 0);
+                    fileName[sizeof(fileName) - 1] = '\0';
+                    papszFilenames = CSLAddString(papszFilenames, fileName);
+                }
+                while( cpl_unzGoToNextFile(unzF) == UNZ_OK );
+            }
+            cpl_unzClose(unzF);
+        }
+    }
+
+    zipFile hZip = cpl_zipOpen( pszZipFilename, bAppend ? APPEND_STATUS_ADDINZIP : APPEND_STATUS_CREATE);
+    if( hZip == NULL )
+    {
+        CSLDestroy(papszFilenames);
+        return NULL;
+    }
+    
+    CPLZip* psZip = (CPLZip*)CPLMalloc(sizeof(CPLZip));
+    psZip->hZip = hZip;
+    psZip->papszFilenames = papszFilenames;
+    return psZip;
 }
 
 /************************************************************************/
@@ -1232,18 +1276,31 @@ CPLErr CPLCreateFileInZip( void *hZip, const char *pszFilename,
     int  nErr;
 
     (void) papszOptions;
-
-    if( hZip == NULL )
+    
+    CPLZip* psZip = (CPLZip*)hZip;
+    if( psZip == NULL )
         return CE_Failure;
 
-    nErr = cpl_zipOpenNewFileInZip( (zipFile) hZip, pszFilename, NULL, 
+    if( CSLFindString(psZip->papszFilenames, pszFilename ) >= 0)
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                "%s already exists in ZIP file", pszFilename);
+        return CE_Failure;
+    }
+
+    int bCompressed = CSLTestBoolean(CSLFetchNameValueDef(papszOptions, "COMPRESSED", "TRUE"));
+
+    nErr = cpl_zipOpenNewFileInZip( psZip->hZip, pszFilename, NULL, 
                                     NULL, 0, NULL, 0, "", 
-                                    Z_DEFLATED, Z_DEFAULT_COMPRESSION );
-    
+                                    bCompressed ? Z_DEFLATED : 0, bCompressed ? Z_DEFAULT_COMPRESSION : 0 );
+
     if( nErr != ZIP_OK )
         return CE_Failure;
     else
+    {
+        psZip->papszFilenames = CSLAddString(psZip->papszFilenames, pszFilename);
         return CE_None;
+    }
 }
 
 /************************************************************************/
@@ -1254,8 +1311,12 @@ CPLErr CPLWriteFileInZip( void *hZip, const void *pBuffer, int nBufferSize )
 
 {
     int nErr;
-    
-    nErr = cpl_zipWriteInFileInZip( (zipFile) hZip, pBuffer, 
+
+    CPLZip* psZip = (CPLZip*)hZip;
+    if( psZip == NULL )
+        return CE_Failure;
+
+    nErr = cpl_zipWriteInFileInZip( psZip->hZip, pBuffer, 
                                     (unsigned int) nBufferSize );
 
     if( nErr != ZIP_OK )
@@ -1273,7 +1334,11 @@ CPLErr CPLCloseFileInZip( void *hZip )
 {
     int nErr;
 
-    nErr = cpl_zipCloseFileInZip( (zipFile) hZip );
+    CPLZip* psZip = (CPLZip*)hZip;
+    if( psZip == NULL )
+        return CE_Failure;
+
+    nErr = cpl_zipCloseFileInZip( psZip->hZip );
 
     if( nErr != ZIP_OK )
         return CE_Failure;
@@ -1290,7 +1355,16 @@ CPLErr CPLCloseZip( void *hZip )
 {
     int nErr;
 
-    nErr = cpl_zipClose((zipFile) hZip, NULL);
+    CPLZip* psZip = (CPLZip*)hZip;
+    if( psZip == NULL )
+        return CE_Failure;
+
+    nErr = cpl_zipClose(psZip->hZip, NULL);
+
+    psZip->hZip = NULL;
+    CSLDestroy(psZip->papszFilenames);
+    psZip->papszFilenames = NULL;
+    CPLFree(psZip);
 
     if( nErr != ZIP_OK )
         return CE_Failure;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalrasterpolygonenumerator.cpp 18523 2010-01-11 18:12:25Z mloskot $
+ * $Id: gdalrasterpolygonenumerator.cpp 24379 2012-05-04 01:26:19Z warmerdam $
  *
  * Project:  GDAL
  * Purpose:  Raster Polygon Enumerator
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include <vector>
 
-CPL_CVSID("$Id: gdalrasterpolygonenumerator.cpp 18523 2010-01-11 18:12:25Z mloskot $");
+CPL_CVSID("$Id: gdalrasterpolygonenumerator.cpp 24379 2012-05-04 01:26:19Z warmerdam $");
 
 /************************************************************************/
 /*                    GDALRasterPolygonEnumerator()                     */
@@ -180,8 +180,8 @@ void GDALRasterPolygonEnumerator::ProcessLine(
             }
             else
                 panThisLineId[i] = panThisLineId[i-1];
-        }        
-        
+        }
+
         return;
     }
 
@@ -201,6 +201,22 @@ void GDALRasterPolygonEnumerator::ProcessLine(
             {
                 MergePolygon( panLastLineId[i], panThisLineId[i] );
             }
+
+            if( nConnectedness == 8 
+                && panLastLineVal[i-1] == panThisLineVal[i] 
+                && (panPolyIdMap[panLastLineId[i-1]]
+                    != panPolyIdMap[panThisLineId[i]]) )
+            {
+                MergePolygon( panLastLineId[i-1], panThisLineId[i] );
+            }
+
+            if( nConnectedness == 8 && i < nXSize-1 
+                && panLastLineVal[i+1] == panThisLineVal[i] 
+                && (panPolyIdMap[panLastLineId[i+1]]
+                    != panPolyIdMap[panThisLineId[i]]) )
+            {
+                MergePolygon( panLastLineId[i+1], panThisLineId[i] );
+            }
         }
         else if( panLastLineVal[i] == panThisLineVal[i] )
         {
@@ -210,6 +226,13 @@ void GDALRasterPolygonEnumerator::ProcessLine(
                  && panLastLineVal[i-1] == panThisLineVal[i] )
         {
             panThisLineId[i] = panLastLineId[i-1];
+
+            if( i < nXSize-1 && panLastLineVal[i+1] == panThisLineVal[i]
+                && (panPolyIdMap[panLastLineId[i+1]]
+                != panPolyIdMap[panThisLineId[i]]) )
+            {
+                MergePolygon( panLastLineId[i+1], panThisLineId[i] );
+            }
         }
         else if( i < nXSize-1 && nConnectedness == 8 
                  && panLastLineVal[i+1] == panThisLineVal[i] )

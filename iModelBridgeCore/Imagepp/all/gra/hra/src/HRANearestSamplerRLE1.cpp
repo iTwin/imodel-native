@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRANearestSamplerRLE1.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRANearestSamplerRLE1.h>
 
@@ -80,8 +80,7 @@ HRANearestSamplerRLE1Base::~HRANearestSamplerRLE1Base()
 
  @return const void* The current pixel.
 -----------------------------------------------------------------------------*/
-void* HRANearestSamplerRLE1Base::GetPixel(double     pi_PosX,
-                                          double     pi_PosY) const
+void const* HRANearestSamplerRLE1Base::GetPixel(double pi_PosX, double pi_PosY) const
     {
     HPRECONDITION(pi_PosX >= 0.0);
     HPRECONDITION(pi_PosY >= 0.0);
@@ -135,7 +134,7 @@ void HRANearestSamplerRLE1Base::GetPixels(const double*  pi_pPositionsX,
     HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaX, 0.0), L"The X scaling set into the sampler was not used\n");
     HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaY, 0.0), L"The Y scaling set into the sampler was not used\n");
 
-    //TR#259220: Alloc array that will remember the last position in RLE buffer. It gives a huge performance gains when resampling: 45 min -> 2 min
+    //TR#259220: Alloc array that will remember the last position in RLE buffer. It gives a huge performance gains when resampling: 45 MIN -> 2 MIN
     if(m_pLastRLEBufferPosition == 0)
         {
         m_pLastRLEBufferPosition = new RLEBufferPosition[m_Height];
@@ -153,8 +152,8 @@ void HRANearestSamplerRLE1Base::GetPixels(const double*  pi_pPositionsX,
         HASSERT(pi_pPositionsX[PixelIndex] <= m_Width + 0.5);
         HASSERT(pi_pPositionsY[PixelIndex] <= m_Height + 0.5);
 
-        double PosX = min(pi_pPositionsX[PixelIndex], m_Width - HGLOBAL_EPSILON);
-        double PosY = min(pi_pPositionsY[PixelIndex], m_Height - HGLOBAL_EPSILON);
+        double PosX = MIN(pi_pPositionsX[PixelIndex], m_Width - HGLOBAL_EPSILON);
+        double PosY = MIN(pi_pPositionsY[PixelIndex], m_Height - HGLOBAL_EPSILON);
 
         if(OnMode != IsPixelOn((uint32_t)PosX, (uint32_t)PosY))
             {
@@ -211,11 +210,11 @@ void HRANearestSamplerRLE1Base::GetPixels(double         pi_PositionX,
                                           size_t          pi_PixelCount,
                                           void*           po_pBuffer) const
     {
-    HPRECONDITION(pi_PositionX >= 0.0);
-    HPRECONDITION(pi_PositionY >= 0.0);
+    BeAssertOnce(pi_PositionX >= 0.0);
+    BeAssertOnce(pi_PositionY >= 0.0);
 
     unsigned short* pDstRun = (unsigned short*)po_pBuffer;
-    pi_PositionY = min(pi_PositionY, (double)(m_Height - 1));  // TR 228473
+    pi_PositionY = MIN(pi_PositionY, (double)(m_Height - 1));  // TR 228473
 
     if (m_StretchByLine)
         {
@@ -284,7 +283,7 @@ void HRANearestSamplerRLE1Base::GetPixels(double         pi_PositionX,
                     pi_PixelCount -= PixelOver;
                     }
 
-                OutputPixels = min(SrcLen, (int32_t)pi_PixelCount);
+                OutputPixels = MIN(SrcLen, (int32_t)pi_PixelCount);
                 *pDstRun++ = (unsigned short)OutputPixels;     // write the run
 
                 pi_PixelCount -= OutputPixels;
@@ -294,7 +293,7 @@ void HRANearestSamplerRLE1Base::GetPixels(double         pi_PositionX,
                 while (pi_PixelCount != 0)
                     {
                     SrcLen = *(++pSrcRun);    // can increment the ptr, we are inside the buffer run (PAGALLOC)
-                    OutputPixels = min(SrcLen, (int32_t)pi_PixelCount);
+                    OutputPixels = MIN(SrcLen, (int32_t)pi_PixelCount);
                     *pDstRun++ = (unsigned short)OutputPixels; // write the run
 
                     pi_PixelCount -= OutputPixels;
@@ -345,11 +344,11 @@ void HRANearestSamplerRLE1Base::GetPixels(double         pi_PositionX,
                             if(m_ForegroundState == SrcState)
                                 {
                                 //OPTIMIZ: Use a premult instead of a division
-                                DstRunLen = min((size_t)((RunLen / DeltaX)+1), pi_PixelCount);
+                                DstRunLen = MIN((size_t)((RunLen / DeltaX)+1), pi_PixelCount);
                                 }
                             else
                                 {
-                                DstRunLen = min(((size_t)(RunLen / DeltaX)), pi_PixelCount);
+                                DstRunLen = MIN(((size_t)(RunLen / DeltaX)), pi_PixelCount);
                                 }
                             pi_PositionX += (double)DstRunLen * DeltaX;
 
@@ -415,7 +414,7 @@ void HRANearestSamplerRLE1Base::GetPixels(double         pi_PositionX,
                             {
                             RunLen = EndRunPos - pi_PositionX;
                             // at least, keep one pixel
-                            DstRunLen = max(min((uint32_t)(RunLen / DeltaX), pi_PixelCount), 1);
+                            DstRunLen = MAX(MIN((uint32_t)(RunLen / DeltaX), pi_PixelCount), 1);
                             pi_PositionX += (double)DstRunLen * DeltaX;
 
                             // we have reach the end of the image
@@ -518,10 +517,10 @@ unsigned short* HRANearestSamplerRLE1Base::ComputeAddress(HUINTX   pi_PosX,
     HPRECONDITION(po_pRunPos != 0);
 
     // pointer at the beginning of a line
-    unsigned short* pOffRun = (unsigned short*)GetLineBufferAddress(min(pi_PosY, m_Height-1));
+    unsigned short* pOffRun = (unsigned short*)GetLineBufferAddress(MIN(pi_PosY, m_Height-1));
 
     HASSERT_X64(pi_PosX < ULONG_MAX);
-    uint32_t PixelsFromRun = (uint32_t)min(pi_PosX, m_Width-1);
+    uint32_t PixelsFromRun = (uint32_t)MIN(pi_PosX, m_Width-1);
 
     bool PixelFound = false;
     *po_pRunPos = 0;
@@ -552,7 +551,7 @@ unsigned short* HRANearestSamplerRLE1Base::ComputeAddress(HUINTX   pi_PosX,
 
     //:> This post condition is use to verify if we read a initialized data
     //:> call Clear() to initialize the buffer
-    HPOSTCONDITION(pOffRun <= (unsigned short*)GetLineBufferAddress(min(pi_PosY, m_Height-1)) + GetLineDataSize(min(pi_PosY, m_Height-1)));
+    HPOSTCONDITION(pOffRun <= (unsigned short*)GetLineBufferAddress(MIN(pi_PosY, m_Height-1)) + GetLineDataSize(MIN(pi_PosY, m_Height-1)));
 
     return pOffRun;
     }

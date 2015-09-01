@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSunRasterFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFSunRasterFile
@@ -21,6 +21,7 @@
 #include "HRFRasterFileCapabilities.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFSunRasterCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -76,7 +77,7 @@ public:
 
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1432, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_SunRaster, HRFRasterFile)
 
     friend class HRFSunRasterLineEditor;
     friend class HRFSunRasterImageEditor;
@@ -169,9 +170,10 @@ struct HRFSunRasterCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFSunRasterCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFSunRasterCreator)
 
     // Disabled methodes
     HRFSunRasterCreator();
     };
+END_IMAGEPP_NAMESPACE
 

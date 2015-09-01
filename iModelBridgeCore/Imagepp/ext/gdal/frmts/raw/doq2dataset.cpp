@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: doq2dataset.cpp 21298 2010-12-20 10:58:34Z rouault $
+ * $Id: doq2dataset.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  USGS DOQ Driver (Second Generation Format)
  * Purpose:  Implementation of DOQ2Dataset
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Derrick J Brashear
+ * Copyright (c) 2009-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "rawdataset.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: doq2dataset.cpp 21298 2010-12-20 10:58:34Z rouault $");
+CPL_CVSID("$Id: doq2dataset.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 CPL_C_START
 void	GDALRegister_DOQ2(void);
@@ -59,7 +60,7 @@ CPL_C_END
 
 class DOQ2Dataset : public RawDataset
 {
-    FILE	*fpImage;	// image data file.
+    VSILFILE	*fpImage;	// image data file.
     
     double	dfULX, dfULY;
     double	dfXPixelSize, dfYPixelSize;
@@ -97,7 +98,7 @@ DOQ2Dataset::~DOQ2Dataset()
 
     CPLFree( pszProjection );
     if( fpImage != NULL )
-        VSIFClose( fpImage );
+        VSIFCloseL( fpImage );
 }
 
 /************************************************************************/
@@ -139,7 +140,7 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*	We assume the user is pointing to the binary (ie. .bil) file.	*/
 /* -------------------------------------------------------------------- */
-    if( poOpenInfo->nHeaderBytes < 212 || poOpenInfo->fp == NULL )
+    if( poOpenInfo->nHeaderBytes < 212 )
         return NULL;
 
     int         nLineCount = 0;
@@ -160,10 +161,14 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
                 "BEGIN_USGS_DOQ_HEADER", 21) )
         return NULL;
 
-    /* read and discard the first line */
-    pszLine = CPLReadLine( poOpenInfo->fp );
+    VSILFILE* fp = VSIFOpenL(poOpenInfo->pszFilename, "rb");
+    if (fp == NULL)
+        return NULL;
 
-    while( (pszLine = CPLReadLine( poOpenInfo->fp )) != NULL )
+    /* read and discard the first line */
+    pszLine = CPLReadLineL( fp );
+
+    while( (pszLine = CPLReadLineL( fp )) != NULL )
     {
 	char    **papszTokens;
 
@@ -300,7 +305,7 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
         CSLDestroy( papszTokens );
     }
 
-    CPLReadLine( NULL );
+    CPLReadLineL( NULL );
 
 /* -------------------------------------------------------------------- */
 /*      Do these values look coherent for a DOQ file?  It would be      */
@@ -312,6 +317,7 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
         || nBandTypes < 1 || nBandTypes > 9 )
     {
         CSLDestroy( papszMetadata );
+        VSIFCloseL(fp);
         return NULL;
     }
 
@@ -325,6 +331,7 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
                   "DOQ Data Type (%d) is not a supported configuration.\n",
                   nBandTypes );
         CSLDestroy( papszMetadata );
+        VSIFCloseL(fp);
         return NULL;
     }
     
@@ -337,6 +344,7 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
         CPLError( CE_Failure, CPLE_NotSupported, 
                   "The DOQ2 driver does not support update access to existing"
                   " datasets.\n" );
+        VSIFCloseL(fp);
         return NULL;
     }
 /* -------------------------------------------------------------------- */
@@ -351,12 +359,8 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
 
     poDS->SetMetadata( papszMetadata );
     CSLDestroy( papszMetadata );
-    
-/* -------------------------------------------------------------------- */
-/*      Assume ownership of the file handled from the GDALOpenInfo.     */
-/* -------------------------------------------------------------------- */
-    poDS->fpImage = poOpenInfo->fp;
-    poOpenInfo->fp = NULL;
+
+    poDS->fpImage = fp;
 
 /* -------------------------------------------------------------------- */
 /*      Compute layout of data.                                         */
@@ -376,7 +380,7 @@ GDALDataset *DOQ2Dataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->SetBand( i+1, 
             new RawRasterBand( poDS, i+1, poDS->fpImage,
                                nSkipBytes + i, nBytesPerPixel, nBytesPerLine,
-                               GDT_Byte, TRUE ) );
+                               GDT_Byte, TRUE, TRUE ) );
     }
 
     if (nProjType == 1)
@@ -432,6 +436,7 @@ void GDALRegister_DOQ2()
                                    "USGS DOQ (New Style)" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#DOQ2" );
+        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = DOQ2Dataset::Open;
 

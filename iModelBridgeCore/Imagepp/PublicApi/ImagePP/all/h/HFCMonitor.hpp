@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMonitor.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class : HFCGenericMonitor
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------
  The default constructor for this class.  It can be used in some special
  circumstances, when the assignation to a key must be done in a stack
@@ -126,3 +126,4 @@ inline void HFCGenericMonitor<T>::Assign(T& pi_rMonitor, bool pi_IsClaimed)
     if (!pi_IsClaimed)
         m_pMonitor->ClaimKey();
     }
+END_IMAGEPP_NAMESPACE

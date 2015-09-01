@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfatype.cpp 18895 2010-02-23 19:30:01Z warmerdam $
+ * $Id: hfatype.cpp 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFAType class, for managing one type
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Intergraph Corporation
+ * Copyright (c) 2009-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id: hfatype.cpp 18895 2010-02-23 19:30:01Z warmerdam $");
+CPL_CVSID("$Id: hfatype.cpp 27739 2014-09-25 18:49:52Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -49,6 +50,7 @@ HFAType::HFAType()
     nFields = 0;
     papoFields = NULL;
     pszTypeName = NULL;
+    bInCompleteDefn = FALSE;
 }
 
 /************************************************************************/
@@ -150,7 +152,16 @@ void HFAType::CompleteDefn( HFADictionary * poDict )
 /* -------------------------------------------------------------------- */
     if( nBytes != 0 )
         return;
-    
+
+
+    if( bInCompleteDefn )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Recursion detected in HFAType::CompleteDefn()");
+        return;
+    }
+    bInCompleteDefn = TRUE;
+
 /* -------------------------------------------------------------------- */
 /*      Complete each of the fields, totaling up the sizes.  This       */
 /*      isn't really accurate for object with variable sized            */
@@ -164,6 +175,8 @@ void HFAType::CompleteDefn( HFADictionary * poDict )
         else
             nBytes += papoFields[i]->nBytes;
     }
+
+    bInCompleteDefn = FALSE;
 }
 
 /************************************************************************/
@@ -272,10 +285,11 @@ HFAType::SetInstValue( const char * pszFieldPath,
 
 int
 HFAType::GetInstCount( const char * pszFieldPath,
-                       GByte *pabyData, GUInt32 nDataOffset, int nDataSize )
+                       GByte *pabyData, CPL_UNUSED GUInt32 nDataOffset, int nDataSize )
 
 {
-    int		nArrayIndex = 0, nNameLen, iField, nByteOffset;
+    /* int		nArrayIndex = 0; */
+    int		nNameLen, iField, nByteOffset;
     const char	*pszRemainder;
 
 /* -------------------------------------------------------------------- */
@@ -285,8 +299,8 @@ HFAType::GetInstCount( const char * pszFieldPath,
     if( strchr(pszFieldPath,'[') != NULL )
     {
         const char	*pszEnd = strchr(pszFieldPath,'[');
-        
-        nArrayIndex = atoi(pszEnd+1);
+
+        /* nArrayIndex = atoi(pszEnd+1); */
         nNameLen = pszEnd - pszFieldPath;
 
         pszRemainder = strchr(pszFieldPath,'.');
@@ -297,7 +311,7 @@ HFAType::GetInstCount( const char * pszFieldPath,
     else if( strchr(pszFieldPath,'.') != NULL )
     {
         const char	*pszEnd = strchr(pszFieldPath,'.');
-        
+
         nNameLen = pszEnd - pszFieldPath;
 
         pszRemainder = pszEnd + 1;
@@ -308,7 +322,7 @@ HFAType::GetInstCount( const char * pszFieldPath,
         nNameLen = strlen(pszFieldPath);
         pszRemainder = NULL;
     }
-    
+
 /* -------------------------------------------------------------------- */
 /*      Find this field within this type, if possible.                  */
 /* -------------------------------------------------------------------- */

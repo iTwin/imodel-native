@@ -2,17 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPDFEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPDFEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
+#include <Imagepp/all/h/HRFPDFFile.h>
+
+#if defined(IPP_HAVE_PDF_SUPPORT) 
 
 #include <Imagepp/all/h/HRFPDFEditor.h>
-#include <Imagepp/all/h/HRFPDFFile.h>
 
 #include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
 #include <Imagepp/all/h/HRFRawFile.h>
@@ -66,41 +68,43 @@ public:
         *po_pResHeight = m_pPDFEditor->m_ResHeight;
     };
 
-    bool ReadBlock(uint32_t            pi_PosX,
-                    uint32_t            pi_PosY,
-                    const HFCPtr<HMDContext>& pi_rpContext,
-                    Byte*              po_pData)
+    bool ReadBlock(uint64_t            pi_PosX,
+                   uint64_t            pi_PosY,
+                   const HFCPtr<HMDContext>& pi_rpContext,
+                   Byte*               po_pData)
     {
         HPRECONDITION(m_pPDFEditor->m_pPDDoc != 0);
         HPRECONDITION(po_pData != 0);
+        HPRECONDITION(pi_PosX <= ULONG_MAX && pi_PosY <= ULONG_MAX);
 
         return HRFPDFLibInterface::ReadBlock(m_pPDFEditor,
                                              m_UseDrawContentToMem,
-                                             pi_PosX,
-                                             pi_PosY,
+                                             (uint32_t)pi_PosX,
+                                             (uint32_t)pi_PosY,
                                              1024,
                                              1024,
                                              pi_rpContext,
                                              po_pData);
     };
 
-    bool ReadBlock(uint32_t            pi_MinX,
-                    uint32_t            pi_MinY,
-                    uint32_t            pi_MaxX,
-                    uint32_t            pi_MaxY,
-                    const HFCPtr<HMDContext>& pi_rpContext,
-                    Byte*              po_pData) override
+    bool ReadBlock(uint64_t            pi_MinX,
+                   uint64_t            pi_MinY,
+                   uint64_t            pi_MaxX,
+                   uint64_t            pi_MaxY,
+                   const HFCPtr<HMDContext>& pi_rpContext,
+                   Byte*               po_pData)
     {
         HPRECONDITION(m_pPDFEditor->m_pPDDoc != 0);
         HPRECONDITION(po_pData != 0);
+        HPRECONDITION(pi_MinX <= ULONG_MAX && pi_MinY <= ULONG_MAX);
 
-        ASInt32 Width = pi_MaxX - pi_MinX;
-        ASInt32 Height = pi_MaxY - pi_MinY;
+        ASInt32 Width = (uint32_t)pi_MaxX - (uint32_t)pi_MinX;
+        ASInt32 Height = (uint32_t)pi_MaxY - (uint32_t)pi_MinY;
 
         return HRFPDFLibInterface::ReadBlockByExtent(m_pPDFEditor,
                                                      m_UseDrawContentToMem,
-                                                     pi_MinX,
-                                                     pi_MinY,
+                                                     (uint32_t)pi_MinX,
+                                                     (uint32_t)pi_MinY,
                                                      Width,
                                                      Height,
                                                      pi_rpContext,
@@ -133,7 +137,7 @@ HRFPDFEditor::HRFPDFEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
     : HRFResolutionEditor(pi_rpRasterFile, pi_Page, pi_Resolution, pi_AccessMode)
     {
     if (m_Resolution > 255)
-        throw HRFException(HRF_BAD_SUB_IMAGE_EXCEPTION, pi_rpRasterFile->GetURL()->GetURL());
+        throw HRFBadSubImageException(pi_rpRasterFile->GetURL()->GetURL());
 
     CreateEditorWrapper();
 
@@ -199,11 +203,11 @@ HRFPDFEditor::~HRFPDFEditor()
     }
 
 
-HSTATUS HRFPDFEditor::ReadBlock(uint32_t    pi_MinX,
-                                uint32_t    pi_MinY,
-                                uint32_t    pi_MaxX,
-                                uint32_t    pi_MaxY,
-                                Byte*      po_pData)
+HSTATUS HRFPDFEditor::ReadBlockPDF(uint32_t    pi_MinX,
+                                   uint32_t    pi_MinY,
+                                   uint32_t    pi_MaxX,
+                                   uint32_t    pi_MaxY,
+                                   Byte*        po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(pi_MaxX > pi_MinX);
@@ -227,11 +231,11 @@ HSTATUS HRFPDFEditor::ReadBlock(uint32_t    pi_MinX,
 
 
     if (m_pPDFEditorWrapper->ReadBlock(pi_MinX,
-                                       pi_MinY,
-                                       pi_MaxX,
-                                       pi_MaxY,
-                                       PDF_RASTERFILE->GetContext(GetPage()),
-                                       po_pData) == false)
+                                         pi_MinY,
+                                         pi_MaxX,
+                                         pi_MaxY,
+                                         PDF_RASTERFILE->GetContext(GetPage()),
+                                         po_pData) == false)
     {
         RetStatus = H_ERROR;
         }
@@ -253,10 +257,10 @@ HSTATUS HRFPDFEditor::ReadBlock(uint32_t    pi_MinX,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPDFEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                uint32_t pi_PosBlockY,
-                                Byte* po_pData,
-                                HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFPDFEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                  uint64_t pi_PosBlockY,
+                                  Byte*  po_pData,
+                                  HFCLockMonitor const* pi_pSisterFileLock)
     {
     //Something with more bits than UInt64 should be used on architecture with pointer greater than 64 bits.
     HPRECONDITION(sizeof(PDF_RASTERFILE->GetContext(m_Page).GetPtr()) <= 8);
@@ -328,13 +332,14 @@ HSTATUS HRFPDFEditor::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPDFEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                 uint32_t     pi_PosBlockY,
-                                 const Byte* pi_pData,
-                                 HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFPDFEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                   uint64_t     pi_PosBlockY,
+                                   const Byte*  pi_pData,
+                                   HFCLockMonitor const* pi_pSisterFileLock)
     {
     HASSERT(0); // not supported
 
     return H_ERROR;
     }
 
+#endif

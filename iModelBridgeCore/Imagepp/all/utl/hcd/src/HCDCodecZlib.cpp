@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecZlib.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecZlib
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HCDCodecZlib.h>
 #include <zlib/zlib.h>
@@ -72,12 +72,12 @@ size_t HCDCodecZlib::CompressSubset(const void* pi_pInData,
 
     int err;
 
-    uint32_t OutLen = (uint32_t)pi_OutBufferSize;
+    uLongf OutLen = (uLongf)pi_OutBufferSize;
 
     // Use level 5 compression. Varies from 1 to 9, 6 being the default.
     // There seems to be a big difference between 5 and 6 on execution time for
     // big images, with only a small size penalty.
-    err = compress2((Byte*)po_pOutBuffer, (DWORD*)&OutLen, (Byte*)pi_pInData, (uint32_t)pi_InDataSize, 5);
+    err = compress2((Byte*)po_pOutBuffer, &OutLen, (Byte*)pi_pInData, (uint32_t)pi_InDataSize, 5);
 
     if(err != Z_OK)
         OutLen = 0;
@@ -99,9 +99,9 @@ size_t HCDCodecZlib::DecompressSubset(const void* pi_pInData,
 
     int err;
 
-    uint32_t OutLen = (uint32_t)pi_OutBufferSize;
+    uLongf OutLen = (uLongf)pi_OutBufferSize;
 
-    err = uncompress((Byte*)po_pOutBuffer, (DWORD*)&OutLen, (Byte*)pi_pInData, (uint32_t)pi_InDataSize);
+    err = uncompress((Byte*)po_pOutBuffer, &OutLen, (Byte*)pi_pInData, (uint32_t)pi_InDataSize);
 
     if(err != Z_OK)
         OutLen = 0;

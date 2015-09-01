@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMaths.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,6 +11,7 @@
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Function prototypes.
 //-----------------------------------------------------------------------------
@@ -31,6 +32,8 @@ double ArithmeticMean(double pi_FirstValue, double pi_SecondValue);
 
 double HarmonicMean(double* pi_pArray, size_t pi_ArraySize);
 double HarmonicMean(double pi_FirstValue, double pi_SecondValue);
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCMaths.hpp"
 

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDLZWDecoder.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDLZWDecoder
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HCDLZWDecoder.h>
 
 //-----------------------------------------------------------------------------
@@ -68,6 +68,10 @@ int32_t HCDLZWDecoder::GetCode()
 
         if( m_BitCount < m_NumBits )
             {
+            if(m_CurrentPos >= (uint32_t)m_pInputBytesCount)
+                // No more data : Compressed data does not contain an End of Information code.
+                return LZW_CODE_EOI;
+
             m_BitBuffer = (m_BitBuffer << 8) | m_pInputBuffer[m_CurrentPos++];
             m_BitCount += 8;
             }
@@ -107,9 +111,8 @@ Byte* HCDLZWDecoder::DecodeStack(Byte* pi_pStackBottom, int32_t pi_Code)
 //
 //-----------------------------------------------------------------------------
 
-HSTATUS HCDLZWDecoder::Decode(Byte* pi_pInputBuffer, size_t pi_inputBytesCount, Byte* po_pOutputBuffer, size_t pi_outputBytesCount)
+size_t HCDLZWDecoder::Decode(Byte const* pi_pInputBuffer, size_t pi_inputBytesCount, Byte* po_pOutputBuffer, size_t pi_outputBytesCount)
     {
-    HSTATUS Error = H_SUCCESS;
     m_pInputBuffer = pi_pInputBuffer;
     m_pInputBytesCount = pi_inputBytesCount;
 
@@ -118,123 +121,119 @@ HSTATUS HCDLZWDecoder::Decode(Byte* pi_pInputBuffer, size_t pi_inputBytesCount, 
     int32_t oldCode(0);
 
     // First code is always a clear code
-    if (newCode == LZW_CODE_CLEAR)
-        {
-        LZW_DEBUG_TRACE(char msg[512];)
+    if (newCode != LZW_CODE_CLEAR)
+        return 0;
 
-        while((Pos < pi_outputBytesCount) && newCode != LZW_CODE_EOI)
+    LZW_DEBUG_TRACE(char msg[512];)
+
+    while((Pos < pi_outputBytesCount) && newCode != LZW_CODE_EOI)
+        {
+        LZW_DEBUG_TRACE
+        (
+            sprintf(msg, "Code = %d\n", newCode);
+            m_pfile->Write(msg, strlen(msg));
+        )
+
+        if( newCode == LZW_CODE_CLEAR) // reset all decompression parameters
             {
+            LZW_DEBUG_TRACE
+            (
+                sprintf(msg, "***** Clear Code Case : \n      Pos = %d pi_outputBytesCount = %d m_pInputBuffer[m_CurrentPos] = %d m_CurrentPos = %d\n      m_BitBuffer = %d m_BitCount = %d m_NextCode = %d m_NumBits = %d m_MaxCode = %d\n", Pos, pi_outputBytesCount, (int)m_pInputBuffer[m_CurrentPos], m_CurrentPos, m_BitBuffer, m_BitCount, m_NextCode, m_NumBits, m_MaxCode);
+                m_pfile->Write(msg, strlen(msg));
+            )
+
+            m_NextCode = LZW_CODE_FIRST;
+            m_MaxCode  = LZW_MAXCODE(LZW_BITS_MIN);
+            m_NumBits  = LZW_BITS_MIN;
+            newCode    = GetCode();
+
+
             LZW_DEBUG_TRACE
             (
                 sprintf(msg, "Code = %d\n", newCode);
                 m_pfile->Write(msg, strlen(msg));
             )
 
-            if( newCode == LZW_CODE_CLEAR) // reset all decompression parameters
+            if(newCode == LZW_CODE_EOI)
                 {
-                LZW_DEBUG_TRACE
-                (
-                    sprintf(msg, "***** Clear Code Case : \n      Pos = %d pi_outputBytesCount = %d m_pInputBuffer[m_CurrentPos] = %d m_CurrentPos = %d\n      m_BitBuffer = %d m_BitCount = %d m_NextCode = %d m_NumBits = %d m_MaxCode = %d\n", Pos, pi_outputBytesCount, (int)m_pInputBuffer[m_CurrentPos], m_CurrentPos, m_BitBuffer, m_BitCount, m_NextCode, m_NumBits, m_MaxCode);
-                    m_pfile->Write(msg, strlen(msg));
-                )
+                break;
+                }
 
-                m_NextCode = LZW_CODE_FIRST;
-                m_MaxCode  = LZW_MAXCODE(LZW_BITS_MIN);
-                m_NumBits  = LZW_BITS_MIN;
-                newCode    = GetCode();
+            HASSERT((Pos + 1) <= pi_outputBytesCount);
 
+            po_pOutputBuffer[Pos++] = (Byte)newCode;
+            oldCode      = newCode;
+            m_PixelValue = (Byte)newCode;
+            }
+        else
+            {
+            LZW_DEBUG_TRACE
+            (
+                sprintf(msg, "@@@@@ NOT Clear Code Case : \n     Pos = %d pi_outputBytesCount = %d m_pInputBuffer[m_CurrentPos] = %d m_CurrentPos = %d\n      m_BitBuffer = %d m_BitCount = %d m_NextCode = %d m_NumBits = %d m_MaxCode = %d\n", Pos, pi_outputBytesCount, (int)m_pInputBuffer[m_CurrentPos], m_CurrentPos, m_BitBuffer, m_BitCount, m_NextCode, m_NumBits, m_MaxCode);
+                m_pfile->Write(msg, strlen(msg));
+            )
 
-                LZW_DEBUG_TRACE
-                (
-                    sprintf(msg, "Code = %d\n", newCode);
-                    m_pfile->Write(msg, strlen(msg));
-                )
-
-                if(newCode == LZW_CODE_EOI)
-                    {
-                    break;
-                    }
-
-                HASSERT((Pos + 1)< pi_outputBytesCount);
-
-                po_pOutputBuffer[Pos++] = (Byte)newCode;
-                oldCode      = newCode;
-                m_PixelValue = (Byte)newCode;
+            if( newCode >= m_NextCode )
+                {
+                *m_pDecodeStack = m_PixelValue;
+                m_pStackTop     = DecodeStack(m_pDecodeStack + 1, oldCode);
                 }
             else
                 {
-                LZW_DEBUG_TRACE
-                (
-                    sprintf(msg, "@@@@@ NOT Clear Code Case : \n     Pos = %d pi_outputBytesCount = %d m_pInputBuffer[m_CurrentPos] = %d m_CurrentPos = %d\n      m_BitBuffer = %d m_BitCount = %d m_NextCode = %d m_NumBits = %d m_MaxCode = %d\n", Pos, pi_outputBytesCount, (int)m_pInputBuffer[m_CurrentPos], m_CurrentPos, m_BitBuffer, m_BitCount, m_NextCode, m_NumBits, m_MaxCode);
-                    m_pfile->Write(msg, strlen(msg));
-                )
+                m_pStackTop = DecodeStack(m_pDecodeStack, newCode);
+                }
 
-                if( newCode >= m_NextCode )
+            m_PixelValue = *m_pStackTop;              // output decoded stack_top in reverse
+
+            while( m_pStackTop >= m_pDecodeStack )
+                {
+                // Do not allow to set pixel out of bound
+                if (Pos <  pi_outputBytesCount)
                     {
-                    *m_pDecodeStack = m_PixelValue;
-                    m_pStackTop     = DecodeStack(m_pDecodeStack + 1, oldCode);
+                    po_pOutputBuffer[Pos++] = *m_pStackTop--;
                     }
                 else
                     {
-                    m_pStackTop = DecodeStack(m_pDecodeStack, newCode);
+                    Pos++;
+                    *m_pStackTop--;
                     }
-
-                m_PixelValue = *m_pStackTop;              // output decoded stack_top in reverse
-
-                while( m_pStackTop >= m_pDecodeStack )
-                    {
-                    // Do not allow to set pixel out of bound
-                    if (Pos <  pi_outputBytesCount)
-                        {
-                        po_pOutputBuffer[Pos++] = *m_pStackTop--;
-                        }
-                    else
-                        {
-                        Pos++;
-                        *m_pStackTop--;
-                        }
-                    }
-
-                if( m_NextCode < m_MaxCode )  // Add to stack_top table if not full
-                    {
-                    LZW_DEBUG_TRACE
-                    (
-                        sprintf(msg, "prefix[%d] = %d\n", m_NextCode, oldCode);
-                        m_pfile->Write(msg, strlen(msg));
-                    )
-
-                    m_pPrefixCode[m_NextCode] = oldCode;
-                    m_pSecondByte[m_NextCode] = m_PixelValue;
-
-                    // Will cause an infinite loop
-                    // Not always true. HASSERT(m_pPrefixCode[m_NextCode] != m_NextCode && m_pPrefixCode[oldCode] != oldCode);
-
-                    m_NextCode++;
-
-                    if( m_NextCode >= m_MaxCode )
-                        {
-                        m_NumBits++;
-
-                        if( m_NumBits > LZW_BITS_MAX )
-                            {
-                            HASSERT(false);             // should not happen
-                            m_NumBits = LZW_BITS_MAX;
-                            }
-
-                        m_MaxCode = LZW_MAXCODE(m_NumBits);
-                        }
-                    }
-                oldCode = newCode;
                 }
-            newCode = GetCode();
+
+            if( m_NextCode < m_MaxCode )  // Add to stack_top table if not full
+                {
+                LZW_DEBUG_TRACE
+                (
+                    sprintf(msg, "prefix[%d] = %d\n", m_NextCode, oldCode);
+                    m_pfile->Write(msg, strlen(msg));
+                )
+
+                m_pPrefixCode[m_NextCode] = oldCode;
+                m_pSecondByte[m_NextCode] = m_PixelValue;
+
+                // Will cause an infinite loop
+                // Not always true. HASSERT(m_pPrefixCode[m_NextCode] != m_NextCode && m_pPrefixCode[oldCode] != oldCode);
+
+                m_NextCode++;
+
+                if( m_NextCode >= m_MaxCode )
+                    {
+                    m_NumBits++;
+
+                    if( m_NumBits > LZW_BITS_MAX )
+                        {
+                        HASSERT(false);             // should not happen
+                        m_NumBits = LZW_BITS_MAX;
+                        }
+
+                    m_MaxCode = LZW_MAXCODE(m_NumBits);
+                    }
+                }
+            oldCode = newCode;
             }
-        }
-    else
-        {
-        Error = H_ERROR;
+        newCode = GetCode();
         }
 
-    return Error;
+    return Pos; // Number of bytes decoded.
     }
 
 

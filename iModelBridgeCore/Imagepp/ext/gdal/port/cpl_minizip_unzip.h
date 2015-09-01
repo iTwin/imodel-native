@@ -4,7 +4,7 @@
      - Undef EXPORT so that we are sure the symbols are not exported
      - Add support for ZIP64
 
-   Copyright (C) 2007-2008 Even Rouault
+ * Copyright (c) 2008, Even Rouault <even dot rouault at mines-paris dot org>
 
    Original licence available in port/LICENCE_minizip
 */
@@ -64,7 +64,7 @@ extern "C" {
 #endif
 
 #ifndef _ZLIB_H
-#include <zlib/zlib.h>
+#include <zlib/zlib.h>  //IPP 
 #endif
 
 #ifndef CPL_MINIZIP_IOAPI_H_INCLUDED

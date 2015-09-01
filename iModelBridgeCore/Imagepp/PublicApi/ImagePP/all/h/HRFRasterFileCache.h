@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFileCache.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFileCache
@@ -13,6 +13,7 @@
 #include "HRFCacheFileCreator.h"
 #include "HRFRasterFileBlockAdapter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFileCache : public HRFRasterFileExtender
     {
     //--------------------------------------
@@ -20,24 +21,24 @@ class HRFRasterFileCache : public HRFRasterFileExtender
     //--------------------------------------
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1468, HRFRasterFileExtender)
+    HDECLARE_CLASS_ID(HRFRasterFileId_Cache, HRFRasterFileExtender)
 
 
 public:
     // This methods allow to know if the specified raster file need a cache.
-    _HDLLg static bool    NeedCacheFor(HFCPtr<HRFRasterFile>& pi_rpForRasterFile);
+    IMAGEPP_EXPORT static bool    NeedCacheFor(HFCPtr<HRFRasterFile>& pi_rpForRasterFile);
 
 
     //--------------------------------------
     // Constructor/Destructor
     //--------------------------------------
 
-    _HDLLg                         HRFRasterFileCache(const HFCPtr<HRFRasterFile>&  pi_rpSource,
+    IMAGEPP_EXPORT                         HRFRasterFileCache(const HFCPtr<HRFRasterFile>&  pi_rpSource,
                                                       const HRFCacheFileCreator*    pi_pCreator,
                                                       bool                          pi_AutoErase = false,
                                                       uint32_t                     pi_Page = -1);
 
-    _HDLLg virtual                 ~HRFRasterFileCache();
+    IMAGEPP_EXPORT virtual                 ~HRFRasterFileCache();
 
 
     //--------------------------------------
@@ -102,12 +103,12 @@ public:
     // Methods
     //--------------------------------------
 
-    _HDLLg void                             SetAutoErase(bool pi_autoErase);
-    _HDLLg bool                             GetAutoErase()const;
+    IMAGEPP_EXPORT void                             SetAutoErase(bool pi_autoErase);
+    IMAGEPP_EXPORT bool                             GetAutoErase()const;
 
     // for internal use (for IRASB)
     // The impact will be only on the destructor
-    _HDLLg void                             SetCacheInvalidate(bool pi_cacheInvalidate);
+    IMAGEPP_EXPORT void                             SetCacheInvalidate(bool pi_cacheInvalidate);
 
 protected:
     //--------------------------------------
@@ -151,6 +152,7 @@ private:
     HRFRasterFileCache(const HRFRasterFileCache& pi_rObj);
     HRFRasterFileCache&  operator=(const HRFRasterFileCache& pi_rObj);
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLg);
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT);
     };
+END_IMAGEPP_NAMESPACE
 

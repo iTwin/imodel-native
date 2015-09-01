@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMMosaic.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** ---------------------------------------------------------------------------
     Start to iterate on the mosaic's source images
     ---------------------------------------------------------------------------
@@ -67,3 +68,4 @@ inline uint32_t HIMMosaic::CountElements(IteratorHandle pi_Handle) const
     {
     return (uint32_t)((IndexType::IndexableList*)pi_Handle)->size();
     }
+END_IMAGEPP_NAMESPACE

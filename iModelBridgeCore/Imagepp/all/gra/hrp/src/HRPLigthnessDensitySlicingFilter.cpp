@@ -2,19 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPLigthnessDensitySlicingFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPLigthnessDensitySlicingFilter
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPLigthnessDensitySlicingFilter.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/HGFLightnessColorSpace.h>
 
 //-----------------------------------------------------------------------------
@@ -100,8 +99,8 @@ int32_t HRPLigthnessDensitySlicingFilter::AddSlice( int32_t pi_StartIndex,
 
     SliceInfo NewSlice;
 
-    NewSlice.m_StartIndex = (int32_t)(max(min(pi_StartIndex, m_MaxSampleValue), 0.0));
-    NewSlice.m_EndIndex   = (int32_t)(max(min(pi_EndIndex,   m_MaxSampleValue), 0.0));
+    NewSlice.m_StartIndex = (int32_t)(MAX(MIN(pi_StartIndex, m_MaxSampleValue), 0.0));
+    NewSlice.m_EndIndex   = (int32_t)(MAX(MIN(pi_EndIndex,   m_MaxSampleValue), 0.0));
 
     // Do not allow the pi_EndColor tobe before the pi_StartColor
     if (NewSlice.m_EndIndex < NewSlice.m_StartIndex)
@@ -110,7 +109,7 @@ int32_t HRPLigthnessDensitySlicingFilter::AddSlice( int32_t pi_StartIndex,
     NewSlice.m_StartColor = pi_StartColor;
     NewSlice.m_EndColor   = pi_EndColor;
 
-    NewSlice.m_Opacity    = (int32_t)(max(min(pi_Opacity, 100.0), 0.0));
+    NewSlice.m_Opacity    = (int32_t)(MAX(MIN(pi_Opacity, 100.0), 0.0));
 
     m_SliceList.push_back(NewSlice);
 
@@ -139,8 +138,8 @@ bool HRPLigthnessDensitySlicingFilter::ModifySlice (int32_t pi_StartIndex,
     // If the slice exist..
     if (SelectedSlice >= 0)
         {
-        m_SliceList[SelectedSlice].m_StartIndex = (int32_t)(max(min(pi_StartIndex, m_MaxSampleValue), 0.0));
-        m_SliceList[SelectedSlice].m_EndIndex   = (int32_t)(max(min(pi_EndIndex,   m_MaxSampleValue), 0.0));
+        m_SliceList[SelectedSlice].m_StartIndex = (int32_t)(MAX(MIN(pi_StartIndex, m_MaxSampleValue), 0.0));
+        m_SliceList[SelectedSlice].m_EndIndex   = (int32_t)(MAX(MIN(pi_EndIndex,   m_MaxSampleValue), 0.0));
 
         // Do not allow the pi_EndColor tobe before the pi_StartColor
         if (m_SliceList[SelectedSlice].m_EndIndex < m_SliceList[SelectedSlice].m_StartIndex)
@@ -149,7 +148,7 @@ bool HRPLigthnessDensitySlicingFilter::ModifySlice (int32_t pi_StartIndex,
         m_SliceList[SelectedSlice].m_StartColor = pi_StartColor;
         m_SliceList[SelectedSlice].m_EndColor   = pi_EndColor;
 
-        m_SliceList[SelectedSlice].m_Opacity    = (int32_t)(max(min(pi_Opacity, 100.0), 0.0));
+        m_SliceList[SelectedSlice].m_Opacity    = (int32_t)(MAX(MIN(pi_Opacity, 100.0), 0.0));
 
         SliceModified = true;
         }
@@ -376,7 +375,7 @@ void HRPLigthnessDensitySlicingFilter::FunctionN8( const void*  pi_pSrcRawData,
                 {
                 if (GrayValue >= (*SliceItr).m_StartIndex && GrayValue <= (*SliceItr).m_EndIndex)
                     {
-                    double GradientFactor = (GrayValue - (*SliceItr).m_StartIndex) / (double)(max((*SliceItr).m_EndIndex - (*SliceItr).m_StartIndex, 1.0));
+                    double GradientFactor = (GrayValue - (*SliceItr).m_StartIndex) / (double)(MAX((*SliceItr).m_EndIndex - (*SliceItr).m_StartIndex, 1.0));
 
                     RedValue   = (int)(((((*SliceItr).m_StartColor & 0x00FF0000) >> 16) * (1 - GradientFactor)) +
                                        ((((*SliceItr).m_EndColor   & 0x00FF0000) >> 16) * GradientFactor));
@@ -442,7 +441,7 @@ void HRPLigthnessDensitySlicingFilter::FunctionN8( const void*  pi_pSrcRawData,
                 {
                 if (GrayValue >= (*SliceItr).m_StartIndex && GrayValue <= (*SliceItr).m_EndIndex)
                     {
-                    double GradientFactor = (GrayValue - (*SliceItr).m_StartIndex) / (double)(max((*SliceItr).m_EndIndex - (*SliceItr).m_StartIndex, 1.0));
+                    double GradientFactor = (GrayValue - (*SliceItr).m_StartIndex) / (double)(MAX((*SliceItr).m_EndIndex - (*SliceItr).m_StartIndex, 1.0));
 
                     RedValue   = (int)(((((*SliceItr).m_StartColor & 0x00FF0000) >> 16) * (1 - GradientFactor)) +
                                        ((((*SliceItr).m_EndColor   & 0x00FF0000) >> 16) * GradientFactor));
@@ -546,7 +545,7 @@ void HRPLigthnessDensitySlicingFilter::FunctionN16( const void*  pi_pSrcRawData,
                 {
                 if (GrayValue >= (*SliceItr).m_StartIndex && GrayValue <= (*SliceItr).m_EndIndex)
                     {
-                    double GradientFactor = (GrayValue - (*SliceItr).m_StartIndex) / (double)(max((*SliceItr).m_EndIndex - (*SliceItr).m_StartIndex, 1.0));
+                    double GradientFactor = (GrayValue - (*SliceItr).m_StartIndex) / (double)(MAX((*SliceItr).m_EndIndex - (*SliceItr).m_StartIndex, 1.0));
 
                     RedValue   = (int)(((((*SliceItr).m_StartColor & 0x00FF0000) >> 16) * (1 - GradientFactor)) +
                                        ((((*SliceItr).m_EndColor   & 0x00FF0000) >> 16) * GradientFactor));
@@ -621,7 +620,7 @@ void HRPLigthnessDensitySlicingFilter::FunctionN16( const void*  pi_pSrcRawData,
                 {
                 if (GrayValue >= (*SliceItr).m_StartIndex && GrayValue <= (*SliceItr).m_EndIndex)
                     {
-                    double GradientFactor = (GrayValue - (*SliceItr).m_StartIndex) / (double)(max((*SliceItr).m_EndIndex - (*SliceItr).m_StartIndex, 1.0));
+                    double GradientFactor = (GrayValue - (*SliceItr).m_StartIndex) / (double)(MAX((*SliceItr).m_EndIndex - (*SliceItr).m_StartIndex, 1.0));
 
                     RedValue   = (int)(((((*SliceItr).m_StartColor & 0x00FF0000) >> 16) * (1 - GradientFactor)) +
                                        ((((*SliceItr).m_EndColor   & 0x00FF0000) >> 16) * GradientFactor));
@@ -702,7 +701,7 @@ void HRPLigthnessDensitySlicingFilter::SetDesaturationFactor(double pi_Desaturat
     {
     HPRECONDITION(pi_DesaturationFactor >= 0.0 && pi_DesaturationFactor <= 100.0);
 
-    m_DesaturationFactor = min( max(pi_DesaturationFactor, 0.0), 100.0);
+    m_DesaturationFactor = MIN( MAX(pi_DesaturationFactor, 0.0), 100.0);
 
     // Internally we normalize the factor to optimize some computation.
     m_DesaturationFactor /= 100.0;

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <ImagePP/all/h/ImageppLib.h>
 #include <Imagepp/all/h/HFCURLFile.h>
@@ -27,7 +27,6 @@
 #include <Imagepp/all/h/HCDCodecCCITTFax4.h>
 #include <Imagepp/all/h/HCDCodecHMRRLE1.h>
 #include <Imagepp/all/h/HCDCodecRLE8.h>
-#include <Imagepp/all/h/HCDCodecRGBRLE8.h>
 #include <Imagepp/all/h/HCDCodecIJG.h>
 #include <Imagepp/all/h/HCDCodecCRL8.h>
 
@@ -88,7 +87,7 @@ bool HRFIntergraphFile::Creator::IsMultiPage(HFCBinStream& pi_rSrcFile, uint32_t
         // The position of the cfp field (concatenate file ptr) is always 528 if there is
         // more than one block.
         pi_rSrcFile.SeekToPos(528);
-        pi_rSrcFile.Read((void*)&ConcatenateFilePtr, sizeof(unsigned short));
+        pi_rSrcFile.Read(&ConcatenateFilePtr, sizeof(unsigned short));
 
         // Replace the file cursor where it was.
         pi_rSrcFile.SeekToPos(CursorFilePosition);
@@ -124,6 +123,8 @@ HRFIntergraphFile::HRFIntergraphFile(const HFCPtr<HFCURL>& pi_rURL,
     m_OverviewCountChanged = false;
     m_LUTColorCorrected    = false;
     m_LUTColorPacketOffset = 0;
+
+    m_DataTypeCode          = -1;
     }
 
 //-----------------------------------------------------------------------------
@@ -153,6 +154,8 @@ HRFIntergraphFile::HRFIntergraphFile(const HFCPtr<HFCURL>& pi_rURL,
     m_OverviewCountChanged = false;
     m_LUTColorCorrected    = false;
     m_LUTColorPacketOffset = 0;
+
+    m_DataTypeCode         = -1;
     }
 
 
@@ -215,7 +218,7 @@ uint32_t HRFIntergraphFile::CalcNumberOfPage () const
         m_pIntergraphFile->SeekToPos(NextPageOffset);
 
         // Read the Header, and check if we have read it at all.
-        m_pIntergraphFile->Read((void*)&TempHeaderBlocks.IBlock1, sizeof(IntergraphHeaderBlock1));
+        m_pIntergraphFile->Read(&TempHeaderBlocks.IBlock1, sizeof(IntergraphHeaderBlock1));
         BlockNumInHeader = (TempHeaderBlocks.IBlock1.wtf + 2) / 256;
 
         if (((TempHeaderBlocks.IBlock1.wtf + 2) % 256) == 0)
@@ -223,7 +226,7 @@ uint32_t HRFIntergraphFile::CalcNumberOfPage () const
             // We always supposed to have at least two block
             // but there is always an exception..
             if (BlockNumInHeader > 1)
-                m_pIntergraphFile->Read((void*)&TempHeaderBlocks.IBlock2, sizeof(IntergraphHeaderBlock2));
+                m_pIntergraphFile->Read(&TempHeaderBlocks.IBlock2, sizeof(IntergraphHeaderBlock2));
             else
                 CreateHeaderBlock2(TempHeaderBlocks);  // Set the Block2 as empty in a valid state.
             }
@@ -356,9 +359,7 @@ bool HRFIntergraphFile::Open()
     HPRECONDITION(!m_pIntergraphFile);
 
     // Be sure the Intergraph raster file is NOT already open.
-    m_pIntergraphFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pIntergraphFile, GetURL()->GetURL());
+    m_pIntergraphFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     // This creates the sister file for file sharing control if necessary.
     SharingControlCreate();
@@ -379,9 +380,7 @@ bool HRFIntergraphFile::Create()
     HPRECONDITION(!m_IsOpen);
     HPRECONDITION(!m_pIntergraphFile);
 
-    m_pIntergraphFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pIntergraphFile, GetURL()->GetURL());
+    m_pIntergraphFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     // This creates the sister file for file sharing control if necessary.
     SharingControlCreate();
@@ -505,7 +504,7 @@ void HRFIntergraphFile::IntergraphTagUpdate(HFCPtr<HRFPageDescriptor> pi_pPageDe
             m_pIntergraphFile->SeekToPos(GetpageOffset(m_CurentPageIndex));
 
             // Afterall flush theses HeaderBlocks on the disk...
-            m_pIntergraphFile->Write((void*)&m_IntergraphHeader.IBlock1,
+            m_pIntergraphFile->Write(&m_IntergraphHeader.IBlock1,
                                      sizeof(Byte) * HRF_INTERGRAGH_HEADER_BLOCK_LENGTH);
 
             // Reset the cursor to it's old position.
@@ -542,7 +541,7 @@ bool HRFIntergraphFile::WriteTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rp
             m_pIntergraphFile->SeekToPos(GetpageOffset(m_CurentPageIndex));
 
             // Afterall flush theses HeaderBlocks on the disk...
-            m_pIntergraphFile->Write((void*)&m_IntergraphHeader.IBlock1,
+            m_pIntergraphFile->Write(&m_IntergraphHeader.IBlock1,
                                      sizeof(Byte) * HRF_INTERGRAGH_HEADER_BLOCK_LENGTH);
 
             // Reset the cursor to it's old position.
@@ -990,7 +989,6 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
     m_SubResolution        =  0;
     m_CurrentSubImage      = -1;
     m_BitPerPixel          =  0;
-    m_pCompBuffer          =  0;
 
     // Check if the file has been open in read and/or write mode...
     if (pi_pPage != 0)
@@ -1016,7 +1014,7 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
         else
             m_DataTypeCode = m_IntergraphHeader.IBlock1.dtc;
 
-        switch(m_DataTypeCode)
+        switch(GetDatatypeCode())
             {
             case  COT :                                              // COT
                 // We have different pixel type according the palette type
@@ -1179,7 +1177,7 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                     {
                     if (HasTileAccess((unsigned short)i))
                         {
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetTileWidth((unsigned short)i), GetTileHeight((unsigned short)i));
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetTileWidth((unsigned short)i), GetTileHeight((unsigned short)i), 8);
                         // Check if we have a scanline header before the data. If it's the case
                         // inform the codec of this particularity.
                         if (m_IntergraphHeader.IBlock1.scn == 1)
@@ -1189,7 +1187,7 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                         {
                         // Instead of giving the width of the line, we give the new width
                         // previously calculated.
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetWidth((unsigned short)i), GetHeight((unsigned short)i));
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetWidth((unsigned short)i), GetHeight((unsigned short)i), 8);
                         m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((unsigned short)i),1);
                         // Check if we have a scanline header before the data. If it's the case
                         // inform the codec of this particularity.
@@ -1229,23 +1227,22 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
                     {
                     if (HasTileAccess((unsigned short)i))
                         {
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRGBRLE8(GetTileWidth((unsigned short)i), GetTileHeight((unsigned short)i));
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetTileWidth((unsigned short)i), GetTileHeight((unsigned short)i), 24);
                         // Check if we have a scanline header before the data. If it's the case
                         // inform the codec of this particularity.
                         if (m_IntergraphHeader.IBlock1.scn == 1)
-                            ((HFCPtr<HCDCodecRGBRLE8> &)m_IntergraphResDescriptors[i]->pCodec)->SetLineHeader(true);
+                            ((HFCPtr<HCDCodecRLE8> &)m_IntergraphResDescriptors[i]->pCodec)->SetLineHeader(true);
                         }
                     else
                         {
                         // Instead of giving the width of the line, we give the new width
                         // previously calculated.
-                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRGBRLE8(GetWidth((unsigned short)i),
-                                                                                    GetHeight((unsigned short)i));
+                        m_IntergraphResDescriptors[i]->pCodec = new HCDCodecRLE8(GetWidth((unsigned short)i), GetHeight((unsigned short)i), 24);
                         m_IntergraphResDescriptors[i]->pCodec->SetSubset(GetWidth((unsigned short)i),1);
                         // Check if we have a scanline header before the data. If it's the case
                         // inform the codec of this particularity.
                         if (m_IntergraphHeader.IBlock1.scn == 1)
-                            ((HFCPtr<HCDCodecRGBRLE8> &)m_IntergraphResDescriptors[i]->pCodec)->SetLineHeader(true);
+                            ((HFCPtr<HCDCodecRLE8> &)m_IntergraphResDescriptors[i]->pCodec)->SetLineHeader(true);
                         }
                     }
 
@@ -1314,7 +1311,7 @@ bool HRFIntergraphFile::InitOpenedFile(HFCPtr<HRFPageDescriptor> pi_pPage)
 
             default :
                 // This file type is not support yet...
-                throw(new HFCFileException(HRF_PIXEL_TYPE_CODEC_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL()));
+                throw(new HRFPixelTypeCodecNotSupportedException(GetURL()->GetURL())); 
                 break;
             }
         }
@@ -1409,7 +1406,7 @@ bool HRFIntergraphFile::FillFileHeader()
     m_pIntergraphFile->SeekToPos(GetpageOffset(m_CurentPageIndex));
 
     // Read the Header, and check if we have read it at all.
-    m_pIntergraphFile->Read((void*)&m_IntergraphHeader.IBlock1, sizeof(IntergraphHeaderBlock1));
+    m_pIntergraphFile->Read(&m_IntergraphHeader.IBlock1, sizeof(IntergraphHeaderBlock1));
 
     m_BlockNumInHeader = (m_IntergraphHeader.IBlock1.wtf + 2) / 256;
 
@@ -1419,7 +1416,7 @@ bool HRFIntergraphFile::FillFileHeader()
         // We always supposed to have at least two block
         // but there is always an exception..
         if (m_BlockNumInHeader > 1)
-            m_pIntergraphFile->Read((void*)&m_IntergraphHeader.IBlock2, sizeof(IntergraphHeaderBlock2));
+            m_pIntergraphFile->Read(&m_IntergraphHeader.IBlock2, sizeof(IntergraphHeaderBlock2));
         else
             CreateHeaderBlock2(m_IntergraphHeader);  // Set the Block2 as empty in a valid state.
 
@@ -1432,7 +1429,7 @@ bool HRFIntergraphFile::FillFileHeader()
             for (int32_t BlockIndex = 0; BlockIndex < m_BlockNumInHeader - 2; BlockIndex++)
                 {
                 IntergraphHeaderBlockP pIntergraphHeaderBlock = new IntergraphHeaderBlockN;
-                m_pIntergraphFile->Read((void*)pIntergraphHeaderBlock, sizeof(IntergraphHeaderBlockN));
+                m_pIntergraphFile->Read(pIntergraphHeaderBlock, sizeof(IntergraphHeaderBlockN));
                 m_pIntergraphBlockSupp.push_back(pIntergraphHeaderBlock);
                 }
             }
@@ -1506,7 +1503,7 @@ void HRFIntergraphFile::ReadTileDirectory(unsigned short pi_SubImage)
     m_pIntergraphFile->SeekToPos(FileOffset);
 
     // Read the Tile directory
-    m_pIntergraphFile->Read((void*)&m_IntergraphResDescriptors[pi_SubImage]->TileDirectory, sizeof(TileDirectoryInfo));
+    m_pIntergraphFile->Read(&m_IntergraphResDescriptors[pi_SubImage]->TileDirectory, sizeof(TileDirectoryInfo));
 
     // Calculate the number of tile required for the raster.
     HorzTileNumber  = (uint32_t)ceil((double)(GetWidth (pi_SubImage)) / (double)(m_IntergraphResDescriptors[pi_SubImage]->TileDirectory.TileSize));
@@ -1520,7 +1517,7 @@ void HRFIntergraphFile::ReadTileDirectory(unsigned short pi_SubImage)
         m_IntergraphResDescriptors[pi_SubImage]->pTileDirectoryEntry = new TileEntry[TotalTileNumber];
 
     // Read all tile entry.
-    m_pIntergraphFile->Read((void*)m_IntergraphResDescriptors[pi_SubImage]->pTileDirectoryEntry, sizeof(TileEntry) * TotalTileNumber);
+    m_pIntergraphFile->Read(m_IntergraphResDescriptors[pi_SubImage]->pTileDirectoryEntry, sizeof(TileEntry) * TotalTileNumber);
 
     // Unlock the sister file.
     SisterFileLock.ReleaseKey();
@@ -1606,13 +1603,13 @@ void HRFIntergraphFile::SetPalette (const HRPPixelPalette& pi_rPalette)
             m_pIntergraphFile->SeekToPos(GetpageOffset(m_CurentPageIndex));
 
             // Afterall flush theses HeaderBlocks on the disk...
-            m_pIntergraphFile->Write((void*)&m_IntergraphHeader.IBlock1,
+            m_pIntergraphFile->Write(&m_IntergraphHeader.IBlock1,
                                      sizeof(Byte) * HRF_INTERGRAGH_HEADER_BLOCK_LENGTH);
-            m_pIntergraphFile->Write((void*)&m_IntergraphHeader.IBlock2,
+            m_pIntergraphFile->Write(&m_IntergraphHeader.IBlock2,
                                      sizeof(Byte) * HRF_INTERGRAGH_HEADER_BLOCK_LENGTH);
 
             for (int32_t BlockInHeader = 2; BlockInHeader < m_BlockNumInHeader; BlockInHeader++)
-                m_pIntergraphFile->Write((void*)m_pIntergraphBlockSupp[BlockInHeader - 2], sizeof(Byte) * HRF_INTERGRAGH_HEADER_BLOCK_LENGTH);
+                m_pIntergraphFile->Write(m_pIntergraphBlockSupp[BlockInHeader - 2], sizeof(Byte) * HRF_INTERGRAGH_HEADER_BLOCK_LENGTH);
 
             // Reset the cursor to it's old position.
             m_pIntergraphFile->SeekToPos(oldCursorPosition);
@@ -1975,7 +1972,7 @@ bool HRFIntergraphFile::WriteFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
             m_BlockHeaderAddition = (int32_t)ceil((double) (m_IntergraphHeader.IBlock2.apl * 2) /
                                                 (double) (HRF_INTERGRAGH_HEADER_BLOCK_LENGTH));
 
-            m_BlockHeaderAddition = __max( m_BlockHeaderAddition, 0);
+            m_BlockHeaderAddition = MAX( m_BlockHeaderAddition, 0);
             }
 
         // TR #242927/TR #278636:
@@ -2032,16 +2029,16 @@ bool HRFIntergraphFile::WriteFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
     m_pIntergraphFile->SeekToPos(GetpageOffset(m_CurentPageIndex));
 
     // Update the word to follow according newly added BlockNumInHeader.
-    m_IntergraphHeader.IBlock1.wtf = (unsigned short)(m_BlockNumInHeader * (HRF_INTERGRAGH_HEADER_BLOCK_LENGTH / 2)) - 2;
+    m_IntergraphHeader.IBlock1.wtf = (unsigned short)((m_BlockNumInHeader * (HRF_INTERGRAGH_HEADER_BLOCK_LENGTH / 2)) - 2);
 
     // Afterall flush theses HeaderBlocks on the disk...
-    m_pIntergraphFile->Write((void*)&m_IntergraphHeader.IBlock1, sizeof(IntergraphHeaderBlock1));
-    m_pIntergraphFile->Write((void*)&m_IntergraphHeader.IBlock2, sizeof(IntergraphHeaderBlock2));
+    m_pIntergraphFile->Write(&m_IntergraphHeader.IBlock1, sizeof(IntergraphHeaderBlock1));
+    m_pIntergraphFile->Write(&m_IntergraphHeader.IBlock2, sizeof(IntergraphHeaderBlock2));
 
     // Write all m_pIntergraphBlockSupp into the file.
     for (int32_t BlockInHeader = 2; BlockInHeader < m_BlockNumInHeader; BlockInHeader++)
         {
-        m_pIntergraphFile->Write((void*)m_pIntergraphBlockSupp[BlockInHeader - 2], sizeof(IntergraphHeaderBlockN));
+        m_pIntergraphFile->Write(m_pIntergraphBlockSupp[BlockInHeader - 2], sizeof(IntergraphHeaderBlockN));
         }
 
     // At this time always return true...
@@ -2060,7 +2057,10 @@ void HRFIntergraphFile::CreateHeaderBlock1(HRFResolutionDescriptor*  pi_pResolut
     if (pi_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE)
         m_IntergraphHeader.IBlock1.dtc = HRF_INTERGRAPH_TILE_CODE; // Data type code
     else
+        {
+        HASSERT(-1 != m_DataTypeCode);
         m_IntergraphHeader.IBlock1.dtc = m_DataTypeCode;
+        }
     m_IntergraphHeader.IBlock1.utc = 0;                        // Application Type
 
     // At this time, make an identity matrix...
@@ -2085,7 +2085,7 @@ void HRFIntergraphFile::CreateHeaderBlock1(HRFResolutionDescriptor*  pi_pResolut
     m_IntergraphHeader.IBlock1.drs = 0;                        // Device resolution     ?????????
     m_IntergraphHeader.IBlock1.slo = 4;                        // Scan line orientation
 
-    if (m_DataTypeCode == RLE)
+    if (GetDatatypeCode() == RLE)
         m_IntergraphHeader.IBlock1.scn = 1;                    // Scannable flag
     else
         m_IntergraphHeader.IBlock1.scn = 0;                    // Scannable flag
@@ -2164,7 +2164,7 @@ bool HRFIntergraphFile::CreateTileDirectory(unsigned short             pi_SubIma
         if (m_SubResolution > 0)
             pIntergraphResolutionDescriptor->TileDirectory.Properties  = 3;
 
-        pIntergraphResolutionDescriptor->TileDirectory.DataTypeCode    = m_DataTypeCode;
+        pIntergraphResolutionDescriptor->TileDirectory.DataTypeCode    = GetDatatypeCode();
         memset(pIntergraphResolutionDescriptor->TileDirectory.Reserved2, 0, 100);  // Must be 0
         pIntergraphResolutionDescriptor->TileDirectory.TileSize        = pi_pResolutionDescriptor->GetBlockWidth();
 
@@ -2250,12 +2250,12 @@ bool HRFIntergraphFile::WriteTileDirectory(unsigned short pi_SubImage)
             TotalTileNumber = HorzTileNumber * VertTileNumber;
 
             SizeToWrite = sizeof(m_IntergraphResDescriptors[pi_SubImage]->TileDirectory);
-            if (m_pIntergraphFile->Write((void*)&m_IntergraphResDescriptors[pi_SubImage]->TileDirectory, sizeof(Byte) * SizeToWrite) == (sizeof(Byte) * SizeToWrite))
+            if (m_pIntergraphFile->Write(&m_IntergraphResDescriptors[pi_SubImage]->TileDirectory, sizeof(Byte) * SizeToWrite) == (sizeof(Byte) * SizeToWrite))
                 {
                 if (m_IntergraphResDescriptors[pi_SubImage]->pTileDirectoryEntry != 0)
                     {
                     SizeToWrite = sizeof(m_IntergraphResDescriptors[pi_SubImage]->pTileDirectoryEntry[0]);
-                    if ((m_pIntergraphFile->Write((void*)m_IntergraphResDescriptors[pi_SubImage]->pTileDirectoryEntry,
+                    if ((m_pIntergraphFile->Write(m_IntergraphResDescriptors[pi_SubImage]->pTileDirectoryEntry,
                                                   SizeToWrite * TotalTileNumber)) == (SizeToWrite * TotalTileNumber))
                         {
                         CalculatedSizeOfDirectory += (SizeToWrite * TotalTileNumber);
@@ -2265,7 +2265,7 @@ bool HRFIntergraphFile::WriteTileDirectory(unsigned short pi_SubImage)
                             {
                             HArrayAutoPtr<Byte> EmptyBuffer(new Byte[CalculatedSizeOfDirectory]);
                             memset(EmptyBuffer, 0, CalculatedSizeOfDirectory);
-                            m_pIntergraphFile->Write((void*)EmptyBuffer.get(), sizeof(Byte) * CalculatedSizeOfDirectory);
+                            m_pIntergraphFile->Write(EmptyBuffer.get(), sizeof(Byte) * CalculatedSizeOfDirectory);
                             }
                         Status = true;
                         }
@@ -2471,7 +2471,7 @@ bool HRFIntergraphFile::IsSingleColor()
         m_pIntergraphFile->SeekToPos(FileOffset);
 
         // Read the Tile directory
-        m_pIntergraphFile->Read((void*)&TempResDescriptors.TileDirectory, sizeof(TileDirectoryInfo));
+        m_pIntergraphFile->Read(&TempResDescriptors.TileDirectory, sizeof(TileDirectoryInfo));
 
         // Reset the cursor to it's old position.
         m_pIntergraphFile->SeekToPos(CurrentCursorPosition);
@@ -2516,7 +2516,7 @@ uint32_t HRFIntergraphFile::GetpageOffset(uint32_t pi_PageIndex)
             m_pIntergraphFile->SeekToPos(NextPageOffset);
 
             // Read the Header, and check if we have read it at all.
-            m_pIntergraphFile->Read((void*)&TempHeaderBlocks.IBlock1, sizeof(IntergraphHeaderBlock1));
+            m_pIntergraphFile->Read(&TempHeaderBlocks.IBlock1, sizeof(IntergraphHeaderBlock1));
             BlockNumInHeader = (TempHeaderBlocks.IBlock1.wtf + 2) / 256;
 
             if (((TempHeaderBlocks.IBlock1.wtf + 2) % 256) == 0)
@@ -2524,7 +2524,7 @@ uint32_t HRFIntergraphFile::GetpageOffset(uint32_t pi_PageIndex)
                 // We always supposed to have at least two block
                 // but there is always an exception..
                 if (BlockNumInHeader > 1)
-                    m_pIntergraphFile->Read((void*)&TempHeaderBlocks.IBlock2, sizeof(IntergraphHeaderBlock2));
+                    m_pIntergraphFile->Read(&TempHeaderBlocks.IBlock2, sizeof(IntergraphHeaderBlock2));
                 else
                     CreateHeaderBlock2(TempHeaderBlocks);  // Set the Block2 as empty in a valid state.
                 }
@@ -2822,7 +2822,7 @@ bool HRFIntergraphFile::ReadAllApplicationPacket()
             m_pIntergraphFile->SeekToPos(CursorFilePosition);
 
             // Fill the generic part of the application packet.
-            m_pIntergraphFile->Read((void*)&ApplicationPacketHeader, sizeof(GenericApplicationPacket));
+            m_pIntergraphFile->Read(&ApplicationPacketHeader, sizeof(GenericApplicationPacket));
 
             // check if the application packet was an overview packet.
             if (ApplicationPacketHeader.ApplicationType == 1 && ApplicationPacketHeader.SubTypeCode == 10)
@@ -2844,7 +2844,7 @@ bool HRFIntergraphFile::ReadAllApplicationPacket()
 
             if (ApplicationPacketHeader.ApplicationType == 1 && ApplicationPacketHeader.SubTypeCode == 2)
                 {
-                if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsIntergraphLUTColorCorrectionEnable() || m_sIntergraphLUT_ApplyReset)
+                if (ImageppLib::GetHost().GetImageppLibAdmin()._IsIntergraphLUTColorCorrectionEnable() || m_sIntergraphLUT_ApplyReset)
                     {
                     GetLUTColorCorrection(CursorFilePosition, ApplicationPacketHeader);
                     // if the LUT is not null, we don't allow to open the file in ReadWrite mode normally.
@@ -2854,7 +2854,7 @@ bool HRFIntergraphFile::ReadAllApplicationPacket()
                         if ((GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess) && !m_sIntergraphLUT_ApplyReset)
                             {
                             WString CurrentFileName(GetURL()->GetURL());
-                            throw HRFException(HRF_INTERGRAPH_LUT_READ_ONLY_EXCEPTION, CurrentFileName);
+                            throw HRFIntergraphLutReadOnlyException(CurrentFileName);
                             }
                         }
                     }
@@ -2946,6 +2946,7 @@ void HRFIntergraphFile::SetDatatypeCode(unsigned short pi_DataTypeCode)
 
 const unsigned short HRFIntergraphFile::GetDatatypeCode() const
     {
+    HPRECONDITION(-1 != m_DataTypeCode);
     return m_DataTypeCode;
     }
 
@@ -2960,7 +2961,6 @@ const unsigned short HRFIntergraphFile::GetDatatypeCode() const
 void HRFIntergraphFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                       uint32_t pi_Page,
                                                       bool   pi_CheckSpecificUnitSpec,
-                                                      bool   pi_GeoModelDefaultUnit,
                                                       bool   pi_InterpretUnitINTGR)
     {
     //The unit used by Intergraph file formats is always UoR.

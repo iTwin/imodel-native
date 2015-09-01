@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLECWPS.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLECWPS
@@ -11,6 +11,7 @@
 
 #include "HFCURLCommonInternet.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //:Ignore
 // URL specification at this level is:
 // http:[//][user[:password]@]host[:port][/[Path[?SearchPart]]]
@@ -48,7 +49,7 @@ class HFCURLECWPS : public HFCURLCommonInternet
     {
 public:
 
-    HDECLARE_CLASS_ID(1295, HFCURLCommonInternet);
+    HDECLARE_CLASS_ID(HFCURLId_ECWPS, HFCURLCommonInternet);
 
     // Define the Scheme label
     static const WString& s_SchemeName()
@@ -58,25 +59,25 @@ public:
         }
 
     //:> constructor
-    _HDLLu                         HFCURLECWPS() { } //:> required for persistence
-    _HDLLu                         HFCURLECWPS(const WString& pi_URL);
-    _HDLLu                         HFCURLECWPS(const WString& pi_User,
+    IMAGEPP_EXPORT                         HFCURLECWPS() { } //:> required for persistence
+    IMAGEPP_EXPORT                         HFCURLECWPS(const WString& pi_URL);
+    IMAGEPP_EXPORT                         HFCURLECWPS(const WString& pi_User,
                                                const WString& pi_Password,
                                                const WString& pi_Host,
                                                const WString& pi_Port,
                                                const WString& pi_Path,
                                                const WString& pi_SearchPart);
-    _HDLLu virtual                 ~HFCURLECWPS();
+    IMAGEPP_EXPORT virtual                 ~HFCURLECWPS();
 
     //:> Content access methods
-    _HDLLu virtual WString         GetURL() const;
+    IMAGEPP_EXPORT virtual WString         GetURL() const;
     const WString&          GetPath() const;
     const WString&          GetSearchPart() const;
 
     //:> Overriden methods, used in relative path management
-    _HDLLu virtual bool           HasPathTo(HFCURL* pi_pURL);
-    _HDLLu virtual WString         FindPathTo(HFCURL* pi_pDest);
-    _HDLLu virtual HFCURL*         MakeURLTo(const WString& pi_Path);
+    IMAGEPP_EXPORT virtual bool           HasPathTo(HFCURL* pi_pURL);
+    IMAGEPP_EXPORT virtual WString         FindPathTo(HFCURL* pi_pDest);
+    IMAGEPP_EXPORT virtual HFCURL*         MakeURLTo(const WString& pi_Path);
 
 #ifdef __HMR_DEBUG_MEMBER
     virtual void            PrintState() const;
@@ -97,7 +98,7 @@ private:
     HFCURLECWPS& operator=(const HFCURLECWPS&);
 
     };
-
+END_IMAGEPP_NAMESPACE
 
 #include "HFCURLECWPS.hpp"
 

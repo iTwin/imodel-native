@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DUniverse.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // operator=
 // Assignment operator.  It duplicates another polygon object.
@@ -319,24 +320,4 @@ inline void HGF2DUniverse::Rasterize(HGFScanLines& pio_rScanlines) const
     HASSERT(0);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+END_IMAGEPP_NAMESPACE

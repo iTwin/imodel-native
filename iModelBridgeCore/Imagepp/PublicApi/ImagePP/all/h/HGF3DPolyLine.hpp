@@ -2,10 +2,10 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF3DPolyLine.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -248,3 +248,4 @@ inline void HGF3DPolyLine::SetAutoToleranceActive(bool i_AutoToleranceActive)
 
     ResetTolerance();
     }
+END_IMAGEPP_NAMESPACE

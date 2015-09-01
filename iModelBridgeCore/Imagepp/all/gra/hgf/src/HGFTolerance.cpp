@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFTolerance.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HGFTolerance
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGFTolerance.h>
 
@@ -41,8 +41,8 @@ HGFTolerance::HGFTolerance
     double pi_y3,
     HFCPtr<HGF2DCoordSys>  pi_pCoordSys
 )
-    : m_XMin(min(min(pi_x0, pi_x1), min(pi_x2, pi_x3))),
-      m_YMin(min(min(pi_y0, pi_y1), min(pi_y2, pi_y3))),
+    : m_XMin(MIN(MIN(pi_x0, pi_x1), MIN(pi_x2, pi_x3))),
+      m_YMin(MIN(MIN(pi_y0, pi_y1), MIN(pi_y2, pi_y3))),
       m_Quadrilateral(pi_x0 - m_XMin, pi_y0 - m_YMin,
                       pi_x1 - m_XMin, pi_y1 - m_YMin,
                       pi_x2 - m_XMin, pi_y2 - m_YMin,
@@ -153,8 +153,8 @@ HGFTolerance& HGFTolerance::ChangeCoordSys
         x3 = Point3.GetX();
         y3 = Point3.GetY();
 
-        m_XMin = min(min(x0, x1), min(x2, x3));
-        m_YMin = min(min(y0, y1), min(y2, y3));
+        m_XMin = MIN(MIN(x0, x1), MIN(x2, x3));
+        m_YMin = MIN(MIN(y0, y1), MIN(y2, y3));
 
         m_Quadrilateral = HGF2DLiteQuadrilateral(x0 - m_XMin, y0 - m_YMin,
                                                  x1 - m_XMin, y1 - m_YMin,
@@ -197,7 +197,7 @@ double HGFTolerance::GetLinearTolerance
 
         m_Quadrilateral.GetCorners(&x0, &y0, &x1, &y1, &x2, &y2, &x3, &y3);
 
-        m_Tolerance = max (sqrt(SQUARE(x2 - x0) + SQUARE(y2 - y0)), sqrt(SQUARE(x3 - x1) + SQUARE(y3 - y1)));
+        m_Tolerance = MAX (sqrt(SQUARE(x2 - x0) + SQUARE(y2 - y0)), sqrt(SQUARE(x3 - x1) + SQUARE(y3 - y1)));
         }
 
     return m_Tolerance;

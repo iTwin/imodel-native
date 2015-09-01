@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRawFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRawFile
 //-----------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFRawFile.h>
 #include <Imagepp/all/h/HFCURLFile.h>
@@ -27,7 +27,6 @@
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //-----------------------------------------------------------------------------
@@ -130,8 +129,7 @@ HRFRawCreator::HRFRawCreator()
 //-----------------------------------------------------------------------------
 WString HRFRawCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_RAW);  // Raw Data
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_RAW());  // Raw Data
     }
 
 //-----------------------------------------------------------------------------
@@ -178,7 +176,7 @@ HFCPtr<HRFRasterFile> HRFRawCreator::Create(
         if (pi_AccessMode.m_HasCreateAccess)
             pFile = new HRFRawFile(pi_rpURL, 1, 1, new HRPPixelTypeV24R8G8B8(), pi_AccessMode, pi_Offset);
         else
-            throw HFCFileException(HFC_FILE_NOT_CREATED_EXCEPTION, pi_rpURL->GetURL());
+            throw HFCFileNotCreatedException(pi_rpURL->GetURL());
         }
 
     HASSERT(pFile != 0);
@@ -193,7 +191,6 @@ bool HRFRawCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                   uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
 
     bool Result = false;
 
@@ -301,9 +298,9 @@ void HRFRawCreator::AutoDetectFileSize (const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the Raw File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    if (pFile == 0 || pFile->GetLastException() != 0)
         po_Width = po_Height = 0;
     else
         {
@@ -357,9 +354,9 @@ HFCPtr<HRPPixelType> HRFRawCreator::AutoDetectPixelType (const HFCPtr<HFCURL>& p
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the Raw File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
         FileSize = (size_t)(pFile->GetSize() - pi_Offset - pi_Footer);
         FileSize /= pi_Width * pi_Height;
@@ -402,9 +399,7 @@ bool HRFRawFile::Open()
     {
     if (!m_IsOpen)
         {
-        m_pRawFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(m_pRawFile, GetURL()->GetURL());
+        m_pRawFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -602,9 +597,7 @@ bool HRFRawFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
 bool HRFRawFile::Create()
     {
     // Open the file
-    m_pRawFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pRawFile, GetURL()->GetURL());
+    m_pRawFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
 
     // Create the sharing control object for file sharing
     SharingControlCreate();

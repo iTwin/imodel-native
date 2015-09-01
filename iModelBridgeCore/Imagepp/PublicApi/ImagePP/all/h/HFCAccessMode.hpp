@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCAccessMode.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 /**--------------------------------------------------------------------------
  Returns true if the access mode(s) described by @r{pi_AccessMode} is
@@ -120,3 +120,5 @@ inline HFCAccessMode& HFCAccessMode::operator|=(const HFCAccessMode& pi_rObj)
 
     return *this;
     }
+
+END_IMAGEPP_NAMESPACE

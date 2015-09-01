@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTWFPageFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTWFPageFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 
 #include <Imagepp/all/h/HRFTWFPageFile.h>
@@ -18,7 +18,6 @@
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HFCStat.h>
 #include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include <Imagepp/all/h/HGF2DAffine.h>
@@ -141,7 +140,7 @@ HFCPtr<HFCURL> HRFTWFPageFileCreator::ComposeURLFor(const HFCPtr<HFCURL>&   pi_r
 
     // Decompose the file name
     if (!pi_rpURLFileName->IsCompatibleWith(HFCURLFile::CLASS_ID))
-        throw HFCFileException(HFC_INVALID_URL_FOR_SISTER_FILE_EXCEPTION, pi_rpURLFileName->GetURL());
+        throw HFCInvalidUrlForSisterFileException(pi_rpURLFileName->GetURL());
 
     WString Path(((HFCPtr<HFCURLFile>&)pi_rpURLFileName)->GetPath());
 
@@ -246,19 +245,17 @@ HRFTWFPageFile::HRFTWFPageFile(const HFCPtr<HFCURL>&   pi_rpURL,
     HPRECONDITION(pi_rpURL != 0);
 
     if (pi_AccessMode == HFC_CREATE_ONLY)
-        m_pFile = HFCBinStream::Instanciate(pi_rpURL, HFC_CREATE_ONLY | HFC_WRITE_ONLY);
+        m_pFile = HFCBinStream::Instanciate(pi_rpURL, HFC_CREATE_ONLY | HFC_WRITE_ONLY, 0, true);
     else
-        m_pFile = HFCBinStream::Instanciate(pi_rpURL, pi_AccessMode);
+        m_pFile = HFCBinStream::Instanciate(pi_rpURL, pi_AccessMode, 0, true);
 
-    ThrowFileExceptionIfError(m_pFile, pi_rpURL->GetURL());
-
-    m_DefaultRatioToMeter = ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetDefaultRatioToMeter();
+    m_DefaultRatioToMeter = ImageppLib::GetHost().GetImageppLibAdmin()._GetDefaultRatioToMeter();
 
     if (!pi_AccessMode.m_HasCreateAccess)
         {
         ReadFile();
         if (!IsValidTWFFile())
-            throw HRFException(HRF_INVALID_SISTER_FILE_EXCEPTION, pi_rpURL->GetURL());
+            throw HRFInvalidSisterFileException(pi_rpURL->GetURL());
         }
     else
         {
@@ -307,13 +304,23 @@ void HRFTWFPageFile::WriteToDisk()
         {
         WriteFile();
         m_pFile->Flush();
+
+        //// Reopen R/W with share access for Projectwise
+        //if (m_pFile->GetAccessMode().m_HasWriteAccess && !(m_pFile->GetAccessMode().m_HasReadShare))
+        //    {
+        //    m_pFile = 0;    // Close the file
+        //    m_pFile = HFCBinStream::Instanciate(GetURL(), HFC_READ_WRITE_OPEN | HFC_SHARE_READ_WRITE, 0, true);
+        //    }
         }
     catch(...)
         {
         // Errors can happen, but they surely can't propagate in a destructor!
         // Break anyway so that we can make sure it's not a fatal error.
-
+#if defined (ANDROID) || defined (__APPLE__)
+        HASSERT(!L"Write error TWF file");
+#elif defined (_WIN32)
         HDEBUGCODE(DebugBreak(););
+#endif
         }
     }
 
@@ -403,85 +410,73 @@ void HRFTWFPageFile::ReadFile()
     // x-dimension of a pixel in map units (this value may not be 0.0)
     ReadLine(&Line);
     if (Line.empty())
-        throw HRFFileParameterException(HRF_SISTER_FILE_MISSING_PARAMETER_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_PixelSizeX));
+        throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_PixelSizeX()));
 
     if (!ConvertStringToDouble(Line, &m_A00))
-        throw HRFFileParameterException(HRF_SISTER_FILE_INVALID_PARAM_VALUE_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_PixelSizeX));
+        throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_PixelSizeX()));
 
     if (Line.empty())
         ReadLine(&Line);
 
     // Rotation term
     if (Line.empty())
-        throw HRFFileParameterException(HRF_SISTER_FILE_MISSING_PARAMETER_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_RotationAboutY));
+        throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_RotationAboutY()));
 
     if (!ConvertStringToDouble(Line, &m_A10))
-        throw HRFFileParameterException(HRF_SISTER_FILE_INVALID_PARAM_VALUE_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_RotationAboutY));
+        throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_RotationAboutY()));
 
     if (Line.empty())
         ReadLine(&Line);
 
     // Rotation term
     if (Line.empty())
-        throw HRFFileParameterException(HRF_SISTER_FILE_MISSING_PARAMETER_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_RotationAboutX));
+        throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_RotationAboutX()));
 
     if (!ConvertStringToDouble(Line, &m_A01))
-        throw HRFFileParameterException(HRF_SISTER_FILE_INVALID_PARAM_VALUE_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_RotationAboutX));
+        throw HRFSisterFileMissingParamGroupException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_RotationAboutX()));
 
     if (Line.empty())
         ReadLine(&Line);
 
     // negative of y-dimension of a pixel in map units (this value may not be 0.0)
     if (Line.empty())
-        throw HRFFileParameterException(HRF_SISTER_FILE_MISSING_PARAMETER_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_PixelSizeY));
+        throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_PixelSizeY()));
 
     if (!ConvertStringToDouble(Line, &m_A11))
-        throw HRFFileParameterException(HRF_SISTER_FILE_INVALID_PARAM_VALUE_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_PixelSizeY));
+        throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_PixelSizeY()));
 
     if (Line.empty())
         ReadLine(&Line);
 
     // x coordinate of center of upper left pixel in map units
     if (Line.empty())
-        throw HRFFileParameterException(HRF_SISTER_FILE_MISSING_PARAMETER_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_TranslationX));
+        throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_TranslationX()));
 
 
     if  (!ConvertStringToDouble(Line, &m_Tx))
-        throw HRFFileParameterException(HRF_SISTER_FILE_INVALID_PARAM_VALUE_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_TranslationX));
+        throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_TranslationX()));
 
     if (Line.empty())
         ReadLine(&Line);
 
     // y coordinte of center of upper left corner in map units
     if (Line.empty())
-        throw HRFFileParameterException(HRF_SISTER_FILE_MISSING_PARAMETER_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_TranslationY));
+        throw HRFSisterFileMissingParamException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_TranslationY()));
 
     if (!ConvertStringToDouble(Line, &m_Ty))
-        throw HRFFileParameterException(HRF_SISTER_FILE_INVALID_PARAM_VALUE_EXCEPTION,
-                                        m_pFile->GetURL()->GetURL(),
-                                        HFCResourceLoader::GetInstance()->GetString(IDS_TWF_TranslationY));
+        throw HRFSisterFileInvalidParamValueException(m_pFile->GetURL()->GetURL(),
+                                        ImagePPMessages::GetStringW(ImagePPMessages::TWF_TranslationY()));
     }
 
 //-----------------------------------------------------------------------------
@@ -623,7 +618,7 @@ void HRFTWFPageFile::WriteFile()
         }
     else
         {
-        throw HRFException(HRF_INVALID_TRANSFO_FOR_SISTER_FILE_EXCEPTION, GetURL()->GetURL());
+        throw HRFInvalidTransfoForSisterFileException(GetURL()->GetURL());
         }
 
     char aBuffer[256];
@@ -638,7 +633,7 @@ void HRFTWFPageFile::WriteFile()
         {
         sprintf(aBuffer, "%.12lf\r\n", m_A00);
         }
-    NewSize += m_pFile->Write((void*)aBuffer, strlen(aBuffer));
+    NewSize += m_pFile->Write(aBuffer, strlen(aBuffer));
 
     if (fabs(m_A10) < 1E-12)
         {
@@ -648,7 +643,7 @@ void HRFTWFPageFile::WriteFile()
         {
         sprintf(aBuffer, "%.12lf\r\n", m_A10);
         }
-    NewSize += m_pFile->Write((void*)aBuffer, strlen(aBuffer));
+    NewSize += m_pFile->Write(aBuffer, strlen(aBuffer));
 
     if (fabs(m_A01) < 1E-12)
         {
@@ -658,7 +653,7 @@ void HRFTWFPageFile::WriteFile()
         {
         sprintf(aBuffer, "%.12lf\r\n", m_A01);
         }
-    NewSize += m_pFile->Write((void*)aBuffer, strlen(aBuffer));
+    NewSize += m_pFile->Write(aBuffer, strlen(aBuffer));
 
     if (fabs(m_A11) < 1E-12)
         {
@@ -668,7 +663,7 @@ void HRFTWFPageFile::WriteFile()
         {
         sprintf(aBuffer, "%.12lf\r\n", m_A11);
         }
-    NewSize += m_pFile->Write((void*)aBuffer, strlen(aBuffer));
+    NewSize += m_pFile->Write(aBuffer, strlen(aBuffer));
 
     if (fabs(m_Tx) < 1E-12)
         {
@@ -678,7 +673,7 @@ void HRFTWFPageFile::WriteFile()
         {
         sprintf(aBuffer, "%.12lf\r\n", m_Tx);
         }
-    NewSize += m_pFile->Write((void*)aBuffer, strlen(aBuffer));
+    NewSize += m_pFile->Write(aBuffer, strlen(aBuffer));
 
     if (fabs(m_Ty) < 1E-12)
         {
@@ -688,7 +683,7 @@ void HRFTWFPageFile::WriteFile()
         {
         sprintf(aBuffer, "%.12lf\r\n", m_Ty);
         }
-    NewSize += m_pFile->Write((void*)aBuffer, strlen(aBuffer));
+    NewSize += m_pFile->Write(aBuffer, strlen(aBuffer));
 
     if (m_pFile->GetSize() > NewSize)
         {
@@ -698,12 +693,12 @@ void HRFTWFPageFile::WriteFile()
         // clear the end of the file
         while (NewSize > 256)
             {
-            m_pFile->Write((void*)aBuffer, 256);
+            m_pFile->Write(aBuffer, 256);
             NewSize -= 256;
             }
 
         if (NewSize > 0)
-            m_pFile->Write((void*)aBuffer, NewSize);
+            m_pFile->Write(aBuffer, NewSize);
         }
 
     m_pFile->Flush();
@@ -755,7 +750,7 @@ void HRFTWFPageFile::ReadLine(string*   po_pString)
         memset(Buffer, 0, BufferSize+1);
         for (unsigned short i = 0; i < BufferSize && !EndOfLine; i++)
             {
-            m_pFile->Read((void*)&Buffer[i], 1);
+            m_pFile->Read(&Buffer[i], 1);
             EndOfLine = Buffer[i] == '\n' || m_pFile->EndOfFile();
             }
 

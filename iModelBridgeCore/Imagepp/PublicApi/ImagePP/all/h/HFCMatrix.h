@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMatrix.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCMatrix
@@ -10,7 +10,7 @@
 
 #pragma once
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /**
 
     This template class is not usually used directly, but through the
@@ -261,6 +261,6 @@ operator*(HNumericType pi_RawDouble,
 template<size_t Rows, size_t Columns, class HNumericType> inline HFCMatrix<Rows, Columns, HNumericType>
 operator*(HNumericType pi_RawDouble, const HFCMatrix<Rows, Columns, HNumericType>& pi_rMatrix);
 
-
+END_IMAGEPP_NAMESPACE
 
 #include "HFCMatrix.hpp"

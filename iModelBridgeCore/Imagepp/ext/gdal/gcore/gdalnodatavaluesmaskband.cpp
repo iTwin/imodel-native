@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalnodatavaluesmaskband.cpp 17757 2009-10-05 17:06:20Z rouault $
+ * $Id: gdalnodatavaluesmaskband.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALNoDataValuesMaskBand, a class implementing 
@@ -9,7 +9,7 @@
  * Author:   Even Rouault, <even dot rouault at mines dash paris dot ogr>
  *
  ******************************************************************************
- * Copyright (c) 2008, Even Rouault
+ * Copyright (c) 2008-2009, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +32,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalnodatavaluesmaskband.cpp 17757 2009-10-05 17:06:20Z rouault $");
+CPL_CVSID("$Id: gdalnodatavaluesmaskband.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                   GDALNoDataValuesMaskBand()                         */

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFDoqFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFDoqFile
@@ -20,6 +20,7 @@
 #include "HRFMacros.h"
 #include "HTIFFTag.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //--------------------------------------------------
 // Keywords
 //--------------------------------------------------
@@ -80,7 +81,7 @@ struct HRFDoqCreator : public HRFRasterFileCreator
 
 
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFDoqCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFDoqCreator)
 private:
 
 
@@ -98,7 +99,7 @@ public:
     friend class HRFDoqEditor;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1505, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Doq, HRFRasterFile)
 
     // allow to Open an image file
     HRFDoqFile          (const HFCPtr<HFCURL>&          pi_rpURL,
@@ -128,7 +129,6 @@ public:
     virtual void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                  uint32_t pi_Page = 0,
                                                                  bool   pi_CheckSpecificUnitSpec = false,
-                                                                 bool   pi_GeoModelDefaultUnit = true,
                                                                  bool   pi_InterpretUnitINTGR = false);
 
     // Constructor use only to create a child
@@ -222,5 +222,6 @@ private:
     HRFDoqFile& operator=(const HRFDoqFile& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE
 
 

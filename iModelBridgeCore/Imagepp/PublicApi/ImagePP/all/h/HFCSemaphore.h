@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCSemaphore.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCSemaphore
@@ -17,6 +17,7 @@
 
 #include "HFCSynchro.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /**
 
     This class is used to create and access @t{semaphores}.  These objects are
@@ -46,12 +47,12 @@ public:
 
     //:> Construction/Destruction
 
-    _HDLLu                 HFCSemaphore(int32_t       pi_InitCount   = 0,
+    IMAGEPP_EXPORT                 HFCSemaphore(int32_t       pi_InitCount   = 0,
                                         int32_t       pi_MaxCount    = LONG_MAX);
-    _HDLLu                 HFCSemaphore(const WString& pi_rName,
+    IMAGEPP_EXPORT                 HFCSemaphore(const WString& pi_rName,
                                         int32_t       pi_InitCount   = 0,
                                         int32_t       pi_MaxCount    = LONG_MAX);
-    _HDLLu virtual         ~HFCSemaphore();
+    IMAGEPP_EXPORT virtual         ~HFCSemaphore();
 
 
     //:> Open a named semaphore - must have been
@@ -109,5 +110,7 @@ private:
     friend struct EventKeyCreator;
 #endif
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCSemaphore.hpp"

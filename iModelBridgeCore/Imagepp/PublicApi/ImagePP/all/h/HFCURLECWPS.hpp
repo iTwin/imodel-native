@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLECWPS.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HFCURLECWPS
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------
  Returns a constant reference to a string that contains the path to the
  resource included in this URL, which is present when the host is not
@@ -52,3 +52,4 @@ inline const WString& HFCURLECWPS::GetSearchPart() const
     {
     return m_SearchPart;
     }
+END_IMAGEPP_NAMESPACE

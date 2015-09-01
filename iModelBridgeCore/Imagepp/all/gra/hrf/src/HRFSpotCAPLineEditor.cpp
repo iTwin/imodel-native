@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSpotCAPLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFSpotCAPLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFSpotCAPLineEditor.h>
 #include <Imagepp/all/h/HRFSpotCAPFile.h>
 #include <Imagepp/all/h/HTIFFUtils.h>
@@ -77,14 +77,15 @@ HRFSpotCAPLineEditor::~HRFSpotCAPLineEditor()
 // Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFSpotCAPLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                        uint32_t pi_PosBlockY,
-                                        Byte* po_pData,
+HSTATUS HRFSpotCAPLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                        uint64_t pi_PosBlockY,
+                                        Byte*   po_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (pi_PosBlockY >= 0);
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     HSTATUS Status = H_ERROR;
 
@@ -99,12 +100,12 @@ HSTATUS HRFSpotCAPLineEditor::ReadBlock(uint32_t pi_PosBlockX,
         {
         case 1:
             if (m_nbBitsPerBandPerPixel == 8)
-                Status = Read8BitGrayBlock(pi_PosBlockX, pi_PosBlockY, po_pData, pi_pSisterFileLock);
+                Status = Read8BitGrayBlock((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, po_pData, pi_pSisterFileLock);
             break;
 
         case 3:
             if (m_nbBitsPerBandPerPixel == 8)
-                Status = Read8BitGrayBlock(pi_PosBlockX, pi_PosBlockY, po_pData, pi_pSisterFileLock);
+                Status = Read8BitGrayBlock((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, po_pData, pi_pSisterFileLock);
             break;
 
         case 4:
@@ -130,7 +131,7 @@ WRAPUP:
 
 HSTATUS HRFSpotCAPLineEditor::Read8BitGrayBlock(uint32_t pi_PosBlockX,
                                                 uint32_t pi_PosBlockY,
-                                                Byte* po_pData,
+                                                Byte*   po_pData,
                                                 HFCLockMonitor const* pi_pSisterFileLock)
     {
     HSTATUS Status = H_SUCCESS;
@@ -155,7 +156,7 @@ HSTATUS HRFSpotCAPLineEditor::Read8BitGrayBlock(uint32_t pi_PosBlockX,
             m_pRasterFile->m_pImagFile->SeekToPos(m_Offset);
 
         uint32_t DataSize = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth();
-        if(m_pRasterFile->m_pImagFile->Read((void*)po_pData, DataSize) != DataSize)
+        if(m_pRasterFile->m_pImagFile->Read(po_pData, DataSize) != DataSize)
             Status = H_ERROR;
 
         // Unlock the sister file.
@@ -175,7 +176,7 @@ HSTATUS HRFSpotCAPLineEditor::Read8BitGrayBlock(uint32_t pi_PosBlockX,
 
 HSTATUS HRFSpotCAPLineEditor::Read24BitRgbBlock(uint32_t pi_PosBlockX,
                                                 uint32_t pi_PosBlockY,
-                                                Byte* po_pData,
+                                                Byte*   po_pData,
                                                 HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(po_pData != 0);
@@ -211,17 +212,17 @@ HSTATUS HRFSpotCAPLineEditor::Read24BitRgbBlock(uint32_t pi_PosBlockX,
         offSetToLine += m_LineWidth * (RedChannel - 1);
         m_pRasterFile->m_pImagFile->SeekToPos(offSetToLine);
 
-        if(m_pRasterFile->m_pImagFile->Read((void*)m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
+        if(m_pRasterFile->m_pImagFile->Read(m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
 
         m_pRasterFile->m_pImagFile->Seek((GreenChannel - RedChannel - 1) * m_pRasterFile->GetTotalBytesPerRow());
 
-        if(m_pRasterFile->m_pImagFile->Read((void*)m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
+        if(m_pRasterFile->m_pImagFile->Read(m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
 
         m_pRasterFile->m_pImagFile->Seek((BlueChannel - GreenChannel - 1) * m_pRasterFile->GetTotalBytesPerRow());
 
-        if(m_pRasterFile->m_pImagFile->Read((void*)m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
+        if(m_pRasterFile->m_pImagFile->Read(m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
         }
     else
@@ -272,9 +273,9 @@ WRAPUP:
 // Write uncompressed Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFSpotCAPLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                         uint32_t     pi_PosBlockY,
-                                         const Byte* pi_pData,
+HSTATUS HRFSpotCAPLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                         uint64_t     pi_PosBlockY,
+                                         const Byte*  pi_pData,
                                          HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(pi_pData != 0);

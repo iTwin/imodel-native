@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DWorldCluster.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DWorldCluster
@@ -17,7 +17,7 @@
 #include <Imagepp/all/h/HGF2DWorld.h>
 #include <Imagepp/all/h/HGF2DCoordSys.h>
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert
@@ -67,13 +67,13 @@
 */
 class HGF2DWorldCluster : public HPMPersistentObject, public HPMShareableObject<HGF2DWorldCluster>
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1124)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HGF2DWorldId_Cluster)
 
 public:
 
     // Primary methods
-    _HDLLg                     HGF2DWorldCluster();
-    _HDLLg virtual             ~HGF2DWorldCluster();
+    IMAGEPP_EXPORT                     HGF2DWorldCluster();
+    IMAGEPP_EXPORT virtual             ~HGF2DWorldCluster();
 
     // World link management
     virtual void        AddWorldReference(const HFCPtr<HGF2DWorld>& pi_rpWorld);
@@ -102,4 +102,5 @@ private:
     HGF2DWorldCluster&     operator=(const HGF2DWorldCluster& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGF2DWorldCluster.hpp"

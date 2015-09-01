@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXAList.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -19,6 +19,7 @@
 #include "HFCPtr.h"
 #include "HIDXIndexable.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 // Convert between absolute and relative positions
 #define HIDXALIST_ABSOLUTE_POS(pi_pBlock, pi_RelativePosition) (pi_pBlock->GetBlockOffset() + pi_RelativePosition)
@@ -164,7 +165,7 @@ private:
     uint32_t        m_BlockCount;
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HIDXAList.hpp"
 
 

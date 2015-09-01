@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLocation.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HGF2DLocation
 //-----------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     Default Constructor
@@ -534,8 +534,9 @@ inline bool HGF2DLocation::IsEqualToAutoEpsilon(const HGF2DLocation& pi_rObj) co
                               &NewX, &NewY);
 
     // Compare coordinates
-    return(HDOUBLE_EQUAL(NewX, m_XValue, fabs(HGLOBAL_EPSILON * max(m_XValue, NewX))) &&
-           HDOUBLE_EQUAL(NewY, m_YValue, fabs(HGLOBAL_EPSILON * max(m_YValue, NewY))));
+    return(HDOUBLE_EQUAL(NewX, m_XValue, fabs(HGLOBAL_EPSILON * MAX(m_XValue, NewX))) &&
+           HDOUBLE_EQUAL(NewY, m_YValue, fabs(HGLOBAL_EPSILON * MAX(m_YValue, NewY))));
     }
 
 
+END_IMAGEPP_NAMESPACE

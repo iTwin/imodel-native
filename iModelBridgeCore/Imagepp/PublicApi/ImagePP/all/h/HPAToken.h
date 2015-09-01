@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAToken.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPAToken
@@ -22,12 +22,13 @@
 
 #include <Imagepp/all/h/HPAGrammarObject.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HPAToken : public HPAGrammarObject
     {
 public:
 
-    _HDLLu                     HPAToken();
-    _HDLLu virtual             ~HPAToken();
+    IMAGEPP_EXPORT                     HPAToken();
+    IMAGEPP_EXPORT virtual             ~HPAToken();
 
     virtual bool       IsTerminal() const {
         return true;
@@ -53,12 +54,12 @@ class HPATokenNode : public HPANode
     {
 public:
 
-    _HDLLu                     HPATokenNode(HPAGrammarObject* pi_pToken,
+    IMAGEPP_EXPORT                     HPATokenNode(HPAGrammarObject* pi_pToken,
                                             const WString& pi_rText,
                                             const HPASourcePos& pi_rLeftPos,
                                             const HPASourcePos& pi_rRightPos,
                                             HPASession* pi_pSession);
-    _HDLLu virtual             ~HPATokenNode();
+    IMAGEPP_EXPORT virtual             ~HPATokenNode();
 
     void                SetText(const WString& pi_rText);
     const WString&      GetText() const;
@@ -87,13 +88,13 @@ class HPANumberTokenNode : public HPATokenNode
     {
 public:
 
-    _HDLLu                     HPANumberTokenNode(HPAGrammarObject* pi_pToken,
+    IMAGEPP_EXPORT                     HPANumberTokenNode(HPAGrammarObject* pi_pToken,
                                                   const WString& pi_rText,
                                                   const HPASourcePos& pi_rLeftPos,
                                                   const HPASourcePos& pi_rRightPos,
                                                   HPASession* pi_pSession,
                                                   double pi_Value);
-    _HDLLu virtual             ~HPANumberTokenNode();
+    IMAGEPP_EXPORT virtual             ~HPANumberTokenNode();
 
     void                SetValue(double pi_Value);
     double             GetValue() const;
@@ -113,6 +114,7 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HPAToken.hpp"
 
 

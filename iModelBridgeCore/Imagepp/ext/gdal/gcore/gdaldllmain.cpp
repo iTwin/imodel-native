@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2010, Mateusz Loskot <mateusz@loskot.net>
+ * Copyright (c) 2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,16 @@
 #include "gdal.h"
 #include "ogr_api.h"
 #include "cpl_multiproc.h"
+#include "cpl_conv.h"
+#include "cpl_string.h"
 
+static int bInGDALGlobalDestructor = FALSE;
+extern "C" int CPL_DLL GDALIsInGlobalDestructor(void);
+
+int GDALIsInGlobalDestructor(void)
+{
+    return bInGDALGlobalDestructor;
+}
 
 /************************************************************************/
 /*  The library set-up/clean-up routines implemented with               */
@@ -62,13 +72,18 @@ static void GDALDestroy(void)
 {
     // TODO: Confirm if calling CPLCleanupTLS here is safe
     //CPLCleanupTLS();
+    
+    if( !CSLTestBoolean(CPLGetConfigOption("GDAL_DESTROY", "YES")) )
+        return;
 
     CPLDebug("GDAL", "In GDALDestroy - unloading GDAL shared library.");
+    bInGDALGlobalDestructor = TRUE;
     GDALDestroyDriverManager();
 
 #ifdef OGR_ENABLED
     OGRCleanupAll();
 #endif
+    bInGDALGlobalDestructor = FALSE;
 }
 
 #endif // __GNUC__
@@ -78,7 +93,8 @@ static void GDALDestroy(void)
 /*  The library set-up/clean-up routine implemented as DllMain entry    */
 /*  point specific for Windows.                                         */
 /************************************************************************/
-#ifdef _MSC_VER
+//IPP #ifdef _MSC_VER
+#if (0)
 
 #include <windows.h>
 
@@ -101,11 +117,13 @@ extern "C" int WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpRese
     }
     else if (dwReason == DLL_PROCESS_DETACH)
     {
+        bInGDALGlobalDestructor = TRUE;
         ::GDALDestroyDriverManager();
 
 #ifdef OGR_ENABLED
         ::OGRCleanupAll();
 #endif
+        bInGDALGlobalDestructor = FALSE;
     }
 
 	return 1; // ignroed for all reasons but DLL_PROCESS_ATTACH

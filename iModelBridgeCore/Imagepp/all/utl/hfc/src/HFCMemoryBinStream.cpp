@@ -8,8 +8,8 @@
 // Methods for class HFCMemoryBinStream
 //---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCMemoryBinStream.h>
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HFCURLMemFile.h>
@@ -20,7 +20,6 @@
 //---------------------------------------------------------------------------
 // This is the creator that registers itself in the stream-type list.
 //---------------------------------------------------------------------------
-
 static struct MemoryBinStreamCreator : public HFCBinStream::Creator
     {
     MemoryBinStreamCreator()
@@ -29,29 +28,19 @@ static struct MemoryBinStreamCreator : public HFCBinStream::Creator
         }
 
     // The parameter pi_NbRetryBeforeThrow is not used presently
-    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, HFCAccessMode pi_AccessMode, short pi_NbRetryBeforeThrow=0) const
+    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, uint64_t pi_offSet, HFCAccessMode pi_AccessMode, short pi_NbRetryBeforeThrow=0) const override
         {
         HPRECONDITION(pi_pURL != 0);
         HPRECONDITION(pi_pURL->GetSchemeType() == HFCURLMemFile::s_SchemeName());
+        HPRECONDITION(pi_pURL->IsCompatibleWith(HFCURLMemFile::CLASS_ID));
 
-        uint64_t OriginOffset = 0;
-        HFCURLMemFile* pURL = (HFCURLMemFile*)pi_pURL.GetPtr();
-        WString Filename = pURL->GetPath();
-        WString::size_type ColonPos = Filename.find(L':');
-
-        if (ColonPos != WString::npos)
-            {
-            WString OffsetString = Filename.substr(ColonPos+1, Filename.length() - ColonPos - 1);
-            Filename.erase(ColonPos, Filename.length()-ColonPos);
-            swscanf(OffsetString.c_str(), L"%lld", &OriginOffset);
-            }
-        Filename = pURL->GetHost() + L"\\" + Filename;
-
+        HFCURLMemFile* pMemURL = static_cast<HFCURLMemFile*>(pi_pURL.GetPtr());
+       
         // No read no write and no create access means that access mode is automatically choosen
         if ((!pi_AccessMode.m_HasWriteAccess) && (!pi_AccessMode.m_HasReadAccess) && (!pi_AccessMode.m_HasCreateAccess))
-            return new HFCMemoryBinStream(Filename, pi_AccessMode.m_HasWriteShare, pi_AccessMode.m_HasReadShare, false, false, OriginOffset, 0, pURL->GetBuffer());
+            return new HFCMemoryBinStream(pMemURL->GetFilename(), pi_AccessMode.m_HasWriteShare, pi_AccessMode.m_HasReadShare, false, false, pi_offSet, 0, pMemURL->GetBuffer());
         else
-            return new HFCMemoryBinStream(Filename, pi_AccessMode, false, OriginOffset, 0, pURL->GetBuffer());
+            return new HFCMemoryBinStream(pMemURL->GetFilename(), pi_AccessMode, false, pi_offSet, 0, pMemURL->GetBuffer());
 
         }
     } s_MemoryBinStreamCreator;
@@ -68,7 +57,7 @@ HFCMemoryBinStream::HFCMemoryBinStream()
     m_AutoRemove    = false;
     m_AccessMode    = HFC_READ_WRITE_OPEN;
     m_OriginOffset  = 0;
-    m_LastException = NO_EXCEPTION;
+    m_pLastException.reset(NULL);
     m_BinStreamOpen = true;
     }
 
@@ -91,7 +80,7 @@ HFCMemoryBinStream::HFCMemoryBinStream(const WString&        pi_Filename,
         m_BinStreamBuffer = pi_rpBuffer;
     m_CurrentOffset   = 0;
     m_Filename        = pi_Filename;
-    m_LastException   = NO_EXCEPTION;
+    m_pLastException.reset(NULL);
     m_LastSeekStatus  = true;
     m_OriginOffset    = pi_OriginOffset;
 
@@ -119,7 +108,7 @@ HFCMemoryBinStream::HFCMemoryBinStream(const WString&        pi_Filename,
         m_BinStreamBuffer = pi_rpBuffer;
     m_CurrentOffset   = 0;
     m_Filename        = pi_Filename;
-    m_LastException   = NO_EXCEPTION;
+    m_pLastException.reset(NULL);
     m_LastSeekStatus  = true;
     m_OriginOffset    = pi_OriginOffset;
 
@@ -151,7 +140,7 @@ HFCMemoryBinStream::HFCMemoryBinStream(const WString&        pi_Filename,
         m_BinStreamBuffer = pi_rpBuffer;
     m_CurrentOffset   = 0;
     m_Filename        = pi_Filename;
-    m_LastException   = NO_EXCEPTION;
+    m_pLastException.reset(NULL);
     m_LastSeekStatus  = true;
     m_OriginOffset    = pi_OriginOffset;
 
@@ -196,48 +185,6 @@ void HFCMemoryBinStream::Unlock(uint64_t pi_Pos, uint64_t pi_Size)
     // Do nothing at this time.
     }
 
-//---------------------------------------------------------------------------
-// HFCMemoryBinStream::Read
-//
-// Note that the parameter pi_DataSize represents the number of characters
-// to read. The value returned should be the number of characters written.
-//---------------------------------------------------------------------------
-inline size_t HFCMemoryBinStream::Read(WChar* po_pData, size_t pi_DataSize)
-    {
-    size_t StreamSize   = m_BinStreamBuffer->GetDataSize();
-    size_t DataSizeRead = 0;
-    size_t DataSize     = pi_DataSize;
-
-    DataSize = DataSize * sizeof(WChar);
-
-    if (m_CurrentOffset + DataSize <= StreamSize)
-        {
-        // Be sure to not read more data than wich really are.
-        memcpy(po_pData, m_BinStreamBuffer->GetData() + m_CurrentOffset, DataSize);
-        m_CurrentOffset += DataSize;
-        DataSizeRead = pi_DataSize;
-        m_LastException = NO_EXCEPTION;
-        }
-    else
-        {
-        m_LastException = HFC_FILE_OUT_OF_RANGE_EXCEPTION;
-        }
-
-    return DataSizeRead;
-    }
-
-//---------------------------------------------------------------------------
-//
-//---------------------------------------------------------------------------
-
-inline size_t HFCMemoryBinStream::Write(const WChar* pi_pData, size_t pi_DataSize)
-    {
-    size_t TSize = pi_DataSize * sizeof(WChar);
-    m_BinStreamBuffer->AddData((const Byte*)pi_pData, TSize);
-    m_CurrentOffset += TSize;
-
-    return pi_DataSize;
-    }
 
 #ifdef __HMR_DEBUG_MEMBER
 

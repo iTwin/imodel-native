@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPHistogram.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRPHistogram
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // GetEntryCount
 //-----------------------------------------------------------------------------
@@ -81,3 +82,4 @@ inline const HRPHistogram::COLOR_SPACE HRPHistogram::GetSamplingColorSpace() con
     {
     return m_ColorSpace;
     }
+END_IMAGEPP_NAMESPACE

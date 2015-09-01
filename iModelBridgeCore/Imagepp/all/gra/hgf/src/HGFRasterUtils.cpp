@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFRasterUtils.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 
 
@@ -119,7 +119,7 @@ void fCopyMemoryBloc   (void*               po_pBufDst,
     HGF2DGrid SrcGrid(pi_rExtentSrc);
     HGF2DGrid DstGrid(pi_rExtentDst);
 
-    // Get min of each Extent
+    // Get MIN of each Extent
     //
     int32_t DstMinX = DstGrid.GetXMin();
     int32_t DstMinY = DstGrid.GetYMin();
@@ -128,10 +128,10 @@ void fCopyMemoryBloc   (void*               po_pBufDst,
 
     // Find the intersect rectangle.
     //
-    int32_t InterMinX = (int32_t)max (DstMinX, SrcMinX);
-    int32_t InterMaxX = (int32_t)min (DstGrid.GetXMax(), SrcGrid.GetXMax());
-    int32_t InterMinY = (int32_t)max (DstMinY, SrcMinY);
-    int32_t InterMaxY = (int32_t)min (DstGrid.GetYMax(), SrcGrid.GetYMax());
+    int32_t InterMinX = (int32_t)MAX (DstMinX, SrcMinX);
+    int32_t InterMaxX = (int32_t)MIN (DstGrid.GetXMax(), SrcGrid.GetXMax());
+    int32_t InterMinY = (int32_t)MAX (DstMinY, SrcMinY);
+    int32_t InterMaxY = (int32_t)MIN (DstGrid.GetYMax(), SrcGrid.GetYMax());
     int32_t InterWidth= (InterMaxX - InterMinX + 1);
 
     // Empty overlap

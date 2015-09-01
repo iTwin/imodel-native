@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdtsdataset.cpp 20504 2010-09-02 02:40:49Z warmerdam $
+ * $Id: sdtsdataset.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  SDTS Translator
  * Purpose:  GDALDataset driver for SDTS Raster translator.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2008-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: sdtsdataset.cpp 20504 2010-09-02 02:40:49Z warmerdam $");
+CPL_CVSID("$Id: sdtsdataset.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /**
  \file sdtsdataset.cpp
@@ -285,6 +286,11 @@ GDALDataset *SDTSDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
+/* -------------------------------------------------------------------- */
+/*      Check for external overviews.                                   */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
+
     return( poDS );
 }
 
@@ -363,8 +369,8 @@ double SDTSRasterBand::GetNoDataValue( int *pbSuccess )
         *pbSuccess = TRUE;
     
     return -32767.0; //IPP - According to the document "The Spatial Data Transfer Standard Mapping
-                     //      of the USGS Digital Elevation Model", the value -32766.0 represents
-                     //      the background value and the value -32767.0 represents the no data value
+    //      of the USGS Digital Elevation Model", the value -32766.0 represents
+    //      the background value and the value -32767.0 represents the no data value
 }
 
 /************************************************************************/

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFVirtualEarthEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFVirtualEarthEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFVirtualEarthEditor.h>
 #include <Imagepp/all/h/HRFVirtualEarthFile.h>
@@ -49,10 +49,10 @@ HRFVirtualEarthEditor::~HRFVirtualEarthEditor()
 //-----------------------------------------------------------------------------
 // Read a block of data
 //-----------------------------------------------------------------------------
-HSTATUS HRFVirtualEarthEditor::ReadBlock64(uint64_t             pi_PosBlockX,
-                                           uint64_t             pi_PosBlockY,
-                                           Byte*                po_pData,
-                                           HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
+                                         uint64_t             pi_PosBlockY,
+                                         Byte*                po_pData,
+                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_pData != 0);
@@ -108,10 +108,17 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock64(uint64_t             pi_PosBlockX,
             memcpy(po_pData, pTile->GetData(), pTile->GetDataSize());
             Status = H_SUCCESS;
             }
-        else if (pTile->GetException() != 0)
-            {
-            HFCExceptionHandler::HandleException(pTile->GetException());
-            }
+        }
+
+    if(H_SUCCESS != Status)
+        {
+        // If the connection failed or whatever...
+        // Clear output and return SUCCESS anyway because HRFObjectStore will add an empty tile to the pool and 
+        // every CopyFrom will failed to copy pixels which will leave the destination with uninitialized pixels.
+        // Lets hope we can improve this behavior in the future. e.g. do not add it to the pool and try again next time.
+        memset(po_pData, 0, GetResolutionDescriptor()->GetBlockSizeInBytes()); 
+
+        Status = H_SUCCESS;
         }
 
     return Status;
@@ -120,10 +127,23 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock64(uint64_t             pi_PosBlockX,
 //-----------------------------------------------------------------------------
 // Write a block of data
 //-----------------------------------------------------------------------------
-HSTATUS HRFVirtualEarthEditor::WriteBlock64(uint64_t             pi_PosBlockX,
-                                            uint64_t             pi_PosBlockY,
-                                            const Byte*          pi_pData,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFVirtualEarthEditor::WriteBlock(uint64_t pi_PosBlockX,
+                                          uint64_t pi_PosBlockY,
+                                          const Byte* pi_pData,
+                                          HFCLockMonitor const* pi_pSisterFileLock)
+    {
+    //Virtual Earth is supported only in read only mode.
+    HASSERT(false);
+    return H_ERROR;
+    }
+
+//-----------------------------------------------------------------------------
+// Write a block of data
+//-----------------------------------------------------------------------------
+HSTATUS HRFVirtualEarthEditor::WriteBlock(uint64_t pi_PosBlockX,
+                                          uint64_t pi_PosBlockY,
+                                          const HFCPtr<HCDPacket>&    pi_rpPacket,
+                                          HFCLockMonitor const*       pi_pSisterFileLock)
     {
     //Virtual Earth is supported only in read only mode.
     HASSERT(false);
@@ -241,7 +261,7 @@ const double HRFVirtualEarthEditor::VirtualEarthTileSystem::MaxLongitude = 180;
 /// <returns>The clipped value.</returns>
 double HRFVirtualEarthEditor::VirtualEarthTileSystem::Clip(double n, double minValue, double maxValue)
     {
-    return min(max(n, minValue), maxValue);
+    return MIN(MAX(n, minValue), maxValue);
     }
 
 /// <summary>
@@ -542,13 +562,13 @@ void HRFVirtualEarthTileReaderThread::ReadBlockFromServer(HRFVirtualEarthTileReq
 
         try
             {
-            uint32_t codePage;
+            LangCodePage codePage;
             BeStringUtilities::GetCurrentCodePage (codePage);
 
             AString requestA;
             BeStringUtilities::WCharToLocaleChar (requestA, codePage, Request.c_str());
 
-            //&&MM should have a unicode version of pConnection->Send
+            //&&Backlog should have a unicode version of pConnection->Send
 
             //Send the command
             pConnection->Send((Byte const*)requestA.c_str(), requestA.size());
@@ -596,7 +616,7 @@ void HRFVirtualEarthTileReaderThread::ReadBlockFromServer(HRFVirtualEarthTileReq
 
             HArrayAutoPtr<Byte> pTileData(new Byte[(size_t)TileRequest.m_BlockSizeInBytes]);
 
-            if (*pEditor->GetResolutionDescriptor()->GetPixelType() != *TileRequest.m_PixelType)
+            if (!pEditor->GetResolutionDescriptor()->GetPixelType()->HasSamePixelInterpretation(*TileRequest.m_PixelType))
                 {
                 //Need to convert the data
                 HFCPtr<HRPPixelConverter> pConverter;

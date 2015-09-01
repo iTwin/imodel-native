@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUSgsNDFFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCStat.h>
 #include <Imagepp/all/h/HTIFFFile.h>
@@ -32,14 +32,13 @@
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include "HRFGeoTiffTable.h"
 
 #include <BeXml/BeXml.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 //-----------------------------------------------------------------------------
 // HRFUSgsNDFBlockCapabilities
@@ -149,8 +148,7 @@ HRFUSgsNDFCreator::HRFUSgsNDFCreator()
 //-----------------------------------------------------------------------------
 WString HRFUSgsNDFCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_USGS_NDF);  // USGS NDF File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_USGS_NDF());  // USGS NDF File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -190,7 +188,7 @@ HRFUSgsNDFFile::HRFUSgsNDFFile(const HFCPtr<HFCURL>& pi_rURL,
     m_ImgBlueBand   = pi_BlueBand;
 
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
 
     Open();
     CreateDescriptors();
@@ -215,7 +213,6 @@ const HGF2DWorldIdentificator HRFUSgsNDFFile::GetWorldIdentificator () const
 void HRFUSgsNDFFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                    uint32_t pi_Page,
                                                    bool   pi_CheckSpecificUnitSpec,
-                                                   bool   pi_GeoModelDefaultUnit,
                                                    bool   pi_InterpretUnitINTGR)
     {
     //The following tag and its value is always added to the page descriptor :
@@ -294,7 +291,9 @@ bool HRFUSgsNDFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                       uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
+    
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
 
     bool   Result = false;
 
@@ -383,12 +382,12 @@ bool HRFUSgsNDFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         char buffer[12+1];
 
         // Open the NDF Header File and place file pointer at the start of the file
-        pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+        pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-        if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+        if (pFile == 0 || pFile->GetLastException() != 0)
             goto WRAPUP;
 
-        if (pFile->Read((void*)&buffer,12) != 12)
+        if (pFile->Read(&buffer,12) != 12)
             goto WRAPUP;
 
         if (BeStringUtilities::Strnicmp(buffer, "NDF_REVISION",12) == 0)
@@ -531,8 +530,7 @@ bool HRFUSgsNDFFile::Open()
             BlueFileNameStr = content.c_str();
 
             if (!(pHeaderFileURL = ComposeChannelURL(rpURL, HeaderFileNameStr)))
-                throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                            GetURL()->GetURL(),
+                throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                             HeaderFileNameStr);
             IsUSGSFile = true;
             }
@@ -540,9 +538,7 @@ bool HRFUSgsNDFFile::Open()
             pHeaderFileURL = GetURL();
 
         HAutoPtr<HFCBinStream> pHeaderFile;
-        pHeaderFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pHeaderFileURL, m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(pHeaderFile, pHeaderFileURL->GetURL());
+        pHeaderFile = HFCBinStream::Instanciate(pHeaderFileURL, m_Offset, GetAccessMode(), 0, true);
 
         // Read header file
         if(GetHeaderFile(*pHeaderFile))
@@ -551,32 +547,26 @@ bool HRFUSgsNDFFile::Open()
                 {
                 // Get red band number
                 if (!GetBandNumber(m_ImgRedBand, RedFileNameStr))
-                    throw HRFFileParameterException(HRF_USGS_BAND_NOT_FOUND_IN_HEADER_FILE_EXCEPTION,
-                                                    GetURL()->GetURL(),
+                    throw HRFUSGSBandNotFoundInHeaderFileException(GetURL()->GetURL(),
                                                     L"RED");
                 // Get green band number
                 if (!GetBandNumber(m_ImgGreenBand, GreenFileNameStr))
-                    throw HRFFileParameterException(HRF_USGS_BAND_NOT_FOUND_IN_HEADER_FILE_EXCEPTION,
-                                                    GetURL()->GetURL(),
+                    throw HRFUSGSBandNotFoundInHeaderFileException(GetURL()->GetURL(),
                                                     L"GREEN");
                 // Get blue band number
                 if (!GetBandNumber(m_ImgBlueBand, BlueFileNameStr))
-                    throw HRFFileParameterException(HRF_USGS_BAND_NOT_FOUND_IN_HEADER_FILE_EXCEPTION,
-                                                    GetURL()->GetURL(),
+                    throw HRFUSGSBandNotFoundInHeaderFileException(GetURL()->GetURL(),
                                                     L"BLUE");
                 }
 
             BeStringUtilities::CurrentLocaleCharToWChar( RedFileNameStr,m_Bands[m_ImgRedBand].m_FileName.c_str());
 
             if (!(pRedFileURL = ComposeChannelURL(rpURL, RedFileNameStr)))
-                throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                            GetURL()->GetURL(),
+                throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                             RedFileNameStr);
 
             // Open files read-only
-            m_pRedFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pRedFileURL, m_Offset), GetAccessMode());
-
-            ThrowFileExceptionIfError(m_pRedFile, pRedFileURL->GetURL());
+            m_pRedFile = HFCBinStream::Instanciate(pRedFileURL, m_Offset, GetAccessMode(), 0, true);
 
             if (m_HeaderInfo.m_NumberOfBands > 2)
                 {
@@ -584,25 +574,22 @@ bool HRFUSgsNDFFile::Open()
                 BeStringUtilities::CurrentLocaleCharToWChar( BlueFileNameStr,m_Bands[m_ImgBlueBand].m_FileName.c_str());
 
                 if (!(pGreenFileURL = ComposeChannelURL(rpURL, GreenFileNameStr)))
-                    throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                                GetURL()->GetURL(),
+                    throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                                 GreenFileNameStr);
                 if (!(pBlueFileURL = ComposeChannelURL(rpURL, BlueFileNameStr)))
-                    throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                                GetURL()->GetURL(),
+                    throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                                 BlueFileNameStr);
 
                 // Open files read-only
-                m_pGreenFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pGreenFileURL, m_Offset), GetAccessMode());
-                ThrowFileExceptionIfError(m_pGreenFile, pGreenFileURL->GetURL());
-                m_pBlueFile  = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pBlueFileURL, m_Offset), GetAccessMode());
-                ThrowFileExceptionIfError(m_pBlueFile, pBlueFileURL->GetURL());
+                m_pGreenFile = HFCBinStream::Instanciate(pGreenFileURL, m_Offset, GetAccessMode(), 0, true);
+
+                m_pBlueFile  = HFCBinStream::Instanciate(pBlueFileURL, m_Offset, GetAccessMode(), 0, true);
                 }
 
             m_IsOpen = true;
             }
         else
-            throw(HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, rpURL->GetURL()));
+            throw HFCFileNotSupportedException(rpURL->GetURL());
 
         // Unlock the sister file
         SisterFileLock.ReleaseKey();
@@ -762,9 +749,6 @@ void HRFUSgsNDFFile::CreateDescriptors()
 
     GetGeoKeyTag(pGeoTiffKeys);
 
-    //&&AR review: we are not using pBaseGCS
-    IRasterBaseGcsPtr pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, *pGeoTiffKeys);
-
     // TranfoModel
     pTransfoModel = CreateTransfoModelFromNDF();
 
@@ -778,15 +762,7 @@ void HRFUSgsNDFFile::CreateDescriptors()
                                    pTransfoModel,        // TransfoModel,
                                    0);                   // Filters
 
-    HFCPtr<HMDMetaDataContainerList> pMetaDataContainers;
-
-    pMetaDataContainers = new HMDMetaDataContainerList();
-
-    //HMD_GEOCODING_INFO
-    pMetaDataContainers->SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>(pGeoTiffKeys));
-
-    pPage->SetListOfMetaDataContainer(pMetaDataContainers);
-
+    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys.GetPtr()));
 
     m_ListOfPageDescriptor.push_back(pPage);
     }

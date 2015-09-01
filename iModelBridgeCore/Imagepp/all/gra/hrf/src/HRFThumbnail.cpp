@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFThumbnail.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class : HRFThumbnail
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h> // Must be the first include.
+#include <ImagePPInternal/hstdcpp.h>
+ // Must be the first include.
 #include <Imagepp/all/h/HRFThumbnail.h>
 #include <Imagepp/all/h/HRPPixelType.h>
 
@@ -167,6 +167,16 @@ void HRFThumbnail::SetPalette(const HRPPixelPalette& pi_rPalette)
     rPalette = pi_rPalette;
     m_pPixelType->UnlockPalette();
     m_IsPaletteChanged = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  10/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+Byte const* HRFThumbnail::GetDataP() const
+    {
+    HPRECONDITION (m_AccessMode.m_HasReadAccess);
+
+    return m_pData;
     }
 
 //-----------------------------------------------------------------------------

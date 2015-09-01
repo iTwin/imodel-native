@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTExportToFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HUTExportFile.
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
@@ -49,390 +49,14 @@
 #include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCDCodecErMapperSupported.h>
+#include <Imagepp/all/h/HCPGeoTiffKeys.h>
 
-#ifdef __ECW_EXPORT_ENABLE__
-//#error
-// Includes from the ERMapper SDK
-#include <ErMapperEcw/NCSEcwCompressClient.h>
-#include <ErMapperEcw/NCSTypes.h>
-#include <ErMapperEcw/NCSGDTLocation.h>
-#include <ErMapperEcw/NCSMalloc.h>
+#include <Imagepp/all/h/HRFErMapperSupportedFile.h>
 
-#include <Imagepp/all/h/HFCThread.h>
 
-// this class is use to initialize the ErMapper library only once.
-// The library will be initialized on the first Init() call and will be
-// shutdown by the destructor.
-class ErMapperLibrary
-    {
-public:
-    ErMapperLibrary()
-        : m_ErMapperInitalized(false)
-        {
-        };
 
-    ~ErMapperLibrary()
-        {
-        if (m_ErMapperInitalized)
-            NCSecwShutdown();
-        };
 
-    void Init()
-        {
-        if (!m_ErMapperInitalized)
-            {
-            NCSecwInit();
-            m_ErMapperInitalized = true;
-            }
-        };
-
-    void Term()
-        {
-        // do nothing, the library will be shutdown by the destructor
-        };
-
-private:
-    bool m_ErMapperInitalized;
-    };
-
-// singleton on ErMapperLibrary.
-// we can use a static variable to shutdown the library because ErMapper library's is static
-static ErMapperLibrary s_ErMapperLibrary;
-
-//----------------------------------------------------------------------------
-// Structure to store client read data
-struct ECWReadInfoStruct
-    {
-    ECWReadInfoStruct()
-        : m_ComputeStripEvent(false, false),
-          m_StripComputedEvent(false, false),
-          m_CancelExport(false)
-        {
-        };
-
-    ~ECWReadInfoStruct()
-        {
-        };
-
-    HFCPtr<HRAStoredRaster>         m_pSourceRaster;
-    HFCPtr<HRAStoredRaster>         m_pDestinationRaster;
-    HFCPtr<HRABitmap>               m_pDestinationBitmap;
-
-    HFCPtr<HRFRasterFile>           m_pSourceFile;
-    HFCPtr<HRFRasterFile>           m_pDestinationFile;
-
-    HFCPtr<HGF2DTransfoModel>       m_pLineTranslateModel;
-    HRACopyFromOptions              m_CopyFromOptions;
-
-    UINT32                          m_LineWidthInByte;
-
-    // Buffer to store an error message in (1024 is an arbitrary size)
-    char                            m_pErrorBuffer[1024];
-
-    UINT32                          m_StripHeight;
-    UINT32                          m_CurrentStripPos;
-
-    // PDF export
-    HFCEvent                        m_ComputeStripEvent;
-    HFCEvent                        m_StripComputedEvent;
-
-    bool                           m_CancelExport;
-    };
-
-
-//----------------------------------------------------------------------------
-// Callback Functions for ECW special export.
-//
-static BOOLEAN ReadCallback  (NCSEcwCompressClient* pClient, UINT32 nNextLine, IEEE4** ppOutputBandBufferArray);
-static BOOLEAN CancelCallback(NCSEcwCompressClient* pClient);
-
-class PDFExporterThread : public HFCThread
-    {
-public:
-    PDFExporterThread(ECWReadInfoStruct& pi_rCompressReadInfo)
-        : HFCThread(),
-          m_rCompressReadInfo(pi_rCompressReadInfo),
-          m_ExportCompleted(false),
-          m_LastError(NCS_SUCCESS)
-        {
-        };
-
-    ~PDFExporterThread()
-        {
-        WaitUntilSignaled();    // wait until the thread is terminated
-        };
-
-    void Go()
-        {
-        s_ErMapperLibrary.Init();
-
-        if (InitializeECWCallbackStruct())
-            {
-            // Open the compression
-            m_LastError = NCSEcwCompressOpen(m_pCompressClient, false);
-            if (m_LastError == NCS_SUCCESS)
-                {
-                // Start progress indicator.
-                // Iteration occurs in StatusCallback(...), except for the last one that occurs
-                // after all the "hard work" (See a couples of lines below).
-                uint64_t NbBlocks((uint64_t)ceil((double)(m_pCompressClient->nInOutSizeY)/(double)(m_rCompressReadInfo.m_StripHeight)));
-                HUTExportProgressIndicator::GetInstance()->Restart(NbBlocks);
-
-                // Compress
-                m_LastError = NCSEcwCompress(m_pCompressClient);
-
-                if ((m_LastError == NCS_SUCCESS) ||
-                    (m_LastError == NCS_USER_CANCELLED_COMPRESSION))
-                    {
-                    // Free client
-                    if (NCSEcwCompressClose(m_pCompressClient) == NCS_SUCCESS)
-                        m_ExportCompleted = true;
-                    HDEBUGCODE(else HASSERT(false));
-                    }
-                HDEBUGCODE(else HASSERT(false););
-                }
-            HDEBUGCODE(else HASSERT(m_LastError == NCS_INPUT_SIZE_TOO_SMALL););
-
-            //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // Free allocated memory
-            if (m_pCompressClient)
-                {
-                NCSEcwCompressFreeClient(m_pCompressClient);
-                m_pCompressClient = 0;
-                }
-            }
-        HDEBUGCODE(else HASSERT(false););
-
-        s_ErMapperLibrary.Term();
-
-        HASSERT(!m_pCompressClient);
-        };
-
-    NCSError GetLastError()
-        {
-        return m_LastError;
-        }
-
-    // Build a strip
-    // This method is called by the ReadCallback function. All information need to copy the strip was
-    // calculated by ReadCallback().
-    void ComputeStrip()
-        {
-        m_rCompressReadInfo.m_pDestinationBitmap->CopyFrom((HFCPtr<HRARaster>&)m_rCompressReadInfo.m_pSourceRaster, m_rCompressReadInfo.m_CopyFromOptions);
-        m_rCompressReadInfo.m_StripComputedEvent.Signal();
-        };
-
-    // Initialize the callback structure for ErMapper API.
-    bool InitializeECWCallbackStruct()
-        {
-        bool CreationStatus = false;
-
-        // Dynamic Load the ECW library
-        if (m_pCompressClient = NCSEcwCompressAllocClient())
-            {
-            WString  FileName(((HFCPtr<HFCURLFile>&)m_rCompressReadInfo.m_pDestinationFile->GetURL())->GetHost());
-
-            FileName += L"\\";
-            FileName += ((HFCPtr<HFCURLFile>&)m_rCompressReadInfo.m_pDestinationFile->GetURL())->GetPath();
-
-            // Copy in string (unicode) to buffer (ansi)
-            BeStringUtilities::WCharToCurrentLocaleChar(m_pCompressClient->szOutputFilename,FileName.c_str(),MAX_PATH);
-            HFCPtr<HRFPageDescriptor>       pDstPageDesc = m_rCompressReadInfo.m_pDestinationFile->GetPageDescriptor(0);
-            HFCPtr<HRFResolutionDescriptor> pDstResDesc  = pDstPageDesc->GetResolutionDescriptor(0);
-
-            // Set up the input dimensions
-            HASSERT(pDstResDesc->GetWidth() <= ULONG_MAX);
-            HASSERT(pDstResDesc->GetHeight() <= ULONG_MAX);
-
-            m_pCompressClient->nInOutSizeX = (uint32_t)pDstResDesc->GetWidth();
-            m_pCompressClient->nInOutSizeY = (uint32_t)pDstResDesc->GetHeight();
-
-            // Specify the callbacks and client data ptr
-            m_pCompressClient->pReadCallback   = ReadCallback;
-            m_pCompressClient->pStatusCallback = 0;
-            m_pCompressClient->pCancelCallback = CancelCallback;
-
-            // Set the transformation model
-            HFCPtr<HGF2DTransfoModel> pDestModel(((HFCPtr<HRAStoredRaster> &)m_rCompressReadInfo.
-                                                  m_pDestinationRaster)->
-                                                 GetTransfoModel());
-
-            // Translate the model units to geocoding units
-            IRasterBaseGcsPtr baseGCS = pDstPageDesc->GetGeocoding();
-
-            //If some geocoding information is available, get the transformation in the units specified
-            //by the geocoding information
-            if (baseGCS != 0 && baseGCS->IsValid())
-                {
-                pDestModel = HCPGeoKeys::TranslateFromMeter(baseGCS,
-                                                            pDestModel,
-                                                            true,
-                                                            false,
-                                                            0,
-                                                            baseGCS);
-                }
-
-            if (pDestModel->IsStretchable())
-                {
-                double           ScaleFactorX;
-                double           ScaleFactorY;
-                HGF2DDisplacement Translation;
-
-                pDestModel->GetStretchParams(&ScaleFactorX, &ScaleFactorY, &Translation);
-
-                // Specifying the transformation model.
-                m_pCompressClient->fCellIncrementX = ScaleFactorX;
-                m_pCompressClient->fCellIncrementY = ScaleFactorY;
-
-                m_pCompressClient->fOriginX        = Translation.GetDeltaX();
-                m_pCompressClient->fOriginY        = Translation.GetDeltaY();
-
-                // TR 188117 (ECW lib problem)
-                char* pszProjection      = 0;
-                char* pszDatum           = 0;
-                bool IsRefCoordSysFound = false;
-
-                if ((baseGCS != 0) && (baseGCS->IsValid() && (baseGCS->IsProjected()) && (baseGCS->GetEPSGCode() != 0))
-                    {
-                    uint32_t EPSGCode = baseGCS->GetEPSGCode();
-
-                    // szProjection : ER Mapper style Projection name string, e.g. "RAW" or "GEODETIC".  Never NULL
-                    // szDatum : Mapper style Datum name string, e.g. "RAW" or "NAD27".  Never NULL
-                    if (NCS_SUCCESS == NCSGetProjectionAndDatumEx(EPSGCode, &pszProjection, &pszDatum, true))
-                        {
-                        // TR 265837 - Sometimes the return status is SUCCESS but the pszProjection is NULL (In this case the datum is correctly set)
-                        // We will consider this identical to a not found status. A typical test case is EPSG:21892 a deprectated Bogot CRS replaced
-                        // by EPSG:21897 ... It is not up to us nor ERMapper to determine what replacement should be set.
-                        if (pszProjection != NULL)
-                            IsRefCoordSysFound = true;
-                        }
-                    }
-                else if ((baseGCS != 0) && (baseGCS->IsValid() && (!baseGCS->IsProjected()) && (baseGCS->GetEPSGCode() != 0))
-                    {
-                    uint32_t EPSGCode = baseGCS->GetEPSGCode();
-
-                    // szProjection : ER Mapper style Projection name string, e.g. "RAW" or "GEODETIC".  Never NULL
-                    // szDatum : Mapper style Datum name string, e.g. "RAW" or "NAD27".  Never NULL
-                    if (NCS_SUCCESS == NCSGetProjectionAndDatumEx(EPSGCode, &pszProjection, &pszDatum, true))
-                        {
-                        IsRefCoordSysFound = true;
-                        }
-                    }
-
-                if (IsRefCoordSysFound == true)
-                    {
-                    strcpy(m_pCompressClient->szProjection, pszProjection);
-                    strcpy(m_pCompressClient->szDatum     , pszDatum);
-                    NCSFree (pszProjection);
-                    NCSFree (pszDatum);
-                    }
-
-                // Specify the units in which world cell sizes are specified, e.g. meters, feet
-                m_pCompressClient->eCellSizeUnits = ECW_CELL_UNITS_METERS;
-                }
-            else
-                {
-                // Specifying the transformation model.
-                m_pCompressClient->fCellIncrementX = 1.0;
-                m_pCompressClient->fCellIncrementY = 1.0;
-
-                m_pCompressClient->fOriginX        = 0.0;
-                m_pCompressClient->fOriginY        = 0.0;
-
-                // Specify the units in which world cell sizes are specified, e.g. meters, feet
-                m_pCompressClient->eCellSizeUnits = ECW_CELL_UNITS_METERS;
-                }
-
-            //Set the compression ratio
-            HFCPtr<HRFRasterFile> pOriginalDestRaster(m_rCompressReadInfo.m_pDestinationFile);
-
-            //Not the original file
-            if (pOriginalDestRaster->IsCompatibleWith(HRFRasterFileExtender::CLASS_ID))
-                pOriginalDestRaster = ((HFCPtr<HRFRasterFileExtender> &)m_rCompressReadInfo.m_pDestinationFile)->GetOriginalFile();
-
-            HFCPtr<HRFResolutionDescriptor> pOriRasterResDesc = pOriginalDestRaster->GetPageDescriptor(0)->GetResolutionDescriptor(0);
-
-            const HFCPtr<HCDCodec>& pCodec = pOriRasterResDesc->GetCodec();
-            HASSERT(pCodec->IsCompatibleWith(HCDCodecErMapperSupported::CLASS_ID));
-            m_pCompressClient->fTargetCompression = (IEEE4)((HFCPtr<HCDCodecErMapperSupported>&)pCodec)->GetCompressionRatio();
-
-            // Set up client data for read callback
-            m_rCompressReadInfo.m_pDestinationBitmap  = new HRABitmap(m_pCompressClient->nInOutSizeX,
-                                                                      pDstResDesc->GetBlockHeight(),
-                                                                      m_rCompressReadInfo.m_pDestinationRaster->GetTransfoModel(),
-                                                                      m_rCompressReadInfo.m_pDestinationRaster->GetCoordSys(),
-                                                                      pDstResDesc->GetPixelType());
-
-            m_rCompressReadInfo.m_StripHeight = pDstResDesc->GetBlockHeight();
-
-            if (m_rCompressReadInfo.m_pDestinationBitmap->GetPacket()->GetBufferAddress() == 0)
-                {
-                m_rCompressReadInfo.m_pDestinationBitmap = new HRABitmap(m_pCompressClient->nInOutSizeX,
-                                                                         1,
-                                                                         m_rCompressReadInfo.m_pDestinationRaster->GetTransfoModel(),
-                                                                         m_rCompressReadInfo.m_pDestinationRaster->GetCoordSys(),
-                                                                         pDstResDesc->GetPixelType());
-
-                m_rCompressReadInfo.m_StripHeight = 1;
-                }
-
-            if (m_rCompressReadInfo.m_pDestinationBitmap->GetPacket()->GetBufferAddress() != 0)
-                {
-                m_rCompressReadInfo.m_CurrentStripPos = 0;
-
-                // ECW support only GrayScale or RGB
-                HPRECONDITION(pDstResDesc->GetPixelType()->CountValueBits() == 8 || pDstResDesc->GetPixelType()->CountValueBits() == 24);
-                m_rCompressReadInfo.m_LineWidthInByte       = m_pCompressClient->nInOutSizeX * pDstResDesc->GetPixelType()->CountValueBits() / 8;
-
-                m_rCompressReadInfo.m_pErrorBuffer[0]       = 0;
-
-                // Set up the default pixel type according the src pixel type.
-                if (pDstResDesc->GetPixelType()->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID))
-                    {
-                    m_pCompressClient->nInputBands     = 1;
-                    m_pCompressClient->eCompressFormat = COMPRESS_UINT8;
-                    }
-                else
-                    {
-                    m_pCompressClient->nInputBands     = 3;
-                    m_pCompressClient->eCompressFormat = COMPRESS_RGB;
-                    }
-
-                // Create a Translation transformation model to move the m_pDestinationBitmap
-                // over the SourceRaster physical line by physical line into our ReadCallback.
-                m_rCompressReadInfo.m_pLineTranslateModel = new HGF2DTranslation(
-                    HGF2DDisplacement(0, m_rCompressReadInfo.m_StripHeight));
-                m_pCompressClient->pClientData = (void*)&m_rCompressReadInfo;
-                CreationStatus = true;
-                }
-            }
-        return CreationStatus;
-        };
-
-    bool ExportCompleted() const
-        {
-        return m_ExportCompleted;
-        }
-
-    void CancelExport()
-        {
-        m_rCompressReadInfo.m_CancelExport = true;
-        }
-
-private:
-
-    bool                   m_ExportCompleted;
-    ECWReadInfoStruct&      m_rCompressReadInfo;
-    NCSEcwCompressClient*   m_pCompressClient;
-    NCSError                m_LastError;
-
-    };
-
-#endif // __ECW_EXPORT_ENABLE__
-
-USING_NAMESPACE_IMAGEPP
-
+#define HPM_POOL_SIZE_KB (48*1024)
 //-----------------------------------------------------------------------------
 // Public
 // Constructor used to export the given source file into the specified
@@ -443,12 +67,12 @@ USING_NAMESPACE_IMAGEPP
 HUTExportToFile::HUTExportToFile(const HFCPtr<HFCURL>&            pi_rpSourceURL,
                                  HFCPtr<HRFRasterFile>&           pi_rpDestinationFile,
                                  const HFCPtr<HGF2DWorldCluster>& pi_rpWorldCluster,
-                                 double                          pi_ScaleX,
-                                 double                          pi_ScaleY,
-                                 bool                            pi_Resample,
+                                 double                           pi_ScaleX,
+                                 double                           pi_ScaleY,
+                                 bool                             pi_Resample,
                                  const HFCPtr<HRPFilter>&         pi_rpResamplingFilter)
     : m_pDestinationFile(pi_rpDestinationFile), m_pClusterWorld(pi_rpWorldCluster),
-      m_SourcePool(1024, HPMPool::KeepLastBlock),
+    m_SourcePool(HPM_POOL_SIZE_KB, HPMPool::KeepLastBlock),
       m_Resampling(HGSResampling::AVERAGE)
     {
     HPRECONDITION(m_pDestinationFile != 0);
@@ -479,9 +103,6 @@ HUTExportToFile::HUTExportToFile(const HFCPtr<HFCURL>&            pi_rpSourceURL
     // Open the source file.
     OpenSourceFile(pi_rpSourceURL);
 
-
-
-
     HASSERT(m_pSourceFile != 0);
     }
 
@@ -500,7 +121,7 @@ HUTExportToFile::HUTExportToFile(const HFCPtr<HRFRasterFile>&     pi_rpRasterFil
                                  bool                            pi_Resample,
                                  const HFCPtr<HRPFilter>&         pi_rpResamplingFilter)
     : m_pDestinationFile(pi_rpDestinationFile), m_pClusterWorld(pi_rpWorldCluster),
-      m_SourcePool(1024, HPMPool::KeepLastBlock),
+    m_SourcePool(HPM_POOL_SIZE_KB, HPMPool::KeepLastBlock),
       m_Resampling(HGSResampling::AVERAGE)
     {
     HPRECONDITION(m_pDestinationFile != 0);
@@ -547,7 +168,7 @@ HUTExportToFile::HUTExportToFile(HFCPtr<HRARaster>&               pi_rpSourceRas
                                  const HFCPtr<HRPFilter>&         pi_rpResamplingFilter)
     : m_pSourceRaster(pi_rpSourceRaster), m_pDestinationFile(pi_rpDestinationFile),
       m_pClusterWorld(pi_rpWorldCluster),
-      m_SourcePool(1024, HPMPool::KeepLastBlock),
+      m_SourcePool(HPM_POOL_SIZE_KB, HPMPool::KeepLastBlock),
       m_Resampling(HGSResampling::AVERAGE)
     {
     HPRECONDITION(m_pSourceRaster != 0);
@@ -783,8 +404,6 @@ void HUTExportToFile::Export()
     HFCPtr<HRFResolutionDescriptor> pDstResDesc;
     HFCPtr<HRPHistogram>            pHistogram;
     HFCPtr<HGF2DTransfoModel>       pPhysicalToLogicalCS;
-
-    HFCPtr<HRFRasterFile>           pOriginalDestRaster = m_pDestinationFile;
     HAutoPtr<HPMPool>                pDstObjectLog;
 
     try
@@ -805,14 +424,16 @@ void HUTExportToFile::Export()
         // Get the logical transformation model from the physical coordsys.
         pPhysicalToLogicalCS = ComputeTransformation(pDstPageDesc, pDstResDesc);
 
-#ifdef __ECW_EXPORT_ENABLE__
+        HFCPtr<HRFRasterFile> pOriginalFile = m_pDestinationFile;
         if (m_pDestinationFile->IsCompatibleWith(HRFRasterFileExtender::CLASS_ID))
-            pOriginalDestRaster = ((HFCPtr<HRFRasterFileExtender> &)m_pDestinationFile)->GetOriginalFile();
-
-        // Is the destination is the COM ECW(ERMapper) (1429) OR Is the destination is COM Jpeg2000File (1477)
-        // Simplify the transformation model to meet their restricted capabillities.
+            pOriginalFile = ((HFCPtr<HRFRasterFileExtender>&)m_pDestinationFile)->GetOriginalFile();
+            
+//DMx ECW SDK 5.0 support Geotiff Tag
+        // If the destination is ECW(ERMapper) OR Jpeg2000File (1477)
+        // Simplify the transformation model to meet their restricted capabilities.
         if (!m_Resample &&
-            ((pOriginalDestRaster->GetClassID() == HRFEcwFile::CLASS_ID) || (pOriginalDestRaster->GetClassID() == HRFJpeg2000File::CLASS_ID)))
+            (pOriginalFile->GetClassID() == HRFFileId_Ecw/*HRFEcwFile::CLASS_ID*/ ||
+             pOriginalFile->GetClassID() == HRFFileId_Jpeg2000/*HRFJpeg2000File::CLASS_ID)*/))
             {
             double           ScaleFactorX;
             double           ScaleFactorY;
@@ -826,12 +447,8 @@ void HUTExportToFile::Export()
 
             // ECW support the raster origin, the size of dataset cells in world units (scalling),
             // and the type of linear units used, (rotation and shear are unsupported)
-            if ((pOriginalDestRaster->GetClassID() == HRFEcwFile::CLASS_ID) || (pOriginalDestRaster->GetClassID() == HRFJpeg2000File::CLASS_ID)) // ECW or J2K
-                {
-                pPhysicalToLogicalCS = new HGF2DStretch(Translation, ScaleFactorX, ScaleFactorY);
-                }
+            pPhysicalToLogicalCS = new HGF2DStretch(Translation, ScaleFactorX, ScaleFactorY);
             }
-#endif // __ECW_EXPORT_ENABLE__
 
         // If we don't resample we need to check that the destination file
         // support the transformation.
@@ -943,10 +560,10 @@ void HUTExportToFile::Export()
                         if (pStripPixelType == 0)
                             pStripPixelType = new HRPPixelTypeV32R8G8B8A8();
 
-                        HFCPtr<HRARaster> pAdapter(new HIMStripAdapter(m_pSourceRaster, pStripPixelType));
-                        ((HFCPtr<HIMStripAdapter>&)pAdapter)->ClipStripsBasedOnSource(true);
+                        HFCPtr<HIMStripAdapter> pAdapter(new HIMStripAdapter(m_pSourceRaster, pStripPixelType));
+                        pAdapter->ClipStripsBasedOnSource(true);
                         if (RepPalOptions.GetPyramidImageSize() != 0)
-                            ((HFCPtr<HIMStripAdapter>&)pAdapter)->SetQualityFactor(RepPalOptions.GetPyramidImageSize() / 100.0);
+                            pAdapter->SetQualityFactor(RepPalOptions.GetPyramidImageSize() / 100.0);
 
                         pAdapter->GetRepresentativePalette(&RepPalParms);
                         }
@@ -971,6 +588,13 @@ void HUTExportToFile::Export()
                     }
                 }
             }
+
+        // do not port MIN/MAX sample tag when pixeltype change.
+        if(m_pSourceRaster->GetPixelType()->GetClassID() != pDstPixelType->GetClassID())
+            {
+            pDstPageDesc->GetTagsPtr()->Remove<HRFAttributeMinSampleValue>();
+            pDstPageDesc->GetTagsPtr()->Remove<HRFAttributeMaxSampleValue>();
+            }            
 
         // Create a Destination POOL
         //
@@ -1003,7 +627,7 @@ void HUTExportToFile::Export()
             SelectedMemMgr = HPMPool::ExportRaster; // Optimize - Stripped output
 
         // Disable memory manager if 1bitRLE,  because the editor replace the buffer in the packet...
-        pDstObjectLog = new HPMPool((uint32_t)PoolSizeKB, SelectedMemMgr);
+        pDstObjectLog = new HPMPool(PoolSizeKB, SelectedMemMgr);
 
         // Convert the destination file to a raster object using an HRSObjectStore.
         // Put the HRF raster in a store so that we can pull a HRARaster afterwards.
@@ -1014,6 +638,22 @@ void HUTExportToFile::Export()
 
         // Get the raster from the store.
         m_pDestinationRaster = m_pDestinationStore->LoadRaster();
+
+
+#ifdef IPP_HPM_ATTRIBUTES_ON_HRA
+        // Need to remove tags at HRA level in case _IsRasterAttributesEnable is ON.
+        if(m_pSourceRaster->GetPixelType()->GetClassID() != m_pDestinationRaster->GetPixelType()->GetClassID())
+            {
+            // Lock down the attributes
+            HPMAttributeSet& rAttributes = m_pDestinationRaster->LockAttributes();
+
+            rAttributes.Remove<HRFAttributeMinSampleValue>();
+            rAttributes.Remove<HRFAttributeMaxSampleValue>();
+
+            // let go the attributes
+            m_pDestinationRaster->UnlockAttributes();
+            }         
+#endif
 
         // if we are in RasterToFile or we resample, move the destination
         if (m_pSourceFile == 0 || m_Resample)
@@ -1103,87 +743,12 @@ void HUTExportToFile::Export()
 
         HUTExportProgressIndicator::GetInstance()->SetExportedFile(m_pDestinationFile);
 
-        HFCPtr<HRFRasterFile> pOriginalFile = m_pDestinationFile;
-        if (m_pDestinationFile->IsCompatibleWith(HRFRasterFileExtender::CLASS_ID))
-            {
-            pOriginalFile = ((HFCPtr<HRFRasterFileExtender>&)m_pDestinationFile)->GetOriginalFile();
-            }
+        HRFRasterFileCreator* pDestRasterFileCreator = HRFRasterFileFactory::GetInstance()->GetCreator(pOriginalFile->GetClassID());
 
-#ifdef __ECW_EXPORT_ENABLE__
-        // Is the destination is the COM ECW(ERMapper) (1429) OR Is the destination is COM Jpeg2000File (1477)
-        if ((pOriginalDestRaster->GetClassID() == HRFEcwFile::CLASS_ID) || (pOriginalDestRaster->GetClassID() == HRFJpeg2000File::CLASS_ID))
-            {
-
-            // Initialize ECWReadInfoStruct
-            ECWReadInfoStruct ReadInfoStruct;
-            ReadInfoStruct.m_pSourceFile = m_pSourceFile;
-            ReadInfoStruct.m_pSourceRaster = (HFCPtr<HRAStoredRaster>&)m_pSourceRaster;
-            ReadInfoStruct.m_pDestinationFile = m_pDestinationFile;
-            ReadInfoStruct.m_pDestinationRaster = (HFCPtr<HRAStoredRaster>&)m_pDestinationRaster;
-            ReadInfoStruct.m_CopyFromOptions = CopyFromOptions;
-
-            // TR #194882
-            // PDF library must be run into a single thread, this means that the CopyFrom() must be run into the main thread.
-            // When we export to ECW, the ReadCallback() function is called by another thread then the main thread. For this
-            // reason, we create a new thread, the ECW API is initialized into the new thread, the ReadCallback() signal an
-            // event for the main thread
-            // Create the thread
-            // This thread will initialize ECW API and call NCSEcwCompress()
-            // The callback function ReadCallback will be called by ECW API for each line.
-            // When the PDF data is needed, ReadCallback() will signal m_ComputeStripEvent.
-            PDFExporterThread ExportThread(ReadInfoStruct);
-            ExportThread.StartThread();
-
-            HFCSynchroContainer Synchros;
-            Synchros.AddSynchro (&ExportThread);    // ExportThread will be signaled when the thread stop
-            Synchros.AddSynchro (&ReadInfoStruct.m_ComputeStripEvent);
-
-            if (0 != HFCSynchro::WaitForMultipleObjects (Synchros, false))
-                {
-                do
-                    {
-                    // execute the CopyFrom
-                    ExportThread.ComputeStrip();
-
-                    }
-                while (0 != HFCSynchro::WaitForMultipleObjects (Synchros, false) && HUTExportProgressIndicator::GetInstance()->ContinueIteration(m_pDestinationFile, 0));
-                }
-
-            if (!ExportThread.ExportCompleted())
-                {
-                ExportThread.CancelExport();
-                //Wait until the library cancels the export
-                do
-                    {
-                    ReadInfoStruct.m_StripComputedEvent.Signal();
-                    }
-                while (!ExportThread.WaitUntilSignaled(100));
-                }
-
-            if ((ExportThread.GetLastError() != NCS_SUCCESS) &&
-                (ExportThread.GetLastError() != NCS_USER_CANCELLED_COMPRESSION))
-                {
-                if (ExportThread.GetLastError() == NCS_INPUT_SIZE_TOO_SMALL)
-                    {
-                    throw HRFException(HRF_TOO_SMALL_FOR_ECW_COMPRESSION_EXCEPTION, m_pDestinationFile->GetURL()->GetURL());
-                    }
-                else
-                    {
-                    throw HFCFileException(HFC_FILE_NOT_CREATED_EXCEPTION, m_pDestinationFile->GetURL()->GetURL());
-                    }
-                }
-
-            //Sub-resolution computation is done by the ErMapper library above.
-            if (m_pDestinationRaster->GetClassID() == HRAPyramidRaster::CLASS_ID)
-                {
-                ((HFCPtr<HRAPyramidRaster>&)m_pDestinationRaster)->EnableSubImageComputing(false);
-                }
-            }
-        else
-#endif // __ECW_EXPORT_ENABLE__
+        // Give a change to format like ERMapper and Jpeg2000 to handle the export.
+        if(pDestRasterFileCreator == NULL || !pDestRasterFileCreator->_HandleExportToFile(m_pDestinationFile, m_pDestinationRaster, m_pSourceFile, m_pSourceRaster, CopyFromOptions))
             {
             HFCPtr<ExportSizeEstimator> pExportSizeEstimator = 0;
-
 
             HFCPtr<HFCProgressEvaluator> pExportSizeEstimation;
 
@@ -1257,7 +822,7 @@ void HUTExportToFile::Export()
                         m_pSourceRaster->SetLookAhead(BlockShape.GetExtent(), 0);
 
                     // Copy the source raster in the destination
-                    m_pDestinationRaster->CopyFrom((HFCPtr<HRARaster>&)m_pSourceRaster, CopyFromOptions);
+                    m_pDestinationRaster->CopyFrom(*m_pSourceRaster, CopyFromOptions);
                     }
 
                 // Remove the shape pointer because it's a local...
@@ -1316,18 +881,6 @@ void HUTExportToFile::Export()
         HUTExportProgressIndicator::GetInstance()->RemoveEvaluator(HFCProgressEvaluator::COMPRESSED_DATA_ESTIMATED_SIZE);
         HUTExportProgressIndicator::GetInstance()->SetExportedFile(0);
         }
-    catch(HFCException& rException)
-        {
-        HUTExportProgressIndicator::GetInstance()->RemoveEvaluator(HFCProgressEvaluator::COMPRESSED_DATA_ESTIMATED_SIZE);
-        HUTExportProgressIndicator::GetInstance()->SetExportedFile(0);
-
-        if (m_pDestinationStore != 0)
-            m_pDestinationStore->ForceReadOnly(true);
-
-        CleanUp();
-
-        throw rException;
-        }
     catch(...)
         {
         HUTExportProgressIndicator::GetInstance()->RemoveEvaluator(HFCProgressEvaluator::COMPRESSED_DATA_ESTIMATED_SIZE);
@@ -1377,11 +930,12 @@ void HUTExportToFile::InitSourceFile()
     if (Dst_BlockHeight != Src_BlockHeight ||
         m_pSourceFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType()->CountPixelRawDataBits() == 1)
         {
-        uint32_t AdaptHeight = max(HRFImportExport_ADAPT_HEIGHT, Dst_BlockHeight);
+        uint32_t AdaptHeight = MAX(HRFImportExport_ADAPT_HEIGHT, Dst_BlockHeight);
 
         // Adapt the source raster file to srip.
         // The strip adapter is the fastest access that we can use when we export a file.
-        HASSERT(m_pSourceFile->CountPages() == 1);
+        //HASSERT(m_pSourceFile->CountPages() == 1); This has to be commented so that the IPPTests can succeed in DEBUG mode
+        //Formats like IntergraphMPF or PDF could fail here because they can hold multiple pages...
         HRFRasterFileBlockAdapter::BlockDescriptorMap BlockDescMap;
         HRFRasterFileBlockAdapter::BlockDescriptor    BlockDesc;
         BlockDesc.m_BlockType   = HRFBlockType(HRFBlockType::STRIP);
@@ -1565,91 +1119,6 @@ HFCPtr<HGF2DTransfoModel> HUTExportToFile::ComputeTransformation(HFCPtr<HRFPageD
 
     return pPhysicalToLogicalCS;
     }
-
-//---------------------------------------------------------------------------
-//
-//---------------------------------------------------------------------------
-#ifdef __ECW_EXPORT_ENABLE__
-
-//---------------------------------------------------------------------------
-// Read callback function - called once for each input line
-//---------------------------------------------------------------------------
-
-static BOOLEAN ReadCallback(NCSEcwCompressClient* pClient,
-                            UINT32                nNextLine,
-                            IEEE4**               ppOutputBandBufferArray)
-    {
-    HPRECONDITION(((ECWReadInfoStruct*)(pClient->pClientData))->m_pSourceRaster   != 0);
-
-    ECWReadInfoStruct* pReadInfo = (ECWReadInfoStruct*)pClient->pClientData;
-
-    if (nNextLine == 0)
-        {
-        // Copy data from the source raster into the destination one.
-        pReadInfo->m_pDestinationBitmap->Clear();
-        // signal the event, the main thread will execute the CopyFrom...
-        pReadInfo->m_ComputeStripEvent.Signal();
-        // wait until the main signal that the CopyFrom is terminate
-        pReadInfo->m_StripComputedEvent.WaitUntilSignaled();
-        }
-    else if (nNextLine >= pReadInfo->m_CurrentStripPos + pReadInfo->m_StripHeight)
-        {
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // Move the destination raster OVER the source file at the right position.
-        HFCPtr<HGF2DTransfoModel> pLineModel = pReadInfo->m_pDestinationBitmap->GetTransfoModel();
-
-        pLineModel = pReadInfo->m_pLineTranslateModel->ComposeInverseWithDirectOf (*pLineModel);
-        pReadInfo->m_pDestinationBitmap->SetTransfoModel(*pLineModel, pReadInfo->m_pDestinationBitmap->GetCoordSys());
-
-        // Copy data from the source raster into the destination one.
-        pReadInfo->m_pDestinationBitmap->Clear();
-        // signal the event, the main thread will execute the CopyFrom...
-        pReadInfo->m_ComputeStripEvent.Signal();
-        // wait until the main signal that the CopyFrom is terminate
-        pReadInfo->m_StripComputedEvent.WaitUntilSignaled();
-
-        pReadInfo->m_CurrentStripPos = pReadInfo->m_CurrentStripPos + pReadInfo->m_StripHeight;
-        }
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // Then convert our buffer into the ECW format.
-
-    const Byte* pData = pReadInfo->m_pDestinationBitmap->GetPacket()->GetBufferAddress() + (nNextLine - pReadInfo->m_CurrentStripPos) * pReadInfo->m_LineWidthInByte;
-
-    unsigned int ValueIndex;
-    IEEE4* pOutputValue;
-
-    for(unsigned int Channel = 0; Channel < pClient->nInputBands; Channel++)
-        {
-        pOutputValue = ppOutputBandBufferArray[Channel];
-        ValueIndex   = Channel;
-
-        for (unsigned int PixelIndex = 0; PixelIndex < pClient->nInOutSizeX; PixelIndex++)
-            {
-            // Be sure to remain inbound.
-            HASSERT(ValueIndex < pReadInfo->m_pDestinationBitmap->GetPacket()->GetBufferSize());
-
-            // Compression needs input to be IEEE4
-            pOutputValue[PixelIndex] =  *(pData + ValueIndex);
-            ValueIndex += pClient->nInputBands;
-            }
-        }
-    return true;
-    }
-
-//---------------------------------------------------------------------------
-// Cancel callback function
-//---------------------------------------------------------------------------
-static BOOLEAN CancelCallback(NCSEcwCompressClient* pClient)
-    {
-    HPRECONDITION(((ECWReadInfoStruct*)(pClient->pClientData))->m_pSourceRaster != 0);
-
-    ECWReadInfoStruct* pReadInfo = (ECWReadInfoStruct*)pClient->pClientData;
-
-    return pReadInfo->m_CancelExport;
-    }
-
-#endif // __ECW_EXPORT_ENABLE__
 
 
 //-----------------------------------------------------------------------------

@@ -2,18 +2,18 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecHMRGIF.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HCDCodecHMRGIF
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HCDCodecHMRGIF.h>
-
+#include <Imagepp/all/h/HFCMath.h>
 
 
 // NOTE: THERE ARE A LOT OF CONSTANT NUMBERS; I DO NOT MAKE "DEFINE" WITH THEM BECAUSE I DON'T
@@ -599,7 +599,7 @@ short HCDCodecHMRGIF::ReadCode(Byte* po_pDataBuffer,
             if (NewByte < 0)
                 return NewByte;
 
-            m_pCodeBuffer[i++] = (Byte)NewByte;
+            m_pCodeBuffer[i++] = CONVERT_TO_BYTE(NewByte);
             m_BytesUnread--;
             }
 
@@ -774,13 +774,13 @@ bool HCDCodecHMRGIF::WriteCode(short pi_Code,
     if (BitsLeft > 0)
         {
         temp = ((long)pi_Code << BitsLeft) | m_pCodeBufferCompress[ByteOffset];
-        m_pCodeBufferCompress[ByteOffset] = (Byte)temp;
-        m_pCodeBufferCompress[ByteOffset + 1] = (Byte)(temp >> 8);
-        m_pCodeBufferCompress[ByteOffset + 2] = (Byte)(temp >> 16);
+        m_pCodeBufferCompress[ByteOffset] = CONVERT_TO_BYTE(temp);
+        m_pCodeBufferCompress[ByteOffset + 1] = CONVERT_TO_BYTE(temp >> 8);
+        m_pCodeBufferCompress[ByteOffset + 2] = CONVERT_TO_BYTE(temp >> 16);
         }
     else
         {
-        m_pCodeBufferCompress[ByteOffset] = (Byte)pi_Code;
+        m_pCodeBufferCompress[ByteOffset] = CONVERT_TO_BYTE(pi_Code);
         m_pCodeBufferCompress[ByteOffset + 1] = pi_Code >> 8;
         }
 

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFilePageDecorator.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRasterFilePageDecorator
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCAccessMode.h>
 #include <Imagepp/all/h/HFCException.h>
@@ -345,7 +345,7 @@ bool HRFRasterFilePageDecorator::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
                                                       GetOriginalFile()->GetAccessMode()) != 0);
 
     if (OriginalFileMultiPageSupported && !PageFileMultiPageSupported)
-        throw HRFException(HRF_MULTI_PAGE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFMultiPageNotSupportedException(GetURL()->GetURL());
 
     // Add the page descriptor to the list
     HRFRasterFile::AddPage(pi_pPage);
@@ -445,13 +445,11 @@ void HRFRasterFilePageDecorator::CreateDescriptors ()
             // support only SLO4, SLO6
             if (RasterOrientation != HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL &&
                 RasterOrientation != HRFScanlineOrientation::LOWER_LEFT_HORIZONTAL)
-                throw HRFException(HRF_SLO_NOT_SUPPORTED_EXCEPTION,
-                                   m_pOriginalFile->GetURL()->GetURL());
+                throw HRFSloNotSupportedException(m_pOriginalFile->GetURL()->GetURL());
 
             if (PageOrientation != HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL &&
                 PageOrientation != HRFScanlineOrientation::LOWER_LEFT_HORIZONTAL)
-                throw HRFException(HRF_SISTER_FILE_SLO_NOT_SUPPORTED_EXCEPTION,
-                                   m_pPageFile->GetURL()->GetURL());
+                throw HRFSisterFileSloNotSupportedException(m_pPageFile->GetURL()->GetURL());
 
             HFCPtr<HGF2DTransfoModel> pModel;
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIntergraphFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -21,6 +21,7 @@
 #include  <ImagePP/h/HAutoPtr.h>
 #include "HRFRasterFile.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelPalette;
 class HGF2DTransfoModel;
 class HGF2DIdentity;
@@ -44,7 +45,7 @@ class HRFIntergraphFile : public HRFRasterFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1427, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Intergraph, HRFRasterFile)
 
     struct Creator : public HRFRasterFileCreator
         {
@@ -81,12 +82,11 @@ public:
     virtual void                                SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                        uint32_t pi_Page = 0,
                                                                        bool   pi_CheckSpecificUnitSpec = false,
-                                                                       bool   pi_GeoModelDefaultUnit = true,
                                                                        bool   pi_InterpretUnitINTGR = false);
 
 
-    _HDLLg bool                                HasLUTColorCorrection() const;
-    _HDLLg bool                                ResetLUT();
+    IMAGEPP_EXPORT bool                                HasLUTColorCorrection() const;
+    IMAGEPP_EXPORT bool                                ResetLUT();
 
 
     static  bool                               GetIntergraphLUTApplyReset();           
@@ -98,8 +98,8 @@ public:
     class LUTOverrideAccessLimitationGuard
         {
         public:
-            _HDLLg LUTOverrideAccessLimitationGuard(bool pi_OverrideAccessLimitation);
-            _HDLLg ~LUTOverrideAccessLimitationGuard();
+            IMAGEPP_EXPORT LUTOverrideAccessLimitationGuard(bool pi_OverrideAccessLimitation);
+            IMAGEPP_EXPORT ~LUTOverrideAccessLimitationGuard();
         private:
             bool m_intergraphLUT_ApplyReset;
         };
@@ -457,8 +457,6 @@ protected:
 
     unsigned short                 m_DataTypeCode;
 
-    Byte*                         m_pCompBuffer;
-
     bool                           m_OverviewCountChanged;
     bool                           m_LUTColorCorrected;
     uint32_t                        m_LUTColorPacketOffset;
@@ -484,4 +482,4 @@ private:
 #pragma pack( pop)
 #endif
 
-
+END_IMAGEPP_NAMESPACE

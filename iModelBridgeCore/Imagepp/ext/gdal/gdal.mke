@@ -1,10 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
 #     $Source: ext/gdal/gdal.mke $
-#    $RCSfile: imagepp.mke,v $
-#   $Revision: 1.50 $
-#       $Date: 2007/03/07 13:34:13 $
-#     $Author: Bern.McCarty $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -12,7 +8,15 @@
 
 PolicyFile=$(_MakeFilePath)../AssertIppExtLibsPolicy.mki
 
-appName = gdal
+baseAppName = IppGdalLib
+
+%if defined (BUILD_USING_VS2005)
+    appName = $(baseAppName)VC8
+%elif defined (BUILD_USING_VS2012)
+    appName = $(baseAppName)VC11
+%else
+    appName = $(baseAppName)
+%endif
 
 # lean and mean will be defined by gdal lib if needed
 NO_LEAN_AND_MEAN=1
@@ -21,10 +25,15 @@ NO_LEAN_AND_MEAN=1
 
 ippGdalDir = $(_MakeFilePath)
 
-%if $(BUILD_TOOLSET) != "VC10" && $(BUILD_TOOLSET) != "VC11" && $(BUILD_TOOLSET) != "VC12" && $(BUILD_TOOLSET) != "VC14"
-    %if !defined (DEBUG) && !defined (DEBUG_RUNTIME)    
-        gdal_enable_ECW = 1
-    %endif
+%if !defined (DEBUG_RUNTIME)
+    gdal_enable_ECW = 1
+%endif
+
+CCompPDBName = $(appName)
+
+%if $(TARGET_PLATFORM) == "Windows"
+%else
+    %undef gdal_enable_ECW
 %endif
 
 #----------------------------------------------------------------------
@@ -81,8 +90,7 @@ dirToSearch=$(BuildContext)VendorAPI/
 dirToSearch=$(BuildContext)VendorAPI/libjpeg-turbo/
 %include cincapnd.mki
 
-dirToSearch=$(BuildContext)VendorAPI/png/
-%include cincapnd.mki
+
 
 #----------------------------------------------------------
 #       Preprocessor definitions
@@ -90,19 +98,12 @@ dirToSearch=$(BuildContext)VendorAPI/png/
 nameToDefine=ZIP_SUPPORT
 %include cdefapnd.mki
 
+%if $(TARGET_PLATFORM) == "Windows"
 nameToDefine=MUTEX_NONE
 %include cdefapnd.mki
+%endif
 
 nameToDefine=HAVE_STRING_H
-%include cdefapnd.mki
-
-nameToDefine=_CRT_SECURE_NO_DEPRECATE
-%include cdefapnd.mki
-
-nameToDefine=_CRT_NONSTDC_NO_DEPRECATE
-%include cdefapnd.mki
-
-nameToDefine=CPL_DISABLE_DLL
 %include cdefapnd.mki
 
 nameToDefine=HAVE_LIBZ
@@ -114,6 +115,7 @@ cDefs + -DFRMT_ceos -DFRMT_bsb -DFRMT_aigrid -DFRMT_elas -DFRMT_hfa -DFRMT_gtiff
 
 %if defined(gdal_enable_ECW)
     cDefs + -DFRMT_ecw
+    cDefs + -DECWSDK_VERSION=50
 %endif
 
 #----------------------------------------------------------
@@ -126,12 +128,12 @@ CCompOpts+-wd4309 -wd4018 -wd4244 -wd4267
  # lib makes future update painful.
 %ifdef MSVC_VERSION
     # Create PCH
-    CCPchOpts = -Yc"../$(appName)PCH.h" -Fp$(o)$(appName).pch
+    CCPchOpts = -Yc"../$(baseAppName)PCH.h" -Fp$(o)$(appName).pch
 
-    $(o)$(appName)PCH$(oext) $(o)$(appName).pch : $(ippGdalDir)$(appName)PCH.cpp $(ippGdalDir)$(appName)PCH.h
+    $(o)$(appName)PCH$(oext) $(o)$(appName).pch : $(ippGdalDir)$(baseAppName)PCH.cpp $(ippGdalDir)$(baseAppName)PCH.h
 
     # Use PCH by forcing the pch header inclusion(-FI). 
-    CCPchOpts = -Yu../$(appName)PCH.h -Fp$(o)$(appName).pch -FI../$(appName)PCH.h
+    CCPchOpts = -Yu../$(baseAppName)PCH.h -Fp$(o)$(appName).pch -FI../$(baseAppName)PCH.h
 %endif
         
 #----------------------------------------------------------------------
@@ -146,6 +148,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 #--------------------------- ALG -------------------------------------------
 $(o)contour$(oext) : $(ippGdalDir)alg/contour.cpp ${MultiCompileDepends}
+
+$(o)fpolygonize$(oext) : $(ippGdalDir)alg/fpolygonize.cpp ${MultiCompileDepends}
 
 $(o)gdal_crs$(oext) : $(ippGdalDir)alg/gdal_crs.c ${MultiCompileDepends}
 
@@ -162,6 +166,8 @@ $(o)gdaldither$(oext) : $(ippGdalDir)alg/gdaldither.cpp ${MultiCompileDepends}
 $(o)gdalgeoloc$(oext) : $(ippGdalDir)alg/gdalgeoloc.cpp ${MultiCompileDepends}
 
 $(o)gdalgrid$(oext) : $(ippGdalDir)alg/gdalgrid.cpp ${MultiCompileDepends}
+
+$(o)gdalgridavx$(oext) : $(ippGdalDir)alg/gdalgridavx.cpp ${MultiCompileDepends}
 
 $(o)gdalmediancut$(oext) : $(ippGdalDir)alg/gdalmediancut.cpp ${MultiCompileDepends}
 
@@ -266,6 +272,10 @@ $(o)ogrspatialreference$(oext) : $(ippGdalDir)ogr/ogrspatialreference.cpp ${Mult
 
 $(o)ogrutils$(oext) : $(ippGdalDir)ogr/ogrutils.cpp ${MultiCompileDepends}
 
+$(o)osr_cs_wkt$(oext) : $(ippGdalDir)ogr/osr_cs_wkt.c ${MultiCompileDepends}
+
+$(o)osr_cs_wkt_parser$(oext) : $(ippGdalDir)ogr/osr_cs_wkt_parser.c ${MultiCompileDepends}
+
 $(o)swq$(oext) : $(ippGdalDir)ogr/swq.cpp ${MultiCompileDepends}
 
 $(o)swq_expr_node$(oext) : $(ippGdalDir)ogr/swq_expr_node.cpp ${MultiCompileDepends}
@@ -278,11 +288,16 @@ $(o)swq_parser$(oext) : $(ippGdalDir)ogr/swq_parser.cpp ${MultiCompileDepends}
 
 $(o)swq_select$(oext) : $(ippGdalDir)ogr/swq_select.cpp ${MultiCompileDepends}
 
+
 #--------------------------- FRMTS -------------------------------------------
 
 $(o)gdalallregister$(oext) : $(ippGdalDir)frmts/gdalallregister.cpp ${MultiCompileDepends}
 
+# aaigrid :
+
 $(o)aaigriddataset$(oext) : $(ippGdalDir)frmts/aaigrid/aaigriddataset.cpp ${MultiCompileDepends}
+
+# aigrid :
 
 $(o)aigccitt$(oext) : $(ippGdalDir)frmts/aigrid/aigccitt.c ${MultiCompileDepends}
 
@@ -292,11 +307,23 @@ $(o)aigopen$(oext) : $(ippGdalDir)frmts/aigrid/aigopen.c ${MultiCompileDepends}
 
 $(o)gridlib$(oext) : $(ippGdalDir)frmts/aigrid/gridlib.c ${MultiCompileDepends}
 
+# bmp :
+
 $(o)bmpdataset$(oext) : $(ippGdalDir)frmts/bmp/bmpdataset.cpp ${MultiCompileDepends}
+
+# bsb :
+
+$(o)bsb_read$(oext) : $(ippGdalDir)frmts/bsb/bsb_read.c ${MultiCompileDepends}
+
+$(o)bsbdataset$(oext) : $(ippGdalDir)frmts/bsb/bsbdataset.cpp ${MultiCompileDepends}
+
+# ceos :
 
 $(o)ceosdataset$(oext) : $(ippGdalDir)frmts/ceos/ceosdataset.cpp ${MultiCompileDepends}
 
 $(o)ceosopen$(oext) : $(ippGdalDir)frmts/ceos/ceosopen.c ${MultiCompileDepends}
+
+# ceos2 :
 
 $(o)ceos$(oext) : $(ippGdalDir)frmts/ceos2/ceos.c ${MultiCompileDepends}
 
@@ -308,6 +335,8 @@ $(o)link$(oext) : $(ippGdalDir)frmts/ceos2/link.c ${MultiCompileDepends}
 
 $(o)sar_ceosdataset$(oext) : $(ippGdalDir)frmts/ceos2/sar_ceosdataset.cpp ${MultiCompileDepends}
 
+# dted :
+
 $(o)dted_api$(oext) : $(ippGdalDir)frmts/dted/dted_api.c ${MultiCompileDepends}
 
 $(o)dted_create$(oext) : $(ippGdalDir)frmts/dted/dted_create.c ${MultiCompileDepends}
@@ -316,17 +345,45 @@ $(o)dted_ptstream$(oext) : $(ippGdalDir)frmts/dted/dted_ptstream.c ${MultiCompil
 
 $(o)dteddataset$(oext) : $(ippGdalDir)frmts/dted/dteddataset.cpp ${MultiCompileDepends}
 
+# ecw :
+
+%if defined(gdal_enable_ECW)
+#    $(o)ecwasyncreader$(oext) : $(ippGdalDir)frmts/ecw/ecwasyncreader.cpp ${MultiCompileDepends}
+
+#    $(o)ecwcreatecopy$(oext) : $(ippGdalDir)frmts/ecw/ecwcreatecopy.cpp ${MultiCompileDepends}
+
+    $(o)ecwdataset$(oext) : $(ippGdalDir)frmts/ecw/ecwdataset.cpp ${MultiCompileDepends}
+
+#    $(o)jp2userbox$(oext) : $(ippGdalDir)frmts/ecw/jp2userbox.cpp ${MultiCompileDepends}
+%endif
+
+# elas :
+
 $(o)elasdataset$(oext) : $(ippGdalDir)frmts/elas/elasdataset.cpp ${MultiCompileDepends}
+
+# envisat :
+
+$(o)adsrange$(oext) : $(ippGdalDir)frmts/envisat/adsrange.cpp ${MultiCompileDepends}
 
 $(o)envisatdataset$(oext) : $(ippGdalDir)frmts/envisat/envisatdataset.cpp ${MultiCompileDepends}
 
 $(o)EnvisatFile$(oext) : $(ippGdalDir)frmts/envisat/EnvisatFile.c ${MultiCompileDepends}
 
+$(o)records$(oext) : $(ippGdalDir)frmts/envisat/records.c ${MultiCompileDepends}
+
+$(o)unwrapgcps$(oext) : $(ippGdalDir)frmts/envisat/unwrapgcps.cpp ${MultiCompileDepends}
+
+# fit :
+
 $(o)fit$(oext) : $(ippGdalDir)frmts/fit/fit.cpp ${MultiCompileDepends}
 
 $(o)fitdataset$(oext) : $(ippGdalDir)frmts/fit/fitdataset.cpp ${MultiCompileDepends}
 
+# gif :
+
 $(o)biggifdataset$(oext) : $(ippGdalDir)frmts/gif/biggifdataset.cpp ${MultiCompileDepends}
+
+$(o)gifabstractdataset$(oext) : $(ippGdalDir)frmts/gif/gifabstractdataset.cpp ${MultiCompileDepends}
 
 $(o)gifdataset$(oext) : $(ippGdalDir)frmts/gif/gifdataset.cpp ${MultiCompileDepends}
 
@@ -340,9 +397,14 @@ $(o)gif_hash$(oext) : $(ippGdalDir)frmts/gif/giflib/gif_hash.c ${MultiCompileDep
 
 $(o)gifalloc$(oext) : $(ippGdalDir)frmts/gif/giflib/gifalloc.c ${MultiCompileDepends}
 
+# gtiff :
+
 $(o)geotiff$(oext) : $(ippGdalDir)frmts/gtiff/geotiff.cpp ${MultiCompileDepends}
 
 $(o)gt_citation$(oext) : $(ippGdalDir)frmts/gtiff/gt_citation.cpp ${MultiCompileDepends}
+
+# warning LNK4221: This object file does not add any previously undefined public symbols...
+#$(o)gt_jpeg_copy$(oext) : $(ippGdalDir)frmts/gtiff/gt_jpeg_copy.cpp ${MultiCompileDepends} 
 
 $(o)gt_overview$(oext) : $(ippGdalDir)frmts/gtiff/gt_overview.cpp ${MultiCompileDepends}
 
@@ -456,6 +518,8 @@ $(o)tif_write$(oext) : $(ippGdalDir)frmts/gtiff/libtiff/tif_write.c ${MultiCompi
 
 $(o)tif_zip$(oext) : $(ippGdalDir)frmts/gtiff/libtiff/tif_zip.c ${MultiCompileDepends}
 
+# gxf :
+
 $(o)gxf_ogcwkt$(oext) : $(ippGdalDir)frmts/gxf/gxf_ogcwkt.c ${MultiCompileDepends}
 
 $(o)gxf_proj4$(oext) : $(ippGdalDir)frmts/gxf/gxf_proj4.c ${MultiCompileDepends}
@@ -463,6 +527,8 @@ $(o)gxf_proj4$(oext) : $(ippGdalDir)frmts/gxf/gxf_proj4.c ${MultiCompileDepends}
 $(o)gxfdataset$(oext) : $(ippGdalDir)frmts/gxf/gxfdataset.cpp ${MultiCompileDepends}
 
 $(o)gxfopen$(oext) : $(ippGdalDir)frmts/gxf/gxfopen.c ${MultiCompileDepends}
+
+# hfa :
 
 $(o)hfa_overviews$(oext) : $(ippGdalDir)frmts/hfa/hfa_overviews.cpp ${MultiCompileDepends}
 
@@ -482,6 +548,8 @@ $(o)hfaopen$(oext) : $(ippGdalDir)frmts/hfa/hfaopen.cpp ${MultiCompileDepends}
 
 $(o)hfatype$(oext) : $(ippGdalDir)frmts/hfa/hfatype.cpp ${MultiCompileDepends}
 
+# iso8211 :
+
 $(o)ddffield$(oext) : $(ippGdalDir)frmts/iso8211/ddffield.cpp ${MultiCompileDepends}
 
 $(o)ddffielddefn$(oext) : $(ippGdalDir)frmts/iso8211/ddffielddefn.cpp ${MultiCompileDepends}
@@ -494,18 +562,27 @@ $(o)ddfsubfielddefn$(oext) : $(ippGdalDir)frmts/iso8211/ddfsubfielddefn.cpp ${Mu
 
 $(o)ddfutils$(oext) : $(ippGdalDir)frmts/iso8211/ddfutils.cpp ${MultiCompileDepends}
 
+# jdem :
+
 $(o)jdemdataset$(oext) : $(ippGdalDir)frmts/jdem/jdemdataset.cpp ${MultiCompileDepends}
+
+# jpeg :
 
 $(o)jpgdataset$(oext) : $(ippGdalDir)frmts/jpeg/jpgdataset.cpp ${MultiCompileDepends}
 
-# Not needed
-#$(o)jpgdataset_12$(oext) : $(ippGdalDir)frmts/jpeg/jpgdataset_12.cpp ${MultiCompileDepends}
-
 $(o)vsidataio$(oext) : $(ippGdalDir)frmts/jpeg/vsidataio.cpp ${MultiCompileDepends}
+
+# l1b :
 
 $(o)l1bdataset$(oext) : $(ippGdalDir)frmts/l1b/l1bdataset.cpp ${MultiCompileDepends}
 
+# mem :
+
 $(o)memdataset$(oext) : $(ippGdalDir)frmts/mem/memdataset.cpp ${MultiCompileDepends}
+
+# nitf :
+
+$(o)ecrgtocdataset$(oext) : $(ippGdalDir)frmts/nitf/ecrgtocdataset.cpp ${MultiCompileDepends}
 
 $(o)mgrs$(oext) : $(ippGdalDir)frmts/nitf/mgrs.c ${MultiCompileDepends}
 
@@ -525,21 +602,33 @@ $(o)nitfwritejpeg_12$(oext) : $(ippGdalDir)frmts/nitf/nitfwritejpeg_12.cpp ${Mul
 
 $(o)nitfimage$(oext) : $(ippGdalDir)frmts/nitf/nitfimage.c ${MultiCompileDepends}
 
+$(o)nitfrasterband$(oext) : $(ippGdalDir)frmts/nitf/nitfrasterband.cpp ${MultiCompileDepends}
+
 $(o)rpftocdataset$(oext) : $(ippGdalDir)frmts/nitf/rpftocdataset.cpp ${MultiCompileDepends}
 
 $(o)rpftocfile$(oext) : $(ippGdalDir)frmts/nitf/rpftocfile.cpp ${MultiCompileDepends}
+
+# pcidsk :
 
 $(o)pcidskdataset$(oext) : $(ippGdalDir)frmts/pcidsk/pcidskdataset.cpp ${MultiCompileDepends}
 
 $(o)pcidsktiledrasterband$(oext) : $(ippGdalDir)frmts/pcidsk/pcidsktiledrasterband.cpp ${MultiCompileDepends}
 
+# png :
+
 $(o)pngdataset$(oext) : $(ippGdalDir)frmts/png/pngdataset.cpp ${MultiCompileDepends}
+
+# raw :
+
+$(o)ace2dataset$(oext) : $(ippGdalDir)frmts/raw/ace2dataset.cpp ${MultiCompileDepends}
 
 $(o)atlsci_spheroid$(oext) : $(ippGdalDir)frmts/raw/atlsci_spheroid.cpp ${MultiCompileDepends}
 
 $(o)btdataset$(oext) : $(ippGdalDir)frmts/raw/btdataset.cpp ${MultiCompileDepends}
 
 $(o)cpgdataset$(oext) : $(ippGdalDir)frmts/raw/cpgdataset.cpp ${MultiCompileDepends}
+
+$(o)ctable2dataset$(oext) : $(ippGdalDir)frmts/raw/ctable2dataset.cpp ${MultiCompileDepends}
 
 $(o)dipxdataset$(oext) : $(ippGdalDir)frmts/raw/dipxdataset.cpp ${MultiCompileDepends}
 
@@ -567,6 +656,8 @@ $(o)hkvdataset$(oext) : $(ippGdalDir)frmts/raw/hkvdataset.cpp ${MultiCompileDepe
 
 $(o)idadataset$(oext) : $(ippGdalDir)frmts/raw/idadataset.cpp ${MultiCompileDepends}
 
+$(o)krodataset$(oext) : $(ippGdalDir)frmts/raw/krodataset.cpp ${MultiCompileDepends}
+
 $(o)landataset$(oext) : $(ippGdalDir)frmts/raw/landataset.cpp ${MultiCompileDepends}
 
 $(o)lcpdataset$(oext) : $(ippGdalDir)frmts/raw/lcpdataset.cpp ${MultiCompileDepends}
@@ -584,6 +675,12 @@ $(o)pauxdataset$(oext) : $(ippGdalDir)frmts/raw/pauxdataset.cpp ${MultiCompileDe
 $(o)pnmdataset$(oext) : $(ippGdalDir)frmts/raw/pnmdataset.cpp ${MultiCompileDepends}
 
 $(o)rawdataset$(oext) : $(ippGdalDir)frmts/raw/rawdataset.cpp ${MultiCompileDepends}
+
+$(o)snodasdataset$(oext) : $(ippGdalDir)frmts/raw/snodasdataset.cpp ${MultiCompileDepends}
+
+# sdts : 
+
+# $(o)sdts2shp$(oext) : $(ippGdalDir)frmts/sdts/sdts2shp.cpp ${MultiCompileDepends}
 
 $(o)sdtsattrreader$(oext) : $(ippGdalDir)frmts/sdts/sdtsattrreader.cpp ${MultiCompileDepends}
 
@@ -609,9 +706,13 @@ $(o)sdtstransfer$(oext) : $(ippGdalDir)frmts/sdts/sdtstransfer.cpp ${MultiCompil
 
 $(o)sdtsxref$(oext) : $(ippGdalDir)frmts/sdts/sdtsxref.cpp ${MultiCompileDepends}
 
+# usgsdem :
+
 $(o)usgsdem_create$(oext) : $(ippGdalDir)frmts/usgsdem/usgsdem_create.cpp ${MultiCompileDepends}
 
 $(o)usgsdemdataset$(oext) : $(ippGdalDir)frmts/usgsdem/usgsdemdataset.cpp ${MultiCompileDepends}
+
+# vrt :
 
 $(o)vrtdataset$(oext) : $(ippGdalDir)frmts/vrt/vrtdataset.cpp ${MultiCompileDepends}
 
@@ -631,23 +732,16 @@ $(o)vrtsources$(oext) : $(ippGdalDir)frmts/vrt/vrtsources.cpp ${MultiCompileDepe
 
 $(o)vrtwarped$(oext) : $(ippGdalDir)frmts/vrt/vrtwarped.cpp ${MultiCompileDepends}
 
-$(o)xpmdataset$(oext) : $(ippGdalDir)frmts/xpm/xpmdataset.cpp ${MultiCompileDepends}
-
-%if defined(gdal_enable_ECW)
-    $(o)ecwcreatecopy$(oext) : $(ippGdalDir)frmts/ecw/ecwcreatecopy.cpp ${MultiCompileDepends}
-
-    $(o)ecwdataset$(oext) : $(ippGdalDir)frmts/ecw/ecwdataset.cpp ${MultiCompileDepends}
-
-    $(o)jp2userbox$(oext) : $(ippGdalDir)frmts/ecw/jp2userbox.cpp ${MultiCompileDepends}
-%endif
+# wcs :
 
 $(o)httpdriver$(oext) : $(ippGdalDir)frmts/wcs/httpdriver.cpp ${MultiCompileDepends}
 
 $(o)wcsdataset$(oext) : $(ippGdalDir)frmts/wcs/wcsdataset.cpp ${MultiCompileDepends}
 
-$(o)bsb_read$(oext) : $(ippGdalDir)frmts/bsb/bsb_read.c ${MultiCompileDepends}
+# xpm :
 
-$(o)bsbdataset$(oext) : $(ippGdalDir)frmts/bsb/bsbdataset.cpp ${MultiCompileDepends}
+$(o)xpmdataset$(oext) : $(ippGdalDir)frmts/xpm/xpmdataset.cpp ${MultiCompileDepends}
+
 
 #--------------------------- GCORE -------------------------------------------
 
@@ -658,6 +752,8 @@ $(o)gdal_rat$(oext) : $(ippGdalDir)gcore/gdal_rat.cpp ${MultiCompileDepends}
 $(o)gdal_rpcimdio$(oext) : $(ippGdalDir)gcore/gdal_rpcimdio.cpp ${MultiCompileDepends}
 
 $(o)gdalallvalidmaskband$(oext) : $(ippGdalDir)gcore/gdalallvalidmaskband.cpp ${MultiCompileDepends}
+
+$(o)gdalclientserver$(oext) : $(ippGdalDir)gcore/gdalclientserver.cpp ${MultiCompileDepends}
 
 $(o)gdalcolortable$(oext) : $(ippGdalDir)gcore/gdalcolortable.cpp ${MultiCompileDepends}
 
@@ -673,7 +769,13 @@ $(o)gdaldriver$(oext) : $(ippGdalDir)gcore/gdaldriver.cpp ${MultiCompileDepends}
 
 $(o)gdaldrivermanager$(oext) : $(ippGdalDir)gcore/gdaldrivermanager.cpp ${MultiCompileDepends}
 
+$(o)gdalexif$(oext) : $(ippGdalDir)gcore/gdalexif.cpp ${MultiCompileDepends}
+
+$(o)gdalgeorefpamdataset$(oext) : $(ippGdalDir)gcore/gdalgeorefpamdataset.cpp ${MultiCompileDepends}
+
 $(o)gdalgmlcoverage$(oext) : $(ippGdalDir)gcore/gdalgmlcoverage.cpp ${MultiCompileDepends}
+
+$(o)gdaljp2abstractdataset$(oext) : $(ippGdalDir)gcore/gdaljp2abstractdataset.cpp ${MultiCompileDepends}
 
 $(o)gdaljp2box$(oext) : $(ippGdalDir)gcore/gdaljp2box.cpp ${MultiCompileDepends}
 
@@ -703,9 +805,16 @@ $(o)gdalrasterband$(oext) : $(ippGdalDir)gcore/gdalrasterband.cpp ${MultiCompile
 
 $(o)gdalrasterblock$(oext) : $(ippGdalDir)gcore/gdalrasterblock.cpp ${MultiCompileDepends}
 
+$(o)gdalrescaledalphaband$(oext) : $(ippGdalDir)gcore/gdalrescaledalphaband.cpp ${MultiCompileDepends}
+
+$(o)gdalvirtualmem$(oext) : $(ippGdalDir)gcore/gdalvirtualmem.cpp ${MultiCompileDepends}
+
+$(o)jp2dump$(oext) : $(ippGdalDir)gcore/jp2dump.cpp ${MultiCompileDepends}
+
 $(o)overview$(oext) : $(ippGdalDir)gcore/overview.cpp ${MultiCompileDepends}
 
 $(o)rasterio$(oext) : $(ippGdalDir)gcore/rasterio.cpp ${MultiCompileDepends}
+
 
 #--------------------------- PORT -------------------------------------------
 
@@ -743,9 +852,18 @@ $(o)cpl_multiproc$(oext) : $(ippGdalDir)port/cpl_multiproc.cpp ${MultiCompileDep
 
 $(o)cpl_path$(oext) : $(ippGdalDir)port/cpl_path.cpp ${MultiCompileDepends}
 
+$(o)cpl_progress$(oext) : $(ippGdalDir)port/cpl_progress.cpp ${MultiCompileDepends}
+
 $(o)cpl_quad_tree$(oext) : $(ippGdalDir)port/cpl_quad_tree.cpp ${MultiCompileDepends}
 
+$(o)cpl_recode$(oext) : $(ippGdalDir)port/cpl_recode.cpp ${MultiCompileDepends}
+
+# warning LNK4221: This object file does not add any previously undefined public symbols...
+#$(o)cpl_recode_iconv$(oext) : $(ippGdalDir)port/cpl_recode_iconv.cpp ${MultiCompileDepends}
+
 $(o)cpl_recode_stub$(oext) : $(ippGdalDir)port/cpl_recode_stub.cpp ${MultiCompileDepends}
+
+$(o)cpl_spawn$(oext) : $(ippGdalDir)port/cpl_spawn.cpp ${MultiCompileDepends}
 
 $(o)cpl_string$(oext) : $(ippGdalDir)port/cpl_string.cpp ${MultiCompileDepends}
 
@@ -753,39 +871,37 @@ $(o)cpl_strtod$(oext) : $(ippGdalDir)port/cpl_strtod.cpp ${MultiCompileDepends}
 
 $(o)cpl_time$(oext) : $(ippGdalDir)port/cpl_time.cpp ${MultiCompileDepends}
 
-$(o)cpl_vsil_abstract_archive$(oext) : $(ippGdalDir)port/cpl_vsil_abstract_archive.cpp ${MultiCompileDepends}
+$(o)cpl_virtualmem$(oext) : $(ippGdalDir)port/cpl_virtualmem.cpp ${MultiCompileDepends}
 
 $(o)cpl_vsi_mem$(oext) : $(ippGdalDir)port/cpl_vsi_mem.cpp ${MultiCompileDepends}
 
 $(o)cpl_vsil$(oext) : $(ippGdalDir)port/cpl_vsil.cpp ${MultiCompileDepends}
 
-$(o)cpl_vsisimple$(oext) : $(ippGdalDir)port/cpl_vsisimple.cpp ${MultiCompileDepends}
+$(o)cpl_vsil_abstract_archive$(oext) : $(ippGdalDir)port/cpl_vsil_abstract_archive.cpp ${MultiCompileDepends}
 
 $(o)cpl_vsil_buffered_reader$(oext) : $(ippGdalDir)port/cpl_vsil_buffered_reader.cpp ${MultiCompileDepends}
+
+$(o)cpl_vsil_cache$(oext) : $(ippGdalDir)port/cpl_vsil_cache.cpp ${MultiCompileDepends}
 
 $(o)cpl_vsil_curl$(oext) : $(ippGdalDir)port/cpl_vsil_curl.cpp ${MultiCompileDepends}
 
 $(o)cpl_vsil_gzip$(oext) : $(ippGdalDir)port/cpl_vsil_gzip.cpp ${MultiCompileDepends}
 
-$(o)cpl_vsil_stdout$(oext) : $(ippGdalDir)port/cpl_vsil_stdout.cpp ${MultiCompileDepends}
-
-$(o)cpl_vsil_subfile$(oext) : $(ippGdalDir)port/cpl_vsil_subfile.cpp ${MultiCompileDepends}
-
-$(o)cpl_vsil_win32$(oext) : $(ippGdalDir)port/cpl_vsil_win32.cpp ${MultiCompileDepends}
-
-# Not required. Generates link errors like this:
-#   (cpl_vsil_simple$(oext)) : warning LNK4006: _VSIMkdir already defined in gdal.lib(cpl_vsil$(oext)); second definition ignored  [gdal.lib (0)]
-#$(o)cpl_vsil_simple$(oext) : $(ippGdalDir)port/cpl_vsil_simple.cpp ${MultiCompileDepends}
-
 $(o)cpl_vsil_sparsefile$(oext) : $(ippGdalDir)port/cpl_vsil_sparsefile.cpp ${MultiCompileDepends}
 
 $(o)cpl_vsil_stdin$(oext) : $(ippGdalDir)port/cpl_vsil_stdin.cpp ${MultiCompileDepends}
 
+$(o)cpl_vsil_stdout$(oext) : $(ippGdalDir)port/cpl_vsil_stdout.cpp ${MultiCompileDepends}
+
+$(o)cpl_vsil_subfile$(oext) : $(ippGdalDir)port/cpl_vsil_subfile.cpp ${MultiCompileDepends}
+
 $(o)cpl_vsil_tar$(oext) : $(ippGdalDir)port/cpl_vsil_tar.cpp ${MultiCompileDepends}
 
-# Not required. Generates link errors like this:
-#   (minigzip$(oext)) : warning LNK4006: main already defined in gdal.lib(xmlreformat$(oext)); second definition ignored  [deflate.lib (0)]
-#$(o)xmlreformat$(oext) : $(ippGdalDir)port/xmlreformat.cpp ${MultiCompileDepends}
+$(o)cpl_vsil_unix_stdio_64$(oext) : $(ippGdalDir)port/cpl_vsil_unix_stdio_64.cpp ${MultiCompileDepends}
+
+$(o)cpl_vsil_win32$(oext) : $(ippGdalDir)port/cpl_vsil_win32.cpp ${MultiCompileDepends}
+
+$(o)cpl_vsisimple$(oext) : $(ippGdalDir)port/cpl_vsisimple.cpp ${MultiCompileDepends}
 
 $(o)cplgetsymbol$(oext) : $(ippGdalDir)port/cplgetsymbol.cpp ${MultiCompileDepends}
 
@@ -793,6 +909,7 @@ $(o)cplkeywordparser$(oext) : $(ippGdalDir)port/cplkeywordparser.cpp ${MultiComp
 
 $(o)cplstring$(oext) : $(ippGdalDir)port/cplstring.cpp ${MultiCompileDepends}
 
+$(o)cplstringlist$(oext) : $(ippGdalDir)port/cplstringlist.cpp ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -806,9 +923,22 @@ $(o)cplstring$(oext) : $(ippGdalDir)port/cplstring.cpp ${MultiCompileDepends}
 #----------------------------------------------------------------------
 LIB_NAME    = $(appName)
 LIB_DEST    = $(o)
-LIB_OBJS    = $(MultiCompileObjectList) $(o)$(appName)PCH$(oext)
+LIB_OBJS    = $(MultiCompileObjectList) 
+
+%if $(TARGET_PLATFORM) == "Windows"
+LIB_OBJS    + $(o)$(appName)PCH$(oext)
+%endif
+
+LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
 
 %include creatlib.mki
+
+CreateBuildContext:
+    CreateSymLinks.py -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)gcore/*.h" \
+                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)port/*.h" \
+                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)port/cpl_config.h.vc" \
+                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)port/cpl_config.h.an" \
+                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)ogr/*.h"
 
 $(BuildContext)Delivery/gdal-notice.txt : $(ippGdalDir)gdal-notice.txt
     $(LinkFirstDepToFirstTarget)

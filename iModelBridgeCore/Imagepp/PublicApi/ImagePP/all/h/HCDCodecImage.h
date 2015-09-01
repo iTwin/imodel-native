@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecImage.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,11 +15,13 @@
 
 #include "HCDCodec.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDPacketRLE;
 
 class HNOVTABLEINIT HCDCodecImage : public HCDCodec
     {
-    HDECLARE_CLASS_ID(1162, HCDCodec)
+    HDECLARE_CLASS_ID(HCDCodecId_Image, HCDCodec)
 
 public:
 
@@ -84,7 +86,7 @@ public:
 
     bool                    IsCodecImage() const;
 
-    _HDLLu static bool      SetCodecForImage(const HFCPtr<HCDCodec>& pi_pCodec,
+    IMAGEPP_EXPORT static bool      SetCodecForImage(const HFCPtr<HCDCodec>& pi_pCodec,
                                              size_t pi_Width,
                                              size_t pi_Height,
                                              size_t pi_BitsPerPixel,
@@ -132,6 +134,7 @@ private:
     size_t          m_CompressedImageIndex;
     };
 
+END_IMAGEPP_NAMESPACE
 
 #include "HCDCodecImage.hpp"
 

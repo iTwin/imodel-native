@@ -1,12 +1,12 @@
 /******************************************************************************
- * $Id: cpl_vsil_tar.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: cpl_vsil_tar.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for tar files (.tar).
  * Author:   Even Rouault, even.rouault at mines-paris.org
  *
  ******************************************************************************
- * Copyright (c) 2010, Even Rouault
+ * Copyright (c) 2010-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +29,7 @@
 
 #include "cpl_vsi_virtual.h"
 
-CPL_CVSID("$Id: cpl_vsil_tar.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: cpl_vsil_tar.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 
 /************************************************************************/
@@ -129,11 +129,13 @@ int VSITarReader::GotoNextFile()
         abyHeader[107] != '\0' ||
         abyHeader[115] != '\0' ||
         abyHeader[123] != '\0' ||
-        abyHeader[135] != '\0' ||
-        abyHeader[147] != '\0' ||
+        (abyHeader[135] != '\0' && abyHeader[135] != ' ') ||
+        (abyHeader[147] != '\0' && abyHeader[147] != ' ') ||
         abyHeader[154] != '\0' ||
         abyHeader[155] != ' ')
+    {
         return FALSE;
+    }
 
     osNextFileName = abyHeader;
     nNextFileSize = 0;
@@ -148,6 +150,12 @@ int VSITarReader::GotoNextFile()
     nCurOffset = VSIFTellL(fp);
 
     GUIntBig nBytesToSkip = ((nNextFileSize + 511) / 512) * 512;
+    if( nBytesToSkip > (~((GUIntBig)0)) - nCurOffset )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined, "Bad .tar structure");
+        return FALSE;
+    }
+
     VSIFSeekL(fp, nBytesToSkip, SEEK_CUR);
 
     return TRUE;
@@ -295,14 +303,32 @@ VSIVirtualHandle* VSITarFilesystemHandler::Open( const char *pszFilename,
 /*                    VSIInstallTarFileHandler()                        */
 /************************************************************************/
 
-
 /**
- * \brief Install TAR file system handler. 
+ * \brief Install /vsitar/ file system handler.
  *
- * A special file handler is installed that allows reading on-the-fly in TAR (.tar, .tar.gz/.tgz) archives.
- * All portions of the file system underneath the base
- * path "/vsitar/" will be handled by this driver.
+ * A special file handler is installed that allows reading on-the-fly in TAR
+ * (regular .tar, or compressed .tar.gz/.tgz) archives.
  *
+ * All portions of the file system underneath the base path "/vsitar/" will be
+ * handled by this driver.
+ *
+ * The syntax to open a file inside a zip file is /vsitar/path/to/the/file.tar/path/inside/the/tar/file
+ * were path/to/the/file.tar is relative or absolute and path/inside/the/tar/file
+ * is the relative path to the file inside the archive.
+ *
+ * If the path is absolute, it should begin with a / on a Unix-like OS (or C:\ on Windows),
+ * so the line looks like /vsitar//home/gdal/...
+ * For example gdalinfo /vsitar/myarchive.tar/subdir1/file1.tif
+ *
+ * Syntaxic sugar : if the tar archive contains only one file located at its root,
+ * just mentionning "/vsitar/path/to/the/file.tar" will work
+ *
+ * VSIStatL() will return the uncompressed size in st_size member and file
+ * nature- file or directory - in st_mode member.
+ *
+ * Directory listing is available through VSIReadDir().
+ *
+ * @since GDAL 1.8.0
  */
 
 void VSIInstallTarFileHandler(void)

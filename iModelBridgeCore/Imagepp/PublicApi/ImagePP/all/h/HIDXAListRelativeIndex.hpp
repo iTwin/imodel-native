@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXAListRelativeIndex.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIDXAListRelativeIndex
@@ -10,7 +10,7 @@
 // General class for relative ordering indexes.
 //-----------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 //-----------------------------------------------------------------------------
 // Constructor
@@ -1208,3 +1208,5 @@ template<class O, SI> inline const HFCPtr< HIDXIndexable<O> > HIDXAListRelativeI
     return pResult;
     }
 #endif
+
+END_IMAGEPP_NAMESPACE

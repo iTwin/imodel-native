@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileFactory.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRFRasterFileFactory
 // ----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURL.h>
 #include <Imagepp/all/h/HFCStat.h>
@@ -18,7 +18,6 @@
 #include <Imagepp/all/h/HFCAccessMode.h>
 #include <Imagepp/all/h/HRFRasterFileFactory.h>
 
-#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
 
 // **** Kept here for history purpose only **********
 #ifdef _HRF_COM_SUPPORT
@@ -71,11 +70,11 @@ HFCPtr<HRFRasterFile> HRFRasterFileFactory::OpenFileAs(const HFCPtr<HFCURL>&    
 
     // Open the file as specific creator
     if (!FileStat.IsExistent())
-        throw(HFCFileException(HFC_FILE_NOT_FOUND_EXCEPTION, pi_rpURL->GetURL()));
+        throw(HFCFileNotFoundException(pi_rpURL->GetURL()));
 
     // Check if it is the good type of file format
-    if (!((HRFRasterFileCreator*)pi_pCreator)->IsKindOfFile(pi_rpURL, pi_Offset))
-        throw(HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, pi_rpURL->GetURL()));
+    if (!pi_pCreator->IsKindOfFile(pi_rpURL, pi_Offset))
+        throw(HFCFileNotSupportedException(pi_rpURL->GetURL()));
 
     HFCAccessMode AccessMode = HFC_READ_ONLY | HFC_SHARE_READ_WRITE;
 
@@ -96,14 +95,14 @@ HFCPtr<HRFRasterFile> HRFRasterFileFactory::NewFile(const HFCPtr<HFCURL>& pi_rpU
     HPRECONDITION(pi_rpURL != 0);
 
     HFCPtr<HRFRasterFile>   p_RasterFile;
-    HRFRasterFileCreator*   pCreator = 0;
+    HRFRasterFileCreator const*   pCreator = nullptr;
 
     // Instantiate the raster file
-    pCreator = (HRFRasterFileCreator*)FindCreator(pi_rpURL, HFC_READ_WRITE_CREATE, pi_Offset);
+    pCreator = FindCreator(pi_rpURL, HFC_READ_WRITE_CREATE, pi_Offset);
     p_RasterFile = pCreator->Create(pi_rpURL, HFC_READ_WRITE_CREATE, 0);
 
     if (p_RasterFile == 0)
-        throw(HFCFileException(HFC_FILE_NOT_CREATED_EXCEPTION, pi_rpURL->GetURL()));
+        throw(HFCFileNotCreatedException(pi_rpURL->GetURL()));
 
     return p_RasterFile;
     }
@@ -119,7 +118,7 @@ HFCPtr<HRFRasterFile> HRFRasterFileFactory::NewFileAs(const HFCPtr<HFCURL>&     
     {
     HPRECONDITION(pi_rpURL != 0);
     HPRECONDITION(pi_pCreator != 0);
-    return ((HRFRasterFileCreator*)pi_pCreator)->Create(pi_rpURL, HFC_READ_WRITE_CREATE, pi_Offset);
+    return pi_pCreator->Create(pi_rpURL, HFC_READ_WRITE_CREATE, pi_Offset);
     }
 
 
@@ -148,18 +147,18 @@ HFCPtr<HRFRasterFile> HRFRasterFileFactory::OpenFile(const HFCPtr<HFCURL>& pi_rp
             case HFCStat::AccessGranted:
                 break;  // Will try to open file.
             case HFCStat::TargetNotFound:
-                throw(HFCFileException(HFC_FILE_NOT_FOUND_EXCEPTION, pi_rpURL->GetURL()));
+                throw(HFCFileNotFoundException(pi_rpURL->GetURL()));
             case HFCStat::AccessDenied:
-                throw(HFCFileException(HFC_FILE_PERMISSION_DENIED_EXCEPTION, pi_rpURL->GetURL()));
+                throw(HFCFilePermissionDeniedException(pi_rpURL->GetURL()));
             case HFCStat::AccessError:
             default:
-                throw(HFCFileException(HFC_CANNOT_OPEN_FILE_EXCEPTION, pi_rpURL->GetURL()));
+                throw(HFCCannotOpenFileException(pi_rpURL->GetURL()));
             }
 
-        HRFRasterFileCreator*   pCreator = 0;
+        HRFRasterFileCreator const*   pCreator = 0;
 
         // Obtain the registry
-        pCreator = (HRFRasterFileCreator*)FindCreator(pi_rpURL, pi_AccessMode, pi_Offset);
+        pCreator = FindCreator(pi_rpURL, pi_AccessMode, pi_Offset);
         HASSERT(pCreator != 0);
 
         // Instantiate the raster file
@@ -168,11 +167,12 @@ HFCPtr<HRFRasterFile> HRFRasterFileFactory::OpenFile(const HFCPtr<HFCURL>& pi_rp
         //Usually, a more precise exception should be thrown by the HRFRasterFile derived class
         //capable of handling the file's format.
         if (p_RasterFile == 0)
-            throw(HFCFileException(HFC_CANNOT_OPEN_FILE_EXCEPTION, pi_rpURL->GetURL()));
+            throw(HFCCannotOpenFileException(pi_rpURL->GetURL()));
         }
 
     return p_RasterFile;
     }
+
 
 //-----------------------------------------------------------------------------
 // Public
@@ -189,12 +189,12 @@ HFCPtr<HRFRasterFile> HRFRasterFileFactory::OpenFileAs(const HFCPtr<HFCURL>&    
     HFCPtr<HRFRasterFile>   p_RasterFile;
 
     // Instantiate the raster file
-    p_RasterFile = ((HRFRasterFileCreator*)pi_pCreator)->Create(pi_rpURL, pi_AccessMode, pi_Offset);
+    p_RasterFile = pi_pCreator->Create(pi_rpURL, pi_AccessMode, pi_Offset);
 
     //Usually, a more precise exception should be thrown by the HRFRasterFile derived class
     //capable of handling the file's format.
     if (p_RasterFile == 0)
-        throw(HFCFileException(HFC_CANNOT_OPEN_FILE_EXCEPTION, pi_rpURL->GetURL()));
+        throw(HFCCannotOpenFileException(pi_rpURL->GetURL()));
 
     return p_RasterFile;
     }
@@ -276,7 +276,7 @@ const HRFRasterFileCreator* HRFRasterFileFactory::FindCreator(const HFCPtr<HFCUR
         }
 
     if (pCreator == 0)
-        throw(HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, pi_rpURL->GetURL()));
+        throw(HFCFileNotSupportedException(pi_rpURL->GetURL()));
 
     return pCreator;
     }
@@ -298,7 +298,7 @@ HFCAccessMode HRFRasterFileFactory::DetectAccessMode(const HFCPtr<HFCURL>& pi_rp
         FileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
         // Try to find the access mode of the specified file.
-        if (BeFileName::CheckAccess(FileName.c_str(), BeFileNameAccess::ReadWrite) == BeFileNameStatus::Success) 
+        if (static_cast<int>(BeFileName::CheckAccess(FileName.c_str(), BeFileNameAccess::ReadWrite)) == 0) 
             AccessMode = HFC_READ_WRITE_OPEN | HFC_SHARE_READ_ONLY;
         else
             AccessMode = HFC_READ_ONLY | HFC_SHARE_READ_WRITE;
@@ -483,8 +483,7 @@ void HRFRasterFileFactory::RegisterCreator(const HRFRasterFileCreator* pi_pCreat
     if (pi_pCreator->CanRegister())
         {
         // Register the Raster File Creators ensuring that we do not add duplicates
-        if (true ==
-            m_CreatorsMap.insert(CreatorsMap::value_type(pi_pCreator->GetRasterFileClassID(), (HRFRasterFileCreator*)pi_pCreator)).second)
+        if (m_CreatorsMap.insert(CreatorsMap::value_type(pi_pCreator->GetRasterFileClassID(), (HRFRasterFileCreator*)pi_pCreator)).second)
             {
             m_Creators.push_back((HRFRasterFileCreator*)pi_pCreator);
             }
@@ -545,3 +544,19 @@ HRFRasterFileCreator* HRFRasterFileFactory::GetCreator(HCLASS_ID pi_ClassID) con
     return pResult;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* Used this to avoid direct dependency on external libraries.
+* ex: 
+* HRFPDFCreator::GetInstance()->IsKindOfFile(*urlIter)                    << BAD
+* HRFRasterFileFactory::GetInstance()->IsKindOfFile(HRFFileId_PDF, pURL)  << GOOD no direct dependency on PDF
+* @bsimethod                                                   Mathieu.Marchand  09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HRFRasterFileFactory::IsKindOfFile(HCLASS_ID rasterFileClassID, HFCPtr<HFCURL> const& pUrl) const
+    {
+    HRFRasterFileCreator* pCreator = GetCreator(rasterFileClassID);
+    if(NULL == pCreator)
+        return false;   // File format not registred. 
+
+    return pCreator->IsKindOfFile(pUrl);    
+    }

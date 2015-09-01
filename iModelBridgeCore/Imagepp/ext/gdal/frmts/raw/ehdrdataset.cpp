@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ehdrdataset.cpp 21623 2011-02-02 18:53:34Z warmerdam $
+ * $Id: ehdrdataset.cpp 27192 2014-04-16 09:59:42Z rouault $
  *
  * Project:  ESRI .hdr Driver
  * Purpose:  Implementation of EHdrDataset
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2007-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ehdrdataset.cpp 21623 2011-02-02 18:53:34Z warmerdam $");
+CPL_CVSID("$Id: ehdrdataset.cpp 27192 2014-04-16 09:59:42Z rouault $");
 
 CPL_C_START
 void	GDALRegister_EHdr(void);
@@ -56,6 +57,8 @@ class EHdrDataset : public RawDataset
     friend class EHdrRasterBand;
 
     VSILFILE	*fpImage;	// image data file.
+
+    CPLString   osHeaderExt;
 
     int         bGotTransform;
     double      adfGeoTransform[6];
@@ -111,6 +114,8 @@ class EHdrRasterBand : public RawRasterBand
     int            nPixelOffsetBits;
     int            nLineOffsetBits;
 
+    int            bNoDataSet;
+    double         dfNoData;
     double         dfMin;
     double         dfMax;
     double         dfMean;
@@ -132,6 +137,7 @@ class EHdrRasterBand : public RawRasterBand
     virtual CPLErr IReadBlock( int, int, void * );
     virtual CPLErr IWriteBlock( int, int, void * );
 
+    virtual double GetNoDataValue( int *pbSuccess = NULL );
     virtual double GetMinimum( int *pbSuccess = NULL );
     virtual double GetMaximum(int *pbSuccess = NULL );
     virtual CPLErr GetStatistics( int bApproxOK, int bForce,
@@ -156,6 +162,8 @@ EHdrRasterBand::EHdrRasterBand( GDALDataset *poDS,
 : RawRasterBand( poDS, nBand, fpRaw, nImgOffset, nPixelOffset, nLineOffset, 
                          eDataType, bNativeOrder, TRUE ),
   nBits(nBits),
+  bNoDataSet(FALSE),
+  dfNoData(0),
   dfMin(0),
   dfMax(0),
   minmaxmeanstddev(0)
@@ -229,6 +237,7 @@ CPLErr EHdrRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                   "Failed to read %u bytes at offset %lu.\n%s",
                   nLineBytes, (unsigned long)nLineStart, 
                   VSIStrerror( errno ) );
+        CPLFree( pabyBuffer );
         return CE_Failure;
     }
 
@@ -250,7 +259,7 @@ CPLErr EHdrRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
         iBitOffset = iBitOffset + nPixelOffsetBits - nBits;
                 
-        ((GByte *) pImage)[iPixel++] = nOutWord;
+        ((GByte *) pImage)[iPixel++] = (GByte) nOutWord;
     }
 
     CPLFree( pabyBuffer );
@@ -293,6 +302,7 @@ CPLErr EHdrRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
                   "Failed to read %u bytes at offset %lu.\n%s",
                   nLineBytes, (unsigned long)nLineStart, 
                   VSIStrerror( errno ) );
+        CPLFree( pabyBuffer );
         return CE_Failure;
     }
 
@@ -428,6 +438,7 @@ EHdrDataset::EHdrDataset()
     papszHDR = NULL;
     bHDRDirty = FALSE;
     bCLRDirty = FALSE;
+    osHeaderExt = "hdr";
 }
 
 /************************************************************************/
@@ -710,7 +721,7 @@ CPLErr EHdrDataset::RewriteHDR()
 {
     CPLString osPath = CPLGetPath( GetDescription() );
     CPLString osName = CPLGetBasename( GetDescription() );
-    CPLString osHDRFilename = CPLFormCIFilename( osPath, osName, "hdr" );
+    CPLString osHDRFilename = CPLFormCIFilename( osPath, osName, osHeaderExt );
 
 /* -------------------------------------------------------------------- */
 /*      Write .hdr file.                                                */
@@ -813,6 +824,20 @@ CPLErr EHdrDataset::ReadSTX()
               EHdrRasterBand* poBand = (EHdrRasterBand*)papoBands[i-1];
               poBand->dfMin = atof(papszTokens[1]);
               poBand->dfMax = atof(papszTokens[2]);
+
+              int bNoDataSet = FALSE;
+              double dfNoData = poBand->GetNoDataValue(&bNoDataSet);
+              if (bNoDataSet && dfNoData == poBand->dfMin)
+              {
+                  /* Triggered by /vsicurl/http://eros.usgs.gov/archive/nslrsda/GeoTowns/HongKong/srtm/n22e113.zip/n22e113.bil */
+                  CPLDebug("EHDr", "Ignoring .stx file where min == nodata. "
+                           "The nodata value shouldn't be taken into account "
+                           "in minimum value computation.");
+                  CSLDestroy( papszTokens );
+                  papszTokens = NULL;
+                  break;
+              }
+
               poBand->minmaxmeanstddev = HAS_MIN_FLAG | HAS_MAX_FLAG;
               // reads optional mean and stddev
               if ( !EQUAL(papszTokens[3], "#") )
@@ -917,7 +942,7 @@ char **EHdrDataset::GetFileList()
     papszFileList = GDALPamDataset::GetFileList();
 
     // Header file.
-    CPLString osFilename = CPLFormCIFilename( osPath, osName, "hdr" );
+    CPLString osFilename = CPLFormCIFilename( osPath, osName, osHeaderExt );
     papszFileList = CSLAddString( papszFileList, osFilename );
 
     // Statistics file
@@ -965,10 +990,21 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
     CPLString osName = CPLGetBasename( poOpenInfo->pszFilename );
     CPLString osHDRFilename;
 
+    const char* pszHeaderExt = "hdr";
+    if( EQUAL( CPLGetExtension( poOpenInfo->pszFilename ), "SRC" ) &&
+        osName.size() == 7 &&
+        (osName[0] == 'e' || osName[0] == 'E' || osName[0] == 'w' || osName[0] == 'W') &&
+        (osName[4] == 'n' || osName[4] == 'N' || osName[4] == 's' || osName[4] == 'S') )
+    {
+        /* It is a GTOPO30 or SRTM30 source file, whose header extension is .sch */
+        /* see http://dds.cr.usgs.gov/srtm/version1/SRTM30/GTOPO30_Documentation */
+        pszHeaderExt = "sch";
+    }
+
     if( poOpenInfo->papszSiblingFiles )
     {
         int iFile = CSLFindString(poOpenInfo->papszSiblingFiles, 
-                                  CPLFormFilename( NULL, osName, "hdr" ) );
+                                  CPLFormFilename( NULL, osName, pszHeaderExt ) );
         if( iFile < 0 ) // return if there is no corresponding .hdr file
             return NULL;
         
@@ -978,7 +1014,7 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
     }
     else
     {
-        osHDRFilename = CPLFormCIFilename( osPath, osName, "hdr" );
+        osHDRFilename = CPLFormCIFilename( osPath, osName, pszHeaderExt );
     }
 
     bSelectedHDR = EQUAL( osHDRFilename, poOpenInfo->pszFilename );
@@ -1051,32 +1087,32 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
                  || EQUAL(papszTokens[0],"xllcorner") 
                  || EQUAL(papszTokens[0],"xllcenter") )
         {
-            dfULXMap = atof(papszTokens[1]);
+            dfULXMap = CPLAtofM(papszTokens[1]);
             if( EQUAL(papszTokens[0],"xllcorner") )
                 bCenter = FALSE;
         }
         else if( EQUAL(papszTokens[0],"ulymap") )
         {
-            dfULYMap = atof(papszTokens[1]);
+            dfULYMap = CPLAtofM(papszTokens[1]);
         }
         else if( EQUAL(papszTokens[0],"yllcorner") 
                  || EQUAL(papszTokens[0],"yllcenter") )
         {
-            dfYLLCorner = atof(papszTokens[1]);
+            dfYLLCorner = CPLAtofM(papszTokens[1]);
             if( EQUAL(papszTokens[0],"yllcorner") )
                 bCenter = FALSE;
         }
         else if( EQUAL(papszTokens[0],"xdim") )
         {
-            dfXDim = atof(papszTokens[1]);
+            dfXDim = CPLAtofM(papszTokens[1]);
         }
         else if( EQUAL(papszTokens[0],"ydim") )
         {
-            dfYDim = atof(papszTokens[1]);
+            dfYDim = CPLAtofM(papszTokens[1]);
         }
         else if( EQUAL(papszTokens[0],"cellsize") )
         {
-            dfXDim = dfYDim = atof(papszTokens[1]);
+            dfXDim = dfYDim = CPLAtofM(papszTokens[1]);
         }
         else if( EQUAL(papszTokens[0],"nbands") )
         {
@@ -1090,7 +1126,7 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
         else if( EQUAL(papszTokens[0],"NODATA_value") 
                  || EQUAL(papszTokens[0],"NODATA") )
         {
-            dfNoData = atof(papszTokens[1]);
+            dfNoData = CPLAtofM(papszTokens[1]);
             bNoDataSet = TRUE;
         }
         else if( EQUAL(papszTokens[0],"NBITS") )
@@ -1099,11 +1135,11 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
         }
         else if( EQUAL(papszTokens[0],"PIXELTYPE") )
         {
-            chPixelType = toupper(papszTokens[1][0]);
+            chPixelType = (char) toupper(papszTokens[1][0]);
         }
         else if( EQUAL(papszTokens[0],"byteorder") )
         {
-            chByteOrder = toupper(papszTokens[1][0]);
+            chByteOrder = (char) toupper(papszTokens[1][0]);
         }
 
         /* http://www.worldclim.org/futdown.htm have the projection extensions */
@@ -1111,14 +1147,16 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
         {
             bHasInternalProjection = TRUE;
         }
-        else if( EQUAL(papszTokens[0],"MinValue") )
+        else if( EQUAL(papszTokens[0],"MinValue") ||
+                 EQUAL(papszTokens[0],"MIN_VALUE") )
         {
-            dfMin = atof(papszTokens[1]);
+            dfMin = CPLAtofM(papszTokens[1]);
             bHasMin = TRUE;
         }
-        else if( EQUAL(papszTokens[0],"MaxValue") )
+        else if( EQUAL(papszTokens[0],"MaxValue") ||
+                 EQUAL(papszTokens[0],"MAX_VALUE") )
         {
-            dfMax = atof(papszTokens[1]);
+            dfMax = CPLAtofM(papszTokens[1]);
             bHasMax = TRUE;
         }
 
@@ -1171,7 +1209,7 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
         VSIStatBufL sStatBuf;
         if( VSIStatL( poOpenInfo->pszFilename, &sStatBuf ) == 0 )
         {
-            size_t nBytes = sStatBuf.st_size/nCols/nRows/nBands;
+            size_t nBytes = (size_t) (sStatBuf.st_size/nCols/nRows/nBands);
             if( nBytes > 0 && nBytes != 3 )
                 nBits = nBytes*8;
 
@@ -1205,6 +1243,8 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
     EHdrDataset     *poDS;
 
     poDS = new EHdrDataset();
+
+    poDS->osHeaderExt = pszHeaderExt;
 
 /* -------------------------------------------------------------------- */
 /*      Capture some information from the file that is of interest.     */
@@ -1328,8 +1368,8 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
 #endif        
                                 nBits);
 
-        if( bNoDataSet )
-            poBand->SetNoDataValue( dfNoData );
+        poBand->bNoDataSet = bNoDataSet;
+        poBand->dfNoData = dfNoData;
 
         if( bHasMin && bHasMax )
         {
@@ -1599,9 +1639,9 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
                 int nIndex = atoi( papszValues[0] ); // Index
                 if (nIndex >= 0 && nIndex < 65536)
                 {
-                    oEntry.c1 = atoi( papszValues[1] ); // Red
-                    oEntry.c2 = atoi( papszValues[2] ); // Green
-                    oEntry.c3 = atoi( papszValues[3] ); // Blue
+                    oEntry.c1 = (short) atoi( papszValues[1] ); // Red
+                    oEntry.c2 = (short) atoi( papszValues[2] ); // Green
+                    oEntry.c3 = (short) atoi( papszValues[3] ); // Blue
                     oEntry.c4 = 255;
 
                     oColorTable.SetColorEntry( nIndex, &oEntry );
@@ -1793,6 +1833,7 @@ GDALDataset *EHdrDataset::CreateCopy( const char * pszFilename,
     {
         CPLError( CE_Failure, CPLE_NotSupported, 
                   "EHdr driver does not support source dataset with zero band.\n");
+        CSLDestroy( papszAdjustedOptions );
         return NULL;
     }
 
@@ -1829,8 +1870,26 @@ GDALDataset *EHdrDataset::CreateCopy( const char * pszFilename,
                                            papszAdjustedOptions, 
                                            pfnProgress, pProgressData );
     CSLDestroy( papszAdjustedOptions );
+    
+    if( poOutDS != NULL )
+        poOutDS->FlushCache();
 
     return poOutDS;
+}
+    
+/************************************************************************/
+/*                        GetNoDataValue()                              */
+/************************************************************************/
+
+double EHdrRasterBand::GetNoDataValue( int *pbSuccess )
+{
+    if( pbSuccess )
+        *pbSuccess = bNoDataSet;
+
+    if( bNoDataSet )
+        return dfNoData;
+
+    return RawRasterBand::GetNoDataValue( pbSuccess );
 }
     
 /************************************************************************/
@@ -1967,12 +2026,12 @@ void GDALRegister_EHdr()
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#EHdr" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Byte int16_t uint16_t int32_t uint32_t Float32" );
+                                   "Byte Int16 UInt16 Int32 UInt32 Float32" );
 
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST, 
 "<CreationOptionList>"
 "   <Option name='NBITS' type='int' description='Special pixel bits (1-7)'/>"
-"   <Option name='PIXELTYPE' type='string' description='By setting this to SIGNEDBYTE, a new Byte file can be forced to be written as signed Byte'/>"
+"   <Option name='PIXELTYPE' type='string' description='By setting this to SIGNEDBYTE, a new Byte file can be forced to be written as signed byte'/>"
 "</CreationOptionList>" );
 
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );

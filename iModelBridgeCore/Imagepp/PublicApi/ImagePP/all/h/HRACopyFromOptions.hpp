@@ -2,18 +2,19 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRACopyFromOptions.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // inline methods for class : HRACopyFromOptions
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // GetAlphaBlend
 //-----------------------------------------------------------------------------
-inline bool HRACopyFromOptions::ApplyAlphaBlend() const
+inline bool HRACopyFromLegacyOptions::ApplyAlphaBlend() const
     {
     return m_AlphaBlend;
     }
@@ -22,7 +23,7 @@ inline bool HRACopyFromOptions::ApplyAlphaBlend() const
 // public
 // SetAlphaBlend
 //-----------------------------------------------------------------------------
-inline void HRACopyFromOptions::SetAlphaBlend(bool pi_AlphaBlend)
+inline void HRACopyFromLegacyOptions::SetAlphaBlend(bool pi_AlphaBlend)
     {
     m_AlphaBlend = pi_AlphaBlend;
     }
@@ -31,7 +32,7 @@ inline void HRACopyFromOptions::SetAlphaBlend(bool pi_AlphaBlend)
 // public
 // GetBorderGenerator
 //-----------------------------------------------------------------------------
-inline const HVEShape* HRACopyFromOptions::GetDestShape() const
+inline const HVEShape* HRACopyFromLegacyOptions::GetDestShape() const
     {
     return m_pDestShape;
     }
@@ -41,7 +42,7 @@ inline const HVEShape* HRACopyFromOptions::GetDestShape() const
 // public
 // SetAveraging
 //-----------------------------------------------------------------------------
-inline void HRACopyFromOptions::SetResamplingMode(const HGSResampling& pi_rResampling)
+inline void HRACopyFromLegacyOptions::SetResamplingMode(const HGSResampling& pi_rResampling)
     {
     m_Resampling = pi_rResampling;
     }
@@ -50,7 +51,7 @@ inline void HRACopyFromOptions::SetResamplingMode(const HGSResampling& pi_rResam
 // public
 // ApplyAveraging
 //-----------------------------------------------------------------------------
-inline const HGSResampling& HRACopyFromOptions::GetResamplingMode() const
+inline const HGSResampling& HRACopyFromLegacyOptions::GetResamplingMode() const
     {
     return m_Resampling;
     }
@@ -60,7 +61,7 @@ inline const HGSResampling& HRACopyFromOptions::GetResamplingMode() const
 // public
 // MaxResolutionStretchingFactor
 //-----------------------------------------------------------------------------
-inline uint8_t HRACopyFromOptions::MaxResolutionStretchingFactor() const
+inline uint8_t HRACopyFromLegacyOptions::MaxResolutionStretchingFactor() const
     {
     return m_MaxResolutionStretchingFactor;
     }
@@ -70,7 +71,7 @@ inline uint8_t HRACopyFromOptions::MaxResolutionStretchingFactor() const
 // public
 // SetMaxResolutionStretchingFactor
 //-----------------------------------------------------------------------------
-inline void HRACopyFromOptions::SetMaxResolutionStretchingFactor(uint8_t pi_Factor)
+inline void HRACopyFromLegacyOptions::SetMaxResolutionStretchingFactor(uint8_t pi_Factor)
     {
     // Represents a percentage.
     HASSERT(pi_Factor <= 100);
@@ -81,29 +82,9 @@ inline void HRACopyFromOptions::SetMaxResolutionStretchingFactor(uint8_t pi_Fact
 
 //-----------------------------------------------------------------------------
 // public
-// ApplyMosaicSupersampling
-//-----------------------------------------------------------------------------
-inline bool HRACopyFromOptions::ApplyMosaicSupersampling() const
-    {
-    return m_ApplyMosaicSupersampling;
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// SetMosaicSupersampling
-//-----------------------------------------------------------------------------
-inline void HRACopyFromOptions::SetMosaicSupersampling(bool pi_Quality)
-    {
-    m_ApplyMosaicSupersampling = pi_Quality;
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
 // ApplySourceClipping
 //-----------------------------------------------------------------------------
-inline bool HRACopyFromOptions::ApplySourceClipping() const
+inline bool HRACopyFromLegacyOptions::ApplySourceClipping() const
     {
     return m_ApplySourceClipping;
     }
@@ -113,7 +94,7 @@ inline bool HRACopyFromOptions::ApplySourceClipping() const
 // public
 // SetSourceClipping
 //-----------------------------------------------------------------------------
-inline void HRACopyFromOptions::SetSourceClipping(bool pi_Clip)
+inline void HRACopyFromLegacyOptions::SetSourceClipping(bool pi_Clip)
     {
     m_ApplySourceClipping = pi_Clip;
     }
@@ -123,7 +104,7 @@ inline void HRACopyFromOptions::SetSourceClipping(bool pi_Clip)
 // public
 // GetGridShapeMode
 //-----------------------------------------------------------------------------
-inline bool HRACopyFromOptions::GetGridShapeMode() const
+inline bool HRACopyFromLegacyOptions::GetGridShapeMode() const
     {
     return m_GridShapeMode;
     }
@@ -133,7 +114,7 @@ inline bool HRACopyFromOptions::GetGridShapeMode() const
 // public
 // SetGridShapeMode
 //-----------------------------------------------------------------------------
-inline void HRACopyFromOptions::SetGridShapeMode(bool pi_GridShapeMode)
+inline void HRACopyFromLegacyOptions::SetGridShapeMode(bool pi_GridShapeMode)
     {
     m_GridShapeMode = pi_GridShapeMode;
     }
@@ -142,7 +123,7 @@ inline void HRACopyFromOptions::SetGridShapeMode(bool pi_GridShapeMode)
 // public
 // SetOverviewMode
 //-----------------------------------------------------------------------------
-inline void HRACopyFromOptions::SetOverviewMode(bool pi_mode)
+inline void HRACopyFromLegacyOptions::SetOverviewMode(bool pi_mode)
     {
     m_OverviewMode = pi_mode;
     }
@@ -151,34 +132,16 @@ inline void HRACopyFromOptions::SetOverviewMode(bool pi_mode)
 // public
 // GetOverviewMode
 //-----------------------------------------------------------------------------
-inline bool HRACopyFromOptions::GetOverviewMode() const
+inline bool HRACopyFromLegacyOptions::GetOverviewMode() const
     {
     return m_OverviewMode;
     }
 
 //-----------------------------------------------------------------------------
 // public
-// SetPreDrawOptions
-//-----------------------------------------------------------------------------
-inline void    HRACopyFromOptions::SetPreDrawOptions(HGFPreDrawOptions* pi_prPreDrawOptions)
-    {
-    m_pPreDrawOptions = pi_prPreDrawOptions;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// GetPreDrawOptions
-//-----------------------------------------------------------------------------
-inline HGFPreDrawOptions* HRACopyFromOptions::GetPreDrawOptions() const
-    {
-    return m_pPreDrawOptions;
-    }
-
-//-----------------------------------------------------------------------------
-// public
 // GetReplacingPixelType
 //-----------------------------------------------------------------------------
-inline HFCPtr<HRPPixelType> HRACopyFromOptions::GetDestReplacingPixelType() const
+inline HFCPtr<HRPPixelType> HRACopyFromLegacyOptions::GetDestReplacingPixelType() const
     {
     return m_pDestReplacingPixelType;
     }
@@ -187,7 +150,8 @@ inline HFCPtr<HRPPixelType> HRACopyFromOptions::GetDestReplacingPixelType() cons
 // public
 // SetReplacingPixelType
 //-----------------------------------------------------------------------------
-inline void HRACopyFromOptions::SetDestReplacingPixelType(const HFCPtr<HRPPixelType>& pi_rpPixelType)
+inline void HRACopyFromLegacyOptions::SetDestReplacingPixelType(const HFCPtr<HRPPixelType>& pi_rpPixelType)
     {
     m_pDestReplacingPixelType = pi_rpPixelType;
     }
+END_IMAGEPP_NAMESPACE

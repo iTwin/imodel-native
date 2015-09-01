@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalproxypool.cpp 21211 2010-12-08 13:38:25Z rouault $
+ * $Id: gdalproxypool.cpp 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  A dataset and raster band classes that differ the opening of the
@@ -7,7 +7,7 @@
  * Author:   Even Rouault <even dot rouault at mines dash paris dot org>
  *
  ******************************************************************************
- * Copyright (c) 2008, Even Rouault
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,12 +31,7 @@
 #include "gdal_proxy.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: gdalproxypool.cpp 21211 2010-12-08 13:38:25Z rouault $");
-
-/* Functions shared between gdalproxypool.cpp and gdaldataset.cpp */
-void** GDALGetphDLMutex();
-void GDALSetResponsiblePIDForCurrentThread(GIntBig responsiblePID);
-GIntBig GDALGetResponsiblePIDForCurrentThread();
+CPL_CVSID("$Id: gdalproxypool.cpp 27739 2014-09-25 18:49:52Z goatbar $");
 
 /* We *must* share the same mutex as the gdaldataset.cpp file, as we are */
 /* doing GDALOpen() calls that can indirectly call GDALOpenShared() on */
@@ -52,6 +47,8 @@ GIntBig GDALGetResponsiblePIDForCurrentThread();
 
 class GDALDatasetPool;
 static GDALDatasetPool* singleton = NULL;
+
+void GDALNullifyProxyPoolSingleton() { singleton = NULL; }
 
 struct _GDALProxyPoolCacheEntry
 {
@@ -102,6 +99,9 @@ class GDALDatasetPool
         static void Unref();
         static GDALProxyPoolCacheEntry* RefDataset(const char* pszFileName, GDALAccess eAccess);
         static void UnrefDataset(GDALProxyPoolCacheEntry* cacheEntry);
+
+        static void PreventDestroy();
+        static void ForceDestroy();
 };
 
 
@@ -255,8 +255,9 @@ GDALProxyPoolCacheEntry* GDALDatasetPool::_RefDataset(const char* pszFileName, G
         /* moves it to the top of the list */
         if (lastEntryWithZeroRefCount->prev)
             lastEntryWithZeroRefCount->prev->next = lastEntryWithZeroRefCount->next;
-        else
+        else {
             CPLAssert(0);
+        }
         if (lastEntryWithZeroRefCount->next)
             lastEntryWithZeroRefCount->next->prev = lastEntryWithZeroRefCount->prev;
         else
@@ -319,6 +320,22 @@ void GDALDatasetPool::Ref()
       singleton->refCount++;
 }
 
+/* keep that in sync with gdaldrivermanager.cpp */
+void GDALDatasetPool::PreventDestroy()
+{
+    CPLMutexHolderD( GDALGetphDLMutex() );
+    if (! singleton)
+        return;
+    singleton->refCountOfDisableRefCount ++;
+}
+
+/* keep that in sync with gdaldrivermanager.cpp */
+void GDALDatasetPoolPreventDestroy()
+{
+    GDALDatasetPool::PreventDestroy();
+}
+
+
 /************************************************************************/
 /*                               Unref()                                */
 /************************************************************************/
@@ -340,6 +357,25 @@ void GDALDatasetPool::Unref()
           singleton = NULL;
       }
     }
+}
+
+/* keep that in sync with gdaldrivermanager.cpp */
+void GDALDatasetPool::ForceDestroy()
+{
+    CPLMutexHolderD( GDALGetphDLMutex() );
+    if (! singleton)
+        return;
+    singleton->refCountOfDisableRefCount --;
+    CPLAssert(singleton->refCountOfDisableRefCount == 0);
+    singleton->refCount = 0;
+    delete singleton;
+    singleton = NULL;
+}
+
+/* keep that in sync with gdaldrivermanager.cpp */
+void GDALDatasetPoolForceDestroy()
+{
+    GDALDatasetPool::ForceDestroy();
 }
 
 /************************************************************************/
@@ -565,7 +601,7 @@ GDALDataset* GDALProxyPoolDataset::RefUnderlyingDataset()
 /*                    UnrefUnderlyingDataset()                        */
 /************************************************************************/
 
-void GDALProxyPoolDataset::UnrefUnderlyingDataset(GDALDataset* poUnderlyingDataset)
+void GDALProxyPoolDataset::UnrefUnderlyingDataset(CPL_UNUSED GDALDataset* poUnderlyingDataset)
 {
     if (cacheEntry != NULL)
     {
@@ -1074,7 +1110,7 @@ GDALRasterBand *GDALProxyPoolRasterBand::GetOverview(int nOverviewBand)
 /*                     GetRasterSampleOverview()                        */
 /* ******************************************************************** */
 
-GDALRasterBand *GDALProxyPoolRasterBand::GetRasterSampleOverview( int nDesiredSamples)
+GDALRasterBand *GDALProxyPoolRasterBand::GetRasterSampleOverview( CPL_UNUSED int nDesiredSamples)
 {
     CPLError(CE_Failure, CPLE_AppDefined,
              "GDALProxyPoolRasterBand::GetRasterSampleOverview : not implemented yet");
@@ -1150,7 +1186,7 @@ GDALRasterBand* GDALProxyPoolOverviewRasterBand::RefUnderlyingRasterBand()
 /*                  UnrefUnderlyingRasterBand()                         */
 /* ******************************************************************** */
 
-void GDALProxyPoolOverviewRasterBand::UnrefUnderlyingRasterBand(GDALRasterBand* poUnderlyingRasterBand)
+void GDALProxyPoolOverviewRasterBand::UnrefUnderlyingRasterBand(CPL_UNUSED GDALRasterBand* poUnderlyingRasterBand)
 {
     poMainBand->UnrefUnderlyingRasterBand(poUnderlyingMainRasterBand);
     nRefCountUnderlyingMainRasterBand --;
@@ -1215,7 +1251,7 @@ GDALRasterBand* GDALProxyPoolMaskBand::RefUnderlyingRasterBand()
 /*                  UnrefUnderlyingRasterBand()                         */
 /* ******************************************************************** */
 
-void GDALProxyPoolMaskBand::UnrefUnderlyingRasterBand(GDALRasterBand* poUnderlyingRasterBand)
+void GDALProxyPoolMaskBand::UnrefUnderlyingRasterBand(CPL_UNUSED GDALRasterBand* poUnderlyingRasterBand)
 {
     poMainBand->UnrefUnderlyingRasterBand(poUnderlyingMainRasterBand);
     nRefCountUnderlyingMainRasterBand --;

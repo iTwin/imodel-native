@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DShape.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -118,3 +119,4 @@ inline HGF2DVector::Location HGF2DShape::Locate(const HGF2DPosition& pi_rPoint) 
     return((MyPosition == S_ON) ?  S_ON_BOUNDARY : ((MyPosition == S_IN) ? S_INSIDE : S_OUTSIDE));
     }
 
+END_IMAGEPP_NAMESPACE

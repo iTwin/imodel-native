@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIG4File.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -20,6 +20,7 @@
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class  HRPPixelType;
 class  HFCBinStream;
 
@@ -58,7 +59,7 @@ class HRFIG4File : public HRFRasterFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1961, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_IG4, HRFRasterFile)
 
     friend class HRFIG4StripEditor;
 
@@ -151,10 +152,11 @@ struct HRFIG4Creator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFIG4Creator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFIG4Creator)
 
     // Disabled methodes
     HRFIG4Creator();
     };
+END_IMAGEPP_NAMESPACE
 
 

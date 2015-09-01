@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFErMapperSupportedFileEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes the resolution editor interface
@@ -10,8 +10,11 @@
 
 #pragma once
 
+#if defined(IPP_HAVE_ERMAPPER_SUPPORT)  
+
 #include "HRFResolutionEditor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFErMapperSupportedFile;
 
 class HRFErMapperSupportedFileEditor : public HRFResolutionEditor
@@ -24,26 +27,28 @@ public:
     virtual ~HRFErMapperSupportedFileEditor  ();
 
     // Edition by block
-    virtual HSTATUS                 ReadBlock     (uint32_t     pi_PosBlockX,
-                                                   uint32_t     pi_PosBlockY,
-                                                   Byte*       po_pData,
-                                                   HFCLockMonitor const* pi_pSisterFileLock = 0);
-    virtual HSTATUS          ReadBlock     (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            HFCPtr<HCDPacket>&       po_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0)
+    virtual HSTATUS ReadBlock(uint64_t               pi_PosBlockX,
+                              uint64_t               pi_PosBlockY,
+                              Byte*                  po_pData,
+                              HFCLockMonitor const*  pi_pSisterFileLock = 0) override;
+
+    virtual HSTATUS ReadBlock(uint64_t               pi_PosBlockX,
+                              uint64_t               pi_PosBlockY,
+                              HFCPtr<HCDPacket>&     po_rpPacket,
+                              HFCLockMonitor const*  pi_pSisterFileLock = 0)
         {
         return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
         }
 
-    virtual HSTATUS                 WriteBlock    (uint32_t     pi_PosBlockX,
-                                                   uint32_t     pi_PosBlockY,
-                                                   const Byte* pi_pData,
-                                                   HFCLockMonitor const* pi_pSisterFileLock = 0);
-    virtual HSTATUS          WriteBlock    (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            const HFCPtr<HCDPacket>& pi_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0)
+    virtual HSTATUS WriteBlock(uint64_t               pi_PosBlockX,
+                               uint64_t               pi_PosBlockY,
+                               const Byte*            pi_pData,
+                               HFCLockMonitor const*  pi_pSisterFileLock = 0) override;
+
+    virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
+                               uint64_t                 pi_PosBlockY,
+                               const HFCPtr<HCDPacket>& pi_rpPacket,
+                               HFCLockMonitor const*    pi_pSisterFileLock = 0)
         {
         return T_Super::WriteBlock(pi_PosBlockX,pi_PosBlockY,pi_rpPacket,pi_pSisterFileLock);
         }
@@ -58,12 +63,12 @@ protected:
                                    unsigned short       pi_Resolution,
                                    HFCAccessMode         pi_AccessMode);
 
-    HSTATUS ReadBlock(uint32_t              pi_PosBlockX,
-                      uint32_t              pi_PosBlockY,
-                      uint32_t              pi_BlockWidth,
-                      uint32_t              pi_BlockHeight,
-                      Byte*                po_pData,
-                      HFCLockMonitor const* pi_pSisterFileLock);
+    HSTATUS ReadBlock(uint64_t                pi_PosBlockX,
+                        uint64_t                pi_PosBlockY,
+                        uint64_t                pi_BlockWidth,
+                        uint64_t                pi_BlockHeight,
+                        Byte*                   po_pData,
+                        HFCLockMonitor const*   pi_pSisterFileLock);
 
 private:
 
@@ -78,4 +83,6 @@ private:
     HRFErMapperSupportedFileEditor(const HRFErMapperSupportedFileEditor& pi_rObj);
     HRFErMapperSupportedFileEditor& operator=(const HRFErMapperSupportedFileEditor& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 
+#endif

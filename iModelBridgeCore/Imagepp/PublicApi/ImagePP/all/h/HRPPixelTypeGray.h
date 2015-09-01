@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeGray.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,10 @@
 
 #include "HRPPixelType.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelTypeGray : public HRPPixelType
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1020)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRPPixelTypeId_Gray)
 
 public:
 
@@ -39,4 +40,5 @@ protected:
     HRPPixelTypeGray(const HRPPixelTypeGray& pi_rObj);
 private:
     };
+END_IMAGEPP_NAMESPACE
 

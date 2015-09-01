@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfacompress.cpp 17547 2009-08-21 10:02:01Z rouault $
+ * $Id: hfacompress.cpp 23624 2011-12-21 19:31:43Z rouault $
  *
  * Name:     hfadataset.cpp
  * Project:  Erdas Imagine Driver
@@ -30,7 +30,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id: hfacompress.cpp 17547 2009-08-21 10:02:01Z rouault $");
+CPL_CVSID("$Id: hfacompress.cpp 23624 2011-12-21 19:31:43Z rouault $");
 
 HFACompress::HFACompress( void *pData, GUInt32 nBlockSize, int nDataType )
 {
@@ -42,10 +42,10 @@ HFACompress::HFACompress( void *pData, GUInt32 nBlockSize, int nDataType )
 
   /* Allocate some memory for the count and values - probably too big */
   /* About right for worst case scenario tho */
-  m_pCounts     = (GByte*)CPLMalloc( m_nBlockCount * sizeof(GUInt32) + sizeof(GUInt32) );
+  m_pCounts     = (GByte*)VSIMalloc( m_nBlockCount * sizeof(GUInt32) + sizeof(GUInt32) );
   m_nSizeCounts = 0;
   
-  m_pValues     = (GByte*)CPLMalloc( m_nBlockCount * sizeof(GUInt32) + sizeof(GUInt32) );
+  m_pValues     = (GByte*)VSIMalloc( m_nBlockCount * sizeof(GUInt32) + sizeof(GUInt32) );
   m_nSizeValues = 0;
   
   m_nMin        = 0;
@@ -168,14 +168,14 @@ void HFACompress::makeCount( GUInt32 count, GByte *pCounter, GUInt32 *pnSizeCoun
       lower 2 bits of the data it restricts what we can use */
   if( count < 0x40 )
   {
-    pCounter[0] = count;
+    pCounter[0] = (GByte) count;
     *pnSizeCount = 1;
   }
   else if( count < 0x8000 )
   {
     pCounter[1] = count & 0xff;
     count /= 256;
-    pCounter[0] = count | 0x40;
+    pCounter[0] = (GByte) (count | 0x40);
     *pnSizeCount = 2;
   }
   else if( count < 0x800000 )
@@ -184,7 +184,7 @@ void HFACompress::makeCount( GUInt32 count, GByte *pCounter, GUInt32 *pnSizeCoun
     count /= 256;
     pCounter[1] = count & 0xff;
     count /= 256;
-    pCounter[0] = count | 0x80;
+    pCounter[0] = (GByte) (count | 0x80);
     *pnSizeCount = 3;
   }
   else
@@ -195,7 +195,7 @@ void HFACompress::makeCount( GUInt32 count, GByte *pCounter, GUInt32 *pnSizeCoun
     count /= 256;
     pCounter[1] = count & 0xff;
     count /= 256;
-    pCounter[0] = count | 0xc0;
+    pCounter[0] = (GByte) (count | 0xc0);
     *pnSizeCount = 4;
   }
 }

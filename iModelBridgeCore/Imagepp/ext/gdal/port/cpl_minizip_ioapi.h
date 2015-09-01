@@ -2,7 +2,7 @@
       - change fill_fopen_filefunc to cpl_fill_fopen_filefunc
       - Add support for ZIP64
 
-   Copyright (C) 2007-2008 Even Rouault
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
 
    Original licence available in port/LICENCE_minizip
 */
@@ -20,6 +20,12 @@
 
 #include "cpl_vsi.h"
 #define uLong64 vsi_l_offset
+
+/* Gentoo removed OF from their copy of zconf.h (https://bugs.gentoo.org/show_bug.cgi?id=383179) */
+/* but our copy of minizip needs it. */
+#ifndef OF
+#define OF(args) args
+#endif
 
 #define ZLIB_FILEFUNC_SEEK_CUR (1)
 #define ZLIB_FILEFUNC_SEEK_END (2)

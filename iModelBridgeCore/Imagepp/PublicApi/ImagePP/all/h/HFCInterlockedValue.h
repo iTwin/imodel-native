@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCInterlockedValue.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,6 +13,7 @@
 
 #include <Imagepp/all/h/HFCExclusiveKey.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 /**
 
     This is a template class that can be used to get automatic multithread
@@ -106,6 +107,8 @@ private:
     // The value
     T                       m_Value;
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCInterlockedValue.hpp"
 

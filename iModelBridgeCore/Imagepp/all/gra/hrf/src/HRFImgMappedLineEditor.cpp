@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFImgMappedLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>                //:> must be first for PreCompiledHeader Option
+#include <ImagePPInternal/hstdcpp.h>
+                //:> must be first for PreCompiledHeader Option
 
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRFImgMappedFile.h>
@@ -55,11 +55,13 @@ HRFImgMappedLineEditor::~HRFImgMappedLineEditor()
     @return HSTATUS H_SUCCESS.
     ---------------------------------------------------------------------------
  */
-HSTATUS HRFImgMappedLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                          uint32_t pi_PosBlockY,
-                                          Byte* po_pData,
+HSTATUS HRFImgMappedLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                          uint64_t pi_PosBlockY,
+                                          Byte*   po_pData,
                                           HFCLockMonitor const* pi_pSisterFileLock)
     {
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     if (!GetRasterFile()->GetAccessMode().m_HasCreateAccess)
@@ -79,7 +81,7 @@ HSTATUS HRFImgMappedLineEditor::ReadBlock(uint32_t pi_PosBlockX,
             }
 
         Offset = static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_OffsetToPixelData +
-                 (pi_PosBlockY * (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth());
+                 ((uint32_t)pi_PosBlockY * (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth());
 
         //:> Place file ptr
         if (static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_pImgMappedFile->GetCurrentPos() != Offset)
@@ -87,7 +89,7 @@ HSTATUS HRFImgMappedLineEditor::ReadBlock(uint32_t pi_PosBlockX,
 
         //:> Read data
         uint32_t DataSize = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth();
-        if(static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_pImgMappedFile->Read((void*)po_pData, DataSize) != DataSize)
+        if(static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_pImgMappedFile->Read(po_pData, DataSize) != DataSize)
             Status = H_ERROR;
 
         //:> Unlock the sister file.
@@ -109,20 +111,21 @@ HSTATUS HRFImgMappedLineEditor::ReadBlock(uint32_t pi_PosBlockX,
     @return HSTATUS H_SUCCESS.
     ---------------------------------------------------------------------------
  */
-HSTATUS HRFImgMappedLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                           uint32_t     pi_PosBlockY,
-                                           const Byte* pi_pData,
+HSTATUS HRFImgMappedLineEditor::WriteBlock(uint64_t       pi_PosBlockX,
+                                           uint64_t       pi_PosBlockY,
+                                           const Byte*    pi_pData,
                                            HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     HSTATUS     Status = H_SUCCESS;
 
     uint32_t Offset;
 
     Offset = static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_OffsetToPixelData +
-             (pi_PosBlockY * (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth());
+             ((uint32_t)pi_PosBlockY * (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth());
 
     // Lock the sister file if needed
     HFCLockMonitor SisterFileLock;
@@ -139,7 +142,7 @@ HSTATUS HRFImgMappedLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
 
     //:> Write data
     uint32_t DataSize = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth();
-    if(static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_pImgMappedFile->Write((void*)pi_pData, DataSize) != DataSize)
+    if(static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_pImgMappedFile->Write(pi_pData, DataSize) != DataSize)
         Status = H_ERROR;
 
     //:> Increment the counter after the edition

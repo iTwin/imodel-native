@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: overview.cpp 21356 2010-12-31 16:35:02Z rouault $
+ * $Id: overview.cpp 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  GDAL Core
  * Purpose:  Helper code to implement overview support in different drivers.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam
+ * Copyright (c) 2007-2010, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +30,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: overview.cpp 21356 2010-12-31 16:35:02Z rouault $");
+CPL_CVSID("$Id: overview.cpp 27739 2014-09-25 18:49:52Z goatbar $");
 
 typedef CPLErr (*GDALDownsampleFunction)
                       ( int nSrcWidth, int nSrcHeight,
@@ -51,16 +52,16 @@ typedef CPLErr (*GDALDownsampleFunction)
 template <class T>
 static CPLErr
 GDALDownsampleChunk32R_NearT( int nSrcWidth, int nSrcHeight,
-                        GDALDataType eWrkDataType,
-                        T * pChunk,
-                        GByte * pabyChunkNodataMask_unused,
-                        int nChunkXOff, int nChunkXSize,
-                        int nChunkYOff, int nChunkYSize,
-                        GDALRasterBand * poOverview,
-                        const char * pszResampling_unused,
-                        int bHasNoData_unused, float fNoDataValue_unused,
-                        GDALColorTable* poColorTable_unused,
-                        GDALDataType eSrcDataType)
+                              GDALDataType eWrkDataType,
+                              T * pChunk,
+                              CPL_UNUSED GByte * pabyChunkNodataMask_unused,
+                              int nChunkXOff, int nChunkXSize,
+                              int nChunkYOff, int nChunkYSize,
+                              GDALRasterBand * poOverview,
+                              CPL_UNUSED const char * pszResampling_unused,
+                              CPL_UNUSED int bHasNoData_unused, CPL_UNUSED float fNoDataValue_unused,
+                              CPL_UNUSED GDALColorTable* poColorTable_unused,
+                              CPL_UNUSED GDALDataType eSrcDataType)
 
 {
     CPLErr eErr = CE_None;
@@ -210,16 +211,16 @@ GDALDownsampleChunk32R_Near( int nSrcWidth, int nSrcHeight,
 template <class T, class Tsum>
 static CPLErr
 GDALDownsampleChunk32R_AverageT( int nSrcWidth, int nSrcHeight,
-                        GDALDataType eWrkDataType,
-                        T* pChunk,
-                        GByte * pabyChunkNodataMask,
-                        int nChunkXOff, int nChunkXSize,
-                        int nChunkYOff, int nChunkYSize,
-                        GDALRasterBand * poOverview,
-                        const char * pszResampling,
-                        int bHasNoData, float fNoDataValue,
-                        GDALColorTable* poColorTable,
-                        GDALDataType eSrcDataType)
+                                 GDALDataType eWrkDataType,
+                                 T* pChunk,
+                                 GByte * pabyChunkNodataMask,
+                                 int nChunkXOff, int nChunkXSize,
+                                 int nChunkYOff, int nChunkYSize,
+                                 GDALRasterBand * poOverview,
+                                 const char * pszResampling,
+                                 int bHasNoData, float fNoDataValue,
+                                 GDALColorTable* poColorTable,
+                                 CPL_UNUSED GDALDataType eSrcDataType)
 
 {
     CPLErr eErr = CE_None;
@@ -516,16 +517,16 @@ GDALDownsampleChunk32R_Average( int nSrcWidth, int nSrcHeight,
 
 static CPLErr
 GDALDownsampleChunk32R_Gauss( int nSrcWidth, int nSrcHeight,
-                        GDALDataType eWrkDataType,
-                        void * pChunk,
-                        GByte * pabyChunkNodataMask,
-                        int nChunkXOff, int nChunkXSize,
-                        int nChunkYOff, int nChunkYSize,
-                        GDALRasterBand * poOverview,
-                        const char * pszResampling,
-                        int bHasNoData, float fNoDataValue,
-                        GDALColorTable* poColorTable,
-                        GDALDataType eSrcDataType)
+                              CPL_UNUSED GDALDataType eWrkDataType,
+                              void * pChunk,
+                              GByte * pabyChunkNodataMask,
+                              int nChunkXOff, int nChunkXSize,
+                              int nChunkYOff, int nChunkYSize,
+                              GDALRasterBand * poOverview,
+                              CPL_UNUSED const char * pszResampling,
+                              int bHasNoData, float fNoDataValue,
+                              GDALColorTable* poColorTable,
+                              CPL_UNUSED GDALDataType eSrcDataType)
 
 {
     CPLErr eErr = CE_None;
@@ -798,17 +799,16 @@ GDALDownsampleChunk32R_Gauss( int nSrcWidth, int nSrcHeight,
 
 static CPLErr
 GDALDownsampleChunk32R_Mode( int nSrcWidth, int nSrcHeight,
-                        GDALDataType eWrkDataType,
-                        void * pChunk,
-                        GByte * pabyChunkNodataMask,
-                        int nChunkXOff, int nChunkXSize,
-                        int nChunkYOff, int nChunkYSize,
-                        GDALRasterBand * poOverview,
-                        const char * pszResampling,
-                        int bHasNoData, float fNoDataValue,
-                        GDALColorTable* poColorTable,
-                        GDALDataType eSrcDataType)
-
+                             CPL_UNUSED GDALDataType eWrkDataType,
+                             void * pChunk,
+                             GByte * pabyChunkNodataMask,
+                             int nChunkXOff, int nChunkXSize,
+                             int nChunkYOff, int nChunkYSize,
+                             GDALRasterBand * poOverview,
+                             CPL_UNUSED const char * pszResampling,
+                             int bHasNoData, float fNoDataValue,
+                             GDALColorTable* poColorTable,
+                             GDALDataType eSrcDataType)
 {
     CPLErr eErr = CE_None;
 
@@ -1030,17 +1030,16 @@ GDALDownsampleChunk32R_Mode( int nSrcWidth, int nSrcHeight,
 
 static CPLErr
 GDALDownsampleChunk32R_Cubic( int nSrcWidth, int nSrcHeight,
-                        GDALDataType eWrkDataType,
-                        void * pChunk,
-                        GByte * pabyChunkNodataMask,
-                        int nChunkXOff, int nChunkXSize,
-                        int nChunkYOff, int nChunkYSize,
-                        GDALRasterBand * poOverview,
-                        const char * pszResampling,
-                        int bHasNoData, float fNoDataValue,
-                        GDALColorTable* poColorTable,
-                        GDALDataType eSrcDataType)
-
+                              CPL_UNUSED GDALDataType eWrkDataType,
+                              void * pChunk,
+                              CPL_UNUSED GByte * pabyChunkNodataMask,
+                              int nChunkXOff, int nChunkXSize,
+                              int nChunkYOff, int nChunkYSize,
+                              GDALRasterBand * poOverview,
+                              CPL_UNUSED const char * pszResampling,
+                              CPL_UNUSED int bHasNoData, CPL_UNUSED float fNoDataValue,
+                              GDALColorTable* poColorTable,
+                              CPL_UNUSED GDALDataType eSrcDataType)
 {
 
     CPLErr eErr = CE_None;
@@ -1111,7 +1110,7 @@ GDALDownsampleChunk32R_Cubic( int nSrcWidth, int nSrcHeight,
     for( int iDstLine = nDstYOff; iDstLine < nDstYOff2 && eErr == CE_None; iDstLine++ )
     {
         float *pafSrcScanline;
-        GByte *pabySrcScanlineNodataMask;
+        // GByte *pabySrcScanlineNodataMask;
         int   nSrcYOff, nSrcYOff2 = 0, iDstPixel;
 
         nSrcYOff = (int) floor(((iDstLine+0.5)/(double)nOYSize) * nSrcHeight - 0.5)-1;
@@ -1127,10 +1126,13 @@ GDALDownsampleChunk32R_Cubic( int nSrcWidth, int nSrcHeight,
             nSrcYOff2 = nChunkYOff + nChunkYSize;
 
         pafSrcScanline = pafChunk + ((nSrcYOff-nChunkYOff) * nChunkXSize);
+#if 0
+        // pabySrcScanlineNodataMask is unused.
         if (pabyChunkNodataMask != NULL)
             pabySrcScanlineNodataMask = pabyChunkNodataMask + ((nSrcYOff-nChunkYOff) * nChunkXSize);
         else
             pabySrcScanlineNodataMask = NULL;
+#endif
 
 /* -------------------------------------------------------------------- */
 /*      Loop over destination pixels                                    */
@@ -1599,8 +1601,28 @@ GDALRegenerateOverviews( GDALRasterBandH hSrcBand,
 
     /* If we have a nodata mask and we are doing something more complicated */
     /* than nearest neighbouring, we have to fetch to nodata mask */ 
-    int bUseNoDataMask = (!EQUALN(pszResampling,"NEAR",4) &&
-                          (poSrcBand->GetMaskFlags() & GMF_ALL_VALID) == 0);
+
+    GDALRasterBand* poMaskBand = NULL;
+    int nMaskFlags = 0;
+    int bUseNoDataMask = FALSE;
+    if( !EQUALN(pszResampling,"NEAR",4) )
+    {
+        /* Special case if we are the alpha band. We want it to be considered */
+        /* as the mask band to avoid alpha=0 to be taken into account in average */
+        /* computation */
+        if( poSrcBand->GetColorInterpretation() == GCI_AlphaBand )
+        {
+            poMaskBand = poSrcBand;
+            nMaskFlags = GMF_ALPHA | GMF_PER_DATASET;
+        }
+        else
+        {
+            poMaskBand = poSrcBand->GetMaskBand();
+            nMaskFlags = poSrcBand->GetMaskFlags();
+        }
+
+        bUseNoDataMask = ((nMaskFlags & GMF_ALL_VALID) == 0);
+    }
 
 /* -------------------------------------------------------------------- */
 /*      If we are operating on multiple overviews, and using            */
@@ -1612,7 +1634,7 @@ GDALRegenerateOverviews( GDALRasterBandH hSrcBand,
     /* we can't use cascaded generation, as the computation of the overviews */
     /* of the band used for the mask band may not have yet occured (#3033) */
     if( (EQUALN(pszResampling,"AVER",4) || EQUALN(pszResampling,"GAUSS",5)) && nOverviewCount > 1
-         && !(bUseNoDataMask && poSrcBand->GetMaskFlags() != GMF_NODATA))
+         && !(bUseNoDataMask && nMaskFlags != GMF_NODATA))
         return GDALRegenerateCascadingOverviews( poSrcBand, 
                                                  nOverviewCount, papoOvrBands,
                                                  pszResampling, 
@@ -1684,7 +1706,7 @@ GDALRegenerateOverviews( GDALRasterBandH hSrcBand,
                                 pChunk, nWidth, nFullResYChunk, eType,
                                 0, 0 );
         if (eErr == CE_None && bUseNoDataMask)
-            eErr = poSrcBand->GetMaskBand()->RasterIO( GF_Read, 0, nChunkYOff, nWidth, nFullResYChunk, 
+            eErr = poMaskBand->RasterIO( GF_Read, 0, nChunkYOff, nWidth, nFullResYChunk, 
                                 pabyChunkNodataMask, nWidth, nFullResYChunk, GDT_Byte,
                                 0, 0 );
 
@@ -1711,8 +1733,9 @@ GDALRegenerateOverviews( GDALRasterBandH hSrcBand,
                         pabyChunk[i] = 255;
                 }
             }
-            else
+            else {
                 CPLAssert(0);
+            }
         }
         else if( EQUAL(pszResampling,"AVERAGE_BIT2GRAYSCALE_MINISWHITE") )
         {
@@ -1740,10 +1763,11 @@ GDALRegenerateOverviews( GDALRasterBandH hSrcBand,
                         pabyChunk[i] = 255;
                 }
             }
-            else
+            else {
                 CPLAssert(0);
+            }
         }
-        
+
         for( int iOverview = 0; iOverview < nOverviewCount && eErr == CE_None; iOverview++ )
         {
             if( eType == GDT_Byte || eType == GDT_Float32 )

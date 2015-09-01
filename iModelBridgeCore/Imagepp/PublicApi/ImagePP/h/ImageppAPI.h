@@ -2,79 +2,49 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/ImageppAPI.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-//*****************************************************************************
-// hstdcpp.h
-//
-//      Header for HMR C++ standards
-//
-//*****************************************************************************
+
 #pragma once
 
-// Some color space conversion need a Gamma value. Provide the standard default
-// gamma factor for the PC world. (MAC is 1.8)
-#define  DEFAULT_GAMMA_FACTOR   2.2
+#include <Bentley/Bentley.h>
+#include <Bentley/BeAtomic.h>
+#include <ImagePP/h/ExportMacros.h>
+#include <ImagePP/h/HTypes.h>
+#include <ImagePP/h/renew.h>
+#include <ImagePP/h/HArrayAutoPtr.h>
+#include <ImagePP/h/HAutoPtr.h>
+#include <ImagePP/h/ImagePPClassId.h>
 
-// htypes.h is the header for the HMR C standards
-// Including it here allows to call HMR C libraries from HMR C++ code
-#include "HTypes.h"
-#include "renew.h"
-#include "HArrayAutoPtr.h"
-#include "HAutoPtr.h"
-
-// Precompiled Header files list
-#if defined (ANDROID) || defined (__APPLE__)
-
-#   include <fstream>
-#   include <ostream>
-#   include <iostream>
-#   include <memory>
-#   include <vector>
-#   include <list>
-#   include <map>
-#   include <algorithm>
-#   include <deque>
-#   include <set>
-#   include <string>
-#   include <sstream>
-#   include <iosfwd>
-#   include <locale>
-#   include <iterator>
-#   include <iosfwd>
-#   include <utility>
-#   include <stack>
+#include <fstream>
+#include <ostream>
+#include <iostream>
+#include <memory>
+#include <vector>
+#include <list>
+#include <map>
+#include <algorithm>
+#include <deque>
+#include <set>
+#include <string>
+#include <sstream>
+#include <iosfwd>
+#include <locale>
+#include <iterator>
+#include <iosfwd>
+#include <utility>
+#include <stack>
 
 using namespace std;
 
+// General compiler Include files
+#if defined (ANDROID) || defined (__APPLE__)
+
 #elif defined (_WIN32)
-#   include <fstream>
-#   include <ostream>
-#   include <iostream>
-#   include <memory>
-#   include <vector>
-#   include <list>
-#   include <map>
-#   include <algorithm>
-#   include <deque>
-#   include <set>
-#   include <numeric>
 
-#   include <string>
-#   include <sstream>
-#   include <iosfwd>
-#   include <locale>
-#   include <iterator>
-#   include <iosfwd>
-#   include <utility>
-#   include <stack>
+#include <numeric>
 
-// #   include <Winsock2.h>
-// #   include <Winerror.h>
-// #   include <wininet.h>
-
-using namespace std;     // Used by STL with VisualC++ 5.00
 #else
 #   error Unknown compiler - No STL inclusion Standard defined
 #endif
@@ -84,69 +54,6 @@ using namespace std;     // Used by STL with VisualC++ 5.00
 
 // Include after the STL includes.
 #include "HStlStuff.h"
-
-
-// For windows dependant stuff ?????
-#if defined(_WIN32) || defined(WIN32)
-
-#   ifndef NO_STRICT        // Compile in STRICT mode with VC5, it is the default with VC6
-#       ifndef STRICT
-#           define STRICT 1
-#       endif
-#   endif
-
-// #  if !defined(WIN32_LEAN_AND_MEAN)
-// #    define WIN32_LEAN_AND_MEAN
-// #    include "windows.h"
-// #    undef WIN32_LEAN_AND_MEAN
-// #  else
-// #    include "windows.h"
-// #  endif
-
-// We will need _WIN32_WINNT to activate extended COM features... See HRFMacros.h
-// (WINVER is defined by windows.h)
-#  if !defined(_WIN32_WINNT)
-#    if defined(_OBJBASE_H_)
-#      error objbase.h must be included after _WIN32_WINNT is defined
-#    endif
-#    define _WIN32_WINNT WINVER
-#  endif
-
-#endif
-
-
-// DLL support (default values)
-//
-// See in HDllSupport.h for more information
-//
-#define _HDLLNone
-#if !defined (_HDLL_SUPPORT)
-#   define _HDLLu                                  // UtlLibs
-#   define _HDLLw                                  // WinLibs
-#   define _HDLLg                                  // GraLibs
-#   define _HDLLn                                  // NetLibs
-#   define IPPIMAGING_EXPORT
-#endif
-
-// General compiler Include files
-#if defined (ANDROID) || defined (__APPLE__)
-
-// Minimum and maximum macros - These macros are defined in stdlib.h for Windows.
-#define max(a,b)  (((a) > (b)) ? (a) : (b))
-#define min(a,b)  (((a) < (b)) ? (a) : (b))
-
-#elif defined (_WIN32)
-// #   include <conio.h>
-// #   include <direct.h>
-// #   include <io.h>
-// #   include <wtypes.h>
-// #   include <urlmon.h>
-// #   include <initguid.h>
-
-#else
-#   error Unknown compiler - No STL inclusion Standard defined
-#endif
-
 
 #include <ctype.h>
 #include <errno.h>
@@ -170,6 +77,8 @@ using namespace std;     // Used by STL with VisualC++ 5.00
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/BeNumerical.h>
+#include <BeSQLite/L10N.h>
 
 // I++ Include files
 #include "../all/h/ImageppLib.h"
@@ -178,6 +87,59 @@ using namespace std;     // Used by STL with VisualC++ 5.00
 #include "../all/h/HFCBuffer.h"
 #include "../all/h/HFCMatrix.h"
 
+// ///////////////////////////////////////////////////////////////////////////////////////////////////
+// ImagePP types
+// ///////////////////////////////////////////////////////////////////////////////////////////////////
+IMAGEPP_TYPEDEFS(HRAImageBuffer)
+IMAGEPP_REF_COUNTED_PTR(HRAImageBuffer)
+
+IMAGEPP_TYPEDEFS(HRACopyToOptions)
+
+IMAGEPP_TYPEDEFS(HRAImageSurface)
+IMAGEPP_REF_COUNTED_PTR(HRAImageSurface)
+
+IMAGEPP_REF_COUNTED_PTR(HRASampleSurface)
+IMAGEPP_TYPEDEFS(HRASampleN1Surface)
+IMAGEPP_REF_COUNTED_PTR(HRASampleN1Surface)
+IMAGEPP_TYPEDEFS(HRASampleN8Surface)
+IMAGEPP_REF_COUNTED_PTR(HRASampleN8Surface)
+
+IMAGEPP_TYPEDEFS(HRAPacketSurface)
+IMAGEPP_TYPEDEFS(HRAPacketN1Surface)
+IMAGEPP_TYPEDEFS(HRAPacketN8Surface)
+IMAGEPP_TYPEDEFS(HRAPacketCodecRleSurface)
+IMAGEPP_REF_COUNTED_PTR(HRAPacketCodecRleSurface)
+IMAGEPP_TYPEDEFS(HRAPacketRleSurface)
+IMAGEPP_REF_COUNTED_PTR(HRAPacketRleSurface)
+
+IMAGEPP_TYPEDEFS(HRAImageBufferRle)
+IMAGEPP_REF_COUNTED_PTR(HRAImageBufferRle)
+
+IMAGEPP_TYPEDEFS(HRAImageSample)
+IMAGEPP_REF_COUNTED_PTR(HRAImageSample)
+
+IMAGEPP_TYPEDEFS(HRAImageOp)
+IMAGEPP_REF_COUNTED_PTR(HRAImageOp)
+
+IMAGEPP_TYPEDEFS(HRAImageOpShaper)
+IMAGEPP_REF_COUNTED_PTR(HRAImageOpShaper)
+
+IMAGEPP_TYPEDEFS(HRAImageOpPipeLine)
+
+IMAGEPP_TYPEDEFS(ImageNode)
+IMAGEPP_REF_COUNTED_PTR(ImageNode)
+
+IMAGEPP_TYPEDEFS(ImageTransformNode)
+IMAGEPP_REF_COUNTED_PTR(ImageTransformNode)
+
+IMAGEPP_TYPEDEFS(ImageSourceNode)
+IMAGEPP_REF_COUNTED_PTR(ImageSourceNode)
+
+IMAGEPP_TYPEDEFS(ImageSinkNode)
+IMAGEPP_REF_COUNTED_PTR(ImageSinkNode)
+
+IMAGEPP_TYPEDEFS(IImageAllocator)
+IMAGEPP_REF_COUNTED_PTR(ImageAllocatorRef)
 
 
 

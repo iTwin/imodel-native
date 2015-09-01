@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABitmapRLE.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRABitmapRLE
 // ----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRABitmapRLE.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
@@ -23,14 +23,11 @@
 #include <Imagepp/all/h/HRADrawOptions.h>
 #include <Imagepp/all/h/HRAClearOptions.h>
 #include <Imagepp/all/h/HGFMappedSurface.h>
-#include <Imagepp/all/h/HGSBlitter.h>
-#include <Imagepp/all/h/HGSWarper.h>
-#include <Imagepp/all/h/HGSToolbox.h>
 #include <Imagepp/all/h/HGSMemoryRLESurfaceDescriptor.h>
-#include <Imagepp/all/h/HGSEditor.h>
+#include <Imagepp/all/h/HRAEditor.h>
 #include <Imagepp/all/h/HRABitmapEditor.h>
 #include <Imagepp/all/h/HGFScanLines.h>
-
+#include <Imagepp/all/h/HGSRegion.h>
 #include <Imagepp/all/h/HCDCodecHMRRLE1.h>
 #include <Imagepp/all/h/HCDPacketRLE.h>
 #include <Imagepp/all/h/HCDPacket.h>
@@ -44,14 +41,94 @@
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HGFTolerance.h>
 #include <Imagepp/all/h/HRPMessages.h>
+#include <ImagePPInternal/gra/ImageCommon.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
 
-class HRARasterEditor;
+
 
 HPM_REGISTER_CLASS(HRABitmapRLE, HRABitmapBase)
 
 HMG_BEGIN_DUPLEX_MESSAGE_MAP(HRABitmapRLE, HRABitmapBase, HMG_NO_NEED_COHERENCE_SECURITY)
 HMG_REGISTER_MESSAGE(HRABitmapRLE, HRPPaletteChangedMsg, NotifyPaletteChanged)
 HMG_END_MESSAGE_MAP()
+
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+struct BitmapRleSourceNode : ImageSourceNode
+{
+public:
+    static RefCountedPtr<BitmapRleSourceNode> Create(HRABitmapRLE& bitmap, HFCPtr<HGF2DCoordSys>& pPhysicalCoordSys, HFCPtr<HRPPixelType>& pPixelType)
+        {
+        return new BitmapRleSourceNode(bitmap, pPhysicalCoordSys, pPixelType);
+        }
+
+protected:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  07/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    BitmapRleSourceNode(HRABitmapRLE& bitmap, HFCPtr<HGF2DCoordSys>& pPhysicalCoordSys, HFCPtr<HRPPixelType>& pPixelType)
+        :ImageSourceNode(pPixelType),    
+         m_bitmap(bitmap)
+        {
+        BeAssert(pPixelType->IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID) || pPixelType->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID));
+
+        uint64_t width64, height64;
+        m_bitmap.GetSize(&width64, &height64);
+        m_physicalExtent = HGF2DExtent(0, 0, (double)width64, (double)height64, pPhysicalCoordSys);
+
+        BeAssert(width64 <= ULONG_MAX && height64 <= ULONG_MAX);
+        m_width = (uint32_t)width64;
+        m_height = (uint32_t)height64;
+        }
+
+    virtual ~BitmapRleSourceNode(){}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual ImagePPStatus _GetRegion(HRAImageSurfacePtr& pOutSurface, PixelOffset64& outOffset, HFCInclusiveGrid const& region, IImageAllocatorR allocator) override
+        {
+        // Bitmap do not care about the asked region.  It returns a ref to itself, without copying memory.  If extra clamping pixels
+        // are required it is assumed that the transformNode sampler will do it.
+        outOffset.x = outOffset.y = 0;
+
+        HRAPacketRleSurfacePtr pSurface = HRAPacketRleSurface::CreateSurface(m_width, m_height, GetPixelType(), m_height);
+
+        HFCPtr<HRABitmapRLE> pBitmapRle(&m_bitmap); // HRABitmapRLE is always an HFCPtr.
+        pSurface->AppendStrip(pBitmapRle);
+
+        pOutSurface = pSurface;
+        
+        return IMAGEPP_STATUS_Success;
+        }      
+
+    virtual HGF2DExtent const& _GetPhysicalExtent() const override { return m_physicalExtent; }
+    virtual HFCPtr<HGF2DCoordSys>& _GetPhysicalCoordSys() override { return const_cast<HFCPtr<HGF2DCoordSys>&>(m_physicalExtent.GetCoordSys()); }
+    
+private:
+    HRABitmapRLE&  m_bitmap;
+    HGF2DExtent m_physicalExtent;
+    uint32_t    m_width;
+    uint32_t    m_height;
+    size_t      m_bytesPerRow;
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCPtr<HRABitmapRLE> HRABitmapRLE::Create(uint32_t                       pi_WidthPixels,
+                                          uint32_t                       pi_HeightPixels,
+                                          const HGF2DTransfoModel*       pi_pModelCSp_CSl,
+                                          const HFCPtr<HGF2DCoordSys>&   pi_rpLogicalCoordSys,
+                                          const HFCPtr<HRPPixelType>&    pi_rpPixel,
+                                          bool                           pi_Resizable)
+    {
+    return new HRABitmapRLE(pi_WidthPixels, pi_HeightPixels, pi_pModelCSp_CSl, pi_rpLogicalCoordSys, pi_rpPixel, pi_Resizable);
+    }
 
 //-----------------------------------------------------------------------------
 // public
@@ -73,7 +150,6 @@ HRABitmapRLE::HRABitmapRLE(uint32_t                       pi_WidthPixels,
                            const HGF2DTransfoModel*       pi_pModelCSp_CSl,
                            const HFCPtr<HGF2DCoordSys>&   pi_rpLogicalCoordSys,
                            const HFCPtr<HRPPixelType>&    pi_rpPixel,
-                           HRABitmapRLE::SLO              pi_SLO,
                            bool                          pi_Resizable)
     : HRABitmapBase(pi_WidthPixels,
                     pi_HeightPixels,
@@ -81,14 +157,16 @@ HRABitmapRLE::HRABitmapRLE(uint32_t                       pi_WidthPixels,
                     pi_rpLogicalCoordSys,
                     pi_rpPixel,
                     8,
-                    pi_SLO,
                     pi_Resizable)
     {
     HPRECONDITION(pi_rpPixel != 0);
     HPRECONDITION(pi_rpPixel->IsCompatibleWith(HRPPixelTypeI1R8G8B8::CLASS_ID)   ||
-                  pi_rpPixel->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8::CLASS_ID) ||
-                  pi_rpPixel->IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID)   ||
-                  pi_rpPixel->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID));
+                  pi_rpPixel->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8::CLASS_ID));
+
+// We should not create HRABitmapRLE with the RLE pixelType.
+//                                                                                    ||
+//                  pi_rpPixel->IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID)   ||
+//                  pi_rpPixel->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID));
 
     m_pPacketRLE = new HCDPacketRLE(pi_WidthPixels, pi_HeightPixels);
     }
@@ -111,7 +189,7 @@ HRABitmapRLE::~HRABitmapRLE()
 // public
 // Clone - Store and Log are not used.
 //-----------------------------------------------------------------------------
-HRARaster* HRABitmapRLE::Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog) const
+HFCPtr<HRARaster> HRABitmapRLE::Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog) const
     {
     return new HRABitmapRLE(*this);
     }
@@ -178,14 +256,13 @@ void HRABitmapRLE::Clear(const HRAClearOptions& pi_rOptions)
 
         HASSERT(pEditor != 0);
 
-        HFCPtr<HGSEditor> pSurfaceEditor = pEditor->GetSurfaceEditor();
+        HRAEditor* pSurfaceEditor = pEditor->GetSurfaceEditor();
 
         HPRECONDITION(pSurfaceEditor != 0);
-        HPRECONDITION(pSurfaceEditor->GetSurface() != 0);
-        HPRECONDITION(pSurfaceEditor->GetSurface()->GetSurfaceDescriptor() != 0);
-        HPRECONDITION(pSurfaceEditor->GetSurface()->GetSurfaceDescriptor()->IsCompatibleWith(HGSMemoryBaseSurfaceDescriptor::CLASS_ID));
+        HPRECONDITION(pSurfaceEditor->GetSurface().GetSurfaceDescriptor() != 0);
+        HPRECONDITION(pSurfaceEditor->GetSurface().GetSurfaceDescriptor()->IsCompatibleWith(HGSMemoryBaseSurfaceDescriptor::CLASS_ID));
 
-        HFCPtr<HRPPixelType> pPixelTypeRLE1 = ((const HFCPtr<HGSMemoryBaseSurfaceDescriptor>&)pSurfaceEditor->GetSurface()->GetSurfaceDescriptor())->GetPixelType();
+        HFCPtr<HRPPixelType> pPixelTypeRLE1 = ((const HFCPtr<HGSMemoryBaseSurfaceDescriptor>&)pSurfaceEditor->GetSurface().GetSurfaceDescriptor())->GetPixelType();
 
         // We assume the converter will return RLE run
         HPOSTCONDITION(pPixelTypeRLE1 != 0 &&
@@ -207,11 +284,6 @@ void HRABitmapRLE::Clear(const HRAClearOptions& pi_rOptions)
 
     DecrementRef();
     }
-
-
-
-
-
 
 //-----------------------------------------------------------------------------
 // protected
@@ -250,24 +322,24 @@ HRABitmapRLE& HRABitmapRLE::operator=(const HRABitmapRLE& pi_rBitmap)
 //-----------------------------------------------------------------------------
 HRARasterEditor* HRABitmapRLE::CreateEditor (HFCAccessMode pi_Mode)
     {
-    return (HRARasterEditor*)new HRABitmapEditor(this, pi_Mode);
+    return new HRABitmapEditor(this, pi_Mode);
     }
 
 HRARasterEditor* HRABitmapRLE::CreateEditor(const HVEShape& pi_rShape,
                                             HFCAccessMode   pi_Mode)
     {
-    return (HRARasterEditor*)new HRABitmapEditor(this, pi_rShape, pi_Mode);
+    return new HRABitmapEditor(this, pi_rShape, pi_Mode);
     }
 
 HRARasterEditor* HRABitmapRLE::CreateEditor(const HGFScanLines& pi_rScanLines,
                                             HFCAccessMode       pi_Mode)
     {
-    return (HRARasterEditor*)new HRABitmapEditor(this, pi_rScanLines, pi_Mode);
+    return new HRABitmapEditor(this, pi_rScanLines, pi_Mode);
     }
 
 HRARasterEditor* HRABitmapRLE::CreateEditorUnShaped (HFCAccessMode pi_Mode)
     {
-    return (HRARasterEditor*)new HRABitmapEditor(this, pi_Mode);
+    return new HRABitmapEditor(this, pi_Mode);
     }
 
 //-----------------------------------------------------------------------------
@@ -340,19 +412,19 @@ void HRABitmapRLE::ComputeHistogram(HRAHistogramOptions* pio_pOptions,
                 Byte                    RGBValue[3];
 
                 // LightnessValue *= Scale;
-                // LightnessValue  = min(LightnessValue, MaxFrequencyValue);
+                // LightnessValue  = MIN(LightnessValue, MaxFrequencyValue);
                 // pHistogram->IncrementEntryCount((UInt32)LightnessValue, 1, 0);
                 HGFLightnessColorSpace ColorSpaceConverter(DEFAULT_GAMMA_FACTOR, 8);
 
                 // Index 0
                 pConverter->Convert(pSrcPixelType->GetPalette().GetCompositeValue(0), RGBValue);
                 double LightnessValue = ColorSpaceConverter.ConvertFromRGB(RGBValue[0],RGBValue[1],RGBValue[2]);
-                pHistogram->IncrementEntryCount((uint32_t)(min(LightnessValue * Scale, MaxFrequencyValue)), NativeHisto.GetHistogram()->GetEntryCount(0, 0), 0);
+                pHistogram->IncrementEntryCount((uint32_t)(MIN(LightnessValue * Scale, MaxFrequencyValue)), NativeHisto.GetHistogram()->GetEntryCount(0, 0), 0);
 
                 // Index 1
                 pConverter->Convert(pSrcPixelType->GetPalette().GetCompositeValue(1), RGBValue);
                 LightnessValue = ColorSpaceConverter.ConvertFromRGB(RGBValue[0],RGBValue[1],RGBValue[2]);
-                pHistogram->IncrementEntryCount((uint32_t)(min(LightnessValue * Scale, MaxFrequencyValue)), NativeHisto.GetHistogram()->GetEntryCount(1, 0), 0);
+                pHistogram->IncrementEntryCount((uint32_t)(MIN(LightnessValue * Scale, MaxFrequencyValue)), NativeHisto.GetHistogram()->GetEntryCount(1, 0), 0);
                 }
             else if(pio_pOptions->GetSamplingColorSpace() == HRPHistogram::GRAYSCALE)
                 {
@@ -592,262 +664,216 @@ const HFCPtr<HCDPacketRLE>& HRABitmapRLE::GetPacket() const
 // public
 // Draw
 //-----------------------------------------------------------------------------
-void HRABitmapRLE::PreDraw(HRADrawOptions* pio_pOptions)
+void HRABitmapRLE::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
     {
-    //Not Implemented
-    //  HASSERT(0);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Draw
-//-----------------------------------------------------------------------------
-void HRABitmapRLE::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const
-    {
-    HPRECONDITION(pio_pSurface != 0);
-
     // If the Raster is empty, skip it
-    if (!IsEmpty())
+    if (IsEmpty())
+        return;
+
+    HRADrawOptions Options(pi_Options);
+
+    // set the effective coordsys
+    if (Options.GetReplacingCoordSys() == 0)
+        // case when there is no replacing coordsys
+        Options.SetReplacingCoordSys(GetCoordSys());
+
+    // get the destination descriptor
+    HFCPtr<HGSSurfaceDescriptor> pDstDescriptor(pio_destSurface.GetSurfaceDescriptor());
+
+    //
+    // Compute the effective clip shape, and give it
+    // to the destination surface.
+    //
+    HFCPtr<HVEShape> pClipShape;
+    if (Options.GetShape() != 0)
+        pClipShape = new HVEShape(*Options.GetShape());
+    else
+        pClipShape = new HVEShape(*GetEffectiveShape());
+
+    pClipShape->ChangeCoordSys(GetCoordSys());
+    pClipShape->SetCoordSys(Options.GetReplacingCoordSys());
+    pClipShape->ChangeCoordSys(pio_destSurface.GetSurfaceCoordSys());
+
+    // store the old clip region
+    HFCPtr<HGSRegion> pOldClipRegion(pio_destSurface.GetRegion());
+
+    if (pOldClipRegion != 0)
         {
-        HRADrawOptions Options(pi_pOptions);
+        // construct a shape from the clip region
+        HFCPtr<HVEShape> pSurfaceShape(pOldClipRegion->GetShape());
 
-        // set the effective coordsys
-        if (Options.GetReplacingCoordSys() == 0)
-            // case when there is no replacing coordsys
-            Options.SetReplacingCoordSys(GetCoordSys());
+        // if yes, intersect it with the destination
+        pClipShape->Intersect(*pSurfaceShape);
+        }
+    else
+        {
+        // Create a rectangular clip region to stay
+        // inside the destination surface.
+        HVEShape DestSurfaceShape(0.0, 0.0, pDstDescriptor->GetWidth(), pDstDescriptor->GetHeight(), pio_destSurface.GetSurfaceCoordSys());
+        HFCPtr<HGFTolerance> pTol (new HGFTolerance(GetSurfaceDescriptor()->GetWidth() / 2.0 - DEFAULT_PIXEL_TOLERANCE,
+                                                    GetSurfaceDescriptor()->GetHeight() / 2.0 - DEFAULT_PIXEL_TOLERANCE,
+                                                    GetSurfaceDescriptor()->GetWidth() / 2.0 + DEFAULT_PIXEL_TOLERANCE,
+                                                    GetSurfaceDescriptor()->GetHeight() / 2.0 + DEFAULT_PIXEL_TOLERANCE,
+                                                    DestSurfaceShape.GetCoordSys()));
 
-        // get the destination descriptor
-        HFCPtr<HGSSurfaceDescriptor> pDstDescriptor(pio_pSurface->GetSurfaceDescriptor());
+        DestSurfaceShape.SetStrokeTolerance(pTol);
+
+        pClipShape->Intersect(DestSurfaceShape);
+        }
+
+    // Not sure it is actually needed but just in case. Original code from HRABitmap.
+    if ((m_pPacketRLE->GetCodec() != 0) /*&&
+        m_pPacketRLE->GetCodec()->IsCompatibleWith(HCDCodecImage::CLASS_ID)*/)
+        {
+        // SOMETIMES. THE SOURCE COMPRESSED DATA IS INCOMPLETE!, WE MUST CLIP
+        HFCPtr<HCDCodecHMRRLE1> const& pCodecImage = m_pPacketRLE->GetCodec();
+
+        uint64_t WidthPixels;
+        uint64_t HeightPixels;
+        GetSize(&WidthPixels, &HeightPixels);
+
+        if (pCodecImage->GetHeight() < HeightPixels)
+            {
+            HFCPtr<HVEShape> pShape(new HVEShape(0, 0, static_cast<double>(pCodecImage->GetWidth()),static_cast<double>(pCodecImage->GetHeight()),  GetPhysicalCoordSys()));
+            pShape->ChangeCoordSys(GetCoordSys());
+            pShape->SetCoordSys(Options.GetReplacingCoordSys());
+            pShape->ChangeCoordSys(pio_destSurface.GetSurfaceCoordSys());
+
+            pClipShape->Intersect(*pShape);
+            }
+        }
+
+    if (!pClipShape->IsEmpty())
+        {
+        // test if this is a simple rectangle covering the entire surface
+        bool Clip = true;
+        if(pClipShape->GetShapePtr()->GetClassID() == HVE2DRectangle::CLASS_ID)
+            {
+            HGF2DExtent Extent(pClipShape->GetShapePtr()->GetExtent());
+
+            // if yes, do not clip
+            if(Extent.GetWidth() >= pDstDescriptor->GetWidth() && Extent.GetHeight() >= pDstDescriptor->GetHeight())
+                Clip = false;
+            }
+        if(Clip)
+            {
+            HFCPtr<HGSRegion> pTheRegion(new HGSRegion(pClipShape, pClipShape->GetCoordSys()));
+            pio_destSurface.SetRegion(pTheRegion);
+            }
 
         //
-        // Compute the effective clip shape, and give it
-        // to the destination surface.
+        // Verify / modify certain options
         //
-        HFCPtr<HVEShape> pClipShape;
-        if (Options.GetShape() != 0)
-            pClipShape = new HVEShape(*Options.GetShape());
-        else
-            pClipShape = new HVEShape(*GetEffectiveShape());
 
-        pClipShape->ChangeCoordSys(GetCoordSys());
-        pClipShape->SetCoordSys(Options.GetReplacingCoordSys());
-        pClipShape->ChangeCoordSys(pio_pSurface->GetSurfaceCoordSys());
-
-        // store the old clip region
-        HFCPtr<HGSRegion> pOldClipRegion(static_cast<HGSRegion*>(pio_pSurface->GetOption(HGSRegion::CLASS_ID).GetPtr()));
-
-        if (pOldClipRegion != 0)
+        // set the effective pixel type
+        bool ReplacingPixelType;
+        HFCPtr<HRPPixelType> pEffectivePixelType;
+        if (Options.GetReplacingPixelType() != 0)
             {
-            // construct a shape from the clip region
-            HFCPtr<HVEShape> pSurfaceShape(pOldClipRegion->GetShape());
-
-            // if yes, intersect it with the destination
-            pClipShape->Intersect(*pSurfaceShape);
+            pEffectivePixelType = Options.GetReplacingPixelType();
+            ReplacingPixelType = true;
             }
         else
             {
-            // Create a rectangular clip region to stay
-            // inside the destination surface.
-            HVEShape DestSurfaceShape(0.0, 0.0, pDstDescriptor->GetWidth(), pDstDescriptor->GetHeight(), pio_pSurface->GetSurfaceCoordSys());
-            HFCPtr<HGFTolerance> pTol (new HGFTolerance(GetSurfaceDescriptor()->GetWidth() / 2.0 - DEFAULT_PIXEL_TOLERANCE,
-                                                        GetSurfaceDescriptor()->GetHeight() / 2.0 - DEFAULT_PIXEL_TOLERANCE,
-                                                        GetSurfaceDescriptor()->GetWidth() / 2.0 + DEFAULT_PIXEL_TOLERANCE,
-                                                        GetSurfaceDescriptor()->GetHeight() / 2.0 + DEFAULT_PIXEL_TOLERANCE,
-                                                        DestSurfaceShape.GetCoordSys()));
-
-            DestSurfaceShape.SetStrokeTolerance(pTol);
-
-            pClipShape->Intersect(DestSurfaceShape);
+            pEffectivePixelType = GetPixelType();
+            ReplacingPixelType = false;
             }
 
-        // Not sure it is actually needed but just in case. Original code from HRABitmap.
-        if ((m_pPacketRLE->GetCodec() != 0) /*&&
-            m_pPacketRLE->GetCodec()->IsCompatibleWith(HCDCodecImage::CLASS_ID)*/)
+        if (ReplacingPixelType)
+            Options.SetReplacingPixelType(pEffectivePixelType);
+
+        // set the effective alpha blend
+        if (Options.ApplyAlphaBlend() &&
+            pEffectivePixelType->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) == HRPChannelType::FREE)
             {
-            // SOMETIMES. THE SOURCE COMPRESSED DATA IS INCOMPLETE!, WE MUST CLIP
-            HFCPtr<HCDCodecHMRRLE1> const& pCodecImage = m_pPacketRLE->GetCodec();
-
-            uint64_t WidthPixels;
-            uint64_t HeightPixels;
-            GetSize(&WidthPixels, &HeightPixels);
-
-            if (pCodecImage->GetHeight() < HeightPixels)
-                {
-                HFCPtr<HVEShape> pShape(new HVEShape(0, 0, static_cast<double>(pCodecImage->GetWidth()),static_cast<double>(pCodecImage->GetHeight()),  GetPhysicalCoordSys()));
-                pShape->ChangeCoordSys(GetCoordSys());
-                pShape->SetCoordSys(Options.GetReplacingCoordSys());
-                pShape->ChangeCoordSys(pio_pSurface->GetSurfaceCoordSys());
-
-                pClipShape->Intersect(*pShape);
-                }
+            Options.SetAlphaBlend(false);
             }
 
-        if (!pClipShape->IsEmpty())
+        //
+        // Do the pixel copy, using the appropriate tool
+        //
+
+        // Model Physical --> Physical
+        // Get the model between model Physical Destination CoordSys to
+        //                             Physical Source CoordSys
+        // get the transfo model between the low level and high level
+        HFCPtr<HGF2DTransfoModel> pTransfoModel = pio_destSurface.GetSurfaceCoordSys()->GetTransfoModelTo (Options.GetReplacingCoordSys());
+
+        if (GetTransfoModel() != 0)
             {
-            // test if this is a simple rectangle covering the entire surface
-            bool Clip = true;
-            if(pClipShape->GetShapePtr()->GetClassID() == HVE2DRectangle::CLASS_ID)
-                {
-                HGF2DExtent Extent(pClipShape->GetShapePtr()->GetExtent());
-
-                // if yes, do not clip
-                if(Extent.GetWidth() >= pDstDescriptor->GetWidth() && Extent.GetHeight() >= pDstDescriptor->GetHeight())
-                    Clip = false;
-                }
-            if(Clip)
-                {
-                HFCPtr<HGSRegion> pTheRegion(new HGSRegion(pClipShape, pClipShape->GetCoordSys()));
-                pio_pSurface->SetOption((const HFCPtr<HGSSurfaceOption>&)pTheRegion);
-                }
-
-            //
-            // Verify / modify certain options
-            //
-
-            // set the effective pixel type
-            bool ReplacingPixelType;
-            HFCPtr<HRPPixelType> pEffectivePixelType;
-            if (Options.GetReplacingPixelType() != 0)
-                {
-                pEffectivePixelType = Options.GetReplacingPixelType();
-                ReplacingPixelType = true;
-                }
-            else
-                {
-                pEffectivePixelType = GetPixelType();
-                ReplacingPixelType = false;
-                }
-
-            if (ReplacingPixelType)
-                Options.SetReplacingPixelType(pEffectivePixelType);
-
-            // set the effective alpha blend
-            if (Options.ApplyAlphaBlend() &&
-                pEffectivePixelType->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) == HRPChannelType::FREE)
-                {
-                Options.SetAlphaBlend(false);
-                }
-
-            //
-            // Do the pixel copy, using the appropriate tool
-            //
-
-            // Model Physical --> Physical
-            // Get the model between model Physical Destination CoordSys to
-            //                             Physical Source CoordSys
-            // get the transfo model between the low level and high level
-            HFCPtr<HGF2DTransfoModel> pTransfoModel = pio_pSurface->GetSurfaceCoordSys()->GetTransfoModelTo (Options.GetReplacingCoordSys());
-
-            if (GetTransfoModel() != 0)
-                {
-                pTransfoModel = pTransfoModel->ComposeInverseWithInverseOf(*GetTransfoModel());
-                }
-
-            bool CanStretch = pTransfoModel->IsStretchable(HGLOBAL_EPSILON);
-            if (CanStretch)
-                {
-                // Extract stretching parameters
-                double StretchX;
-                double StretchY;
-                HGF2DDisplacement Translation;
-                pTransfoModel->GetStretchParams(&StretchX,
-                                                &StretchY,
-                                                &Translation);
-
-                // create a real stretch model
-                pTransfoModel = new HGF2DStretch(Translation,
-                                                 StretchX,
-                                                 StretchY);
-
-                }
-
-            if (CanStretch)
-                StretchWithHGS(pio_pSurface, &Options, pTransfoModel);
-            else
-                WarpWithHGS(pio_pSurface, &Options, pTransfoModel);
-
-            // set the old clip region back
-            if (Clip)
-                {
-                if (pOldClipRegion != 0)
-                    pio_pSurface->SetOption((const HFCPtr<HGSSurfaceOption>&)pOldClipRegion);
-                else
-                    pio_pSurface->RemoveOption(HGSRegion::CLASS_ID);
-                }
+            pTransfoModel = pTransfoModel->ComposeInverseWithInverseOf(*GetTransfoModel());
             }
+
+        bool CanStretch = pTransfoModel->IsStretchable(HGLOBAL_EPSILON);
+        if (CanStretch)
+            {
+            // Extract stretching parameters
+            double StretchX;
+            double StretchY;
+            HGF2DDisplacement Translation;
+            pTransfoModel->GetStretchParams(&StretchX,
+                                            &StretchY,
+                                            &Translation);
+
+            // create a real stretch model
+            pTransfoModel = new HGF2DStretch(Translation,
+                                                StretchX,
+                                                StretchY);
+
+            }
+
+        if (CanStretch)
+            StretchWithHGS(pio_destSurface, Options, pTransfoModel);
+        else
+            WarpWithHGS(pio_destSurface, Options, pTransfoModel);
+
+        // set the old clip region back
+        if (Clip)
+            pio_destSurface.SetRegion(pOldClipRegion);
         }
     }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-void HRABitmapRLE::StretchWithHGS(HGFMappedSurface* pio_pSurface,
-                                  const HRADrawOptions* pi_pOptions,
-                                  const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Stephane.Poulin                 07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRABitmapRLE::_BuildCopyToContext(ImageTransformNodeR parentNode, HRACopyToOptionsCR options)
     {
-    HPRECONDITION(pi_rpTransfoModel->IsCompatibleWith(HGF2DStretch::CLASS_ID));
+    // Get the effective logical and physical coordsys
+    HFCPtr<HGF2DCoordSys> pEffLogCS(GetCoordSys());
+    HFCPtr<HGF2DCoordSys> pEffPhyCS(GetPhysicalCoordSys());
+    if (NULL != options.GetReplacingCoordSys().GetPtr())
+        {
+        pEffLogCS = options.GetReplacingCoordSys();
 
-    // create the toolboxes with the editors
-    HFCPtr<HGSBlitter> pDstBlitter(new HGSBlitter());
-    pDstBlitter->AddAttribute(HGSResamplingAttribute(pi_pOptions->GetResamplingMode()));
-    if(pi_pOptions->ApplyAlphaBlend())
-        pDstBlitter->AddAttribute(HGSColorConversionAttribute(HGSColorConversion::COMPOSE));
-    if (pi_pOptions->ApplyGridShape())
-        pDstBlitter->AddAttribute(HGSScanlinesAttribute(HGSScanlineMethod(HGSScanlineMethod::GRID)));
-    if (pi_pOptions->GetOverviewMode())
-        pDstBlitter->AddAttribute(HGSPurposeAttribute(HGSPurpose(HGSPurpose::OVERVIEWS)));
+        HFCPtr<HGF2DTransfoModel> pPhysicalToLogical(GetPhysicalCoordSys()->GetTransfoModelTo(GetCoordSys()));
+        HFCPtr<HGF2DTransfoModel> pSimplModel(pPhysicalToLogical->CreateSimplifiedModel());
+        if (NULL != pSimplModel)
+            pPhysicalToLogical = pSimplModel;
 
-    HGSToolbox DstToolbox((HFCPtr<HGSGraphicTool>&)pDstBlitter);
+        pEffPhyCS = new HGF2DCoordSys(*pPhysicalToLogical, pEffLogCS);
+        }
 
-    // create the descriptor for the source
-    HFCPtr<HRPPixelType> PixelReplace(pi_pOptions->GetReplacingPixelType());
-    HFCPtr<HGSSurfaceDescriptor> pSrcDescriptor(GetSurfaceDescriptor(&PixelReplace));
+    //Image Node and Image sample use the pixel type to differentiate between 1bit and Rle data. Unlike HRABitmap[RLE] that use pixeltype and codec.
+    HFCPtr<HRPPixelType> pRlePixelType = ImageNode::TransformToRleEquivalent(options.GetReplacingPixelType() != NULL ? options.GetReplacingPixelType() : GetPixelType());
+    if (pRlePixelType == NULL)
+        {
+        BeAssert(!"Incompatible replacing pixelType");
+        return COPYFROM_STATUS_IncompatiblePixelTypeReplacer;
+        }
 
-    // test if the destination surface is compatible, otherwise HASSERT
-    HAutoPtr<HGSSurfaceCapabilities> pSrcRequiredSurfaceCapabilities(pSrcDescriptor->GetRequiredSurfaceCapabilities());
-    pio_pSurface->RequestCompatibility(&DstToolbox, pSrcRequiredSurfaceCapabilities);
+    // Validate that we intersect with copyRegion.
+    HDEBUGCODE
+        (
+        HVEShape myPhysicalExtent(GetPhysicalExtent());
+        myPhysicalExtent.SetCoordSys(pEffPhyCS);
 
-    // create the destination surfaces
-    HFCPtr<HGSSurface> pSrcSurface = pio_pSurface->CreateCompatibleSurface(pSrcDescriptor);
+        BeAssert(options.GetShape()->HasIntersect(myPhysicalExtent));
+    );
 
-    // set the surfaces on the toolboxes
-    DstToolbox.SetFor(pio_pSurface);
-
-    pDstBlitter->BlitFrom(pSrcSurface, *pi_rpTransfoModel, pi_pOptions->GetTransaction());
+    RefCountedPtr<BitmapRleSourceNode> pSource = BitmapRleSourceNode::Create(*this, pEffPhyCS, pRlePixelType);
+     
+    return parentNode.LinkTo(*pSource);
     }
-
-//-----------------------------------------------------------------------------
-// WarpWithHGS
-//-----------------------------------------------------------------------------
-void HRABitmapRLE::WarpWithHGS(HGFMappedSurface*                   pio_pSurface,
-                               const HRADrawOptions*               pi_pOptions,
-                               const HFCPtr<HGF2DTransfoModel>&    pi_rpTransfoModel) const
-    {
-    // create the toolboxes with the editors
-    HFCPtr<HGSWarper> pDstWarper(new HGSWarper());
-    pDstWarper->AddAttribute(HGSResamplingAttribute(pi_pOptions->GetResamplingMode()));
-    if(pi_pOptions->ApplyAlphaBlend())
-        pDstWarper->AddAttribute(HGSColorConversionAttribute(HGSColorConversion::COMPOSE));
-    if (pi_pOptions->ApplyGridShape())
-        pDstWarper->AddAttribute(HGSScanlinesAttribute(HGSScanlineMethod(HGSScanlineMethod::GRID)));
-    HGSToolbox DstToolbox((HFCPtr<HGSGraphicTool>&)pDstWarper);
-
-    // create the descriptor for the source
-    HFCPtr<HRPPixelType> PixelReplace(pi_pOptions->GetReplacingPixelType());
-    HFCPtr<HGSSurfaceDescriptor> pSrcDescriptor(GetSurfaceDescriptor(&PixelReplace));
-
-    // test if the destination surface is compatible, otherwise HASSERT
-    HAutoPtr<HGSSurfaceCapabilities> pSrcRequiredSurfaceCapabilities(pSrcDescriptor->GetRequiredSurfaceCapabilities());
-    pio_pSurface->RequestCompatibility(&DstToolbox, pSrcRequiredSurfaceCapabilities);
-
-    // create the destination surfaces
-    HFCPtr<HGSSurface> pSrcSurface = pio_pSurface->CreateCompatibleSurface(pSrcDescriptor);
-
-    // set the surfaces on the toolboxes
-    DstToolbox.SetFor(pio_pSurface);
-
-    pDstWarper->WarpFrom(pSrcSurface, *pi_rpTransfoModel, pi_pOptions->GetTransaction());
-    }
-
 
 //-----------------------------------------------------------------------------
 // private
@@ -911,7 +937,7 @@ HFCPtr<HGSSurfaceDescriptor> HRABitmapRLE::CreateSurfaceDescriptor(const HFCPtr<
                                           (uint32_t)Height,
                                           pSrcPixelType,
                                           m_pPacketRLE,
-                                          (HGFSLO)m_SLO));
+                                          HGFSLO::HGF_UPPER_LEFT_HORIZONTAL));
 
     pDescriptor->SetOffsets(m_XPosInRaster,
                             m_YPosInRaster);
@@ -939,6 +965,55 @@ bool HRABitmapRLE::NotifyPaletteChanged(const HMGMessage& pi_rMessage)
 
     // otherwise, propagate the message
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Stephane.Poulin                 11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+HRABitmapRLE* HRABitmapRLE::_AsHRABitmapRleP()  
+    {
+    return this; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Stephane.Poulin                 11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCPtr<HCDPacket> HRABitmapRLE::GetContiguousBuffer() const
+    {
+    if (NULL == m_pPacketRLE.GetPtr())
+        return NULL;
+
+    size_t bufSize = m_pPacketRLE->GetBufferSize();
+    HArrayAutoPtr<Byte> pContiguousBuffer(new Byte[bufSize]);
+
+    if (NULL == pContiguousBuffer)
+        return NULL;
+
+    HFCPtr<HCDCodecHMRRLE1> pCodec = new HCDCodecHMRRLE1;
+    if (NULL == pCodec.GetPtr())
+        return NULL;
+
+    // Line indexesTable is not enabled
+    BeAssert(false == pCodec->HasLineIndexesTable());
+
+    HFCPtr<HCDPacket> pPacket(new HCDPacket(pCodec.GetPtr(), pContiguousBuffer.release(), bufSize, bufSize));
+    if (NULL == pPacket.GetPtr())
+        return NULL;
+
+    pPacket->SetBufferOwnership(true);
+
+    uint64_t width, height;
+    GetSize(&width, &height);
+    size_t pos = 0;
+    Byte* pDst = pPacket->GetBufferAddress();
+    // Make contiguous buffer
+    for (uint32_t line = 0; line < height; ++line)
+        {
+        memcpy(&pDst[pos], m_pPacketRLE->GetLineBuffer(line), m_pPacketRLE->GetLineDataSize(line));
+        pos += m_pPacketRLE->GetLineDataSize(line);
+        }
+
+    return pPacket;
     }
 
 //-----------------------------------------------------------------------------
@@ -1001,7 +1076,7 @@ void HRABitmapRLE::ComputeHistogramRLE(HRAHistogramOptions* pio_pOptions)
 
                 if (PixelFromRun != 0)
                     {
-                    uint32_t CurrentRunLen = (uint32_t)min(PixelFromRun, RunLen);
+                    uint32_t CurrentRunLen = (uint32_t)MIN(PixelFromRun, RunLen);
                     pio_pOptions->GetHistogram()->IncrementEntryCount((RunState ? 1 : 0), CurrentRunLen);
 
                     RunLen -= CurrentRunLen;
@@ -1078,4 +1153,112 @@ bool HRABitmapRLE::IsEmpty() const
 // ----------------------------------------------------------------------------
 void HRABitmapRLE::DeepDelete()
     {
+    }
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+template<typename SinkNode_T>
+struct BitmapImageSurfaceIterator : public ImageSurfaceIterator
+{
+public:
+    BitmapImageSurfaceIterator(SinkNode_T& sink, HFCInclusiveGrid const& grid)
+        :m_bitmap(sink.GetBitmap()),
+         m_grid(grid)
+        {
+        HRAPacketRleSurfacePtr pSurface = HRAPacketRleSurface::CreateSurface(sink.GetWidth(), sink.GetHeight(), sink.GetPixelType(), sink.GetHeight());
+        HFCPtr<HRABitmapRLE> pBitmapRle(&m_bitmap); // HRABitmapRLE is always an HFCPtr.
+        pSurface->AppendStrip(pBitmapRle);
+
+        SetCurrent(*pSurface, PixelOffset64(0, 0));
+        }
+
+    virtual ~BitmapImageSurfaceIterator()
+        {
+        HVEShape rect((double)m_grid.GetXMin(), (double)m_grid.GetYMin(), (double)m_grid.GetXMax()+ 1.0, (double)m_grid.GetYMax()+ 1.0, m_bitmap.GetPhysicalCoordSys());
+        m_bitmap.Updated(&rect);
+        }
+    
+    virtual bool _Next() override {Invalidate(); return false;}
+
+    HRABitmapRLE& m_bitmap;
+    HFCInclusiveGrid m_grid;
+};
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+struct BitmapRleSinkNode : public ImageSinkNode
+{
+public:
+    typedef BitmapImageSurfaceIterator<BitmapRleSinkNode> Iterator;
+
+    static ImageSinkNodePtr Create(HRABitmapRLE& raster, HVEShape const& sinkShape, HFCPtr<HGF2DCoordSys> pPhysicalCoordSys, HFCPtr<HRPPixelType>& pPixelType)
+        {
+        uint64_t width64, height64;
+        raster.GetSize(&width64, &height64);
+        return new BitmapRleSinkNode(raster, sinkShape, pPixelType, HGF2DExtent(0, 0, (double)width64, (double)height64, pPhysicalCoordSys));
+        }
+
+    HRABitmapRLE& GetBitmap() { return m_raster; }
+    uint32_t GetWidth() const { return m_width; }
+    uint32_t GetHeight() const { return m_height; }
+
+protected:
+    BitmapRleSinkNode(HRABitmapRLE& raster, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pPixelType, HGF2DExtent const& physicalExtent)
+        :ImageSinkNode(sinkShape, pPixelType, physicalExtent),
+        m_raster(raster)
+        {
+        BeAssert(pPixelType->IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID) || pPixelType->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID));
+
+        uint64_t width64, height64;
+        m_raster.GetSize(&width64, &height64);
+        m_width = (uint32_t)width64;
+        m_height = (uint32_t)height64;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  10/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual ImageSurfaceIterator* _GetImageSurfaceIterator(HFCInclusiveGrid& strip) override
+        {
+        // We are using input pixeltype instead of the bitmap pixeltype because we may have a replacing pixeltype in the sinkNode.
+        BeAssert(GetPixelType()->CountPixelRawDataBits() == m_raster.GetPixelType()->CountPixelRawDataBits());
+        BeAssert(GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID) || GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID));
+
+        HFCInclusiveGrid physicalGrid;
+        physicalGrid.InitFromLenght(0, 0, m_width, m_height);
+
+        HFCInclusiveGrid effectiveGrid;
+        effectiveGrid.InitFromIntersectionOf(physicalGrid, strip);
+
+        return new Iterator(*this, effectiveGrid);
+        }
+
+    //! Native block size of the sink.
+    virtual uint32_t _GetBlockSizeX() override { return m_width; }
+    virtual uint32_t _GetBlockSizeY() override { return m_height; }
+
+    HRABitmapRLE&         m_raster;
+    uint32_t              m_width;
+    uint32_t              m_height;
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageSinkNodePtr HRABitmapRLE::_GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType)
+    {
+    status = IMAGEPP_STATUS_Success;
+
+    //Image Node and Image sample use the pixel type to differentiate between 1bit and Rle data. Unlike HRABitmap[RLE] that use pixeltype and codec.
+    HFCPtr<HRPPixelType> pRlePixelType = ImageNode::TransformToRleEquivalent(pReplacingPixelType ? pReplacingPixelType : GetPixelType());
+    if (pRlePixelType == NULL)
+        {
+        BeAssert(!"Incompatible replacing pixelType");
+        status = COPYFROM_STATUS_IncompatiblePixelTypeReplacer;
+        return NULL;
+        }
+
+    return BitmapRleSinkNode::Create(*this, sinkShape, GetPhysicalCoordSys(), pRlePixelType);
     }

@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptStripToNStrip.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptStripToNStrip
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCAccessMode.h>
 
@@ -121,8 +121,8 @@ HRFAdaptStripToNStrip::~HRFAdaptStripToNStrip()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptStripToNStrip::ReadBlock(uint32_t pi_PosBlockX,
-                                         uint32_t pi_PosBlockY,
+HSTATUS HRFAdaptStripToNStrip::ReadBlock(uint64_t pi_PosBlockX,
+                                         uint64_t pi_PosBlockY,
                                          Byte* po_pData,
                                          HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -137,8 +137,7 @@ HSTATUS HRFAdaptStripToNStrip::ReadBlock(uint32_t pi_PosBlockX,
         {
         HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
 
-        NumberOfBlockToAccess = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_StripHeight -1)
-                                 - pi_PosBlockY) / m_StripHeight;
+        NumberOfBlockToAccess = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_StripHeight -1) - (uint32_t)pi_PosBlockY) / m_StripHeight;
         }
 
     // Lock the sister file
@@ -165,10 +164,10 @@ HSTATUS HRFAdaptStripToNStrip::ReadBlock(uint32_t pi_PosBlockX,
 // ReadBlockRLE
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptStripToNStrip::ReadBlockRLE (uint32_t                 pi_PosBlockX,
-                                             uint32_t                 pi_PosBlockY,
-                                             HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
-                                             HFCLockMonitor const*    pi_pSisterFileLock)
+HSTATUS HRFAdaptStripToNStrip::ReadBlockRLE(uint64_t                 pi_PosBlockX,
+                                            uint64_t                 pi_PosBlockY,
+                                            HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
+                                            HFCLockMonitor const*    pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffers.
@@ -190,8 +189,8 @@ HSTATUS HRFAdaptStripToNStrip::ReadBlockRLE (uint32_t                 pi_PosBloc
     // Adjust if necessary the number of strip at the resolution height
     if (pi_PosBlockY + (m_StripPerBlock*m_StripHeight) >= m_pResolutionDescriptor->GetHeight())
         {
-        NumberOfBlockToAccess = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_StripHeight -1) - pi_PosBlockY) / m_StripHeight;
-        NumberOfLineInBlock = (uint32_t)GetResolutionDescriptor()->GetHeight() - pi_PosBlockY;
+        NumberOfBlockToAccess = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_StripHeight -1) - (uint32_t)pi_PosBlockY) / m_StripHeight;
+        NumberOfLineInBlock = (uint32_t)GetResolutionDescriptor()->GetHeight() - (uint32_t)pi_PosBlockY;
         }
 
     HFCPtr<HCDPacketRLE> pWorkPacket(new HCDPacketRLE((uint32_t)GetResolutionDescriptor()->GetWidth(), m_StripHeight));
@@ -213,9 +212,9 @@ HSTATUS HRFAdaptStripToNStrip::ReadBlockRLE (uint32_t                 pi_PosBloc
         uint32_t NumberOfLineInStrip(m_StripHeight);
 
         // Last strip ?
-        if(pi_PosBlockY + ((NoStrip+1) * m_StripHeight) > (uint32_t)GetResolutionDescriptor()->GetHeight())
+        if(pi_PosBlockY + ((NoStrip+1) * m_StripHeight) > GetResolutionDescriptor()->GetHeight())
             {
-            NumberOfLineInStrip = (uint32_t)GetResolutionDescriptor()->GetHeight() - (pi_PosBlockY + CurrentStripStartPos);
+            NumberOfLineInStrip = (uint32_t)GetResolutionDescriptor()->GetHeight() - ((uint32_t)pi_PosBlockY + CurrentStripStartPos);
             }
 
         if(H_SUCCESS != (Status = m_pAdaptedResolutionEditor->ReadBlockRLE(0, pi_PosBlockY + CurrentStripStartPos, pWorkPacket, pi_pSisterFileLock)))
@@ -240,9 +239,9 @@ HSTATUS HRFAdaptStripToNStrip::ReadBlockRLE (uint32_t                 pi_PosBloc
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptStripToNStrip::WriteBlock(uint32_t     pi_PosBlockX,
-                                          uint32_t     pi_PosBlockY,
-                                          const Byte* pi_pData,
+HSTATUS HRFAdaptStripToNStrip::WriteBlock(uint64_t     pi_PosBlockX,
+                                          uint64_t     pi_PosBlockY,
+                                          const Byte*  pi_pData,
                                           HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -256,8 +255,7 @@ HSTATUS HRFAdaptStripToNStrip::WriteBlock(uint32_t     pi_PosBlockX,
     // Adjust if necessary the number of strip at the resolution height
     if (pi_PosBlockY + (m_StripPerBlock*m_StripHeight) >= (uint32_t)m_pResolutionDescriptor->GetHeight())
         {
-        NumberOfBlockToAccess = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_StripHeight -1)
-                                 - pi_PosBlockY) / m_StripHeight;
+        NumberOfBlockToAccess = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_StripHeight -1) - (uint32_t)pi_PosBlockY) / m_StripHeight;
         }
 
     // Lock the sister file
@@ -286,12 +284,14 @@ HSTATUS HRFAdaptStripToNStrip::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlockRLE
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptStripToNStrip::WriteBlockRLE(uint32_t              pi_PosBlockX,
-                                             uint32_t              pi_PosBlockY,
+HSTATUS HRFAdaptStripToNStrip::WriteBlockRLE(uint64_t              pi_PosBlockX,
+                                             uint64_t              pi_PosBlockY,
                                              HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
                                              HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     uint32_t NumberOfBlockToAccess = m_StripPerBlock;
@@ -299,10 +299,9 @@ HSTATUS HRFAdaptStripToNStrip::WriteBlockRLE(uint32_t              pi_PosBlockX,
     HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
 
     // Adjust if necessary the number of strip at the resolution height
-    if (pi_PosBlockY + (m_StripPerBlock*m_StripHeight) >= (uint32_t)m_pResolutionDescriptor->GetHeight())
+    if (pi_PosBlockY + (m_StripPerBlock*m_StripHeight) >= m_pResolutionDescriptor->GetHeight())
         {
-        NumberOfBlockToAccess = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_StripHeight -1)
-                                 - pi_PosBlockY) / m_StripHeight;
+        NumberOfBlockToAccess = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_StripHeight -1) - (uint32_t)pi_PosBlockY) / m_StripHeight;
         }
 
     // Lock the sister file
@@ -322,7 +321,7 @@ HSTATUS HRFAdaptStripToNStrip::WriteBlockRLE(uint32_t              pi_PosBlockX,
 
         // Last strip ?
         if(pi_PosBlockY + ((NoStrip+1) * m_StripHeight) > (uint32_t)GetResolutionDescriptor()->GetHeight())
-            NumberOfLineInStrip = (uint32_t)GetResolutionDescriptor()->GetHeight() - (pi_PosBlockY + CurrentStripStartPos);
+            NumberOfLineInStrip = (uint32_t)GetResolutionDescriptor()->GetHeight() - ((uint32_t)pi_PosBlockY + CurrentStripStartPos);
 
         // Create a packet that contains only the current strip block.
         HFCPtr<HCDPacketRLE> pOneStripPacketRLE(new HCDPacketRLE((uint32_t)m_pResolutionDescriptor->GetWidth(), NumberOfLineInStrip));

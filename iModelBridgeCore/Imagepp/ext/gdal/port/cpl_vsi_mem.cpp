@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsi_mem.cpp 21167 2010-11-24 15:19:51Z warmerdam $
+ * $Id: cpl_vsi_mem.cpp 27157 2014-04-12 12:59:41Z rouault $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation of Memory Buffer virtual IO functions.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2005, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -42,7 +43,7 @@
 #endif
 
 
-CPL_CVSID("$Id: cpl_vsi_mem.cpp 21167 2010-11-24 15:19:51Z warmerdam $");
+CPL_CVSID("$Id: cpl_vsi_mem.cpp 27157 2014-04-12 12:59:41Z rouault $");
 
 /*
 ** Notes on Multithreading:
@@ -90,6 +91,8 @@ public:
     vsi_l_offset  nLength;
     vsi_l_offset  nAllocLength;
 
+    int           bEOF;
+
                   VSIMemFile();
     virtual       ~VSIMemFile();
 
@@ -108,6 +111,7 @@ class VSIMemHandle : public VSIVirtualHandle
     VSIMemFile    *poFile;
     vsi_l_offset  nOffset;
     int           bUpdate;
+    int           bEOF;
 
     virtual int       Seek( vsi_l_offset nOffset, int nWhence );
     virtual vsi_l_offset Tell();
@@ -115,6 +119,7 @@ class VSIMemHandle : public VSIVirtualHandle
     virtual size_t    Write( const void *pBuffer, size_t nSize, size_t nMemb );
     virtual int       Eof();
     virtual int       Close();
+    virtual int       Truncate( vsi_l_offset nNewSize );
 };
 
 /************************************************************************/
@@ -163,6 +168,7 @@ VSIMemFile::VSIMemFile()
     pabyData = NULL;
     nLength = 0;
     nAllocLength = 0;
+    bEOF = FALSE;
 }
 
 /************************************************************************/
@@ -208,7 +214,12 @@ bool VSIMemFile::SetLength( vsi_l_offset nNewLength )
 
         pabyNewData = (GByte *) VSIRealloc(pabyData, (size_t)nNewAlloc);
         if( pabyNewData == NULL )
+        {
+            CPLError(CE_Failure, CPLE_OutOfMemory,
+                     "Cannot extend in-memory file to " CPL_FRMT_GUIB " bytes due to out-of-memory situation",
+                     nNewAlloc);
             return false;
+        }
             
         /* Clear the new allocated part of the buffer */
         memset(pabyNewData + nAllocLength, 0, 
@@ -264,20 +275,16 @@ int VSIMemHandle::Seek( vsi_l_offset nOffset, int nWhence )
         return -1;
     }
 
-    if( this->nOffset < 0 )
-    {
-        this->nOffset = 0;
-        return -1;
-    }
-    
+    bEOF = FALSE;
+
     if( this->nOffset > poFile->nLength )
     {
         if( !bUpdate ) // Read-only files cannot be extended by seek.
         {
             CPLDebug( "VSIMemHandle", 
-                      "Attempt to extend read-only file '%s' to length %d from %d, .", 
+                      "Attempt to extend read-only file '%s' to length " CPL_FRMT_GUIB " from " CPL_FRMT_GUIB ".",
                       poFile->osFilename.c_str(), 
-                      (int) this->nOffset, (int) poFile->nLength );
+                      this->nOffset, poFile->nLength );
 
             this->nOffset = poFile->nLength;
             errno = EACCES;
@@ -315,8 +322,15 @@ size_t VSIMemHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
 
     if( nBytesToRead + nOffset > poFile->nLength )
     {
+        if (poFile->nLength < nOffset)
+        {
+            bEOF = TRUE;
+            return 0;
+        }
+
         nBytesToRead = (size_t)(poFile->nLength - nOffset);
         nCount = nBytesToRead / nSize;
+        bEOF = TRUE;
     }
 
     memcpy( pBuffer, poFile->pabyData + nOffset, (size_t)nBytesToRead );
@@ -360,7 +374,25 @@ size_t VSIMemHandle::Write( const void * pBuffer, size_t nSize, size_t nCount )
 int VSIMemHandle::Eof()
 
 {
-    return nOffset == poFile->nLength;
+    return bEOF;
+}
+
+/************************************************************************/
+/*                             Truncate()                               */
+/************************************************************************/
+
+int VSIMemHandle::Truncate( vsi_l_offset nNewSize )
+{
+    if( !bUpdate )
+    {
+        errno = EACCES;
+        return -1;
+    }
+
+    if (poFile->SetLength( nNewSize ))
+        return 0;
+    else
+        return -1;
 }
 
 /************************************************************************/
@@ -453,6 +485,7 @@ VSIMemFilesystemHandler::Open( const char *pszFilename,
 
     poHandle->poFile = poFile;
     poHandle->nOffset = 0;
+    poHandle->bEOF = FALSE;
     if( strstr(pszAccess,"w") || strstr(pszAccess,"+") 
         || strstr(pszAccess,"a") )
         poHandle->bUpdate = TRUE;
@@ -509,7 +542,7 @@ int VSIMemFilesystemHandler::Stat( const char * pszFilename,
     }
     else
     {
-        pStatBuf->st_size = (long)poFile->nLength;
+        pStatBuf->st_size = poFile->nLength;
         pStatBuf->st_mode = S_IFREG;
     }
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFSDirectoryLister.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFSDirectoryLister
@@ -23,12 +23,13 @@
 // HFS
 #include "HFSDirectoryListItem.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HFSDirectoryLister : public HFCShareableObject<HFSDirectoryLister>
     {
 public:
 
-    HDECLARE_BASECLASS_ID(5000);
+    HDECLARE_BASECLASS_ID(HFSDirectoryListerId_Base);
 
     // STL definition
     typedef list<HFSDirectoryListItem, allocator<HFSDirectoryListItem> > HFSENTRY_LIST;
@@ -118,6 +119,7 @@ private:
     HFSDirectoryLister& operator=(const HFSDirectoryLister&);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HFSDirectoryLister.hpp"
 
 

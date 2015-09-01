@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAIteratorOptions.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAIteratorOptions
 //-----------------------------------------------------------------------------
 #pragma once
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HRARaster;
 class HVEShape;
@@ -20,7 +22,7 @@ public:
 
     // Primary methods
 
-    _HDLLg                  HRAIteratorOptions();
+    IMAGEPP_EXPORT                  HRAIteratorOptions();
 
     HRAIteratorOptions(const HRAIteratorOptions& pi_rOptions);
 
@@ -33,7 +35,7 @@ public:
     HRAIteratorOptions(const HFCPtr<HVEShape>& pi_rpRegionToProcess,
                        bool                   pi_ClipUsingEffectiveShape = true);
 
-    _HDLLg                ~HRAIteratorOptions();
+    IMAGEPP_EXPORT                ~HRAIteratorOptions();
 
     HRAIteratorOptions&
     operator=(const HRAIteratorOptions& pi_rObj);
@@ -86,3 +88,4 @@ private:
     };
 
 
+END_IMAGEPP_NAMESPACE

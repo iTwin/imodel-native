@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCBuffer.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,6 +13,7 @@
 
 #include <Imagepp/all/h/HFCPtr.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 /**
 
     The HFCBuffer class encapsulates the characteristics of a reusable,
@@ -183,5 +184,7 @@ private:
     size_t          m_PossibleNewDataSize;
 #endif
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCBuffer.hpp"

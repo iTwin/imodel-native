@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecPackBits.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,11 @@
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecPackBits : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1176, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_PackBits, HCDCodecImage)
 
 public:
 
@@ -41,3 +43,4 @@ protected:
     HCDCodecPackBits(const HCDCodecPackBits& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

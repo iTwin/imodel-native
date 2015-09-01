@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalchecksum.cpp 13893 2008-02-28 21:08:37Z rouault $
+ * $Id: gdalchecksum.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Compute simple checksum for a region of image data. 
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2003, Frank Warmerdam
+ * Copyright (c) 2007-2008, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "gdal_alg.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: gdalchecksum.cpp 13893 2008-02-28 21:08:37Z rouault $");
+CPL_CVSID("$Id: gdalchecksum.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                         GDALChecksumImage()                          */

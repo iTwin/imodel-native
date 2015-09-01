@@ -2,10 +2,10 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DVector.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -172,4 +172,4 @@ inline HGF2DVector::Location HGF2DVector::Locate(const HGF2DPosition& pi_rPoint)
 
 
 
-
+END_IMAGEPP_NAMESPACE

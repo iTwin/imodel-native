@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphRGBFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphRGBFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFIntergraphRGBFile.h>
@@ -28,8 +28,8 @@
 #include <Imagepp/all/h/HGF2DStretch.h>
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HCDCodecIdentity.h>
+#include <Imagepp/all/h/HCDCodecRLE8.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //-----------------------------------------------------------------------------
@@ -69,6 +69,11 @@ public:
     HRFRGBCodecCapabilities()
         : HRFRasterFileCapabilities()
         {
+        // Codec RGB RLE8
+        Add(new HRFCodecCapability(HFC_READ_WRITE_CREATE,
+                                   HCDCodecRLE8::CLASS_ID,
+                                   new HRFRGBBlockCapabilities()));
+                                   
         // Codec Identity
         Add(new HRFCodecCapability(HFC_READ_WRITE_CREATE,
                                    HCDCodecIdentity::CLASS_ID,
@@ -161,8 +166,7 @@ HRFIntergraphRGBCreator::HRFIntergraphRGBCreator()
 WString HRFIntergraphRGBCreator::GetLabel() const
     {
 
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_RGB); // Intergraph RGB File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_RGB()); // Intergraph RGB File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -212,25 +216,25 @@ bool HRFIntergraphRGBCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     (const_cast<HRFIntergraphRGBCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock(GetLockManager());
 
-    // Open the COT File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    // Open the RGB File & place file pointer at the start of the file
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
-        // Check if the file was a valid Intergraph COT...
+        // Check if the file was a valid Intergraph RGB...
         pFile->SeekToBegin();
-        if (pFile->Read((void*)&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+        if (pFile->Read(&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
             goto WRAPUP;
 
         if (HeaderTypeCode == 0x0908)
             {
-            if (pFile->Read((void*)&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short))
                 goto WRAPUP;
 
-            if (pFile->Read((void*)&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
                 goto WRAPUP;
 
-            if ((DataTypeCode == 28) && (pi_Offset || !IsMultiPage(*pFile, (WordToFollow + 2)/256)) )
+            if ((DataTypeCode == 27 || DataTypeCode == 28) && (pi_Offset || !IsMultiPage(*pFile, (WordToFollow + 2)/256)) )
                 Result = true;
             else
                 {
@@ -241,10 +245,10 @@ bool HRFIntergraphRGBCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                         HeaderLen = ((WordToFollow + 2) /256) * 512;
                         HeaderLen += 18;
                         pFile->SeekToPos(HeaderLen);
-                        if (pFile->Read((void*)&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+                        if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
                             goto WRAPUP;
 
-                        if ((DataTypeCode == 28) && !IsMultiPage(*pFile, (WordToFollow + 2)/256))
+                        if ((DataTypeCode == 27 || DataTypeCode == 28) && !IsMultiPage(*pFile, (WordToFollow + 2)/256))
                             Result = true;
                         }
                     }
@@ -292,7 +296,8 @@ HRFIntergraphRGBFile::HRFIntergraphRGBFile(const HFCPtr<HFCURL>& pi_rURL,
                                            uint64_t             pi_Offset)
     : HRFIntergraphColorFile(pi_rURL, pi_AccessMode, pi_Offset)
     {
-    SetDatatypeCode(28);
+    // Data type code will be set by InitOpenedFile() for existing file and AddPage() during creation.
+    //SetDatatypeCode(27 or 28);
     SetBitPerPixel (24);
 
     if (GetAccessMode().m_HasCreateAccess)
@@ -306,22 +311,25 @@ HRFIntergraphRGBFile::HRFIntergraphRGBFile(const HFCPtr<HFCURL>& pi_rURL,
         Open();
         // Create Page and Res Descriptors.
         CreateDescriptors();
+
+        HASSERT(GetDatatypeCode() == 27 || GetDatatypeCode() == 28);
         }
     }
 
-//-----------------------------------------------------------------------------
-// Protected
-// Constructor
-// allow to Create an image file object without open.
-//-----------------------------------------------------------------------------
-HRFIntergraphRGBFile::HRFIntergraphRGBFile(const HFCPtr<HFCURL>& pi_rURL,
-                                           HFCAccessMode         pi_AccessMode,
-                                           uint64_t             pi_Offset,
-                                           bool                 pi_DontOpenFile)
-    : HRFIntergraphColorFile(pi_rURL, pi_AccessMode, pi_Offset, pi_DontOpenFile)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  05/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HRFIntergraphRGBFile::AddPage (HFCPtr<HRFPageDescriptor> pi_pPage)
     {
-    SetDatatypeCode(28);
-    SetBitPerPixel (24);
+    HPRECONDITION(pi_pPage->GetResolutionDescriptor(0)->GetCodec()->GetClassID() == HCDCodecIdentity::CLASS_ID || 
+                  pi_pPage->GetResolutionDescriptor(0)->GetCodec()->GetClassID() == HCDCodecRLE8::CLASS_ID);
+
+    if(pi_pPage->GetResolutionDescriptor(0)->GetCodec()->GetClassID() == HCDCodecRLE8::CLASS_ID)
+        SetDatatypeCode(27);   
+    else
+        SetDatatypeCode(28);
+
+    return T_Super::AddPage(pi_pPage);
     }
 
 //-----------------------------------------------------------------------------
@@ -337,6 +345,8 @@ void HRFIntergraphRGBFile::CreateDescriptors()
         {
         // Initialise some members and read file header Read
         InitOpenedFile(0);
+
+        HASSERT(GetDatatypeCode() == 27 || GetDatatypeCode() == 28);
 
         // TranfoModel
         // HFCPtr<HGF2DTransfoModel> pTransfoModel = &GetTransfoModel();
@@ -366,6 +376,12 @@ void HRFIntergraphRGBFile::CreateDescriptors()
                 BlockType   = HRFBlockType::LINE;
                 }
 
+            HFCPtr<HCDCodec> pCodec;
+            if(GetDatatypeCode() == 27)
+               pCodec = new HCDCodecRLE8();
+            else 
+                pCodec = new HCDCodecIdentity();
+
             // Obtain Resolution Information
             // resolution dimension
             HFCPtr<HRFResolutionDescriptor> pResolution =  new HRFResolutionDescriptor(
@@ -374,7 +390,7 @@ void HRFIntergraphRGBFile::CreateDescriptors()
                 GetResolution(Resolution),        // XResolutionRatio,
                 GetResolution(Resolution),        // YResolutionRatio,
                 GetPixelType(),                     // PixelType,
-                new HCDCodecIdentity(),           // Codec
+                pCodec,                             // Codec
                 BlockAccess,                            // RBlockAccess,
                 BlockAccess,                            // WBlockAccess,
                 GetScanlineOrientation(),           // ScanLineOrientation,

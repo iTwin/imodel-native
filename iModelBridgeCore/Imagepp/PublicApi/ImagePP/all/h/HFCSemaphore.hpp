@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCSemaphore.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HFCSemaphore
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //:Ignore
 //-----------------------------------------------------------------------------
 // Internal stuff.  Since the key in HFCSemaphore is allocated and initialised
@@ -53,3 +53,4 @@ inline void HFCSemaphore::Signal()
     ReleaseSemaphore(GetHandle(), 1, NULL);
 #endif
     }
+END_IMAGEPP_NAMESPACE

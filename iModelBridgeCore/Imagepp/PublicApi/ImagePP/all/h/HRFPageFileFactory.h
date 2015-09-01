@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPageFileFactory.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFPageFileFactory
@@ -18,9 +18,10 @@
 // This is a helper class to instantiate a page file object
 // without knowing the different format.
 //-----------------------------------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
 class HRFPageFileFactory
     {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFPageFileFactory)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFPageFileFactory)
 
 public:
     // Search the appropriate creator
@@ -31,14 +32,14 @@ public:
     virtual bool HasFor(const HFCPtr<HRFRasterFile>& pi_rpForRasterFile, bool pi_ApplyonAllFiles=false) const;
 
     // This method return the URL for the page decorator corresponding to the specified raster file.
-    _HDLLg HFCPtr<HFCURL> ComposeURLFor(const HFCPtr<HRFRasterFile>& pi_rpForRasterFile, bool pi_ApplyonAllFiles=true) const;
+    IMAGEPP_EXPORT HFCPtr<HFCURL> ComposeURLFor(const HFCPtr<HRFRasterFile>& pi_rpForRasterFile, bool pi_ApplyonAllFiles=true) const;
 
     // This method return the URL for the page decorator corresponding to the specified raster file.
     void GetRelatedPageFileURLs(const HFCPtr<HFCURL>& pi_rpForRasterFileURL,
                                 ListOfRelatedURLs&    po_rRelatedURLs);
 
     // Add the creators to the registry
-    void Register(const HRFPageFileCreator* pi_pCreator);
+    IMAGEPP_EXPORT void Register(const HRFPageFileCreator* pi_pCreator);
 
     // Destructor
     virtual ~HRFPageFileFactory();
@@ -59,19 +60,8 @@ private:
     HRFPageFileFactory(const HRFPageFileFactory&);
     HRFPageFileFactory& operator=(const HRFPageFileFactory&);
     };
+END_IMAGEPP_NAMESPACE
 
-//-----------------------------------------------------------------------------
-// HRF_REGISTER_PAGEFILEFORMAT
-// register the creator to the registry
-//-----------------------------------------------------------------------------
-#define HRF_REGISTER_PAGEFILEFORMAT(pi_ClassName) \
-static struct pi_ClassName##CreatorRegister \
-{ \
-    pi_ClassName##CreatorRegister() \
-    { \
-        HRFPageFileFactory::GetInstance()->Register(pi_ClassName::GetInstance()); \
-    } \
-} g_##pi_ClassName##CreatorRegister;
 
 
 

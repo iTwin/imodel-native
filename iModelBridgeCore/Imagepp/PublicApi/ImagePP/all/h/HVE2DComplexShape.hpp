@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DComplexShape.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Default constructor for a complex shape. This constructor creates an empty
     complex shape that does not contain any components. The interpretation
@@ -228,33 +229,5 @@ inline HVE2DShapeTypeId HVE2DComplexShape::GetShapeType() const
     return(HVE2DComplexShape::CLASS_ID);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+END_IMAGEPP_NAMESPACE
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRLCFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,6 +18,7 @@
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class  HRPPixelType;
 class  HFCBinStream;
 
@@ -161,7 +162,7 @@ class HRFRLCFile : public HRFRasterFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1446, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_RLC, HRFRasterFile)
 
     friend class HRFRLCLineEditor;
 
@@ -201,7 +202,7 @@ protected:
     virtual bool   Open ();
     virtual void    CreateDescriptors ();
 
-    virtual const HFCBinStream* HRFRLCFile::GetRLCFilePtr() const;
+    virtual const HFCBinStream* GetRLCFilePtr() const;
 
     void    FindImageParams();
 
@@ -247,9 +248,10 @@ struct HRFRLCCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFRLCCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFRLCCreator)
 
     // Disabled methodes
     HRFRLCCreator();
     };
+END_IMAGEPP_NAMESPACE
 

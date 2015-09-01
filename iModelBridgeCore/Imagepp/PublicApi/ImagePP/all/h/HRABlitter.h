@@ -2,72 +2,76 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABlitter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-// Class : HRABlitter
-//-----------------------------------------------------------------------------
-// General class for Blitters.
-//-----------------------------------------------------------------------------
+
 #pragma once
 
-#include "HGSBlitterImplementation.h"
-#include "HGSMacros.h"
-#include "HRASurface.h"
-#include "HGSFilter.h"
+#include <Imagepp/all/h/HGSTypes.h>
 
-class HGSGraphicToolAttributes;
-class HGSSurfaceImplementation;
+BEGIN_IMAGEPP_NAMESPACE
+class HRASurface;
 class HRPPixelType;
 class HGF2DStretch;
 class HRATransaction;
+class HRASurface;
+class HRPFilter;
+class HGF2DTransfoModel;
 
-HGS_DECLARE_GRAPHICTOOL_DLL(_HDLLg, HRABlitter)
-
-class HRABlitter : public HGSBlitterImplementation
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+class HRABlitter
     {
-    HDECLARE_CLASS_ID(1740, HGSBlitterImplementation)
-
-    HGS_DECLARE_GRAPHICCAPABILITIES()
-
 public:
 
     // Primary methods
-    HRABlitter(const HGSGraphicToolAttributes*  pi_pAttributes,
-               HGSSurfaceImplementation*        pi_pSurfaceImplementation);
+    HRABlitter(HRASurface& pi_destSurface);
 
-    virtual         ~HRABlitter();
+    ~HRABlitter();
 
-    virtual void    BlitFrom(const HGSSurfaceImplementation*    pi_pSrcSurfaceImp,
-                             const HGF2DTransfoModel&           pi_rTransfoModel,
-                             HRATransaction*                    pi_pTransaction = 0);
+    void BlitFrom(const HRASurface&                  pi_srcSurface,
+                  const HGF2DTransfoModel&           pi_rTransfoModel,
+                  HRATransaction*                    pi_pTransaction = 0);
 
+    void SetAlphaBlend(bool alphaBlend);
+    void SetGridMode(bool gridMode);
+    void SetSamplingMode(HGSResampling const& samplingMode);
+    void SetOverviewsMode(bool overviews);
+    void SetFilter(HFCPtr<HRPFilter> const& pFilter);
 
 protected:
 
 private:
+    HRASurface& GetDestSurface() const {return m_destSurface;}
 
-    bool           m_ComposeRequired;
-    bool           m_VerticalFlip;
-    bool           m_ApplyGrid;
-    bool           m_AveragingMode;
-
-
-    void            Optimized8BitsBlit(const HGSSurfaceImplementation*  pi_pSrcSurfaceImp,
+    void            Optimized8BitsBlit(const HRASurface&                pi_srcSurface,
                                        const HGF2DStretch&              pi_rTransfoModel,
                                        HRATransaction*                  pi_pTransaction);
-    void            NormalBlit        (const HGSSurfaceImplementation*  pi_pSrcSurfaceImp,
+
+    void            NormalBlit        (const HRASurface&                pi_srcSurface,
                                        const HGF2DStretch&              pi_rTransfoModel,
                                        HRATransaction*                  pi_pTransaction);
-    HRASurface*     ApplyFilter(const HRASurface*                       pi_pSurface,
+
+    HRASurface*     ApplyFilter(const HRASurface&                       pi_srcSurface,
                                 const HFCPtr<HRPFilter>&                pi_rpFilter) const;
 
     Byte*          CreateWorkingBuffer(const HRPPixelType&             pi_rPixelType,
-                                        uint32_t                        pi_Width,
-                                        uint32_t                        pi_Height) const;
+                                       uint32_t                        pi_Width,
+                                       uint32_t                        pi_Height) const;
+    
+    HRASurface&    m_destSurface;
+
+    bool           m_ComposeRequired;
+    bool           m_ApplyGrid;
+    HGSResampling  m_samplingMode;
+    bool           m_overviewsMode;
+    HFCPtr<HRPFilter>   m_pFilter;
 
     // disabled methods
     HRABlitter(const HRABlitter& pi_rObj);
     HRABlitter&  operator=(const HRABlitter& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

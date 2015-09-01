@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAHistogramOptions.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRAHistogramOptions.h>
 
@@ -140,7 +140,7 @@ bool HRAHistogramOptions::CanBeUsedInPlaceOf(const HRAHistogramOptions& pi_rHist
         return false;
 
     if (m_SamplingOptions.GetSrcPixelTypeReplacer() != 0 && pi_rHistogramOptions.m_SamplingOptions.GetSrcPixelTypeReplacer() != 0)
-        CanBeUsed = (*m_SamplingOptions.GetSrcPixelTypeReplacer() == *pi_rHistogramOptions.m_SamplingOptions.GetSrcPixelTypeReplacer());
+        CanBeUsed = m_SamplingOptions.GetSrcPixelTypeReplacer()->HasSamePixelInterpretation(*pi_rHistogramOptions.m_SamplingOptions.GetSrcPixelTypeReplacer());
     else
         CanBeUsed = m_SamplingOptions.GetSrcPixelTypeReplacer() == 0 && pi_rHistogramOptions.m_SamplingOptions.GetSrcPixelTypeReplacer() == 0;
 
@@ -148,7 +148,7 @@ bool HRAHistogramOptions::CanBeUsedInPlaceOf(const HRAHistogramOptions& pi_rHist
         return false;
 
     if (m_pPixelType != 0 && pi_rHistogramOptions.m_pPixelType != 0)
-        CanBeUsed = (*m_pPixelType == *pi_rHistogramOptions.m_pPixelType);
+        CanBeUsed = m_pPixelType->HasSamePixelInterpretation(*pi_rHistogramOptions.m_pPixelType);
     else
         CanBeUsed = m_pPixelType == 0 && pi_rHistogramOptions.m_pPixelType == 0;
 

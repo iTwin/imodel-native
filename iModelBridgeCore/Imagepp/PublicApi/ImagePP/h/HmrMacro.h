@@ -2,16 +2,45 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HmrMacro.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #pragma once
 
-#define BEGIN_IMAGEPP_NAMESPACE              namespace ImagePP {
-#define END_IMAGEPP_NAMESPACE                }
-#define USING_NAMESPACE_IMAGEPP              using namespace ImagePP;
+#include <Bentley/Bentley.h>
+#include <Bentley/RefCounted.h>
 
+
+#if !defined(MAX)
+#   define MAX(a,b)                 ((a)>(b)?(a):(b))
+#endif
+
+#if !defined(MIN)
+#   define MIN(a,b)                 ((a)<(b)?(a):(b))
+#endif
+
+#if !defined(BOUND)
+#define BOUND(x,min,max)            ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
+#endif
+
+#if !defined(LIMIT_RANGE)
+#define LIMIT_RANGE(min,max,val)    {if ((val) < (min)) val = min; else if ((val) > (max)) val = max;}
+#endif
+
+#if !defined(IN_RANGE)
+#define IN_RANGE(x,min,max)         (((x) >= (min)) && ((x) <= (max)))
+#endif
+
+#define BEGIN_IMAGEPP_NAMESPACE              BEGIN_BENTLEY_NAMESPACE namespace ImagePP {
+#define END_IMAGEPP_NAMESPACE                } END_BENTLEY_NAMESPACE
+#define USING_NAMESPACE_IMAGEPP              using namespace BentleyApi::ImagePP;
+
+#define IMAGEPP_TYPEDEFS(_name_) \
+    BEGIN_IMAGEPP_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_IMAGEPP_NAMESPACE 
+
+#define IMAGEPP_REF_COUNTED_PTR(_sname_) \
+    BEGIN_IMAGEPP_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_IMAGEPP_NAMESPACE
 
 // Define __HMR_DEBUG if NDEBUG is NOT defined
 #ifndef NDEBUG
@@ -73,6 +102,12 @@
 #   define HVERIFYCONTRACT
 #endif
 
+// Validate that every classID is defined in ImagePPClassId.
+//#if defined(__IMAGEPP_BUILD__) || defined(__IPPIMAGING_BUILD__)
+    #define IPPCLASSIDVALIDATE(ClassID) HDEBUGCODE(ImagePPClassId t=ClassID;t;);
+//#else
+//    #define IPPCLASSIDVALIDATE(ClassID)
+//#endif
 
 /*
 ** Macro used to assign an ID and implement the method GetClassID().
@@ -86,7 +121,7 @@
 #define HDECLARE_BASECLASS_ID(ClassID) \
     public: \
         enum { CLASS_ID = ClassID }; \
-        virtual HCLASS_ID GetClassID() const { return CLASS_ID; } \
+        virtual HCLASS_ID GetClassID() const {IPPCLASSIDVALIDATE(ClassID) return CLASS_ID; } \
         virtual bool IsCompatibleWith(HCLASS_ID pi_ClassID) const \
             { return (CLASS_ID == pi_ClassID); }
 
@@ -94,14 +129,14 @@
     public: \
         enum { CLASS_ID = ClassID }; \
         DEFINE_T_SUPER(pi_Ancestor)   \
-        virtual HCLASS_ID GetClassID() const override { return CLASS_ID; } \
+        virtual HCLASS_ID GetClassID() const override {IPPCLASSIDVALIDATE(ClassID) return CLASS_ID; } \
         virtual bool IsCompatibleWith(HCLASS_ID pi_ClassID) const override \
             { return (CLASS_ID == pi_ClassID) ? true : pi_Ancestor::IsCompatibleWith(pi_ClassID); }
 
 #define HDECLARE_SEALEDCLASS_ID(ClassID) \
     public: \
     enum { CLASS_ID = ClassID }; \
-    HCLASS_ID GetClassID() const { return CLASS_ID; } \
+    HCLASS_ID GetClassID() const {IPPCLASSIDVALIDATE(ClassID) return CLASS_ID; } \
     bool IsCompatibleWith(HCLASS_ID pi_ClassID) const \
             { return (CLASS_ID == pi_ClassID); }
 
@@ -158,15 +193,18 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 #       define REDIRECTED_ASSERT(expr) RedirectedAssert((int)(expr), _CRT_WIDE(#expr), _CRT_WIDE(__FILE__), __LINE__)
 #       define  HASSERT(expr) REDIRECTED_ASSERT(expr)
 #       define  HASSERT_X64(expr) REDIRECTED_ASSERT(expr)
+#       define  HASSERT_DATA(expr) REDIRECTED_ASSERT(expr)
 
 #   else
 #       define HASSERT(expr) BeAssert(expr)
 #       define HASSERT_X64(expr) BeAssert(expr)        // I use this one to identify special assert related to x64 only.
+#       define HASSERT_DATA(expr) BeDataAssert(expr)
 
 #   endif
 #else
 #   define HASSERT(expr)
 #   define HASSERT_X64(expr)
+#   define HASSERT_DATA(expr) BeDataAssert(expr)
 #endif
 
 
@@ -194,8 +232,10 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 */
 #if !defined(HVERIFYCONTRACT)
 #   define HPRECONDITION(expr)
+#   define HPRECONDITION_T(...)
 #else
-#   define HPRECONDITION(expr) HASSERT(expr)
+#   define HPRECONDITION(expr) HASSERT((expr))
+#   define HPRECONDITION_T(...) HASSERT((__VA_ARGS__))
 #endif
 
 /*
@@ -254,6 +294,40 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 #   define HINVARIANTS
 #else
 #   define HINVARIANTS  ValidateInvariants()
+#endif
+
+
+/*
+** -----------------------------------------------------------------------
+**  HVERIFY(expr) - Allows to enter a line of code that will have its return value
+**                  compared to true in debug only. In release the line is
+**                  executed but the return value not checked.
+**
+**  Example:  HVERIFY(testBool;);
+** -----------------------------------------------------------------------
+*/
+#if !defined(__HMR_DEBUG)
+#   define HVERIFY(expr) expr
+#else
+#   define HVERIFY(expr) HASSERT(expr)
+#endif
+
+
+/*
+** -----------------------------------------------------------------------
+**  HVERIFYRETURNVALUE(expr, expectedValue) - Allows to enter a line of 
+**                  code that will have its return value
+**                  compared to the specified expected return value in debug only. 
+**                  In release the line is
+**                  executed but the return value not checked.
+**
+**  Example:  HVERIFYRETURNVALUE(strcmp("a", "b"), 0);
+** -----------------------------------------------------------------------
+*/
+#if !defined(__HMR_DEBUG)
+#   define HVERIFYRETURNVALUE(expr, expectedValue) expr
+#else
+#   define HVERIFYRETURNVALUE(expr, expectedValue) HASSERT(expr == expectedValue)
 #endif
 
 
@@ -541,13 +615,10 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 **       when rounding precision is not a factor.
 ** --------------------------------------------------------------------------
 */
-//DM-Android #define OPTI_DOUBLE2INT_CONVERSION      // comment this line to disable DOUBLE2INT optimization.
+//#define OPTI_DOUBLE2INT_CONVERSION      	// comment this line to disable DOUBLE2INT optimization.
+											// Make sure DOUBLE2INT routines are working correctly in a non WIN32 environment !!!
 
 #if defined(OPTI_DOUBLE2INT_CONVERSION)
-
-#if !defined(_WIN32)
-#error Make sure DOUBLE2INT routines are working correctly in a non WIN32 environment !!!
-#endif
 
 // Same result as round(d) except when the value equal .5. In this case the result will
 // differ by 1.  ex. DOUBLE2INT_Fast(2.5) = 2, round(2.5) = 3. If you don't care about

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dteddataset.cpp 20763 2010-10-04 22:04:10Z rouault $
+ * $Id: dteddataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  DTED Translator
  * Purpose:  GDALDataset driver for DTED translator.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2007-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,8 +31,9 @@
 #include "dted_api.h"
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
+#include <algorithm>
 
-CPL_CVSID("$Id: dteddataset.cpp 20763 2010-10-04 22:04:10Z rouault $");
+CPL_CVSID("$Id: dteddataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 CPL_C_START
 void    GDALRegister_DTED(void);
@@ -65,6 +67,7 @@ class DTEDDataset : public GDALPamDataset
     void SetFileName(const char* pszFilename);
     
     static GDALDataset *Open( GDALOpenInfo * );
+    static int Identify( GDALOpenInfo * );
 };
 
 /************************************************************************/
@@ -122,7 +125,7 @@ DTEDRasterBand::DTEDRasterBand( DTEDDataset *poDS, int nBand )
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr DTEDRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
+CPLErr DTEDRasterBand::IReadBlock( int nBlockXOff, CPL_UNUSED int nBlockYOff,
                                   void * pImage )
 
 {
@@ -135,21 +138,24 @@ CPLErr DTEDRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
     if (nBlockXSize != 1)
     {
+        const int cbs = 32; // optimize for 64 byte cache line size
+        const int bsy = (nBlockYSize + cbs - 1) / cbs * cbs;
         panData = (GInt16 *) pImage;
-        GInt16* panBuffer = (GInt16*) CPLMalloc(sizeof(GInt16) * nBlockYSize);
-        int i;
-        for(i=0;i<nBlockXSize;i++)
-        {
-            if( !DTEDReadProfileEx( poDTED_DS->psDTED, i, panBuffer,
-                                    poDTED_DS->bVerifyChecksum ) )
-            {
-                CPLFree(panBuffer);
-                return CE_Failure;
+        GInt16* panBuffer = (GInt16*) CPLMalloc(sizeof(GInt16) * cbs * bsy);
+        for (int i = 0; i < nBlockXSize; i += cbs) {
+            int n = std::min(cbs, nBlockXSize - i);
+            for (int j = 0; j < n; ++j) {
+                if (!DTEDReadProfileEx(poDTED_DS->psDTED, i + j, panBuffer + j * bsy, poDTED_DS->bVerifyChecksum)) {
+                    CPLFree(panBuffer);
+                    return CE_Failure;
+                }
             }
-            int j;
-            for(j=0;j<nBlockYSize;j++)
-            {
-                panData[j * nBlockXSize + i] = panBuffer[nYSize - j - 1];
+            for (int y = 0; y < nBlockYSize; ++y) {
+                GInt16 *dst = panData + i + (nYSize - y - 1) * nBlockXSize;
+                GInt16 *src = panBuffer + y;
+                for (int j = 0; j < n; ++j) {
+                    dst[j] = src[j * bsy];
+                }
             }
         }
 
@@ -171,11 +177,7 @@ CPLErr DTEDRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /* -------------------------------------------------------------------- */
     for( int i = nYSize/2; i >= 0; i-- )
     {
-        GInt16  nTemp;
-
-        nTemp = panData[i];
-        panData[i] = panData[nYSize - i - 1];
-        panData[nYSize - i - 1] = nTemp;
+        std::swap(panData[i], panData[nYSize - i - 1]);
     }
 
     return CE_None;
@@ -185,7 +187,7 @@ CPLErr DTEDRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr DTEDRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
+CPLErr DTEDRasterBand::IWriteBlock( int nBlockXOff, CPL_UNUSED int nBlockYOff,
                                   void * pImage )
 
 {
@@ -278,27 +280,26 @@ void DTEDDataset::SetFileName(const char* pszFilename)
 }
 
 /************************************************************************/
-/*                                Open()                                */
+/*                              Identify()                              */
 /************************************************************************/
 
-GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
+int DTEDDataset::Identify( GDALOpenInfo * poOpenInfo )
 
 {
     int         i;
-    DTEDInfo    *psDTED;
 
 /* -------------------------------------------------------------------- */
 /*      Does the file start with one of the possible DTED header        */
 /*      record types, and do we have a UHL marker?                      */
 /* -------------------------------------------------------------------- */
     if( poOpenInfo->nHeaderBytes < 240 )
-        return NULL;
+        return FALSE;
 
     if( !EQUALN((const char *)poOpenInfo->pabyHeader,"VOL",3)
         && !EQUALN((const char *)poOpenInfo->pabyHeader,"HDR",3)
         && !EQUALN((const char *)poOpenInfo->pabyHeader,"UHL",3) )
     {
-        return NULL;
+        return FALSE;
     }
 
     int bFoundUHL = FALSE;
@@ -310,6 +311,22 @@ GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
         }
     }
     if (!bFoundUHL)
+        return FALSE;
+
+    return TRUE;
+}
+
+/************************************************************************/
+/*                                Open()                                */
+/************************************************************************/
+
+GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
+
+{
+    int         i;
+    DTEDInfo    *psDTED;
+
+    if (!Identify(poOpenInfo))
         return NULL;
 
 /* -------------------------------------------------------------------- */
@@ -346,7 +363,7 @@ GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
-    poDS->nBands = 1;;
+    poDS->nBands = 1;
     for( i = 0; i < poDS->nBands; i++ )
         poDS->SetBand( i+1, new DTEDRasterBand( poDS, i+1 ) );
 
@@ -442,7 +459,11 @@ GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
     pszValue = DTEDGetMetadata( psDTED, DTEDMD_NIMA_DESIGNATOR ); 
     poDS->SetMetadataItem( "DTED_NimaDesignator", pszValue ); 
     free( pszValue );
-    
+
+    pszValue = DTEDGetMetadata( psDTED, DTEDMD_PARTIALCELL_DSI );
+    poDS->SetMetadataItem( "DTED_PartialCellIndicator", pszValue );
+    free( pszValue ); 
+
     poDS->SetMetadataItem( GDALMD_AREA_OR_POINT, GDALMD_AOP_POINT );
 
 /* -------------------------------------------------------------------- */
@@ -512,7 +533,7 @@ const char *DTEDDataset::GetProjectionRef()
     if (EQUAL(pszPrj, "WGS84"))
     {
         //IPP Ensure that GeoCoord is able to convert the WKT describing DTED transformation.
-        return( "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AXIS[\"Lat\",NORTH],AXIS[\"Long\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]" );
+        return("GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AXIS[\"Lat\",NORTH],AXIS[\"Long\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]");
     }
     else if (EQUAL(pszPrj, "WGS72"))
     {
@@ -529,7 +550,7 @@ const char *DTEDDataset::GetProjectionRef()
                       "No more warnings will be issued in this session about this operation.", GetFileName() );
         }
         //IPP Ensure that GeoCoord is able to convert the WKT describing DTED transformation.
-        return( "GEOGCS[\"WGS 72\",DATUM[\"WGS_1972\",SPHEROID[\"WGS 72\",6378135,298.26]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433],AXIS[\"Lat\",NORTH],AXIS[\"Long\",EAST],AUTHORITY[\"EPSG\",\"4322\"]]" );
+        return("GEOGCS[\"WGS 72\",DATUM[\"WGS_1972\",SPHEROID[\"WGS 72\",6378135,298.26]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433],AXIS[\"Lat\",NORTH],AXIS[\"Long\",EAST],AUTHORITY[\"EPSG\",\"4322\"]]");
     }
     else
     {
@@ -543,7 +564,7 @@ const char *DTEDDataset::GetProjectionRef()
                       "No more warnings will be issued in this session about this operation.", GetFileName(), pszPrj );
         }
         //IPP Ensure that GeoCoord is able to convert the WKT describing DTED transformation.
-        return( "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AXIS[\"Lat\",NORTH],AXIS[\"Long\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]" );
+        return("GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AXIS[\"Lat\",NORTH],AXIS[\"Long\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]");
     }
 }
 
@@ -775,7 +796,7 @@ DTEDCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
            iPartialCell=1;
     }
     sprintf(szPartialCell,"%02d",iPartialCell);
-    strncpy((char *) (psDTED->pachDSIRecord+289), szPartialCell, 2 );
+    DTEDSetMetadata(psDTED, DTEDMD_PARTIALCELL_DSI, szPartialCell); 
 
 /* -------------------------------------------------------------------- */
 /*      Try to copy any matching available metadata.                    */
@@ -892,11 +913,12 @@ void GDALRegister_DTED()
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#DTED" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Byte int16_t uint16_t" );
+                                   "Byte Int16 UInt16" );
 
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = DTEDDataset::Open;
+        poDriver->pfnIdentify = DTEDDataset::Identify;
         poDriver->pfnCreateCopy = DTEDCreateCopy;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );

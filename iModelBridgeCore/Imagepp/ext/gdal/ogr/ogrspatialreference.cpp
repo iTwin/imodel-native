@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrspatialreference.cpp 21435 2011-01-08 10:41:11Z rouault $
+ * $Id: ogrspatialreference.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSpatialReference class.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999,  Les Technologies SoftMap Inc.
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@
 #include "cpl_http.h"
 #include "cpl_atomic_ops.h"
 
-CPL_CVSID("$Id: ogrspatialreference.cpp 21435 2011-01-08 10:41:11Z rouault $");
+CPL_CVSID("$Id: ogrspatialreference.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 // The current opinion is that WKT longitudes like central meridian
 // should be relative to greenwich, not the prime meridian in use. 
@@ -45,7 +46,7 @@ CPL_CVSID("$Id: ogrspatialreference.cpp 21435 2011-01-08 10:41:11Z rouault $");
 /*                           OGRPrintDouble()                           */
 /************************************************************************/
 
-static void OGRPrintDouble( char * pszStrBuf, double dfValue )
+void OGRPrintDouble( char * pszStrBuf, double dfValue )
 
 {
     sprintf( pszStrBuf, "%.16g", dfValue );
@@ -428,7 +429,10 @@ OGR_SRSNode *OGRSpatialReference::GetAttrNode( const char * pszNodePath )
     papszPathTokens = CSLTokenizeStringComplex(pszNodePath, "|", TRUE, FALSE);
 
     if( CSLCount( papszPathTokens ) < 1 )
+    {
+        CSLDestroy(papszPathTokens);
         return NULL;
+    }
 
     poNode = GetRoot();
     for( int i = 0; poNode != NULL && papszPathTokens[i] != NULL; i++ )
@@ -546,6 +550,22 @@ OGRSpatialReferenceH CPL_STDCALL OSRClone( OGRSpatialReferenceH hSRS )
     VALIDATE_POINTER1( hSRS, "OSRClone", NULL );
 
     return (OGRSpatialReferenceH) ((OGRSpatialReference *) hSRS)->Clone();
+}
+
+/************************************************************************/
+/*                            dumpReadable()                            */
+/*                                                                      */
+/*      Dump pretty wkt to stdout, mostly for debugging.                */
+/************************************************************************/
+
+void OGRSpatialReference::dumpReadable()
+
+{
+    char *pszPrettyWkt = NULL;
+
+    exportToPrettyWkt( &pszPrettyWkt, FALSE );
+    printf( "%s\n", pszPrettyWkt );
+    CPLFree( pszPrettyWkt );
 }
 
 /************************************************************************/
@@ -701,7 +721,27 @@ OGRErr OGRSpatialReference::importFromWkt( char ** ppszInput )
 
     poRoot = new OGR_SRSNode();
 
-    return poRoot->importFromWkt( ppszInput );
+    OGRErr eErr = poRoot->importFromWkt( ppszInput ); 
+    if (eErr != OGRERR_NONE)
+        return eErr;
+
+/* -------------------------------------------------------------------- */
+/*      The following seems to try and detect and unconsumed            */
+/*      VERTCS[] coordinate system definition (ESRI style) and to       */
+/*      import and attach it to the existing root.  Likely we will      */
+/*      need to extend this somewhat to bring it into an acceptable     */
+/*      OGRSpatialReference organization at some point.                 */
+/* -------------------------------------------------------------------- */
+    if (strlen(*ppszInput) > 0 && strstr(*ppszInput, "VERTCS"))
+    {
+        if(((*ppszInput)[0]) == ',')
+            (*ppszInput)++;
+        OGR_SRSNode *poNewChild = new OGR_SRSNode();
+        poRoot->AddChild( poNewChild );
+        return poNewChild->importFromWkt( ppszInput );
+    }
+
+    return eErr;
 }
 
 /************************************************************************/
@@ -1060,6 +1100,7 @@ OGRErr OSRSetLinearUnitsAndUpdateParameters( OGRSpatialReferenceH hSRS,
     return ((OGRSpatialReference *) hSRS)->
         SetLinearUnitsAndUpdateParameters( pszUnits, dfInMeters );
 }
+
 /************************************************************************/
 /*                           SetLinearUnits()                           */
 /************************************************************************/
@@ -1068,7 +1109,7 @@ OGRErr OSRSetLinearUnitsAndUpdateParameters( OGRSpatialReferenceH hSRS,
  * \brief Set the linear units for the projection.
  *
  * This method creates a UNIT subnode with the specified values as a
- * child of the PROJCS or LOCAL_CS node. 
+ * child of the PROJCS, GEOCCS or LOCAL_CS node. 
  *
  * This method does the same as the C function OSRSetLinearUnits(). 
  *
@@ -1087,17 +1128,79 @@ OGRErr OGRSpatialReference::SetLinearUnits( const char * pszUnitsName,
                                             double dfInMeters )
 
 {
+    return SetTargetLinearUnits( NULL, pszUnitsName, dfInMeters );
+}
+
+/************************************************************************/
+/*                         OSRSetLinearUnits()                          */
+/************************************************************************/
+
+/**
+ * \brief Set the linear units for the projection.
+ *
+ * This function is the same as OGRSpatialReference::SetLinearUnits()
+ */
+OGRErr OSRSetLinearUnits( OGRSpatialReferenceH hSRS, 
+                          const char * pszUnits, double dfInMeters )
+
+{
+    VALIDATE_POINTER1( hSRS, "OSRSetLinearUnits", CE_Failure );
+
+    return ((OGRSpatialReference *) hSRS)->SetLinearUnits( pszUnits, 
+                                                           dfInMeters );
+}
+
+/************************************************************************/
+/*                        SetTargetLinearUnits()                        */
+/************************************************************************/
+
+/**
+ * \brief Set the linear units for the projection.
+ *
+ * This method creates a UNIT subnode with the specified values as a
+ * child of the target node. 
+ *
+ * This method does the same as the C function OSRSetTargetLinearUnits(). 
+ *
+ * @param pszTargetKey the keyword to set the linear units for.  ie. "PROJCS" or "VERT_CS"
+ *
+ * @param pszUnitsName the units name to be used.  Some preferred units
+ * names can be found in ogr_srs_api.h such as SRS_UL_METER, SRS_UL_FOOT 
+ * and SRS_UL_US_FOOT. 
+ *
+ * @param dfInMeters the value to multiple by a length in the indicated
+ * units to transform to meters.  Some standard conversion factors can
+ * be found in ogr_srs_api.h. 
+ *
+ * @return OGRERR_NONE on success.
+ *
+ * @since OGR 1.9.0
+ */
+
+OGRErr OGRSpatialReference::SetTargetLinearUnits( const char *pszTargetKey,
+                                                  const char * pszUnitsName,
+                                                  double dfInMeters )
+
+{
     OGR_SRSNode *poCS;
     OGR_SRSNode *poUnits;
     char        szValue[128];
 
     bNormInfoSet = FALSE;
 
-    poCS = GetAttrNode( "PROJCS" );
-    if( poCS == NULL )
-        poCS = GetAttrNode( "VERT_CS" );
-    if( poCS == NULL )
-        poCS = GetAttrNode( "LOCAL_CS" );
+    if( pszTargetKey == NULL )
+    {
+        poCS = GetAttrNode( "PROJCS" );
+
+        if( poCS == NULL )
+            poCS = GetAttrNode( "LOCAL_CS" );
+        if( poCS == NULL )
+            poCS = GetAttrNode( "GEOCCS" );
+        if( poCS == NULL && IsVertical() )
+            poCS = GetAttrNode( "VERT_CS" );
+    }
+    else
+        poCS = GetAttrNode( pszTargetKey );
 
     if( poCS == NULL )
         return OGRERR_FAILURE;
@@ -1134,18 +1237,21 @@ OGRErr OGRSpatialReference::SetLinearUnits( const char * pszUnitsName,
 /************************************************************************/
 
 /**
- * \brief Set the linear units for the projection.
+ * \brief Set the linear units for the target node.
  *
- * This function is the same as OGRSpatialReference::SetLinearUnits()
+ * This function is the same as OGRSpatialReference::SetTargetLinearUnits()
+ *
+ * @since OGR 1.9.0
  */
-OGRErr OSRSetLinearUnits( OGRSpatialReferenceH hSRS, 
-                          const char * pszUnits, double dfInMeters )
+OGRErr OSRSetTargetLinearUnits( OGRSpatialReferenceH hSRS, 
+                                const char *pszTargetKey,
+                                const char * pszUnits, double dfInMeters )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRSetLinearUnits", CE_Failure );
+    VALIDATE_POINTER1( hSRS, "OSRSetTargetLinearUnits", CE_Failure );
 
-    return ((OGRSpatialReference *) hSRS)->SetLinearUnits( pszUnits, 
-                                                           dfInMeters );
+    return ((OGRSpatialReference *) hSRS)->
+        SetTargetLinearUnits( pszTargetKey, pszUnits, dfInMeters );
 }
 
 /************************************************************************/
@@ -1156,8 +1262,8 @@ OGRErr OSRSetLinearUnits( OGRSpatialReferenceH hSRS,
  * \brief Fetch linear projection units. 
  *
  * If no units are available, a value of "Meters" and 1.0 will be assumed.
- * This method only checks directly under the PROJCS or LOCAL_CS node for 
- * units.
+ * This method only checks directly under the PROJCS, GEOCCS or LOCAL_CS node 
+ * for units.
  *
  * This method does the same thing as the C function OSRGetLinearUnits()/
  *
@@ -1173,10 +1279,68 @@ OGRErr OSRSetLinearUnits( OGRSpatialReferenceH hSRS,
 double OGRSpatialReference::GetLinearUnits( char ** ppszName ) const
 
 {
-    const OGR_SRSNode *poCS = GetAttrNode( "PROJCS" );
+    return GetTargetLinearUnits( NULL, ppszName );
+}
 
-    if( poCS == NULL )
-        poCS = GetAttrNode( "LOCAL_CS" );
+/************************************************************************/
+/*                         OSRGetLinearUnits()                          */
+/************************************************************************/
+
+/**
+ * \brief Fetch linear projection units. 
+ *
+ * This function is the same as OGRSpatialReference::GetLinearUnits()
+ */
+double OSRGetLinearUnits( OGRSpatialReferenceH hSRS, char ** ppszName )
+    
+{
+    VALIDATE_POINTER1( hSRS, "OSRGetLinearUnits", 0 );
+
+    return ((OGRSpatialReference *) hSRS)->GetLinearUnits( ppszName );
+}
+
+/************************************************************************/
+/*                        GetTargetLinearUnits()                        */
+/************************************************************************/
+
+/**
+ * \brief Fetch linear units for target. 
+ *
+ * If no units are available, a value of "Meters" and 1.0 will be assumed.
+ *
+ * This method does the same thing as the C function OSRGetTargetLinearUnits()/
+ *
+ * @param pszTargetKey the key to look on. ie. "PROJCS" or "VERT_CS".
+ * @param ppszName a pointer to be updated with the pointer to the 
+ * units name.  The returned value remains internal to the OGRSpatialReference
+ * and shouldn't be freed, or modified.  It may be invalidated on the next
+ * OGRSpatialReference call. 
+ *
+ * @return the value to multiply by linear distances to transform them to 
+ * meters.
+ *
+ * @since OGR 1.9.0
+ */
+
+double OGRSpatialReference::GetTargetLinearUnits( const char *pszTargetKey,
+                                                  char ** ppszName ) const
+
+{
+    const OGR_SRSNode *poCS;
+
+    if( pszTargetKey == NULL )
+    {
+        poCS = GetAttrNode( "PROJCS" );
+
+        if( poCS == NULL )
+            poCS = GetAttrNode( "LOCAL_CS" );
+        if( poCS == NULL )
+            poCS = GetAttrNode( "GEOCCS" );
+        if( poCS == NULL && IsVertical() )
+            poCS = GetAttrNode( "VERT_CS" );
+    }
+    else
+        poCS = GetAttrNode( pszTargetKey );
 
     if( ppszName != NULL )
         *ppszName = (char*) "unknown";
@@ -1202,20 +1366,25 @@ double OGRSpatialReference::GetLinearUnits( char ** ppszName ) const
 }
 
 /************************************************************************/
-/*                         OSRGetLinearUnits()                          */
+/*                      OSRGetTargetLinearUnits()                       */
 /************************************************************************/
 
 /**
  * \brief Fetch linear projection units. 
  *
- * This function is the same as OGRSpatialReference::GetLinearUnits()
+ * This function is the same as OGRSpatialReference::GetTargetLinearUnits()
+ *
+ * @since OGR 1.9.0
  */
-double OSRGetLinearUnits( OGRSpatialReferenceH hSRS, char ** ppszName )
+double OSRGetTargetLinearUnits( OGRSpatialReferenceH hSRS, 
+                                const char *pszTargetKey, 
+                                char ** ppszName )
     
 {
-    VALIDATE_POINTER1( hSRS, "OSRGetLinearUnits", 0 );
+    VALIDATE_POINTER1( hSRS, "OSRGetTargetLinearUnits", 0 );
 
-    return ((OGRSpatialReference *) hSRS)->GetLinearUnits( ppszName );
+    return ((OGRSpatialReference *) hSRS)->GetTargetLinearUnits( pszTargetKey,
+                                                                 ppszName );
 }
 
 /************************************************************************/
@@ -1338,18 +1507,35 @@ OGRSpatialReference::SetGeogCS( const char * pszGeogName,
     bNormInfoSet = FALSE;
 
 /* -------------------------------------------------------------------- */
+/*      For a geocentric coordinate system we want to set the datum     */
+/*      and ellipsoid based on the GEOGCS.  Create the GEOGCS in a      */
+/*      temporary srs and use the copy method which has special         */
+/*      handling for GEOCCS.                                            */
+/* -------------------------------------------------------------------- */
+    if( IsGeocentric() )
+    {
+        OGRSpatialReference oGCS;
+
+        oGCS.SetGeogCS( pszGeogName, pszDatumName, pszSpheroidName,
+                        dfSemiMajor, dfInvFlattening, 
+                        pszPMName, dfPMOffset, 
+                        pszAngularUnits, dfConvertToRadians );
+        return CopyGeogCSFrom( &oGCS );
+    }        
+
+/* -------------------------------------------------------------------- */
 /*      Do we already have a GEOGCS?  If so, blow it away so it can     */
 /*      be properly replaced.                                           */
 /* -------------------------------------------------------------------- */
     if( GetAttrNode( "GEOGCS" ) != NULL )
     {
-        OGR_SRSNode *poPROJCS;
+        OGR_SRSNode *poCS;
 
         if( EQUAL(GetRoot()->GetValue(),"GEOGCS") )
             Clear();
-        else if( (poPROJCS = GetAttrNode( "PROJCS" )) != NULL
-                 && poPROJCS->FindChild( "GEOGCS" ) != -1 )
-            poPROJCS->DestroyChild( poPROJCS->FindChild( "GEOGCS" ) );
+        else if( (poCS = GetAttrNode( "PROJCS" )) != NULL
+                 && poCS->FindChild( "GEOGCS" ) != -1 )
+            poCS->DestroyChild( poCS->FindChild( "GEOGCS" ) );
         else
             return OGRERR_FAILURE;
     }
@@ -1538,16 +1724,16 @@ OGRErr OGRSpatialReference::SetWellKnownGeogCS( const char * pszName )
 /* -------------------------------------------------------------------- */
     char        *pszWKT = NULL;
 
-    if( EQUAL(pszName, "WGS84") || EQUAL(pszName,"CRS84") )
+    if( EQUAL(pszName, "WGS84") || EQUAL(pszName,"CRS84") || EQUAL(pszName,"CRS:84") )
         pszWKT = (char* ) SRS_WKT_WGS84;
 
     else if( EQUAL(pszName, "WGS72") )
         pszWKT = (char* ) "GEOGCS[\"WGS 72\",DATUM[\"WGS_1972\",SPHEROID[\"WGS 72\",6378135,298.26,AUTHORITY[\"EPSG\",\"7043\"]],TOWGS84[0,0,4.5,0,0,0.554,0.2263],AUTHORITY[\"EPSG\",\"6322\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AUTHORITY[\"EPSG\",\"4322\"]]";
 
-    else if( EQUAL(pszName, "NAD27") || EQUAL(pszName, "CRS27") )
+    else if( EQUAL(pszName, "NAD27") || EQUAL(pszName, "CRS27") || EQUAL(pszName,"CRS:27") )
         pszWKT = (char* ) "GEOGCS[\"NAD27\",DATUM[\"North_American_Datum_1927\",SPHEROID[\"Clarke 1866\",6378206.4,294.978698213898,AUTHORITY[\"EPSG\",\"7008\"]],AUTHORITY[\"EPSG\",\"6267\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AUTHORITY[\"EPSG\",\"4267\"]]";
         
-    else if( EQUAL(pszName, "NAD83") || EQUAL(pszName,"CRS83") )
+    else if( EQUAL(pszName, "NAD83") || EQUAL(pszName,"CRS83") || EQUAL(pszName,"CRS:83") )
         pszWKT = (char* ) "GEOGCS[\"NAD83\",DATUM[\"North_American_Datum_1983\",SPHEROID[\"GRS 1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6269\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AUTHORITY[\"EPSG\",\"4269\"]]";
 
     else
@@ -1607,6 +1793,30 @@ OGRErr OGRSpatialReference::CopyGeogCSFrom(
     const OGR_SRSNode  *poGeogCS = NULL;
 
     bNormInfoSet = FALSE;
+
+/* -------------------------------------------------------------------- */
+/*      Handle geocentric coordinate systems specially.  We just        */
+/*      want to copy the DATUM and PRIMEM nodes.                        */
+/* -------------------------------------------------------------------- */
+    if( IsGeocentric() )
+    {
+        if( GetRoot()->FindChild( "DATUM" ) != -1 )
+            GetRoot()->DestroyChild( GetRoot()->FindChild( "DATUM" ) );
+        if( GetRoot()->FindChild( "PRIMEM" ) != -1 )
+            GetRoot()->DestroyChild( GetRoot()->FindChild( "PRIMEM" ) );
+
+        const OGR_SRSNode *poDatum = poSrcSRS->GetAttrNode( "DATUM" );
+        const OGR_SRSNode *poPrimeM = poSrcSRS->GetAttrNode( "PRIMEM" );
+
+        if( poDatum == NULL || poPrimeM == NULL )
+            return OGRERR_FAILURE;
+        
+        poRoot->InsertChild( poDatum->Clone(), 1 );
+        poRoot->InsertChild( poPrimeM->Clone(), 2 );
+
+        return OGRERR_NONE;
+        
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Do we already have a GEOGCS?  If so, blow it away so it can     */
@@ -1686,6 +1896,7 @@ OGRErr OSRCopyGeogCSFrom( OGRSpatialReferenceH hSRS,
  * WGS84 or WGS72. 
  * <li> WKT (directly or in a file) in ESRI format should be prefixed with
  * ESRI:: to trigger an automatic morphFromESRI().
+ * <li> "IGNF:xxx" - "+init=IGNF:xxx" passed on to importFromProj4().
  * </ol>
  *
  * It is expected that this method will be extended in the future to support
@@ -1723,7 +1934,9 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
 /* -------------------------------------------------------------------- */
     if( EQUALN(pszDefinition,"PROJCS",6)
         || EQUALN(pszDefinition,"GEOGCS",6)
-        || EQUALN(pszDefinition,"COMPD_CS",6)
+        || EQUALN(pszDefinition,"COMPD_CS",8)
+        || EQUALN(pszDefinition,"GEOCCS",6)
+        || EQUALN(pszDefinition,"VERT_CS",7)
         || EQUALN(pszDefinition,"LOCAL_CS",8) )
     {
         err = importFromWkt( (char **) &pszDefinition );
@@ -1760,7 +1973,7 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
 
                 CPLString osName = poHorizSRS->GetChild(0)->GetValue();
                 osName += " + ";
-                osName += oVertSRS.GetRoot()->GetValue();
+                osName += oVertSRS.GetRoot()->GetChild(0)->GetValue();
 
                 SetNode( "COMPD_CS", osName );
                 GetRoot()->AddChild( poHorizSRS );
@@ -1773,16 +1986,26 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
             return eStatus;
     }
 
-    if( EQUALN(pszDefinition,"urn:ogc:def:crs:",16) 
+    if( EQUALN(pszDefinition,"urn:ogc:def:crs:",16)
+        || EQUALN(pszDefinition,"urn:ogc:def:crs,crs:",20)
         || EQUALN(pszDefinition,"urn:x-ogc:def:crs:",18)
+        || EQUALN(pszDefinition,"urn:opengis:crs:",16)
         || EQUALN(pszDefinition,"urn:opengis:def:crs:",20))
         return importFromURN( pszDefinition );
+
+    if( EQUALN(pszDefinition,"http://opengis.net/def/crs",26)
+        || EQUALN(pszDefinition,"http://www.opengis.net/def/crs",30)
+        || EQUALN(pszDefinition,"www.opengis.net/def/crs",23))
+        return importFromCRSURL( pszDefinition );
 
     if( EQUALN(pszDefinition,"AUTO:",5) )
         return importFromWMSAUTO( pszDefinition );
 
     if( EQUALN(pszDefinition,"OGC:",4) )  // WMS/WCS OGC codes like OGC:CRS84
         return SetWellKnownGeogCS( pszDefinition+4 );
+
+    if( EQUALN(pszDefinition,"CRS:",4) )
+        return SetWellKnownGeogCS( pszDefinition );
 
     if( EQUALN(pszDefinition,"DICT:",5) 
         && strstr(pszDefinition,",") )
@@ -1813,6 +2036,17 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
     if( strstr(pszDefinition,"+proj") != NULL 
              || strstr(pszDefinition,"+init") != NULL )
         return importFromProj4( pszDefinition );
+
+    if( EQUALN(pszDefinition,"IGNF:", 5) )
+    {
+        char* pszProj4Str = (char*) CPLMalloc(6 + strlen(pszDefinition) + 1);
+        strcpy(pszProj4Str, "+init=");
+        strcat(pszProj4Str, pszDefinition);
+        err = importFromProj4( pszProj4Str );
+        CPLFree(pszProj4Str);
+
+        return err;
+    }
 
     if( EQUALN(pszDefinition,"http://",7) )
     {
@@ -2008,86 +2242,18 @@ OGRErr OSRImportFromUrl( OGRSpatialReferenceH hSRS, const char *pszUrl )
 }
 
 /************************************************************************/
-/*                           importFromURN()                            */
-/*                                                                      */
-/*      See OGC recommendation paper 06-023r1 or later for details.     */
+/*                         importFromURNPart()                          */
 /************************************************************************/
-
-/**
- * \brief Initialize from OGC URN. 
- *
- * Initializes this spatial reference from a coordinate system defined
- * by an OGC URN prefixed with "urn:ogc:def:crs:" per recommendation 
- * paper 06-023r1.  Currently EPSG and OGC authority values are supported, 
- * including OGC auto codes, but not including CRS1 or CRS88 (NAVD88). 
- *
- * This method is also support through SetFromUserInput() which can
- * normally be used for URNs.
- * 
- * @param pszURN the urn string. 
- *
- * @return OGRERR_NONE on success or an error code.
- */
-
-OGRErr OGRSpatialReference::importFromURN( const char *pszURN )
-
+OGRErr OGRSpatialReference::importFromURNPart(const char* pszAuthority,
+                                              const char* pszCode,
+                                              const char* pszURN)
 {
-    const char *pszCur;
-
-    if( EQUALN(pszURN,"urn:ogc:def:crs:",16) )
-        pszCur = pszURN + 16;
-    else if( EQUALN(pszURN,"urn:x-ogc:def:crs:",18) )
-        pszCur = pszURN + 18;
-    else if( EQUALN(pszURN,"urn:opengis:def:crs:",20) )
-        pszCur = pszURN + 20;
-    else
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "URN %s not a supported format.", pszURN );
-        return OGRERR_FAILURE;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Clear any existing definition.                                  */
-/* -------------------------------------------------------------------- */
-    if( GetRoot() != NULL )
-    {
-        delete poRoot;
-        poRoot = NULL;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Find code (ignoring version) out of string like:                */
-/*                                                                      */
-/*      authority:[version]:code                                          */
-/* -------------------------------------------------------------------- */
-    const char *pszAuthority = pszCur;
-
-    // skip authority
-    while( *pszCur != ':' && *pszCur )
-        pszCur++;
-    if( *pszCur == ':' )
-        pszCur++;
-
-    // skip version
-    const char* pszBeforeVersion = pszCur;
-    while( *pszCur != ':' && *pszCur )
-        pszCur++;
-    if( *pszCur == ':' )
-        pszCur++;
-    else
-        /* We come here in the case, the content to parse is authority:code (instead of authority::code) */
-        /* which is probably illegal according to http://www.opengeospatial.org/ogcUrnPolicy */
-        /* but such content is found for example in what is returned by GeoServer */
-        pszCur = pszBeforeVersion;
-
-    const char *pszCode = pszCur;
 
 /* -------------------------------------------------------------------- */
 /*      Is this an EPSG code? Note that we import it with EPSG          */
 /*      preferred axis ordering for geographic coordinate systems!      */
 /* -------------------------------------------------------------------- */
-    if( EQUALN(pszAuthority,"EPSG:",5) )
+    if( EQUALN(pszAuthority,"EPSG",4) )
         return importFromEPSGA( atoi(pszCode) );
 
 /* -------------------------------------------------------------------- */
@@ -2099,10 +2265,10 @@ OGRErr OGRSpatialReference::importFromURN( const char *pszURN )
 /* -------------------------------------------------------------------- */
 /*      Is this an OGC code?                                            */
 /* -------------------------------------------------------------------- */
-    if( !EQUALN(pszAuthority,"OGC:",4) )
+    if( !EQUALN(pszAuthority,"OGC",3) )
     {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "URN %s has unrecognised authority.", 
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "URN %s has unrecognised authority.",
                   pszURN );
         return OGRERR_FAILURE;
     }
@@ -2140,11 +2306,316 @@ OGRErr OGRSpatialReference::importFromURN( const char *pszURN )
 /* -------------------------------------------------------------------- */
 /*      Not a recognise OGC item.                                       */
 /* -------------------------------------------------------------------- */
-    CPLError( CE_Failure, CPLE_AppDefined, 
-              "URN %s value not supported.", 
+    CPLError( CE_Failure, CPLE_AppDefined,
+              "URN %s value not supported.",
               pszURN );
 
     return OGRERR_FAILURE;
+}
+
+/************************************************************************/
+/*                           importFromURN()                            */
+/*                                                                      */
+/*      See OGC recommendation paper 06-023r1 or later for details.     */
+/************************************************************************/
+
+/**
+ * \brief Initialize from OGC URN. 
+ *
+ * Initializes this spatial reference from a coordinate system defined
+ * by an OGC URN prefixed with "urn:ogc:def:crs:" per recommendation 
+ * paper 06-023r1.  Currently EPSG and OGC authority values are supported, 
+ * including OGC auto codes, but not including CRS1 or CRS88 (NAVD88). 
+ *
+ * This method is also support through SetFromUserInput() which can
+ * normally be used for URNs.
+ * 
+ * @param pszURN the urn string. 
+ *
+ * @return OGRERR_NONE on success or an error code.
+ */
+
+OGRErr OGRSpatialReference::importFromURN( const char *pszURN )
+
+{
+    const char *pszCur;
+
+    if( EQUALN(pszURN,"urn:ogc:def:crs:",16) )
+        pszCur = pszURN + 16;
+    else if( EQUALN(pszURN,"urn:ogc:def:crs,crs:",20) )
+        pszCur = pszURN + 20;
+    else if( EQUALN(pszURN,"urn:x-ogc:def:crs:",18) )
+        pszCur = pszURN + 18;
+    else if( EQUALN(pszURN,"urn:opengis:crs:",16) )
+        pszCur = pszURN + 16;
+    else if( EQUALN(pszURN,"urn:opengis:def:crs:",20) )
+        pszCur = pszURN + 20;
+    else
+    {
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "URN %s not a supported format.", pszURN );
+        return OGRERR_FAILURE;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Clear any existing definition.                                  */
+/* -------------------------------------------------------------------- */
+    if( GetRoot() != NULL )
+    {
+        delete poRoot;
+        poRoot = NULL;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Find code (ignoring version) out of string like:                */
+/*                                                                      */
+/*      authority:[version]:code                                        */
+/* -------------------------------------------------------------------- */
+    const char *pszAuthority = pszCur;
+
+    // skip authority
+    while( *pszCur != ':' && *pszCur )
+        pszCur++;
+    if( *pszCur == ':' )
+        pszCur++;
+
+    // skip version
+    const char* pszBeforeVersion = pszCur;
+    while( *pszCur != ':' && *pszCur )
+        pszCur++;
+    if( *pszCur == ':' )
+        pszCur++;
+    else
+        /* We come here in the case, the content to parse is authority:code (instead of authority::code) */
+        /* which is probably illegal according to http://www.opengeospatial.org/ogcUrnPolicy */
+        /* but such content is found for example in what is returned by GeoServer */
+        pszCur = pszBeforeVersion;
+
+    const char *pszCode = pszCur;
+
+    const char* pszComma = strchr(pszCur, ',');
+    if (pszComma == NULL)
+        return importFromURNPart(pszAuthority, pszCode, pszURN);
+
+
+    /* There's a second part with the vertical SRS */
+    pszCur = pszComma + 1;
+    if (strncmp(pszCur, "crs:", 4) != 0)
+    {
+        CPLError( CE_Failure, CPLE_AppDefined,
+                  "URN %s not a supported format.", pszURN );
+        return OGRERR_FAILURE;
+    }
+
+    pszCur += 4;
+
+    char* pszFirstCode = CPLStrdup(pszCode);
+    pszFirstCode[pszComma - pszCode] = '\0';
+    OGRErr eStatus = importFromURNPart(pszAuthority, pszFirstCode, pszURN);
+    CPLFree(pszFirstCode);
+
+    // Do we want to turn this into a compound definition
+    // with a vertical datum?
+    if( eStatus == OGRERR_NONE )
+    {
+        OGRSpatialReference oVertSRS;
+
+    /* -------------------------------------------------------------------- */
+    /*      Find code (ignoring version) out of string like:                */
+    /*                                                                      */
+    /*      authority:[version]:code                                        */
+    /* -------------------------------------------------------------------- */
+        pszAuthority = pszCur;
+
+        // skip authority
+        while( *pszCur != ':' && *pszCur )
+            pszCur++;
+        if( *pszCur == ':' )
+            pszCur++;
+
+        // skip version
+        pszBeforeVersion = pszCur;
+        while( *pszCur != ':' && *pszCur )
+            pszCur++;
+        if( *pszCur == ':' )
+            pszCur++;
+        else
+            pszCur = pszBeforeVersion;
+
+        pszCode = pszCur;
+
+        eStatus = oVertSRS.importFromURNPart(pszAuthority, pszCode, pszURN);
+        if( eStatus == OGRERR_NONE )
+        {
+            OGR_SRSNode *poHorizSRS = GetRoot()->Clone();
+
+            Clear();
+
+            CPLString osName = poHorizSRS->GetChild(0)->GetValue();
+            osName += " + ";
+            osName += oVertSRS.GetRoot()->GetChild(0)->GetValue();
+
+            SetNode( "COMPD_CS", osName );
+            GetRoot()->AddChild( poHorizSRS );
+            GetRoot()->AddChild( oVertSRS.GetRoot()->Clone() );
+        }
+
+        return eStatus;
+    }
+    else
+        return eStatus;
+}
+
+/************************************************************************/
+/*                           importFromCRSURL()                         */
+/*                                                                      */
+/*      See OGC Best Practice document 11-135 for details.              */
+/************************************************************************/
+
+/**
+ * \brief Initialize from OGC URL. 
+ *
+ * Initializes this spatial reference from a coordinate system defined
+ * by an OGC URL prefixed with "http://opengis.net/def/crs" per best practice 
+ * paper 11-135.  Currently EPSG and OGC authority values are supported, 
+ * including OGC auto codes, but not including CRS1 or CRS88 (NAVD88). 
+ *
+ * This method is also supported through SetFromUserInput() which can
+ * normally be used for URLs.
+ * 
+ * @param pszURL the URL string. 
+ *
+ * @return OGRERR_NONE on success or an error code.
+ */
+
+OGRErr OGRSpatialReference::importFromCRSURL( const char *pszURL )
+
+{
+    const char *pszCur;
+    
+    if( EQUALN(pszURL,"http://opengis.net/def/crs",26) )
+        pszCur = pszURL + 26;
+    else if( EQUALN(pszURL,"http://www.opengis.net/def/crs",30) )
+        pszCur = pszURL + 30;
+    else if( EQUALN(pszURL,"www.opengis.net/def/crs",23) )
+        pszCur = pszURL + 23;
+    else
+    {
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "URL %s not a supported format.", pszURL );
+        return OGRERR_FAILURE;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Clear any existing definition.                                  */
+/* -------------------------------------------------------------------- */
+    if( GetRoot() != NULL )
+    {
+        delete poRoot;
+        poRoot = NULL;
+    }
+
+    if( EQUALN(pszCur, "-compound?1=", 12) )
+    {
+/* -------------------------------------------------------------------- */
+/*      It's a compound CRS, of the form:                               */
+/*                                                                      */
+/*      http://opengis.net/def/crs-compound?1=URL1&2=URL2&3=URL3&..     */
+/* -------------------------------------------------------------------- */
+        pszCur += 12;
+        
+        // extract each component CRS URL
+        int iComponentUrl = 2;
+
+        CPLString osName = "";
+        Clear();
+        
+        while (iComponentUrl != -1)
+        {
+            char searchStr[5];
+            sprintf(searchStr, "&%d=", iComponentUrl);
+            
+            const char* pszUrlEnd = strstr(pszCur, searchStr);
+            
+            // figure out the next component URL
+            char* pszComponentUrl;
+            
+            if( pszUrlEnd )
+            {
+                size_t nLen = pszUrlEnd - pszCur;
+                pszComponentUrl = (char*) CPLMalloc(nLen + 1);
+                strncpy(pszComponentUrl, pszCur, nLen);
+                pszComponentUrl[nLen] = '\0';
+                
+                ++iComponentUrl;
+                pszCur += nLen + strlen(searchStr);
+            }
+            else
+            {
+                if( iComponentUrl == 2 )
+                {
+                    CPLError( CE_Failure, CPLE_AppDefined, 
+                              "Compound CRS URLs must have at least two component CRSs." );
+                    return OGRERR_FAILURE;
+                }
+                else
+                {
+                    pszComponentUrl = CPLStrdup(pszCur);
+                    // no more components
+                    iComponentUrl = -1;
+                }
+            }
+            
+            OGRSpatialReference oComponentSRS;
+            OGRErr eStatus = oComponentSRS.importFromCRSURL( pszComponentUrl );
+
+            CPLFree(pszComponentUrl);
+            pszComponentUrl = NULL;
+            
+            if( eStatus == OGRERR_NONE )
+            {
+                if( osName.length() != 0 )
+                {
+                  osName += " + ";
+                }
+                osName += oComponentSRS.GetRoot()->GetValue();
+                SetNode( "COMPD_CS", osName );
+                GetRoot()->AddChild( oComponentSRS.GetRoot()->Clone() );
+            }
+            else
+                return eStatus;
+        }
+        
+        
+        return OGRERR_NONE;
+    }
+    else
+    {
+/* -------------------------------------------------------------------- */
+/*      It's a normal CRS URL, of the form:                             */
+/*                                                                      */
+/*      http://opengis.net/def/crs/AUTHORITY/VERSION/CODE               */
+/* -------------------------------------------------------------------- */
+        ++pszCur;
+        const char *pszAuthority = pszCur;
+
+        // skip authority
+        while( *pszCur != '/' && *pszCur )
+            pszCur++;
+        if( *pszCur == '/' )
+            pszCur++;
+        
+
+        // skip version
+        while( *pszCur != '/' && *pszCur )
+            pszCur++;
+        if( *pszCur == '/' )
+            pszCur++;
+        
+        const char *pszCode = pszCur;
+        
+        return importFromURNPart( pszAuthority, pszCode, pszURL );
+    }
 }
 
 /************************************************************************/
@@ -2450,7 +2921,7 @@ double OSRGetSemiMinor( OGRSpatialReferenceH hSRS, OGRErr *pnErr )
  *
  * This method is the same as the C function OSRSetLocalCS(). 
  *
- * This method is will ensure a LOCAL_CS node is created as the root, 
+ * This method will ensure a LOCAL_CS node is created as the root,
  * and set the provided name on it.  It must be used before SetLinearUnits().
  *
  * @param pszName the user visible name to assign.  Not used as a key.
@@ -2496,6 +2967,284 @@ OGRErr OSRSetLocalCS( OGRSpatialReferenceH hSRS, const char * pszName )
 }
 
 /************************************************************************/
+/*                             SetGeocCS()                              */
+/************************************************************************/
+
+/**
+ * \brief Set the user visible GEOCCS name.
+ *
+ * This method is the same as the C function OSRSetGeocCS(). 
+
+ * This method will ensure a GEOCCS node is created as the root,
+ * and set the provided name on it.  If used on a GEOGCS coordinate system, 
+ * the DATUM and PRIMEM nodes from the GEOGCS will be tarnsferred over to 
+ * the GEOGCS. 
+ *
+ * @param pszName the user visible name to assign.  Not used as a key.
+ * 
+ * @return OGRERR_NONE on success.
+ *
+ * @since OGR 1.9.0
+ */
+
+OGRErr OGRSpatialReference::SetGeocCS( const char * pszName )
+
+{
+    OGR_SRSNode *poGeogCS = NULL;
+    OGR_SRSNode *poGeocCS = GetAttrNode( "GEOCCS" );
+
+    if( poRoot != NULL && EQUAL(poRoot->GetValue(),"GEOGCS") )
+    {
+        poGeogCS = poRoot;
+        poRoot = NULL;
+    }
+
+    if( poGeocCS == NULL && GetRoot() != NULL )
+    {
+        CPLDebug( "OGR", 
+                  "OGRSpatialReference::SetGeocCS(%s) failed.\n"
+               "It appears an incompatible root node (%s) already exists.\n",
+                  pszName, GetRoot()->GetValue() );
+        return OGRERR_FAILURE;
+    }
+
+    SetNode( "GEOCCS", pszName );
+
+    if( poGeogCS != NULL )
+    {
+        OGR_SRSNode *poDatum = poGeogCS->GetNode( "DATUM" );
+        OGR_SRSNode *poPRIMEM = poGeogCS->GetNode( "PRIMEM" );
+        if ( poDatum != NULL && poPRIMEM != NULL )
+        {
+            poRoot->InsertChild( poDatum->Clone(), 1 );
+            poRoot->InsertChild( poPRIMEM->Clone(), 2 );
+        }
+        delete poGeogCS;
+    }
+
+    return OGRERR_NONE;
+}
+
+/************************************************************************/
+/*                            OSRSetGeocCS()                            */
+/************************************************************************/
+
+/**
+ * \brief Set the user visible PROJCS name.
+ *
+ * This function is the same as OGRSpatialReference::SetGeocCS()
+ *
+ * @since OGR 1.9.0
+ */
+OGRErr OSRSetGeocCS( OGRSpatialReferenceH hSRS, const char * pszName )
+
+{
+    VALIDATE_POINTER1( hSRS, "OSRSetGeocCS", CE_Failure );
+
+    return ((OGRSpatialReference *) hSRS)->SetGeocCS( pszName );
+}
+
+/************************************************************************/
+/*                             SetVertCS()                              */
+/************************************************************************/
+
+/**
+ * \brief Set the user visible VERT_CS name.
+ *
+ * This method is the same as the C function OSRSetVertCS(). 
+
+ * This method will ensure a VERT_CS node is created if needed.  If the
+ * existing coordinate system is GEOGCS or PROJCS rooted, then it will be
+ * turned into a COMPD_CS.
+ *
+ * @param pszVertCSName the user visible name of the vertical coordinate
+ * system. Not used as a key.
+ *  
+ * @param pszVertDatumName the user visible name of the vertical datum.  It
+ * is helpful if this matches the EPSG name.
+ * 
+ * @param nVertDatumType the OGC vertical datum type, usually 2005. 
+ * 
+ * @return OGRERR_NONE on success.
+ *
+ * @since OGR 1.9.0
+ */
+
+OGRErr OGRSpatialReference::SetVertCS( const char * pszVertCSName,
+                                       const char * pszVertDatumName,
+                                       int nVertDatumType )
+
+{
+/* -------------------------------------------------------------------- */
+/*      Handle the case where we want to make a compound coordinate     */
+/*      system.                                                         */
+/* -------------------------------------------------------------------- */
+    if( IsProjected() || IsGeographic() )
+    {
+        OGR_SRSNode *poNewRoot = new OGR_SRSNode( "COMPD_CS" );
+        poNewRoot->AddChild( poRoot );
+        poRoot = poNewRoot;
+    }
+
+    else if( GetAttrNode( "VERT_CS" ) == NULL )
+        Clear();
+
+/* -------------------------------------------------------------------- */
+/*      If we already have a VERT_CS, wipe and recreate the root        */
+/*      otherwise create the VERT_CS now.                               */
+/* -------------------------------------------------------------------- */
+    OGR_SRSNode *poVertCS = GetAttrNode( "VERT_CS" );
+    
+    if( poVertCS != NULL )
+    {
+        poVertCS->ClearChildren();
+    }
+    else
+    {
+        poVertCS = new OGR_SRSNode( "VERT_CS" );
+        if( poRoot != NULL && EQUAL(poRoot->GetValue(),"COMPD_CS") )
+        {
+            poRoot->AddChild( poVertCS );
+        }
+        else
+            SetRoot( poVertCS );
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Set the name, datumname, and type.                              */
+/* -------------------------------------------------------------------- */
+    OGR_SRSNode *poVertDatum;
+
+    poVertCS->AddChild( new OGR_SRSNode( pszVertCSName ) );
+    
+    poVertDatum = new OGR_SRSNode( "VERT_DATUM" );
+    poVertCS->AddChild( poVertDatum );
+        
+    poVertDatum->AddChild( new OGR_SRSNode( pszVertDatumName ) );
+
+    CPLString osVertDatumType;
+    osVertDatumType.Printf( "%d", nVertDatumType );
+    poVertDatum->AddChild( new OGR_SRSNode( osVertDatumType ) );
+
+    // add default axis node.
+    OGR_SRSNode *poAxis = new OGR_SRSNode( "AXIS" );
+
+    poAxis->AddChild( new OGR_SRSNode( "Up" ) );
+    poAxis->AddChild( new OGR_SRSNode( "UP" ) );
+
+    poVertCS->AddChild( poAxis );
+
+    return OGRERR_NONE;
+}
+
+/************************************************************************/
+/*                            OSRSetVertCS()                            */
+/************************************************************************/
+
+/**
+ * \brief Setup the vertical coordinate system.
+ *
+ * This function is the same as OGRSpatialReference::SetVertCS()
+ *
+ * @since OGR 1.9.0
+ */
+OGRErr OSRSetVertCS( OGRSpatialReferenceH hSRS,
+                     const char * pszVertCSName,
+                     const char * pszVertDatumName,
+                     int nVertDatumType )
+
+{
+    VALIDATE_POINTER1( hSRS, "OSRSetVertCS", CE_Failure );
+
+    return ((OGRSpatialReference *) hSRS)->SetVertCS( pszVertCSName,
+                                                      pszVertDatumName,
+                                                      nVertDatumType );
+}
+
+/************************************************************************/
+/*                           SetCompoundCS()                            */
+/************************************************************************/
+
+/**
+ * \brief Setup a compound coordinate system.
+ *
+ * This method is the same as the C function OSRSetCompoundCS(). 
+
+ * This method is replace the current SRS with a COMPD_CS coordinate system
+ * consisting of the passed in horizontal and vertical coordinate systems.
+ *
+ * @param pszName the name of the compound coordinate system. 
+ * 
+ * @param poHorizSRS the horizontal SRS (PROJCS or GEOGCS).
+ *  
+ * @param poVertSRS the vertical SRS (VERT_CS).
+ * 
+ * @return OGRERR_NONE on success.
+ */
+
+OGRErr 
+OGRSpatialReference::SetCompoundCS( const char *pszName,
+                                    const OGRSpatialReference *poHorizSRS,
+                                    const OGRSpatialReference *poVertSRS )
+
+{
+/* -------------------------------------------------------------------- */
+/*      Verify these are legal horizontal and vertical coordinate       */
+/*      systems.                                                        */
+/* -------------------------------------------------------------------- */
+    if( !poVertSRS->IsVertical() ) 
+    {
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "SetCompoundCS() fails, vertical component is not VERT_CS." );
+        return OGRERR_FAILURE;
+    }
+    if( !poHorizSRS->IsProjected() 
+        && !poHorizSRS->IsGeographic() )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "SetCompoundCS() fails, horizontal component is not PROJCS or GEOGCS." );
+        return OGRERR_FAILURE;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Replace with compound srs.                                      */
+/* -------------------------------------------------------------------- */
+    Clear();
+
+    poRoot = new OGR_SRSNode( "COMPD_CS" );
+    poRoot->AddChild( new OGR_SRSNode( pszName ) );
+    poRoot->AddChild( poHorizSRS->GetRoot()->Clone() );
+    poRoot->AddChild( poVertSRS->GetRoot()->Clone() );
+    
+    return OGRERR_NONE;
+}
+
+/************************************************************************/
+/*                          OSRSetCompoundCS()                          */
+/************************************************************************/
+
+/**
+ * \brief Setup a compound coordinate system.
+ *
+ * This function is the same as OGRSpatialReference::SetCompoundCS()
+ */
+OGRErr OSRSetCompoundCS( OGRSpatialReferenceH hSRS,
+                         const char *pszName,
+                         OGRSpatialReferenceH hHorizSRS,
+                         OGRSpatialReferenceH hVertSRS )
+
+{
+    VALIDATE_POINTER1( hSRS, "OSRSetCompoundCS", CE_Failure );
+    VALIDATE_POINTER1( hHorizSRS, "OSRSetCompoundCS", CE_Failure );
+    VALIDATE_POINTER1( hVertSRS, "OSRSetCompoundCS", CE_Failure );
+
+    return ((OGRSpatialReference *) hSRS)->
+        SetCompoundCS( pszName,
+                       (OGRSpatialReference *) hHorizSRS,
+                       (OGRSpatialReference *) hVertSRS );
+}
+
+/************************************************************************/
 /*                             SetProjCS()                              */
 /************************************************************************/
 
@@ -2504,7 +3253,7 @@ OGRErr OSRSetLocalCS( OGRSpatialReferenceH hSRS, const char * pszName )
  *
  * This method is the same as the C function OSRSetProjCS(). 
  *
- * This method is will ensure a PROJCS node is created as the root, 
+ * This method will ensure a PROJCS node is created as the root,
  * and set the provided name on it.  If used on a GEOGCS coordinate system, 
  * the GEOGCS node will be demoted to be a child of the new PROJCS root.
  *
@@ -2614,6 +3363,8 @@ OGRErr OSRSetProjection( OGRSpatialReferenceH hSRS,
                          const char * pszProjection )
 
 {
+    VALIDATE_POINTER1( hSRS, "OSRSetProjection", CE_Failure );
+
     return ((OGRSpatialReference *) hSRS)->SetProjection( pszProjection );
 }
 
@@ -3656,6 +4407,30 @@ OGRErr OSRSetGH( OGRSpatialReferenceH hSRS,
 }
 
 /************************************************************************/
+/*                              SetIGH()                                */
+/************************************************************************/
+
+OGRErr OGRSpatialReference::SetIGH()
+
+{
+    SetProjection( SRS_PT_IGH );
+
+    return OGRERR_NONE;
+}
+
+/************************************************************************/
+/*                              OSRSetIGH()                             */
+/************************************************************************/
+
+OGRErr OSRSetIGH( OGRSpatialReferenceH hSRS )
+
+{
+    VALIDATE_POINTER1( hSRS, "OSRSetIGH", CE_Failure );
+
+    return ((OGRSpatialReference *) hSRS)->SetIGH();
+}
+
+/************************************************************************/
 /*                              SetGEOS()                               */
 /************************************************************************/
 
@@ -3724,6 +4499,8 @@ OGRErr OSRSetGaussSchreiberTMercator( OGRSpatialReferenceH hSRS,
                                       double dfFalseNorthing )
 
 {
+    VALIDATE_POINTER1( hSRS, "OSRSetGaussSchreiberTMercator", CE_Failure );
+
     return ((OGRSpatialReference *) hSRS)->SetGaussSchreiberTMercator(
         dfCenterLat, dfCenterLong, dfScale,
         dfFalseEasting, dfFalseNorthing );
@@ -3766,11 +4543,84 @@ OGRErr OSRSetGnomonic( OGRSpatialReferenceH hSRS,
 }
 
 /************************************************************************/
+/*                              SetHOMAC()                              */
+/************************************************************************/
+
+/**
+ * \brief Set an Hotine Oblique Mercator Azimuth Center projection using 
+ * azimuth angle.
+ *
+ * This projection corresponds to EPSG projection method 9815, also 
+ * sometimes known as hotine oblique mercator (variant B).
+ *
+ * This method does the same thing as the C function OSRSetHOMAC().
+ *
+ * @param dfCenterLat Latitude of the projection origin.
+ * @param dfCenterLong Longitude of the projection origin.
+ * @param dfAzimuth Azimuth, measured clockwise from North, of the projection
+ * centerline.
+ * @param dfRectToSkew ?.
+ * @param dfScale Scale factor applies to the projection origin.
+ * @param dfFalseEasting False easting.
+ * @param dfFalseNorthing False northing.
+ *
+ * @return OGRERR_NONE on success.
+ */ 
+
+OGRErr OGRSpatialReference::SetHOMAC( double dfCenterLat, double dfCenterLong,
+                                      double dfAzimuth, double dfRectToSkew,
+                                      double dfScale,
+                                      double dfFalseEasting,
+                                      double dfFalseNorthing )
+
+{
+    SetProjection( SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER );
+    SetNormProjParm( SRS_PP_LATITUDE_OF_CENTER, dfCenterLat );
+    SetNormProjParm( SRS_PP_LONGITUDE_OF_CENTER, dfCenterLong );
+    SetNormProjParm( SRS_PP_AZIMUTH, dfAzimuth );
+    SetNormProjParm( SRS_PP_RECTIFIED_GRID_ANGLE, dfRectToSkew );
+    SetNormProjParm( SRS_PP_SCALE_FACTOR, dfScale );
+    SetNormProjParm( SRS_PP_FALSE_EASTING, dfFalseEasting );
+    SetNormProjParm( SRS_PP_FALSE_NORTHING, dfFalseNorthing );
+
+    return OGRERR_NONE;
+}
+
+/************************************************************************/
+/*                            OSRSetHOMAC()                             */
+/************************************************************************/
+
+/**
+ * \brief Set an Oblique Mercator projection using azimuth angle.
+ *
+ * This is the same as the C++ method OGRSpatialReference::SetHOMAC()
+ */
+OGRErr OSRSetHOMAC( OGRSpatialReferenceH hSRS, 
+                    double dfCenterLat, double dfCenterLong,
+                    double dfAzimuth, double dfRectToSkew, 
+                    double dfScale,
+                    double dfFalseEasting,
+                    double dfFalseNorthing )
+    
+{
+    VALIDATE_POINTER1( hSRS, "OSRSetHOMAC", CE_Failure );
+
+    return ((OGRSpatialReference *) hSRS)->SetHOMAC( 
+        dfCenterLat, dfCenterLong, 
+        dfAzimuth, dfRectToSkew, 
+        dfScale,
+        dfFalseEasting, dfFalseNorthing );
+}
+
+/************************************************************************/
 /*                               SetHOM()                               */
 /************************************************************************/
 
 /**
  * \brief Set a Hotine Oblique Mercator projection using azimuth angle.
+ *
+ * This projection corresponds to EPSG projection method 9812, also 
+ * sometimes known as hotine oblique mercator (variant A)..
  *
  * This method does the same thing as the C function OSRSetHOM().
  *
@@ -5085,6 +5935,8 @@ const char *OSRGetAuthorityName( OGRSpatialReferenceH hSRS,
  * portion remains (normally PROJCS, GEOGCS or LOCAL_CS). 
  *
  * If this is not a compound coordinate system then nothing is changed.
+ *
+ * @since OGR 1.8.0
  */
 
 OGRErr OGRSpatialReference::StripVertical()
@@ -5170,6 +6022,44 @@ OGRErr OSRStripCTParms( OGRSpatialReferenceH hSRS )
 }
 
 /************************************************************************/
+/*                             IsCompound()                             */
+/************************************************************************/
+
+/**
+ * \brief Check if coordinate system is compound.
+ *
+ * This method is the same as the C function OSRIsCompound().
+ *
+ * @return TRUE if this is rooted with a COMPD_CS node.
+ */
+
+int OGRSpatialReference::IsCompound() const
+
+{
+    if( poRoot == NULL )
+        return FALSE;
+
+    return EQUAL(poRoot->GetValue(),"COMPD_CS");
+}
+
+/************************************************************************/
+/*                           OSRIsCompound()                            */
+/************************************************************************/
+
+/** 
+ * \brief Check if the coordinate system is compound.
+ *
+ * This function is the same as OGRSpatialReference::IsCompound().
+ */
+int OSRIsCompound( OGRSpatialReferenceH hSRS ) 
+
+{
+    VALIDATE_POINTER1( hSRS, "OSRIsCompound", 0 );
+
+    return ((OGRSpatialReference *) hSRS)->IsCompound();
+}
+
+/************************************************************************/
 /*                            IsProjected()                             */
 /************************************************************************/
 
@@ -5210,6 +6100,51 @@ int OSRIsProjected( OGRSpatialReferenceH hSRS )
     VALIDATE_POINTER1( hSRS, "OSRIsProjected", 0 );
 
     return ((OGRSpatialReference *) hSRS)->IsProjected();
+}
+
+/************************************************************************/
+/*                            IsGeocentric()                            */
+/************************************************************************/
+
+/**
+ * \brief Check if geocentric coordinate system.
+ *
+ * This method is the same as the C function OSRIsGeocentric().
+ *
+ * @return TRUE if this contains a GEOCCS node indicating a it is a 
+ * geocentric coordinate system.
+ *
+ * @since OGR 1.9.0
+ */
+
+int OGRSpatialReference::IsGeocentric() const
+
+{
+    if( poRoot == NULL )
+        return FALSE;
+
+    if( EQUAL(poRoot->GetValue(),"GEOCCS") )
+        return TRUE;
+    else 
+        return FALSE;
+}
+
+/************************************************************************/
+/*                           OSRIsGeocentric()                          */
+/************************************************************************/
+/** 
+ * \brief Check if geocentric coordinate system.
+ *
+ * This function is the same as OGRSpatialReference::IsGeocentric().
+ *
+ * @since OGR 1.9.0
+ */
+int OSRIsGeocentric( OGRSpatialReferenceH hSRS ) 
+
+{
+    VALIDATE_POINTER1( hSRS, "OSRIsGeocentric", 0 );
+
+    return ((OGRSpatialReference *) hSRS)->IsGeocentric();
 }
 
 /************************************************************************/
@@ -5304,7 +6239,9 @@ int OSRIsLocal( OGRSpatialReferenceH hSRS )
  * This method is the same as the C function OSRIsVertical().
  *
  * @return TRUE if this contains a VERT_CS node indicating a it is a 
- * vertical coordinate system. 
+ * vertical coordinate system.
+ *
+ * @since OGR 1.8.0
  */
 
 int OGRSpatialReference::IsVertical() const
@@ -5328,6 +6265,8 @@ int OGRSpatialReference::IsVertical() const
  * \brief Check if vertical coordinate system.
  *
  * This function is the same as OGRSpatialReference::IsVertical().
+ *
+ * @since OGR 1.8.0
  */
 int OSRIsVertical( OGRSpatialReferenceH hSRS ) 
 
@@ -5352,6 +6291,35 @@ OGRSpatialReference *OGRSpatialReference::CloneGeogCS() const
     const OGR_SRSNode *poGeogCS;
     OGRSpatialReference * poNewSRS;
 
+/* -------------------------------------------------------------------- */
+/*      We have to reconstruct the GEOGCS node for geocentric           */
+/*      coordinate systems.                                             */
+/* -------------------------------------------------------------------- */
+    if( IsGeocentric() )
+    {
+        const OGR_SRSNode *poDatum = GetAttrNode( "DATUM" );
+        const OGR_SRSNode *poPRIMEM = GetAttrNode( "PRIMEM" );
+        OGR_SRSNode *poGeogCS;
+        
+        if( poDatum == NULL || poPRIMEM == NULL )
+            return NULL;
+        
+        poGeogCS = new OGR_SRSNode( "GEOGCS" );
+        poGeogCS->AddChild( new OGR_SRSNode( "unnamed" ) );
+        poGeogCS->AddChild( poDatum->Clone() );
+        poGeogCS->AddChild( poPRIMEM->Clone() );
+
+        poNewSRS = new OGRSpatialReference();
+        poNewSRS->SetRoot( poGeogCS );
+
+        poNewSRS->SetAngularUnits( "degree", CPLAtof(SRS_UA_DEGREE_CONV) );
+
+        return poNewSRS;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      For all others we just search the tree, and duplicate.          */
+/* -------------------------------------------------------------------- */
     poGeogCS = GetAttrNode( "GEOGCS" );
     if( poGeogCS == NULL )
         return NULL;
@@ -5969,13 +6937,16 @@ OGRErr OGRSpatialReference::Fixup()
 
 {
 /* -------------------------------------------------------------------- */
-/*      Ensure linear units defaulted to METER if missing for PROJCS    */
-/*      or LOCAL_CS.                                                    */
+/*      Ensure linear units defaulted to METER if missing for PROJCS,   */
+/*      GEOCCS or LOCAL_CS.                                             */
 /* -------------------------------------------------------------------- */
     const OGR_SRSNode *poCS = GetAttrNode( "PROJCS" );
 
     if( poCS == NULL )
         poCS = GetAttrNode( "LOCAL_CS" );
+
+    if( poCS == NULL )
+        poCS = GetAttrNode( "GEOCCS" );
 
     if( poCS != NULL && poCS->FindChild( "UNIT" ) == -1 )
         SetLinearUnits( SRS_UL_METER, 1.0 );
@@ -6145,6 +7116,7 @@ void OSRCleanup( void )
 {
     CleanupESRIDatumMappingTable();
     CSVDeaccess( NULL );
+    OCTCleanupProjMutex();
 }
 
 /************************************************************************/
@@ -6232,6 +7204,12 @@ OGRSpatialReference::GetAxis( const char *pszTargetKey, int iAxis,
             *peOrientation = OAO_South;
         else if( EQUAL(pszOrientation,"WEST") )
             *peOrientation = OAO_West;
+        else if( EQUAL(pszOrientation,"UP") )
+            *peOrientation = OAO_Up;
+        else if( EQUAL(pszOrientation,"DOWN") )
+            *peOrientation = OAO_Down;
+        else if( EQUAL(pszOrientation,"OTHER") )
+            *peOrientation = OAO_Other;
         else
         {
             CPLDebug( "OSR", "Unrecognised orientation value '%s'.",
@@ -6284,6 +7262,12 @@ const char *OSRAxisEnumToName( OGRAxisOrientation eOrientation )
         return "SOUTH";
     if( eOrientation == OAO_West )
         return "WEST";
+    if( eOrientation == OAO_Up )
+        return "UP";
+    if( eOrientation == OAO_Down )
+        return "DOWN";
+    if( eOrientation == OAO_Other )
+        return "OTHER";
 
     return "UNKNOWN";
 }

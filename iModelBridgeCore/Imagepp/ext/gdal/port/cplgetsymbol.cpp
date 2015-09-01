@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cplgetsymbol.cpp 16702 2009-04-01 20:42:49Z rouault $
+ * $Id: cplgetsymbol.cpp 27461 2014-06-18 12:38:34Z rouault $
  *
  * Project:  Common Portability Library
  * Purpose:  Fetch a function pointer from a shared library / DLL.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2009-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +30,7 @@
 
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: cplgetsymbol.cpp 16702 2009-04-01 20:42:49Z rouault $");
+CPL_CVSID("$Id: cplgetsymbol.cpp 27461 2014-06-18 12:38:34Z rouault $");
 
 
 /* ==================================================================== */
@@ -140,13 +141,21 @@ void *CPLGetSymbol( const char * pszLibrary, const char * pszSymbolName )
 {
     void        *pLibrary;
     void        *pSymbol;
+    UINT        uOldErrorMode;
+
+    /* Avoid error boxes to pop up (#5211, #5525) */
+    uOldErrorMode = SetErrorMode(SEM_NOOPENFILEERRORBOX | SEM_FAILCRITICALERRORS);
 
     pLibrary = LoadLibrary(pszLibrary);
-    if( pLibrary == NULL )
+
+    if( pLibrary <= (void*)HINSTANCE_ERROR )
     {
         LPVOID      lpMsgBuf = NULL;
         int         nLastError = GetLastError();
-        
+
+        /* Restore old error mode */
+        SetErrorMode(uOldErrorMode);
+
         FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER 
                        | FORMAT_MESSAGE_FROM_SYSTEM
                        | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -159,6 +168,9 @@ void *CPLGetSymbol( const char * pszLibrary, const char * pszSymbolName )
                   pszLibrary, nLastError, (const char *) lpMsgBuf );
         return NULL;
     }
+
+    /* Restore old error mode */
+    SetErrorMode(uOldErrorMode);
 
     pSymbol = (void *) GetProcAddress( (HINSTANCE) pLibrary, pszSymbolName );
 

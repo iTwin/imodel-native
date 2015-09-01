@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecIdentity.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecIdentity
@@ -13,20 +13,20 @@
 
 #include "HCDCodecVector.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 class HCDCodecIdentity : public HCDCodecVector
     {
-    HDECLARE_CLASS_ID(1182, HCDCodecVector)
+    HDECLARE_CLASS_ID(HCDCodecId_Identity, HCDCodecVector)
 
 public:
 
     ~HCDCodecIdentity();
 
-    _HDLLu                 HCDCodecIdentity();
+    IMAGEPP_EXPORT                 HCDCodecIdentity();
 
-    _HDLLu                 HCDCodecIdentity(size_t pi_DataSize);
+    IMAGEPP_EXPORT                 HCDCodecIdentity(size_t pi_DataSize);
 
-    _HDLLu                 HCDCodecIdentity(const HCDCodecIdentity& pi_rObj);
+    IMAGEPP_EXPORT                 HCDCodecIdentity(const HCDCodecIdentity& pi_rObj);
 
     size_t          CompressSubset(const void* pi_pInData,
                                    size_t pi_InDataSize,
@@ -51,3 +51,4 @@ protected:
 private:
     };
 
+END_IMAGEPP_NAMESPACE

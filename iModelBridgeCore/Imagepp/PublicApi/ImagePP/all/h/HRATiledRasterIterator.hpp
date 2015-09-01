@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRATiledRasterIterator.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------//
@@ -12,6 +12,7 @@
 #include "HRATiledRaster.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // private
 //-----------------------------------------------------------------------------
@@ -20,7 +21,7 @@ inline void HRATiledRasterIterator::PrepareCurrentTile ()
     if (m_Index >= m_MaxIndex)
         m_pCurrentTile = 0;
     else
-        m_pCurrentTile = m_pTileRaster->GetTile(m_Index)->GetTile();
+        m_pCurrentTile = m_pTileRaster->GetTileByIndex(m_Index)->GetTile();
     }
 
 
@@ -74,3 +75,4 @@ inline void HRATiledRasterIterator::Reset()
 
     PrepareCurrentTile();
     }
+END_IMAGEPP_NAMESPACE

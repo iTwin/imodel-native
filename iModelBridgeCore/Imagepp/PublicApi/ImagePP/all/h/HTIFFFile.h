@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,6 +14,7 @@
 #include "HTagFile.h"
 #include "HFCAccessMode.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 // Special value for the channel index. It indicates that all channels are concerned
 static const uint32_t  CHANNEL_INDEX_ALL_CHANNELS         = UINT32_MAX;
 
@@ -43,7 +44,7 @@ class HTIFFFile : public HTagFile
 public:
     // Primary methods
 
-    _HDLLg HTIFFFile   (const WString&         pi_pFilename,
+    IMAGEPP_EXPORT HTIFFFile   (const WString&         pi_pFilename,
                         HFCAccessMode          pi_Mode,
                         uint64_t              pi_OriginOffset = 0,
                         bool                  pi_CreateBigTifFormat = false,
@@ -51,6 +52,7 @@ public:
                         bool*                 pi_NewFile = 0);
 
     HTIFFFile   (const HFCPtr<HFCURL>&  pi_rpURL,
+                 uint64_t               pi_offset,
                  HFCAccessMode          pi_AccessMode = HFC_READ_ONLY,
                  bool                  pi_CreateBigTifFormat = false,
                  bool*                 pi_NewFile = 0);
@@ -62,18 +64,18 @@ public:
 
 
     uint32_t            ScanlineSize        () const;
-    _HDLLg uint32_t     StripSize           () const;
+    IMAGEPP_EXPORT uint32_t     StripSize           () const;
     size_t              StripBlockSize      (uint32_t pi_Strip) const;
 
-    _HDLLg uint32_t     NumberOfStrips      () const;
+    IMAGEPP_EXPORT uint32_t     NumberOfStrips      () const;
     uint32_t            NumberOfTiles       () const;
-    _HDLLg uint32_t     TileSize            () const;
+    IMAGEPP_EXPORT uint32_t     TileSize            () const;
     size_t              TileBlockSize       (uint32_t pi_PosX, uint32_t pi_PosY) const;
-    _HDLLg bool         IsTiled             () const;
+    IMAGEPP_EXPORT bool         IsTiled             () const;
 
-    _HDLLg HSTATUS      TileRead            (Byte* po_pData, uint32_t pi_PosX, uint32_t pi_PosY);
+    IMAGEPP_EXPORT HSTATUS      TileRead            (Byte* po_pData, uint32_t pi_PosX, uint32_t pi_PosY);
     HSTATUS             TileWrite           (const Byte* pi_pData, uint32_t pi_PosX, uint32_t pi_PosY);
-    _HDLLg HSTATUS      StripRead           (Byte* po_pData, uint32_t pi_Strip);
+    IMAGEPP_EXPORT HSTATUS      StripRead           (Byte* po_pData, uint32_t pi_Strip);
     HSTATUS             StripWrite          (const Byte* pi_pData, uint32_t pi_Strip);
 
     // Compressed Data access
@@ -94,8 +96,8 @@ public:
     using HTagFile::GetField;
     using HTagFile::SetField;
 
-    _HDLLg bool        GetField (HTagID pi_Tag, unsigned short* po_pVal) const;
-    _HDLLg bool        GetField (HTagID pi_Tag, uint32_t* po_pVal) const;
+    IMAGEPP_EXPORT bool        GetField (HTagID pi_Tag, unsigned short* po_pVal) const;
+    IMAGEPP_EXPORT bool        GetField (HTagID pi_Tag, uint32_t* po_pVal) const;
     bool               GetField (HTagID pi_Tag, uint32_t* po_pCount, unsigned short** po_ppVal) const;
 
     bool               GetField (HTagID pi_Tag, unsigned short** po_ppVal1, unsigned short** po_ppVal2, unsigned short** po_ppVal3) const;
@@ -142,14 +144,18 @@ public:
     bool               GetEXIFTags(uint32_t         pi_PageDirInd,
                                     HPMAttributeSet& po_rExifGpsTags);
 
-    _HDLLg void         PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
+    IMAGEPP_EXPORT void         PrintEXIFDefinedGPSTags(uint32_t pi_PageDirInd,
                                                 FILE*  po_pOutput);
 
-    _HDLLg void         PrintEXIFTags(uint32_t pi_PageDirInd,
+    IMAGEPP_EXPORT void         PrintEXIFTags(uint32_t pi_PageDirInd,
                                       FILE*  po_pOutput);
 
     //Compact the iTIFF file, removing freeblocks
     bool                CompactITIFF();
+
+    // Utility function
+    //
+    static HTIFFFile* UndoRedoFile(const WString& pi_rFilename, HFCAccessMode pi_Mode);
 
 protected:
 
@@ -244,10 +250,10 @@ private:
     virtual void    _PrintCurrentDirectory
     (FILE* po_pOutput, uint32_t pi_Flag) override;
 
-    _HDLLg bool    IsTiled             (HTIFFDirectory*        pi_Dir) const;
+    IMAGEPP_EXPORT bool    IsTiled             (HTIFFDirectory*        pi_Dir) const;
 
-    _HDLLg uint32_t TileSizePrivate     () const;
-    _HDLLg uint32_t StripSizePrivate    () const;
+    IMAGEPP_EXPORT uint32_t TileSizePrivate     () const;
+    IMAGEPP_EXPORT uint32_t StripSizePrivate    () const;
 
     uint32_t        ComputeStrip        (uint32_t pi_Line) const;
     uint32_t        ComputeTile         (uint32_t pi_PosX, uint32_t pi_PosY) const;
@@ -287,7 +293,7 @@ private:
     void            SetCCITTAlgo        (uint32_t pi_CompressMode, bool pi_BitRev);
     void            SetFlashpixAlgo     (uint32_t pi_BitsPerPixel);
     void            SetQualityToCodec   ();
-    void            SetLZWAlgo(uint32_t pi_BitsPerPixel, unsigned short pi_Predictor);
+    void            SetLZWAlgo(uint32_t pi_BitsPerPixel, unsigned short pi_Predictor, uint32_t pi_SamplesPerPixel);
     void            SetJPEGKodakAlgo    ();
 
     
@@ -344,10 +350,8 @@ private:
 
 
     // Disable        bool           SetSynchroField();
-
     };
 
-// Utility function
-//
-HTIFFFile* HTIFFFile_UndoRedoFile(const WString& pi_rFilename, HFCAccessMode pi_Mode);
+
+END_IMAGEPP_NAMESPACE
 

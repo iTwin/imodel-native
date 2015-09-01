@@ -2,12 +2,19 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPDFFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
 //-----------------------------------------------------------------------------
 #pragma once
+
+#if !defined(_DEBUG) // We do not support this format when using the debug version of the C run-time library
+    #define IPP_HAVE_PDF_SUPPORT
+#endif
+
+#if defined(IPP_HAVE_PDF_SUPPORT) 
+
 
 #include "HFCMacros.h"
 
@@ -18,6 +25,7 @@
 #include "HMDLayers.h"
 #include "HMDAnnotations.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class PDFWrapper;
 
 class HMDVolatileLayers;
@@ -35,7 +43,7 @@ public:
     friend class HRFPDFEditor;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1509, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_PDF, HRFRasterFile)
 
     static double s_dpiConvertScaleFactor;
 
@@ -59,14 +67,17 @@ public:
     // File information
     virtual const HGF2DWorldIdentificator   GetWorldIdentificator () const;
 
-    virtual const HGF2DWorldIdentificator   GetPageWorldIdentificator
-    (uint32_t pi_Page = 0) const;
+    virtual const HGF2DWorldIdentificator   GetPageWorldIdentificator(uint32_t pi_Page = 0) const;
+        
+    IMAGEPP_EXPORT void                      GetDimensionForDWGUnderlay(uint32_t pi_Page,                                                                                                          
+                                                                       double& po_xDimension, 
+                                                                       double& po_yDimension) const;
 
     // File manipulation
-    virtual bool                           AddPage             (HFCPtr<HRFPageDescriptor> pi_pPage);
+    virtual bool                        AddPage             (HFCPtr<HRFPageDescriptor> pi_pPage);
 
-    uint32_t                                CountPages          () const;
-    HFCPtr<HRFPageDescriptor>               GetPageDescriptor   (uint32_t pi_Page) const;
+    uint32_t                           CountPages          () const;
+    HFCPtr<HRFPageDescriptor>           GetPageDescriptor   (uint32_t pi_Page) const;
 
     virtual HRFResolutionEditor*        CreateResolutionEditor  (uint32_t                   pi_Page,
                                                                  unsigned short            pi_Resolution,
@@ -108,9 +119,9 @@ public:
 
 
     //Function used to initialize the PDF library
-    _HDLLg static int                   InitializePDFLibraryInThread();
+    IMAGEPP_EXPORT static int                   InitializePDFLibraryInThread();
 
-    _HDLLg static void                  TerminatePDFLibraryInThread();
+    IMAGEPP_EXPORT static void                  TerminatePDFLibraryInThread();
 
     uint32_t                            GetMainThreadId() const;
     void*                               GetDocument(uint32_t pi_Page) const;
@@ -178,7 +189,7 @@ struct HRFPDFCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFPDFCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFPDFCreator)
 
     // Disabled methodes
     HRFPDFCreator();
@@ -194,7 +205,9 @@ public:
     virtual ~PDFWrapper() {};
     virtual void*       GetDocument() = 0;
 
-    virtual uint32_t    CountPages() = 0;
+    virtual uint32_t    CountPages() const = 0;
+    virtual void         GetMaxResolutionSize(uint32_t   pi_Page, double dpiConvertScaleFactor, uint32_t& po_maxResSize)=0;
+
     virtual void        PageSize                    (uint32_t                       pi_Page,
                                                      uint32_t*                        po_pWidth,
                                                      uint32_t*                        po_pHeight,
@@ -210,5 +223,11 @@ public:
                                                      uint32_t                       pi_RasterizePageHeight,
                                                      IRasterBaseGcsPtr&              po_rpGeocoding,
                                                      HFCPtr<HGF2DTransfoModel>&      po_rpGeoreference) = 0;
-    };
+    virtual void        GetDimensionForDWGUnderlay( uint32_t                  pi_Page,
+                                                    double&                    po_xDimension, 
+                                                    double&                    po_yDimension) const =0;     
 
+    };
+END_IMAGEPP_NAMESPACE
+
+#endif // IPP_HAVE_PDF_SUPPORT

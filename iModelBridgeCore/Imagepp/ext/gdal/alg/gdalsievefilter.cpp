@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalsievefilter.cpp 21213 2010-12-08 16:43:11Z warmerdam $
+ * $Id: gdalsievefilter.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Raster to Polygon Converter
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2008, Frank Warmerdam
+ * Copyright (c) 2009-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "cpl_conv.h"
 #include <vector>
 
-CPL_CVSID("$Id: gdalsievefilter.cpp 21213 2010-12-08 16:43:11Z warmerdam $");
+CPL_CVSID("$Id: gdalsievefilter.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 #define GP_NODATA_MARKER -51502112
 #define MY_MAX_INT 2147483647
@@ -169,7 +170,7 @@ static inline void CompareNeighbour( int nPolyId1, int nPolyId2,
  * @param nConnectedness either 4 indicating that diagonal pixels are not
  * considered directly adjacent for polygon membership purposes or 8
  * indicating they are. 
- * @param papszOption algorithm options in name=value list form.  None currently
+ * @param papszOptions algorithm options in name=value list form.  None currently
  * supported.
  * @param pfnProgress callback for reporting algorithm progress matching the
  * GDALProgressFunc() semantics.  May be NULL.
@@ -182,7 +183,7 @@ CPLErr CPL_STDCALL
 GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
                  GDALRasterBandH hDstBand,
                  int nSizeThreshold, int nConnectedness,
-                 char **papszOptions,
+                 CPL_UNUSED char **papszOptions,
                  GDALProgressFunc pfnProgress, 
                  void * pProgressArg )
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTExportToFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,6 +25,7 @@
 #include "HRABitmap.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Forward declarations.
 class HGF2DCoordSys;
@@ -101,25 +102,25 @@ private:
         uint64_t EstimateCompressedFileSize();
 
         HFCPtr<HRFRasterFile>  m_pOriginalRasterFile;
-        clock_t                   m_LastCheckTime;
-        clock_t                   m_EstimateInterval;
-        vector<uint32_t>           m_NbPixelsPerBlock;
-        uint64_t                 m_TotalNbOfPixelsAllRes;
-        int32_t                 m_NbRes;
+        clock_t                m_LastCheckTime;
+        clock_t                m_EstimateInterval;
+        vector<uint32_t>         m_NbPixelsPerBlock;
+        uint64_t               m_TotalNbOfPixelsAllRes;
+        int32_t                m_NbRes;
         };
 
 
     // Members.
-    bool                     m_AlreadyExported;
-    bool                     m_BlendAlpha;
+    bool                      m_AlreadyExported;
+    bool                      m_BlendAlpha;
     HGSResampling             m_Resampling;
     HVEShape                  m_ClipShape;
     HVEShape                  m_LogicalShape;
-    bool                     m_HasClipShape;
-    bool                     m_SrcNeedCache;
-    uint32_t                  m_NbColorsIfIndexed;
-    bool                     m_UseDestinationPaletteIfIndexed;
-    bool                     m_Resample;
+    bool                      m_HasClipShape;
+    bool                      m_SrcNeedCache;
+    uint32_t                 m_NbColorsIfIndexed;
+    bool                      m_UseDestinationPaletteIfIndexed;
+    bool                      m_Resample;
     HFCPtr<HRPFilter>         m_pResamplingFilter;
     HRFBlockAccess            m_SrcBlockAccess;
     HFCPtr<HGF2DWorldCluster> m_pClusterWorld;      // WorldCluster
@@ -131,12 +132,12 @@ private:
     HFCPtr<HRSObjectStore>    m_pSourceStore;
     HPMPool                   m_SourcePool;
     HRASamplingOptions        m_RepPalSamplingOptions;
-    bool                     m_HasRepPalSamplingOptions;
+    bool                      m_HasRepPalSamplingOptions;
     bool                      m_EstimateExportSize;
 
     // Scaling members
-    double                   m_ScaleFactorX;
-    double                   m_ScaleFactorY;
+    double                    m_ScaleFactorX;
+    double                    m_ScaleFactorY;
 
     // Method used to compute the transformation model.
     HFCPtr<HGF2DTransfoModel> ComputeTransformation(HFCPtr<HRFPageDescriptor>       pi_pDstPageDesc,
@@ -162,3 +163,4 @@ private:
     HUTExportToFile(const HUTExportToFile& pi_rObj);
     HUTExportToFile&          operator=(const HUTExportToFile& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

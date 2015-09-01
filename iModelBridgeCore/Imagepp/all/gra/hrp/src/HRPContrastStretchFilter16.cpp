@@ -2,19 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPContrastStretchFilter16.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPContrastStretchFilter16
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPContrastStretchFilter16.h>
 #include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 
 //-----------------------------------------------------------------------------
 //  Custom Map16  Filter

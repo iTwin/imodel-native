@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtiff.h 21288 2010-12-19 09:54:45Z rouault $
+ * $Id: gtiff.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  GDAL GeoTIFF support.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1998, 2002, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -37,6 +38,8 @@
 
 CPL_C_START
 int    GTiffOneTimeInit();
+void CPL_DLL LibgeotiffOneTimeInit();
+void   LibgeotiffOneTimeCleanupMutex();
 CPL_C_END
 
 void    GTIFFGetOverviewBlockSize(int* pnBlockXSize, int* pnBlockYSize);

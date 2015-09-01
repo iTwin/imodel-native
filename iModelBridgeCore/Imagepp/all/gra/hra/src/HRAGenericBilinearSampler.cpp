@@ -2,19 +2,14 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAGenericBilinearSampler.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRAGenericBilinearSampler.h>
-
-//Macros name min and max are defined in some Microsoft's include files which
-//impedes the use of the min, max functions of numeric_limits.
-#undef min
-#undef max
 
 /**----------------------------------------------------------------------------
  Constructor for this class
@@ -23,25 +18,17 @@
  @param pi_pSurfaceImplementation
 -----------------------------------------------------------------------------*/
 template <class T>
-HRAGenericBilinearSampler<T>::HRAGenericBilinearSampler(const HGSGraphicToolAttributes*     pi_pAttributes,
-                                                        const HGSSurfaceImplementation*     pi_pSurfaceImplementation,
+HRAGenericBilinearSampler<T>::HRAGenericBilinearSampler(HGSMemorySurfaceDescriptor const&   pi_rMemorySurface,
                                                         const HGF2DRectangle&               pi_rSampleDimension,
                                                         double                              pi_DeltaX,
                                                         double                              pi_DeltaY)
-    : HRAGenericSampler(pi_pAttributes,
-                        pi_pSurfaceImplementation,
+    : HRAGenericSampler(pi_rMemorySurface,
                         pi_rSampleDimension,
                         pi_DeltaX,
                         pi_DeltaY)
     {
-    HPRECONDITION(pi_pSurfaceImplementation->GetSurfaceDescriptor()->IsCompatibleWith(HGSMemorySurfaceDescriptor::CLASS_ID));
-
-    // compute some useful information
-    const HFCPtr<HGSMemorySurfaceDescriptor>& rpDescriptor = (const HFCPtr<HGSMemorySurfaceDescriptor>&)
-                                                             pi_pSurfaceImplementation->GetSurfaceDescriptor();
-
-    HPRECONDITION(rpDescriptor->GetPacket() != 0);
-    m_pPacket = rpDescriptor->GetPacket();
+    HPRECONDITION(pi_rMemorySurface->GetPacket() != 0);
+    m_pPacket = pi_rMemorySurface->GetPacket();
 
     //numeric_limits<T>::min() returns the smallest representable value
     //for decimal type instead of greatest negative value representable.
@@ -55,8 +42,6 @@ HRAGenericBilinearSampler<T>::HRAGenericBilinearSampler(const HGSGraphicToolAttr
         }
 
     m_ChannelMaxValue = std::numeric_limits<T>::max();
-
-    m_pTempData = new T[m_NbChannels];
     }
 
 /**----------------------------------------------------------------------------
@@ -85,7 +70,7 @@ void* HRAGenericBilinearSampler<T>::GetPixel(double pi_PosX,
     HPRECONDITION(pi_PosY <= (double)m_Height + 0.5);
 
     // Clear everything just in case.
-    memset((void*)m_pTempData.get(), 0, sizeof(T) * m_NbChannels);
+    memset(m_pTempData, 0, sizeof(m_pTempData));
 
     Sample CurrentSample(pi_PosX, pi_PosY);
 
@@ -107,7 +92,7 @@ void* HRAGenericBilinearSampler<T>::GetPixel(double pi_PosX,
                                    CurrentSample.GetFirstLine());
     pSrcSecondLine = ComputeAddress(m_pPacket,
                                     XPosition,
-                                    min(CurrentSample.GetSecondLine(), m_Height - 1));
+                                    MIN(CurrentSample.GetSecondLine(), m_Height - 1));
     HASSERT(CurrentSample.GetSecondLine() >= CurrentSample.GetFirstLine());
 
     if (CurrentSample.GetSecondColumn() > XPosition && XPosition < m_Width - 1)
@@ -123,10 +108,10 @@ void* HRAGenericBilinearSampler<T>::GetPixel(double pi_PosX,
                             Dy * (DxComplement * (double)pSrcSecondLine[Channel] +
                                   Dx * (double)pSrcSecondLine[Channel + NextPixelOffset]));
 
-        m_pTempData[Channel] = (T)min(max(ChannelResult, m_ChannelMinValue), m_ChannelMaxValue);
+        m_pTempData[Channel] = (T)MIN(MAX(ChannelResult, m_ChannelMinValue), m_ChannelMaxValue);
         }
 
-    return (void*)m_pTempData.get();
+    return m_pTempData;
     }
 
 /**----------------------------------------------------------------------------
@@ -183,7 +168,7 @@ void HRAGenericBilinearSampler<T>::GetPixels(const double* pi_pPositionsX,
                                             CurrentSample.GetFirstLine());
         pSrcSecondLine = (T*)ComputeAddress(m_pPacket,
                                             XPosition,
-                                            min(CurrentSample.GetSecondLine(), m_Height-1));
+                                            MIN(CurrentSample.GetSecondLine(), m_Height-1));
         HASSERT(CurrentSample.GetSecondLine() >= CurrentSample.GetFirstLine());
 
         if ((CurrentSample.GetSecondColumn() > XPosition) && (XPosition < m_Width - 1))
@@ -199,7 +184,7 @@ void HRAGenericBilinearSampler<T>::GetPixels(const double* pi_pPositionsX,
                                 Dy * (DxComplement * (double) pSrcSecondLine[Channel] +
                                       Dx * (double) pSrcSecondLine[Channel + NextPixelOffset]));
 
-            *pOut++ = (T)min(max(ChannelResult, m_ChannelMinValue), m_ChannelMaxValue);
+            *pOut++ = (T)MIN(MAX(ChannelResult, m_ChannelMinValue), m_ChannelMaxValue);
             }
 
         ++pPosX;
@@ -243,7 +228,7 @@ void HRAGenericBilinearSampler<T>::GetPixels(double pi_PositionX,
                                                CurrentSample.GetFirstLine());
         T* pSrcSecondLine = (T*)ComputeAddress(m_pPacket,
                                                XPosition,
-                                               min(CurrentSample.GetSecondLine(), m_Height-1));
+                                               MIN(CurrentSample.GetSecondLine(), m_Height-1));
 
         HASSERT(CurrentSample.GetSecondLine() >= CurrentSample.GetFirstLine());
 
@@ -274,7 +259,7 @@ void HRAGenericBilinearSampler<T>::GetPixels(double pi_PositionX,
                                     Dy * (DxComplement * (double)pSrcSecondLine[Channel] +
                                           Dx * (double) pSrcSecondLine[Channel + NextPixelOffset]));
 
-                *pOut++ = (T)min(max(ChannelResult, m_ChannelMinValue), m_ChannelMaxValue);
+                *pOut++ = (T)MIN(MAX(ChannelResult, m_ChannelMinValue), m_ChannelMaxValue);
                 }
 
             CurrentSample.TranslateX(m_DeltaX);

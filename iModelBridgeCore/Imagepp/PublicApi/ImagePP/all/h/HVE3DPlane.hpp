@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE3DPlane.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-
+ BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------
  This method returns true if the two planes are identical
  To be identical the equation parameters must be exactly the same
@@ -96,8 +96,4 @@ inline bool HVE3DPlane::IsValid() const
     {
     return(m_C != 0.0);
     }
-
-
-
-
-
+END_IMAGEPP_NAMESPACE

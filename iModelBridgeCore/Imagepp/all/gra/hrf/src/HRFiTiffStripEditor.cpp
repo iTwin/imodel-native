@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFiTiffStripEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFiTiffStripEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFiTiffStripEditor.h>
 #include <Imagepp/all/h/HRFTiffFile.h>
 #include <Imagepp/all/h/HCDCodecHMRRLE1.h>
@@ -21,7 +21,7 @@
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCDPacket.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 #define H_CONCURENCE 1
 
@@ -62,9 +62,9 @@ HRFiTiffStripEditor::~HRFiTiffStripEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFiTiffStripEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                       uint32_t pi_PosBlockY,
-                                       Byte* po_pData,
+HSTATUS HRFiTiffStripEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                       uint64_t pi_PosBlockY,
+                                       Byte*  po_pData,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
@@ -109,8 +109,8 @@ HSTATUS HRFiTiffStripEditor::ReadBlock(uint32_t pi_PosBlockX,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFiTiffStripEditor::ReadBlock(uint32_t          pi_PosBlockX,
-                                       uint32_t           pi_PosBlockY,
+HSTATUS HRFiTiffStripEditor::ReadBlock(uint64_t           pi_PosBlockX,
+                                       uint64_t           pi_PosBlockY,
                                        HFCPtr<HCDPacket>& po_rpPacket,
                                        HFCLockMonitor const* pi_pSisterFileLock)
 
@@ -171,10 +171,10 @@ HSTATUS HRFiTiffStripEditor::ReadBlock(uint32_t          pi_PosBlockX,
 // Public
 // ReadBlockRLE
 //-----------------------------------------------------------------------------
-HSTATUS HRFiTiffStripEditor::ReadBlockRLE  (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
-                                            HFCLockMonitor const*    pi_pSisterFileLock)
+HSTATUS HRFiTiffStripEditor::ReadBlockRLE(uint64_t                 pi_PosBlockX,
+                                          uint64_t                 pi_PosBlockY,
+                                          HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
+                                          HFCLockMonitor const*    pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffers.
@@ -226,9 +226,9 @@ HSTATUS HRFiTiffStripEditor::ReadBlockRLE  (uint32_t                 pi_PosBlock
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFiTiffStripEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                        uint32_t     pi_PosBlockY,
-                                        const Byte* pi_pData,
+HSTATUS HRFiTiffStripEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                        uint64_t     pi_PosBlockY,
+                                        const Byte*  pi_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -251,14 +251,20 @@ HSTATUS HRFiTiffStripEditor::WriteBlock(uint32_t     pi_PosBlockX,
         GetRasterFile()->SharingControlSynchronize();
         }
 
-    // If the original file is in read only, we do not have to rewrite the tile if it is already
-    // written in the cache file.
-    if (!(m_IscTiff &&
-          (GetResolutionDescriptor()->GetBlockDataFlag(GetResolutionDescriptor()->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY)) &
-           (HRFDATAFLAG_LOADED | HRFDATAFLAG_OVERWRITTEN)) &&
-          (!static_cast<HRFcTiffFile*>(GetRasterFile().GetPtr())->m_OriginalFileAccessMode.m_HasWriteAccess &&
-           !static_cast<HRFcTiffFile*>(GetRasterFile().GetPtr())->m_OriginalFileAccessMode.m_HasCreateAccess)))
-
+    // If the file is a cache file
+    //            (To be a cache file, we need (m_IscTiff && static_cast<HRFcTiffFile*>(GetRasterFile().GetPtr())->m_OriginalFileAccessMode != HFC_NO_ACCESS) == true)
+    //    If the original file is in read only && tile is already written in the cache file
+    //        We do not have to rewrite the tile. (if == false)
+    //    Else
+    //        Write the tile in the CTiff (if == true)
+    // Else
+    //     We are working with a CTiff file directly, like a Itiff, write the tile in the CTiff (if == true)
+    //   
+    if (!(m_IscTiff && static_cast<HRFcTiffFile*>(GetRasterFile().GetPtr())->m_OriginalFileAccessMode != HFC_NO_ACCESS &&
+        (!(static_cast<HRFcTiffFile*>(GetRasterFile().GetPtr())->m_OriginalFileAccessMode.m_HasWriteAccess) &&
+        !(static_cast<HRFcTiffFile*>(GetRasterFile().GetPtr())->m_OriginalFileAccessMode.m_HasCreateAccess)) &&
+        ((GetResolutionDescriptor()->GetBlockDataFlag(GetResolutionDescriptor()->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY))) &
+        (HRFDATAFLAG_LOADED | HRFDATAFLAG_OVERWRITTEN))))
         {
         // Select the page and the resolution
         RASTER_FILE->SetImageInSubImage (m_IndexOfPage+m_Resolution);
@@ -291,10 +297,10 @@ HSTATUS HRFiTiffStripEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFiTiffStripEditor::WriteBlock (uint32_t                 pi_PosBlockX,
-                                         uint32_t                 pi_PosBlockY,
-                                         const HFCPtr<HCDPacket>& pi_rpPacket,
-                                         HFCLockMonitor const*    pi_pSisterFileLock)
+HSTATUS HRFiTiffStripEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                        uint64_t                 pi_PosBlockY,
+                                        const HFCPtr<HCDPacket>& pi_rpPacket,
+                                        HFCLockMonitor const*    pi_pSisterFileLock)
     {
     HPRECONDITION (pi_rpPacket != 0);
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -386,8 +392,8 @@ HSTATUS HRFiTiffStripEditor::WriteBlock (uint32_t                 pi_PosBlockX,
 // WriteBlockRLE
 // Edition by block
 //-----------------------------------------------------------------------------
-HSTATUS HRFiTiffStripEditor::WriteBlockRLE(uint32_t pi_PosBlockX,
-                                           uint32_t pi_PosBlockY,
+HSTATUS HRFiTiffStripEditor::WriteBlockRLE(uint64_t pi_PosBlockX,
+                                           uint64_t pi_PosBlockY,
                                            HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
                                            HFCLockMonitor const* pi_pSisterFileLock)
     {

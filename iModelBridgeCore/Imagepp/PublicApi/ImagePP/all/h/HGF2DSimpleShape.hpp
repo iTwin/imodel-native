@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DSimpleShape.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -13,10 +14,6 @@ inline HGF2DSimpleShape::HGF2DSimpleShape()
     : HGF2DShape()
     {
     }
-
-
-
-
 
 //-----------------------------------------------------------------------------
 // Copy constructor.  It duplicates another HGF2DSimpleShape object.
@@ -122,36 +119,4 @@ inline void HGF2DSimpleShape::Drop(HGF2DPositionCollection* po_pPoints,
     GetLinear()->Drop(po_pPoints, pi_rTolerance, HGF2DLinear::INCLUDE_END_POINT);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+END_IMAGEPP_NAMESPACE

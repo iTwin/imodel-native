@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE3DPlane.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE3DPlane
@@ -14,6 +14,7 @@
 #include "HGF2DPosition.h"
 // HPM_DECLARE_HEADER(HVE3DPlane)
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert 
@@ -73,6 +74,7 @@ private:
     double m_D;
 
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HVE3DPlane.hpp"
 

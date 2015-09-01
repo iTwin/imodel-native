@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDPacketRLE.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,7 +11,7 @@
 
 #include "HCDCodecHMRRLE1.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public method
 //-----------------------------------------------------------------------------
@@ -169,3 +169,5 @@ inline HUINTX HCDPacketRLE::RLEScanlineGenerator::GetCurrentScanline(HUINTX* po_
 
     return 0;
     }
+
+END_IMAGEPP_NAMESPACE

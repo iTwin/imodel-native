@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptLineToImage.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptLineToImage
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCAccessMode.h>
 
@@ -96,8 +96,8 @@ HRFAdaptLineToImage::~HRFAdaptLineToImage()
 // ReadBlock
 // Edition by Image
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToImage::ReadBlock(uint32_t pi_PosBlockX,
-                                       uint32_t pi_PosBlockY,
+HSTATUS HRFAdaptLineToImage::ReadBlock(uint64_t pi_PosBlockX,
+                                       uint64_t pi_PosBlockY,
                                        Byte* po_pData,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -131,8 +131,8 @@ HSTATUS HRFAdaptLineToImage::ReadBlock(uint32_t pi_PosBlockX,
 // ReadBlock
 // Edition by Image
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToImage::ReadBlock(uint32_t             pi_PosBlockX,
-                                       uint32_t             pi_PosBlockY,
+HSTATUS HRFAdaptLineToImage::ReadBlock(uint64_t             pi_PosBlockX,
+                                       uint64_t             pi_PosBlockY,
                                        HFCPtr<HCDPacket>&   po_rpPacket,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -144,10 +144,10 @@ HSTATUS HRFAdaptLineToImage::ReadBlock(uint32_t             pi_PosBlockX,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToImage::ReadBlockRLE  (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
-                                            HFCLockMonitor const*    pi_pSisterFileLock)
+HSTATUS HRFAdaptLineToImage::ReadBlockRLE(uint64_t                 pi_PosBlockX,
+                                          uint64_t                 pi_PosBlockY,
+                                          HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
+                                          HFCLockMonitor const*    pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffer.
@@ -205,9 +205,9 @@ HSTATUS HRFAdaptLineToImage::ReadBlockRLE  (uint32_t                 pi_PosBlock
 // WriteBlock
 // Edition by Image
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToImage::WriteBlock(uint32_t        pi_PosBlockX,
-                                        uint32_t        pi_PosBlockY,
-                                        const Byte*    pi_pData,
+HSTATUS HRFAdaptLineToImage::WriteBlock(uint64_t        pi_PosBlockX,
+                                        uint64_t        pi_PosBlockY,
+                                        const Byte*     pi_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess );
@@ -243,10 +243,10 @@ HSTATUS HRFAdaptLineToImage::WriteBlock(uint32_t        pi_PosBlockX,
 // WriteBlock
 // Edition by Image
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToImage::WriteBlockRLE (uint32_t              pi_PosBlockX,
-                                            uint32_t              pi_PosBlockY,
-                                            HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFAdaptLineToImage::WriteBlockRLE(uint64_t              pi_PosBlockX,
+                                           uint64_t              pi_PosBlockY,
+                                           HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
+                                           HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess );
     HSTATUS Status      = H_SUCCESS;
@@ -291,8 +291,8 @@ HSTATUS HRFAdaptLineToImage::WriteBlockRLE (uint32_t              pi_PosBlockX,
 // WriteBlock
 // Edition by Image
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToImage::WriteBlock(uint32_t                    pi_PosBlockX,
-                                        uint32_t                    pi_PosBlockY,
+HSTATUS HRFAdaptLineToImage::WriteBlock(uint64_t                    pi_PosBlockX,
+                                        uint64_t                    pi_PosBlockY,
                                         const HFCPtr<HCDPacket>&    pi_rpPacket,
                                         HFCLockMonitor const*       pi_pSisterFileLock)
     {

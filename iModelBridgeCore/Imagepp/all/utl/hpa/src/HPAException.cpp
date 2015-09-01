@@ -2,100 +2,45 @@
 //:>
 //:>     $Source: all/utl/hpa/src/HPAException.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPAException
 //---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HPAException.h>
 #include <Imagepp/all/h/HPANode.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
-//-----------------------------------------------------------------------------
-// public
-// Implementation of functions common to all exception classes
-//-----------------------------------------------------------------------------
-HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(HPAException)
-HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(HPAGenericException)
 
 //-----------------------------------------------------------------------------
 // public
 // Constructor
 //-----------------------------------------------------------------------------
 HPAException::HPAException(HFCPtr<HPANode>&    pi_rpOffendingNode)
-    : HFCException(HPA_EXCEPTION)
+    : HFCException()
     {
-    m_pInfo = new HPAExInfo;
-    ((HPAExInfo*)m_pInfo)->m_pOffendingNode = pi_rpOffendingNode;
-
-    GENERATE_FORMATTED_EXCEPTION_MSG()
+    m_pOffendingNode = pi_rpOffendingNode;   
     }
-
 //-----------------------------------------------------------------------------
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HPAException::HPAException(ExceptionID        pi_ExceptionID,
-                           bool               pi_CreateInfoStruct)
-    : HFCException(pi_ExceptionID)
+HPAException::HPAException()
+    : HFCException()
     {
-    HPRECONDITION(((pi_ExceptionID >= HPA_BASE) && (pi_ExceptionID < HPA_SEPARATOR_ID)) ||
-                  ((pi_ExceptionID >= HPS_BASE) && (pi_ExceptionID < HPS_SEPARATOR_ID)));
-
-    if (pi_CreateInfoStruct)
-        {
-        m_pInfo = new HPAExInfo;
-        ((HPAExInfo*)m_pInfo)->m_pOffendingNode = HFCPtr<HPANode>();
-
-        if (GetID() != HPA_CANNOT_RESOLVE_START_RULE_EXCEPTION)
-            {
-            GENERATE_FORMATTED_EXCEPTION_MSG()
-            }
-        }
     }
-
-
-//-----------------------------------------------------------------------------
-// public
-// Constructor
-//-----------------------------------------------------------------------------
-HPAException::HPAException(ExceptionID        pi_ExceptionID,
-                           HFCPtr<HPANode>&   pi_rpOffendingNode,
-                           bool               pi_CreateInfoStruct)
-    : HFCException(pi_ExceptionID)
-    {
-    HPRECONDITION(((pi_ExceptionID >= HPA_BASE) && (pi_ExceptionID < HPA_SEPARATOR_ID)) ||
-                  ((pi_ExceptionID >= HPS_BASE) && (pi_ExceptionID < HPS_SEPARATOR_ID)));
-
-    if (pi_CreateInfoStruct)
-        {
-        m_pInfo = new HPAExInfo;
-        ((HPAExInfo*)m_pInfo)->m_pOffendingNode = pi_rpOffendingNode;
-
-        if (GetID() != HPA_CANNOT_RESOLVE_START_RULE_EXCEPTION)
-            {
-            GENERATE_FORMATTED_EXCEPTION_MSG()
-            }
-        }
-    }
-
-
 //-----------------------------------------------------------------------------
 // public
 // Copy Constructor
 //-----------------------------------------------------------------------------
-HPAException::HPAException(const HPAException& pi_rObj)
-    : HFCException(pi_rObj)
-    {
-    COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HPAExInfo)
-    }
-
-
+ HPAException::HPAException(const HPAException&     pi_rObj) : HFCException(pi_rObj)
+ {
+     m_pOffendingNode =pi_rObj.m_pOffendingNode;
+ }
 //-----------------------------------------------------------------------------
 // public
 // Destructor
@@ -109,31 +54,22 @@ HPAException::~HPAException()
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-void HPAException::FormatExceptionMessage(WString& pio_rMessage) const
+WString HPAException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
     {
-    HPRECONDITION(m_pInfo != 0);
-
-    if (GetID() != HPA_CANNOT_RESOLVE_START_RULE_EXCEPTION)
-        {
-        FORMAT_EXCEPTION_MSG(pio_rMessage,
-                             ((HPAExInfo*)m_pInfo)->m_pOffendingNode->GetEndPos().m_Line,
-                             ((HPAExInfo*)m_pInfo)->m_pOffendingNode->GetEndPos().m_Column)
-        }
+    WPrintfString rawMessage(GetRawMessageFromResource(pi_rsID).c_str(), m_pOffendingNode->GetEndPos().m_Line,
+                                 m_pOffendingNode->GetEndPos().m_Column);
+    WString exceptionName(pi_rsID.m_str, true/*isUtf8*/);
+    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    return message;
     }
 
 //-----------------------------------------------------------------------------
 // public
-// operator=
+// Get the exception information, if any.
 //-----------------------------------------------------------------------------
-HPAException& HPAException::operator=(const HPAException& pi_rObj)
+const HFCPtr<HPANode>& HPAException::GetOffendingNode() const
     {
-    if (this != &pi_rObj)
-        {
-        HFCException::operator=(pi_rObj);
-        COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HPAExInfo)
-        }
-
-    return *this;
+    return m_pOffendingNode;
     }
 
 
@@ -143,47 +79,32 @@ HPAException& HPAException::operator=(const HPAException& pi_rObj)
 //-----------------------------------------------------------------------------
 HPAGenericException::HPAGenericException(HFCPtr<HPANode>&    pi_rpOffendingNode,
                                          const WString&      pi_rMessage)
-    : HPAException(HPA_GENERIC_EXCEPTION, pi_rpOffendingNode, false)
+    : HPAException(pi_rpOffendingNode)
     {
-    m_pInfo = new HPAGenericExInfo;
-    ((HPAGenericExInfo*)m_pInfo)->m_pOffendingNode = pi_rpOffendingNode;
-    ((HPAGenericExInfo*)m_pInfo)->m_Message = pi_rMessage.c_str();
-
-    GENERATE_FORMATTED_EXCEPTION_MSG()
+    m_pOffendingNode = pi_rpOffendingNode;
+    m_Message = pi_rMessage.c_str();
     }
-
-
 
 //---------------------------------------------------------------------------
 // This constructor extracts the needed information from a HPAException
 //---------------------------------------------------------------------------
 HPAGenericException::HPAGenericException(const HPAException* pi_pObj)
-    : HPAException(HPA_GENERIC_EXCEPTION, false)
+    : HPAException()
     {
     HPRECONDITION(pi_pObj != 0);
 
-    HPAExInfo* pExInfo = (HPAExInfo*)pi_pObj->GetInfo();
+    m_pOffendingNode = pi_pObj->GetOffendingNode();
+    m_Message = pi_pObj->GetExceptionMessage();
 
-    m_pInfo = new HPAGenericExInfo();
-    ((HPAGenericExInfo*)m_pInfo)->m_pOffendingNode = pExInfo->m_pOffendingNode;
-    ((HPAGenericExInfo*)m_pInfo)->m_Message = pi_pObj->GetExceptionMessage();
-
-    GENERATE_FORMATTED_EXCEPTION_MSG()
     }
-
-
 //-----------------------------------------------------------------------------
 // public
 // Copy Constructor
 //-----------------------------------------------------------------------------
-HPAGenericException::HPAGenericException(const HPAGenericException& pi_rObj)
-    : HPAException(HPA_GENERIC_EXCEPTION, false)
-    {
-    COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HPAGenericExInfo)
-    COPY_FORMATTED_ERR_MSG(m_pFormattedErrMsg, pi_rObj.m_pFormattedErrMsg)
-    }
-
-
+ HPAGenericException::HPAGenericException(const HPAGenericException&     pi_rObj) : HPAException(pi_rObj)
+ {
+     m_Message = pi_rObj.m_Message;
+ }
 //-----------------------------------------------------------------------------
 // public
 // Destructor
@@ -197,49 +118,49 @@ HPAGenericException::~HPAGenericException()
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-void HPAGenericException::FormatExceptionMessage(WString& pio_rMessage) const
+WString HPAGenericException::GetExceptionMessage() const
     {
-    HPRECONDITION(m_pInfo != 0);
-    FORMAT_EXCEPTION_MSG(pio_rMessage, ((HPAGenericExInfo*)m_pInfo)->m_Message.c_str())
+    WPrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HPAGeneric()).c_str(), m_Message.c_str());
+    WString exceptionName(ImagePPExceptions::HPAGeneric().m_str, true/*isUtf8*/);
+    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    return message;
     }
 
 //-----------------------------------------------------------------------------
 // public
-// operator=
+// Get the exception information, if any.
 //-----------------------------------------------------------------------------
-HPAGenericException& HPAGenericException::operator=(const HPAGenericException& pi_rObj)
+WStringCR HPAGenericException::GetMessage() const
     {
-    if (this != &pi_rObj)
-        {
-        HFCException::operator=(pi_rObj);
-        COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HPAGenericExInfo)
-        }
-
-    return *this;
+    return m_Message;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCException* HPAGenericException::Clone() const
+    {
+    return new HPAGenericException(*this);
     }
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 WString HPAException::MakeErrorMsg() const
     {
-    HPRECONDITION(m_pInfo != 0);
-    HPRECONDITION(((HPAExInfo*)m_pInfo)->m_pOffendingNode != 0);
+    HPRECONDITION(m_pOffendingNode != 0);
 
     wostringstream OutputMsg;
 
-    HPAExInfo* pInfo = (HPAExInfo*)m_pInfo;
-
-    if (pInfo->m_pOffendingNode != 0)
+    if (m_pOffendingNode != 0)
         {
-        if (pInfo->m_pOffendingNode->GetEndPos().m_pURL != 0)
-            OutputMsg << pInfo->m_pOffendingNode ->GetEndPos().m_pURL->GetURL();
+        if (m_pOffendingNode->GetEndPos().m_pURL != 0)
+            OutputMsg << m_pOffendingNode ->GetEndPos().m_pURL->GetURL();
         else
             OutputMsg << "????";
 
         OutputMsg << " at line "
-                  << pInfo->m_pOffendingNode->GetEndPos().m_Line
+                  << m_pOffendingNode->GetEndPos().m_Line
                   << ", column "
-                  << pInfo->m_pOffendingNode->GetEndPos().m_Column
+                  << m_pOffendingNode->GetEndPos().m_Column
                   << ": "
                   << GetErrorText();
         }
@@ -250,18 +171,15 @@ WString HPAException::MakeErrorMsg() const
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-WString HPAException::GetErrorText() const
+WString HPAException::GetErrorText() const 
     {
-    switch (GetID())
-        {
-        case HPA_EXCEPTION :
-            return HFCResourceLoader::GetInstance()->GetString(IDS_PSS_SyntaxError);  //Syntax error.
-        case HPA_NO_TOKEN_EXCEPTION :
-            return HFCResourceLoader::GetInstance()->GetString(IDS_PSS_PrematureEndOfFile); // Can't get token / Premature end of file found.
-        case HPA_RECURSIVE_INCLUSION_EXCEPTION :
-            return HFCResourceLoader::GetInstance()->GetString(IDS_PSS_FileAlreadyIncluded); // Can't get token / Premature end of file found.
-        default :
+        if (dynamic_cast<HPANoTokenException const*>(this) != 0)
+           return ImagePPMessages::GetStringW(ImagePPMessages::PSS_PrematureEndOfFile()); // Can't get token / Premature end of file found.
+        else if  (dynamic_cast<HPARecursiveInclusionException const*>(this) != 0)
+            return ImagePPMessages::GetStringW(ImagePPMessages::PSS_FileAlreadyIncluded()); // Can't get token / Premature end of file found.
+        else
+            {
             HASSERT(0);
             return L"";
-        }
+            }
     }

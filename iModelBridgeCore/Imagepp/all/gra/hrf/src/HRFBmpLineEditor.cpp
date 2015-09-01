@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBmpLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFBmpLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFBmpFile.h>
 #include <Imagepp/all/h/HRFBmpLineEditor.h>
@@ -56,8 +56,8 @@ HRFBmpLineEditor::~HRFBmpLineEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFBmpLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                    uint32_t pi_PosBlockY,
+HSTATUS HRFBmpLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                    uint64_t pi_PosBlockY,
                                     Byte* po_pData,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -70,8 +70,8 @@ HSTATUS HRFBmpLineEditor::ReadBlock(uint32_t pi_PosBlockX,
     if (GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         return H_NOT_FOUND;
 
-    int32_t offSetToLine;
-    uint32_t new_PosBlockY = ((uint32_t)GetResolutionDescriptor()->GetHeight()-1) - pi_PosBlockY;
+    uint64_t offSetToLine;
+    uint64_t new_PosBlockY = ((uint64_t)GetResolutionDescriptor()->GetHeight()-1) - pi_PosBlockY;
 
     offSetToLine          = m_pRasterFile->m_BmpFileHeader.m_OffBitsToData +
                             (new_PosBlockY * m_ExactBytesPerRow);
@@ -87,7 +87,7 @@ HSTATUS HRFBmpLineEditor::ReadBlock(uint32_t pi_PosBlockX,
     m_pRasterFile->m_pBmpFile->SeekToPos(offSetToLine);
 
     uint32_t DataSize = GetResolutionDescriptor()->GetBytesPerBlockWidth();
-    if(m_pRasterFile->m_pBmpFile->Read((void*)po_pData, DataSize) != DataSize)
+    if(m_pRasterFile->m_pBmpFile->Read(po_pData, DataSize) != DataSize)
         return H_ERROR;
 
     SisterFileLock.ReleaseKey();
@@ -100,18 +100,18 @@ HSTATUS HRFBmpLineEditor::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFBmpLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                     uint32_t     pi_PosBlockY,
-                                     const Byte* pi_pData,
+HSTATUS HRFBmpLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                     uint64_t     pi_PosBlockY,
+                                     const Byte*  pi_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
 
     HSTATUS Status = H_ERROR;
-    int32_t offSetToLine;
+    uint64_t offSetToLine;
 
-    uint32_t new_PosBlockY = ((uint32_t)GetResolutionDescriptor()->GetHeight()-1) - pi_PosBlockY;
+    uint64_t new_PosBlockY = ((uint64_t)GetResolutionDescriptor()->GetHeight()-1) - pi_PosBlockY;
 
     offSetToLine          = m_pRasterFile->m_BmpFileHeader.m_OffBitsToData +
                             (new_PosBlockY * m_ExactBytesPerRow);
@@ -129,7 +129,7 @@ HSTATUS HRFBmpLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
 
     m_pRasterFile->m_pBmpFile->SeekToPos(offSetToLine);
 
-    if(m_pRasterFile->m_pBmpFile->Write((void*)m_pLineBuffer, m_ExactBytesPerRow) != m_ExactBytesPerRow)
+    if(m_pRasterFile->m_pBmpFile->Write(m_pLineBuffer, m_ExactBytesPerRow) != m_ExactBytesPerRow)
         goto WRAPUP;
 
     GetRasterFile()->SharingControlIncrementCount();

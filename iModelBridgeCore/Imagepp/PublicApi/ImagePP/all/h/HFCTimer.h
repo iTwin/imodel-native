@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCTimer.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCTimer
@@ -14,6 +14,7 @@
 
 #include <Imagepp/all/h/HFCExclusiveKey.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HFCTimer;
 
 class HFCTimerListener
@@ -42,7 +43,7 @@ class HFCTimer
 public:
 
     HFCTimer();
-    _HDLLu virtual      ~HFCTimer();
+    IMAGEPP_EXPORT virtual      ~HFCTimer();
 
     void                Start(uint32_t pi_Interval = 0, bool pi_IsPeriodic = true);
     void                Stop();
@@ -57,7 +58,7 @@ public:
 protected:
 
     void                TriggerInternal();
-    _HDLLu virtual void Trigger();
+    IMAGEPP_EXPORT virtual void Trigger();
 
 private:
 
@@ -77,7 +78,7 @@ private:
 #if defined (ANDROID) || defined (__APPLE__)
     //DM-Android
 #elif defined (_WIN32)    // Windows timer callback
-    _HDLLu static void CALLBACK TimerCallback(UINT uID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2);
+    IMAGEPP_EXPORT static void CALLBACK TimerCallback(uint32_t uID, uint32_t uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2);
 #endif
     };
 
@@ -129,5 +130,6 @@ private:
     TriggerMethodPtr    m_pMethod;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HFCTimer.hpp"
 

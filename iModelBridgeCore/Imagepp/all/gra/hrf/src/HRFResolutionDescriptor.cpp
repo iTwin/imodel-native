@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFResolutionDescriptor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFCachedFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCAccessMode.h>
 
@@ -119,7 +119,7 @@ HRFResolutionDescriptor::HRFResolutionDescriptor(
 
         if (!(pPixelTypeCapability->GetPixelTypeClassID() == pi_rpPixelType->GetClassID() && pPixelTypeCapability->SupportsCodec(CodecID)))
             pPixelTypeCapability = 0;
-        }
+        } 
 
     // Assert that we have found a pixel type capability, other wise it
     // means that this pixel type is not supported by the pi_rpResolutionCapabilities.
@@ -215,8 +215,8 @@ HRFResolutionDescriptor::HRFResolutionDescriptor(
     m_Height                = pi_Height;
 
     // The Block size
-    m_BlockWidth            = max(1, pi_BlockWidth);
-    m_BlockHeight           = max(1, pi_BlockHeight);
+    m_BlockWidth            = MAX(1, pi_BlockWidth);
+    m_BlockHeight           = MAX(1, pi_BlockHeight);
 
     // Calc the number of blocks per width and height
     m_BlocksPerWidth  = (m_Width + m_BlockWidth - 1) / m_BlockWidth;
@@ -307,14 +307,19 @@ HRFResolutionDescriptor::HRFResolutionDescriptor(
 
             p_CurrentStripCapability = (HFCPtr<HRFStripCapability>&)pStripCapabilities->GetCapability(Index);
 
-            if (!((pi_BlockHeight >= p_CurrentStripCapability->GetMinHeight()) &&
-                  (pi_BlockHeight <= p_CurrentStripCapability->GetMaxHeight())))
-                IsValid = false;
+            // If more than one block
+            if (m_Height > m_BlockHeight)
+                {
+                if (!((pi_BlockHeight >= p_CurrentStripCapability->GetMinHeight()) &&
+                      (pi_BlockHeight <= p_CurrentStripCapability->GetMaxHeight())))
+                    IsValid = false;
 
-            if (!(((p_CurrentStripCapability->GetHeightIncrement() > 0) &&
-                   !(pi_BlockHeight % p_CurrentStripCapability->GetHeightIncrement())) ||
-                  (p_CurrentStripCapability->GetHeightIncrement() == 0)))
-                IsValid = false;
+                // Test if the strip height is a multiple of the increment.
+                if (!(((p_CurrentStripCapability->GetHeightIncrement() > 0) &&
+                       !(pi_BlockHeight % p_CurrentStripCapability->GetHeightIncrement())) ||
+                      (p_CurrentStripCapability->GetHeightIncrement() == 0)))
+                    IsValid = false;
+                }
 
             if (!(m_BlockSizeInBytes <= p_CurrentStripCapability->GetMaxSizeInBytes()))
                 IsValid = false;

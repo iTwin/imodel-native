@@ -1,9 +1,11 @@
 /**********************************************************************
- * $Id: cpl_recode_stub.cpp 17405 2009-07-17 06:13:24Z chaitanya $
+ * $Id: cpl_recode_stub.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
- * Name:     cpl_recode.cpp
+ * Name:     cpl_recode_stub.cpp
  * Project:  CPL - Common Portability Library
- * Purpose:  Character set recoding and char/wchar_t conversions.
+ * Purpose:  Character set recoding and char/wchar_t conversions, stub
+ *           implementation to be used if iconv() functionality is not
+ *           available.
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
  * The bulk of this code is derived from the utf.c module from FLTK. It
@@ -13,6 +15,7 @@
  **********************************************************************
  * Copyright (c) 2008, Frank Warmerdam
  * Copyright 2006 by Bill Spitzak and others.
+ * Copyright (c) 2009-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -29,9 +32,7 @@
 
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: cpl_recode_stub.cpp 17405 2009-07-17 06:13:24Z chaitanya $");
-
-#define CPL_RECODE_STUB
+CPL_CVSID("$Id: cpl_recode_stub.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 #ifdef CPL_RECODE_STUB 
 
@@ -46,6 +47,15 @@ static unsigned utf8froma(char* dst, unsigned dstlen,
                           const char* src, unsigned srclen);
 static int utf8test(const char* src, unsigned srclen);
 
+#ifdef _WIN32
+
+#include <windows.h>
+#include <winnls.h>
+
+static char* CPLWin32Recode( const char* src,
+                             unsigned src_code_page, unsigned dst_code_page );
+#endif
+
 #ifdef FUTURE_NEEDS
 static const char* utf8fwd(const char* p, const char* start, const char* end);
 static const char* utf8back(const char* p, const char* start, const char*end);
@@ -59,8 +69,29 @@ static int utf8bytes(unsigned ucs);
 /* ==================================================================== */
 /************************************************************************/
 
+static int bHaveWarned1 = FALSE;
+static int bHaveWarned2 = FALSE;
+static int bHaveWarned3 = FALSE;
+static int bHaveWarned4 = FALSE;
+static int bHaveWarned5 = FALSE;
+static int bHaveWarned6 = FALSE;
+
 /************************************************************************/
-/*                             CPLRecode()                              */
+/*                 CPLClearRecodeStubWarningFlags()                     */
+/************************************************************************/
+
+void CPLClearRecodeStubWarningFlags()
+{
+    bHaveWarned1 = FALSE;
+    bHaveWarned2 = FALSE;
+    bHaveWarned3 = FALSE;
+    bHaveWarned4 = FALSE;
+    bHaveWarned5 = FALSE;
+    bHaveWarned6 = FALSE;
+}
+
+/************************************************************************/
+/*                           CPLRecodeStub()                            */
 /************************************************************************/
 
 /**
@@ -76,31 +107,18 @@ static int utf8bytes(unsigned ucs);
  *
  * If an error occurs an error may, or may not be posted with CPLError(). 
  *
- * @param pszSource a NUL terminated string.
+ * @param pszSource a NULL terminated string.
  * @param pszSrcEncoding the source encoding.
  * @param pszDstEncoding the destination encoding.
  *
- * @return a NUL terminated string which should be freed with CPLFree().
- *
- * @since GDAL 1.6.0
+ * @return a NULL terminated string which should be freed with CPLFree().
  */
 
-char CPL_DLL *CPLRecode( const char *pszSource, 
-                         const char *pszSrcEncoding, 
-                         const char *pszDstEncoding )
+char *CPLRecodeStub( const char *pszSource, 
+                     const char *pszSrcEncoding, 
+                     const char *pszDstEncoding )
 
 {
-/* -------------------------------------------------------------------- */
-/*      Handle a few common short cuts.                                 */
-/* -------------------------------------------------------------------- */
-    if( strcmp(pszSrcEncoding,pszDstEncoding) == 0 )
-        return CPLStrdup(pszSource);
-
-    if( strcmp(pszSrcEncoding,CPL_ENC_ASCII) == 0 
-        && (strcmp(pszDstEncoding,CPL_ENC_UTF8) == 0 
-            || strcmp(pszDstEncoding,CPL_ENC_ISO8859_1) == 0) )
-        return CPLStrdup(pszSource);
-
 /* -------------------------------------------------------------------- */
 /*      If the source or destination is current locale(), we change     */
 /*      it to ISO8859-1 since our stub implementation does not          */
@@ -141,6 +159,34 @@ char CPL_DLL *CPLRecode( const char *pszSource,
         return pszResult;
     }
 
+#ifdef _WIN32
+/* ---------------------------------------------------------------------*/
+/*      CPXXX to UTF8                                                   */
+/* ---------------------------------------------------------------------*/
+    if( strncmp(pszSrcEncoding,"CP",2) == 0
+        && strcmp(pszDstEncoding,CPL_ENC_UTF8) == 0 )
+    {
+        int nCode = atoi( pszSrcEncoding + 2 );
+        if( nCode > 0 ) {
+           return CPLWin32Recode( pszSource, nCode, CP_UTF8 );
+        }
+        else if( EQUAL(pszSrcEncoding, "CP_OEMCP") )
+            return CPLWin32Recode( pszSource, CP_OEMCP, CP_UTF8 );
+    }
+
+/* ---------------------------------------------------------------------*/
+/*      UTF8 to CPXXX                                                   */
+/* ---------------------------------------------------------------------*/
+    if( strcmp(pszSrcEncoding,CPL_ENC_UTF8) == 0
+        && strncmp(pszDstEncoding,"CP",2) == 0 )
+    {
+         int nCode = atoi( pszDstEncoding + 2 );
+         if( nCode > 0 ) {
+             return CPLWin32Recode( pszSource, CP_UTF8, nCode );
+         }
+    }
+#endif
+
 /* -------------------------------------------------------------------- */
 /*      Anything else to UTF-8 is treated as ISO8859-1 to UTF-8 with    */
 /*      a one-time warning.                                             */
@@ -149,11 +195,10 @@ char CPL_DLL *CPLRecode( const char *pszSource,
     {
         int nCharCount = strlen(pszSource);
         char *pszResult = (char *) CPLCalloc(1,nCharCount*2+1);
-        static int bHaveWarned = FALSE;
 
-        if( !bHaveWarned )
+        if( !bHaveWarned1 )
         {
-            bHaveWarned = 1;
+            bHaveWarned1 = 1;
             CPLError( CE_Warning, CPLE_AppDefined, 
                       "Recode from %s to UTF-8 not supported, treated as ISO8859-1 to UTF-8.", 
                       pszSrcEncoding );
@@ -173,11 +218,10 @@ char CPL_DLL *CPLRecode( const char *pszSource,
     {
         int nCharCount = strlen(pszSource);
         char *pszResult = (char *) CPLCalloc(1,nCharCount+1);
-        static int bHaveWarned = FALSE;
 
-        if( !bHaveWarned )
+        if( !bHaveWarned2 )
         {
-            bHaveWarned = 1;
+            bHaveWarned2 = 1;
             CPLError( CE_Warning, CPLE_AppDefined, 
                       "Recode from UTF-8 to %s not supported, treated as UTF-8 to ISO8859-1.", 
                       pszDstEncoding );
@@ -192,11 +236,9 @@ char CPL_DLL *CPLRecode( const char *pszSource,
 /*      Everything else is treated as a no-op with a warning.           */
 /* -------------------------------------------------------------------- */
     {
-        static int bHaveWarned = FALSE;
-
-        if( !bHaveWarned )
+        if( !bHaveWarned3 )
         {
-            bHaveWarned = 1;
+            bHaveWarned3 = 1;
             CPLError( CE_Warning, CPLE_AppDefined, 
                       "Recode from %s to %s not supported, no change applied.", 
                       pszSrcEncoding, pszDstEncoding );
@@ -207,7 +249,7 @@ char CPL_DLL *CPLRecode( const char *pszSource,
 }
 
 /************************************************************************/
-/*                         CPLRecodeFromWChar()                         */
+/*                       CPLRecodeFromWCharStub()                       */
 /************************************************************************/
 
 /**
@@ -230,27 +272,26 @@ char CPL_DLL *CPLRecode( const char *pszSource,
  *
  * @return a zero terminated multi-byte string which should be freed with 
  * CPLFree(), or NULL if an error occurs. 
- *
- * @since GDAL 1.6.0
  */
 
-char CPL_DLL *CPLRecodeFromWChar( const wchar_t *pwszSource, 
-                                  const char *pszSrcEncoding, 
-                                  const char *pszDstEncoding )
+char *CPLRecodeFromWCharStub( const wchar_t *pwszSource, 
+                              const char *pszSrcEncoding, 
+                              const char *pszDstEncoding )
 
 {
 /* -------------------------------------------------------------------- */
 /*      We try to avoid changes of character set.  We are just          */
 /*      providing for unicode to unicode.                               */
 /* -------------------------------------------------------------------- */
-    if( strcmp(pszSrcEncoding,CPL_ENC_UTF8) != 0
+    if( strcmp(pszSrcEncoding,"WCHAR_T") != 0 &&
+        strcmp(pszSrcEncoding,CPL_ENC_UTF8) != 0
         && strcmp(pszSrcEncoding,CPL_ENC_UTF16) != 0
         && strcmp(pszSrcEncoding,CPL_ENC_UCS2) != 0
         && strcmp(pszSrcEncoding,CPL_ENC_UCS4) != 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Stub recoding implementation does not support\n"
-                  "CPLRecodeFromWChar(...,%s,%s)", 
+                  "CPLRecodeFromWCharStub(...,%s,%s)", 
                   pszSrcEncoding, pszDstEncoding );
         return NULL;
     }
@@ -272,6 +313,12 @@ char CPL_DLL *CPLRecodeFromWChar( const wchar_t *pwszSource,
     nDstBufSize = nSrcLen * 4 + 1;
     pszResult = (char *) CPLMalloc(nDstBufSize); // nearly worst case.
 
+    if (nSrcLen == 0)
+    {
+        pszResult[0] = '\0';
+        return pszResult;
+    }
+
 /* -------------------------------------------------------------------- */
 /*      Convert, and confirm we had enough space.                       */
 /* -------------------------------------------------------------------- */
@@ -289,7 +336,7 @@ char CPL_DLL *CPLRecodeFromWChar( const wchar_t *pwszSource,
         return pszResult;
 
     char *pszFinalResult = 
-        CPLRecode( pszResult, CPL_ENC_UTF8, pszDstEncoding );
+        CPLRecodeStub( pszResult, CPL_ENC_UTF8, pszDstEncoding );
 
     CPLFree( pszResult );
     
@@ -297,7 +344,7 @@ char CPL_DLL *CPLRecodeFromWChar( const wchar_t *pwszSource,
 }
 
 /************************************************************************/
-/*                          CPLRecodeToWChar()                          */
+/*                        CPLRecodeToWCharStub()                        */
 /************************************************************************/
 
 /**
@@ -325,9 +372,9 @@ char CPL_DLL *CPLRecodeFromWChar( const wchar_t *pwszSource,
  * @since GDAL 1.6.0
  */
 
-wchar_t CPL_DLL *CPLRecodeToWChar( const char *pszSource,
-                                   const char *pszSrcEncoding, 
-                                   const char *pszDstEncoding )
+wchar_t *CPLRecodeToWCharStub( const char *pszSource,
+                               const char *pszSrcEncoding, 
+                               const char *pszDstEncoding )
 
 {
     char *pszUTF8Source = (char *) pszSource;
@@ -335,7 +382,7 @@ wchar_t CPL_DLL *CPLRecodeToWChar( const char *pszSource,
     if( strcmp(pszSrcEncoding,CPL_ENC_UTF8) != 0 
         && strcmp(pszSrcEncoding,CPL_ENC_ASCII) != 0 )
     {
-        pszUTF8Source = CPLRecode( pszSource, pszSrcEncoding, CPL_ENC_UTF8 );
+        pszUTF8Source = CPLRecodeStub( pszSource, pszSrcEncoding, CPL_ENC_UTF8 );
         if( pszUTF8Source == NULL )
             return NULL;
     }
@@ -344,13 +391,14 @@ wchar_t CPL_DLL *CPLRecodeToWChar( const char *pszSource,
 /*      We try to avoid changes of character set.  We are just          */
 /*      providing for unicode to unicode.                               */
 /* -------------------------------------------------------------------- */
-    if( strcmp(pszDstEncoding,CPL_ENC_UCS2) != 0
+    if( strcmp(pszDstEncoding,"WCHAR_T") != 0
+        && strcmp(pszDstEncoding,CPL_ENC_UCS2) != 0
         && strcmp(pszDstEncoding,CPL_ENC_UCS4) != 0 
         && strcmp(pszDstEncoding,CPL_ENC_UTF16) != 0 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Stub recoding implementation does not support\n"
-                  "CPLRecodeToWChar(...,%s,%s)", 
+                  "CPLRecodeToWCharStub(...,%s,%s)", 
                   pszSrcEncoding, pszDstEncoding );
         return NULL;
     }
@@ -384,49 +432,12 @@ wchar_t CPL_DLL *CPLRecodeToWChar( const char *pszSource,
  *
  * @since GDAL 1.7.0
  */
-int CPLIsUTF8(const char* pabyData, int nLen)
+int CPLIsUTF8Stub(const char* pabyData, int nLen)
 {
     if (nLen < 0)
         nLen = strlen(pabyData);
     return utf8test(pabyData, (unsigned)nLen) != 0;
 }
-
-/************************************************************************/
-/*                          CPLForceToASCII()                           */
-/************************************************************************/
-
-/**
- * Return a new string that is made only of ASCII characters. If non-ASCII
- * characters are found in the input string, they will be replaced by the
- * provided replacement character.
- *
- * @param pabyData input string to test
- * @param nLen length of the input string, or -1 if the function must compute
- *             the string length. In which case it must be null terminated.
- * @param chReplacementChar character which will be used when the input stream
- *                          contains a non ASCII character. Must be valid ASCII !
- *
- * @return a new string that must be freed with CPLFree().
- *
- * @since GDAL 1.7.0
- */
-char CPL_DLL *CPLForceToASCII(const char* pabyData, int nLen, char chReplacementChar)
-{
-    if (nLen < 0)
-        nLen = strlen(pabyData);
-    char* pszOutputString = (char*)CPLMalloc(nLen + 1);
-    int i;
-    for(i=0;i<nLen;i++)
-    {
-        if (((unsigned char*)pabyData)[i] > 127)
-            pszOutputString[i] = chReplacementChar;
-        else
-            pszOutputString[i] = pabyData[i];
-    }
-    pszOutputString[i] = '\0';
-    return pszOutputString;
-}
-
 
 /************************************************************************/
 /* ==================================================================== */
@@ -856,7 +867,17 @@ static unsigned utf8toa(const char* src, unsigned srclen,
       int len; unsigned ucs = utf8decode(p,e,&len);
       p += len;
       if (ucs < 0x100) dst[count] = (char)ucs;
-      else dst[count] = '?';
+      else
+      {
+          if (!bHaveWarned4)
+          {
+              bHaveWarned4 = TRUE;
+              CPLError(CE_Warning, CPLE_AppDefined,
+                       "One or several characters couldn't be converted correctly from UTF-8 to ISO-8859-1.\n"
+                       "This warning will not be emitted anymore.");
+          }
+          dst[count] = '?';
+      }
     }
     if (++count >= dstlen) {dst[count-1] = 0; break;}
   }
@@ -1025,6 +1046,123 @@ static unsigned utf8froma(char* dst, unsigned dstlen,
   }
   return count;
 }
+
+#ifdef _WIN32
+
+/************************************************************************/
+/*                            CPLWin32Recode()                          */
+/************************************************************************/
+
+/* Convert an CODEPAGE (ie normal c-string) byte stream
+     to another CODEPAGE (ie normal c-string) byte stream.
+
+    \a src is target c-string byte stream (including a null terminator).
+    \a src_code_page is target c-string byte code page.
+    \a dst_code_page is destination c-string byte code page.
+
+   UTF7          65000
+   UTF8          65001
+   OEM-US          437
+   OEM-ALABIC      720
+   OEM-GREEK       737
+   OEM-BALTIC      775
+   OEM-MLATIN1     850
+   OEM-LATIN2      852
+   OEM-CYRILLIC    855
+   OEM-TURKISH     857
+   OEM-MLATIN1P    858
+   OEM-HEBREW      862
+   OEM-RUSSIAN     866
+
+   THAI            874
+   SJIS            932
+   GBK             936
+   KOREA           949
+   BIG5            950
+
+   EUROPE         1250
+   CYRILLIC       1251
+   LATIN1         1252
+   GREEK          1253
+   TURKISH        1254
+   HEBREW         1255
+   ARABIC         1256
+   BALTIC         1257
+   VIETNAM        1258
+
+   ISO-LATIN1    28591
+   ISO-LATIN2    28592
+   ISO-LATIN3    28593
+   ISO-BALTIC    28594
+   ISO-CYRILLIC  28595
+   ISO-ARABIC    28596
+   ISO-HEBREW    28598
+   ISO-TURKISH   28599
+   ISO-LATIN9    28605
+
+   ISO-2022-JP   50220
+
+*/
+
+char* CPLWin32Recode( const char* src, unsigned src_code_page, unsigned dst_code_page )
+{
+    /* Convert from source code page to Unicode */
+
+    /* Compute the length in wide characters */
+    int wlen = MultiByteToWideChar( src_code_page, MB_ERR_INVALID_CHARS, src, -1, 0, 0 );
+    if (wlen == 0 && GetLastError() == ERROR_NO_UNICODE_TRANSLATION)
+    {
+        if (!bHaveWarned5)
+        {
+            bHaveWarned5 = TRUE;
+            CPLError(CE_Warning, CPLE_AppDefined,
+                    "One or several characters could not be translated from CP%d. "
+                    "This warning will not be emitted anymore.", src_code_page);
+        }
+
+        /* Retry now without MB_ERR_INVALID_CHARS flag */
+        wlen = MultiByteToWideChar( src_code_page, 0, src, -1, 0, 0 );
+    }
+
+    /* Do the actual conversion */
+    wchar_t* tbuf = (wchar_t*)CPLCalloc(sizeof(wchar_t),wlen+1);
+    tbuf[wlen] = 0;
+    MultiByteToWideChar( src_code_page, 0, src, -1, tbuf, wlen+1 );
+
+    /* Convert from Unicode to destination code page */
+
+    /* Compute the length in chars */
+    BOOL bUsedDefaultChar = FALSE;
+    int len;
+    if ( dst_code_page == CP_UTF7 || dst_code_page == CP_UTF8 )
+        len = WideCharToMultiByte( dst_code_page, 0, tbuf, -1, 0, 0, 0, NULL );
+    else
+        len = WideCharToMultiByte( dst_code_page, 0, tbuf, -1, 0, 0, 0, &bUsedDefaultChar );
+    if (bUsedDefaultChar)
+    {
+        if (!bHaveWarned6)
+        {
+            bHaveWarned6 = TRUE;
+            CPLError(CE_Warning, CPLE_AppDefined,
+                    "One or several characters could not be translated to CP%d. "
+                    "This warning will not be emitted anymore.", dst_code_page);
+        }
+    }
+
+    /* Do the actual conversion */
+    char* pszResult = (char*)CPLCalloc(sizeof(char),len+1);
+    WideCharToMultiByte( dst_code_page, 0, tbuf, -1, pszResult, len+1, 0, NULL );
+    pszResult[len] = 0;
+
+    /* Cleanup */
+    CPLFree(tbuf);
+
+    return pszResult;
+}
+
+#endif
+
+
 
 /*
 ** For now we disable the rest which is locale() related.  We may need 

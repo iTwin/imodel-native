@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFCapability.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -12,6 +12,7 @@
 #include "HTIFFTag.h"
 #include "HFCAccessMode.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFileCapabilities;
 class HPMGenericAttribute;
 
@@ -45,7 +46,7 @@ class HPMGenericAttribute;
  */
 class HRFCapability : public HFCShareableObject<HRFCapability>
     {
-    HDECLARE_BASECLASS_ID(2200)
+    HDECLARE_BASECLASS_ID(HRFCapabilityId_Base)
 
 public:
     HRFCapability(HFCAccessMode pi_AccessMode);
@@ -91,11 +92,11 @@ private:
  */
 class HRFBlockCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2208, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Block, HRFCapability)
 
 
 public:
-    _HDLLg HRFBlockCapability(HFCAccessMode    pi_AccessMode,
+    IMAGEPP_EXPORT HRFBlockCapability(HFCAccessMode    pi_AccessMode,
                               HRFBlockType     pi_BlockType,
                               uint32_t         pi_MaxSizeInBytes,
                               HRFBlockAccess   pi_BlockAccess = HRFBlockAccess::RANDOM);
@@ -153,10 +154,10 @@ private:
  */
 class HRFCodecCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2226, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Codec, HRFCapability)
 
 public:
-    _HDLLg                 HRFCodecCapability(HFCAccessMode                            pi_AccessMode,
+    IMAGEPP_EXPORT                 HRFCodecCapability(HFCAccessMode                            pi_AccessMode,
                                               HCLASS_ID                              pi_Codec,
                                               const HFCPtr<HRFRasterFileCapabilities>& pi_rBlockTypeList);
 
@@ -216,10 +217,10 @@ private:
  */
 class HRFPixelTypeCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2201, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_PixelType, HRFCapability)
 
 public:
-    _HDLLg                 HRFPixelTypeCapability(HFCAccessMode                            pi_AccessMode,
+    IMAGEPP_EXPORT                 HRFPixelTypeCapability(HFCAccessMode                            pi_AccessMode,
                                                   HCLASS_ID                              pi_PixelType,
                                                   const HFCPtr<HRFRasterFileCapabilities>& pi_rpListOfCodec);
 
@@ -290,10 +291,10 @@ private:
  */
 class HRFInterlaceCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2202, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Interlace, HRFCapability)
 
 public:
-    _HDLLg HRFInterlaceCapability(HFCAccessMode pi_AccessMode);
+    IMAGEPP_EXPORT HRFInterlaceCapability(HFCAccessMode pi_AccessMode);
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -322,10 +323,10 @@ private:
  */
 class HRFScanlineOrientationCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2203, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_ScanlineOrientation, HRFCapability)
 
 public:
-    _HDLLg HRFScanlineOrientationCapability(HFCAccessMode           pi_AccessMode,
+    IMAGEPP_EXPORT HRFScanlineOrientationCapability(HFCAccessMode           pi_AccessMode,
                                             HRFScanlineOrientation  pi_ScanlineOrientation);
 
     virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
@@ -374,10 +375,10 @@ private:
  */
 class HRFInterleaveCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2204, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Interleave, HRFCapability)
 
 public:
-    _HDLLg HRFInterleaveCapability(HFCAccessMode       pi_AccessMode,
+    IMAGEPP_EXPORT HRFInterleaveCapability(HFCAccessMode       pi_AccessMode,
                                    HRFInterleaveType   pi_InterleaveType);
 
     virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
@@ -426,10 +427,10 @@ private:
  */
 class HRFMultiResolutionCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2206, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_MultiResolution, HRFCapability)
 
 public:
-    _HDLLg HRFMultiResolutionCapability(
+    IMAGEPP_EXPORT HRFMultiResolutionCapability(
         HFCAccessMode       pi_AccessMode,
         bool               pi_SinglePixelType      = true,
         bool               pi_SingleBlockType      = true,
@@ -503,10 +504,10 @@ private:
  */
 class HRFSingleResolutionCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2207, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_SingleResolution, HRFCapability)
 
 public:
-    _HDLLg HRFSingleResolutionCapability(HFCAccessMode  pi_AccessMode);
+    IMAGEPP_EXPORT HRFSingleResolutionCapability(HFCAccessMode  pi_AccessMode);
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -546,10 +547,10 @@ private:
  */
 class HRFLineCapability : public HRFBlockCapability
     {
-    HDECLARE_CLASS_ID(2209, HRFBlockCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Line, HRFBlockCapability)
 
 public:
-    _HDLLg HRFLineCapability (HFCAccessMode    pi_AccessMode,
+    IMAGEPP_EXPORT HRFLineCapability (HFCAccessMode    pi_AccessMode,
                               uint32_t         pi_MaxSizeInBytes,
                               HRFBlockAccess   pi_BlockAccess = HRFBlockAccess::RANDOM);
 
@@ -598,10 +599,10 @@ private:
  */
 class HRFStripCapability : public HRFBlockCapability
     {
-    HDECLARE_CLASS_ID(2210, HRFBlockCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Strip, HRFBlockCapability)
 
 public:
-    _HDLLg HRFStripCapability( HFCAccessMode    pi_AccessMode,
+    IMAGEPP_EXPORT HRFStripCapability( HFCAccessMode    pi_AccessMode,
                                uint32_t         pi_MaxSizeInBytes,
 
                                uint32_t         pi_MinHeight,
@@ -669,10 +670,10 @@ private:
  */
 class HRFTileCapability : public HRFBlockCapability
     {
-    HDECLARE_CLASS_ID(2211, HRFBlockCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Tile, HRFBlockCapability)
 
 public:
-    _HDLLg HRFTileCapability ( HFCAccessMode   pi_AccessMode,
+    IMAGEPP_EXPORT HRFTileCapability ( HFCAccessMode   pi_AccessMode,
                                uint32_t        pi_MaxSizeInBytes,
 
                                uint32_t        pi_MinWidth,
@@ -760,10 +761,10 @@ private:
  */
 class HRFImageCapability : public HRFBlockCapability
     {
-    HDECLARE_CLASS_ID(2212, HRFBlockCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Image, HRFBlockCapability)
 
 public:
-    _HDLLg HRFImageCapability( HFCAccessMode    pi_AccessMode,
+    IMAGEPP_EXPORT HRFImageCapability( HFCAccessMode    pi_AccessMode,
                                uint32_t         pi_MaxSizeInBytes,
                                uint32_t         pi_MinWidth,
                                uint32_t         pi_MaxWidth,
@@ -821,10 +822,10 @@ private:
  */
 class HRFFilterCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2213, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Filter, HRFCapability)
 
 public:
-    _HDLLg HRFFilterCapability(HFCAccessMode   pi_AccessMode,
+    IMAGEPP_EXPORT HRFFilterCapability(HFCAccessMode   pi_AccessMode,
                                HCLASS_ID     pi_Filter);
 
     virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
@@ -888,10 +889,10 @@ private:
  */
 class HRFClipShapeCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2214, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_ClipShape, HRFCapability)
 
 public:
-    _HDLLg HRFClipShapeCapability(HFCAccessMode     pi_AccessMode,
+    IMAGEPP_EXPORT HRFClipShapeCapability(HFCAccessMode     pi_AccessMode,
                                   HRFCoordinateType pi_CoordinateType);
 
     virtual bool             SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
@@ -945,10 +946,10 @@ private:
  */
 class HRFTransfoModelCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2215, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_TransfoModel, HRFCapability)
 
 public:
-    _HDLLg HRFTransfoModelCapability(HFCAccessMode    pi_AccessMode,
+    IMAGEPP_EXPORT HRFTransfoModelCapability(HFCAccessMode    pi_AccessMode,
                                      HCLASS_ID      pi_TransfoModel);
 
     virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
@@ -1000,10 +1001,10 @@ private:
  */
 class HRFHistogramCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2216, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Histogram, HRFCapability)
 
 public:
-    _HDLLg HRFHistogramCapability(HFCAccessMode    pi_AccessMode);
+    IMAGEPP_EXPORT HRFHistogramCapability(HFCAccessMode    pi_AccessMode);
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1049,10 +1050,10 @@ private:
  */
 class HRFThumbnailCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2217, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Thumbnail, HRFCapability)
 
 public:
-    _HDLLg HRFThumbnailCapability(HFCAccessMode    pi_AccessMode,
+    IMAGEPP_EXPORT HRFThumbnailCapability(HFCAccessMode    pi_AccessMode,
 
                                   uint32_t         pi_MinWidth        = 64,
                                   uint32_t         pi_MaxWidth        = 64,
@@ -1142,10 +1143,10 @@ private:
  */
 class HRFRepresentativePaletteCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2218, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_RepresentativePalette, HRFCapability)
 
 public:
-    _HDLLg HRFRepresentativePaletteCapability(HFCAccessMode    pi_AccessMode);
+    IMAGEPP_EXPORT HRFRepresentativePaletteCapability(HFCAccessMode    pi_AccessMode);
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1174,10 +1175,10 @@ private:
  */
 class HRFMultiPageCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2219, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_MultiPage, HRFCapability)
 
 public:
-    _HDLLg HRFMultiPageCapability(HFCAccessMode    pi_AccessMode);
+    IMAGEPP_EXPORT HRFMultiPageCapability(HFCAccessMode    pi_AccessMode);
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1206,10 +1207,10 @@ private:
  */
 class HRFTagCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2220, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Tag, HRFCapability)
 
 public:
-    _HDLLg HRFTagCapability(   HFCAccessMode                       pi_AccessMode,
+    IMAGEPP_EXPORT HRFTagCapability(   HFCAccessMode                       pi_AccessMode,
                                const HFCPtr<HPMGenericAttribute>&  pi_rpTag);
 
     virtual bool   SameAs(const HFCPtr<HRFCapability>& pi_rpCapability) const;
@@ -1248,10 +1249,10 @@ protected:
  */
 class HRFUniversalTagCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2227, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_UniversalTag, HRFCapability)
 
 public:
-    _HDLLg HRFUniversalTagCapability(HFCAccessMode pi_AccessMode);
+    IMAGEPP_EXPORT HRFUniversalTagCapability(HFCAccessMode pi_AccessMode);
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1282,10 +1283,10 @@ private:
  */
 class HRFBlocksDataFlagCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2221, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_BlocksDataFlag, HRFCapability)
 
 public:
-    _HDLLg HRFBlocksDataFlagCapability(HFCAccessMode    pi_AccessMode);
+    IMAGEPP_EXPORT HRFBlocksDataFlagCapability(HFCAccessMode    pi_AccessMode);
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1314,10 +1315,10 @@ private:
  */
 class HRFSubSamplingCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2228, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_SubSampling, HRFCapability)
 
 public:
-    _HDLLg HRFSubSamplingCapability(HFCAccessMode    pi_AccessMode);
+    IMAGEPP_EXPORT HRFSubSamplingCapability(HFCAccessMode    pi_AccessMode);
     
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1346,10 +1347,10 @@ private:
  */
 class HRFEmbedingCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2222, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Embeding, HRFCapability)
 
 public:
-    _HDLLg HRFEmbedingCapability(HFCAccessMode pi_AccessMode);
+    IMAGEPP_EXPORT HRFEmbedingCapability(HFCAccessMode pi_AccessMode);
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1380,10 +1381,10 @@ private:
  */
 class HRFStillImageCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2224, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_StillImage, HRFCapability)
 
 public:
-    _HDLLg HRFStillImageCapability(HFCAccessMode pi_AccessMode);
+    IMAGEPP_EXPORT HRFStillImageCapability(HFCAccessMode pi_AccessMode);
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1414,10 +1415,10 @@ private:
  */
 class HRFAnimationCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2225, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Animation, HRFCapability)
 
 public:
-    _HDLLg HRFAnimationCapability(HFCAccessMode pi_AccessMode);
+    IMAGEPP_EXPORT HRFAnimationCapability(HFCAccessMode pi_AccessMode);
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1440,10 +1441,10 @@ capability to the file. The @b{create} access mode should be seen as export acce
 */
 class HRFMaxFileSizeCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2229, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_MaxFileSize, HRFCapability)
 
 public:
-    _HDLLg HRFMaxFileSizeCapability(HFCAccessMode pi_AccessMode,
+    IMAGEPP_EXPORT HRFMaxFileSizeCapability(HFCAccessMode pi_AccessMode,
                                     uint64_t        pi_MaxFileSize);
 
     uint64_t GetMaxFileSize() const;
@@ -1474,15 +1475,15 @@ capability to the file. The @b{create} access mode should be seen as export acce
 */
 class HRFGeocodingCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2230, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Geocoding, HRFCapability)
 
 public:
-    _HDLLg HRFGeocodingCapability(HFCAccessMode pi_AccessMode);
+    IMAGEPP_EXPORT HRFGeocodingCapability(HFCAccessMode pi_AccessMode);
 
-    void         		AddSupportedKey 	(ImagePP::TIFFGeoKey pi_GeoKey);
-    _HDLLg bool 		IsKeySupported  	(ImagePP::TIFFGeoKey pi_GeoKey) const;
-    _HDLLg unsigned short GetNbGeotiffKeys	() const;
-    _HDLLg ImagePP::TIFFGeoKey   GetGeotiffKey		(unsigned short pi_KeyIndex) const;
+    IMAGEPP_EXPORT void AddSupportedKey 	(BentleyApi::ImagePP::TIFFGeoKey pi_GeoKey);
+    IMAGEPP_EXPORT bool 		IsKeySupported  	(BentleyApi::ImagePP::TIFFGeoKey pi_GeoKey) const;
+    IMAGEPP_EXPORT unsigned short GetNbGeotiffKeys	() const;
+    IMAGEPP_EXPORT BentleyApi::ImagePP::TIFFGeoKey   GetGeotiffKey		(unsigned short pi_KeyIndex) const;
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1492,7 +1493,7 @@ public:
 private:
     HRFGeocodingCapability();
 
-    typedef vector<ImagePP::TIFFGeoKey> TIFFGeoKeyVector;
+    typedef vector<BentleyApi::ImagePP::TIFFGeoKey> TIFFGeoKeyVector;
 
     TIFFGeoKeyVector m_SupportedGeoKeys;
     };
@@ -1508,10 +1509,10 @@ This capability is used to define if the format can is ability to change size
 */
 class HRFResizableCapability : public HRFCapability
     {
-    HDECLARE_CLASS_ID(2231, HRFCapability)
+    HDECLARE_CLASS_ID(HRFCapabilityId_Resizable, HRFCapability)
 
 public:
-    _HDLLg HRFResizableCapability(HFCAccessMode pi_AccessMode);
+    IMAGEPP_EXPORT HRFResizableCapability(HFCAccessMode pi_AccessMode);
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1520,3 +1521,4 @@ public:
 private:
     HRFResizableCapability();
     };
+END_IMAGEPP_NAMESPACE

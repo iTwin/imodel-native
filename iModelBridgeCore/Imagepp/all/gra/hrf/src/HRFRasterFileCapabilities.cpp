@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileCapabilities.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFileCapabilities
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h> // Must be the first include.
+#include <ImagePPInternal/hstdcpp.h>
+ // Must be the first include.
 
 #include <Imagepp/all/h/HFCAccessMode.h>
 #include <Imagepp/all/h/HRFCapability.h>

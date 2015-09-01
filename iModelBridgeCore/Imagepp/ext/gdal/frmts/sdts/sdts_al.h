@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdts_al.h 19952 2010-07-02 05:44:18Z warmerdam $
+ * $Id: sdts_al.h 26613 2013-11-14 17:42:08Z goatbar $
  *
  * Project:  SDTS Translator
  * Purpose:  Include file for entire SDTS Abstraction Layer functions.
@@ -28,7 +28,7 @@
  ****************************************************************************/
 
 #ifndef SDTS_AL_H_INCLUDED
-#define STDS_AL_H_INCLUDED
+#define SDTS_AL_H_INCLUDED
 
 #include "cpl_conv.h"
 #include "iso8211.h"
@@ -165,7 +165,8 @@ class SDTSModId
   public:
                 SDTSModId() { szModule[0] = '\0';
                               nRecord = -1;
-                              szOBRP[0] = '\0'; }
+                              szOBRP[0] = '\0';
+                              szName[0] = '\0'; }
 
     int         Set( DDFField * );
 
@@ -181,6 +182,11 @@ class SDTSModId
     /** The "role" of this record within the module.  This is normally empty
         for references, but set in the oModId member of a feature.  */
     char        szOBRP[8]; 
+
+    /** String "szModule:nRecord" */
+    char        szName[20];
+
+
 };
 
 /************************************************************************/
@@ -671,4 +677,4 @@ class SDTSTransfer
     SDTSIndexedReader **papoLayerReader;
 };
 
-#endif /* ndef SDTS_AL_H_INCLUDED */
+#endif /* ifndef SDTS_AL_H_INCLUDED */

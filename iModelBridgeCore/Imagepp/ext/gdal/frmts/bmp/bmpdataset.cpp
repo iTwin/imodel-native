@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: bmpdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: bmpdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  Microsoft Windows Bitmap
  * Purpose:  Read/write MS Windows Device Independent Bitmap (DIB) files
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2002, Andrey Kiselev <dron@remotesensing.org>
+ * Copyright (c) 2007-2010, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: bmpdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: bmpdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 CPL_C_START
 void    GDALRegister_BMP(void);
@@ -163,7 +164,9 @@ typedef struct
 
 // Info header size in bytes:
 const unsigned int  BIH_WIN4SIZE = 40; // for BMPT_WIN4
+#if 0  /* Unused */
 const unsigned int  BIH_WIN5SIZE = 57; // for BMPT_WIN5
+#endif
 const unsigned int  BIH_OS21SIZE = 12; // for BMPT_OS21
 const unsigned int  BIH_OS22SIZE = 64; // for BMPT_OS22
 
@@ -318,7 +321,7 @@ BMPRasterBand::~BMPRasterBand()
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr BMPRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
+CPLErr BMPRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                   void * pImage )
 {
     BMPDataset  *poGDS = (BMPDataset *) poDS;
@@ -858,7 +861,7 @@ BMPComprRasterBand::~BMPComprRasterBand()
 /************************************************************************/
 
 CPLErr BMPComprRasterBand::
-    IReadBlock( int nBlockXOff, int nBlockYOff, void * pImage )
+    IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff, void * pImage )
 {
     memcpy( pImage, pabyUncomprBuf +
             (poDS->GetRasterYSize() - nBlockYOff - 1) * poDS->GetRasterXSize(),
@@ -1040,7 +1043,7 @@ GDALDataset *BMPDataset::Open( GDALOpenInfo * poOpenInfo )
 #ifdef CPL_MSB
     CPL_SWAP32PTR( &poDS->sFileHeader.iOffBits );
 #endif
-    poDS->sFileHeader.iSize = sStat.st_size;
+    poDS->sFileHeader.iSize = (GUInt32) sStat.st_size;
 
 #ifdef BMP_DEBUG
     CPLDebug( "BMP", "File size %d bytes.", poDS->sFileHeader.iSize );

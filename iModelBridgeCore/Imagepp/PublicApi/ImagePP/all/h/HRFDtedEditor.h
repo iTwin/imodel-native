@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFDtedEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,8 +14,9 @@
 #include "HRFResolutionEditor.h"
 #include "HRFGdalSupportedFileEditor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFDtedFile;
-class GDALRasterBand;
+
 
 class HRFDtedEditor : public HRFGdalSupportedFileEditor
     {
@@ -27,15 +28,15 @@ public:
     virtual ~HRFDtedEditor  ();
 
     // Edition by Block
-    virtual HSTATUS                 ReadBlock (uint32_t                 pi_PosBlockX,
-                                               uint32_t                 pi_PosBlockY,
-                                               Byte*                   po_pData,
-                                               HFCLockMonitor const*    pi_pSisterFileLock = 0);
+    virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
+                              uint64_t                 pi_PosBlockY,
+                              Byte*                    po_pData,
+                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS          ReadBlock     (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            HFCPtr<HCDPacket>&       po_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0)
+    virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
+                              uint64_t                 pi_PosBlockY,
+                              HFCPtr<HCDPacket>&       po_rpPacket,
+                              HFCLockMonitor const*    pi_pSisterFileLock = 0)
         {
         return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
         }
@@ -56,3 +57,4 @@ private:
     HRFDtedEditor(const HRFDtedEditor& pi_rObj);
     HRFDtedEditor& operator=(const HRFDtedEditor& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

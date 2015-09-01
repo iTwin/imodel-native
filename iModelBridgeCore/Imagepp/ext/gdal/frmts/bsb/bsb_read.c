@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: bsb_read.c 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: bsb_read.c 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  BSB Reader
  * Purpose:  Low level BSB Access API Implementation (non-GDAL).
@@ -12,6 +12,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam
+ * Copyright (c) 2007-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -36,7 +37,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: bsb_read.c 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: bsb_read.c 27729 2014-09-24 00:40:16Z goatbar $");
 
 static int BSBReadHeaderLine( BSBInfo *psInfo, char* pszLine, int nLineMaxLen, int bNO1 );
 static int BSBSeekAndCheckScanlineNumber ( BSBInfo *psInfo, int nScanline,
@@ -213,7 +214,7 @@ BSBInfo *BSBOpen( const char *pszFilename )
         return NULL;
     }
 
-    for( i = 0; i < sizeof(achTestBlock) - 4; i++ )
+    for( i = 0; (size_t)i < sizeof(achTestBlock) - 4; i++ )
     {
         /* Test for "BSB/" */
         if( achTestBlock[i+0] == 'B' && achTestBlock[i+1] == 'S' 
@@ -378,10 +379,10 @@ BSBInfo *BSBOpen( const char *pszFilename )
 
     if( psInfo->nXSize <= 0 || psInfo->nYSize <= 0 )
     {
-        BSBClose( psInfo );
         CPLError( CE_Failure, CPLE_AppDefined, 
                   "Wrong dimensions found in header : %d x %d.",
                   psInfo->nXSize, psInfo->nYSize );
+        BSBClose( psInfo );
         return NULL;
     }
 
@@ -881,7 +882,8 @@ int BSBReadScanline( BSBInfo *psInfo, int nScanline,
     while ( iPixel < psInfo->nXSize &&
             (nScanline == psInfo->nYSize-1 ||
              psInfo->panLineOffset[nScanline+1] == -1 ||
-             VSIFTellL( fp ) - psInfo->nBufferSize + psInfo->nBufferOffset < psInfo->panLineOffset[nScanline+1]) );
+             /* TODO: Will this work for large files? */
+             (int)(VSIFTellL( fp ) - psInfo->nBufferSize + psInfo->nBufferOffset) < psInfo->panLineOffset[nScanline+1]) );
 
 /* -------------------------------------------------------------------- */
 /*      If the line buffer is not filled after reading the line in the  */
@@ -927,7 +929,7 @@ void BSBClose( BSBInfo *psInfo )
 /*                             BSBCreate()                              */
 /************************************************************************/
 
-BSBInfo *BSBCreate( const char *pszFilename, int nCreationFlags, int nVersion, 
+BSBInfo *BSBCreate( const char *pszFilename, CPL_UNUSED int nCreationFlags, int nVersion, 
                     int nXSize, int nYSize )
 
 {

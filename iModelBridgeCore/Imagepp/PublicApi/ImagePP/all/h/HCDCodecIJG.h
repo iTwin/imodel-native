@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecIJG.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecIJG
@@ -14,12 +14,14 @@
 
 #include "HCDCodecJPEG.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecIJG_8bits;
 class HCDCodecIJG_12bits;
 
 class HCDCodecIJG : public HCDCodecJPEG
     {
-    HDECLARE_CLASS_ID(1163, HCDCodecJPEG)
+    HDECLARE_CLASS_ID(HCDCodecId_IJGJPEG, HCDCodecJPEG)
 
 public:
 
@@ -42,12 +44,12 @@ public:
         };
 
     // primary methods
-    _HDLLu                 HCDCodecIJG();
-    _HDLLu                 HCDCodecIJG(size_t pi_Width,
+    IMAGEPP_EXPORT                 HCDCodecIJG();
+    IMAGEPP_EXPORT                 HCDCodecIJG(size_t pi_Width,
                                        size_t pi_Height,
                                        size_t pi_BitsPerPixel);
-    _HDLLu                 HCDCodecIJG(const HCDCodecIJG& pi_rObj);
-    _HDLLu virtual         ~HCDCodecIJG();
+    IMAGEPP_EXPORT                 HCDCodecIJG(const HCDCodecIJG& pi_rObj);
+    IMAGEPP_EXPORT virtual         ~HCDCodecIJG();
 
 
     // overriden methods
@@ -84,27 +86,27 @@ public:
 
 
     // added method
-    _HDLLu void            SetQuality(Byte pi_Percentage);
-    _HDLLu Byte          GetQuality() const;
-    _HDLLu void            SetOptimizeCoding(bool pi_Enable);
-    _HDLLu bool           GetOptimizeCoding() const;
-    _HDLLu uint32_t        CreateTables(void* po_pOutBuffer, uint32_t pi_OutBufferSize);
-    _HDLLu void            SetProgressiveMode(bool pi_Enable);
-    _HDLLu bool           IsProgressive() const;
-    _HDLLu void            SetColorMode(ColorModes pi_Mode);
-    _HDLLu ColorModes      GetColorMode() const;
-    _HDLLu void            ReadHeader(const void* pi_pInData, size_t pi_InDataSize);
-    _HDLLu void            SetAbbreviateMode(bool pi_Enable);
-    _HDLLu bool           GetAbbreviateMode() const;
-    _HDLLu void            CopyTablesFromDecoderToEncoder();
+    IMAGEPP_EXPORT void            SetQuality(Byte pi_Percentage);
+    IMAGEPP_EXPORT Byte          GetQuality() const;
+    IMAGEPP_EXPORT void            SetOptimizeCoding(bool pi_Enable);
+    IMAGEPP_EXPORT bool           GetOptimizeCoding() const;
+    IMAGEPP_EXPORT uint32_t        CreateTables(void* po_pOutBuffer, uint32_t pi_OutBufferSize);
+    IMAGEPP_EXPORT void            SetProgressiveMode(bool pi_Enable);
+    IMAGEPP_EXPORT bool           IsProgressive() const;
+    IMAGEPP_EXPORT void            SetColorMode(ColorModes pi_Mode);
+    IMAGEPP_EXPORT ColorModes      GetColorMode() const;
+    IMAGEPP_EXPORT void            ReadHeader(const void* pi_pInData, size_t pi_InDataSize);
+    IMAGEPP_EXPORT void            SetAbbreviateMode(bool pi_Enable);
+    IMAGEPP_EXPORT bool           GetAbbreviateMode() const;
+    IMAGEPP_EXPORT void            CopyTablesFromDecoderToEncoder();
 
     // Standard JPG color mode has been store in YCbCr form. (YCbCr is defined per CCIR 601-1)
     // The jpeg_set_defaults function may choose wrong colorspace, eg YCbCr if input is RGB.
-    _HDLLu void            SetSourceColorMode(ColorModes pi_Mode);
-    _HDLLu ColorModes      GetSourceColorMode() const;
+    IMAGEPP_EXPORT void            SetSourceColorMode(ColorModes pi_Mode);
+    IMAGEPP_EXPORT ColorModes      GetSourceColorMode() const;
 
     // third parameter applies only for IJL, internal use :)
-    _HDLLu void            SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTable, bool pi_UnZigZag = true);
+    IMAGEPP_EXPORT void            SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTable, bool pi_UnZigZag = true);
 
     // There is 3 kinds of jpeg stream:
     //  1) (default) Interchange format. A standalone jpeg stream.
@@ -112,13 +114,12 @@ public:
     //  3) Abbreviated format for table-specification data. The quantization and huffman tables to used with a (2) stream.
     // MakeInterchangeFormat will inject quantization and huffman tables(3) in the jpeg header(2) without altering the compressed pixels.
     // The result will be a standalone jpeg stream(1). 0 is returned to indicate an ERROR.
-    _HDLLu size_t MakeInterchangeFormat(const Byte* pi_pInData, size_t pi_InDataSize, Byte* po_pOutBuffer, size_t pi_OutBufferSize) const;
+    IMAGEPP_EXPORT size_t MakeInterchangeFormat(const Byte* pi_pInData, size_t pi_InDataSize, Byte* po_pOutBuffer, size_t pi_OutBufferSize) const;
 
     Byte const* GetAbbreviateTableHeader(size_t& headerSize) const;
-
-    _HDLLu SubsamplingModes
+    IMAGEPP_EXPORT SubsamplingModes
     GetSubsamplingMode() const;
-    _HDLLu void            SetSubsamplingMode(SubsamplingModes pi_Mode);
+    IMAGEPP_EXPORT void            SetSubsamplingMode(SubsamplingModes pi_Mode);
 
     virtual size_t         GetSubsetMaxCompressedSize() const;
 
@@ -127,3 +128,6 @@ private:
     HAutoPtr<HCDCodecIJG_8bits>     m_pJpegCodec8Bits;
     HAutoPtr<HCDCodecIJG_12bits>    m_pJpegCodec12Bits;
     };
+
+
+END_IMAGEPP_NAMESPACE

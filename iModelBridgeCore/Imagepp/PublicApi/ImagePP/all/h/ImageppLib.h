@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/ImageppLib.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,11 +15,8 @@
 #include <Bentley/WString.h>
 #include <Bentley/NonCopyableClass.h>
 #include <ImagePP/h/HmrMacro.h>
-#include <ImagePP/h/HDllSupport.h>
-#include <ImagePP/all/h/HFCMacros.h>
-#include <ImagePP/all/h/HFCPtr.h>
-#include <ImagePP/all/h/HFCException.h>
 #include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
+
 
 //=======================================================================================
 // This is a macro you can use to declare and implement a default ImagePPLibHost when
@@ -28,7 +25,7 @@
 // @bsiclass                                                    Marc.Bedard   10/2012
 //=======================================================================================
 #define IMPLEMENT_DEFAULT_IMAGEPP_LIBHOST(pi_ClassName)                 \
-struct pi_ClassName : ImagePP::ImageppLib::Host                         \
+struct pi_ClassName : BentleyApi::ImagePP::ImageppLib::Host             \
 {                                                                       \
     virtual void _RegisterFileFormat() override                         \
         {                                                               \
@@ -85,9 +82,11 @@ public:
         void     SetValue (T const& v) {m_value = v;}
         };
 
+//__PUBLISH_SECTION_END__
 private:
     size_t GetKeyIndex (ImagePPHost::Key& key);
 
+//__PUBLISH_SCOPE_1_START__
 protected:
     struct VarEntry
         {
@@ -112,6 +111,8 @@ protected:
     VarEntry& GetVarEntry(Key& key);
     ObjEntry& GetObjEntry(Key& key);
 
+//__PUBLISH_SECTION_END__     // end of SCOPE_1
+//__PUBLISH_SECTION_START__ 
 public:
 
     //! Get the value of a host-based variable identified by key. 
@@ -119,13 +120,13 @@ public:
     //! and must remain the same for the entire run of a host program.
     //! @return The value of the host variable identified by key. If the variable has never been set on this instance of ImagePPHost, 
     //! the value will be 0.
-    _HDLLg void* GetHostVariable (Key& key);
+    IMAGEPP_EXPORT void* GetHostVariable (Key& key);
 
     //! Set the value of a host-based variable identified by key. 
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
     //! and must remain the same for the entire run of a host program.
     //! @param[in] val The value to be associated with key for this ImagePPHost.
-    _HDLLg void  SetHostVariable (Key& key, void* val);
+    IMAGEPP_EXPORT void  SetHostVariable (Key& key, void* val);
 
     //! Get the value of a host-based integer variable identified by key.
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
@@ -160,13 +161,13 @@ public:
     //! and must remain the same for the entire run of a host program.
     //! @return The value of the host variable identified by key. If the variable has never been set on this instance of ImagePPHost, 
     //! the value will be 0.
-    _HDLLg IHostObject* GetHostObject (Key& key);
+    IMAGEPP_EXPORT IHostObject* GetHostObject (Key& key);
 
     //! Set the value of a host-based variable identified by key. 
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
     //! and must remain the same for the entire run of a host program.
     //! @param[in] val The value to be associated with key for this ImagePPHost.
-    _HDLLg void  SetHostObject (Key& key, IHostObject* val);
+    IMAGEPP_EXPORT void  SetHostObject (Key& key, IHostObject* val);
     };
 
 
@@ -203,31 +204,33 @@ enum CCITT_PHOTOMETRIC_INTERPRETATION
 +===============+===============+===============+===============+===============+======*/
 struct ImageppLibAdmin : ImagePPHost::IHostObject
 {
+/*__PUBLISH_SECTION_END__*/
 private:
 
 
     virtual int  _GetVersion() const {return 1;} // Do not override!
     virtual void _OnHostTermination (bool isProcessShutdown)  {delete this;}
 
-    _HDLLg virtual bool _Initialize();
-    _HDLLg virtual void _Terminate();
+    IMAGEPP_EXPORT virtual bool _Initialize();
+    IMAGEPP_EXPORT virtual void _Terminate();
 
 protected:
     mutable bool                        m_initializationComplete;
     mutable BeFileName                  m_localDirPath;               //Create on first use
 
 
-    _HDLLg ImageppLibAdmin();
+    IMAGEPP_EXPORT ImageppLibAdmin();
     virtual ~ImageppLibAdmin(){}
 
-    _HDLLg virtual void  _CompleteInitialization();
+    IMAGEPP_EXPORT virtual void  _CompleteInitialization();
 
+    /*__PUBLISH_SECTION_START__*/
 public:
     typedef bvector<WString>    CompatibleSoftware;
 
-    _HDLLg static ImageppLibAdmin* Create ();
+    IMAGEPP_EXPORT static ImageppLibAdmin* Create ();
 
-    _HDLLg void OnHostTermination (bool isProgramExit) {_OnHostTermination(isProgramExit);}
+    IMAGEPP_EXPORT void OnHostTermination (bool isProgramExit) {_OnHostTermination(isProgramExit);}
     bool Initialize();
     void Terminate();
     void CompleteInitialization();
@@ -477,24 +480,6 @@ public:
         }
 
     /*---------------------------------------------------------------------------------**//**
-    * Return true if the passage of the HRF attributes to the HRA objects is enable.
-    * @bsimethod                                                            05/2012
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual bool _IsRasterAttributesEnable() const   
-        {
-        return false; 
-        }
-    /*---------------------------------------------------------------------------------**//**
-    * Return true if the addition of extended information about the HRF
-    * objects into the HRA objects, as attributes is enable.
-    * @bsimethod                                                            05/2012
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual bool _IsRasterExtendedAttributesEnable() const   
-        {
-        return false; 
-        }
-
-    /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                            05/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual IRasterGeoCoordinateServices* _GetIRasterGeoCoordinateServicesImpl() const   
@@ -509,7 +494,15 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual CCITT_PHOTOMETRIC_INTERPRETATION _GetDefaultPhotometricInterpretation() const   
         {
-        return ImagePP::CCITT_PHOTOMETRIC_MINISBLACK; 
+        return BentleyApi::ImagePP::CCITT_PHOTOMETRIC_MINISBLACK; 
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                            12/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual bool _IsSamplerMultiThreadingEnabled() const   
+        {
+        return true; 
         }
 };
 
@@ -530,7 +523,7 @@ public:
             ImageppLibAdmin*            m_imageppLibAdmin;
 
             //! Supply the ImageppAdmin for this session. This method is guaranteed to be called once and never again.
-            _HDLLg virtual ImageppLibAdmin& _SupplyImageppLibAdmin();
+            IMAGEPP_EXPORT virtual ImageppLibAdmin& _SupplyImageppLibAdmin();
 
 
             //! Register supported file format for this session. This method is guaranteed to be called once and never again.
@@ -538,7 +531,7 @@ public:
             //! Implementation should look like this: 
             //! virtual void _RegisterFileFormat() override { REGISTER_SUPPORTED_FILEFORMAT }
             //! where REGISTER_SUPPORTED_FILEFORMAT is a macro in HRFFileFormats.h
-            _HDLLg virtual void             _RegisterFileFormat()=0;
+            IMAGEPP_EXPORT virtual void             _RegisterFileFormat()=0;
 
         public:
             Host()
@@ -556,22 +549,22 @@ public:
         //! Terminate this Host. After this method is called, no further imagepp methods can ever be called on this thread again (including Initialize).
         //! This method should be called on thread termination.
         //! @param[in] onProgramExit Whether the entire program is exiting. If true, some cleanup operations can be skipped for faster program exits.
-        _HDLLg void Terminate(bool onProgramExit);
+        IMAGEPP_EXPORT void Terminate(bool onProgramExit);
         };
 
     //! Must be called once per Host before calling any method in imagepp. Applications can have more than one Host. 
-    _HDLLg static void Initialize (Host& host);
+    IMAGEPP_EXPORT static void Initialize (Host& host);
 
     //! Query if the imagepp library has been initialized on this thread.
-    _HDLLg static bool IsInitialized ();
+    IMAGEPP_EXPORT static bool IsInitialized ();
 
     //! Get the imagepp library host for this thread. 
-    _HDLLg static Host& GetHost();
+    IMAGEPP_EXPORT static Host& GetHost();
 
     //! This method call basegeocoord.dll to implement default IRasterGeoCoordinateServices.
     //! Host can call this method in its ImageppLibAdmin::_GetIRasterGeoCoordinateServicesImpl override method
     //! provided that basegeocoord.dll is delivered by application and initialized by it.
-    _HDLLg static IRasterGeoCoordinateServices* GetDefaultIRasterGeoCoordinateServicesImpl();
+    IMAGEPP_EXPORT static IRasterGeoCoordinateServices* GetDefaultIRasterGeoCoordinateServicesImpl();
 
 };
 

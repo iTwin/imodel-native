@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRATiledRaster.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,10 +10,14 @@
 #include "HRAStoredRaster.h"
 #include "HGFTileIDDescriptor.h"
 #include "HPMPool.h"
+#include "HRABitmapBase.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HFCExclusiveKey;
 class HRATiledRasterIterator;
 class HRSObjectStore;
+class HRABitmapBase;
+struct TiledImageSinkNode;
 
 
 /** -----------------------------------------------------------------------------
@@ -31,7 +35,7 @@ class HRSObjectStore;
 */
 class HRATileStatus : public HFCShareableObject<HRATileStatus>
     {
-    HDECLARE_SEALEDCLASS_ID(1015)
+    HDECLARE_SEALEDCLASS_ID(HRATileStatusId_Base)
 
 public:
 
@@ -47,17 +51,17 @@ public:
     void            Allocate(uint64_t pi_NumberOfTiles);
 
     //:> Get/Set flags
-    bool           GetClearFlag(uint64_t pi_TileID);
+    bool            GetClearFlag(uint64_t pi_TileID);
     void            SetClearFlag(uint64_t pi_TileID, bool pi_Value);
-    bool           GetDirtyForSubResFlag(uint64_t pi_TileID);
+    bool            GetDirtyForSubResFlag(uint64_t pi_TileID);
     void            SetDirtyForSubResFlag(uint64_t pi_TileID, bool pi_Value);
 
 
 private:
 
-    uint64_t       ComputeByteContainingTile(uint64_t pi_TileID) const;
-    Byte           GetBitmaskForFlagsOfTile(uint64_t pi_TileID) const;
-    uint64_t       GetByteCount() const;
+    uint64_t        ComputeByteContainingTile(uint64_t pi_TileID) const;
+    Byte            GetBitmaskForFlagsOfTile(uint64_t pi_TileID) const;
+    uint64_t        GetByteCount() const;
 
     /** -------------------------------------------------------------------
         Array of flags. One flag occupies one bit, so there are
@@ -85,12 +89,13 @@ private:
 
 class HRATiledRaster : public HRAStoredRaster
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1032)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRATiledRasterId)
 
     friend class HRATiledRasterIterator;
     friend class HRAPyramidRaster;
     friend class HRAUnlimitedResolutionRaster;
     friend class HRSObjectStore;
+    friend struct TiledImageSinkNode;
 
 public:
 
@@ -102,44 +107,53 @@ public:
     typedef TileMap::const_iterator             const_TileMapItr;
 
     class HRATile : public HPMPoolItem
+
         {
     public :
 
-        HRATile(const HFCPtr<HRAStoredRaster>&  pi_rpTile,
-                HPMPool*                        pi_pPool);
+        HRATile(const HFCPtr<HRABitmapBase>&  pi_rpTile,
+                HPMPool*                      pi_pPool);
         virtual                     ~HRATile();
 
         void                        Invalidate(bool pi_Invalidate);
-        bool                       IsInvalidate() const;
+        bool                        IsInvalidate() const;
 
         void                        Discartable(bool pi_Discartable);
-        bool                       IsDiscartable() const;
+        bool                        IsDiscartable() const;
 
 
-        HFCPtr<HRAStoredRaster>&    GetTile();
+        IMAGEPP_EXPORT /*IppImaging_Needs*/ HFCPtr<HRABitmapBase>&    GetTile();
 
-        void                        SetTile(HFCPtr<HRAStoredRaster>& pi_rpTile);
+//        virtual byte*               AllocMemory(size_t pi_MemorySize) override;
+//        virtual void                FreeMemory(byte* pi_MemPtr, size_t pi_MemorySize) override;
+//        virtual byte*               AllocMemoryExt(size_t pi_MemorySize, size_t& po_ActualMemory) override;
+
 
     protected :
 
         void                        UpdateCachedSize();
         HFCExclusiveKey&            GetExclusiveKey();
 
+
     private :
         friend class HRATiledRaster;    // HRATiledRaster will set m_Itr
 
+        // TO BE REMOVED Only called by HRATiledRaster through friendship
+        // The HRA Tile should make the loading itself through a call to Inflate()
+        void                        SetTile(HFCPtr<HRABitmapBase>& pi_rpTile);
+
 
         // this member is necessary to remove the tile from HRATiledRaster tile map on HRATile destructor
-        HRATiledRaster*             m_pTiledRaster;
-        HRATiledRaster::TileMapItr  m_Itr;
+        mutable HRATiledRaster*             m_pTiledRaster;
+        mutable HRATiledRaster::TileMapItr  m_Itr;
 
-        HFCPtr<HRAStoredRaster>     m_pTile;
-        static HFCExclusiveKey      s_Key;
+        mutable HFCPtr<HRABitmapBase>       m_pTile;
+        uint64_t                            m_TileIndex;
+        static HFCExclusiveKey              s_Key;
 
-        bool                       m_Discartable;
-        bool                       m_Invalidate;
+        bool                                m_Discartable;
+        bool                                m_Invalidate;
 //#ifdef __HMR_DEBUG_MEMBER
-        uint64_t m_TileIndex;
         uint32_t m_Resolution;
 //#endif
         };
@@ -149,63 +163,51 @@ public:
     // Primary methods
 
     HRATiledRaster ();
-    _HDLLg /*IppImaging_Needs*/ HRATiledRaster (const HFCPtr<HRAStoredRaster>&  pi_pRasterModel,
-                                                uint64_t                       pi_TileSizeX,
-                                                uint64_t                       pi_TileSizeY,
-                                                uint64_t                       pi_WidthPixels,
-                                                uint64_t                       pi_HeightPixels,
+    IMAGEPP_EXPORT /*IppImaging_Needs*/ HRATiledRaster (const HFCPtr<HRABitmapBase>&  pi_pRasterModel,
+                                                uint64_t                        pi_TileSizeX,
+                                                uint64_t                        pi_TileSizeY,
+                                                uint64_t                        pi_WidthPixels,
+                                                uint64_t                        pi_HeightPixels,
                                                 HPMObjectStore*                 pi_pStore=0,
                                                 HPMPool*                        pi_pPool=0,
-                                                bool                           pi_DisableTileStatus = false);
+                                                bool                            pi_DisableTileStatus = false);
 
     HRATiledRaster(const HRATiledRaster& pi_rObj);
 
     virtual ~HRATiledRaster();
 
-    HRATiledRaster& operator=(const HRATiledRaster& pi_rObj);
+    HRATiledRaster&             operator=(const HRATiledRaster& pi_rObj);
 
-
+    HPMPool*                    GetPool();
     // Overriden from HRAStoredRaster
 
-    virtual const void*
-    GetRawDataPtr () const;
+    virtual HRARasterEditor*    CreateEditor(HFCAccessMode pi_Mode);
+    virtual HRARasterEditor*    CreateEditor(const HVEShape& pi_rShape,
+                                             HFCAccessMode   pi_Mode);
+    virtual HRARasterEditor*    CreateEditorUnShaped (HFCAccessMode pi_Mode);
 
-    virtual HRARasterEditor*
-    CreateEditor(HFCAccessMode pi_Mode);
-    virtual HRARasterEditor*
-    CreateEditor(const HVEShape& pi_rShape,
-                 HFCAccessMode   pi_Mode);
-    virtual HRARasterEditor*
-    CreateEditorUnShaped (HFCAccessMode pi_Mode);
-
-    virtual HRARasterIterator*
-    CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
+    virtual HRARasterIterator*  CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
 
     // Special cas
-    virtual void    InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels);
+    virtual void                InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels);
 
     // Catch it, and call the parent
-    virtual void    SetTransfoModel (const HGF2DTransfoModel& pi_rModelCSp_CSl);
+    virtual void                SetTransfoModel (const HGF2DTransfoModel& pi_rModelCSp_CSl);
 
-    virtual HPMPersistentObject* Clone () const override;
+    virtual HPMPersistentObject*    
+                                Clone () const override;
 
-    virtual HRARaster*
-    Clone (HPMObjectStore* pi_pStore,
-           HPMPool* pi_pPool=0) const;
-
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions);
-
-    virtual void    Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
     virtual void    InvalidateRaster();
 
     virtual uint64_t   GetTileSizeX        () const;
     virtual uint64_t   GetTileSizeY        () const;
 
-    const HFCPtr<HRATile> GetTile(uint64_t pi_Index, bool pi_NotInPool = false) const;
+    const HFCPtr<HRATile> GetTileByIndex(uint64_t pi_Index, bool pi_NotInPool = false) const;
 
     // (Used by the HRSObjectStore)
-    _HDLLg /*IppImaging_Needs*/ const HFCPtr<HRATile> GetTile(uint64_t pi_PosX, uint64_t pi_PosY) const;
+    IMAGEPP_EXPORT /*IppImaging_Needs*/ const HFCPtr<HRATile> GetTile(uint64_t pi_PosX, uint64_t pi_PosY) const;
 
     virtual unsigned short GetRepresentativePalette(
         HRARepPalParms* pio_pRepPalParms);
@@ -240,6 +242,8 @@ public:
 
     void            ApplyTransaction(HFCPtr<HRATransaction>& pi_rpTransaction);
 
+    uint64_t       GetNumberOfTileX() const;
+    uint64_t       GetNumberOfTileY() const;
 
 protected:
 
@@ -249,9 +253,11 @@ protected:
     HPMPool*                m_pPool;
 
     // Copy of the Model with an Extent (1,1)
-    HFCPtr<HRAStoredRaster> m_pRasterModel;
+    HFCPtr<HRABitmapBase> m_pBitmapModel;
 
     // Methods
+
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
 
     // From HGFGraphicObject
     virtual void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys);
@@ -272,6 +278,12 @@ protected:
 
     const HFCPtr<HRATile>
     GetTileFromLoaded(uint64_t pi_Index) const;
+
+    const HFCPtr<HRABitmapBase> GetStoredRaster(uint64_t pi_Index, IHPMMemoryManager* memoryManager) const;
+
+    virtual ImageSinkNodePtr _GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType) override;
+
+    virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
 
 private:
 
@@ -311,7 +323,7 @@ private:
 
     // Methods
 
-    void            Constructor    (const HFCPtr<HRAStoredRaster>&  pi_pRasterModel,
+    void            Constructor    (const HFCPtr<HRABitmapBase>&  pi_pRasterModel,
                                     uint64_t                       pi_WidthPixels,
                                     uint64_t                       pi_HeightPixels);
 
@@ -320,8 +332,6 @@ private:
 
     // Added methods (only used by Iterator and Editor)
 
-    uint64_t       GetNumberOfTileX        () const;
-    uint64_t       GetNumberOfTileY        () const;
 
     HGFTileIDDescriptor*        GetPtrTileDescription      () const;
     HRATileStatus&              GetInternalTileStatusList  (uint64_t* po_pNumberOfTile=0);
@@ -351,9 +361,12 @@ private:
     void                        RemoveTile(HRATiledRaster::TileMapItr&  pi_rItr,
                                            bool                        pi_WillBeNotSaved);
 
+    void                        SaveTile(HRATiledRaster::TileMapItr&  pi_rItr);
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLg)
+
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT)
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRATiledRaster.hpp"
 

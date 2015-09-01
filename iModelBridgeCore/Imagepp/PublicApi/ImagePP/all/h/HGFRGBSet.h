@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFRGBSet.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -13,22 +13,23 @@
 
 #include "HGFColorSet.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HGFRGBSet : public HGFColorSet
     {
-    HDECLARE_CLASS_ID(1538, HGFColorSet)
+    HDECLARE_CLASS_ID(HGFRGBId_Set, HGFColorSet)
 
 public:
 
-    _HDLLg HGFRGBSet();
-    _HDLLg HGFRGBSet(const HGFRGBSet& pi_rSrc);
-    _HDLLg virtual         ~HGFRGBSet();
+    IMAGEPP_EXPORT HGFRGBSet();
+    IMAGEPP_EXPORT HGFRGBSet(const HGFRGBSet& pi_rSrc);
+    IMAGEPP_EXPORT virtual         ~HGFRGBSet();
 
 
     HGFRGBSet& operator=(const HGFRGBSet& pi_rSrc);
 
-    _HDLLg void            Add(Byte pi_R, Byte pi_G, Byte pi_B);
-    _HDLLg virtual bool   IsIn(Byte pi_R, Byte pi_G, Byte pi_B) const;
-    _HDLLg void            Remove(Byte pi_R, Byte pi_G, Byte pi_B);
+    IMAGEPP_EXPORT void            Add(Byte pi_R, Byte pi_G, Byte pi_B);
+    IMAGEPP_EXPORT virtual bool   IsIn(Byte pi_R, Byte pi_G, Byte pi_B) const;
+    IMAGEPP_EXPORT void            Remove(Byte pi_R, Byte pi_G, Byte pi_B);
 
 protected:
 
@@ -47,5 +48,6 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGFRGBSet.hpp"
 

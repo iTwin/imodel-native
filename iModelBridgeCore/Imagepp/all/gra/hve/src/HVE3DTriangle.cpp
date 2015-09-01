@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE3DTriangle.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -358,7 +358,7 @@ HVE2DFacet<HVE3DPlane>* HVE3DTriangle::AllocateTransformed(const HFCMatrix<3, 3>
 
         if (!HDOBLE_EQUAL(fabs(MyTriangleContour.CalculateRayArea(MyTriangleContour.GetStartPoint())),
                       0.0,
-                      min(HMAX_EPSILON,
+                      MIN(HMAX_EPSILON,
                           MyTriangleContour.GetTolerance() *
                           MyTriangleContour.GetTolerance())))
             {

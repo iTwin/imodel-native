@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPComplexConverter.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -19,6 +19,7 @@
 #include "HRPPixelTypeV48R16G16B16.h"
 #include "HRPPixelTypeV64R16G16B16A16.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPComplexConverter : public HRPPixelConverter
     {
 public:
@@ -34,38 +35,18 @@ public:
     virtual         ~HRPComplexConverter();
 
     virtual void    Convert(    const void* pi_pSourceRawData,
-                                void* pio_pDestRawData) const;
-
-    virtual void    Convert(    const void* pi_pSourceRawData,
                                 void* pio_pDestRawData,
-                                size_t pi_PixelsCount) const;
-
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
-
-    virtual void    ConvertToValue(
-        const void* pi_pSourceRawData,
-        void* pio_pDestRawData) const;
-
-    virtual void    Compose(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData) const;
-
+                                size_t pi_PixelsCount) const override; 
 
     virtual void    Compose(const void* pi_pSourceRawData,
                             void* pio_pDestRawData,
-                            size_t pi_PixelsCount) const;
+                            size_t pi_PixelsCount) const override;
 
-    virtual HRPPixelConverter*
-    AllocateCopy() const;
+    virtual HRPPixelConverter* AllocateCopy() const override;
 
 protected:
 
-    virtual void    Update();
+    virtual void    Update() override;
 
 private:
 
@@ -100,5 +81,6 @@ private:
     mutable HAutoPtr<Byte> m_pTransientConversionDataBuffer;
     mutable size_t           m_LastConversionPixelCount;
     };
+END_IMAGEPP_NAMESPACE
 
 //#include "HRPComplexConverter.hpp"

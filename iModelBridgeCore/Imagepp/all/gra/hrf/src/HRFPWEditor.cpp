@@ -2,17 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPWEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFHMRTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
 
-#include <Imagepp/all/h/HRFPWEditor.h>
 #include <Imagepp/all/h/HRFPWRasterFile.h>
+#include <Imagepp/all/h/HRFPWEditor.h>
+
+#if defined(IPP_HAVE_PROJECTWISE_SUPPORT) 
+
 #include <Imagepp/all/h/interface/IHRFPWFileHandler.h>
 
 
@@ -45,13 +47,14 @@ HRFPWEditor::~HRFPWEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPWEditor::ReadBlock(uint32_t pi_PosBlockX,
-                               uint32_t pi_PosBlockY,
+HSTATUS HRFPWEditor::ReadBlock(uint64_t pi_PosBlockX,
+                               uint64_t pi_PosBlockY,
                                Byte* po_pData,
                                HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     HSTATUS RetValue = H_SUCCESS;
     // must call IHRFPWFileHandler interface
@@ -60,8 +63,8 @@ HSTATUS HRFPWEditor::ReadBlock(uint32_t pi_PosBlockX,
                                                                          (__time32_t)m_DocumentTimestamp,
                                                                          m_Page,
                                                                          m_Resolution,
-                                                                         pi_PosBlockX,
-                                                                         pi_PosBlockY,
+                                                                         (uint32_t)pi_PosBlockX,
+                                                                         (uint32_t)pi_PosBlockY,
                                                                          po_pData) != IHRFPWFileHandler::GETTILE_Success)
         RetValue = H_ERROR;
 
@@ -75,8 +78,8 @@ HSTATUS HRFPWEditor::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPWEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                uint32_t     pi_PosBlockY,
+HSTATUS HRFPWEditor::WriteBlock(uint64_t    pi_PosBlockX,
+                                uint64_t    pi_PosBlockY,
                                 const Byte* pi_pData,
                                 HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -89,10 +92,10 @@ HSTATUS HRFPWEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPWEditor::WriteBlock (uint32_t                 pi_PosBlockX,
-                                 uint32_t                 pi_PosBlockY,
-                                 const HFCPtr<HCDPacket>& pi_rpPacket,
-                                 HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFPWEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                uint64_t                 pi_PosBlockY,
+                                const HFCPtr<HCDPacket>& pi_rpPacket,
+                                HFCLockMonitor const* pi_pSisterFileLock)
     {
     HASSERT(0);
     return H_NOT_SUPPORTED;
@@ -145,3 +148,5 @@ IHRFPWFileHandler::GETTILE_STATUS HRFPWHandler::GetTile(uint32_t pi_Page,
     }
 
 #endif
+
+#endif  // IPP_HAVE_PROJECTWISE_SUPPORT

@@ -2,14 +2,18 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPDEMFilter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #pragma once
 
 #include "HRPPixelNeighbourhood.h"
+#include <Imagepp/all/h/HRAImageOp.h>    
 
+IMAGEPP_REF_COUNTED_PTR(HRAImageOpDEMFilter)
+
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelType;
 class HGSMemorySurfaceDescriptor;
 class DEMFilterImplementation;
@@ -25,14 +29,19 @@ public:
 
     enum Style
         {
+        //&&Backlog We persisted a new type which is Style_Intensity. It's the same as elevation but need a different IDs for DC GUI. 
+        // Eval de possibility to remove the persisted enum from IPP and store the persisted enum in rastercore. 
+        // The IPP version should renamed Style_Elevation to Style_Value. rastercore would do the mapping.
+        // >> if we don't, make sure we do not instantiate 2 versions of the elevation processing.
         // NEVER CHANGE THIS ENUM NUMBERS THEY ARE PERSISTENT.
         Style_Unknown       = 0,
         Style_Elevation     = 1,
         Style_SlopePercent  = 2,
-        Style_Aspect        = 3,
+        Style_Aspect        = 3,        
+        Style_Intensity     = 4,
         };
 
-    struct _HDLLg RangeInfo
+    struct IMAGEPP_EXPORT RangeInfo
         {
         RangeInfo()
             {
@@ -55,15 +64,15 @@ public:
 
     struct  HillShadingSettings
         {
-        _HDLLg HillShadingSettings();
-        _HDLLg HillShadingSettings(unsigned short pi_AltitudeAngle, unsigned short pi_AzimuthDegree);
+        IMAGEPP_EXPORT HillShadingSettings();
+        IMAGEPP_EXPORT HillShadingSettings(unsigned short pi_AltitudeAngle, unsigned short pi_AzimuthDegree);
 
-        _HDLLg bool       GetHillShadingState() const;
-        _HDLLg void       SetHillShadingState(bool state);
-        _HDLLg unsigned short GetAltitudeAngle() const;
-        _HDLLg void       SetAltitudeAngle(unsigned short pi_AltitudeAngle);
-        _HDLLg unsigned short GetAzimuthDegree() const;
-        _HDLLg void       SetAzimuthDegree(unsigned short pi_AltitudeAngle);
+        IMAGEPP_EXPORT bool       GetHillShadingState() const;
+        IMAGEPP_EXPORT void       SetHillShadingState(bool state);
+        IMAGEPP_EXPORT unsigned short GetAltitudeAngle() const;
+        IMAGEPP_EXPORT void       SetAltitudeAngle(unsigned short pi_AltitudeAngle);
+        IMAGEPP_EXPORT unsigned short GetAzimuthDegree() const;
+        IMAGEPP_EXPORT void       SetAzimuthDegree(unsigned short pi_AltitudeAngle);
 
 
     private:
@@ -74,31 +83,30 @@ public:
 
     typedef map<double, RangeInfo, lessDoubleEpsilon> UpperRangeValues;
 
-    _HDLLg                          HRPDEMFilter(const HillShadingSettings& settings, Style pi_Style = Style_Unknown);
+    IMAGEPP_EXPORT                          HRPDEMFilter(const HillShadingSettings& settings, Style pi_Style = Style_Unknown);
 
-    _HDLLg                          HRPDEMFilter(HRPDEMFilter const& object);
+    IMAGEPP_EXPORT                          HRPDEMFilter(HRPDEMFilter const& object);
 
-    _HDLLg virtual                  ~HRPDEMFilter();
+    IMAGEPP_EXPORT virtual                  ~HRPDEMFilter();
 
-    _HDLLg bool                    GetClipToEndValues() const;
-    _HDLLg void                     SetClipToEndValues(bool pi_ClipToEndValues);
+    IMAGEPP_EXPORT bool                    GetClipToEndValues() const;
+    IMAGEPP_EXPORT void                     SetClipToEndValues(bool pi_ClipToEndValues);
 
-    _HDLLg const HillShadingSettings& GetHillShadingSettings() const;
-    _HDLLg void                    SetHillShadingSettings(const HillShadingSettings& pi_HillShading);
-    _HDLLg unsigned short          GetVerticalExaggeration() const;
-    _HDLLg void                    SetVerticalExaggeration(unsigned short pi_VerticalExaggeration);
+    IMAGEPP_EXPORT const HillShadingSettings& GetHillShadingSettings() const;
+    IMAGEPP_EXPORT void                    SetHillShadingSettings(const HillShadingSettings& pi_HillShading);
+    IMAGEPP_EXPORT unsigned short          GetVerticalExaggeration() const;
+    IMAGEPP_EXPORT void                    SetVerticalExaggeration(unsigned short pi_VerticalExaggeration);
 
-    _HDLLg Style                    GetStyle() const;
-    _HDLLg void                     SetStyle(Style pi_Style);
+    IMAGEPP_EXPORT Style                    GetStyle() const;
+    IMAGEPP_EXPORT void                     SetStyle(Style pi_Style);
 
-    _HDLLg const Byte*            GetDefaultColor() const;
-    _HDLLg void                     SetDefaultColor(Byte pi_Red, Byte pi_Green, Byte pi_Blue, Byte pi_Alpha);
+    IMAGEPP_EXPORT const Byte*            GetDefaultColor() const;
+    IMAGEPP_EXPORT void                     SetDefaultColor(Byte pi_Red, Byte pi_Green, Byte pi_Blue, Byte pi_Alpha);
 
-    //&&MM review this. Not sure is a good idea to provide only get/set this way. It involves too many copy of the map.
-    _HDLLg UpperRangeValues const&  GetUpperRangeValues() const;
-    _HDLLg void                     SetUpperRangeValues(UpperRangeValues const& pi_rUpperRangeValues);
+    IMAGEPP_EXPORT UpperRangeValues const&  GetUpperRangeValues() const;
+    IMAGEPP_EXPORT void                     SetUpperRangeValues(UpperRangeValues const& pi_rUpperRangeValues);
 
-    _HDLLg HFCPtr<HRPPixelType>     GetOutputPixelType() const;
+    IMAGEPP_EXPORT HFCPtr<HRPPixelType>     GetOutputPixelType() const;
 
     HRPPixelNeighbourhood           GetNeighbourhood() const;
 
@@ -131,3 +139,74 @@ private:
     HillShadingSettings m_HillShadingSettings;  
 
     };
+  
+/*----------------------------------------------------------------------------+
+|struct HRAImageOpDEMFilter
++----------------------------------------------------------------------------*/
+struct HRAImageOpDEMFilter: public HRAImageOp
+{
+public:
+
+    struct DEMFilterProcessor
+        {
+        virtual void _ProcessPixels(HRAImageSampleR outData, HRAImageSampleCR inputData, double scalingX, double scalingY) = 0;
+        virtual void _ProcessPixelsWithShading(HRAImageSampleR outData, HRAImageSampleCR inputData, double scalingX, double scalingY) = 0;
+        };
+
+    static HRAImageOpDEMFilterPtr CreateDEMFilter(HRPDEMFilter::Style style, HRPDEMFilter::UpperRangeValues const& upperRangeValues,
+                                                  double unitSizeX, double unitSizeY, HGF2DTransfoModel const& orientation);
+        
+    // DEM filter settings.
+    Byte const* GetDefaultRGBA() const;
+    void        SetDefaultRGBA(Byte const* rgba);
+
+    unsigned short GetVerticalExaggeration() const;
+    void        SetVerticalExaggeration(unsigned short newExaggeration);
+
+    bool        GetClipToEndValue() const;
+    void        SetClipToEndValue(bool clipToEnd);
+
+    HRPDEMFilter::HillShadingSettings const&  GetHillShadingSettings() const;
+    void                        SetHillShadingSettings(HRPDEMFilter::HillShadingSettings const& pi_HillShading);
+
+    HRPDEMFilter::UpperRangeValues const&  GetUpperRangeValues() const;
+
+    double GetUnitSizeX() const;
+    double GetUnitSizeY() const;
+
+protected:
+    virtual ImagePPStatus _GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch) override;
+    virtual ImagePPStatus _GetAvailableOutputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch) override;
+
+    virtual ImagePPStatus _Process(HRAImageSampleR out, HRAImageSampleCR inputData, ImagepOpParams& params) override;
+
+    virtual ImagePPStatus _SetInputPixelType(HFCPtr<HRPPixelType> pixelType) override;
+    virtual ImagePPStatus _SetOutputPixelType(HFCPtr<HRPPixelType> pixelType) override;
+
+
+private:
+
+    HRAImageOpDEMFilter(HRPDEMFilter::Style style, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues,
+                        double unitSizeX, double unitSizeY, HGF2DTransfoModel const& orientation);
+
+    virtual ~HRAImageOpDEMFilter();
+
+    template<class Src_T> DEMFilterProcessor* CreateProcessor(HRPChannelType const& srcChannelType);
+
+    void UpdatePixelNeighbourhood();
+    ImagePPStatus UpdateProcessor();
+    
+    HRPDEMFilter::Style         m_style; 
+    uint32_t                    m_defaultRGBA;
+    double                      m_unitSizeX;
+    double                      m_unitSizeY;
+    HFCPtr<HGF2DTransfoModel>   m_pOrientationTransfo;
+    std::unique_ptr<DEMFilterProcessor> m_pDEMFilterProcessor;
+
+    HRPDEMFilter::UpperRangeValues    m_upperRangeValues;
+    unsigned short              m_verticalExaggeration;
+    HRPDEMFilter::HillShadingSettings m_hillShadingSettings;
+    bool                        m_clipToEndValue;
+    };
+
+END_IMAGEPP_NAMESPACE

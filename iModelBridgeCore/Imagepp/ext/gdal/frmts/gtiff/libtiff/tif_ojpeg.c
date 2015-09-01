@@ -1,4 +1,4 @@
-/* $Id: tif_ojpeg.c,v 1.51 2010-12-11 23:52:27 faxguy Exp $ */
+/* $Id: tif_ojpeg.c,v 1.58 2014-12-25 18:29:11 erouault Exp $ */
 
 /* WARNING: The type of JPEG encapsulation defined by the TIFF Version 6.0
    specification is now totally obsolete and deprecated for new applications and
@@ -39,7 +39,7 @@
    OF THIS SOFTWARE.
 
    Joris Van Damme and/or AWare Systems may be available for custom
-   developement. If you like what you see, and need anything similar or related,
+   development. If you like what you see, and need anything similar or related,
    contact <info@awaresystems.be>.
 */
 
@@ -120,6 +120,8 @@
    session.
 */
 
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRALEAN
 
 #include "tiffiop.h"
 #ifdef OJPEG_SUPPORT
@@ -139,7 +141,7 @@
  * OJPEG_BUFFER: Define the size of the desired buffer here. Should be small enough so as to guarantee
  * 	instant processing, optimal streaming and optimal use of processor cache, but also big
  * 	enough so as to not result in significant call overhead. It should be at least a few
- * 	bytes to accomodate some structures (this is verified in asserts), but it would not be
+ * 	bytes to accommodate some structures (this is verified in asserts), but it would not be
  * 	sensible to make it this small anyway, and it should be at most 64K since it is indexed
  * 	with uint16. We recommend 2K.
  * EGYPTIANWALK: You could also define EGYPTIANWALK here, but it is not used anywhere and has
@@ -192,6 +194,16 @@ static const TIFFField ojpegFields[] = {
 
 #ifdef FAR
 #undef FAR
+#endif
+
+/*
+  Libjpeg's jmorecfg.h defines INT16 and INT32, but only if XMD_H is
+  not defined.  Unfortunately, the MinGW and Borland compilers include
+  a typedef for INT32, which causes a conflict.  MSVC does not include
+  a conficting typedef given the headers which are included.
+*/
+#if defined(__BORLANDC__) || defined(__MINGW32__)
+# define XMD_H 1
 #endif
 
 /* Define "boolean" as unsigned char, not int, per Windows custom. */
@@ -360,8 +372,8 @@ static int OJPEGReadHeaderInfoSecTablesDcTable(TIFF* tif);
 static int OJPEGReadHeaderInfoSecTablesAcTable(TIFF* tif);
 
 static int OJPEGReadBufferFill(OJPEGState* sp);
-static int OJPEGReadByte(OJPEGState* sp, uint8* Byte);
-static int OJPEGReadBytePeek(OJPEGState* sp, uint8* Byte);
+static int OJPEGReadByte(OJPEGState* sp, uint8* byte);
+static int OJPEGReadBytePeek(OJPEGState* sp, uint8* byte);
 static void OJPEGReadByteAdvance(OJPEGState* sp);
 static int OJPEGReadWord(OJPEGState* sp, uint16* word);
 static int OJPEGReadBlock(OJPEGState* sp, uint16 len, void* mem);
@@ -516,6 +528,8 @@ OJPEGVSetField(TIFF* tif, uint32 tag, va_list ap)
 	uint32 ma;
 	uint64* mb;
 	uint32 n;
+	const TIFFField* fip;
+
 	switch(tag)
 	{
 		case TIFFTAG_JPEGIFOFFSET:
@@ -585,7 +599,10 @@ OJPEGVSetField(TIFF* tif, uint32 tag, va_list ap)
 		default:
 			return (*sp->vsetparent)(tif,tag,ap);
 	}
-	TIFFSetFieldBit(tif,TIFFFieldWithTag(tif,tag)->field_bit);
+	fip = TIFFFieldWithTag(tif,tag);
+	if( fip == NULL ) /* shouldn't happen */
+	    return(0);
+	TIFFSetFieldBit(tif,fip->field_bit);
 	tif->tif_flags|=TIFF_DIRTYDIRECT;
 	return(1);
 }
@@ -967,6 +984,8 @@ OJPEGSubsamplingCorrect(TIFF* tif)
 	OJPEGState* sp=(OJPEGState*)tif->tif_data;
 	uint8 mh;
 	uint8 mv;
+        _TIFFFillStriles( tif );
+        
 	assert(sp->subsamplingcorrect_done==0);
 	if ((tif->tif_dir.td_samplesperpixel!=3) || ((tif->tif_dir.td_photometric!=PHOTOMETRIC_YCBCR) &&
 	    (tif->tif_dir.td_photometric!=PHOTOMETRIC_ITULAB)))
@@ -1132,7 +1151,9 @@ OJPEGWriteHeaderInfo(TIFF* tif)
 	OJPEGState* sp=(OJPEGState*)tif->tif_data;
 	uint8** m;
 	uint32 n;
-	assert(sp->libjpeg_session_active==0);
+	/* if a previous attempt failed, don't try again */
+	if (sp->libjpeg_session_active != 0) 
+		return 0;
 	sp->out_state=ososSoi;
 	sp->restart_index=0;
 	jpeg_std_error(&(sp->libjpeg_jpeg_error_mgr));
@@ -1419,12 +1440,15 @@ OJPEGReadHeaderInfoSecStreamDqt(TIFF* tif)
 			nb[sizeof(uint32)+1]=JPEG_MARKER_DQT;
 			nb[sizeof(uint32)+2]=0;
 			nb[sizeof(uint32)+3]=67;
-			if (OJPEGReadBlock(sp,65,&nb[sizeof(uint32)+4])==0)
+			if (OJPEGReadBlock(sp,65,&nb[sizeof(uint32)+4])==0) {
+				_TIFFfree(nb);
 				return(0);
+			}
 			o=nb[sizeof(uint32)+4]&15;
 			if (3<o)
 			{
 				TIFFErrorExt(tif->tif_clientdata,module,"Corrupt DQT marker in JPEG data");
+				_TIFFfree(nb);
 				return(0);
 			}
 			if (sp->qtable[o]!=0)
@@ -1937,6 +1961,11 @@ OJPEGReadBufferFill(OJPEGState* sp)
 			case osibsJpegInterchangeFormat:
 				sp->in_buffer_source=osibsStrile;
 			case osibsStrile:
+				if (!_TIFFFillStriles( sp->tif ) 
+				    || sp->tif->tif_dir.td_stripoffset == NULL
+				    || sp->tif->tif_dir.td_stripbytecount == NULL)
+					return 0;
+
 				if (sp->in_buffer_next_strile==sp->in_buffer_strile_count)
 					sp->in_buffer_source=osibsEof;
 				else
@@ -1951,7 +1980,7 @@ OJPEGReadBufferFill(OJPEGState* sp)
 						else
 						{
 							if (sp->tif->tif_dir.td_stripbytecount == 0) {
-								TIFFErrorExt(sp->tif->tif_clientdata,sp->tif->tif_name,"Strip Byte counts are missing");
+								TIFFErrorExt(sp->tif->tif_clientdata,sp->tif->tif_name,"Strip byte counts are missing");
 								return(0);
 							}
 							sp->in_buffer_file_togo=sp->tif->tif_dir.td_stripbytecount[sp->in_buffer_next_strile];
@@ -1972,7 +2001,7 @@ OJPEGReadBufferFill(OJPEGState* sp)
 }
 
 static int
-OJPEGReadByte(OJPEGState* sp, uint8* Byte)
+OJPEGReadByte(OJPEGState* sp, uint8* byte)
 {
 	if (sp->in_buffer_togo==0)
 	{
@@ -1980,14 +2009,14 @@ OJPEGReadByte(OJPEGState* sp, uint8* Byte)
 			return(0);
 		assert(sp->in_buffer_togo>0);
 	}
-	*Byte=*(sp->in_buffer_cur);
+	*byte=*(sp->in_buffer_cur);
 	sp->in_buffer_cur++;
 	sp->in_buffer_togo--;
 	return(1);
 }
 
 static int
-OJPEGReadBytePeek(OJPEGState* sp, uint8* Byte)
+OJPEGReadBytePeek(OJPEGState* sp, uint8* byte)
 {
 	if (sp->in_buffer_togo==0)
 	{
@@ -1995,7 +2024,7 @@ OJPEGReadBytePeek(OJPEGState* sp, uint8* Byte)
 			return(0);
 		assert(sp->in_buffer_togo>0);
 	}
-	*Byte=*(sp->in_buffer_cur);
+	*byte=*(sp->in_buffer_cur);
 	return(1);
 }
 

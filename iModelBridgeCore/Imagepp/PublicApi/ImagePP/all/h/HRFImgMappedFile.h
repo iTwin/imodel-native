@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFImgMappedFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -21,6 +21,7 @@
     (24 bits RGB, SLO upper left horizontal).
     ---------------------------------------------------------------------------
  */
+BEGIN_IMAGEPP_NAMESPACE
 class HRFImgMappedCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -48,7 +49,7 @@ class HRFImgMappedFile : public HRFRasterFile
     {
 public:
     //:> Class ID for this class
-    HDECLARE_CLASS_ID(1442, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_ImgMapped, HRFRasterFile)
 
     friend class HRFImgMappedLineEditor;
 
@@ -130,10 +131,11 @@ struct HRFImgMappedCreator : public HRFRasterFileCreator
                                          HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                          uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFImgMappedCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFImgMappedCreator)
 
     //:> Disabled methodes
     HRFImgMappedCreator();
     };
+END_IMAGEPP_NAMESPACE
 
 

@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelPalette.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRPPixelPalette
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Return the number of entries that can be stored in the palette.
 //-----------------------------------------------------------------------------
@@ -97,3 +98,4 @@ inline void HRPPixelPalette::GetPalette(Byte* po_pPalette) const
     memcpy(po_pPalette, m_BufPalette.pData, m_BufPalette.BufSize);
     }
 
+END_IMAGEPP_NAMESPACE

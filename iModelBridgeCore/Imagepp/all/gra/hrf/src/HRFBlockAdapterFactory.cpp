@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBlockAdapterFactory.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,8 +11,8 @@
 // This class describes the BlockAdapter implementation
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFException.h>
 #include <Imagepp/all/h/HRFBlockAdapterFactory.h>
 
@@ -359,15 +359,22 @@ const HRFBlockAdapterCreator* HRFBlockAdapterFactory::FindCreator(HRFBlockType  
     if (pi_FromBlockType == HRFBlockType::LINE)  CapAdaptFrom = HRFBlockAdapterCapabilities::FROM_LINE;
     else if (pi_FromBlockType == HRFBlockType::STRIP) CapAdaptFrom = HRFBlockAdapterCapabilities::FROM_STRIP;
     else if (pi_FromBlockType == HRFBlockType::TILE)  CapAdaptFrom = HRFBlockAdapterCapabilities::FROM_TILE;
-    else  CapAdaptFrom = HRFBlockAdapterCapabilities::FROM_IMAGE;   // if (pi_FromBlockType == HRFBlockType::IMAGE)
-
+    else  
+        {
+        HASSERT(pi_FromBlockType == HRFBlockType::IMAGE);
+        CapAdaptFrom = HRFBlockAdapterCapabilities::FROM_IMAGE;
+        }
     // Adapt To
     HRFBlockAdapterCapabilities::Capability CapAdaptTo;
 
     if (pi_ToBlockType == HRFBlockType::LINE)  CapAdaptTo = HRFBlockAdapterCapabilities::TO_LINE;
     else if (pi_ToBlockType == HRFBlockType::STRIP) CapAdaptTo = HRFBlockAdapterCapabilities::TO_STRIP;
     else if (pi_ToBlockType == HRFBlockType::TILE)  CapAdaptTo = HRFBlockAdapterCapabilities::TO_TILE;
-    else  CapAdaptTo = HRFBlockAdapterCapabilities::TO_IMAGE;   // if (pi_ToBlockType == HRFBlockType::IMAGE)
+    else  
+        {
+        HASSERT(pi_ToBlockType == HRFBlockType::IMAGE);
+        CapAdaptTo = HRFBlockAdapterCapabilities::TO_IMAGE;
+        }
 
     // Iterator is used to loop through the vector.
     Creators::const_iterator CreatorIterator;

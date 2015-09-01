@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDAnnotationIconsPDF.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,20 +10,22 @@
 #include "HMDLayers.h"
 #include "HMDLayerInfoPDF.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HMDAnnotationIconsPDF : public HMDMetaDataContainer
     {
-    HDECLARE_CLASS_ID(7013, HMDMetaDataContainer);
+    HDECLARE_CLASS_ID(HMDAnnotationId_IconsPDF, HMDMetaDataContainer);
 
 public :
-    _HDLLu HMDAnnotationIconsPDF();
-    _HDLLu virtual     ~HMDAnnotationIconsPDF();
+    IMAGEPP_EXPORT HMDAnnotationIconsPDF();
+    IMAGEPP_EXPORT virtual     ~HMDAnnotationIconsPDF();
 
-    _HDLLu HMDAnnotationIconsPDF(const HMDAnnotationIconsPDF& pi_rObj);
+    IMAGEPP_EXPORT HMDAnnotationIconsPDF(const HMDAnnotationIconsPDF& pi_rObj);
 
-    _HDLLu void        SetRasterization(bool pi_RasterizeIcon);
-    _HDLLu bool       GetRasterization();
+    IMAGEPP_EXPORT void        SetRasterization(bool pi_RasterizeIcon);
+    IMAGEPP_EXPORT bool       GetRasterization();
 
-    _HDLLu virtual HFCPtr<HMDMetaDataContainer> Clone() const;
+    IMAGEPP_EXPORT virtual HFCPtr<HMDMetaDataContainer> Clone() const;
 
 private :
     HMDAnnotationIconsPDF& operator=(const HMDAnnotationIconsPDF& pi_rObj);
@@ -31,3 +33,4 @@ private :
     bool m_RasterizeIcon;
     };
 
+END_IMAGEPP_NAMESPACE

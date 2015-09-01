@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelOrgBGR.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRPChannelOrgBGR
@@ -11,6 +11,7 @@
 
 #include "HRPChannelOrg.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPChannelOrgBGR : public HRPChannelOrg
     {
 public:
@@ -59,3 +60,4 @@ public:
     HRPChannelOrgBGR(const HRPChannelOrgBGR& pi_rObj) : HRPChannelOrg(pi_rObj) { };
     virtual ~HRPChannelOrgBGR() { };
     };
+END_IMAGEPP_NAMESPACE

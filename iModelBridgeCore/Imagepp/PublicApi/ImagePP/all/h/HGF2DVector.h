@@ -13,6 +13,8 @@
 
 #include "HGFLiteTolerance.h"
 #include "HGF2DDisplacement.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 class HGF2DLinear;
 
 
@@ -59,7 +61,7 @@ typedef uint32_t HGF2DVectorTypeId;
 class HNOVTABLEINIT HGF2DVector : public HFCShareableObject<HGF2DVector>
     {
 
-    HDECLARE_BASECLASS_ID(8309)
+    HDECLARE_BASECLASS_ID(HGF2DVectorId_Base)
 
 
 public:
@@ -170,7 +172,7 @@ public:
         @see CalculatePerpendicularBearingAt()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual HGFBearing CalculateBearing(const HGF2DPosition& pi_rPoint,
+    IMAGEPP_EXPORT virtual HGFBearing CalculateBearing(const HGF2DPosition& pi_rPoint,
                                            ArbitraryDirection pi_Direction = BETA) const = 0;
 
     // Bearing calculations
@@ -213,7 +215,7 @@ public:
         @see CalculateBearing()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual HGFBearing CalculatePerpendicularBearingAt(const HGF2DPosition&            pi_rPoint,
+    IMAGEPP_EXPORT virtual HGFBearing CalculatePerpendicularBearingAt(const HGF2DPosition&            pi_rPoint,
                                                           HGF2DVector::ArbitraryDirection pi_DirectionToRight = HGF2DVector::BETA,
                                                           double*                         po_pSweep = 0) const;
 
@@ -403,7 +405,7 @@ public:
         @see ObtainContiguousnessPoints()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual bool      AreContiguous(const HGF2DVector& pi_rVector) const = 0;
+    IMAGEPP_EXPORT virtual bool      AreContiguous(const HGF2DVector& pi_rVector) const = 0;
 
     /** -----------------------------------------------------------------------------
         This method determines if the two vectors are adjacent to each
@@ -426,7 +428,7 @@ public:
         @see CalculateBearing()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual bool      AreAdjacent(const HGF2DVector& pi_rVector) const = 0;
+    IMAGEPP_EXPORT virtual bool      AreAdjacent(const HGF2DVector& pi_rVector) const = 0;
 
 
     /** -----------------------------------------------------------------------------
@@ -464,7 +466,7 @@ public:
         @see IsPointOnSCS()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual bool      IsPointOn(
+    IMAGEPP_EXPORT virtual bool      IsPointOn(
         const HGF2DPosition& pi_rTestPoint,
         ExtremityProcessing pi_ExtremProcess = INCLUDE_EXTREMITIES,
         double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const = 0;
@@ -472,7 +474,7 @@ public:
 
 
 
-    _HDLLg virtual bool      IsConnectedBy(const HGF2DLinear& pi_rLinear) const;
+    IMAGEPP_EXPORT virtual bool      IsConnectedBy(const HGF2DLinear& pi_rLinear) const;
 
 
     /** -----------------------------------------------------------------------------
@@ -500,7 +502,7 @@ public:
         @see ObtainContiguousnessPointsAt()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual bool      AreContiguousAt(const HGF2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual bool      AreContiguousAt(const HGF2DVector& pi_rVector,
                                               const HGF2DPosition& pi_rPoint) const = 0;
 
     /** -----------------------------------------------------------------------------
@@ -567,15 +569,15 @@ public:
     double            GetTolerance() const;
     virtual void       SetTolerance(double pi_Tolerance);
 
-    _HDLLg HFCPtr<HGFLiteTolerance>    GetStrokeTolerance() const;
-    _HDLLg virtual void                SetStrokeTolerance(const HFCPtr<HGFLiteTolerance> & pi_Tolerance);
+    IMAGEPP_EXPORT HFCPtr<HGFLiteTolerance>    GetStrokeTolerance() const;
+    IMAGEPP_EXPORT virtual void                SetStrokeTolerance(const HFCPtr<HGFLiteTolerance> & pi_Tolerance);
 
 
     bool              TendsToTheLeftOfSCS(const HGF2DVector&   pi_rVector,
                                            const HGF2DPosition& pi_rPoint,
                                            ArbitraryDirection   pi_Direction) const;
 
-    _HDLLg virtual void       PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT virtual void       PrintState(ostream& po_rOutput) const;
 
     // Location and Transformation
 
@@ -640,7 +642,7 @@ public:
         @see ObtainContiguousnessPointsAt()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual bool      AreContiguousAtAndGet(
+    IMAGEPP_EXPORT virtual bool      AreContiguousAtAndGet(
         const HGF2DVector& pi_rVector,
         const HGF2DPosition& pi_rPoint,
         HGF2DPosition* po_pFirstContiguousnessPoint,
@@ -657,7 +659,7 @@ public:
 
 protected:
 
-    _HDLLg virtual bool      IntersectsAtSplitPoint(const HGF2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual bool      IntersectsAtSplitPoint(const HGF2DVector& pi_rVector,
                                                      const HGF2DPosition& pi_rTestPoint,
                                                      const HGF2DPosition& pi_rNextEndPoint,
                                                      bool pi_ProcessNext) const;
@@ -670,4 +672,5 @@ private:
     bool                m_AutoToleranceActive;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGF2DVector.hpp"

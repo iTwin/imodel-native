@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DLiteExtent.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 
 // The class declaration must be the last include file.
@@ -39,6 +39,15 @@ void HGF2DLiteExtent::DummyMethod() const
 */
 bool HGF2DLiteExtent::Contains(const HGF2DLiteExtent& pi_rExtent) const
     {
+    HPRECONDITION(pi_rExtent.m_initializedXMin);
+    HPRECONDITION(pi_rExtent.m_initializedYMin);
+    HPRECONDITION(pi_rExtent.m_initializedXMax);
+    HPRECONDITION(pi_rExtent.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     bool   Result;
 
     if (IsDefined() && pi_rExtent.IsDefined())
@@ -81,6 +90,15 @@ bool HGF2DLiteExtent::Contains(const HGF2DLiteExtent& pi_rExtent) const
 */
 bool HGF2DLiteExtent::InnerContains(const HGF2DLiteExtent& pi_rExtent) const
     {
+    HPRECONDITION(pi_rExtent.m_initializedXMin);
+    HPRECONDITION(pi_rExtent.m_initializedYMin);
+    HPRECONDITION(pi_rExtent.m_initializedXMax);
+    HPRECONDITION(pi_rExtent.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     bool   Result;
 
     if (IsDefined() && pi_rExtent.IsDefined())
@@ -126,6 +144,15 @@ bool HGF2DLiteExtent::InnerContains(const HGF2DLiteExtent& pi_rExtent) const
 bool HGF2DLiteExtent::InnerContains(const HGF2DLiteExtent& pi_rExtent,
                                  double            pi_Epsilon) const
     {
+    HPRECONDITION(pi_rExtent.m_initializedXMin);
+    HPRECONDITION(pi_rExtent.m_initializedYMin);
+    HPRECONDITION(pi_rExtent.m_initializedXMax);
+    HPRECONDITION(pi_rExtent.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     bool   Result;
 
     if (IsDefined() && pi_rExtent.IsDefined())
@@ -167,6 +194,15 @@ bool HGF2DLiteExtent::InnerContains(const HGF2DLiteExtent& pi_rExtent,
 */
 bool HGF2DLiteExtent::OuterContains(const HGF2DLiteExtent& pi_rExtent) const
     {
+    HPRECONDITION(pi_rExtent.m_initializedXMin);
+    HPRECONDITION(pi_rExtent.m_initializedYMin);
+    HPRECONDITION(pi_rExtent.m_initializedXMax);
+    HPRECONDITION(pi_rExtent.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     bool   Result;
 
     if (IsDefined() && pi_rExtent.IsDefined())
@@ -212,6 +248,15 @@ bool HGF2DLiteExtent::OuterContains(const HGF2DLiteExtent& pi_rExtent) const
 bool HGF2DLiteExtent::OuterContains(const HGF2DLiteExtent& pi_rExtent,
                                  double            pi_Epsilon) const
     {
+    HPRECONDITION(pi_rExtent.m_initializedXMin);
+    HPRECONDITION(pi_rExtent.m_initializedYMin);
+    HPRECONDITION(pi_rExtent.m_initializedXMax);
+    HPRECONDITION(pi_rExtent.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     bool   Result;
 
     if (IsDefined() && pi_rExtent.IsDefined())
@@ -244,6 +289,15 @@ bool HGF2DLiteExtent::OuterContains(const HGF2DLiteExtent& pi_rExtent,
 */
 void HGF2DLiteExtent::Intersect(const HGF2DLiteExtent& pi_rExtent)
     {
+    HPRECONDITION(pi_rExtent.m_initializedXMin);
+    HPRECONDITION(pi_rExtent.m_initializedYMin);
+    HPRECONDITION(pi_rExtent.m_initializedXMax);
+    HPRECONDITION(pi_rExtent.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     if (IsDefined() && pi_rExtent.IsDefined())
         {
         // Both extents are defined ...

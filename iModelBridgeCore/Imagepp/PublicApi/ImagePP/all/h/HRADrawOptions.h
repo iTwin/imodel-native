@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRADrawOptions.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,53 +11,44 @@
 
 #pragma once
 
-#include "HGFPreDrawOptions.h"
-#include "HGFDrawOptions.h"
-
-#include "HFCPtr.h"
+#include "HPMAttributeSet.h"
+#include "HGSTypes.h"
 #include "HVEShape.h"
 #include "HRPPixelType.h"
 #include "HRPFilter.h"
 #include "HRACopyFromOptions.h"
-#include "HRATransaction.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+class HRATransaction;
 
-class HRADrawOptions : public HGFDrawOptions
+class HRADrawOptions
     {
-    HDECLARE_CLASS_ID(1759, HGFDrawOptions)
+    HDECLARE_SEALEDCLASS_ID(HRADrawOptionsId)
 
 public:
 
     // Primary methods
 
-    _HDLLg                       HRADrawOptions();
+    IMAGEPP_EXPORT HRADrawOptions();
+    IMAGEPP_EXPORT HRADrawOptions(const HRADrawOptions& pi_rOptions);
+    IMAGEPP_EXPORT HRADrawOptions(const HRACopyFromLegacyOptions& pi_rCFOptions);
 
-    _HDLLg                       HRADrawOptions(const HRADrawOptions& pi_rOptions);
-    _HDLLg                       HRADrawOptions(const HGFDrawOptions& pi_rOptions);
-    _HDLLg                       HRADrawOptions(const HGFDrawOptions* pi_pOptions);
-    _HDLLg                       HRADrawOptions(const HRACopyFromOptions& pi_rCFOptions);
-
-    _HDLLg virtual              ~HRADrawOptions();
+    IMAGEPP_EXPORT ~HRADrawOptions();
 
 
     // Operators
 
     HRADrawOptions&             operator=(const HRADrawOptions& pi_rObj);
-    HRADrawOptions&             operator=(const HGFDrawOptions& pi_rObj);
-    HRADrawOptions&             operator=(const HGFDrawOptions* pi_pObj);
 
     //TR 300554 - Temporary fix the problem for STM raster draping only.
     bool                       GetDataDimensionFix() const;
     void                        SetDataDimensionFix(bool pi_fix);
 
-    void                        SetMosaicSupersampling(bool pi_Quality);
-    bool                       ApplyMosaicSupersampling() const;
-
     HFCPtr<HVEShape>            GetShape() const;
     void                        SetShape(const HFCPtr<HVEShape>& pi_rpShape);
 
     void                        SetGridShape(bool pi_GridShape);
-    bool                       ApplyGridShape() const;
+    bool                        ApplyGridShape() const;
 
     HFCPtr<HGF2DCoordSys>       GetReplacingCoordSys() const;
     void                        SetReplacingCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
@@ -68,19 +59,32 @@ public:
     void                        SetTransaction(const HFCPtr<HRATransaction>& pi_rpTransaction);
     HFCPtr<HRATransaction>      GetTransaction() const;
 
-protected:
+    bool                        ApplyAlphaBlend() const;
+    void                        SetAlphaBlend(bool pi_ApplyDithering);
+
+    const HGSResampling&        GetResamplingMode() const;
+    void                        SetResamplingMode(const HGSResampling& pi_rResampling);
+
+    const HPMAttributeSet&      GetAttributes() const;
+    void                        SetAttributes(const HPMAttributeSet& pi_rpAttributes);
+
+    void                        SetOverviewMode(bool pi_mode);
+    bool                        GetOverviewMode() const;
 
 private:
 
+    HGSResampling               m_Resampling;
+    bool                        m_ApplyAlphaBlend;
+    HPMAttributeSet             m_Attributes;
+    bool                        m_OverviewMode;
     HFCPtr<HVEShape>            m_pShape;
-    bool                       m_ApplyGridShape;
+    bool                        m_ApplyGridShape;
     HFCPtr<HGF2DCoordSys>       m_pReplacingCoordSys;
     HFCPtr<HRPPixelType>        m_pReplacingPixelType;
     HFCPtr<HRATransaction>      m_pTransaction;
-
     bool                        m_DataDimensionFix;
-    bool                        m_ApplyMosaicSupersampling;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HRADrawOptions.hpp"
 

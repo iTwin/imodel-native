@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIrasbRSTFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -13,6 +13,7 @@
 
 #include "HRFRasterFile.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 typedef struct RSTSubFileInfo {
     WString fileName;
     int32_t layerNumber;
@@ -35,10 +36,10 @@ class HRFIrasbRSTFile : public HRFRasterFile
     {
 public:
     // Class ID for this class
-    HDECLARE_CLASS_ID(1498, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_IrasbRST, HRFRasterFile)
 
     // Allow to open an image file
-    _HDLLg                   HRFIrasbRSTFile        (const HFCPtr<HFCURL>& pi_rpURL,
+    IMAGEPP_EXPORT                   HRFIrasbRSTFile        (const HFCPtr<HFCURL>& pi_rpURL,
                                                      HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                                      uint64_t             pi_Offset = 0);
 
@@ -52,7 +53,7 @@ public:
     virtual const HGF2DWorldIdentificator
     GetWorldIdentificator () const;
 
-    _HDLLg const list<RSTSubFileInfo>&
+    IMAGEPP_EXPORT const list<RSTSubFileInfo>&
     GetFileInfoList () const;
 
     virtual HRFResolutionEditor*
@@ -67,7 +68,6 @@ public:
     virtual void            SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                    uint32_t pi_Page = 0,
                                                    bool   pi_CheckSpecificUnitSpec = false,
-                                                   bool   pi_GeoModelDefaultUnit = true,
                                                    bool   pi_InterpretUnitINTGR = false);
 
 private:
@@ -111,10 +111,11 @@ struct HRFIrasbRSTCreator : public HRFRasterFileCreator
                                            uint64_t             pi_Offset = 0) const;
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFIrasbRSTCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFIrasbRSTCreator)
 
     // Disabled methods
     HRFIrasbRSTCreator();
     };
+END_IMAGEPP_NAMESPACE
 
 

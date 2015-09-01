@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/SDOGeoRasterWrapper.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a oracle SDOGeoRaster.
@@ -21,6 +21,7 @@
 // October 1, 2012
 //      This class support Oracle 11g version 11.2.
 // -----------------------------------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
 class SDOGeoRasterWrapper : public NonCopyableClass
     {
 public:
@@ -34,37 +35,37 @@ public:
         };
 
 
-    _HDLLg virtual            ~SDOGeoRasterWrapper   ();
+    IMAGEPP_EXPORT virtual            ~SDOGeoRasterWrapper   ();
 
-    _HDLLg virtual bool       GetHeader   (Utf16Char**        po_ppHeader,
+    IMAGEPP_EXPORT virtual bool       GetHeader   (Utf16Char**        po_ppHeader,
                                                      size_t*        po_HeaderSize) const;
 
-    _HDLLg virtual void       GetBlock    (unsigned short pi_Resolution,
+    IMAGEPP_EXPORT virtual void       GetBlock    (unsigned short pi_Resolution,
                                                 unsigned short pi_Band,
                                                 uint32_t       pi_PosX,
                                                 uint32_t       pi_PosY,
                                                 Byte*         po_pBuffer,
                                                 size_t         pi_BufferSize) = 0;
 
-    _HDLLg virtual void       GetBlock    (unsigned short pi_Resolution,
+    IMAGEPP_EXPORT virtual void       GetBlock    (unsigned short pi_Resolution,
                                                 unsigned short pi_Band,
                                                 uint32_t       pi_PosX,
                                                 uint32_t       pi_PosY,
                                                 Byte**        po_ppBuffer,
                                                 size_t*        po_pBufferSize) = 0;
 
-    _HDLLg virtual bool       SetBlock    (unsigned short pi_Resolution,
+    IMAGEPP_EXPORT virtual bool       SetBlock    (unsigned short pi_Resolution,
                                                 unsigned short pi_Band,
                                                 uint32_t       pi_PosX,
                                                 uint32_t       pi_PosY,
                                                 const Byte*   pi_pBuffer,
                                                 size_t         pi_BufferSize) = 0;
 
-    _HDLLg virtual bool        GetWkt      (uint32_t       pi_SRID,
+    IMAGEPP_EXPORT virtual bool        GetWkt      (uint32_t       pi_SRID,
                                                        WStringR        po_rWKT) = 0;
 
     // static methods
-    _HDLLg static SDOGeoRasterWrapper*
+    IMAGEPP_EXPORT static SDOGeoRasterWrapper*
     GetWrapper(WStringCR  pi_rTableName,
                WStringCR  pi_rColumnName,
                WStringCR  pi_rImageID,
@@ -72,27 +73,27 @@ public:
                const Utf16Char*   pi_pXMLGeoRasterHeader = 0,
                size_t         pi_XMLSize = 0);
 
-    _HDLLg static bool       IsConnected     ();
+    IMAGEPP_EXPORT static bool       IsConnected     ();
 
-    _HDLLg static bool       Connect         (          WStringCR      pi_rUser,
+    IMAGEPP_EXPORT static bool       Connect         (          WStringCR      pi_rUser,
                                                         WStringCR      pi_rPassword,
                                                         WStringCR      pi_rDatabase,
                                                         OracleError*       po_pError = 0);
 
-    _HDLLg static bool       Connect         (          WStringCR      pi_rConnectionString,
+    IMAGEPP_EXPORT static bool       Connect         (          WStringCR      pi_rConnectionString,
                                                         OracleError*       po_pError = 0);
 
-    _HDLLg static bool       Disconnect      ();
+    IMAGEPP_EXPORT static bool       Disconnect      ();
 
     // for testing only
 #if 0
-    _HDLLg static void* CreateEnvironment();
-    _HDLLg static void* CreateConnection(void* pi_pEnvironment,
+    IMAGEPP_EXPORT static void* CreateEnvironment();
+    IMAGEPP_EXPORT static void* CreateConnection(void* pi_pEnvironment,
                                               WStringCR pi_rUserName,
                                               WStringCR pi_rPassword,
                                               WStringCR pi_rService);
 
-    _HDLLg static void  GetGeoRaster(void*            pi_pConnection,
+    IMAGEPP_EXPORT static void  GetGeoRaster(void*            pi_pConnection,
                                           WStringCR    pi_rTableName,
                                           WStringCR    pi_rColumnName,
                                           WStringCR    pi_rRasterID,
@@ -118,4 +119,5 @@ protected:
     WString                 m_RasterID;
     SDOGeoRasterWrapper*    m_pImpl;
     };
+END_IMAGEPP_NAMESPACE
 

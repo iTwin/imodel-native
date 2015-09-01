@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVEVSRelativeAttribute.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -17,6 +17,7 @@
 #include "HVEShape.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HVEVSRelativeAttribute : public HIDXAttribute
     {
 public:
@@ -41,6 +42,7 @@ private:
     mutable HFCPtr<HVEShape>
     m_pShape;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HVEVSRelativeAttribute.hpp"
 

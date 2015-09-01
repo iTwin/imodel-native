@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DBoundaryModel.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -16,6 +16,7 @@
 #include <Imagepp/all/h/HGF2DGridModel.h>
 #include <Imagepp/all/h/HGF2DPieceWiseModel.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     HGF2DBoundaryModel
@@ -79,6 +80,6 @@ private:
     HGF2DBoundaryModel& operator=(HGF2DBoundaryModel const&);
     };
 
-
+END_IMAGEPP_NAMESPACE
 
 #include <Imagepp/all/h/HGF2DBoundaryModel.hpp>

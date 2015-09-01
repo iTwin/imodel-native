@@ -7,12 +7,11 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-BUILD_NO_STACK_CHECK = 1
-DLMLINK_WARNINGS_AS_ERRORS=1
 
-# ImagePP\all\gra\HTiff\src\IDTMFileDirectories\IDTMLayerDir.cpp(371) : error C2440: 'initializing' : cannot convert from 'const wchar_t [1]' to 'Bentley::WCharP'
-#                                                                       Conversion from string literal loses const qualifier (see /Zc:strictStrings)
-DEVELOPER_NEEDS_TO_FIX_COMPILER_WARNINGS=1
+# TODO! There is a lot of runtime-check errors in the pixel converters. We need to fix them.
+BUILD_NO_STACK_CHECK = 1
+
+DLMLINK_WARNINGS_AS_ERRORS=1
 
 %include $(SrcImagepp)mki/imageppdirs.mki
 
@@ -21,7 +20,7 @@ DEVELOPER_NEEDS_TO_FIX_COMPILER_WARNINGS=1
 #----------------------------------------------------------
 %include $(SharedMki)CommonCompileLinkPolicy.mki
 
-PublicApiIncludes + -I$(ippOutPrivateApi)
+PublicApiIncludes + -I$(ippPrivateAPISrc) -I$(ippOutPrivateApi)
 
 # All warnings on
 WARNINGS_UP=1
@@ -29,19 +28,12 @@ WARNINGS_UP=1
 #----------------------------------------------------------
 # Common Preprocessor definition.
 #----------------------------------------------------------
-%if defined(IMAGEPP_DLLMODE)
-    nameToDefine=_HDLL_SUPPORT
-    %include cdefapnd.mki
-%endif
-
-# ** We don't want to be calling upon any functionality that is available only post Windows XP **
-# ** These will be passed through as #defines to the compiler by winntmdl.mki **
-_WIN32_WINNT=0x0502 #Windows Server 2003 with SP1, Windows XP with SP2. required for SetDllDirectory
-MSB-_WIN32_WINNT=$(_WIN32_WINNT)
-WINVER=0x0502
-MSB-WINVER=$(WINVER)
-_WIN32_IE=0x0501
-MSB-_WIN32_IE=$(_WIN32_IE)
+#
+#  Defining NOMINMAX keeps windef.h from defining min/max macros. This is necessary to be able to use
+#  the std::min and std::max function templates. 
+#
+nameToDefine = NOMINMAX
+%include cdefapnd.mki
 
 # dlmlink.mki common options.
 DLM_DEST                    = $(o)
@@ -53,19 +45,16 @@ DLM_NO_DEF                  = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NO_DLS                  = 1
 DLM_NOENTRY                 = 1
-DLM_NO_IMPLIB               = 1
 
 # creatlib.mki common options
 LIB_TMP_DIR = $(o)
 
 # Common library names for linking.  Originally macro-ized when they had numbers in the name of the LIB
-IppGraLibsLib       = $(ContextSubpartsLibs)IppGraLibs$(libext)
-IppNetLibsLib       = $(ContextSubpartsLibs)IppNetLibs$(libext)
-IppUtlLibsLib       = $(ContextSubpartsLibs)IppUtlLibs$(libext)
-IppWinLibsLib       = $(ContextSubpartsLibs)IppWinLibs$(libext)
+ImagePPLib          = $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext)
 
 BeLibJpegTurbo      = $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext)
 IppJpegLib12Bits    = $(ippOutPrivateLibs)$(libprefix)IppJpeg12Bits$(stlibext)
+IppGdalLib          = $(ContextSubpartsLibs)$(libprefix)IppGdalLib$(stlibext)
 
 PdfLibInitializer              = $(libprefix)PdfLibInitializer$(libext)
 PdfLibInitializerExportLib     = $(ContextSubpartsLibs)$(PdfLibInitializer)

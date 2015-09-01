@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVEClipShape.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVEShape
@@ -11,7 +11,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <HFCPtr.h>
+#include <Imagepp/all/h/HFCPtr.h>
 #include "HGF2DCoordSys.h"
 #include "HGF2DLocation.h"
 #include "HVEShape.h"
@@ -20,6 +20,7 @@
 // This class has been designed for clipping data according to a stack of
 // masking or boundary clips when the range of the data that
 // need to be clipped is not known.
+BEGIN_IMAGEPP_NAMESPACE
 class HVEClipShape : public HFCShareableObject<HVEClipShape>
     {
 public :
@@ -54,6 +55,7 @@ private :
     ClipShapes                   m_clips;
     HFCPtr<HGF2DCoordSys>        m_pCoordSys;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HVEClipShape.hpp"
 

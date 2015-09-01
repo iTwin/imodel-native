@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCListenerThread.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,6 +15,7 @@
 #include <ImagePP/win/h/HFCSocket.h>
 #include "HFCListenerThread.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 static const int32_t s_SleepTime = 100;   // in ms
 
@@ -69,7 +70,7 @@ void HFCListenerThread<T>::Go()
             // Try to accept a connection
             HAutoPtr<HFCSocket> pSocket(Listener.Accept(s_SleepTime));
             if (pSocket.get() != 0)
-                m_pStarterThread->Queue((void*)pSocket.release());
+                m_pStarterThread->Queue(pSocket.release());
             }
         }
 
@@ -89,3 +90,5 @@ unsigned short HFCListenerThread<T>::GetPort() const
     m_PortEvent.WaitUntilSignaled();
     return (m_Port);
     }
+
+END_IMAGEPP_NAMESPACE

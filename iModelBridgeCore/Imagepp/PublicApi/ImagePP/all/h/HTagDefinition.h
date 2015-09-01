@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTagDefinition.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HTIFFTagDefinition
@@ -10,6 +10,7 @@
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 class HTIFFError;
 class HTagFileDef;
 
@@ -68,13 +69,13 @@ public:
         DataType        Type;           // Data type
         unsigned char          ReadWriteTag;   // false, ReadOnly Tag
         unsigned char          PassDirCount;   // if true, pass dir count on set
-        char*          pTagName;       // ASCII name
+        char const*          pTagName;       // ASCII name
         } Info;
 
 
     // Read/Write field definition
     static const short TAG_IO_ANY;         // field descriptor
-    static const short TAG_IO_VARIABLE;    // Variable, use lenght
+    IMAGEPP_EXPORT static const short TAG_IO_VARIABLE;    // Variable, use lenght
     static const short TAG_IO_USE_SPP;     // use SamplePerPixel
 
     static size_t                   sGetDataLen                        (DataType                pi_Type);
@@ -175,6 +176,7 @@ private:
                                                  uint32_t               pi_TagFile,
                                                  size_t*                pio_pIndex);
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HTagDefinition.hpp"
 

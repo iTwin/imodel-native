@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAParser.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPAParser
@@ -23,20 +23,22 @@
 #include <Imagepp/all/h/HPAProduction.h>
 #include <Imagepp/all/h/HFCPtr.h>
 #include <Imagepp/all/h/HPASession.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 class HPANode;
 
 class HPAParser
     {
 public:
 
-    _HDLLu                     HPAParser(HPATokenizer* pi_pTokenizer = 0,
+    IMAGEPP_EXPORT                     HPAParser(HPATokenizer* pi_pTokenizer = 0,
                                          HPAGrammarObject* pi_pStartRule = 0);
-    _HDLLu virtual             ~HPAParser();
+    IMAGEPP_EXPORT virtual             ~HPAParser();
 
     HPATokenizer*       GetTokenizer() const;
     HPAGrammarObject*   GetStartRule() const;
 
-    _HDLLu virtual HPANode*    Parse(const HFCPtr<HPASession>& pi_pSession);
+    IMAGEPP_EXPORT virtual HPANode*    Parse(const HFCPtr<HPASession>& pi_pSession);
 
 protected:
 
@@ -65,7 +67,7 @@ private:
 
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HPAParser.hpp"
 
 

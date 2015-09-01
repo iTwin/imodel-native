@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAReferenceToRasterEditor.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,6 +18,7 @@
 #include "HRARaster.h"
 #include "HRAReferenceToRaster.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRARaster;
 class HVEShape;
 
@@ -26,7 +27,7 @@ class HRAReferenceToRasterEditor : public HRARasterEditor
 public:
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1072, HRARasterEditor)
+    HDECLARE_CLASS_ID(HRAReferenceToRasterEditorId, HRARasterEditor)
 
     // Type used in type Error to specify error type
     /*
@@ -79,6 +80,7 @@ private:
     operator=(const HRAReferenceToRasterEditor& pi_rObj);
 
     };
+END_IMAGEPP_NAMESPACE
 
 
 

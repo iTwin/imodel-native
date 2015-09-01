@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFAdaptStripToTile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFAdaptStripToTile
@@ -14,6 +14,7 @@
 #include "HFCMacros.h"
 #include "HRFBlockAdapter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class  HRFRasterFile;
 //-----------------------------------------------------------------------------
 // This specific implementation of this object add
@@ -21,7 +22,7 @@ class  HRFRasterFile;
 //-----------------------------------------------------------------------------
 class HRFAdaptStripToTileCapabilities : public HRFBlockAdapterCapabilities
     {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFAdaptStripToTileCapabilities)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFAdaptStripToTileCapabilities)
 
 public:
     HRFAdaptStripToTileCapabilities();
@@ -34,7 +35,7 @@ public:
 //-----------------------------------------------------------------------------
 class HRFAdaptStripToTileCreator : public HRFBlockAdapterCreator
     {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFAdaptStripToTileCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFAdaptStripToTileCreator)
 
 public:
     // Obtain the capabilities of stretcher
@@ -67,34 +68,31 @@ public:
     virtual                ~HRFAdaptStripToTile();
 
     // Edition by Block
-    virtual HSTATUS        ReadBlock     (uint32_t                 pi_PosBlockX,
-                                          uint32_t                 pi_PosBlockY,
-                                          Byte*                   po_pData,
-                                          HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+    virtual HSTATUS ReadBlock(uint64_t                pi_PosBlockX,
+                              uint64_t                pi_PosBlockY,
+                              Byte*                   po_pData,
+                              HFCLockMonitor const*   pi_pSisterFileLock = 0) override;
 
-
-    virtual HSTATUS          ReadBlock     (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            HFCPtr<HCDPacket>&       po_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0) override
+    virtual HSTATUS ReadBlock(uint64_t                pi_PosBlockX,
+                              uint64_t                pi_PosBlockY,
+                              HFCPtr<HCDPacket>&      po_rpPacket,
+                              HFCLockMonitor const*   pi_pSisterFileLock = 0) override
         {
         return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
         }
 
-    virtual HSTATUS        WriteBlock    (uint32_t                 pi_PosBlockX,
-                                          uint32_t                 pi_PosBlockY,
-                                          const Byte*             pi_pData,
-                                          HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+    virtual HSTATUS WriteBlock(uint64_t               pi_PosBlockX,
+                               uint64_t               pi_PosBlockY,
+                               const Byte*            pi_pData,
+                               HFCLockMonitor const*  pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS          WriteBlock    (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            const HFCPtr<HCDPacket>& pi_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0) override
+    virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
+                               uint64_t                 pi_PosBlockY,
+                               const HFCPtr<HCDPacket>& pi_rpPacket,
+                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override
         {
         return T_Super::WriteBlock(pi_PosBlockX,pi_PosBlockY,pi_rpPacket,pi_pSisterFileLock);
         }
-
-
 
     void                   NoMoreRead    () override;
 
@@ -141,3 +139,4 @@ private:
     HRFAdaptStripToTile(const HRFAdaptStripToTile& pi_rObj);
     HRFAdaptStripToTile& operator=(const HRFAdaptStripToTile& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

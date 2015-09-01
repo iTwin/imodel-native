@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2007, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2008-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -200,7 +201,6 @@ class GenBinDataset : public RawDataset
     double      adfGeoTransform[6];
     char       *pszProjection;
 
-    int         bHDRDirty;
     char      **papszHDR;
 
     void        ParseCoordinateSystem( char ** );
@@ -226,9 +226,6 @@ class GenBinDataset : public RawDataset
 class GenBinBitRasterBand : public GDALPamRasterBand
 {
     int            nBits;
-    long           nStartBit;
-    int            nPixelOffsetBits;
-    int            nLineOffsetBits;
 
   public:
     GenBinBitRasterBand( GenBinDataset *poDS, int nBits );
@@ -260,7 +257,7 @@ GenBinBitRasterBand::GenBinBitRasterBand( GenBinDataset *poDS, int nBitsIn )
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr GenBinBitRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
+CPLErr GenBinBitRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                         void * pImage )
 
 {
@@ -311,7 +308,7 @@ CPLErr GenBinBitRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     {
         for( iX = 0; iX < nBlockXSize; iX++, iBitOffset += nBits )
         {
-            ((GByte *) pImage)[iX] = 
+            ((GByte *) pImage)[iX] =
                 ((pabyBuffer[iBitOffset>>3]) >> (6-(iBitOffset&0x7)) & 0x3);
         }
     }
@@ -325,8 +322,9 @@ CPLErr GenBinBitRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                 ((GByte *) pImage)[iX] = (pabyBuffer[iBitOffset>>3]) & 0xf;
         }
     }
-    else
+    else {
         CPLAssert( FALSE );
+    }
 
     CPLFree( pabyBuffer );
 
@@ -893,6 +891,8 @@ void GDALRegister_GenBin()
                                    "Generic Binary (.hdr Labelled)" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_various.html#GenBin" );
+        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+
         poDriver->pfnOpen = GenBinDataset::Open;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );

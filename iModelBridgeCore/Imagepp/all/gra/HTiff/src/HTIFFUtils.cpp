@@ -2,21 +2,20 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFUtils.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HTIFFUtils
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HTIFFUtils.h>
 #include <Imagepp/all/h/HFCLocalBinStream.h>
 #include <Imagepp/all/h/HFCURL.h>
 #include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 // Class HTIFFByteOrdering
@@ -224,65 +223,65 @@ void HTIFFError::AddError (HTIFFError::ErrorCode     pi_ErrorCode,
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-void HTIFFError::GetErrorMsg(WString& po_rErrorMsg)
+void HTIFFError::GetErrorMsg(WString& po_rErrorMsg) const
     {
     HSTATICASSERTMSG(HTIFFError::ERROR_COUNT == 43, "Missing HTIFF error message.");
 
-    ImagePPMessages messageID = IDS_HTIFF_UnknownError;
+    ImagePPMessages::StringId messageID = ImagePPMessages::HTIFF_UnknownError();
 
     switch(m_ErrorCode)
         {
-        case UNKNOWN_ERROR                              : messageID = IDS_HTIFF_UnknownError                   ; break;
-        case CANNOT_READ_DIR_COUNT                      : messageID = IDS_HTIFF_CannotReadDirCount             ; break;
-        case CANNOT_WRITE_DIR_BUFFER                    : messageID = IDS_HTIFF_CannotWriteDirBuffer           ; break;
-        case CANNOT_WRITE_DIR_COUNT                     : messageID = IDS_HTIFF_CannotWriteDirCount            ; break;
-        case CANNOT_WRITE_DIR_NEXT_DIR_OFFSET           : messageID = IDS_HTIFF_CannotWriteDirOffset           ; break;
-        case CANNOT_WRITE_DIR_LINK                      : messageID = IDS_HTIFF_CannotWriteDirLink             ; break;
-        case NEGATIVE_VALUE_FOR_RATIONAL                : messageID = IDS_HTIFF_NegativeValueForRational       ; break;
-        case HMR_DIR_ALREADY_EXIST_IN_PAGE              : messageID = IDS_HTIFF_HMRDirAlreadyExist             ; break;
-        case CANNOT_WRITE_PW_BLOB                       : messageID = IDS_HTIFF_CannotWritePWBlob              ; break;
-        case CANNOT_OPEN_FILE                           : messageID = IDS_HTIFF_CannotOpenFile                 ; break;
-        case CANNOT_READ_HEADER                         : messageID = IDS_HTIFF_CannotReadHeader               ; break;
-        case BAD_MAGIC_NUMBER                           : messageID = IDS_HTIFF_BadMagicNumber                 ; break;
-        case BAD_FILE_VERSION                           : messageID = IDS_HTIFF_BadFileVersion                 ; break;
-        case CANNOT_CREATE_FILE                         : messageID = IDS_HTIFF_CannotCreateFile               ; break;
-        case CANNOT_WRITE_HEADER                        : messageID = IDS_HTIFF_CannotWriteHeader              ; break;
-        case ERROR_FOUND_IN_DIRECTORY                   : messageID = IDS_HTIFF_ErrorFoundInDirectory          ; break;
-        case IMAGE_DEPTH_DIFFERENT_THAN_1_NOT_SUPPORTED : messageID = IDS_HTIFF_ImageDepthDifferentThan1       ; break;
-        case IMAGE_WIDTH_AND_LENGTH_ARE_REQUIRED        : messageID = IDS_HTIFF_ImageWidthAndLengthRequired    ; break;
-        case MISSING_STRIP_OR_TILE_OFFSET               : messageID = IDS_HTIFF_MissingStripOrTileOffset       ; break;
-        case MISSING_IMAGE_PLANAR_CONFIGURATION         : messageID = IDS_HTIFF_MissingImagePlanarConfig       ; break;
-        case MISSING_COLOR_MAP                          : messageID = IDS_HTIFF_MissingColorMap                ; break;
-        case BAD_BLOCK_NUMBER                           : messageID = IDS_HTIFF_BadBlockNumber                 ; break;
-        case CANNOT_WRITE_SEPARATE_PLANE_ON_SEPARATE_CFG: messageID = IDS_HTIFF_CannotWriteSeparatePlane       ; break;
-        case CANNOT_WRITE_BLOCK                         : messageID = IDS_HTIFF_CannotWriteBlock               ; break;
-        case CANNOT_READ_SEPARATE_PLANE_ON_SEPARATE_CFG : messageID = IDS_HTIFF_CannotReadSeparatePlane        ; break;
-        case CANNOT_READ_BLOCK                          : messageID = IDS_HTIFF_CannotReadBlock                ; break;
-        case UNKNOWN_COMPRESSION_TYPE                   : messageID = IDS_HTIFF_UnknownCompressType            ; break;
-        case SEPARATE_PLANAR_CONFIGURATION_NOT_SUPPORTED: messageID = IDS_HTIFF_SeparatePlanarConfigNotSuported; break;
-        case UNSUPPORTED_GEOTIFF_VERSION                : messageID = IDS_HTIFF_UnsupportedGeotiffVersion      ; break;
-        case INVALID_GEOTIFF_COUNT                      : messageID = IDS_HTIFF_InvalidGeotiffCount            ; break;
-        case INVALID_GEOTIFF_INDEX_OR_COUNT             : messageID = IDS_HTIFF_InvalidGeotiffIndex            ; break;
-        case INVALID_GEOTIFF_TAG                        : messageID = IDS_HTIFF_InvalidGeotiffTag              ; break;
-        case UNKNOWN_TAG_ENUM                           : messageID = IDS_HTIFF_UnknownTagEnumeration          ; break;
-        case WRONG_DATA_TYPE_FOR_TAG                    : messageID = IDS_HTIFF_WrongDataTypeForTag            ; break;
-        case UNKNOWN_TAG                                : messageID = IDS_HTIFF_UnknownTag                     ; break;
-        case UNKNOWN_FIRST_TAG                          : messageID = IDS_HTIFF_UnknownFirstTag                ; break;
-        case DIRECTORY_ENTRY_READ_ERROR                 : messageID = IDS_HTIFF_DirectoryEntryReadError        ; break;
-        case TAG_READ_ERROR                             : messageID = IDS_HTIFF_TagReadError                   ; break;
-        case DIRECTORY_ENTRY_WRITE_ERROR                : messageID = IDS_HTIFF_DirectoryEntryWriteError       ; break;
-        case TAG_WRITE_ERROR                            : messageID = IDS_HTIFF_TagWriteError                  ; break;
-        case INCORRECT_COUNT_FOR_TAG_READ               : messageID = IDS_HTIFF_IncorrectCountForTagRead       ; break;
-        case INCORRECT_COUNT_FOR_TAG_WRITTEN            : messageID = IDS_HTIFF_IncorrectCountForTagWritten    ; break;
-        case SIZE_OUT_OF_RANGE                          : messageID = IDS_HTIFF_SizeOutOfRange                 ; break;
+        case UNKNOWN_ERROR                              : messageID = ImagePPMessages::HTIFF_UnknownError()                   ; break;
+        case CANNOT_READ_DIR_COUNT                      : messageID = ImagePPMessages::HTIFF_CannotReadDirCount()             ; break;
+        case CANNOT_WRITE_DIR_BUFFER                    : messageID = ImagePPMessages::HTIFF_CannotWriteDirBuffer()           ; break;
+        case CANNOT_WRITE_DIR_COUNT                     : messageID = ImagePPMessages::HTIFF_CannotWriteDirCount()            ; break;
+        case CANNOT_WRITE_DIR_NEXT_DIR_OFFSET           : messageID = ImagePPMessages::HTIFF_CannotWriteDirOffset()           ; break;
+        case CANNOT_WRITE_DIR_LINK                      : messageID = ImagePPMessages::HTIFF_CannotWriteDirLink()             ; break;
+        case NEGATIVE_VALUE_FOR_RATIONAL                : messageID = ImagePPMessages::HTIFF_NegativeValueForRational()       ; break;
+        case HMR_DIR_ALREADY_EXIST_IN_PAGE              : messageID = ImagePPMessages::HTIFF_HMRDirAlreadyExist()             ; break;
+        case CANNOT_WRITE_PW_BLOB                       : messageID = ImagePPMessages::HTIFF_CannotWritePWBlob()              ; break;
+        case CANNOT_OPEN_FILE                           : messageID = ImagePPMessages::HTIFF_CannotOpenFile()                 ; break;
+        case CANNOT_READ_HEADER                         : messageID = ImagePPMessages::HTIFF_CannotReadHeader()               ; break;
+        case BAD_MAGIC_NUMBER                           : messageID = ImagePPMessages::HTIFF_BadMagicNumber()                 ; break;
+        case BAD_FILE_VERSION                           : messageID = ImagePPMessages::HTIFF_BadFileVersion()                 ; break;
+        case CANNOT_CREATE_FILE                         : messageID = ImagePPMessages::HTIFF_CannotCreateFile()               ; break;
+        case CANNOT_WRITE_HEADER                        : messageID = ImagePPMessages::HTIFF_CannotWriteHeader()              ; break;
+        case ERROR_FOUND_IN_DIRECTORY                   : messageID = ImagePPMessages::HTIFF_ErrorFoundInDirectory()          ; break;
+        case IMAGE_DEPTH_DIFFERENT_THAN_1_NOT_SUPPORTED : messageID = ImagePPMessages::HTIFF_ImageDepthDifferentThan1()       ; break;
+        case IMAGE_WIDTH_AND_LENGTH_ARE_REQUIRED        : messageID = ImagePPMessages::HTIFF_ImageWidthAndLengthRequired()    ; break;
+        case MISSING_STRIP_OR_TILE_OFFSET               : messageID = ImagePPMessages::HTIFF_MissingStripOrTileOffset()       ; break;
+        case MISSING_IMAGE_PLANAR_CONFIGURATION         : messageID = ImagePPMessages::HTIFF_MissingImagePlanarConfig()       ; break;
+        case MISSING_COLOR_MAP                          : messageID = ImagePPMessages::HTIFF_MissingColorMap()                ; break;
+        case BAD_BLOCK_NUMBER                           : messageID = ImagePPMessages::HTIFF_BadBlockNumber()                 ; break;
+        case CANNOT_WRITE_SEPARATE_PLANE_ON_SEPARATE_CFG: messageID = ImagePPMessages::HTIFF_CannotWriteSeparatePlane()       ; break;
+        case CANNOT_WRITE_BLOCK                         : messageID = ImagePPMessages::HTIFF_CannotWriteBlock()               ; break;
+        case CANNOT_READ_SEPARATE_PLANE_ON_SEPARATE_CFG : messageID = ImagePPMessages::HTIFF_CannotReadSeparatePlane()        ; break;
+        case CANNOT_READ_BLOCK                          : messageID = ImagePPMessages::HTIFF_CannotReadBlock()                ; break;
+        case UNKNOWN_COMPRESSION_TYPE                   : messageID = ImagePPMessages::HTIFF_UnknownCompressType()            ; break;
+        case SEPARATE_PLANAR_CONFIGURATION_NOT_SUPPORTED: messageID = ImagePPMessages::HTIFF_SeparatePlanarConfigNotSuported(); break;
+        case UNSUPPORTED_GEOTIFF_VERSION                : messageID = ImagePPMessages::HTIFF_UnsupportedGeotiffVersion()      ; break;
+        case INVALID_GEOTIFF_COUNT                      : messageID = ImagePPMessages::HTIFF_InvalidGeotiffCount()            ; break;
+        case INVALID_GEOTIFF_INDEX_OR_COUNT             : messageID = ImagePPMessages::HTIFF_InvalidGeotiffIndex()            ; break;
+        case INVALID_GEOTIFF_TAG                        : messageID = ImagePPMessages::HTIFF_InvalidGeotiffTag()              ; break;
+        case UNKNOWN_TAG_ENUM                           : messageID = ImagePPMessages::HTIFF_UnknownTagEnumeration()          ; break;
+        case WRONG_DATA_TYPE_FOR_TAG                    : messageID = ImagePPMessages::HTIFF_WrongDataTypeForTag()            ; break;
+        case UNKNOWN_TAG                                : messageID = ImagePPMessages::HTIFF_UnknownTag()                     ; break;
+        case UNKNOWN_FIRST_TAG                          : messageID = ImagePPMessages::HTIFF_UnknownFirstTag()                ; break;
+        case DIRECTORY_ENTRY_READ_ERROR                 : messageID = ImagePPMessages::HTIFF_DirectoryEntryReadError()        ; break;
+        case TAG_READ_ERROR                             : messageID = ImagePPMessages::HTIFF_TagReadError()                   ; break;
+        case DIRECTORY_ENTRY_WRITE_ERROR                : messageID = ImagePPMessages::HTIFF_DirectoryEntryWriteError()       ; break;
+        case TAG_WRITE_ERROR                            : messageID = ImagePPMessages::HTIFF_TagWriteError()                  ; break;
+        case INCORRECT_COUNT_FOR_TAG_READ               : messageID = ImagePPMessages::HTIFF_IncorrectCountForTagRead()       ; break;
+        case INCORRECT_COUNT_FOR_TAG_WRITTEN            : messageID = ImagePPMessages::HTIFF_IncorrectCountForTagWritten()    ; break;
+        case SIZE_OUT_OF_RANGE                          : messageID = ImagePPMessages::HTIFF_SizeOutOfRange()                 ; break;
         default:
             HASSERT(!"Missing HTIFF error message");
-            messageID = IDS_HTIFF_UnknownError;
+            messageID = ImagePPMessages::HTIFF_UnknownError();
             break;
         }
 
     // Do not want to translate HTIFF. That's the name of our tiff lib.
-    po_rErrorMsg.Sprintf(L"HTIFF(%.4d) - %ls", m_ErrorCode, HFCResourceLoader::GetInstance()->GetString(messageID).c_str());
+    po_rErrorMsg.Sprintf(L"HTIFF(%.4d) - %ls", m_ErrorCode, ImagePPMessages::GetStringW(messageID).c_str());
 
     if (m_pErrorInfo != 0)
         m_pErrorInfo->FormatErrorMessage(po_rErrorMsg);
@@ -322,12 +321,11 @@ HTIFFStream::HTIFFStream(const WString& pi_rFilename, HFCAccessMode pi_Mode, uin
 //
 //-----------------------------------------------------------------------------
 
-HTIFFStream::HTIFFStream(const HFCPtr<HFCURL>& pi_rpURL, HFCAccessMode pi_AccessMode)
+HTIFFStream::HTIFFStream(const HFCPtr<HFCURL>& pi_rpURL, HFCAccessMode pi_AccessMode, uint64_t pi_OriginOffset)
     {
     m_ListDirty = false;
     m_ListOfFreeBlock.clear();
-    m_pStream = HFCBinStream::Instanciate(pi_rpURL, pi_AccessMode);
-
+    m_pStream = HFCBinStream::Instanciate(pi_rpURL, pi_OriginOffset, pi_AccessMode);
     }
 
 //-----------------------------------------------------------------------------
@@ -637,7 +635,7 @@ bool HTIFFStream::OverlapsFreeBlocks(uint64_t pi_Offset, uint64_t pi_Size) const
 //-----------------------------------------------------------------------------
 // Return true if Fatal Error.
 //-----------------------------------------------------------------------------
-bool ErrorMsg(HTIFFError**              pio_pError,
+bool ImagePP::ErrorMsg(HTIFFError**              pio_pError,
                HTIFFError::ErrorCode     pi_ErrorCode,
                const HTIFFError::ErInfo* pi_pErrorInfo,
                bool                     pi_Fatal)
@@ -655,7 +653,7 @@ bool ErrorMsg(HTIFFError**              pio_pError,
 //-----------------------------------------------------------------------------
 // Return true if Fatal Error.
 //-----------------------------------------------------------------------------
-bool ErrorMsg (HTIFFError** pio_pError, const char* pi_pMsg, bool pi_Fatal)
+bool ImagePP::ErrorMsg (HTIFFError** pio_pError, const char* pi_pMsg, bool pi_Fatal)
 {
     // Copy Error message
     if (*pio_pError)
@@ -670,7 +668,8 @@ bool ErrorMsg (HTIFFError** pio_pError, const char* pi_pMsg, bool pi_Fatal)
 //
 //-----------------------------------------------------------------------------
 
-bool ErrorMsg (HTIFFError** pio_pError, HTIFFError& pi_rNewError)
+
+bool ImagePP::ErrorMsg (HTIFFError** pio_pError, HTIFFError& pi_rNewError)
     {
     return ErrorMsg(pio_pError, pi_rNewError.GetErrorCode(), pi_rNewError.GetErrorInfo(), pi_rNewError.IsFatal());
     }
@@ -679,7 +678,7 @@ bool ErrorMsg (HTIFFError** pio_pError, HTIFFError& pi_rNewError)
 //
 //-----------------------------------------------------------------------------
 
-void SwabArrayOfShort (unsigned short* pio_pData, register size_t pi_Count)
+void ImagePP::SwabArrayOfShort (unsigned short* pio_pData, register size_t pi_Count)
     {
     register unsigned char*    pData;
     register int        Tmp;
@@ -699,7 +698,7 @@ void SwabArrayOfShort (unsigned short* pio_pData, register size_t pi_Count)
 //
 //-----------------------------------------------------------------------------
 
-void SwabArrayOfLong(register uint32_t* pio_pData, register size_t pi_Count)
+void ImagePP::SwabArrayOfLong(register uint32_t* pio_pData, register size_t pi_Count)
     {
     register unsigned char*    pData;
     register int        Tmp;
@@ -717,11 +716,12 @@ void SwabArrayOfLong(register uint32_t* pio_pData, register size_t pi_Count)
         pio_pData++;
         }
     }
+
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
 
-void SwabArrayOfDouble(double* pio_pData, register size_t pi_Count)
+void ImagePP::SwabArrayOfDouble(double* pio_pData, register size_t pi_Count)
     {
     register uint32_t* pLong = (uint32_t*) pio_pData;
     register uint32_t Tmp;
@@ -736,7 +736,7 @@ void SwabArrayOfDouble(double* pio_pData, register size_t pi_Count)
         }
     }
 
-void SwabArrayOfUInt64(uint64_t* pio_pData, register size_t pi_Count)
+void ImagePP::SwabArrayOfUInt64(uint64_t* pio_pData, register size_t pi_Count)
     {
     register uint32_t* pLong = (uint32_t*) pio_pData;
     register uint32_t Tmp;
@@ -756,7 +756,7 @@ void SwabArrayOfUInt64(uint64_t* pio_pData, register size_t pi_Count)
 //
 //-----------------------------------------------------------------------------
 
-bool SystemIsBigEndian()
+bool ImagePP::SystemIsBigEndian()
     {
     bool SystemBigEndian;
         {
@@ -774,7 +774,7 @@ bool SystemIsBigEndian()
 //
 //-----------------------------------------------------------------------------
 
-bool IsValidDoubleArray(const double* pi_pValues, int32_t pi_ArraySize)
+bool ImagePP::IsValidDoubleArray(const double* pi_pValues, int32_t pi_ArraySize)
     {
     HPRECONDITION (pi_pValues != 0);
     HPRECONDITION (pi_ArraySize > 0);
@@ -783,15 +783,7 @@ bool IsValidDoubleArray(const double* pi_pValues, int32_t pi_ArraySize)
 
     for (int ArrayIndex = 0; ArrayIndex < pi_ArraySize; ArrayIndex++)
         {
-#if defined (ANDROID) || defined (__APPLE__)
-        if (1)  //DM-Android
-
-#elif defined (_WIN32)
-        int Status = _fpclass(pi_pValues[ArrayIndex]);
-
-        if ( (Status != _FPCLASS_PN) && (Status != _FPCLASS_NN) &&
-             (Status != _FPCLASS_NZ) && (Status != _FPCLASS_PZ))
-#endif
+        if (BeNumerical::BeIsnan(pi_pValues[ArrayIndex]) || !BeNumerical::BeFinite(pi_pValues[ArrayIndex]))
             {
             IsValid = false;
 
@@ -822,17 +814,17 @@ size_t HTIFFStream::Write(const void* pi_pBuffer, size_t pi_Size, size_t pi_Coun
     HPRECONDITION(m_pStream != 0);
     HPRECONDITION(pi_Size   != 0);
     HPRECONDITION(pi_Count  != 0);
-    size_t result = m_pStream->Write((void*)pi_pBuffer, pi_Size * pi_Count) / pi_Size;
+    size_t result = m_pStream->Write(pi_pBuffer, pi_Size * pi_Count) / pi_Size;
 
     // Stream write error
-    if ((pi_Count != result) || (m_pStream->GetLastExceptionID() != NO_EXCEPTION))
+    if ((pi_Count != result) || (m_pStream->GetLastException() != 0))
         {
 #ifdef _WIN32
         // Some error must have occured
         int32_t lastError = GetLastError();
 
         HASSERT ((lastError == ERROR_DISK_FULL) ||
-            (m_pStream->GetLastExceptionID() != NO_EXCEPTION));
+            (m_pStream->GetLastException() != 0));
 #endif
 
         // Notes on possible error

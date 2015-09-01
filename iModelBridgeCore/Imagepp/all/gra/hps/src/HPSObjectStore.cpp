@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSObjectStore.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Methods for class HPSObjectStore
 //---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCURL.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
@@ -29,9 +29,10 @@
 #include "HPSInternalNodes.h"
 #include "HPSParserScope.h"
 
-//MST : Should be moved in HPSUtility.cpp on BEIJING. 
-void HPSGetURLsFromChildrenNode(const HPANode*     pi_pParentNode,
-                                ListOfRelatedURLs& po_rRelatedURLs)
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   
+//----------------------------------------------------------------------------------------
+/*static*/ void HPSObjectStore::GetURLsFromChildrenNode(const HPANode* pi_pParentNode, ListOfRelatedURLs& po_rRelatedURLs)
 {
     HPANodeList::const_iterator NodeIter    = pi_pParentNode->GetSubNodes().begin();
     HPANodeList::const_iterator NodeIterEnd = pi_pParentNode->GetSubNodes().end();
@@ -54,11 +55,11 @@ void HPSGetURLsFromChildrenNode(const HPANode*     pi_pParentNode,
                                                     GetVariableTokenNode()->
                                                     GetExpressionNode();
 
-            HPSGetURLsFromChildrenNode(pNode, po_rRelatedURLs);                        
+            GetURLsFromChildrenNode(pNode, po_rRelatedURLs);                        
         }
         else
         {
-            HPSGetURLsFromChildrenNode((*NodeIter).GetPtr(), po_rRelatedURLs);                        
+            GetURLsFromChildrenNode((*NodeIter).GetPtr(), po_rRelatedURLs);                        
         }   
 
         NodeIter++;
@@ -133,9 +134,7 @@ HPSObjectStore::HPSObjectStore(HPMPool*                         pi_pLog,
         //If no cache file was found, parse the PSS.
         if (m_pCacheFileForPSS == 0)
             {
-            m_pBinStream = HFCBinStream::Instanciate(pi_pURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
-
-            ThrowFileExceptionIfError(m_pBinStream, pi_pURL->GetURL());
+            m_pBinStream = HFCBinStream::Instanciate(pi_pURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, 0, true);
 
             m_pNode = (HPSNode*)(m_Parser.Parse(m_pBinStream,
                                                 pi_pLog,
@@ -211,9 +210,7 @@ void HPSObjectStore::Construct(HPMPool*                         pi_pLog,
         //If no cache file was found, parse the PSS.
         if (m_pCacheFileForPSS == 0)
             {
-            m_pBinStream = HFCBinStream::Instanciate(pi_pURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
-
-            ThrowFileExceptionIfError(m_pBinStream, pi_pURL->GetURL());
+            m_pBinStream = HFCBinStream::Instanciate(pi_pURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, 0, true);
 
             m_pNode = (HPSNode*)(m_Parser.Parse(m_pBinStream,
                                                 pi_pLog,
@@ -335,7 +332,7 @@ HFCPtr<HRARaster> HPSObjectStore::LoadRaster(uint32_t pi_PageID)
 
         if (pMosaic->Add(pODRastersInfoAttr->GetData(), GetPool(), m_pWorldCluster, m_pURL) == false)
             {
-            throw HRFException(HRF_INVALID_SISTER_FILE_EXCEPTION, m_pCacheFileForPSS->GetURL()->GetURL());
+            throw HRFInvalidSisterFileException(m_pCacheFileForPSS->GetURL()->GetURL());
             }                
 
         pRaster = pMosaic.release();

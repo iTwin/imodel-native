@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DLocalProjectiveGrid.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DLocalProjectiveGrid
 //-----------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
+#include <ImagePPInternal/hstdcpp.h>
 #define NO_IODEFS
 
-#include <ImagePP/h/HDllSupport.h>
+
 
 #include <Imagepp/all/h/HGF2DLocalProjectiveGrid.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
@@ -307,8 +307,8 @@ HGF2DLocalProjectiveGrid& HGF2DLocalProjectiveGrid::operator=(const HGF2DLocalPr
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DLocalProjectiveGrid::ConvertDirect(double* pio_pXInOut,
-                                             double* pio_pYInOut) const
+StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(double* pio_pXInOut,
+                                                  double* pio_pYInOut) const
     {
     HINVARIANTS;
 
@@ -317,11 +317,11 @@ void HGF2DLocalProjectiveGrid::ConvertDirect(double* pio_pXInOut,
 
     if (m_Direct)
         {
-        GetComposedModelFromCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertDirect(pio_pXInOut, pio_pYInOut);
+        return GetComposedModelFromCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertDirect(pio_pXInOut, pio_pYInOut);
         }
     else
         {
-        GetComposedModelFromInverseCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertInverse(pio_pXInOut, pio_pYInOut);
+        return GetComposedModelFromInverseCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertInverse(pio_pXInOut, pio_pYInOut);
         }
     }
 
@@ -329,10 +329,10 @@ void HGF2DLocalProjectiveGrid::ConvertDirect(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DLocalProjectiveGrid::ConvertDirect(double pi_XIn,
-                                             double pi_YIn,
-                                             double* po_pXOut,
-                                             double* po_pYOut) const
+StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(double pi_XIn,
+                                                  double pi_YIn,
+                                                  double* po_pXOut,
+                                                  double* po_pYOut) const
     {
     HINVARIANTS;
 
@@ -341,23 +341,23 @@ void HGF2DLocalProjectiveGrid::ConvertDirect(double pi_XIn,
 
     if (m_Direct)
         {
-        GetComposedModelFromCoordinate(pi_XIn, pi_YIn)->ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
+        return GetComposedModelFromCoordinate(pi_XIn, pi_YIn)->ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
         }
     else
         {
-        GetComposedModelFromInverseCoordinate(pi_XIn, pi_YIn)->ConvertInverse(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
+        return GetComposedModelFromInverseCoordinate(pi_XIn, pi_YIn)->ConvertInverse(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
         }
     }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DLocalProjectiveGrid::ConvertDirect(double    pi_YIn,
-                                             double    pi_XInStart,
-                                             size_t     pi_NumLoc,
-                                             double    pi_XInStep,
-                                             double*   po_pXOut,
-                                             double*   po_pYOut) const
+StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(double    pi_YIn,
+                                                  double    pi_XInStart,
+                                                  size_t    pi_NumLoc,
+                                                  double    pi_XInStep,
+                                                  double*   po_pXOut,
+                                                  double*   po_pYOut) const
     {
     // Make sure recipient arrays are provided
     HPRECONDITION(po_pXOut != 0);
@@ -367,21 +367,52 @@ void HGF2DLocalProjectiveGrid::ConvertDirect(double    pi_YIn,
     uint32_t Index;
     double* pCurrentX = po_pXOut;
     double* pCurrentY = po_pYOut;
+
+    StatusInt status = SUCCESS;
 
     for (Index = 0, X = pi_XInStart;
          Index < pi_NumLoc;
          ++Index, X+=pi_XInStep, ++pCurrentX, ++pCurrentY)
         {
-        ConvertDirect(X, pi_YIn, pCurrentX, pCurrentY);
+        StatusInt tempStatus = ConvertDirect(X, pi_YIn, pCurrentX, pCurrentY);
+
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
         }
+
+    return status;
+    }
+
+//-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DLocalProjectiveGrid::ConvertDirect(size_t pi_NumLoc, 
+                                                  double* pio_aXInOut,
+                                                  double* pio_aYInOut) const
+    {
+    // Make sure recipient arrays are provided
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+
+    StatusInt status = SUCCESS;
+
+    for(uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        StatusInt tempStatus = ConvertDirect(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
+
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
+        }
+
+    return status;
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DLocalProjectiveGrid::ConvertInverse(double* pio_pXInOut,
-                                              double* pio_pYInOut) const
+StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(double* pio_pXInOut,
+                                                   double* pio_pYInOut) const
     {
     HINVARIANTS;
 
@@ -390,11 +421,11 @@ void HGF2DLocalProjectiveGrid::ConvertInverse(double* pio_pXInOut,
 
     if (m_Direct)
         {
-        GetComposedModelFromInverseCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertInverse(pio_pXInOut, pio_pYInOut);
+        return GetComposedModelFromInverseCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertInverse(pio_pXInOut, pio_pYInOut);
         }
     else
         {
-        GetComposedModelFromCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertDirect(pio_pXInOut, pio_pYInOut);
+        return GetComposedModelFromCoordinate(*pio_pXInOut, *pio_pYInOut)->ConvertDirect(pio_pXInOut, pio_pYInOut);
         }
     }
 
@@ -402,10 +433,10 @@ void HGF2DLocalProjectiveGrid::ConvertInverse(double* pio_pXInOut,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DLocalProjectiveGrid::ConvertInverse(double   pi_XIn,
-                                              double   pi_YIn,
-                                              double*  po_pXOut,
-                                              double*  po_pYOut) const
+StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(double   pi_XIn,
+                                                   double   pi_YIn,
+                                                   double*  po_pXOut,
+                                                   double*  po_pYOut) const
     {
     HINVARIANTS;
 
@@ -414,23 +445,23 @@ void HGF2DLocalProjectiveGrid::ConvertInverse(double   pi_XIn,
 
     if (m_Direct)
         {
-        GetComposedModelFromInverseCoordinate(pi_XIn, pi_YIn)->ConvertInverse(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
+        return GetComposedModelFromInverseCoordinate(pi_XIn, pi_YIn)->ConvertInverse(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
         }
     else
         {
-        GetComposedModelFromCoordinate(pi_XIn, pi_YIn)->ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
+        return GetComposedModelFromCoordinate(pi_XIn, pi_YIn)->ConvertDirect(pi_XIn, pi_YIn, po_pXOut, po_pYOut);
         }
     }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DLocalProjectiveGrid::ConvertInverse(double    pi_YIn,
-                                              double    pi_XInStart,
-                                              size_t     pi_NumLoc,
-                                              double    pi_XInStep,
-                                              double*   po_pXOut,
-                                              double*   po_pYOut) const
+StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(double    pi_YIn,
+                                                   double    pi_XInStart,
+                                                   size_t    pi_NumLoc,
+                                                   double    pi_XInStep,
+                                                   double*   po_pXOut,
+                                                   double*   po_pYOut) const
     {
     // Make sure recipient arrays are provided
     HPRECONDITION(po_pXOut != 0);
@@ -441,14 +472,44 @@ void HGF2DLocalProjectiveGrid::ConvertInverse(double    pi_YIn,
     double* pCurrentX = po_pXOut;
     double* pCurrentY = po_pYOut;
 
+    StatusInt status = SUCCESS;
+
     for (Index = 0, X = pi_XInStart;
          Index < pi_NumLoc ; ++Index, X+=pi_XInStep, ++pCurrentX, ++pCurrentY)
         {
-        ConvertInverse(X, pi_YIn, pCurrentX, pCurrentY);
+        StatusInt tempStatus = ConvertInverse(X, pi_YIn, pCurrentX, pCurrentY);
+
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
         }
+
+    return status;
     }
 
 
+//-----------------------------------------------------------------------------
+// Converter (inverse)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DLocalProjectiveGrid::ConvertInverse(size_t pi_NumLoc, 
+                                                   double* pio_aXInOut,
+                                                   double* pio_aYInOut) const
+    {
+    // Make sure recipient arrays are provided
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+
+    StatusInt status = SUCCESS;
+
+    for(uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        StatusInt tempStatus = ConvertInverse(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
+
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
+        }
+
+    return status;
+    }
 
 
 //-----------------------------------------------------------------------------

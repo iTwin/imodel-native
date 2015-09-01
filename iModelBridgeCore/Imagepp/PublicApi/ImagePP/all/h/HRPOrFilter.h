@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPOrFilter.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,10 @@
 
 #include "HRPFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPOrFilter : public HRPFilter
     {
-    HDECLARE_CLASS_ID(1200, HRPFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_Or, HRPFilter)
 
 public:
 
@@ -54,4 +55,5 @@ private:
     void                    InitObject();
     void                    UpdateTable();
     };
+END_IMAGEPP_NAMESPACE
 

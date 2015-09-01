@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFLRDFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFLRDFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFLRDFile.h>
 #include <Imagepp/all/h/HRFLRDLineEditor.h>
@@ -34,7 +34,6 @@
 
 #include <Imagepp/all/h/HCDCodecLRDRLE.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 
@@ -134,8 +133,7 @@ HRFLRDCreator::HRFLRDCreator()
 
 WString HRFLRDCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_LRD); // LRD File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_LRD()); // LRD File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -197,17 +195,16 @@ bool HRFLRDCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the LRD File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset),
-                                      HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
         // Check if the file is a valid CRL
         pFile->SeekToBegin();
 
         char MagicString[5] = {0};
 
-        if (pFile->Read((void*)&MagicString, 5) == 5)
+        if (pFile->Read(&MagicString, 5) == 5)
             bResult = !strncmp(MagicString, ".vec", 4);
         }
     SisterFileLock.ReleaseKey();
@@ -384,9 +381,7 @@ bool HRFLRDFile::Open()
     HPRECONDITION(!m_pLRDFile);
 
     // Be sure the Intergraph raster file is NOT already open.
-    m_pLRDFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pLRDFile, GetURL()->GetURL());
+    m_pLRDFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     m_IsOpen = true;
 
@@ -488,7 +483,7 @@ void HRFLRDFile::SaveLRDFile(bool pi_CloseFile)
                 unsigned short* pPaddingBuffer = new unsigned short[BufferSize / 2];
                 memset(pPaddingBuffer, 0, BufferSize / 2);
 
-                m_pLRDFile->Write((void*)pPaddingBuffer, BufferSize);
+                m_pLRDFile->Write(pPaddingBuffer, BufferSize);
                 HASSERT(!(m_pLRDFile->GetSize() % 512));
                 }
             else
@@ -514,7 +509,7 @@ void HRFLRDFile::SaveLRDFile(bool pi_CloseFile)
             if (WriteHeader)
                 {
                 m_pLRDFile->SeekToBegin();
-                m_pLRDFile->Write((void*)m_pLRDHeader, sizeof(LRDHeaderBlock)); // HRF_LRD_BLOCK_SIZE
+                m_pLRDFile->Write(m_pLRDHeader, sizeof(LRDHeaderBlock)); // HRF_LRD_BLOCK_SIZE
                 }
 
             m_pLRDFile->Flush();
@@ -548,9 +543,7 @@ bool HRFLRDFile::Create()
     HPRECONDITION(!m_IsOpen);
     HPRECONDITION(!m_pLRDFile);
 
-    m_pLRDFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pLRDFile, GetURL()->GetURL());
+    m_pLRDFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     m_IsOpen = true;
 
@@ -671,7 +664,7 @@ bool HRFLRDFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
         m_pLRDHeader->Matrix[15]  = 1.0;
 
         // Write freshly created header physically into the file...
-        m_pLRDFile->Write((void*)m_pLRDHeader, sizeof(LRDHeaderBlock)); // HRF_LRD_BLOCK_SIZE
+        m_pLRDFile->Write(m_pLRDHeader, sizeof(LRDHeaderBlock)); // HRF_LRD_BLOCK_SIZE
 
         // Unlock the sister file
         SisterFileLock.ReleaseKey();
@@ -729,7 +722,7 @@ void HRFLRDFile::InitOpenedFile()
         m_pLRDFile->SeekToBegin();
 
         // Read and fill the Type1BlockHeader
-        m_pLRDFile->Read((void*)m_pLRDHeader, sizeof(LRDHeaderBlock) ); // HRF_LRD_BLOCK_SIZE);
+        m_pLRDFile->Read(m_pLRDHeader, sizeof(LRDHeaderBlock) ); // HRF_LRD_BLOCK_SIZE);
         m_HasHeaderFilled = true;
 
         // Unlock the sister file.
@@ -743,7 +736,7 @@ void HRFLRDFile::InitOpenedFile()
         else if (m_pLRDHeader->VecLevel == 0x01000000)
             m_IsBigEndian = true;
         else
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL()); // InvalidFile or corrupted file, or..
+            throw HFCCorruptedFileException(GetURL()->GetURL()); // InvalidFile or corrupted file, or..
 
         if (m_IsBigEndian)
             {
@@ -1072,15 +1065,13 @@ void HRFLRDFile::WriteTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rpTransfo
 
 void HRFLRDFile::AsciiDate (char adate[])
     {
-    // Set time zone from TZ environment variable. If TZ is not set,
-    // the operating system is queried to obtain the default value
-    //  for the variable.
-    _tzset();
-
     time_t t;
     char* s;
 
-    t=time(0l);
+    uint64_t tt = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+    tt = (uint64_t)(tt / 1000.0);   // Convert in second
+
+    t = (time_t)tt;
     s=ctime(&t);
 
     adate[0]=s[8];
@@ -1101,16 +1092,15 @@ void HRFLRDFile::AsciiDate (char adate[])
 
 void HRFLRDFile::AsciiTime (char atime[])
     {
-    // Set time zone from TZ environment variable. If TZ is not set,
-    // the operating system is queried to obtain the default value
-    //  for the variable.
-    _tzset();
-
     time_t t;
     char* s;
     long i;
 
-    t=time(0l);
+    uint64_t tt = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+    tt = (uint64_t)(tt / 1000.0);   // Convert in second
+
+    t = (time_t)tt;
+    t=time(0L);
     s=ctime(&t);
 
     for (i=0; i<=7; i++)
@@ -1157,7 +1147,6 @@ const HFCPtr<HCDCodecLRDRLE>& HRFLRDFile::GetLRDCodecPtr() const
 void HRFLRDFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                uint32_t pi_Page,
                                                bool   pi_CheckSpecificUnitSpec,
-                                               bool   pi_GeoModelDefaultUnit,
                                                bool   pi_InterpretUnitINTGR)
     {
     //The unit used by an Intergraph file format is always UoR.

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecHMRPackBits.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecHMRPackBits
@@ -13,8 +13,8 @@
 // Programming graphic files in C and C++, by John Levine, Wiley.
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HCDException.h>
 #include <Imagepp/all/h/HCDCodecHMRPackBits.h>
@@ -323,7 +323,7 @@ Byte* HCDCodecHMRPackBits::DecompressRun(Byte*    pi_pIn,
             IdenticalBytes = -IdenticalBytes + 1;
 
             if(IdenticalBytes > (int32_t)BytesCount)
-                throw HCDException(HCD_CORRUPTED_PACKBITS_DATA_EXCEPTION);
+                throw HCDCorruptedPackbitsDataException();
 
             BytesCount -= IdenticalBytes;
 
@@ -335,7 +335,7 @@ Byte* HCDCodecHMRPackBits::DecompressRun(Byte*    pi_pIn,
             ++IdenticalBytes;
 
             if(IdenticalBytes > (int32_t)BytesCount)
-                throw HCDException(HCD_CORRUPTED_PACKBITS_DATA_EXCEPTION);
+                throw HCDCorruptedPackbitsDataException();
 
             memcpy(pi_pOut, pi_pIn, IdenticalBytes);
 

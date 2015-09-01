@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPTypeAdaptFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPTypeAdaptFilter
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPTypeAdaptFilter.h>
 
@@ -149,7 +149,7 @@ void HRPTypeAdaptFilter::Convert( HRPPixelBuffer* pi_pInputBuffer,
 
     // iterate through each filter in the list
     for(ListFilters::iterator Itr = m_List.begin(); Itr != m_List.end(); Itr++)
-        if((*(*Itr)->GetFilterPixelType()) == (*GetInputPixelType()))
+        if((*(*Itr)->GetFilterPixelType()).HasSamePixelInterpretation((*GetInputPixelType())))
             {
             pFilter = (*Itr);
             break;
@@ -255,7 +255,7 @@ const HRPTypedFilter* HRPTypeAdaptFilter::GetPreferredFilterFor(const HFCPtr<HRP
 
     // iterate through each filter in the list
     for(ListFilters::const_iterator Itr(m_List.begin()); Itr != m_List.end(); Itr++)
-        if((*(*Itr)->GetFilterPixelType()) == (*pi_rpInputPixelType))
+        if((*(*Itr)->GetFilterPixelType()).HasSamePixelInterpretation(*pi_rpInputPixelType))
             {
             pFilter = (*Itr);
             break;

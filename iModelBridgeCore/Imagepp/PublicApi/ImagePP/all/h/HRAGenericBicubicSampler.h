@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAGenericBicubicSampler.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -13,19 +13,17 @@
 #include "HCDPacket.h"
 #include "HRPPixelConverter.h"
 
-class HGSGraphicToolAttributes;
-class HGSSurfaceImplementation;
+BEGIN_IMAGEPP_NAMESPACE
 
 template <class T>
 class HRAGenericBicubicSampler : public HRAGenericSampler
     {
-    HDECLARE_CLASS_ID(1772, HRAGenericSampler)
+    HDECLARE_CLASS_ID(HRAGenericId_BicubicSampler, HRAGenericSampler)
 
 public:
 
     // Primary methods
-    HRAGenericBicubicSampler(const HGSGraphicToolAttributes*     pi_pAttributes,
-                             const HGSSurfaceImplementation*     pi_pSurfaceImplementation,
+    HRAGenericBicubicSampler(HGSMemorySurfaceDescriptor const&   pi_rMemorySurface,
                              const HGF2DRectangle&               pi_rSampleDimension,
                              double                              pi_DeltaX,
                              double                              pi_DeltaY);
@@ -55,7 +53,7 @@ private:
     T m_ChannelMaxValue;
 
     // Hold one pixel, used in GetPixel()
-    mutable HArrayAutoPtr<T> m_pTempData;
+    mutable Byte m_pTempData[HRPPixelType::MAX_PIXEL_BYTES];
 
     HFCPtr<HCDPacket>        m_pPacket;
 
@@ -132,5 +130,7 @@ private:
     HRAGenericBicubicSampler& operator=(const HRAGenericBicubicSampler& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HRAGenericBicubicSampler.hpp"
+
 

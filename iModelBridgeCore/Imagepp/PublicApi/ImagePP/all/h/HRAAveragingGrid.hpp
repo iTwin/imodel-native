@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAAveragingGrid.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 #define HRAAVGGRID_MINPIXELOVERLAP      0.2
 #define HRAAVGGRID_MINPIXELOVERLAPX2    0.4
 
@@ -18,24 +18,24 @@
 //-----------------------------------------------------------------------------
 inline void HRAAveragingGrid::ComputeResults()
     {
-    m_ResultXMin = (uint32_t)(max(m_XMin, 0.0) + HRAAVGGRID_MINPIXELOVERLAP);
-    m_ResultYMin = (uint32_t)(max(m_YMin, 0.0) + HRAAVGGRID_MINPIXELOVERLAP);
+    m_ResultXMin = (uint32_t)(MAX(m_XMin, 0.0) + HRAAVGGRID_MINPIXELOVERLAP);
+    m_ResultYMin = (uint32_t)(MAX(m_YMin, 0.0) + HRAAVGGRID_MINPIXELOVERLAP);
 
-    m_ResultXMax = min((uint32_t)max(m_XMax - HRAAVGGRID_MINPIXELOVERLAP, 0.0), m_XLimit);
-    m_ResultYMax = min((uint32_t)max(m_YMax - HRAAVGGRID_MINPIXELOVERLAP, 0.0), m_YLimit);
+    m_ResultXMax = MIN((uint32_t)MAX(m_XMax - HRAAVGGRID_MINPIXELOVERLAP, 0.0), m_XLimit);
+    m_ResultYMax = MIN((uint32_t)MAX(m_YMax - HRAAVGGRID_MINPIXELOVERLAP, 0.0), m_YLimit);
 
     uint32_t Temp;
     if (m_ResultXMin > m_ResultXMax)
         {
         Temp = m_ResultXMin;
         m_ResultXMin = m_ResultXMax;
-        m_ResultXMax = min(Temp, m_XLimit);
+        m_ResultXMax = MIN(Temp, m_XLimit);
         }
     if (m_ResultYMin > m_ResultYMax)
         {
         Temp = m_ResultYMin;
         m_ResultYMin = m_ResultYMax;
-        m_ResultYMax = min(Temp, m_YLimit);
+        m_ResultYMax = MIN(Temp, m_YLimit);
         }
     }
 
@@ -54,10 +54,10 @@ inline HRAAveragingGrid::HRAAveragingGrid (double pi_XMin,
     HPRECONDITION(HDOUBLE_SMALLER_OR_EQUAL_EPSILON(pi_XMin, pi_XMax) || HDOUBLE_EQUAL_EPSILON(pi_XMin, pi_XMax));
     HPRECONDITION(HDOUBLE_SMALLER_OR_EQUAL_EPSILON(pi_YMin, pi_YMax) || HDOUBLE_EQUAL_EPSILON(pi_YMin, pi_YMax));
 
-    m_XMin      = min(pi_XMin, pi_XMax);
-    m_YMin      = min(pi_YMin, pi_YMax);
-    m_XMax      = max(pi_XMax, pi_XMin);
-    m_YMax      = max(pi_YMax, pi_YMin);
+    m_XMin      = MIN(pi_XMin, pi_XMax);
+    m_YMin      = MIN(pi_YMin, pi_YMax);
+    m_XMax      = MAX(pi_XMax, pi_XMin);
+    m_YMax      = MAX(pi_YMax, pi_YMin);
 
     m_XLimit = pi_XLimit;
     m_YLimit = pi_YLimit;
@@ -136,10 +136,10 @@ inline void HRAAveragingGrid::SetExtent(double pi_XMin,
     HPRECONDITION(HDOUBLE_SMALLER_OR_EQUAL_EPSILON(pi_XMin, pi_XMax) || HDOUBLE_EQUAL_EPSILON(pi_XMin, pi_XMax));
     HPRECONDITION(HDOUBLE_SMALLER_OR_EQUAL_EPSILON(pi_YMin, pi_YMax) || HDOUBLE_EQUAL_EPSILON(pi_YMin, pi_YMax));
 
-    m_XMin = min(pi_XMin, pi_XMax);
-    m_YMin = min(pi_YMin, pi_YMax);
-    m_XMax = max(pi_XMax, pi_XMin);
-    m_YMax = max(pi_YMax, pi_YMin);
+    m_XMin = MIN(pi_XMin, pi_XMax);
+    m_YMin = MIN(pi_YMin, pi_YMax);
+    m_XMax = MAX(pi_XMax, pi_XMin);
+    m_YMax = MAX(pi_YMax, pi_YMin);
 
     ComputeResults();
     }
@@ -155,14 +155,14 @@ inline void HRAAveragingGrid::TranslateX(double pi_Translation)
     m_XMax += pi_Translation;
 
     // As ComputeResults(), but only on X
-    m_ResultXMin = (uint32_t)(max(m_XMin, 0.0) + HRAAVGGRID_MINPIXELOVERLAP);
-    m_ResultXMax = min((uint32_t)max(m_XMax - HRAAVGGRID_MINPIXELOVERLAP, 0.0), m_XLimit);
+    m_ResultXMin = (uint32_t)(MAX(m_XMin, 0.0) + HRAAVGGRID_MINPIXELOVERLAP);
+    m_ResultXMax = MIN((uint32_t)MAX(m_XMax - HRAAVGGRID_MINPIXELOVERLAP, 0.0), m_XLimit);
 
     if (m_ResultXMin > m_ResultXMax)
         {
         uint32_t Temp = m_ResultXMin;
         m_ResultXMin = m_ResultXMax;
-        m_ResultXMax = min(Temp, m_XLimit);
+        m_ResultXMax = MIN(Temp, m_XLimit);
         }
     }
 
@@ -177,14 +177,14 @@ inline void HRAAveragingGrid::TranslateY(double pi_Translation)
     m_YMax += pi_Translation;
 
     // As ComputeResults(), but only on X
-    m_ResultYMin = (uint32_t)(max(m_YMin, 0.0) + HRAAVGGRID_MINPIXELOVERLAP);
-    m_ResultYMax = min((uint32_t)max(m_YMax - HRAAVGGRID_MINPIXELOVERLAP, 0.0), m_YLimit);
+    m_ResultYMin = (uint32_t)(MAX(m_YMin, 0.0) + HRAAVGGRID_MINPIXELOVERLAP);
+    m_ResultYMax = MIN((uint32_t)MAX(m_YMax - HRAAVGGRID_MINPIXELOVERLAP, 0.0), m_YLimit);
 
     if (m_ResultYMin > m_ResultYMax)
         {
         uint32_t Temp = m_ResultYMin;
         m_ResultYMin = m_ResultYMax;
-        m_ResultYMax = min(Temp, m_YLimit);
+        m_ResultYMax = MIN(Temp, m_YLimit);
         }
     }
 
@@ -315,3 +315,4 @@ inline uint32_t HRAAveragingGrid::GetHeight() const
     return m_ResultYMax - m_ResultYMin + 1;
     }
 
+END_IMAGEPP_NAMESPACE

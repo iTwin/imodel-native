@@ -2,22 +2,21 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFErMapperSupportedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFErMapperFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
 
+#include <Imagepp/all/h/HRFErMapperSupportedFile.h>
 #if defined(IPP_HAVE_ERMAPPER_SUPPORT) 
 
 #include <ImagePP/all/h/ImageppLib.h>
 
 #include <Imagepp/all/h/HCDCodecECW.h>
 #include <Imagepp/all/h/HCDCodecJPEG2000.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HFCURLECWP.h>
@@ -28,37 +27,32 @@
 #include <Imagepp/all/h/HGF2DSimilitude.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
-#include <Imagepp/all/h/HRFErMapperSupportedFile.h>
 #include <Imagepp/all/h/HRFErMapperSupportedFileEditor.h>
 #include <Imagepp/all/h/HRFException.h>
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 #include <Imagepp/all/h/HRFRasterFileFactory.h>
 #include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFTags.h>
 #include <Imagepp/all/h/HRPChannelOrgRGB.h>
 #include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HTIFFTag.h>
 #include <Imagepp/all/h/HVETileIDIterator.h>
+#include <Imagepp/all/h/HFCStat.h>
+#include <Imagepp/all/h/HRFURLInternetImagingHTTP.h>
 
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
-//#define _SECURE_SCL 0
 
 // Includes from the ERMapper SDK
-#include <ErMapperEcw/NCSECWClient.h>
-#include <ErMapperEcw/NCSTypes.h>
-
-#include <ErMapperEcw/NCSECWCompressClient.h>
-#include <ErMapperEcw/NCSGDTLocation.h>
-//#undef _SECURE_SCL
+#include <ErdasEcwJpeg2000/NCSECWClient.h>
+#include <ErdasEcwJpeg2000/NCSTypes.h>
+#include <ErdasEcwJpeg2000/NCSECWCompressClient.h>
 
 
 
 #define round(a) ((long)((a)<0.0?(a)-0.5:(a)+0.5))
 
-HRFErMapperSupportedFile::BandList HRFErMapperSupportedFile::s_SpecifiedBands;
 
 //Ensure that the .objs related to these object are included in the final
 //executable, otherwise, the global variables whose constructors
@@ -140,7 +134,12 @@ HRFEcwCapabilities::HRFEcwCapabilities()
     Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DIdentity::CLASS_ID));
     Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DTranslation::CLASS_ID));
     Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DStretch::CLASS_ID));
-
+#if 0 //DMx ECW SDK 5.0 support Geotiff Tag
+    Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DSimilitude::CLASS_ID));
+    Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DAffine::CLASS_ID));
+    Add(new HRFTransfoModelCapability(HFC_READ_CREATE, HGF2DProjective::CLASS_ID));
+#endif
+    
     // Geocoding capability
     HFCPtr<HRFGeocodingCapability> pGeocodingCapability(new HRFGeocodingCapability(HFC_READ_CREATE));
 
@@ -151,6 +150,254 @@ HRFEcwCapabilities::HRFEcwCapabilities()
 
     Add((HFCPtr<HRFCapability>&)pGeocodingCapability);
     }
+
+///-----------------------------------------------------------------------------
+// HRFEcw Stat Implementation Declaration
+//-----------------------------------------------------------------------------
+
+class HRFEcwStatImpl : public HFCStatImpl
+    {
+public:
+    //--------------------------------------
+    // Construction / Destruction
+    //--------------------------------------
+
+    HRFEcwStatImpl();
+    virtual             ~HRFEcwStatImpl();
+
+
+    //--------------------------------------
+    // Methods
+    //--------------------------------------
+
+    // Indicates if an impl can handle an URL
+    virtual bool       CanHandle(const HFCURL& pi_rURL) const override;
+
+    // Resource time
+    virtual time_t      GetCreationTime     (const HFCURL& pi_rURL) const override;
+    virtual time_t      GetLastAccessTime   (const HFCURL& pi_rURL) const override;
+    virtual time_t      GetModificationTime (const HFCURL& pi_rURL) const override;
+    virtual void        SetModificationTime (const HFCURL& pi_rURL, time_t pi_NewTime) const override;
+
+    // Resource size
+    virtual uint64_t   GetSize(const HFCURL& pi_rURL) const override;
+
+    virtual HFCStat::AccessStatus
+    DetectAccess(const HFCURL& pi_rURL) const override;
+
+    // Resource access mode
+    virtual HFCAccessMode
+    GetAccessMode(const HFCURL& pi_rURL) const override;
+    };
+
+//-----------------------------------------------------------------------------
+// Instantiate the file implementation
+//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// HRFEcwStat 
+//------------------------------------------------------------------------------
+class HRFEcwStat
+    {
+    public:
+        static void Register();
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void HRFEcwStat::Register()
+    {
+    static HRFEcwStatImpl s_impl;
+    }
+
+
+//-----------------------------------------------------------------------------
+// Public
+//
+//-----------------------------------------------------------------------------
+HRFEcwStatImpl::HRFEcwStatImpl()
+    {
+    RegisterImpl(this);
+    }
+
+
+//-----------------------------------------------------------------------------
+// Public
+//
+//-----------------------------------------------------------------------------
+HRFEcwStatImpl::~HRFEcwStatImpl()
+    {
+    UnregisterImpl(this);
+    }
+
+
+//-----------------------------------------------------------------------------
+// Public
+// Indicates if an impl can handle an URL
+//-----------------------------------------------------------------------------
+bool HRFEcwStatImpl::CanHandle(const HFCURL& pi_rURL) const
+    {
+    return (((pi_rURL.GetSchemeType() == HFCURLECWP::s_SchemeName()) ||
+             (pi_rURL.GetSchemeType() == HFCURLECWPS::s_SchemeName())) &&
+            (!HRFURLInternetImagingHTTP::IsURLInternetImaging(&pi_rURL))) ;
+    }
+
+
+//-----------------------------------------------------------------------------
+// Public
+// Resource modification time
+//-----------------------------------------------------------------------------
+time_t HRFEcwStatImpl::GetCreationTime(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+    time_t Result = 0;
+
+    /* NEEDS_WORK
+        It looks like there is no easy/safe way to retrieve file information without downloading the file.
+
+    try
+    {
+        // Copy the URL
+        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
+        HASSERT(pURL != 0);
+
+        // Create an web file but use the cache copy only. i.e. do not download the file
+        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetCreationTime();
+    }
+    catch(...)
+    {
+        HASSERT(false);
+    }
+    */
+
+    return Result;
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// Resource modification time
+//-----------------------------------------------------------------------------
+time_t HRFEcwStatImpl::GetLastAccessTime(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+    time_t Result = 0;
+
+    /* NEEDS_WORK
+        It seems like there is no easy/safe way to retrieve file information without downloading the file.
+
+    try
+    {
+        // Copy the URL
+        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
+        HASSERT(pURL != 0);
+
+        // Create an web file but use the cache copy only. i.e. do not download the file
+        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetLastAccessTime();
+    }
+    catch(...)
+    {
+        HASSERT(false);
+    }
+    */
+
+    return Result;
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// Resource modification time
+//-----------------------------------------------------------------------------
+time_t HRFEcwStatImpl::GetModificationTime(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+    time_t Result = 0;
+
+    /* NEEDS_WORK
+        It looks like there is no easy/safe way to retrieve file information without downloading the file.
+
+    try
+    {
+        // Copy the URL
+        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
+        HASSERT(pURL != 0);
+
+        // Create an web file but use the cache copy only. i.e. do not download the file
+        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetModificationTime();
+    }
+    catch(...)
+    {
+        HASSERT(false);
+    }
+    */
+
+    return Result;
+    }
+
+
+//-----------------------------------------------------------------------------
+// Public
+//
+//-----------------------------------------------------------------------------
+void HRFEcwStatImpl::SetModificationTime(const HFCURL& pi_rURL, time_t pi_NewTime) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+
+    // Cannot so do nothing
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// Resource size
+//-----------------------------------------------------------------------------
+uint64_t HRFEcwStatImpl::GetSize(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+    uint64_t Result = 0;
+
+    /* NEEDS_WORK
+        It looks like there is no easy/safe way to retrieve file information without downloading the file.
+
+    try
+    {
+        // Copy the URL
+        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
+        HASSERT(pURL != 0);
+
+        // Create an web file but use the cache copy only. i.e. do not download the file
+        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetSize();
+    }
+    catch(...)
+    {
+        HASSERT(false);
+    }
+    */
+
+    return Result;
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// Detect existence
+//-----------------------------------------------------------------------------
+HFCStat::AccessStatus HRFEcwStatImpl::DetectAccess(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+
+    return HFCStat::AccessGranted;
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// Resource access mode
+//-----------------------------------------------------------------------------
+HFCAccessMode HRFEcwStatImpl::GetAccessMode(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+
+    return (HFC_READ_ONLY);
+    }
+
+
 
 HFC_IMPLEMENT_SINGLETON(HRFEcwCreator)
 
@@ -168,6 +415,7 @@ HRFEcwCreator::HRFEcwCreator()
     m_pLabel = 0;
     m_pExtensions = 0;
     m_pSupportedPixelTypeList = 0;
+    HRFEcwStat::Register();
     }
 
 //-----------------------------------------------------------------------------
@@ -177,8 +425,7 @@ HRFEcwCreator::HRFEcwCreator()
 //-----------------------------------------------------------------------------
 WString HRFEcwCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_GRA_HRF_ECW_FILE_FORMAT);
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_ECW());
     }
 
 //-----------------------------------------------------------------------------
@@ -277,13 +524,9 @@ bool HRFEcwCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             UrlOffset = 7; //Ignore the file:// placed at the front of the url
             (const_cast<HRFEcwCreator*>(this))->SharingControlCreate(pi_rpURL);
             pSisterFileLock = new HFCLockMonitor(GetLockManager());
-            }
+            } 
 
-        size_t  destinationBuffSize = WString(pi_rpURL->GetURL().substr(UrlOffset)).GetMaxLocaleCharBytes();
-        char*   multiByteDestination= (char*)_alloca (destinationBuffSize);
-        BeStringUtilities::WCharToCurrentLocaleChar(multiByteDestination,pi_rpURL->GetURL().substr(UrlOffset).c_str(),destinationBuffSize);
-
-        NCSError error = NCScbmOpenFileView(multiByteDestination, &pView, 0);
+        NCSError error = NCScbmOpenFileViewW(pi_rpURL->GetURL().substr(UrlOffset).c_str(), &pView, 0);
 
         if (error == NCS_SUCCESS)
             {
@@ -459,8 +702,7 @@ HRFJpeg2000Creator::HRFJpeg2000Creator()
 //-----------------------------------------------------------------------------
 WString HRFJpeg2000Creator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_GRA_HRF_JPEG2000_FILE_FORMAT);
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_Jpeg2000());
     }
 
 //-----------------------------------------------------------------------------
@@ -510,7 +752,8 @@ HFCPtr<HRFRasterFile> HRFJpeg2000Creator::Create(const HFCPtr<HFCURL>& pi_rpURL,
 bool HRFJpeg2000Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                        uint64_t             pi_Offset) const
     {
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
 
     bool IsKindOf = false;
 
@@ -522,10 +765,7 @@ bool HRFJpeg2000Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     HRFErMapperSupportedFile::InitErMapperLibrary();
 
-    AString filenameA;
-    BeStringUtilities::WCharToCurrentLocaleChar (filenameA, static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName().c_str());
-
-    NCSError error = NCScbmOpenFileView(filenameA.c_str(), &pView, 0);
+    NCSError error = NCScbmOpenFileViewW(static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName().c_str(), &pView, 0);
     if (error == NCS_SUCCESS)
         {
         //Check if it is really an ECW since ErMapper can also open Jpeg2000 files.
@@ -677,7 +917,6 @@ bool HRFErMapperSupportedFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
 void HRFErMapperSupportedFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                       uint32_t pi_Page,
                                                       bool   pi_CheckSpecificUnitSpec,
-                                                      bool   pi_GeoModelDefaultUnit,
                                                       bool   pi_InterpretUnitINTGR)
     {
     HPRECONDITION(CountPages() == 1);
@@ -687,20 +926,17 @@ void HRFErMapperSupportedFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
     bool                         defaultUnitWasFound = false;
     HFCPtr<HRFPageDescriptor>     pPageDescriptor     = GetPageDescriptor(0);
 
-    IRasterBaseGcsPtr pBaseGCS = pPageDescriptor->GetGeocoding();
+    IRasterBaseGcsCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
     if ((pBaseGCS != NULL) && (pBaseGCS->IsValid()) && (pBaseGCS->GetBaseGCS() != NULL))
         {
-        bool latitudeLongitudeGCS = (!pBaseGCS->IsProjected());
+        HFCPtr<HGF2DTransfoModel> pTransfoModel;
+        BuildTransfoModelMatrix (pTransfoModel);
 
-        BuildTransfoMatrix (latitudeLongitudeGCS, pTransfoModel);
-
-        pTransfoModel = HCPGeoReferenceProvider::TranslateToMeter(pTransfoModel, 
-                                                                  pi_RatioToMeter, 
-                                                                  pi_GeoModelDefaultUnit,
-                                                                  pi_CheckSpecificUnitSpec,
-                                                                  &defaultUnitWasFound.
-                                                                  baseGCS);
+        pTransfoModel = pPageDescriptor->GetRasterFileGeocoding().TranslateToMeter(pTransfoModel,
+                                                                                   pi_RatioToMeter, 
+                                                                                   pi_CheckSpecificUnitSpec,
+                                                                                   &defaultUnitWasFound);
 
 
         pPageDescriptor->SetTransfoModel(*pTransfoModel, true);
@@ -746,11 +982,7 @@ bool HRFErMapperSupportedFile::Open()
             UrlOffset = 7; //Ignore the file:// placed at the front of the url
             }
 
-        size_t  destinationBuffSize = WString(m_pURL->GetURL().substr(UrlOffset)).GetMaxLocaleCharBytes();
-        char*   multiByteDestination= (char*)_alloca (destinationBuffSize);
-        BeStringUtilities::WCharToCurrentLocaleChar(multiByteDestination,m_pURL->GetURL().substr(UrlOffset).c_str(),destinationBuffSize);
-
-        NCSError error = NCScbmOpenFileView(multiByteDestination, (NCSFileView**)&m_pNCSFileView, 0);
+        NCSError error = NCScbmOpenFileViewW(m_pURL->GetURL().substr(UrlOffset).c_str(), (NCSFileView**)&m_pNCSFileView, 0);
 
         if (error != 0)
             {
@@ -764,7 +996,7 @@ bool HRFErMapperSupportedFile::Open()
         if (error == 0)
             {
             // Prepare bands (optimization)
-            m_pBandList = new UINT32[((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->nBands];
+            m_pBandList = new uint32_t[((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->nBands];
             for (unsigned short Band = 0; Band < ((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->nBands; Band++)
                 m_pBandList[Band] = Band;
 
@@ -836,10 +1068,10 @@ void HRFErMapperSupportedFile::SetLookAhead(uint32_t        pi_Page,
                 HASSERT(PosX <= ULONG_MAX);
                 HASSERT(PosY <= ULONG_MAX);
 
-                MinX = min(MinX, (uint32_t)PosX);
-                MinY = min(MinY, (uint32_t)PosY);
-                MaxX = max(MaxX, (uint32_t)PosX + BlockWidth);
-                MaxY = max(MaxY, (uint32_t)PosY + BlockHeight);
+                MinX = MIN(MinX, (uint32_t)PosX);
+                MinY = MIN(MinY, (uint32_t)PosY);
+                MaxX = MAX(MaxX, (uint32_t)PosX + BlockWidth);
+                MaxY = MAX(MaxY, (uint32_t)PosY + BlockHeight);
 
                 BlockIndex = TileIterator.GetNextTileIndex();
                 }
@@ -864,8 +1096,7 @@ void HRFErMapperSupportedFile::SetLookAhead(uint32_t        pi_Page,
             }
         else
             {
-            if (HRFErMapperSupportedFile::s_SpecifiedBands.empty() ||
-                HRFErMapperSupportedFile::s_SpecifiedBands.size() == 3)
+            if (GetSpecifiedBands().empty() || GetSpecifiedBands().size() == 3)
                 {
                 NbBytePerPixel = 3;
                 }
@@ -992,7 +1223,7 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
         ResHeight= (unsigned long)ceil(ResHeight / 2.0);
         ResCount++;
         }
-    ResCount = __min(ResCount, 254);  // don't use 255, 255 means Unlimited resolution.
+    ResCount = MIN(ResCount, 254);  // don't use 255, 255 means Unlimited resolution.
 
     HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
     HFCPtr<HRFResolutionDescriptor>                   pResolutionDesc;
@@ -1011,8 +1242,7 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
         }
     else
         {
-        if (HRFErMapperSupportedFile::s_SpecifiedBands.empty() ||
-            HRFErMapperSupportedFile::s_SpecifiedBands.size() == 3)
+        if (GetSpecifiedBands().empty() || GetSpecifiedBands().size() == 3)
             {
             pPixelType = new HRPPixelTypeV24R8G8B8();
             }
@@ -1070,24 +1300,17 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
         }
 
 
-    IRasterBaseGcsPtr pBaseGCS = GetGeoReference();
-
-    uint32_t ModelType = 0; //Undefined by default
-
-    if ((pBaseGCS != NULL) && (pBaseGCS->IsValid()) && (pBaseGCS->GetBaseGCS() != NULL))
-        GTModelType = (pBaseGCS->IsProjected() ? 1 : 0);
+    double factorModelToMeter(1.0);
+    RasterFileGeocodingPtr pGeocoding = ExtractGeocodingInformation(factorModelToMeter);
 
     HFCPtr<HGF2DTransfoModel> pTransfoModel;
-    bool                      defaultUnitWasFound = FALSE;
+    bool                      defaultUnitWasFound = false;
 
-    BuildTransfoModelMatrix((unsigned short)ModelType, pTransfoModel);
-            
-    pTransfoModel = HRFGeoCoordinateProvider::TranslateToMeter(pTransfoModel,
-                                                   1.0,
-                                                   true,
-                                                   false,
-                                                   &defaultUnitWasFound,
-                                                   pBaseGCS);
+    BuildTransfoModelMatrix(pTransfoModel);
+    pTransfoModel = pGeocoding->TranslateToMeter(pTransfoModel,
+                                                 factorModelToMeter,
+                                                 false,
+                                                 &defaultUnitWasFound);
 
     SetUnitFoundInFile(defaultUnitWasFound);
 
@@ -1104,8 +1327,8 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
                                    0,                           // Tag
                                    0);                          // Duration
 
-    if (pBaseGCS != NULL)
-        pPage->SetGeoreference();
+    // Set geocoding
+    pPage->InitFromRasterFileGeocoding(*pGeocoding);
 
     m_ListOfPageDescriptor.push_back(pPage);
     }
@@ -1115,26 +1338,33 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
 // Private
 // Get a list of relevant tags found embedded in the file.
 //-----------------------------------------------------------------------------
-IRasterBaseGcsPtr HRFErMapperSupportedFile::GetGeoReference()
+RasterFileGeocodingPtr HRFErMapperSupportedFile::ExtractGeocodingInformation(double & factorModelToMeter) const
     {
-    HASSERT(po_rpGeoTiffKeys == 0);
-
-
-
-
     WString osUnits;
 
     if (((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->eCellSizeUnits == ECW_CELL_UNITS_FEET )
         {
-        if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsErMapperUseFeetInsteadofSurveyFeet())
+        if (ImageppLib::GetHost().GetImageppLibAdmin()._IsErMapperUseFeetInsteadofSurveyFeet())
+            {
+            factorModelToMeter = 0.3048000000;//  meters by international feet.
             osUnits = L"IFEET";
+            }
         else
+            {
+            factorModelToMeter = 12000.0 / 39370.0; //0.30480060960121919 meters by survey feet.
             osUnits = L"FEET";
+            }
         }
-    else if (((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->eCellSizeUnits ==  ECW_CELL_UNITS_METERS)
+    else if (((NCSFileViewFileInfoEx*) m_pNCSFileViewFileInfoEx)->eCellSizeUnits == ECW_CELL_UNITS_METERS)
+        {
+        factorModelToMeter=1.0;
         osUnits = L"METERS";
-    else if (((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->eCellSizeUnits ==  ECW_CELL_UNITS_DEGREES)
+        }
+    else if (((NCSFileViewFileInfoEx*) m_pNCSFileViewFileInfoEx)->eCellSizeUnits == ECW_CELL_UNITS_DEGREES)
+        {
+        factorModelToMeter = 1.0;
         osUnits = L"DEGREES";
+        }
 
     WString projection;
     WString datum;
@@ -1142,21 +1372,69 @@ IRasterBaseGcsPtr HRFErMapperSupportedFile::GetGeoReference()
     BeStringUtilities::CurrentLocaleCharToWChar(projection,((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->szProjection);
     BeStringUtilities::CurrentLocaleCharToWChar(datum,((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->szDatum);
 
-    IRasterBaseGcsPtr pBaseGCS = HRFGeoCoordinateProvider::CreateFromERMapperIDs(projection, datum, osUnits);
+    uint32_t EPSGCodeFomrERLibrary = GetEPSGFromProjectionAndDatum(projection, datum);
+    IRasterBaseGcsPtr  pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, projection,datum,osUnits);
 
-    return pBaseGCS;
+    return RasterFileGeocoding::Create(pBaseGCS.get());
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t HRFErMapperSupportedFile::GetEPSGFromProjectionAndDatum(WStringCR pi_rErmProjection, WStringCR pi_rErmDatum)
+    {
+    INT32 nEPSGCode = TIFFGeo_UserDefined;
+
+    // We try to obtain the EPSG code
+    size_t  destinationBuffSize = pi_rErmProjection.GetMaxLocaleCharBytes();
+    char*  szProjectionMBS= (char*)_alloca (destinationBuffSize);
+    BeStringUtilities::WCharToCurrentLocaleChar(szProjectionMBS,pi_rErmProjection.c_str(),destinationBuffSize);
+    destinationBuffSize = pi_rErmDatum.GetMaxLocaleCharBytes();
+    char*  szDatumMBS= (char*)_alloca (destinationBuffSize);
+    BeStringUtilities::WCharToCurrentLocaleChar(szDatumMBS,pi_rErmDatum.c_str(),destinationBuffSize);
+
+    if (NCS_SUCCESS != NCSGetEPSGCode(szProjectionMBS, szDatumMBS, &nEPSGCode))
+        {
+        if (NCS_SUCCESS != NCSGetEPSGCode(szDatumMBS, szProjectionMBS, &nEPSGCode))
+            {
+            nEPSGCode = TIFFGeo_UserDefined;
+            }
+        }
+    return (uint32_t)nEPSGCode;
+    }
+
 
 //-----------------------------------------------------------------------------
 // BuildTransfoModelMatrix
 // Protected
 // This method build the transformation matrix.
 //-----------------------------------------------------------------------------
-void HRFErMapperSupportedFile::BuildTransfoModelMatrix(unsigned short                pi_ModelType,
-                                                       HFCPtr<HGF2DTransfoModel>&     po_prTranfoModel)
+void HRFErMapperSupportedFile::BuildTransfoModelMatrix(HFCPtr<HGF2DTransfoModel>&     po_prTranfoModel)
     {
     HFCMatrix<3, 3> TransfoMatrix;
 
+#if 0       //DMx ECW SDK 5.0 support Geotiff Tag
+            // If we want to use Geotiff tag, we need to update the code below to support it.    
+    double         *pFileMatrix=nullptr;
+    int            NbPoints;
+    if (NCSGetGeotiffTag((NCSFileView *)GetFileView(), GTIFF_TRANSMATRIX, &NbPoints, &pFileMatrix) == NCS_SUCCESS &&
+        (NbPoints == 16))
+        {
+        TransfoMatrix[0][0] = pFileMatrix[0];
+        TransfoMatrix[0][1] = pFileMatrix[1];
+        TransfoMatrix[0][2] = pFileMatrix[3];
+        TransfoMatrix[1][0] = pFileMatrix[4];
+        TransfoMatrix[1][1] = pFileMatrix[5];
+        TransfoMatrix[1][2] = pFileMatrix[7];
+        TransfoMatrix[2][0] = pFileMatrix[12];
+        TransfoMatrix[2][1] = pFileMatrix[13];
+        if (!HDOUBLE_EQUAL_EPSILON(pFileMatrix[15], 0.0))
+            TransfoMatrix[2][2] = pFileMatrix[15];
+        else
+            TransfoMatrix[2][2] = 1.0;
+        }
+    else
+#endif
+    {
     switch(((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->eCellSizeUnits)
         {
         case ECW_CELL_UNITS_METERS:
@@ -1165,7 +1443,7 @@ void HRFErMapperSupportedFile::BuildTransfoModelMatrix(unsigned short           
         case ECW_CELL_UNITS_FEET:
             if (((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->fCellIncrementX == 0 ||
                 ((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->fCellIncrementY == 0)
-                throw(HRFException(HRF_TRANSFO_MODEL_NOT_SUPPORTED_EXCEPTION, m_pURL->GetURL().c_str()));
+                throw HRFTransfoModelNotSupportedException(m_pURL->GetURL().c_str());
 
             // The unit will be treated by the tag ProjLinearUnits
             TransfoMatrix[0][0] = ((NCSFileViewFileInfoEx*)m_pNCSFileViewFileInfoEx)->fCellIncrementX;
@@ -1201,6 +1479,7 @@ void HRFErMapperSupportedFile::BuildTransfoModelMatrix(unsigned short           
         {
         TransfoMatrix[1][1] =  -TransfoMatrix[1][1]; // y scale
         }
+    }
 
     po_prTranfoModel = new HGF2DProjective(TransfoMatrix);
 
@@ -1279,24 +1558,52 @@ void HRFErMapperSupportedFile::InitErMapperLibrary()
     if (sIsLibraryInitialized == false)
         {
         WString pProperty;
-        if (BSISUCCESS != ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetECWDataPath(pProperty))
+        if (BSISUCCESS != ImageppLib::GetHost().GetImageppLibAdmin()._GetECWDataPath(pProperty))
             return;
 
         NCSecwInit();
 
-        size_t  destinationBuffSize = pProperty->GetMaxLocaleCharBytes();
+        size_t  destinationBuffSize = pProperty.GetMaxLocaleCharBytes();
         char*   multiByteDestination= (char*)_alloca (destinationBuffSize);
-        BeStringUtilities::WCharToCurrentLocaleChar(multiByteDestination,pProperty->c_str(),destinationBuffSize);
+        BeStringUtilities::WCharToCurrentLocaleChar(multiByteDestination,pProperty.c_str(),destinationBuffSize);
 
         NCSSetGDTPath(multiByteDestination);
-        CNCSGDTLocation::SetGuessPath(true);
+//DMx        CNCSGDTLocation::SetGuessPath(true);
 
-        NCSecwSetConfig(NCSCFG_CACHE_MAXMEM, 8*1024*1024);    // tr #243826, limit the cache to 8 meg
+//        NCSecwSetConfig(NCSCFG_CACHE_MAXMEM_64, 128*1024*1024);    // tr #243826, limit the cache to 8 meg in 2008
+                                                                   // Now we need a minimum of 128Meg in 64Bit (2013)
 
         sIsLibraryInitialized = true;
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+const HRFErMapperSupportedFile::BandList& HRFErMapperSupportedFile::GetSpecifiedBands()
+    {
+    static BandList s_SpecifiedBands;
+    static bool bInit=false;
+
+    if (!bInit)
+        {
+        bInit=true;
+        s_SpecifiedBands.clear();
+        ChannelToBandIndexMapping specifiedBand;
+        bool IsBandSpecDefined = ImageppLib::GetHost().GetImageppLibAdmin()._GetChannelToBandIndexMapping(specifiedBand);
+        if (IsBandSpecDefined)
+            {
+            //Init s_SpecifiedBands
+            //Note that ChannelToBandIndexMapping start at index=1 and s_SpecifiedBands at index=0
+            s_SpecifiedBands.push_back(specifiedBand.GetIndex(ChannelToBandIndexMapping::RED) - 1);
+            s_SpecifiedBands.push_back(specifiedBand.GetIndex(ChannelToBandIndexMapping::GREEN) - 1);
+            s_SpecifiedBands.push_back(specifiedBand.GetIndex(ChannelToBandIndexMapping::BLUE) - 1);
+            if (specifiedBand.IsAlphaChannelDefined())
+                s_SpecifiedBands.push_back(specifiedBand.GetIndex(ChannelToBandIndexMapping::ALPHA) - 1);
+            }
+        }
+    return s_SpecifiedBands;
+    }
 
 
 //-----------------------------------------------------------------------------
@@ -1315,8 +1622,8 @@ HRFEcwFile::HRFEcwFile(const HFCPtr<HFCURL>& pi_rURL,
     }
 
 HRFJpeg2000File::HRFJpeg2000File(const HFCPtr<HFCURL>& pi_rURL,
-                                        HFCAccessMode         pi_AccessMode,
-                                        uint64_t             pi_Offset)
+                                        HFCAccessMode  pi_AccessMode,
+                                        uint64_t       pi_Offset)
     : HRFErMapperSupportedFile(pi_rURL,
                                GetCapabilities(),
                                pi_AccessMode,
@@ -1326,16 +1633,17 @@ HRFJpeg2000File::HRFJpeg2000File(const HFCPtr<HFCURL>& pi_rURL,
     }
 
 HRFErMapperSupportedFile::HRFErMapperSupportedFile(const HFCPtr<HFCURL>&                    pi_rURL,
-                                                          const HFCPtr<HRFRasterFileCapabilities>& pi_prCapabilities,
-                                                          HFCAccessMode                            pi_AccessMode,
-                                                          uint64_t                                pi_Offset,
-                                                          bool                                    pi_IsJpeg2000)
+                                                   const HFCPtr<HRFRasterFileCapabilities>& pi_prCapabilities,
+                                                   HFCAccessMode                            pi_AccessMode,
+                                                   uint64_t                                pi_Offset,
+                                                   bool                                    pi_IsJpeg2000)
     : HRFRasterFile(pi_rURL, pi_AccessMode, pi_Offset)
     {
     m_pCapabilities = pi_prCapabilities;
     m_IsJpeg2000    = pi_IsJpeg2000;
     m_IsECWP        = (pi_rURL->IsCompatibleWith(HFCURLECWP::CLASS_ID) ||
                        pi_rURL->IsCompatibleWith(HFCURLECWPS::CLASS_ID));
+    m_ECWVersion    = 2;        // Only use at the creation for the moment - SDK previous of 5.0, like V8i
 
     // The ancestor store the access mode
     m_IsOpen                = false;
@@ -1348,16 +1656,14 @@ HRFErMapperSupportedFile::HRFErMapperSupportedFile(const HFCPtr<HFCURL>&        
 
     if (GetAccessMode().m_HasWriteAccess)
         {
-        throw HFCFileException(HFC_FILE_NOT_SUPPORTED_IN_WRITE_MODE,
-                               GetURL()->GetURL());
+        throw HFCFileNotSupportedInWriteModeException(GetURL()->GetURL());
         }
     else if (GetAccessMode().m_HasReadAccess)
         {
         // Create Page and Res Descriptors.
         if (Open() == false)
             {
-            throw HFCFileException(HFC_CANNOT_OPEN_FILE_EXCEPTION,
-                                   GetURL()->GetURL());
+            throw HFCCannotOpenFileException(GetURL()->GetURL());
             }
 
         CreateDescriptors();
@@ -1366,6 +1672,8 @@ HRFErMapperSupportedFile::HRFErMapperSupportedFile(const HFCPtr<HFCURL>&        
         {
         Create();
         }
+
+
     }
 
 //-----------------------------------------------------------------------------
@@ -1385,20 +1693,19 @@ const HGF2DWorldIdentificator HRFErMapperSupportedFile::GetWorldIdentificator ()
 
     // Check geotiff tags
     HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(0);
-    
-    bool hasGTModelTypeKey = false;
-    HFCPtr<HCPGeoTiffKeys> pGeoKeyContainer((HFCPtr<HCPGeoTiffKeys>&)pPageDescriptor->GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO));
 
-    if (pGeoKeyContainer != 0)
-        {
-        hasGTModelTypeKey = pGeoKeyContainer->HasKey(GTModelType);
-        }
+    bool hasGTModelTypeKey = false;
+
+    RasterFileGeocoding const& fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
+    HCPGeoTiffKeys const& geoKeyContainer = fileGeocoding.GetGeoTiffKeys();
+
+    hasGTModelTypeKey = geoKeyContainer.HasKey(GTModelType);
 
     if (hasGTModelTypeKey)
         {
         // Change world id if GTModelType is ModelTypeGeographic
         uint32_t GeoLongValue;
-        pGeoKeyContainer->GetGeoKeyValue(GTModelType, &GeoLongValue);
+        geoKeyContainer.GetValue(GTModelType, &GeoLongValue);
 
         switch (GeoLongValue)
             {
@@ -1473,7 +1780,7 @@ double HRFErMapperSupportedFile::GetRatio(unsigned short pi_ResolutionNb)
 // GetBandList
 // Get the band list.
 //-----------------------------------------------------------------------------
-UINT32* HRFErMapperSupportedFile::GetBandList()
+uint32_t* HRFErMapperSupportedFile::GetBandList()
     {
     return m_pBandList;
     }

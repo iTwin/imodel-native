@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVEShape.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVEShape
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 // The class declaration must be the last include file.
 #include <Imagepp/all/h/HVEShape.h>
@@ -23,6 +23,8 @@
 #include <Imagepp/all/h/HGF2DTransfoModel.h>
 #include <Imagepp/all/h/HVE2DHoledShape.h>
 #include <Imagepp/all/h/HVE2DComplexShape.h>
+#include <Imagepp/all/h/HGF2DHoledShape.h>
+#include <Imagepp/all/h/HGF2DComplexShape.h>
 
 HPM_REGISTER_CLASS(HVEShape, HGFGraphicObject)
 
@@ -52,8 +54,8 @@ HVEShape::HVEShape(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys)
 
 
 
-#if (0)
-// To be rewritten
+
+
 //-----------------------------------------------------------------------------
 // Constructor from a fence
 //-----------------------------------------------------------------------------
@@ -61,26 +63,33 @@ HVEShape::HVEShape(const HGF2DShape& pi_rShape,
                    const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
     : HGFGraphicObject(pi_rpCoordSys)
     {
-    // Check if fence is a polygon
+    m_pShape = HVE2DShape::fCreateShapeFromLightShape(pi_rShape, pi_rpCoordSys);
+    }
+#if (0)
+    // Check if fence is a rectangle
     if (pi_rShape.IsRectangle())
         {
-        m_pShape = new HVE2DRectangle(static_cast<const HGF2DRectangleFence<double>&>(pi_rFence), pi_rpCoordSys);
+        m_pShape = new HVE2DRectangle(static_cast<const HGF2DRectangle&>(pi_rShape), pi_rpCoordSys);
         }
     else if (pi_rShape.IsPolygon())
         {
         // Create polygon of segments from fence
-        m_pShape = new HVE2DPolygonOfSegments(static_cast<const HGF2DPolygonFence<double>&>(pi_rFence), pi_rpCoordSys);
+        m_pShape = new HVE2DPolygonOfSegments(static_cast<const HGF2DPolygonFence&>(pi_rShape), pi_rpCoordSys);
         }
     // Check if fence is holed fence
     else if (pi_rShape.IsHoled())
         {
         // Cast as holed fence
-        const HGF2DHoledFence<double>& rHoledFence = static_cast<const HGF2DHoledFence<double> & >(pi_rFence);
+        const HGF2DHoledShape& rHoledShape = static_cast<const HGF2DHoledShape & >(pi_rShape);
+
+#if (0)
+        m_pShape = new HVE2DHoledShape(rHoledShape);
+#else
 
         // Check if holed is defined
-        if (rHoledFence.IsDefined())
+        if (rHoledShape.IsDefined())
             {
-            const HGF2DFence<double>& rBase = rHoledFence.GetBaseFence();
+            const HGF2DSimpleShape& rBase = rHoledFence.GetBase();
 
             // Create recipient
             HAutoPtr<HVE2DHoledShape> pHoledShape(new HVE2DHoledShape(pi_rpCoordSys));
@@ -89,7 +98,7 @@ HVEShape::HVEShape(const HGF2DShape& pi_rShape,
             if (rBase.IsRectangle())
                 {
                 // Cast as rectangle
-                const HGF2DRectangleFence<double>& rRectBase = static_cast<const HGF2DRectangleFence<double> &>(rBase);
+                const HGF2DRectangle& rRectBase = static_cast<const HGF2DRectangle&>(rBase);
 
                 // Create base shape as rectangle
                 HVE2DRectangle BaseShape(rRectBase, pi_rpCoordSys);
@@ -102,7 +111,7 @@ HVEShape::HVEShape(const HGF2DShape& pi_rShape,
                 HASSERT(rBase.IsPolygon());
 
                 // Cast as polygon
-                const HGF2DPolygonFence<double>& rPolygonBase = static_cast<const HGF2DPolygonFence<double>&>(rBase);
+                const HGF2DPolygonOfSegments& rPolygonBase = static_cast<const HGF2DPolygonOfSegments&>(rBase);
 
                 // Create base shape as polygon
                 HVE2DPolygonOfSegments BaseShape(rPolygonBase, pi_rpCoordSys);
@@ -112,10 +121,10 @@ HVEShape::HVEShape(const HGF2DShape& pi_rShape,
                 }
 
             // Obtain list of holes
-            const HGF2DHoledFence<double>::HoleList& rHoleList = rHoledFence.GetHoleList();
+            const HGF2DHoledShape::HoleList& rHoleList = rHoledFence.GetHoleList();
 
             // Create iterator on list
-            HGF2DHoledFence<double>::HoleList::const_iterator rHoleListItr = rHoleList.begin();
+            HGF2DHoledShape::HoleList::const_iterator rHoleListItr = rHoleList.begin();
 
             // For every hole in holed fence
             for( ; rHoleListItr != rHoleList.end() ; ++rHoleListItr)
@@ -123,7 +132,7 @@ HVEShape::HVEShape(const HGF2DShape& pi_rShape,
                 // Check nature of hole
                 if ((*rHoleListItr)->IsRectangle())
                     {
-                    HVE2DRectangle Hole(*(static_cast<HGF2DRectangleFence<double> *>(*rHoleListItr)),
+                    HVE2DRectangle Hole(*(static_cast<HGF2DRectangle *>(*rHoleListItr)),
                                         pi_rpCoordSys);
 
                     pHoledShape->AddHole(Hole);
@@ -134,7 +143,7 @@ HVEShape::HVEShape(const HGF2DShape& pi_rShape,
                     HASSERT((*rHoleListItr)->IsPolygon());
 
                     // Create polygon which will be hole
-                    HVE2DPolygonOfSegments Hole(*(static_cast<HGF2DPolygonFence<double> *>(*rHoleListItr)),
+                    HVE2DPolygonOfSegments Hole(*(static_cast<HGF2DPolygonOfSegments *>(*rHoleListItr)),
                                                 pi_rpCoordSys);
 
                     pHoledShape->AddHole(Hole);
@@ -143,6 +152,7 @@ HVEShape::HVEShape(const HGF2DShape& pi_rShape,
 
             // Assign result to member
             m_pShape = pHoledShape.release();
+#endif
             }
         else
             {
@@ -150,16 +160,16 @@ HVEShape::HVEShape(const HGF2DShape& pi_rShape,
             m_pShape = new HVE2DVoidShape(pi_rpCoordSys);
             }
         }
-    else if(pi_rFence.IsComplex())
+    else if(pi_rShape.IsComplex())
         {
         // The given fence is complex ... cast
-        const HGF2DComplexFence<double>& rComplexFence = static_cast<const HGF2DComplexFence<double>&>(pi_rFence);
+        const HGF2DComplexShape& rComplexShape = static_cast<const HGF2DComplexShape&>(pi_rShape);
 
         // Allocate a complex shape
         HAutoPtr<HVE2DComplexShape> pNewComplexShape(new HVE2DComplexShape(pi_rpCoordSys));
 
         // Obtain list of fence in complex fence
-        const HGF2DComplexFence<double>::FenceList& rFenceList = rComplexFence.GetFenceList();
+        const HGF2DComplexShape::FenceList& rFenceList = rComplexFence.GetShapeList();
 
         // Create iterator on list
         HGF2DComplexFence<double>::FenceList::const_iterator FenceListItr = rFenceList.begin();
@@ -352,7 +362,7 @@ HVEShape::HVEShape(double pi_x1, double pi_y1,
 // Constructs a shape from a double array coming from the HMR file shape tag
 //-----------------------------------------------------------------------------
 HVEShape::HVEShape(size_t*                      po_pBufferLength,
-                   double*                     pi_pBuffer,
+                   double*                      pi_pBuffer,
                    const HFCPtr<HGF2DCoordSys>& pi_pCoordSys)
     : HGFGraphicObject(pi_pCoordSys)
     {
@@ -365,7 +375,7 @@ HVEShape::HVEShape(size_t*                      po_pBufferLength,
     // Check if the polysegment auto crosses
     if (pNewPolySegment->AutoCrosses())
         {
-        m_pShape = fCreateShapeFromAutoCrossingPolySegment(*pNewPolySegment);
+        m_pShape = HVE2DPolygonOfSegments::CreateShapeFromAutoCrossingPolySegment(*pNewPolySegment);
         }
     else
         {
@@ -597,6 +607,18 @@ void HVEShape::TransformInverse(HGF2DTransfoModel const& pi_rTransfo)
     }
 
 //-----------------------------------------------------------------------------
+// Transport the shape from specified source to specified destination.
+// This operation actually moves the shape in space.
+// The coordinate system of the result shape is always the destination
+// coordinate systems.
+//-----------------------------------------------------------------------------
+void HVEShape::Transport(HFCPtr<HGF2DCoordSys> const& fromCoordinateSystem, HFCPtr<HGF2DCoordSys> const& toCoordinateSystem)
+    {
+    ChangeCoordSys(fromCoordinateSystem);
+    SetCoordSys(toCoordinateSystem);
+    }
+
+//-----------------------------------------------------------------------------
 // Locate a point relative to the shape
 //-----------------------------------------------------------------------------
 HGFGraphicObject::Location HVEShape::Locate(const HGF2DLocation& pi_rPoint) const
@@ -613,7 +635,7 @@ HGFGraphicObject::Location HVEShape::Locate(const HGF2DLocation& pi_rPoint) cons
 //-----------------------------------------------------------------------------
 HGF2DShape* HVEShape::GetLightShape() const
     {
-    return NULL;
+    return m_pShape->GetLightShape();
     }
 
 /*---------------------------------------------------------------------------------**//**

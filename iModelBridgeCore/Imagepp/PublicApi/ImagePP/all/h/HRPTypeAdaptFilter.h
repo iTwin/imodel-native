@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPTypeAdaptFilter.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,9 +18,10 @@
 
 #include "HRPTypedFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPTypeAdaptFilter : public HRPFilter
     {
-    HDECLARE_CLASS_ID(1167, HRPFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_TypeAdapt, HRPFilter)
 
 public:
 
@@ -77,4 +78,5 @@ private:
     ListFilters::iterator
     m_Itr;
     };
+END_IMAGEPP_NAMESPACE
 

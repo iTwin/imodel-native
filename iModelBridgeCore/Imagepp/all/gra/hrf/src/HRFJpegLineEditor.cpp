@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFJpegLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFJpegLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFJpegLineEditor.h>
 #include <Imagepp/all/h/HRFJpegFile.h>
 
@@ -62,9 +62,9 @@ HRFJpegLineEditor::~HRFJpegLineEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFJpegLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                     uint32_t pi_PosBlockY,
-                                     Byte* po_pData,
+HSTATUS HRFJpegLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                     uint64_t pi_PosBlockY,
+                                     Byte*  po_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
@@ -144,9 +144,9 @@ WRAPUP:
 //
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFJpegLineEditor::ReadCMYKBlock(uint32_t pi_PosBlockX,
-                                         uint32_t pi_PosBlockY,
-                                         Byte* po_pData,
+HSTATUS HRFJpegLineEditor::ReadCMYKBlock(uint64_t pi_PosBlockX,
+                                         uint64_t pi_PosBlockY,
+                                         Byte*  po_pData,
                                          HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(po_pData != 0);
@@ -218,9 +218,9 @@ HSTATUS HRFJpegLineEditor::ReadCMYKBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFJpegLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                      uint32_t     pi_PosBlockY,
-                                      const Byte* pi_pData,
+HSTATUS HRFJpegLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                      uint64_t     pi_PosBlockY,
+                                      const Byte*  pi_pData,
                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -298,9 +298,9 @@ HSTATUS HRFJpegLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFJpegLineEditor::WriteCMYKBlock(uint32_t     pi_PosBlockX,
-                                          uint32_t     pi_PosBlockY,
-                                          const Byte* pi_pData,
+HSTATUS HRFJpegLineEditor::WriteCMYKBlock(uint64_t     pi_PosBlockX,
+                                          uint64_t     pi_PosBlockY,
+                                          const Byte*  pi_pData,
                                           HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);

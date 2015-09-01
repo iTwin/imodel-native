@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVETileIDIterator.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
@@ -172,3 +173,4 @@ inline HFCPtr<HVEShape> HVETileIDIterator::GetRegion() const
     {
     return m_pRegion;
     }
+END_IMAGEPP_NAMESPACE

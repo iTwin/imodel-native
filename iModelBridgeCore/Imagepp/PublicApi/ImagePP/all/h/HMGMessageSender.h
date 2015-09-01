@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMGMessageSender.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HMGMessageSender
@@ -13,6 +13,7 @@
 
 #include "HMGThread.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HMGMessage;
 class HMGSink;
 
@@ -55,10 +56,10 @@ public:
     // Primary methods
     ///////////////////
 
-    _HDLLu HMGMessageSender();
-    _HDLLu HMGMessageSender(const HMGMessageSender& pi_rObj);
+    IMAGEPP_EXPORT HMGMessageSender();
+    IMAGEPP_EXPORT HMGMessageSender(const HMGMessageSender& pi_rObj);
 
-    _HDLLu virtual ~HMGMessageSender();
+    IMAGEPP_EXPORT virtual ~HMGMessageSender();
 
     HMGMessageSender& operator=(const HMGMessageSender& pi_rObj);
 
@@ -68,7 +69,7 @@ public:
     // override the method that calls Link, and since friendship
     // is not inherited, this method must be public for them
     // to be able to access it.
-    _HDLLu void            Link(const HFCPtr<HMGSink>& pi_pNewSink, HMGThreadID pi_SendToThread = 0);
+    IMAGEPP_EXPORT void            Link(const HFCPtr<HMGSink>& pi_pNewSink, HMGThreadID pi_SendToThread = 0);
 
 protected:
 
@@ -77,10 +78,10 @@ protected:
     ////////////////
 
     // Send a message to all notifiees
-    _HDLLu void            Propagate(const HMGMessage& pi_rMessage);
+    IMAGEPP_EXPORT void            Propagate(const HMGMessage& pi_rMessage);
 
     // Notifiees list management
-    _HDLLu void            Unlink(const HFCPtr<HMGSink>& pi_pToRemove);
+    IMAGEPP_EXPORT void            Unlink(const HFCPtr<HMGSink>& pi_pToRemove);
 
     ////////////////
     // Attributes
@@ -96,6 +97,6 @@ protected:
     m_pNonPersistentNotifiees;
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HMGMessageSender.hpp"
 

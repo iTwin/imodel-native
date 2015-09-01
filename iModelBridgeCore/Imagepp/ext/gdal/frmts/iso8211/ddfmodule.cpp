@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddfmodule.cpp 17405 2009-07-17 06:13:24Z chaitanya $
+ * $Id: ddfmodule.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFModule class.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2011-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddfmodule.cpp 17405 2009-07-17 06:13:24Z chaitanya $");
+CPL_CVSID("$Id: ddfmodule.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                             DDFModule()                              */
@@ -161,7 +162,7 @@ void DDFModule::Close()
 int DDFModule::Open( const char * pszFilename, int bFailQuietly )
 
 {
-    static const size_t nLeaderSize = 24;
+    static const int nLeaderSize = 24;
 
 /* -------------------------------------------------------------------- */
 /*      Close the existing file if there is one.                        */
@@ -188,7 +189,7 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
 /* -------------------------------------------------------------------- */
     char        achLeader[nLeaderSize];
     
-    if( VSIFReadL( achLeader, 1, nLeaderSize, fpDDF ) != nLeaderSize )
+    if( (int)VSIFReadL( achLeader, 1, nLeaderSize, fpDDF ) != nLeaderSize )
     {
         VSIFCloseL( fpDDF );
         fpDDF = NULL;
@@ -206,7 +207,7 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
 /* -------------------------------------------------------------------- */
     int         i, bValid = TRUE;
 
-    for( i = 0; i < (int)nLeaderSize; i++ )
+    for( i = 0; i < nLeaderSize; i++ )
     {
         if( achLeader[i] < 32 || achLeader[i] > 126 )
             bValid = FALSE;
@@ -242,7 +243,7 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
         _sizeFieldPos                 = DDFScanInt(achLeader+21,1);
         _sizeFieldTag                 = DDFScanInt(achLeader+23,1);
 
-        if( _recLength < 12 || _fieldControlLength == 0
+        if( _recLength < nLeaderSize || _fieldControlLength == 0
             || _fieldAreaStart < 24 || _sizeFieldLength == 0
             || _sizeFieldPos == 0 || _sizeFieldTag == 0 )
         {
@@ -275,7 +276,7 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
     pachRecord = (char *) CPLMalloc(_recLength);
     memcpy( pachRecord, achLeader, nLeaderSize );
 
-    if( VSIFReadL( pachRecord+nLeaderSize, 1, _recLength-nLeaderSize, fpDDF )
+    if( (int)VSIFReadL( pachRecord+nLeaderSize, 1, _recLength-nLeaderSize, fpDDF )
         != _recLength - nLeaderSize )
     {
         if( !bFailQuietly )
@@ -319,6 +320,18 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
         
         nEntryOffset += _sizeFieldLength;
         nFieldPos = DDFScanInt( pachRecord+nEntryOffset, _sizeFieldPos );
+
+        if (_fieldAreaStart+nFieldPos < 0 ||
+            _recLength - (_fieldAreaStart+nFieldPos) < nFieldLength)
+        {
+            if( !bFailQuietly )
+                CPLError( CE_Failure, CPLE_FileIO,
+                        "Header record invalid on DDF file `%s'.",
+                        pszFilename );
+
+            CPLFree( pachRecord );
+            return FALSE;
+        }
         
         poFDefn = new DDFFieldDefn();
         if( poFDefn->Initialize( this, szTag, nFieldLength,
@@ -436,18 +449,24 @@ int DDFModule::Create( const char *pszFilename )
     int nOffset = 0;
     for( iField=0; iField < nFieldDefnCount; iField++ )
     {
-        char achDirEntry[12];
+        char achDirEntry[255];
+        char szFormat[32];
         int nLength;
+
+        CPLAssert(_sizeFieldLength + _sizeFieldPos + _sizeFieldTag < (int)sizeof(achDirEntry));
 
         papoFieldDefns[iField]->GenerateDDREntry( NULL, &nLength );
 
+        CPLAssert( (int)strlen(papoFieldDefns[iField]->GetName()) == _sizeFieldTag );
         strcpy( achDirEntry, papoFieldDefns[iField]->GetName() );
-        sprintf( achDirEntry + _sizeFieldTag, "%03d", nLength );
+        sprintf(szFormat, "%%0%dd", (int)_sizeFieldLength);
+        sprintf( achDirEntry + _sizeFieldTag, szFormat, nLength );
+        sprintf(szFormat, "%%0%dd", (int)_sizeFieldTag);
         sprintf( achDirEntry + _sizeFieldTag + _sizeFieldLength, 
-                 "%04d", nOffset );
+                 szFormat, nOffset );
         nOffset += nLength;
 
-        VSIFWriteL( achDirEntry, 11, 1, fpDDF );
+        VSIFWriteL( achDirEntry, _sizeFieldLength + _sizeFieldPos + _sizeFieldTag, 1, fpDDF );
     }
 
     char chUT = DDF_FIELD_TERMINATOR;

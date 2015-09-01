@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTImportFromFileExportToFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HUTImportFromFileExportToFile
@@ -20,13 +20,14 @@
 #include "HGSTypes.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HUTImportFromFileExportToFile : public HRFImportExport
     {
 public:
     // Creation and destruction interface
-    _HDLLg HUTImportFromFileExportToFile (const HFCPtr<HGF2DWorldCluster>& pi_pWorldCluster,
+    IMAGEPP_EXPORT HUTImportFromFileExportToFile (const HFCPtr<HGF2DWorldCluster>& pi_pWorldCluster,
                                           bool                            pi_BestMatchTag = true);
-    _HDLLg virtual ~HUTImportFromFileExportToFile();
+    IMAGEPP_EXPORT virtual ~HUTImportFromFileExportToFile();
 
     // Import File interface
     virtual void                            SelectImportFilename(const HFCPtr<HFCURL>& pi_rpURLPath);
@@ -36,7 +37,7 @@ public:
 
 
     // Export interface
-    _HDLLg virtual HFCPtr<HRFRasterFile>    StartExport();
+    IMAGEPP_EXPORT virtual HFCPtr<HRFRasterFile>    StartExport();
 
 
     // BestMatch interface
@@ -45,11 +46,11 @@ public:
 
     // Set number of color, if dest to palette
     //  0 --> MaxEntries
-    _HDLLg void                             SetNumberOfColorDestination(uint32_t pi_NbColors);
-    _HDLLg uint32_t                         GetNumberOfColorDestination() const;
+    IMAGEPP_EXPORT void                             SetNumberOfColorDestination(uint32_t pi_NbColors);
+    IMAGEPP_EXPORT uint32_t                         GetNumberOfColorDestination() const;
 
-    _HDLLg const HGSResampling&             GetResamplingMode() const;
-    _HDLLg void                             SetResamplingMode(const HGSResampling& pi_rResampling);
+    IMAGEPP_EXPORT const HGSResampling&             GetResamplingMode() const;
+    IMAGEPP_EXPORT void                             SetResamplingMode(const HGSResampling& pi_rResampling);
 
 
 protected:
@@ -70,3 +71,4 @@ private:
     HUTImportFromFileExportToFile(const HUTImportFromFileExportToFile&);
     HUTImportFromFileExportToFile& operator=(const HUTImportFromFileExportToFile&);
     };
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeV16Int16.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -12,18 +12,19 @@
 
 #include "HRPPixelType.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelTypeV16Int16 : public HRPPixelType
     {
 public:
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1055)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRPPixelTypeId_V16Int16)
 
     // Primary methods
-    _HDLLg                 HRPPixelTypeV16Int16(HRPChannelType::ChannelRole pi_Role = HRPChannelType::USER,
+    IMAGEPP_EXPORT                 HRPPixelTypeV16Int16(HRPChannelType::ChannelRole pi_Role = HRPChannelType::USER,
                                                 const int16_t*              pi_pNoDataValue = 0);
-    _HDLLg                 HRPPixelTypeV16Int16(const HRPPixelTypeV16Int16& pi_rObj);
+    IMAGEPP_EXPORT                 HRPPixelTypeV16Int16(const HRPPixelTypeV16Int16& pi_rObj);
 
-    _HDLLg virtual         ~HRPPixelTypeV16Int16();
+    IMAGEPP_EXPORT virtual         ~HRPPixelTypeV16Int16();
 
     virtual HPMPersistentObject*
     Clone() const;
@@ -38,3 +39,4 @@ protected:
     virtual const HRPPixelConverter*
     HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const;
     };
+END_IMAGEPP_NAMESPACE

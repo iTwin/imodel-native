@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DTriangleMesh.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DTriangleMesh
@@ -28,6 +28,7 @@
 
     -----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 template<class ATTRIBUTE> class HVE2DTriangleMesh : public HVE2DMesh<ATTRIBUTE>
     {
 
@@ -72,6 +73,7 @@ private:
     mutable double m_y1My3;
 
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HVE2DTriangleMesh.hpp"
 

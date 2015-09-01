@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCBinStreamLockManager.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HFCBinStreamLockManager
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** ---------------------------------------------------------------------------
     Constructor
     Public
@@ -146,3 +147,4 @@ inline void HFCBinStreamLockManager::SetSisterFileStream(HFCBinStream* pi_pBinSt
     if (m_RefCount != 0)
         m_pBinStream->Lock(m_Position, m_Size, m_Share);
     }
+END_IMAGEPP_NAMESPACE

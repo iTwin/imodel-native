@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMBufferedImage.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIMBufferedImage
@@ -17,11 +17,10 @@
 #include "HFCExclusiveKey.h"
 #include "HPMPool.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 class HIMBufferedImageIterator;
 class HRAClearOptions;
 class HRABitmap;
-class HGFPreDrawOptions;
 
 // Type used to return a set of tile IDs covering an extent
 typedef set<uint64_t> HIMBufImgTileIDSet;
@@ -162,7 +161,7 @@ private:
 
 class HIMBufferedImage : public HRARaster
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1045)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HIMBufferedImageId)
 
     friend class HIMBufferedImageIterator;
     friend class HIMBufferedImageTile;
@@ -170,9 +169,9 @@ class HIMBufferedImage : public HRARaster
 public:
 
     // Primary methods
-    _HDLLg HIMBufferedImage();
+    IMAGEPP_EXPORT HIMBufferedImage();
 
-    _HDLLg HIMBufferedImage(const HFCPtr<HRARaster>&        pi_rpSource,
+    IMAGEPP_EXPORT HIMBufferedImage(const HFCPtr<HRARaster>&        pi_rpSource,
                             const HFCPtr<HRAStoredRaster>&  pi_rpExample,
                             HPMPool*                        pi_pObjectLog,
                             double                          pi_rXRatio = 1.0,
@@ -182,7 +181,7 @@ public:
                             bool                            pi_ShapeTheTiles = false,
                             uint8_t                        pi_MaxResolutionStretchingFactor = 0);
 
-    _HDLLg virtual ~HIMBufferedImage();
+    IMAGEPP_EXPORT virtual ~HIMBufferedImage();
 
 
     // Overriden from HGFGraphicObject
@@ -197,16 +196,12 @@ public:
                           const HGF2DLocation& pi_rOrigin);
 
     // Overriden from HRARaster
-    virtual void    CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
-                             const HRACopyFromOptions& pi_rOptions);
+    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions);
 
-    virtual void    CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster);
+    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster);
 
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
-
-    virtual void    PreDraw (HRADrawOptions* pi_pOptions);
-
 
     virtual HRARasterIterator*
     CreateIterator (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
@@ -228,8 +223,6 @@ public:
     virtual bool   ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role,
                                               Byte                      pi_Id = 0) const;
 
-    virtual const void*     GetRawDataPtr () const;
-
     virtual HFCPtr<HVEShape>    GetEffectiveShape () const;
 
     virtual HGF2DExtent    GetAveragePixelSize () const;
@@ -240,8 +233,7 @@ public:
 
     virtual HPMPersistentObject* Clone () const;
 
-    virtual HRARaster*         Clone (HPMObjectStore* pi_pStore,
-           HPMPool*        pi_pLog=0) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
     virtual bool   IsStoredRaster  () const;
 
@@ -264,7 +256,7 @@ public:
     void            SetBilinear(bool pi_State);
     void            SetConvolution(bool pi_State);
 
-    const HFCPtr<HRARaster>      GetTile(uint64_t pi_ID, HGFPreDrawOptions* pi_pPreDrawOptions = 0) const;
+    const HFCPtr<HRARaster>      GetTile(uint64_t pi_ID) const;
     void            GetPositionFromIndex (uint64_t     pi_Index,
                                           uint64_t*      po_pTilePosX,
                                           uint64_t*      po_pTilePosY) const;
@@ -297,8 +289,6 @@ public:
 
     bool NotifyPaletteChanged (const HMGMessage& pi_rMessage);
 
-    virtual void Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface, const HGFDrawOptions* pi_pOptions) const;
-
     //Context Methods
     virtual void                      SetContext(const HFCPtr<HMDContext>& pi_rpContext);
     virtual HFCPtr<HMDContext>        GetContext();
@@ -306,10 +296,16 @@ public:
     virtual void                      InvalidateRaster();
 
     // Preparation
-    _HDLLg void            PrepareRegion(const HVEShape& pi_rRegion);
+    IMAGEPP_EXPORT void            PrepareRegion(const HVEShape& pi_rRegion);
 
 protected:
 
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
+
+    virtual ImagePPStatus _CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options) override;
+
+    virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
+        
     // From HGFGraphicObject
     virtual void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_pOldCoordSys);
 
@@ -429,9 +425,9 @@ private:
     // Used when copying into buffered tiles
     uint8_t                m_MaxSourceResolutionStretchingFactor;
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLg)
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT)
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HIMBufferedImage.hpp"
 

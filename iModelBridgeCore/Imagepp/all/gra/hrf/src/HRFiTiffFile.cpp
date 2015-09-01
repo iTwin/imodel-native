@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFiTiffFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 // Class HRFitiffFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HFCURLEmbedFile.h>
@@ -64,16 +64,14 @@
 #include <Imagepp/all/h/HGF2DSimilitude.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 
 #include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
-#include <Imagepp/all/h/HCPException.h>
 
 
-USING_NAMESPACE_IMAGEPP
+
 
 //-----------------------------------------------------------------------------
 // HRFiTiffStripBlockCapabilities
@@ -584,14 +582,13 @@ HRFiTiff64Creator::HRFiTiff64Creator()
 // Identification information
 WString HRFiTiff64Creator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_iTiff64);  // Internet TIFF 64 File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_iTiff64());  // Internet TIFF 64 File Format
     }
 
 // Identification information
 WString HRFiTiff64Creator::GetExtensions() const
     {
-    return WString(L"*.iTIFF64");
+    return WString(L"*.itiff64");
     }
 
 // allow to Open an image file
@@ -615,7 +612,7 @@ HFCPtr<HRFRasterFile> HRFiTiff64Creator::Create(const HFCPtr<HFCURL>& pi_rpURL,
 bool HRFiTiff64Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                       uint64_t             pi_Offset) const
     {
-    return ((HRFiTiffCreatorBase*)this)->IsKindOfFile(pi_rpURL, pi_Offset, true);
+    return HRFiTiffCreatorBase::IsKindOfFile(pi_rpURL, pi_Offset, true);
     }
 
 
@@ -653,14 +650,13 @@ HRFiTiffCreator::HRFiTiffCreator()
 // Identification information
 WString HRFiTiffCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_iTiff);  // Internet TIFF File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_iTiff());  // Internet TIFF File Format
     }
 
 // Identification information
 WString HRFiTiffCreator::GetExtensions() const
     {
-    return WString(L"*.iTIFF");
+    return WString(L"*.itiff");
     }
 
 // allow to Open an image file
@@ -684,7 +680,7 @@ HFCPtr<HRFRasterFile> HRFiTiffCreator::Create(const HFCPtr<HFCURL>& pi_rpURL,
 bool HRFiTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                     uint64_t             pi_Offset) const
     {
-    return ((HRFiTiffCreatorBase*)this)->IsKindOfFile(pi_rpURL, pi_Offset, false);
+    return HRFiTiffCreatorBase::IsKindOfFile(pi_rpURL, pi_Offset, false);
     }
 
 //-----------------------------------------------------------------------------
@@ -724,7 +720,7 @@ bool HRFiTiffCreatorBase::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    pTiff = new HTIFFFile (CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pTiff = new HTIFFFile (pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
     if ((pTiff->IsValid(&pErr) || ((pErr != 0) && !pErr->IsFatal())) && (pTiff->IsTiff64() == pi_IsItiff64))
         {
         // set the result to true, it will be false if an error
@@ -865,7 +861,7 @@ bool HRFiTiffCreatorBase::ValidateHMRDirectory(HTIFFFile*  pi_pTiffFilePtr,
             }
         else if (Version > ITIFF_LATEST_VERSION)
             {   //A new version of iTiff cannot be opened with an old version of Imagepp.
-            throw HRFException(HRF_UNSUPPORTED_ITIFF_VERSION_EXCEPTION, pi_pTiffFilePtr->GetURL()->GetURL());
+            throw HRFUnsupportedITiffVersionException(pi_pTiffFilePtr->GetURL()->GetURL());
             }
 
         // Check Pixel Type Spec.
@@ -1070,7 +1066,6 @@ HRFiTiffFile::~HRFiTiffFile()
 void HRFiTiffFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                           uint32_t pi_Page,
                                           bool   pi_CheckSpecificUnitSpec,
-                                          bool   pi_GeoModelDefaultUnit,
                                           bool   pi_InterpretUnitINTGR)
     {
     //The iTiff file format and the derivated cTiff and iTiff64 formats
@@ -1279,7 +1274,7 @@ void HRFiTiffFile::CreateDescriptors()
         InitPrivateTagDefault (pHMRHeader);
 
         if (!ReadPrivateDirectory(Page, pHMRHeader))
-            throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HFCFileNotSupportedException(GetURL()->GetURL());
 
         // Select the page
         PageIndex = GetIndexOfPage(Page);
@@ -1380,7 +1375,7 @@ void HRFiTiffFile::CreateDescriptors()
             if (GetAccessMode().m_HasWriteAccess)
                 {
                 if (Compression == COMPRESSION_HMR_FLASHPIX && PixelType->IsCompatibleWith(HRPPixelTypeV24R8G8B8::CLASS_ID))
-                    throw HRFException(HRF_ACCESS_MODE_FOR_CODEC_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                    throw HRFAccessModeForCodeNotSupportedException(GetURL()->GetURL());
 
                 unsigned short Photometric;
                 GetFilePtr()->GetField(PHOTOMETRIC, &Photometric);
@@ -1514,9 +1509,9 @@ void HRFiTiffFile::CreateDescriptors()
             WString WktGeocode;
             BeStringUtilities::CurrentLocaleCharToWChar(WktGeocode, pHMRHeader->m_WellKnownText.c_str());
 
-            pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorUnknown, WktGeocode.c_str());
+            pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorUnknown, WktGeocode.c_str());
 
-//            pGeoTiffKeys = GetGeocodingInformationFromWKT (pHMRHeader->m_WellKnownText);
+//            pGeoTiffKeys = ExtractGeocodingInformationFromWKT (pHMRHeader->m_WellKnownText);
             }
 
         // set keys since WKT was not used
@@ -1822,10 +1817,6 @@ void HRFiTiffFile::CreateDescriptors()
                 pGeoTiffKeys->AddKey(VerticalUnits, (uint32_t)GeoShortValue);
                 }
 
-            if (pGeoTiffKeys->GetNbKeys() > 0)
-                {
-                HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, *pGeoTiffKeys);
-                }
             }
 
         HFCPtr<HRFPageDescriptor> pPage;
@@ -1841,17 +1832,15 @@ void HRFiTiffFile::CreateDescriptors()
                                        &TagList,                    // Tag
                                        0);                          // Duration
 
-        if (pBaseGCS != NULL)
+        if (pBaseGCS==0)
             {
-            pPage->SetGeocoding(pBaseGCS);
+            pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys));
+            }
+        else
+            {
+            pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
             }
 
-        if (pGeoTiffKeys != 0 && pGeoTiffKeys->GetNbKeys() > 0)
-            {
-            HFCPtr<HMDMetaDataContainerList> pMDContainers(new HMDMetaDataContainerList());
-            pMDContainers->SetMetaDataContainer((HFCPtr<HMDMetaDataContainer>&)pGeoTiffKeys);
-            pPage->SetListOfMetaDataContainer(pMDContainers);
-            }
 
         m_ListOfPageDescriptor.push_back(pPage);
 
@@ -1950,31 +1939,27 @@ void HRFiTiffFile::SaveiTiffFile()
                                                 &pHMRHeader->m_ChannelsNoDataValue,
                                                 rChannelOrg);
 
-                    IRasterBaseGcsPtr pBaseGCS = pPageDescriptor->GetGeocoding();
-                    HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys;
-                    pGeoTiffKeys = static_cast<HCPGeoTiffKeys*>(pPageDescriptor->GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO).GetPtr());
 
                     if ((GetFilePtr()->IsTiff64()) && (pPageDescriptor->GeocodingHasChanged() == true))
                         {
+                        RasterFileGeocoding const& fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
+
                         pHMRHeader->m_HMRDirDirty = true;
 
-                        if (pBaseGCS == 0 || !pBaseGCS->IsValid())
+                        if (fileGeocoding.GetGeocodingCP() == NULL || !(fileGeocoding.GetGeocodingCP()->IsValid()))
                             {
                             pHMRHeader->m_WellKnownText = ""; //set to empty
                             }
                         else
                             {
                             // The first reaction is to store the geo key list as it is defined originally.
-                            // We try to initialize the raster BaseCGS using the geo keys ...
-                            IRasterBaseGcsPtr pBaseGCSDummy = HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, *pGeoTiffKeys);
-
-                            if (pBaseGCSDummy != NULL)
+                            if (fileGeocoding.GetGeocodingCP() != NULL)
                                 {
                                 WString WellKnownText;
-                                pBaseGCS->GetWellKnownText(WellKnownText, IRasterGeoCoordinateServices::WktFlavorOGC);
+                                fileGeocoding.GetGeocodingCP()->GetWellKnownText(WellKnownText, IRasterGeoCoordinateServices::WktFlavorOGC);
 
                                 if (WellKnownText == L"")
-                                    pBaseGCS->GetWellKnownText(WellKnownText, IRasterGeoCoordinateServices::WktFlavorESRI);
+                                    fileGeocoding.GetGeocodingCP()->GetWellKnownText(WellKnownText, IRasterGeoCoordinateServices::WktFlavorESRI);
 
                                 size_t  destinationBuffSize = WellKnownText.GetMaxLocaleCharBytes();
                                 char*  WellKnownTextMBS= (char*)_alloca (destinationBuffSize);
@@ -2069,25 +2054,22 @@ bool HRFiTiffFile::Write3DMatrixToTiffTag(HFCMatrix<4, 4>& pi_r3DMatrix)
 // Protected
 // Create3DMatrixFromiTiffTag
 //-----------------------------------------------------------------------------
-IRasterBaseGcsPtr  HRFiTiffFile::GetGeocodingInformationFromWKT(string& pi_wkt) const
+RasterFileGeocodingPtr  HRFiTiffFile::ExtractGeocodingInformationFromWKT(string& pi_wkt) const
     {
-    IRasterBaseGcsPtr pBaseGCS;
+    RasterFileGeocodingPtr pGeocoding(RasterFileGeocoding::Create());
 
     if (!pi_wkt.empty() && GCSServices->_IsAvailable())
         {
-        try
-            {
+
             WString WellKnownText;
             BeStringUtilities::CurrentLocaleCharToWChar( WellKnownText,pi_wkt.c_str());
-
-            pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorUnknown, WellKnownText.c_str());
-            }
-        catch (HCPGCoordException&)
-            {
-            }
+                                                                                                             
+            IRasterBaseGcsPtr pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorUnknown, WellKnownText.c_str());
+            pGeocoding = RasterFileGeocoding::Create(pBaseGCS.get());
+            
         }
 
-    return pBaseGCS;
+    return pGeocoding;
     }
 
 
@@ -2348,6 +2330,7 @@ bool HRFiTiffFile::ReadPrivateDirectory(uint32_t pi_Page, HMRHeader* po_pHMRHead
             po_pHMRHeader->m_pTransPalette = 0;
 
         // Get SourceFile creation date, if present
+        // That information is only keep for back compatible between V8i, on Windows platform.
         char* p_SrcFileTime=0;
         GetFilePtr()->GetField(HMR_SOURCEFILE_CREATIONDATE,  &p_SrcFileTime);
         if (p_SrcFileTime != 0)
@@ -2450,12 +2433,12 @@ void HRFiTiffFile::WritePrivateDirectory (uint32_t pi_Page)
             // Tag HMR
             GetFilePtr()->SetField(HMR_VERSION,                pHMRHeader->m_Version);
             GetFilePtr()->SetField(HMR_VERSION_MINOR,          pHMRHeader->m_MinorVersion);
-            GetFilePtr()->SetField(HMR_IMAGECOORDINATESYSTEM,  pHMRHeader->m_SystemCoord);
+            GetFilePtr()->SetFieldA(HMR_IMAGECOORDINATESYSTEM,  pHMRHeader->m_SystemCoord);
             GetFilePtr()->SetField(HMR_HISTOGRAM, pHMRHeader->m_HistogramLength, pHMRHeader->m_pHistogram);
 
             // DateTime
             GetSystemDateTime (pHMRHeader->m_HistoDateTime);
-            GetFilePtr()->SetField(HMR_HISTOGRAMDATETIME,  pHMRHeader->m_HistoDateTime);
+            GetFilePtr()->SetFieldA(HMR_HISTOGRAMDATETIME,  pHMRHeader->m_HistoDateTime);
 
 
             // 3D Transformation Model
@@ -2512,7 +2495,7 @@ void HRFiTiffFile::WritePrivateDirectory (uint32_t pi_Page)
 
             // Set TilesFlag...
             if (pHMRHeader->m_iTiffTileFlagsLength > 0)
-                GetFilePtr()->SetField(HMR2_TILEFLAG, (char*)pHMRHeader->m_piTiffTileFlags.get());
+                GetFilePtr()->SetFieldA(HMR2_TILEFLAG, (char*)pHMRHeader->m_piTiffTileFlags.get());
 
             // Down Sampling Method
             GetFilePtr()->SetField(HMR_DECIMATION_METHOD,
@@ -2524,9 +2507,10 @@ void HRFiTiffFile::WritePrivateDirectory (uint32_t pi_Page)
                 pPixelType->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE)
                 {
                 HArrayAutoPtr<Byte> pTransPalette(new Byte[pPixelType->GetPalette().GetMaxEntries()]);
+                memset(pTransPalette, 0, pPixelType->GetPalette().GetMaxEntries());
                 Byte* pSourceComposite;
 
-                for (uint32_t i = 0; i < pPixelType->GetPalette().GetMaxEntries(); ++i)
+                for (uint32_t i = 0; i < pPixelType->GetPalette().CountUsedEntries(); ++i)
                     {
                     pSourceComposite = (Byte*) (pPixelType->GetPalette().GetCompositeValue(i));
                     pTransPalette[i] = (Byte) pSourceComposite[3];
@@ -2539,7 +2523,7 @@ void HRFiTiffFile::WritePrivateDirectory (uint32_t pi_Page)
             if (GetFilePtr()->IsTiff64())
                 {
                 if (!pHMRHeader->m_WellKnownText.empty ())
-                    GetFilePtr()->SetField(HMR2_WELLKNOWNTEXT, pHMRHeader->m_WellKnownText.c_str());
+                    GetFilePtr()->SetFieldA(HMR2_WELLKNOWNTEXT, pHMRHeader->m_WellKnownText.c_str());
                 else
                     GetFilePtr()->RemoveTag(HMR2_WELLKNOWNTEXT);
                 }
@@ -2609,7 +2593,7 @@ void HRFiTiffFile::SetHistogram(HMRHeader*          pio_pHMRHeader,
             {
             // This file format doesn't support more than 3 channel.
             HASSERT(pi_rHistogram.GetChannelCount() <= 3);  // Why? we already allocate ChannelCount in pio_pHMRHeader->m_pHistogram
-            uint32_t ChannelCount = min(pi_rHistogram.GetChannelCount(), 3);
+            uint32_t ChannelCount = MIN(pi_rHistogram.GetChannelCount(), 3);
             for (uint32_t ChannelIndex = 0; ChannelIndex < ChannelCount; ChannelIndex++)
                 {
                 pi_rHistogram.GetEntryFrequencies(pio_pHMRHeader->m_pHistogram.get() + (ChannelIndex * pi_rHistogram.GetEntryFrequenciesSize()),
@@ -2831,7 +2815,7 @@ void HRFiTiffFile::SaveDescriptor(uint32_t pi_Page)
 
         // Set TilesFlag...
         if (pHMRHeader->m_iTiffTileFlagsLength > 0)
-            GetFilePtr()->SetField(HMR2_TILEFLAG, (char*)pHMRHeader->m_piTiffTileFlags.get());
+            GetFilePtr()->SetFieldA(HMR2_TILEFLAG, (char*)pHMRHeader->m_piTiffTileFlags.get());
         }
 
     // Reset Directory

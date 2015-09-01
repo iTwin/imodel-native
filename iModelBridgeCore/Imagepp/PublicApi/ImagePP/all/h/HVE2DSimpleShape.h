@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DSimpleShape.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DSimpleShape
@@ -35,10 +35,11 @@
 
     -----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 class HNOVTABLEINIT HVE2DSimpleShape : public HVE2DShape
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1111)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DShapeId_Simple)
 
 public:
 
@@ -140,16 +141,16 @@ public:
     virtual const HVE2DShape::HoleList&
                                   GetHoleList() const;
 
-    virtual HVE2DShape*           DifferentiateFromShapeSCS(const HVE2DShape& pi_rShape) const;
-    virtual HVE2DShape*           DifferentiateShapeSCS(const HVE2DShape& pi_rShape) const;
-    virtual HVE2DShape*           IntersectShapeSCS(const HVE2DShape& pi_rShape) const;
-    virtual HVE2DShape*           UnifyShapeSCS(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HVE2DShape*    DifferentiateFromShapeSCS(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HVE2DShape*    DifferentiateShapeSCS(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HVE2DShape*    IntersectShapeSCS(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HVE2DShape*    UnifyShapeSCS(const HVE2DShape& pi_rShape) const;
 
     virtual void                  Drop(HGF2DLocationCollection* po_pPoint,
                                        double                   pi_Tolerance) const;
 
     // Debugging
-    virtual void       PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT virtual void           PrintState(ostream& po_rOutput) const;
 
 protected:
 
@@ -188,5 +189,6 @@ private:
 
 
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HVE2DSimpleShape.hpp"

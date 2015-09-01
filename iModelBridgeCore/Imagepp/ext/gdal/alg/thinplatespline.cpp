@@ -1,15 +1,16 @@
 /******************************************************************************
- * $Id: thinplatespline.cpp 15547 2008-10-17 17:45:03Z rouault $
+ * $Id: thinplatespline.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL Warp API
  * Purpose:  Implemenentation of 2D Thin Plate Spline transformer. 
  * Author:   VIZRT Development Team.
  *
- * This code was provided by Gilad Ronnen (gro at visrt dot com) with 
+ * This code was provided by Gilad Ronnen (gro at visrt dot com) with
  * permission to reuse under the following license.
  * 
  ******************************************************************************
  * Copyright (c) 2004, VIZRT Inc.
+ * Copyright (c) 2008-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,21 +31,12 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#ifdef HAVE_ARMADILLO
+/* Include before #define A(r,c) because armadillo uses A in its include files */
+#include "armadillo"
+#endif
+
 #include "thinplatespline.h"
-
-#ifdef HAVE_FLOAT_H
-#  include <float.h>
-#elif defined(HAVE_VALUES_H)
-#  include <values.h>
-#endif
-
-#ifndef FLT_MAX
-#  define FLT_MAX 1e+37
-#  define FLT_MIN 1e-37
-#endif
-
-VizGeorefSpline2D* viz_xy2llz;
-VizGeorefSpline2D* viz_llz2xy;
 
 /////////////////////////////////////////////////////////////////////////////////////
 //// vizGeorefSpline2D
@@ -56,40 +48,31 @@ VizGeorefSpline2D* viz_llz2xy;
 
 #define VIZ_GEOREF_SPLINE_DEBUG 0
 
-int matrixInvert( int N, double input[], double output[] );
+#ifndef HAVE_ARMADILLO
+static int matrixInvert( int N, double input[], double output[] );
+#endif
 
 void VizGeorefSpline2D::grow_points()
 
 {
     int new_max = _max_nof_points*2 + 2 + 3;
     int i;
-    
-    if( _max_nof_points == 0 )
+
+    x = (double *) VSIRealloc( x, sizeof(double) * new_max );
+    y = (double *) VSIRealloc( y, sizeof(double) * new_max );
+    u = (double *) VSIRealloc( u, sizeof(double) * new_max );
+    unused = (int *) VSIRealloc( unused, sizeof(int) * new_max );
+    index = (int *) VSIRealloc( index, sizeof(int) * new_max );
+    for( i = 0; i < VIZGEOREF_MAX_VARS; i++ )
     {
-        x = (double *) VSIMalloc( sizeof(double) * new_max );
-        y = (double *) VSIMalloc( sizeof(double) * new_max );
-        u = (double *) VSIMalloc( sizeof(double) * new_max );
-        unused = (int *) VSIMalloc( sizeof(int) * new_max );
-        index = (int *) VSIMalloc( sizeof(int) * new_max );
-        for( i = 0; i < VIZGEOREF_MAX_VARS; i++ )
+        rhs[i] = (double *) 
+            VSIRealloc( rhs[i], sizeof(double) * new_max );
+        coef[i] = (double *) 
+            VSIRealloc( coef[i], sizeof(double) * new_max );
+        if( _max_nof_points == 0 )
         {
-            rhs[i] = (double *) VSICalloc( sizeof(double), new_max );
-            coef[i] = (double *) VSICalloc( sizeof(double), new_max );
-        }
-    }
-    else
-    {
-        x = (double *) VSIRealloc( x, sizeof(double) * new_max );
-        y = (double *) VSIRealloc( y, sizeof(double) * new_max );
-        u = (double *) VSIRealloc( u, sizeof(double) * new_max );
-        unused = (int *) VSIRealloc( unused, sizeof(int) * new_max );
-        index = (int *) VSIRealloc( index, sizeof(int) * new_max );
-        for( i = 0; i < VIZGEOREF_MAX_VARS; i++ )
-        {
-            rhs[i] = (double *) 
-                VSIRealloc( rhs[i], sizeof(double) * new_max );
-            coef[i] = (double *) 
-                VSIRealloc( coef[i], sizeof(double) * new_max );
+            memset(rhs[i], 0, 3 * sizeof(double));
+            memset(coef[i], 0, 3 * sizeof(double));
         }
     }
 
@@ -114,6 +97,7 @@ int VizGeorefSpline2D::add_point( const double Px, const double Py, const double
     return 1;
 }
 
+#if 0
 bool VizGeorefSpline2D::change_point(int index, double Px, double Py, double* Pvars)
 {
     if ( index < _nof_points )
@@ -167,10 +151,217 @@ int VizGeorefSpline2D::delete_point(const double Px, const double Py )
     }
     return(0);
 }
+#endif
+
+#define SQ(x) ((x)*(x))
+
+static CPL_INLINE double VizGeorefSpline2DBase_func( const double x1, const double y1,
+                          const double x2, const double y2 )
+{
+    double dist  = SQ( x2 - x1 )  + SQ( y2 - y1 );
+    return dist ? dist * log( dist ) : 0.0;
+}
+
+#if defined(__GNUC__) && defined(__x86_64__)
+
+/* Derived and adapted from code originating from: */
+
+/* @(#)e_log.c 1.3 95/01/18 */
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunSoft, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+
+/* __ieee754_log(x)
+ * Return the logrithm of x
+ *
+ * Method :                  
+ *   1. Argument Reduction: find k and f such that
+ *                      x = 2^k * (1+f),
+ *         where  sqrt(2)/2 < 1+f < sqrt(2) .
+ *
+ *   2. Approximation of log(1+f).
+ *      Let s = f/(2+f) ; based on log(1+f) = log(1+s) - log(1-s)
+ *               = 2s + 2/3 s**3 + 2/5 s**5 + .....,
+ *               = 2s + s*R
+ *      We use a special Reme algorithm on [0,0.1716] to generate
+ *      a polynomial of degree 14 to approximate R The maximum error
+ *      of this polynomial approximation is bounded by 2**-58.45. In
+ *      other words,
+ *                      2      4      6      8      10      12      14
+ *          R(z) ~ Lg1*s +Lg2*s +Lg3*s +Lg4*s +Lg5*s  +Lg6*s  +Lg7*s
+ *      (the values of Lg1 to Lg7 are listed in the program)
+ *      and
+ *          |      2          14          |     -58.45
+ *          | Lg1*s +...+Lg7*s    -  R(z) | <= 2
+ *          |                             |
+ *      Note that 2s = f - s*f = f - hfsq + s*hfsq, where hfsq = f*f/2.
+ *      In order to guarantee error in log below 1ulp, we compute log
+ *      by
+ *              log(1+f) = f - s*(f - R)        (if f is not too large)
+ *              log(1+f) = f - (hfsq - s*(hfsq+R)).     (better accuracy)
+ *      
+ *      3. Finally,  log(x) = k*ln2 + log(1+f).  
+ *                          = k*ln2_hi+(f-(hfsq-(s*(hfsq+R)+k*ln2_lo)))
+ *         Here ln2 is split into two floating point number:
+ *                      ln2_hi + ln2_lo,
+ *         where n*ln2_hi is always exact for |n| < 2000.
+ *
+ * Special cases:
+ *      log(x) is NaN with signal if x < 0 (including -INF) ;
+ *      log(+INF) is +INF; log(0) is -INF with signal;
+ *      log(NaN) is that NaN with no signal.
+ *
+ * Accuracy:
+ *      according to an error analysis, the error is always less than
+ *      1 ulp (unit in the last place).
+ *
+ * Constants:
+ * The hexadecimal values are the intended ones for the following
+ * constants. The decimal values may be used, provided that the
+ * compiler will convert from decimal to binary accurately enough
+ * to produce the hexadecimal values shown.
+ */
+
+typedef double V2DF __attribute__ ((__vector_size__ (16)));
+typedef union
+{
+    V2DF v2;
+    double d[2];
+} v2dfunion;
+
+typedef union
+{
+    int i[2];
+    long long li;
+} i64union;
+
+static const V2DF
+v2_ln2_div_2pow20 = {6.93147180559945286e-01 / 1048576, 6.93147180559945286e-01 / 1048576},
+v2_Lg1 = {6.666666666666735130e-01, 6.666666666666735130e-01},
+v2_Lg2 = {3.999999999940941908e-01, 3.999999999940941908e-01}, 
+v2_Lg3 = {2.857142874366239149e-01, 2.857142874366239149e-01},
+v2_Lg4 = {2.222219843214978396e-01, 2.222219843214978396e-01},
+v2_Lg5 = {1.818357216161805012e-01, 1.818357216161805012e-01},
+v2_Lg6 = {1.531383769920937332e-01, 1.531383769920937332e-01},
+/*v2_Lg7 = {1.479819860511658591e-01, 1.479819860511658591e-01}, */
+v2_one = { 1.0, 1.0 },
+v2_const1023_mul_2pow20 = { 1023.0 * 1048576, 1023.0 * 1048576};
+
+#define GET_HIGH_WORD(hx,x) memcpy(&hx,((char*)&x+4),4)
+#define SET_HIGH_WORD(x,hx) memcpy(((char*)&x+4),&hx,4)
+
+#define MAKE_WIDE_CST(x) ((((long long)(x)) << 32) | (x))
+static const long long cst_expmask = MAKE_WIDE_CST(0xfff00000);
+static const long long cst_0x95f64 = MAKE_WIDE_CST(0x00095f64);
+static const long long cst_0x100000 = MAKE_WIDE_CST(0x00100000);
+static const long long cst_0x3ff00000 = MAKE_WIDE_CST(0x3ff00000);
+
+/* Modified version of __ieee754_log(), less precise than log() but a bit */
+/* faste, and computing 4 log() at a time. Assumes that the values are > 0 */
+static void FastApproxLog4Val(v2dfunion* x)
+{
+    V2DF f[2],s[2],z[2],R[2],w[2],t1[2],t2[2];
+    v2dfunion dk[2];
+    i64union k[2], hx[2], i[2];
+
+    GET_HIGH_WORD(hx[0].i[0],x[0].d[0]);
+    GET_HIGH_WORD(hx[0].i[1],x[0].d[1]);
+    k[0].li = hx[0].li & cst_expmask;
+    hx[0].li &= ~cst_expmask;
+    i[0].li = (hx[0].li + cst_0x95f64) & cst_0x100000;
+    hx[0].li |= i[0].li ^ cst_0x3ff00000;
+    SET_HIGH_WORD(x[0].d[0],hx[0].i[0]);     /* normalize x or x/2 */
+    SET_HIGH_WORD(x[0].d[1],hx[0].i[1]);     /* normalize x or x/2 */
+    k[0].li += i[0].li;
+    dk[0].d[0] = (double)k[0].i[0];
+    dk[0].d[1] = (double)k[0].i[1];
+
+    GET_HIGH_WORD(hx[1].i[0],x[1].d[0]);
+    GET_HIGH_WORD(hx[1].i[1],x[1].d[1]);
+    k[1].li = hx[1].li & cst_expmask;
+    hx[1].li &= ~cst_expmask;
+    i[1].li = (hx[1].li + cst_0x95f64) & cst_0x100000;
+    hx[1].li |= i[1].li ^ cst_0x3ff00000;
+    SET_HIGH_WORD(x[1].d[0],hx[1].i[0]);     /* normalize x or x/2 */
+    SET_HIGH_WORD(x[1].d[1],hx[1].i[1]);     /* normalize x or x/2 */
+    k[1].li += i[1].li;
+    dk[1].d[0] = (double)k[1].i[0];
+    dk[1].d[1] = (double)k[1].i[1];
+
+    f[0] = x[0].v2-v2_one;
+    s[0] = f[0]/(x[0].v2+v2_one);
+    z[0] = s[0]*s[0];
+    w[0] = z[0]*z[0];
+    t1[0]= w[0]*(v2_Lg2+w[0]*(v2_Lg4+w[0]*v2_Lg6));
+    t2[0]= z[0]*(v2_Lg1+w[0]*(v2_Lg3+w[0]*(v2_Lg5/*+w[0]*v2_Lg7*/)));
+    R[0] = t2[0]+t1[0];
+    x[0].v2 = ((dk[0].v2 - v2_const1023_mul_2pow20)*v2_ln2_div_2pow20-(s[0]*(f[0]-R[0])-f[0]));
+
+    f[1] = x[1].v2-v2_one;
+    s[1] = f[1]/(x[1].v2+v2_one);
+    z[1] = s[1]*s[1];
+    w[1] = z[1]*z[1];
+    t1[1]= w[1]*(v2_Lg2+w[1]*(v2_Lg4+w[1]*v2_Lg6));
+    t2[1]= z[1]*(v2_Lg1+w[1]*(v2_Lg3+w[1]*(v2_Lg5/*+w[1]*v2_Lg7*/)));
+    R[1] = t2[1]+t1[1];
+    x[1].v2 = ((dk[1].v2- v2_const1023_mul_2pow20)*v2_ln2_div_2pow20-(s[1]*(f[1]-R[1])-f[1]));
+}
+
+static CPL_INLINE void VizGeorefSpline2DBase_func4( double* res,
+                                         const double* pxy,
+                                         const double* xr, const double* yr )
+{
+    v2dfunion x1v, y1v, xv[2], yv[2], dist[2], resv[2];
+    xv[0].d[0] = xr[0];
+    xv[0].d[1] = xr[1];
+    xv[1].d[0] = xr[2];
+    xv[1].d[1] = xr[3];
+    yv[0].d[0] = yr[0];
+    yv[0].d[1] = yr[1];
+    yv[1].d[0] = yr[2];
+    yv[1].d[1] = yr[3];
+    x1v.d[0] = pxy[0];
+    x1v.d[1] = pxy[0];
+    y1v.d[0] = pxy[1];
+    y1v.d[1] = pxy[1];
+    dist[0].v2 = SQ( xv[0].v2 - x1v.v2 ) + SQ( yv[0].v2 - y1v.v2 );
+    dist[1].v2 = SQ( xv[1].v2 - x1v.v2 ) + SQ( yv[1].v2 - y1v.v2 );
+    resv[0] = dist[0];
+    resv[1] = dist[1];
+    FastApproxLog4Val(dist);
+    resv[0].v2 *= dist[0].v2;
+    resv[1].v2 *= dist[1].v2;
+    res[0] = resv[0].d[0];
+    res[1] = resv[0].d[1];
+    res[2] = resv[1].d[0];
+    res[3] = resv[1].d[1];
+}
+#else
+static void VizGeorefSpline2DBase_func4( double* res,
+                                         const double* pxy,
+                                         const double* xr, const double* yr )
+{
+    double dist0  = SQ( xr[0] - pxy[0] ) + SQ( yr[0] - pxy[1] );
+    res[0] = dist0 ? dist0 * log(dist0) : 0.0;
+    double dist1  = SQ( xr[1] - pxy[0] ) + SQ( yr[1] - pxy[1] );
+    res[1] = dist1 ? dist1 * log(dist1) : 0.0;
+    double dist2  = SQ( xr[2] - pxy[0] ) + SQ( yr[2] - pxy[1] );
+    res[2] = dist2 ? dist2 * log(dist2) : 0.0;
+    double dist3  = SQ( xr[3] - pxy[0] ) + SQ( yr[3] - pxy[1] );
+    res[3] = dist3 ? dist3 * log(dist3) : 0.0;
+}
+#endif
 
 int VizGeorefSpline2D::solve(void)
 {
-    int r, c, v;
+    int r, c;
     int p;
 	
     //	No points at all
@@ -275,15 +466,25 @@ int VizGeorefSpline2D::solve(void)
 	
     type = VIZ_GEOREF_SPLINE_FULL;
     // Make the necessary memory allocations
-    if ( _AA )
-        CPLFree(_AA);
-    if ( _Ainv )
-        CPLFree(_Ainv);
-	
+
     _nof_eqs = _nof_points + 3;
+    
+    if( _nof_eqs > INT_MAX / _nof_eqs )
+    {
+        fprintf(stderr, "Too many coefficients. Computation aborted.\n");
+        return 0;
+    }
 	
-    _AA = ( double * )CPLCalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
-    _Ainv = ( double * )CPLCalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
+    double* _AA = ( double * )VSICalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
+    double* _Ainv = ( double * )VSICalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
+    
+    if( _AA == NULL || _Ainv == NULL )
+    {
+        fprintf(stderr, "Out-of-memory while allocating temporary arrays. Computation aborted.\n");
+        VSIFree(_AA);
+        VSIFree(_Ainv);
+        return 0;
+    }
 	
     // Calc the values of the matrix A
     for ( r = 0; r < 3; r++ )
@@ -304,7 +505,7 @@ int VizGeorefSpline2D::solve(void)
     for ( r = 0; r < _nof_points; r++ )
         for ( c = r; c < _nof_points; c++ )
         {
-            A(r+3,c+3) = base_func( x[r], y[r], x[c], y[c] );
+            A(r+3,c+3) = VizGeorefSpline2DBase_func( x[r], y[r], x[c], y[c] );
             if ( r != c )
                 A(c+3,r+3 ) = A(r+3,c+3);
         }
@@ -319,26 +520,53 @@ int VizGeorefSpline2D::solve(void)
     }
 			
 #endif
-			
+
+    int ret  = 4;
+#ifdef HAVE_ARMADILLO
+    try
+    {
+        arma::mat matA(_AA,_nof_eqs,_nof_eqs,false);
+        arma::mat matRHS(_nof_eqs, _nof_vars);
+        int row, col;
+        for(row = 0; row < _nof_eqs; row++)
+            for(col = 0; col < _nof_vars; col++)
+                matRHS.at(row, col) = rhs[col][row];
+        arma::mat matCoefs(arma::solve(matA, matRHS));
+        for(row = 0; row < _nof_eqs; row++)
+            for(col = 0; col < _nof_vars; col++)
+                coef[col][row] = matCoefs.at(row, col);
+    }
+    catch(...)
+    {
+        fprintf(stderr, "There is a problem to invert the interpolation matrix\n");
+        ret = 0;
+    }
+#else
     // Invert the matrix
     int status = matrixInvert( _nof_eqs, _AA, _Ainv );
 			
     if ( !status )
     {
         fprintf(stderr, " There is a problem to invert the interpolation matrix\n");
-        return 0;
+        ret = 0;
     }
-			
-    // calc the coefs
-    for ( v = 0; v < _nof_vars; v++ )
-        for ( r = 0; r < _nof_eqs; r++ )
-        {
-            coef[v][r] = 0.0;
-            for ( c = 0; c < _nof_eqs; c++ )
-                coef[v][r] += Ainv(r,c) * rhs[v][c];
-        }
-				
-    return(4);
+    else
+    {
+        // calc the coefs
+        for ( int v = 0; v < _nof_vars; v++ )
+            for ( r = 0; r < _nof_eqs; r++ )
+            {
+                coef[v][r] = 0.0;
+                for ( c = 0; c < _nof_eqs; c++ )
+                    coef[v][r] += Ainv(r,c) * rhs[v][c];
+            }
+    }
+#endif
+
+    VSIFree(_AA);
+    VSIFree(_Ainv);
+
+    return(ret);
 }
 
 int VizGeorefSpline2D::get_point( const double Px, const double Py, double *vars )
@@ -392,16 +620,29 @@ int VizGeorefSpline2D::get_point( const double Px, const double Py, double *vars
 			fact * rhs[v][rightP+3];
 		break;
 	case VIZ_GEOREF_SPLINE_FULL :
-		for ( v = 0; v < _nof_vars; v++ )
-			vars[v] = coef[v][0] + coef[v][1] * Px + coef[v][2] * Py;
-		
-		for ( r = 0; r < _nof_points; r++ )
-		{
-			tmp = base_func( Px, Py, x[r], y[r] );
-			for ( v= 0; v < _nof_vars; v++ )
-				vars[v] += coef[v][r+3] * tmp;
-		}
-		break;
+    {
+        double Pxy[2] = { Px, Py };
+        for ( v = 0; v < _nof_vars; v++ )
+            vars[v] = coef[v][0] + coef[v][1] * Px + coef[v][2] * Py;
+        
+        for ( r = 0; r < (_nof_points & (~3)); r+=4 )
+        {
+            double tmp[4];
+            VizGeorefSpline2DBase_func4( tmp, Pxy, &x[r], &y[r] );
+            for ( v= 0; v < _nof_vars; v++ )
+                vars[v] += coef[v][r+3] * tmp[0] +
+                        coef[v][r+3+1] * tmp[1] +
+                        coef[v][r+3+2] * tmp[2] +
+                        coef[v][r+3+3] * tmp[3];
+        }
+        for ( ; r < _nof_points; r++ )
+        {
+            tmp = VizGeorefSpline2DBase_func( Px, Py, x[r], y[r] );
+            for ( v= 0; v < _nof_vars; v++ )
+                vars[v] += coef[v][r+3] * tmp;
+        }
+        break;
+    }
 	case VIZ_GEOREF_SPLINE_POINT_WAS_ADDED :
 		fprintf(stderr, " A point was added after the last solve\n");
 		fprintf(stderr, " NO interpolation - return values are zero\n");
@@ -423,18 +664,8 @@ int VizGeorefSpline2D::get_point( const double Px, const double Py, double *vars
 	return(1);
 }
 
-double VizGeorefSpline2D::base_func( const double x1, const double y1,
-						  const double x2, const double y2 )
-{
-	if ( ( x1 == x2 ) && (y1 == y2 ) )
-		return 0.0;
-	
-	double dist  = ( x2 - x1 ) * ( x2 - x1 ) + ( y2 - y1 ) * ( y2 - y1 );
-	
-	return dist * log( dist );	
-}
-
-int matrixInvert( int N, double input[], double output[] )
+#ifndef HAVE_ARMADILLO
+static int matrixInvert( int N, double input[], double output[] )
 {
     // Receives an array of dimension NxN as input.  This is passed as a one-
     // dimensional array of N-squared size.  It produces the inverse of the
@@ -530,14 +761,16 @@ int matrixInvert( int N, double input[], double output[] )
             temp[ k*2*N + col ] /= ftemp;
         }
 		
+        int i2 = k*2*N ;
         for ( row=0; row<N; row++ )
         {
             if ( row != k )
             {
-                ftemp = temp[ row*2*N + k ];
+                int i1 = row*2*N;
+                ftemp = temp[ i1 + k ];
                 for ( col=k; col<2*N; col++ ) 
                 {
-                    temp[ row*2*N + col ] -= ftemp * temp[ k*2*N + col ];
+                    temp[ i1 + col ] -= ftemp * temp[ i2 + col ];
                 }
             }
         }
@@ -568,3 +801,4 @@ int matrixInvert( int N, double input[], double output[] )
     delete [] temp;       // free memory
     return true;
 }
+#endif

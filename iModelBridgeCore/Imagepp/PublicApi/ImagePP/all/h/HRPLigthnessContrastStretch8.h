@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPLigthnessContrastStretch8.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPFunctionFilters
@@ -18,19 +18,20 @@
 // HRPColortwistFilter
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPLigthnessContrastStretch8 : public HRPLigthnessContrastStretch
     {
-    HDECLARE_CLASS_ID(1352, HRPLigthnessContrastStretch)
+    HDECLARE_CLASS_ID(HRPFilterId_LigthnessContrastStretch8, HRPLigthnessContrastStretch)
     
 
 public:
 
     // Primary methods
-    _HDLLg                HRPLigthnessContrastStretch8();
-    _HDLLg                HRPLigthnessContrastStretch8(const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
-    _HDLLg                HRPLigthnessContrastStretch8(const HRPLigthnessContrastStretch8& pi_rSrcFilter);
+    IMAGEPP_EXPORT                HRPLigthnessContrastStretch8();
+    IMAGEPP_EXPORT                HRPLigthnessContrastStretch8(const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
+    IMAGEPP_EXPORT                HRPLigthnessContrastStretch8(const HRPLigthnessContrastStretch8& pi_rSrcFilter);
 
-    _HDLLg virtual        ~HRPLigthnessContrastStretch8();
+    IMAGEPP_EXPORT virtual        ~HRPLigthnessContrastStretch8();
 
     // Cloning
     virtual HRPFilter* Clone() const override;
@@ -41,6 +42,7 @@ private:
 
     // members
     };
+END_IMAGEPP_NAMESPACE
 
 
 

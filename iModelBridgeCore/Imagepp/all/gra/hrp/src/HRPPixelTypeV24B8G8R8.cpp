@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeV24B8G8R8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPPixelTypeV24B8G8R8
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
 
@@ -35,10 +35,11 @@ static ConverterV24R8G8B8_V24R8G8B8<BGR_RED,BGR_BLUE,BGR_RED,BGR_BLUE> s_V24B8G8
 static ConverterV24R8G8B8_V24R8G8B8<RGB_RED,RGB_BLUE,BGR_RED,BGR_BLUE> s_V24B8G8R8_V24R8G8B8;
 static ConverterV24R8G8B8_V24R8G8B8<BGR_RED,BGR_BLUE,RGB_RED,RGB_BLUE> s_V24R8G8B8_V24B8G8R8;
 
-#define                                                                s_V8Gray8_V24B8G8R8   (g_V8Gray8_V24R8G8B8) // from raptc24.cpp
 static ConverterV24R8G8B8_V8Gray8<BGR_RED,BGR_BLUE>                    s_V24B8G8R8_V8Gray8;
-#define                                                                s_V1Gray1_V24B8G8R8   (g_V1Gray1_V24R8G8B8) // from raptc24.cpp
 static ConverterV24R8G8B8_V1Gray1<BGR_RED,BGR_BLUE>                    s_V24B8G8R8_V1Gray1;
+
+extern struct ConverterV8Gray8_V24R8G8B8  s_V8Gray8_V24R8G8B8;      // From HRPPixelTypeV24R8G8B8.cpp      
+extern struct ConverterV1Gray1_V24R8G8B8  s_V1Gray1_V24R8G8B8;      // From HRPPixelTypeV24R8G8B8.cpp      
 
 static ConverterV24R8G8B8_I8R8G8B8<BGR_RED,BGR_BLUE>                   s_V24B8G8R8_I8R8G8B8;
 static ConverterI8R8G8B8_V24R8G8B8<BGR_RED,BGR_BLUE>                   s_I8R8G8B8_V24B8G8R8;
@@ -52,8 +53,11 @@ struct V24B8G8R8ConvertersFrom : public MapHRPPixelTypeToConverter
         {
         insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV24B8G8R8::CLASS_ID, &s_V24B8G8R8_V24B8G8R8));
         insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV24R8G8B8::CLASS_ID, &s_V24R8G8B8_V24B8G8R8));
-        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV8Gray8::CLASS_ID, &s_V8Gray8_V24B8G8R8));
-        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV1Gray1::CLASS_ID, &s_V1Gray1_V24B8G8R8));
+        
+        // Gray to BGR is the same as Gray to RGB since all components have the same value.
+        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV8Gray8::CLASS_ID, &s_V8Gray8_V24R8G8B8));
+        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV1Gray1::CLASS_ID, &s_V1Gray1_V24R8G8B8));
+
         insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeI8R8G8B8::CLASS_ID, &s_I8R8G8B8_V24B8G8R8));
         };
     };

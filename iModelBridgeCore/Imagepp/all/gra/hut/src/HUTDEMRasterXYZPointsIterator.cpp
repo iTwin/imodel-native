@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTDEMRasterXYZPointsIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HCPGCoordModel.h>
 
@@ -31,6 +31,8 @@
 
 
 #define STRIP_HEIGHT 256
+
+
 
 
 namespace { // BEGIN unnamed namespace
@@ -623,9 +625,9 @@ struct HUTDEMRasterXYZPointsIterator::Impl
     {
     HUTDEMRasterXYZPointsExtractor&         m_rRasterPointExtractor;
 
-    auto_ptr<const PixelToPointConverter>   m_pPixelToPointConverter;
-    auto_ptr<const PointDiscriminator>      m_pPointDiscriminator;
-    auto_ptr<const PointModifier>           m_pPointModifier;
+    unique_ptr<const PixelToPointConverter>   m_pPixelToPointConverter;
+    unique_ptr<const PointDiscriminator>      m_pPointDiscriminator;
+    unique_ptr<const PointModifier>           m_pPointModifier;
 
     explicit                                Impl                           (HUTDEMRasterXYZPointsExtractor&    pi_rRasterPointExtractor)
         :   m_rRasterPointExtractor(pi_rRasterPointExtractor)
@@ -764,7 +766,7 @@ void HUTDEMRasterXYZPointsIterator::Init   (HUTDEMRasterXYZPointsExtractor&    p
 
     m_StripHeightInSourceRasterPhyCS = (STRIP_HEIGHT / m_ScaleFactorY);
 
-    m_pStrip = new HRABitmap((uint32_t)m_StripWidthInPixels,
+    m_pStrip = HRABitmap::Create((uint32_t)m_StripWidthInPixels,
                              (uint32_t)STRIP_HEIGHT,
                              //pi_pModelCSp_CSl
                              pTransfoModel,
@@ -786,16 +788,15 @@ void HUTDEMRasterXYZPointsIterator::Init   (HUTDEMRasterXYZPointsExtractor&    p
             {
             try
                 {
-                if (pi_rExtractor.m_pRasterFile->GetPageDescriptor(0)->GetGeocoding() != 0)
+                if (pi_rExtractor.m_pRasterFile->GetPageDescriptor(0)->GetGeocodingCP() != 0)
                 {     
 					//MST : The computation of the grid model is currently just used to determine if the conversion 
 					//      from the source to the destination GCS is possible (i.e. : validity domain verification).
 					//      Eventually it might be removed when HCPGCoordModel or HUTDEMRasterXYZPointsIterator provide such verification. 					
-                    m_pReprojectionModel = HCPGeoTiffKeys::
-                                           GetTransfoModelForReprojection(pi_rExtractor.m_pRasterFile,
+                    m_pReprojectionModel = HCPGeoTiffKeys::GetTransfoModelForReprojection(pi_rExtractor.m_pRasterFile,
                                                                           0,
-                                                                          m_pDestCoorSys,
-                                                                          (HFCPtr<HGF2DWorldCluster>&)pi_rExtractor.m_spWorldCluster, 
+                                                                          m_pDestCoorSys.get(),
+                                                                          (HFCPtr<HGF2DWorldCluster>&)(HUTDEMRasterXYZPointsExtractor::GetHMRWorldCluster()),
                                                                           NULL);
                 }
 
@@ -806,10 +807,10 @@ void HUTDEMRasterXYZPointsIterator::Init   (HUTDEMRasterXYZPointsExtractor&    p
                 }
                 else
                 {
-                    IRasterBaseGcsPtr pSrcFileGeocoding = pi_rExtractor.m_pRasterFile->GetPageDescriptor(0)->GetGeocoding();
+                    IRasterBaseGcsCP pSrcFileGeocoding = pi_rExtractor.m_pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
 
                     if (pSrcFileGeocoding != NULL && pSrcFileGeocoding->IsValid())
-                        m_pReprojectionModel = new HCPGCoordModel(pSrcFileGeocoding, m_pDestCoorSys);
+                        m_pReprojectionModel = new HCPGCoordModel(*(pSrcFileGeocoding->Clone()), *m_pDestCoorSys);
 					
 					HASSERT(m_pReprojectionModel != 0);
                 }
@@ -955,7 +956,7 @@ size_t HUTDEMRasterXYZPointsIterator::GetXYZPointsImpl(void*    po_pPointsBuffer
 
     HDEBUGCODE(const_cast<HUTDEMRasterXYZPointsIterator&>(*this).InitStripForDebug());
 
-    m_pStrip->CopyFrom(m_pImpl->m_rRasterPointExtractor.m_pRaster);
+    m_pStrip->CopyFrom(*m_pImpl->m_rRasterPointExtractor.m_pRaster);
 
 
     HFCPtr<HGF2DTransfoModel> pTransfoModel(ComputeTransfoModel());

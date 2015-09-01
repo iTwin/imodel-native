@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCLocalConnection.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCLocalConnection
@@ -19,11 +19,12 @@
 #include "HFCConnection.h"
 #include "HFCURLFile.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HFCLocalConnection : public HFCConnection
     {
 public:
-    HDECLARE_CLASS_ID(1804, HFCConnection)
+    HDECLARE_CLASS_ID(HFCConnectionId_Local, HFCConnection)
 
     //--------------------------------------
     // Construction/Destruction
@@ -67,3 +68,4 @@ private:
     HFCLocalConnection& operator=(const HFCLocalConnection&);
     };
 
+END_IMAGEPP_NAMESPACE

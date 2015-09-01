@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFImportExport.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFImportExport
@@ -16,6 +16,7 @@
 #include "HRFExportOptions.h"
 #include "HGF2DWorldCluster.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 // This value is use in the file HUTImportExport and
 // HUTImportFromFileExportToFile to synchronize the size of
 // the StripAdapter.
@@ -57,257 +58,259 @@ public:
     friend class HRFExportOptions;
 
     // Creation and destruction interface
-    _HDLLg HRFImportExport (const HFCPtr<HGF2DWorldCluster>& pi_pWorldCluster);
+    IMAGEPP_EXPORT HRFImportExport (const HFCPtr<HGF2DWorldCluster>& pi_pWorldCluster);
 
-    _HDLLg virtual ~HRFImportExport();
+    IMAGEPP_EXPORT virtual ~HRFImportExport();
 
     // Export options
-    _HDLLg virtual void                            SetExportOptions(const HFCPtr<HRFExportOptions>& pi_rpExportOptions);
-    _HDLLg virtual HRFExportOptions                GetSelectedExportOptions() const;
+    IMAGEPP_EXPORT virtual void                            SetExportOptions(const HFCPtr<HRFExportOptions>& pi_rpExportOptions);
+    IMAGEPP_EXPORT virtual HRFExportOptions                GetSelectedExportOptions() const;
 
     // Export File Format interface
-    _HDLLg virtual uint32_t                        CountExportFileFormat() const;
-    _HDLLg virtual HRFRasterFileCreator*           GetExportFileFormat(uint32_t pi_index) const;
+    IMAGEPP_EXPORT virtual uint32_t                        CountExportFileFormat() const;
+    IMAGEPP_EXPORT virtual HRFRasterFileCreator*           GetExportFileFormat(uint32_t pi_index) const;
 
-    _HDLLg virtual void                            SelectExportFileFormat(const HRFRasterFileCreator* pi_pCreator);
-    _HDLLg virtual void                            SelectExportFileFormatByIndex(uint32_t pi_index);
+    IMAGEPP_EXPORT virtual void                            SelectExportFileFormat(const HRFRasterFileCreator* pi_pCreator);
+    IMAGEPP_EXPORT virtual void                            SelectExportFileFormatByIndex(uint32_t pi_index);
 
-    _HDLLg virtual const HRFRasterFileCreator*     GetSelectedExportFileFormat() const;
-    _HDLLg virtual uint32_t                        GetSelectedExportFileFormatIndex() const;
+    IMAGEPP_EXPORT virtual const HRFRasterFileCreator*     GetSelectedExportFileFormat() const;
+    IMAGEPP_EXPORT virtual uint32_t                        GetSelectedExportFileFormatIndex() const;
 
     // Export File interface
-    _HDLLg virtual void                            SelectExportFilename(const HFCPtr<HFCURL>& pi_rpURLPath);
-    _HDLLg virtual const HFCPtr<HFCURL>&           GetSelectedExportFilename() const;
+    IMAGEPP_EXPORT virtual void                            SelectExportFilename(const HFCPtr<HFCURL>& pi_rpURLPath);
+    IMAGEPP_EXPORT virtual const HFCPtr<HFCURL>&           GetSelectedExportFilename() const;
 
     // Pixel Type interface
-    _HDLLg virtual uint32_t                        CountPixelType() const;
-    _HDLLg virtual HCLASS_ID                     GetPixelType(uint32_t pi_index) const;
+    IMAGEPP_EXPORT virtual uint32_t                        CountPixelType() const;
+    IMAGEPP_EXPORT virtual HCLASS_ID                     GetPixelType(uint32_t pi_index) const;
 
-    _HDLLg virtual void                            SelectPixelType(HCLASS_ID pi_PixelType);
-    _HDLLg virtual void                            SelectPixelTypeByIndex(uint32_t pi_Index);
-    _HDLLg virtual void                            SelectPixelType(const HFCPtr<HRPPixelType>& pi_rpPixelType);
+    IMAGEPP_EXPORT virtual void                            SelectPixelType(HCLASS_ID pi_PixelType);
+    IMAGEPP_EXPORT virtual void                            SelectPixelTypeByIndex(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                            SelectPixelType(const HFCPtr<HRPPixelType>& pi_rpPixelType);
 
-    _HDLLg virtual HCLASS_ID                     GetSelectedPixelType() const;
-    _HDLLg virtual uint32_t                        GetSelectedPixelTypeIndex() const;
-    _HDLLg virtual const HFCPtr<HRPPixelType>&     GetPixelType() const;
+    IMAGEPP_EXPORT virtual HCLASS_ID                     GetSelectedPixelType() const;
+    IMAGEPP_EXPORT virtual uint32_t                        GetSelectedPixelTypeIndex() const;
+    IMAGEPP_EXPORT virtual const HFCPtr<HRPPixelType>&     GetPixelType() const;
 
     // Sub resolution Pixel Type interface
-    _HDLLg virtual uint32_t                        CountSubResPixelType() const;
-    _HDLLg virtual HCLASS_ID                     GetSubResPixelType(uint32_t pi_index) const;
+    IMAGEPP_EXPORT virtual uint32_t                        CountSubResPixelType() const;
+    IMAGEPP_EXPORT virtual HCLASS_ID                     GetSubResPixelType(uint32_t pi_index) const;
 
-    _HDLLg virtual void                            SelectSubResPixelType(HCLASS_ID pi_PixelType);
-    _HDLLg virtual void                            SelectSubResPixelTypeByIndex(uint32_t pi_Index);
-    _HDLLg virtual void                            SelectSubResPixelType(const HFCPtr<HRPPixelType>& pi_rpPixelType);
+    IMAGEPP_EXPORT virtual void                            SelectSubResPixelType(HCLASS_ID pi_PixelType);
+    IMAGEPP_EXPORT virtual void                            SelectSubResPixelTypeByIndex(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                            SelectSubResPixelType(const HFCPtr<HRPPixelType>& pi_rpPixelType);
 
-    _HDLLg virtual HCLASS_ID                     GetSelectedSubResPixelType() const;
-    _HDLLg virtual uint32_t                        GetSelectedSubResPixelTypeIndex() const;
-    _HDLLg virtual const HFCPtr<HRPPixelType>&     GetSubResPixelType() const;
+    IMAGEPP_EXPORT virtual HCLASS_ID                     GetSelectedSubResPixelType() const;
+    IMAGEPP_EXPORT virtual uint32_t                        GetSelectedSubResPixelTypeIndex() const;
+    IMAGEPP_EXPORT virtual const HFCPtr<HRPPixelType>&     GetSubResPixelType() const;
 
     // Down sampling method interface
-    _HDLLg virtual uint32_t                        CountDownSamplingMethod() const;
-    _HDLLg virtual HRFDownSamplingMethod           GetDownSamplingMethod(uint32_t pi_index) const;
+    IMAGEPP_EXPORT virtual uint32_t                        CountDownSamplingMethod() const;
+    IMAGEPP_EXPORT virtual HRFDownSamplingMethod           GetDownSamplingMethod(uint32_t pi_index) const;
 
-    _HDLLg virtual void                            SelectDownSamplingMethod(HRFDownSamplingMethod pi_DownSamplingMethod);
-    _HDLLg virtual void                            SelectDownSamplingMethodByIndex(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                            SelectDownSamplingMethod(HRFDownSamplingMethod pi_DownSamplingMethod);
+    IMAGEPP_EXPORT virtual void                            SelectDownSamplingMethodByIndex(uint32_t pi_Index);
 
-    _HDLLg virtual HRFDownSamplingMethod           GetSelectedDownSamplingMethod() const;
-    _HDLLg virtual uint32_t                        GetSelectedDownSamplingMethodIndex() const;
+    IMAGEPP_EXPORT virtual HRFDownSamplingMethod           GetSelectedDownSamplingMethod() const;
+    IMAGEPP_EXPORT virtual uint32_t                        GetSelectedDownSamplingMethodIndex() const;
 
     // Sub Down sampling method interface
-    _HDLLg virtual uint32_t                        CountSubResDownSamplingMethod() const;
-    _HDLLg virtual HRFDownSamplingMethod           GetSubResDownSamplingMethod(uint32_t pi_index) const;
+    IMAGEPP_EXPORT virtual uint32_t                        CountSubResDownSamplingMethod() const;
+    IMAGEPP_EXPORT virtual HRFDownSamplingMethod           GetSubResDownSamplingMethod(uint32_t pi_index) const;
 
-    _HDLLg virtual void                            SelectSubResDownSamplingMethod(HRFDownSamplingMethod pi_DownSamplingMethod);
-    _HDLLg virtual void                            SelectSubResDownSamplingMethodByIndex(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                            SelectSubResDownSamplingMethod(HRFDownSamplingMethod pi_DownSamplingMethod);
+    IMAGEPP_EXPORT virtual void                            SelectSubResDownSamplingMethodByIndex(uint32_t pi_Index);
 
-    _HDLLg virtual HRFDownSamplingMethod           GetSelectedSubResDownSamplingMethod() const;
-    _HDLLg virtual uint32_t                        GetSelectedSubResDownSamplingMethodIndex() const;
+    IMAGEPP_EXPORT virtual HRFDownSamplingMethod           GetSelectedSubResDownSamplingMethod() const;
+    IMAGEPP_EXPORT virtual uint32_t                        GetSelectedSubResDownSamplingMethodIndex() const;
 
     // Special override method, for DownSampling
     // These methods set a DownSamplingMethod, without any consideration of type file.
     // Normally used by special application only.
-    _HDLLg void                                    OverrideDownSamplingMethod(HRFDownSamplingMethod pi_DownSamplingMethod);
-    _HDLLg void                                    OverrideSubResDownSamplingMethod(HRFDownSamplingMethod pi_DownSamplingMethod);
+    IMAGEPP_EXPORT void                                    OverrideDownSamplingMethod(HRFDownSamplingMethod pi_DownSamplingMethod);
+    IMAGEPP_EXPORT void                                    OverrideSubResDownSamplingMethod(HRFDownSamplingMethod pi_DownSamplingMethod);
 
 
     // Codec interface
-    _HDLLg virtual uint32_t                    CountCodecs() const;
-    _HDLLg virtual HCLASS_ID                    GetCodec(uint32_t pi_index) const;
+    IMAGEPP_EXPORT virtual uint32_t                    CountCodecs() const;
+    IMAGEPP_EXPORT virtual HCLASS_ID                    GetCodec(uint32_t pi_index) const;
 
-    _HDLLg virtual bool                         SelectCodec(HCLASS_ID pi_Codec);
-    _HDLLg virtual bool                         SelectCodecSample(const HFCPtr<HCDCodec>& pi_rpCodec);
-    _HDLLg virtual void                         SelectCodecByIndex(uint32_t pi_index);
+    IMAGEPP_EXPORT virtual bool                         SelectCodec(HCLASS_ID pi_Codec);
+    IMAGEPP_EXPORT virtual bool                         SelectCodecSample(const HFCPtr<HCDCodec>& pi_rpCodec);
+    IMAGEPP_EXPORT virtual void                         SelectCodecByIndex(uint32_t pi_index);
 
-    _HDLLg virtual HCLASS_ID                    GetSelectedCodec() const;
-    _HDLLg virtual const HFCPtr<HCDCodec>&      GetSelectedCodecSample() const;
-    _HDLLg virtual uint32_t                    GetSelectedCodecIndex() const;
+    IMAGEPP_EXPORT virtual HCLASS_ID                    GetSelectedCodec() const;
+    IMAGEPP_EXPORT virtual const HFCPtr<HCDCodec>&      GetSelectedCodecSample() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetSelectedCodecIndex() const;
 
-    _HDLLg virtual uint32_t                    CountCompressionStep() const;
-    _HDLLg virtual void                         SelectCompressionQuality(uint32_t pi_Quality);
-    _HDLLg virtual uint32_t                    GetSelectedCompressionQuality() const;
+    IMAGEPP_EXPORT virtual uint32_t                    CountCompressionStep() const;
+    IMAGEPP_EXPORT virtual void                         SelectCompressionQuality(uint32_t pi_Quality);
+    IMAGEPP_EXPORT virtual uint32_t                    GetSelectedCompressionQuality() const;
 
-    _HDLLg virtual uint32_t                    CountCompressionRatioStep() const;
-    _HDLLg virtual void                         SelectCompressionRatio(uint32_t pi_Quality);
-    _HDLLg virtual uint32_t                    GetSelectedCompressionRatio() const;
+    IMAGEPP_EXPORT virtual uint32_t                    CountCompressionRatioStep() const;
+    IMAGEPP_EXPORT virtual void                         SelectCompressionRatio(uint32_t pi_Quality);
+    IMAGEPP_EXPORT virtual uint32_t                    GetSelectedCompressionRatio() const;
 
     // Sub resolution Codec interface
-    _HDLLg virtual uint32_t                    CountSubResCodecs() const;
-    _HDLLg virtual HCLASS_ID                    GetSubResCodec(uint32_t pi_index) const;
+    IMAGEPP_EXPORT virtual uint32_t                    CountSubResCodecs() const;
+    IMAGEPP_EXPORT virtual HCLASS_ID                    GetSubResCodec(uint32_t pi_index) const;
 
-    _HDLLg virtual bool                         SelectSubResCodec(HCLASS_ID pi_Codec);
-    _HDLLg virtual bool                         SelectSubResCodecSample(const HFCPtr<HCDCodec>& pi_rpCodec);
-    _HDLLg virtual void                         SelectSubResCodecByIndex(uint32_t pi_index);
+    IMAGEPP_EXPORT virtual bool                         SelectSubResCodec(HCLASS_ID pi_Codec);
+    IMAGEPP_EXPORT virtual bool                         SelectSubResCodecSample(const HFCPtr<HCDCodec>& pi_rpCodec);
+    IMAGEPP_EXPORT virtual void                         SelectSubResCodecByIndex(uint32_t pi_index);
 
-    _HDLLg virtual HCLASS_ID                    GetSelectedSubResCodec() const;
-    _HDLLg virtual const HFCPtr<HCDCodec>&      GetSelectedSubResCodecSample() const;
-    _HDLLg virtual uint32_t                    GetSelectedSubResCodecIndex() const;
+    IMAGEPP_EXPORT virtual HCLASS_ID                    GetSelectedSubResCodec() const;
+    IMAGEPP_EXPORT virtual const HFCPtr<HCDCodec>&      GetSelectedSubResCodecSample() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetSelectedSubResCodecIndex() const;
 
-    _HDLLg virtual uint32_t                    CountSubResCompressionStep() const;
-    _HDLLg virtual void                         SelectSubResCompressionQuality(uint32_t pi_Quality);
-    _HDLLg virtual uint32_t                    GetSelectedSubResCompressionQuality() const;
+    IMAGEPP_EXPORT virtual uint32_t                    CountSubResCompressionStep() const;
+    IMAGEPP_EXPORT virtual void                         SelectSubResCompressionQuality(uint32_t pi_Quality);
+    IMAGEPP_EXPORT virtual uint32_t                    GetSelectedSubResCompressionQuality() const;
 
-    _HDLLg virtual uint32_t                    CountSubResCompressionRatioStep() const;
-    _HDLLg virtual void                         SelectSubResCompressionRatio(uint32_t pi_Quality);
-    _HDLLg virtual uint32_t                    GetSelectedSubResCompressionRatio() const;
+    IMAGEPP_EXPORT virtual uint32_t                    CountSubResCompressionRatioStep() const;
+    IMAGEPP_EXPORT virtual void                         SelectSubResCompressionRatio(uint32_t pi_Quality);
+    IMAGEPP_EXPORT virtual uint32_t                    GetSelectedSubResCompressionRatio() const;
 
     // Block Type  interface
-    _HDLLg virtual uint32_t                    CountBlockType() const;
-    _HDLLg virtual HRFBlockType                 GetBlockType(uint32_t pi_index) const;
+    IMAGEPP_EXPORT virtual uint32_t                    CountBlockType() const;
+    IMAGEPP_EXPORT virtual HRFBlockType                 GetBlockType(uint32_t pi_index) const;
 
-    _HDLLg virtual void                         SelectBlockType(HRFBlockType pi_BlockType);
-    _HDLLg virtual void                         SelectBlockTypeByIndex(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                         SelectBlockType(HRFBlockType pi_BlockType);
+    IMAGEPP_EXPORT virtual void                         SelectBlockTypeByIndex(uint32_t pi_Index);
 
-    _HDLLg virtual HRFBlockType                 GetSelectedBlockType() const;
-    _HDLLg virtual uint32_t                    GetSelectedBlockTypeIndex() const;
+    IMAGEPP_EXPORT virtual HRFBlockType                 GetSelectedBlockType() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetSelectedBlockTypeIndex() const;
 
-    _HDLLg virtual void                         SetBlockWidth(uint32_t pi_Width);
-    _HDLLg virtual void                         SetBlockHeight(uint32_t pi_Height);
+    IMAGEPP_EXPORT virtual void                         SetBlockWidth(uint32_t pi_Width);
+    IMAGEPP_EXPORT virtual void                         SetBlockHeight(uint32_t pi_Height);
 
-    _HDLLg virtual uint32_t                    GetBlockWidth() const;
-    _HDLLg virtual uint32_t                    GetBlockHeight() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetBlockWidth() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetBlockHeight() const;
 
-    _HDLLg virtual uint32_t                    GetMinimumBlockWidth() const;
-    _HDLLg virtual uint32_t                    GetMinimumBlockHeight() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetMinimumBlockWidth() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetMinimumBlockHeight() const;
 
-    _HDLLg virtual uint32_t                    CountBlockWidthIncrementStep() const;
-    _HDLLg virtual uint32_t                    CountBlockHeightIncrementStep() const;
+    IMAGEPP_EXPORT virtual uint32_t                    CountBlockWidthIncrementStep() const;
+    IMAGEPP_EXPORT virtual uint32_t                    CountBlockHeightIncrementStep() const;
 
-    _HDLLg virtual uint32_t                    GetBlockWidthIncrementStep() const;
-    _HDLLg virtual uint32_t                    GetBlockHeightIncrementStep() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetBlockWidthIncrementStep() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetBlockHeightIncrementStep() const;
 
-    _HDLLg virtual void                         SelectBlockWidthIncrementStep(uint32_t pi_Index);
-    _HDLLg virtual void                         SelectBlockHeightIncrementStep(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                         SelectBlockWidthIncrementStep(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                         SelectBlockHeightIncrementStep(uint32_t pi_Index);
 
-    _HDLLg virtual uint32_t                    GetSelectedBlockWidthIncrementStep() const;
-    _HDLLg virtual uint32_t                    GetSelectedBlockHeightIncrementStep() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetSelectedBlockWidthIncrementStep() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetSelectedBlockHeightIncrementStep() const;
 
     // Sub resolution Block Interface
-    _HDLLg virtual uint32_t                    CountSubResBlockType() const;
-    _HDLLg virtual HRFBlockType                 GetSubResBlockType(uint32_t pi_index) const;
+    IMAGEPP_EXPORT virtual uint32_t                    CountSubResBlockType() const;
+    IMAGEPP_EXPORT virtual HRFBlockType                 GetSubResBlockType(uint32_t pi_index) const;
 
-    _HDLLg virtual void                         SelectSubResBlockType(HRFBlockType pi_BlockType);
-    _HDLLg virtual void                         SelectSubResBlockTypeByIndex(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                         SelectSubResBlockType(HRFBlockType pi_BlockType);
+    IMAGEPP_EXPORT virtual void                         SelectSubResBlockTypeByIndex(uint32_t pi_Index);
 
-    _HDLLg virtual HRFBlockType                 GetSelectedSubResBlockType() const;
-    _HDLLg virtual uint32_t                    GetSelectedSubResBlockTypeIndex() const;
+    IMAGEPP_EXPORT virtual HRFBlockType                 GetSelectedSubResBlockType() const;
+    IMAGEPP_EXPORT virtual uint32_t                    GetSelectedSubResBlockTypeIndex() const;
 
     // Tag interface
-    _HDLLg virtual uint32_t                         CountTag() const;
+    IMAGEPP_EXPORT virtual uint32_t                         CountTag() const;
 
-    _HDLLg virtual const HFCPtr<HPMGenericAttribute> GetTag(uint32_t pi_Index) const;
-    _HDLLg virtual void                              SetTag(const HFCPtr<HPMGenericAttribute>&  pi_rpTag);
+    IMAGEPP_EXPORT virtual const HFCPtr<HPMGenericAttribute> GetTag(uint32_t pi_Index) const;
+    IMAGEPP_EXPORT virtual void                              SetTag(const HFCPtr<HPMGenericAttribute>&  pi_rpTag);
 
     template <typename AttributeT> AttributeT const* FindTagCP() const;  
     template <typename AttributeT> AttributeT*       FindTagP(); 
     
     template <typename AttributeT> bool              HasTag() const; 
-    _HDLLg virtual bool                              HasTag(HPMGenericAttribute const& pi_Tag) const; 
+    IMAGEPP_EXPORT virtual bool                              HasTag(HPMGenericAttribute const& pi_Tag) const; 
     
     //MetaData interface
     const HMDMetaDataContainerList&         GetMetaDataContainerList() const;
     const HFCPtr<HMDMetaDataContainer>      GetMetaDataContainer(HMDMetaDataContainer::Type     pi_ContainerType) const;
-    _HDLLg void                                    SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>&  pi_rpMDContainer);
+    IMAGEPP_EXPORT void                                    SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>&  pi_rpMDContainer);
 
     // Geocoding interface
-    _HDLLg IRasterBaseGcsPtr                GetGeocoding() const;
-    _HDLLg void                             SetGeocoding(IRasterBaseGcsPtr pi_pGeocoding);
+    IMAGEPP_EXPORT RasterFileGeocodingCR        GetRasterFileGeocoding() const;
+    IMAGEPP_EXPORT void                              SetRasterFileGeocoding(RasterFileGeocodingR pi_pGeocoding);
+    IMAGEPP_EXPORT IRasterBaseGcsCP             GetGeocodingCP() const;
+    IMAGEPP_EXPORT void                              SetGeocoding(IRasterBaseGcsP pi_pGeocoding);
 
     // Resample interface
-    _HDLLg virtual void                            SetResample(bool pi_Resample);
-    _HDLLg virtual bool                           GetResample() const;
+    IMAGEPP_EXPORT virtual void                            SetResample(bool pi_Resample);
+    IMAGEPP_EXPORT virtual bool                           GetResample() const;
 
-    _HDLLg virtual void                            SetResampleIsForce(bool pi_Resampling);
-    _HDLLg virtual bool                           GetResampleIsForce() const;
+    IMAGEPP_EXPORT virtual void                            SetResampleIsForce(bool pi_Resampling);
+    IMAGEPP_EXPORT virtual bool                           GetResampleIsForce() const;
 
-    _HDLLg virtual void                            SetResamplingMethod(const HFCPtr<HRPFilter>& pi_rFilter);
-    _HDLLg virtual const HFCPtr<HRPFilter>&        GetResamplingMethod() const;
+    IMAGEPP_EXPORT virtual void                            SetResamplingMethod(const HFCPtr<HRPFilter>& pi_rFilter);
+    IMAGEPP_EXPORT virtual const HFCPtr<HRPFilter>&        GetResamplingMethod() const;
 
 
     // Image size interface
-    _HDLLg virtual void                            SetImageWidth(uint32_t pi_Width);
-    _HDLLg virtual void                            SetImageHeight(uint32_t pi_Height);
+    IMAGEPP_EXPORT virtual void                            SetImageWidth(uint32_t pi_Width);
+    IMAGEPP_EXPORT virtual void                            SetImageHeight(uint32_t pi_Height);
 
-    _HDLLg virtual uint32_t                        GetImageWidth() const;
-    _HDLLg virtual uint32_t                        GetImageHeight() const;
+    IMAGEPP_EXPORT virtual uint32_t                        GetImageWidth() const;
+    IMAGEPP_EXPORT virtual uint32_t                        GetImageHeight() const;
 
     // Scale  interface
-    _HDLLg virtual void                            SetScaleFactorX(double pi_ScaleFactorX);
-    _HDLLg virtual void                            SetScaleFactorY(double pi_ScaleFactorY);
+    IMAGEPP_EXPORT virtual void                            SetScaleFactorX(double pi_ScaleFactorX);
+    IMAGEPP_EXPORT virtual void                            SetScaleFactorY(double pi_ScaleFactorY);
 
-    _HDLLg virtual double                         GetScaleFactorX() const;
-    _HDLLg virtual double                         GetScaleFactorY() const;
+    IMAGEPP_EXPORT virtual double                         GetScaleFactorX() const;
+    IMAGEPP_EXPORT virtual double                         GetScaleFactorY() const;
 
     // Encoding type interface
-    _HDLLg virtual uint32_t                        CountEncoding() const;
-    _HDLLg virtual HRFEncodingType                 GetEncoding(uint32_t pi_Index) const;
+    IMAGEPP_EXPORT virtual uint32_t                        CountEncoding() const;
+    IMAGEPP_EXPORT virtual HRFEncodingType                 GetEncoding(uint32_t pi_Index) const;
 
-    _HDLLg virtual void                            SelectEncodingByIndex(uint32_t pi_Index);
-    _HDLLg virtual void                            SelectEncoding(HRFEncodingType pi_EncodingType);
+    IMAGEPP_EXPORT virtual void                            SelectEncodingByIndex(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                            SelectEncoding(HRFEncodingType pi_EncodingType);
 
-    _HDLLg virtual HRFEncodingType                 GetSelectedEncoding() const;
-    _HDLLg virtual uint32_t                        GetSelectedEncodingIndex() const;
+    IMAGEPP_EXPORT virtual HRFEncodingType                 GetSelectedEncoding() const;
+    IMAGEPP_EXPORT virtual uint32_t                        GetSelectedEncodingIndex() const;
 
     // Georeference format interface
-    _HDLLg virtual uint32_t                        CountGeoreferenceFormats() const;
-    _HDLLg virtual HRFGeoreferenceFormat           GetGeoreferenceFormat(uint32_t pi_index) const;
+    IMAGEPP_EXPORT virtual uint32_t                        CountGeoreferenceFormats() const;
+    IMAGEPP_EXPORT virtual HRFGeoreferenceFormat           GetGeoreferenceFormat(uint32_t pi_index) const;
 
-    _HDLLg virtual void                            SelectGeoreferenceFormat(HRFGeoreferenceFormat pi_Format);
-    _HDLLg virtual void                            SelectGeoreferenceFormatByIndex(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                            SelectGeoreferenceFormat(HRFGeoreferenceFormat pi_Format);
+    IMAGEPP_EXPORT virtual void                            SelectGeoreferenceFormatByIndex(uint32_t pi_Index);
 
-    _HDLLg virtual HRFGeoreferenceFormat           GetSelectedGeoreferenceFormat() const;
-    _HDLLg virtual uint32_t                        GetSelectedGeoreferenceFormatIndex() const;
+    IMAGEPP_EXPORT virtual HRFGeoreferenceFormat           GetSelectedGeoreferenceFormat() const;
+    IMAGEPP_EXPORT virtual uint32_t                        GetSelectedGeoreferenceFormatIndex() const;
 
     // Export interface
-    _HDLLg virtual HFCPtr<HRFRasterFile>           StartExport() = 0;
+    IMAGEPP_EXPORT virtual HFCPtr<HRFRasterFile>           StartExport() = 0;
 
     // BestMatch interface
-    _HDLLg virtual void                            BestMatchSelectedValues() = 0;
+    IMAGEPP_EXPORT virtual void                            BestMatchSelectedValues() = 0;
 
-    _HDLLg virtual WString                         ComposeFilenameWithOptions() const;
-    _HDLLg virtual uint32_t                        ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath);
+    IMAGEPP_EXPORT virtual WString                         ComposeFilenameWithOptions() const;
+    IMAGEPP_EXPORT virtual uint32_t                        ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath);
 
     // Default Values
-    _HDLLg virtual HGF2DPosition                   GetOriginalSize() const;
-    _HDLLg virtual HGF2DPosition                   GetDefaultResampleSize() const;
-    _HDLLg virtual double                         GetDefaultResampleScaleFactorX() const;
-    _HDLLg virtual double                         GetDefaultResampleScaleFactorY() const;
+    IMAGEPP_EXPORT virtual HGF2DPosition                   GetOriginalSize() const;
+    IMAGEPP_EXPORT virtual HGF2DPosition                   GetDefaultResampleSize() const;
+    IMAGEPP_EXPORT virtual double                         GetDefaultResampleScaleFactorX() const;
+    IMAGEPP_EXPORT virtual double                         GetDefaultResampleScaleFactorY() const;
 
     // Status Information
-    _HDLLg virtual bool                           ImageSizeIsLock();
-    _HDLLg virtual bool                           ScaleFactorIsLock();
-    _HDLLg virtual bool                           MaintainAspectRatioIsCheck();
+    IMAGEPP_EXPORT virtual bool                           ImageSizeIsLock();
+    IMAGEPP_EXPORT virtual bool                           ScaleFactorIsLock();
+    IMAGEPP_EXPORT virtual bool                           MaintainAspectRatioIsCheck();
 
-    _HDLLg virtual void                            SetImageSizeIsLock(bool pi_Check);
-    _HDLLg virtual void                            SetScaleFactorIsLock(bool pi_Check);
-    _HDLLg virtual void                            SetMaintainAspectRatio(bool pi_Check);
+    IMAGEPP_EXPORT virtual void                            SetImageSizeIsLock(bool pi_Check);
+    IMAGEPP_EXPORT virtual void                            SetScaleFactorIsLock(bool pi_Check);
+    IMAGEPP_EXPORT virtual void                            SetMaintainAspectRatio(bool pi_Check);
 
     // Default color
-    _HDLLg virtual void*                           GetRGBDefaultColor() const;
-    _HDLLg virtual void                            SetRGBDefaultColor(const void* pi_pValue);
-    _HDLLg virtual void                            SetRGBADefaultColor(const void* pi_pValue);
+    IMAGEPP_EXPORT virtual void const*                     GetRGBDefaultColor() const;
+    IMAGEPP_EXPORT virtual void                            SetRGBDefaultColor(const void* pi_pValue);
+    IMAGEPP_EXPORT virtual void                            SetRGBADefaultColor(const void* pi_pValue);
 
-    _HDLLg virtual bool                           UseDestinationPaletteIfIndexed() const;
-    _HDLLg virtual void                            SetUseDestinationPaletteIfIndexed(bool pi_UseDestinationPalette);
+    IMAGEPP_EXPORT virtual bool                           UseDestinationPaletteIfIndexed() const;
+    IMAGEPP_EXPORT virtual void                            SetUseDestinationPaletteIfIndexed(bool pi_UseDestinationPalette);
 
 protected:
     // EncodingType list
@@ -374,13 +377,13 @@ protected:
     uint32_t                            m_CountCompressionRatioStep;
     uint32_t                            m_SubResCountCompressionRatioStep;
 
-    _HDLLg virtual void                        PrepareExportFileFormatOptions();
-    _HDLLg virtual HFCPtr<HRFPageDescriptor>   CreatePageFromSelectedValues();
-    _HDLLg virtual HFCPtr<HRFRasterFile>       CreateFileFromSelectedValues();
-    _HDLLg virtual void                        UpdateBlockValues();
-    _HDLLg         void                        ClearTagList();
+    IMAGEPP_EXPORT virtual void                        PrepareExportFileFormatOptions();
+    IMAGEPP_EXPORT virtual HFCPtr<HRFPageDescriptor>   CreatePageFromSelectedValues();
+    IMAGEPP_EXPORT virtual HFCPtr<HRFRasterFile>       CreateFileFromSelectedValues();
+    IMAGEPP_EXPORT virtual void                        UpdateBlockValues();
+    IMAGEPP_EXPORT         void                        ClearTagList();
 
-    _HDLLg         void                        ValidateUncompressedExportSize(HFCPtr<HRFRasterFile>& pi_prDstRasterFile,
+    IMAGEPP_EXPORT         void                        ValidateUncompressedExportSize(HFCPtr<HRFRasterFile>& pi_prDstRasterFile,
                                                                               bool*                 po_pIsCompressedImg = 0) const;
 
     HFCPtr<HRPFilter>                   m_pResamplingFilter;
@@ -428,5 +431,6 @@ private:
     HRFImportExport(const HRFImportExport&);
     HRFImportExport& operator=(const HRFImportExport&);
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRFImportExport.hpp"

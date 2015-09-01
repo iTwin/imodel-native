@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCPGeoTiffKeys.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCPGeoTiffKeys
@@ -16,13 +16,12 @@
 #include "HPMAttribute.h"
 #include "HTIFFTag.h"
 #include "HGF2DWorldCluster.h"
-#include "HMDMetaDataContainer.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HRFRasterFile;
 
-#include "HRFRasterFile.h"
-
-class HCPGeoTiffKeys : public HMDMetaDataContainer, public IGeoTiffKeysList
+class HCPGeoTiffKeys : public HFCShareableObject<HCPGeoTiffKeys>, public IGeoTiffKeysList
     {
 
 
@@ -43,13 +42,13 @@ public:
         GEOKEYS_PCS_WITH_NO_GCS //Possible to deduce a PCS but not a GCS
         };
 
-    HDECLARE_CLASS_ID(1380, HMDMetaDataContainer)
+    HDECLARE_BASECLASS_ID(HCPGeoTiffKeysId)
 
-    _HDLLg HCPGeoTiffKeys();
+    IMAGEPP_EXPORT HCPGeoTiffKeys();
 
-//    _HDLLg HCPGeoTiffKeys(UInt32 pi_ProjectedCSType);
+//    IMAGEPP_EXPORT HCPGeoTiffKeys(UInt32 pi_ProjectedCSType);
 
-//    _HDLLg HCPGeoTiffKeys(const WString&   pi_rWellKnownText,
+//    IMAGEPP_EXPORT HCPGeoTiffKeys(const WString&   pi_rWellKnownText,
 //                          int              pi_WktFlavor);
     /** -----------------------------------------------------------------------------
 
@@ -76,70 +75,78 @@ public:
 
         -----------------------------------------------------------------------------
     */
-//    _HDLLg HCPGeoTiffKeys(const WString&   pi_rErmProjection,
+//    IMAGEPP_EXPORT HCPGeoTiffKeys(const WString&   pi_rErmProjection,
 //                          const WString&   pi_rErmDatum,
 //                          const WString&   pi_rErmUnits);
 
-//    _HDLLg HCPGeoTiffKeys(const WString&   pi_rCSKeyName);
+//    IMAGEPP_EXPORT HCPGeoTiffKeys(const WString&   pi_rCSKeyName);
 
-//    _HDLLg HCPGeoTiffKeys(IRasterBaseGcsPtr& pi_rpBaseGeoCoord);
+//    IMAGEPP_EXPORT HCPGeoTiffKeys(IRasterBaseGcsPtr& pi_rpBaseGeoCoord);
 
     // Copy constructor
-    _HDLLg HCPGeoTiffKeys(const HCPGeoTiffKeys& pi_rObj);
+    IMAGEPP_EXPORT HCPGeoTiffKeys(const HCPGeoTiffKeys& pi_rObj);
 
-    _HDLLg virtual         ~HCPGeoTiffKeys();
+    IMAGEPP_EXPORT virtual         ~HCPGeoTiffKeys();
 
-    virtual HFCPtr<HMDMetaDataContainer> Clone() const;
+    virtual HFCPtr<HCPGeoTiffKeys> Clone() const;
 
 
     // All previous GeoKeys are removed
 
-    _HDLLg ErrorCode            GetErrorCode();
+    IMAGEPP_EXPORT ErrorCode            GetErrorCode();
     void                        SetErrorCode(ErrorCode pi_ErrorCode);
     KeysValidStatus             ValidateGeoTIFFKey();
-    bool                        HasValidGeoTIFFKeysList () 
+    bool                        HasValidGeoTIFFKeysList () const
         {
         return m_HasValidGeoTIFFKeysList;
         }
 
 
 
-    _HDLLg bool             GetValue (unsigned short pi_Key, uint32_t*  po_pVal) const;
-    _HDLLg bool             GetValue (unsigned short pi_Key, double* po_pVal) const;
-    _HDLLg bool             GetValue (unsigned short pi_Key, WString* po_pVal) const;
+    IMAGEPP_EXPORT bool             GetValue (unsigned short pi_Key, uint32_t*  po_pVal) const;
+    IMAGEPP_EXPORT bool             GetValue (unsigned short pi_Key, double* po_pVal) const;
+    IMAGEPP_EXPORT bool             GetValue (unsigned short pi_Key, WString* po_pVal) const;
 
-    _HDLLg bool             SetValue (unsigned short pi_Key, uint32_t pi_Val);
-    _HDLLg bool             SetValue (unsigned short pi_Key, double pi_Val);
-    _HDLLg bool             SetValue (unsigned short pi_Key, WString& pi_Val);
+    IMAGEPP_EXPORT bool             SetValue (unsigned short pi_Key, uint32_t pi_Val);
+    IMAGEPP_EXPORT bool             SetValue (unsigned short pi_Key, double pi_Val);
+    IMAGEPP_EXPORT bool             SetValue (unsigned short pi_Key, WString& pi_Val);
 
     // From IGeoTiffKeysList
-    _HDLLg virtual bool     GetFirstKey(GeoKeyItem* po_Key);
-    _HDLLg virtual bool     GetNextKey(GeoKeyItem* po_Key);
+    IMAGEPP_EXPORT virtual bool     GetFirstKey(GeoKeyItem* po_Key) const override;
+    IMAGEPP_EXPORT virtual bool     GetNextKey(GeoKeyItem* po_Key) const override;
 
-    _HDLLg virtual void     AddKey (unsigned short pi_KeyID, unsigned int pi_value);
-    _HDLLg virtual void     AddKey (unsigned short pi_KeyID, double pi_value);
-    _HDLLg virtual void     AddKey (unsigned short pi_KeyID, const std::string& pi_value);
+    IMAGEPP_EXPORT virtual void     AddKey (unsigned short pi_KeyID, uint32_t pi_value) override;
+    IMAGEPP_EXPORT virtual void     AddKey (unsigned short pi_KeyID, double pi_value) override;
+    IMAGEPP_EXPORT virtual void     AddKey (unsigned short pi_KeyID, const std::string& pi_value) override;
+
+    IMAGEPP_EXPORT virtual size_t   EraseKey(unsigned short pi_KeyID) override;
 
     // Utility methods
-    _HDLLg bool             HasKey (unsigned short pi_KeyID);
-    unsigned short          GetNbKeys();
+    IMAGEPP_EXPORT bool             HasKey (unsigned short pi_KeyID) const;
+    IMAGEPP_EXPORT unsigned short   GetNbKeys() const;
 
 
 
 
     //Static methods
-   static unsigned short DecodeGeoKeyIDFromString(const WString& pi_rGeoTagLabel);
+    IMAGEPP_EXPORT static unsigned short DecodeGeoKeyIDFromString(const WString& pi_rGeoTagLabel);
 
+    IMAGEPP_EXPORT static HFCPtr<HGF2DTransfoModel> GetTransfoModelForReprojection(const HFCPtr<HGF2DCoordSys>&         pi_rpRasterCoordSys,
+                                                                                  const HGF2DExtent&                   pi_rRasterExtent,
+                                                                                  const HGF2DExtent&                   pi_rMinimumRasterPixelRange,
+                                                                                  const IRasterBaseGcsCP               pi_rpSourceCoordSys,
+                                                                                  const IRasterBaseGcsCP               pi_rpDestCoordSys,
+                                                                                  const HFCPtr<HGF2DWorldCluster>&     pi_rpWorldCluster);
 
-    _HDLLg static HFCPtr<HGF2DTransfoModel>GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&         pi_rpSrcRasterFile,
+    IMAGEPP_EXPORT static HFCPtr<HGF2DTransfoModel>GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&         pi_rpSrcRasterFile,
                                                                           uint32_t                            pi_PageNumber,
-                                                                          const IRasterBaseGcsPtr              pi_rpDestCoordSys,
+                                                                          const IRasterBaseGcsCP               pi_rpDestCoordSys,
                                                                           const HFCPtr<HGF2DWorldCluster>&     pi_rpWorldCluster,
-                                                                          const IRasterBaseGcsPtr              pi_rpOverwriteSourceCoordSys);
+                                                                          const IRasterBaseGcsCP               pi_rpOverwriteSourceCoordSys);
 
-     static HFCPtr<HGF2DTransfoModel> GetTransfoModelToMeters(IRasterBaseGcsPtr pi_rpProjection);
+    static HFCPtr<HGF2DTransfoModel> GetTransfoModelToMeters(IRasterBaseGcsCR pi_rpProjection);
 
-     static HFCPtr<HGF2DTransfoModel> GetTransfoModelFromMeters(IRasterBaseGcsPtr pi_rpProjection);
+    static HFCPtr<HGF2DTransfoModel> GetTransfoModelFromMeters(IRasterBaseGcsCR pi_rpProjection);
 
 
      static HFCPtr<HGF2DTransfoModel> GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&         pi_rpSrcRasterFile,
@@ -148,20 +155,30 @@ public:
                                                                      const HFCPtr<HGF2DWorldCluster>&     pi_rpWorldCluster,
                                                                      const HFCPtr<HCPGeoTiffKeys>& pi_rpOverwriteSourceCoordSys = HFCPtr<HCPGeoTiffKeys>());
 
-    static _HDLLg HFCPtr<HGF2DTransfoModel>
-    TranslateToMeter (const HFCPtr<HGF2DTransfoModel>& pi_pModel,
-                      double                          pi_FactorModelToMeter=1.0,
-                      bool                            pi_ModelTypeGeographicConsiderDefaultUnit=true,
-                      bool                            pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation=false,
-                      bool*                           po_DefaultUnitWasFound=0,
-                      IRasterBaseGcsPtr               po_pGeocoding = NULL);
-    static _HDLLg HFCPtr<HGF2DTransfoModel>
-    TranslateFromMeter (const HFCPtr<HGF2DTransfoModel>& pi_pModel,
-                        bool                            pi_ModelTypeGeographicConsiderDefaultUnit=true,
-                        bool                            pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation=false,
-                        bool*                           po_DefaultUnitWasFound=0,
-                        IRasterBaseGcsPtr               po_pGeocoding = NULL);
+     static HFCPtr<HGF2DTransfoModel> CreateTransfoModelFromGeoTiff(HCPGeoTiffKeys const*   pi_rpGeoTiffKeys,
+                                                                    double                  pi_FactorModelToMeter,
+                                                                    double*                 pi_pMatrix,    // 4 x 4
+                                                                    uint32_t                pi_MatSize,
+                                                                    double*                 pi_pPixelScale=nullptr,
+                                                                    uint32_t                pi_NbPixelScale=0, 
+                                                                    double*                 pi_pTiePoints=nullptr,
+                                                                    uint32_t                pi_NbTiePoints=0,
+                                                                    bool                    pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation=false,
+                                                                    bool*                   po_DefaultUnitWasFound=nullptr);
 
+     static void WriteTransfoModelFromGeoTiff(HCPGeoTiffKeys const*               pi_rpGeoTiffKeys,
+                                              const HFCPtr<HGF2DTransfoModel>&    pi_pModel,
+                                              uint64_t                            pi_ImageWidth,
+                                              uint64_t                            pi_ImageHeight,
+                                              bool                                pi_StoreUsingMatrix,
+                                              double*                             po_pMatrix,           // 4 x 4  array[16]
+                                              uint32_t&                             pio_MatSize,
+                                              double*                             po_pPixelScale,       // array[3]
+                                              uint32_t&                             pio_NbPixelScale,
+                                              double*                             po_pTiePoints,        // array[24]
+                                              uint32_t&                             pio_NbTiePoints,
+                                              bool                                pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
+                                              bool*                               po_DefaultUnitWasFound);
 
 
 protected:
@@ -193,9 +210,11 @@ private:
     // The key is the GeoKey.
     typedef map<unsigned short, GeoKeyItem> GeoKeyList;
     GeoKeyList                              m_GeoKeyList;
-    GeoKeyList::iterator                    m_GeoKeyListItr;
+    mutable GeoKeyList::const_iterator      m_GeoKeyListItr;
 
     bool                                    m_HasValidGeoTIFFKeysList;
     ErrorCode                               m_ErrorCode;
 
     };
+
+END_IMAGEPP_NAMESPACE

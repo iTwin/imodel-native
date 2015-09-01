@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFResolutionEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFResolutionEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFResolutionEditor.h>
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCDCodecImage.h>
@@ -114,12 +114,15 @@ HFCAccessMode HRFResolutionEditor::GetAccessMode() const
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFResolutionEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                       uint32_t pi_PosBlockY,
-                                       Byte* po_pData,
+HSTATUS HRFResolutionEditor::ReadBlock(uint64_t             pi_PosBlockX,
+                                       uint64_t             pi_PosBlockY,
+                                       Byte*                po_pData,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
+    HPRECONDITION((pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth()  <= ULONG_MAX) &&
+                  (pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight() <= ULONG_MAX));
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
+
     HSTATUS Status = H_SUCCESS;
 
     // Display a message that we pass through the default ReadBlock with
@@ -140,49 +143,33 @@ HSTATUS HRFResolutionEditor::ReadBlock(uint32_t pi_PosBlockX,
     return Status;
     }
 
+
 //-----------------------------------------------------------------------------
 // public
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFResolutionEditor::ReadBlock64(uint64_t             pi_PosBlockX,
+HSTATUS HRFResolutionEditor::ReadBlock(uint64_t             pi_PosBlockX,
                                          uint64_t             pi_PosBlockY,
-                                         Byte*                po_pData,
+                                         HFCPtr<HCDPacket>&    po_rpPacket,
                                          HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION((pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth()  <= ULONG_MAX) &&
                   (pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight() <= ULONG_MAX));
-
-    return ReadBlock((uint32_t)pi_PosBlockX,
-                     (uint32_t)pi_PosBlockY,
-                     po_pData,
-                     pi_pSisterFileLock);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// ReadBlock
-// Edition by Block
-//-----------------------------------------------------------------------------
-HSTATUS HRFResolutionEditor::ReadBlock(uint32_t           pi_PosBlockX,
-                                       uint32_t           pi_PosBlockY,
-                                       HFCPtr<HCDPacket>& po_rpPacket,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
-    {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
-    
+
     // Display a message that we pass through the default ReadBlock with
     // a packet, which decompressed the data into an Identify packet
     HDEBUGTEXT(L"Warning! Using the default ReadBlock(Packet) which uncompresses the data\r\n");
 
     // we take for granted that there is no compression
-    // we get the data uncompressed ans associate to it an identity codec
+    // we get the data uncompressed and associate to it an identity codec
     // test if there is a buffer already defined
     if(po_rpPacket->GetBufferSize() == 0)
         {
         // if not, create a buffer
         po_rpPacket->SetBuffer(new Byte[m_pResolutionDescriptor->GetBlockSizeInBytes()],
-                               m_pResolutionDescriptor->GetBlockSizeInBytes());
+            m_pResolutionDescriptor->GetBlockSizeInBytes());
         po_rpPacket->SetBufferOwnership(true);
         }
 
@@ -197,50 +184,13 @@ HSTATUS HRFResolutionEditor::ReadBlock(uint32_t           pi_PosBlockX,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFResolutionEditor::ReadBlock64(uint64_t             pi_PosBlockX,
-                                         uint64_t             pi_PosBlockY,
-                                         HFCPtr<HCDPacket>&    po_rpPacket,
-                                         HFCLockMonitor const* pi_pSisterFileLock)
-    {
-    HPRECONDITION((pi_PosBlockX + m_pRasterFile->GetPageDescriptor(m_Page)->
-                   GetResolutionDescriptor(m_Resolution)->
-                   GetBlockWidth()                         <= ULONG_MAX) &&
-                  (pi_PosBlockY + m_pRasterFile->GetPageDescriptor(m_Page)->
-                   GetResolutionDescriptor(m_Resolution)->
-                   GetBlockHeight()                        <= ULONG_MAX));
-
-    return ReadBlock((uint32_t)pi_PosBlockX,
-                     (uint32_t)pi_PosBlockY,
-                     po_rpPacket,
-                     pi_pSisterFileLock);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// ReadBlock
-// Edition by Block
-//-----------------------------------------------------------------------------
-HSTATUS HRFResolutionEditor::ReadBlockRLE64(uint64_t                pi_PosBlockX,
-                                            uint64_t                pi_PosBlockY,
-                                            HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
-                                            HFCLockMonitor const*    pi_pSisterFileLock)
+HSTATUS HRFResolutionEditor::ReadBlockRLE(uint64_t                pi_PosBlockX,
+                                          uint64_t                pi_PosBlockY,
+                                          HFCPtr<HCDPacketRLE>&   po_rpPacketRLE,
+                                          HFCLockMonitor const*   pi_pSisterFileLock)
     {
     HPRECONDITION((pi_PosBlockX + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockWidth() <= ULONG_MAX) &&
                   (pi_PosBlockY + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockHeight() <= ULONG_MAX));
-
-    return ReadBlockRLE((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, po_rpPacketRLE, pi_pSisterFileLock);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// ReadBlock
-// Edition by Block
-//-----------------------------------------------------------------------------
-HSTATUS HRFResolutionEditor::ReadBlockRLE  (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
-                                            HFCLockMonitor const*    pi_pSisterFileLock)
-    {
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffer.
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetWidth() == GetResolutionDescriptor()->GetBlockWidth());
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetBlockHeight());
@@ -250,7 +200,7 @@ HSTATUS HRFResolutionEditor::ReadBlockRLE  (uint32_t                 pi_PosBlock
 
     // Display a message that we pass through the default ReadBlock with
     // a packet, which decompressed the data into an Identify packet
-    HDEBUGTEXT(L"Warning! Using the default ReadBlockRLE() which uncompresses and compress(RLE) the data\r\n");
+    //HDEBUGTEXT(L"Warning! Using the default ReadBlockRLE() which uncompresses and compress(RLE) the data\r\n");
 
     HSTATUS Status = H_ERROR;
 
@@ -270,7 +220,7 @@ HSTATUS HRFResolutionEditor::ReadBlockRLE  (uint32_t                 pi_PosBlock
         uint32_t ActualBlockHeight(GetResolutionDescriptor()->GetBlockHeight());
         if(pi_PosBlockY + GetResolutionDescriptor()->GetBlockHeight() > GetResolutionDescriptor()->GetHeight())
             {
-            ActualBlockHeight = (uint32_t)GetResolutionDescriptor()->GetHeight() - pi_PosBlockY;
+            ActualBlockHeight = (uint32_t)GetResolutionDescriptor()->GetHeight() - (uint32_t)pi_PosBlockY;
             }
 
         HFCPtr<HCDCodecHMRRLE1> pCodecRLE = new HCDCodecHMRRLE1((uint32_t)GetResolutionDescriptor()->GetBlockWidth(), 1);              // Compress one line at a time.
@@ -281,17 +231,17 @@ HSTATUS HRFResolutionEditor::ReadBlockRLE  (uint32_t                 pi_PosBlock
         for(uint32_t NoLine=0; NoLine < ActualBlockHeight; ++NoLine)
             {
             size_t compressDataSize = pCodecRLE->CompressSubset(UncompressPacket.GetBufferAddress() + (NoLine*BytesPerBlockWidth),
-                                                                BytesPerBlockWidth,
-                                                                pWorkLineBuffer,
-                                                                WorkLineBufferSize);
+                BytesPerBlockWidth,
+                pWorkLineBuffer,
+                WorkLineBufferSize);
 
             // Alloc buffer if it is not large enough.
             if(po_rpPacketRLE->GetLineBufferSize(NoLine) < compressDataSize)
                 {
                 HASSERT(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffer.
                 po_rpPacketRLE->SetLineBuffer(NoLine,
-                                              new Byte[compressDataSize],
-                                              compressDataSize, 0/*pi_DataSize*/);
+                    new Byte[compressDataSize],
+                    compressDataSize, 0/*pi_DataSize*/);
                 }
 
             // Copy from workBuffer to output packet.
@@ -308,34 +258,18 @@ HSTATUS HRFResolutionEditor::ReadBlockRLE  (uint32_t                 pi_PosBlock
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFResolutionEditor::WriteBlockRLE64 (uint64_t             pi_PosBlockX,
-                                              uint64_t             pi_PosBlockY,
-                                              HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                              HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFResolutionEditor::WriteBlockRLE(uint64_t             pi_PosBlockX,
+                                           uint64_t             pi_PosBlockY,
+                                           HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
+                                           HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION((pi_PosBlockX + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockWidth() <= ULONG_MAX) &&
                   (pi_PosBlockY + m_pRasterFile->GetPageDescriptor(m_Page)->GetResolutionDescriptor(m_Resolution)->GetBlockHeight() <= ULONG_MAX));
-
-    return WriteBlockRLE((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, pi_rpPacketRLE, pi_pSisterFileLock);
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// WriteBlock
-// Edition by Block
-//-----------------------------------------------------------------------------
-HSTATUS HRFResolutionEditor::WriteBlockRLE (uint32_t              pi_PosBlockX,
-                                            uint32_t              pi_PosBlockY,
-                                            HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
-    {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetCodec() != 0);
-
     HPRECONDITION(pi_rpPacketRLE->GetCodec()->GetWidth() == GetResolutionDescriptor()->GetBlockWidth());
     HPRECONDITION(pi_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetBlockHeight() ||             // Must contains block height,
-                  pi_PosBlockY + pi_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetHeight());    // except for last block.
+        pi_PosBlockY + pi_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetHeight());    // except for last block.
     HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
     HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= ULONG_MAX);
     HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
@@ -352,9 +286,16 @@ HSTATUS HRFResolutionEditor::WriteBlockRLE (uint32_t              pi_PosBlockX,
     HFCPtr<HCDCodecHMRRLE1> pRLECodec = pi_rpPacketRLE->GetCodec();
     pRLECodec->SetSubset(pRLECodec->GetWidth(), 1);    // Subset by line.
 
-    for(uint32_t LineNo=0; LineNo < pRLECodec->GetHeight(); ++LineNo)
+    uint32_t LineNo;
+    for(LineNo=0; LineNo < pRLECodec->GetHeight(); ++LineNo)
         {
         pRLECodec->DecompressSubset(pi_rpPacketRLE->GetLineBuffer(LineNo), pi_rpPacketRLE->GetLineDataSize(LineNo),  UncompressPacket.GetBufferAddress() + LineNo*BytesPerWidth, BytesPerWidth);
+        }
+
+    // Fill last strip with '0' padding. It compress better and avoid mismatch in ATP.
+    if (LineNo < GetResolutionDescriptor()->GetBlockHeight())
+        {
+        memset(UncompressPacket.GetBufferAddress()+(LineNo*BytesPerWidth), 0, BytesPerWidth*(GetResolutionDescriptor()->GetBlockHeight()-LineNo));
         }
 
     // After a Reset the Codec subset need to be set again because by default it use the whole raster area.
@@ -369,9 +310,9 @@ HSTATUS HRFResolutionEditor::WriteBlockRLE (uint32_t              pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFResolutionEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                        uint32_t     pi_PosBlockY,
-                                        const Byte* pi_pData,
+HSTATUS HRFResolutionEditor::WriteBlock(uint64_t              pi_PosBlockX,
+                                        uint64_t              pi_PosBlockY,
+                                        const Byte*           pi_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -382,8 +323,8 @@ HSTATUS HRFResolutionEditor::WriteBlock(uint32_t     pi_PosBlockX,
     // we take for granted that there is compression
     // we compress the data
     HCDPacket Uncompressed((Byte*)pi_pData,
-                           m_pResolutionDescriptor->GetBlockSizeInBytes(),
-                           m_pResolutionDescriptor->GetBlockSizeInBytes());
+                            m_pResolutionDescriptor->GetBlockSizeInBytes(),
+                            m_pResolutionDescriptor->GetBlockSizeInBytes());
 
     // Assign a default Codec
     HFCPtr<HCDCodec> pCodec = (HCDCodec*)m_pResolutionDescriptor->GetCodec()->Clone();
@@ -412,8 +353,8 @@ HSTATUS HRFResolutionEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFResolutionEditor::WriteBlock(uint32_t                 pi_PosBlockX,
-                                        uint32_t                 pi_PosBlockY,
+HSTATUS HRFResolutionEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                        uint64_t                 pi_PosBlockY,
                                         const HFCPtr<HCDPacket>& pi_rpPacket,
                                         HFCLockMonitor const*    pi_pSisterFileLock)
     {
@@ -422,7 +363,7 @@ HSTATUS HRFResolutionEditor::WriteBlock(uint32_t                 pi_PosBlockX,
 
     // we decompress the data
     HCDPacket Uncompressed(new Byte[m_pResolutionDescriptor->GetBlockSizeInBytes()],
-                           m_pResolutionDescriptor->GetBlockSizeInBytes());
+                                    m_pResolutionDescriptor->GetBlockSizeInBytes());
     Uncompressed.SetBufferOwnership(true);
 
     pi_rpPacket->Decompress(&Uncompressed);

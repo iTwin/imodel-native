@@ -1,0 +1,31 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Tests/dependencies.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#%if defined (CREATE_STATIC_LIBRARIES)
+#    ProductRoot = $(OutputRootDir)../Product/
+#%else
+#    ProductRoot = $(OutputRootDir)Product/
+#%endif
+
+BEGTEST_LIBRARIES + $(BuildContext)SubParts/StaticLibs/BeXml.lib \
+                    $(BuildContext)SubParts/StaticLibs/BeLibxml2.lib \
+                    $(BuildContext)SubParts/StaticLibs/Imagepp.lib \
+                    $(BuildContext)SubParts/StaticLibs/BaseGeoCoord.lib \
+                    $(BuildContext)SubParts/StaticLibs/BeCsmapStatic.lib \
+                    $(BuildContext)SubParts/StaticLibs/BentleyGeom.lib
+                    
+# We cannot add windows lib to BEGTEST_LIBRARIES because it requires a full path and I can't find a way to resolve it using $(LIB) delimited list.
+# So I ended up adding "#pragma comment(lib, "Ws2_32.lib")" to our test header. see ImageppTestPCH.h.
+#Ws2_32Lib = $[@readstdout "where $LIB:Ws2_32.lib"]                    
+# effective location:  ${VS2013_WindowsSdkDir}/lib/winv6.3/um${slashx86x64}/Ws2_32.lib
+
+# Additional assets needed by DgnDb unit tests
+#BEGTEST_ASSETS     + $(BuildContext)SubParts/ECSchemas/
+#BEGTEST_ASSETS     + $(ProductRoot)BeTestDocuments/
+
+# Required xliff files
+BEGTEST_XLIFFS     + $[@wildcard $(BuildContext)SubParts/xliffs/*.xliff]

@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAGenericAverageSampler.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
 
+#include <Imagepp/all/h/HRAGenericSampler.h>
 #include <Imagepp/all/h/HRAGenericAverageSampler.h>
 #include <Imagepp/all/h/HCDPacket.h>
 #include <Imagepp/all/h/HRPPixelConverter.h>
@@ -119,8 +119,8 @@ Byte* HRAGenericAverageSampler<T, TS>::ComputeAddress(const HFCPtr<HCDPacket>& p
     HPRECONDITION(pi_PosX <= m_Width);
     HPRECONDITION(pi_PosY <= m_Height);
 
-    pi_PosX = min(pi_PosX, m_Width - 1);
-    pi_PosY = min(pi_PosY, m_Height - 1);
+    pi_PosX = MIN(pi_PosX, m_Width - 1);
+    pi_PosY = MIN(pi_PosY, m_Height - 1);
 
     HPRECONDITION(pi_rpPacket->GetBufferAddress() != 0);
 
@@ -190,8 +190,7 @@ Byte* HRAGenericAverageSampler<T, TS>::ComputeAddress(const HFCPtr<HCDPacket>& p
     ----------------------------------------------------------------------------
 */
 template <class T, class TS>
-void* HRAGenericAverageSampler<T, TS>::GetPixel(double pi_PosX,
-                                                double pi_PosY) const
+void const* HRAGenericAverageSampler<T, TS>::GetPixel(double pi_PosX, double pi_PosY) const
     {
     HPRECONDITION(pi_PosX >= 0.0);
     HPRECONDITION(pi_PosY >= 0.0);
@@ -199,7 +198,7 @@ void* HRAGenericAverageSampler<T, TS>::GetPixel(double pi_PosX,
     HPRECONDITION(pi_PosY < (double)m_Height);
 
     // Clear everything just in case.
-    memset((void*)m_pTempData.get(), 0, m_BytesPerPixel);
+    memset(m_pTempData, 0, m_BytesPerPixel);
 
     double HalfScaleIncrementX = (GetSampleDimension().GetXMax() - GetSampleDimension().GetXMin()) * 0.5;
     double HalfScaleIncrementY = (GetSampleDimension().GetYMax() - GetSampleDimension().GetYMin()) * 0.5;
@@ -220,7 +219,7 @@ void* HRAGenericAverageSampler<T, TS>::GetPixel(double pi_PosX,
     uint32_t NumberOfColumns;
     uint32_t NumberOfPixels;
 
-    memset((void*)pChannelsSum, 0, sizeof(TS) * m_NbChannels);
+    memset(pChannelsSum, 0, sizeof(TS) * m_NbChannels);
 
     NumberOfColumns = Grid.GetWidth();
     NumberOfPixels  = NumberOfColumns * NumberOfLines;
@@ -242,7 +241,7 @@ void* HRAGenericAverageSampler<T, TS>::GetPixel(double pi_PosX,
             }
         }
 
-    T* pOut = (T*)m_pTempData.get();
+    T* pOut = (T*)m_pTempData;
 
     // Set result
     for (size_t ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
@@ -252,7 +251,7 @@ void* HRAGenericAverageSampler<T, TS>::GetPixel(double pi_PosX,
 
     delete pChannelsSum;
 
-    return (T*)m_pTempData.get();
+    return m_pTempData;
     }
 
 
@@ -310,7 +309,7 @@ void HRAGenericAverageSampler<T, TS>::GetPixels(const double* pi_pPositionsX,
         // Add each useful pixel
         for (uint32_t Line = 0 ; Line < NumberOfLines ; ++Line)
             {
-            T* pSrcData = (T*)ComputeAddress(m_pPacket,
+            T* pSrcData = (T*)this->ComputeAddress(m_pPacket,
                                              CurrentSourcePositionX,
                                              Grid.GetYMin() + Line,
                                              NumberOfColumns);
@@ -368,7 +367,7 @@ void HRAGenericAverageSampler<T, TS>::GetPixels(double pi_PositionX,
         // Adjust X,Y positions by 1 pixel, because stretch by two will read 2x2 pixels,
         // and the received coordinate represents the sample center.
 
-        StretchByTwo((uint32_t)max(pi_PositionX - 1.0, 0.0), (uint32_t)max(pi_PositionY - 1.0, 0.0), pi_PixelCount, (Byte*) po_pBuffer);
+        StretchByTwo((uint32_t)MAX(pi_PositionX - 1.0, 0.0), (uint32_t)MAX(pi_PositionY - 1.0, 0.0), pi_PixelCount, (Byte*) po_pBuffer);
         }
     else if (m_StretchByLine)
         {
@@ -392,7 +391,7 @@ void HRAGenericAverageSampler<T, TS>::GetPixels(double pi_PositionX,
 
         for (uint32_t Line = 0 ; Line < NumberOfLines ; ++Line)
             {
-            ppSrcData[Line] = (T*)ComputeAddress(m_pPacket,
+            ppSrcData[Line] = (T*)this->ComputeAddress(m_pPacket,
                                                  CurrentSourcePositionX,
                                                  Grid.GetYMin() + Line);
             }
@@ -404,7 +403,7 @@ void HRAGenericAverageSampler<T, TS>::GetPixels(double pi_PositionX,
 
         while(pi_PixelCount > 0)
             {
-            memset((void*)pChannelsSum, 0, m_NbChannels * sizeof(TS));
+            memset(pChannelsSum, 0, m_NbChannels * sizeof(TS));
 
             NumberOfColumns = Grid.GetWidth();
             NumberOfPixels  = NumberOfColumns * NumberOfLines;
@@ -548,9 +547,9 @@ HRAGenericAverageSamplerInteger<T, TS>::HRAGenericAverageSamplerInteger(HGSMemor
     m_DataHeight          = pi_rMemorySurface.GetDataHeight();
 
     // optimization
-    m_StretchLineByTwo  = m_StretchByLine &&
+    HRAGenericAverageSampler<T, TS>::m_StretchLineByTwo = HRAGenericSampler::m_StretchByLine &&
                           HDOUBLE_EQUAL_EPSILON(pi_DeltaX, 2.0) &&
-                          HDOUBLE_EQUAL_EPSILON(GetSampleDimension().GetXMax() - GetSampleDimension().GetXMin(), 2.0);
+                          HDOUBLE_EQUAL_EPSILON(HRAGenericSampler::GetSampleDimension().GetXMax() - HRAGenericSampler::GetSampleDimension().GetXMin(), 2.0);
     }
 
 
@@ -590,28 +589,28 @@ void HRAGenericAverageSamplerInteger<T, TS>::StretchByTwo(uint32_t pi_PositionX,
 
     // ComputeAddress give the address of the left pixel
     // the adjustment was made by the caller
-    T* pSrcFirstLine          = (T*)ComputeAddress(m_pPacket, 0, pi_PositionY);
+    T* pSrcFirstLine = (T*)this->ComputeAddress(HRAGenericAverageSampler<T, TS>::m_pPacket, 0, pi_PositionY);
 
     // Need to compute address because data might come from m_ppConvertedLines.
     T* pSrcSecondLine         = (pi_PositionY >= m_DataHeight - 1) ?
                                 pSrcFirstLine :
-                                (T*)ComputeAddress(m_pPacket, 0, pi_PositionY+1);
+                                (T*)this->ComputeAddress(HRAGenericAverageSampler<T, TS>::m_pPacket, 0, pi_PositionY + 1);
 
-    T* pSrcFirstLineLeftPixel  = pSrcFirstLine  + pi_PositionX * m_NbChannels;
-    T* pSrcSecondLineLeftPixel = pSrcSecondLine + pi_PositionX * m_NbChannels;;
+    T* pSrcFirstLineLeftPixel = pSrcFirstLine + pi_PositionX * HRAGenericAverageSampler<T, TS>::m_NbChannels;
+    T* pSrcSecondLineLeftPixel = pSrcSecondLine + pi_PositionX * HRAGenericAverageSampler<T, TS>::m_NbChannels;;
     T* pSrcFirstLineLastPixel = NULL;
     T* pSrcSecondLineLastPixel = NULL;
 
     if (LastPixelOutside)
         {
-        pSrcFirstLineLastPixel  = pSrcFirstLine + (m_DataWidth - 1) * m_NbChannels;
-        pSrcSecondLineLastPixel = pSrcSecondLine + (m_DataWidth - 1) * m_NbChannels;
+        pSrcFirstLineLastPixel = pSrcFirstLine + (m_DataWidth - 1) * HRAGenericAverageSampler<T, TS>::m_NbChannels;
+        pSrcSecondLineLastPixel = pSrcSecondLine + (m_DataWidth - 1) * HRAGenericAverageSampler<T, TS>::m_NbChannels;
         }
 
-    size_t SrcStep    = 2 * m_NbChannels;
+    size_t SrcStep = 2 * HRAGenericAverageSampler<T, TS>::m_NbChannels;
     T*     pOutBuffer = (T*)po_pBuffer;
 
-    if (m_NbChannels == 4)
+    if (HRAGenericAverageSampler<T, TS>::m_NbChannels == 4)
         {
         // Process all
         while (pi_PixelCount != 0)
@@ -631,7 +630,7 @@ void HRAGenericAverageSamplerInteger<T, TS>::StretchByTwo(uint32_t pi_PositionX,
             pSrcFirstLineLeftPixel  += SrcStep;
             pSrcSecondLineLeftPixel += SrcStep;
 
-            pOutBuffer              += m_NbChannels;
+            pOutBuffer += HRAGenericAverageSampler<T, TS>::m_NbChannels;
 
             --pi_PixelCount;
             }
@@ -649,7 +648,7 @@ void HRAGenericAverageSamplerInteger<T, TS>::StretchByTwo(uint32_t pi_PositionX,
                                  pSrcSecondLineLastPixel[3] + pSrcSecondLineLastPixel[7]) >> 2);
             }
         }
-    else if (m_NbChannels == 3)
+    else if (HRAGenericAverageSampler<T, TS>::m_NbChannels == 3)
         {
         while(pi_PixelCount != 0)
             {
@@ -663,7 +662,7 @@ void HRAGenericAverageSamplerInteger<T, TS>::StretchByTwo(uint32_t pi_PositionX,
             pSrcFirstLineLeftPixel  += SrcStep;
             pSrcSecondLineLeftPixel += SrcStep;
 
-            pOutBuffer              += m_NbChannels;
+            pOutBuffer += HRAGenericAverageSampler<T, TS>::m_NbChannels;
 
             --pi_PixelCount;
             }
@@ -679,7 +678,7 @@ void HRAGenericAverageSamplerInteger<T, TS>::StretchByTwo(uint32_t pi_PositionX,
                                  pSrcSecondLineLastPixel[2] + pSrcSecondLineLastPixel[5]) >> 2);
             }
         }
-    else if (m_NbChannels == 2)
+    else if (HRAGenericAverageSampler<T, TS>::m_NbChannels == 2)
         {
         while(pi_PixelCount != 0)
             {
@@ -691,7 +690,7 @@ void HRAGenericAverageSamplerInteger<T, TS>::StretchByTwo(uint32_t pi_PositionX,
             pSrcFirstLineLeftPixel  += SrcStep;
             pSrcSecondLineLeftPixel += SrcStep;
 
-            pOutBuffer              += m_NbChannels;
+            pOutBuffer += HRAGenericAverageSampler<T, TS>::m_NbChannels;
 
             --pi_PixelCount;
             }
@@ -705,7 +704,7 @@ void HRAGenericAverageSamplerInteger<T, TS>::StretchByTwo(uint32_t pi_PositionX,
                                  pSrcSecondLineLastPixel[1] + pSrcSecondLineLastPixel[3]) >> 2);
             }
         }
-    else if (m_NbChannels == 1)
+    else if (HRAGenericAverageSampler<T, TS>::m_NbChannels == 1)
         {
         while(pi_PixelCount != 0)
             {
@@ -729,29 +728,29 @@ void HRAGenericAverageSamplerInteger<T, TS>::StretchByTwo(uint32_t pi_PositionX,
         unsigned short ChannelInd;
         while(pi_PixelCount > 0)
             {
-            for (ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
+            for (ChannelInd = 0; ChannelInd < HRAGenericAverageSampler<T, TS>::m_NbChannels; ChannelInd++)
                 {
                 pOutBuffer[ChannelInd] = (T)(((TS)pSrcFirstLineLeftPixel[ChannelInd] +
-                                              pSrcFirstLineLeftPixel[m_NbChannels + ChannelInd] +
+                                              pSrcFirstLineLeftPixel[HRAGenericAverageSampler<T, TS>::m_NbChannels + ChannelInd] +
                                               pSrcSecondLineLeftPixel[ChannelInd] +
-                                              pSrcSecondLineLeftPixel[m_NbChannels + ChannelInd]) >> 2);
+                                              pSrcSecondLineLeftPixel[HRAGenericAverageSampler<T, TS>::m_NbChannels + ChannelInd]) >> 2);
                 }
             pSrcFirstLineLeftPixel  += SrcStep;
             pSrcSecondLineLeftPixel += SrcStep;
 
-            pOutBuffer              += m_NbChannels;
+            pOutBuffer += HRAGenericAverageSampler<T, TS>::m_NbChannels;
 
             --pi_PixelCount;
             }
 
         if (LastPixelOutside)
             {
-            for (ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
+            for (ChannelInd = 0; ChannelInd < HRAGenericAverageSampler<T, TS>::m_NbChannels; ChannelInd++)
                 {
                 pOutBuffer[ChannelInd] = (T)(((TS)pSrcFirstLineLastPixel[ChannelInd] +
-                                              pSrcFirstLineLastPixel[m_NbChannels + ChannelInd] +
+                                              pSrcFirstLineLastPixel[HRAGenericAverageSampler<T, TS>::m_NbChannels + ChannelInd] +
                                               pSrcSecondLineLastPixel[ChannelInd] +
-                                              pSrcSecondLineLastPixel[m_NbChannels + ChannelInd]) >> 2);
+                                              pSrcSecondLineLastPixel[HRAGenericAverageSampler<T, TS>::m_NbChannels + ChannelInd]) >> 2);
                 }
             }
         }
@@ -818,39 +817,39 @@ HRAGenericAverageSparseDataSampler<T, TS>::~HRAGenericAverageSparseDataSampler()
     ----------------------------------------------------------------------------
 */
 template <class T, class TS>
-void* HRAGenericAverageSparseDataSampler<T, TS>::GetPixel(double pi_PosX,
+void const* HRAGenericAverageSparseDataSampler<T, TS>::GetPixel(double pi_PosX,
                                                           double pi_PosY) const
     {
     HPRECONDITION(pi_PosX >= 0.0);
     HPRECONDITION(pi_PosY >= 0.0);
-    HPRECONDITION(pi_PosX < (double)m_Width);
-    HPRECONDITION(pi_PosY < (double)m_Height);
+    HPRECONDITION_T(pi_PosX < (double)HRAGenericAverageSampler<T , TS>::m_Width);
+    HPRECONDITION_T(pi_PosY < (double)HRAGenericAverageSampler<T,TS>::m_Height);
 
     // Clear everything just in case.
-    memset((void*)m_pTempData.get(), 0, m_BytesPerPixel);
+    memset(HRAGenericAverageSampler<T, TS>::m_pTempData, 0, HRAGenericAverageSampler<T, TS>::m_BytesPerPixel);
 
-    double HalfScaleIncrementX = (GetSampleDimension().GetXMax() - GetSampleDimension().GetXMin()) * 0.5;
-    double HalfScaleIncrementY = (GetSampleDimension().GetYMax() - GetSampleDimension().GetYMin()) * 0.5;
+    double HalfScaleIncrementX = (HRAGenericSampler::GetSampleDimension().GetXMax() - HRAGenericSampler::GetSampleDimension().GetXMin()) * 0.5;
+    double HalfScaleIncrementY = (HRAGenericSampler::GetSampleDimension().GetYMax() - HRAGenericSampler::GetSampleDimension().GetYMin()) * 0.5;
 
     HRAAveragingGrid Grid(pi_PosX - HalfScaleIncrementX,
                           pi_PosY - HalfScaleIncrementY,
                           pi_PosX + HalfScaleIncrementX,
                           pi_PosY + HalfScaleIncrementY,
-                          m_Width - 1,
-                          m_Height - 1);
+                          HRAGenericAverageSampler<T, TS>::m_Width - 1,
+                          HRAGenericAverageSampler<T, TS>::m_Height - 1);
 
     uint32_t NumberOfLines = Grid.GetHeight();
     HASSERT(NumberOfLines > 0);
 
     uint32_t CurrentSourcePositionX = Grid.GetXMin();
-    TS*     pChannelsSum = new TS[m_NbChannels];
-    uint32_t* pNumberOfValidPixels = new uint32_t[m_NbChannels];
+    TS*     pChannelsSum = new TS[HRAGenericAverageSampler<T, TS>::m_NbChannels];
+    uint32_t* pNumberOfValidPixels = new uint32_t[HRAGenericAverageSampler<T, TS>::m_NbChannels];
     uint32_t NumberOfColumns;
     uint32_t NumberOfPixels;
     T       SrcData;
 
-    memset((void*)pChannelsSum, 0, sizeof(TS) * m_NbChannels);
-    memset((void*)pNumberOfValidPixels, 0, sizeof(uint32_t) * m_NbChannels);
+    memset(pChannelsSum, 0, sizeof(TS)* HRAGenericAverageSampler<T, TS>::m_NbChannels);
+    memset(pNumberOfValidPixels, 0, sizeof(uint32_t)* HRAGenericAverageSampler<T, TS>::m_NbChannels);
 
     NumberOfColumns = Grid.GetWidth();
     NumberOfPixels  = NumberOfColumns * NumberOfLines;
@@ -858,16 +857,16 @@ void* HRAGenericAverageSparseDataSampler<T, TS>::GetPixel(double pi_PosX,
     // Add each useful pixel
     for (uint32_t Line = 0 ; Line < NumberOfLines ; ++Line)
         {
-        T* pSrcData = (T*)ComputeAddress(m_pPacket,
+        T* pSrcData = (T*)this->ComputeAddress(HRAGenericAverageSampler<T, TS>::m_pPacket,
                                          CurrentSourcePositionX,
                                          Grid.GetYMin() + Line,
                                          NumberOfColumns);
 
         for (uint32_t Column = 0; Column < NumberOfColumns; ++Column)
             {
-            for (size_t ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
+            for (size_t ChannelInd = 0; ChannelInd < HRAGenericAverageSampler<T, TS>::m_NbChannels; ChannelInd++)
                 {
-                SrcData = pSrcData[Column * m_NbChannels + ChannelInd];
+                SrcData = pSrcData[Column * HRAGenericAverageSampler<T, TS>::m_NbChannels + ChannelInd];
 
                 if (SrcData != m_NoDataValue)
                     {
@@ -878,10 +877,10 @@ void* HRAGenericAverageSparseDataSampler<T, TS>::GetPixel(double pi_PosX,
             }
         }
 
-    T* pOut = (T*)m_pTempData.get();
+    T* pOut = (T*)HRAGenericAverageSampler<T, TS>::m_pTempData;
 
     // Set result
-    for (size_t ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
+    for (size_t ChannelInd = 0; ChannelInd < HRAGenericAverageSampler<T, TS>::m_NbChannels; ChannelInd++)
         {
         if (pNumberOfValidPixels[ChannelInd] == 0)
             {
@@ -896,7 +895,7 @@ void* HRAGenericAverageSparseDataSampler<T, TS>::GetPixel(double pi_PosX,
     delete [] pChannelsSum;
     delete [] pNumberOfValidPixels;
 
-    return (T*)m_pTempData.get();
+    return HRAGenericAverageSampler<T, TS>::m_pTempData;
     }
 
 
@@ -929,10 +928,10 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(const double* pi_pPosi
     uint32_t NumberOfPixels;
     uint32_t NumberOfLines;
     T       SrcData;
-    double HalfScaleIncrementX  = (GetSampleDimension().GetXMax() - GetSampleDimension().GetXMin()) * 0.5;
-    double HalfScaleIncrementY  = (GetSampleDimension().GetYMax() - GetSampleDimension().GetYMin()) * 0.5;
-    TS*     pChannelsSum         = new TS[m_NbChannels];
-    uint32_t* pNumberOfValidPixels = new uint32_t[m_NbChannels];
+    double HalfScaleIncrementX = (HRAGenericSampler::GetSampleDimension().GetXMax() - HRAGenericSampler::GetSampleDimension().GetXMin()) * 0.5;
+    double HalfScaleIncrementY = (HRAGenericSampler::GetSampleDimension().GetYMax() - HRAGenericSampler::GetSampleDimension().GetYMin()) * 0.5;
+    TS*     pChannelsSum = new TS[HRAGenericAverageSampler<T, TS>::m_NbChannels];
+    uint32_t* pNumberOfValidPixels = new uint32_t[HRAGenericAverageSampler<T, TS>::m_NbChannels];
 
     while (pi_PixelCount)
         {
@@ -940,16 +939,16 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(const double* pi_pPosi
                               *pi_pPositionsY - HalfScaleIncrementY,
                               *pi_pPositionsX + HalfScaleIncrementX,
                               *pi_pPositionsY + HalfScaleIncrementY,
-                              m_Width - 1,
-                              m_Height - 1);
+                              HRAGenericAverageSampler<T, TS>::m_Width - 1,
+                              HRAGenericAverageSampler<T, TS>::m_Height - 1);
 
         NumberOfLines = Grid.GetHeight();
         HASSERT(NumberOfLines > 0);
 
         CurrentSourcePositionX = Grid.GetXMin();
 
-        memset(pChannelsSum, 0, m_NbChannels * sizeof(TS));
-        memset(pNumberOfValidPixels, 0, m_NbChannels * sizeof(uint32_t));
+        memset(pChannelsSum, 0, HRAGenericAverageSampler<T, TS>::m_NbChannels * sizeof(TS));
+        memset(pNumberOfValidPixels, 0, HRAGenericAverageSampler<T, TS>::m_NbChannels * sizeof(uint32_t));
 
         NumberOfColumns = Grid.GetWidth();
         NumberOfPixels  = NumberOfColumns * NumberOfLines;
@@ -957,16 +956,16 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(const double* pi_pPosi
         // Add each useful pixel
         for (uint32_t Line = 0 ; Line < NumberOfLines ; ++Line)
             {
-            T* pSrcData = (T*)ComputeAddress(m_pPacket,
+            T* pSrcData = (T*)this->ComputeAddress(HRAGenericAverageSampler<T, TS>::m_pPacket,
                                              CurrentSourcePositionX,
                                              Grid.GetYMin() + Line,
                                              NumberOfColumns);
 
             for (uint32_t Column = 0 ; Column < NumberOfColumns ; ++Column)
                 {
-                for (size_t ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
+                for (size_t ChannelInd = 0; ChannelInd < HRAGenericAverageSampler<T, TS>::m_NbChannels; ChannelInd++)
                     {
-                    SrcData = pSrcData[Column * m_NbChannels + ChannelInd];
+                    SrcData = pSrcData[Column * HRAGenericAverageSampler<T, TS>::m_NbChannels + ChannelInd];
 
                     if (SrcData != m_NoDataValue)
                         {
@@ -978,7 +977,7 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(const double* pi_pPosi
             }
 
         // Set result
-        for (size_t ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
+        for (size_t ChannelInd = 0; ChannelInd < HRAGenericAverageSampler<T, TS>::m_NbChannels; ChannelInd++)
             {
             if (pNumberOfValidPixels[ChannelInd] == 0)
                 {
@@ -1017,27 +1016,27 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(double pi_PositionX,
     {
     HPRECONDITION(pi_PositionX >= 0.0);
     HPRECONDITION(pi_PositionY >= 0.0);
-    HPRECONDITION(pi_PositionX + ((double)(pi_PixelCount - 1) * m_DeltaX) >= 0.0);
-    HPRECONDITION(pi_PositionX + (double)(pi_PixelCount - 1) * m_DeltaX <= (double)m_Width + HGLOBAL_EPSILON);
-    HPRECONDITION(pi_PositionY + ((double)(pi_PixelCount - 1) * m_DeltaY) >= 0.0);
-    HPRECONDITION(pi_PositionY + (double)(pi_PixelCount -  1) * m_DeltaY <= (double)m_Height + HGLOBAL_EPSILON);
-    HPRECONDITION(m_StretchLineByTwo == false);
+    HPRECONDITION_T(pi_PositionX + ((double)(pi_PixelCount - 1) * HRAGenericAverageSampler<T,TS>::m_DeltaX) >= 0.0);
+    HPRECONDITION_T(pi_PositionX + (double)(pi_PixelCount - 1) * HRAGenericAverageSampler<T,TS>::m_DeltaX <= (double)HRAGenericAverageSampler<T,TS>::m_Width + HGLOBAL_EPSILON);
+    HPRECONDITION_T(pi_PositionY + ((double)(pi_PixelCount - 1) * HRAGenericAverageSampler<T,TS>::m_DeltaY) >= 0.0);
+    HPRECONDITION_T(pi_PositionY + (double)(pi_PixelCount - 1) * HRAGenericAverageSampler<T,TS>::m_DeltaY <= (double)HRAGenericAverageSampler<T,TS>::m_Height + HGLOBAL_EPSILON);
+    HPRECONDITION_T(HRAGenericAverageSampler<T,TS>::m_StretchLineByTwo == false);
 
     // HChk MR: We could do better by choosing the preceding OR following line depending
     // on the received Y coordinate?
     T* pOut = (T*)po_pBuffer;
 
-    if (m_StretchByLine)
+    if (HRAGenericAverageSampler<T, TS>::m_StretchByLine)
         {
-        double HalfScaleIncrementX = (GetSampleDimension().GetXMax() - GetSampleDimension().GetXMin()) * 0.5;
-        double HalfScaleIncrementY = (GetSampleDimension().GetYMax() - GetSampleDimension().GetYMin()) * 0.5;
+        double HalfScaleIncrementX = (HRAGenericSampler::GetSampleDimension().GetXMax() - HRAGenericSampler::GetSampleDimension().GetXMin()) * 0.5;
+        double HalfScaleIncrementY = (HRAGenericSampler::GetSampleDimension().GetYMax() - HRAGenericSampler::GetSampleDimension().GetYMin()) * 0.5;
 
         HRAAveragingGrid Grid(pi_PositionX - HalfScaleIncrementX,
                               pi_PositionY - HalfScaleIncrementY,
                               pi_PositionX + HalfScaleIncrementX,
                               pi_PositionY + HalfScaleIncrementY,
-                              m_Width - 1,
-                              m_Height - 1);
+                              HRAGenericAverageSampler<T, TS>::m_Width - 1,
+                              HRAGenericAverageSampler<T, TS>::m_Height - 1);
 
         uint32_t NumberOfLines = Grid.GetHeight();
         HASSERT(NumberOfLines > 0);
@@ -1049,13 +1048,13 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(double pi_PositionX,
 
         for (uint32_t Line = 0 ; Line < NumberOfLines ; ++Line)
             {
-            ppSrcData[Line] = (T*)ComputeAddress(m_pPacket,
+            ppSrcData[Line] = (T*)this->ComputeAddress(HRAGenericAverageSampler<T, TS>::m_pPacket,
                                                  CurrentSourcePositionX,
                                                  Grid.GetYMin() + Line);
             }
 
-        TS*     pChannelsSum         = new TS[m_NbChannels];
-        uint32_t* pNumberOfValidPixels = new uint32_t[m_NbChannels];
+        TS*     pChannelsSum = new TS[HRAGenericAverageSampler<T, TS>::m_NbChannels];
+        uint32_t* pNumberOfValidPixels = new uint32_t[HRAGenericAverageSampler<T, TS>::m_NbChannels];
         uint32_t NewSourcePositionX;
         uint32_t NumberOfColumns;
         uint32_t NumberOfPixels;
@@ -1063,13 +1062,13 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(double pi_PositionX,
 
         while(pi_PixelCount > 0)
             {
-            memset((void*)pChannelsSum, 0, m_NbChannels * sizeof(TS));
-            memset((void*)pNumberOfValidPixels, 0, m_NbChannels * sizeof(uint32_t));
+            memset(pChannelsSum, 0, HRAGenericAverageSampler<T, TS>::m_NbChannels * sizeof(TS));
+            memset(pNumberOfValidPixels, 0, HRAGenericAverageSampler<T, TS>::m_NbChannels * sizeof(uint32_t));
 
             NumberOfColumns = Grid.GetWidth();
             NumberOfPixels  = NumberOfColumns * NumberOfLines;
 
-            Grid.TranslateX(m_DeltaX);
+            Grid.TranslateX(HRAGenericAverageSampler<T, TS>::m_DeltaX);
             NewSourcePositionX = Grid.GetXMin();
 
             // Add each useful pixel
@@ -1077,9 +1076,9 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(double pi_PositionX,
                 {
                 for (uint32_t Column = 0 ; Column < NumberOfColumns ; ++Column)
                     {
-                    for (size_t ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
+                    for (size_t ChannelInd = 0; ChannelInd < HRAGenericAverageSampler<T, TS>::m_NbChannels; ChannelInd++)
                         {
-                        SrcData = ppSrcData[Line][Column * m_NbChannels + ChannelInd];
+                        SrcData = ppSrcData[Line][Column * HRAGenericAverageSampler<T, TS>::m_NbChannels + ChannelInd];
 
                         if (SrcData != m_NoDataValue)
                             {
@@ -1090,11 +1089,11 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(double pi_PositionX,
                     }
 
                 // Adjust source data pointer for next turn
-                ppSrcData[Line] += m_NbChannels * (NewSourcePositionX - CurrentSourcePositionX);
+                ppSrcData[Line] += HRAGenericAverageSampler<T, TS>::m_NbChannels * (NewSourcePositionX - CurrentSourcePositionX);
                 }
 
             // Set result
-            for (size_t ChannelInd = 0; ChannelInd < m_NbChannels; ChannelInd++)
+            for (size_t ChannelInd = 0; ChannelInd < HRAGenericAverageSampler<T, TS>::m_NbChannels; ChannelInd++)
                 {
                 if (pNumberOfValidPixels[ChannelInd] == 0)
                     {
@@ -1127,8 +1126,8 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(double pi_PositionX,
             pXPositions[Position] = pi_PositionX;
             pYPositions[Position] = pi_PositionY;
 
-            pi_PositionX += m_DeltaX;
-            pi_PositionY += m_DeltaY;
+            pi_PositionX += HRAGenericAverageSampler<T, TS>::m_DeltaX;
+            pi_PositionY += HRAGenericAverageSampler<T, TS>::m_DeltaY;
             }
         GetPixels(pXPositions, pYPositions, pi_PixelCount, po_pBuffer);
         }

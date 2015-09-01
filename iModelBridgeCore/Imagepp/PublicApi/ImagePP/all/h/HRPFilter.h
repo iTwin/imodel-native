@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPFilter.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPFilter
@@ -16,12 +16,13 @@
 #include "HRPPixelType.h"
 #include "HRPPixelBuffer.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelType;
 class HRPPixelBuffer;
 
 class HNOVTABLEINIT HRPFilter : public HFCShareableObject<HRPFilter>
     {
-    HDECLARE_BASECLASS_ID(1130)
+    HDECLARE_BASECLASS_ID(HRPFilterId_Base)
 
 public:
 
@@ -35,7 +36,7 @@ public:
     void                    Convert(const HFCPtr<HRPPixelType>& pio_pPixelType);
 
     // Composing
-    _HDLLg virtual HRPFilter*      ComposeWith(const HRPFilter* pi_pFilter);
+    IMAGEPP_EXPORT virtual HRPFilter*      ComposeWith(const HRPFilter* pi_pFilter);
 
     // Neighbourhood
     const HRPPixelNeighbourhood&
@@ -77,6 +78,7 @@ private:
 
     HFCPtr<HRPPixelType>    m_pOutputPixelType;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRPFilter.hpp"
 

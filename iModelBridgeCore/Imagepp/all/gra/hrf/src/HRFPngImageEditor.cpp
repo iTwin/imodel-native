@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPngImageEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngImageEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFPngImageEditor.h>
 #include <Imagepp/all/h/HRFPngFile.h>
 #include <png/png.h>
@@ -51,10 +51,10 @@ HRFPngImageEditor::~HRFPngImageEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPngImageEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                     uint32_t pi_PosBlockY,
-                                     Byte* po_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFPngImageEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                       uint64_t pi_PosBlockY,
+                                       Byte*  po_pData,
+                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -116,10 +116,10 @@ HSTATUS HRFPngImageEditor::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPngImageEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                      uint32_t     pi_PosBlockY,
-                                      const Byte* pi_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFPngImageEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                        uint64_t     pi_PosBlockY,
+                                        const Byte*  pi_pData,
+                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
@@ -174,8 +174,8 @@ HSTATUS HRFPngImageEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPngImageEditor::ReadBlock(uint32_t           pi_PosBlockX,
-                                     uint32_t           pi_PosBlockY,
+HSTATUS HRFPngImageEditor::ReadBlock(uint64_t           pi_PosBlockX,
+                                     uint64_t           pi_PosBlockY,
                                      HFCPtr<HCDPacket>& po_rpPacket,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -201,8 +201,8 @@ HSTATUS HRFPngImageEditor::ReadBlock(uint32_t           pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPngImageEditor::WriteBlock(uint32_t                 pi_PosBlockX,
-                                      uint32_t                 pi_PosBlockY,
+HSTATUS HRFPngImageEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                      uint64_t                 pi_PosBlockY,
                                       const HFCPtr<HCDPacket>& pi_rpPacket,
                                       HFCLockMonitor const*    pi_pSisterFileLock)
     {

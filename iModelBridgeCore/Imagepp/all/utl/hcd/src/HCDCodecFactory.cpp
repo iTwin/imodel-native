@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecFactory.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodec
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HCDCodecFactory.h>
 #include <Imagepp/all/h/HCDCodecBMPRLE4.h>
@@ -24,7 +24,6 @@
 #include <Imagepp/all/h/HCDCodecJBIG.h>
 #include <Imagepp/all/h/HCDCodecLRDRLE.h>
 #include <Imagepp/all/h/HCDCodecLZW.h>
-#include <Imagepp/all/h/HCDCodecRGBRLE8.h>
 #include <Imagepp/all/h/HCDCodecRLE8.h>
 #include <Imagepp/all/h/HCDCodecHMRCCITT.h>
 #include <Imagepp/all/h/HCDCodecTGARLE.h>
@@ -68,7 +67,6 @@ HCDCodecFactory::HCDCodecFactory()
 #endif
     REGISTER_CODEC(HCDCodecLRDRLE)
     REGISTER_CODEC(HCDCodecLZW)
-    REGISTER_CODEC(HCDCodecRGBRLE8)
     REGISTER_CODEC(HCDCodecRLE8)
     REGISTER_CODEC(HCDCodecHMRCCITT)
     REGISTER_CODEC(HCDCodecTGARLE)

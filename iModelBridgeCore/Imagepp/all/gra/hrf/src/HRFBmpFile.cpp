@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBmpFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFBmpFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRFException.h>
@@ -33,7 +33,6 @@
 
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 // Bit masks used for pixel type V16R5G6B5
@@ -290,8 +289,7 @@ void HRFBmpCreator::CreateBmpFileFromImageData(HFCPtr<HFCURL>&       pi_rpFileNa
 //-----------------------------------------------------------------------------
 WString HRFBmpCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_BMP); // BMP File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_BMP()); // BMP File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -354,19 +352,19 @@ bool HRFBmpCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the BMP File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
-    if (pFile->Read((void*)&FileHeader.m_Type, sizeof FileHeader.m_Type) != sizeof FileHeader.m_Type)
+    if (pFile->Read(&FileHeader.m_Type, sizeof FileHeader.m_Type) != sizeof FileHeader.m_Type)
         goto WRAPUP;
 
     // OS/2 Bitmap arrays processing. Choose the best resolution image.
     if (0x4142 == FileHeader.m_Type)
         {
         // Validate that we really got a bitmap array
-        if (pFile->Read((void*)&ArrayHeader.m_HeaderSize,    sizeof ArrayHeader.m_HeaderSize) != sizeof ArrayHeader.m_HeaderSize)
+        if (pFile->Read(&ArrayHeader.m_HeaderSize,    sizeof ArrayHeader.m_HeaderSize) != sizeof ArrayHeader.m_HeaderSize)
             goto WRAPUP; // Error
 
         if (40 != ArrayHeader.m_HeaderSize)
@@ -381,21 +379,21 @@ bool HRFBmpCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     if (FileHeader.m_Type != 0x4D42)
         goto WRAPUP;
 
-    if (pFile->Read((void*)&FileHeader.m_FileSize,      sizeof FileHeader.m_FileSize)      != sizeof FileHeader.m_FileSize      ||
-        pFile->Read((void*)&FileHeader.m_Reserved1,     sizeof FileHeader.m_Reserved1)     != sizeof FileHeader.m_Reserved1     ||
-        pFile->Read((void*)&FileHeader.m_Reserved2,     sizeof FileHeader.m_Reserved2)     != sizeof FileHeader.m_Reserved2     ||
-        pFile->Read((void*)&FileHeader.m_OffBitsToData, sizeof FileHeader.m_OffBitsToData) != sizeof FileHeader.m_OffBitsToData ||
+    if (pFile->Read(&FileHeader.m_FileSize,      sizeof FileHeader.m_FileSize)      != sizeof FileHeader.m_FileSize      ||
+        pFile->Read(&FileHeader.m_Reserved1,     sizeof FileHeader.m_Reserved1)     != sizeof FileHeader.m_Reserved1     ||
+        pFile->Read(&FileHeader.m_Reserved2,     sizeof FileHeader.m_Reserved2)     != sizeof FileHeader.m_Reserved2     ||
+        pFile->Read(&FileHeader.m_OffBitsToData, sizeof FileHeader.m_OffBitsToData) != sizeof FileHeader.m_OffBitsToData ||
         pFile->Read(&InfoHeader.m_StructSize,           sizeof InfoHeader.m_StructSize)    != sizeof InfoHeader.m_StructSize)
         goto WRAPUP;
 
     // Windows 3.x BMP
     if (InfoHeader.m_StructSize == sizeof(BmpInfoHeader))
         {
-        if (pFile->Read((void*)&InfoHeader.m_Width,       sizeof InfoHeader.m_Width)       != sizeof InfoHeader.m_Width     ||
-            pFile->Read((void*)&InfoHeader.m_Height,      sizeof InfoHeader.m_Height)      != sizeof InfoHeader.m_Height    ||
-            pFile->Read((void*)&InfoHeader.m_Planes,      sizeof InfoHeader.m_Planes)      != sizeof InfoHeader.m_Planes    ||
-            pFile->Read((void*)&InfoHeader.m_BitCount,    sizeof InfoHeader.m_BitCount)    != sizeof InfoHeader.m_BitCount  ||
-            pFile->Read((void*)&InfoHeader.m_Compression, sizeof InfoHeader.m_Compression) != sizeof InfoHeader.m_Compression ||
+        if (pFile->Read(&InfoHeader.m_Width,       sizeof InfoHeader.m_Width)       != sizeof InfoHeader.m_Width     ||
+            pFile->Read(&InfoHeader.m_Height,      sizeof InfoHeader.m_Height)      != sizeof InfoHeader.m_Height    ||
+            pFile->Read(&InfoHeader.m_Planes,      sizeof InfoHeader.m_Planes)      != sizeof InfoHeader.m_Planes    ||
+            pFile->Read(&InfoHeader.m_BitCount,    sizeof InfoHeader.m_BitCount)    != sizeof InfoHeader.m_BitCount  ||
+            pFile->Read(&InfoHeader.m_Compression, sizeof InfoHeader.m_Compression) != sizeof InfoHeader.m_Compression ||
             !(InfoHeader.m_BitCount == 1 || InfoHeader.m_BitCount == 4 || InfoHeader.m_BitCount == 8 ||
               InfoHeader.m_BitCount == 16 || InfoHeader.m_BitCount == 24 || InfoHeader.m_BitCount == 32) )
             goto WRAPUP;
@@ -405,10 +403,10 @@ bool HRFBmpCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         {
         BitMapCoreHeader CoreHeader;
 
-        if (pFile->Read((void*)&CoreHeader.m_Width,        sizeof CoreHeader.m_Width)        != sizeof CoreHeader.m_Width        ||
-            pFile->Read((void*)&CoreHeader.m_Height,       sizeof CoreHeader.m_Height)       != sizeof CoreHeader.m_Height       ||
-            pFile->Read((void*)&CoreHeader.m_ColorPlanes,  sizeof CoreHeader.m_ColorPlanes)  != sizeof CoreHeader.m_ColorPlanes  ||
-            pFile->Read((void*)&CoreHeader.m_BitsPerPixel, sizeof CoreHeader.m_BitsPerPixel) != sizeof CoreHeader.m_BitsPerPixel ||
+        if (pFile->Read(&CoreHeader.m_Width,        sizeof CoreHeader.m_Width)        != sizeof CoreHeader.m_Width        ||
+            pFile->Read(&CoreHeader.m_Height,       sizeof CoreHeader.m_Height)       != sizeof CoreHeader.m_Height       ||
+            pFile->Read(&CoreHeader.m_ColorPlanes,  sizeof CoreHeader.m_ColorPlanes)  != sizeof CoreHeader.m_ColorPlanes  ||
+            pFile->Read(&CoreHeader.m_BitsPerPixel, sizeof CoreHeader.m_BitsPerPixel) != sizeof CoreHeader.m_BitsPerPixel ||
             !(CoreHeader.m_BitsPerPixel == 1 || CoreHeader.m_BitsPerPixel == 4 || CoreHeader.m_BitsPerPixel == 8 ||
               CoreHeader.m_BitsPerPixel == 16 || CoreHeader.m_BitsPerPixel == 24 || CoreHeader.m_BitsPerPixel == 32) )
             goto WRAPUP;
@@ -427,14 +425,14 @@ bool HRFBmpCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         {
         // We need to check if the pixel type corresponding to those bit masks is supported
 
-        if (pFile->Read((void*)&InfoHeader.m_SizeImage,     sizeof InfoHeader.m_SizeImage)     != sizeof InfoHeader.m_SizeImage     ||
-            pFile->Read((void*)&InfoHeader.m_XPelsPerMeter, sizeof InfoHeader.m_XPelsPerMeter) != sizeof InfoHeader.m_XPelsPerMeter ||
-            pFile->Read((void*)&InfoHeader.m_YPelsPerMeter, sizeof InfoHeader.m_YPelsPerMeter) != sizeof InfoHeader.m_YPelsPerMeter ||
-            pFile->Read((void*)&InfoHeader.m_ClrUsed,       sizeof InfoHeader.m_ClrUsed)       != sizeof InfoHeader.m_ClrUsed       ||
-            pFile->Read((void*)&InfoHeader.m_ClrImportant,  sizeof InfoHeader.m_ClrImportant)  != sizeof InfoHeader.m_ClrImportant  ||
-            pFile->Read((void*)&BitMasks.m_RedMask,         sizeof BitMasks.m_RedMask)         != sizeof BitMasks.m_RedMask         ||
-            pFile->Read((void*)&BitMasks.m_GreenMask,       sizeof BitMasks.m_GreenMask)       != sizeof BitMasks.m_GreenMask       ||
-            pFile->Read((void*)&BitMasks.m_BlueMask,        sizeof BitMasks.m_BlueMask)        != sizeof BitMasks.m_BlueMask)
+        if (pFile->Read(&InfoHeader.m_SizeImage,     sizeof InfoHeader.m_SizeImage)     != sizeof InfoHeader.m_SizeImage     ||
+            pFile->Read(&InfoHeader.m_XPelsPerMeter, sizeof InfoHeader.m_XPelsPerMeter) != sizeof InfoHeader.m_XPelsPerMeter ||
+            pFile->Read(&InfoHeader.m_YPelsPerMeter, sizeof InfoHeader.m_YPelsPerMeter) != sizeof InfoHeader.m_YPelsPerMeter ||
+            pFile->Read(&InfoHeader.m_ClrUsed,       sizeof InfoHeader.m_ClrUsed)       != sizeof InfoHeader.m_ClrUsed       ||
+            pFile->Read(&InfoHeader.m_ClrImportant,  sizeof InfoHeader.m_ClrImportant)  != sizeof InfoHeader.m_ClrImportant  ||
+            pFile->Read(&BitMasks.m_RedMask,         sizeof BitMasks.m_RedMask)         != sizeof BitMasks.m_RedMask         ||
+            pFile->Read(&BitMasks.m_GreenMask,       sizeof BitMasks.m_GreenMask)       != sizeof BitMasks.m_GreenMask       ||
+            pFile->Read(&BitMasks.m_BlueMask,        sizeof BitMasks.m_BlueMask)        != sizeof BitMasks.m_BlueMask)
             goto WRAPUP;
 
 
@@ -750,9 +748,7 @@ bool HRFBmpFile::Open()
     if (!m_IsOpen)
         {
         // Open the actual bmp file.
-        m_pBmpFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetPhysicalAccessMode());
-
-        ThrowFileExceptionIfError(m_pBmpFile, GetURL()->GetURL());
+        m_pBmpFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetPhysicalAccessMode(), 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -789,7 +785,7 @@ void HRFBmpFile::CreateDescriptors ()
 
     if (pPixelType == 0)
         {
-        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
         }
 
     // Find Padding Bits Per Row
@@ -825,7 +821,7 @@ void HRFBmpFile::CreateDescriptors ()
 
         // RLE4 is supported in read only.
         if (GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess)
-            throw HRFException(HRF_ACCESS_MODE_FOR_CODEC_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFAccessModeForCodeNotSupportedException(GetURL()->GetURL());
         }
     // Compression is NONE
     else
@@ -1025,9 +1021,7 @@ void HRFBmpFile::Save()
 bool HRFBmpFile::Create()
     {
     // Open the file.
-    m_pBmpFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pBmpFile, GetURL()->GetURL());
+    m_pBmpFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
 
     // This creates the sister file for file sharing control if necessary.
     SharingControlCreate();
@@ -1254,9 +1248,9 @@ bool HRFBmpFile::ReadBestResolutionArrayHeader         (HFCBinStream*           
         {
         pio_pFile->SeekToPos(po_pBmpArrayHeader->m_NextOffset);
 
-        if (pio_pFile->Read((void*)&po_pBmpArrayHeader->m_Type,          sizeof po_pBmpArrayHeader->m_Type)       != sizeof po_pBmpArrayHeader->m_Type         ||
-            pio_pFile->Read((void*)&po_pBmpArrayHeader->m_HeaderSize,    sizeof po_pBmpArrayHeader->m_HeaderSize) != sizeof po_pBmpArrayHeader->m_HeaderSize   ||
-            pio_pFile->Read((void*)&po_pBmpArrayHeader->m_NextOffset,    sizeof po_pBmpArrayHeader->m_NextOffset) != sizeof po_pBmpArrayHeader->m_NextOffset)
+        if (pio_pFile->Read(&po_pBmpArrayHeader->m_Type,          sizeof po_pBmpArrayHeader->m_Type)       != sizeof po_pBmpArrayHeader->m_Type         ||
+            pio_pFile->Read(&po_pBmpArrayHeader->m_HeaderSize,    sizeof po_pBmpArrayHeader->m_HeaderSize) != sizeof po_pBmpArrayHeader->m_HeaderSize   ||
+            pio_pFile->Read(&po_pBmpArrayHeader->m_NextOffset,    sizeof po_pBmpArrayHeader->m_NextOffset) != sizeof po_pBmpArrayHeader->m_NextOffset)
             return false; // Error
 
         if (0x4142 != po_pBmpArrayHeader->m_Type || 40 != po_pBmpArrayHeader->m_HeaderSize)
@@ -1265,8 +1259,8 @@ bool HRFBmpFile::ReadBestResolutionArrayHeader         (HFCBinStream*           
     while(po_pBmpArrayHeader->m_NextOffset);
 
 
-    if (pio_pFile->Read((void*)&po_pBmpArrayHeader->m_XDisplay,  sizeof po_pBmpArrayHeader->m_XDisplay)   != sizeof po_pBmpArrayHeader->m_XDisplay ||
-        pio_pFile->Read((void*)&po_pBmpArrayHeader->m_YDisplay,  sizeof po_pBmpArrayHeader->m_YDisplay)   != sizeof po_pBmpArrayHeader->m_YDisplay)
+    if (pio_pFile->Read(&po_pBmpArrayHeader->m_XDisplay,  sizeof po_pBmpArrayHeader->m_XDisplay)   != sizeof po_pBmpArrayHeader->m_XDisplay ||
+        pio_pFile->Read(&po_pBmpArrayHeader->m_YDisplay,  sizeof po_pBmpArrayHeader->m_YDisplay)   != sizeof po_pBmpArrayHeader->m_YDisplay)
         return false; // Error
 
 
@@ -1285,7 +1279,7 @@ bool HRFBmpFile::GetFileHeaderFromFile()
     // Lock the sister file for the getFileHeaderFromFile method
     HFCLockMonitor SisterFileLock(GetLockManager());
 
-    if (m_pBmpFile->Read((void*)&m_BmpFileHeader.m_Type, sizeof m_BmpFileHeader.m_Type) != sizeof m_BmpFileHeader.m_Type)
+    if (m_pBmpFile->Read(&m_BmpFileHeader.m_Type, sizeof m_BmpFileHeader.m_Type) != sizeof m_BmpFileHeader.m_Type)
         return false; // Error
 
     // This is an OS/2 Bitmap array. Move to the best resolution bitmap in the array.
@@ -1298,14 +1292,14 @@ bool HRFBmpFile::GetFileHeaderFromFile()
         m_BmpFileHeaderOffset = m_pBmpFile->GetCurrentPos();
 
         // Reread the type field in the File Header so that the behaviour stays as if it was a normal bmp (not a bitmap array)
-        if (m_pBmpFile->Read((void*)&m_BmpFileHeader.m_Type, sizeof m_BmpFileHeader.m_Type) != sizeof m_BmpFileHeader.m_Type)
+        if (m_pBmpFile->Read(&m_BmpFileHeader.m_Type, sizeof m_BmpFileHeader.m_Type) != sizeof m_BmpFileHeader.m_Type)
             return false; // Error
         }
 
-    if (m_pBmpFile->Read((void*)&m_BmpFileHeader.m_FileSize,      sizeof m_BmpFileHeader.m_FileSize)        != sizeof m_BmpFileHeader.m_FileSize    ||
-        m_pBmpFile->Read((void*)&m_BmpFileHeader.m_Reserved1,     sizeof m_BmpFileHeader.m_Reserved1)       != sizeof m_BmpFileHeader.m_Reserved1   ||
-        m_pBmpFile->Read((void*)&m_BmpFileHeader.m_Reserved2,     sizeof m_BmpFileHeader.m_Reserved2)       != sizeof m_BmpFileHeader.m_Reserved2   ||
-        m_pBmpFile->Read((void*)&m_BmpFileHeader.m_OffBitsToData, sizeof m_BmpFileHeader.m_OffBitsToData)   != sizeof m_BmpFileHeader.m_OffBitsToData)
+    if (m_pBmpFile->Read(&m_BmpFileHeader.m_FileSize,      sizeof m_BmpFileHeader.m_FileSize)        != sizeof m_BmpFileHeader.m_FileSize    ||
+        m_pBmpFile->Read(&m_BmpFileHeader.m_Reserved1,     sizeof m_BmpFileHeader.m_Reserved1)       != sizeof m_BmpFileHeader.m_Reserved1   ||
+        m_pBmpFile->Read(&m_BmpFileHeader.m_Reserved2,     sizeof m_BmpFileHeader.m_Reserved2)       != sizeof m_BmpFileHeader.m_Reserved2   ||
+        m_pBmpFile->Read(&m_BmpFileHeader.m_OffBitsToData, sizeof m_BmpFileHeader.m_OffBitsToData)   != sizeof m_BmpFileHeader.m_OffBitsToData)
         return false; // Error
 
     // Unlock the sister file
@@ -1326,11 +1320,11 @@ void HRFBmpFile::SetFileHeaderToFile()
     // Lock the sister file for the SetFileHeadertoFile method
     HFCLockMonitor SisterFileLock(GetLockManager());
 
-    m_pBmpFile->Write((void*)&m_BmpFileHeader.m_Type,          sizeof m_BmpFileHeader.m_Type);
-    m_pBmpFile->Write((void*)&m_BmpFileHeader.m_FileSize,      sizeof m_BmpFileHeader.m_FileSize);
-    m_pBmpFile->Write((void*)&m_BmpFileHeader.m_Reserved1,     sizeof m_BmpFileHeader.m_Reserved1);
-    m_pBmpFile->Write((void*)&m_BmpFileHeader.m_Reserved2,     sizeof m_BmpFileHeader.m_Reserved2);
-    m_pBmpFile->Write((void*)&m_BmpFileHeader.m_OffBitsToData, sizeof m_BmpFileHeader.m_OffBitsToData);
+    m_pBmpFile->Write(&m_BmpFileHeader.m_Type,          sizeof m_BmpFileHeader.m_Type);
+    m_pBmpFile->Write(&m_BmpFileHeader.m_FileSize,      sizeof m_BmpFileHeader.m_FileSize);
+    m_pBmpFile->Write(&m_BmpFileHeader.m_Reserved1,     sizeof m_BmpFileHeader.m_Reserved1);
+    m_pBmpFile->Write(&m_BmpFileHeader.m_Reserved2,     sizeof m_BmpFileHeader.m_Reserved2);
+    m_pBmpFile->Write(&m_BmpFileHeader.m_OffBitsToData, sizeof m_BmpFileHeader.m_OffBitsToData);
 
     // Unlock the sister file.
     SisterFileLock.ReleaseKey();
@@ -1355,23 +1349,23 @@ bool HRFBmpFile::GetBmpInfoHeaderFromFile()
         {
         m_IsRGBQuad = true;
 
-        m_pBmpFile->Read((void*)&m_BmpInfo.m_BmpInfoHeader.m_Width,         sizeof m_BmpInfo.m_BmpInfoHeader.m_Width);
-        m_pBmpFile->Read((void*)&m_BmpInfo.m_BmpInfoHeader.m_Height,        sizeof m_BmpInfo.m_BmpInfoHeader.m_Height);
-        m_pBmpFile->Read((void*)&m_BmpInfo.m_BmpInfoHeader.m_Planes,        sizeof m_BmpInfo.m_BmpInfoHeader.m_Planes);
-        m_pBmpFile->Read((void*)&m_BmpInfo.m_BmpInfoHeader.m_BitCount,      sizeof m_BmpInfo.m_BmpInfoHeader.m_BitCount);
-        m_pBmpFile->Read((void*)&m_BmpInfo.m_BmpInfoHeader.m_Compression,   sizeof m_BmpInfo.m_BmpInfoHeader.m_Compression);
-        m_pBmpFile->Read((void*)&m_BmpInfo.m_BmpInfoHeader.m_SizeImage,     sizeof m_BmpInfo.m_BmpInfoHeader.m_SizeImage);
-        m_pBmpFile->Read((void*)&m_BmpInfo.m_BmpInfoHeader.m_XPelsPerMeter, sizeof m_BmpInfo.m_BmpInfoHeader.m_XPelsPerMeter);
-        m_pBmpFile->Read((void*)&m_BmpInfo.m_BmpInfoHeader.m_YPelsPerMeter, sizeof m_BmpInfo.m_BmpInfoHeader.m_YPelsPerMeter);
-        m_pBmpFile->Read((void*)&m_BmpInfo.m_BmpInfoHeader.m_ClrUsed,       sizeof m_BmpInfo.m_BmpInfoHeader.m_ClrUsed);
-        m_pBmpFile->Read((void*)&m_BmpInfo.m_BmpInfoHeader.m_ClrImportant,  sizeof m_BmpInfo.m_BmpInfoHeader.m_ClrImportant);
+        m_pBmpFile->Read(&m_BmpInfo.m_BmpInfoHeader.m_Width,         sizeof m_BmpInfo.m_BmpInfoHeader.m_Width);
+        m_pBmpFile->Read(&m_BmpInfo.m_BmpInfoHeader.m_Height,        sizeof m_BmpInfo.m_BmpInfoHeader.m_Height);
+        m_pBmpFile->Read(&m_BmpInfo.m_BmpInfoHeader.m_Planes,        sizeof m_BmpInfo.m_BmpInfoHeader.m_Planes);
+        m_pBmpFile->Read(&m_BmpInfo.m_BmpInfoHeader.m_BitCount,      sizeof m_BmpInfo.m_BmpInfoHeader.m_BitCount);
+        m_pBmpFile->Read(&m_BmpInfo.m_BmpInfoHeader.m_Compression,   sizeof m_BmpInfo.m_BmpInfoHeader.m_Compression);
+        m_pBmpFile->Read(&m_BmpInfo.m_BmpInfoHeader.m_SizeImage,     sizeof m_BmpInfo.m_BmpInfoHeader.m_SizeImage);
+        m_pBmpFile->Read(&m_BmpInfo.m_BmpInfoHeader.m_XPelsPerMeter, sizeof m_BmpInfo.m_BmpInfoHeader.m_XPelsPerMeter);
+        m_pBmpFile->Read(&m_BmpInfo.m_BmpInfoHeader.m_YPelsPerMeter, sizeof m_BmpInfo.m_BmpInfoHeader.m_YPelsPerMeter);
+        m_pBmpFile->Read(&m_BmpInfo.m_BmpInfoHeader.m_ClrUsed,       sizeof m_BmpInfo.m_BmpInfoHeader.m_ClrUsed);
+        m_pBmpFile->Read(&m_BmpInfo.m_BmpInfoHeader.m_ClrImportant,  sizeof m_BmpInfo.m_BmpInfoHeader.m_ClrImportant);
 
         if ( m_BmpInfo.m_BmpInfoHeader.m_Compression == 3 )
             {
             //We need to read the bit masks
-            m_pBmpFile->Read((void*)&m_BmpBitMasksHeader.m_RedMask,            sizeof m_BmpBitMasksHeader.m_RedMask);
-            m_pBmpFile->Read((void*)&m_BmpBitMasksHeader.m_GreenMask,          sizeof m_BmpBitMasksHeader.m_GreenMask);
-            m_pBmpFile->Read((void*)&m_BmpBitMasksHeader.m_BlueMask,           sizeof m_BmpBitMasksHeader.m_BlueMask);
+            m_pBmpFile->Read(&m_BmpBitMasksHeader.m_RedMask,            sizeof m_BmpBitMasksHeader.m_RedMask);
+            m_pBmpFile->Read(&m_BmpBitMasksHeader.m_GreenMask,          sizeof m_BmpBitMasksHeader.m_GreenMask);
+            m_pBmpFile->Read(&m_BmpBitMasksHeader.m_BlueMask,           sizeof m_BmpBitMasksHeader.m_BlueMask);
             }
         }
     // PM DIBs
@@ -1381,10 +1375,10 @@ bool HRFBmpFile::GetBmpInfoHeaderFromFile()
 
         m_IsRGBQuad = false;
 
-        m_pBmpFile->Read((void*)&CoreHeader.m_Width,        sizeof CoreHeader.m_Width);
-        m_pBmpFile->Read((void*)&CoreHeader.m_Height,       sizeof CoreHeader.m_Height);
-        m_pBmpFile->Read((void*)&CoreHeader.m_ColorPlanes,  sizeof CoreHeader.m_ColorPlanes);
-        m_pBmpFile->Read((void*)&CoreHeader.m_BitsPerPixel, sizeof CoreHeader.m_BitsPerPixel);
+        m_pBmpFile->Read(&CoreHeader.m_Width,        sizeof CoreHeader.m_Width);
+        m_pBmpFile->Read(&CoreHeader.m_Height,       sizeof CoreHeader.m_Height);
+        m_pBmpFile->Read(&CoreHeader.m_ColorPlanes,  sizeof CoreHeader.m_ColorPlanes);
+        m_pBmpFile->Read(&CoreHeader.m_BitsPerPixel, sizeof CoreHeader.m_BitsPerPixel);
 
         m_BmpInfo.m_BmpInfoHeader.m_StructSize  = sizeof (BmpInfoHeader);
 
@@ -1400,7 +1394,7 @@ bool HRFBmpFile::GetBmpInfoHeaderFromFile()
         m_BmpInfo.m_BmpInfoHeader.m_ClrImportant  = 0;
         }
     else //V4 and V5 are not supported
-        throw HRFException(HRF_UNSUPPORTED_BMP_VERSION_EXCEPTION, GetURL()->GetURL());
+        throw HRFUnsupportedBMPVersionException(GetURL()->GetURL());
 
     // The maximum size should be where each line is aligned on double word boundary.
     if (!m_BmpInfo.m_BmpInfoHeader.m_SizeImage)
@@ -1437,25 +1431,25 @@ void HRFBmpFile::SetBmpInfoHeaderToFile()
     // Lock the sister file for the SetBmpInfoHeaderToFile method
     HFCLockMonitor SisterFileLock(GetLockManager());
 
-    m_pBmpFile->Write((void*)&m_BmpInfo.m_BmpInfoHeader.m_StructSize,    sizeof m_BmpInfo.m_BmpInfoHeader.m_StructSize);
-    m_pBmpFile->Write((void*)&m_BmpInfo.m_BmpInfoHeader.m_Width,         sizeof m_BmpInfo.m_BmpInfoHeader.m_Width);
-    m_pBmpFile->Write((void*)&m_BmpInfo.m_BmpInfoHeader.m_Height,        sizeof m_BmpInfo.m_BmpInfoHeader.m_Height);
-    m_pBmpFile->Write((void*)&m_BmpInfo.m_BmpInfoHeader.m_Planes,        sizeof m_BmpInfo.m_BmpInfoHeader.m_Planes);
-    m_pBmpFile->Write((void*)&m_BmpInfo.m_BmpInfoHeader.m_BitCount,      sizeof m_BmpInfo.m_BmpInfoHeader.m_BitCount);
-    m_pBmpFile->Write((void*)&m_BmpInfo.m_BmpInfoHeader.m_Compression,   sizeof m_BmpInfo.m_BmpInfoHeader.m_Compression);
-    m_pBmpFile->Write((void*)&m_BmpInfo.m_BmpInfoHeader.m_SizeImage,     sizeof m_BmpInfo.m_BmpInfoHeader.m_SizeImage);
-    m_pBmpFile->Write((void*)&m_BmpInfo.m_BmpInfoHeader.m_XPelsPerMeter, sizeof m_BmpInfo.m_BmpInfoHeader.m_XPelsPerMeter);
-    m_pBmpFile->Write((void*)&m_BmpInfo.m_BmpInfoHeader.m_YPelsPerMeter, sizeof m_BmpInfo.m_BmpInfoHeader.m_YPelsPerMeter);
-    m_pBmpFile->Write((void*)&m_BmpInfo.m_BmpInfoHeader.m_ClrUsed,       sizeof m_BmpInfo.m_BmpInfoHeader.m_ClrUsed);
-    m_pBmpFile->Write((void*)&m_BmpInfo.m_BmpInfoHeader.m_ClrImportant,  sizeof m_BmpInfo.m_BmpInfoHeader.m_ClrImportant);
+    m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_StructSize,    sizeof m_BmpInfo.m_BmpInfoHeader.m_StructSize);
+    m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_Width,         sizeof m_BmpInfo.m_BmpInfoHeader.m_Width);
+    m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_Height,        sizeof m_BmpInfo.m_BmpInfoHeader.m_Height);
+    m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_Planes,        sizeof m_BmpInfo.m_BmpInfoHeader.m_Planes);
+    m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_BitCount,      sizeof m_BmpInfo.m_BmpInfoHeader.m_BitCount);
+    m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_Compression,   sizeof m_BmpInfo.m_BmpInfoHeader.m_Compression);
+    m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_SizeImage,     sizeof m_BmpInfo.m_BmpInfoHeader.m_SizeImage);
+    m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_XPelsPerMeter, sizeof m_BmpInfo.m_BmpInfoHeader.m_XPelsPerMeter);
+    m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_YPelsPerMeter, sizeof m_BmpInfo.m_BmpInfoHeader.m_YPelsPerMeter);
+    m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_ClrUsed,       sizeof m_BmpInfo.m_BmpInfoHeader.m_ClrUsed);
+    m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_ClrImportant,  sizeof m_BmpInfo.m_BmpInfoHeader.m_ClrImportant);
 
     // If the compression is set to 3
     if ( m_BmpInfo.m_BmpInfoHeader.m_Compression == 3 )
         {
         //We need to write the bit masks
-        m_pBmpFile->Write((void*)&m_BmpBitMasksHeader.m_RedMask,            sizeof m_BmpBitMasksHeader.m_RedMask);
-        m_pBmpFile->Write((void*)&m_BmpBitMasksHeader.m_GreenMask,          sizeof m_BmpBitMasksHeader.m_GreenMask);
-        m_pBmpFile->Write((void*)&m_BmpBitMasksHeader.m_BlueMask,           sizeof m_BmpBitMasksHeader.m_BlueMask);
+        m_pBmpFile->Write(&m_BmpBitMasksHeader.m_RedMask,            sizeof m_BmpBitMasksHeader.m_RedMask);
+        m_pBmpFile->Write(&m_BmpBitMasksHeader.m_GreenMask,          sizeof m_BmpBitMasksHeader.m_GreenMask);
+        m_pBmpFile->Write(&m_BmpBitMasksHeader.m_BlueMask,           sizeof m_BmpBitMasksHeader.m_BlueMask);
         }
 
     SetPaletteToFile();
@@ -1501,11 +1495,11 @@ void HRFBmpFile::GetPaletteFromFile()
 
         for (uint32_t color=0; color < maxColor; color++)
             {
-            m_pBmpFile->Read((void*)&m_BmpInfo.m_RgbColors[color].m_rgbBlue,  sizeof m_BmpInfo.m_RgbColors[color].m_rgbBlue);
-            m_pBmpFile->Read((void*)&m_BmpInfo.m_RgbColors[color].m_rgbGreen, sizeof m_BmpInfo.m_RgbColors[color].m_rgbGreen);
-            m_pBmpFile->Read((void*)&m_BmpInfo.m_RgbColors[color].m_rgbRed,   sizeof m_BmpInfo.m_RgbColors[color].m_rgbRed);
+            m_pBmpFile->Read(&m_BmpInfo.m_RgbColors[color].m_rgbBlue,  sizeof m_BmpInfo.m_RgbColors[color].m_rgbBlue);
+            m_pBmpFile->Read(&m_BmpInfo.m_RgbColors[color].m_rgbGreen, sizeof m_BmpInfo.m_RgbColors[color].m_rgbGreen);
+            m_pBmpFile->Read(&m_BmpInfo.m_RgbColors[color].m_rgbRed,   sizeof m_BmpInfo.m_RgbColors[color].m_rgbRed);
             if(m_IsRGBQuad)
-                m_pBmpFile->Read((void*)&m_BmpInfo.m_RgbColors[color].m_rgbReserved, sizeof m_BmpInfo.m_RgbColors[color].m_rgbReserved);
+                m_pBmpFile->Read(&m_BmpInfo.m_RgbColors[color].m_rgbReserved, sizeof m_BmpInfo.m_RgbColors[color].m_rgbReserved);
             else
                 m_BmpInfo.m_RgbColors[color].m_rgbReserved = 0;
             }
@@ -1544,10 +1538,10 @@ void HRFBmpFile::SetPaletteToFile()
 
         for (uint32_t color=0; color<maxColor; color++)
             {
-            m_pBmpFile->Write((void*)&m_BmpInfo.m_RgbColors[color].m_rgbBlue,     sizeof m_BmpInfo.m_RgbColors[color].m_rgbBlue);
-            m_pBmpFile->Write((void*)&m_BmpInfo.m_RgbColors[color].m_rgbGreen,    sizeof m_BmpInfo.m_RgbColors[color].m_rgbGreen);
-            m_pBmpFile->Write((void*)&m_BmpInfo.m_RgbColors[color].m_rgbRed,      sizeof m_BmpInfo.m_RgbColors[color].m_rgbRed);
-            m_pBmpFile->Write((void*)&m_BmpInfo.m_RgbColors[color].m_rgbReserved, sizeof m_BmpInfo.m_RgbColors[color].m_rgbReserved);
+            m_pBmpFile->Write(&m_BmpInfo.m_RgbColors[color].m_rgbBlue,     sizeof m_BmpInfo.m_RgbColors[color].m_rgbBlue);
+            m_pBmpFile->Write(&m_BmpInfo.m_RgbColors[color].m_rgbGreen,    sizeof m_BmpInfo.m_RgbColors[color].m_rgbGreen);
+            m_pBmpFile->Write(&m_BmpInfo.m_RgbColors[color].m_rgbRed,      sizeof m_BmpInfo.m_RgbColors[color].m_rgbRed);
+            m_pBmpFile->Write(&m_BmpInfo.m_RgbColors[color].m_rgbReserved, sizeof m_BmpInfo.m_RgbColors[color].m_rgbReserved);
             }
 
         // Unlock the sister file.

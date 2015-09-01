@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVEVSRelativeIndex.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVEVSRelativeIndex
@@ -19,6 +19,7 @@
 #include "HVEVSRelativeAttribute.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 template <class O, class SI = DefaultSubIndexType<O> > class HVEVSRelativeIndex
     {
 public:
@@ -129,6 +130,7 @@ private:
     // The index we use internally to simulate inheritance from it.
     HIDXAListRelativeIndex<O, SI> m_Index;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVEVSRelativeIndex.hpp"

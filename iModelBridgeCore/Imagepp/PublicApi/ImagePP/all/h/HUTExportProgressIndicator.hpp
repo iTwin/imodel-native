@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTExportProgressIndicator.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class : HUTExportProgressIndicator
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // SetActivate
@@ -91,3 +92,4 @@ inline uint32_t HUTExportProgressIndicator::GetNbExportedBlocks(uint32_t pi_ResI
     return m_NbBlocksPerRes[pi_ResIndex];
     }
 
+END_IMAGEPP_NAMESPACE

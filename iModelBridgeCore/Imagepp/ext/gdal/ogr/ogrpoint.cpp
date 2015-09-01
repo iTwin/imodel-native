@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpoint.cpp 20260 2010-08-11 20:39:54Z rouault $
+ * $Id: ogrpoint.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The Point geometry class.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2008-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,10 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrpoint.cpp 20260 2010-08-11 20:39:54Z rouault $");
+/* for std::numeric_limits */
+#include <limits>
+
+CPL_CVSID("$Id: ogrpoint.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                              OGRPoint()                              */
@@ -129,10 +133,10 @@ int OGRPoint::getDimension() const
 OGRwkbGeometryType OGRPoint::getGeometryType() const
 
 {
-    if( nCoordDimension < 3 )
-        return wkbPoint;
-    else
+    if( nCoordDimension == 3 )
         return wkbPoint25D;
+    else
+        return wkbPoint;
 }
 
 /************************************************************************/
@@ -214,27 +218,18 @@ OGRErr OGRPoint::importFromWkb( unsigned char * pabyData,
 /*      geometry type is between 0 and 255 so we only have to fetch     */
 /*      one byte.                                                       */
 /* -------------------------------------------------------------------- */
+    OGRBoolean bIs3D;
     OGRwkbGeometryType eGeometryType;
-    int                bIs3D;
-    
-    if( eByteOrder == wkbNDR )
-    {
-        eGeometryType = (OGRwkbGeometryType) pabyData[1];
-        bIs3D = pabyData[4] & 0x80 || pabyData[2] & 0x80;
-    }
-    else
-    {
-        eGeometryType = (OGRwkbGeometryType) pabyData[4];
-        bIs3D = pabyData[1] & 0x80 || pabyData[3] & 0x80;
-    }
+    OGRErr err = OGRReadWKBGeometryType( pabyData, &eGeometryType, &bIs3D );
 
-    if( eGeometryType != wkbPoint )
+    if( err != OGRERR_NONE || eGeometryType != wkbPoint )
         return OGRERR_CORRUPT_DATA;
 
 /* -------------------------------------------------------------------- */
 /*      Get the vertex.                                                 */
 /* -------------------------------------------------------------------- */
-    memcpy( &x, pabyData + 5, 16 );
+    memcpy( &x, pabyData + 5,     8 );
+    memcpy( &y, pabyData + 5 + 8, 8 );
     
     if( OGR_SWAP( eByteOrder ) )
     {
@@ -270,7 +265,8 @@ OGRErr OGRPoint::importFromWkb( unsigned char * pabyData,
 /************************************************************************/
 
 OGRErr  OGRPoint::exportToWkb( OGRwkbByteOrder eByteOrder,
-                               unsigned char * pabyData ) const
+                               unsigned char * pabyData,
+                               OGRwkbVariant eWkbVariant ) const
 
 {
 /* -------------------------------------------------------------------- */
@@ -283,6 +279,9 @@ OGRErr  OGRPoint::exportToWkb( OGRwkbByteOrder eByteOrder,
 /* -------------------------------------------------------------------- */
     GUInt32 nGType = getGeometryType();
     
+    if ( eWkbVariant == wkbVariantIso )
+        nGType = getIsoGeometryType();
+    
     if( eByteOrder == wkbNDR )
         nGType = CPL_LSBWORD32( nGType );
     else
@@ -293,11 +292,22 @@ OGRErr  OGRPoint::exportToWkb( OGRwkbByteOrder eByteOrder,
 /* -------------------------------------------------------------------- */
 /*      Copy in the raw data.                                           */
 /* -------------------------------------------------------------------- */
-    memcpy( pabyData+5, &x, 16 );
 
-    if( nCoordDimension == 3 )
+    if ( IsEmpty() && eWkbVariant == wkbVariantIso )
     {
-        memcpy( pabyData + 5 + 16, &z, 8 );
+        double dNan = std::numeric_limits<double>::quiet_NaN();
+        memcpy( pabyData+5, &dNan, 8 );
+        memcpy( pabyData+5+8, &dNan, 8 );
+        if( nCoordDimension == 3 )
+            memcpy( pabyData+5+16, &dNan, 8 );
+    }
+    else
+    {
+        memcpy( pabyData+5, &x, 16 );
+        if( nCoordDimension == 3 )
+        {
+            memcpy( pabyData + 5 + 16, &z, 8 );
+        }
     }
     
 /* -------------------------------------------------------------------- */
@@ -464,7 +474,7 @@ OGRErr OGRPoint::exportToWkt( char ** ppszDstText ) const
     char        szTextEquiv[140];
     char        szCoordinate[80];
 
-    if (nCoordDimension == 0)
+    if ( IsEmpty() )
         *ppszDstText = CPLStrdup( "POINT EMPTY" );
     else
     {
@@ -487,6 +497,17 @@ void OGRPoint::getEnvelope( OGREnvelope * psEnvelope ) const
     psEnvelope->MinY = psEnvelope->MaxY = getY();
 }
 
+/************************************************************************/
+/*                            getEnvelope()                             */
+/************************************************************************/
+
+void OGRPoint::getEnvelope( OGREnvelope3D * psEnvelope ) const
+
+{
+    psEnvelope->MinX = psEnvelope->MaxX = getX();
+    psEnvelope->MinY = psEnvelope->MaxY = getY();
+    psEnvelope->MinZ = psEnvelope->MaxZ = getZ();
+}
 
 
 /**
@@ -559,6 +580,9 @@ OGRBoolean OGRPoint::Equals( OGRGeometry * poOther ) const
     
     if( poOther->getGeometryType() != getGeometryType() )
         return FALSE;
+
+    if ( IsEmpty() && poOther->IsEmpty() )
+        return TRUE;
 
     // we should eventually test the SRS.
     

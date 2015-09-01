@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosopen.c 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: ceosopen.c 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  CEOS Translator
  * Purpose:  Implementation of non-GDAL dependent CEOS support.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2007-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +30,7 @@
 
 #include "ceosopen.h"
 
-CPL_CVSID("$Id: ceosopen.c 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: ceosopen.c 27729 2014-09-24 00:40:16Z goatbar $");
 
 /************************************************************************/
 /*                            CEOSScanInt()                             */
@@ -144,7 +145,7 @@ CEOSRecord * CEOSReadRecord( CEOSImage *psImage )
         != psRecord->nLength - 12 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
-                  "short read on CEOS record data.\n" );
+                  "Short read on CEOS record data.\n" );
         CPLFree( psRecord );
         return NULL;
     }
@@ -172,8 +173,8 @@ void CEOSDestroyRecord( CEOSRecord * psRecord )
 /**
  * Open a CEOS transfer.
  *
- * @param Filename The name of the CEOS imagery file (ie. imag_01.dat).
- * @param Access An fopen() style access string.  Should be either "rb" for
+ * @param pszFilename The name of the CEOS imagery file (ie. imag_01.dat).
+ * @param pszAccess An fopen() style access string.  Should be either "rb" for
  * read-only access, or "r+b" for read, and update access.
  *
  * @return A CEOSImage pointer as a handle to the image.  The CEOSImage also
@@ -274,7 +275,7 @@ CEOSImage * CEOSOpen( const char * pszFilename, const char * pszAccess )
     if( psImage->nImageRecLength <= 0 ||
         psImage->nPrefixBytes < 0 ||
         psImage->nBands > INT_MAX / psImage->nImageRecLength ||
-        psImage->nBands > INT_MAX / sizeof(int))
+        (size_t)psImage->nBands > INT_MAX / sizeof(int))
     {
         CEOSDestroyRecord( psRecord );
         CEOSClose( psImage );

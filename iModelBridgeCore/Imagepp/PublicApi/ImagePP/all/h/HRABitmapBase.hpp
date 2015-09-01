@@ -2,21 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABitmapBase.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //
 // Class: HRABitmapBase
 // ----------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------
-// public
-// GetSLO
-// ----------------------------------------------------------------------------
-inline HRABitmapBase::SLO  HRABitmapBase::GetSLO() const
-    {
-    return m_SLO;
-    }
+BEGIN_IMAGEPP_NAMESPACE
 
 // ----------------------------------------------------------------------------
 // public
@@ -41,3 +34,4 @@ inline void HRABitmapBase::GetPosInRaster(HUINTX*    po_pPosX,
     }
 
 
+END_IMAGEPP_NAMESPACE

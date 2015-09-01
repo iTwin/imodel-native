@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPQuantizedPaletteR8G8B8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPQuantizedPaletteR8G8B8
@@ -15,6 +15,7 @@
 #include "HRPQuantizedPalette.h"
 #include "HRPPixelPalette.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 struct HRPQuantizedPaletteR8G8B8Node
     {
     // is the node a leaf
@@ -190,3 +191,4 @@ private:
 
     void            ReduceNextNode();
     };
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCProgressIndicator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCProgress
@@ -11,6 +11,7 @@
 
 #include "HFCProgressEvaluator.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HFCProgressIndicator;
 //----------------------------------------------------------------------------
 
@@ -31,8 +32,8 @@ class HFCProgressIndicator;
 class HFCProgressListener
     {
 public:
-    _HDLLu HFCProgressListener();
-    _HDLLu virtual ~HFCProgressListener();
+    IMAGEPP_EXPORT HFCProgressListener();
+    IMAGEPP_EXPORT virtual ~HFCProgressListener();
 
 
     /** -----------------------------------------------------------------------------
@@ -52,7 +53,7 @@ public:
 
         -----------------------------------------------------------------------------
     */
-    _HDLLu virtual void Progression(HFCProgressIndicator* pi_pProgressIndicator,     // Indicator
+    IMAGEPP_EXPORT virtual void Progression(HFCProgressIndicator* pi_pProgressIndicator,     // Indicator
                                     uint64_t             pi_Processed,              // Total processed items count.
                                     uint64_t             pi_CountProgression) = 0;  // number of items.
     };
@@ -77,10 +78,10 @@ public:
 class HFCProgressDurationListener : public HFCProgressListener
     {
 public:
-    _HDLLu HFCProgressDurationListener();
-    _HDLLu virtual ~HFCProgressDurationListener();
+    IMAGEPP_EXPORT HFCProgressDurationListener();
+    IMAGEPP_EXPORT virtual ~HFCProgressDurationListener();
 
-    _HDLLu virtual void Progression(HFCProgressIndicator* pi_pProgressIndicator,// Indicator
+    IMAGEPP_EXPORT virtual void Progression(HFCProgressIndicator* pi_pProgressIndicator,// Indicator
                                     uint64_t             pi_Processed,         // Total processed items count.
                                     uint64_t             pi_CountProgression); // number of items.
 
@@ -136,10 +137,10 @@ protected:
 class HFCProgressIndicator
     {
 public:
-    _HDLLu HFCProgressIndicator();
-    _HDLLu virtual ~HFCProgressIndicator();
+    IMAGEPP_EXPORT HFCProgressIndicator();
+    IMAGEPP_EXPORT virtual ~HFCProgressIndicator();
 
-    _HDLLu virtual void StopIteration();
+    IMAGEPP_EXPORT virtual void StopIteration();
 
     bool IsLifeSignal() const;
 
@@ -177,5 +178,6 @@ protected:
     };
 
 //----------------------------------------------------------------------------
+END_IMAGEPP_NAMESPACE
 
 #include "HFCProgressIndicator.hpp"

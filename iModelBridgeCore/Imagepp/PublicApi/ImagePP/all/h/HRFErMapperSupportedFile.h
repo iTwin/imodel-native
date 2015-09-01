@@ -2,17 +2,22 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFErMapperSupportedFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#if (_MSC_VER < 1600) // 1600 => VC 2010
-    #if !defined(_DEBUG) // We do not support these format when using the debug version of the C run-time library
+#if defined(_WIN32)
+    #if !defined(_DEBUG)    // We do not support these format when using the debug version of the C run-time library
         #define IPP_HAVE_ERMAPPER_SUPPORT
     #endif
 #endif
 
+#if defined(IPP_HAVE_ERMAPPER_SUPPORT) 
+
+#define __ECW_EXPORT_ENABLE__
+
+#define ECW_COMPRESS_RW_SDK_VERSION         // Needed to compress images.
 
 #include "HTIFFTag.h"
 
@@ -30,13 +35,14 @@
 #define BLOCK_WIDTH_ERMAPPER       256
 #define BLOCK_HEIGHT_ERMAPPER      256
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFErMapperSupportedFileEditor;
 
 class HRFErMapperSupportedFile : public HRFRasterFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1959, HRFRasterFile);
+    HDECLARE_CLASS_ID(HRFFileId_ErMapperSupported, HRFRasterFile);
 
     friend class HRFErMapperSupportedFileEditor;
 
@@ -67,7 +73,6 @@ public:
     virtual void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                  uint32_t pi_Page,
                                                                  bool   pi_CheckSpecificUnitSpec,
-                                                                 bool   pi_GeoModelDefaultUnit,
                                                                  bool   pi_InterpretUnitINTGR);
 
     // LookAhead related methods
@@ -94,6 +99,11 @@ public:
 
     static void             InitErMapperLibrary();
 
+    static uint32_t GetEPSGFromProjectionAndDatum(WStringCR pi_rErmProjection, WStringCR pi_rErmDatum);
+
+    Byte                    m_ECWVersion;               // 2 --> Version supported by V8i (default)
+                                                        // 3 --> Version supported by ECW SDK 5.0&higher, More models and 16 bits supported
+
 protected:
 
     virtual bool            Open                ();
@@ -104,12 +114,9 @@ protected:
     const void*             GetFileViewFileInfoEx();
     uint32_t*                 GetBandList();
 
-    void                    BuildTransfoModelMatrix(IRasterBaseGcsPtr              pi_rpGeoTiffKeys,
-                                                                unsigned short                 pi_ModelType,
-                                                                HFCPtr<HGF2DTransfoModel>&     po_prTranfoModel);
+    void                    BuildTransfoModelMatrix(HFCPtr<HGF2DTransfoModel>&     po_prTranfoModel);
 
-//    void                                GetGeoTiffKeys(HFCPtr<HRFGeoTiffKeys>& po_rpGeoTiffKeys);
-    IRasterBaseGcsPtr       GetGeocoding(HFCPtr<HCPGeoTiffKeys>& po_rpGeoTiffKeys);
+    RasterFileGeocodingPtr       ExtractGeocodingInformation(double & factorModelToMeter) const;
 
     double                  RoundRatio(unsigned long pi_MainImageSize, unsigned long pi_ResImageSize);
 
@@ -123,30 +130,30 @@ protected:
 
 private:
 
+    typedef vector<unsigned short> BandList;
     typedef map<uint64_t, Byte*> TilePool;
     HFCExclusiveKey              m_TilePoolKey;
     TilePool                     m_TilePool;
 
     HFCPtr<HRFRasterFileCapabilities>    m_pCapabilities;
     bool                                Create();
+    static const BandList&              GetSpecifiedBands();
 
     // Methods Disabled
     HRFErMapperSupportedFile(const HRFErMapperSupportedFile& pi_rObj);
     HRFErMapperSupportedFile&             operator= (const HRFErMapperSupportedFile& pi_rObj);
 
-    typedef vector<unsigned short> BandList;
-    static BandList s_SpecifiedBands;
     };
 
 class HRFEcwFile : public HRFErMapperSupportedFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1429, HRFErMapperSupportedFile);
+    HDECLARE_CLASS_ID(HRFFileId_Ecw, HRFErMapperSupportedFile);
 
     // allow to Open an image file
     HRFEcwFile (const  HFCPtr<HFCURL>&  pi_rpURL,
-                HFCAccessMode              pi_AccessMode = HFC_READ_ONLY,
+                HFCAccessMode           pi_AccessMode = HFC_READ_ONLY,
                 uint64_t                pi_Offset = 0);
 
     virtual     ~HRFEcwFile();
@@ -166,11 +173,11 @@ class HRFJpeg2000File : public HRFErMapperSupportedFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1477, HRFErMapperSupportedFile);
+    HDECLARE_CLASS_ID(HRFFileId_Jpeg2000, HRFErMapperSupportedFile);
 
     // allow to Open an image file
     HRFJpeg2000File (const  HFCPtr<HFCURL>&  pi_rpURL,
-                     HFCAccessMode              pi_AccessMode = HFC_READ_ONLY,
+                     HFCAccessMode           pi_AccessMode = HFC_READ_ONLY,
                      uint64_t                pi_Offset = 0);
 
     virtual     ~HRFJpeg2000File();
@@ -215,8 +222,13 @@ struct HRFEcwCreator : public HRFRasterFileCreator
     virtual HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
+
+    virtual bool _HandleExportToFile(HFCPtr<HRFRasterFile>& pDestinationFile, HFCPtr<HRAStoredRaster>& pDestinationRaster, 
+                                     HFCPtr<HRFRasterFile>& pSourceFile, HFCPtr<HRARaster>& pSourceRaster, 
+                                     HRACopyFromOptions const& copyFromOpts) const override;
+
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFEcwCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFEcwCreator)
 
     // members
     WCharP          m_pLabel;
@@ -252,8 +264,12 @@ struct HRFJpeg2000Creator : public HRFRasterFileCreator
     virtual HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
+
+    virtual bool _HandleExportToFile(HFCPtr<HRFRasterFile>& pDestinationFile, HFCPtr<HRAStoredRaster>& pDestinationRaster, 
+                                     HFCPtr<HRFRasterFile>& pSourceFile, HFCPtr<HRARaster>& pSourceRaster, 
+                                     HRACopyFromOptions const& copyFromOpts) const override;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFJpeg2000Creator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFJpeg2000Creator)
 
     // members
     WCharP      m_pLabel;
@@ -263,4 +279,6 @@ private:
     // Disabled methodes
     HRFJpeg2000Creator();
     };
+END_IMAGEPP_NAMESPACE
 
+#endif

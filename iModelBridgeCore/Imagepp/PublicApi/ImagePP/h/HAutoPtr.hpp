@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HAutoPtr.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for the class HAutoPtr.
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Constructor.
 //-----------------------------------------------------------------------------
@@ -162,3 +162,4 @@ inline P* HAutoPtr<P>::reset(P* pi_Ptr)
     return tmp;
     }
 
+END_IMAGEPP_NAMESPACE

@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURL.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HFCURL
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------
  Returns a string that contain the text of the scheme type for this URL.
 
@@ -81,3 +81,4 @@ inline bool HFCURL::IsEncodedURL() const
     {
     return m_EncodedURL;
     }
+END_IMAGEPP_NAMESPACE

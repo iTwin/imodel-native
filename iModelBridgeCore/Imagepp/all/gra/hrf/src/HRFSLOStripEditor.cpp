@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSLOStripEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFSLOStripEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFSLOStripEditor.h>
 #include <Imagepp/all/h/HRFSLOStripAdapter.h>
 #include <Imagepp/all/h/HCDPacket.h>
@@ -117,10 +117,10 @@ HRFSLOStripEditor::~HRFSLOStripEditor()
 // ReadBlock
 // Read an Uncompressed Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFSLOStripEditor::ReadBlock( uint32_t pi_PosBlockX,
-                                      uint32_t pi_PosBlockY,
-                                      Byte* po_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFSLOStripEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                     uint64_t pi_PosBlockY,
+                                     Byte*   po_pData,
+                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
@@ -139,7 +139,7 @@ HSTATUS HRFSLOStripEditor::ReadBlock( uint32_t pi_PosBlockX,
     pPacket->SetBufferOwnership(true);
 
     // Fill packet using the ReadBlock method with Packet
-    Status = ReadBlock (pi_PosBlockX, pi_PosBlockY, pPacket);
+    Status = ReadBlock(pi_PosBlockX, pi_PosBlockY, pPacket);
 
     if (Status == H_SUCCESS)
         {
@@ -162,12 +162,13 @@ HSTATUS HRFSLOStripEditor::ReadBlock( uint32_t pi_PosBlockX,
 // ReadBlock
 // Read compressed Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFSLOStripEditor::ReadBlock(uint32_t           pi_PosBlockX,
-                                     uint32_t           pi_PosBlockY,
-                                     HFCPtr<HCDPacket>& po_rpPacket,
+HSTATUS HRFSLOStripEditor::ReadBlock(uint64_t            pi_PosBlockX,
+                                     uint64_t            pi_PosBlockY,
+                                     HFCPtr<HCDPacket>&  po_rpPacket,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     HSTATUS Status      = H_SUCCESS;
     uint32_t ColumnIndex;
@@ -177,7 +178,7 @@ HSTATUS HRFSLOStripEditor::ReadBlock(uint32_t           pi_PosBlockX,
     HASSERT (pi_PosBlockY < m_AdaptorHeight);
 
     // Get the index of the strip required
-    GetAdaptorBlockIndex(pi_PosBlockX, pi_PosBlockY, &ColumnIndex, &LineIndex);
+    GetAdaptorBlockIndex((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, &ColumnIndex, &LineIndex);
 
     // Check if the image is in memory
     if (!m_AllImageRead)
@@ -255,12 +256,14 @@ HSTATUS HRFSLOStripEditor::ReadBlock(uint32_t           pi_PosBlockX,
 // WriteBlock
 // Write an uncompressed block
 //-----------------------------------------------------------------------------
-HSTATUS HRFSLOStripEditor::WriteBlock(uint32_t      pi_PosBlockX,
-                                      uint32_t      pi_PosBlockY,
-                                      const Byte*  pi_pData,
+HSTATUS HRFSLOStripEditor::WriteBlock(uint64_t      pi_PosBlockX,
+                                      uint64_t      pi_PosBlockY,
+                                      const Byte*   pi_pData,
                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     // Get current block size
@@ -268,9 +271,9 @@ HSTATUS HRFSLOStripEditor::WriteBlock(uint32_t      pi_PosBlockX,
     uint32_t BlockWidth  = m_AdaptorBlockWidth;
 
     // Adjust Block Height if it is the last block
-    if (pi_PosBlockY == (m_AdaptorBlockPerHeight-1) * m_AdaptorBlockHeight)
+    if ((uint32_t)pi_PosBlockY == (m_AdaptorBlockPerHeight-1) * m_AdaptorBlockHeight)
         {
-        BlockHeight = m_AdaptorHeight - pi_PosBlockY;
+        BlockHeight = m_AdaptorHeight - (uint32_t)pi_PosBlockY;
         }
 
     // Create a codec to compress the source data in RLE1
@@ -286,7 +289,7 @@ HSTATUS HRFSLOStripEditor::WriteBlock(uint32_t      pi_PosBlockX,
     Compress1BitData (pi_pData, pRLE1Packet);
 
     // Use WriteBlock with Packet
-    Status = WriteBlock (pi_PosBlockX, pi_PosBlockY, pRLE1Packet);
+    Status = WriteBlock(pi_PosBlockX, pi_PosBlockY, pRLE1Packet);
 
     return Status;
     }
@@ -296,12 +299,14 @@ HSTATUS HRFSLOStripEditor::WriteBlock(uint32_t      pi_PosBlockX,
 // WriteBlock
 // Write a compressed block
 //-----------------------------------------------------------------------------
-HSTATUS HRFSLOStripEditor::WriteBlock(      uint32_t            pi_PosBlockX,
-                                            uint32_t            pi_PosBlockY,
-                                            const HFCPtr<HCDPacket>&  pi_rpPacket,
-                                            HFCLockMonitor const*     pi_pSisterFileLock)
+HSTATUS HRFSLOStripEditor::WriteBlock(uint64_t            pi_PosBlockX,
+                                      uint64_t            pi_PosBlockY,
+                                      const HFCPtr<HCDPacket>&  pi_rpPacket,
+                                      HFCLockMonitor const*     pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess );
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     // Create a copy of the source packet as the destination packet
@@ -314,7 +319,7 @@ HSTATUS HRFSLOStripEditor::WriteBlock(      uint32_t            pi_PosBlockX,
     TransformRLE1PacketFromSLO4 (pTransformedPacket);
 
     // Save block
-    Status = SaveBlock (pi_PosBlockX, pi_PosBlockY, pTransformedPacket);
+    Status = SaveBlock ((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, pTransformedPacket);
 
     return Status;
     }
@@ -551,7 +556,7 @@ uint32_t HRFSLOStripEditor::GetSrcStripHeight(uint32_t x, uint32_t y)
         // Horizontal SLO
         if (m_ScanLineOrientation.IsUpper())
             {
-            CurrentBlockHeight = max (0, min (m_SrcImageHeight - y, m_SrcStripsHeight));
+            CurrentBlockHeight = MAX (0, MIN (m_SrcImageHeight - y, m_SrcStripsHeight));
             }
         else
             {
@@ -577,7 +582,7 @@ uint32_t HRFSLOStripEditor::GetSrcStripHeight(uint32_t x, uint32_t y)
         // Vertical SLO
         if (m_ScanLineOrientation.IsLeft())
             {
-            CurrentBlockHeight = max (0, min (m_SrcImageHeight - y, m_SrcStripsHeight));
+            CurrentBlockHeight = MAX (0, MIN (m_SrcImageHeight - y, m_SrcStripsHeight));
             }
         else
             {
@@ -1033,7 +1038,7 @@ HSTATUS HRFSLOStripEditor::BuildHorizontalStrips (BlockTable& po_rpppBlocks,
         {
         HArrayAutoPtr <Byte>  pBuffer;
         HArrayAutoPtr <uint32_t>  pLit; //Lit: LineIndexTable
-        uint32_t NewStripHeight  = min (pi_StripHeight, pi_height - HorzStripIndex * pi_StripHeight);
+        uint32_t NewStripHeight  = MIN (pi_StripHeight, pi_height - HorzStripIndex * pi_StripHeight);
         uint32_t SourceLineIndex = HorzStripIndex * pi_StripHeight;
         size_t CurrentDataSize = 0;
 
@@ -1292,7 +1297,7 @@ void    HRFSLOStripEditor::Transpose1BitBuffer  (Byte*   po_pDest,
                 {
                 pDst = po_pDest + col * BytesPerDstLine + (line/8);
 
-                Nbits = min(8, pi_dimX-col);
+                Nbits = MIN(8, pi_dimX-col);
 
                 for (uint32_t bit=0; bit<Nbits; ++bit)
                     {
@@ -1349,7 +1354,7 @@ void HRFSLOStripEditor::TransposeAndFlip1BitBuffer  (Byte*   po_pDest,
                 {
                 pDst = po_pDest + (pi_dimX-col-1) * BytesPerDstLine + (line/8);
 
-                Nbits = min(8, pi_dimX-col);
+                Nbits = MIN(8, pi_dimX-col);
 
                 for (uint32_t bit=0; bit<Nbits; ++bit)
                     {
@@ -1495,7 +1500,7 @@ HSTATUS HRFSLOStripEditor::SaveBlock   (uint32_t           pi_PosBlockX,
             uint32_t posY = 0;
 
             // First block may be smaller than other one...
-            uint32_t BlockWrittenHeight = static_cast<uint32_t>(max (0, min(m_AdaptorBlockHeight, ((HFCPtr<HCDCodecImage>&)(pi_rpTransformedPacket->GetCodec()))->GetHeight())));
+            uint32_t BlockWrittenHeight = static_cast<uint32_t>(MAX (0, MIN(m_AdaptorBlockHeight, ((HFCPtr<HCDCodecImage>&)(pi_rpTransformedPacket->GetCodec()))->GetHeight())));
 
             for (uint32_t x=0; x<m_SrcStripsPerHeight && Status == H_SUCCESS; ++x)
                 {
@@ -1550,7 +1555,7 @@ HSTATUS HRFSLOStripEditor::sWriteBlock (uint32_t           pi_PosBlockX,
 
 
     uint32_t CurrentBlockHeight;
-    CurrentBlockHeight = static_cast<uint32_t>(max (0, min(m_AdaptorBlockHeight, ((HFCPtr<HCDCodecImage>&)(rpPacket->GetCodec()))->GetHeight())));
+    CurrentBlockHeight = static_cast<uint32_t>(MAX (0, MIN(m_AdaptorBlockHeight, ((HFCPtr<HCDCodecImage>&)(rpPacket->GetCodec()))->GetHeight())));
 
     uint32_t LinesWritten = 0;
     Byte* pBlock = pData;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalpamproxydb.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: gdalpamproxydb.cpp 22812 2011-07-25 04:50:23Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of the GDAL PAM Proxy database interface.
@@ -35,7 +35,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: gdalpamproxydb.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: gdalpamproxydb.cpp 22812 2011-07-25 04:50:23Z warmerdam $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -281,12 +281,17 @@ static void InitProxyDB()
 void PamCleanProxyDB()
 
 {
-    CPLMutexHolderD( &hProxyDBLock );
-    
-    bProxyDBInitialized = FALSE;
+    {
+        CPLMutexHolderD( &hProxyDBLock );
+        
+        bProxyDBInitialized = FALSE;
+        
+        delete poProxyDB;
+        poProxyDB = NULL;
+    }
 
-    delete poProxyDB;
-    poProxyDB = NULL;
+    CPLDestroyMutex( hProxyDBLock );
+    hProxyDBLock = NULL;
 }
 
 /************************************************************************/

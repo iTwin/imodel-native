@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DRectangle.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DRectangle
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HVE2DRectangle.h>
 
@@ -177,10 +177,10 @@ void HVE2DRectangle::SetRectangle(const HGF2DLocation& pi_rFirstPoint,
     HGF2DLocation   MySecondPoint(pi_rSecondPoint, GetCoordSys());
 
     // Set extreme values
-    m_XMin = min(MyFirstPoint.GetX(), MySecondPoint.GetX());
-    m_XMax = max(MyFirstPoint.GetX(), MySecondPoint.GetX());
-    m_YMin = min(MyFirstPoint.GetY(), MySecondPoint.GetY());
-    m_YMax = max(MyFirstPoint.GetY(), MySecondPoint.GetY());
+    m_XMin = MIN(MyFirstPoint.GetX(), MySecondPoint.GetX());
+    m_XMax = MAX(MyFirstPoint.GetX(), MySecondPoint.GetX());
+    m_YMin = MIN(MyFirstPoint.GetY(), MySecondPoint.GetY());
+    m_YMax = MAX(MyFirstPoint.GetY(), MySecondPoint.GetY());
 
     // Set tolerance if necessary
     ResetTolerance();
@@ -300,11 +300,11 @@ void HVE2DRectangle::Scale(double pi_ScaleFactor, const HGF2DLocation& pi_rScale
 
     // Swap if XMin is now greater than XMax
     if (m_XMin > m_XMax)
-        swap(m_XMin, m_XMax);
+        std::swap(m_XMin, m_XMax);
 
     // Swap if XMin is now greater than XMax
     if (m_YMin > m_YMax)
-        swap(m_YMin, m_YMax);
+        std::swap(m_YMin, m_YMax);
 
     // Set tolerance if necessary
     ResetTolerance();
@@ -335,11 +335,11 @@ void HVE2DRectangle::Scale(double pi_ScaleFactorX,
 
     // Swap if XMin is now greater than XMax
     if (m_XMin > m_XMax)
-        swap(m_XMin, m_XMax);
+        std::swap(m_XMin, m_XMax);
 
     // Swap if XMin is now greater than XMax
     if (m_YMin > m_YMax)
-        swap(m_YMin, m_YMax);
+        std::swap(m_YMin, m_YMax);
 
     // Set tolerance if necessary
     ResetTolerance();
@@ -357,7 +357,7 @@ HVE2DShape* HVE2DRectangle::UnifyRectangleSCS(const HVE2DRectangle& pi_rRectangl
 
     HAutoPtr<HVE2DShape>     pMyResultShape;
 
-    double Tolerance = min(pi_rRectangle.GetTolerance(), GetTolerance());
+    double Tolerance = MIN(pi_rRectangle.GetTolerance(), GetTolerance());
 
     // For the result to be a rectangle, it is required that the given rectangle
     // either fits exactly one of the sides of the other, or that either one be
@@ -402,13 +402,13 @@ HVE2DShape* HVE2DRectangle::UnifyRectangleSCS(const HVE2DRectangle& pi_rRectangl
              HDOUBLE_GREATER_OR_EQUAL(pi_rRectangle.m_XMax, m_XMin, Tolerance) &&
              HDOUBLE_EQUAL(pi_rRectangle.m_YMin, m_YMin, Tolerance) &&
              HDOUBLE_EQUAL(pi_rRectangle.m_YMax, m_YMax, Tolerance))
-        pMyResultShape = new HVE2DRectangle(min(pi_rRectangle.m_XMin, m_XMin), m_YMin, max(pi_rRectangle.m_XMax, m_XMax), m_YMax, GetCoordSys());
+        pMyResultShape = new HVE2DRectangle(MIN(pi_rRectangle.m_XMin, m_XMin), m_YMin, MAX(pi_rRectangle.m_XMax, m_XMax), m_YMax, GetCoordSys());
     // Check is adjoint and perfectly fitted on the lower side
     else if (HDOUBLE_EQUAL(pi_rRectangle.m_XMin, m_XMin, Tolerance) &&
              HDOUBLE_EQUAL(pi_rRectangle.m_XMax, m_XMax, Tolerance) &&
              HDOUBLE_SMALLER_OR_EQUAL(pi_rRectangle.m_YMin, m_YMax, Tolerance) &&
              HDOUBLE_GREATER_OR_EQUAL(pi_rRectangle.m_YMax, m_YMin, Tolerance))
-        pMyResultShape = new HVE2DRectangle(m_XMin, min(pi_rRectangle.m_YMin, m_YMin), m_XMax, max(pi_rRectangle.m_YMax, m_YMax), GetCoordSys());
+        pMyResultShape = new HVE2DRectangle(m_XMin, MIN(pi_rRectangle.m_YMin, m_YMin), m_XMax, MAX(pi_rRectangle.m_YMax, m_YMax), GetCoordSys());
     // Check if rectangles are disjoint
     else if (HDOUBLE_GREATER(pi_rRectangle.m_XMin, m_XMax, Tolerance) ||
              HDOUBLE_SMALLER(pi_rRectangle.m_XMax, m_XMin, Tolerance) ||
@@ -446,7 +446,7 @@ HVE2DShape* HVE2DRectangle::DifferentiateRectangleSCS(const HVE2DRectangle& pi_r
 
     HAutoPtr<HVE2DShape>     pMyResultShape;
 
-    double Tolerance = min(pi_rRectangle.GetTolerance(), GetTolerance());
+    double Tolerance = MIN(pi_rRectangle.GetTolerance(), GetTolerance());
 
     // For the result to be a rectangle, it is required that the given rectangle
     // Chunks out a whole side of self.
@@ -568,7 +568,7 @@ HVE2DShape* HVE2DRectangle::IntersectRectangleSCS(const HVE2DRectangle& pi_rRect
 
     HAutoPtr<HVE2DShape> pMyResultShape;
 
-    double Tolerance = min(pi_rRectangle.GetTolerance(), GetTolerance());
+    double Tolerance = MIN(pi_rRectangle.GetTolerance(), GetTolerance());
 
     // Check if both rectangles are empty
     if (IsEmpty() || pi_rRectangle.IsEmpty())
@@ -589,10 +589,10 @@ HVE2DShape* HVE2DRectangle::IntersectRectangleSCS(const HVE2DRectangle& pi_rRect
         {
         // The intersection of two rectangles always yields a rectangle
         // Allocate copy of this to obtain result
-        pMyResultShape = new HVE2DRectangle(max(m_XMin, pi_rRectangle.m_XMin),
-                                            max(m_YMin, pi_rRectangle.m_YMin),
-                                            min(m_XMax, pi_rRectangle.m_XMax),
-                                            min(m_YMax, pi_rRectangle.m_YMax),
+        pMyResultShape = new HVE2DRectangle(MAX(m_XMin, pi_rRectangle.m_XMin),
+                                            MAX(m_YMin, pi_rRectangle.m_YMin),
+                                            MIN(m_XMax, pi_rRectangle.m_XMax),
+                                            MIN(m_YMax, pi_rRectangle.m_YMax),
                                             GetCoordSys());
         }
 
@@ -626,7 +626,7 @@ bool HVE2DRectangle::Crosses(const HVE2DVector& pi_rVector) const
     HGF2DExtent VectorExtent(pi_rVector.GetExtent());
 
     // Obtain minimal tolerance
-    double Tolerance = min(pi_rVector.GetTolerance(), GetTolerance());
+    double Tolerance = MIN(pi_rVector.GetTolerance(), GetTolerance());
 
     // Check if their extents overlap
     if (GetExtent().InnerOverlaps(VectorExtent, Tolerance))
@@ -760,7 +760,7 @@ bool HVE2DRectangle::AreContiguousAt(const HVE2DVector& pi_rVector,
     bool   AreContiguousAtPoint = false;
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
     // Create first segment
     HVE2DSegment    MySegment(HGF2DLocation(m_XMin, m_YMin, GetCoordSys()), HGF2DLocation(m_XMin, m_YMax, GetCoordSys()));
@@ -899,7 +899,7 @@ bool HVE2DRectangle::Overlaps(const HVE2DShape& pi_rShape) const
     HGF2DExtent ShapeExtent(pi_rShape.GetExtent());
 
     // Obtain minimal tolerance
-    double Tolerance = min(pi_rShape.GetTolerance(), GetTolerance());
+    double Tolerance = MIN(pi_rShape.GetTolerance(), GetTolerance());
 
     // Check if their extents overlap
     if (GetExtent().InnerOverlaps(ShapeExtent, Tolerance))
@@ -1006,7 +1006,7 @@ HVE2DShape::SpatialPosition HVE2DRectangle::CalculateSpatialPositionOfSingleComp
     HGF2DExtent VectorExtent(pi_rVector.GetExtent());
 
     // Obtain minimal tolerance
-    double Tolerance = min(pi_rVector.GetTolerance(), GetTolerance());
+    double Tolerance = MIN(pi_rVector.GetTolerance(), GetTolerance());
 
     // Check if their extents overlap
     if (GetExtent().OutterOverlaps(VectorExtent, Tolerance))
@@ -1213,7 +1213,7 @@ HVE2DShape::SpatialPosition HVE2DRectangle::CalculateSpatialPositionOfNonCrossin
 
     HGF2DExtent LinearExtent(pi_rLinear.GetExtent());
 
-    double Tolerance = min(pi_rLinear.GetTolerance(), GetTolerance());
+    double Tolerance = MIN(pi_rLinear.GetTolerance(), GetTolerance());
 
     // Check if their extents overlap
     if (GetExtent().OutterOverlaps(LinearExtent, Tolerance))
@@ -1558,7 +1558,7 @@ HVE2DShape* HVE2DRectangle::DifferentiateShapeSCS(const HVE2DShape& pi_rShape) c
 
     // Check if given is a simple shape and completely inside rectangle
     if (pi_rShape.IsSimple() &&
-        GetExtent().InnerContains(pi_rShape.GetExtent(), min(GetTolerance(), pi_rShape.GetTolerance())))
+        GetExtent().InnerContains(pi_rShape.GetExtent(), MIN(GetTolerance(), pi_rShape.GetTolerance())))
         {
         // The given is a simple shape and completely inside rectangle
         // The result will therefore be a holed shape
@@ -1663,10 +1663,10 @@ void HVE2DRectangle::ResetTolerance()
         double Tolerance = HGLOBAL_EPSILON;
 
         // Check if a greater tolerance may be applicable
-        Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_XMin));
-        Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_XMax));
-        Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_YMin));
-        Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_YMax));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_XMin));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_XMax));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_YMin));
+        Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_YMax));
 
         // Set tolerance
         SetTolerance(Tolerance);

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCBinStreamLockManager.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HFCBinStreamLockManager
@@ -11,6 +11,11 @@
 #pragma once
 
 #include "HFCBinStream.h"
+
+// Define the default HFCMonitor that works on HFCBinStreamLockManager
+#include <ImagePP/all/h/HFCMonitor.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 /** ---------------------------------------------------------------------------
     This class implents a intelligent file locking algorithm. It can perform a
@@ -64,9 +69,10 @@ private:
 
     };
 
-// Define the default HFCMonitor that works on HFCBinStreamLockManager
-#include <ImagePP/all/h/HFCMonitor.h>
 typedef HFCGenericMonitor<HFCBinStreamLockManager> HFCLockMonitor;
+
+END_IMAGEPP_NAMESPACE
+
 
 #include "HFCBinStreamLockManager.hpp"
 

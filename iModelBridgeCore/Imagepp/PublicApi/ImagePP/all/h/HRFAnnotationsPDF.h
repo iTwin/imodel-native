@@ -2,16 +2,17 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFAnnotationsPDF.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HMDAnnotations.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFAnnotationsPDF : public HMDAnnotations
     {
-    HDECLARE_CLASS_ID(8051, HMDAnnotations);
+    HDECLARE_CLASS_ID(HRFAnnotationsPDFId_Base, HMDAnnotations);
 
 public :
     HRFAnnotationsPDF();
@@ -29,3 +30,4 @@ protected:
 private :
     HRFAnnotationsPDF& operator=(const HRFAnnotationsPDF& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

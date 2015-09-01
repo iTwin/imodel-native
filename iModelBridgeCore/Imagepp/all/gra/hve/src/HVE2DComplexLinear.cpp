@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DComplexLinear.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HVE2DComplexLinear.h>
 
@@ -126,7 +126,7 @@ void HVE2DComplexLinear::InsertLinear(const HVE2DLinear& pi_rLinear)
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance of self and new linear
-        SetTolerance(max(GetTolerance(), pi_rLinear.GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_rLinear.GetTolerance()));
         }
 
     // Create a copy of the given linear in the complex coordinate system
@@ -209,7 +209,7 @@ void HVE2DComplexLinear::InsertLinearPtrSCS(HVE2DLinear* pi_pLinear)
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance of self and new linear
-        SetTolerance(max(GetTolerance(), pi_pLinear->GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_pLinear->GetTolerance()));
         }
 
     // Set its tolerance to the global complex tolerance and desactive automaic tolerance
@@ -283,7 +283,7 @@ void HVE2DComplexLinear::AppendLinear(const HVE2DLinear& pi_rLinear)
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance of self and new linear
-        SetTolerance(max(GetTolerance(), pi_rLinear.GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_rLinear.GetTolerance()));
         }
 
     // Create a copy of the given linear in the complex coordinate system
@@ -369,7 +369,7 @@ void HVE2DComplexLinear::AppendLinearPtrSCS(HVE2DLinear* pi_pLinear)
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance of self and new linear
-        SetTolerance(max(GetTolerance(), pi_pLinear->GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_pLinear->GetTolerance()));
         }
 
     // Set its tolerance to the global complex tolerance and desactive automaic tolerance
@@ -421,10 +421,10 @@ void HVE2DComplexLinear::Move(const HGF2DDisplacement& pi_rDisplacement)
 
         if (NewExtent.IsDefined())
             {
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
             }
 
         // Set tolerance
@@ -464,10 +464,10 @@ void HVE2DComplexLinear::Scale(double pi_ScaleFactor, const HGF2DLocation& pi_rS
 
         if (NewExtent.IsDefined())
             {
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
             }
 
         // Set tolerance
@@ -546,7 +546,7 @@ void HVE2DComplexLinear::InsertComplexLinear(const HVE2DComplexLinear& pi_rCompl
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance
-        SetTolerance(max(GetTolerance(), pi_rComplexLinear.GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_rComplexLinear.GetTolerance()));
         }
 
     HVE2DComplexLinear::LinearList::const_reverse_iterator  MyIterator;
@@ -642,7 +642,7 @@ void HVE2DComplexLinear::AppendComplexLinear(const HVE2DComplexLinear& pi_rCompl
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance
-        SetTolerance(max(GetTolerance(), pi_rComplexLinear.GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_rComplexLinear.GetTolerance()));
         }
 
     HVE2DComplexLinear::LinearList::const_iterator  MyIterator;
@@ -1054,10 +1054,10 @@ void HVE2DComplexLinear::ShortenFrom(double pi_StartRelativePos)
 
         if (NewExtent.IsDefined())
             {
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
             }
 
         // Set tolerance
@@ -1125,10 +1125,10 @@ void HVE2DComplexLinear::ShortenTo(double pi_EndRelativePos)
 
         if (NewExtent.IsDefined())
             {
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
             }
 
         // Set tolerance
@@ -1240,10 +1240,10 @@ void HVE2DComplexLinear::Shorten(double pi_StartRelativePos, double pi_EndRelati
 
         if (NewExtent.IsDefined())
             {
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
             }
 
         // Set tolerance
@@ -1691,7 +1691,7 @@ void HVE2DComplexLinear::ObtainContiguousnessPointsAt(
         bool   Found = false;
 
         // Obtain tolerance
-        double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+        double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
         // For every linear part of the complex ... obtain contiguousness points
         HVE2DComplexLinear::LinearList::const_iterator MyIterator = m_LinearList.begin();
@@ -1853,7 +1853,7 @@ bool HVE2DComplexLinear::AreContiguousAtAndGet(const HVE2DVector& pi_rVector,
         bool   Found = false;
 
         // Obtain tolerance
-        double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+        double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
         // For every linear part of the complex ... obtain contiguousness points
         HVE2DComplexLinear::LinearList::const_iterator MyIterator = m_LinearList.begin();
@@ -2207,10 +2207,10 @@ HVE2DVector* HVE2DComplexLinear::AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordS
         if (NewExtent.IsDefined())
             {
 
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
             }
 
         // Set tolerance
@@ -2291,7 +2291,7 @@ bool HVE2DComplexLinear::AreContiguousAt(const HVE2DVector& pi_rVector,
     if (!IsNull() && !pi_rVector.IsNull())
         {
         // Obtain tolerance
-        double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+        double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
         // Create an iterator
         HVE2DComplexLinear::LinearList::const_iterator   MyIterator = m_LinearList.begin();

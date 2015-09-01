@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2box.cpp 22592 2011-06-27 12:27:36Z warmerdam $
+ * $Id: gdaljp2box.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL 
  * Purpose:  GDALJP2Box Implementation - Low level JP2 box reader.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2005, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2010-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "gdaljp2metadata.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdaljp2box.cpp 22592 2011-06-27 12:27:36Z warmerdam $");
+CPL_CVSID("$Id: gdaljp2box.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                             GDALJP2Box()                             */
@@ -183,6 +184,12 @@ int GDALJP2Box::ReadBox()
         nDataOffset += 16;
     }
 
+    if( GetDataLength() < 0 )
+    {
+        CPLDebug("GDALJP2", "Invalid length for box %s", szBoxType);
+        return FALSE;
+    }
+
     return TRUE;
 }
 
@@ -234,11 +241,15 @@ GIntBig GDALJP2Box::GetDataLength()
 /*                            DumpReadable()                            */
 /************************************************************************/
 
-int GDALJP2Box::DumpReadable( FILE *fpOut )
+int GDALJP2Box::DumpReadable( FILE *fpOut, int nIndentLevel )
 
 {
     if( fpOut == NULL )
         fpOut = stdout;
+
+    int i;
+    for(i=0;i<nIndentLevel;i++)
+        fprintf( fpOut, "  " );
 
     fprintf( fpOut, "  Type=%s, Offset=%d/%d, Data Size=%d",
              szBoxType, (int) nBoxOffset, (int) nDataOffset, 
@@ -259,15 +270,16 @@ int GDALJP2Box::DumpReadable( FILE *fpOut )
              strlen(oSubBox.GetType()) > 0;
              oSubBox.ReadNextChild( this ) )
         {
-            oSubBox.DumpReadable( fpOut );
+            oSubBox.DumpReadable( fpOut, nIndentLevel + 1 );
         }
-
-        printf( "  (end of %s subboxes)\n", szBoxType );
     }
 
     if( EQUAL(GetType(),"uuid") )
     {
         char *pszHex = CPLBinaryToHex( 16, GetUUID() );
+        for(i=0;i<nIndentLevel;i++)
+            fprintf( fpOut, "  " );
+
         fprintf( fpOut, "    UUID=%s", pszHex );
 
         if( EQUAL(pszHex,"B14BF8BD083D4B43A5AE8CD7D5A6CE03") )
@@ -291,10 +303,7 @@ void GDALJP2Box::SetType( const char *pszType )
 {
     CPLAssert( strlen(pszType) == 4 );
 
-    szBoxType[0] = pszType[3];
-    szBoxType[1] = pszType[2];
-    szBoxType[2] = pszType[1];
-    szBoxType[3] = pszType[0];
+    memcpy(szBoxType, pszType, 4);
     szBoxType[4] = '\0';
 }
 
@@ -365,15 +374,13 @@ GDALJP2Box *GDALJP2Box::CreateAsocBox( int nCount, GDALJP2Box **papoBoxes )
 /* -------------------------------------------------------------------- */
     for( iBox = 0; iBox < nCount; iBox++ )
     {
-        GUInt32   nLBox, nTBox;
+        GUInt32   nLBox;
 
         nLBox = CPL_MSBWORD32(papoBoxes[iBox]->nBoxLength);
         memcpy( pabyNext, &nLBox, 4 );
         pabyNext += 4;
 
-        memcpy( &nTBox, papoBoxes[iBox]->szBoxType, 4 );
-        nTBox = CPL_MSBWORD32( nTBox );
-        memcpy( pabyNext, &nTBox, 4 );
+        memcpy( pabyNext, papoBoxes[iBox]->szBoxType, 4 );
         pabyNext += 4;
 
         memcpy( pabyNext, papoBoxes[iBox]->pabyData, 

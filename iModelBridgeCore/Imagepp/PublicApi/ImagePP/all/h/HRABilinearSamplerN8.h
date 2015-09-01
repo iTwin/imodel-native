@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABilinearSamplerN8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -12,14 +12,16 @@
 #pragma once
 
 #include "HRAGenericSampler.h"
+#include "HRPPixelType.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HCDPacket;
 class HRPPixelConverter;
 class HGSMemorySurfaceDescriptor;
 
 class HRABilinearSamplerN8 : public HRAGenericSampler
     {
-    HDECLARE_CLASS_ID(1757, HRAGenericSampler)
+    HDECLARE_CLASS_ID(HRABilinearSamplerN8Id, HRAGenericSampler)
 
 public:
 
@@ -30,18 +32,17 @@ public:
                          double                                pi_DeltaY);
     virtual         ~HRABilinearSamplerN8();
 
-    virtual void*   GetPixel(double             pi_PosX,
-                             double             pi_PosY) const;
+    virtual void const* GetPixel(double pi_PosX, double pi_PosY) const override;
 
     virtual void    GetPixels(const double*     pi_pPositionsX,
                               const double*     pi_pPositionsY,
                               size_t            pi_PixelCount,
-                              void*             po_pBuffer) const;
+                              void*             po_pBuffer) const override;
 
     virtual void    GetPixels(double            pi_PositionX,
                               double            pi_PositionY,
                               size_t            pi_PixelCount,
-                              void*             po_pBuffer) const;
+                              void*             po_pBuffer) const override;
 
     virtual HFCPtr<HRPPixelType>
     GetOutputPixelType() const;
@@ -51,7 +52,7 @@ public:
 private:
 
     // Hold one pixel, used in GetPixel()
-    mutable Byte   m_TempData[4];
+    mutable Byte   m_TempData[HRPPixelType::MAX_PIXEL_BYTES];
 
     //:> Information about the source data
     uint32_t        m_SourceBytesPerLine;
@@ -121,6 +122,8 @@ private:
     HRABilinearSamplerN8(const HRABilinearSamplerN8& pi_rObj);
     HRABilinearSamplerN8& operator=(const HRABilinearSamplerN8& pi_rObj);
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HRABilinearSamplerN8.hpp"
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTDEMRasterXYZPointsIterator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -14,6 +14,7 @@
 
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HUTDEMRasterXYZPointsExtractor;
 
 class HUTDEMRasterXYZPointsIterator
@@ -22,35 +23,35 @@ public :
 
 
     // Deprecated. Factor from the extractor
-    _HDLLg                          HUTDEMRasterXYZPointsIterator          (HUTDEMRasterXYZPointsExtractor*    pi_pRasterPointExtractor,
+    IMAGEPP_EXPORT                          HUTDEMRasterXYZPointsIterator          (HUTDEMRasterXYZPointsExtractor*    pi_pRasterPointExtractor,
                                                                             const WString&                     pi_rDestCoordSysKeyName,
                                                                             double                             pi_ScaleFactor);
 
-    _HDLLg virtual                  ~HUTDEMRasterXYZPointsIterator         ();
+    IMAGEPP_EXPORT virtual                  ~HUTDEMRasterXYZPointsIterator         ();
 
-    _HDLLg size_t                   GetMaxXYZPointQty                      () const;
+    IMAGEPP_EXPORT size_t                   GetMaxXYZPointQty                      () const;
 
     template <typename PointType>
     size_t                          GetXYZPoints                           (PointType*                          po_pPoints,
                                                                             size_t                              pi_Capacity) const;
 
     // Deprecated. Use template overload.
-    _HDLLg const double*           GetXYZPoints                           (uint32_t*                             po_pNumberPoints) const;
+    IMAGEPP_EXPORT const double*           GetXYZPoints                           (uint32_t*                             po_pNumberPoints) const;
 
-    _HDLLg void                     GetNumberOfFilteredPoints              (uint64_t*                            po_pNumberOfPoints) const;
+    IMAGEPP_EXPORT void                     GetNumberOfFilteredPoints              (uint64_t*                            po_pNumberOfPoints) const;
 
-    _HDLLg void                     GetFilteredDimensionInPixels           (uint64_t*                            po_pWidthInPixels,
+    IMAGEPP_EXPORT void                     GetFilteredDimensionInPixels           (uint64_t*                            po_pWidthInPixels,
                                                                             uint64_t*                            po_pHeightInPixels) const;
 
-    _HDLLg bool                    IsDestCoordSysCreationFailed           () const;
+    IMAGEPP_EXPORT bool                    IsDestCoordSysCreationFailed           () const;
 
     // NTERAY: May rename to Next once Next is removed.
-    _HDLLg bool                    NextBlock();
+    IMAGEPP_EXPORT bool                    NextBlock();
 
     // Deprecated. Use NextBlock.
-    _HDLLg void                     Next();
+    IMAGEPP_EXPORT void                     Next();
 
-    _HDLLg void                     Reset();
+    IMAGEPP_EXPORT void                     Reset();
 
 private :
     friend class                    HUTDEMRasterXYZPointsExtractor;
@@ -75,10 +76,10 @@ private :
     void                            InitStripForDebug                      ();
     HFCPtr<HGF2DTransfoModel>       ComputeTransfoModel                    () const;
 
-    _HDLLg size_t                   GetXYZPointsImpl                       (void*                               po_pPointsBuffer,
+    IMAGEPP_EXPORT size_t                   GetXYZPointsImpl                       (void*                               po_pPointsBuffer,
                                                                             size_t                              pi_CapacityInPoints) const;
 
-    std::auto_ptr<Impl>             m_pImpl;
+    std::unique_ptr<Impl>             m_pImpl;
 
     //Reprojection related members
     bool                           m_IsDestCoordSysCreationFailed;
@@ -105,3 +106,4 @@ size_t HUTDEMRasterXYZPointsIterator::GetXYZPoints (PointType* po_pPoints, size_
 
     return (pi_Capacity < GetMaxXYZPointQty()) ? 0 : GetXYZPointsImpl(po_pPoints, pi_Capacity);
     }
+END_IMAGEPP_NAMESPACE

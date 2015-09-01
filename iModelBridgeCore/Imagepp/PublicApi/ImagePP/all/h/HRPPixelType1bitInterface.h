@@ -2,30 +2,40 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelType1bitInterface.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/h/HmrTypes.h>
 
 /*---------------------------------------------------------------------------------**//**
 * This class is an interface for all binary pixeltype.
 +---------------+---------------+---------------+---------------+---------------+------*/
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelType1BitInterface
     {
 public:
-    _HDLLg HRPPixelType1BitInterface();
-    _HDLLg HRPPixelType1BitInterface(const HRPPixelType1BitInterface& pi_rObj);
-    _HDLLg virtual ~HRPPixelType1BitInterface();
+    IMAGEPP_EXPORT HRPPixelType1BitInterface();
+    IMAGEPP_EXPORT HRPPixelType1BitInterface(const HRPPixelType1BitInterface& pi_rObj);
+    IMAGEPP_EXPORT virtual ~HRPPixelType1BitInterface();
 
-    _HDLLg bool   IsForegroundStateDefined() const;
-    _HDLLg bool   GetForegroundState() const;
-    _HDLLg void    SetForegroundState(bool pi_ForegroundState);
+    bool IsForegroundStateDefined() const {return m_IsForegroundStateDefined;}
+    void UndefineForegroundState() { m_IsForegroundStateDefined = false;}
+
+    bool GetForegroundState() const
+        {
+        HPRECONDITION(IsForegroundStateDefined());  // You should not call this if the foreground state is not defined
+        return m_ForegroundState;
+        }
+    void SetForegroundState(bool pi_ForegroundState)
+        {
+        m_IsForegroundStateDefined = true;
+        m_ForegroundState = pi_ForegroundState;
+        }
 
 private:
     bool   m_IsForegroundStateDefined;
     bool   m_ForegroundState;
     };
+END_IMAGEPP_NAMESPACE
 
-#include "HRPPixelType1BitInterface.hpp"

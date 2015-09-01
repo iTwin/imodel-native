@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecJPEG2000.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecIJG
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HCDCodecJPEG2000.h>
 
 #define HCD_CODEC_NAME     L"JPEG2000"
@@ -82,11 +82,11 @@ public :
     //
     // The cell type of the buffer is the same as that passed into SetFileInfo() in the
     // NCSFileViewFileInfoEx struct.
-    virtual CNCSError WriteReadLine(UINT32 nNextLine, void** ppInputArray);
+    virtual CNCSError WriteReadLine(uint32_t nNextLine, void** ppInputArray);
 
     // Status update function, called for each line output during compression, and therefore
     // useful for updating progress indicators in the interface of an application.
-    virtual void WriteStatus(UINT32 nCurrentLine);
+    virtual void WriteStatus(uint32_t nCurrentLine);
 
     // A cancel function called by the SDK which will cancel the compression if it returns
     // true.  We override it here without actually introducing cancel functionality.
@@ -220,12 +220,12 @@ public:
     * @param            count           How many bytes of data to read.
     * @return      bool         true, or false on failure.  Instance inherits CNCSError object containing error value.
     */
-    virtual bool NCS_FASTCALL Read(void* buffer, UINT32 count) {
+    virtual bool NCS_FASTCALL Read(void* buffer, uint32_t count) {
 
         HPRECONDITION(m_BufferOffset + count <= m_OutBufferSize);
 
         if (count == 0) return true;
-        errno_t ErrCode = memcpy_s(buffer, count, (m_pOutBuffer + m_BufferOffset), count);
+        errno_t ErrCode = BeStringUtilities::Memcpy(buffer, count, (m_pOutBuffer + m_BufferOffset), count);
 
         //No error occurred
         if (ErrCode == 0)
@@ -242,13 +242,13 @@ public:
     * @param            count           How many bytes of data to write to the stream.
     * @return      bool         true, or false on failure.  Instance inherits CNCSError object containing error value.
     */
-    virtual bool NCS_FASTCALL Write(void* buffer, UINT32 count) {
+    virtual bool NCS_FASTCALL Write(void* buffer, uint32_t count) {
 
         HPRECONDITION(m_BufferOffset + count <= m_OutBufferSize);
 
         if (count == 0) return true;
 
-        errno_t ErrCode = memcpy_s((void*)(m_pOutBuffer + m_BufferOffset),
+        errno_t ErrCode = BeStringUtilities::Memcpy(m_pOutBuffer + m_BufferOffset,
                                    count,
                                    buffer,
                                    count);
@@ -401,7 +401,7 @@ public:
     * @param            count           How many bytes of data to read.
     * @return      bool         true, or false on failure.  Instance inherits CNCSError object containing error value.
     */
-    virtual bool NCS_FASTCALL Read(void* buffer, UINT32 count) {
+    virtual bool NCS_FASTCALL Read(void* buffer, uint32_t count) {
 
         HPRECONDITION(m_Jp2StreamOffset + count <= m_CompressedDataSize);
 
@@ -423,7 +423,7 @@ public:
     * @param            count           How many bytes of data to write to the stream.
     * @return      bool         true, or false on failure.  Instance inherits CNCSError object containing error value.
     */
-    virtual bool NCS_FASTCALL Write(void* buffer, UINT32 count) {
+    virtual bool NCS_FASTCALL Write(void* buffer, uint32_t count) {
         HASSERT(0);
         return false;
         }
@@ -554,7 +554,7 @@ void HCDCodecJPEG2000::OpenJP2Stream()
 
     NCSFileViewFileInfoEx Info;
     //NCSFileViewFileInfoEx
-    memset((void*)&Info, 0, sizeof(NCSFileViewFileInfoEx));
+    memset(&Info, 0, sizeof(NCSFileViewFileInfoEx));
 
     Info.fOriginX = 0;
     Info.fOriginY = 0;
@@ -677,7 +677,7 @@ size_t HCDCodecJPEG2000::CompressSubset(const void* pi_pInData,
             }
 
         uint32_t BytesPerLine = (uint32_t)ceil(GetBitsPerPixel() / 8.0) * GetSubsetWidth();
-        void* pInData = (void*)pi_pInData;
+        void* pInData = pi_pInData;
         CNCSError Error;
 
         HASSERT(BytesPerLine != 0);
@@ -693,7 +693,7 @@ size_t HCDCodecJPEG2000::CompressSubset(const void* pi_pInData,
                                                m_NbBands,
                                                &pInData);
 
-                pInData = (void*)((Byte*)pInData + BytesPerLine);
+                pInData = ((Byte*)pInData + BytesPerLine);
                 }
             }
         else
@@ -748,7 +748,7 @@ size_t HCDCodecJPEG2000::CompressSubset(const void* pi_pInData,
         */
         NCSFileViewFileInfoEx Info;
         //NCSFileViewFileInfoEx
-        memset((void*)&Info, 0, sizeof(NCSFileViewFileInfoEx));
+        memset(&Info, 0, sizeof(NCSFileViewFileInfoEx));
 
         Info.fOriginX = 0;
         Info.fOriginY = 0;
@@ -846,7 +846,7 @@ size_t HCDCodecJPEG2000::CompressSubset(const void* pi_pInData,
             else
                 {
                 uint32_t BytesPerLine = (uint32_t)ceil(GetBitsPerPixel() / 8.0) * GetSubsetWidth();
-                void* pInData = (void*)pi_pInData;
+                void* pInData = pi_pInData;
 
                 for (unsigned int LineInd = 0; LineInd < GetSubsetHeight(); LineInd++)
                     {
@@ -854,7 +854,7 @@ size_t HCDCodecJPEG2000::CompressSubset(const void* pi_pInData,
                                                Info.nBands,
                                                &pInData);
 
-                    pInData = (void*)((Byte*)pInData + BytesPerLine);
+                    pInData = ((Byte*)pInData + BytesPerLine);
                     }
                 }
 
@@ -874,7 +874,7 @@ size_t HCDCodecJPEG2000::CompressSubset(const void* pi_pInData,
 // This is called once for each output line.
 // In this example, we can simply call ReadLineBIL on m_Src.
 //
-CNCSError JPEG2000Codec::WriteReadLine(UINT32 nNextLine, void** ppInputArray)
+    CNCSError JPEG2000Codec::WriteReadLine(uint32_t nNextLine, void** ppInputArray)
     {
     static bool RGB = true;
 
@@ -913,12 +913,12 @@ CNCSError JPEG2000Codec::WriteReadLine(UINT32 nNextLine, void** ppInputArray)
 // The correct approach would be to schedule a fixed number of updates and call them at even
 // intervals based on the output file size.
 //
-void JPEG2000Codec::WriteStatus(UINT32 nCurrentLine)
+    void JPEG2000Codec::WriteStatus(uint32_t nCurrentLine)
     {
     /*
     NCSFileViewFileInfoEx *pInfo = GetFileInfo();
 
-    UINT32 nPercentComplete = (UINT32)((nCurrentLine * 100)/(pInfo->nSizeY));
+    uint32_t nPercentComplete = (uint32_t)((nCurrentLine * 100)/(pInfo->nSizeY));
     if (nPercentComplete > m_nPercentComplete)
     {
         m_nPercentComplete = nPercentComplete;
@@ -1017,7 +1017,7 @@ size_t HCDCodecJPEG2000::DecompressSubset(const void*  pi_pInData,
             for (INT32 nBand = 0; nBand < pInfo->nBands; nBand++)
                 Bands[nBand] = nBand;
 
-            UINT32 nWidth, nHeight;
+            uint32_t nWidth, nHeight;
             IEEE8 fStartX, fStartY, fEndX, fEndY;
 
             HASSERT((pInfo->fCellIncrementX == 1) && (pInfo->fCellIncrementY == 1));
@@ -1055,7 +1055,7 @@ size_t HCDCodecJPEG2000::DecompressSubset(const void*  pi_pInData,
                     else
                         {
                         Byte** pOutBuffer = new Byte*[pInfo->nBands];
-                        UINT32  LineSteps = pInfo->nBands;
+                        uint32_t  LineSteps = pInfo->nBands;
 
                         pOutBuffer[0] = (UINT8*)pOutBufferPointer;
                         pOutBuffer[1] = ((UINT8*)pOutBufferPointer + 1);
@@ -1117,7 +1117,7 @@ size_t HCDCodecJPEG2000::DecompressSubset(const void*  pi_pInData,
             for (INT32 nBand = 0; nBand < pInfo->nBands; nBand++)
                 Bands[nBand] = nBand;
 
-            UINT32 nWidth, nHeight;
+            uint32_t nWidth, nHeight;
             IEEE8 fStartX, fStartY, fEndX, fEndY;
 
             nWidth = pInfo->nSizeX;
@@ -1153,7 +1153,7 @@ size_t HCDCodecJPEG2000::DecompressSubset(const void*  pi_pInData,
                     else
                         {
                         Byte** pOutBuffer = new Byte*[pInfo->nBands];
-                        UINT32  LineSteps = pInfo->nBands;
+                        uint32_t  LineSteps = pInfo->nBands;
 
                         pOutBuffer[0] = (UINT8*)pOutBufferPointer;
                         pOutBuffer[1] = ((UINT8*)pOutBufferPointer + 1);
@@ -1600,7 +1600,7 @@ void HCDCodecIJG::SetProgressiveMode(bool pi_Enable)
             {
             if(cinfocomp->scan_info != NULL)
                 {
-                free((void*)(cinfocomp->scan_info));
+                free((cinfocomp->scan_info));
                 cinfocomp->scan_info = NULL;
                 cinfocomp->num_scans = 0;
                 }

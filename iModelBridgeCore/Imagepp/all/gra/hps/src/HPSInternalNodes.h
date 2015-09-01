@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSInternalNodes.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Node types, in order of appearance in grammar description
@@ -27,6 +27,8 @@
 #include <Imagepp/all/h/HRFGeoreferenceContext.h>
 #include <Imagepp/all/h/HRPFilter.h>
 #include <Imagepp/all/h/HRPAlphaRange.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HPSParser;
 class HPMPool;
@@ -816,3 +818,4 @@ public:
     virtual void Calculate();
     };
 
+END_IMAGEPP_NAMESPACE

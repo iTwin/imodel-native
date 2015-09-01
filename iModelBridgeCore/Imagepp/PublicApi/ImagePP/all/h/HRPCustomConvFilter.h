@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPCustomConvFilter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,19 +14,20 @@
 
 #include "HRPConvFilterV24R8G8B8.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPCustomConvFilter : public HRPConvFilterV24R8G8B8
     {
-    HDECLARE_CLASS_ID(1347, HRPConvFilterV24R8G8B8)
+    HDECLARE_CLASS_ID(HRPFilterId_CustomConv, HRPConvFilterV24R8G8B8)
     
 public:
-    _HDLLg             HRPCustomConvFilter();
+    IMAGEPP_EXPORT             HRPCustomConvFilter();
 
-    _HDLLg             HRPCustomConvFilter(uint32_t pi_MatrixWidth,
+    IMAGEPP_EXPORT             HRPCustomConvFilter(uint32_t pi_MatrixWidth,
                                            uint32_t pi_MatrixHeigth,
                                            uint32_t pi_XOrigin,
                                            uint32_t pi_YOrigin,
                                            int32_t* pi_pWeightMatrix);
-    _HDLLg virtual     ~HRPCustomConvFilter();
+    IMAGEPP_EXPORT virtual     ~HRPCustomConvFilter();
 
     // Cloning
     virtual HRPFilter* Clone() const override;
@@ -47,5 +48,6 @@ private:
     HRPCustomConvFilter&
     operator=(const HRPCustomConvFilter& pi_rSrcFilter);
     };
+END_IMAGEPP_NAMESPACE
 
 

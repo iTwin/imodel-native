@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalmediancut.cpp 20629 2010-09-16 19:08:40Z rouault $
+ * $Id: gdalmediancut.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  CIETMap Phase 2
  * Purpose:  Use median cut algorithm to generate an near-optimal PCT for a 
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam
+ * Copyright (c) 2007-2010, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -39,7 +40,7 @@
 #include "gdal_priv.h"
 #include "gdal_alg.h"
 
-CPL_CVSID("$Id: gdalmediancut.cpp 20629 2010-09-16 19:08:40Z rouault $");
+CPL_CVSID("$Id: gdalmediancut.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 #define	MAX_CMAP_SIZE	256
 

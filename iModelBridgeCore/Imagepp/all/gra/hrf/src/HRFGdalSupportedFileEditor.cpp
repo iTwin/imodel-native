@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGdalSupportedFileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFGdalSupportedFileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFGdalSupportedFile.h>
 #include <Imagepp/all/h/HRFGdalSupportedFileEditor.h>
 #include <Imagepp/all/h/HTIFFUtils.h>
@@ -24,7 +24,7 @@
 #include <Imagepp/all/h/HRPPixelTypeV64R16G16B16X16.h>
 #include <Imagepp/all/h/HRPPixelTypeV96R32G32B32.h>
 
-#include <ImagePPInternal/ext/gdal/gdal_priv.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
 
 //-----------------------------------------------------------------------------
 //                              Notes
@@ -357,17 +357,18 @@ void HRFGdalSupportedFileEditor::DetermineScalingMethod()
 // Read uncompressed 32 bit RGBA Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFGdalSupportedFileEditor::ReadIntegerBlock(uint32_t pi_PosBlockX,
-                                                     uint32_t pi_PosBlockY,
+HSTATUS HRFGdalSupportedFileEditor::ReadIntegerBlock(uint64_t pi_PosBlockX,
+                                                     uint64_t pi_PosBlockY,
                                                      Byte* po_pData,
                                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
+    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
-    ComputeIOblockSize(pi_PosBlockX, pi_PosBlockY);
+    ComputeIOblockSize((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
 
     // Lock the sister file
     HFCLockMonitor SisterFileLock;
@@ -407,7 +408,9 @@ HSTATUS HRFGdalSupportedFileEditor::ReadIntegerBlock(uint32_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 void HRFGdalSupportedFileEditor::ComputeIOblockSize(uint32_t pi_PosBlockX, uint32_t pi_PosBlockY)
     {
-    if ((pi_PosBlockX + RASTER_FILE->GetBlockWidth()) > (UINT)RASTER_FILE->GetImageWidth())
+    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
+    if ((pi_PosBlockX + RASTER_FILE->GetBlockWidth()) > (uint32_t)RASTER_FILE->GetImageWidth())
         {
         m_WidthToRead = RASTER_FILE->GetImageWidth() - pi_PosBlockX;
         }
@@ -416,7 +419,7 @@ void HRFGdalSupportedFileEditor::ComputeIOblockSize(uint32_t pi_PosBlockX, uint3
         m_WidthToRead = RASTER_FILE->GetBlockWidth();
         }
 
-    if ((pi_PosBlockY + RASTER_FILE->GetBlockHeight()) > (UINT)RASTER_FILE->GetImageHeight())
+    if ((pi_PosBlockY + RASTER_FILE->GetBlockHeight()) > (uint32_t)RASTER_FILE->GetImageHeight())
         {
         m_HeightToRead = RASTER_FILE->GetImageHeight() - pi_PosBlockY;
         }
@@ -432,17 +435,18 @@ void HRFGdalSupportedFileEditor::ComputeIOblockSize(uint32_t pi_PosBlockX, uint3
 // Read uncompressed 96 bit real RGB Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFGdalSupportedFileEditor::ReadRealBlock(uint32_t pi_PosBlockX,
-                                                  uint32_t pi_PosBlockY,
+HSTATUS HRFGdalSupportedFileEditor::ReadRealBlock(uint64_t pi_PosBlockX,
+                                                  uint64_t pi_PosBlockY,
                                                   Byte* po_pData,
                                                   HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(RASTER_FILE->IsReadPixelReal() == true); //INT not tested
+    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
-    ComputeIOblockSize(pi_PosBlockX, pi_PosBlockY);
+    ComputeIOblockSize((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
 
     // Lock the sister file
     HFCLockMonitor SisterFileLock;
@@ -519,8 +523,8 @@ HSTATUS HRFGdalSupportedFileEditor::ReadRealBlock(uint32_t pi_PosBlockX,
 // Read uncompressed Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFGdalSupportedFileEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                              uint32_t pi_PosBlockY,
+HSTATUS HRFGdalSupportedFileEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                              uint64_t pi_PosBlockY,
                                               Byte* po_pData,
                                               HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -880,30 +884,31 @@ void HRFGdalSupportedFileEditor::FindRealPVminMax(double*   po_pMin,
 // Write Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFGdalSupportedFileEditor::WriteBlock(uint32_t              pi_PosBlockX,
-                                               uint32_t              pi_PosBlockY,
+HSTATUS HRFGdalSupportedFileEditor::WriteBlock(uint64_t              pi_PosBlockX,
+                                               uint64_t              pi_PosBlockY,
                                                const Byte*          pi_pData,
                                                HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(pi_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
+    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
-    HSTATUS      Status = H_SUCCESS;
+    HSTATUS Status = H_SUCCESS;
 
     const Byte* pDataToWrite = pi_pData;
 
-    if ((pi_PosBlockX + RASTER_FILE->GetBlockWidth()) > (UINT)RASTER_FILE->GetImageWidth())
+    if ((pi_PosBlockX + RASTER_FILE->GetBlockWidth()) > (uint32_t)RASTER_FILE->GetImageWidth())
         {
-        m_WidthToRead = RASTER_FILE->GetImageWidth() - pi_PosBlockX;
+        m_WidthToRead = RASTER_FILE->GetImageWidth() - (uint32_t)pi_PosBlockX;
         }
     else
         {
         m_WidthToRead = RASTER_FILE->GetBlockWidth();
         }
 
-    if ((pi_PosBlockY + RASTER_FILE->GetBlockHeight()) > (UINT)RASTER_FILE->GetImageHeight())
+    if ((pi_PosBlockY + RASTER_FILE->GetBlockHeight()) > (uint32_t)RASTER_FILE->GetImageHeight())
         {
-        m_HeightToRead = RASTER_FILE->GetImageHeight() - pi_PosBlockY;
+        m_HeightToRead = RASTER_FILE->GetImageHeight() - (uint32_t)pi_PosBlockY;
         }
     else
         {
@@ -921,10 +926,10 @@ HSTATUS HRFGdalSupportedFileEditor::WriteBlock(uint32_t              pi_PosBlock
 
     if (RASTER_FILE->IsUnsignedPixelTypeForSignedData() == true)
         {
-        memcpy_s(m_pTempSignedBuffer.get(),
-                 m_pResolutionDescriptor->GetBlockSizeInBytes(),
-                 pi_pData,
-                 m_pResolutionDescriptor->GetBlockSizeInBytes());
+        BeStringUtilities::Memcpy(m_pTempSignedBuffer.get(),
+                                  m_pResolutionDescriptor->GetBlockSizeInBytes(),
+                                  pi_pData,
+                                  m_pResolutionDescriptor->GetBlockSizeInBytes());
 
         //Only when the data are signed that it is possible to edit
         //them.
@@ -965,20 +970,22 @@ HSTATUS HRFGdalSupportedFileEditor::WriteBlock(uint32_t              pi_PosBlock
 // Read band block
 // Read a specified band block using GDAL
 //-----------------------------------------------------------------------------
-HSTATUS HRFGdalSupportedFileEditor::ReadBandBlock  (Byte*          po_pOutBuffer,
-                                                    const uint32_t  pi_BandIndex,
-                                                    const uint32_t  pi_PosBlockX,
-                                                    const uint32_t  pi_PosBlockY)
+HSTATUS HRFGdalSupportedFileEditor::ReadBandBlock  (Byte*           po_pOutBuffer,
+                                                    const uint64_t  pi_BandIndex,
+                                                    const uint64_t  pi_PosBlockX,
+                                                    const uint64_t  pi_PosBlockY)
     {
+    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     CPLErrorReset();
     m_pRasterBands[pi_BandIndex]->RasterIO(GF_Read,
-                                            pi_PosBlockX,
-                                            pi_PosBlockY,
+                                            (uint32_t)pi_PosBlockX,
+                                            (uint32_t)pi_PosBlockY,
                                             m_WidthToRead,
                                             m_HeightToRead,
-                                            (void*)po_pOutBuffer,
+                                            po_pOutBuffer,
                                             m_WidthToRead,
                                             m_HeightToRead,
                                             (GDALDataType)m_GdalDataType,
@@ -1021,19 +1028,21 @@ HSTATUS HRFGdalSupportedFileEditor::ReadBandBlock  (Byte*          po_pOutBuffer
 // Write a specified band block using GDAL
 //-----------------------------------------------------------------------------
 HSTATUS HRFGdalSupportedFileEditor::WriteBandBlock (const Byte*    pi_pInBuffer,
-                                                    const uint32_t  pi_BandIndex,
-                                                    const uint32_t  pi_PosBlockX,
-                                                    const uint32_t  pi_PosBlockY)
+                                                    const uint64_t  pi_BandIndex,
+                                                    const uint64_t  pi_PosBlockX,
+                                                    const uint64_t  pi_PosBlockY)
     {
+    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     CPLErrorReset();
     m_pRasterBands[pi_BandIndex]->RasterIO(GF_Write,
-                                           pi_PosBlockX,
-                                           pi_PosBlockY,
+                                           (uint32_t)pi_PosBlockX,
+                                           (uint32_t)pi_PosBlockY,
                                            m_WidthToRead,
                                            m_HeightToRead,
-                                           (void*)pi_pInBuffer,
+                                           const_cast<Byte*>(pi_pInBuffer),
                                            m_WidthToRead,
                                            m_HeightToRead,
                                            (GDALDataType)m_GdalDataType,

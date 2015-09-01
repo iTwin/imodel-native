@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMMosaic.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -14,7 +14,7 @@
 #include "HIDXComplexIndex.h"
 #include "HGFHVVHSpatialIndex.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 class HGF2DTransfoModel;
 class HRPPixelType;
 class HGF2DCoordSys;
@@ -40,7 +40,7 @@ class HRAClearOptions;
 */
 class HIMMosaic : public HRARaster
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1014)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HIMMosaicId_Base)
 
     friend class HIMMosaicEditor;
     friend class HIMMosaicIterator;
@@ -59,11 +59,11 @@ public:
 
     //:> Primary methods
 
-    _HDLLg HIMMosaic();
-    _HDLLg HIMMosaic(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
-    _HDLLg HIMMosaic(const HIMMosaic& pi_rObj);
+    IMAGEPP_EXPORT HIMMosaic();
+    IMAGEPP_EXPORT HIMMosaic(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    IMAGEPP_EXPORT HIMMosaic(const HIMMosaic& pi_rObj);
 
-    _HDLLg virtual ~HIMMosaic();
+    IMAGEPP_EXPORT virtual ~HIMMosaic();
 
     HIMMosaic& operator=(const HIMMosaic& pi_rObj);
 
@@ -85,10 +85,6 @@ public:
                           double pi_ScaleFactorY,
                           const HGF2DLocation& pi_rOrigin);
 
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions);
-
-    virtual void    Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface, const HGFDrawOptions* pi_pOptions) const;
-
     //Context Methods
     virtual void                      SetContext(const HFCPtr<HMDContext>& pi_rpContext);
     virtual HFCPtr<HMDContext>        GetContext();
@@ -96,10 +92,9 @@ public:
     virtual void                      InvalidateRaster();
 
     //:> Overriden from HRARaster
-    virtual void    CopyFrom(  const HFCPtr<HRARaster>& pi_pSrcRaster,
-                               const HRACopyFromOptions& pi_rOptions);
+    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions);
 
-    virtual void    CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster);
+    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster);
 
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
@@ -114,13 +109,10 @@ public:
 
     virtual bool HasSinglePixelType() const;
     virtual HFCPtr<HRPPixelType> GetPixelType() const;
-    _HDLLg         void                 SetPixelType(HFCPtr<HRPPixelType> const& pi_pPixelType);
+    IMAGEPP_EXPORT         void                 SetPixelType(HFCPtr<HRPPixelType> const& pi_pPixelType);
 
     virtual bool   ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role,
                                               Byte                      pi_Id = 0) const;
-
-    virtual const void*
-    GetRawDataPtr () const;
 
     virtual HFCPtr<HVEShape>
     GetEffectiveShape () const;
@@ -130,7 +122,7 @@ public:
     virtual void    GetPixelSizeRange(HGF2DExtent& po_rMinimum, HGF2DExtent& po_rMaximum) const;
 
     virtual HPMPersistentObject* Clone () const;
-    virtual HRARaster* Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
     //:> Added methods
 
@@ -183,6 +175,12 @@ public:
 
 protected:
 
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
+
+    virtual ImagePPStatus _CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options) override;
+
+    virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
+
     virtual void    RecalculateEffectiveShape ();
 
     // The images
@@ -212,9 +210,9 @@ private:
     // DON'T USE BOOLEAN VALUES WITH THIS VARIABLE!
     mutable int32_t  m_HasLookAhead;
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLg)
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT)
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HIMMosaic.hpp"
 

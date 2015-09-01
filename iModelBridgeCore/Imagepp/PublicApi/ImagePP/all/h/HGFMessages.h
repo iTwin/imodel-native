@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFMessages.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -17,6 +17,8 @@
 
 #include "HMGMessage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 // Forward declarations
 class HMGMessageSender;
 
@@ -27,52 +29,18 @@ class HMGMessageSender;
 
 class HGFGeometryChangedMsg : public HMGAsynchronousMessage
     {
-    HDECLARE_CLASS_ID(1094, HMGAsynchronousMessage)
+    HDECLARE_CLASS_ID(HGFMsgId_GeometryChanged, HMGAsynchronousMessage)
 
 public:
     HGFGeometryChangedMsg();
-    _HDLLg virtual ~HGFGeometryChangedMsg();
+    IMAGEPP_EXPORT virtual ~HGFGeometryChangedMsg();
 
-    _HDLLg virtual HMGMessage* Clone() const override;
+    IMAGEPP_EXPORT virtual HMGMessage* Clone() const override;
 protected:
     HGFGeometryChangedMsg(const HGFGeometryChangedMsg& pi_rObj);
     HGFGeometryChangedMsg& operator=(const HGFGeometryChangedMsg& pi_rObj);
     };
-
-
-///////////////////////////
-// HGFBufferContentChangedMsg
-///////////////////////////
-
-class HGFBufferContentChangedMsg: public HMGAsynchronousMessage
-    {
-    HDECLARE_CLASS_ID(1195, HMGAsynchronousMessage)
-
-public:
-    HGFBufferContentChangedMsg();
-    HGFBufferContentChangedMsg(uint32_t pi_TileIndex, bool  pi_IsEmpty, bool pi_IsOverwritten);
-    _HDLLg virtual ~HGFBufferContentChangedMsg();
-
-    // the Tile index
-    uint32_t        GetTileIndex() const;
-
-    // Emptiness state of the tile
-    bool           IsEmpty() const;
-    // if the tile data was overwritten at least once
-    bool           IsOverwritten() const;
-
-    _HDLLg virtual HMGMessage* Clone() const override;
-
-protected:
-    HGFBufferContentChangedMsg(const HGFBufferContentChangedMsg& pi_rObj);
-    HGFBufferContentChangedMsg& operator=(const HGFBufferContentChangedMsg& pi_rObj);
-
-private:
-    bool  m_IsOverwritten;
-    bool  m_IsEmpty;
-    uint32_t m_TileIndex;
-    };
-
+END_IMAGEPP_NAMESPACE
 
 #include "HGFMessages.hpp"
 

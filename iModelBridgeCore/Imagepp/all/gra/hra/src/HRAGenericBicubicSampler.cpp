@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAGenericBicubicSampler.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRAGenericBicubicSampler.h>
 
@@ -17,8 +17,6 @@
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
 
-#undef min
-#undef max
 
 // Smoothing precomputing
 template <class T> const double HRAGenericBicubicSampler<T>::s_a(-0.5);
@@ -34,25 +32,17 @@ template <class T> const double HRAGenericBicubicSampler<T>::s_aP3(s_a + 3.0);
  @param pi_pSurfaceImplementation
 -----------------------------------------------------------------------------*/
 template <class T>
-HRAGenericBicubicSampler<T>::HRAGenericBicubicSampler(const HGSGraphicToolAttributes*     pi_pAttributes,
-                                                      const HGSSurfaceImplementation*     pi_pSurfaceImplementation,
+HRAGenericBicubicSampler<T>::HRAGenericBicubicSampler(HGSMemorySurfaceDescriptor const&   pi_rMemorySurface,
                                                       const HGF2DRectangle&               pi_rSampleDimension,
                                                       double                              pi_DeltaX,
                                                       double                              pi_DeltaY)
-    : HRAGenericSampler(pi_pAttributes,
-                        pi_pSurfaceImplementation,
+    : HRAGenericSampler(pi_rMemorySurface,
                         pi_rSampleDimension,
                         pi_DeltaX,
                         pi_DeltaY)
     {
-    HPRECONDITION(pi_pSurfaceImplementation->GetSurfaceDescriptor()->IsCompatibleWith(HGSMemorySurfaceDescriptor::CLASS_ID));
-
-    // compute some useful information
-    const HFCPtr<HGSMemorySurfaceDescriptor>& rpDescriptor = (const HFCPtr<HGSMemorySurfaceDescriptor>&)
-                                                             pi_pSurfaceImplementation->GetSurfaceDescriptor();
-
-    HPRECONDITION(rpDescriptor->GetPacket() != 0);
-    m_pPacket = rpDescriptor->GetPacket();
+    HPRECONDITION(pi_rMemorySurface->GetPacket() != 0);
+    m_pPacket = pi_rMemorySurface->GetPacket();
 
     //numeric_limits<T>::min() returns the smallest representable value
     //for decimal type instead of greatest negative value representable.
@@ -66,8 +56,6 @@ HRAGenericBicubicSampler<T>::HRAGenericBicubicSampler(const HGSGraphicToolAttrib
         }
 
     m_ChannelMaxValue = std::numeric_limits<T>::max();
-
-    m_pTempData = new T[m_NbChannels];
     }
 
 /**----------------------------------------------------------------------------
@@ -97,7 +85,7 @@ void* HRAGenericBicubicSampler<T>::GetPixel(double pi_PosX,
     HPRECONDITION(pi_PosY <= (double)m_Height + 0.5);
 
     // Clear everything just in case.
-    memset((void*)m_pTempData.get(), 0, m_BytesPerPixel);
+    memset(m_pTempData, 0, sizeof(m_pTempData));
 
     Sample CurrentSample(pi_PosX, pi_PosY);
 
@@ -110,13 +98,13 @@ void* HRAGenericBicubicSampler<T>::GetPixel(double pi_PosX,
                                       CurrentSample.GetLine0());
     T* pSrcLine1 = (T*)ComputeAddress(m_pPacket,
                                       Column0,
-                                      min(CurrentSample.GetLine1(), m_Height-1));
+                                      MIN(CurrentSample.GetLine1(), m_Height-1));
     T* pSrcLine2 = (T*)ComputeAddress(m_pPacket,
                                       Column0,
-                                      min(CurrentSample.GetLine2(), m_Height-1));
+                                      MIN(CurrentSample.GetLine2(), m_Height-1));
     T* pSrcLine3 = (T*)ComputeAddress(m_pPacket,
                                       Column0,
-                                      min(CurrentSample.GetLine3(), m_Height-1));
+                                      MIN(CurrentSample.GetLine3(), m_Height-1));
 
     // Compute byte offsets for each column
     int OffsetColumn1;
@@ -189,11 +177,11 @@ void* HRAGenericBicubicSampler<T>::GetPixel(double pi_PosX,
 
         ChannelResult = Horiz0 * CoefY0 + Horiz1 * CoefY1 + Horiz2 * CoefY2 + Horiz3 * CoefY3;
 
-        m_pTempData[ChannelInd] = (T)min(max(ChannelResult, (double)m_ChannelMinValue),
+        m_pTempData[ChannelInd] = (T)MIN(MAX(ChannelResult, (double)m_ChannelMinValue),
                                          (double)m_ChannelMaxValue);
         }
 
-    return (void*)m_pTempData.get();
+    return m_pTempData;
     }
 
 /**----------------------------------------------------------------------------
@@ -249,13 +237,13 @@ void HRAGenericBicubicSampler<T>::GetPixels(const double* pi_pPositionsX,
                                        CurrentSample.GetLine0());
         pSrcLine1 = (T*)ComputeAddress(m_pPacket,
                                        Column0,
-                                       min(CurrentSample.GetLine1(), m_Height - 1));
+                                       MIN(CurrentSample.GetLine1(), m_Height - 1));
         pSrcLine2 = (T*)ComputeAddress(m_pPacket,
                                        Column0,
-                                       min(CurrentSample.GetLine2(), m_Height - 1));
+                                       MIN(CurrentSample.GetLine2(), m_Height - 1));
         pSrcLine3 = (T*)ComputeAddress(m_pPacket,
                                        Column0,
-                                       min(CurrentSample.GetLine3(), m_Height - 1));
+                                       MIN(CurrentSample.GetLine3(), m_Height - 1));
 
         // Compute byte offsets for each column
         if (Column1 > Column0)
@@ -318,7 +306,7 @@ void HRAGenericBicubicSampler<T>::GetPixels(const double* pi_pPositionsX,
 
             ChannelResult = Horiz0 * CoefY0 + Horiz1 * CoefY1 + Horiz2 * CoefY2 + Horiz3 * CoefY3;
 
-            *pOut++ = (T)min(max(ChannelResult, (double)m_ChannelMinValue),
+            *pOut++ = (T)MIN(MAX(ChannelResult, (double)m_ChannelMinValue),
                              (double)m_ChannelMaxValue);
             }
 
@@ -374,13 +362,13 @@ void HRAGenericBicubicSampler<T>::GetPixels(double pi_PositionX,
                                           CurrentSample.GetLine0());
         T* pSrcLine1 = (T*)ComputeAddress(m_pPacket,
                                           Column0,
-                                          min(CurrentSample.GetLine1(), m_Height-1));
+                                          MIN(CurrentSample.GetLine1(), m_Height-1));
         T* pSrcLine2 = (T*)ComputeAddress(m_pPacket,
                                           Column0,
-                                          min(CurrentSample.GetLine2(), m_Height-1));
+                                          MIN(CurrentSample.GetLine2(), m_Height-1));
         T* pSrcLine3 = (T*)ComputeAddress(m_pPacket,
                                           Column0,
-                                          min(CurrentSample.GetLine3(), m_Height-1));
+                                          MIN(CurrentSample.GetLine3(), m_Height-1));
 
         int NextPixelOffset = m_NbChannels;
         int BytesToAdd;
@@ -447,7 +435,7 @@ void HRAGenericBicubicSampler<T>::GetPixels(double pi_PositionX,
 
                 ChannelResult = Horiz0 * CoefY0 + Horiz1 * CoefY1 + Horiz2 * CoefY2 + Horiz3 * CoefY3;
 
-                *pOut++ = (T)min(max(ChannelResult, (double)m_ChannelMinValue), (double)m_ChannelMaxValue);
+                *pOut++ = (T)MIN(MAX(ChannelResult, (double)m_ChannelMinValue), (double)m_ChannelMaxValue);
                 }
 
             CurrentSample.TranslateX(m_DeltaX);

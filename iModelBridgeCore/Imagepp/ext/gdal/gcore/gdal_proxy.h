@@ -1,12 +1,12 @@
 /******************************************************************************
- * $Id: gdal_proxy.h 20962 2010-10-25 23:00:16Z rouault $
+ * $Id: gdal_proxy.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  GDAL Core C++/Private declarations
  * Author:   Even Rouault <even dot rouault at mines dash paris dot org>
  *
  ******************************************************************************
- * Copyright (c) 2008, Even Rouault
+ * Copyright (c) 2008-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -54,6 +54,7 @@ class CPL_DLL GDALProxyDataset : public GDALDataset
                                 int, int *, int, int, int );
     public:
 
+        virtual char      **GetMetadataDomainList();
         virtual char      **GetMetadata( const char * pszDomain  );
         virtual CPLErr      SetMetadata( char ** papszMetadata,
                                         const char * pszDomain  );
@@ -109,6 +110,7 @@ class CPL_DLL GDALProxyRasterBand : public GDALRasterBand
 
     public:
 
+        virtual char      **GetMetadataDomainList();
         virtual char      **GetMetadata( const char * pszDomain  );
         virtual CPLErr      SetMetadata( char ** papszMetadata,
                                         const char * pszDomain  );
@@ -171,13 +173,17 @@ class CPL_DLL GDALProxyRasterBand : public GDALRasterBand
         virtual CPLErr SetDefaultHistogram( double dfMin, double dfMax,
                                             int nBuckets, int *panHistogram );
 
-        virtual const GDALRasterAttributeTable *GetDefaultRAT();
+        virtual GDALRasterAttributeTable *GetDefaultRAT();
         virtual CPLErr SetDefaultRAT( const GDALRasterAttributeTable * );
 
         virtual GDALRasterBand *GetMaskBand();
         virtual int             GetMaskFlags();
         virtual CPLErr          CreateMaskBand( int nFlags );
 
+        virtual CPLVirtualMem  *GetVirtualMemAuto( GDALRWFlag eRWFlag,
+                                                int *pnPixelSpace,
+                                                GIntBig *pnLineSpace,
+                                                char **papszOptions );
 };
 
 

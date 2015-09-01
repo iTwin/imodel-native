@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: EnvisatFile.c 20600 2010-09-12 22:56:55Z rouault $
+ * $Id: EnvisatFile.c 27731 2014-09-24 07:58:14Z rouault $
  *
  * Project:  APP ENVISAT Support
  * Purpose:  Low Level Envisat file access (read/write) API.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Atlantis Scientific, Inc.
+ * Copyright (c) 2010-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +33,7 @@
 #  include "cpl_conv.h"
 #  include "EnvisatFile.h"
 
-CPL_CVSID("$Id: EnvisatFile.c 20600 2010-09-12 22:56:55Z rouault $");
+CPL_CVSID("$Id: EnvisatFile.c 27731 2014-09-24 07:58:14Z rouault $");
 
 #else
 #  include "APP/app.h"
@@ -61,7 +62,7 @@ typedef struct
 
 struct EnvisatFile_tag
 {
-    FILE	*fp;
+    VSILFILE	*fp;
     char        *filename;
     int		updatable;
     int         header_dirty;
@@ -102,7 +103,7 @@ const char *S_NameValueList_FindValue( const char *key,
                                        EnvisatNameValue **entries,
                                        const char * default_value );
 
-int S_NameValueList_Rewrite( FILE *fp, int entry_count, 
+int S_NameValueList_Rewrite( VSILFILE *fp, int entry_count, 
                              EnvisatNameValue **entries );
 
 EnvisatNameValue *
@@ -153,14 +154,14 @@ static int EnvisatFile_SetupLevel0( EnvisatFile *self )
      * Figure out how long the file is. 
      */
 
-    fseek( self->fp, 0, SEEK_END );
-    file_length = (int) ftell( self->fp );
+    VSIFSeekL( self->fp, 0, SEEK_END );
+    file_length = (int) VSIFTellL( self->fp );
     
     /* 
      * Read the first record header, and verify the well known values.
      */
-    fseek( self->fp, 3203, SEEK_SET );
-    fread( header, 68, 1, self->fp );
+    VSIFSeekL( self->fp, 3203, SEEK_SET );
+    VSIFReadL( header, 68, 1, self->fp );
 
     if( header[38] != 0 || header[39] != 0x1d
         || header[40] != 0 || header[41] != 0x54 )
@@ -215,7 +216,7 @@ int EnvisatFile_Open( EnvisatFile **self_ptr,
                       const char *mode )
 
 {
-    FILE	*fp;
+    VSILFILE	*fp;
     EnvisatFile	*self;
     char	mph_data[1248];
     char	*sph_data, *ds_data;
@@ -242,7 +243,7 @@ int EnvisatFile_Open( EnvisatFile **self_ptr,
      * Try to open the file, and report failure. 
      */
 
-    fp = fopen( filename, mode );
+    fp = VSIFOpenL( filename, mode );
 
     if( fp == NULL )
     {
@@ -272,10 +273,10 @@ int EnvisatFile_Open( EnvisatFile **self_ptr,
      * Read the MPH, and process it as a group of name/value pairs. 
      */
 
-    if( fread( mph_data, 1, MPH_SIZE, fp ) != MPH_SIZE )
+    if( VSIFReadL( mph_data, 1, MPH_SIZE, fp ) != MPH_SIZE )
     {
         free( self );
-        SendError( "fread() for mph failed." );
+        SendError( "VSIFReadL() for mph failed." );
         return FAILURE;
     }
 
@@ -321,10 +322,10 @@ int EnvisatFile_Open( EnvisatFile **self_ptr,
     if( sph_data == NULL )
         return FAILURE;
 
-    if( (int) fread( sph_data, 1, sph_size, fp ) != sph_size )
+    if( (int) VSIFReadL( sph_data, 1, sph_size, fp ) != sph_size )
     {
         free( self );
-        SendError( "fread() for sph failed." );
+        SendError( "VSIFReadL() for sph failed." );
         return FAILURE;
     }
 
@@ -447,13 +448,13 @@ int EnvisatFile_Create( EnvisatFile **self_ptr,
 {
     int		template_size;
     char	*template_data;
-    FILE	*fp;
+    VSILFILE	*fp;
 
     /*
      * Try to open the template file, and read it into memory.
      */
 
-    fp = fopen( template_file, "rb" );
+    fp = VSIFOpenL( template_file, "rb" );
 
     if( fp == NULL )
     {
@@ -467,20 +468,20 @@ int EnvisatFile_Create( EnvisatFile **self_ptr,
         return FAILURE;
     }
 
-    fseek( fp, 0, SEEK_END );
-    template_size = (int) ftell( fp );
+    VSIFSeekL( fp, 0, SEEK_END );
+    template_size = (int) VSIFTellL( fp );
 
     template_data = (char *) malloc(template_size);
     
-    fseek( fp, 0, SEEK_SET );
-    fread( template_data, template_size, 1, fp );
-    fclose( fp );
+    VSIFSeekL( fp, 0, SEEK_SET );
+    VSIFReadL( template_data, template_size, 1, fp );
+    VSIFCloseL( fp );
 
     /*
      * Try to write the template out to the new filename. 
      */
     
-    fp = fopen( filename, "wb" );
+    fp = VSIFOpenL( filename, "wb" );
     if( fp == NULL )
     {
         char	error_buf[2048];
@@ -493,8 +494,8 @@ int EnvisatFile_Create( EnvisatFile **self_ptr,
         return FAILURE;
     }
 
-    fwrite( template_data, template_size, 1, fp );
-    fclose( fp );
+    VSIFWriteL( template_data, template_size, 1, fp );
+    VSIFCloseL( fp );
 
     free( template_data );
 
@@ -602,16 +603,16 @@ static int EnvisatFile_RewriteHeader( EnvisatFile *self )
         EnvisatNameValue **dsdh_entries = NULL;
 
         dsd_text = (char *) calloc(1,dsd_size+1);
-        if( fseek( self->fp, self->dsd_offset + dsd * dsd_size, 
+        if( VSIFSeekL( self->fp, self->dsd_offset + dsd * dsd_size, 
                    SEEK_SET ) != 0 )
         {
-            SendError( "fseek() failed in EnvisatFile_RewriteHeader()" );
+            SendError( "VSIFSeekL() failed in EnvisatFile_RewriteHeader()" );
             return FAILURE;
         }
         
-        if( (int) fread( dsd_text, 1, dsd_size, self->fp ) != dsd_size )
+        if( (int) VSIFReadL( dsd_text, 1, dsd_size, self->fp ) != dsd_size )
         {
-            SendError( "fread() failed in EnvisatFile_RewriteHeader()" );
+            SendError( "VSIFReadL() failed in EnvisatFile_RewriteHeader()" );
             return FAILURE;
         }
 
@@ -691,7 +692,7 @@ void EnvisatFile_Close( EnvisatFile *self )
      * Close file. 
      */
     if( self->fp != NULL )
-        fclose( self->fp );
+        VSIFCloseL( self->fp );
 
     /*
      * Clean up data structures. 
@@ -1203,17 +1204,18 @@ Returns:
 -----------------------------------------------------------------------------*/
 
 int EnvisatFile_GetDatasetIndex( EnvisatFile *self, const char *ds_name )
-
 {
-    int		i;
     char	padded_ds_name[100];
+    size_t i;
+    int ii;
 
     /* 
      * Padd the name.  While the normal product spec says the DS_NAME will
      * be 28 characters, I try to pad more than this incase the specification
      * is changed. 
      */
-    strcpy( padded_ds_name, ds_name );
+    strncpy( padded_ds_name, ds_name, sizeof(padded_ds_name) );
+    padded_ds_name[sizeof(padded_ds_name)-1] = 0;
     for( i = strlen(padded_ds_name); i < sizeof(padded_ds_name)-1; i++ )
     {
         padded_ds_name[i] = ' ';
@@ -1223,12 +1225,12 @@ int EnvisatFile_GetDatasetIndex( EnvisatFile *self, const char *ds_name )
     /* 
      * Compare only for the full length of DS_NAME we have saved.
      */
-    for( i = 0; i < self->ds_count; i++ )
+    for( ii = 0; ii < self->ds_count; ii++ )
     {
-        if( strncmp( padded_ds_name, self->ds_info[i]->ds_name, 
-                     strlen(self->ds_info[i]->ds_name) ) == 0 )
+        if( strncmp( padded_ds_name, self->ds_info[ii]->ds_name, 
+                     strlen(self->ds_info[ii]->ds_name) ) == 0 )
         {
-            return i;
+            return ii;
         }
     }
 
@@ -1397,14 +1399,14 @@ int EnvisatFile_ReadDatasetChunk( EnvisatFile *self,
         return FAILURE;
     }
 
-    if( fseek( self->fp, self->ds_info[ds_index]->ds_offset+offset, SEEK_SET )
+    if( VSIFSeekL( self->fp, self->ds_info[ds_index]->ds_offset+offset, SEEK_SET )
         != 0 )
     {
         SendError( "seek failed in EnvisatFile_ReadChunk()" );
         return FAILURE;
     }
 
-    if( (int) fread( buffer, 1, size, self->fp ) != size )
+    if( (int) VSIFReadL( buffer, 1, size, self->fp ) != size )
     {
         SendError( "read failed in EnvisatFile_ReadChunk()" );
         return FAILURE;
@@ -1465,13 +1467,13 @@ int EnvisatFile_WriteDatasetRecord( EnvisatFile *self,
     absolute_offset = self->ds_info[ds_index]->ds_offset
         + record_index * self->ds_info[ds_index]->dsr_size;
 
-    if( fseek( self->fp, absolute_offset, SEEK_SET ) != 0 )
+    if( VSIFSeekL( self->fp, absolute_offset, SEEK_SET ) != 0 )
     {
         SendError( "seek failed in EnvisatFile_WriteDatasetRecord()" );
         return FAILURE;
     }
 
-    result = fwrite( buffer, 1, self->ds_info[ds_index]->dsr_size, self->fp );
+    result = VSIFWriteL( buffer, 1, self->ds_info[ds_index]->dsr_size, self->fp );
     if( result != self->ds_info[ds_index]->dsr_size )
     {
         SendError( "write failed in EnvisatFile_WriteDatasetRecord()" );
@@ -1506,41 +1508,97 @@ Returns:
 
 -----------------------------------------------------------------------------*/
 
+int EnvisatFile_ReadDatasetRecordChunk(EnvisatFile*,int,int,void*,int,int);
+
 int EnvisatFile_ReadDatasetRecord( EnvisatFile *self, 
                                     int ds_index,
                                     int record_index,
                                     void *buffer )
+{
+    return EnvisatFile_ReadDatasetRecordChunk( self, 
+                ds_index, record_index, buffer, 0 , -1 ) ; 
+} 
 
+/*-----------------------------------------------------------------------------
+
+Name:
+    EnvisatFile_ReadDatasetRecordChunk()
+
+Purpose:
+    Read a part of an arbitrary dataset record.
+
+Description:
+    Note that no range checking is made on dataset's offset and size, 
+    and data may be read from outside the dataset if they are inappropriate.
+
+Inputs:
+    self -- the file to be searched.
+    ds_index -- the index of dataset to access.
+    record_index -- the record to write.
+    record_buffer -- buffer to load data into
+    offset -- chunk offset relative to the record start (zerro offset)
+    size -- chunk size (set -1 to read from offset to the records' end)  
+
+Outputs:
+
+Returns:
+    SUCCESS or FAILURE
+
+-----------------------------------------------------------------------------*/
+
+int EnvisatFile_ReadDatasetRecordChunk( EnvisatFile *self, 
+                                    int ds_index,
+                                    int record_index,
+                                    void *buffer, 
+                                    int offset, int size )
 {
     int		absolute_offset;
     int         result;
+    int     dsr_size = self->ds_info[ds_index]->dsr_size ; 
+
+    if (( offset < 0 )||(offset > dsr_size))
+    {
+        SendError( "Invalid chunk offset in "
+                   "EnvisatFile_ReadDatasetRecordChunk()" );
+        return FAILURE;
+    } 
+
+    if ( size < 0 ) 
+        size = dsr_size - offset ; 
 
     if( ds_index < 0 || ds_index >= self->ds_count )
     {
-        SendError( "Attempt to write non-existant dataset in "
-                   "EnvisatFile_WriteDatasetRecord()" );
+        SendError( "Attempt to read non-existant dataset in "
+                   "EnvisatFile_ReadDatasetRecordChunk()" );
         return FAILURE;
     }
 
     if( record_index < 0
         || record_index >=  self->ds_info[ds_index]->num_dsr )
     {
-        SendError( "Attempt to write beyond end of dataset in "
-                   "EnvisatFile_WriteDatasetRecord()" );
+        SendError( "Attempt to read beyond end of dataset in "
+                   "EnvisatFile_ReadDatasetRecordChunk()" );
+        return FAILURE;
+    }
+
+    if( (offset + size) > dsr_size )
+    {
+        SendError( "Attempt to read beyond the record's boundary"
+                   "EnvisatFile_ReadDatasetRecord()" );
         return FAILURE;
     }
 
     absolute_offset = self->ds_info[ds_index]->ds_offset
-        + record_index * self->ds_info[ds_index]->dsr_size;
+        + record_index * dsr_size + offset ;
 
-    if( fseek( self->fp, absolute_offset, SEEK_SET ) != 0 )
+    if( VSIFSeekL( self->fp, absolute_offset, SEEK_SET ) != 0 )
     {
-        SendError( "seek failed in EnvisatFile_WriteDatasetRecord()" );
+        SendError( "seek failed in EnvisatFile_ReadDatasetRecordChunk()" );
         return FAILURE;
     }
 
-    result = fread( buffer, 1, self->ds_info[ds_index]->dsr_size, self->fp );
-    if( result != self->ds_info[ds_index]->dsr_size )
+    result = VSIFReadL( buffer, 1, size, self->fp );
+    if( result != size )
     {
         SendError( "read failed in EnvisatFile_ReadDatasetRecord()" );
         return FAILURE;
@@ -1681,7 +1739,7 @@ int S_NameValueList_Parse( const char *text, int text_offset,
         line_offset = (int) (next_text - text) + text_offset;
         while( *next_text != '\0' && *next_text != '\n' )
         {
-            if( line_len > sizeof(line)-1 )
+          if( (size_t)line_len > sizeof(line)-1 )
             {
                 SendError( "S_NameValueList_Parse(): "
                            "Corrupt line, longer than 1024 characters." );
@@ -1792,7 +1850,7 @@ Purpose:
 Description:
 
 Inputs:
-    fp -- the FILE to operate on.
+    fp -- the VSILFILE to operate on.
     entry_count -- number of entries to write.
     entries -- array of entry descriptions.
 
@@ -1802,7 +1860,7 @@ Returns:
 
 -----------------------------------------------------------------------------*/
 
-int S_NameValueList_Rewrite( FILE * fp, int entry_count, 
+int S_NameValueList_Rewrite( VSILFILE * fp, int entry_count, 
                               EnvisatNameValue **entries )	      
 
 {
@@ -1812,16 +1870,16 @@ int S_NameValueList_Rewrite( FILE * fp, int entry_count,
     {
         EnvisatNameValue	*entry = entries[i];
 
-        if( fseek( fp, entry->value_offset, SEEK_SET ) != 0 )
+        if( VSIFSeekL( fp, entry->value_offset, SEEK_SET ) != 0 )
         {
-            SendError( "fseek() failed writing name/value list." );
+            SendError( "VSIFSeekL() failed writing name/value list." );
             return FAILURE;
         }
 
-        if( fwrite( entry->value, 1, strlen(entry->value), fp ) != 
+        if( VSIFWriteL( entry->value, 1, strlen(entry->value), fp ) != 
             strlen(entry->value) )
         {
-            SendError( "fwrite() failed writing name/value list." );
+            SendError( "VSIFWriteL() failed writing name/value list." );
             return FAILURE;
         }
     }

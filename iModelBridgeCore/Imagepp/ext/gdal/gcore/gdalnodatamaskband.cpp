@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalnodatamaskband.cpp 19692 2010-05-13 17:16:55Z rouault $
+ * $Id: gdalnodatamaskband.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALNoDataMaskBand, a class implementing all
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2007, Frank Warmerdam
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalnodatamaskband.cpp 19692 2010-05-13 17:16:55Z rouault $");
+CPL_CVSID("$Id: gdalnodatamaskband.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                        GDALNoDataMaskBand()                          */
@@ -143,7 +144,10 @@ CPLErr GDALNoDataMaskBand::IReadBlock( int nXBlockOff, int nYBlockOff,
                                pabySrc, nXSizeRequest, nYSizeRequest,
                                eWrkDT, 0, nBlockXSize * (GDALGetDataTypeSize(eWrkDT)/8) );
     if( eErr != CE_None )
+    {
+        CPLFree(pabySrc);
         return eErr;
+    }
 
     int bIsNoDataNan = CPLIsNan(dfNoDataValue);
 
@@ -204,7 +208,7 @@ CPLErr GDALNoDataMaskBand::IReadBlock( int nXBlockOff, int nYBlockOff,
               float fVal =((float *)pabySrc)[i];
               if( bIsNoDataNan && CPLIsNan(fVal))
                   ((GByte *) pImage)[i] = 0;
-              else if( EQUAL_TO_NODATA(fVal, fNoData) )
+              else if( ARE_REAL_EQUAL(fVal, fNoData) )
                   ((GByte *) pImage)[i] = 0;
               else
                   ((GByte *) pImage)[i] = 255;
@@ -219,7 +223,7 @@ CPLErr GDALNoDataMaskBand::IReadBlock( int nXBlockOff, int nYBlockOff,
               double dfVal =((double *)pabySrc)[i];
               if( bIsNoDataNan && CPLIsNan(dfVal))
                   ((GByte *) pImage)[i] = 0;
-              else if( EQUAL_TO_NODATA(dfVal, dfNoDataValue) )
+              else if( ARE_REAL_EQUAL(dfVal, dfNoDataValue) )
                   ((GByte *) pImage)[i] = 0;
               else
                   ((GByte *) pImage)[i] = 255;
@@ -235,4 +239,48 @@ CPLErr GDALNoDataMaskBand::IReadBlock( int nXBlockOff, int nYBlockOff,
     CPLFree( pabySrc );
 
     return CE_None;
+}
+
+/************************************************************************/
+/*                             IRasterIO()                              */
+/************************************************************************/
+
+CPLErr GDALNoDataMaskBand::IRasterIO( GDALRWFlag eRWFlag,
+                                      int nXOff, int nYOff, int nXSize, int nYSize,
+                                      void * pData, int nBufXSize, int nBufYSize,
+                                      GDALDataType eBufType,
+                                      int nPixelSpace, int nLineSpace )
+{
+    /* Optimization in common use case (#4488) */
+    /* This avoids triggering the block cache on this band, which helps */
+    /* reducing the global block cache consumption */
+    if (eRWFlag == GF_Read && eBufType == GDT_Byte &&
+        poParent->GetRasterDataType() == GDT_Byte &&
+        nXSize == nBufXSize && nYSize == nBufYSize &&
+        nPixelSpace == 1 && nLineSpace == nBufXSize)
+    {
+        CPLErr eErr = poParent->RasterIO( GF_Read, nXOff, nYOff, nXSize, nYSize,
+                                          pData, nBufXSize, nBufYSize,
+                                          eBufType,
+                                          nPixelSpace, nLineSpace );
+        if (eErr != CE_None)
+            return eErr;
+
+        GByte* pabyData = (GByte*) pData;
+        GByte byNoData = (GByte) dfNoDataValue;
+
+        for( int i = nBufXSize * nBufYSize - 1; i >= 0; i-- )
+        {
+            if( pabyData[i] == byNoData )
+                pabyData[i] = 0;
+            else
+                pabyData[i] = 255;
+        }
+        return CE_None;
+    }
+
+    return GDALRasterBand::IRasterIO( eRWFlag, nXOff, nYOff, nXSize, nYSize,
+                                      pData, nBufXSize, nBufYSize,
+                                      eBufType,
+                                      nPixelSpace, nLineSpace );
 }

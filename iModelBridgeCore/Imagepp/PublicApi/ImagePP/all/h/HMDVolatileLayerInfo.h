@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDVolatileLayerInfo.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,20 +10,21 @@
 
 #include "HMDMetaData.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HMDVolatileLayerInfo : public HMDMetaData
     {
-    HDECLARE_CLASS_ID(7006, HMDMetaData);
+    HDECLARE_CLASS_ID(HMDVolatileLayersId_Info, HMDMetaData);
 
 public :
-    _HDLLu HMDVolatileLayerInfo(const HMDLayerInfo* pi_pLayerInfo);
-    _HDLLu virtual ~HMDVolatileLayerInfo();
+    IMAGEPP_EXPORT HMDVolatileLayerInfo(const HMDLayerInfo* pi_pLayerInfo);
+    IMAGEPP_EXPORT virtual ~HMDVolatileLayerInfo();
 
-    _HDLLu HMDVolatileLayerInfo(const HMDVolatileLayerInfo& pi_rObj);
-    _HDLLu HMDVolatileLayerInfo& operator=(const HMDVolatileLayerInfo& pi_rObj);
+    IMAGEPP_EXPORT HMDVolatileLayerInfo(const HMDVolatileLayerInfo& pi_rObj);
+    IMAGEPP_EXPORT HMDVolatileLayerInfo& operator=(const HMDVolatileLayerInfo& pi_rObj);
 
-    _HDLLu const HMDLayerInfo* GetLayerInfo() const;
-    _HDLLu bool               GetVisibleState() const;
-    _HDLLu void                SetVisibleState(bool pi_NewVisibleState);
+    IMAGEPP_EXPORT const HMDLayerInfo* GetLayerInfo() const;
+    IMAGEPP_EXPORT bool               GetVisibleState() const;
+    IMAGEPP_EXPORT void                SetVisibleState(bool pi_NewVisibleState);
 
 protected :
 
@@ -35,3 +36,4 @@ private :
     void CopyMemberData(const HMDVolatileLayerInfo& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

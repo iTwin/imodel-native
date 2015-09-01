@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeV32Float32.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -12,19 +12,20 @@
 
 #include "HRPPixelType.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelTypeV32Float32 : public HRPPixelType
     {
 public:
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1054)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRPPixelTypeId_V32Float32)
 
     // Primary methods
-    _HDLLg                 HRPPixelTypeV32Float32(
+    IMAGEPP_EXPORT                 HRPPixelTypeV32Float32(
         HRPChannelType::ChannelRole pi_Role = HRPChannelType::USER,
         const float*               pi_pNoDataValue = 0);
-    _HDLLg                 HRPPixelTypeV32Float32(const HRPPixelTypeV32Float32& pi_rObj);
+    IMAGEPP_EXPORT                 HRPPixelTypeV32Float32(const HRPPixelTypeV32Float32& pi_rObj);
 
-    _HDLLg virtual         ~HRPPixelTypeV32Float32();
+    IMAGEPP_EXPORT virtual         ~HRPPixelTypeV32Float32();
 
     virtual HPMPersistentObject*
     Clone() const;
@@ -39,3 +40,4 @@ protected:
     virtual const HRPPixelConverter*
     HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const;
     };
+END_IMAGEPP_NAMESPACE

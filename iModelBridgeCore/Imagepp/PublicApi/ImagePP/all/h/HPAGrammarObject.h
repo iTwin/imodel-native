@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAGrammarObject.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPAGrammarObject
@@ -24,6 +24,8 @@
 
 #include <Imagepp/all/h/HPAProduction.h>
 #include <Imagepp/all/h/HPANode.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 typedef list<HPAProduction*> HPAReferingProdList;
 
@@ -73,8 +75,7 @@ private:
     };
 
 
-
-
+END_IMAGEPP_NAMESPACE
 
 #include "HPAGrammarObject.hpp"
 

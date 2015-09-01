@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTransfoModelAdapter.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16,6 +16,7 @@
 #include "HGF2DTransfoModel.h"
 #include "HGF2DLiteExtent.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert 
@@ -36,7 +37,7 @@
 */
 class HGF2DTransfoModelAdapter : public HGF2DTransfoModel
     {
-    HDECLARE_CLASS_ID(1282, HGF2DTransfoModel)
+    HDECLARE_CLASS_ID(HGF2DTransfoModelId_Adapter, HGF2DTransfoModel)
 
 public:
     typedef  list <pair<double, double> > ListOfPoints;
@@ -48,7 +49,7 @@ public:
     const HFCPtr<HGF2DTransfoModel>&
     GetAdaptedTransfoModel() const;
 
-    _HDLLg void     StudyPrecisionOver(const HGF2DLiteExtent& pi_PrecisionArea,
+    IMAGEPP_EXPORT void     StudyPrecisionOver(const HGF2DLiteExtent& pi_PrecisionArea,
                                        double                pi_Step,
                                        double*               po_pMeanError,
                                        double*               po_pMaxError) const;
@@ -97,5 +98,6 @@ template<class T, class U> void StudyPrecision
     double& po_pMaxError
 );
 
+END_IMAGEPP_NAMESPACE
 #include "HGF2DTransfoModelAdapter.hpp"
 

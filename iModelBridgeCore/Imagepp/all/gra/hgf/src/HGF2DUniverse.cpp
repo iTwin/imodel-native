@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DUniverse.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DUniverse
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DUniverse.h>
 #include <Imagepp/all/h/HGF2DDisplacement.h>
@@ -150,6 +150,22 @@ HGF2DShape::SpatialPosition HGF2DUniverse::CalculateSpatialPositionOf(const HGF2
     return (ThePosition);
     }
 
+
+//-----------------------------------------------------------------------------
+// @bsimethod                                                   2014/06
+//-----------------------------------------------------------------------------
+HFCPtr<HGF2DShape> HGF2DUniverse::AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const
+    {
+    return (new HGF2DUniverse(*this));
+    }
+
+//-----------------------------------------------------------------------------
+// @bsimethod                                                   2014/06
+//-----------------------------------------------------------------------------
+HFCPtr<HGF2DShape> HGF2DUniverse::AllocTransformInverse(const HGF2DTransfoModel& pi_rModel) const
+    {
+    return (new HGF2DUniverse(*this));
+    }
 
 //-----------------------------------------------------------------------------
 // PrintState

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteExtent.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,17 +13,9 @@
 
 #pragma once
 
-#include "HFCPtr.h"
-
-
-
 #include "HGF2DPosition.h"
-#if (0)
 
-typedef HGF2DTemplateExtent<double, HGF2DCoord<double> > HGF2DLiteExtent;
-
-#else
-
+BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DLiteExtent
     {
@@ -63,32 +55,32 @@ public:
     double            GetXMax() const;
     double            GetYMax() const;
 
-    void               SetXMin(double    pi_XMin);
-    void               SetYMin(double    pi_YMin);
-    void               SetXMax(double    pi_XMax);
-    void               SetYMax(double    pi_YMax);
+    void              SetXMin(double    pi_XMin);
+    void              SetYMin(double    pi_YMin);
+    void              SetXMax(double    pi_XMax);
+    void              SetYMax(double    pi_YMax);
 
-    HGF2DPosition      GetOrigin() const;
-    HGF2DPosition      GetCorner() const;
+    HGF2DPosition     GetOrigin() const;
+    HGF2DPosition     GetCorner() const;
 
     double            GetWidth() const;
     double            GetHeight() const;
 
-    void               SetOrigin(const HGF2DPosition& pi_rNewOrigin);
-    void               SetCorner(const HGF2DPosition& pi_rNewCorner);
+    void              SetOrigin(const HGF2DPosition& pi_rNewOrigin);
+    void              SetCorner(const HGF2DPosition& pi_rNewCorner);
 
-    void               Set(double pi_X1,
-                           double pi_Y1,
-                           double pi_X2,
-                           double pi_Y2);
+    void              Set(double pi_X1,
+                          double pi_Y1,
+                          double pi_X2,
+                          double pi_Y2);
 
 
-    void               Add (const HGF2DPosition& pi_rLocation);
-    void               Add (const HGF2DLiteExtent& pi_rExtent);
+    void              Add (const HGF2DPosition& pi_rLocation);
+    void              Add (const HGF2DLiteExtent& pi_rExtent);
 
     // Union ...
-    void               Union (const HGF2DLiteExtent& pi_rObj);
-    void               Intersect (const HGF2DLiteExtent& pi_rObj);
+    void              Union (const HGF2DLiteExtent& pi_rObj);
+    void              Intersect (const HGF2DLiteExtent& pi_rObj);
 
     // Overlap determination
     bool              Overlaps(const HGF2DLiteExtent& pi_rObj) const;
@@ -124,8 +116,11 @@ private:
     double         m_XMax;
     double         m_YMax;
 
+    HDEBUGCODE(bool m_initializedXMin;)
+    HDEBUGCODE(bool m_initializedXMax;)
+    HDEBUGCODE(bool m_initializedYMin;)
+    HDEBUGCODE(bool m_initializedYMax;)
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGF2DLiteExtent.hpp"
-
-#endif

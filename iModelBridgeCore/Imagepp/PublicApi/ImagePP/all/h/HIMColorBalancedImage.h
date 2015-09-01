@@ -10,6 +10,8 @@
 
 #include "HRAImageView.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HRPPixelBuffer;
 class HRPHistogram;
 
@@ -27,13 +29,13 @@ class HRPHistogram;
 */
 class HIMColorBalancedImage : public HRAImageView
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1273)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HIMColorBalancedImageId)
 
     friend class HIMColorBalancedImageIterator;
 
 public:
 
-    enum SamplingQuality
+    typedef enum SamplingQuality
         {
         SAMPLING_FAST,
         SAMPLING_NORMAL,
@@ -165,14 +167,10 @@ public:
 
     //:> Overriden methods
     virtual HPMPersistentObject* Clone () const;
-    virtual HRARaster* Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
     virtual HRARasterIterator*
     CreateIterator (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
-
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions);
-
-    virtual void    Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const;
 
     bool           NotifyContentChanged(HMGMessage& pi_rMessage);
 
@@ -220,7 +218,9 @@ public:
 
 protected:
 
-    enum ColorMode
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
+
+    typedef enum ColorMode
         {
         COLORMODE_GRAY,
         COLORMODE_RGB
@@ -415,5 +415,6 @@ private:
     ColorMode       m_ColorMode;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HIMColorBalancedImage.hpp"
 

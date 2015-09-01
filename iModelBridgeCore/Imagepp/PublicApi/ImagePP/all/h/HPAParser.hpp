@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAParser.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Inline methods for class HPAParser
 //---------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -36,3 +38,4 @@ inline void HPAParser::SetStartRule(HPAGrammarObject* pi_pTopRule)
     {
     m_pStartRule = pi_pTopRule;
     }
+END_IMAGEPP_NAMESPACE

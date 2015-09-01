@@ -2,17 +2,16 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABicubicInterpolationSamplerN8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRABiCubicInterpolationSamplerN8.h>
 
 #include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRASurface.h>
 #include <Imagepp/all/h/HRAAveragingGrid.h>
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
@@ -26,35 +25,25 @@
  @param pi_pAttributes
  @param pi_pSurfaceImplementation
 -------------------------------------------------------------------------------*/
-HRABiCubicInterpolationSamplerN8::HRABiCubicInterpolationSamplerN8(const HGSGraphicToolAttributes*     pi_pAttributes,
-                                                                   const HGSSurfaceImplementation*     pi_pSurfaceImplementation,
+HRABiCubicInterpolationSamplerN8::HRABiCubicInterpolationSamplerN8(HGSMemorySurfaceDescriptor const&   pi_rMemorySurface,
                                                                    const HGF2DRectangle&               pi_rSampleDimension)
-    : HRAGenericSampler(pi_pAttributes,
-                        pi_pSurfaceImplementation,
+    : HRAGenericSampler(pi_rMemorySurface,
                         pi_rSampleDimension),
     m_Smoothing(-0.5)
     {
-    HPRECONDITION(pi_pSurfaceImplementation != 0);
-    HPRECONDITION(pi_pSurfaceImplementation->GetSurfaceDescriptor() != 0);
-    HPRECONDITION(pi_pSurfaceImplementation->GetSurfaceDescriptor()->IsCompatibleWith(HGSMemorySurfaceDescriptor::CLASS_ID));
-
-    // compute some useful information
-    const HFCPtr<HGSMemorySurfaceDescriptor>& rpDescriptor = (const HFCPtr<HGSMemorySurfaceDescriptor>&)
-                                                             pi_pSurfaceImplementation->GetSurfaceDescriptor();
-
-    HFCPtr<HRPPixelType> pSourcePixelType(rpDescriptor->GetPixelType());
+    HFCPtr<HRPPixelType> pSourcePixelType(pi_rMemorySurface->GetPixelType());
 
     HPRECONDITION(pSourcePixelType != 0);
     m_SourceBytesPerPixel   = pSourcePixelType->CountPixelRawDataBits() / 8;
     m_BytesPerPixel         = m_SourceBytesPerPixel;
-    m_SourceBytesPerLine    = rpDescriptor->GetBytesPerRow();
-    m_Width                 = rpDescriptor->GetWidth();
-    m_Height                = rpDescriptor->GetHeight();
-    m_SLO4                  = rpDescriptor->GetSLO() == HGF_UPPER_LEFT_HORIZONTAL;
+    m_SourceBytesPerLine    = pi_rMemorySurface->GetBytesPerRow();
+    m_Width                 = pi_rMemorySurface->GetWidth();
+    m_Height                = pi_rMemorySurface->GetHeight();
+    m_SLO4                  = pi_rMemorySurface->GetSLO() == HGF_UPPER_LEFT_HORIZONTAL;
 
 
-    HPRECONDITION(rpDescriptor->GetPacket() != 0);
-    m_pPacket = rpDescriptor->GetPacket();
+    HPRECONDITION(pi_rMemorySurface->GetPacket() != 0);
+    m_pPacket = pi_rMemorySurface->GetPacket();
 
     if (pSourcePixelType->CountIndexBits() > 0 || (pSourcePixelType->CountPixelRawDataBits() % 8) != 0)
         {
@@ -119,7 +108,7 @@ void* HRABiCubicInterpolationSamplerN8::GetPixel(double     pi_PosX,
 
 
     // Clear everything just in case.
-    memset((void*)m_aTempData, 0, 4);
+    memset(m_aTempData, 0, 4);
 
     double Dummy;
     double Dx = modf(pi_PosX, &Dummy);
@@ -216,7 +205,7 @@ void HRABiCubicInterpolationSamplerN8::GetPixels(double         pi_PositionX,
             // Adjust X,Y positions by 1 pixel, because stretch by two will read 2x2 pixels,
             // and the received coordinate represents the sample center.
 
-            StretchByTwo(max(pi_PositionX - 1.0, 0.0), max(pi_PositionY - 1.0, 0.0), pi_PixelCount, (Byte*) po_pBuffer);
+            StretchByTwo(MAX(pi_PositionX - 1.0, 0.0), MAX(pi_PositionY - 1.0, 0.0), pi_PixelCount, (Byte*) po_pBuffer);
             }
         else
             {
@@ -391,7 +380,7 @@ void* HRABiCubicInterpolationSamplerN8::Convoluate(double        pi_CoefX0,
                        (double)*(pMatrix + 9) * m_CoefX0;
 
         Value = m_CoefY3 * Hm1 + CoefY2 * H0 + CoefY1 * Hp1 + CoefY0 * Hp2;
-        *pData = (Byte)max(min(Value, 0.0), 255.0);
+        *pData = (Byte)MAX(MIN(Value, 0.0), 255.0);
         pData++;
         }
 
@@ -409,8 +398,8 @@ Byte* HRABiCubicInterpolationSamplerN8::ComputeAddress(uint32_t pi_PosX,
     HPRECONDITION(pi_PosX <= m_Width);
     HPRECONDITION(pi_PosY <= m_Height);
 
-    pi_PosX = min(pi_PosX, m_Width-1);
-    pi_PosY = min(pi_PosY, m_Height-1);
+    pi_PosX = MIN(pi_PosX, m_Width-1);
+    pi_PosY = MIN(pi_PosY, m_Height-1);
 
     HPRECONDITION(m_pPacket->GetBufferAddress() != 0);
 

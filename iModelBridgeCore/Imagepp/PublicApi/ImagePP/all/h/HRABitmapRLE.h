@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABitmapRLE.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HRABitmapBase.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRADrawOptions;
 class HRABitmapEditor;
 class HCDPacketRLE;
@@ -20,29 +21,20 @@ class HRAClearOptions;
 // ----------------------------------------------------------------------------
 class HRABitmapRLE : public HRABitmapBase
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1744)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRABitmapId_RLE)
 
 public:
 
-    // Primary methods
-    HRABitmapRLE(bool                          pi_Resizable = false);
+    IMAGEPP_EXPORT static HFCPtr<HRABitmapRLE> Create(uint32_t                       pi_WidthPixels,
+                                                     uint32_t                       pi_HeightPixels,
+                                                     const HGF2DTransfoModel*       pi_pModelCSp_CSl,
+                                                     const HFCPtr<HGF2DCoordSys>&   pi_rpLogicalCoordSys,
+                                                     const HFCPtr<HRPPixelType>&    pi_rpPixel,
+                                                     bool                           pi_Resizable = false);
 
-    _HDLLg              HRABitmapRLE(uint32_t                       pi_WidthPixels,
-                                     uint32_t                       pi_HeightPixels,
-                                     const HGF2DTransfoModel*       pi_pModelCSp_CSl,
-                                     const HFCPtr<HGF2DCoordSys>&   pi_rpLogicalCoordSys,
-                                     const HFCPtr<HRPPixelType>&    pi_rpPixel,
-                                     SLO                            pi_SLO = UPPER_LEFT_HORIZONTAL,
-                                     bool                          pi_Resizable = false);
-
-    _HDLLg              HRABitmapRLE   (const HRABitmapRLE& pi_rObj);
-
-    _HDLLg virtual      ~HRABitmapRLE  ();
-
-    HRABitmapRLE&      operator=(const HRABitmapRLE& pi_rBitmap);
 
     virtual HPMPersistentObject* Clone () const;
-    virtual HRARaster* Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
     // Inherited from HRARaster
     virtual HRARasterEditor*
@@ -84,19 +76,40 @@ public:
                          HFCPtr<HRPPixelType>* po_ppOutputPixelType = 0) const override;
     virtual void    Updated(const HVEShape* pi_pModifiedContent = 0) override;
 
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions) override;
-
-    virtual void    Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const override;
-
     // packets and codecs
     virtual const HFCPtr<HCDCodec>&
     GetCodec() const override;
 
-    _HDLLg const HFCPtr<HCDPacketRLE>& GetPacket() const;
+    IMAGEPP_EXPORT const HFCPtr<HCDPacketRLE>& GetPacket() const;
+    IMAGEPP_EXPORT       HFCPtr<HCDPacket> GetContiguousBuffer() const;
+
 
     bool           NotifyPaletteChanged (const HMGMessage& pi_rMessage);
 
+    virtual HRABitmapRLE* _AsHRABitmapRleP() override;
+
 protected:
+
+    // Primary methods
+    HRABitmapRLE(bool                          pi_Resizable = false);
+    
+    HRABitmapRLE(uint32_t                       pi_WidthPixels,
+                 uint32_t                       pi_HeightPixels,
+                 const HGF2DTransfoModel*       pi_pModelCSp_CSl,
+                 const HFCPtr<HGF2DCoordSys>&   pi_rpLogicalCoordSys,
+                 const HFCPtr<HRPPixelType>&    pi_rpPixel,
+                 bool                          pi_Resizable = false);
+
+    HRABitmapRLE& operator=(const HRABitmapRLE& pi_rBitmap);
+    HRABitmapRLE   (const HRABitmapRLE& pi_rObj);
+
+    virtual      ~HRABitmapRLE  ();
+
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
+
+    virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
+
+    virtual ImageSinkNodePtr _GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType) override;        
 
     // surface descriptor
     virtual HFCPtr<HGSSurfaceDescriptor>
@@ -112,16 +125,10 @@ private:
     // Methods
     void            DeepCopy(const HRABitmapRLE& pi_rBitmap);
     void            DeepDelete();
-    void            StretchWithHGS(HGFMappedSurface*                pio_pSurface,
-                                   const HRADrawOptions*            pi_pOptions,
-                                   const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel) const;
-
-    void            WarpWithHGS(HGFMappedSurface*                   pio_pSurface,
-                                const HRADrawOptions*               pi_pOptions,
-                                const HFCPtr<HGF2DTransfoModel>&    pi_rpTransfoModel) const;
 
     void            ComputeHistogramRLE      (HRAHistogramOptions* pio_pOptions);
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLg)
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT)
     };
 
+END_IMAGEPP_NAMESPACE

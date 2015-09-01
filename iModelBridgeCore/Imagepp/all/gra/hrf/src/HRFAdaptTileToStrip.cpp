@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptTileToStrip.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptTileToStrip
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCAccessMode.h>
 
@@ -117,9 +117,9 @@ HRFAdaptTileToStrip::~HRFAdaptTileToStrip()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptTileToStrip::ReadBlock(uint32_t pi_PosBlockX,
-                                       uint32_t pi_PosBlockY,
-                                       Byte* po_pData,
+HSTATUS HRFAdaptTileToStrip::ReadBlock(uint64_t pi_PosBlockX,
+                                       uint64_t pi_PosBlockY,
+                                       Byte*  po_pData,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
@@ -134,8 +134,8 @@ HSTATUS HRFAdaptTileToStrip::ReadBlock(uint32_t pi_PosBlockX,
 
     HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
 
-    if (pi_PosBlockY+(m_TilePerBlock*m_TileHeight) > (uint32_t)m_pResolutionDescriptor->GetHeight())
-        CurrentTilePerBlock = ((uint32_t)m_pResolutionDescriptor->GetHeight() - pi_PosBlockY + m_TileHeight - 1) / m_TileHeight;
+    if (pi_PosBlockY+(m_TilePerBlock*m_TileHeight) > m_pResolutionDescriptor->GetHeight())
+        CurrentTilePerBlock = ((uint32_t)m_pResolutionDescriptor->GetHeight() - (uint32_t)pi_PosBlockY + m_TileHeight - 1) / m_TileHeight;
 
     // Lock the sister file
     HFCLockMonitor SisterFileLock;
@@ -161,8 +161,8 @@ HSTATUS HRFAdaptTileToStrip::ReadBlock(uint32_t pi_PosBlockX,
         for (uint32_t NoRow=0; (NoRow< CurrentTilePerBlock) && (Status == H_SUCCESS); NoRow++)
             {
             // Check if the block exist in the file, before read it
-            uint32_t YPos = pi_PosBlockY+(NoRow*m_TileHeight);
-            if (YPos <= (uint32_t)m_pResolutionDescriptor->GetHeight())
+            uint32_t YPos = (uint32_t)pi_PosBlockY+(NoRow*m_TileHeight);
+            if (YPos <= m_pResolutionDescriptor->GetHeight())
                 Status = m_pAdaptedResolutionEditor->ReadBlock(NoCol*m_TileWidth, YPos, m_pTile, pi_pSisterFileLock);
             else
                 NoRow = m_TilePerBlock;        // exit
@@ -191,9 +191,9 @@ HSTATUS HRFAdaptTileToStrip::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptTileToStrip::WriteBlock(uint32_t     pi_PosBlockX,
-                                        uint32_t     pi_PosBlockY,
-                                        const Byte* pi_pData,
+HSTATUS HRFAdaptTileToStrip::WriteBlock(uint64_t     pi_PosBlockX,
+                                        uint64_t     pi_PosBlockY,
+                                        const Byte*  pi_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -212,7 +212,7 @@ HSTATUS HRFAdaptTileToStrip::WriteBlock(uint32_t     pi_PosBlockX,
 
     if (pi_PosBlockY+(m_TilePerBlock*m_TileHeight) > ResolutionHeight)
         {
-        CurrentTilePerBlock = (ResolutionHeight - pi_PosBlockY + m_TileHeight - 1) / m_TileHeight;
+        CurrentTilePerBlock = (ResolutionHeight - (uint32_t)pi_PosBlockY + m_TileHeight - 1) / m_TileHeight;
         LastLineOfTile = true;
         }
 
@@ -248,7 +248,7 @@ HSTATUS HRFAdaptTileToStrip::WriteBlock(uint32_t     pi_PosBlockX,
             uint32_t NumberOfScanLinesToCopy;
             if (LastLineOfTile && (NoRow == (CurrentTilePerBlock - 1)))
                 {
-                NumberOfScanLinesToCopy = ResolutionHeight - (pi_PosBlockY + (NoRow*m_TileHeight));
+                NumberOfScanLinesToCopy = ResolutionHeight - ((uint32_t)pi_PosBlockY + (NoRow*m_TileHeight));
                 // The strip don't fill the tile completely, init it
                 memset(m_pTile, 0, m_TileSize);
                 }

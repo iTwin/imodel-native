@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCProfiler.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Start counting
 //-----------------------------------------------------------------------------
@@ -137,3 +137,5 @@ __forceinline void HFCProfiler::Stop(int pi_CounterID, LARGE_INTEGER pi_Start)
 #define HFCPROFILER_RETURN_INTERNAL(x) \
     HFCProfiler::GetInstance()->Stop(HFC_PROFILER_Counter_ID, HFC_PROFILER_Counter_Start); \
     return (x);
+
+END_IMAGEPP_NAMESPACE

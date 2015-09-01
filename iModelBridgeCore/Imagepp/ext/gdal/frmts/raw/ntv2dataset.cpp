@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ntv2dataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: ntv2dataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  Horizontal Datum Formats
  * Purpose:  Implementation of NTv2 datum shift format used in Canada, France, 
@@ -9,6 +9,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2010, Frank Warmerdam
+ * Copyright (c) 2010-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@
 #include "cpl_string.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ntv2dataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: ntv2dataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 /** 
  * The header for the file, and each grid consists of 11 16byte records.
@@ -86,7 +87,7 @@ class NTv2Dataset : public RawDataset
     VSILFILE	*fpImage;	// image data file.
 
     int         nRecordLength;
-    int         nGridOffset;
+    vsi_l_offset nGridOffset;
     
     double      adfGeoTransform[6];
 
@@ -180,6 +181,8 @@ void NTv2Dataset::FlushCache()
     {
         char *pszKey = NULL;
         const char *pszValue = CPLParseNameValue( papszMD[i], &pszKey );
+        if( pszKey == NULL )
+            continue;
 
         if( EQUAL(pszKey,"GS_TYPE") )
         {
@@ -525,8 +528,8 @@ int NTv2Dataset::OpenGrid( char *pachHeader, vsi_l_offset nGridOffset )
         SetBand( iBand+1, poBand );
     }
     
-    GetRasterBand(1)->SetDescription( "Latitude Offset" );
-    GetRasterBand(2)->SetDescription( "Longitude Offset" );
+    GetRasterBand(1)->SetDescription( "Latitude Offset (arc seconds)" );
+    GetRasterBand(2)->SetDescription( "Longitude Offset (arc seconds)" );
     GetRasterBand(3)->SetDescription( "Latitude Error" );
     GetRasterBand(4)->SetDescription( "Longitude Error" );
     
@@ -655,7 +658,7 @@ const char *NTv2Dataset::GetProjectionRef()
 /************************************************************************/
 
 GDALDataset *NTv2Dataset::Create( const char * pszFilename,
-                                  int nXSize, int nYSize, int nBands,
+                                  int nXSize, int nYSize, CPL_UNUSED int nBands,
                                   GDALDataType eType,
                                   char ** papszOptions )
 
@@ -824,10 +827,10 @@ GDALDataset *NTv2Dataset::Create( const char * pszFilename,
     memset( achHeader, 0, 16 );
 
     // Use -1 (0x000080bf) as the default error value.
-    achHeader[10] = 0x80;
-    achHeader[11] = 0xbf;
-    achHeader[14] = 0x80;
-    achHeader[15] = 0xbf;
+    memset( achHeader + 10, 0x80, 1 );
+    memset( achHeader + 11, 0xbf, 1 );
+    memset( achHeader + 14, 0x80, 1 );
+    memset( achHeader + 15, 0xbf, 1 );
 
     for( i = 0; i < nXSize * nYSize; i++ )
         VSIFWriteL( achHeader, 1, 16, fp );
@@ -868,7 +871,7 @@ void GDALRegister_NTv2()
                                    "NTv2 Datum Grid Shift" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "gsb" );
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
-
+        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
                                    "Float32" );
 

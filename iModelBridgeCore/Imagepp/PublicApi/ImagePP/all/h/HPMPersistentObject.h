@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMPersistentObject.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPMPersistentObject
@@ -11,6 +11,8 @@
 
 #include "HFCPtr.h"
 #include "HPMClassKey.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HPMObjectStore;
 class HFCExclusiveKey;
@@ -52,17 +54,12 @@ public:
 
     void                         IncrementRef();
     void                         DecrementRef();
-    int32_t                     GetRefCount() const;
-
-    //:> Sometimes required to share access to the internal key
-
-    HFCExclusiveKey*             GetHFCPtrKey() const;
+    uint32_t                     GetRefCount() const;
 
 private:
 
-    uint32_t                     m_RefCount;
-    HFCExclusiveKey              m_Key;
-
+    BeAtomic<uint32_t>    m_RefCount;
+    //HFCExclusiveKey              m_Key;
     };
 
 /**--------------------------------------------------------------------------
@@ -241,32 +238,32 @@ public:
 
     //:> Primary methods
 
-    _HDLLu                      HPMPersistentObject();
-    _HDLLu                      HPMPersistentObject(const HPMPersistentObject& pi_rObj);
-    _HDLLu virtual              ~HPMPersistentObject();
-    _HDLLu HPMPersistentObject& operator=(const HPMPersistentObject& pi_rObj);
+    IMAGEPP_EXPORT                      HPMPersistentObject();
+    IMAGEPP_EXPORT                      HPMPersistentObject(const HPMPersistentObject& pi_rObj);
+    IMAGEPP_EXPORT virtual              ~HPMPersistentObject();
+    IMAGEPP_EXPORT HPMPersistentObject& operator=(const HPMPersistentObject& pi_rObj);
 
     //:> Identification of object
 
     HPMObjectID                         GetID() const;
     void                                SetID(HPMObjectID pi_ObjectID);
     virtual HCLASS_ID                   GetClassID() const;
-    _HDLLu virtual bool                 IsCompatibleWith(HCLASS_ID pi_ClassID) const;
+    IMAGEPP_EXPORT virtual bool                 IsCompatibleWith(HCLASS_ID pi_ClassID) const;
     
     //:> Link to a store
 
-    _HDLLu HPMObjectStore* GetStore() const;
-    _HDLLu void           SetStore(HPMObjectStore* pi_pStore);
+    IMAGEPP_EXPORT HPMObjectStore* GetStore() const;
+    IMAGEPP_EXPORT void           SetStore(HPMObjectStore* pi_pStore);
 
     //:> Persistence methods
-    _HDLLu void           Save();
+    IMAGEPP_EXPORT void           Save();
 
     //:> State management
-    _HDLLu virtual HPMPersistentObject* Clone() const;
+    IMAGEPP_EXPORT virtual HPMPersistentObject* Clone() const;
 
     //:> Utility
     virtual size_t        GetObjectSize() const = 0;
-    _HDLLu virtual size_t GetAdditionalSize() const;
+    IMAGEPP_EXPORT virtual size_t GetAdditionalSize() const;
     void                  SetModificationState(bool pi_State = true);
     bool                  ToBeSaved() const;
     void                  SetTimestamp(uint32_t pi_Timestamp);
@@ -287,7 +284,7 @@ private:
     bool                    m_ToBeSaved;
     };
 
-
+END_IMAGEPP_NAMESPACE
 
 //---------------------------------------------------------------------------
 // These inclusions made here allow including only this file where

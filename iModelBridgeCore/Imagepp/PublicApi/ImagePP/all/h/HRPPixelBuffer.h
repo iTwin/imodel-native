@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelBuffer.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelBuffer
@@ -11,6 +11,7 @@
 
 #include "HRPPixelNeighbourhood.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelType;
 
 class HRPPixelBuffer
@@ -30,7 +31,7 @@ public:
                    const double*       pi_pPositionsX = 0,
                    const double*       pi_pPositionsY = 0);
 
-    _HDLLg                     HRPPixelBuffer(const HRPPixelType&  pi_rPixelType,
+    IMAGEPP_EXPORT                     HRPPixelBuffer(const HRPPixelType&  pi_rPixelType,
                                               void*                pio_pRawDataPtr,
                                               uint32_t             pi_Width,
                                               uint32_t             pi_Height,
@@ -45,7 +46,7 @@ public:
     HRPPixelBuffer(const HRPPixelType&  pi_rpPixelType);
 
 
-    _HDLLg virtual                ~HRPPixelBuffer();
+    IMAGEPP_EXPORT virtual                ~HRPPixelBuffer();
 
 
     // Buffer settings
@@ -131,6 +132,7 @@ private:
     uint32_t                m_RightBorderPaddingBytes;
     uint32_t                m_BottomBorderPaddingBytes;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRPPixelBuffer.hpp"
 

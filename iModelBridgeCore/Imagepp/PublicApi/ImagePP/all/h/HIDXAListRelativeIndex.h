@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXAListRelativeIndex.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIDXAListRelativeIndex
@@ -18,7 +18,7 @@
 #include "HIDXSearchCriteria.h"
 #include "HIDXAListRelativeAttribute.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 template <class O, class SI = DefaultSubIndexType<O> > class HIDXAListRelativeIndex
     {
@@ -136,7 +136,7 @@ private:
     const SI*       m_pSubIndex;
     };
 
-
+END_IMAGEPP_NAMESPACE
 
 #include "HIDXAListRelativeIndex.hpp"
 

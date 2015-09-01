@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecCCITT.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,11 +14,12 @@
 #pragma once
 
 #include "HCDCodecImage.h"
-#include "ImageppLib.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HCDCodecCCITT : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1180, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_CCITT, HCDCodecImage)
 
 public:
 
@@ -32,10 +33,10 @@ public:
 
     virtual double GetEstimatedCompressionRatio() const;
 
-    _HDLLu void     SetPhotometric(unsigned short pi_Photo);
+    IMAGEPP_EXPORT void     SetPhotometric(unsigned short pi_Photo);
     unsigned short GetPhotometric() const;
 
-    _HDLLu void     SetBitRevTable(bool pi_Reverse);
+    IMAGEPP_EXPORT void     SetBitRevTable(bool pi_Reverse);
 
 protected:
     
@@ -50,3 +51,4 @@ protected:
     unsigned short m_photometric;
     };
 
+END_IMAGEPP_NAMESPACE

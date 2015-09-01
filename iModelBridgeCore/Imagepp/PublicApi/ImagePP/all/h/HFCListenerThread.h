@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCListenerThread.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16,6 +16,8 @@
 #include "HAutoPtr.h"
 #include "HFCThread.h"
 #include "HFCEvent.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 template <class T>
 class HFCListenerThread : public HFCThread
@@ -63,6 +65,8 @@ private:
     unsigned short m_Port;
     HFCThread*      m_pStarterThread;
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCListenerThread.hpp"
 

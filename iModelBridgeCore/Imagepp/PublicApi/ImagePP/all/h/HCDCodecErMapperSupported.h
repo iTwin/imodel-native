@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecErMapperSupported.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecECW
@@ -13,19 +13,21 @@
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecErMapperSupported : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1670, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_ErMapperSupported, HCDCodecImage)
 
 public:
 
     // primary methods
-    _HDLLu          HCDCodecErMapperSupported();
-    _HDLLu          HCDCodecErMapperSupported(const HCDCodecErMapperSupported& pi_rObj);
-    _HDLLu virtual  ~HCDCodecErMapperSupported();
+    IMAGEPP_EXPORT          HCDCodecErMapperSupported();
+    IMAGEPP_EXPORT          HCDCodecErMapperSupported(const HCDCodecErMapperSupported& pi_rObj);
+    IMAGEPP_EXPORT virtual  ~HCDCodecErMapperSupported();
 
-    _HDLLu void     SetCompressionRatio(unsigned short pi_Ratio);
-    _HDLLu unsigned short GetCompressionRatio() const;
+    IMAGEPP_EXPORT void     SetCompressionRatio(unsigned short pi_Ratio);
+    IMAGEPP_EXPORT unsigned short GetCompressionRatio() const;
 
     // overriden methods
     virtual HCDCodec* Clone() const override;
@@ -51,3 +53,5 @@ private :
     unsigned short m_CompressionRatio;
 
     };
+
+END_IMAGEPP_NAMESPACE

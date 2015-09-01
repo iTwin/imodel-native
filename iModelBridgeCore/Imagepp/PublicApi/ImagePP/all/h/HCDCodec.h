@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodec.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,6 +14,8 @@
 #pragma once
 
 #include <Imagepp/all/h/HFCExclusiveKey.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HCDPacketRLE;
 
@@ -28,7 +30,7 @@ public:
 class HNOVTABLEINIT HCDCodec : public HFCShareableObject<HCDCodec>,
     public HFCExclusiveKey     // to have access to claim/release instead of including m_Key and adding the methods
     {
-    HDECLARE_BASECLASS_ID(1136)
+    HDECLARE_BASECLASS_ID(HCDCodecId_Base)
 
 public:
 
@@ -93,3 +95,4 @@ private:
     State          m_CurrentState;
     };
 
+END_IMAGEPP_NAMESPACE

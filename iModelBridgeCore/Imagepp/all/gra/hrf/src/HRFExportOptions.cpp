@@ -2,20 +2,22 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFExportOptions.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class: HRFExportOptions
 // ----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFExportOptions.h>
 #include <Imagepp/all/h/HPMPersistentObject.h>
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCDCodecFactory.h>
+
+
 
 /** -----------------------------------------------------------------------------
     HRFExportOptions default constructor defined of persitense only.
@@ -68,7 +70,7 @@ HRFExportOptions::HRFExportOptions()
 
     m_Encoding                  = HRFEncodingType::STANDARD;
     m_GeoreferenceFormat        = HRFGeoreferenceFormat::GEOREFERENCE_IN_IMAGE;
-    m_pGeocoding                = NULL;
+    m_pGeocoding                = RasterFileGeocoding::Create();
     }
 
 /** -----------------------------------------------------------------------------
@@ -137,7 +139,7 @@ HRFExportOptions::HRFExportOptions(const HRFRasterFileCreator*  pi_pFileFormat,
                                    HRFGeoreferenceFormat        pi_GeoreferenceFormat,
                                    uint32_t                    pi_CompressionRatio,
                                    uint32_t                    pi_SubResCompressionRatio,
-                                   IRasterBaseGcsPtr            pi_pGeocoding)
+                                   IRasterBaseGcsP              pi_pGeocoding)
     {
     m_pFileFormat               = const_cast<HRFRasterFileCreator*> (pi_pFileFormat);
 
@@ -176,7 +178,7 @@ HRFExportOptions::HRFExportOptions(const HRFRasterFileCreator*  pi_pFileFormat,
     m_ScaleFactorY              = pi_ScaleFactorY;
     m_Encoding                  = pi_Encoding;
     m_GeoreferenceFormat        = pi_GeoreferenceFormat;
-    m_pGeocoding                = pi_pGeocoding;
+    m_pGeocoding                = RasterFileGeocoding::Create(pi_pGeocoding);
 
     // Set all the tags.
     HPMAttributeSet::HPMASiterator TagIterator;
@@ -257,7 +259,7 @@ HRFExportOptions::HRFExportOptions(const HRFRasterFileCreator*  pi_pFileFormat,
                                    HRFGeoreferenceFormat        pi_GeoreferenceFormat,
                                    uint32_t                    pi_CompressionRatio,
                                    uint32_t                    pi_SubResCompressionRatio,
-                                   IRasterBaseGcsPtr            pi_pGeocoding)
+                                   IRasterBaseGcsP              pi_pGeocoding)
     {
     HPRECONDITION(pi_rpCodec != 0);
     HPRECONDITION(pi_rpSubResCodec != 0);
@@ -296,7 +298,7 @@ HRFExportOptions::HRFExportOptions(const HRFRasterFileCreator*  pi_pFileFormat,
 
     m_Encoding                  = pi_Encoding;
     m_GeoreferenceFormat        = pi_GeoreferenceFormat;
-    m_pGeocoding                = pi_pGeocoding;
+    m_pGeocoding                = RasterFileGeocoding::Create(pi_pGeocoding);
 
     // Set all the tags.
     HPMAttributeSet::HPMASiterator TagIterator;
@@ -382,7 +384,7 @@ void HRFExportOptions::DeepCopy(const HRFExportOptions& pi_rExportOptions)
     m_Encoding                  = pi_rExportOptions.m_Encoding;
     m_GeoreferenceFormat        = pi_rExportOptions.m_GeoreferenceFormat;
     m_ListOfMetaDataContainer   = pi_rExportOptions.m_ListOfMetaDataContainer;
-    m_pGeocoding                = pi_rExportOptions.m_pGeocoding;
+    m_pGeocoding                = pi_rExportOptions.m_pGeocoding->Clone();
 
     // Set all the tags.
     HPMAttributeSet::HPMASiterator TagIterator;
@@ -428,9 +430,9 @@ bool HRFExportOptions::operator==(HRFExportOptions& pi_rExportOptions) const
         (m_CompressionRatio            == pi_rExportOptions.m_CompressionRatio           ) &&
         (m_SubResCompressionRatio      == pi_rExportOptions.m_SubResCompressionRatio     ) &&
         ((m_pGeocoding                 == pi_rExportOptions.m_pGeocoding) ||
-         ((m_pGeocoding != NULL) && (pi_rExportOptions.m_pGeocoding != NULL) && 
-          (m_pGeocoding->IsValid()) && (pi_rExportOptions.m_pGeocoding->IsValid()) &&  
-          (m_pGeocoding->IsEquivalent(*(pi_rExportOptions.m_pGeocoding))))               ))
+         ((m_pGeocoding->GetGeocodingCP() != NULL) && (pi_rExportOptions.m_pGeocoding->GetGeocodingCP() != NULL) && 
+          (m_pGeocoding->GetGeocodingCP()->IsValid()) && (pi_rExportOptions.m_pGeocoding->GetGeocodingCP()->IsValid()) &&  
+          (m_pGeocoding->GetGeocodingCP()->IsEquivalent(*(pi_rExportOptions.m_pGeocoding->GetGeocodingCP()))))               ))
         {
         // !!!! HChckSebG !!!!
         // Check also for taglist equality ???? if m_TagList;
@@ -718,9 +720,9 @@ HRFGeoreferenceFormat HRFExportOptions::GetGeoreferenceFormat() const
              if no geocoding is specified.
     -----------------------------------------------------------------------------
 */
-IRasterBaseGcsPtr HRFExportOptions::GetGeocoding() const
+RasterFileGeocoding const& HRFExportOptions::GetRasterFileGeocoding() const
     {
-    return m_pGeocoding;
+    return *m_pGeocoding;
     }
 
 
@@ -1088,8 +1090,8 @@ void HRFExportOptions::SetGeoreferenceFormat (HRFGeoreferenceFormat pi_Georefere
                         no geocoding is specified.
     -----------------------------------------------------------------------------
 */
-void HRFExportOptions::SetGeocoding (IRasterBaseGcsPtr pi_pGeocoding)
+void HRFExportOptions::SetRasterFileGeocoding (RasterFileGeocoding& pi_pGeocoding)
     {
-    m_pGeocoding = pi_pGeocoding;
+    m_pGeocoding = &pi_pGeocoding;
     }
 

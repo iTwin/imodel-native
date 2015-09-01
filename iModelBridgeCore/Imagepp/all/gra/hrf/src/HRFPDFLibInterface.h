@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPDFLibInterface.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -15,6 +15,7 @@
 #include <Imagepp/all/h/HMDVolatileLayers.h>
 #include <Imagepp/all/h/HGF2DCoordSys.h> 
 #include <Imagepp/all/h/HGF2DPosition.h>
+#include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
 
 
 class HVE2DVector;
@@ -69,6 +70,9 @@ public :
                                       uint32_t&     po_rHeight,
                                       double&    po_rDPI);
 
+    static void     GetMaxResolutionSize(const PDDoc pi_pDoc, uint32_t pi_Page, double dpiConvertScaleFactor, uint32_t& po_maxResSize);
+
+
     static Editor*  CreateEditor     (const PDDoc pi_pDoc,
                                       uint32_t    pi_Page,
                                       double     pi_ResolutionFactor);
@@ -85,7 +89,7 @@ public :
                                       Byte*                     po_pData);
 
     static bool    ReadBlockByExtent(Editor*                    pi_pEditor,
-        bool                      pi_UseDrawContentToMem,
+                                      bool                      pi_UseDrawContentToMem,
                                       uint32_t                 pi_PosX,
                                       uint32_t                 pi_PosY,
                                       uint32_t                 pi_Width,
@@ -114,6 +118,11 @@ public :
                                                   IRasterBaseGcsPtr&            po_rpGeocoding,
                                                   HFCPtr<HGF2DTransfoModel>&    po_rpGeoreference);
 
+    static void     GetDimensionForDWGUnderlay(const PDDoc                pi_pDoc,
+                                               uint32_t                  pi_Page,
+                                               double&                    po_xDimension, 
+                                               double&                    po_yDimension);     
+
 private :
 
     static bool    GetGeocodingReferenceFromImage(const PDPage&                     pi_rPage,
@@ -134,7 +143,7 @@ private :
                                     double                        pi_VPMaxX,
                                     double                        pi_VPMaxY,
                                     double                        pi_PageRotation,
-                                    IRasterBaseGcsPtr&            pi_rpGeocoding,
+                                    IRasterBaseGcsCP              pi_rpGeocoding,
                                     HFCPtr<HGF2DTransfoModel>&    po_rpGeoreference);
 
     static void     CreateGeocodingFromWKT(const string&          pi_rWKT,

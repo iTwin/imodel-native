@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DLiteQuadrilateral.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HGF2DLiteQuadrilateral.h>
 
 /*---------------------------------------------------------------------------------**//**
@@ -25,8 +25,8 @@ HGF2DLiteQuadrilateral::HGF2DLiteQuadrilateral
 )
     {
     // Compute extent before centering the quadrilatere
-    HGF2DPosition Origin(min(min(pi_x0,pi_x1), min(pi_x2,pi_x3)), min(min(pi_y0,pi_y1), min(pi_y2,pi_y3)));
-    HGF2DPosition Corner(max(max(pi_x0,pi_x1), max(pi_x2,pi_x3)), max(max(pi_y0,pi_y1), max(pi_y2,pi_y3)));
+    HGF2DPosition Origin(MIN(MIN(pi_x0,pi_x1), MIN(pi_x2,pi_x3)), MIN(MIN(pi_y0,pi_y1), MIN(pi_y2,pi_y3)));
+    HGF2DPosition Corner(MAX(MAX(pi_x0,pi_x1), MAX(pi_x2,pi_x3)), MAX(MAX(pi_y0,pi_y1), MAX(pi_y2,pi_y3)));
     m_Extent = HGF2DLiteExtent(Origin, Corner);
 
     // Compute the quadrilateral centroid

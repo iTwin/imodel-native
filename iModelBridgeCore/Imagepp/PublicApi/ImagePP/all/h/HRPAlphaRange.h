@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPAlphaRange.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPAlphaRange
@@ -13,26 +13,27 @@
 
 #include "HGFColorSet.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPAlphaRange : public HFCShareableObject<HRPAlphaRange>
     {
-    HDECLARE_SEALEDCLASS_ID(1212)
+    HDECLARE_SEALEDCLASS_ID(HRPAlphaRangeId_Base)
 
 public:
 
     // primary methods
-    _HDLLg HRPAlphaRange();
-    _HDLLg HRPAlphaRange(  Byte pi_RedMin,    // constructor kept for compatibility purposes
+    IMAGEPP_EXPORT HRPAlphaRange();
+    IMAGEPP_EXPORT HRPAlphaRange(  Byte pi_RedMin,    // constructor kept for compatibility purposes
                            Byte pi_RedMax,
                            Byte pi_GreenMin,
                            Byte pi_GreenMax,
                            Byte pi_BlueMin,
                            Byte pi_BlueMax,
                            Byte pi_AlphaValue);
-    _HDLLg HRPAlphaRange(HFCPtr<HGFColorSet>& pi_pSet, Byte pi_AlphaValue);
-    _HDLLg HRPAlphaRange(const HRPAlphaRange& pi_rObj);
+    IMAGEPP_EXPORT HRPAlphaRange(HFCPtr<HGFColorSet>& pi_pSet, Byte pi_AlphaValue);
+    IMAGEPP_EXPORT HRPAlphaRange(const HRPAlphaRange& pi_rObj);
 
     // Overriden methods
-    _HDLLg HRPAlphaRange&  operator=(const HRPAlphaRange& pi_rObj);
+    IMAGEPP_EXPORT HRPAlphaRange&  operator=(const HRPAlphaRange& pi_rObj);
     HRPAlphaRange* Clone() const;
 
     // added methods
@@ -64,6 +65,7 @@ private:
 
 typedef vector<HRPAlphaRange, allocator<HRPAlphaRange> >
 ListHRPAlphaRange;
+END_IMAGEPP_NAMESPACE
 
 #include "HRPAlphaRange.hpp"
 

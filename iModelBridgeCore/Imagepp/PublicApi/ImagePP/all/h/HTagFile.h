@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTagFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,6 +18,7 @@
 #include "HFCBinStreamLockManager.h"
 #include "HFCMonitor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HTIFFDirectory;
 
 
@@ -56,17 +57,17 @@ public:
 
     typedef uint32_t DirectoryID;
 
-    static uint32_t             GetDirCountCapacity            ();
+    IMAGEPP_EXPORT static uint32_t             GetDirCountCapacity            ();
 
     static DirectoryID          MakeDirectoryID                (DirectoryType pi_DirectoryID, uint32_t pi_DirNum);
     static uint32_t             GetDirectoryNum                (DirectoryID pi_DirectoryID);
     static DirectoryType        GetDirectoryType               (DirectoryID pi_DirectoryID);
 
-    virtual                     ~HTagFile                      ();
+    IMAGEPP_EXPORT virtual                     ~HTagFile                      ();
 
     bool                       IsValid                        (HTIFFError**  po_ppError=0) const;
 
-    void                        Save                           ();
+    IMAGEPP_EXPORT void                Save                           ();
 
 
     HFCPtr<HFCURL>              GetURL                         () const;
@@ -79,24 +80,24 @@ public:
 
     void                        SetAsBigEndian                 (bool pi_AsBigEndian = true);
 
-    HFCBinStream*               GetFilePtr                     () const;
+    IMAGEPP_EXPORT HFCBinStream*        GetFilePtr                     () const;
     // Returns a pointer on the HFCBinStreamLockManager object.
     HFCBinStreamLockManager*    GetLockManager                 () const;
 
     //HFCAccessMode               GetAccessMode                  () const;
 
-    _HDLLg uint32_t             NumberOfDirectory              (HTagFile::DirectoryType pi_DirType = STANDARD) const;
+    IMAGEPP_EXPORT uint32_t             NumberOfDirectory              (HTagFile::DirectoryType pi_DirType = STANDARD) const;
 
-    bool                       AppendDirectory                ();
+    IMAGEPP_EXPORT bool        AppendDirectory                ();
     bool                       AddHMRDirectory                (HTagID pi_HMRTag);
 
-    _HDLLg bool                SetDirectory                   (DirectoryID pi_DirID);
+    IMAGEPP_EXPORT bool                SetDirectory                   (DirectoryID pi_DirID);
     DirectoryID                 CurrentDirectory               () const;
 
     uint64_t                   DirectoryOffset                (DirectoryID pi_DirID) const;
 
     void                        PrintCurrentDirectory          (FILE* po_pOutput, uint32_t pi_Flag);
-    _HDLLg void                 PrintDirectory                 (FILE* po_pOutput, DirectoryID pi_Dir, uint32_t pi_Flag);
+    IMAGEPP_EXPORT void                 PrintDirectory                 (FILE* po_pOutput, DirectoryID pi_Dir, uint32_t pi_Flag);
 
 
     const char*                 GetTagNameString               (HTagID pi_Tag) const;
@@ -127,8 +128,8 @@ public:
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Val);
     bool                       SetField                       (HTagID pi_Tag, double pi_Val);
     bool                       SetField                       (HTagID pi_Tag, uint64_t pi_Val);
-    bool                       SetField                       (HTagID pi_Tag, const char* pi_pVal);
-    bool                       SetField                       (HTagID pi_Tag, const WChar* pi_pVal);
+    bool                       SetFieldA                      (HTagID pi_Tag, const char* pi_pVal);
+    bool                       SetFieldW                      (HTagID pi_Tag, const WChar* pi_pVal);
     bool                       SetField                       (HTagID pi_Tag, unsigned short pi_Val1, unsigned short pi_Val2);
 
     bool                       SetField                       (HTagID pi_Tag, uint32_t pi_Count, const Byte* pi_pVal);
@@ -141,7 +142,7 @@ protected:
 
     typedef unsigned short     MagicNumber;
 
-    explicit                    HTagFile                       (const WString&          pi_rFilename,
+    IMAGEPP_EXPORT explicit    HTagFile                       (const WString&          pi_rFilename,
                                                                 const HTagInfo&         pi_rTagInfo,
                                                                 HFCAccessMode           pi_Mode,
                                                                 uint64_t               pi_OriginOffset = 0,
@@ -158,7 +159,7 @@ protected:
 
 
 
-    void                        Construct                      (const HFCPtr<HFCURL>&   pi_rpURL,           // by URL
+    IMAGEPP_EXPORT void         Construct                      (const HFCPtr<HFCURL>&   pi_rpURL,           // by URL
                                                                 const WString*          pi_pFilename,              // by string
                                                                 HFCAccessMode           pi_Mode,
                                                                 uint64_t               pi_OriginOffset,
@@ -167,23 +168,23 @@ protected:
                                                                 bool*                  po_pNewFile = 0);
 
 
-    void                        SaveTagFile                    ();
+    IMAGEPP_EXPORT void         SaveTagFile                    ();
 
     uint32_t                    GetCurrentDirIndex             () const;
     DirectoryType               GetCurrentDirType              () const;
     DirectoryID                 GetCurrentDirID                () const;
 
-    HTIFFDirectory&             GetCurrentDir                  ();
-    const HTIFFDirectory&       GetCurrentDir                  () const;
+    IMAGEPP_EXPORT HTIFFDirectory&             GetCurrentDir                  ();
+    IMAGEPP_EXPORT const HTIFFDirectory&       GetCurrentDir                  () const;
 
-    _HDLLg bool                SetDirectoryImpl               (HTagFile::DirectoryID   pi_DirID,
+    IMAGEPP_EXPORT bool                SetDirectoryImpl               (HTagFile::DirectoryID   pi_DirID,
                                                                 bool                   pi_ReloadCodec);
 
     void                        SetOffsetCountData             (uint32_t pi_NbData, uint64_t* pi_pOffset, uint32_t* pi_pCount);
-    bool                       SetOffset                      (size_t pi_Index, uint64_t pi_Offset);
-    bool                       SetCount                       (size_t pi_Index, uint64_t pi_Count);
-    void                        FreeOffsetCount                ();
-    void                        ReadOffsetCountTags            ();
+    IMAGEPP_EXPORT bool                       SetOffset                      (size_t pi_Index, uint64_t pi_Offset);
+    IMAGEPP_EXPORT bool                       SetCount                       (size_t pi_Index, uint64_t pi_Count);
+    IMAGEPP_EXPORT void                        FreeOffsetCount                ();
+    IMAGEPP_EXPORT void                        ReadOffsetCountTags            ();
 
     uint64_t                   GetOffset                      (size_t pi_Index) const;
     uint32_t                    GetCount                       (size_t pi_Index) const;
@@ -334,6 +335,7 @@ private:
     // Always invoked after current directory is set
     virtual bool               PostCurrentDirectorySet        (HTagFile::DirectoryID pi_DirID, bool pi_ReloadCodec) = 0;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HTagFile.hpp"

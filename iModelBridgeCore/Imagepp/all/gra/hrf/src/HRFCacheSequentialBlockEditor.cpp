@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCacheSequentialBlockEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFCacheSequentialBlockEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFCacheSequentialBlockEditor.h>
 #include <Imagepp/all/h/HFCMonitor.h>
 #include <Imagepp/all/h/HCDCodecHMRRLE1.h>
@@ -57,10 +57,10 @@ HRFCacheSequentialBlockEditor::~HRFCacheSequentialBlockEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFCacheSequentialBlockEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                                 uint32_t pi_PosBlockY,
-                                                 Byte* po_pData,
-                                                 HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFCacheSequentialBlockEditor::ReadBlock(uint64_t                pi_PosBlockX,
+                                                 uint64_t                pi_PosBlockY,
+                                                 Byte*                   po_pData,
+                                                 HFCLockMonitor const*   pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
@@ -91,7 +91,7 @@ HSTATUS HRFCacheSequentialBlockEditor::ReadBlock(uint32_t pi_PosBlockX,
         if (!m_pSrcResolutionEditor->GetAccessMode().m_HasCreateAccess) // no block when we export
             {
             // the default value equal to the client position
-            uint32_t PosBlockY = pi_PosBlockY;
+            uint64_t PosBlockY = pi_PosBlockY;
             uint32_t PosBlockX = 0;
             uint32_t BlockWidth  = GetResolutionDescriptor()->GetBlockWidth();
             uint32_t BlockHeight = GetResolutionDescriptor()->GetBlockHeight();
@@ -153,10 +153,10 @@ HSTATUS HRFCacheSequentialBlockEditor::ReadBlock(uint32_t pi_PosBlockX,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFCacheSequentialBlockEditor::ReadBlock (uint32_t             pi_PosBlockX,
-                                                  uint32_t             pi_PosBlockY,
-                                                  HFCPtr<HCDPacket>&   po_rpPacket,
-                                                  HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFCacheSequentialBlockEditor::ReadBlock(uint64_t                pi_PosBlockX,
+                                                 uint64_t                pi_PosBlockY,
+                                                 HFCPtr<HCDPacket>&      po_rpPacket,
+                                                 HFCLockMonitor const*   pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_rpPacket != 0);
@@ -187,7 +187,7 @@ HSTATUS HRFCacheSequentialBlockEditor::ReadBlock (uint32_t             pi_PosBlo
         if (!m_pSrcResolutionEditor->GetAccessMode().m_HasCreateAccess) // no block when we export
             {
             // the default value equal to the client position
-            uint32_t PosBlockY = pi_PosBlockY;
+            uint64_t PosBlockY = pi_PosBlockY;
             uint32_t PosBlockX = 0;
             uint32_t BlockWidth  = GetResolutionDescriptor()->GetBlockWidth();
             uint32_t BlockHeight = GetResolutionDescriptor()->GetBlockHeight();
@@ -249,10 +249,10 @@ HSTATUS HRFCacheSequentialBlockEditor::ReadBlock (uint32_t             pi_PosBlo
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFCacheSequentialBlockEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                                  uint32_t     pi_PosBlockY,
-                                                  const Byte* pi_pData,
-                                                  HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFCacheSequentialBlockEditor::WriteBlock(uint64_t                pi_PosBlockX,
+                                                  uint64_t                pi_PosBlockY,
+                                                  const Byte*             pi_pData,
+                                                  HFCLockMonitor const*   pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
@@ -280,10 +280,10 @@ HSTATUS HRFCacheSequentialBlockEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFCacheSequentialBlockEditor::WriteBlock(uint32_t                 pi_PosBlockX,
-                                                  uint32_t                 pi_PosBlockY,
+HSTATUS HRFCacheSequentialBlockEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                                  uint64_t                 pi_PosBlockY,
                                                   const HFCPtr<HCDPacket>& pi_rpPacket,
-                                                  HFCLockMonitor const* pi_pSisterFileLock)
+                                                  HFCLockMonitor const*    pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_rpPacket != 0);

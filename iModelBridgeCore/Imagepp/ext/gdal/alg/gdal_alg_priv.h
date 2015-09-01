@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_alg_priv.h 20078 2010-07-16 21:21:29Z rouault $
+ * $Id: gdal_alg_priv.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL Image Processing Algorithms
  * Purpose:  Prototypes and definitions for various GDAL based algorithms:
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2008, Andrey Kiselev <dron@ak4719.spb.edu>
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -42,6 +43,11 @@ typedef enum {
     /*! Use value form the M value */    GBV_M = 2
 } GDALBurnValueSrc;
 
+typedef enum {
+    GRMA_Replace = 0,
+    GRMA_Add = 1,
+} GDALRasterMergeAlg;
+
 typedef struct {
     unsigned char * pabyChunkBuf;
     int nXSize;
@@ -50,6 +56,7 @@ typedef struct {
     GDALDataType eType;
     double *padfBurnValue;
     GDALBurnValueSrc eBurnValueSource;
+    GDALRasterMergeAlg eMergeAlg;
 } GDALRasterizeInfo;
 
 /************************************************************************/
@@ -117,6 +124,42 @@ public:
     void     Clear();
 };
 
+#ifdef OGR_ENABLED
+/************************************************************************/
+/*                          Polygon Enumerator                          */
+/*                                                                      */
+/*              Buffers has float values instead og GInt32              */
+/************************************************************************/
+class GDALRasterFPolygonEnumerator
+
+{
+private:
+    void     MergePolygon( int nSrcId, int nDstId );
+    int      NewPolygon( float fValue );
+
+public:  // these are intended to be readonly.
+
+    GInt32   *panPolyIdMap;
+    float    *pafPolyValue;
+
+    int      nNextPolygonId;
+    int      nPolyAlloc;
+
+    int      nConnectedness;
+
+public:
+             GDALRasterFPolygonEnumerator( int nConnectedness=4 );
+            ~GDALRasterFPolygonEnumerator();
+
+    void     ProcessLine( float *pafLastLineVal, float *pafThisLineVal,
+                          GInt32 *panLastLineId,  GInt32 *panThisLineId,
+                          int nXSize );
+
+    void     CompleteMerges();
+
+    void     Clear();
+};
+#endif
 
 typedef void* (*GDALTransformDeserializeFunc)( CPLXMLNode *psTree );
 
@@ -124,5 +167,33 @@ void* GDALRegisterTransformDeserializer(const char* pszTransformName,
                                        GDALTransformerFunc pfnTransformerFunc,
                                        GDALTransformDeserializeFunc pfnDeserializeFunc);
 void GDALUnregisterTransformDeserializer(void* pData);
+
+void GDALCleanupTransformDeserializerMutex();
+
+/* Transformer cloning */
+
+void* GDALCloneTPSTransformer( void *pTransformArg );
+void* GDALCloneGenImgProjTransformer( void *pTransformArg );
+void* GDALCloneApproxTransformer( void *pTransformArg );
+/* TODO : GDALCloneGeoLocTransformer? , GDALCloneRPCTransformer? */ 
+
+void* GDALCreateTPSTransformerInt( int nGCPCount, const GDAL_GCP *pasGCPList, 
+                                   int bReversed, char** papszOptions );
+
+void CPL_DLL * GDALCloneTransformer( void *pTranformerArg );
+
+/************************************************************************/
+/*      Float comparison function.                                      */
+/************************************************************************/
+
+/**
+ * Units in the Last Place. This specifies how big an error we are willing to
+ * accept in terms of the value of the least significant digit of the floating
+ * point number’s representation. MAX_ULPS can also be interpreted in terms of
+ * how many representable floats we are willing to accept between A and B. 
+ */
+#define MAX_ULPS 10
+
+GBool GDALFloatEquals(float A, float B);
 
 #endif /* ndef GDAL_ALG_PRIV_H_INCLUDED */

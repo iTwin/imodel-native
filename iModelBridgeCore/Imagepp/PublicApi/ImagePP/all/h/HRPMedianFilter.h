@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMedianFilter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16,9 +16,10 @@
 //
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPMedianFilter : public HRPConvFilter
     {
-    HDECLARE_CLASS_ID(1568, HRPConvFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_Median, HRPConvFilter)
 
 public:
 
@@ -43,4 +44,5 @@ private:
     HRPMedianFilter& operator = (const HRPMedianFilter& pi_rFilter);
 
     };
+END_IMAGEPP_NAMESPACE
 

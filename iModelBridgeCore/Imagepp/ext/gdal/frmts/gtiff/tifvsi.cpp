@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tifvsi.cpp 21102 2010-11-08 20:47:38Z rouault $
+ * $Id: tifvsi.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Implement system hook functions for libtiff on top of CPL/VSI,
@@ -9,6 +9,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2005, Frank Warmerdam, warmerdam@pobox.com
+ * Copyright (c) 2010-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,8 +36,14 @@
 #include "cpl_vsi.h"
 #include "tifvsi.h"
 
+#include <errno.h>
+
 // We avoid including xtiffio.h since it drags in the libgeotiff version
 // of the VSI functions.
+
+#ifdef RENAME_INTERNAL_LIBGEOTIFF_SYMBOLS
+#include "gdal_libgeotiff_symbol_rename.h"
+#endif
 
 CPL_C_START
 extern TIFF CPL_DLL * XTIFFClientOpen(const char* name, const char* mode, 
@@ -56,7 +63,12 @@ _tiffReadProc(thandle_t fd, tdata_t buf, tsize_t size)
 static tsize_t
 _tiffWriteProc(thandle_t fd, tdata_t buf, tsize_t size)
 {
-    return VSIFWriteL( buf, 1, size, (VSILFILE *) fd );
+    tsize_t nRet = VSIFWriteL( buf, 1, size, (VSILFILE *) fd );
+    if (nRet < size)
+    {
+        TIFFErrorExt( fd, "_tiffWriteProc", "%s", VSIStrerror( errno ) );
+    }
+    return nRet;
 }
 
 static toff_t
@@ -65,7 +77,10 @@ _tiffSeekProc(thandle_t fd, toff_t off, int whence)
     if( VSIFSeekL( (VSILFILE *) fd, off, whence ) == 0 )
         return (toff_t) VSIFTellL( (VSILFILE *) fd );
     else
+    {
+        TIFFErrorExt( fd, "_tiffSeekProc", "%s", VSIStrerror( errno ) );
         return (toff_t) -1;
+    }
 }
 
 static int

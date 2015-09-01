@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMGMessage.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,6 +13,8 @@
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HMGMessageSender;
 
 
@@ -22,7 +24,7 @@ class HMGMessageSender;
 
 class HMGMessage : public HFCShareableObject<HMGMessage>
     {
-    HDECLARE_BASECLASS_ID(1091)
+    HDECLARE_BASECLASS_ID(HMGMessageId_Base)
 
 public:
 
@@ -34,9 +36,9 @@ public:
     // Added
     bool           IsSynchronous() const;
 
-    _HDLLu HMGMessageSender* GetSender() const;
+    IMAGEPP_EXPORT HMGMessageSender* GetSender() const;
 
-    _HDLLu void            SetSender(HMGMessageSender* pi_pSender);
+    IMAGEPP_EXPORT void            SetSender(HMGMessageSender* pi_pSender);
 
     virtual HMGMessage* Clone() const = 0;
 
@@ -57,15 +59,15 @@ private:
 
 class HMGAsynchronousMessage : public HMGMessage
     {
-    HDECLARE_CLASS_ID(1093, HMGMessage)
+    HDECLARE_CLASS_ID(HMGAsynchronousMessageId, HMGMessage)
 
 public:
 
     // Primary methods
-    _HDLLu HMGAsynchronousMessage();
-    _HDLLu virtual ~HMGAsynchronousMessage();
+    IMAGEPP_EXPORT HMGAsynchronousMessage();
+    IMAGEPP_EXPORT virtual ~HMGAsynchronousMessage();
 protected:
-    _HDLLu HMGAsynchronousMessage(const HMGAsynchronousMessage& pi_rObj);
+    IMAGEPP_EXPORT HMGAsynchronousMessage(const HMGAsynchronousMessage& pi_rObj);
     HMGAsynchronousMessage& operator=(const HMGAsynchronousMessage& pi_rObj);
     };
 
@@ -76,14 +78,16 @@ protected:
 
 class HMGSynchronousMessage : public HMGMessage
     {
-    HDECLARE_CLASS_ID(1092, HMGMessage)
+    HDECLARE_CLASS_ID(HMGSynchronousMessageId, HMGMessage)
 
 public:
 
     // Primary methods
-    _HDLLu HMGSynchronousMessage();
-    _HDLLu virtual ~HMGSynchronousMessage();
+    IMAGEPP_EXPORT HMGSynchronousMessage();
+    IMAGEPP_EXPORT virtual ~HMGSynchronousMessage();
 protected:
-    _HDLLu HMGSynchronousMessage(const HMGSynchronousMessage& pi_rObj);
+    IMAGEPP_EXPORT HMGSynchronousMessage(const HMGSynchronousMessage& pi_rObj);
     HMGSynchronousMessage& operator=(const HMGSynchronousMessage& pi_rObj);
     };
+
+END_IMAGEPP_NAMESPACE

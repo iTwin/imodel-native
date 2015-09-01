@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFTileIDDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,8 +13,9 @@
 
 #include "HFCPtr.h"
 
-class HGF2DExtent;
+BEGIN_IMAGEPP_NAMESPACE
 
+class HGF2DExtent;
 
 typedef list<uint64_t> HGFTileIDList;
 
@@ -42,26 +43,26 @@ typedef list<uint64_t> HGFTileIDList;
 */
 class HGFTileIDDescriptor : public HFCShareableObject<HGFTileIDDescriptor>
     {
-    HDECLARE_SEALEDCLASS_ID(1044)
+    HDECLARE_SEALEDCLASS_ID(HGFTileIDDescriptorId_Base)
 
 public:
 
     // Constants
 
-    static  const uint64_t INDEX_NOT_FOUND;
+    IMAGEPP_EXPORT static  const uint64_t INDEX_NOT_FOUND;
 
     // Primary methods
 
-    HGFTileIDDescriptor     ();
-    _HDLLg /*IppImaging_Needs*/ HGFTileIDDescriptor(uint64_t              pi_Width,
+    IMAGEPP_EXPORT HGFTileIDDescriptor     ();
+    IMAGEPP_EXPORT HGFTileIDDescriptor(uint64_t              pi_Width,
                                                     uint64_t              pi_Height,
                                                     uint64_t              pi_TileSizeX,
                                                     uint64_t              pi_TileSizeY);
-    _HDLLg /*IppImaging_Needs*/~HGFTileIDDescriptor    ();
+    IMAGEPP_EXPORT ~HGFTileIDDescriptor    ();
 
     HGFTileIDDescriptor     (const HGFTileIDDescriptor& pi_rObj);
 
-    HGFTileIDDescriptor&    operator=      (const HGFTileIDDescriptor& pi_rObj);
+    IMAGEPP_EXPORT HGFTileIDDescriptor&    operator=      (const HGFTileIDDescriptor& pi_rObj);
 
     // Compute Methods
 
@@ -97,7 +98,7 @@ public:
     uint64_t      GetTileCount            (HGF2DExtent& pi_rExtent) const;
 
     // Query methods
-    uint64_t      GetFirstTileIndex       (const HGF2DExtent&     pi_rExtent);
+    IMAGEPP_EXPORT uint64_t      GetFirstTileIndex       (const HGF2DExtent&     pi_rExtent);
 
     uint64_t      GetFirstTileIndex       (uint64_t              pi_XMin,
                                             uint64_t              pi_YMin,
@@ -138,6 +139,8 @@ private:
     uint64_t       m_LastCurIndex;
     uint64_t       m_LastFirstColumn;  // Index of the last row
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HGFTileIDDescriptor.hpp"
 

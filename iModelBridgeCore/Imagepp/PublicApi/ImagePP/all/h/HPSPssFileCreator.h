@@ -2,14 +2,16 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/HPSPssFileCreator.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <Imagepp/all/h/HPSPssFile.h>
 #include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
+#include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFile;
 
 /** -----------------------------------------------------------------------------
@@ -45,13 +47,13 @@ class HRFRasterFile;
 class HPSPssFileCreator
     {
 public:
-    _HDLLg                  HPSPssFileCreator ();
-    _HDLLg                  ~HPSPssFileCreator();
-    _HDLLg HSTATUS          CreateFileW(WString const& pi_rPssFileName);
-    _HDLLg void             AddImage(WString const& pi_rImageName, uint32_t pi_pageNumber, IRasterBaseGcsPtr pi_projection);
+    IMAGEPP_EXPORT                  HPSPssFileCreator ();
+    IMAGEPP_EXPORT                  ~HPSPssFileCreator();
+    IMAGEPP_EXPORT HSTATUS          CreateFileW(WString const& pi_rPssFileName);
+    IMAGEPP_EXPORT void             AddImage(WString const& pi_rImageName, uint32_t pi_pageNumber, IRasterBaseGcsP pi_projection);
 
-    _HDLLg void             SetDstProjection(IRasterBaseGcsPtr pi_projection);
-    _HDLLg IRasterBaseGcsPtr GetDstProjection() const;
+    IMAGEPP_EXPORT void              SetDstProjection(IRasterBaseGcsP pi_projection);
+    IMAGEPP_EXPORT IRasterBaseGcsCP  GetDstProjectionCP() const;
 
 protected:
     HFCPtr<HRFRasterFile>   GetRasterFile(WString const& rImageName) const;
@@ -70,3 +72,4 @@ private:
     IRasterBaseGcsPtr               m_dstProjection;
     HFCPtr<HGFHMRStdWorldCluster>   m_pWorldCluster;
     };
+END_IMAGEPP_NAMESPACE

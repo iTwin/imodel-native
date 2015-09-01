@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDAnnotationInfo.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,27 +10,28 @@
 
 #include "HMDMetaData.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HMDAnnotations;
 
 class HMDAnnotationInfo : public HMDMetaData
     {
     friend class HMDAnnotations;
 
-    HDECLARE_CLASS_ID(7010, HMDMetaData);
+    HDECLARE_CLASS_ID(HMDAnnotationId_Info, HMDMetaData);
 
 public :
-    _HDLLu HMDAnnotationInfo(const WString& pi_rMsg,
+    IMAGEPP_EXPORT HMDAnnotationInfo(const WString& pi_rMsg,
                       bool          pi_IsSupported,
                       const WString& pi_rAnnotationType = L"");
-    _HDLLu virtual                 ~HMDAnnotationInfo();
+    IMAGEPP_EXPORT virtual                 ~HMDAnnotationInfo();
 
-    _HDLLu HMDAnnotationInfo(const HMDAnnotationInfo& pi_rObj);
+    IMAGEPP_EXPORT HMDAnnotationInfo(const HMDAnnotationInfo& pi_rObj);
 
 
-    _HDLLu const WString&          GetAnnotationType() const;
-    _HDLLu const WString&          GetAnnotationMsg() const;
+    IMAGEPP_EXPORT const WString&          GetAnnotationType() const;
+    IMAGEPP_EXPORT const WString&          GetAnnotationMsg() const;
 
-    _HDLLu bool                   IsSupported() const;
+    IMAGEPP_EXPORT bool                   IsSupported() const;
 
 protected:
 
@@ -45,3 +46,4 @@ private :
     bool   m_IsSupported;
     };
 
+END_IMAGEPP_NAMESPACE

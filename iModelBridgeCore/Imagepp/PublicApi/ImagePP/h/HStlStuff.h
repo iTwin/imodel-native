@@ -2,13 +2,15 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HStlStuff.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
+#include <Bentley/WString.h>
 #include <functional>
 
+BEGIN_IMAGEPP_NAMESPACE
 /*
 ** --------------------------------------------------------------------------
 **  FREEZE_STL_STRING
@@ -62,7 +64,7 @@ inline void FreezeStlStringFunction_W(WString& pi_rObj)
 
 // TEMPLATE STRUCT less
 struct lessDoubleEpsilon
-        : public binary_function<double, double, bool>
+        : public std::binary_function<double, double, bool>
     {   // functor for operator<
     bool operator()(const double& _Left, const double& _Right) const
         {   // apply operator< to operands
@@ -89,11 +91,6 @@ struct StaticCast
         return static_cast<ToType>(pi_rFrom);
         }
     };
-
-
-
-BEGIN_IMAGEPP_NAMESPACE
-
 
 /*
 ** --------------------------------------------------------------------------
@@ -208,9 +205,9 @@ inline AccumulateIterator<T, BinaryFunction> AccumulateIter(T&                  
     }
 
 template <typename T>
-inline AccumulateIterator<T, plus<T> > AccumulateIter (T&       pio_rAccumulatedValue)
+inline AccumulateIterator<T, std::plus<T> > AccumulateIter (T&       pio_rAccumulatedValue)
     {
-    return AccumulateIterator<T, plus<T> >(pio_rAccumulatedValue, plus<T>());
+    return AccumulateIterator<T, std::plus<T> >(pio_rAccumulatedValue, std::plus<T>());
     }
 
 
@@ -289,8 +286,6 @@ inline SetterIterator<WrappedIterator, std::mem_fun1_ref_t<Result, T, Argument>>
     }
 
 #endif
-
-END_IMAGEPP_NAMESPACE
 
 /*
 ** --------------------------------------------------------------------------
@@ -619,3 +614,5 @@ struct CaseInsensitiveStringToolsW
 
 #   define CaseInsensitiveStringTools      CaseInsensitiveStringToolsW
 #   define CaseInsensitiveStringCompare    CaseInsensitiveStringCompareW
+
+END_IMAGEPP_NAMESPACE

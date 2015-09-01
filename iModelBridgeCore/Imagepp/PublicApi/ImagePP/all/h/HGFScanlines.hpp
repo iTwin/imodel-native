@@ -2,9 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFScanlines.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Retrieve the minimum Y value of the scanline region. This is the YMin
     value given to SetLimits().
@@ -305,3 +307,4 @@ inline void HGFScanLines::SetStrategy(IPixelSelectionStrategy* pi_pStrategy)
     {
     m_pPixelSelector = pi_pStrategy;
     }
+END_IMAGEPP_NAMESPACE

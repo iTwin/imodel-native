@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTgaLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTgaLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCMath.h>
 #include <Imagepp/all/h/HRFTgaLineEditor.h>
 #include <Imagepp/all/h/HRFTgaFile.h>
@@ -70,9 +70,9 @@ HRFTgaLineEditor::~HRFTgaLineEditor()
 
  @return HSTATUS H_SUCCESS if the readint operation went right.
 ------------------------------------------------------------------------------*/
-HSTATUS HRFTgaLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                    uint32_t pi_PosBlockY,
-                                    Byte* po_pData,
+HSTATUS HRFTgaLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                    uint64_t pi_PosBlockY,
+                                    Byte*  po_pData,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (po_pData != 0);
@@ -84,8 +84,8 @@ HSTATUS HRFTgaLineEditor::ReadBlock(uint32_t pi_PosBlockX,
     HSTATUS             Status = H_ERROR;
     Byte                BytePerPixel;
     unsigned short      Input;
-    uint32_t           Offset;
-    uint32_t           Line;
+    uint64_t            Offset;
+    uint64_t            Line;
     uint32_t           i;
     uint32_t           j;
     HFCLockMonitor      SisterFileLock;
@@ -99,7 +99,7 @@ HSTATUS HRFTgaLineEditor::ReadBlock(uint32_t pi_PosBlockX,
     // If the lines are write from bottom to up, we convert the index of
     // the line to read from the end of the file.
     if ((pTgaFile->m_pTgaFileHeader->m_ImageDescriptor & 0x20) == 0)
-        Line = (uint32_t)GetResolutionDescriptor()->GetHeight() - pi_PosBlockY - 1;
+        Line = (uint64_t)GetResolutionDescriptor()->GetHeight() - pi_PosBlockY - 1;
     else
         Line = pi_PosBlockY;
 
@@ -120,7 +120,7 @@ HSTATUS HRFTgaLineEditor::ReadBlock(uint32_t pi_PosBlockX,
     switch (pTgaFile->GetBitsPerPixel())
         {
         case 8 :
-            if(pTgaFile->m_pTgaFile->Read((void*)po_pData, m_BytesPerLine) != m_BytesPerLine)
+            if(pTgaFile->m_pTgaFile->Read(po_pData, m_BytesPerLine) != m_BytesPerLine)
                 goto WRAPUP;    // H_ERROR
             break;
         case 15 :
@@ -128,7 +128,7 @@ HSTATUS HRFTgaLineEditor::ReadBlock(uint32_t pi_PosBlockX,
             // Convert V16B5G5R5 to V24R8G8B8
             m_pLineBuffer = new Byte[m_BytesPerLine];
 
-            if(pTgaFile->m_pTgaFile->Read((void*)m_pLineBuffer, m_BytesPerLine) != m_BytesPerLine)
+            if(pTgaFile->m_pTgaFile->Read(m_pLineBuffer, m_BytesPerLine) != m_BytesPerLine)
                 goto WRAPUP;
 
             for (i = 0, j = 0; j < GetResolutionDescriptor()->GetBlockSizeInBytes(); i++, j+=3)
@@ -145,7 +145,7 @@ HSTATUS HRFTgaLineEditor::ReadBlock(uint32_t pi_PosBlockX,
             // Convert V24B8G8R8 to V24R8G8B8 or convert V32B8G8R8A8 to V32R8G8B8A8
             m_pLineBuffer = new Byte[m_BytesPerLine];
 
-            if(pTgaFile->m_pTgaFile->Read((void*)m_pLineBuffer, m_BytesPerLine) != m_BytesPerLine)
+            if(pTgaFile->m_pTgaFile->Read(m_pLineBuffer, m_BytesPerLine) != m_BytesPerLine)
                 goto WRAPUP;
 
             BytePerPixel = (Byte)pTgaFile->GetBitsPerPixel() / 8;
@@ -188,10 +188,10 @@ WRAPUP:
 
  @return HSTATUS H_SUCCESS if the writing operation went right.
 ------------------------------------------------------------------------------*/
-HSTATUS HRFTgaLineEditor::WriteBlock (uint32_t     pi_PosBlockX,
-                                      uint32_t     pi_PosBlockY,
-                                      const Byte* pi_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFTgaLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                     uint64_t     pi_PosBlockY,
+                                     const Byte*  pi_pData,
+                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_pData != 0);
@@ -202,8 +202,8 @@ HSTATUS HRFTgaLineEditor::WriteBlock (uint32_t     pi_PosBlockX,
     HArrayAutoPtr<unsigned short>           pLineBuffer;
     HFCPtr<HRFTgaFile>              pTgaFile   = TGA_RASTERFILE;
     HFCPtr<HRFResolutionDescriptor> pResolutionDescriptor = GetResolutionDescriptor();
-    int32_t                        Offset      = pTgaFile->GetRasterDataOffset();
-    uint32_t                       Line;
+    uint64_t                        Offset      = pTgaFile->GetRasterDataOffset();
+    uint64_t                        Line;
 
     if (pTgaFile->GetAccessMode().m_HasWriteAccess  || pTgaFile->GetAccessMode().m_HasCreateAccess)
         {
@@ -233,7 +233,7 @@ HSTATUS HRFTgaLineEditor::WriteBlock (uint32_t     pi_PosBlockX,
             case 8 :
                 {
                 uint32_t DataSize = pResolutionDescriptor->GetBytesPerBlockWidth();
-                if(pTgaFile->m_pTgaFile->Write((void*)pi_pData, DataSize) != DataSize)
+                if(pTgaFile->m_pTgaFile->Write(pi_pData, DataSize) != DataSize)
                     goto WRAPUP;    // H_ERROR
                 break;
                 }
@@ -259,7 +259,7 @@ HSTATUS HRFTgaLineEditor::WriteBlock (uint32_t     pi_PosBlockX,
                     *(pBufferPtr++) = *(((Byte*)&pOutput)+1);
                     }
 
-                if(pTgaFile->m_pTgaFile->Write((void*)m_pLineBuffer, LineWidthInByte) != LineWidthInByte)
+                if(pTgaFile->m_pTgaFile->Write(m_pLineBuffer, LineWidthInByte) != LineWidthInByte)
                     goto WRAPUP;    // H_ERROR
                 break;
                 }
@@ -276,7 +276,7 @@ HSTATUS HRFTgaLineEditor::WriteBlock (uint32_t     pi_PosBlockX,
                     }
 
                 uint32_t DataSize = pResolutionDescriptor->GetBytesPerBlockWidth();
-                if(pTgaFile->m_pTgaFile->Write((void*)m_pLineBuffer, DataSize) != DataSize)
+                if(pTgaFile->m_pTgaFile->Write(m_pLineBuffer, DataSize) != DataSize)
                     goto WRAPUP;    // H_ERROR
                 break;
             }

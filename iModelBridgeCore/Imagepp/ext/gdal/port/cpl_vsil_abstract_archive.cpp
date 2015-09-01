@@ -1,12 +1,12 @@
 /******************************************************************************
- * $Id: cpl_vsil_abstract_archive.cpp 20958 2010-10-25 19:24:01Z rouault $
+ * $Id: cpl_vsil_abstract_archive.cpp 27722 2014-09-22 15:37:31Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for archive files.
  * Author:   Even Rouault, even.rouault at mines-paris.org
  *
  ******************************************************************************
- * Copyright (c) 2010, Even Rouault
+ * Copyright (c) 2010-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,7 +35,7 @@
 
 #define ENABLE_DEBUG 0
 
-CPL_CVSID("$Id: cpl_vsil_abstract_archive.cpp 20958 2010-10-25 19:24:01Z rouault $");
+CPL_CVSID("$Id: cpl_vsil_abstract_archive.cpp 27722 2014-09-22 15:37:31Z goatbar $");
 
 /************************************************************************/
 /*                    ~VSIArchiveEntryFileOffset()                      */
@@ -130,9 +130,24 @@ const VSIArchiveContent* VSIArchiveFilesystemHandler::GetContentOfArchive
         CPLString osFileName = poReader->GetFileName();
         const char* fileName = osFileName.c_str();
 
+        /* Remove ./ pattern at the beginning of a filename */
+        if (fileName[0] == '.' && fileName[1] == '/')
+        {
+            fileName += 2;
+            if (fileName[0] == '\0')
+                continue;
+        }
+
         char* pszStrippedFileName = CPLStrdup(fileName);
+        char* pszIter;
+        for(pszIter = pszStrippedFileName;*pszIter;pszIter++)
+        {
+            if (*pszIter == '\\')
+                *pszIter = '/';
+        }
+
         int bIsDir = strlen(fileName) > 0 &&
-                      (fileName[strlen(fileName)-1] == '/' || fileName[strlen(fileName)-1] == '\\');
+                      fileName[strlen(fileName)-1] == '/';
         if (bIsDir)
         {
             /* Remove trailing slash */
@@ -144,10 +159,9 @@ const VSIArchiveContent* VSIArchiveFilesystemHandler::GetContentOfArchive
             oSet.insert(pszStrippedFileName);
 
             /* Add intermediate directory structure */
-            char* pszIter;
             for(pszIter = pszStrippedFileName;*pszIter;pszIter++)
             {
-                if (*pszIter == '/' || *pszIter == '\\')
+                if (*pszIter == '/')
                 {
                     char* pszStrippedFileName2 = CPLStrdup(pszStrippedFileName);
                     pszStrippedFileName2[pszIter - pszStrippedFileName] = 0;
@@ -336,11 +350,11 @@ char* VSIArchiveFilesystemHandler::SplitFilename(const char *pszFilename,
                     osFileInArchive = "";
 
                 /* Remove trailing slash */
-                if (strlen(osFileInArchive))
+                if (osFileInArchive.size())
                 {
                     char lastC = osFileInArchive[strlen(osFileInArchive) - 1];
                     if (lastC == '\\' || lastC == '/')
-                        osFileInArchive[strlen(osFileInArchive) - 1] = 0;
+                        osFileInArchive.resize(strlen(osFileInArchive) - 1);
                 }
 
                 return archiveFilename;
@@ -430,7 +444,7 @@ VSIArchiveReader* VSIArchiveFilesystemHandler::OpenArchiveFile(const char* archi
 /*                                 Stat()                               */
 /************************************************************************/
 
-int VSIArchiveFilesystemHandler::Stat( const char *pszFilename, VSIStatBufL *pStatBuf, int nFlags )
+int VSIArchiveFilesystemHandler::Stat( const char *pszFilename, VSIStatBufL *pStatBuf, CPL_UNUSED int nFlags )
 {
     int ret = -1;
     CPLString osFileInArchive;
@@ -450,7 +464,7 @@ int VSIArchiveFilesystemHandler::Stat( const char *pszFilename, VSIStatBufL *pSt
         if (FindFileInArchive(archiveFilename, osFileInArchive, &archiveEntry))
         {
             /* Patching st_size with uncompressed file size */
-            pStatBuf->st_size = (long)archiveEntry->uncompressed_size;
+            pStatBuf->st_size = archiveEntry->uncompressed_size;
             pStatBuf->st_mtime = (time_t)archiveEntry->nModifiedTime;
             if (archiveEntry->bIsDir)
                 pStatBuf->st_mode = S_IFDIR;
@@ -488,7 +502,7 @@ int VSIArchiveFilesystemHandler::Stat( const char *pszFilename, VSIStatBufL *pSt
             else
             {
                 /* Patching st_size with uncompressed file size */
-                pStatBuf->st_size = (long)poReader->GetFileSize();
+                pStatBuf->st_size = poReader->GetFileSize();
                 pStatBuf->st_mtime = (time_t)poReader->GetModifiedTime();
                 pStatBuf->st_mode = S_IFREG;
             }
@@ -507,7 +521,7 @@ int VSIArchiveFilesystemHandler::Stat( const char *pszFilename, VSIStatBufL *pSt
 /*                              Unlink()                                */
 /************************************************************************/
 
-int VSIArchiveFilesystemHandler::Unlink( const char *pszFilename )
+int VSIArchiveFilesystemHandler::Unlink( CPL_UNUSED const char *pszFilename )
 {
     return -1;
 }
@@ -516,7 +530,7 @@ int VSIArchiveFilesystemHandler::Unlink( const char *pszFilename )
 /*                             Rename()                                 */
 /************************************************************************/
 
-int VSIArchiveFilesystemHandler::Rename( const char *oldpath, const char *newpath )
+int VSIArchiveFilesystemHandler::Rename( CPL_UNUSED const char *oldpath, CPL_UNUSED const char *newpath )
 {
     return -1;
 }
@@ -525,7 +539,7 @@ int VSIArchiveFilesystemHandler::Rename( const char *oldpath, const char *newpat
 /*                             Mkdir()                                  */
 /************************************************************************/
 
-int VSIArchiveFilesystemHandler::Mkdir( const char *pszDirname, long nMode )
+int VSIArchiveFilesystemHandler::Mkdir( CPL_UNUSED const char *pszDirname, CPL_UNUSED long nMode )
 {
     return -1;
 }
@@ -534,7 +548,7 @@ int VSIArchiveFilesystemHandler::Mkdir( const char *pszDirname, long nMode )
 /*                             Rmdir()                                  */
 /************************************************************************/
 
-int VSIArchiveFilesystemHandler::Rmdir( const char *pszDirname )
+int VSIArchiveFilesystemHandler::Rmdir( CPL_UNUSED const char *pszDirname )
 {
     return -1;
 }

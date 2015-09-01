@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUSgsNDFLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFUSgsNDFLineEditor.h>
 #include <Imagepp/all/h/HRFUSgsNDFFile.h>
 
@@ -40,9 +40,9 @@ HRFUSgsNDFLineEditor::~HRFUSgsNDFLineEditor()
 // Read uncompressed Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFUSgsNDFLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                        uint32_t pi_PosBlockY,
-                                        Byte* po_pData,
+HSTATUS HRFUSgsNDFLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                        uint64_t pi_PosBlockY,
+                                        Byte*  po_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (po_pData != 0);
@@ -75,7 +75,7 @@ HSTATUS HRFUSgsNDFLineEditor::ReadBlock(uint32_t pi_PosBlockX,
             pNDFFile->m_pRedFile->SeekToPos(Offset);
 
         // Create Grayscale image
-        if(pNDFFile->m_pRedFile->Read((void*)po_pData, BufferPixelLength) != BufferPixelLength)
+        if(pNDFFile->m_pRedFile->Read(po_pData, BufferPixelLength) != BufferPixelLength)
            return H_ERROR;
 
         // Unlock the sister file
@@ -95,9 +95,9 @@ HSTATUS HRFUSgsNDFLineEditor::ReadBlock(uint32_t pi_PosBlockX,
             pNDFFile->m_pBlueFile->SeekToPos(Offset);
 
         // Read each channel
-        if(pNDFFile->m_pRedFile->Read((void*)pBuffRed,     BufferPixelLength) != BufferPixelLength ||
-           pNDFFile->m_pGreenFile->Read((void*)pBuffGreen, BufferPixelLength) != BufferPixelLength ||
-           pNDFFile->m_pBlueFile->Read((void*)pBuffBlue,   BufferPixelLength) != BufferPixelLength)
+        if(pNDFFile->m_pRedFile->Read(pBuffRed,     BufferPixelLength) != BufferPixelLength ||
+           pNDFFile->m_pGreenFile->Read(pBuffGreen, BufferPixelLength) != BufferPixelLength ||
+           pNDFFile->m_pBlueFile->Read(pBuffBlue,   BufferPixelLength) != BufferPixelLength)
             return H_ERROR;
 
         // Unlock the sister file

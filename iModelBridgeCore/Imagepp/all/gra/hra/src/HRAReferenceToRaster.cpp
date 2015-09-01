@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAReferenceToRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRAReferenceToRaster
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRAReferenceToRaster.h>
 #include <Imagepp/all/h/HRAReferenceToRasterEditor.h>
@@ -27,6 +27,10 @@
 #include <Imagepp/all/h/HVEShape.h>
 #include <Imagepp/all/h/HMDContext.h>
 #include <Imagepp/all/h/HRAMessages.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
+
+
 
 
 HPM_REGISTER_CLASS(HRAReferenceToRaster, HRARaster)
@@ -237,13 +241,59 @@ HRAReferenceToRaster& HRAReferenceToRaster::operator=(const HRAReferenceToRaster
     return *this;
     }
 
-
 //-----------------------------------------------------------------------------
 // public
 // CopyFrom
 //-----------------------------------------------------------------------------
-void HRAReferenceToRaster::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
-                                    const HRACopyFromOptions& pi_rOptions)
+ImagePPStatus HRAReferenceToRaster::_CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& pi_rOptions)
+    {
+    HPRECONDITION(m_pSource != 0);
+    HRACopyFromOptions newOptions(pi_rOptions);
+
+    HVEShape newDestShape(GetShape());  // Always in reference's CS.
+
+    // Take intersection of reference's shape and specified one
+    if (NULL != pi_rOptions.GetEffectiveCopyRegion())
+        {
+        newDestShape.Intersect(*pi_rOptions.GetEffectiveCopyRegion());
+        newOptions.SetEffectiveCopyRegion(&newDestShape);
+        // Set shape to the source's coordinate system
+        newDestShape.SetCoordSys(m_pSource->GetCoordSys());
+        }
+
+    // Extract the transformation we're applying to our source (T1)
+    HFCPtr<HGF2DTransfoModel> pRefTransfo(m_pSource->GetCoordSys()->GetTransfoModelTo(GetCoordSys()));
+
+    // Calculate the transformation between our CS and the CS
+    // the object to copy uses. (T2)
+    HFCPtr<HGF2DTransfoModel> pCurrentToRef(srcRaster.GetCoordSys()->GetTransfoModelTo(GetCoordSys()));
+
+    // Create the CS by composing everything correctly :)
+    // T2 o T1 o -T2
+    HFCPtr<HGF2DTransfoModel> pToApply(pCurrentToRef->ComposeInverseWithDirectOf(*pRefTransfo)->ComposeInverseWithInverseOf(*pCurrentToRef));
+    HFCPtr<HGF2DCoordSys> pCSToApply(new HGF2DCoordSys(*pToApply, srcRaster.GetCoordSys()));
+
+    //Need this to make sure we do no delete an HRaster that is not an HFCPtr.
+    srcRaster.IncrementRef();
+    HFCPtr<HRARaster> pRefToSrcRaster(new HRAReferenceToRaster(&srcRaster, pCSToApply));
+
+    // Use source's CopyFrom, with new calculated shape
+    ImagePPStatus status = m_pSource->CopyFrom(*pRefToSrcRaster, newOptions);
+
+    srcRaster.DecrementRef();
+
+    return status;
+
+    // Our content has changed...
+    // But don't propagate ContentChanged, since our source (to whom we are
+    // registered) will call it when it has finished its CopyFrom().
+    }
+
+//-----------------------------------------------------------------------------
+// public
+// CopyFromLegacy
+//-----------------------------------------------------------------------------
+void HRAReferenceToRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
     {
     HPRECONDITION(m_pSource != 0);
 
@@ -274,11 +324,11 @@ void HRAReferenceToRaster::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
 
     HFCPtr<HRARaster> pRefToSrcRaster(new HRAReferenceToRaster(pi_pSrcRaster, pCSToApply));
 
-    HRACopyFromOptions NewCopyFromOptions(pi_rOptions);
+    HRACopyFromLegacyOptions NewCopyFromOptions(pi_rOptions);
     NewCopyFromOptions.SetDestShape(&NewDestShape);
 
     // Use source's CopyFrom, with new calculated shape
-    m_pSource->CopyFrom(pRefToSrcRaster, NewCopyFromOptions);
+    m_pSource->CopyFromLegacy(pRefToSrcRaster, NewCopyFromOptions);
 
     // Our content has changed...
     // But don't propagate ContentChanged, since our source (to whom we are
@@ -289,9 +339,9 @@ void HRAReferenceToRaster::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
 // public
 // CopyFrom
 //-----------------------------------------------------------------------------
-void HRAReferenceToRaster::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster)
+void HRAReferenceToRaster::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
     {
-    CopyFrom(pi_pSrcRaster, HRACopyFromOptions());
+    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
     }
 
 
@@ -778,34 +828,11 @@ void HRAReferenceToRaster::RecalculateEffectiveShape()
 
 //-----------------------------------------------------------------------------
 // public
-// Call before a draw for initialization purpose.
-//-----------------------------------------------------------------------------
-void HRAReferenceToRaster::PreDraw(HRADrawOptions* pio_pOptions)
-    {
-    HFCPtr<HGF2DCoordSys> pReferenceLookAheadCS(new HGF2DCoordSys(
-                                                    *GetSource()->GetCoordSys()->GetTransfoModelTo(GetCoordSys()),
-                                                    pio_pOptions->GetShape()->GetCoordSys()));
-
-    // Take a copy of the shape and transform it to the source's position
-    HFCPtr<HVEShape> pTempShape = pio_pOptions->GetShape();
-    pTempShape->ChangeCoordSys(GetCoordSys());
-    pTempShape->SetCoordSys(m_pSource->GetCoordSys());
-
-    // Use a destination CS that doesn't take the reference's
-    // transformation into account.
-    pTempShape->ChangeCoordSys(pReferenceLookAheadCS);
-    pio_pOptions->SetShape(pTempShape);
-
-    m_pSource->PreDraw(pio_pOptions);
-    }
-
-//-----------------------------------------------------------------------------
-// public
 // Draw
 //-----------------------------------------------------------------------------
-void HRAReferenceToRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const
+void HRAReferenceToRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
     {
-    HRADrawOptions Options(pi_pOptions);
+    HRADrawOptions Options(pi_Options);
 
     // if there is no replacing coordsys, set ours
     if(Options.GetReplacingCoordSys() == 0)
@@ -823,7 +850,7 @@ void HRAReferenceToRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, co
 
     Options.SetShape(pRegionToDraw);
 
-    m_pSource->Draw(pio_pSurface, &Options);
+    m_pSource->Draw(pio_destSurface, Options);
     }
 
 /** -----------------------------------------------------------------------------
@@ -1160,60 +1187,7 @@ void HRAReferenceToRaster::ComputeHistogram(HRAHistogramOptions* pio_pOptions,
     HPRECONDITION(IsStoredRaster());
     HPRECONDITION(pio_pOptions != 0);
 
-#if 0
-    if (pi_ForceRecompute || (GetHistogram() == 0) || (GetHistogram() != 0 && !GetHistogram()->CanBeUsedInPlaceOf(*pio_pOptions)))
-        {
-        // we copy the options structure
-        HRAHistogramOptions TmpOptions(*pio_pOptions);
-
-        // create an iterator
-        HAutoPtr<HRARasterIterator> pSrcIterator(m_pSource->CreateIterator());
-
-        // Inform of invalid iterator onstruction
-        HASSERT(pSrcIterator != 0);
-
-        if (pSrcIterator != 0)
-            {
-            unsigned short Index;
-            unsigned short Entries = pio_pOptions->GetPalette()->CountUsedEntries();
-            HFCPtr<HRARaster> pRaster;
-
-            while((*pSrcIterator)() != 0)
-                {
-                // get the current raster
-                pRaster = (*pSrcIterator)();
-
-                // copy the histogram for each raster
-                TmpOptions.SetHistogram(new HRPHistogram(*(TmpOptions.GetPalette())));
-
-                // compute the histogram
-                pRaster->ComputeHistogram(&TmpOptions, pi_ForceRecompute);
-
-                // add each entry in the histogram
-                for(Index = 0; Index < Entries; Index++)
-                    pio_pOptions->GetHistogram()->
-                    IncrementEntryCount(Index,
-                                        TmpOptions.GetHistogram()->GetEntryCount(Index));
-
-                pSrcIterator->Next();
-                }
-
-            SetHistogram(pio_pOptions);
-            }
-        }
-    else
-        {
-        HPRECONDITION(GetHistogram()->GetHistogram()->GetEntryFrequenciesSize() <=
-                      pio_pOptions->GetHistogram()->GetEntryFrequenciesSize());
-
-        HFCPtr<HRPHistogram> pHisto(new HRPHistogram(*GetHistogram()->GetHistogram()));
-        HFCPtr<HRPHistogram> pOutHisto(pio_pOptions->GetHistogram());
-        for (uint32_t i = 0; i < pHisto->GetEntryFrequenciesSize(); i++)
-            pOutHisto->IncrementEntryCount(i, pHisto->GetEntryCount(i));
-        }
-#else
     m_pSource->ComputeHistogram(pio_pOptions, pi_ForceRecompute);
-#endif
     }
 
 
@@ -1226,79 +1200,7 @@ unsigned short HRAReferenceToRaster::GetRepresentativePalette(HRARepPalParms* pi
 
     HPRECONDITION(pio_pRepPalParms != 0);
 
-#if 0
-    unsigned short CountUsed = GetRepresentativePaletteCache(pio_pRepPalParms);
-
-    // test if not updated
-    if(CountUsed == 0)
-        {
-        // we copy the representative palette parameters structure and
-        // its pixel type to not notify the tiled raster after each
-        // unlock in the tiles
-        HRARepPalParms RepPalParms(*pio_pRepPalParms);
-        RepPalParms.SetPixelType((HRPPixelType*)RepPalParms.GetPixelType()->Clone());
-
-        // create an iterator
-        HAutoPtr<HRARasterIterator> pSrcIterator(m_pSource->CreateIterator());
-        HASSERT(pSrcIterator != 0);
-
-        if (pSrcIterator != 0)
-            {
-            const HRPPixelPalette& rPalette = (RepPalParms.GetPixelType())->GetPalette();
-            unsigned short Index;
-            unsigned short Entries;
-            HFCPtr<HRARaster> pRaster;
-
-            // create a quantized palette object
-            HAutoPtr<HRPQuantizedPalette> pQuantizedPalette (pio_pRepPalParms->CreateQuantizedPalette());
-            HASSERT(pQuantizedPalette != 0);
-
-            while((*pSrcIterator)() != 0)
-                {
-                // get the current raster
-                pRaster = (*pSrcIterator)();
-
-                // we create a new histogram for each tile if there is one
-                if(pio_pRepPalParms->GetHistogram() != 0)
-                    RepPalParms.SetHistogram(new HRPHistogram(rPalette));
-
-                // get the representative palette of an element in the mosaic
-                pRaster->GetRepresentativePalette(&RepPalParms);
-                Entries = rPalette.CountUsedEntries();
-
-                // insert each entry of the representative palette in the
-                // quantized object
-                for(Index = 0; Index < Entries; Index++)
-                    {
-                    if(RepPalParms.GetHistogram() != 0)
-                        pQuantizedPalette->AddCompositeValue(
-                            rPalette.GetCompositeValue(Index),
-                            RepPalParms.GetHistogram()->GetEntryCount(Index));
-
-                    else
-                        pQuantizedPalette->AddCompositeValue(rPalette.GetCompositeValue(Index));
-                    }
-
-                pSrcIterator->Next();
-                }
-
-            // get the number of entries in the quantized palette
-            CountUsed = pQuantizedPalette->GetPalette(&((pio_pRepPalParms->GetPixelType())->LockPalette()),
-                                                      pio_pRepPalParms->GetHistogram());
-            (pio_pRepPalParms->GetPixelType())->UnlockPalette();
-
-            if(pio_pRepPalParms->UseCache())
-                {
-                // update the palette cache if required
-                UpdateRepPalCache(CountUsed, (pio_pRepPalParms->GetPixelType())->GetPalette());
-                }
-            }
-        }
-
-    return CountUsed;
-#else
     return m_pSource->GetRepresentativePalette(pio_pRepPalParms);
-#endif
     }
 
 //-----------------------------------------------------------------------------
@@ -1394,7 +1296,7 @@ HFCPtr<HVEShape> HRAReferenceToRaster::GetEffectiveShape () const
             m_pEffectiveShape->Intersect(GetShape());
 
         // Now we're clean...
-        ((HRAReferenceToRaster*) this)->m_EffectiveShapeDirty = false;
+        m_EffectiveShapeDirty = false;
         }
 
     return m_pEffectiveShape;
@@ -1438,8 +1340,7 @@ void HRAReferenceToRaster::SetDefaultShape()
 //-----------------------------------------------------------------------------
 // Return a new copy of self
 //-----------------------------------------------------------------------------
-HRARaster* HRAReferenceToRaster::Clone (HPMObjectStore* pi_pStore,
-    HPMPool*        pi_pLog) const
+HFCPtr<HRARaster> HRAReferenceToRaster::Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog) const
     {
     return new HRAReferenceToRaster(*this);
     }
@@ -1449,4 +1350,30 @@ HRARaster* HRAReferenceToRaster::Clone (HPMObjectStore* pi_pStore,
 HPMPersistentObject* HRAReferenceToRaster::Clone () const
     {
     return new HRAReferenceToRaster(*this);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Stephane.Poulin                 06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRAReferenceToRaster::_BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options)
+    {
+    // Do not override the replacing
+    if (NULL != options.GetReplacingCoordSys().GetPtr())
+        return GetSource()->BuildCopyToContext(imageNode, options);
+
+    HFCPtr<HGF2DTransfoModel> pDiffModel(GetCoordSys()->GetTransfoModelTo(GetSource()->GetCoordSys()));
+    HFCPtr<HGF2DTransfoModel> pSimplModel(pDiffModel->CreateSimplifiedModel());
+    if (NULL != pSimplModel.GetPtr())
+        pDiffModel = pSimplModel;
+
+    // If the diffModel is identity, nothing to do
+    if (pDiffModel->IsCompatibleWith(HGF2DIdentityId))
+        return GetSource()->BuildCopyToContext(imageNode, options);
+
+    // Here we know that the HRAReferenceToRaster induce a transformation
+    HRACopyToOptions newOptions(options);
+    newOptions.SetReplacingCoordSys(GetCoordSys());
+    return GetSource()->BuildCopyToContext(imageNode, newOptions);
+
     }

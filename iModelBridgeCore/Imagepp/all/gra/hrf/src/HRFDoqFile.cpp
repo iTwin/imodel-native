@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFDoqFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFDoqFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 
 
@@ -38,12 +38,11 @@
 #include <Imagepp/all/h/HGF2DSimilitude.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 //--------------------------------------------------
 // Definition
@@ -198,8 +197,7 @@ HRFDoqCreator::HRFDoqCreator()
 WString HRFDoqCreator::GetLabel() const
     {
     // DOQ File Format
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_USGS_DOQ); // DOQ File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_USGS_DOQ()); // DOQ File Format
     }
 
 // Identification information
@@ -237,7 +235,6 @@ bool HRFDoqCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                   uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
 
     bool                       Result = false;
     HAutoPtr<HFCBinStream>      pFile;
@@ -247,9 +244,9 @@ bool HRFDoqCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock (GetLockManager());
 
     // Open the Doq File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
         pFile->Read(pLine, DOQ_HEADER_LINE_LENGTH);
 
@@ -335,9 +332,7 @@ bool HRFDoqFile::Open()
 
     if (!m_IsOpen)
         {
-        m_pDoqFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(m_pDoqFile, GetURL()->GetURL());
+        m_pDoqFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -424,16 +419,16 @@ void HRFDoqFile::ReadHeader()
         }
 
     if(!GetField(BITS_PER_PIXEL,1,&m_BitsPerPixel))
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+        throw HFCCorruptedFileException(m_pURL->GetURL());
 
     if(!GetField(SAMPLES_AND_LINES, 1, &m_ImageWidth))
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+        throw HFCCorruptedFileException(m_pURL->GetURL());
 
     if(!GetField(SAMPLES_AND_LINES, 2, &m_ImageHeight))
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+        throw HFCCorruptedFileException(m_pURL->GetURL());
 
     if(!GetField(BYTE_COUNT, 1, &m_HeaderSize))
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+        throw HFCCorruptedFileException(m_pURL->GetURL());
 
     m_SLO = TranslateScanlineOrientation(GetField(RASTER_ORDER, 1));
 
@@ -581,7 +576,7 @@ string HRFDoqFile::GetFieldString(int pi_Offset, uint32_t pi_ArgNb)const
                 }
             else
                 {
-                throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+                throw HFCCorruptedFileException(m_pURL->GetURL());
                 }
             }
 
@@ -753,12 +748,12 @@ void HRFDoqFile::CreatePixelType()
 
 
             default:
-                throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                 break;
             }
         }
     else
-        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
 
     HPOSTCONDITION (m_pPixelType != 0);
     }
@@ -1033,18 +1028,7 @@ void HRFDoqFile::CreateDescriptors()
                                         &TagList);               // Attribute set
         }
 
-    IRasterBaseGcsPtr pBaseGcs = HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, *pGeoTiffKeys);
-    if (pBaseGcs != NULL && pBaseGcs->IsValid())
-        pPage->SetGeocoding(pBaseGcs);
-
-//    HFCPtr<HMDMetaDataContainerList> pMetaDataContainers;
-
-//    pMetaDataContainers = new HMDMetaDataContainerList;
-
-    //HMD_GEOCODING_INFO
-//    pMetaDataContainers->SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>(pGeoTiffKeys));
-
-//    pPage->SetListOfMetaDataContainer(pMetaDataContainers);
+    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys));
 
     m_ListOfPageDescriptor.push_back(pPage);
     }
@@ -1315,7 +1299,7 @@ HRFDoqFile::HRFDoqFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
     else
         {
@@ -1345,7 +1329,6 @@ const HGF2DWorldIdentificator HRFDoqFile::GetWorldIdentificator () const
 void HRFDoqFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                uint32_t pi_Page,
                                                bool   pi_CheckSpecificUnitSpec,
-                                               bool   pi_GeoModelDefaultUnit,
                                                bool   pi_InterpretUnitINTGR)
     {
     //There is already a default unit specified by the DOQ file format specification,
@@ -1370,7 +1353,7 @@ HRFDoqFile::HRFDoqFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
 
     }

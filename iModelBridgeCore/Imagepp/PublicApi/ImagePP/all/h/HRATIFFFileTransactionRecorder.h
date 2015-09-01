@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRATIFFFileTransactionRecorder.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Class : HRATIFFFileTransactionRecorder
@@ -13,6 +13,7 @@
 #include "HFCAccessMode.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HTIFFFileRecorder;
 class HRATransaction;
 class HFCURL;
@@ -26,14 +27,14 @@ class HRATIFFFileTransactionRecorder : public HRATransactionRecorder
     {
 public:
 
-    _HDLLg static HRATIFFFileTransactionRecorder* CreateFor(const HFCPtr<HFCURL>& pi_rpURL,
+    IMAGEPP_EXPORT static HRATIFFFileTransactionRecorder* CreateFor(const HFCPtr<HFCURL>& pi_rpURL,
                                                             uint32_t              pi_Page,
                                                             bool                 pi_NewFile = false);
 
 
-    _HDLLg HRATIFFFileTransactionRecorder    (const HFCPtr<HFCURLFile>& pi_rpURL,
+    IMAGEPP_EXPORT HRATIFFFileTransactionRecorder    (const HFCPtr<HFCURLFile>& pi_rpURL,
                                               bool                     pi_NewFile = false);
-    _HDLLg virtual ~HRATIFFFileTransactionRecorder   ();
+    IMAGEPP_EXPORT virtual ~HRATIFFFileTransactionRecorder   ();
 
     virtual HRATransaction*     CreateNewTransaction(TransactionType    pi_TransactionType) override;
     virtual HRATransaction*     CreateTransaction   (TransactionType    pi_TransactionType,
@@ -49,7 +50,7 @@ public:
                                                      const void*        pi_pStack,
                                                      size_t             pi_StackSize) override;
 
-    _HDLLg virtual void         ClearAllRecordedData() override;
+    IMAGEPP_EXPORT virtual void         ClearAllRecordedData() override;
 
 
 
@@ -69,5 +70,6 @@ private:
     HRATIFFFileTransactionRecorder(const HRATIFFFileTransactionRecorder&);
     HRATIFFFileTransactionRecorder& operator=(const HRATIFFFileTransactionRecorder&);
     };
+END_IMAGEPP_NAMESPACE
 
 

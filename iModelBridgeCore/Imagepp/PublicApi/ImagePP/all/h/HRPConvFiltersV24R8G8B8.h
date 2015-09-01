@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPConvFiltersV24R8G8B8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16,15 +16,16 @@
 // HRPSmoothFilter
 // Smooth filter definition
 //-----------------------------------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
 class HRPSmoothFilter : public HRPConvFilterV24R8G8B8
     {
-    HDECLARE_CLASS_ID(1342, HRPConvFilterV24R8G8B8)
+    HDECLARE_CLASS_ID(HRPFilterId_Smooth, HRPConvFilterV24R8G8B8)
     
 
 public:
 
-    _HDLLg                     HRPSmoothFilter();
-    _HDLLg virtual             ~HRPSmoothFilter();
+    IMAGEPP_EXPORT                     HRPSmoothFilter();
+    IMAGEPP_EXPORT virtual             ~HRPSmoothFilter();
 
     virtual HRPFilter* Clone() const override;
 
@@ -43,13 +44,13 @@ private:
 //-----------------------------------------------------------------------------
 class HRPSharpenFilter : public HRPConvFilterV24R8G8B8
     {
-    HDECLARE_CLASS_ID(1204, HRPConvFilterV24R8G8B8)
+    HDECLARE_CLASS_ID(HRPFilterId_Sharpen, HRPConvFilterV24R8G8B8)
     
 
 public:
-    _HDLLg                     HRPSharpenFilter();
-    _HDLLg                     HRPSharpenFilter(Byte pi_Intensity);
-    _HDLLg virtual             ~HRPSharpenFilter();
+    IMAGEPP_EXPORT                     HRPSharpenFilter();
+    IMAGEPP_EXPORT                     HRPSharpenFilter(Byte pi_Intensity);
+    IMAGEPP_EXPORT virtual             ~HRPSharpenFilter();
 
     virtual HRPFilter* Clone() const override;
 
@@ -71,12 +72,12 @@ private:
 //-----------------------------------------------------------------------------
 class HRPDetailFilter : public HRPConvFilterV24R8G8B8
     {
-    HDECLARE_CLASS_ID(1343, HRPConvFilterV24R8G8B8)
+    HDECLARE_CLASS_ID(HRPFilterId_Detail, HRPConvFilterV24R8G8B8)
     
 
 public:
-    _HDLLg                     HRPDetailFilter();
-    _HDLLg virtual             ~HRPDetailFilter();
+    IMAGEPP_EXPORT                     HRPDetailFilter();
+    IMAGEPP_EXPORT virtual             ~HRPDetailFilter();
 
     virtual HRPFilter* Clone() const override;
 
@@ -96,13 +97,13 @@ private:
 
 class HRPEdgeEnhanceFilter : public HRPConvFilterV24R8G8B8
     {
-    HDECLARE_CLASS_ID(1344, HRPConvFilterV24R8G8B8)
+    HDECLARE_CLASS_ID(HRPFilterId_EdgeEnhance, HRPConvFilterV24R8G8B8)
     
 
 public:
 
-    _HDLLg                 HRPEdgeEnhanceFilter();
-    _HDLLg virtual         ~HRPEdgeEnhanceFilter();
+    IMAGEPP_EXPORT                 HRPEdgeEnhanceFilter();
+    IMAGEPP_EXPORT virtual         ~HRPEdgeEnhanceFilter();
 
     virtual HRPFilter* Clone() const override;
 
@@ -122,13 +123,13 @@ private:
 
 class HRPFindEdgesFilter : public HRPConvFilterV24R8G8B8
     {
-    HDECLARE_CLASS_ID(1345, HRPConvFilterV24R8G8B8)
+    HDECLARE_CLASS_ID(HRPFilterId_FindEdges, HRPConvFilterV24R8G8B8)
     
 
 public:
 
-    _HDLLg                     HRPFindEdgesFilter();
-    _HDLLg virtual             ~HRPFindEdgesFilter();
+    IMAGEPP_EXPORT                     HRPFindEdgesFilter();
+    IMAGEPP_EXPORT virtual             ~HRPFindEdgesFilter();
 
     virtual HRPFilter* Clone() const override;
 
@@ -148,14 +149,14 @@ private:
 
 class HRPBlurFilter : public HRPConvFilterV24R8G8B8
     {
-    HDECLARE_CLASS_ID(1203, HRPConvFilterV24R8G8B8)
+    HDECLARE_CLASS_ID(HRPFilterId_Blur, HRPConvFilterV24R8G8B8)
     
 
 public:
-    _HDLLg                     HRPBlurFilter();
-    _HDLLg                     HRPBlurFilter(Byte pi_Intensity);
+    IMAGEPP_EXPORT                     HRPBlurFilter();
+    IMAGEPP_EXPORT                     HRPBlurFilter(Byte pi_Intensity);
 
-    _HDLLg virtual             ~HRPBlurFilter();
+    IMAGEPP_EXPORT virtual             ~HRPBlurFilter();
 
     virtual HRPFilter* Clone() const override;
 
@@ -179,13 +180,13 @@ private:
 
 class HRPAverageFilter : public HRPConvFilterV24R8G8B8
     {
-    HDECLARE_CLASS_ID(1346, HRPConvFilterV24R8G8B8)
+    HDECLARE_CLASS_ID(HRPFilterId_Average, HRPConvFilterV24R8G8B8)
     
 
 public:
 
-    _HDLLg                     HRPAverageFilter();
-    _HDLLg virtual             ~HRPAverageFilter();
+    IMAGEPP_EXPORT                     HRPAverageFilter();
+    IMAGEPP_EXPORT virtual             ~HRPAverageFilter();
 
     virtual HRPFilter* Clone() const override;
 
@@ -197,4 +198,5 @@ private:
 
     static int32_t WeightMatrix[2][2];
     };
+END_IMAGEPP_NAMESPACE
 

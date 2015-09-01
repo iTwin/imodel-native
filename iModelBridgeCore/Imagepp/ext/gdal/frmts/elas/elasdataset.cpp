@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: elasdataset.cpp 16396 2009-02-22 20:49:52Z rouault $
+ * $Id: elasdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  ELAS Translator
  * Purpose:  Complete implementation of ELAS translator module for GDAL.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2008-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +30,7 @@
 
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: elasdataset.cpp 16396 2009-02-22 20:49:52Z rouault $");
+CPL_CVSID("$Id: elasdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 CPL_C_START
 void	GDALRegister_ELAS(void);
@@ -81,7 +82,7 @@ class ELASDataset : public GDALPamDataset
 {
     friend class ELASRasterBand;
 
-    FILE	*fp;
+    VSILFILE	*fp;
 
     ELASHeader  sHeader;
     int		bHeaderModified;
@@ -101,6 +102,7 @@ class ELASDataset : public GDALPamDataset
     virtual CPLErr SetGeoTransform( double * );
 
     static GDALDataset *Open( GDALOpenInfo * );
+    static int          Identify( GDALOpenInfo * );
     static GDALDataset *Create( const char * pszFilename,
                                 int nXSize, int nYSize, int nBands,
                                 GDALDataType eType, char ** papszParmList );
@@ -151,7 +153,7 @@ ELASRasterBand::ELASRasterBand( ELASDataset *poDS, int nBand )
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr ELASRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
+CPLErr ELASRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                    void * pImage )
 
 {
@@ -170,8 +172,8 @@ CPLErr ELASRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /*      created file, and that the file hasn't been extended yet.       */
 /*      Just read as zeros.                                             */
 /* -------------------------------------------------------------------- */
-    if( VSIFSeek( poGDS->fp, nOffset, SEEK_SET ) != 0 
-        || VSIFRead( pImage, 1, nDataSize, poGDS->fp ) != (size_t) nDataSize )
+    if( VSIFSeekL( poGDS->fp, nOffset, SEEK_SET ) != 0
+        || VSIFReadL( pImage, 1, nDataSize, poGDS->fp ) != (size_t) nDataSize )
     {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Seek or read of %d bytes at %ld failed.\n",
@@ -186,7 +188,7 @@ CPLErr ELASRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /*                            IWriteBlock()                             */
 /************************************************************************/
 
-CPLErr ELASRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
+CPLErr ELASRasterBand::IWriteBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                      void * pImage )
 
 {
@@ -201,8 +203,8 @@ CPLErr ELASRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
     nDataSize = GDALGetDataTypeSize(eDataType) * poGDS->GetRasterXSize() / 8;
     nOffset = poGDS->nLineOffset * nBlockYOff + 1024 + (nBand-1) * nDataSize;
     
-    if( VSIFSeek( poGDS->fp, nOffset, SEEK_SET ) != 0
-        || VSIFWrite( pImage, 1, nDataSize, poGDS->fp ) != (size_t) nDataSize )
+    if( VSIFSeekL( poGDS->fp, nOffset, SEEK_SET ) != 0
+        || VSIFWriteL( pImage, 1, nDataSize, poGDS->fp ) != (size_t) nDataSize )
     {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Seek or write of %d bytes at %ld failed.\n",
@@ -246,8 +248,11 @@ ELASDataset::~ELASDataset()
 {
     FlushCache();
 
-    VSIFClose( fp );
-    fp = NULL;
+    if( fp != NULL )
+    {
+        VSIFCloseL( fp );
+        fp = NULL;
+    }
 }
 
 /************************************************************************/
@@ -263,12 +268,34 @@ void ELASDataset::FlushCache()
 
     if( bHeaderModified )
     {
-        VSIFSeek( fp, 0, SEEK_SET );
-        VSIFWrite( &sHeader, 1024, 1, fp );
+        VSIFSeekL( fp, 0, SEEK_SET );
+        VSIFWriteL( &sHeader, 1024, 1, fp );
         bHeaderModified = FALSE;
     }
 }
 
+/************************************************************************/
+/*                              Identify()                               */
+/************************************************************************/
+
+int ELASDataset::Identify( GDALOpenInfo * poOpenInfo )
+
+{
+/* -------------------------------------------------------------------- */
+/*  First we check to see if the file has the expected header           */
+/*  bytes.                                                               */
+/* -------------------------------------------------------------------- */
+    if( poOpenInfo->nHeaderBytes < 256 )
+        return FALSE;
+
+    if( CPL_MSBWORD32(*((GInt32 *) (poOpenInfo->pabyHeader+0))) != 1024
+        || CPL_MSBWORD32(*((GInt32 *) (poOpenInfo->pabyHeader+28))) != 4321 )
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
 
 /************************************************************************/
 /*                                Open()                                */
@@ -277,18 +304,8 @@ void ELASDataset::FlushCache()
 GDALDataset *ELASDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
-/* -------------------------------------------------------------------- */
-/*	First we check to see if the file has the expected header	*/
-/*	bytes.								*/    
-/* -------------------------------------------------------------------- */
-    if( poOpenInfo->nHeaderBytes < 256 )
+    if( !Identify(poOpenInfo) )
         return NULL;
-
-    if( CPL_MSBWORD32(*((GInt32 *) (poOpenInfo->pabyHeader+0))) != 1024
-        || CPL_MSBWORD32(*((GInt32 *) (poOpenInfo->pabyHeader+28))) != 4321 )
-    {
-        return NULL;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
@@ -303,12 +320,13 @@ GDALDataset *ELASDataset::Open( GDALOpenInfo * poOpenInfo )
 
     poDS = new ELASDataset();
 
-    poDS->fp = VSIFOpen( poOpenInfo->pszFilename, pszAccess );
+    poDS->fp = VSIFOpenL( poOpenInfo->pszFilename, pszAccess );
     if( poDS->fp == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
                   "Attempt to open `%s' with acces `%s' failed.\n",
                   poOpenInfo->pszFilename, pszAccess );
+        delete poDS;
         return NULL;
     }
 
@@ -318,10 +336,10 @@ GDALDataset *ELASDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Read the header information.                                    */
 /* -------------------------------------------------------------------- */
     poDS->bHeaderModified = FALSE;
-    if( VSIFRead( &(poDS->sHeader), 1024, 1, poDS->fp ) != 1 )
+    if( VSIFReadL( &(poDS->sHeader), 1024, 1, poDS->fp ) != 1 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
-                  "Attempt to read 1024 Byte header filed on file %s\n",
+                  "Attempt to read 1024 byte header filed on file %s\n",
                   poOpenInfo->pszFilename );
         return NULL;
     }
@@ -431,6 +449,11 @@ GDALDataset *ELASDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
+
+/* -------------------------------------------------------------------- */
+/*      Check for external overviews.                                   */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
 
     return( poDS );
 }
@@ -653,8 +676,11 @@ void GDALRegister_ELAS()
                                    "ELAS" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
                                    "Byte Float32 Float64" );
-        
+
+        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+
         poDriver->pfnOpen = ELASDataset::Open;
+        poDriver->pfnIdentify = ELASDataset::Identify;
         poDriver->pfnCreate = ELASDataset::Create;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );

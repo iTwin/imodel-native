@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTgaCompressLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTgaCompressLineEditor
 //---------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFTgaFile.h>
 #include <Imagepp/all/h/HCDPacket.h>
@@ -97,9 +97,9 @@ HRFTgaCompressLineEditor::~HRFTgaCompressLineEditor()
 
  @return HSTATUS H_SUCCESS if the readint operation went right.
 ------------------------------------------------------------------------------*/
-HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint32_t        pi_PosBlockX,
-                                            uint32_t        pi_PosBlockY,
-                                            Byte*          po_pData,
+HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
+                                            uint64_t  pi_PosBlockY,
+                                            Byte*     po_pData,
                                             HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -144,8 +144,8 @@ HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint32_t        pi_PosBlockX,
 
  @return HSTATUS H_SUCCESS if the readint operation went right.
 ------------------------------------------------------------------------------*/
-HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
-                                            uint32_t           pi_PosBlockY,
+HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint64_t           pi_PosBlockX,
+                                            uint64_t           pi_PosBlockY,
                                             HFCPtr<HCDPacket>& po_rpPacket,
                                             HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -157,7 +157,7 @@ HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
     HSTATUS Status = H_ERROR;
     HFCLockMonitor SisterFileLock;
 
-    uint32_t           Line;
+    uint64_t           Line;
     uint32_t           NbBytesRead;
     HFCPtr<HRFTgaFile>  pTgaFile    = TGA_RASTERFILE;
 
@@ -214,7 +214,7 @@ HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
         {
         Byte* pReturnBytes = new Byte[NbBytesRead];
 
-        if (pTgaFile->m_pTgaFile->Read((void*)pReturnBytes, NbBytesRead) != NbBytesRead)
+        if (pTgaFile->m_pTgaFile->Read(pReturnBytes, NbBytesRead) != NbBytesRead)
             goto WRAPUP;    // H_ERROR
 
         po_rpPacket->SetBuffer (pReturnBytes, NbBytesRead);
@@ -225,7 +225,7 @@ HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
         {
         HASSERT (NbBytesRead <= po_rpPacket->GetBufferSize());
 
-        if (pTgaFile->m_pTgaFile->Read((void*)po_rpPacket->GetBufferAddress(), NbBytesRead) != NbBytesRead)
+        if (pTgaFile->m_pTgaFile->Read(po_rpPacket->GetBufferAddress(), NbBytesRead) != NbBytesRead)
             goto WRAPUP;    // H_ERROR;
 
         po_rpPacket->SetDataSize (NbBytesRead);
@@ -253,9 +253,9 @@ WRAPUP:
 
  @return HSTATUS H_SUCCESS if the writing operation went right.
 ------------------------------------------------------------------------------*/
-HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint32_t                 pi_PosBlockX,
-                                             uint32_t                 pi_PosBlockY,
-                                             const Byte*             pi_pData,
+HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                             uint64_t                 pi_PosBlockY,
+                                             const Byte*              pi_pData,
                                              HFCLockMonitor const*    pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -295,8 +295,8 @@ HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint32_t                 pi_PosBloc
 
  @return HSTATUS H_SUCCESS if the writing operation went right.
 ------------------------------------------------------------------------------*/
-HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint32_t                 pi_PosBlockX,
-                                             uint32_t                 pi_PosBlockY,
+HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                             uint64_t                 pi_PosBlockY,
                                              const HFCPtr<HCDPacket>& pi_rpPacket,
                                              HFCLockMonitor const*    pi_pSisterFileLock)
     {
@@ -335,7 +335,7 @@ HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint32_t                 pi_PosBloc
 
     // Write the packet in the physical file.
     size_t DataSize = pi_rpPacket->GetDataSize();
-    if (pTgaFile->m_pTgaFile->Write ((void*)pi_rpPacket->GetBufferAddress(), DataSize) != DataSize)
+    if (pTgaFile->m_pTgaFile->Write (pi_rpPacket->GetBufferAddress(), DataSize) != DataSize)
         goto WRAPUP;    // H_ERROR
 
     m_pLineOffsetTbl[pi_PosBlockY+1] = (uint32_t)pTgaFile->m_pTgaFile->GetCurrentPos();
@@ -400,7 +400,7 @@ bool HRFTgaCompressLineEditor::GetLineOffsetTableFromFile()
         SizeToProcess = pTgaFile->GetRasterDataEndOffset() - PosFromLastBlock;
         SizeToProcess = SizeToProcess < BLOCKSIZE ? SizeToProcess : BLOCKSIZE;
         pTgaFile->m_pTgaFile->SeekToPos (PosFromLastBlock);
-        pTgaFile->m_pTgaFile->Read ((void*)pBlockOfData, SizeToProcess);
+        pTgaFile->m_pTgaFile->Read (pBlockOfData, SizeToProcess);
         Pos = 0;
 
         // Process a block

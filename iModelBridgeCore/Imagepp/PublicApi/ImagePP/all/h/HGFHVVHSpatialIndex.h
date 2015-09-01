@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFHVVHSpatialIndex.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFHVVHSpatialIndex
@@ -17,7 +17,7 @@
 #include "HGFHVVHSpatialAttribute.h"
 #include "HGF2DCoordSys.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -518,7 +518,7 @@ private:
     m_UnindexedObjects;
     };
 
-
+END_IMAGEPP_NAMESPACE
 
 #include "HGFHVVHSpatialIndex.hpp"
 

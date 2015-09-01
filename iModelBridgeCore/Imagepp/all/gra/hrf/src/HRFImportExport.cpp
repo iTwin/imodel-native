@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFImportExport.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRFImportExport
 // ----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HFCGrid.h>
@@ -27,13 +27,14 @@
 #include <Imagepp/all/h/HRFImportExport.h>
 #include <Imagepp/all/h/HRFRasterFileFactory.h>
 #include <Imagepp/all/h/HRFRasterFilePageDecorator.h>
-#include <Imagepp/all/h/HRFErMapperSupportedFile.h>
 
 #include <Imagepp/all/h/HRFExportOptions.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
 #include <Imagepp/all/h/HRFException.h>
+
+
 
 //-----------------------------------------------------------------------------
 // Constructor
@@ -119,8 +120,7 @@ void HRFImportExport::SetExportOptions(const HFCPtr<HRFExportOptions>& pi_rpExpo
             FileName = GetSelectedExportFilename()->GetURL();
             }
 
-        throw HRFException(HRF_INVALID_EXPORT_OPTION_EXCEPTION,
-                           FileName);
+        throw HRFInvalidExportOptionException(FileName);
         }
 
     if (CountCompressionStep() > 1)
@@ -174,7 +174,7 @@ void HRFImportExport::SetExportOptions(const HFCPtr<HRFExportOptions>& pi_rpExpo
     SetBlockHeight(pi_rpExportOptions->GetBlockHeight());
     SelectEncoding(pi_rpExportOptions->GetEncoding());
 
-    SetGeocoding(pi_rpExportOptions->GetGeocoding());
+    SetRasterFileGeocoding(*(pi_rpExportOptions->GetRasterFileGeocoding().Clone()));
 
     if (CountGeoreferenceFormats() > 0)
         SelectGeoreferenceFormat(pi_rpExportOptions->GetGeoreferenceFormat());
@@ -1773,9 +1773,9 @@ void HRFImportExport::UpdateBlockValues()
 
         if (m_BlockHeightIncrementStep)
             {
-            if (min(m_pStripCapability->GetMaxHeight(),GetImageHeight()) > m_MinBlockHeight)
+            if (MIN(m_pStripCapability->GetMaxHeight(),GetImageHeight()) > m_MinBlockHeight)
                 {
-                m_CountBlockHeightIncrementStep = ((min(m_pStripCapability->GetMaxHeight(),GetImageHeight() + 1) - m_MinBlockHeight)
+                m_CountBlockHeightIncrementStep = ((MIN(m_pStripCapability->GetMaxHeight(),GetImageHeight() + 1) - m_MinBlockHeight)
                                                    / m_BlockHeightIncrementStep) + 1;
                 }
             }
@@ -2337,29 +2337,48 @@ uint32_t HRFImportExport::GetSelectedGeoreferenceFormatIndex() const
 
 
 /** ------------------------------------------------------------------
+    SetRasterFileGeocoding
+    ------------------------------------------------------------------
+*/
+void HRFImportExport::SetRasterFileGeocoding(RasterFileGeocoding& pi_pGeocoding)
+    {
+    m_ExportOptions.SetRasterFileGeocoding(pi_pGeocoding);
+    }
+
+/** ------------------------------------------------------------------
+    GetRasterFileGeocoding
+    ------------------------------------------------------------------
+*/
+RasterFileGeocoding const& HRFImportExport::GetRasterFileGeocoding() const
+    {
+    return m_ExportOptions.GetRasterFileGeocoding();
+    }
+/** ------------------------------------------------------------------
     SetGeocoding
     ------------------------------------------------------------------
 */
-void HRFImportExport::SetGeocoding(IRasterBaseGcsPtr pi_pGeocoding)
+void HRFImportExport::SetGeocoding(IRasterBaseGcsP pi_pGeocoding)
     {
-    m_ExportOptions.SetGeocoding(pi_pGeocoding);
+    m_ExportOptions.SetRasterFileGeocoding(*(RasterFileGeocoding::Create(pi_pGeocoding)));
     }
 
 /** ------------------------------------------------------------------
     SetGeocoding
     ------------------------------------------------------------------
 */
-IRasterBaseGcsPtr HRFImportExport::GetGeocoding() const
+IRasterBaseGcsCP HRFImportExport::GetGeocodingCP() const
     {
-    return m_ExportOptions.GetGeocoding();
+    return m_ExportOptions.GetRasterFileGeocoding().GetGeocodingCP();
     }
+
+	
 
 //-----------------------------------------------------------------------------
 // GetRGBDefaultColor
 //-----------------------------------------------------------------------------
-void* HRFImportExport::GetRGBDefaultColor() const
+void const* HRFImportExport::GetRGBDefaultColor() const
     {
-    return((void*)m_aRGBDefaultColor);
+    return m_aRGBDefaultColor;
     }
 
 
@@ -2432,10 +2451,7 @@ HFCPtr<HRFPageDescriptor> HRFImportExport::CreatePageFromSelectedValues()
     // Create the selected pixel type
     HFCPtr<HRPPixelType> pPixelType = GetPixelType();
 
-    // Default color
-    // (32 is an arbitrary number larger enough to contain any kind of
-    // composite value)
-    Byte aValue[32];
+    Byte defaultPixelValue[HRPPixelType::MAX_PIXEL_BYTES];
 
     // We need a converter to transform RGB <<default>> value to one compatible with selected pixel type
     HFCPtr<HRPPixelConverter> pConverter;
@@ -2446,7 +2462,7 @@ HFCPtr<HRFPageDescriptor> HRFImportExport::CreatePageFromSelectedValues()
         pConverter = HRPPixelTypeV32R8G8B8A8().GetConverterTo(pPixelType);
 
         // Convert color
-        pConverter->ConvertToValue(m_aRGBADefaultColor,(void*)aValue);
+        pConverter->Convert(m_aRGBADefaultColor, defaultPixelValue);
         }
     else
         {
@@ -2454,11 +2470,11 @@ HFCPtr<HRFPageDescriptor> HRFImportExport::CreatePageFromSelectedValues()
         pConverter = HRPPixelTypeV24R8G8B8().GetConverterTo(pPixelType);
 
         // Convert color
-        pConverter->ConvertToValue(m_aRGBDefaultColor,(void*)aValue);
+        pConverter->Convert(m_aRGBDefaultColor, defaultPixelValue);
         }
 
     // Set pixel type default value
-    pPixelType->SetDefaultCompositeValue(aValue);
+    pPixelType->SetDefaultRawData(defaultPixelValue);
 
     // Create the selected Sub pixel type
     HFCPtr<HRPPixelType> pSubPixelType;
@@ -2477,10 +2493,10 @@ HFCPtr<HRFPageDescriptor> HRFImportExport::CreatePageFromSelectedValues()
             pConverter = HRPPixelTypeV32R8G8B8A8().GetConverterTo(pSubPixelType);
 
             // Convert color
-            pConverter->ConvertToValue(m_aRGBADefaultColor,(void*)aValue);
+            pConverter->Convert(m_aRGBADefaultColor,defaultPixelValue);
 
             // Set pixel type default value
-            pSubPixelType->SetDefaultCompositeValue(aValue);
+            pSubPixelType->SetDefaultRawData(defaultPixelValue);
             }
         else
             {
@@ -2488,10 +2504,10 @@ HFCPtr<HRFPageDescriptor> HRFImportExport::CreatePageFromSelectedValues()
             pConverter = HRPPixelTypeV24R8G8B8().GetConverterTo(pSubPixelType);
 
             // Convert color
-            pConverter->ConvertToValue(m_aRGBDefaultColor,(void*)aValue);
+            pConverter->Convert(m_aRGBDefaultColor,defaultPixelValue);
 
             // Set pixel type default value
-            pSubPixelType->SetDefaultCompositeValue(aValue);
+            pSubPixelType->SetDefaultRawData(defaultPixelValue);
             }
         }
 
@@ -2653,6 +2669,9 @@ HFCPtr<HRFPageDescriptor> HRFImportExport::CreatePageFromSelectedValues()
         pPageDesc->SetListOfMetaDataContainer(pMDContainers, true);
         }
 
+    //Set geocoding in page descriptor
+    pPageDesc->InitFromRasterFileGeocoding(*(GetRasterFileGeocoding().Clone()),true);
+
     return pPageDesc;
     }
 
@@ -2752,10 +2771,10 @@ uint32_t HRFImportExport::ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath)
                 if (CountCompressionStep() > 1)
                     {
                     // By default we test 4 quality of compression
-                    int NumberOfLevels = min(3, CountCompressionStep() - 1);
+                    int NumberOfLevels = MIN(3, CountCompressionStep() - 1);
                     for (int Level = 1; Level <= NumberOfLevels; Level ++)
                         {
-                        SelectCompressionQuality(min(CountCompressionStep() - 1, (CountCompressionStep() / NumberOfLevels) * Level));
+                        SelectCompressionQuality(MIN(CountCompressionStep() - 1, (CountCompressionStep() / NumberOfLevels) * Level));
 
                         // Add the path to the Booster url
                         WString ExportPath(pi_rpURLPath->GetURL());
@@ -2780,10 +2799,10 @@ uint32_t HRFImportExport::ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath)
                 else if (CountCompressionRatioStep() > 1)
                     {
                     // By default we test 4 quality of compression
-                    int NumberOfLevels = min(3, CountCompressionRatioStep() - 1);
+                    int NumberOfLevels = MIN(3, CountCompressionRatioStep() - 1);
                     for (int Level = 1; Level <= NumberOfLevels; Level ++)
                         {
-                        SelectCompressionRatio(min(CountCompressionRatioStep() - 1, (CountCompressionRatioStep() / NumberOfLevels) * Level));
+                        SelectCompressionRatio(MIN(CountCompressionRatioStep() - 1, (CountCompressionRatioStep() / NumberOfLevels) * Level));
 
                         // Add the path to the Booster url
                         WString ExportPath(pi_rpURLPath->GetURL());
@@ -2845,16 +2864,10 @@ HFCPtr<HRFRasterFile> HRFImportExport::CreateFileFromSelectedValues()
 
     // Create the basic destination file
     // Is the destination is the COM ECW(ERMapper) (1429) OR Is the destination is COM Jpeg2000File (1477)
-    if (pRasterFileCreator->GetRasterFileClassID() == HRFEcwFile::CLASS_ID || pRasterFileCreator->GetRasterFileClassID() == HRFJpeg2000File::CLASS_ID)
+    if (pRasterFileCreator->GetRasterFileClassID() == HRFFileId_Ecw/*HRFEcwFile::CLASS_ID*/ || 
+        pRasterFileCreator->GetRasterFileClassID() == HRFFileId_Jpeg2000/*HRFJpeg2000File::CLASS_ID*/)
         {
         pOutputFile = pRasterFileCreator->Create(GetSelectedExportFilename(), HFC_CREATE_ONLY);
-
-        //MST : In case of an COM supporting something other than ECW or JP2, and that is able to export,
-        //        an access mode as an HRF is likely required. Temporary solution.
-        if ((pOutputFile->GetClassID() != HRFEcwFile::CLASS_ID) && (pRasterFileCreator->GetClassID() == HRFJpeg2000File::CLASS_ID))
-            {
-            pOutputFile = pRasterFileCreator->Create(GetSelectedExportFilename(), HFC_WRITE_AND_CREATE);
-            }
         }
     else
         // TR 185890: Restore code of HRFImportExport.cpp version 1.14 that was lost in version 1.15.
@@ -2877,7 +2890,7 @@ HFCPtr<HRFRasterFile> HRFImportExport::CreateFileFromSelectedValues()
 
         // Add the page before any adapter.
         if (! pOutputFile->AddPage(CreatePageFromSelectedValues()))
-            throw HFCFileException(HFC_FILE_NOT_CREATED_EXCEPTION, GetSelectedExportFilename()->GetURL());
+            throw HFCFileNotCreatedException(GetSelectedExportFilename()->GetURL());
 
         if (m_ExportOptions.GetGeoreferenceFormat() == HRFGeoreferenceFormat::GEOREFERENCE_IN_HGR)
             {
@@ -2893,7 +2906,7 @@ HFCPtr<HRFRasterFile> HRFImportExport::CreateFileFromSelectedValues()
                 }
             else
                 {
-                throw HFCFileException(HFC_SISTER_FILE_NOT_CREATED_EXCEPTION, pPageFileName->GetURL());
+                throw HFCSisterFileNotCreatedException(pPageFileName->GetURL());
                 }
             }
         else if (m_ExportOptions.GetGeoreferenceFormat() == HRFGeoreferenceFormat::GEOREFERENCE_IN_WORLD_FILE)
@@ -2907,13 +2920,13 @@ HFCPtr<HRFRasterFile> HRFImportExport::CreateFileFromSelectedValues()
                 }
             else
                 {
-                throw HFCFileException(HFC_SISTER_FILE_NOT_CREATED_EXCEPTION, pPageFileName->GetURL());
+                throw HFCSisterFileNotCreatedException(pPageFileName->GetURL());
                 }
             }
         }
     else
         {
-        throw HFCFileException(HFC_FILE_NOT_CREATED_EXCEPTION, GetSelectedExportFilename()->GetURL());
+        throw HFCFileNotCreatedException(GetSelectedExportFilename()->GetURL());
         }
 
     return pOutputFile;
@@ -3517,7 +3530,7 @@ void HRFImportExport::ValidateUncompressedExportSize(HFCPtr<HRFRasterFile>& pi_p
 
         if (UncompressedDataSize > MaxImgDataSize)
             {
-            throw HFCFileException(HFC_FILE_OUT_OF_RANGE_EXCEPTION, pi_prDstRasterFile->GetURL()->GetURL());
+            throw HFCFileOutOfRangeException(pi_prDstRasterFile->GetURL()->GetURL());
             }
         }
 

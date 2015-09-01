@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptTileToLine.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptTileToLine
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCAccessMode.h>
 
@@ -115,16 +115,18 @@ HRFAdaptTileToLine::~HRFAdaptTileToLine()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptTileToLine::ReadBlock (uint32_t pi_PosBlockX,
-                                       uint32_t pi_PosBlockY,
-                                       Byte* po_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFAdaptTileToLine::ReadBlock(uint64_t pi_PosBlockX,
+                                      uint64_t pi_PosBlockY,
+                                      Byte*  po_pData,
+                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
-    uint32_t TileIndexY = pi_PosBlockY / m_TileHeight;
-    uint32_t LineInTile = pi_PosBlockY % m_TileHeight;
+    uint32_t TileIndexY = (uint32_t)pi_PosBlockY / m_TileHeight;
+    uint32_t LineInTile = (uint32_t)pi_PosBlockY % m_TileHeight;
 
     if (TileIndexY != m_BufferedTileIndexY)
         {
@@ -164,19 +166,21 @@ HSTATUS HRFAdaptTileToLine::ReadBlock (uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptTileToLine::WriteBlock(uint32_t     pi_PosBlockX,
-                                       uint32_t     pi_PosBlockY,
-                                       const Byte* pi_pData,
+HSTATUS HRFAdaptTileToLine::WriteBlock(uint64_t     pi_PosBlockX,
+                                       uint64_t     pi_PosBlockY,
+                                       const Byte*  pi_pData,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     HASSERT (m_NextLineToWrite == pi_PosBlockY);
     m_NextLineToWrite++;
 
-    uint32_t TileIndexY = pi_PosBlockY / m_TileHeight;
-    uint32_t LineInTile = pi_PosBlockY % m_TileHeight;
+    uint32_t TileIndexY = (uint32_t)pi_PosBlockY / m_TileHeight;
+    uint32_t LineInTile = (uint32_t)pi_PosBlockY % m_TileHeight;
 
     // Alloc working buffer
     if ( m_ppTiles == 0)

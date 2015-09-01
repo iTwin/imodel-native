@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfaband.cpp 21672 2011-02-10 17:24:28Z warmerdam $
+ * $Id: hfaband.cpp 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFABand, for accessing one Eimg_Layer.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Intergraph Corporation
+ * Copyright (c) 2007-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +33,7 @@
 
 /* include the compression code */
 
-CPL_CVSID("$Id: hfaband.cpp 21672 2011-02-10 17:24:28Z warmerdam $");
+CPL_CVSID("$Id: hfaband.cpp 27739 2014-09-25 18:49:52Z goatbar $");
 
 /************************************************************************/
 /*                              HFABand()                               */
@@ -410,28 +411,34 @@ CPLErr	HFABand::LoadExternalBlockInfo()
 /*      Open raw data file.                                             */
 /* -------------------------------------------------------------------- */
     const char *pszFullFilename = HFAGetIGEFilename( psInfo );
+    if (pszFullFilename == NULL)
+    {
+        CPLError( CE_Failure, CPLE_OpenFailed,
+                  "Cannot find external data file name" );
+        return CE_Failure;
+    }
 
     if( psInfo->eAccess == HFA_ReadOnly )
 	fpExternal = VSIFOpenL( pszFullFilename, "rb" );
     else
 	fpExternal = VSIFOpenL( pszFullFilename, "r+b" );
 
-    if( fpExternal == NULL )
+    if (fpExternal == NULL)
     {
         //IPP - TR 244928, CR 247184
         //Try to find an .ige file whose base name is
         //identical to the basename of the IMG file being opened.
-        pszFullFilename = CPLGetBasename( psInfo->pszFilename );
+        pszFullFilename = CPLGetBasename (psInfo->pszFilename);
 
-        const char *pszFileBaseName = VSIStrdup(pszFullFilename);
-                    pszFullFilename = CPLFormFilename( psInfo->pszPath, pszFileBaseName, ".ige" );
+        const char *pszFileBaseName = VSIStrdup (pszFullFilename);
+        pszFullFilename = CPLFormFilename (psInfo->pszPath, pszFileBaseName, ".ige");
 
-        VSIFree((void*)pszFileBaseName);
+        VSIFree ((void*)pszFileBaseName);
 
-        if( psInfo->eAccess == HFA_ReadOnly )
-            fpExternal = VSIFOpenL( pszFullFilename, "rb" );
+        if (psInfo->eAccess == HFA_ReadOnly)
+            fpExternal = VSIFOpenL (pszFullFilename, "rb");
         else
-            fpExternal = VSIFOpenL( pszFullFilename, "r+b" );
+            fpExternal = VSIFOpenL (pszFullFilename, "r+b");
     }
 
     if( fpExternal == NULL )
@@ -451,7 +458,6 @@ CPLErr	HFABand::LoadExternalBlockInfo()
 
     if( strncmp( szHeader, "ERDAS_IMG_EXTERNAL_RASTER", 26 ) != 0 )
     {
-        VSIFCloseL( fpExternal );
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Raw data file %s appears to be corrupt.\n",
                   pszFullFilename );
@@ -628,9 +634,9 @@ static CPLErr UncompressBlock( GByte *pabyCData, int nSrcBytes,
             }
             else
             {
-                printf( "nNumBits = %d\n", nNumBits );
-                CPLAssert( FALSE );
-                nRawValue = 0;
+                CPLError(CE_Failure, CPLE_NotSupported,
+                         "Unsupported nNumBits value : %d", nNumBits);
+                return CE_Failure;
             }
 
 /* -------------------------------------------------------------------- */
@@ -716,7 +722,7 @@ static CPLErr UncompressBlock( GByte *pabyCData, int nSrcBytes,
                  nNumRuns, nDataOffset);
         return CE_Failure;
     }
-    
+
     if (nNumBits > INT_MAX / nNumRuns ||
         nNumBits * nNumRuns > INT_MAX - 7 ||
         (nNumBits * nNumRuns + 7)/8 > INT_MAX - nDataOffset)
@@ -848,7 +854,7 @@ static CPLErr UncompressBlock( GByte *pabyCData, int nSrcBytes,
             
             for( i = 0; i < nRepeatCount; i++ )
             {
-                CPLAssert( nDataValue < 256 );
+                //CPLAssert( nDataValue < 256 );
                 ((GByte *) pabyDest)[nPixelsOutput++] = (GByte)nDataValue;
             }
         }
@@ -867,7 +873,7 @@ static CPLErr UncompressBlock( GByte *pabyCData, int nSrcBytes,
             
             for( i = 0; i < nRepeatCount; i++ )
             {
-                CPLAssert( nDataValue < 256 );
+                //CPLAssert( nDataValue < 256 );
                 ((GByte *) pabyDest)[nPixelsOutput++] = (GByte)nDataValue;
             }
         }
@@ -913,7 +919,7 @@ static CPLErr UncompressBlock( GByte *pabyCData, int nSrcBytes,
         {
             int		i;
 
-            CPLAssert( nDataValue == 0 || nDataValue == 1 );
+            //CPLAssert( nDataValue == 0 || nDataValue == 1 );
             
             if( nDataValue == 1 )
             {
@@ -936,7 +942,7 @@ static CPLErr UncompressBlock( GByte *pabyCData, int nSrcBytes,
         {
             int		i;
 
-            CPLAssert( nDataValue >= 0 && nDataValue < 4 );
+            //CPLAssert( nDataValue >= 0 && nDataValue < 4 );
 
             for( i = 0; i < nRepeatCount; i++ )
             {
@@ -955,7 +961,7 @@ static CPLErr UncompressBlock( GByte *pabyCData, int nSrcBytes,
         {
             int		i;
 
-            CPLAssert( nDataValue >= 0 && nDataValue < 16 );
+            //CPLAssert( nDataValue >= 0 && nDataValue < 16 );
             
             for( i = 0; i < nRepeatCount; i++ )
             {
@@ -993,15 +999,24 @@ static CPLErr UncompressBlock( GByte *pabyCData, int nSrcBytes,
 void HFABand::NullBlock( void *pData )
 
 {
+    int nChunkSize = MAX(1,HFAGetDataTypeBits(nDataType)/8);
+    int nWords = nBlockXSize * nBlockYSize;
+
     if( !bNoDataSet )
-        memset( pData, 0, 
-                HFAGetDataTypeBits(nDataType)*nBlockXSize*nBlockYSize/8 );
+    {
+#ifdef ESRI_BUILD
+        // We want special defaulting for 1 bit data in ArcGIS.
+        if ( nDataType >= EPT_u2 )
+            memset( pData,   0, nChunkSize*nWords );
+        else
+            memset( pData, 255, nChunkSize*nWords );
+#else
+        memset( pData,   0, nChunkSize*nWords );
+#endif
+    }
     else
-            
     {
         double adfND[2];
-        int nChunkSize = MAX(1,HFAGetDataTypeBits(nDataType)/8);
-        int nWords = nBlockXSize * nBlockYSize;
         int i;
 
         switch( nDataType )
@@ -1381,6 +1396,12 @@ CPLErr HFABand::SetRasterBlock( int nXBlock, int nYBlock, void * pData )
 
         /* create the compressor object */
         HFACompress compress( pData, nInBlockSize, nDataType );
+        if( compress.getCounts() == NULL ||
+            compress.getValues() == NULL)
+        {
+            CPLError( CE_Failure, CPLE_OutOfMemory, "Out of memory");
+            return CE_Failure;
+        }
      
         /* compress the data */
         if( compress.compressBlock() )
@@ -2058,12 +2079,29 @@ int HFABand::CreateOverview( int nOverviewLevel, const char *pszResampling )
     }
 
 /* -------------------------------------------------------------------- */
+/*      Are we compressed? If so, overview should be too (unless        */
+/*      HFA_COMPRESS_OVR is defined).                                   */
+/*      Check RasterDMS like HFAGetBandInfo                             */
+/* -------------------------------------------------------------------- */
+    int bCompressionType = FALSE;
+    const char* pszCompressOvr = CPLGetConfigOption("HFA_COMPRESS_OVR", NULL);
+    if( pszCompressOvr != NULL )
+        bCompressionType = CSLTestBoolean(pszCompressOvr);
+    else
+    {
+        HFAEntry *poDMS = poNode->GetNamedChild( "RasterDMS" );
+
+        if( poDMS != NULL )
+            bCompressionType = poDMS->GetIntField( "compressionType" ) != 0;
+    }
+
+/* -------------------------------------------------------------------- */
 /*      Create the layer.                                               */
 /* -------------------------------------------------------------------- */
     osLayerName.Printf( "_ss_%d_", nOverviewLevel );
 
     if( !HFACreateLayer( psRRDInfo, poParent, osLayerName, 
-                         TRUE, 64, FALSE, bCreateLargeRaster, FALSE,
+                         TRUE, 64, bCompressionType, bCreateLargeRaster, FALSE,
                          nOXSize, nOYSize, nOverviewDataType, NULL,
                          nValidFlagsOffset, nDataOffset, 1, 0 ) )
         return -1;

@@ -2,20 +2,20 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFNitfEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFNitfEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFNitfEditor.h>
 #include <Imagepp/all/h/HRFNitfFile.h>
 #include <Imagepp/all/h/HTIFFUtils.h>
 
-#include <ImagePPInternal/ext/gdal/gdal_priv.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
 
 #define BAND_1 0
 #define BAND_2 1

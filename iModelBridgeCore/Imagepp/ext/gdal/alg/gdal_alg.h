@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_alg.h 18227 2009-12-09 13:08:16Z chaitanya $
+ * $Id: gdal_alg.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL Image Processing Algorithms
  * Purpose:  Prototypes, and definitions for various GDAL based algorithms.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -90,6 +91,14 @@ GDALPolygonize( GDALRasterBandH hSrcBand,
                 void * pProgressArg );
 
 CPLErr CPL_DLL CPL_STDCALL
+GDALFPolygonize( GDALRasterBandH hSrcBand,
+                GDALRasterBandH hMaskBand,
+                OGRLayerH hOutLayer, int iPixValField,
+                char **papszOptions,
+                GDALProgressFunc pfnProgress,
+                void * pProgressArg );
+
+CPLErr CPL_DLL CPL_STDCALL
 GDALSieveFilter( GDALRasterBandH hSrcBand, GDALRasterBandH hMaskBand,
                  GDALRasterBandH hDstBand,
                  int nSizeThreshold, int nConnectedness,
@@ -112,6 +121,7 @@ typedef struct {
     GDALTransformerFunc pfnTransform;
     void (*pfnCleanup)( void * );
     CPLXMLNode *(*pfnSerialize)( void * );
+    /* TODO GDAL 2.0 : add a void* (*pfnClone) (void *) member */
 } GDALTransformerInfo;
 
 void CPL_DLL GDALDestroyTransformer( void *pTransformerArg );
@@ -157,6 +167,12 @@ int CPL_DLL GDALReprojectionTransform(
 void CPL_DLL *
 GDALCreateGCPTransformer( int nGCPCount, const GDAL_GCP *pasGCPList, 
                           int nReqOrder, int bReversed );
+			  
+/* GCP based transformer with refinement of the GCPs ... forward is to georef coordinates */
+void CPL_DLL *
+GDALCreateGCPRefineTransformer( int nGCPCount, const GDAL_GCP *pasGCPList, 
+                                int nReqOrder, int bReversed, double tolerance, int minimumGcps);
+			  
 void CPL_DLL GDALDestroyGCPTransformer( void *pTransformArg );
 int CPL_DLL GDALGCPTransform( 
     void *pTransformArg, int bDstToSrc, int nPointCount,
@@ -171,6 +187,8 @@ void CPL_DLL GDALDestroyTPSTransformer( void *pTransformArg );
 int CPL_DLL GDALTPSTransform( 
     void *pTransformArg, int bDstToSrc, int nPointCount,
     double *x, double *y, double *z, int *panSuccess );
+
+char CPL_DLL ** RPCInfoToMD( GDALRPCInfo *psRPCInfo );
 
 /* RPC based transformer ... src is pixel/line/elev, dst is long/lat/elev */
 
@@ -238,7 +256,16 @@ GDALSerializeTransformer( GDALTransformerFunc pfnFunc, void *pTransformArg );
 CPLErr CPL_DLL GDALDeserializeTransformer( CPLXMLNode *psTree, 
                                            GDALTransformerFunc *ppfnFunc, 
                                            void **ppTransformArg );
-                                      
+
+CPLErr CPL_DLL
+GDALTransformGeolocations( GDALRasterBandH hXBand, 
+                           GDALRasterBandH hYBand, 
+                           GDALRasterBandH hZBand,
+                           GDALTransformerFunc pfnTransformer, 
+                           void *pTransformArg, 
+                           GDALProgressFunc pfnProgress, 
+                           void *pProgressArg,
+                           char **papszOptions );
 
 /* -------------------------------------------------------------------- */
 /*      Contour Line Generation                                         */
@@ -438,6 +465,12 @@ GDALGridCreate( GDALGridAlgorithm, const void *, GUInt32,
                 double, double, double, double,
                 GUInt32, GUInt32, GDALDataType, void *,
                 GDALProgressFunc, void *);
+
+GDAL_GCP CPL_DLL *
+GDALComputeMatchingPoints( GDALDatasetH hFirstImage,
+                           GDALDatasetH hSecondImage,
+                           char **papszOptions,
+                           int *pnGCPCount ); 
 CPL_C_END
                             
 #endif /* ndef GDAL_ALG_H_INCLUDED */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fujibasdataset.cpp 17664 2009-09-21 21:16:45Z rouault $
+ * $Id: fujibasdataset.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  eCognition
  * Purpose:  Implementation of FUJI BAS Format
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam
+ * Copyright (c) 2009, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "rawdataset.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: fujibasdataset.cpp 17664 2009-09-21 21:16:45Z rouault $");
+CPL_CVSID("$Id: fujibasdataset.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 CPL_C_START
 void	GDALRegister_FujiBAS(void);

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTgaCompressImageEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTgaCompressImageEditor
 //---------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFTgaFile.h>
 #include <Imagepp/all/h/HCDPacket.h>
@@ -78,9 +78,9 @@ HRFTgaCompressImageEditor::~HRFTgaCompressImageEditor()
 
  @return HSTATUS H_SUCCESS if the read operation worked.
 ------------------------------------------------------------------------------*/
-HSTATUS HRFTgaCompressImageEditor::ReadBlock(uint32_t        pi_PosBlockX,
-                                             uint32_t        pi_PosBlockY,
-                                             Byte*          po_pData,
+HSTATUS HRFTgaCompressImageEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                             uint64_t pi_PosBlockY,
+                                             Byte*    po_pData,
                                              HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -188,7 +188,7 @@ HSTATUS HRFTgaCompressImageEditor::ReadCompressedImage(HFCPtr<HCDPacket>& po_rpP
         {
         Byte* pReturnBytes = new Byte[NbBytesRead];
 
-        if(pTgaFile->m_pTgaFile->Read ((void*)pReturnBytes, NbBytesRead) != NbBytesRead)
+        if(pTgaFile->m_pTgaFile->Read (pReturnBytes, NbBytesRead) != NbBytesRead)
             goto WRAPUP;    // H_ERROR
 
         po_rpPacket->SetBuffer (pReturnBytes, NbBytesRead);
@@ -199,7 +199,7 @@ HSTATUS HRFTgaCompressImageEditor::ReadCompressedImage(HFCPtr<HCDPacket>& po_rpP
         {
         HASSERT (NbBytesRead <= po_rpPacket->GetBufferSize());
 
-        if(pTgaFile->m_pTgaFile->Read ((void*)po_rpPacket->GetBufferAddress(), NbBytesRead) != NbBytesRead)
+        if(pTgaFile->m_pTgaFile->Read (po_rpPacket->GetBufferAddress(), NbBytesRead) != NbBytesRead)
             goto WRAPUP;    // H_ERROR
 
         po_rpPacket->SetDataSize (NbBytesRead);

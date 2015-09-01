@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCBuffer.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class : HFCBuffer.hpp
 //-----------------------------------------------------------------------------
-#include <Bentley/BeAssert.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------
  Constructor for this class.
 
@@ -468,3 +468,5 @@ inline void HFCBuffer::Refit()
     // Resize to fit the data size
     Resize(m_DataSize);
     }
+
+END_IMAGEPP_NAMESPACE

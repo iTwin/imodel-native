@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRSObjectStore.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HRSObjectStore
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Public
 // Returns the PhysicalCoordSys for this store
@@ -76,3 +77,4 @@ inline bool HRSObjectStore::SetResizableRasterSize(uint64_t pi_RasterWidth,
     else
         return false;
     }
+END_IMAGEPP_NAMESPACE

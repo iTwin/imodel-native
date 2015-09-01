@@ -2,13 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DRectangle.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include "HGFDrawOptions.h"
-#include "HGFMappedSurface.h"
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -99,24 +97,24 @@ inline HVE2DRectangle::HVE2DRectangle(const HGF2DLocation& pi_rFirstPoint,
     : HVE2DSimpleShape(pi_rFirstPoint.GetCoordSys())
 // The following cause INTERNAL VC++ ERROR
 //: HVE2DSimpleShape(pi_rFirstPoint.GetCoordSys()),
-//  m_XMin(min(pi_rFirstPoint.GetX(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetX())),
-//  m_XMax(max(pi_rFirstPoint.GetX(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetX())),
-//  m_YMin(min(pi_rFirstPoint.GetY(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetY())),
-//  m_YMax(max(pi_rFirstPoint.GetY(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetY()))
+//  m_XMin(MIN(pi_rFirstPoint.GetX(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetX())),
+//  m_XMax(MAX(pi_rFirstPoint.GetX(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetX())),
+//  m_YMin(MIN(pi_rFirstPoint.GetY(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetY())),
+//  m_YMax(MAX(pi_rFirstPoint.GetY(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetY()))
     {
     if (pi_rFirstPoint.GetCoordSys() != pi_rSecondPoint.GetCoordSys())
         {
-        m_XMin = min(pi_rFirstPoint.GetX(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetX());
-        m_XMax = max(pi_rFirstPoint.GetX(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetX());
-        m_YMin = min(pi_rFirstPoint.GetY(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetY());
-        m_YMax = max(pi_rFirstPoint.GetY(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetY());
+        m_XMin = MIN(pi_rFirstPoint.GetX(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetX());
+        m_XMax = MAX(pi_rFirstPoint.GetX(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetX());
+        m_YMin = MIN(pi_rFirstPoint.GetY(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetY());
+        m_YMax = MAX(pi_rFirstPoint.GetY(), pi_rSecondPoint.ExpressedIn(pi_rFirstPoint.GetCoordSys()).GetY());
         }
     else
         {
-        m_XMin = min(pi_rFirstPoint.GetX(), pi_rSecondPoint.GetX());
-        m_XMax = max(pi_rFirstPoint.GetX(), pi_rSecondPoint.GetX());
-        m_YMin = min(pi_rFirstPoint.GetY(), pi_rSecondPoint.GetY());
-        m_YMax = max(pi_rFirstPoint.GetY(), pi_rSecondPoint.GetY());
+        m_XMin = MIN(pi_rFirstPoint.GetX(), pi_rSecondPoint.GetX());
+        m_XMax = MAX(pi_rFirstPoint.GetX(), pi_rSecondPoint.GetX());
+        m_YMin = MIN(pi_rFirstPoint.GetY(), pi_rSecondPoint.GetY());
+        m_YMax = MAX(pi_rFirstPoint.GetY(), pi_rSecondPoint.GetY());
         }
 
     // Set tolerance if necessary
@@ -464,14 +462,4 @@ inline HVE2DShapeTypeId HVE2DRectangle::GetShapeType() const
     return(HVE2DRectangle::CLASS_ID);
     }
 
-
-
-
-
-
-
-
-
-
-
-
+END_IMAGEPP_NAMESPACE

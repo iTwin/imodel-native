@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFHVVHSpatialIndex.hpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIDXHVVHSpatialIndex
@@ -10,7 +10,7 @@
 // General class for relative ordering indexes.
 //-----------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 ///////////////////////////
 // HGFHVVHSpatialIndex
 ///////////////////////////
@@ -1144,13 +1144,13 @@ template<class O, class SI> double HGFHVVHSpatialIndex<O, SI>::CalculateSplitPos
 
         if (pi_NodeSplitsHorizontally)
             {
-            MinPosition = min(MinPosition, ObjectExtent.GetYMin());
-            MaxPosition = max(MaxPosition, ObjectExtent.GetYMax());
+            MinPosition = MIN(MinPosition, ObjectExtent.GetYMin());
+            MaxPosition = MAX(MaxPosition, ObjectExtent.GetYMax());
             }
         else
             {
-            MinPosition = min(MinPosition, ObjectExtent.GetXMin());
-            MaxPosition = max(MaxPosition, ObjectExtent.GetXMax());
+            MinPosition = MIN(MinPosition, ObjectExtent.GetXMin());
+            MaxPosition = MAX(MaxPosition, ObjectExtent.GetXMax());
             }
 
         ++Itr;
@@ -1169,7 +1169,7 @@ template<class O, class SI> inline void HGFHVVHSpatialIndex<O, SI>::SetAttribute
     Node*                             pi_pNode)
     {
     // Get the object's attribute
-    ((Attribute*) pi_rpObject->GetAttribute(this))->SetNode((void*)pi_pNode);
+    ((Attribute*) pi_rpObject->GetAttribute(this))->SetNode(pi_pNode);
     }
 
 
@@ -1193,17 +1193,17 @@ void HGFHVVHSpatialIndex<O, SI>::AdjustCutNodeBoundsAfterInsertion(
         {
         if (pi_pNode->MinOnOtherAxis != DBL_MAX)
             {
-            pi_pNode->MinOnOtherAxis = min(pi_pNode->MinOnOtherAxis,
+            pi_pNode->MinOnOtherAxis = MIN(pi_pNode->MinOnOtherAxis,
                                            pi_rObjectExtent.GetYMin());
-            pi_pNode->MaxOnOtherAxis = max(pi_pNode->MaxOnOtherAxis,
+            pi_pNode->MaxOnOtherAxis = MAX(pi_pNode->MaxOnOtherAxis,
                                            pi_rObjectExtent.GetYMax());
             }
 
         if (pi_ObjectInsertedHere && pi_pNode->MinOnSplitAxis != DBL_MAX)
             {
-            pi_pNode->MinOnSplitAxis = min(pi_pNode->MinOnSplitAxis,
+            pi_pNode->MinOnSplitAxis = MIN(pi_pNode->MinOnSplitAxis,
                                            pi_rObjectExtent.GetXMin());
-            pi_pNode->MaxOnSplitAxis = max(pi_pNode->MaxOnSplitAxis,
+            pi_pNode->MaxOnSplitAxis = MAX(pi_pNode->MaxOnSplitAxis,
                                            pi_rObjectExtent.GetXMax());
             }
         }
@@ -1211,17 +1211,17 @@ void HGFHVVHSpatialIndex<O, SI>::AdjustCutNodeBoundsAfterInsertion(
         {
         if (pi_pNode->MinOnOtherAxis != DBL_MAX)
             {
-            pi_pNode->MinOnOtherAxis = min(pi_pNode->MinOnOtherAxis,
+            pi_pNode->MinOnOtherAxis = MIN(pi_pNode->MinOnOtherAxis,
                                            pi_rObjectExtent.GetXMin());
-            pi_pNode->MaxOnOtherAxis = max(pi_pNode->MaxOnOtherAxis,
+            pi_pNode->MaxOnOtherAxis = MAX(pi_pNode->MaxOnOtherAxis,
                                            pi_rObjectExtent.GetXMax());
             }
 
         if (pi_ObjectInsertedHere && pi_pNode->MinOnSplitAxis != DBL_MAX)
             {
-            pi_pNode->MinOnSplitAxis = min(pi_pNode->MinOnSplitAxis,
+            pi_pNode->MinOnSplitAxis = MIN(pi_pNode->MinOnSplitAxis,
                                            pi_rObjectExtent.GetYMin());
-            pi_pNode->MaxOnSplitAxis = max(pi_pNode->MaxOnSplitAxis,
+            pi_pNode->MaxOnSplitAxis = MAX(pi_pNode->MaxOnSplitAxis,
                                            pi_rObjectExtent.GetYMax());
             }
         }
@@ -1371,13 +1371,13 @@ template<class O, class SI> void HGFHVVHSpatialIndex<O, SI>::ValidateCutNodeBoun
                     HGF2DExtent ObjectExtent((*Itr)->GetObject()->GetExtent());
                     ObjectExtent.ChangeCoordSys(m_pCoordSys);
 
-                    pi_pNode->MinOnSplitAxis = min(pi_pNode->MinOnSplitAxis,
+                    pi_pNode->MinOnSplitAxis = MIN(pi_pNode->MinOnSplitAxis,
                                                    ObjectExtent.GetXMin());
-                    pi_pNode->MaxOnSplitAxis = max(pi_pNode->MaxOnSplitAxis,
+                    pi_pNode->MaxOnSplitAxis = MAX(pi_pNode->MaxOnSplitAxis,
                                                    ObjectExtent.GetXMax());
-                    pi_pNode->MinOnOtherAxis = min(pi_pNode->MinOnOtherAxis,
+                    pi_pNode->MinOnOtherAxis = MIN(pi_pNode->MinOnOtherAxis,
                                                    ObjectExtent.GetYMin());
-                    pi_pNode->MaxOnOtherAxis = max(pi_pNode->MaxOnOtherAxis,
+                    pi_pNode->MaxOnOtherAxis = MAX(pi_pNode->MaxOnOtherAxis,
                                                    ObjectExtent.GetYMax());
                     ++Itr;
                     }
@@ -1392,13 +1392,13 @@ template<class O, class SI> void HGFHVVHSpatialIndex<O, SI>::ValidateCutNodeBoun
                     HGF2DExtent ObjectExtent((*Itr)->GetObject()->GetExtent());
                     ObjectExtent.ChangeCoordSys(m_pCoordSys);
 
-                    pi_pNode->MinOnSplitAxis = min(pi_pNode->MinOnSplitAxis,
+                    pi_pNode->MinOnSplitAxis = MIN(pi_pNode->MinOnSplitAxis,
                                                    ObjectExtent.GetYMin());
-                    pi_pNode->MaxOnSplitAxis = max(pi_pNode->MaxOnSplitAxis,
+                    pi_pNode->MaxOnSplitAxis = MAX(pi_pNode->MaxOnSplitAxis,
                                                    ObjectExtent.GetYMax());
-                    pi_pNode->MinOnOtherAxis = min(pi_pNode->MinOnOtherAxis,
+                    pi_pNode->MinOnOtherAxis = MIN(pi_pNode->MinOnOtherAxis,
                                                    ObjectExtent.GetXMin());
-                    pi_pNode->MaxOnOtherAxis = max(pi_pNode->MaxOnOtherAxis,
+                    pi_pNode->MaxOnOtherAxis = MAX(pi_pNode->MaxOnOtherAxis,
                                                    ObjectExtent.GetXMax());
                     ++Itr;
                     }
@@ -1407,10 +1407,10 @@ template<class O, class SI> void HGFHVVHSpatialIndex<O, SI>::ValidateCutNodeBoun
             // and also the sub-nodes
             if (!pi_pNode->IsLeaf())
                 {
-                pi_pNode->MinOnOtherAxis = min(pi_pNode->MinOnOtherAxis,
-                                               min(pi_pNode->pLeftNode->MinOnOtherAxis, pi_pNode->pRightNode->MinOnOtherAxis));
-                pi_pNode->MaxOnOtherAxis = max(pi_pNode->MaxOnOtherAxis,
-                                               max(pi_pNode->pLeftNode->MaxOnOtherAxis, pi_pNode->pRightNode->MaxOnOtherAxis));
+                pi_pNode->MinOnOtherAxis = MIN(pi_pNode->MinOnOtherAxis,
+                                               MIN(pi_pNode->pLeftNode->MinOnOtherAxis, pi_pNode->pRightNode->MinOnOtherAxis));
+                pi_pNode->MaxOnOtherAxis = MAX(pi_pNode->MaxOnOtherAxis,
+                                               MAX(pi_pNode->pLeftNode->MaxOnOtherAxis, pi_pNode->pRightNode->MaxOnOtherAxis));
                 }
             }
         else
@@ -1427,9 +1427,9 @@ template<class O, class SI> void HGFHVVHSpatialIndex<O, SI>::ValidateCutNodeBoun
                     HGF2DExtent ObjectExtent((*Itr)->GetObject()->GetExtent());
                     ObjectExtent.ChangeCoordSys(m_pCoordSys);
 
-                    pi_pNode->MinOnSplitAxis = min(pi_pNode->MinOnSplitAxis,
+                    pi_pNode->MinOnSplitAxis = MIN(pi_pNode->MinOnSplitAxis,
                                                    ObjectExtent.GetXMin());
-                    pi_pNode->MaxOnSplitAxis = max(pi_pNode->MaxOnSplitAxis,
+                    pi_pNode->MaxOnSplitAxis = MAX(pi_pNode->MaxOnSplitAxis,
                                                    ObjectExtent.GetXMax());
                     ++Itr;
                     }
@@ -1444,9 +1444,9 @@ template<class O, class SI> void HGFHVVHSpatialIndex<O, SI>::ValidateCutNodeBoun
                     HGF2DExtent ObjectExtent((*Itr)->GetObject()->GetExtent());
                     ObjectExtent.ChangeCoordSys(m_pCoordSys);
 
-                    pi_pNode->MinOnSplitAxis = min(pi_pNode->MinOnSplitAxis,
+                    pi_pNode->MinOnSplitAxis = MIN(pi_pNode->MinOnSplitAxis,
                                                    ObjectExtent.GetYMin());
-                    pi_pNode->MaxOnSplitAxis = max(pi_pNode->MaxOnSplitAxis,
+                    pi_pNode->MaxOnSplitAxis = MAX(pi_pNode->MaxOnSplitAxis,
                                                    ObjectExtent.GetYMax());
                     ++Itr;
                     }
@@ -1468,9 +1468,9 @@ template<class O, class SI> void HGFHVVHSpatialIndex<O, SI>::ValidateCutNodeBoun
                     HGF2DExtent ObjectExtent((*Itr)->GetObject()->GetExtent());
                     ObjectExtent.ChangeCoordSys(m_pCoordSys);
 
-                    pi_pNode->MinOnOtherAxis = min(pi_pNode->MinOnOtherAxis,
+                    pi_pNode->MinOnOtherAxis = MIN(pi_pNode->MinOnOtherAxis,
                                                    ObjectExtent.GetYMin());
-                    pi_pNode->MaxOnOtherAxis = max(pi_pNode->MaxOnOtherAxis,
+                    pi_pNode->MaxOnOtherAxis = MAX(pi_pNode->MaxOnOtherAxis,
                                                    ObjectExtent.GetYMax());
                     ++Itr;
                     }
@@ -1485,9 +1485,9 @@ template<class O, class SI> void HGFHVVHSpatialIndex<O, SI>::ValidateCutNodeBoun
                     HGF2DExtent ObjectExtent((*Itr)->GetObject()->GetExtent());
                     ObjectExtent.ChangeCoordSys(m_pCoordSys);
 
-                    pi_pNode->MinOnOtherAxis = min(pi_pNode->MinOnOtherAxis,
+                    pi_pNode->MinOnOtherAxis = MIN(pi_pNode->MinOnOtherAxis,
                                                    ObjectExtent.GetXMin());
-                    pi_pNode->MaxOnOtherAxis = max(pi_pNode->MaxOnOtherAxis,
+                    pi_pNode->MaxOnOtherAxis = MAX(pi_pNode->MaxOnOtherAxis,
                                                    ObjectExtent.GetXMax());
                     ++Itr;
                     }
@@ -1496,10 +1496,10 @@ template<class O, class SI> void HGFHVVHSpatialIndex<O, SI>::ValidateCutNodeBoun
             // and also the sub-nodes
             if (!pi_pNode->IsLeaf())
                 {
-                pi_pNode->MinOnOtherAxis = min(pi_pNode->MinOnOtherAxis,
-                                               min(pi_pNode->pLeftNode->MinOnOtherAxis, pi_pNode->pRightNode->MinOnOtherAxis));
-                pi_pNode->MaxOnOtherAxis = max(pi_pNode->MaxOnOtherAxis,
-                                               max(pi_pNode->pLeftNode->MaxOnOtherAxis, pi_pNode->pRightNode->MaxOnOtherAxis));
+                pi_pNode->MinOnOtherAxis = MIN(pi_pNode->MinOnOtherAxis,
+                                               MIN(pi_pNode->pLeftNode->MinOnOtherAxis, pi_pNode->pRightNode->MinOnOtherAxis));
+                pi_pNode->MaxOnOtherAxis = MAX(pi_pNode->MaxOnOtherAxis,
+                                               MAX(pi_pNode->pLeftNode->MaxOnOtherAxis, pi_pNode->pRightNode->MaxOnOtherAxis));
                 }
             }
         }
@@ -1800,3 +1800,4 @@ template<class O, class SI> const HFCPtr< HIDXIndexable<O> > HGFHVVHSpatialIndex
 
     return pResult;
     }
+END_IMAGEPP_NAMESPACE

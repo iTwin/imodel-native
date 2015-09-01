@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCNodeIterator.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>---------------------------------------------------------------------------
@@ -13,7 +13,7 @@
 
 #include "HFCNode.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author  Ghislain Tardif (${mailto:Ghislain.Tardif@Bentley.com})
@@ -27,7 +27,7 @@
 class HFCNodeIterator
     {
 public:
-    HDECLARE_BASECLASS_ID (1341);
+    HDECLARE_BASECLASS_ID (HFCNodeIteratorId_Base);
 
     HFCNodeIterator(const HFCPtr<HFCNode>& pi_rpNode);
     HFCNodeIterator(const HFCNodeIterator& pi_rObj);
@@ -53,6 +53,7 @@ private:
     HFCNodeIterator();
     };
 
+END_IMAGEPP_NAMESPACE
 
 #include "HFCNodeIterator.hpp"
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_rpcimdio.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: gdal_rpcimdio.cpp 22057 2011-03-28 15:20:21Z warmerdam $
  *
  * Project:  GDAL Core
  * Purpose:  Functions for reading RPC and IMD formats, and normalizing.
@@ -29,10 +29,11 @@
  ****************************************************************************/
 
 #include "gdal.h"
+#include "gdal_priv.h"
 #include "cpl_string.h"
 #include "cplkeywordparser.h"
 
-CPL_CVSID("$Id: gdal_rpcimdio.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: gdal_rpcimdio.cpp 22057 2011-03-28 15:20:21Z warmerdam $");
 
 /************************************************************************/
 /*                          GDALLoadRPBFile()                           */
@@ -62,33 +63,11 @@ char **CPL_STDCALL GDALLoadRPBFile( const char *pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Try to identify the RPB file in upper or lower case.            */
 /* -------------------------------------------------------------------- */
-    CPLString osTarget = CPLResetExtension( pszFilename, "RPB" );
+    CPLString osTarget = GDALFindAssociatedFile( pszFilename, "RPB", 
+                                                 papszSiblingFiles, 0 );
 
-    /* Is this already a RPB file ? */
-    if (EQUAL(CPLGetExtension(pszFilename), "RPB"))
-        osTarget = pszFilename;
-    else if( papszSiblingFiles == NULL )
-    {
-        VSIStatBufL sStatBuf;
-        
-        if( VSIStatL( osTarget, &sStatBuf ) != 0 )
-        {
-            osTarget = CPLResetExtension( pszFilename, "rpb" );
-
-            if( VSIStatL( osTarget, &sStatBuf ) != 0 )
-                return NULL;
-        }
-    }
-    else
-    {
-        int iSibling = CSLFindString( papszSiblingFiles, 
-                                      CPLGetFilename(osTarget) );
-        if( iSibling < 0 )
-            return NULL;
-
-        osTarget.resize(osTarget.size() - strlen(papszSiblingFiles[iSibling]));
-        osTarget += papszSiblingFiles[iSibling];
-    }
+    if( osTarget == "" )
+        return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Read file and parse.                                            */
@@ -506,33 +485,11 @@ char ** CPL_STDCALL GDALLoadIMDFile( const char *pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Try to identify the IMD file in upper or lower case.            */
 /* -------------------------------------------------------------------- */
-    CPLString osTarget = CPLResetExtension( pszFilename, "IMD" );
+    CPLString osTarget = GDALFindAssociatedFile( pszFilename, "IMD", 
+                                                 papszSiblingFiles, 0 );
 
-    /* Is this already a IMD file ? */
-    if (EQUAL(CPLGetExtension(pszFilename), "IMD"))
-        osTarget = pszFilename;
-    else if( papszSiblingFiles == NULL )
-    {
-        VSIStatBufL sStatBuf;
-        
-        if( VSIStatL( osTarget, &sStatBuf ) != 0 )
-        {
-            osTarget = CPLResetExtension( pszFilename, "imd" );
-
-            if( VSIStatL( osTarget, &sStatBuf ) != 0 )
-                return NULL;
-        }
-    }
-    else
-    {
-        int iSibling = CSLFindString( papszSiblingFiles, 
-                                      CPLGetFilename(osTarget) );
-        if( iSibling < 0 )
-            return NULL;
-
-        osTarget.resize(osTarget.size() - strlen(papszSiblingFiles[iSibling]));
-        osTarget += papszSiblingFiles[iSibling];
-    }
+    if( osTarget == "" )
+        return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Read file and parse.                                            */
@@ -604,7 +561,6 @@ CPLErr CPL_STDCALL GDALWriteIMDFile( const char *pszFilename, char **papszMD )
 
 {
     CPLString osRPBFilename = CPLResetExtension( pszFilename, "IMD" );
-    
 
 /* -------------------------------------------------------------------- */
 /*      Read file and parse.                                            */

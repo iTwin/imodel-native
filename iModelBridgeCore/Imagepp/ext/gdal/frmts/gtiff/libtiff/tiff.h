@@ -1,4 +1,4 @@
-/* $Id: tiff.h,v 1.66 2010-12-14 12:53:00 dron Exp $ */
+/* $Id: tiff.h,v 1.69 2014-04-02 17:23:06 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -91,20 +91,20 @@ typedef int uint16_vap;
  * TIFF header.
  */
 typedef struct {
-	uint16 tiff_magic;      /* magic number (defines Byte order) */
+	uint16 tiff_magic;      /* magic number (defines byte order) */
 	uint16 tiff_version;    /* TIFF version number */
 } TIFFHeaderCommon;
 typedef struct {
-	uint16 tiff_magic;      /* magic number (defines Byte order) */
+	uint16 tiff_magic;      /* magic number (defines byte order) */
 	uint16 tiff_version;    /* TIFF version number */
-	uint32 tiff_diroff;     /* Byte offset to first directory */
+	uint32 tiff_diroff;     /* byte offset to first directory */
 } TIFFHeaderClassic;
 typedef struct {
-	uint16 tiff_magic;      /* magic number (defines Byte order) */
+	uint16 tiff_magic;      /* magic number (defines byte order) */
 	uint16 tiff_version;    /* TIFF version number */
 	uint16 tiff_offsetsize; /* size of offsets, should be 8 */
 	uint16 tiff_unused;     /* unused word, should be 0 */
-	uint64 tiff_diroff;     /* Byte offset to first directory */
+	uint64 tiff_diroff;     /* byte offset to first directory */
 } TIFFHeaderBig;
 
 
@@ -125,7 +125,7 @@ typedef struct {
 typedef enum {
 	TIFF_NOTYPE = 0,      /* placeholder */
 	TIFF_BYTE = 1,        /* 8-bit unsigned integer */
-	TIFF_ASCII = 2,       /* 8-bit bytes w/ last Byte null */
+	TIFF_ASCII = 2,       /* 8-bit bytes w/ last byte null */
 	TIFF_SHORT = 3,       /* 16-bit unsigned integer */
 	TIFF_LONG = 4,        /* 32-bit unsigned integer */
 	TIFF_RATIONAL = 5,    /* 64-bit unsigned fraction */
@@ -166,6 +166,8 @@ typedef enum {
 #define	    COMPRESSION_LZW		5       /* Lempel-Ziv  & Welch */
 #define	    COMPRESSION_OJPEG		6	/* !6.0 JPEG */
 #define	    COMPRESSION_JPEG		7	/* %JPEG DCT compression */
+#define     COMPRESSION_T85			9	/* !TIFF/FX T.85 JBIG compression */
+#define     COMPRESSION_T43			10	/* !TIFF/FX T.43 colour by layered JBIG compression */
 #define	    COMPRESSION_NEXT		32766	/* NeXT 2-bit RLE */
 #define	    COMPRESSION_CCITTRLEW	32771	/* #1 w/ word alignment */
 #define	    COMPRESSION_PACKBITS	32773	/* Macintosh RLE */
@@ -199,6 +201,7 @@ typedef enum {
 #define	    PHOTOMETRIC_CIELAB		8	/* !1976 CIE L*a*b* */
 #define	    PHOTOMETRIC_ICCLAB		9	/* ICC L*a*b* [Adobe TIFF Technote 4] */
 #define	    PHOTOMETRIC_ITULAB		10	/* ITU L*a*b* */
+#define	    PHOTOMETRIC_CFA		32803	/* color filter array */
 #define     PHOTOMETRIC_LOGL		32844	/* CIE Log2(L) */
 #define     PHOTOMETRIC_LOGLUV		32845	/* CIE Log2(L) (u',v') */
 #define	TIFFTAG_THRESHHOLDING		263	/* +thresholding used on data */
@@ -207,7 +210,7 @@ typedef enum {
 #define	    THRESHHOLD_ERRORDIFFUSE	3	/* usually floyd-steinberg */
 #define	TIFFTAG_CELLWIDTH		264	/* +dithering matrix width */
 #define	TIFFTAG_CELLLENGTH		265	/* +dithering matrix height */
-#define	TIFFTAG_FILLORDER		266	/* data order within a Byte */
+#define	TIFFTAG_FILLORDER		266	/* data order within a byte */
 #define	    FILLORDER_MSB2LSB		1	/* most significant -> least */
 #define	    FILLORDER_LSB2MSB		2	/* least significant -> most */
 #define	TIFFTAG_DOCUMENTNAME		269	/* name of doc. image is from */
@@ -237,7 +240,7 @@ typedef enum {
 #define	TIFFTAG_PAGENAME		285	/* page name image is from */
 #define	TIFFTAG_XPOSITION		286	/* x page offset of image lhs */
 #define	TIFFTAG_YPOSITION		287	/* y page offset of image lhs */
-#define	TIFFTAG_FREEOFFSETS		288	/* +Byte offset to free block */
+#define	TIFFTAG_FREEOFFSETS		288	/* +byte offset to free block */
 #define	TIFFTAG_FREEBYTECOUNTS		289	/* +sizes of free blocks */
 #define	TIFFTAG_GRAYRESPONSEUNIT	290	/* $gray scale curve accuracy */
 #define	    GRAYRESPONSEUNIT_10S	1	/* tenths of a unit */
@@ -250,7 +253,7 @@ typedef enum {
 #define	TIFFTAG_T4OPTIONS		292	/* TIFF 6.0 proper name alias */
 #define	    GROUP3OPT_2DENCODING	0x1	/* 2-dimensional coding */
 #define	    GROUP3OPT_UNCOMPRESSED	0x2	/* data not compressed */
-#define	    GROUP3OPT_FILLBITS		0x4	/* fill to Byte boundary */
+#define	    GROUP3OPT_FILLBITS		0x4	/* fill to byte boundary */
 #define	TIFFTAG_GROUP4OPTIONS		293	/* 32 flag bits */
 #define TIFFTAG_T6OPTIONS               293     /* TIFF 6.0 proper name */
 #define	    GROUP4OPT_UNCOMPRESSED	0x2	/* data not compressed */
@@ -281,7 +284,7 @@ typedef enum {
 #define	TIFFTAG_TILEWIDTH		322	/* !tile width in pixels */
 #define	TIFFTAG_TILELENGTH		323	/* !tile height in pixels */
 #define TIFFTAG_TILEOFFSETS		324	/* !offsets to data tiles */
-#define TIFFTAG_TILEBYTECOUNTS		325	/* !Byte counts for tiles */
+#define TIFFTAG_TILEBYTECOUNTS		325	/* !byte counts for tiles */
 #define	TIFFTAG_BADFAXLINES		326	/* lines w/ wrong pixel count */
 #define	TIFFTAG_CLEANFAXDATA		327	/* regenerated line info */
 #define	    CLEANFAXDATA_CLEAN		0	/* no errors detected */
@@ -319,6 +322,30 @@ typedef enum {
 						   [Adobe TIFF Technote 3] */
 #define	TIFFTAG_JPEGTABLES		347	/* %JPEG table stream */
 #define	TIFFTAG_OPIPROXY		351	/* %OPI Proxy [Adobe TIFF technote] */
+/* Tags 400-435 are from the TIFF/FX spec */
+#define TIFFTAG_GLOBALPARAMETERSIFD	400	/* ! */
+#define TIFFTAG_PROFILETYPE			401	/* ! */
+#define     PROFILETYPE_UNSPECIFIED	0	/* ! */
+#define     PROFILETYPE_G3_FAX		1	/* ! */
+#define TIFFTAG_FAXPROFILE			402	/* ! */
+#define     FAXPROFILE_S			1	/* !TIFF/FX FAX profile S */
+#define     FAXPROFILE_F			2	/* !TIFF/FX FAX profile F */
+#define     FAXPROFILE_J			3	/* !TIFF/FX FAX profile J */
+#define     FAXPROFILE_C			4	/* !TIFF/FX FAX profile C */
+#define     FAXPROFILE_L			5	/* !TIFF/FX FAX profile L */
+#define     FAXPROFILE_M			6	/* !TIFF/FX FAX profile LM */
+#define TIFFTAG_CODINGMETHODS		403	/* !TIFF/FX coding methods */
+#define     CODINGMETHODS_T4_1D		(1 << 1)	/* !T.4 1D */
+#define     CODINGMETHODS_T4_2D		(1 << 2)	/* !T.4 2D */
+#define     CODINGMETHODS_T6		(1 << 3)	/* !T.6 */
+#define     CODINGMETHODS_T85 		(1 << 4)	/* !T.85 JBIG */
+#define     CODINGMETHODS_T42 		(1 << 5)	/* !T.42 JPEG */
+#define     CODINGMETHODS_T43		(1 << 6)	/* !T.43 colour by layered JBIG */
+#define TIFFTAG_VERSIONYEAR			404	/* !TIFF/FX version year */
+#define TIFFTAG_MODENUMBER			405	/* !TIFF/FX mode number */
+#define TIFFTAG_DECODE				433	/* !TIFF/FX decode */
+#define TIFFTAG_IMAGEBASECOLOR		434	/* !TIFF/FX image base colour */
+#define TIFFTAG_T82OPTIONS			435	/* !TIFF/FX T.82 options */
 /*
  * Tags 512-521 are obsoleted by Technical Note #2 which specifies a
  * revised JPEG-in-TIFF scheme.
@@ -340,6 +367,7 @@ typedef enum {
 #define	    YCBCRPOSITION_CENTERED	1	/* !as in PostScript Level 2 */
 #define	    YCBCRPOSITION_COSITED	2	/* !as in CCIR 601-1 */
 #define	TIFFTAG_REFERENCEBLACKWHITE	532	/* !colorimetry info */
+#define TIFFTAG_STRIPROWCOUNTS		559 /* !TIFF/FX strip row counts */
 #define	TIFFTAG_XMLPACKET		700	/* %XML packet
 						   [Adobe XMP Specification,
 						   January 2004 */
@@ -375,6 +403,8 @@ typedef enum {
 #define TIFFTAG_PIXAR_MATRIX_WORLDTOCAMERA 33306
 /* tag 33405 is a private tag registered to Eastman Kodak */
 #define TIFFTAG_WRITERSERIALNUMBER      33405   /* device serial number */
+#define TIFFTAG_CFAREPEATPATTERNDIM	33421	/* dimensions of CFA pattern */
+#define TIFFTAG_CFAPATTERN		33422	/* color filter array pattern */
 /* tag 33432 is listed in the 6.0 spec w/ unknown ownership */
 #define	TIFFTAG_COPYRIGHT		33432	/* copyright string */
 /* IPTC TAG from RichTIFF specifications */
@@ -406,6 +436,7 @@ typedef enum {
 #define TIFFTAG_EXIFIFD			34665	/* Pointer to EXIF private directory */
 /* tag 34750 is a private tag registered to Adobe? */
 #define TIFFTAG_ICCPROFILE		34675	/* ICC profile data */
+#define TIFFTAG_IMAGELAYER		34732	/* !TIFF/FX image layer information */
 /* tag 34750 is a private tag registered to Pixel Magic */
 #define	TIFFTAG_JBIGOPTIONS		34750	/* JBIG options */
 #define TIFFTAG_GPSIFD			34853	/* Pointer to GPS private directory */
@@ -518,7 +549,7 @@ typedef enum {
 #define	    FAXMODE_CLASSIC	0x0000		/* default, include RTC */
 #define	    FAXMODE_NORTC	0x0001		/* no RTC at end of data */
 #define	    FAXMODE_NOEOL	0x0002		/* no EOL code at end of row */
-#define	    FAXMODE_BYTEALIGN	0x0004		/* Byte align row */
+#define	    FAXMODE_BYTEALIGN	0x0004		/* byte align row */
 #define	    FAXMODE_WORDALIGN	0x0008		/* word align row */
 #define	    FAXMODE_CLASSF	FAXMODE_NORTC	/* TIFF Class F */
 #define	TIFFTAG_JPEGQUALITY		65537	/* Compression quality level */
@@ -569,6 +600,9 @@ typedef enum {
 #define     SGILOGENCODE_NODITHER	0     /* do not dither encoded values*/
 #define     SGILOGENCODE_RANDITHER	1     /* randomly dither encd values */
 #define	TIFFTAG_LZMAPRESET		65562	/* LZMA2 preset (compression level) */
+#define TIFFTAG_PERSAMPLE       65563	/* interface for per sample tags */
+#define     PERSAMPLE_MERGED        0	/* present as a single value */
+#define     PERSAMPLE_MULTI         1	/* present as multiple values */
 
 /*
  * EXIF tags

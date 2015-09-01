@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_core.h 20885 2010-10-19 00:16:08Z warmerdam $
+ * $Id: ogr_core.h 27792 2014-10-04 09:02:06Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Define some core portability services for cross-platform OGR code.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -47,16 +48,31 @@
 class CPL_DLL OGREnvelope
 {
   public:
-        OGREnvelope()
+        OGREnvelope() : MinX(0.0), MaxX(0.0), MinY(0.0), MaxY(0.0)
         {
-                MinX = MaxX = MinY = MaxY = 0;
         }
+
+        OGREnvelope(const OGREnvelope& oOther) :
+            MinX(oOther.MinX),MaxX(oOther.MaxX), MinY(oOther.MinY), MaxY(oOther.MaxY)
+        {
+        }
+
     double      MinX;
     double      MaxX;
     double      MinY;
     double      MaxY;
 
+/* See http://trac.osgeo.org/gdal/ticket/5299 for details on this pragma */
+#if ((__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) && !defined(_MSC_VER)) 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
     int  IsInit() const { return MinX != 0 || MinY != 0 || MaxX != 0 || MaxY != 0; }
+
+#if ((__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) && !defined(_MSC_VER))
+#pragma GCC diagnostic pop
+#endif
+
     void Merge( OGREnvelope const& sOther ) {
         if( IsInit() )
         {
@@ -137,6 +153,127 @@ typedef struct
 } OGREnvelope;
 #endif
 
+
+/**
+ * Simple container for a bounding region in 3D.
+ */
+
+#if defined(__cplusplus) && !defined(CPL_SUPRESS_CPLUSPLUS)
+class CPL_DLL OGREnvelope3D : public OGREnvelope
+{
+  public:
+        OGREnvelope3D() : OGREnvelope(), MinZ(0.0), MaxZ(0.0)
+        {
+        }
+
+        OGREnvelope3D(const OGREnvelope3D& oOther) :
+                            OGREnvelope(oOther),
+                            MinZ(oOther.MinZ), MaxZ(oOther.MaxZ)
+        {
+        }
+
+    double      MinZ;
+    double      MaxZ;
+
+    int  IsInit() const { return MinX != 0 || MinY != 0 || MaxX != 0 || MaxY != 0 || MinZ != 0 || MaxZ != 0; }
+    void Merge( OGREnvelope3D const& sOther ) {
+        if( IsInit() )
+        {
+            MinX = MIN(MinX,sOther.MinX);
+            MaxX = MAX(MaxX,sOther.MaxX);
+            MinY = MIN(MinY,sOther.MinY);
+            MaxY = MAX(MaxY,sOther.MaxY);
+            MinZ = MIN(MinZ,sOther.MinZ);
+            MaxZ = MAX(MaxZ,sOther.MaxZ);
+        }
+        else
+        {
+            MinX = sOther.MinX;
+            MaxX = sOther.MaxX;
+            MinY = sOther.MinY;
+            MaxY = sOther.MaxY;
+            MinZ = sOther.MinZ;
+            MaxZ = sOther.MaxZ;
+        }
+    }
+    void Merge( double dfX, double dfY, double dfZ ) {
+        if( IsInit() )
+        {
+            MinX = MIN(MinX,dfX);
+            MaxX = MAX(MaxX,dfX);
+            MinY = MIN(MinY,dfY);
+            MaxY = MAX(MaxY,dfY);
+            MinZ = MIN(MinZ,dfZ);
+            MaxZ = MAX(MaxZ,dfZ);
+        }
+        else
+        {
+            MinX = MaxX = dfX;
+            MinY = MaxY = dfY;
+            MinZ = MaxZ = dfZ;
+        }
+    }
+
+    void Intersect( OGREnvelope3D const& sOther ) {
+        if(Intersects(sOther))
+        {
+            if( IsInit() )
+            {
+                MinX = MAX(MinX,sOther.MinX);
+                MaxX = MIN(MaxX,sOther.MaxX);
+                MinY = MAX(MinY,sOther.MinY);
+                MaxY = MIN(MaxY,sOther.MaxY);
+                MinZ = MAX(MinZ,sOther.MinZ);
+                MaxZ = MIN(MaxZ,sOther.MaxZ);
+            }
+            else
+            {
+                MinX = sOther.MinX;
+                MaxX = sOther.MaxX;
+                MinY = sOther.MinY;
+                MaxY = sOther.MaxY;
+                MinZ = sOther.MinZ;
+                MaxZ = sOther.MaxZ;
+            }
+        }
+        else
+        {
+            MinX = 0;
+            MaxX = 0;
+            MinY = 0;
+            MaxY = 0;
+            MinZ = 0;
+            MaxZ = 0;
+        }
+    }
+
+    int Intersects(OGREnvelope3D const& other) const
+    {
+        return MinX <= other.MaxX && MaxX >= other.MinX &&
+               MinY <= other.MaxY && MaxY >= other.MinY &&
+               MinZ <= other.MaxZ && MaxZ >= other.MinZ;
+    }
+
+    int Contains(OGREnvelope3D const& other) const
+    {
+        return MinX <= other.MinX && MinY <= other.MinY &&
+               MaxX >= other.MaxX && MaxY >= other.MaxY &&
+               MinZ <= other.MinZ && MaxZ >= other.MaxZ;
+    }
+};
+#else
+typedef struct
+{
+    double      MinX;
+    double      MaxX;
+    double      MinY;
+    double      MaxY;
+    double      MinZ;
+    double      MaxZ;
+} OGREnvelope3D;
+#endif
+
+
 CPL_C_START
 
 void CPL_DLL *OGRMalloc( size_t );
@@ -162,12 +299,12 @@ typedef int     OGRBoolean;
 /* -------------------------------------------------------------------- */
 /*      ogr_geometry.h related definitions.                             */
 /* -------------------------------------------------------------------- */
+
 /**
  * List of well known binary geometry types.  These are used within the BLOBs
  * but are also returned from OGRGeometry::getGeometryType() to identify the
  * type of a geometry object.
  */
-
 typedef enum 
 {
     wkbUnknown = 0,         /**< unknown type, non-standard */
@@ -192,6 +329,19 @@ typedef enum
     wkbMultiPolygon25D = 0x80000006, /**< 2.5D extension as per 99-402 */
     wkbGeometryCollection25D = 0x80000007 /**< 2.5D extension as per 99-402 */
 } OGRwkbGeometryType;
+
+/**
+ * Output variants of WKB we support. 
+ * 99-402 was a short-lived extension to SFSQL 1.1 that used a high-bit flag
+ * to indicate the presence of Z coordiantes in a WKB geometry.
+ * SQL/MM Part 3 and SFSQL 1.2 use offsets of 1000 (Z), 2000 (M) and 3000 (ZM)
+ * to indicate the present of higher dimensional coordinates in a WKB geometry.
+ */
+typedef enum 
+{
+    wkbVariantOgc, /**< Old-style 99-402 extended dimension (Z) WKB types */
+    wkbVariantIso  /**< SFSQL 1.2 and ISO SQL/MM Part 3 extended dimension (Z&M) WKB types */
+} OGRwkbVariant;
 
 #define wkb25DBit 0x80000000
 #define wkbFlatten(x)  ((OGRwkbGeometryType) ((x) & (~wkb25DBit)))
@@ -219,6 +369,11 @@ typedef enum
 #  define DB2_V72_FIX_BYTE_ORDER(x) (x)
 #  define DB2_V72_UNFIX_BYTE_ORDER(x) (x)
 #endif
+
+#define ALTER_NAME_FLAG            0x1
+#define ALTER_TYPE_FLAG            0x2
+#define ALTER_WIDTH_PRECISION_FLAG 0x4
+#define ALTER_ALL_FLAG             (ALTER_NAME_FLAG | ALTER_TYPE_FLAG | ALTER_WIDTH_PRECISION_FLAG)
 
 /************************************************************************/
 /*                  ogr_feature.h related definitions.                  */
@@ -324,14 +479,19 @@ int CPL_DLL OGRParseDate( const char *pszInput, OGRField *psOutput,
 #define OLCFastFeatureCount    "FastFeatureCount"
 #define OLCFastGetExtent       "FastGetExtent"
 #define OLCCreateField         "CreateField"
+#define OLCDeleteField         "DeleteField"
+#define OLCReorderFields       "ReorderFields"
+#define OLCAlterFieldDefn      "AlterFieldDefn"
 #define OLCTransactions        "Transactions"
 #define OLCDeleteFeature       "DeleteFeature"
 #define OLCFastSetNextByIndex  "FastSetNextByIndex"
 #define OLCStringsAsUTF8       "StringsAsUTF8"
 #define OLCIgnoreFields        "IgnoreFields"
+#define OLCCreateGeomField     "CreateGeomField"
 
 #define ODsCCreateLayer        "CreateLayer"
 #define ODsCDeleteLayer        "DeleteLayer"
+#define ODsCCreateGeomFieldAfterCreateLayer   "CreateGeomFieldAfterCreateLayer"
 
 #define ODrCCreateDataSource   "CreateDataSource"
 #define ODrCDeleteDataSource   "DeleteDataSource"

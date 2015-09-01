@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCInternetConnection.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCInternetConnection
@@ -14,23 +14,23 @@
 #include "HFCConnection.h"
 #include "HFCURLCommonInternet.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // HFCInternetConnection class
 //-----------------------------------------------------------------------------
 class HFCInternetConnection : public HFCConnection
     {
 public:
-    HDECLARE_CLASS_ID(1801, HFCConnection)
+    HDECLARE_CLASS_ID(HFCConnectionId_Internet, HFCConnection)
 
     //--------------------------------------
     // Construction/Destruction
     //--------------------------------------
 
-    _HDLLu                 HFCInternetConnection(const WString& pi_rServer,
+    IMAGEPP_EXPORT                 HFCInternetConnection(const WString& pi_rServer,
                                                  const WString& pi_rUserName,
                                                  const WString& pi_rPassword);
-    _HDLLu virtual         ~HFCInternetConnection() = 0;
+    IMAGEPP_EXPORT virtual         ~HFCInternetConnection() = 0;
 
 
     //--------------------------------------
@@ -45,17 +45,17 @@ public:
     // The Send methods must return immediately.  If thread must be added
     // to the connection to send and wait, then so be it. (eg HTTP).
 
-    _HDLLu virtual void    Send(const Byte* pi_pData, size_t pi_DataSize) = 0;
-    _HDLLu virtual void    Receive(Byte* po_pData, size_t pi_DataSize)    = 0;
+    IMAGEPP_EXPORT virtual void    Send(const Byte* pi_pData, size_t pi_DataSize) = 0;
+    IMAGEPP_EXPORT virtual void    Receive(Byte* po_pData, size_t pi_DataSize)    = 0;
 
     // NOTE: This send method only sends the data that the network
     // can send immediately.
     // Default implementation (here) does a full send (potentially blocking)
-    _HDLLu virtual void    SendImmediate(const Byte* pi_pData, size_t* pio_pDataSize);
+    IMAGEPP_EXPORT virtual void    SendImmediate(const Byte* pi_pData, size_t* pio_pDataSize);
 
     // NOTE: This receive method only retrieve the data available.
     // It waits if no data is available.
-    _HDLLu virtual void    Receive(Byte* po_pData, size_t* pio_pDataSize) = 0;
+    IMAGEPP_EXPORT virtual void    Receive(Byte* po_pData, size_t* pio_pDataSize) = 0;
 
 
     //--------------------------------------
@@ -73,14 +73,14 @@ public:
     // NOTE:  The ___DataAvailable() methods return the number of bytes
     // available on the connection.  If none is available, blocks until
     // new data arrives or until time-out expires.
-    _HDLLu virtual size_t WaitDataAvailable()                            = 0;
-    _HDLLu virtual size_t WaitDataAvailable(uint32_t pi_TimeOut)           = 0;
+    IMAGEPP_EXPORT virtual size_t WaitDataAvailable()                            = 0;
+    IMAGEPP_EXPORT virtual size_t WaitDataAvailable(uint32_t pi_TimeOut)           = 0;
 
     // NOTE:  The ___DataWriteable() methods indicate if new data can
     // be written on the connection. If none can be written, blocks until
     // condition becomes true or until time-out expires.
-    _HDLLu virtual bool   WaitDataWriteable();
-    _HDLLu virtual bool   WaitDataWriteable(uint32_t pi_TimeOut);
+    IMAGEPP_EXPORT virtual bool   WaitDataWriteable();
+    IMAGEPP_EXPORT virtual bool   WaitDataWriteable(uint32_t pi_TimeOut);
 
 
     void            SetUserName(const WString& pi_rUserName);
@@ -111,6 +111,8 @@ protected:
     WString         m_ProxyUserName;
     WString         m_ProxyPassword;
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCInternetConnection.hpp"
 

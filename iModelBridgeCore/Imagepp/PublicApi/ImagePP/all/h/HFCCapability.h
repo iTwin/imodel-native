@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCCapability.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,6 +10,7 @@
 
 #include "HFCPtr.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @end
@@ -24,15 +25,15 @@
 class HFCCapability : public HFCShareableObject<HFCCapability>
     {
 public:
-    HDECLARE_BASECLASS_ID(1382)
+    HDECLARE_BASECLASS_ID(HFCCapabilityId_Base)
 
     // Constructor/ Destructor
-    HFCCapability();
-    HFCCapability(const HFCCapability& pi_rObj);
-    virtual ~HFCCapability();
+    HFCCapability(){};
+    HFCCapability(const HFCCapability& pi_rObj){};
+    virtual ~HFCCapability(){};
 
     // operator
-    HFCCapability&  operator=(const HFCCapability& pi_rObj);
+    HFCCapability&  operator=(const HFCCapability& pi_rObj) {return *this;}
 
     virtual HFCCapability*
     Clone() const = 0;
@@ -90,5 +91,6 @@ private:
 
     };
 
-#include "HFCCapability.hpp"
+END_IMAGEPP_NAMESPACE
+
 

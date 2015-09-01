@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPaletteOctreeR8G8B8A8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #pragma once
 
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Node class that is used in the internal tree of the
     HRPPaletteOctreeR8G8B8A8 class.
@@ -76,3 +77,4 @@ private:
 
     void            DeleteTree(struct HRPPaletteOctreeR8G8B8A8Node* pi_pNode);
     };
+END_IMAGEPP_NAMESPACE

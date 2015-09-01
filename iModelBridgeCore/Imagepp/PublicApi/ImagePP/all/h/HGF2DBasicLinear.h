@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DBasicLinear.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DBasicLinear
@@ -12,7 +12,7 @@
 #pragma once
 
 #include "HGF2DLinear.h"
-
+BEGIN_IMAGEPP_NAMESPACE
 
 typedef uint32_t HGF2DBasicLinearTypeId;
 
@@ -29,7 +29,7 @@ typedef uint32_t HGF2DBasicLinearTypeId;
 */
 class HNOVTABLEINIT HGF2DBasicLinear : public HGF2DLinear
     {
-    HDECLARE_CLASS_ID(8301, HGF2DLinear)
+    HDECLARE_CLASS_ID(HGF2DLinearId_Basic, HGF2DLinear)
 
 public:
 
@@ -62,5 +62,5 @@ private:
 
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HGF2DBasicLinear.hpp"

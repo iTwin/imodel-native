@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMOnDemandMosaic.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include "HRPPixelTypeV32R8G8B8A8.h"
+BEGIN_IMAGEPP_NAMESPACE
 
 /** ---------------------------------------------------------------------------
     Start to iterate on the mosaic's source images
@@ -85,25 +85,6 @@ inline void HIMOnDemandMosaic::SetRepresentativePSSForWorlds(WString& pi_rPSSDes
     }
 
 /** ---------------------------------------------------------------------------
-    Return a new copy of self
-    ---------------------------------------------------------------------------
-*/
-inline HRARaster* HIMOnDemandMosaic::Clone(HPMObjectStore* pi_pStore,
-                                           HPMPool*        pi_pLog) const
-    {
-    return new HIMOnDemandMosaic(*this);
-    }
-/** ---------------------------------------------------------------------------
-    Return a new copy of self
-    ---------------------------------------------------------------------------
-*/
-inline HPMPersistentObject* HIMOnDemandMosaic::Clone () const
-    {
-    return new HIMOnDemandMosaic(*this);
-    }
-
-
-/** ---------------------------------------------------------------------------
     Return the downsampling method used for the cache file. 
     ---------------------------------------------------------------------------
 */
@@ -130,3 +111,5 @@ inline void HIMOnDemandMosaic::RemoveCache()
     m_pSubRes = 0;
     m_CacheFileDownSamplingMethod = HRFDownSamplingMethod::NONE;
     }
+
+END_IMAGEPP_NAMESPACE

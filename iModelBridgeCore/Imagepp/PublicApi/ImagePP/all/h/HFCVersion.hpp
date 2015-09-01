@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCVersion.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 // Note: some methods will have multiple exit points for performance reasons.
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // Default Constructor
@@ -139,7 +139,7 @@ inline bool HFCVersion::operator==(const HFCVersion& pi_rObj) const
     {
     // The first number that is not equal results in the versions being not
     // equal to each other.
-    for (size_t i = 0; i < max(m_NumberCount, pi_rObj.m_NumberCount); i++)
+    for (size_t i = 0; i < MAX(m_NumberCount, pi_rObj.m_NumberCount); i++)
         if (GetNumber(i) != pi_rObj.GetNumber(i))
             return false;
 
@@ -156,7 +156,7 @@ inline bool HFCVersion::operator!=(const HFCVersion& pi_rObj) const
     {
     // The first number that is not equal results in the versions being not
     // equal to each other.
-    for (size_t i = 0; i < max(m_NumberCount, pi_rObj.m_NumberCount); i++)
+    for (size_t i = 0; i < MAX(m_NumberCount, pi_rObj.m_NumberCount); i++)
         if (GetNumber(i) != pi_rObj.GetNumber(i))
             return true;
 
@@ -171,7 +171,7 @@ inline bool HFCVersion::operator!=(const HFCVersion& pi_rObj) const
 //-----------------------------------------------------------------------------
 inline bool HFCVersion::operator< (const HFCVersion& pi_rObj) const
     {
-    for (size_t i = 0; i < max(m_NumberCount, pi_rObj.m_NumberCount); i++)
+    for (size_t i = 0; i < MAX(m_NumberCount, pi_rObj.m_NumberCount); i++)
         {
         if (GetNumber(i) < pi_rObj.GetNumber(i))
             return true;
@@ -189,7 +189,7 @@ inline bool HFCVersion::operator< (const HFCVersion& pi_rObj) const
 //-----------------------------------------------------------------------------
 inline bool HFCVersion::operator<=(const HFCVersion& pi_rObj) const
     {
-    for (size_t i = 0; i < max(m_NumberCount, pi_rObj.m_NumberCount); i++)
+    for (size_t i = 0; i < MAX(m_NumberCount, pi_rObj.m_NumberCount); i++)
         {
         if (GetNumber(i) < pi_rObj.GetNumber(i))
             return true;
@@ -207,7 +207,7 @@ inline bool HFCVersion::operator<=(const HFCVersion& pi_rObj) const
 //-----------------------------------------------------------------------------
 inline bool HFCVersion::operator> (const HFCVersion& pi_rObj) const
     {
-    for (size_t i = 0; i < max(m_NumberCount, pi_rObj.m_NumberCount); i++)
+    for (size_t i = 0; i < MAX(m_NumberCount, pi_rObj.m_NumberCount); i++)
         {
         if (GetNumber(i) < pi_rObj.GetNumber(i))
             return false;
@@ -225,7 +225,7 @@ inline bool HFCVersion::operator> (const HFCVersion& pi_rObj) const
 //-----------------------------------------------------------------------------
 inline bool HFCVersion::operator>=(const HFCVersion& pi_rObj) const
     {
-    for (size_t i = 0; i < max(m_NumberCount, pi_rObj.m_NumberCount); i++)
+    for (size_t i = 0; i < MAX(m_NumberCount, pi_rObj.m_NumberCount); i++)
         {
         if (GetNumber(i) < pi_rObj.GetNumber(i))
             return false;
@@ -278,3 +278,4 @@ inline uint32_t HFCVersion::GetNumber(size_t pi_Index) const
     else
         return 0;
     }
+END_IMAGEPP_NAMESPACE

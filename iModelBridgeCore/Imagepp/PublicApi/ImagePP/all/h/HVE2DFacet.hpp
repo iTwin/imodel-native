@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DFacet.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------
  Constructor for this class specifying shape
 
@@ -224,6 +225,7 @@ template<class ATTRIBUTE> HVE2DFacet<ATTRIBUTE>* HVE2DFacet<ATTRIBUTE>::Allocate
     return NULL;
     }
 
+END_IMAGEPP_NAMESPACE
 
 
 

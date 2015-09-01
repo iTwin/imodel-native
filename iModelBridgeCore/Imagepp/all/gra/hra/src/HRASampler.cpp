@@ -2,19 +2,19 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRASampler.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
 //:> Methods for class HRASampler
 //:>-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
+#include <Imagepp/all/h/HGSTypes.h>
 #include <Imagepp/all/h/HRASampler.h>
 #include <Imagepp/all/h/HGSMemoryBaseSurfaceDescriptor.h>
 #include <Imagepp/all/h/HGSMemoryRLESurfaceDescriptor.h>
-#include <Imagepp/all/h/HGSGraphicToolAttributes.h>
 
 #include <Imagepp/all/h/HRAAverageSamplerN8.h>
 #include <Imagepp/all/h/HRABicubicSamplerN8.h>
@@ -35,14 +35,13 @@
  @param pi_pAttributes
  @param pi_pSurfaceImplementation
 -----------------------------------------------------------------------------*/
-HRASampler::HRASampler(const HGSGraphicToolAttributes*        pi_pAttributes,
+HRASampler::HRASampler(HGSResampling const&                   pi_SamplingMode,
                        HGSMemoryBaseSurfaceDescriptor const&  pi_rMemorySurface,
                        const HGF2DRectangle&                  pi_rSampleDimension,
                        double                                 pi_DeltaX,
                        double                                 pi_DeltaY)
     {
-    HPRECONDITION(pi_pAttributes != 0);
-    
+  
 
     if(pi_rMemorySurface.IsCompatibleWith(HGSMemoryRLESurfaceDescriptor::CLASS_ID))
         {
@@ -57,7 +56,7 @@ HRASampler::HRASampler(const HGSGraphicToolAttributes*        pi_pAttributes,
     else
         {
         HGSMemorySurfaceDescriptor const& rMemorySurface = static_cast<HGSMemorySurfaceDescriptor const&>(pi_rMemorySurface);
-        if (pi_pAttributes->Contains(HGSResamplingAttribute(HGSResampling::AVERAGE)) &&
+        if (pi_SamplingMode.GetResamplingMethod() == HGSResampling::AVERAGE &&
             !(HDOUBLE_EQUAL_EPSILON(pi_rSampleDimension.GetXMax() - pi_rSampleDimension.GetXMin(), 1.0) &&
               HDOUBLE_EQUAL_EPSILON(pi_rSampleDimension.GetYMax() - pi_rSampleDimension.GetYMin(), 1.0)))
             {
@@ -106,7 +105,7 @@ HRASampler::HRASampler(const HGSGraphicToolAttributes*        pi_pAttributes,
             }
         else
             {
-            if (pi_pAttributes->Contains(HGSResamplingAttribute(HGSResampling::CUBIC_CONVOLUTION)))
+            if (pi_SamplingMode.GetResamplingMethod() == HGSResampling::CUBIC_CONVOLUTION)
                 {
                 //HRAGenericBicubicSampler should be used instead. Should be fixed when TR 267979 is fixed.
                 HASSERT((pi_rMemorySurface.GetPixelType()->IsCompatibleWith(HRPPixelTypeV32Float32::CLASS_ID) == false) &&
@@ -120,7 +119,7 @@ HRASampler::HRASampler(const HGSGraphicToolAttributes*        pi_pAttributes,
                 }
             else
                 {
-                if (pi_pAttributes->Contains(HGSResamplingAttribute(HGSResampling::BILINEAR)))
+                if (pi_SamplingMode.GetResamplingMethod() == HGSResampling::BILINEAR)
                     {
                     //HRAGenericBilinearSampler should be used instead. Should be fixed when TR 267979 is fixed.
                     HASSERT((pi_rMemorySurface.GetPixelType()->IsCompatibleWith(HRPPixelTypeV32Float32::CLASS_ID) == false) &&

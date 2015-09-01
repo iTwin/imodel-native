@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCEmbedBinStream.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCEmbedBinStream
 //---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCEmbedBinStream.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HFCURLEmbedFile.h>
@@ -19,7 +19,6 @@
 // This is the creator that registers itself in the stream-type list.
 //---------------------------------------------------------------------------
 
-
 static struct EmbedBinStreamCreator : public HFCBinStream::Creator
     {
     EmbedBinStreamCreator()
@@ -28,9 +27,10 @@ static struct EmbedBinStreamCreator : public HFCBinStream::Creator
         }
 
     // The parameter pi_NbRetryBeforeThrow is not used presently
-    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, HFCAccessMode pi_AccessMode, short pi_NbRetryBeforeThrow=0) const
+    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, uint64_t pi_offSet, HFCAccessMode pi_AccessMode, short pi_NbRetryBeforeThrow=0) const override
         {
         HPRECONDITION(pi_pURL != 0);
+        HPRECONDITION(pi_offSet == 0); // not supported.
         HPRECONDITION(pi_pURL->GetSchemeType() == HFCURLEmbedFile::s_SchemeName());
 
         HFCURLEmbedFile* pURL = (HFCURLEmbedFile*)pi_pURL.GetPtr();
@@ -79,22 +79,6 @@ size_t HFCEmbedBinStream::Read(void* po_pData, size_t pi_DataSize)
     }
 
 //---------------------------------------------------------------------------
-// HFCEmbedBinStream::Read
-//
-// Note that the parameter pi_DataSize represents the number of characters
-// to read. The value returned should be the number of characters read.
-//---------------------------------------------------------------------------
-size_t HFCEmbedBinStream::Read(WChar* po_pData, size_t pi_CharCount)
-    {
-    HPRECONDITION(!"Not tested");
-
-    size_t bytesRead = Read((void*)po_pData, pi_CharCount* sizeof(WChar));
-
-    HASSERT(bytesRead % 2 == 0);
-    return bytesRead / sizeof(WChar);
-    }
-
-//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 size_t HFCEmbedBinStream::Write(const void* pi_pData, size_t pi_DataSize)
     {
@@ -103,14 +87,6 @@ size_t HFCEmbedBinStream::Write(const void* pi_pData, size_t pi_DataSize)
     return 0;
     }
 
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-size_t HFCEmbedBinStream::Write(const WChar* pi_pData, size_t pi_CharCount)
-    {
-    // Do nothing at this time.
-
-    return 0;
-    }
 //---------------------------------------------------------------------------
 //
 //---------------------------------------------------------------------------

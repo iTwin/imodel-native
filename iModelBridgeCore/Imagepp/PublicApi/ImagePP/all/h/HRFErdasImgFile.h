@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFErdasImgFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFErdasImgFile
@@ -25,6 +25,7 @@
 //--------------------------------------------------
 // class HRFDoqCapabilities
 //--------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
 class HRFErdasImgCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -55,7 +56,7 @@ struct HRFErdasImgCreator : public HRFRasterFileCreator
 
 
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFErdasImgCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFErdasImgCreator)
 private:
 
 
@@ -75,7 +76,7 @@ public:
     typedef map<string, unsigned short> UnitNameToEPSGCodeMap;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1510, HRFGdalSupportedFile)
+    HDECLARE_CLASS_ID(HRFFileId_ErdasImg, HRFGdalSupportedFile)
 
     // allow to Open an image file
     HRFErdasImgFile       (const HFCPtr<HFCURL>&          pi_rpURL,
@@ -102,7 +103,7 @@ protected:
     // Protected Methods
     virtual void                          CreateDescriptors() override;
     virtual HFCPtr<HGF2DTransfoModel>     BuildTransfoModel() override;
-    virtual IRasterBaseGcsPtr             GetGeocodingInformation() override;
+    virtual RasterFileGeocodingPtr        ExtractGeocodingInformation() override;
 
     virtual void                          HandleNoDisplayBands () override;
 
@@ -129,3 +130,4 @@ private:
     HRFErdasImgFile(const HRFErdasImgFile& pi_rObj);
     HRFErdasImgFile& operator=(const HRFErdasImgFile& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

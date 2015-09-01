@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMFilteredImage.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIMFilteredImage
@@ -13,31 +13,32 @@
 
 #include "HRAImageView.h"
 
-class HGSSurface;
+BEGIN_IMAGEPP_NAMESPACE
+class HRASurface;
 class HRPFilter;
 class HRPPixelNeighbourhood;
 
 class HIMFilteredImage : public HRAImageView
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1137)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HIMFilteredImageId)
 
 public:
 
     // Primary methods
-    _HDLLg                 HIMFilteredImage();
+    IMAGEPP_EXPORT                 HIMFilteredImage();
 
-    _HDLLg                 HIMFilteredImage(const HFCPtr<HRARaster>& pi_pSource,
-                                            const HFCPtr<HRPFilter>& pi_rpFilter,
-                                            const HFCPtr<HRPPixelType> pi_pPixelType = 0);
+    IMAGEPP_EXPORT                 HIMFilteredImage(const HFCPtr<HRARaster>& pi_pSource,
+                                                   const HFCPtr<HRPFilter>& pi_rpFilter,
+                                                   const HFCPtr<HRPPixelType> pi_pPixelType = 0);
 
-    _HDLLg                 HIMFilteredImage(const HIMFilteredImage& pi_rFilteredImage);
+    IMAGEPP_EXPORT                 HIMFilteredImage(const HIMFilteredImage& pi_rFilteredImage);
 
-    _HDLLg virtual         ~HIMFilteredImage();
+    IMAGEPP_EXPORT virtual         ~HIMFilteredImage();
 
 
     // Overriden methods
     virtual HPMPersistentObject* Clone () const;
-    virtual HRARaster* Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
     virtual HFCPtr<HRPPixelType>
     GetPixelType() const;
@@ -53,30 +54,29 @@ public:
     GetAveragePixelSize () const;
     virtual void    GetPixelSizeRange(HGF2DExtent& po_rMinimum, HGF2DExtent& po_rMaximum) const;
 
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions);
-
-    virtual void    Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface, const HGFDrawOptions* pi_pOptions) const;
-
-
     // Added methods
 
-    _HDLLg HFCPtr<HRPFilter>
+    IMAGEPP_EXPORT HFCPtr<HRPFilter>
     GetFilter() const;
 
     void            InitObject();
 
     void            DeepDelete();
 
-    _HDLLg void            SetFilter(const HFCPtr<HRPFilter>& pi_rpFilter);
+    IMAGEPP_EXPORT void            SetFilter(const HFCPtr<HRPFilter>& pi_rpFilter);
 
 protected:
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
 
+    virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
 
 private:
 
-    void            HandleBorderCases(const HFCPtr<HGSSurface>&    pio_rpSurface,
-                                      const HRPPixelNeighbourhood& pi_rNeighborhood) const;
+    void            HandleBorderCases(HRASurface& pio_destSurface, const HRPPixelNeighbourhood& pi_rNeighborhood) const;
 
     HFCPtr<HRPPixelType>  m_pPixelType;
     HFCPtr<HRPFilter>     m_pFilter;
+
+    std::list<HRAImageOpPtr> m_imageOps;
     };
+END_IMAGEPP_NAMESPACE

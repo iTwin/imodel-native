@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRawLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRawLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFRawLineEditor.h>
 #include <Imagepp/all/h/HRFRawFile.h>
 
@@ -43,9 +43,9 @@ HRFRawLineEditor::~HRFRawLineEditor()
 // Read uncompressed Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFRawLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                    uint32_t pi_PosBlockY,
-                                    Byte* po_pData,
+HSTATUS HRFRawLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                    uint64_t pi_PosBlockY,
+                                    Byte*  po_pData,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (po_pData != 0);
@@ -76,7 +76,7 @@ HSTATUS HRFRawLineEditor::ReadBlock(uint32_t pi_PosBlockX,
 
 
         uint32_t DataSize = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth();
-        if(pRawFile->m_pRawFile->Read((void*)po_pData, DataSize) != DataSize)
+        if(pRawFile->m_pRawFile->Read(po_pData, DataSize) != DataSize)
             Status = H_ERROR;
 
         // Unlock the sister file.
@@ -93,10 +93,10 @@ HSTATUS HRFRawLineEditor::ReadBlock(uint32_t pi_PosBlockX,
 // Write uncompressed Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFRawLineEditor::WriteBlock (uint32_t     pi_PosBlockX,
-                                      uint32_t     pi_PosBlockY,
-                                      const Byte* pi_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFRawLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                     uint64_t     pi_PosBlockY,
+                                     const Byte*  pi_pData,
+                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_pData != 0);
@@ -119,7 +119,7 @@ HSTATUS HRFRawLineEditor::WriteBlock (uint32_t     pi_PosBlockX,
         pRawFile->m_pRawFile->SeekToPos(Offset);
 
     uint32_t DataSize = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth();
-    if(pRawFile->m_pRawFile->Write ((void*)pi_pData, DataSize) != DataSize)
+    if(pRawFile->m_pRawFile->Write (pi_pData, DataSize) != DataSize)
         Status = H_ERROR;
 
     // Increment the counters.

@@ -2,13 +2,15 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/ImagePPErrors.r.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #pragma once
 
 #include "ImagePPExceptionMessages.xliff.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass
@@ -17,7 +19,7 @@ enum HSTATUS
     {
     H_SUCCESS                   = 0L,  /* Indicates success */
     H_ERROR                     = 1L,  /* Undefined error */
-    H_NOT_FOUND                 = 2L,  /* Desired ressource was not found */
+    H_NOT_FOUND                 = 2L,  /* Desired Resource was not found */
     H_PERMISSION_DENIED         = 3L,  /* No permission to access resource */
     H_ALREADY_EXISTS            = 4L,  /* Resource already exists */
     H_TIME_OUT                  = 5L,  /* Time out */
@@ -40,6 +42,8 @@ enum HSTATUS
     H_INTERNET_UNKNOWN_ERROR    = 22L,
     H_EMPTY_TRANSACTION         = 23L, /* used by HRAStoredRaster */
     H_PROXY_PERMISSION_DENIED   = 24L,
+    H_ERROR_BAD_NUMBER_POINTS   = 25L, /* Not enough number of point*/
+    H_ERROR_MATRIX              = 26L, /* Matrix computation impossible*/
     };
 
 /*
@@ -47,85 +51,31 @@ enum HSTATUS
 */
 #define HISERROR(status)    ((status) != H_SUCCESS)
 
-//--------------------------------------------------------------------------------------
-// How To Add a New Exception
-//
-// This document describes how to add a new exception in Imagepp.
-//
-// Steps :
-//
-// 1 – Add a new exception id in the enumeration ExceptionID located in ImagePPExceptionMessages.xliff.h.
-//     Beware to add the new exception at the end of one exception group, to ensure
-//     that the exception ID for a particular exception remains the same for the
-//     lifespan of the library.
-//
-// 2 – Update the exception count in ImagePPErrors.r.h for the specific exception group.
-//
-// 3 – Add an exception message in the string table of LocalizedStrings.resx and save
-//     the string table.
-//
-// 4 - Rebuild ImageppUtl.
-//
-// 5 - Add a new test case in HFCTestedExceptions.h.
-//
-// 6 - If the new exception is triggered by a specific access mode, the exception ID should be added
-//     to s_ippInvalidAccessModeExceptionTable located rasterlib/rastercore/HIEPriv.cpp
-//
-//
-// Creating a new exception class :
-//
-// It is possible that a new exception class is needed if some specific information
-// about the exception has to be saved for further use during the exception catch.
-//
-// Steps :
-//
-// 1 - Create a new information structure in HFCException.h that will hold the specific
-//     exception information.
-//
-// 2 – Create the new exception class from an existent exception class. The function in
-//     the new class should be the same as the existent exception, except for the
-//     constructor, which should have as parameters the specific information of the new
-//     exception.
-//
-// 3 – In the implementation of the functions, replace the old information structure by
-//     the new one and pass in the order appearing in the new exception message the
-//     different information parameter to the macro FORMAT_EXCEPTION_MSG in the function
-//     FormatExceptionMessage(WString& pio_rMessage).
-//--------------------------------------------------------------------------------------
 
-enum ExceptionGroup
+enum ImageErrorCategories
     {
-    HFC = 0,
-    HCD,
-    HFS,
-    HGF,
-    HPA,
-    HPS,
-    HRFII, //Internet Imaging
-    HRP,
-    HRF,
-    HCS,
-    HCP,
-    HVE,
-    //The enumerator value below must always be the last
-    NB_OF_EXCEPTION_GROUPS
+    IMAGEPP_STATUS_BASE         = 0x10000,
+    IMAGEOP_ERROR_BASE          = 0x11000,
+    COPYFROM_ERROR_BASE         = 0x12000,
     };
 
-#define HFC_EXCEPTION_COUNT       55 //23
-#define HCD_EXCEPTION_COUNT        6 //4
-#define HFS_EXCEPTION_COUNT        9
-#define HGF_EXCEPTION_COUNT        3
-#define HPA_EXCEPTION_COUNT        7
-#define HPS_EXCEPTION_COUNT       30
-#define HRFII_EXCEPTION_COUNT     11
-#define HRP_EXCEPTION_COUNT        4
-#define HRF_EXCEPTION_COUNT       78
-#define HCS_EXCEPTION_COUNT        8
-#define HCP_EXCEPTION_COUNT        1
-#define HVE_EXCEPTION_COUNT        6
+enum ImagePPStatus
+    {
+    IMAGEPP_STATUS_Success              = SUCCESS,
+    IMAGEPP_STATUS_UnknownError         = ERROR,
 
-//Fixed number of digits uses when formatting different message ID
-//append at the end of the base key string.before querying the managed
-//resource
-#define IPP_ERR_MSG_NB_KEY_DIGITS       6
+    // IMAGEPP_STATUS_BASE:  General purpose status.
+    IMAGEPP_STATUS_NoImplementation     = IMAGEPP_STATUS_BASE + 0x01,
+    IMAGEPP_STATUS_OutOfMemory          = IMAGEPP_STATUS_BASE + 0x02,
+        
+    // IMAGEOP_ERROR_BASE: related to HRAImageOp
+    IMAGEOP_STATUS_InvalidPixelType             = IMAGEOP_ERROR_BASE + 0x01, 
+    IMAGEOP_STATUS_NoMorePixelType              = IMAGEOP_ERROR_BASE + 0x02,  
+    IMAGEOP_STATUS_CannotNegociatePixelType     = IMAGEOP_ERROR_BASE + 0x03,  
+    
+    // COPYFROM_ERROR_BASE
+    COPYFROM_STATUS_VoidRegion                     = COPYFROM_ERROR_BASE + 0x01,
+    COPYFROM_STATUS_IncompatiblePixelTypeReplacer  = COPYFROM_ERROR_BASE + 0x02 
+    };
 
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelOrgFloat.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRPChannelOrgFloat
@@ -11,6 +11,7 @@
 
 #include "HRPChannelOrg.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPChannelOrgFloat : public HRPChannelOrg
     {
 public:
@@ -32,3 +33,4 @@ public:
 
     virtual ~HRPChannelOrgFloat() { };
     };
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSPssToken.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <Imagepp/all/h/HFCPtr.h>
@@ -16,6 +16,7 @@
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                     StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -926,3 +927,5 @@ private:
     mutable HFCPtr<HVEShape> m_pClipShape;
     HFCPtr<HGF2DWorld>       m_pWorld;
     };
+
+END_IMAGEPP_NAMESPACE

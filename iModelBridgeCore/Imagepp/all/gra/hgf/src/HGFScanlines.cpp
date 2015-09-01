@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFScanlines.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGFScanLines.h>
 
@@ -90,7 +90,7 @@ public:
     virtual int32_t ConvertXMax(double pi_XMax) const
         {
         // Converting to XMax with a value of 0.0 fails because we fall into the negative.
-        // Ex. 0.0 will end-up with a max of 1 instead of 0
+        // Ex. 0.0 will end-up with a MAX of 1 instead of 0
         // ((Int32)(0.0 - EPS)) + 1 = (Int32)(-EPS) + 1   = (0) + 1 = 1 <- wrong
         // ((Int32)(1.0 - EPS)) + 1 = (Int32)(0.9999) + 1 = (0) + 1 = 1 <- good
         // Also see IsAValidRun() and ConvertYMax()
@@ -111,7 +111,7 @@ public:
     virtual int32_t ConvertYMax(double pi_YMax) const
         {
         // Converting to YMax with a value of 0.0 fails because we fall into the negative.
-        // Ex. 0.0 will end-up with a max of 1 instead of 0
+        // Ex. 0.0 will end-up with a MAX of 1 instead of 0
         // ((Int32)(0.0 - EPS)) + 1 = (Int32)(-EPS) + 1   = (0) + 1 = 1 <- wrong
         // ((Int32)(1.0 - EPS)) + 1 = (Int32)(0.9999) + 1 = (0) + 1 = 1 <- good
         // Also see IsAValidRun() and ConvertYMax()
@@ -626,12 +626,12 @@ void HGFScanLines::AddCrossingPointsForSegment(const HGF2DPositionCollection& pi
                 // Adjust X position so it matches the Y value of the first scanline
                 double CurrentX = pStart->GetX() + XDelta * ((double)(FirstScanlinePos + m_FirstScanline) + 0.5 - pStart->GetY());
 
-                double MinX = min(pStart->GetX(), pEnd->GetX());
-                double MaxX = max(pStart->GetX(), pEnd->GetX());
+                double MinX = MIN(pStart->GetX(), pEnd->GetX());
+                double MaxX = MAX(pStart->GetX(), pEnd->GetX());
 
                 for (HSINTX i = FirstScanlinePos; i < LastScanlinePos; ++i)
                     {
-                    m_pScanLines[i].push_back(max(min(CurrentX, MaxX), MinX));
+                    m_pScanLines[i].push_back(MAX(MIN(CurrentX, MaxX), MinX));
 
                     CurrentX += XDelta;
                     }
@@ -694,12 +694,12 @@ void HGFScanLines::AddCrossingPointsForSegment(const HGF2DPosition& pi_rStart,
             // Adjust X position so it matches the Y value of the first scanline
             double CurrentX = Start.GetX() + XDelta * ((double)(FirstScanlinePos + m_FirstScanline) + 0.5 - Start.GetY());
 
-            double MinX = min(Start.GetX(), End.GetX());
-            double MaxX = max(Start.GetX(), End.GetX());
+            double MinX = MIN(Start.GetX(), End.GetX());
+            double MaxX = MAX(Start.GetX(), End.GetX());
 
             for (HSINTX i = FirstScanlinePos; i < LastScanlinePos ; ++i)
                 {
-                m_pScanLines[i].push_back(max(min(CurrentX, MaxX), MinX));
+                m_pScanLines[i].push_back(MAX(MIN(CurrentX, MaxX), MinX));
 
                 CurrentX += XDelta;
                 }

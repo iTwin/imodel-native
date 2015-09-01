@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRANearestSamplerN8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -13,13 +13,14 @@
 
 #include "HRANearestSampler.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HCDPacket;
 class HGSMemorySurfaceDescriptor;
 
 
 class HRANearestSamplerN8 : public HRANearestSampler
     {
-    HDECLARE_CLASS_ID(1753, HRANearestSampler)
+    HDECLARE_CLASS_ID(HRANearestSamplerId_N8, HRANearestSampler)
 
 public:
 
@@ -30,18 +31,17 @@ public:
                         double                             pi_DeltaY);
     virtual         ~HRANearestSamplerN8();
 
-    virtual void*   GetPixel(double             pi_PosX,
-                             double             pi_PosY) const;
+    virtual void const* GetPixel(double pi_PosX, double pi_PosY) const override;
 
     virtual void    GetPixels(const double*     pi_pPositionsX,
                               const double*     pi_pPositionsY,
                               size_t            pi_PixelCount,
-                              void*             po_pBuffer) const;
+                              void*             po_pBuffer) const override;
 
     virtual void    GetPixels(double            pi_PositionX,
                               double            pi_PositionY,
                               size_t            pi_PixelCount,
-                              void*             po_pBuffer) const;
+                              void*             po_pBuffer) const override;
 
 
 protected:
@@ -69,5 +69,6 @@ private:
     HRANearestSamplerN8(const HRANearestSamplerN8& pi_rObj);
     HRANearestSamplerN8&      operator=(const HRANearestSamplerN8& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 
 

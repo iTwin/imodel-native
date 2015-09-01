@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptLineToTile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptLineToTile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCMemcpy.h>
 #include <Imagepp/all/h/HFCAccessMode.h>
@@ -123,12 +123,14 @@ HRFAdaptLineToTile::~HRFAdaptLineToTile()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToTile::ReadBlock(uint32_t pi_PosBlockX,
-                                      uint32_t pi_PosBlockY,
-                                      Byte* po_pData,
+HSTATUS HRFAdaptLineToTile::ReadBlock(uint64_t pi_PosBlockX,
+                                      uint64_t pi_PosBlockY,
+                                      Byte*  po_pData,
                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     // Check if the current location of intern blocks change
@@ -140,13 +142,13 @@ HSTATUS HRFAdaptLineToTile::ReadBlock(uint32_t pi_PosBlockX,
 
         // Load the client Block and beside blocks into the intern tile cache
         if (Status == H_SUCCESS)
-            Status = LoadTiles(pi_PosBlockX, pi_PosBlockY, pi_pSisterFileLock);
+            Status = LoadTiles((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, pi_pSisterFileLock);
         }
     else
         {
         // if the client Block is not loaded in the intern blocks we load the block into the intern cache
         if (m_IsBlocksEmpty)
-            Status = LoadTiles(pi_PosBlockX, pi_PosBlockY, pi_pSisterFileLock);
+            Status = LoadTiles((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, pi_pSisterFileLock);
         }
 
     // Alloc memory if not already done
@@ -163,12 +165,14 @@ HSTATUS HRFAdaptLineToTile::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToTile::WriteBlock(uint32_t     pi_PosBlockX,
-                                       uint32_t     pi_PosBlockY,
+HSTATUS HRFAdaptLineToTile::WriteBlock(uint64_t    pi_PosBlockX,
+                                       uint64_t    pi_PosBlockY,
                                        const Byte* pi_pData,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+    
     HSTATUS Status = H_SUCCESS;
 
     // Check to save the intern blocks
@@ -180,7 +184,7 @@ HSTATUS HRFAdaptLineToTile::WriteBlock(uint32_t     pi_PosBlockX,
         // Check if the client tile is loaded in the intern tiles
         if ((pi_PosBlockY != m_PosTileY) || m_IsBlocksEmpty)
             // Load the client block and beside blocks into the intern blocks cache
-            Status = LoadTiles(pi_PosBlockX, pi_PosBlockY, pi_pSisterFileLock);
+            Status = LoadTiles((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, pi_pSisterFileLock);
         }
 
     // Alloc memory if not already done
@@ -191,7 +195,7 @@ HSTATUS HRFAdaptLineToTile::WriteBlock(uint32_t     pi_PosBlockX,
 
     m_IsBlocksOverwritten = true;
     m_IsBlocksEmpty = false;
-    m_PosTileY = pi_PosBlockY;
+    m_PosTileY = (uint32_t)pi_PosBlockY;
 
     return Status;
     }

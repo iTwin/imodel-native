@@ -2,38 +2,40 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDMetaDataContainerList.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HMDMetaDataContainer.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HMDMetaDataContainerList : public HFCShareableObject<HMDMetaDataContainerList>
     {
-    HDECLARE_BASECLASS_ID(7014);
+    HDECLARE_BASECLASS_ID(HMDMetaDataId_ContainerList);
 
 public :
 
-    _HDLLu HMDMetaDataContainerList();
-    _HDLLu virtual ~HMDMetaDataContainerList();
+    IMAGEPP_EXPORT HMDMetaDataContainerList();
+    IMAGEPP_EXPORT virtual ~HMDMetaDataContainerList();
 
-    _HDLLu HMDMetaDataContainerList(const HMDMetaDataContainerList& pi_rObj);
-    _HDLLu HMDMetaDataContainerList& operator=(const HMDMetaDataContainerList& pi_rObj);
+    IMAGEPP_EXPORT HMDMetaDataContainerList(const HMDMetaDataContainerList& pi_rObj);
+    IMAGEPP_EXPORT HMDMetaDataContainerList& operator=(const HMDMetaDataContainerList& pi_rObj);
 
 
-    _HDLLu unsigned short                     GetNbContainers      () const;
-    _HDLLu void                               GetMetaDataContainer (uint32_t                      pi_MDContainerInd,
+    IMAGEPP_EXPORT unsigned short                     GetNbContainers      () const;
+    IMAGEPP_EXPORT void                               GetMetaDataContainer (uint32_t                      pi_MDContainerInd,
                                                                     HFCPtr<HMDMetaDataContainer>& po_rpMDContainer) const;
-    _HDLLu const HFCPtr<HMDMetaDataContainer> GetMetaDataContainer (HMDMetaDataContainer::Type    pi_ContainerType) const;
-    _HDLLu void                               SetMetaDataContainer (const HFCPtr<HMDMetaDataContainer>& pi_rpMDContainer);
-    _HDLLu void                               SetModificationStatus(bool pi_HasChanged);
+    IMAGEPP_EXPORT const HFCPtr<HMDMetaDataContainer> GetMetaDataContainer (HMDMetaDataContainer::Type    pi_ContainerType) const;
+    IMAGEPP_EXPORT void                               SetMetaDataContainer (const HFCPtr<HMDMetaDataContainer>& pi_rpMDContainer);
+    IMAGEPP_EXPORT void                               SetModificationStatus(bool pi_HasChanged);
 
 private :
 
-    _HDLLu void                               CopyMemberData(const HMDMetaDataContainerList& pi_rObj);
+    IMAGEPP_EXPORT void                               CopyMemberData(const HMDMetaDataContainerList& pi_rObj);
 
     typedef vector<HFCPtr<HMDMetaDataContainer> > ListOfMetaDataContainer;
     ListOfMetaDataContainer m_MetaDataContainers;
     };
 
+END_IMAGEPP_NAMESPACE

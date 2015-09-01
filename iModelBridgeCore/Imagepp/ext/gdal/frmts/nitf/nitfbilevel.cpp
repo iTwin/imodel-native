@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitfbilevel.cpp 16416 2009-02-25 21:13:08Z rouault $
+ * $Id: nitfbilevel.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Module implement BILEVEL (C1) compressed image reading.
@@ -7,6 +7,7 @@
  *
  **********************************************************************
  * Copyright (c) 2007, Frank Warmerdam
+ * Copyright (c) 2009, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -39,7 +40,7 @@ CPL_C_END
 
 TIFF* VSI_TIFFOpen(const char* name, const char* mode);
 
-CPL_CVSID("$Id: nitfbilevel.cpp 16416 2009-02-25 21:13:08Z rouault $");
+CPL_CVSID("$Id: nitfbilevel.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                       NITFUncompressBILEVEL()                        */

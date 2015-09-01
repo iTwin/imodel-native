@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmultilinestring.cpp 18913 2010-02-24 23:41:17Z rouault $
+ * $Id: ogrmultilinestring.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRMultiLineString class.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrmultilinestring.cpp 18913 2010-02-24 23:41:17Z rouault $");
+CPL_CVSID("$Id: ogrmultilinestring.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                        OGRMultiLineString()                          */
@@ -59,6 +60,16 @@ OGRwkbGeometryType OGRMultiLineString::getGeometryType() const
         return wkbMultiLineString25D;
     else
         return wkbMultiLineString;
+}
+
+/************************************************************************/
+/*                            getDimension()                            */
+/************************************************************************/
+
+int OGRMultiLineString::getDimension() const
+
+{
+    return 1;
 }
 
 /************************************************************************/

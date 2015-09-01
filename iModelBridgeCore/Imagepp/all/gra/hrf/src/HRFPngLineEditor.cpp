@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPngLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFPngLineEditor.h>
 #include <Imagepp/all/h/HRFPngFile.h>
 #include <png/png.h>
@@ -51,9 +51,9 @@ HRFPngLineEditor::~HRFPngLineEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPngLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                    uint32_t pi_PosBlockY,
-                                    Byte* po_pData,
+HSTATUS HRFPngLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                    uint64_t pi_PosBlockY,
+                                    Byte*  po_pData,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(po_pData != 0);
@@ -83,14 +83,14 @@ HSTATUS HRFPngLineEditor::ReadBlock(uint32_t pi_PosBlockX,
         // be read because we don't have random access in a PNG file.
 
         if (pi_PosBlockY == PNG_RASTERFILE->m_pPngFileStruct->row_number)
-            png_read_row(PNG_RASTERFILE->m_pPngFileStruct, (Byte*)po_pData, NULL);
+            png_read_row(PNG_RASTERFILE->m_pPngFileStruct, po_pData, NULL);
         else
             {
             if (pi_PosBlockY > PNG_RASTERFILE->m_pPngFileStruct->row_number)
                 {
                 // We pass all line before the asked line
                 while (PNG_RASTERFILE->m_pPngFileStruct->row_number <= pi_PosBlockY)
-                    png_read_row(PNG_RASTERFILE->m_pPngFileStruct, (Byte*)po_pData, NULL);
+                    png_read_row(PNG_RASTERFILE->m_pPngFileStruct, po_pData, NULL);
                 }
             else
                 Status = H_ERROR;
@@ -111,9 +111,9 @@ HSTATUS HRFPngLineEditor::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPngLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                     uint32_t     pi_PosBlockY,
-                                     const Byte* pi_pData,
+HSTATUS HRFPngLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                     uint64_t     pi_PosBlockY,
+                                     const Byte*  pi_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -162,7 +162,7 @@ HSTATUS HRFPngLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
         // Fill the fake line buffer using the default color.
         HFCPtr<HRPPixelType> CurrentPixelType = m_pResolutionDescriptor->GetPixelType();
         uint32_t BitPerPixel     = CurrentPixelType->CountPixelRawDataBits();
-        uint32_t BytePerPixel    = (uint32_t)__max(__min((BitPerPixel + 7) / 8.0, 4), 1);
+        uint32_t BytePerPixel    = (uint32_t)MAX(MIN((BitPerPixel + 7) / 8.0, 4), 1);
         uint32_t PixelCount      = BlockSize;
         uint32_t BackgroundColor = 0;
 
@@ -216,8 +216,8 @@ HSTATUS HRFPngLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPngLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
-                                    uint32_t           pi_PosBlockY,
+HSTATUS HRFPngLineEditor::ReadBlock(uint64_t           pi_PosBlockX,
+                                    uint64_t           pi_PosBlockY,
                                     HFCPtr<HCDPacket>& po_rpPacket,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -243,8 +243,8 @@ HSTATUS HRFPngLineEditor::ReadBlock(uint32_t           pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFPngLineEditor::WriteBlock(uint32_t                 pi_PosBlockX,
-                                     uint32_t                 pi_PosBlockY,
+HSTATUS HRFPngLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                     uint64_t                 pi_PosBlockY,
                                      const HFCPtr<HCDPacket>& pi_rpPacket,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {

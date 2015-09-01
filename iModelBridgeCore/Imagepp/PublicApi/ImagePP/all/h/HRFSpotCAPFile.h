@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSpotCAPFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -18,15 +18,16 @@
 #include "HRFRasterFileCapabilities.h"
 #include "HRFRasterFile.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 typedef struct SpotCAPFilFileHeader
     {
-    UINT  SceneDirectoryName;
-    UINT  SatelliteNumber;
+    uint32_t  SceneDirectoryName;
+    uint32_t  SatelliteNumber;
     //TODO : decide if we need more info
-    UINT  Year;
-    UINT  Month;
-    UINT  Day;
-    UINT  ShiftAlongTrack;
+    uint32_t  Year;
+    uint32_t  Month;
+    uint32_t  Day;
+    uint32_t  ShiftAlongTrack;
 
     } SpotCAPFilFileHeader;
 
@@ -94,7 +95,7 @@ public:
 class HRFSpotCAPFile : public HRFRasterFile
     {
 public:
-    HDECLARE_CLASS_ID(1507, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_SpotCAP, HRFRasterFile)
 
     friend class HRFSpotCAPLineEditor;
 
@@ -165,16 +166,16 @@ protected:
                             uint64_t              pi_Offset,
                             bool                  pi_DontOpenFile);
 
-    virtual bool                       Open();
+    virtual bool                        Open();
     virtual void                        CreateDescriptors();
     uint32_t                            GetNbBands() const;
     uint32_t                            GetImageWidth() const;
     uint32_t                            GetImageHeight() const;
-    INT                                 GetHeaderSize() const;
-    uint32_t                             GetNbRightBorderPixels() const;
-    uint32_t                             GetNbBytesPrefixDataPerRecord() const;
-    uint32_t                             GetNbBytesSuffixDataPerRecord() const;
-    uint32_t                             GetTotalBytesPerRow() const;
+    int32_t                             GetHeaderSize() const;
+    uint32_t                            GetNbRightBorderPixels() const;
+    uint32_t                            GetNbBytesPrefixDataPerRecord() const;
+    uint32_t                            GetNbBytesSuffixDataPerRecord() const;
+    uint32_t                            GetTotalBytesPerRow() const;
 
 
 
@@ -268,9 +269,10 @@ protected:
     HAutoPtr<HRFSharingControl>  m_pImagSharingControl;
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFSpotCAPCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFSpotCAPCreator)
 
     // Disabled methodes
     HRFSpotCAPCreator();
     };
+END_IMAGEPP_NAMESPACE
 

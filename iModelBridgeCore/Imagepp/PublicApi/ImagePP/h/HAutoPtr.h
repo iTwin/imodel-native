@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HAutoPtr.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HAutoPtr.
@@ -12,9 +12,11 @@
 //
 // It can be used to make calls to new() exception safe.
 //*****************************************************************************
+#pragma once
+
 #include "HTypes.h"
 
-#pragma once
+BEGIN_IMAGEPP_NAMESPACE
 
 template <class P>
 class HNOVTABLEINIT HAutoPtr
@@ -50,4 +52,5 @@ private:
     P* m_Ptr;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HAutoPtr.hpp"

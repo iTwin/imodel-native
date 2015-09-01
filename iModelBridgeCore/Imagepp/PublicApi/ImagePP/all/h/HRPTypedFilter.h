@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPTypedFilter.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16,13 +16,14 @@
 #include "HRPFilter.h"
 #include "HRPPixelConverter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPTypedFilter : public HRPFilter
     {
-    HDECLARE_CLASS_ID(1131, HRPFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_Typed, HRPFilter)
 
 public:
     // Primary methods
-    _HDLLg virtual                 ~HRPTypedFilter();
+    IMAGEPP_EXPORT virtual                 ~HRPTypedFilter();
 
     // Cloning
     virtual HRPFilter* Clone() const override = 0;
@@ -30,19 +31,19 @@ public:
     // Pixel types
     const HFCPtr<HRPPixelType>&
     GetFilterPixelType() const;
-    _HDLLg void                    SetInputPixelType(
+    IMAGEPP_EXPORT void                    SetInputPixelType(
         const HFCPtr<HRPPixelType>& pi_pInputPixelType);
-    _HDLLg void                    SetOutputPixelType(
+    IMAGEPP_EXPORT void                    SetOutputPixelType(
         const HFCPtr<HRPPixelType>& pi_pOutputPixelType);
 
 protected:
 
     // Primary methods
-    _HDLLg                         HRPTypedFilter( const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
-    _HDLLg                         HRPTypedFilter( const HFCPtr<HRPPixelType>& pi_pFilterPixelType,
+    IMAGEPP_EXPORT                         HRPTypedFilter( const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
+    IMAGEPP_EXPORT                         HRPTypedFilter( const HFCPtr<HRPPixelType>& pi_pFilterPixelType,
                                                    const HRPPixelNeighbourhood& pi_rNeighbourhood);
 
-    _HDLLg                         HRPTypedFilter( const HRPTypedFilter& pi_rFilter);
+    IMAGEPP_EXPORT                         HRPTypedFilter( const HRPTypedFilter& pi_rFilter);
 
     // Converters
     bool                   AreThereLostChannels() const;
@@ -72,6 +73,7 @@ private:
     void                                SetOutputConverter();
     void                                UpdateLostChannelsProcessing();
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRPTypedFilter.hpp"
 

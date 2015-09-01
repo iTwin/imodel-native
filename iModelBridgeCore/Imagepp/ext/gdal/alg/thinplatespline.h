@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: thinplatespline.h 20193 2010-08-06 17:12:10Z rouault $
+ * $Id: thinplatespline.h 26650 2013-11-24 14:05:58Z rouault $
  *
  * Project:  GDAL Warp API
  * Purpose:  Declarations for 2D Thin Plate Spline transformer. 
@@ -67,18 +67,11 @@ class VizGeorefSpline2D
         _nof_points = 0;
         _nof_vars = nof_vars;
         _max_nof_points = 0;
-        _AA = NULL;
-        _Ainv = NULL;
         grow_points();
         type = VIZ_GEOREF_SPLINE_ZERO_POINTS;
     }
 
     ~VizGeorefSpline2D(){
-        if ( _AA )
-            CPLFree(_AA);
-        if ( _Ainv )
-            CPLFree(_Ainv);
-
         CPLFree( x );
         CPLFree( y );
         CPLFree( u );
@@ -91,6 +84,7 @@ class VizGeorefSpline2D
         }
     }
 
+#if 0
     int get_nof_points(){
         return _nof_points;
     }
@@ -119,6 +113,7 @@ class VizGeorefSpline2D
                 fprintf(stderr, "\n");
             }
 	}
+	
     int delete_list()
 	{
             _nof_points = 0;
@@ -135,19 +130,20 @@ class VizGeorefSpline2D
             }
             return _nof_points;
 	}
+#endif
 
     void grow_points();
     int add_point( const double Px, const double Py, const double *Pvars );
-    int delete_point(const double Px, const double Py );
     int get_point( const double Px, const double Py, double *Pvars );
+#if 0
+    int delete_point(const double Px, const double Py );
     bool get_xy(int index, double& x, double& y);
     bool change_point(int index, double x, double y, double* Pvars);
     void reset(void) { _nof_points = 0; }
+#endif
     int solve(void);
 
   private:	
-    double base_func( const double x1, const double y1,
-                      const double x2, const double y2 );
 
     vizGeorefInterType type;
 
@@ -171,8 +167,4 @@ class VizGeorefSpline2D
     double *u; // [VIZ_GEOREF_SPLINE_MAX_POINTS];
     int *unused; // [VIZ_GEOREF_SPLINE_MAX_POINTS];
     int *index; // [VIZ_GEOREF_SPLINE_MAX_POINTS];
-	
-    double *_AA, *_Ainv;
 };
-
-

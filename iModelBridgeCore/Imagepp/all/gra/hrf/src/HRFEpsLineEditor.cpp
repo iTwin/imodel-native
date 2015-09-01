@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFEpsLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFEpsLineEditor.h>
 #include <Imagepp/all/h/HRFEpsFile.h>
@@ -75,9 +75,9 @@ HRFEpsLineEditor::~HRFEpsLineEditor()
     Read an uncompressed line. Unsupported.
     -----------------------------------------------------------------------------
 */
-HSTATUS HRFEpsLineEditor::ReadBlock(uint32_t     pi_PosBlockX,
-                                    uint32_t     pi_PosBlockY,
-                                    Byte*       pi_pData,
+HSTATUS HRFEpsLineEditor::ReadBlock(uint64_t     pi_PosBlockX,
+                                    uint64_t     pi_PosBlockY,
+                                    Byte*        pi_pData,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     return H_DATA_NOT_AVAILABLE;
@@ -91,9 +91,9 @@ HSTATUS HRFEpsLineEditor::ReadBlock(uint32_t     pi_PosBlockX,
     need to start at column 0.
     -----------------------------------------------------------------------------
 */
-HSTATUS HRFEpsLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                     uint32_t     pi_PosBlockY,
-                                     const Byte* pi_pData,
+HSTATUS HRFEpsLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                     uint64_t     pi_PosBlockY,
+                                     const Byte*  pi_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     // Full lines only
@@ -127,7 +127,7 @@ HSTATUS HRFEpsLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
         while (BytesToProcess > 0)
             {
             BytesLeftInLine = 254 - m_CurrentOutputPosition;
-            BytesToWrite = (unsigned short)min(BytesLeftInLine, BytesToProcess);
+            BytesToWrite = (unsigned short)MIN(BytesLeftInLine, BytesToProcess);
 
             if(m_pRasterFile->m_pFile->Write(&m_pLineBuffer[CurrentPositionInBuffer], BytesToWrite) != BytesToWrite)
                 goto WRAPUP;    // H_ERROR

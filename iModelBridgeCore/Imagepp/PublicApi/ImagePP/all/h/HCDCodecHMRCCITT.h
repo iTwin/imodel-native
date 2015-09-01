@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecHMRCCITT.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecHMRCCITT
@@ -13,6 +13,7 @@
 
 #include "HCDCodecCCITT.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /*
  * CCITT T.4 1D Huffman runlength codes and
  * related definitions.  Given the small sizes
@@ -41,13 +42,13 @@ typedef struct cciitt3tableentry {
 
 class HCDCodecHMRCCITT : public HCDCodecCCITT
     {
-    HDECLARE_CLASS_ID(1181, HCDCodecCCITT)
+    HDECLARE_CLASS_ID(HCDCodecId_CCITTHMR, HCDCodecCCITT)
 
 public:
 
-    _HDLLu                 HCDCodecHMRCCITT();
+    IMAGEPP_EXPORT                 HCDCodecHMRCCITT();
 
-    _HDLLu                 HCDCodecHMRCCITT(uint32_t pi_Width,
+    IMAGEPP_EXPORT                 HCDCodecHMRCCITT(uint32_t pi_Width,
                                             uint32_t pi_Height);
 
 
@@ -71,16 +72,16 @@ public:
 
     virtual HCDCodec* Clone() const override;
 
-    _HDLLu void            SetYResolution(float pi_Res);
+    IMAGEPP_EXPORT void            SetYResolution(float pi_Res);
 
-    _HDLLu void            SetResolutionUnit(unsigned short pi_Unit);
+    IMAGEPP_EXPORT void            SetResolutionUnit(unsigned short pi_Unit);
 
-    _HDLLu void            SetGroup3Options(int32_t pi_Options);
+    IMAGEPP_EXPORT void            SetGroup3Options(int32_t pi_Options);
 
-    _HDLLu void            SetCCITT3(bool pi_Enabled);
-    _HDLLu bool           GetCCITT3() const;
+    IMAGEPP_EXPORT void            SetCCITT3(bool pi_Enabled);
+    IMAGEPP_EXPORT bool           GetCCITT3() const;
 
-    _HDLLu void            SetOptions(int8_t pi_Options);
+    IMAGEPP_EXPORT void            SetOptions(int8_t pi_Options);
 
 protected:
 
@@ -145,3 +146,4 @@ private:
     static bool    m_TablesBuilded;
     };
 
+END_IMAGEPP_NAMESPACE

@@ -2,9 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DPieceWiseModel.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // QuadrilateralFacet
 //-----------------------------------------------------------------------------
@@ -206,3 +208,5 @@ inline void TriangleFacet::Dump (ofstream& outStream) const
     outStream << "xy=" << x2 << "," << y2 << endl;
     outStream << "xy=" << x0 << "," << y0 << endl;
     }
+
+END_IMAGEPP_NAMESPACE

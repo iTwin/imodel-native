@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFBilLineEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,6 +13,7 @@
 
 #include "HRFResolutionEditor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFBilFile;
 
 class HRFBilLineEditor : public HRFResolutionEditor
@@ -24,29 +25,29 @@ public:
     virtual ~HRFBilLineEditor  ();
 
     // Edition by Block
-    virtual HSTATUS                 ReadBlock (uint32_t                 pi_PosBlockX,
-                                               uint32_t                 pi_PosBlockY,
-                                               Byte*                   po_pData,
-                                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+    virtual HSTATUS ReadBlock(uint64_t                pi_PosBlockX,
+                              uint64_t                pi_PosBlockY,
+                              Byte*                   po_pData,
+                              HFCLockMonitor const*   pi_pSisterFileLock = 0) override;
 
 
-    virtual HSTATUS          ReadBlock     (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            HFCPtr<HCDPacket>&       po_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0) override
+    virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
+                              uint64_t                 pi_PosBlockY,
+                              HFCPtr<HCDPacket>&       po_rpPacket,
+                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override
         {
         return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
         }
 
-    virtual HSTATUS                 WriteBlock(uint32_t                 pi_PosBlockX,
-                                               uint32_t                 pi_PosBlockY,
-                                               const Byte*             pi_pData,
-                                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+    virtual HSTATUS WriteBlock(uint64_t                pi_PosBlockX,
+                               uint64_t                pi_PosBlockY,
+                               const Byte*             pi_pData,
+                               HFCLockMonitor const*   pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS          WriteBlock    (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            const HFCPtr<HCDPacket>& pi_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0) override
+    virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
+                               uint64_t                 pi_PosBlockY,
+                               const HFCPtr<HCDPacket>& pi_rpPacket,
+                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override
         {
         return T_Super::WriteBlock(pi_PosBlockX,pi_PosBlockY,pi_rpPacket,pi_pSisterFileLock);
         }
@@ -62,23 +63,23 @@ protected:
                      unsigned short       pi_Resolution,
                      HFCAccessMode         pi_AccessMode);
 
-    HSTATUS Read24BitRgbBlock ( uint32_t                 pi_PosBlockX,
-                                uint32_t                 pi_PosBlockY,
+    HSTATUS Read24BitRgbBlock ( uint64_t                 pi_PosBlockX,
+                                uint64_t                 pi_PosBlockY,
                                 Byte*                   po_pData,
                                 HFCLockMonitor const*    pi_pSisterFileLock);
 
-    HSTATUS Read48BitRgbBlock ( uint32_t                 pi_PosBlockX,
-                                uint32_t                 pi_PosBlockY,
+    HSTATUS Read48BitRgbBlock ( uint64_t                 pi_PosBlockX,
+                                uint64_t                 pi_PosBlockY,
                                 Byte*                   po_pData,
                                 HFCLockMonitor const*    pi_pSisterFileLock);
 
-    HSTATUS Read8BitGrayBlock ( uint32_t                 pi_PosBlockX,
-                                uint32_t                 pi_PosBlockY,
+    HSTATUS Read8BitGrayBlock ( uint64_t                 pi_PosBlockX,
+                                uint64_t                 pi_PosBlockY,
                                 Byte*                   po_pData,
                                 HFCLockMonitor const*    pi_pSisterFileLock);
 
-    HSTATUS Read16BitGrayBlock ( uint32_t                 pi_PosBlockX,
-                                 uint32_t                 pi_PosBlockY,
+    HSTATUS Read16BitGrayBlock ( uint64_t                 pi_PosBlockX,
+                                 uint64_t                 pi_PosBlockY,
                                  Byte*                   po_pData,
                                  HFCLockMonitor const*    pi_pSisterFileLock);
 
@@ -99,4 +100,5 @@ private:
     uint32_t m_nbBitsPerBandPerPixel;
     uint32_t m_nNbChannel;
     };
+END_IMAGEPP_NAMESPACE
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mffdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: mffdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis MFF Support
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@
 #include "ogr_spatialref.h"
 #include "atlsci_spheroid.h"
 
-CPL_CVSID("$Id: mffdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: mffdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 CPL_C_START
 void	GDALRegister_MFF(void);
@@ -56,8 +57,6 @@ static int         GetMFFProjectionType(const char * pszNewProjection);
 
 class MFFDataset : public RawDataset
 {
-    FILE	*fpImage;	// image data file.
-    
     int         nGCPCount;
     GDAL_GCP    *pasGCPList;
 
@@ -543,7 +542,7 @@ void MFFDataset::ScanForProjectionInfo()
     if (pszOriginLong != NULL)
         oLL.SetProjParm(SRS_PP_LONGITUDE_OF_ORIGIN,atof(pszOriginLong));
 
-    if ((pszSpheroidName == NULL))
+    if (pszSpheroidName == NULL)
     {
         CPLError(CE_Warning,CPLE_AppDefined,
             "Warning- unspecified ellipsoid.  Using wgs-84 parameters.\n");
@@ -901,7 +900,7 @@ GDALDataset *MFFDataset::Open( GDALOpenInfo * poOpenInfo )
                          nRawBand + 1 );
                 nSkipped++;
                 VSIFCloseL(fpRaw);
-                continue; /* we don't support 1 Byte complex */
+                continue; /* we don't support 1 byte complex */
             }
             else if( EQUAL(pszRefinedType,"J*2") )
                 eDataType = GDT_CInt16;
@@ -1222,7 +1221,7 @@ GDALDataset *MFFDataset::Create( const char * pszFilenameIn,
 
 GDALDataset *
 MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS, 
-                        int bStrict, char ** papszOptions, 
+                        CPL_UNUSED int bStrict, char ** papszOptions, 
                         GDALProgressFunc pfnProgress, void * pProgressData )
 
 {
@@ -1306,6 +1305,7 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                     CPLError( CE_Failure, CPLE_UserInterrupt, 
                               "User terminated" );
                     delete poDS;
+                    CPLFree( pData );
 
                     GDALDriver *poMFFDriver = 
                         (GDALDriver *) GDALGetDriverByName( "MFF" );
@@ -1323,6 +1323,8 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                                             eType, 0, 0 );
                 if( eErr != CE_None )
                 {
+                    delete poDS;
+                    CPLFree( pData );
                     return NULL;
                 }
             
@@ -1334,6 +1336,8 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
                 if( eErr != CE_None )
                 {
+                    delete poDS;
+                    CPLFree( pData );
                     return NULL;
                 }
             }
@@ -1617,7 +1621,7 @@ void GDALRegister_MFF()
                                    "frmt_various.html#MFF" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "hdr" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Byte uint16_t Float32 CInt16 CFloat32" );
+                                   "Byte UInt16 Float32 CInt16 CFloat32" );
 
         poDriver->pfnOpen = MFFDataset::Open;
         poDriver->pfnCreate = MFFDataset::Create;

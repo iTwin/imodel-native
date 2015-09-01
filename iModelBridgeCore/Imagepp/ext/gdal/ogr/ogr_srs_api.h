@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_api.h 21005 2010-10-29 14:50:50Z dron $
+ * $Id: ogr_srs_api.h 27109 2014-03-28 20:26:34Z kyle $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  C API and constant declarations for OGR Spatial References.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -115,7 +116,10 @@ typedef enum {
 #define SRS_PT_GEOSTATIONARY_SATELLITE                                  \
                                 "Geostationary_Satellite"
 #define SRS_PT_GOODE_HOMOLOSINE "Goode_Homolosine"
+#define SRS_PT_IGH              "Interrupted_Goode_Homolosine"
 #define SRS_PT_GNOMONIC         "Gnomonic"
+#define SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER                   \
+                                "Hotine_Oblique_Mercator_Azimuth_Center"
 #define SRS_PT_HOTINE_OBLIQUE_MERCATOR                                  \
                                 "Hotine_Oblique_Mercator"
 #define SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN         \
@@ -223,6 +227,47 @@ typedef enum {
 #define SRS_UL_CHAIN_CONV                   "20.116684023368047"
 #define SRS_UL_ROD              "Rod"           /* based on US Foot */
 #define SRS_UL_ROD_CONV                     "5.02921005842012"
+#define SRS_UL_LINK_Clarke      "Link_Clarke"          
+#define SRS_UL_LINK_Clarke_CONV              "0.2011661949"
+
+#define SRS_UL_KILOMETER        "Kilometer"
+#define SRS_UL_KILOMETER_CONV                "1000."
+#define SRS_UL_DECIMETER        "Decimeter"
+#define SRS_UL_DECIMETER_CONV                "0.1"
+#define SRS_UL_CENTIMETER       "Centimeter"
+#define SRS_UL_CENTIMETER_CONV               "0.01"
+#define SRS_UL_MILLIMETER       "Millimeter"
+#define SRS_UL_MILLIMETER_CONV               "0.001"
+#define SRS_UL_INTL_NAUT_MILE   "Nautical_Mile_International"
+#define SRS_UL_INTL_NAUT_MILE_CONV           "1852.0"
+#define SRS_UL_INTL_INCH        "Inch_International"
+#define SRS_UL_INTL_INCH_CONV                "0.0254"
+#define SRS_UL_INTL_FOOT        "Foot_International"
+#define SRS_UL_INTL_FOOT_CONV                    "0.3048"
+#define SRS_UL_INTL_YARD        "Yard_International"
+#define SRS_UL_INTL_YARD_CONV                "0.9144"
+#define SRS_UL_INTL_STAT_MILE   "Statute_Mile_International"
+#define SRS_UL_INTL_STAT_MILE_CONV           "1609.344"
+#define SRS_UL_INTL_FATHOM      "Fathom_International"
+#define SRS_UL_INTL_FATHOM_CONV              "1.8288"
+#define SRS_UL_INTL_CHAIN       "Chain_International"
+#define SRS_UL_INTL_CHAIN_CONV               "20.1168"
+#define SRS_UL_INTL_LINK        "Link_International"
+#define SRS_UL_INTL_LINK_CONV                "0.201168"
+#define SRS_UL_US_INCH          "Inch_US_Surveyor"
+#define SRS_UL_US_INCH_CONV                  "0.025400050800101603"
+#define SRS_UL_US_YARD          "Yard_US_Surveyor"
+#define SRS_UL_US_YARD_CONV                  "0.914401828803658"
+#define SRS_UL_US_CHAIN         "Chain_US_Surveyor"
+#define SRS_UL_US_CHAIN_CONV                 "20.11684023368047"
+#define SRS_UL_US_STAT_MILE     "Statute_Mile_US_Surveyor"
+#define SRS_UL_US_STAT_MILE_CONV             "1609.347218694437"
+#define SRS_UL_INDIAN_YARD      "Yard_Indian"
+#define SRS_UL_INDIAN_YARD_CONV              "0.91439523"
+#define SRS_UL_INDIAN_FOOT      "Foot_Indian"
+#define SRS_UL_INDIAN_FOOT_CONV              "0.30479841"
+#define SRS_UL_INDIAN_CHAIN     "Chain_Indian"
+#define SRS_UL_INDIAN_CHAIN_CONV             "20.11669506"
 
 #define SRS_UA_DEGREE           "degree"
 #define SRS_UA_DEGREE_CONV                  "0.0174532925199433"
@@ -317,22 +362,27 @@ const char CPL_DLL * CPL_STDCALL OSRGetAttrValue( OGRSpatialReferenceH hSRS,
 OGRErr CPL_DLL OSRSetAngularUnits( OGRSpatialReferenceH, const char *, double );
 double CPL_DLL OSRGetAngularUnits( OGRSpatialReferenceH, char ** );
 OGRErr CPL_DLL OSRSetLinearUnits( OGRSpatialReferenceH, const char *, double );
+OGRErr CPL_DLL OSRSetTargetLinearUnits( OGRSpatialReferenceH, const char *, const char *, double );
 OGRErr CPL_DLL OSRSetLinearUnitsAndUpdateParameters( 
     OGRSpatialReferenceH, const char *, double );
 double CPL_DLL OSRGetLinearUnits( OGRSpatialReferenceH, char ** );
+double CPL_DLL OSRGetTargetLinearUnits( OGRSpatialReferenceH, const char *, char ** );
 
 double CPL_DLL OSRGetPrimeMeridian( OGRSpatialReferenceH, char ** );
 
 int CPL_DLL OSRIsGeographic( OGRSpatialReferenceH );
 int CPL_DLL OSRIsLocal( OGRSpatialReferenceH );
 int CPL_DLL OSRIsProjected( OGRSpatialReferenceH );
+int CPL_DLL OSRIsCompound( OGRSpatialReferenceH );
+int CPL_DLL OSRIsGeocentric( OGRSpatialReferenceH );
 int CPL_DLL OSRIsVertical( OGRSpatialReferenceH );
 int CPL_DLL OSRIsSameGeogCS( OGRSpatialReferenceH, OGRSpatialReferenceH );
-int CPL_DLL OSRIsVertCS( OGRSpatialReferenceH, OGRSpatialReferenceH );
+int CPL_DLL OSRIsSameVertCS( OGRSpatialReferenceH, OGRSpatialReferenceH );
 int CPL_DLL OSRIsSame( OGRSpatialReferenceH, OGRSpatialReferenceH );
 
 OGRErr CPL_DLL OSRSetLocalCS( OGRSpatialReferenceH hSRS, const char *pszName );
 OGRErr CPL_DLL OSRSetProjCS( OGRSpatialReferenceH hSRS, const char * pszName );
+OGRErr CPL_DLL OSRSetGeocCS( OGRSpatialReferenceH hSRS, const char * pszName );
 OGRErr CPL_DLL OSRSetWellKnownGeogCS( OGRSpatialReferenceH hSRS,
                                       const char * pszName );
 OGRErr CPL_DLL CPL_STDCALL OSRSetFromUserInput( OGRSpatialReferenceH hSRS, 
@@ -345,6 +395,10 @@ OGRErr CPL_DLL OSRSetTOWGS84( OGRSpatialReferenceH hSRS,
 OGRErr CPL_DLL OSRGetTOWGS84( OGRSpatialReferenceH hSRS, double *, int );
                         
 
+OGRErr CPL_DLL OSRSetCompoundCS( OGRSpatialReferenceH hSRS,
+                                 const char *pszName,
+                                 OGRSpatialReferenceH hHorizSRS,
+                                 OGRSpatialReferenceH hVertSRS );
 OGRErr CPL_DLL OSRSetGeogCS( OGRSpatialReferenceH hSRS,
                       const char * pszGeogName,
                       const char * pszDatumName,
@@ -354,6 +408,11 @@ OGRErr CPL_DLL OSRSetGeogCS( OGRSpatialReferenceH hSRS,
                       double dfPMOffset /* = 0.0 */,
                       const char * pszUnits /* = NULL */,
                       double dfConvertToRadians /* = 0.0 */ );
+
+OGRErr CPL_DLL OSRSetVertCS( OGRSpatialReferenceH hSRS,
+                      const char * pszVertCSName,
+                      const char * pszVertDatumName,
+                      int nVertDatumType );
 
 double CPL_DLL OSRGetSemiMajor( OGRSpatialReferenceH, OGRErr * /* = NULL */ );
 double CPL_DLL OSRGetSemiMinor( OGRSpatialReferenceH, OGRErr * /* = NULL */ );
@@ -390,6 +449,7 @@ OGRErr CPL_DLL OSRSetStatePlaneWithUnits( OGRSpatialReferenceH hSRS,
 OGRErr CPL_DLL OSRAutoIdentifyEPSG( OGRSpatialReferenceH hSRS );
 
 int    CPL_DLL OSREPSGTreatsAsLatLong( OGRSpatialReferenceH hSRS );
+int    CPL_DLL OSREPSGTreatsAsNorthingEasting( OGRSpatialReferenceH hSRS );
 const char CPL_DLL *OSRGetAxis( OGRSpatialReferenceH hSRS,
                                 const char *pszTargetKey, int iAxis, 
                                 OGRAxisOrientation *peOrientation );
@@ -457,6 +517,9 @@ OGRErr CPL_DLL OSRSetGS( OGRSpatialReferenceH hSRS, double dfCentralMeridian,
 /** Goode Homolosine */
 OGRErr CPL_DLL OSRSetGH( OGRSpatialReferenceH hSRS, double dfCentralMeridian,
                          double dfFalseEasting, double dfFalseNorthing );
+
+/** Interrupted Goode Homolosine */
+OGRErr CPL_DLL OSRSetIGH( OGRSpatialReferenceH hSRS );
     
 /** GEOS - Geostationary Satellite View */
 OGRErr CPL_DLL OSRSetGEOS( OGRSpatialReferenceH hSRS, 
@@ -473,6 +536,13 @@ OGRErr CPL_DLL OSRSetGaussSchreiberTMercator( OGRSpatialReferenceH hSRS,
 OGRErr CPL_DLL OSRSetGnomonic(OGRSpatialReferenceH hSRS,
                               double dfCenterLat, double dfCenterLong,
                             double dfFalseEasting, double dfFalseNorthing );
+
+/** Oblique Mercator (aka HOM (variant B) */
+OGRErr CPL_DLL OSRSetOM( OGRSpatialReferenceH hSRS,
+                         double dfCenterLat, double dfCenterLong,
+                         double dfAzimuth, double dfRectToSkew,
+                         double dfScale,
+                         double dfFalseEasting, double dfFalseNorthing );
 
 /** Hotine Oblique Mercator using azimuth angle */
 OGRErr CPL_DLL OSRSetHOM( OGRSpatialReferenceH hSRS,
@@ -593,7 +663,12 @@ OGRErr CPL_DLL OSRSetSOC( OGRSpatialReferenceH hSRS,
                           double dfLatitudeOfOrigin, double dfCentralMeridian,
                           double dfFalseEasting, double dfFalseNorthing );
     
-/** Transverse Mercator */
+/** Transverse Mercator
+ *
+ * Special processing available for Transverse Mercator with GDAL &gt;= 1.10 and PROJ &gt;= 4.8 :
+ * see OGRSpatialReference::exportToProj4().
+ */
+
 OGRErr CPL_DLL OSRSetTM( OGRSpatialReferenceH hSRS,
                          double dfCenterLat, double dfCenterLong,
                          double dfScale,
@@ -650,11 +725,13 @@ OCTTransformEx( OGRCoordinateTransformationH hCT,
 /* this is really private to OGR. */
 char *OCTProj4Normalize( const char *pszProj4Src );
 
+void OCTCleanupProjMutex( void );
+
 /* -------------------------------------------------------------------- */
 /*      Projection transform dictionary query.                          */
 /* -------------------------------------------------------------------- */
 
-char CPL_DLL ** OPTGetProjectionMethods();
+char CPL_DLL ** OPTGetProjectionMethods( void );
 char CPL_DLL ** OPTGetParameterList( const char * pszProjectionMethod,
                              char ** ppszUserName );
 int CPL_DLL OPTGetParameterInfo( const char * pszProjectionMethod,

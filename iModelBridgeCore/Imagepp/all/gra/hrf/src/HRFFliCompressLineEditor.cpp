@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFFliCompressLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFFliCompressLineEditor.h>
 #include <Imagepp/all/h/HRFFliFile.h>
 #include <Imagepp/all/h/HCDCodecFLIRLE8.h>
@@ -70,8 +70,8 @@ HRFFliCompressLineEditor::~HRFFliCompressLineEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFFliCompressLineEditor::ReadBlock(uint32_t             pi_PosBlockX,
-                                            uint32_t             pi_PosBlockY,
+HSTATUS HRFFliCompressLineEditor::ReadBlock(uint64_t              pi_PosBlockX,
+                                            uint64_t              pi_PosBlockY,
                                             HFCPtr<HCDPacket>&    po_rpPacket,
                                             HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -107,7 +107,7 @@ HSTATUS HRFFliCompressLineEditor::ReadBlock(uint32_t             pi_PosBlockX,
 
     pCompressBuffer   = new Byte[CompressDateSize];
 
-    if(m_pRasterFile->m_pFliFile->Read((void*)pCompressBuffer, CompressDateSize) != CompressDateSize)
+    if(m_pRasterFile->m_pFliFile->Read(pCompressBuffer, CompressDateSize) != CompressDateSize)
         goto WRAPUP;    // H_ERROR
 
     // Unlock the sister file
@@ -142,9 +142,9 @@ WRAPUP:
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFFliCompressLineEditor::WriteBlock(uint32_t              pi_PosBlockX,
-                                             uint32_t              pi_PosBlockY,
-                                             const Byte*          pi_pData,
+HSTATUS HRFFliCompressLineEditor::WriteBlock(uint64_t              pi_PosBlockX,
+                                             uint64_t              pi_PosBlockY,
+                                             const Byte*           pi_pData,
                                              HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -182,8 +182,8 @@ HSTATUS HRFFliCompressLineEditor::WriteBlock(uint32_t              pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFFliCompressLineEditor::WriteBlock(uint32_t                 pi_PosBlockX,
-                                             uint32_t                 pi_PosBlockY,
+HSTATUS HRFFliCompressLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                             uint64_t                 pi_PosBlockY,
                                              const HFCPtr<HCDPacket>& pi_rpPacket,
                                              HFCLockMonitor const*    pi_pSisterFileLock)
     {

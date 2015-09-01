@@ -2,15 +2,16 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCPtr.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Class: HFCPtr<T>
 // ----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HFCExclusiveKey.h>
+#include <Bentley/BeAtomic.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 /**
 
  This is the companion class for the HFCPtr class.
@@ -72,17 +73,11 @@ public:
 
     void                         IncrementRef();
     void                         DecrementRef();
-    int32_t                     GetRefCount() const;
-
-    //:> Sometimes required to share access to the internal key
-
-    HFCExclusiveKey*             GetHFCPtrKey() const;
+    uint32_t                     GetRefCount() const;
 
 private:
 
-    uint32_t                    m_RefCount;
-    HFCExclusiveKey              m_Key;
-
+    BeAtomic<uint32_t>    m_RefCount;
     };
 
 //-----------------------------------------------------------------------------
@@ -235,4 +230,5 @@ template<class T, class U> HFCPtr<T> static_pcast(const HFCPtr<U>& pi_rPtr);
 template<class T, class U> HFCPtr<T> const_pcast(const HFCPtr<U>& pi_rPtr);
 template<class T, class U> HFCPtr<T> dynamic_pcast(const HFCPtr<U>& pi_rPtr);
 
+END_IMAGEPP_NAMESPACE
 #include "HFCPtr.hpp"

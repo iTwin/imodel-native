@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFEpsFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFEpsFile.h>
 #include <Imagepp/all/h/HRFEpsLineEditor.h>
@@ -19,7 +19,6 @@
 #include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 
@@ -137,8 +136,7 @@ HRFEpsCreator::HRFEpsCreator()
 */
 WString HRFEpsCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_EncapsulatedPostScript); // Encapsulated PostScript
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_EncapsulatedPostScript()); // Encapsulated PostScript
     }
 
 
@@ -338,9 +336,7 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFEpsFile::GetCapabilities () const
 bool HRFEpsFile::Create()
     {
     // Open the file.
-    m_pFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pFile, GetURL()->GetURL());
+    m_pFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
 
     // This creates the sister file for file sharing control if necessary.
     SharingControlCreate();
@@ -408,7 +404,8 @@ void HRFEpsFile::WriteHeader(HFCPtr<HRFResolutionDescriptor>& pi_rpResDescriptor
         {
         Pos += 2;
         }
-    m_pFile->Write(GetURL()->GetSchemeSpecificPart().c_str() + Pos, GetURL()->GetSchemeSpecificPart().size() - Pos);
+    AString urlA(GetURL()->GetSchemeSpecificPart().c_str() + Pos);
+    m_pFile->Write(urlA.c_str(), urlA.size());
     m_pFile->Write(s_EndOfLine.c_str(), s_EndOfLine.size());
 
     // Document data

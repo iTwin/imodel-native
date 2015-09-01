@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWbmpFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFWbmpFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRFException.h>
@@ -24,7 +24,6 @@
 
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //-----------------------------------------------------------------------------
@@ -111,8 +110,7 @@ HRFWbmpCreator::HRFWbmpCreator()
 //-----------------------------------------------------------------------------
 WString HRFWbmpCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_WirelessBitmap); // WBMP File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_WirelessBitmap()); // WBMP File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -165,20 +163,22 @@ bool HRFWbmpCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HPRECONDITION(pi_rpURL != 0);
 
     bool                   bResult = false;
+    uint64_t ExpectedSize = 0;
+    size_t HeaderLength = 0;
     HAutoPtr<HFCBinStream>  pFile;
 
     (const_cast<HRFWbmpCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the BMP File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
     WbmpFileHeader FileHeader;
 
-    size_t HeaderLength = HRFWbmpFile::GetFileHeaderFromFile(*pFile, FileHeader);
+    HeaderLength = HRFWbmpFile::GetFileHeaderFromFile(*pFile, FileHeader);
 
     //Empty file
     if (HeaderLength == 0)
@@ -191,7 +191,7 @@ bool HRFWbmpCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         goto WRAPUP;
 
     //Compute the expected size.
-    uint64_t ExpectedSize = (uint64_t)ceil(FileHeader.m_Width / 8.0) * FileHeader.m_Height + HeaderLength;
+    ExpectedSize = (uint64_t)ceil(FileHeader.m_Width / 8.0) * FileHeader.m_Height + HeaderLength;
 
     if (pFile->GetSize() != ExpectedSize)
         goto WRAPUP;
@@ -403,9 +403,7 @@ bool HRFWbmpFile::Open()
     if (!m_IsOpen)
         {
         // Open the actual wbmp file.
-        m_pWbmpFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetPhysicalAccessMode());
-
-        ThrowFileExceptionIfError(m_pWbmpFile, GetURL()->GetURL());
+        m_pWbmpFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetPhysicalAccessMode(), 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -577,9 +575,7 @@ void HRFWbmpFile::Save()
 bool HRFWbmpFile::Create()
     {
     // Open the file.
-    m_pWbmpFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pWbmpFile, GetURL()->GetURL());
+    m_pWbmpFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
 
     // This creates the sister file for file sharing control if necessary.
     SharingControlCreate();
@@ -667,7 +663,7 @@ size_t HRFWbmpFile::ReadNextMultiByteInteger(HFCBinStream& pi_rFile, uint32_t& p
 //-----------------------------------------------------------------------------
 size_t HRFWbmpFile::WriteNextMultiByteInteger(HFCBinStream& pi_rFile, uint32_t pi_valToWrite)
     {
-    static const UINT32 s_SevenLSBmask = 0x00007F;
+    static const uint32_t s_SevenLSBmask = 0x00007F;
     Byte                aByte = 0;
     size_t              NbByteWritten = 0;
     Byte                ByteBuffer[5]; //There is a maximum of 5 byte needed to encode an int32.

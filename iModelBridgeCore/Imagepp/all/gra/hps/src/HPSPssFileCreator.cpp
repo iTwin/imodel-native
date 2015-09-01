@@ -2,11 +2,11 @@
 |
 |     $Source: all/gra/hps/src/HPSPssFileCreator.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HPSPssFileCreator.h>
 #include <Imagepp/all/h/HPSPssFile.h>
 #include <Imagepp/all/h/HCPGCoordUtility.h>
@@ -14,7 +14,6 @@
 #include <Imagepp/all/h/HVE2DRectangle.h>
 #include <Imagepp/all/h/HGF2DLocalProjectiveGrid.h>
 #include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HRFInternetImagingFile.h>
 #include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
@@ -70,13 +69,12 @@ HSTATUS HPSPssFileCreator::CreateFileW(WString const& pi_rPssFileName)
 
         HFCPtr<HGF2DTransfoModel> pReprojectionModel;
 
-        pReprojectionModel = HCPGeoTiffKeys::
-                             GetTransfoModelForReprojection(pRasterFile,
+        pReprojectionModel = HCPGeoTiffKeys::GetTransfoModelForReprojection(pRasterFile,
                                                             PageNumber,
-                                                            GetDstProjection(),
+                                                            GetDstProjectionCP(),
                                                             (HFCPtr<HGF2DWorldCluster>&)
                                                             m_pWorldCluster,
-                                                            itr->m_projection);
+                                                            itr->m_projection.get());
         // Georeference
         if (pReprojectionModel != 0)
             {
@@ -117,7 +115,7 @@ HSTATUS HPSPssFileCreator::CreateFileW(WString const& pi_rPssFileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HPSPssFileCreator::AddImage(WString const& pi_rImageName, uint32_t pi_pageNumber, IRasterBaseGcsPtr pi_projection)
+void HPSPssFileCreator::AddImage(WString const& pi_rImageName, uint32_t pi_pageNumber, IRasterBaseGcsP pi_projection)
     {
     ImageDef imageDef;
     imageDef.m_imageName = pi_rImageName;
@@ -129,7 +127,7 @@ void HPSPssFileCreator::AddImage(WString const& pi_rImageName, uint32_t pi_pageN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HPSPssFileCreator::SetDstProjection(IRasterBaseGcsPtr pi_projection)
+void HPSPssFileCreator::SetDstProjection(IRasterBaseGcsP pi_projection)
     {
     m_dstProjection = pi_projection;
     }
@@ -137,9 +135,9 @@ void HPSPssFileCreator::SetDstProjection(IRasterBaseGcsPtr pi_projection)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  01/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-IRasterBaseGcsPtr HPSPssFileCreator::GetDstProjection() const
+IRasterBaseGcsCP HPSPssFileCreator::GetDstProjectionCP() const
     {
-    return m_dstProjection;
+    return m_dstProjection.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -159,8 +157,8 @@ HFCPtr<HRFRasterFile> HPSPssFileCreator::GetRasterFile(WString const& rImageName
     // Open the raster file
     HFCPtr<HRFRasterFile> pFile(HRFRasterFileFactory::GetInstance()->OpenFile(pURL, true));
     if (pFile == 0)
-        throw HFCFileException(HFC_FILE_NOT_FOUND_EXCEPTION, rImageName);
-    if (!pFile->IsCompatibleWith(HRFInternetImagingFile::CLASS_ID))
+        throw HFCFileNotFoundException(rImageName);
+    if (!pFile->IsCompatibleWith(HRFFileId_InternetImaging/*HRFInternetImagingFile::CLASS_ID*/))
         {
         // improve the file
         pFile = GenericImprove(pFile, HRFiTiffCacheFileCreator::GetInstance());

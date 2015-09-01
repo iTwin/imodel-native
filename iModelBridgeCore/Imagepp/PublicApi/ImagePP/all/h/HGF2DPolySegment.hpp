@@ -2,9 +2,10 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DPolySegment.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -164,3 +165,4 @@ inline bool HGF2DPolySegment::IsNull() const
     return(m_Points.size() == 0);
     }
 
+END_IMAGEPP_NAMESPACE

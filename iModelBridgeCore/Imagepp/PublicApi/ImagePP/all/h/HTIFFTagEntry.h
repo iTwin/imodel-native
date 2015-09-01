@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFTagEntry.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HTIFFTagEntry
@@ -14,6 +14,7 @@
 #include "HTIFFUtils.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HTagDefinition;
 class HTIFFByteOrdering;
 class HTIFFDirectory;
@@ -77,8 +78,8 @@ public:
     bool               SetValues (uint32_t pi_Val);
     bool               SetValues (double pi_Val);
     bool               SetValues (uint64_t pi_Val);
-    bool               SetValues (const char*  pi_pVal);
-    bool               SetValues (const WChar*  pi_pVal);
+    bool               SetValuesA (const char*  pi_pVal);
+    bool               SetValuesW (const WChar*  pi_pVal);
     bool               SetValues (unsigned short pi_Val1,  unsigned short pi_Val2);
     bool               SetValues (uint32_t pi_pVal1, uint32_t pi_pVal2);     // RATIONAL
     bool               SetValues (uint32_t pi_Count, const unsigned short* pi_pVal);
@@ -135,6 +136,7 @@ private:
 
 
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HTIFFTagEntry.hpp"
 

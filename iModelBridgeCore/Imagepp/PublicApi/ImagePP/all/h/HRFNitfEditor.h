@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFNitfEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,8 +14,8 @@
 #include "HRFResolutionEditor.h"
 #include "HRFGdalSupportedFileEditor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFNitfFile;
-class GDALRasterBand;
 
 class HRFNitfEditor : public HRFGdalSupportedFileEditor
     {
@@ -46,3 +46,4 @@ private:
     HRFNitfEditor(const HRFNitfEditor& pi_rObj);
     HRFNitfEditor& operator=(const HRFNitfEditor& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

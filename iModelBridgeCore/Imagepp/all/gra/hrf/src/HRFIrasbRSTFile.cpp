@@ -2,20 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIrasbRSTFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>    // must be first for PreCompiledHeader Option
+#include <ImagePPInternal/hstdcpp.h>
+    // must be first for PreCompiledHeader Option
 
 #include <Imagepp/all/h/HRFIrasbRSTFile.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HRFIntergraphMPFFile.h>
 
-
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 HFC_IMPLEMENT_SINGLETON(HRFIrasbRSTCreator)
@@ -95,7 +93,7 @@ void ReadLine(const HAutoPtr<HFCBinStream>& pi_pFile,
     memset(Buffer, 0, BufferSize + 1);
     for (unsigned short i = 0; i < BufferSize && !EndOfLine; i++)
         {
-        if (pi_pFile->Read((void*)&Buffer[i], 1) != 1)
+        if (pi_pFile->Read(&Buffer[i], 1) != 1)
             EndOfLine = true;
         else
             EndOfLine = Buffer[i] == '\n' || pi_pFile->EndOfFile();
@@ -124,8 +122,7 @@ HRFIrasbRSTCreator::HRFIrasbRSTCreator()
  */
 WString HRFIrasbRSTCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_IrasbRST);  //Raster Save Set
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_IrasbRST());  //Raster Save Set
     }
 
 /** ---------------------------------------------------------------------------
@@ -170,11 +167,8 @@ HFCPtr<HRFRasterFile> HRFIrasbRSTCreator::Create(const HFCPtr<HFCURL>& pi_rpURL,
 bool HRFIrasbRSTCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                        uint64_t             pi_Offset) const
     {
-    // (NOTE: extensive use of return to simplify code)
-
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
-
+    
     HAutoPtr<HFCBinStream> pFile;
 
     bool                  Result  = false;
@@ -188,9 +182,9 @@ bool HRFIrasbRSTCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     (const_cast<HRFIrasbRSTCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
     // Read "rst"
@@ -249,18 +243,15 @@ void HRFIrasbRSTCreator::OpenFile(const HFCPtr<HFCURL>& pi_rpURL,
                                   uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
 
     HAutoPtr<HFCBinStream> pFile;
 
     (const_cast<HRFIrasbRSTCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
-
     try
         {
-        ThrowFileExceptionIfError(pFile, pi_rpURL->GetURL());
+            pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE, 0, true);
         }
     catch (...)
         {
@@ -340,6 +331,9 @@ bool HRFIrasbRSTCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
                                          ListOfRelatedURLs&    pio_rRelatedURLs) const
     {
     HASSERT (pio_rRelatedURLs.size() == 0);
+
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
 
     list<RSTSubFileInfo> listOfRSTSubFileInfo;
 
@@ -463,7 +457,7 @@ uint64_t HRFIrasbRSTFile::GetFileCurrentSize() const
     /*
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
 
 
@@ -471,7 +465,7 @@ uint64_t HRFIrasbRSTFile::GetFileCurrentSize() const
     bool                   Result  = false;
     HFCLockMonitor           SisterFileLock (GetLockManager());
 
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     */
     }
@@ -497,7 +491,6 @@ void HRFIrasbRSTFile::Save()
 void HRFIrasbRSTFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                              uint32_t pi_Page,
                                              bool   pi_CheckSpecificUnitSpec,
-                                             bool   pi_GeoModelDefaultUnit,
                                              bool   pi_InterpretUnitINTGR)
     {
     //The format is currently not supported by RM, so disable this function

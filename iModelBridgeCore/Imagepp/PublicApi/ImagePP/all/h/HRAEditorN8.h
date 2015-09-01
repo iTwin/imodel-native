@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAEditorN8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAEditorN8
@@ -14,14 +14,14 @@
 
 #include "HRAGenEditor.h"
 
-class HGSGraphicToolAttributes;
+BEGIN_IMAGEPP_NAMESPACE
 class HRATransaction;
 class HGSMemorySurfaceDescriptor;
 class HCDPacket;
 
 class HRAEditorN8 : public HRAGenEditor
     {
-    HDECLARE_CLASS_ID(1732, HRAGenEditor)
+    HDECLARE_CLASS_ID(HRAEditorId_N8, HRAGenEditor)
 
 public:
 
@@ -112,3 +112,4 @@ private:
     HRAEditorN8&    operator=(const HRAEditorN8& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

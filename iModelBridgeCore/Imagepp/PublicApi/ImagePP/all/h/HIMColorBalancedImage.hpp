@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMColorBalancedImage.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** ---------------------------------------------------------------------------
     Specify if the positional algorithm will be applied.
     ---------------------------------------------------------------------------
@@ -133,3 +134,4 @@ inline HIMColorBalancedImage::ColorMode HIMColorBalancedImage::GetColorMode() co
     }
 
 
+END_IMAGEPP_NAMESPACE

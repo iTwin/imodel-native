@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSLOStripEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -17,6 +17,7 @@
 #include "HCDPacket.h"
 #include "HRFTypes.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFSLOStripEditor : public HRFResolutionEditor
     {
 public:
@@ -27,25 +28,25 @@ public:
     virtual         ~HRFSLOStripEditor  ();
 
     // Edition by Block
-    virtual HSTATUS ReadBlock (uint32_t pi_PosBlockX,
-                               uint32_t pi_PosBlockY,
-                               Byte* po_pData,
-                               HFCLockMonitor const* pi_pSisterFileLock = 0);
+    virtual HSTATUS ReadBlock(uint64_t pi_PosBlockX,
+                              uint64_t pi_PosBlockY,
+                              Byte*  po_pData,
+                              HFCLockMonitor const* pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS ReadBlock (uint32_t pi_PosBlockX,
-                               uint32_t pi_PosBlockY,
-                               HFCPtr<HCDPacket>& po_rpPacket,
-                               HFCLockMonitor const* pi_pSisterFileLock = 0);
+    virtual HSTATUS ReadBlock(uint64_t pi_PosBlockX,
+                              uint64_t pi_PosBlockY,
+                              HFCPtr<HCDPacket>& po_rpPacket,
+                              HFCLockMonitor const* pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS WriteBlock (uint32_t pi_PosBlockX,
-                                uint32_t pi_PosBlockY,
-                                const Byte* pi_pData,
-                                HFCLockMonitor const* pi_pSisterFileLock = 0);
+    virtual HSTATUS WriteBlock(uint64_t pi_PosBlockX,
+                               uint64_t pi_PosBlockY,
+                               const Byte* pi_pData,
+                               HFCLockMonitor const* pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS WriteBlock (uint32_t            pi_PosBlockX,
-                                uint32_t            pi_PosBlockY,
-                                const HFCPtr<HCDPacket>&  pi_rpPacket,
-                                HFCLockMonitor const*     pi_pSisterFileLock = 0);
+    virtual HSTATUS WriteBlock(uint64_t pi_PosBlockX,
+                               uint64_t pi_PosBlockY,
+                               const HFCPtr<HCDPacket>&  pi_rpPacket,
+                               HFCLockMonitor const*     pi_pSisterFileLock = 0) override;
 
 protected:
     HAutoPtr<HRFResolutionEditor> m_pSrcResolutionEditor;
@@ -194,3 +195,4 @@ private:
     HRFSLOStripEditor&                 operator=(const HRFSLOStripEditor& pi_rObj);
 
     };
+END_IMAGEPP_NAMESPACE

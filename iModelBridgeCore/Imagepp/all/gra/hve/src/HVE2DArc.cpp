@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DArc.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DArc
 //-------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DTransfoModel.h>
 #include <Imagepp/all/h/HGF2DSimilitude.h>
@@ -1778,7 +1778,7 @@ bool HVE2DArc::AreArcsContiguous(const HVE2DArc& pi_rArc) const
     Answer = (
                  CalculateCircle().IsEqualTo(TempArc.CalculateCircle()) &&
                  GetExtent().InnerOverlaps(TempArc.GetExtent(),
-                                           min(GetTolerance(), TempArc.GetTolerance()))
+                                           MIN(GetTolerance(), TempArc.GetTolerance()))
              );
 
     // If the first conditions are respected ... they are possible candidates
@@ -1861,7 +1861,7 @@ bool HVE2DArc::AreArcsContiguousAt(const HVE2DArc& pi_rArc,
         }
 
     // Pre-compute tolerance
-    double Tolerance = min(GetTolerance(), TempArc.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), TempArc.GetTolerance());
 
 
     // Check if circles are the same and the extents of arcs overlap
@@ -1971,7 +1971,7 @@ bool HVE2DArc::AreArcsAdjacent(const HVE2DArc& pi_rArc) const
     // if the arcs are adjacent (by one point only)
     // and this adjacency point is located on both the arcs
     if (GetExtent().OutterOverlaps(TempArc.GetExtent(),
-                                   min(GetTolerance(), TempArc.GetTolerance())))
+                                   MIN(GetTolerance(), TempArc.GetTolerance())))
         {
         if (AreArcsContiguous(TempArc))
             {
@@ -2052,7 +2052,7 @@ bool HVE2DArc::AreArcAndSegmentAdjacent(const HVE2DSegment& pi_rSegment) const
     // The arc and segment are adjacent if the circle and line are adjacent (by one point only)
     // and this adjacency point is located on both the arc and the segment
     if (GetExtent().OutterOverlaps(pi_rSegment.GetExtent(),
-                                   min(GetTolerance(), pi_rSegment.GetTolerance())) &&
+                                   MIN(GetTolerance(), pi_rSegment.GetTolerance())) &&
         SelfCircle.IsAdjacentToLine(GivenLine))
         {
         // Declare a location to receive adjacence point

@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCCallbacks.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCCallbackRegistry.h>
 #include <Imagepp/all/h/HFCCallbacks.h>
 
@@ -56,8 +56,7 @@ const HFCAuthenticationCallback* HFCAuthenticationCallback::GetCallbackFromRegis
 // Protected
 // constructor
 //-----------------------------------------------------------------------------
-HFCAuthenticationError::HFCAuthenticationError (const ExceptionID   pi_ExceptionID)
-    :   m_ExceptionID(pi_ExceptionID)
+HFCAuthenticationError::HFCAuthenticationError ()
     {
 
     };
@@ -87,15 +86,6 @@ WString HFCAuthenticationError::ToString () const
 void HFCAuthenticationError::Throw () const
     {
     _Throw();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return the underlying exception ID
-//-----------------------------------------------------------------------------
-ExceptionID HFCAuthenticationError::GetExceptionID () const
-    {
-    return m_ExceptionID;
     }
 
 
@@ -358,7 +348,7 @@ void HFCOracleAuthentication::SetDatabaseName (const WString& pi_DbName)
 // SetByString
 //
 // A authentication string must use the following format:
-// Data Source=[DataSource];User Id=[UserId];Password=[Password]
+// user/password@geosvs
 //-----------------------------------------------------------------------------
 void HFCOracleAuthentication::SetByString(const WString& pi_rAuthenticationString)
     {

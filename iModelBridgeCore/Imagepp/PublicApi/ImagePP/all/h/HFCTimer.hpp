@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCTimer.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HFCTimer
@@ -14,6 +14,8 @@
 #include <wtypes.h>     // Windows timer system
 #include <mmsystem.h>    // Windows timer system
 #endif
+
+BEGIN_IMAGEPP_NAMESPACE
 
 inline HFCTimerListener::HFCTimerListener()
     {
@@ -79,9 +81,9 @@ inline void HFCTimer::Start(uint32_t pi_Interval, bool pi_IsPeriodic)
     m_IsPeriodic = pi_IsPeriodic;
     m_Ticks = 0;
     if (m_IsPeriodic)
-        m_TimerID = timeSetEvent((UINT)m_Interval, 0, HFCTimer::TimerCallback, (INT_PTR)this, TIME_PERIODIC);
+        m_TimerID = timeSetEvent((uint32_t)m_Interval, 0, HFCTimer::TimerCallback, (INT_PTR)this, TIME_PERIODIC);
     else
-        m_TimerID = timeSetEvent((UINT)m_Interval, 0, HFCTimer::TimerCallback, (INT_PTR)this, TIME_ONESHOT);
+        m_TimerID = timeSetEvent((uint32_t)m_Interval, 0, HFCTimer::TimerCallback, (INT_PTR)this, TIME_ONESHOT);
 #endif
     }
 
@@ -147,3 +149,4 @@ void HFCMethodCallbackListener<T>::Trigger(HFCTimer* pi_pTimer)
     (m_pObj->*m_pMethod)();
     }
 
+END_IMAGEPP_NAMESPACE

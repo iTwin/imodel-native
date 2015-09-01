@@ -2,11 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/interface/IGeoTiffKeysList.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
+//BEGIN_IMAGEPP_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -74,11 +75,15 @@ struct IGeoTiffKeysList
             }
         };
 
-    virtual bool            GetFirstKey(GeoKeyItem* po_Key)=0;
-    virtual bool            GetNextKey(GeoKeyItem* po_Key)=0;
+    virtual bool            GetFirstKey(GeoKeyItem* po_Key) const=0;
+    virtual bool            GetNextKey(GeoKeyItem* po_Key) const=0;
 
-    virtual void            AddKey (unsigned short pi_KeyID, unsigned int pi_value)=0;
+    virtual void            AddKey (unsigned short pi_KeyID, uint32_t pi_value)=0;
     virtual void            AddKey (unsigned short pi_KeyID, double pi_value)=0;
     virtual void            AddKey (unsigned short pi_KeyID, const std::string& pi_value)=0;
+
+    virtual size_t          EraseKey(unsigned short pi_KeyID)=0;
     };
 
+
+//END_IMAGEPP_NAMESPACE

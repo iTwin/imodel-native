@@ -2,19 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFImgMappedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>    //:> must be first for PreCompiledHeader Option
+#include <ImagePPInternal/hstdcpp.h>
+    //:> must be first for PreCompiledHeader Option
 
 #include <Imagepp/all/h/HRFImgMappedFile.h>
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HFCBinStream.h>
-#include <Imagepp/all/h/HFCFileManager.h>
 #include <Imagepp/all/h/HRFException.h>
 #include <Imagepp/all/h/HRFImgMappedLineEditor.h>
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
@@ -25,7 +24,6 @@
 #include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
 #include <Imagepp/all/h/HRPChannelOrgRGB.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 
@@ -122,8 +120,7 @@ HRFImgMappedCreator::HRFImgMappedCreator()
  */
 WString HRFImgMappedCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_ImgMapped); //ImgMapped File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_ImgMapped()); //ImgMapped File Format
     }
 
 /** ---------------------------------------------------------------------------
@@ -187,8 +184,8 @@ bool HRFImgMappedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     HAutoPtr<HFCBinStream>  pFile;
 
-    Byte                   aBuffer[10]; // File read access buffer
-    Byte*                  pBuffer;
+    char                   aBuffer[10]; // File read access buffer
+    char*                  pBuffer;
     uint32_t                 VersionNo;
     uint32_t                HeaderSize;
     uint32_t                 ColorCount;
@@ -199,14 +196,14 @@ bool HRFImgMappedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     (const_cast<HRFImgMappedCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     // Note: Extensive use of return here to keep code light
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
     // File identification
-    if ((pFile->Read((void*)aBuffer, 8) != 8))
+    if ((pFile->Read(aBuffer, 8) != 8))
         goto WRAPUP;
 
     if ((aBuffer[0] != 'S') || (aBuffer[1] != 'C') || (aBuffer[2] != 'M') || (aBuffer[3] != 'I'))
@@ -215,7 +212,7 @@ bool HRFImgMappedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     // Version
     pBuffer = &aBuffer[4];
 
-    if (sscanf((char*)pBuffer, "%u", &VersionNo) != 1)
+    if (sscanf(pBuffer, "%u", &VersionNo) != 1)
         goto WRAPUP;
 
     // We only support version number 1
@@ -223,7 +220,7 @@ bool HRFImgMappedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         goto WRAPUP;
 
     // File header
-    if ((pFile->Read((void*)aBuffer, 10) != 10))
+    if ((pFile->Read(aBuffer, 10) != 10))
         goto WRAPUP;
 
     if ((aBuffer[0] != 'A') || (aBuffer[1] != 'T'))
@@ -232,29 +229,29 @@ bool HRFImgMappedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     // ... header size
     pBuffer = &aBuffer[2];
 
-    if (sscanf((char*)pBuffer, "%lu", &HeaderSize) != 1)
+    if (sscanf(pBuffer, "%lu", &HeaderSize) != 1)
         goto WRAPUP;
 
     // Dimensions and color space
     // Width
-    if ((pFile->Read((void*)aBuffer, 4) != 4))
+    if ((pFile->Read(aBuffer, 4) != 4))
         goto WRAPUP;
 
-    if (sscanf((char*)aBuffer, "%u", &Width) != 1)
+    if (sscanf(aBuffer, "%u", &Width) != 1)
         goto WRAPUP;
 
     // Height
-    if ((pFile->Read((void*)aBuffer, 4) != 4))
+    if ((pFile->Read(aBuffer, 4) != 4))
         goto WRAPUP;
 
-    if (sscanf((char*)aBuffer, "%u", &Height) != 1)
+    if (sscanf(aBuffer, "%u", &Height) != 1)
         goto WRAPUP;
 
     // Color space
-    if ((pFile->Read((void*)aBuffer, 4) != 4))
+    if ((pFile->Read(aBuffer, 4) != 4))
         goto WRAPUP;
 
-    if ( (sscanf((char*)aBuffer, "%u", &ColorCount) != 1) || (ColorCount>256) )
+    if ( (sscanf(aBuffer, "%u", &ColorCount) != 1) || (ColorCount>256) )
         goto WRAPUP;
 
     Ret = true;
@@ -348,7 +345,9 @@ HRFImgMappedFile::~HRFImgMappedFile()
             m_pImgMappedFile = 0;
 
             // Delete file
-            HFCFileManager::GetInstance()->Remove((HFCPtr<HFCURLFile>&)GetURL());
+            HASSERT(GetURL()->IsCompatibleWith(HFCURLFile::CLASS_ID));
+            
+            BeFileName::BeDeleteFile(static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName().c_str());
             }
         }
     catch(...)
@@ -424,8 +423,7 @@ bool HRFImgMappedFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     if ((pi_pPage->GetResolutionDescriptor(0)->GetWidth()  > 9999) ||
         (pi_pPage->GetResolutionDescriptor(0)->GetHeight() > 9999))
         {
-        throw HRFInvalidNewFileDimensionException(HRF_DIMENSION_TOO_LARGE_FOR_FILE_CREATION_EXCEPTION,
-                                                  GetURL()->GetURL(),
+        throw HRFInvalidNewFileDimensionException(GetURL()->GetURL(),
                                                   9999,
                                                   9999);
         }
@@ -480,7 +478,12 @@ void HRFImgMappedFile::InitFileInfoFromDescriptors()
 
         // Fill color map
         for (uint32_t Index = 0, StepBy3 = 0; Index < rPalette.GetMaxEntries(); ++Index, StepBy3 += 3)
-            memcpy (&(m_FileInfo.m_aColorMap[StepBy3]), (Byte*)rPalette.GetCompositeValue(Index), 3);
+            {
+            if (Index < rPalette.CountUsedEntries())
+                memcpy (&(m_FileInfo.m_aColorMap[StepBy3]), (Byte*)rPalette.GetCompositeValue(Index), 3);
+            else
+                memset(&(m_FileInfo.m_aColorMap[StepBy3]), (Byte)Index, 3);
+            }
         }
     }
 
@@ -507,9 +510,7 @@ bool HRFImgMappedFile::Open()
     if (!m_IsOpen)
         {
         // Open main file
-        m_pImgMappedFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(m_pImgMappedFile, GetURL()->GetURL());
+        m_pImgMappedFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         // Creating the sister file for sharing control
         SharingControlCreate();
@@ -657,9 +658,7 @@ bool HRFImgMappedFile::Create()
     if (!m_IsOpen)
         {
         // Open file
-        m_pImgMappedFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(m_pImgMappedFile, GetURL()->GetURL());
+        m_pImgMappedFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         // Creation of the sister file
         SharingControlCreate();
@@ -681,8 +680,8 @@ void HRFImgMappedFile::ReadFileHeader()
     HPRECONDITION(m_pImgMappedFile != 0);
     HPRECONDITION(SharingControlIsLocked());
 
-    Byte  aBuffer[11]; // File read access buffer
-    Byte* pBuffer;
+    char  aBuffer[11]; // File read access buffer
+    char* pBuffer;
 
     uint32_t SectionSize;
     uint32_t BytesToStepOver;
@@ -692,29 +691,29 @@ void HRFImgMappedFile::ReadFileHeader()
 
     // 1-
     // File identification section (skip)
-    m_pImgMappedFile->Read((void*)aBuffer, 8);
+    m_pImgMappedFile->Read(aBuffer, 8);
 
     // 2-
     // Attribute section
     memset(aBuffer, 0, 11);
-    m_pImgMappedFile->Read((void*)aBuffer, 10);
+    m_pImgMappedFile->Read(aBuffer, 10);
     pBuffer = &aBuffer[2];
 
     // Read section size
-    sscanf ((char*)pBuffer, "%8u", &SectionSize);
+    sscanf (pBuffer, "%8u", &SectionSize);
 
     // Read attibutes
     memset(aBuffer, 0, 11);
-    m_pImgMappedFile->Read((void*)aBuffer, 4);
-    sscanf ((char*)aBuffer, "%4u", &m_FileInfo.m_Width);
+    m_pImgMappedFile->Read(aBuffer, 4);
+    sscanf (aBuffer, "%4u", &m_FileInfo.m_Width);
 
     memset(aBuffer, 0, 11);
-    m_pImgMappedFile->Read((void*)aBuffer, 4);
-    sscanf ((char*)aBuffer, "%4u", &m_FileInfo.m_Height);
+    m_pImgMappedFile->Read(aBuffer, 4);
+    sscanf (aBuffer, "%4u", &m_FileInfo.m_Height);
 
     memset(aBuffer, 0, 11);
-    m_pImgMappedFile->Read((void*)aBuffer, 4);
-    sscanf ((char*)aBuffer, "%4u", &m_FileInfo.m_ColorCount);
+    m_pImgMappedFile->Read(aBuffer, 4);
+    sscanf (aBuffer, "%4u", &m_FileInfo.m_ColorCount);
 
     // If there is still some unknown info to read... step over
     if ((BytesToStepOver = SectionSize - 12) > 0)
@@ -730,22 +729,22 @@ void HRFImgMappedFile::ReadFileHeader()
 
     // Read section header
     memset(aBuffer, 0, 11);
-    m_pImgMappedFile->Read((void*)aBuffer, 10);
+    m_pImgMappedFile->Read(aBuffer, 10);
     pBuffer = &aBuffer[2];
 
     // Read section size
-    sscanf ((char*)pBuffer, "%8u", &SectionSize);
+    sscanf (pBuffer, "%8u", &SectionSize);
 
     // (Prevent memory destruction that could be caused by an error in file)
     if (SectionSize > 256*3)
         SectionSize = 256*3;
 
     // Fill color map
-    m_pImgMappedFile->Read((void*)m_FileInfo.m_aColorMap, SectionSize);
+    m_pImgMappedFile->Read(m_FileInfo.m_aColorMap, SectionSize);
 
     // 4-
     // Pixel data section
-    m_pImgMappedFile->Read((void*)aBuffer, 10);
+    m_pImgMappedFile->Read(aBuffer, 10);
 
     // Set offset to pixel data value
     m_OffsetToPixelData = (uint32_t)m_pImgMappedFile->GetCurrentPos();
@@ -760,8 +759,8 @@ void HRFImgMappedFile::WriteFileHeader()
     HPRECONDITION(m_pImgMappedFile != 0);
     HPRECONDITION(SharingControlIsLocked());
 
-    Byte  aBuffer[13]; // File write access buffer
-    Byte* pBuffer;
+    char  aBuffer[13]; // File write access buffer
+    char* pBuffer;
 
     // Be consistant with page and resolution descriptor
     InitFileInfoFromDescriptors();
@@ -774,57 +773,57 @@ void HRFImgMappedFile::WriteFileHeader()
     memset(aBuffer, ' ', 8);
 
     // Version number
-    sprintf ((char*)aBuffer, "SCMI%4u", 1 /*version 1*/);
+    sprintf (aBuffer, "SCMI%4u", 1 /*version 1*/);
 
     // Write to file
-    m_pImgMappedFile->Write((void*)aBuffer, 8);
+    m_pImgMappedFile->Write(aBuffer, 8);
 
     // 2-
     // Attribute section
     memset(aBuffer, ' ', 10);
 
     // Section size
-    sprintf ((char*)aBuffer, "AT%8u", 12 /*section is 12 bytes long*/);
+    sprintf (aBuffer, "AT%8u", 12 /*section is 12 bytes long*/);
 
     // Write to file
-    m_pImgMappedFile->Write((void*)aBuffer, 10);
+    m_pImgMappedFile->Write(aBuffer, 10);
 
     memset(aBuffer, ' ', 12);
 
     // Section info
-    sprintf ((char*)aBuffer, "%4u", m_FileInfo.m_Width /*image width*/);
+    sprintf (aBuffer, "%4u", m_FileInfo.m_Width /*image width*/);
 
     pBuffer = &aBuffer[4];
-    sprintf ((char*)pBuffer, "%4u", m_FileInfo.m_Height /*image height*/);
+    sprintf (pBuffer, "%4u", m_FileInfo.m_Height /*image height*/);
 
     pBuffer = &aBuffer[8];
-    sprintf ((char*)pBuffer, "%4u", 256 /*number of colors*/);
+    sprintf (pBuffer, "%4u", 256 /*number of colors*/);
 
     // Write to file
-    m_pImgMappedFile->Write((void*)aBuffer, 12);
+    m_pImgMappedFile->Write(aBuffer, 12);
 
     // 3-
     // Color map section
     memset(aBuffer, ' ', 10);
 
     // Section size
-    sprintf ((char*)aBuffer, "CM%8u", 3 * 256 /*space for palette*/);
+    sprintf (aBuffer, "CM%8u", 3 * 256 /*space for palette*/);
 
     // Write to file
-    m_pImgMappedFile->Write((void*)aBuffer, 10);
+    m_pImgMappedFile->Write(aBuffer, 10);
 
     // Write color map to file
-    m_pImgMappedFile->Write((void*)m_FileInfo.m_aColorMap, 3*256);
+    m_pImgMappedFile->Write(m_FileInfo.m_aColorMap, 3*256);
 
     // 4-
     // Pixel Data section
     memset(aBuffer, ' ', 10);
 
     // Image size
-    sprintf ((char*)aBuffer, "PD%8u", m_FileInfo.m_Width * m_FileInfo.m_Height /*space for image data*/);
+    sprintf (aBuffer, "PD%8u", m_FileInfo.m_Width * m_FileInfo.m_Height /*space for image data*/);
 
     // Write to file
-    m_pImgMappedFile->Write((void*)aBuffer, 10);
+    m_pImgMappedFile->Write(aBuffer, 10);
 
     // Set offset to pixel data value
     m_OffsetToPixelData = (uint32_t)m_pImgMappedFile->GetCurrentPos();

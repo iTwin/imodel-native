@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRATransactionRecorder.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Class : HRATransactionRecorder
@@ -12,6 +12,7 @@
 #include "HFCPtr.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRATransaction;
 
 class HRATransactionRecorder : public HFCShareableObject<HRATransactionRecorder>
@@ -51,3 +52,4 @@ private:
     HRATransactionRecorder(const HRATransactionRecorder&);
     HRATransactionRecorder& operator=(const HRATransactionRecorder&);
     };
+END_IMAGEPP_NAMESPACE

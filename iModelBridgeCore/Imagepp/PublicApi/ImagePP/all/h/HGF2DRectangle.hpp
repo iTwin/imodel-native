@@ -2,10 +2,10 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DRectangle.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -69,10 +69,10 @@ inline HGF2DRectangle::HGF2DRectangle(const HGF2DPosition& pi_rFirstPoint,
                                   const HGF2DPosition& pi_rSecondPoint)
     : HGF2DSimpleShape()
     {
-    m_XMin = min(pi_rFirstPoint.GetX(), pi_rSecondPoint.GetX());
-    m_XMax = max(pi_rFirstPoint.GetX(), pi_rSecondPoint.GetX());
-    m_YMin = min(pi_rFirstPoint.GetY(), pi_rSecondPoint.GetY());
-    m_YMax = max(pi_rFirstPoint.GetY(), pi_rSecondPoint.GetY());
+    m_XMin = MIN(pi_rFirstPoint.GetX(), pi_rSecondPoint.GetX());
+    m_XMax = MAX(pi_rFirstPoint.GetX(), pi_rSecondPoint.GetX());
+    m_YMin = MIN(pi_rFirstPoint.GetY(), pi_rSecondPoint.GetY());
+    m_YMax = MAX(pi_rFirstPoint.GetY(), pi_rSecondPoint.GetY());
 
     // Set tolerance if necessary
     ResetTolerance();
@@ -438,13 +438,4 @@ inline HGF2DShapeTypeId HGF2DRectangle::GetShapeType() const
     }
 
 
-
-
-
-
-
-
-
-
-
-
+END_IMAGEPP_NAMESPACE

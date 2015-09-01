@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: atlsci_spheroid.cpp 10645 2007-01-18 02:22:39Z warmerdam $
+ * $Id: atlsci_spheroid.cpp 22381 2011-05-16 21:14:22Z rouault $
  *
  * Project:  Spheroid classes
  * Purpose:  Provide spheroid lookup table base classes.
@@ -30,7 +30,7 @@
 #include "atlsci_spheroid.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: atlsci_spheroid.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
+CPL_CVSID("$Id: atlsci_spheroid.cpp 22381 2011-05-16 21:14:22Z rouault $");
 
 /**********************************************************************/
 /* ================================================================== */
@@ -44,15 +44,15 @@ void SpheroidItem :: SetValuesByRadii(const char *spheroidname, double eq_radius
     spheroid_name = CPLStrdup(spheroidname);
     equitorial_radius=eq_radius;
     polar_radius=p_radius;
-    inverse_flattening=eq_radius/(eq_radius - polar_radius);
+    inverse_flattening=(eq_radius == polar_radius) ? 0 : eq_radius/(eq_radius - polar_radius);
 }
 
 void SpheroidItem :: SetValuesByEqRadiusAndInvFlattening(const char *spheroidname, double eq_radius, double inverseflattening)
 {
     spheroid_name = CPLStrdup(spheroidname);
     equitorial_radius=eq_radius;
-    polar_radius=eq_radius*(1.0 - (1.0/inverse_flattening));
     inverse_flattening=inverseflattening;
+    polar_radius=(inverse_flattening == 0) ? eq_radius : eq_radius*(1.0 - (1.0/inverse_flattening));
 }
 SpheroidItem :: SpheroidItem()
 {

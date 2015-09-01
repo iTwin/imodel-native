@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFBilFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -44,11 +44,7 @@
 
 
 
-bool ConvertStringToDouble(const string& pi_rString, double* po_pDouble) ;
-bool ConvertStringToLong(const string& pi_rString, int32_t* po_pLong) ;
-bool ConvertStringToULong(const string& pi_rString, uint32_t* po_pLong) ;
-
-
+BEGIN_IMAGEPP_NAMESPACE
 
 typedef struct RawPixelFileHeader
     {
@@ -120,7 +116,7 @@ public:
 class HRFBilFile : public HRFRasterFile
     {
 public:
-    HDECLARE_CLASS_ID(1448, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Bil, HRFRasterFile)
 
     friend class HRFBilLineEditor;
     friend struct HRFBilCreator;
@@ -291,11 +287,12 @@ protected:
     HAutoPtr<HRFSharingControl>  m_pHdrSharingControl;
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFBilCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFBilCreator)
 
 
     // Disabled methodes
     HRFBilCreator();
     };
 
+END_IMAGEPP_NAMESPACE
 

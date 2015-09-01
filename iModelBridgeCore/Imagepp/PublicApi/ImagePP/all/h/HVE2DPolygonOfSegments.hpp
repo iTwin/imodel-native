@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DPolygonOfSegments.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -277,13 +278,4 @@ inline HVE2DShapeTypeId HVE2DPolygonOfSegments::GetShapeType() const
     return(HVE2DPolygonOfSegments::CLASS_ID);
     }
 
-
-
-
-
-
-
-
-
-
-
+END_IMAGEPP_NAMESPACE

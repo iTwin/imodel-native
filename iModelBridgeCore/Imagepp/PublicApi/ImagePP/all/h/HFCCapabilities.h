@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCCapabilities.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCCapabilities
@@ -13,7 +13,7 @@
 #include "HFCCapability.h"
 
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     This class is a container for multiple file format capabilities. Capabilities derived
     from HRFCapability are added and can be queried or searched for within the raster file
@@ -38,31 +38,31 @@
  */
 class HFCCapabilities : public HFCShareableObject<HFCCapabilities>
     {
-    HDECLARE_BASECLASS_ID(1383)
+    HDECLARE_BASECLASS_ID(HFCCapabilitiesId_Base)
 
 public:
     // creation and destruction
-    _HDLLu                     HFCCapabilities();
-    _HDLLu                     HFCCapabilities(const HFCCapabilities& pi_rObj);
-    _HDLLu virtual             ~HFCCapabilities();
+    IMAGEPP_EXPORT                     HFCCapabilities();
+    IMAGEPP_EXPORT                     HFCCapabilities(const HFCCapabilities& pi_rObj);
+    IMAGEPP_EXPORT virtual             ~HFCCapabilities();
 
     // test if the specific capability is supported
-    _HDLLu virtual bool       Supports(const HFCCapability&   pi_rCapability) const;
-    _HDLLu virtual bool       Supports(const HFCCapabilities& pi_rpCapabilities) const;
+    IMAGEPP_EXPORT virtual bool       Supports(const HFCCapability&   pi_rCapability) const;
+    IMAGEPP_EXPORT virtual bool       Supports(const HFCCapabilities& pi_rpCapabilities) const;
 
     // capabilities information "include all type of capabilities"
-    _HDLLu virtual uint32_t    CountCapabilities() const;
-    _HDLLu virtual const HFCPtr<HFCCapability>&
+    IMAGEPP_EXPORT virtual uint32_t    CountCapabilities() const;
+    IMAGEPP_EXPORT virtual const HFCPtr<HFCCapability>&
     GetCapability(uint32_t pi_Index) const;
 
     // Test a capabilities is present for a specific type
-    _HDLLu virtual bool       HasCapabilityOfType(const HFCCapability& pi_rCapability) const;
+    IMAGEPP_EXPORT virtual bool       HasCapabilityOfType(const HFCCapability& pi_rCapability) const;
 
     // obtains the first capability found for a specific type
-    _HDLLu virtual HFCPtr<HFCCapabilities>
+    IMAGEPP_EXPORT virtual HFCPtr<HFCCapabilities>
     GetCapabilitiesOfType(const HFCCapability& pi_rCapability) const;
 
-    _HDLLu virtual void        Add(const HFCPtr<HFCCapability>& pi_rCapability);
+    IMAGEPP_EXPORT virtual void        Add(const HFCPtr<HFCCapability>& pi_rCapability);
 
 protected:
 
@@ -76,3 +76,5 @@ protected:
 private:
 
     };
+
+END_IMAGEPP_NAMESPACE

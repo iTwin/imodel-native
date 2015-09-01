@@ -2,18 +2,20 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecCCITTRLE.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HCDCodecCCITTRLE
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HCDCodecCCITTRLE.h>
 #include <Imagepp/all/h/HCDCodecHMRRLE1.h>
 #include <Imagepp/all/h/HCDPacketRLE.h>
+
+
 
 //#define SUPPORT_REVERSE_BIT_ONLY 1
 
@@ -325,8 +327,8 @@ void HCDCodecCCITTRLE::CCITTRLEState::GrowMaxLRS()
     // Invert buffer pointers if needed.
     if(inverted)
         {
-        swap(m_a, m_b);
-        swap(m_acolor, m_bcolor);
+        std::swap(m_a, m_b);
+        std::swap(m_acolor, m_bcolor);
         }
     }
 
@@ -2547,7 +2549,7 @@ size_t HCDCodecCCITTRLE::CompressSubset(const void* pi_pInData, size_t pi_InData
     if(GetSubsetPosY() == 0)
         {
         SetCurrentState(STATE_COMPRESS);
-        m_CCITTRLEState.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), false, m_bitrevtable, ImagePP::CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
+        m_CCITTRLEState.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), false, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
         }
 
     size_t  LineSize(((GetSubsetWidth() * GetBitsPerPixel() + 7) / 8) + GetLinePaddingBits() / 8);
@@ -2604,7 +2606,7 @@ size_t HCDCodecCCITTRLE::CompressSubsetFromRLE(HFCPtr<HCDPacketRLE> const& pi_rp
     if(GetSubsetPosY() == 0)
         {
         SetCurrentState(STATE_COMPRESS);
-        m_CCITTRLEState.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), false, m_bitrevtable, ImagePP::CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
+        m_CCITTRLEState.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), false, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
         }
 
     //size_t  LineSize(((GetSubsetWidth() * GetBitsPerPixel() + 7) / 8) + GetLinePaddingBits() / 8);
@@ -2657,7 +2659,7 @@ void HCDCodecCCITTRLE::DecompressSubsetToRLE(const void* pi_pInData, size_t pi_I
     if(GetSubsetPosY() == 0)
         {
         SetCurrentState(STATE_DECOMPRESS);
-        m_CCITTRLEState.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), true, m_bitrevtable, ImagePP::CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
+        m_CCITTRLEState.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), true, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
         }
 
     // Alloc a working buffer
@@ -2727,14 +2729,14 @@ size_t HCDCodecCCITTRLE::DecompressSubset(const void* pi_pInData, size_t pi_InDa
     if(GetSubsetPosY() == 0)
         {
         SetCurrentState(STATE_DECOMPRESS);
-        m_CCITTRLEState.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), true, m_bitrevtable, ImagePP::CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
+        m_CCITTRLEState.Pre(static_cast<long>(GetWidth()), static_cast<long>(GetHeight()), true, m_bitrevtable, CCITT_PHOTOMETRIC_MINISBLACK == m_photometric);
         }
 
     // Set read buffer for the current line(s)
     size_t  LineSize(((GetSubsetWidth() * GetBitsPerPixel() + 7) / 8) + GetLinePaddingBits() / 8);
 
     // Give only what the decompressor needs as the output buffer size.
-    m_CCITTRLEState.SetupForUncompressMode((Byte*)pi_pInData, pi_InDataSize, (Byte*)po_pOutBuffer, min(pi_OutBufferSize, SubsetSize), LineSize);
+    m_CCITTRLEState.SetupForUncompressMode((Byte*)pi_pInData, pi_InDataSize, (Byte*)po_pOutBuffer, MIN(pi_OutBufferSize, SubsetSize), LineSize);
 
     // Decompress subset
     for(uint32_t Line(0); Line < GetSubsetHeight(); ++Line)

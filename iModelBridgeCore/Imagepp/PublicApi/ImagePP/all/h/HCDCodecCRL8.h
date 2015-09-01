@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecCRL8.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecCRL8
@@ -13,21 +13,22 @@
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HCDCodecCRL8 : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1378, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_CRL8, HCDCodecImage)
 
 public:
 
-    _HDLLu                 HCDCodecCRL8();
+    IMAGEPP_EXPORT                 HCDCodecCRL8();
 
-    _HDLLu                 HCDCodecCRL8( size_t pi_Width,
+    IMAGEPP_EXPORT                 HCDCodecCRL8( size_t pi_Width,
                                          size_t pi_Height);
 
-    _HDLLu                 HCDCodecCRL8(const HCDCodecCRL8& pi_rObj);
+    IMAGEPP_EXPORT                 HCDCodecCRL8(const HCDCodecCRL8& pi_rObj);
 
-    _HDLLu                 ~HCDCodecCRL8();
+    IMAGEPP_EXPORT                 ~HCDCodecCRL8();
 
     size_t          CompressSubset(const void* pi_pInData,
                                    size_t pi_InDataSize,
@@ -43,7 +44,7 @@ public:
 
     virtual HCDCodec* Clone() const override;
 
-    _HDLLu void            SetLineHeader(bool pi_Enable);
+    IMAGEPP_EXPORT void            SetLineHeader(bool pi_Enable);
 
     void            SetOneLineMode(bool pi_Enable);
 
@@ -59,3 +60,4 @@ private:
     bool            m_OneLineMode;
     };
 
+END_IMAGEPP_NAMESPACE

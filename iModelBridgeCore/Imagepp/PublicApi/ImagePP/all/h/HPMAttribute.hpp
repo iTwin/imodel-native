@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMAttribute.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // HPMAttribute inline methods 
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Test if object refers to same attribute as parameter
 //-----------------------------------------------------------------------------
@@ -130,3 +130,4 @@ template<class T, HPMAttributesID ID> WString HPMAttribute_T<T, ID>::GetDataAsSt
     return ExpressAsString(m_Data);
     }
 
+END_IMAGEPP_NAMESPACE

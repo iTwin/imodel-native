@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgs/src/HGSMemorySurfaceDescriptor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HGSMemorySurfaceDescriptor
 //---------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
 #include <Imagepp/all/h/HCDPacket.h>
@@ -54,36 +54,6 @@ HGSMemorySurfaceDescriptor::HGSMemorySurfaceDescriptor
 HGSMemorySurfaceDescriptor::~HGSMemorySurfaceDescriptor()
     {
     }
-
-//-----------------------------------------------------------------------------
-// public
-// GetRequiredSurfaceCapabilities
-//-----------------------------------------------------------------------------
-HGSSurfaceCapabilities* HGSMemorySurfaceDescriptor::GetRequiredSurfaceCapabilities() const
-    {
-    // first call the parent method
-    HGSSurfaceCapabilities* pCapabilities = HGSMemoryBaseSurfaceDescriptor::GetRequiredSurfaceCapabilities();
-
-    // add other capabilities
-    if (m_pPacket != 0 && m_pPacket->GetCodec() != 0)
-        {
-        // add the compression type
-        pCapabilities->Add(new HGSSurfaceCapability(HGSCompressionAttribute(m_pPacket->GetCodec()->GetClassID())));
-
-        if (m_pPacket->GetCodec()->IsCompatibleWith(HCDCodecIdentity::CLASS_ID))
-            {
-            if (m_pPacket->GetBufferAddress() != 0)
-                {
-                HGSMemoryAlignment Alignment(m_pPacket->GetBufferAddress(),
-                                             GetBytesPerRow());
-                pCapabilities->Add(new HGSSurfaceCapability(HGSMemoryAlignmentAttribute(Alignment)));
-                }
-            }
-        }
-
-    return pCapabilities;
-    }
-
 
 //-----------------------------------------------------------------------------
 // public

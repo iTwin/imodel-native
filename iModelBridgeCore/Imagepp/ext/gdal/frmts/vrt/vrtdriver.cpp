@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtdriver.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: vrtdriver.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTDriver
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2003, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2009-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +33,7 @@
 #include "cpl_string.h"
 #include "gdal_alg_priv.h"
 
-CPL_CVSID("$Id: vrtdriver.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: vrtdriver.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 /************************************************************************/
 /*                             VRTDriver()                              */
@@ -60,6 +61,17 @@ VRTDriver::~VRTDriver()
     {
         GDALUnregisterTransformDeserializer( pDeserializerData );
     }
+}
+
+/************************************************************************/
+/*                      GetMetadataDomainList()                         */
+/************************************************************************/
+
+char **VRTDriver::GetMetadataDomainList()
+{
+    return BuildMetadataDomainList(GDALDriver::GetMetadataDomainList(),
+                                   TRUE,
+                                   "SourceParsers", NULL);
 }
 
 /************************************************************************/
@@ -144,8 +156,7 @@ VRTSource *VRTDriver::ParseSource( CPLXMLNode *psSrc, const char *pszVRTPath )
 static GDALDataset *
 VRTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS, 
                int bStrict, char ** papszOptions, 
-               GDALProgressFunc pfnProgress, void * pProgressData )
-
+               CPL_UNUSED GDALProgressFunc pfnProgress, CPL_UNUSED void * pProgressData )
 {
     VRTDataset *poVRTDS = NULL;
 
@@ -159,7 +170,8 @@ VRTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /*      it to disk as a special case to avoid extra layers of           */
 /*      indirection.                                                    */
 /* -------------------------------------------------------------------- */
-    if( EQUAL(poSrcDS->GetDriver()->GetDescription(),"VRT") )
+    if( poSrcDS->GetDriver() != NULL &&
+        EQUAL(poSrcDS->GetDriver()->GetDescription(),"VRT") )
     {
 
     /* -------------------------------------------------------------------- */
@@ -217,6 +229,8 @@ VRTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                             poSrcDS->GetRasterXSize(),
                             poSrcDS->GetRasterYSize(),
                             0, GDT_Byte, NULL );
+    if (poVRTDS == NULL)
+        return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Do we have a geotransform?                                      */
@@ -250,6 +264,10 @@ VRTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     papszMD = poSrcDS->GetMetadata( "IMD" );
     if( papszMD )
         poVRTDS->SetMetadata( papszMD, "IMD" );
+
+    papszMD = poSrcDS->GetMetadata( "GEOLOCATION" );
+    if( papszMD )
+        poVRTDS->SetMetadata( papszMD, "GEOLOCATION" );
 
 /* -------------------------------------------------------------------- */
 /*      GCPs                                                            */
@@ -338,7 +356,7 @@ void GDALRegister_VRT()
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "vrt" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "gdal_vrttut.html" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Byte int16_t uint16_t int32_t uint32_t Float32 Float64 CInt16 CInt32 CFloat32 CFloat64" );
+                                   "Byte Int16 UInt16 Int32 UInt32 Float32 Float64 CInt16 CInt32 CFloat32 CFloat64" );
         
         poDriver->pfnOpen = VRTDataset::Open;
         poDriver->pfnCreateCopy = VRTCreateCopy;

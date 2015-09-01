@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFMappedSurface.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 // Inline methods
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // GetCoordSys
 //-----------------------------------------------------------------------------
@@ -82,3 +82,5 @@ inline uint32_t HGFMappedSurface::GetHeight() const
     {
     return m_Height;
     }
+
+END_IMAGEPP_NAMESPACE

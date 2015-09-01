@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPARule.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPARule
@@ -20,17 +20,18 @@
 #include <Imagepp/all/h/HPAGrammarObject.h>
 #include <Imagepp/all/h/HPAProduction.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HPARule : public HPAGrammarObject
     {
 public:
 
 
-    _HDLLu                     HPARule();
-    _HDLLu                     HPARule(const HPAProduction& pi_rProduction);
-    _HDLLu                     HPARule(const HPAProductionList& pi_rProdList);
-    _HDLLu virtual             ~HPARule();
-    _HDLLu HPARule&            operator=(const HPAProduction& pi_rProduction);
-    _HDLLu HPARule&            operator=(const HPAProductionList& pi_rProdList);
+    IMAGEPP_EXPORT                     HPARule();
+    IMAGEPP_EXPORT                     HPARule(const HPAProduction& pi_rProduction);
+    IMAGEPP_EXPORT                     HPARule(const HPAProductionList& pi_rProdList);
+    IMAGEPP_EXPORT virtual             ~HPARule();
+    IMAGEPP_EXPORT HPARule&            operator=(const HPAProduction& pi_rProduction);
+    IMAGEPP_EXPORT HPARule&            operator=(const HPAProductionList& pi_rProdList);
 
     HPARule&            operator()(HPANodeCreator* pi_pCreator);
 
@@ -58,6 +59,6 @@ private:
 
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HPARule.hpp"
 

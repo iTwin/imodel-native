@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCPerformanceDataHelper.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -48,6 +48,8 @@
 #define HFC_PERFORMANCE_NO_DATA                    PDH_NO_DATA
 
 #endif
+
+BEGIN_IMAGEPP_NAMESPACE
 
 const int NUM_STAT_SAMPLES = 100;
 
@@ -158,4 +160,4 @@ private:
     PERFORMANCE_OBJECT_LIST m_ObjectList;
     };
 
-
+END_IMAGEPP_NAMESPACE

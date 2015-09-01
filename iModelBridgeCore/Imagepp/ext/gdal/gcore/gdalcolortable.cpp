@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalcolortable.cpp 16573 2009-03-14 12:34:17Z rouault $
+ * $Id: gdalcolortable.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Color table implementation.
@@ -7,6 +7,7 @@
  *
  **********************************************************************
  * Copyright (c) 2000, Frank Warmerdam
+ * Copyright (c) 2009, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +30,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalcolortable.cpp 16573 2009-03-14 12:34:17Z rouault $");
+CPL_CVSID("$Id: gdalcolortable.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                           GDALColorTable()                           */

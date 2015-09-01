@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIntergraphMPFFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -16,6 +16,7 @@
 //  Intergraph MPF Capabilities
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFMPFCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -35,7 +36,7 @@ public:
     friend struct HRFIntergraphMPFCreator;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1476, HRFIntergraphMonochromeFile)
+    HDECLARE_CLASS_ID(HRFFileId_IntergraphMPF, HRFIntergraphMonochromeFile)
 
     virtual   ~HRFIntergraphMPFFile();
 
@@ -102,9 +103,10 @@ struct HRFIntergraphMPFCreator : public HRFIntergraphFile::Creator
            HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
            uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFIntergraphMPFCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFIntergraphMPFCreator)
 
     // Disabled methodes
     HRFIntergraphMPFCreator();
     };
+END_IMAGEPP_NAMESPACE
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFHMRFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -17,6 +17,7 @@
 
 #include "HRFRasterFileCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFHMRCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -31,7 +32,7 @@ public:
     friend class HRFHMRTileEditor;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1426, HRFTiffFile)
+    HDECLARE_CLASS_ID(HRFFileId_HMR, HRFTiffFile)
 
     // allow to Open an image file
     HRFHMRFile            (const HFCPtr<HFCURL>&          pi_rpURL,
@@ -61,7 +62,6 @@ public:
     virtual void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                  uint32_t pi_Page = 0,
                                                                  bool   pi_CheckSpecificUnitSpec = false,
-                                                                 bool   pi_GeoModelDefaultUnit = true,
                                                                  bool   pi_InterpretUnitINTGR = false);
 
 protected:
@@ -185,9 +185,10 @@ struct HRFHMRCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFHMRCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFHMRCreator)
 
     // Disabled methodes
     HRFHMRCreator();
     };
+END_IMAGEPP_NAMESPACE
 

@@ -2,20 +2,20 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCPtr.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Inline method for class HFCShareableObject
 //:> Template/Inline methods for class HFCPtr<T>
 //-----------------------------------------------------------------------------
-#include <Bentley/BeAssert.h>
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default constructor.
 //-----------------------------------------------------------------------------
 template<class T>
 inline HFCShareableObject<T>::HFCShareableObject()
     {
-    m_RefCount = 0;
+    m_RefCount.store(0);
     }
 
 //-----------------------------------------------------------------------------
@@ -24,7 +24,7 @@ inline HFCShareableObject<T>::HFCShareableObject()
 template<class T>
 inline HFCShareableObject<T>::HFCShareableObject(const HFCShareableObject<T>& pi_rObj)
     {
-    m_RefCount = 0;
+    m_RefCount.store(0);
     }
 
 //-----------------------------------------------------------------------------
@@ -33,7 +33,7 @@ inline HFCShareableObject<T>::HFCShareableObject(const HFCShareableObject<T>& pi
 template<class T>
 inline HFCShareableObject<T>::~HFCShareableObject()
     {
-    HASSERT(m_RefCount == 0);
+    HASSERT(m_RefCount.load() == 0);
     }
 
 //-----------------------------------------------------------------------------
@@ -53,9 +53,9 @@ HFCShareableObject<T>::operator=(const HFCShareableObject<T>& pi_rObj)
 template<class T>
 inline void HFCShareableObject<T>::_internal_NotifyAdditionOfASmartPointer()
     {
-    m_Key.ClaimKey();
+    //m_Key.ClaimKey();
     ++m_RefCount;
-    m_Key.ReleaseKey();
+    //m_Key.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
@@ -64,10 +64,10 @@ inline void HFCShareableObject<T>::_internal_NotifyAdditionOfASmartPointer()
 template<class T>
 inline void HFCShareableObject<T>::_internal_NotifyRemovalOfASmartPointer()
     {
-    m_Key.ClaimKey();
-    HASSERT(m_RefCount != 0);
+    //m_Key.ClaimKey();
+    HASSERT(m_RefCount.load() != 0);
     uint32_t RefCount = --m_RefCount;
-    m_Key.ReleaseKey();
+    //m_Key.ReleaseKey();
 
     // Delete here because we don't want to keep the key
     // locked in the destruction. Anyways, since the object
@@ -83,9 +83,9 @@ inline void HFCShareableObject<T>::_internal_NotifyRemovalOfASmartPointer()
 template<class T>
 inline void HFCShareableObject<T>::IncrementRef()
     {
-    m_Key.ClaimKey();
+    //m_Key.ClaimKey();
     ++m_RefCount;
-    m_Key.ReleaseKey();
+    //m_Key.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
@@ -94,28 +94,19 @@ inline void HFCShareableObject<T>::IncrementRef()
 template<class T>
 inline void HFCShareableObject<T>::DecrementRef()
     {
-    m_Key.ClaimKey();
-    HASSERT(m_RefCount != 0);
+    //m_Key.ClaimKey();
+    HASSERT(m_RefCount.load() != 0);
     --m_RefCount;
-    m_Key.ReleaseKey();
+    //m_Key.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
 // For special circumstances.
 //-----------------------------------------------------------------------------
 template<class T>
-inline int32_t HFCShareableObject<T>::GetRefCount() const
+inline uint32_t HFCShareableObject<T>::GetRefCount() const
     {
-    return m_RefCount;
-    }
-
-//-----------------------------------------------------------------------------
-// For special circumstances.
-//-----------------------------------------------------------------------------
-template<class T>
-inline HFCExclusiveKey* HFCShareableObject<T>::GetHFCPtrKey() const
-    {
-    return &m_Key;
+    return m_RefCount.load();
     }
 
 
@@ -405,3 +396,4 @@ template<class T, class U> inline HFCPtr<T> dynamic_pcast(const HFCPtr<U>& pi_rP
 {
     return dynamic_cast<T*>(pi_rPtr.GetPtr());
 }
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAEditorRLE1Line.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -13,12 +13,13 @@
 
 #include "HRAGenEditor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HGSMemoryRLESurfaceDescriptor;
 class HCDPacketRLE;
 
 class HRAEditorRLE1Line : public HRAGenEditor
     {
-    HDECLARE_CLASS_ID(1735, HRAGenEditor)
+    HDECLARE_CLASS_ID(HRAEditorId_RLE1Line, HRAGenEditor)
 
 public:
 
@@ -134,3 +135,4 @@ private:
     HRAEditorRLE1Line&  operator=(const HRAEditorRLE1Line& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

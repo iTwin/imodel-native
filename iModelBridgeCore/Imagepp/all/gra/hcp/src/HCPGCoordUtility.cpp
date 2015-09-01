@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hcp/src/HCPGCoordUtility.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>                // must be first for PreCompiledHeader Option
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>                // must be first for PreCompiledHeader Option
+
 #include <Imagepp/all/h/HCPGCoordUtility.h>
 #include <Imagepp/all/h/HCPGCoordModel.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
@@ -14,8 +14,11 @@
 #include <Imagepp/all/h/HGF2DLocalProjectiveGrid.h>
 #include <Imagepp/all/h/HGF2DWorldCluster.h>
 #include <Imagepp/all/h/HRFRasterFile.h>
-
 #include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
+
+#include <GeoCoord\BaseGeoCoord.h>
+#include <ImagePP/all/h/HFCRasterGeoCoordinateServices.h>
+
 
 HFC_IMPLEMENT_SINGLETON (HCPGCoordUtility)
 #define MAX_GRIDSIZE (300)
@@ -51,8 +54,8 @@ false if they are not.
 */
 bool HCPGCoordUtility::AreBaseGCSEquivalent
 (
-    const IRasterBaseGcsPtr& pi_rpBaseGeoCoord1,
-    const IRasterBaseGcsPtr& pi_rpBaseGeoCoord2
+    IRasterBaseGcsCP pi_rpBaseGeoCoord1,
+    IRasterBaseGcsCP pi_rpBaseGeoCoord2
 )
     {
     if (pi_rpBaseGeoCoord1==NULL && pi_rpBaseGeoCoord2==NULL)
@@ -83,8 +86,8 @@ bool HCPGCoordUtility::AreBaseGCSEquivalent
 */
 HFCPtr<HCPGCoordModel> HCPGCoordUtility::CreateGCoordModel
 (
-    IRasterBaseGcsPtr pi_SourceProjection,
-    IRasterBaseGcsPtr pi_DestinationProjection
+    IRasterBaseGcsR pi_SourceProjection,
+    IRasterBaseGcsR pi_DestinationProjection
 ) const
     {
     // Create GCoord model
@@ -174,8 +177,8 @@ HFCPtr<HCPGCoordModel> HCPGCoordUtility::CreateGCoordModel
 */
 HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordAdaptedModel
 (
-    IRasterBaseGcsPtr pi_SourceProjection,
-    IRasterBaseGcsPtr pi_DestinationProjection,
+    IRasterBaseGcsR pi_SourceProjection,
+    IRasterBaseGcsR pi_DestinationProjection,
     const HGF2DLiteExtent& pi_rExtent,
     double  pi_Step,
     double  pi_ExpectedMeanError,
@@ -393,8 +396,8 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordAdaptedModel
 */
 HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordAdaptedModel
 (
-    IRasterBaseGcsPtr               pi_SourceProjection,
-    IRasterBaseGcsPtr               pi_DestinationProjection,
+    IRasterBaseGcsR                pi_SourceProjection,
+    IRasterBaseGcsR                pi_DestinationProjection,
     const HFCPtr<HRFRasterFile>&    pi_rpRasterFile,
     uint32_t                       pi_Page,
     const HGF2DWorldCluster&        pi_rCluster,
@@ -481,10 +484,10 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordAdaptedModel
         TempY = 0.0;
         pFileModelToBase->ConvertDirect (TempX, TempY, &FourthPointX, &FourthPointY);
 
-        HGF2DLiteExtent ImageExtent (min (FirstPointX, min (SecondPointX, min (ThirdPointX, FourthPointX))),
-                                     min (FirstPointY, min (SecondPointY, min (ThirdPointY, FourthPointY))),
-                                     max (FirstPointX, max (SecondPointX, max (ThirdPointX, FourthPointX))),
-                                     max (FirstPointY, max (SecondPointY, max (ThirdPointY, FourthPointY))));
+        HGF2DLiteExtent ImageExtent (MIN (FirstPointX, MIN (SecondPointX, MIN (ThirdPointX, FourthPointX))),
+                                     MIN (FirstPointY, MIN (SecondPointY, MIN (ThirdPointY, FourthPointY))),
+                                     MAX (FirstPointX, MAX (SecondPointX, MAX (ThirdPointX, FourthPointX))),
+                                     MAX (FirstPointY, MAX (SecondPointY, MAX (ThirdPointY, FourthPointY))));
 
         // Check if reversibility must be studied
         if (po_pReversibilityMeanError != 0 || po_pReversibilityMaxError != 0)
@@ -502,7 +505,7 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordAdaptedModel
             if (po_pReversibilityMeanError != 0)
                 *po_pReversibilityMeanError = ReverseMeanError;
 
-            // If max error is desired ... set it
+            // If MAX error is desired ... set it
             if (po_pReversibilityMaxError != 0)
                 *po_pReversibilityMaxError = ReverseMaxError;
 
@@ -582,4 +585,531 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordUtility::CreateGCoordAdaptedModel
 
     return (pResultModel);
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Alain.Robert    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt GetRangeSpecified (vector<HGF2DCoord<double> >&     shape, 
+                              double              minimumLongitude,
+                              double              maximumLongitude,
+                              double              minimumLatitude,
+                              double              maximumLatitude)
+    {
+    shape.push_back(HGF2DCoord<double>(minimumLongitude, minimumLatitude));
+    shape.push_back(HGF2DCoord<double>(minimumLongitude, maximumLatitude));
+    shape.push_back(HGF2DCoord<double>(maximumLongitude, maximumLatitude));
+    shape.push_back(HGF2DCoord<double>(maximumLongitude, minimumLatitude));
+    shape.push_back(HGF2DCoord<double>(minimumLongitude, minimumLatitude));
+    return BSISUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Raymond.Gauthier    07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt GetRangeAboutPrimeMeridianAndEquator (vector<HGF2DCoord<double> >&     shape, 
+                                                double              allowedDeltaAboutPrimeMeridian,
+                                                double              allowedDeltaAboutEquator)
+    {
+    shape.push_back(HGF2DCoord<double>(-allowedDeltaAboutPrimeMeridian, -allowedDeltaAboutEquator));
+    shape.push_back(HGF2DCoord<double>(-allowedDeltaAboutPrimeMeridian, allowedDeltaAboutEquator));
+    shape.push_back(HGF2DCoord<double>(allowedDeltaAboutPrimeMeridian, allowedDeltaAboutEquator));
+    shape.push_back(HGF2DCoord<double>(allowedDeltaAboutPrimeMeridian, -allowedDeltaAboutEquator));
+    shape.push_back(HGF2DCoord<double>(-allowedDeltaAboutPrimeMeridian, -allowedDeltaAboutEquator));
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Raymond.Gauthier    07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt GetRangeAboutMeridianAndEquator  (vector<HGF2DCoord<double> >&     shape, 
+                                            double              specifiedMeridian,
+                                            double              allowedDeltaAboutMeridian,
+                                            double              allowedDeltaAboutEquator)
+    {
+    const double minLongitude = specifiedMeridian - allowedDeltaAboutMeridian;
+    const double maxLongitude = specifiedMeridian + allowedDeltaAboutMeridian;
+    const double minLatitude = -allowedDeltaAboutEquator;
+    const double maxLatitude = allowedDeltaAboutEquator; 
+
+    shape.push_back(HGF2DCoord<double>(minLongitude, minLatitude));
+    shape.push_back(HGF2DCoord<double>(minLongitude, maxLatitude));
+    shape.push_back(HGF2DCoord<double>(maxLongitude, maxLatitude));
+    shape.push_back(HGF2DCoord<double>(maxLongitude, minLatitude));
+    shape.push_back(HGF2DCoord<double>(minLongitude, minLatitude));
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Raymond.Gauthier    07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt GetRangeAboutMeridianAndParallel (vector<HGF2DCoord<double> >&     shape, 
+                                            double              specifiedMeridian,
+                                            double              allowedDeltaAboutMeridian,
+                                            double              specifiedParallel,
+                                            double              allowedDeltaAboutParallel)
+    {
+    const double minLongitude = specifiedMeridian - allowedDeltaAboutMeridian;
+    const double maxLongitude = specifiedMeridian + allowedDeltaAboutMeridian;
+    const double minLatitude = specifiedParallel - allowedDeltaAboutParallel;
+    const double maxLatitude = specifiedParallel + allowedDeltaAboutParallel;   
+
+    shape.push_back(HGF2DCoord<double>(minLongitude, minLatitude));
+    shape.push_back(HGF2DCoord<double>(minLongitude, maxLatitude));
+    shape.push_back(HGF2DCoord<double>(maxLongitude, maxLatitude));
+    shape.push_back(HGF2DCoord<double>(maxLongitude, minLatitude));
+    shape.push_back(HGF2DCoord<double>(minLongitude, minLatitude));
+    return BSISUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Raymond.Gauthier    07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt GetRangeAboutMeridianAndBoundParallel    (vector<HGF2DCoord<double> >&     shape, 
+                                                    double              specifiedMeridian,
+                                                    double              allowedDeltaAboutMeridian,
+                                                    double              specifiedParallel,
+                                                    double              allowedDeltaAboutParallel,
+                                                    double              southMostAllowedParallel,
+                                                    double              northMostAllowedParallel)
+    {
+    const double minLongitude = specifiedMeridian - allowedDeltaAboutMeridian;
+    const double maxLongitude = specifiedMeridian + allowedDeltaAboutMeridian;
+
+    double minLatitude = specifiedParallel - allowedDeltaAboutParallel;
+    if (minLatitude < southMostAllowedParallel)
+        minLatitude = southMostAllowedParallel;
+
+    double maxLatitude = specifiedParallel + allowedDeltaAboutParallel;
+    if (maxLatitude > northMostAllowedParallel)
+        maxLatitude = northMostAllowedParallel;
+
+    shape.push_back(HGF2DCoord<double>(minLongitude, minLatitude));
+    shape.push_back(HGF2DCoord<double>(minLongitude, maxLatitude));
+    shape.push_back(HGF2DCoord<double>(maxLongitude, maxLatitude));
+    shape.push_back(HGF2DCoord<double>(maxLongitude, minLatitude));
+    shape.push_back(HGF2DCoord<double>(minLongitude, minLatitude));
+    return BSISUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Raymond.Gauthier    07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt GetRangeAboutMeridianAndTwoStandardBoundParallel (vector<HGF2DCoord<double> >&     shape, 
+                                                            double              specifiedMeridian,
+                                                            double              allowedDeltaAboutMeridian,
+                                                            double              standardParallel1,
+                                                            double              standardParallel2,
+                                                            double              allowedDeltaAboutParallels,
+                                                            double              southMostAllowedParallel,
+                                                            double              northMostAllowedParallel)
+    {
+    const double minLongitude = specifiedMeridian - allowedDeltaAboutMeridian;
+    const double maxLongitude = specifiedMeridian + allowedDeltaAboutMeridian;
+
+    double minLatitude;
+    double maxLatitude;
+    if (standardParallel1 < standardParallel2)
+        {
+        minLatitude = standardParallel1 - allowedDeltaAboutParallels;
+        if (minLatitude < southMostAllowedParallel)
+            minLatitude = southMostAllowedParallel;
+        maxLatitude = standardParallel2 + allowedDeltaAboutParallels;
+        if (maxLatitude > northMostAllowedParallel)
+            maxLatitude = northMostAllowedParallel;
+        }
+    else
+        {
+        minLatitude = standardParallel2 - allowedDeltaAboutParallels;
+        if (minLatitude < southMostAllowedParallel)
+            minLatitude = southMostAllowedParallel;
+        maxLatitude = standardParallel1 + allowedDeltaAboutParallels;
+        if (maxLatitude > northMostAllowedParallel)
+            maxLatitude = northMostAllowedParallel;
+        }
+
+
+
+    shape.push_back(HGF2DCoord<double>(minLongitude, minLatitude));
+    shape.push_back(HGF2DCoord<double>(minLongitude, maxLatitude));
+    shape.push_back(HGF2DCoord<double>(maxLongitude, maxLatitude));
+    shape.push_back(HGF2DCoord<double>(maxLongitude, minLatitude));
+    shape.push_back(HGF2DCoord<double>(minLongitude, minLatitude));
+
+    return BSISUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Raymond.Gauthier    07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt GetRangeAboutBoundMeridianAndBoundParallel   (vector<HGF2DCoord<double> >&     shape, 
+                                                        double              specifiedMeridian,
+                                                        double              allowedDeltaAboutMeridian,
+                                                        double              westMostAllowedMeridian,
+                                                        double              eastMostAllowedMeridian,
+                                                        double              specifiedParallel,
+                                                        double              allowedDeltaAboutParallel,
+                                                        double              southMostAllowedParallel,
+                                                        double              northMostAllowedParallel)
+    {
+    double minLongitude = specifiedMeridian - allowedDeltaAboutMeridian;
+    if (minLongitude < westMostAllowedMeridian)
+        minLongitude = westMostAllowedMeridian;
+    double maxLongitude = specifiedMeridian + allowedDeltaAboutMeridian;
+    if (maxLongitude > eastMostAllowedMeridian)
+        maxLongitude = eastMostAllowedMeridian;
+    double minLatitude = specifiedParallel - allowedDeltaAboutParallel;
+    if (minLatitude < southMostAllowedParallel) 
+        minLatitude = southMostAllowedParallel;   
+    double maxLatitude = specifiedParallel + allowedDeltaAboutParallel; 
+    if (maxLatitude > northMostAllowedParallel)
+        maxLatitude = northMostAllowedParallel;   
+
+    shape.push_back(HGF2DCoord<double>(minLongitude, minLatitude));
+    shape.push_back(HGF2DCoord<double>(minLongitude, maxLatitude));
+    shape.push_back(HGF2DCoord<double>(maxLongitude, maxLatitude));
+    shape.push_back(HGF2DCoord<double>(maxLongitude, minLatitude));
+    shape.push_back(HGF2DCoord<double>(minLongitude, minLatitude));
+    return BSISUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Raymond.Gauthier    07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+inline double GetUTMZoneCenterMeridian(int zoneNumber)
+    {
+    return (zoneNumber - 30) * 6;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* Returns the domain of application for GCS. This domain is the math domain intersected
+* with the logical domain if one is set.
+* @bsimethod                                                    AlainRobert  2/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt HCPGCoordUtility::GetGeoDomain
+(
+IRasterBaseGcsCR                rasterGcs,
+vector<HGF2DCoord<double> >&    shape
+) 
+    {
+    using namespace GeoCoordinates;
+
+    
+//    BaseGCSCP pGcs = rasterGcs.GetBaseGCS();
+//
+//    if (pGcs == NULL) 
+//        return ERROR;
+//
+//    BaseGCSCR gcs = *pGcs;
+    IRasterBaseGcsCR gcs = rasterGcs;
+    // Some explanation about the values specified below and their intent.
+    // First it must be inderstood that the current implementation is in progress.
+    // The present implementation fixes some reported issues related to the
+    // display and management of rasters when reprojection is invloved.
+    // The principle attempts to define the geo domain of a specific projection using
+    // extent defined as min and max longitude and latitude. Such definition is adequate
+    // for many projections but not all. For example Lamber Comformal Conic domain is
+    // domain is correctle defined using such definition. For transverse mercator and derivatives
+    // the domain can likewise be defined using this method. Others like Oblique Mercator
+    // or stereo graphic projections cannot as their area definition is not alligned
+    // to latitude and longitudes. We assume that an smaller area can be defined using
+    // plain geo extent but we are not sure. When the North and South pole are included we
+    // have not yet defined a way to indicate this representation other than by specifying
+    // exact min or max to either North or Sout pole latitude but the actual
+    // case never occured so the implementation has currently been postponed
+    // till more adequate research can be done.
+    //
+    // Concerning the definition of Transverse Mercators and derivative the mathematical domain
+    // is usually defined from North to South pole on a longitude with of some
+    // specific value ... We provide a very large area in this case. In practice we have had
+    // cases where the datum shift during the reprojection process shifted the North and South pole
+    // sufficiently that a longitude located on one side of the Earth became in the other datum
+    // on the other size of the pole (17E Longitude became 163W Longitude)
+    // For this reason we have decided to limit the upper and lower latitudes for all
+    // projections to 89.9 degrees (any greater values resulted in the problem in our case)
+    // This means that the zone will remain about 12 kilometers from the poles. For cartography
+    // made in the pole areas, other projection methods will have to be used.
+
+    // If datum transformation method is limitative by nature we will use the user-defined domain.
+    ImagePP::WGS84ConvertCode datumConvert = gcs.GetDatumConvertMethod();
+
+    if ((ImagePP::ConvertType_MREG  == datumConvert) ||
+        (ImagePP::ConvertType_NAD27 == datumConvert) ||
+        (ImagePP::ConvertType_HPGN  == datumConvert) ||  
+        (ImagePP::ConvertType_AGD66 == datumConvert) ||  
+        (ImagePP::ConvertType_AGD84 == datumConvert) ||
+        (ImagePP::ConvertType_NZGD4 == datumConvert) ||   
+        (ImagePP::ConvertType_ATS77 == datumConvert) ||  
+        (ImagePP::ConvertType_CSRS  == datumConvert) ||   
+        (ImagePP::ConvertType_TOKYO == datumConvert) ||   
+        (ImagePP::ConvertType_RGF93 == datumConvert) ||  
+        (ImagePP::ConvertType_ED50  == datumConvert) ||    
+        (ImagePP::ConvertType_DHDN  == datumConvert) ||
+        (ImagePP::ConvertType_GENGRID == datumConvert) ||
+        (ImagePP::ConvertType_CHENYX == datumConvert))
+        {
+        double minLongitude = gcs.GetMinimumUsefulLongitude();
+        double maxLongitude = gcs.GetMaximumUsefulLongitude();
+        double minLatitude = gcs.GetMinimumUsefulLatitude();
+        double maxLatitude = gcs.GetMaximumUsefulLatitude();
+        if ((minLongitude != maxLongitude) && (minLatitude != minLongitude))
+            {
+            return GetRangeSpecified(shape, minLongitude, maxLongitude, minLatitude, maxLatitude);
+            }
+        }
+
+
+    const ImagePP::ProjectionCodeValue projectionCode = gcs.GetProjectionCode();
+    switch (projectionCode)
+        {
+        case ImagePP::pcvCassini : // Not so sure about this one ... check http://www.radicalcartography.net/?projectionref
+        case ImagePP::pcvEckertIV :
+        case ImagePP::pcvEckertVI :
+        case ImagePP::pcvMillerCylindrical :
+        case ImagePP::pcvUnity :
+        case ImagePP::pcvGoodeHomolosine :
+        case ImagePP::pcvModifiedStereographic :
+        case ImagePP::pcvEqualAreaAuthalicNormal :
+        case ImagePP::pcvEqualAreaAuthalicTransverse :
+        case ImagePP::pcvSinusoidal :
+        case ImagePP::pcvVanderGrinten :
+        case ImagePP::pcvRobinsonCylindrical :
+        case ImagePP::pcvWinkelTripel :
+        case ImagePP::pcvEquidistantCylindrical :
+        case ImagePP::pcvEquidistantCylindricalEllipsoid :
+        case ImagePP::pcvPlateCarree :
+            // good around the globe          
+            return GetRangeAboutPrimeMeridianAndEquator (shape, 180.0, 89.9);
+
+        case ImagePP::pcvMercatorScaleReduction :
+        case ImagePP::pcvMercator :
+        case ImagePP::pcvPopularVisualizationPseudoMercator :
+            // good pretty close 90 degrees east and west of central meridian
+            return GetRangeAboutMeridianAndEquator(shape, 
+                                                   gcs.GetCentralMeridian (), 179.999999, 
+                                                   80.0);
+        
+        case ImagePP::pcvLambertEquidistantAzimuthal :
+        case ImagePP::pcvAzimuthalEquidistantElevatedEllipsoid :
+        case ImagePP::pcvLambertEqualAreaAzimuthal :
+        case ImagePP::pcvOrthographic :
+        case ImagePP::pcvObliqueStereographic :
+        case ImagePP::pcvSnyderObliqueStereographic :
+        case ImagePP::pcvPolarStereographic :
+        case ImagePP::pcvPolarStereographicStandardLatitude :
+        case ImagePP::pcvGnomonic :
+        case ImagePP::pcvBipolarObliqueConformalConic :
+            // Even though it cannot be computed, the domain must be set as the caller may not check the return status.
+            GetRangeAboutPrimeMeridianAndEquator (shape, 180.0, 89.9);
+            return BSIERROR; // return not implemented;
+
+#if NOT_YET
+            // This one is a bit complicated by the fact the hemisphere can be centered anywhere on earth. 
+            // If centered at a pole, the domain extends from 0 to -90 in latitude and around the globe in longitude
+            // If centered somewhere on the equator, then it is valid from North to South pole but 90 degrees east and west of center
+            // If centered elsewhere, the area is not easily representable in the form of min max of lat long...
+            return GetRangeAboutBoundMeridianAndBoundParallel(shape,
+                                                              gcs.GetOriginLongitude(), 90.0,
+                                                              -180.0, 180.0,
+                                                              gcs.GetOriginLatitude(), 90.0,
+                                                              -90.0, 90.0);
+#endif   
+
+        case ImagePP::pcvTransverseMercator :
+        case ImagePP::pcvGaussKrugerTranverseMercator :
+        case ImagePP::pcvSouthOrientedTransverseMercator :
+        case ImagePP::pcvTransverseMercatorAffinePostProcess :
+        case ImagePP::pcvTransverseMercatorMinnesota :
+        case ImagePP::pcvTransverseMercatorWisconsin:
+        case ImagePP::pcvTransverseMercatorKruger :
+            // Transverse Mercator will work relatively well from North to South pole and XX degrees either way of longitude of origin
+            return GetRangeAboutMeridianAndEquator(shape, 
+                                                   gcs.GetCentralMeridian(), 15.0, 
+                                                   89.9);
+
+#if defined (TOTAL_SPECIAL)
+        case ImagePP::pcvTotalTransverseMercatorBF :
+            return GetRangeAboutMeridianAndEquator(shape, 
+                                                   gcs.GetCentralMeridian(), 30.0, 
+                                                   89.9);
+#endif
+
+        // The following are close enough to TM but require latitude origin
+        case ImagePP::pcvObliqueCylindricalHungary :
+        case ImagePP::pcvTransverseMercatorOstn97 :
+        case ImagePP::pcvTransverseMercatorOstn02 :
+            // Transverse Mercator will work relatively well from North to South pole and XX degrees either way of longitude of origin
+            return GetRangeAboutMeridianAndEquator(shape, 
+                                                   gcs.GetOriginLongitude(), 30.0, 
+                                                   89.9);
+
+        case ImagePP::pcvCzechKrovak :
+        case ImagePP::pcvCzechKrovakObsolete :
+        case ImagePP::pcvCzechKrovak95 :
+        case ImagePP::pcvCzechKrovak95Obsolete :
+            // Hard-coded domain as origin longitude give 17.39W which couldn't be used as a central meridian for this
+            // area. According to Alain Robert, these projections are oblique/conical and this strange origin longitude
+            // could have been used as a mean of correction for non-standard prime meridian (not greenwich) used.
+            return GetRangeAboutMeridianAndParallel(shape, 
+                                                    17.5, 7.5, 
+                                                    49.5, 2.5);
+        case ImagePP::pcvTransverseMercatorDenmarkSys34 :
+        case ImagePP::pcvTransverseMercatorDenmarkSys3499 :
+        case ImagePP::pcvTransverseMercatorDenmarkSys3401 :
+            {
+            int region = gcs.GetDanishSys34Region();
+
+            // 1  ==> jylland
+            // 2  ==> sjælland
+            // 3  ==> bornholm
+
+            if (1 == region)
+                {
+                shape.push_back(HGF2DCoord<double>(8.2930, 54.7757));
+                shape.push_back(HGF2DCoord<double>(7.9743, 55.0112));
+                shape.push_back(HGF2DCoord<double>(7.5544, 56.4801));
+                shape.push_back(HGF2DCoord<double>(8.0280, 57.1564));
+                shape.push_back(HGF2DCoord<double>(10.4167, 58.0417));
+                shape.push_back(HGF2DCoord<double>(10.9897, 57.7786));
+                shape.push_back(HGF2DCoord<double>(11.5395, 57.1551));
+                shape.push_back(HGF2DCoord<double>(12.0059, 56.5088));
+                shape.push_back(HGF2DCoord<double>(11.7200, 54.9853));
+                shape.push_back(HGF2DCoord<double>(10.5938, 54.5951));
+                shape.push_back(HGF2DCoord<double>(8.2930, 54.7757)); 
+                }
+            else if (2 == region)
+                {
+                shape.push_back(HGF2DCoord<double>(11.5108, 54.4367));
+                shape.push_back(HGF2DCoord<double>(10.2526, 54.6795));
+                shape.push_back(HGF2DCoord<double>(9.6333, 55.0286));
+                shape.push_back(HGF2DCoord<double>(9.6157, 55.3831));
+                shape.push_back(HGF2DCoord<double>(10.0748, 56.0823));
+                shape.push_back(HGF2DCoord<double>(11.5664, 56.9520));
+                shape.push_back(HGF2DCoord<double>(13.2099, 565104));
+                shape.push_back(HGF2DCoord<double>(13.2097, 54.8276));
+                shape.push_back(HGF2DCoord<double>(12.8531, 54.6593));
+                shape.push_back(HGF2DCoord<double>(12.1009, 54.5007));
+                shape.push_back(HGF2DCoord<double>(11.5108, 54.4367));
+                }
+            else 
+                {
+                assert (3 == region);
+                shape.push_back(HGF2DCoord<double>(14.510, 54.942));
+                shape.push_back(HGF2DCoord<double>(14.510, 55.431));
+                shape.push_back(HGF2DCoord<double>(15.300, 55.431));
+                shape.push_back(HGF2DCoord<double>(15.300, 54.942));
+                shape.push_back(HGF2DCoord<double>(14.510, 54.942));
+                }
+
+
+            }  
+            return BSISUCCESS;
+
+        // The conic
+        case ImagePP::pcvAmericanPolyconic :
+        case ImagePP::pcvModifiedPolyconic :
+            // For conics we can extent 90 degrees east and west amd from xx degrees up or down from lowest/upper standard parallels
+            return GetRangeAboutMeridianAndBoundParallel(shape,
+                                                         gcs.GetCentralMeridian(), 89.999999,
+                                                         gcs.GetOriginLatitude(), 30.0,
+                                                         -89.9, 89.9);
+                                                                  
+        case ImagePP::pcvLambertTangential :
+        case ImagePP::pcvLambertConformalConicOneParallel :
+        case ImagePP::pcvSnyderTransverseMercator :
+            // For conics we can extent 90 degrees east and west amd from xx degrees up or down from lowest/upper standard parallels
+            return GetRangeAboutMeridianAndBoundParallel(shape, 
+                                                         gcs.GetOriginLongitude(), 89.999999,
+                                                         gcs.GetOriginLatitude(), 30.0,
+                                                         -89.9, 89.9);
+
+        case ImagePP::pcvBonne :
+            return GetRangeAboutMeridianAndBoundParallel(shape, 
+                                                         gcs.GetOriginLongitude(), 170.999999,
+                                                         gcs.GetOriginLatitude(), 60.0,
+                                                         -89.9, 89.9);
+
+        case ImagePP::pcvEquidistantConic :
+        case ImagePP::pcvAlbersEqualArea :
+        case ImagePP::pcvLambertConformalConicTwoParallel :
+        case ImagePP::pcvLambertConformalConicWisconsin :
+        case ImagePP::pcvLambertConformalConicBelgian :
+        case ImagePP::pcvLambertConformalConicMinnesota:
+        case ImagePP::pcvLambertConformalConicAffinePostProcess :
+            // For conics we can extent 90 degrees east and west amd from xx degrees up or down from lowest/upper standard parallels
+            return GetRangeAboutMeridianAndTwoStandardBoundParallel(shape, 
+                                                                    gcs.GetOriginLongitude(), 89.9999,
+                                                                    gcs.GetStandardParallel1(), gcs.GetStandardParallel2(), 30.0,
+                                                                    -80.0, 80.0);
+
+        case ImagePP::pcvObliqueCylindricalSwiss :
+            // This projection is usually only used in Switzerland but can also be used in Hungary
+            // we cannot hard code the extent based on the Switzerland extent but must instead compute the
+            // extent based on the latitude and longitude of origin.
+            return GetRangeAboutMeridianAndParallel(shape, 
+                                                    gcs.GetOriginLongitude(), 6.0, 
+                                                    gcs.GetOriginLatitude(), 6.0);
+
+
+        // Other local projections
+        case ImagePP::pcvHotineObliqueMercator :
+        case ImagePP::pcvNewZealandNationalGrid :
+        case ImagePP::pcvMollweide :
+        case ImagePP::pcvRectifiedSkewOrthomorphic :
+        case ImagePP::pcvRectifiedSkewOrthomorphicCentered :
+        case ImagePP::pcvRectifiedSkewOrthomorphicOrigin :
+        case ImagePP::pcvHotineObliqueMercator1UV :
+        case ImagePP::pcvHotineObliqueMercator1XY :
+        case ImagePP::pcvHotineObliqueMercator2UV :
+        case ImagePP::pcvHotineObliqueMercator2XY :
+        case ImagePP::pcvObliqueMercatorMinnesota :
+            // Even though it cannot be computed, the domain must be set as the caller may not check the return status.
+            GetRangeAboutPrimeMeridianAndEquator (shape, 180.0, 89.9);
+            return BSIERROR; // return not implemented;
+
+#if NOT_YET
+            // This one is a bit complicated by the fact the hemisphere can be centered anywhere on earth. 
+            // If centered at a pole, the domain extends from 0 to -90 in latitude and around the globe in longitude
+            // If centered somewhere on the equator, then it is valid from North to South pole but 90 degrees east and west of center
+            // If centered elsewhere, the area is not easily representable in the form of min max of lat long...
+            return GetRangeAboutBoundMeridianAndBoundParallel(shape,
+                                                              gcs.GetOriginLongitude(), 30.0,
+                                                              -180.0, 180.0,
+                                                              gcs.GetOriginLatitude(), 30.0,
+                                                              -89.9, 89.9);
+#endif
+
+        // Other
+        case ImagePP::pcvNonEarth :
+        case ImagePP::pcvNonEarthScaleRotation :
+        case ImagePP::pcvObliqueConformalConic :
+            GetRangeAboutPrimeMeridianAndEquator (shape, 180.0, 89.9);
+            return BSIERROR; // return not implemented;
+
+        case ImagePP::pcvUniversalTransverseMercator :
+            return GetRangeAboutMeridianAndEquator(shape, 
+                                                   GetUTMZoneCenterMeridian(gcs.GetUTMZone()), 15.0, 
+                                                   89.9);
+
+#if defined (TOTAL_SPECIAL)
+        case ImagePP::pcvTotalUniversalTransverseMercatorBF :
+            return GetRangeAboutMeridianAndEquator(shape, 
+                                                   GetUTMZoneCenterMeridian(gcs.GetUTMZone()), 30.0, 
+                                                   89.9);
+
+#endif //TOTAL_SPECIAL
+        default:
+            break;
+        }
+
+    HASSERT(!"Not implemented ... please do so");
+    return BSIERROR; 
+    }
+
 

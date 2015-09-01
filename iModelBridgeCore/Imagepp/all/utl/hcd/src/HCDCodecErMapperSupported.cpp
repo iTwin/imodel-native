@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecErMapperSupported.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecIJG
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HCDCodecErMapperSupported.h>
 
 #define HCD_CODEC_NAME     L"ErMapperSupportedCodec"
@@ -102,7 +102,10 @@ bool HCDCodecErMapperSupported::IsBitsPerPixelSupported(size_t pi_Bits) const
 //-----------------------------------------------------------------------------
 void HCDCodecErMapperSupported::SetCompressionRatio(unsigned short pi_Ratio)
     {
-    m_CompressionRatio = pi_Ratio;
+    if (pi_Ratio == 0)
+        m_CompressionRatio = 10;    // 0 is not a good value.  Use default suggested by the library
+    else
+        m_CompressionRatio = pi_Ratio;
     }
 
 //-----------------------------------------------------------------------------

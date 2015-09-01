@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPcxFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPcxFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>    //:> must be first for PreCompiledHeader Option
+#include <ImagePPInternal/hstdcpp.h>
+    //:> must be first for PreCompiledHeader Option
 
 #include <Imagepp/all/h/HRFPcxFile.h>
 #include <Imagepp/all/h/HFCURLFile.h>
@@ -25,7 +25,6 @@
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #define EGAPALETTESIZE 48
@@ -161,8 +160,7 @@ HRFPcxCreator::HRFPcxCreator()
 ------------------------------------------------------------------------------*/
 WString HRFPcxCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_PCX);  // Zsoft Paintbrush PCX
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_PCX());  // Zsoft Paintbrush PCX
     }
 
 /**-----------------------------------------------------------------------------
@@ -228,9 +226,9 @@ bool HRFPcxCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     //:> Open the PCX file & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
     Byte buffer[54];
@@ -238,18 +236,18 @@ bool HRFPcxCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     //:> Read header
     pFile->SeekToBegin();
-    Control += pFile->Read((void*)&PcxHdr.Identifier,     sizeof(Byte));
-    Control += pFile->Read((void*)&PcxHdr.Version,        sizeof(Byte));
-    Control += pFile->Read((void*)&PcxHdr.Encoding,       sizeof(Byte));
-    Control += pFile->Read((void*)&PcxHdr.BitsPerPixel,   sizeof(Byte));
+    Control += pFile->Read(&PcxHdr.Identifier,     sizeof(Byte));
+    Control += pFile->Read(&PcxHdr.Version,        sizeof(Byte));
+    Control += pFile->Read(&PcxHdr.Encoding,       sizeof(Byte));
+    Control += pFile->Read(&PcxHdr.BitsPerPixel,   sizeof(Byte));
     pFile->Seek(60);
 
-    Control += pFile->Read((void*)&PcxHdr.Reserved1,      sizeof(Byte));
-    Control += pFile->Read((void*)&PcxHdr.NumBitPlanes,   sizeof(Byte));
+    Control += pFile->Read(&PcxHdr.Reserved1,      sizeof(Byte));
+    Control += pFile->Read(&PcxHdr.NumBitPlanes,   sizeof(Byte));
     pFile->Seek(2);
-    Control += pFile->Read((void*)&PcxHdr.PaletteType,    sizeof(unsigned short));
+    Control += pFile->Read(&PcxHdr.PaletteType,    sizeof(unsigned short));
     pFile->Seek(4);
-    Control += pFile->Read((void*)PcxHdr.Reserved2, RESERVEDSIZE*sizeof(Byte));
+    Control += pFile->Read(PcxHdr.Reserved2, RESERVEDSIZE*sizeof(Byte));
 
     if (62 != Control)
         goto WRAPUP;
@@ -411,7 +409,7 @@ void HRFPcxFile::SavePcxFile()
 
                 //:> Fill out the buffer
                 Byte* pPtr = pVgaPalette+1;
-                for (uint32_t i = 0; i < NumberOfColor; i++, pPtr += 3)
+                for (uint32_t i = 0; i < rPalette.CountUsedEntries(); i++, pPtr += 3)
                     memcpy (pPtr, (Byte*)rPalette.GetCompositeValue(i), 3);
 
                 //:> Lock the sister file for the GetField operation
@@ -421,7 +419,7 @@ void HRFPcxFile::SavePcxFile()
                 HASSERT (m_VGAPaletteOffset != 0);
                 m_pPcxFile->SeekToPos(m_VGAPaletteOffset);
 
-                m_pPcxFile->Write((void*)pVgaPalette, VGAPALETTESIZE+1);
+                m_pPcxFile->Write(pVgaPalette, VGAPALETTESIZE+1);
 
                 //:> Set the end of file caracter at the current position.
                 if (m_pPcxFile->IsCompatibleWith(HFCLocalBinStream::CLASS_ID))
@@ -460,7 +458,7 @@ void HRFPcxFile::SavePcxFile()
                 HASSERT (m_VGAPaletteOffset != 0);
                 m_pPcxFile->SeekToPos(m_VGAPaletteOffset);
 
-                m_pPcxFile->Write((void*)pVgaPalette, VGAPALETTESIZE+1);
+                m_pPcxFile->Write(pVgaPalette, VGAPALETTESIZE+1);
 
                 //:> Unlock the sister file.
                 SisterFileLock.ReleaseKey();
@@ -656,9 +654,7 @@ bool HRFPcxFile::Create()
     SharingControlCreate();
 
     //:> Open the file
-    m_pPcxFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pPcxFile, GetURL()->GetURL());
+    m_pPcxFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
 
     m_IsOpen = true;
 
@@ -674,9 +670,7 @@ bool HRFPcxFile::Open()
     {
     if (!m_IsOpen)
         {
-        m_pPcxFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(m_pPcxFile, GetURL()->GetURL());
+        m_pPcxFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         //:> This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -711,24 +705,24 @@ void HRFPcxFile::GetFileHeaderFromFile()
     HFCLockMonitor SisterFileLock (GetLockManager());
 
     m_pPcxFile->SeekToBegin();
-    m_pPcxFile->Read((void*)&m_pPcxHdr->Identifier,     sizeof(Byte));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->Version,        sizeof(Byte));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->Encoding,       sizeof(Byte));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->BitsPerPixel,   sizeof(Byte));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->XStart,         sizeof(unsigned short));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->YStart,         sizeof(unsigned short));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->XEnd,           sizeof(unsigned short));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->YEnd,           sizeof(unsigned short));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->HorzRes,        sizeof(unsigned short));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->VertRes,        sizeof(unsigned short));
-    m_pPcxFile->Read((void*) m_pPcxHdr->Palette,        sizeof(Byte)*EGAPALETTESIZE);
-    m_pPcxFile->Read((void*)&m_pPcxHdr->Reserved1,      sizeof(Byte));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->NumBitPlanes,   sizeof(Byte));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->BytesPerLine,   sizeof(unsigned short));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->PaletteType,    sizeof(unsigned short));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->HorzScreenSize, sizeof(unsigned short));
-    m_pPcxFile->Read((void*)&m_pPcxHdr->VertScreenSize, sizeof(unsigned short));
-    m_pPcxFile->Read((void*) m_pPcxHdr->Reserved2,      sizeof(Byte)*RESERVEDSIZE);
+    m_pPcxFile->Read(&m_pPcxHdr->Identifier,     sizeof(Byte));
+    m_pPcxFile->Read(&m_pPcxHdr->Version,        sizeof(Byte));
+    m_pPcxFile->Read(&m_pPcxHdr->Encoding,       sizeof(Byte));
+    m_pPcxFile->Read(&m_pPcxHdr->BitsPerPixel,   sizeof(Byte));
+    m_pPcxFile->Read(&m_pPcxHdr->XStart,         sizeof(unsigned short));
+    m_pPcxFile->Read(&m_pPcxHdr->YStart,         sizeof(unsigned short));
+    m_pPcxFile->Read(&m_pPcxHdr->XEnd,           sizeof(unsigned short));
+    m_pPcxFile->Read(&m_pPcxHdr->YEnd,           sizeof(unsigned short));
+    m_pPcxFile->Read(&m_pPcxHdr->HorzRes,        sizeof(unsigned short));
+    m_pPcxFile->Read(&m_pPcxHdr->VertRes,        sizeof(unsigned short));
+    m_pPcxFile->Read( m_pPcxHdr->Palette,        sizeof(Byte)*EGAPALETTESIZE);
+    m_pPcxFile->Read(&m_pPcxHdr->Reserved1,      sizeof(Byte));
+    m_pPcxFile->Read(&m_pPcxHdr->NumBitPlanes,   sizeof(Byte));
+    m_pPcxFile->Read(&m_pPcxHdr->BytesPerLine,   sizeof(unsigned short));
+    m_pPcxFile->Read(&m_pPcxHdr->PaletteType,    sizeof(unsigned short));
+    m_pPcxFile->Read(&m_pPcxHdr->HorzScreenSize, sizeof(unsigned short));
+    m_pPcxFile->Read(&m_pPcxHdr->VertScreenSize, sizeof(unsigned short));
+    m_pPcxFile->Read( m_pPcxHdr->Reserved2,       sizeof(Byte)*RESERVEDSIZE);
 
     //:> Unlock the sister file
     SisterFileLock.ReleaseKey();
@@ -853,12 +847,12 @@ HFCPtr<HRPPixelType> HRFPcxFile::CreatePixelTypeFromFile()
                 pValue = new Byte[VGAPALETTESIZE];
                 m_pPcxFile->SeekToEnd();
                 m_pPcxFile->Seek(-(VGAPALETTESIZE+1));
-                m_pPcxFile->Read((void*)&ControlNumber, 1);
+                m_pPcxFile->Read(&ControlNumber, 1);
                 if (0x0C != ControlNumber)
                     Error = true;
                 else
                     {
-                    m_pPcxFile->Read((void*)pValue, VGAPALETTESIZE);
+                    m_pPcxFile->Read(pValue, VGAPALETTESIZE);
 
                     rPalette = &pPixelType->LockPalette();
 
@@ -884,7 +878,7 @@ HFCPtr<HRPPixelType> HRFPcxFile::CreatePixelTypeFromFile()
         Error = true;
 
     if (Error)
-        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
 
     return pPixelType;
     }
@@ -899,24 +893,24 @@ void HRFPcxFile::SetHeaderToFile()
     HFCLockMonitor SisterFileLock (GetLockManager());
 
     m_pPcxFile->SeekToBegin();
-    m_pPcxFile->Write((void*)&m_pPcxHdr->Identifier,     sizeof(Byte));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->Version,        sizeof(Byte));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->Encoding,       sizeof(Byte));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->BitsPerPixel,   sizeof(Byte));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->XStart,         sizeof(unsigned short));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->YStart,         sizeof(unsigned short));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->XEnd,           sizeof(unsigned short));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->YEnd,           sizeof(unsigned short));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->HorzRes,        sizeof(unsigned short));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->VertRes,        sizeof(unsigned short));
-    m_pPcxFile->Write((void*) m_pPcxHdr->Palette,        sizeof(Byte)*EGAPALETTESIZE);
-    m_pPcxFile->Write((void*)&m_pPcxHdr->Reserved1,      sizeof(Byte));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->NumBitPlanes,   sizeof(Byte));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->BytesPerLine,   sizeof(unsigned short));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->PaletteType,    sizeof(unsigned short));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->HorzScreenSize, sizeof(unsigned short));
-    m_pPcxFile->Write((void*)&m_pPcxHdr->VertScreenSize, sizeof(unsigned short));
-    m_pPcxFile->Write((void*) m_pPcxHdr->Reserved2,      sizeof(Byte)*RESERVEDSIZE);
+    m_pPcxFile->Write(&m_pPcxHdr->Identifier,     sizeof(Byte));
+    m_pPcxFile->Write(&m_pPcxHdr->Version,        sizeof(Byte));
+    m_pPcxFile->Write(&m_pPcxHdr->Encoding,       sizeof(Byte));
+    m_pPcxFile->Write(&m_pPcxHdr->BitsPerPixel,   sizeof(Byte));
+    m_pPcxFile->Write(&m_pPcxHdr->XStart,         sizeof(unsigned short));
+    m_pPcxFile->Write(&m_pPcxHdr->YStart,         sizeof(unsigned short));
+    m_pPcxFile->Write(&m_pPcxHdr->XEnd,           sizeof(unsigned short));
+    m_pPcxFile->Write(&m_pPcxHdr->YEnd,           sizeof(unsigned short));
+    m_pPcxFile->Write(&m_pPcxHdr->HorzRes,        sizeof(unsigned short));
+    m_pPcxFile->Write(&m_pPcxHdr->VertRes,        sizeof(unsigned short));
+    m_pPcxFile->Write( m_pPcxHdr->Palette,        sizeof(Byte)*EGAPALETTESIZE);
+    m_pPcxFile->Write(&m_pPcxHdr->Reserved1,      sizeof(Byte));
+    m_pPcxFile->Write(&m_pPcxHdr->NumBitPlanes,   sizeof(Byte));
+    m_pPcxFile->Write(&m_pPcxHdr->BytesPerLine,   sizeof(unsigned short));
+    m_pPcxFile->Write(&m_pPcxHdr->PaletteType,    sizeof(unsigned short));
+    m_pPcxFile->Write(&m_pPcxHdr->HorzScreenSize, sizeof(unsigned short));
+    m_pPcxFile->Write(&m_pPcxHdr->VertScreenSize, sizeof(unsigned short));
+    m_pPcxFile->Write( m_pPcxHdr->Reserved2,      sizeof(Byte)*RESERVEDSIZE);
 
     //:> Unlock the sister file.
     SisterFileLock.ReleaseKey();

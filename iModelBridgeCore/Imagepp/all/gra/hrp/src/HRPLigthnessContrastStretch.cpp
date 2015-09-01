@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPLigthnessContrastStretch.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,13 +10,12 @@
 //-----------------------------------------------------------------------------
 // Some common function filters.
 //-----------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRPLigthnessContrastStretch.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <Imagepp/all/h/HGFLuvColorSpace.h>
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 
 //-----------------------------------------------------------------------------
 //
@@ -39,7 +38,7 @@ HRPLigthnessContrastStretch::HRPLigthnessContrastStretch()
     m_pMaxContrastValue = new int   [m_Channels];
     m_pGammaFactor      = new double[m_Channels];
 
-    for (int ChannelIndex = 0; ChannelIndex < m_Channels; ChannelIndex++)
+    for (uint32_t ChannelIndex = 0; ChannelIndex < m_Channels; ChannelIndex++)
         {
         m_pMinValue        [ChannelIndex] = 0;
         m_pMaxValue        [ChannelIndex] = 100;
@@ -62,12 +61,12 @@ HRPLigthnessContrastStretch::HRPLigthnessContrastStretch(const HFCPtr<HRPPixelTy
     if (pi_pFilterPixelType->CountIndexBits()) //  GetPalette())
         {
         m_ChannelWidth   = pi_pFilterPixelType->CountIndexBits();
-        m_Channels       = (unsigned short)pi_pFilterPixelType->GetChannelOrg().CountChannels();
+        m_Channels       = pi_pFilterPixelType->GetChannelOrg().CountChannels();
         }
     else
         {
         m_ChannelWidth   = pi_pFilterPixelType->GetChannelOrg().GetChannelPtr(0)->GetSize();
-        m_Channels       = (unsigned short)(pi_pFilterPixelType->CountPixelRawDataBits() / m_ChannelWidth);
+        m_Channels       = pi_pFilterPixelType->CountPixelRawDataBits() / m_ChannelWidth;
         }
 
     m_MaxSampleValue = (1 << m_ChannelWidth) - 1;
@@ -78,7 +77,7 @@ HRPLigthnessContrastStretch::HRPLigthnessContrastStretch(const HFCPtr<HRPPixelTy
     m_pMaxContrastValue = new int   [m_Channels];
     m_pGammaFactor      = new double[m_Channels];
 
-    for (int ChannelIndex = 0; ChannelIndex < m_Channels; ChannelIndex++)
+    for (uint32_t ChannelIndex = 0; ChannelIndex < m_Channels; ChannelIndex++)
         {
         m_pMinValue        [ChannelIndex] = 0;
         m_pMaxValue        [ChannelIndex] = 100;
@@ -239,10 +238,8 @@ void HRPLigthnessContrastStretch::FunctionN8( const void*  pi_pSrcRawData,
             pi_PixelsCount--;
             }
         }
-    else // if(m_Channels == 3)
+    else if(m_Channels == 3)
         {
-        HASSERT(m_Channels == 3 || m_Channels  == 4);
-
         while(pi_PixelsCount)
             {
             //------------------------------------------
@@ -288,6 +285,61 @@ void HRPLigthnessContrastStretch::FunctionN8( const void*  pi_pSrcRawData,
             //------------------------------------------
             // Convert back to original pixeltype (RGB or RGBA)
             m_pColorSpaceConverter->ConvertToRGB (L, U, V, pDestRawData, pDestRawData + 1, pDestRawData + 2);
+
+            pDestRawData += m_Channels;
+            pSrcRawData += m_Channels;
+
+            pi_PixelsCount--;
+            }
+        }
+    else if(m_Channels == 4)
+        {
+        while(pi_PixelsCount)
+            {
+            //------------------------------------------
+            // Convert to L*u*v
+            m_pColorSpaceConverter->ConvertFromRGB (*pSrcRawData, *(pSrcRawData + 1), *(pSrcRawData + 2), &L, &U, &V);
+
+            //------------------------------------------
+            // Process the LigthnessContrastStretch
+            // Input clipping.
+            if (L <= m_pMinValue[0])
+                L = 0.0;
+            else if (L >= m_pMaxValue[0])
+                L = 100.0;
+            else
+                L = ((L - m_pMinValue[0]) / (double)(m_pMaxValue[0] - m_pMinValue[0])) * 100.0;
+
+            HASSERT(L >= 0.0 && L <= 100.0);
+
+            //----------------------------------------
+            // Process gamme adjustement if required.
+            if (!HDOUBLE_EQUAL_EPSILON(m_pGammaFactor[0], 1.0))
+                {
+                L = (unsigned char)(100.0 * pow( L / 100.0, 1 / m_pGammaFactor[0]));
+                HASSERT(L >= 0.0 && L <= 100.0);
+                }
+
+            //----------------------------------------
+            // Compute output clipping if any.
+            if ( m_pMaxContrastValue[0] < 100 || m_pMinContrastValue[0] > 0)
+                {
+                // Take care of inverted handle.
+                if ( m_pMaxContrastValue[0] > m_pMinContrastValue[0] )
+                    {
+                    L = ((L /100.0) * (m_pMaxContrastValue[0] - m_pMinContrastValue[0])) + m_pMinContrastValue[0];
+                    }
+                else
+                    {
+                    L = (((100.0 - L) /100.0) * (m_pMinContrastValue[0] - m_pMaxContrastValue[0])) + m_pMaxContrastValue[0];
+                    }
+                HASSERT(L >= 0.0 && L <= 100.0);
+                }
+
+            //------------------------------------------
+            // Convert back to original pixeltype (RGB or RGBA)
+            m_pColorSpaceConverter->ConvertToRGB (L, U, V, pDestRawData, pDestRawData + 1, pDestRawData + 2);
+            *(pDestRawData + 3) = pSrcRawData[3];
 
             pDestRawData += m_Channels;
             pSrcRawData += m_Channels;
@@ -373,33 +425,32 @@ void HRPLigthnessContrastStretch::FunctionN16( const void*  pi_pSrcRawData,
             pi_PixelsCount--;
             }
         }
-    else // if(m_Channels == 3)
+    else if(m_Channels == 3)
         {
-        HASSERT(m_Channels == 3 || m_Channels  == 4);
-
         while(pi_PixelsCount)
             {
             //------------------------------------------
             // Convert to L*u*v
             m_pColorSpaceConverter->ConvertFromRGB (*pSrcRawData, *(pSrcRawData + 1), *(pSrcRawData + 2), &L, &U, &V);
-            pSrcRawData += m_Channels;
 
             //------------------------------------------
             // Process the LigthnessContrastStretch
-
             // Input clipping.
-            if (L < m_pMinValue[0])
+            if (L <= m_pMinValue[0])
                 L = 0.0;
-            else if (L > m_pMaxValue[0])
+            else if (L >= m_pMaxValue[0])
                 L = 100.0;
             else
                 L = ((L - m_pMinValue[0]) / (double)(m_pMaxValue[0] - m_pMinValue[0])) * 100.0;
+
+            HASSERT(L >= 0.0 && L <= 100.0);
 
             //----------------------------------------
             // Process gamme adjustement if required.
             if (!HDOUBLE_EQUAL_EPSILON(m_pGammaFactor[0], 1.0))
                 {
-                L = (unsigned int)(100.0 * pow( L / 100.0, 1 / m_pGammaFactor[0]));
+                L = (unsigned char)(100.0 * pow( L / 100.0, 1 / m_pGammaFactor[0]));
+                HASSERT(L >= 0.0 && L <= 100.0);
                 }
 
             //----------------------------------------
@@ -415,16 +466,71 @@ void HRPLigthnessContrastStretch::FunctionN16( const void*  pi_pSrcRawData,
                     {
                     L = (((100.0 - L) /100.0) * (m_pMinContrastValue[0] - m_pMaxContrastValue[0])) + m_pMaxContrastValue[0];
                     }
+                HASSERT(L >= 0.0 && L <= 100.0);
                 }
 
             //------------------------------------------
             // Convert back to original pixeltype (RGB or RGBA)
             m_pColorSpaceConverter->ConvertToRGB (L, U, V, pDestRawData, pDestRawData + 1, pDestRawData + 2);
 
-            if (m_Channels == 4)
-                pDestRawData[3] = 0x00;
+            pDestRawData += m_Channels;
+            pSrcRawData += m_Channels;
+
+            pi_PixelsCount--;
+            }
+        }
+    else if(m_Channels == 4)
+        {
+        while(pi_PixelsCount)
+            {
+            //------------------------------------------
+            // Convert to L*u*v
+            m_pColorSpaceConverter->ConvertFromRGB (*pSrcRawData, *(pSrcRawData + 1), *(pSrcRawData + 2), &L, &U, &V);
+
+            //------------------------------------------
+            // Process the LigthnessContrastStretch
+            // Input clipping.
+            if (L <= m_pMinValue[0])
+                L = 0.0;
+            else if (L >= m_pMaxValue[0])
+                L = 100.0;
+            else
+                L = ((L - m_pMinValue[0]) / (double)(m_pMaxValue[0] - m_pMinValue[0])) * 100.0;
+
+            HASSERT(L >= 0.0 && L <= 100.0);
+
+            //----------------------------------------
+            // Process gamme adjustement if required.
+            if (!HDOUBLE_EQUAL_EPSILON(m_pGammaFactor[0], 1.0))
+                {
+                L = (unsigned char)(100.0 * pow( L / 100.0, 1 / m_pGammaFactor[0]));
+                HASSERT(L >= 0.0 && L <= 100.0);
+                }
+
+            //----------------------------------------
+            // Compute output clipping if any.
+            if ( m_pMaxContrastValue[0] < 100 || m_pMinContrastValue[0] > 0)
+                {
+                // Take care of inverted handle.
+                if ( m_pMaxContrastValue[0] > m_pMinContrastValue[0] )
+                    {
+                    L = ((L /100.0) * (m_pMaxContrastValue[0] - m_pMinContrastValue[0])) + m_pMinContrastValue[0];
+                    }
+                else
+                    {
+                    L = (((100.0 - L) /100.0) * (m_pMinContrastValue[0] - m_pMaxContrastValue[0])) + m_pMaxContrastValue[0];
+                    }
+                HASSERT(L >= 0.0 && L <= 100.0);
+                }
+
+            //------------------------------------------
+            // Convert back to original pixeltype (RGB or RGBA)
+            m_pColorSpaceConverter->ConvertToRGB (L, U, V, pDestRawData, pDestRawData + 1, pDestRawData + 2);
+            *(pDestRawData + 3) = pSrcRawData[3];
 
             pDestRawData += m_Channels;
+            pSrcRawData += m_Channels;
+
             pi_PixelsCount--;
             }
         }
@@ -448,7 +554,7 @@ void HRPLigthnessContrastStretch::DeepCopy(const HRPLigthnessContrastStretch& pi
 
     m_pColorSpaceConverter = new HGFLuvColorSpace(DEFAULT_GAMMA_FACTOR, m_ChannelWidth);
 
-    for (int ChannelIndex = 0; ChannelIndex < m_Channels; ChannelIndex++)
+    for (uint32_t ChannelIndex = 0; ChannelIndex < m_Channels; ChannelIndex++)
         {
         m_pMinValue        [ChannelIndex] = pi_rSrc.m_pMinValue[ChannelIndex];
         m_pMaxValue        [ChannelIndex] = pi_rSrc.m_pMaxValue[ChannelIndex];
@@ -465,7 +571,7 @@ void HRPLigthnessContrastStretch::DeepCopy(const HRPLigthnessContrastStretch& pi
 // GetInterval
 //-----------------------------------------------------------------------------
 
-void HRPLigthnessContrastStretch::GetInterval(int  pi_ChannelIndex,
+void HRPLigthnessContrastStretch::GetInterval(uint32_t pi_ChannelIndex,
                                               int* po_pMinValue,
                                               int* po_pMaxValue) const
     {
@@ -473,8 +579,8 @@ void HRPLigthnessContrastStretch::GetInterval(int  pi_ChannelIndex,
     HPRECONDITION(po_pMinValue != 0);
     HPRECONDITION(po_pMaxValue != 0);
 
-    *po_pMinValue = (int)(((double)m_pMinValue[pi_ChannelIndex] / 100.0) * m_MaxSampleValue);
-    *po_pMaxValue = (int)(((double)m_pMaxValue[pi_ChannelIndex] / 100.0) * m_MaxSampleValue);
+    *po_pMinValue = (int)(ceil((double)m_pMinValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
+    *po_pMaxValue = (int)(ceil((double)m_pMaxValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
     }
 
 //-----------------------------------------------------------------------------
@@ -482,7 +588,7 @@ void HRPLigthnessContrastStretch::GetInterval(int  pi_ChannelIndex,
 // SetMap
 //-----------------------------------------------------------------------------
 
-void HRPLigthnessContrastStretch::SetInterval(int pi_ChannelIndex,
+void HRPLigthnessContrastStretch::SetInterval(uint32_t pi_ChannelIndex,
                                               int pi_MinValue,
                                               int pi_MaxValue)
     {
@@ -499,7 +605,7 @@ void HRPLigthnessContrastStretch::SetInterval(int pi_ChannelIndex,
 //
 //-----------------------------------------------------------------------------
 
-void HRPLigthnessContrastStretch::SetContrastInterval(int pi_ChannelIndex,
+void HRPLigthnessContrastStretch::SetContrastInterval(uint32_t pi_ChannelIndex,
                                                       int pi_MinContrastValue,
                                                       int pi_MaxContrastValue)
     {
@@ -515,7 +621,7 @@ void HRPLigthnessContrastStretch::SetContrastInterval(int pi_ChannelIndex,
 //
 //-----------------------------------------------------------------------------
 
-void HRPLigthnessContrastStretch::GetContrastInterval(int  pi_ChannelIndex,
+void HRPLigthnessContrastStretch::GetContrastInterval(uint32_t pi_ChannelIndex,
                                                       int* po_MinContrastValue,
                                                       int* po_MaxContrastValue) const
     {
@@ -523,15 +629,15 @@ void HRPLigthnessContrastStretch::GetContrastInterval(int  pi_ChannelIndex,
     HPRECONDITION(po_MinContrastValue != 0);
     HPRECONDITION(po_MaxContrastValue != 0);
 
-    *po_MinContrastValue = (int)(((double)m_pMinContrastValue[pi_ChannelIndex] / 100.0) * m_MaxSampleValue);
-    *po_MaxContrastValue = (int)(((double)m_pMaxContrastValue[pi_ChannelIndex] / 100.0) * m_MaxSampleValue);
+    *po_MinContrastValue = (int)(ceil((double)m_pMinContrastValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
+    *po_MaxContrastValue = (int)(ceil((double)m_pMaxContrastValue[pi_ChannelIndex] / 100.0 * m_MaxSampleValue));
     }
 
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
 
-void HRPLigthnessContrastStretch::SetGammaFactor(int    pi_ChannelIndex,
+void HRPLigthnessContrastStretch::SetGammaFactor(uint32_t  pi_ChannelIndex,
                                                  double pi_GammaFactor)
     {
     HPRECONDITION(pi_ChannelIndex < m_Channels);
@@ -544,7 +650,7 @@ void HRPLigthnessContrastStretch::SetGammaFactor(int    pi_ChannelIndex,
 //
 //-----------------------------------------------------------------------------
 
-void HRPLigthnessContrastStretch::GetGammaFactor(int     pi_ChannelIndex,
+void HRPLigthnessContrastStretch::GetGammaFactor(uint32_t   pi_ChannelIndex,
                                                  double* po_pGammaFactor) const
     {
     HPRECONDITION(pi_ChannelIndex < m_Channels);

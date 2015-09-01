@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAToken.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HPAToken
 //---------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -63,3 +63,4 @@ inline double HPANumberTokenNode::GetValue() const
     {
     return m_Value;
     }
+END_IMAGEPP_NAMESPACE

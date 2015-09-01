@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTemplateExtent.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,7 +15,7 @@
 
 #include "HFCPtr.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 template<typename DataType = double, class COORD = HGF2DCoord<DataType> > class HGF2DTemplateExtent
     {
@@ -106,6 +106,8 @@ private:
     DataType         m_YMax;
 
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HGF2DTemplateExtent.hpp"
 

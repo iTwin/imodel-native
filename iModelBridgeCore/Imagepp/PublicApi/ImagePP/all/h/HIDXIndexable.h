@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXIndexable.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,7 +18,7 @@
 #include "HFCPtr.h"
 
 #include "HIDXAttribute.h"
-
+BEGIN_IMAGEPP_NAMESPACE
 
 ////////////////////////
 // HIDXIndexable
@@ -61,6 +61,7 @@ private:
     T               m_Object;
     };
 
+END_IMAGEPP_NAMESPACE
 
 #include "HIDXIndexable.hpp"
 

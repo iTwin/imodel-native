@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFCMYKColorSpace.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,6 +10,8 @@
 //-----------------------------------------------------------------------------
 
 #include "HGFBasicColorSpace.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HGFCMYKColorSpace : public HGFBasicColorSpace
     {
@@ -46,3 +48,5 @@ private:
 
     bool m_InvertedMode;
     };
+
+END_IMAGEPP_NAMESPACE

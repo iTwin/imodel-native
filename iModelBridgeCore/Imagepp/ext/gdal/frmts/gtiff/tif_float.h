@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tif_float.h 21102 2010-11-08 20:47:38Z rouault $
+ * $Id: tif_float.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Floating point conversion functions. Convert 16- and 24-bit
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2005, Andrey Kiselev <dron@remotesensing.org>
+ * Copyright (c) 2010, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * This code is based on the code from OpenEXR project with the following
  * copyright:

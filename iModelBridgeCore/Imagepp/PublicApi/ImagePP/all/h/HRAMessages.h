@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAMessages.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,6 +18,7 @@
 #include "HVEShape.h"
 #include "HGFTileIDDescriptor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 // Forward declarations
 class HMGMessageSender;
 class HRARaster;
@@ -29,17 +30,17 @@ class HRARaster;
 
 class HRAEffectiveShapeChangedMsg : public HGFGeometryChangedMsg
     {
-    HDECLARE_CLASS_ID(1095, HGFGeometryChangedMsg)
+    HDECLARE_CLASS_ID(HRAEffectiveShapeChangedMsgId, HGFGeometryChangedMsg)
 
 public:
     HRAEffectiveShapeChangedMsg();
     HRAEffectiveShapeChangedMsg(const HRAEffectiveShapeChangedMsg& pi_rObj);
     HRAEffectiveShapeChangedMsg(const HVEShape& pi_rShape);
-    _HDLLg virtual ~HRAEffectiveShapeChangedMsg();
+    IMAGEPP_EXPORT virtual ~HRAEffectiveShapeChangedMsg();
 
     const HVEShape& GetShape() const;
 
-    _HDLLg virtual HMGMessage* Clone() const override;
+    IMAGEPP_EXPORT virtual HMGMessage* Clone() const override;
 
 private:
 
@@ -53,17 +54,17 @@ private:
 
 class HRAContentChangedMsg : public HMGAsynchronousMessage
     {
-    HDECLARE_CLASS_ID(1096, HMGAsynchronousMessage)
+    HDECLARE_CLASS_ID(HRAContentChangedMsgId, HMGAsynchronousMessage)
 
 public:
     HRAContentChangedMsg();
     HRAContentChangedMsg(const HRAContentChangedMsg& pi_rObj);
     HRAContentChangedMsg(const HVEShape&   pi_rShape);
-    _HDLLg virtual ~HRAContentChangedMsg();
+    IMAGEPP_EXPORT virtual ~HRAContentChangedMsg();
 
     const HVEShape& GetShape() const;
 
-    _HDLLg virtual HMGMessage* Clone() const;
+    IMAGEPP_EXPORT virtual HMGMessage* Clone() const;
 
 private:
 
@@ -77,18 +78,18 @@ private:
 
 class HRAProgressImageChangedMsg : public HRAContentChangedMsg
     {
-    HDECLARE_CLASS_ID(1088, HRAContentChangedMsg)
+    HDECLARE_CLASS_ID(HRAProgressImageChangedMsgId, HRAContentChangedMsg)
 
 public:
     HRAProgressImageChangedMsg();
     HRAProgressImageChangedMsg(const HRAProgressImageChangedMsg& pi_rObj);
     HRAProgressImageChangedMsg(const HVEShape&   pi_rShape,
                                bool             pi_Ended = false);
-    _HDLLg virtual ~HRAProgressImageChangedMsg();
+    IMAGEPP_EXPORT virtual ~HRAProgressImageChangedMsg();
 
     bool           IsEnded() const;
 
-    _HDLLg virtual HMGMessage* Clone() const override;
+    IMAGEPP_EXPORT virtual HMGMessage* Clone() const override;
 
 private:
 
@@ -102,14 +103,14 @@ private:
 
 class HRAPyramidRasterClosingMsg : public HMGSynchronousMessage
     {
-    HDECLARE_CLASS_ID(1087, HMGSynchronousMessage)
+    HDECLARE_CLASS_ID(HRAPyramidRasterClosingMsgId, HMGSynchronousMessage)
 
 public:
     HRAPyramidRasterClosingMsg();
     HRAPyramidRasterClosingMsg(const HRAPyramidRasterClosingMsg& pi_rObj);
-    _HDLLg virtual ~HRAPyramidRasterClosingMsg();
+    IMAGEPP_EXPORT virtual ~HRAPyramidRasterClosingMsg();
 
-    _HDLLg virtual HMGMessage* Clone() const override;
+    IMAGEPP_EXPORT virtual HMGMessage* Clone() const override;
 
 private:
     };
@@ -122,7 +123,7 @@ private:
 
 class HRALookAheadMsg : public HMGSynchronousMessage
     {
-    HDECLARE_CLASS_ID(1234, HMGSynchronousMessage)
+    HDECLARE_CLASS_ID(HRALookAheadMsgId, HMGSynchronousMessage)
 
 public:
     HRALookAheadMsg();
@@ -135,9 +136,9 @@ public:
                     unsigned short pi_Resolution,
                     uint32_t        pi_ConsumerID,
                     bool           pi_Async);
-    _HDLLg virtual ~HRALookAheadMsg();
+    IMAGEPP_EXPORT virtual ~HRALookAheadMsg();
 
-    _HDLLg virtual HMGMessage* Clone() const override;
+    IMAGEPP_EXPORT virtual HMGMessage* Clone() const override;
 
     bool           UseShape() const;
     const HGFTileIDList&
@@ -162,16 +163,16 @@ private:
 ///////////////////////////
 class HRAModifiedTileNotSavedMsg : public HMGSynchronousMessage
     {
-    HDECLARE_CLASS_ID(1364, HMGSynchronousMessage)
+    HDECLARE_CLASS_ID(HRAModifiedTileNotSavedMsgId, HMGSynchronousMessage)
 
 public:
     HRAModifiedTileNotSavedMsg  ();
     HRAModifiedTileNotSavedMsg  (const HRAModifiedTileNotSavedMsg& pi_rObj);
     HRAModifiedTileNotSavedMsg  (unsigned short           pi_Resolution,
                                  uint64_t                 pi_TileIndex);
-    _HDLLg virtual ~HRAModifiedTileNotSavedMsg();
+    IMAGEPP_EXPORT virtual ~HRAModifiedTileNotSavedMsg();
 
-    _HDLLg virtual HMGMessage* Clone() const override;
+    IMAGEPP_EXPORT virtual HMGMessage* Clone() const override;
 
     unsigned short GetResolution() const;
     uint64_t       GetTileIndex() const;
@@ -181,6 +182,7 @@ private:
     unsigned short m_Resolution;
     uint64_t       m_TileIndex;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HRAMessages.hpp"

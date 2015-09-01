@@ -2,10 +2,10 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteQuadrilateral.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  07/2003
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -156,8 +156,9 @@ inline HGF2DLiteExtent const& HGF2DLiteQuadrilateral::GetExtent
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline double HGF2DLiteQuadrilateral::CalcEpsilon() const
     {
-    double xMax(max(max(fabs(m_x0),fabs(m_x1)), max(fabs(m_x2),fabs(m_x3))));
-    double yMax(max(max(fabs(m_y0),fabs(m_y1)), max(fabs(m_y2),fabs(m_y3))));
+    double xMax(MAX(MAX(fabs(m_x0),fabs(m_x1)), MAX(fabs(m_x2),fabs(m_x3))));
+    double yMax(MAX(MAX(fabs(m_y0),fabs(m_y1)), MAX(fabs(m_y2),fabs(m_y3))));
 
-    return max(xMax, yMax) * HEPSILON_MULTIPLICATOR;
+    return MAX(xMax, yMax) * HEPSILON_MULTIPLICATOR;
     }
+END_IMAGEPP_NAMESPACE

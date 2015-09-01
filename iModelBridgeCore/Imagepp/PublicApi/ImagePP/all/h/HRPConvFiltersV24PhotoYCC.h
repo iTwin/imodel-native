@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPConvFiltersV24PhotoYCC.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,9 +18,10 @@
 // Blur filter definition
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPBlurFilterV24PhotoYCC : public HRPConvFilterV24PhotoYCC
     {
-    HDECLARE_CLASS_ID(1201, HRPConvFilterV24PhotoYCC)
+    HDECLARE_CLASS_ID(HRPFilterId_BlurV24PhotoYCC, HRPConvFilterV24PhotoYCC)
     
 
 public:
@@ -51,7 +52,7 @@ private:
 
 class HRPSharpenFilterV24PhotoYCC : public HRPConvFilterV24PhotoYCC
     {
-    HDECLARE_CLASS_ID(1202, HRPConvFilterV24PhotoYCC)
+    HDECLARE_CLASS_ID(HRPFilterId_SharpenV24PhotoYCC, HRPConvFilterV24PhotoYCC)
     
 
 public:
@@ -73,4 +74,5 @@ private:
 
     Byte  m_Intensity;
     };
+END_IMAGEPP_NAMESPACE
 

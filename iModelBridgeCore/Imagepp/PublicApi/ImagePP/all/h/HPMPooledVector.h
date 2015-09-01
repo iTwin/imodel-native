@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMPooledVector.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -11,9 +11,11 @@
 
 
 #include "HPMCountLimitedPool.h"
+#include "HPMIndirectCountLimitedPool.h"
 #include "HPMDataStore.h"
-#include "HIterators.h"
+#include <ImagePP/h/HIterators.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 
 //***********************************************************************************************************************
 // This general class mimics the STL std::vector class yet is very so slightly faster but not so general
@@ -116,7 +118,7 @@ template <typename DataType> class HPMMemoryManagedVector
 public:
     typedef DataType value_type;
 
-    template <class T> class iteratorBase : public ImagePP::RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename ImagePP::ReverseConstTrait<T>::type >, T>
+    template <class T> class iteratorBase : public BentleyApi::ImagePP::RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename BentleyApi::ImagePP::ReverseConstTrait<T>::type >, T>
         {
     public:
         static const size_t npos = -1;
@@ -211,7 +213,7 @@ public:
 
         -----------------------------------------------------------------------------
     */
-    HPMMemoryManagedVector (HPMMemoryMgr* memoryManager)
+    HPMMemoryManagedVector (IHPMMemoryManager* memoryManager)
         {
         m_memoryManager = memoryManager;
         m_allocatedCount = 0;
@@ -249,7 +251,7 @@ public:
             {
             if (m_allocatedCount == 0)
                 {
-                m_memory = (DataType*)m_memoryManager->AllocMemory (newCount * sizeof(DataType), m_allocatedByteSize);
+                m_memory = (DataType*)m_memoryManager->AllocMemoryExt (newCount * sizeof(DataType), m_allocatedByteSize);
                 HASSERT (m_memory != NULL);
 
                 // Integer division is required here
@@ -259,7 +261,7 @@ public:
                 {
                 void* temp = m_memory;
                 size_t tempSize = m_allocatedByteSize;
-                m_memory = (DataType*)m_memoryManager->AllocMemory (newCount * sizeof(DataType), m_allocatedByteSize);
+                m_memory = (DataType*)m_memoryManager->AllocMemoryExt (newCount * sizeof(DataType), m_allocatedByteSize);
                 HASSERT (m_memory != NULL);
 
                 // Integer division is required here
@@ -388,7 +390,7 @@ public:
 
 private:
 
-    HPMMemoryMgr* m_memoryManager;
+    IHPMMemoryManager* m_memoryManager;
     size_t m_count;
     mutable size_t m_allocatedCount; // Contains the number of DataType that can be stored in the allocated memory
     // this value may be different from the actual memory size allocated
@@ -396,6 +398,17 @@ private:
     DataType* m_memory;
     };
 
+    template<typename DataType> struct PoolItem
+        {
+        typedef HPMCountLimitedPoolItem<DataType> Type;
+        typedef HPMCountLimitedPool<DataType> PoolType;
+        };
+
+    template<> struct PoolItem<MTGGraph>
+        {
+        typedef HPMIndirectCountLimitedPoolItem<MTGGraph> Type;
+        typedef HPMIndirectCountLimitedPool<MTGGraph> PoolType;
+        };
 
 //***********************************************************************************************************************
 // The present vector is simply a vector class (with limited interface) that can discard
@@ -436,12 +449,12 @@ private:
 // when the memory will be freed.
 //
 //***********************************************************************************************************************
-template <typename DataType> class HPMPooledVector : public HPMCountLimitedPoolItem<DataType>
+    template <typename DataType> class HPMPooledVector : public PoolItem<DataType>::Type
     {
 public:
     typedef DataType value_type;
 
-    template <class T> class iteratorBase : public ImagePP::RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename ImagePP::ReverseConstTrait<T>::type >, T>
+    template <class T> class iteratorBase : public BentleyApi::ImagePP::RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename BentleyApi::ImagePP::ReverseConstTrait<T>::type >, T>
         {
     public:
         static const size_t npos = -1;
@@ -537,7 +550,7 @@ public:
         -----------------------------------------------------------------------------
     */
     HPMPooledVector ()
-        : HPMCountLimitedPoolItem()
+        : PoolItem<DataType>::Type()
         {
         m_allocatedCount = 0;
         m_count = 0;
@@ -553,8 +566,8 @@ public:
 
         -----------------------------------------------------------------------------
     */
-    HPMPooledVector (HFCPtr<HPMCountLimitedPool<DataType> > pool)
-        : HPMCountLimitedPoolItem(pool)
+    HPMPooledVector(HFCPtr< typename PoolItem<DataType>::PoolType > pool)
+        : PoolItem<DataType>::Type(pool)
         {
         m_allocatedCount = 0;
         m_count = 0;
@@ -786,16 +799,16 @@ public:
 
         HASSERT(!Discarded());
 
-        m_accessCount += min(m_count, maxCount);
+        m_accessCount += MIN(m_count, maxCount);
         if ((m_accessCount > 100) && (m_pool != NULL))
             {
             m_pool->NotifyAccess(this);
             m_accessCount = 0;
             }
 
-        memcpy (objects, m_memory, sizeof(DataType) * min (m_count, maxCount));
+        memcpy (objects, m_memory, sizeof(DataType) * MIN (m_count, maxCount));
 
-        return min(m_count, maxCount);
+        return MIN(m_count, maxCount);
         }
 
     // This used to be a reference returned but this caused a problem when the ref was maintained and the
@@ -848,7 +861,7 @@ public:
         SetDirty (true);
         }
 
-    size_t size() const
+    virtual size_t size() const
         {
         return m_count;
         }
@@ -1222,7 +1235,7 @@ public:
 
         -----------------------------------------------------------------------------
     */
-    HPMStoredPooledVector (HFCPtr<HPMCountLimitedPool<DataType> > pool, IHPMDataStore<DataType>* store)
+    HPMStoredPooledVector (HFCPtr<typename PoolItem<DataType>::PoolType > pool, IHPMDataStore<DataType>* store)
         : HPMPooledVector(pool)
         {
         m_store = store;
@@ -1312,6 +1325,11 @@ public:
         return m_storeBlockID;
         }
 
+    void SetBlockID(HPMBlockID id) const
+        {
+        m_storeBlockID = id;
+        }
+
     // HPMCountLimitedPoolItem implementation
     virtual bool Discard() const // Intentionaly const ... only mutable members are modified
         {
@@ -1391,7 +1409,7 @@ public:
                 m_allocatedCount = countToAllocate;
                 }
 
-            size_t loadedSize = m_store->LoadBlock (m_memory, m_allocatedCount, m_storeBlockID);
+            m_store->LoadBlock (m_memory, m_allocatedCount, m_storeBlockID);
             }
         SetDiscarded(false);
         return true;
@@ -1409,4 +1427,4 @@ protected:
     };
 
 
-
+END_IMAGEPP_NAMESPACE

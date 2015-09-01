@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRATiledRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRATiledRaster.h>
 #include <Imagepp/all/h/HRATiledRasterIterator.h>
@@ -23,23 +23,42 @@
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
 #include <Imagepp/all/h/HRPQuantizedPalette.h>
+#include <ImagePP/all/h/HCDPacket.h>
 #include <Imagepp/all/h/HCDPacketRLE.h>
 #include <Imagepp/all/h/HRPPixelConverter.h>
 #include <Imagepp/all/h/HMDContext.h>
-
+#include <Imagepp/all/h/HGSRegion.h>
 #include <Imagepp/all/h/HFCGrid.h>
+#include <Imagepp/all/h/HRASurface.h>
+#include <Imagepp/all/h/HRATransaction.h>
 
 #include <Imagepp/all/h/HRARasterEditor.h>
 #include <Imagepp/all/h/HRABitmapEditor.h>
-#include <Imagepp/all/h/HGSEditor.h>
+#include <Imagepp/all/h/HRAEditor.h>
 
 #include <Imagepp/all/h/HRAClearOptions.h>
 #include <Imagepp/all/h/HRAMessages.h>
 #include <Imagepp/all/h/HRPMessages.h>
 #include <Imagepp/all/h/HGFTileIDDescriptor.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
+#include <Imagepp/all/h/HGF2DStretch.h>
+#include <Imagepp/all/h/HFCException.h>
+#include <Imagepp/all/h/HGFMappedSurface.h>
 
 #include <Imagepp/all/h/HRSObjectStore.h>
+#include <ImagePPInternal/gra/HRAImageNode.h>
+#include <ImagePPInternal/gra/DownSampling.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
+#include <ImagePPInternal/gra/ImageAllocator.h>
+
+
+#define MANAGEABLE_RASTER_PHYSICAL_SIZE (1024)
+
+// We did not see a tangible gain so we decided to disable it until for now.
+// tested: block image, loaded memory by strip, nearest/average sampling.
+//#define ENABLE_STRIP_CACHING
+
+
 
 
 ///////////////////////////
@@ -219,6 +238,25 @@ void HRATileStatus::SetDirtyForSubResFlag(uint64_t pi_TileID, bool pi_Value)
 
 
 
+//-----------------------------------------------------------------------------
+// protected
+// UpdateCachedSize
+//
+// this method is called by
+//-----------------------------------------------------------------------------
+void HRATiledRaster::HRATile::UpdateCachedSize()
+    {
+    // m_ObjectSize is a protected member of HPMPoolItem
+    if (m_pTile != 0)
+        {
+        //  the tile is in memory and a IncrementRef was made by GetTile
+        if (m_ObjectSize == 1)
+            DecrementRef();
+        m_ObjectSize = m_pTile->GetObjectSize();
+        }
+    else
+        m_ObjectSize = 0;
+    }
 
 //-----------------------------------------------------------------------------
 // class HRATile
@@ -229,7 +267,7 @@ HFCExclusiveKey HRATiledRaster::HRATile::s_Key;
 // public
 // constructor
 //-----------------------------------------------------------------------------
-HRATiledRaster::HRATile::HRATile(const HFCPtr<HRAStoredRaster>& pi_rpTile,
+HRATiledRaster::HRATile::HRATile(const HFCPtr<HRABitmapBase>& pi_rpTile,
     HPMPool*                       pi_pPool)
     : HPMPoolItem(pi_pPool),
     m_pTile(pi_rpTile),
@@ -249,8 +287,7 @@ HRATiledRaster::HRATile::~HRATile()
     HPRECONDITION(m_pTiledRaster != 0);
 
     // remove tile from the HRATiledRaster list
-    m_pTiledRaster->RemoveTile(m_Itr,
-        !m_Discartable && m_pTile->ToBeSaved());
+    m_pTiledRaster->RemoveTile(m_Itr, !m_Discartable && m_pTile->ToBeSaved());
 
     // the tile can be save only if is discarded
     if (!m_Discartable)
@@ -307,7 +344,7 @@ HRATiledRaster::HRATiledRaster ()
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRATiledRaster::HRATiledRaster(const HFCPtr<HRAStoredRaster>&   pi_pRasterModel,
+HRATiledRaster::HRATiledRaster(const HFCPtr<HRABitmapBase>&   pi_pRasterModel,
                                uint64_t                  pi_TileSizeX,
                                uint64_t                  pi_TileSizeY,
                                uint64_t                  pi_WidthPixels,
@@ -320,8 +357,8 @@ HRATiledRaster::HRATiledRaster(const HFCPtr<HRAStoredRaster>&   pi_pRasterModel,
                          pi_pRasterModel->GetTransfoModel (),
                          pi_pRasterModel->GetCoordSys (),
                          pi_pRasterModel->GetPixelType ()),
-    m_TileSizeX       (max(1, pi_TileSizeX)),
-    m_TileSizeY       (max(1, pi_TileSizeY)),
+    m_TileSizeX       (MAX(1, pi_TileSizeX)),
+    m_TileSizeY       (MAX(1, pi_TileSizeY)),
     m_TileSize        (0),
     m_TileObjectSize  (0),
     m_NumberOfTileX   ((pi_WidthPixels  + (m_TileSizeX-1L)) / m_TileSizeX),
@@ -510,7 +547,7 @@ void HRATiledRaster::InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels)
     {
     // Don't call HRAStoredRaster::InitPhysicalShape because we create a new TiledRaster
     //
-    HFCPtr<HRATiledRaster> pTmpRaster = new HRATiledRaster (m_pRasterModel,
+    HFCPtr<HRATiledRaster> pTmpRaster = new HRATiledRaster (m_pBitmapModel,
                                                             m_TileSizeX, m_TileSizeY,
                                                             pi_WidthPixels,
                                                             pi_HeightPixels,
@@ -525,13 +562,16 @@ void HRATiledRaster::InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
 void HRATiledRaster::SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys)
     {
     // Ancestor before...
     HRAStoredRaster::SetCoordSysImplementation(pi_rOldCoordSys);
 
     // Set model == to the TiledRaster
-    m_pRasterModel->SetCoordSys (GetCoordSys());
+    m_pBitmapModel->SetCoordSys (GetCoordSys());
 
     // Change all CoordSys of tiles in memory
     HFCMonitor Monitor(m_TileMapKey);
@@ -543,14 +583,16 @@ void HRATiledRaster::SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_r
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
 void HRATiledRaster::SetTransfoModel(const HGF2DTransfoModel& pi_rModelCSp_CSl)
     {
     // Call the parent
     HRAStoredRaster::SetTransfoModel (pi_rModelCSp_CSl);
 
     // Set model == to the TiledRaster
-    m_pRasterModel->SetTransfoModel (pi_rModelCSp_CSl);
+    m_pBitmapModel->SetTransfoModel (pi_rModelCSp_CSl);
 
     // Save in the Store if present
     if (GetStore())
@@ -604,23 +646,21 @@ unsigned short HRATiledRaster::GetRepresentativePalette(HRARepPalParms* pio_pRep
         uint64_t Tile = 0;
         const HRPPixelPalette& rPalette = (RepPalParms.GetPixelType())->GetPalette();
 
-        HFCPtr<HRAStoredRaster> pRaster;
+        HFCPtr<HRABitmapBase> pRaster;
         unsigned short Entries;
         uint32_t Index;
 
         // create a quantized palette object
-        HRPQuantizedPalette* pQuantizedPalette =
-            pio_pRepPalParms->CreateQuantizedPalette();
+        HRPQuantizedPalette* pQuantizedPalette = pio_pRepPalParms->CreateQuantizedPalette();
         // if not enough memory
         if (!pQuantizedPalette)
             goto wrap_up;
-
 
         // do a first pass for tiles in a look ahead way
         // Iterate on each tile to scan
         while (Tile < Tiles)
             {
-            pRaster = GetTile(Tile)->GetTile();
+            pRaster = GetTileByIndex(Tile)->GetTile();
 
             // get the representative palette of a tile
             // we create a new histogram for each tile if there is one
@@ -689,7 +729,7 @@ void HRATiledRaster::ComputeHistogram(HRAHistogramOptions* pio_pOptions,
 
         Byte TilesInterval = 100 / pio_pOptions->GetSamplingOptions().GetTilesToScan();
 
-        HFCPtr<HRAStoredRaster> pRaster;
+        HFCPtr<HRABitmapBase> pRaster;
         uint32_t HistogramEntries  = pio_pOptions->GetHistogram()->GetEntryFrequenciesSize();
         uint32_t HistogramChannels = pio_pOptions->GetHistogram()->GetChannelCount();
         uint32_t HistogramIndex;
@@ -707,7 +747,7 @@ void HRATiledRaster::ComputeHistogram(HRAHistogramOptions* pio_pOptions,
             while (Index != HGFTileIDDescriptor::INDEX_NOT_FOUND)
                 {
                 // get the tile
-                pRaster = GetTile(Index)->GetTile();
+                pRaster = GetTileByIndex(Index)->GetTile();
 
                 // compute the histogram
                 if (TmpOptions.GetHistogram() != 0)
@@ -757,7 +797,7 @@ void HRATiledRaster::ComputeHistogram(HRAHistogramOptions* pio_pOptions,
             while (Tile < Tiles && HRAHistogramProgressIndicator::GetInstance()->ContinueIteration())
                 {
                 // get the tile
-                pRaster = GetTile(Tile)->GetTile();
+                pRaster = GetTileByIndex(Tile)->GetTile();
 
                 // compute the histogram
                 if (TmpOptions.GetHistogram() != 0)
@@ -819,12 +859,11 @@ void HRATiledRaster::ComputeHistogram(HRAHistogramOptions* pio_pOptions,
 // pi_NotInPool : When we don't want the pool to flush a tile because of
 // getting this requested one.  Used only in UpdateNextRes.
 //-----------------------------------------------------------------------------
-const HFCPtr<HRATiledRaster::HRATile> HRATiledRaster::GetTile (uint64_t pi_Index,
-                                                               bool   pi_NotInPool) const
+const HFCPtr<HRATiledRaster::HRATile> HRATiledRaster::GetTileByIndex (uint64_t pi_Index, bool pi_NotInPool) const
     {
     HPRECONDITION (pi_Index < m_NumberOfTiles);
 
-    HFCPtr<HRAStoredRaster>         pTile;
+    HFCPtr<HRABitmapBase>         pTile;
     HFCPtr<HRATiledRaster::HRATile> pResult;
     bool                           InvalidatedTile = false;
 
@@ -884,20 +923,21 @@ const HFCPtr<HRATiledRaster::HRATile> HRATiledRaster::GetTile (uint64_t pi_Index
                                                                    &PosY,
                                                                    m_pPool);
 
+        
             HFCPtr<HGF2DTransfoModel> pTileModel = GetTransfoModel();
             if (PosX != 0 || PosY != 0)
                 {
                 CHECK_HUINT64_TO_HDOUBLE_CONV(PosX)
                 CHECK_HUINT64_TO_HDOUBLE_CONV(PosY)
 
-                ((HFCPtr<HRABitmapBase>&)pTile)->SetPosInRaster((HUINTX)PosX, (HUINTX)PosY);
-
+                pTile->SetPosInRaster((HUINTX)PosX, (HUINTX)PosY);
+            
                 HGF2DTranslation TranslateModel (HGF2DDisplacement ((double)PosX, (double)PosY));
 
                 pTileModel = TranslateModel.ComposeInverseWithDirectOf (*GetTransfoModel());
                 }
             else
-                ((HFCPtr<HRABitmapBase>&)pTile)->SetPosInRaster(0, 0);
+                pTile->SetPosInRaster(0, 0);
 
             if (pTileModel != 0)
                 {
@@ -909,11 +949,11 @@ const HFCPtr<HRATiledRaster::HRATile> HRATiledRaster::GetTile (uint64_t pi_Index
             if (m_TileSize == 0)
                 {
                 m_TileObjectSize = m_TileSize = (uint32_t)pTile->GetObjectSize();
-
+                
                 if (pTile->IsCompatibleWith(HRABitmap::CLASS_ID))
-                    m_TileSize = (uint32_t)((HFCPtr<HRABitmap>&)pTile)->GetPacket()->GetBufferSize();
+                    m_TileSize = static_cast<HRABitmap*>(pTile.GetPtr())->GetPacket()->GetBufferSize();
                 else if(pTile->IsCompatibleWith(HRABitmapRLE::CLASS_ID))
-                    m_TileSize = (uint32_t)((HFCPtr<HRABitmapRLE>&)pTile)->GetPacket()->GetBufferSize();
+                    m_TileSize = static_cast<HRABitmapRLE*>(pTile.GetPtr())->GetPacket()->GetBufferSize();
                 }
 
             // clear the entire tile if requested previously
@@ -942,8 +982,8 @@ const HFCPtr<HRATiledRaster::HRATile> HRATiledRaster::GetTile (uint64_t pi_Index
 
                 pTile->SetShape(HVEShape((double)PosX,
                                          (double)PosY,
-                                         min((double)Width, (double)(PosX + m_TileSizeX)),
-                                         min((double)Height, (double)(PosY + m_TileSizeY)),
+                                         MIN((double)Width, (double)(PosX + m_TileSizeX)),
+                                         MIN((double)Height, (double)(PosY + m_TileSizeY)),
                                          GetPhysicalCoordSys ()));
 
                 pTile->SetModificationState(false);
@@ -1019,7 +1059,7 @@ void HRATiledRaster::EngageTileHistogramComputing()
     SamplingOpt.SetTilesToScan(100);
     SamplingOpt.SetPyramidImageSize(100);
 
-    HFCPtr<HRAStoredRaster> pCurrentTile;
+    HFCPtr<HRABitmapBase> pCurrentTile;
 
     HFCMonitor Monitor(m_TileMapKey);
     TileMapItr Itr(m_TileMap.begin());
@@ -1052,7 +1092,6 @@ const HFCPtr<HRATiledRaster::HRATile> HRATiledRaster::GetTileFromLoaded(uint64_t
     {
     HPRECONDITION (pi_Index < m_NumberOfTiles);
 
-    HFCPtr<HRAStoredRaster>         pTile;
     HFCPtr<HRATiledRaster::HRATile> pResult;
 
     HFCMonitor Monitor(m_TileMapKey);
@@ -1072,7 +1111,7 @@ const HFCPtr<HRATiledRaster::HRATile> HRATiledRaster::GetTileFromLoaded(uint64_t
 // private
 // Constructor
 //-----------------------------------------------------------------------------
-void HRATiledRaster::Constructor (const HFCPtr<HRAStoredRaster>& pi_pRasterModel,
+void HRATiledRaster::Constructor (const HFCPtr<HRABitmapBase>& pi_pRasterModel,
                                   uint64_t                      pi_WidthPixels,
                                   uint64_t                      pi_HeightPixels)
     {
@@ -1081,13 +1120,13 @@ void HRATiledRaster::Constructor (const HFCPtr<HRAStoredRaster>& pi_pRasterModel
     // Make a copy of the RasterModel.
     // Set CoordSys and Extent (TileSize)
     //
-    m_pRasterModel = (HRAStoredRaster*)pi_pRasterModel->Clone();
+    m_pBitmapModel = (HRABitmapBase*)pi_pRasterModel->Clone();
     if (GetTransfoModel() != 0)
         {
-        m_pRasterModel->SetTransfoModel (*GetTransfoModel(), GetCoordSys());
+        m_pBitmapModel->SetTransfoModel (*GetTransfoModel(), GetCoordSys());
         }
 
-    m_pRasterModel->InitSize (m_TileSizeX, m_TileSizeY);
+    m_pBitmapModel->InitSize (m_TileSizeX, m_TileSizeY);
 
     // Create the TileDescriptor
     m_pTileDescriptor = new HGFTileIDDescriptor (pi_WidthPixels, pi_HeightPixels, m_TileSizeX, m_TileSizeY);
@@ -1109,7 +1148,7 @@ void HRATiledRaster::DeepCopy(const HRATiledRaster& pi_rTiledRaster,
     try
         {
         // Copy the model
-        m_pRasterModel = (HRAStoredRaster*)pi_rTiledRaster.m_pRasterModel->Clone();
+        m_pBitmapModel = (HRABitmapBase*)pi_rTiledRaster.m_pBitmapModel->Clone();
 
         // Alloc List of flags associated to tiles
         //
@@ -1125,7 +1164,7 @@ void HRATiledRaster::DeepCopy(const HRATiledRaster& pi_rTiledRaster,
         TileMapItr Itr(pi_rTiledRaster.m_TileMap.begin());
         while (Itr != pi_rTiledRaster.m_TileMap.end())
             {
-            HFCPtr<HRAStoredRaster> pNewTile((HRAStoredRaster*)Itr->second->GetTile()->Clone());
+            HFCPtr<HRABitmapBase> pNewTile((HRABitmapBase*)Itr->second->GetTile()->Clone());
 
             if (pi_pStore)
                 pNewTile->SetStore(pi_pStore);
@@ -1225,7 +1264,7 @@ void HRATiledRaster::ReplaceObject (HFCPtr<HRATiledRaster>& pio_pRaster)
 
     m_TileStatus      = pio_pRaster->m_TileStatus;
     m_TileStatusDisabled = pio_pRaster->m_TileStatusDisabled;
-    m_pRasterModel    = pio_pRaster->m_pRasterModel;
+    m_pBitmapModel    = pio_pRaster->m_pBitmapModel;
     m_pTileDescriptor = pio_pRaster->m_pTileDescriptor;
 
     // Link the list of TiledRaster with the object and
@@ -1242,7 +1281,7 @@ void HRATiledRaster::ReplaceObject (HFCPtr<HRATiledRaster>& pio_pRaster)
         }
 
     // Set to 0 --> Destructor must not delete these members.
-    pio_pRaster->m_pRasterModel             = 0;
+    pio_pRaster->m_pBitmapModel             = 0;
     pio_pRaster->m_pTileDescriptor          = 0;
     }
 
@@ -1353,7 +1392,7 @@ void HRATiledRaster::Clear(const HRAClearOptions& pi_rOptions)
                 else if (pi_rOptions.HasLoadingData() || GetCurrentTransaction() != 0)
                     {
                     // need to load the tile
-                    pTile = GetTile(TileIndex);
+                    pTile = GetTileByIndex(TileIndex);
 
                     // set the tiled raster transaction on the tile
                     HFCPtr<HRATransaction> pCurTrans(pTile->GetTile()->GetCurrentTransaction());
@@ -1364,6 +1403,11 @@ void HRATiledRaster::Clear(const HRAClearOptions& pi_rOptions)
                     }
                 else
                     {
+                    // This is a trap, if the tile is not loaded tiledraster will do nothing! Instead it will clear the whole tile 
+                    // with a default color the first time it is loaded. If we had a shape and/or a specific color this is wrong! 
+                    // When do we require this behavior?  
+                    // Shape is somethimes equal to physical. BeAssert(!pi_rOptions.HasShape() && pi_rOptions.GetRawDataValue() == NULL);
+                    
                     // The tile is not yet loaded, set a flag to be cleared later
                     m_TileStatus.SetClearFlag(TileIndex, true);
                     }
@@ -1398,8 +1442,8 @@ bool HRATiledRaster::NotifyContentChanged (const HMGMessage& pi_rMessage)
                     Extent.GetXMax(),
                     Extent.GetYMax());
 
-    m_TileStatus.SetDirtyForSubResFlag(ComputeIndexFromTile (max(0, Grid.GetXMin()),
-                                                                max(0, Grid.GetYMin())),
+    m_TileStatus.SetDirtyForSubResFlag(ComputeIndexFromTile (MAX(0, Grid.GetXMin()),
+                                                                MAX(0, Grid.GetYMin())),
                                         true);
     
     SetModificationState();
@@ -1482,36 +1526,13 @@ void HRATiledRaster::GetMissingTilesInRegion(const HFCPtr<HVEShape>& pi_rpRegion
 
 //-----------------------------------------------------------------------------
 // public
-// PreDraw
-//-----------------------------------------------------------------------------
-void HRATiledRaster::PreDraw(HRADrawOptions* pio_pOptions)
-    {
-    HPRECONDITION(pio_pOptions->GetPreDrawOptions() != 0);
-
-    if (HasLookAhead() == true)
-        {
-        uint32_t ConsumerId = 0;
-        bool  Async = false;
-
-        pio_pOptions->GetPreDrawOptions()->GetLookAheadOptions(ConsumerId, Async);
-        SetLookAhead(*(pio_pOptions->GetShape()), ConsumerId, Async);
-        }
-    }
-
-
-
-//-----------------------------------------------------------------------------
-// public
 // Draw
 //-----------------------------------------------------------------------------
-void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const
+void HRATiledRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
     {
-    HPRECONDITION(pio_pSurface != 0);
-    HPRECONDITION(pi_pOptions != 0);
+    HASSERT(m_pBitmapModel->IsCompatibleWith(HRABitmapBase::CLASS_ID));
 
-    HASSERT(m_pRasterModel->IsCompatibleWith(HRABitmapBase::CLASS_ID));
-
-    HRADrawOptions Options(pi_pOptions);
+    HRADrawOptions Options(pi_Options);
 
     // set the effective coordsys
     if (Options.GetReplacingCoordSys() == 0)
@@ -1528,7 +1549,7 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
         pRegionToDraw = new HVEShape(*GetEffectiveShape());
 
     // test if there is a clip region in the destination
-    HFCPtr<HGSRegion> pClipRegion(static_cast<HGSRegion*>(pio_pSurface->GetOption(HGSRegion::CLASS_ID).GetPtr()));
+    const HFCPtr<HGSRegion>& pClipRegion(pio_destSurface.GetRegion());
     if (pClipRegion != 0)
         {
         // if yes, intersect it with the destination
@@ -1543,38 +1564,49 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
         {
         // Create a rectangular clip region to stay
         // inside the destination surface.
-        HVEShape DestSurfaceShape(0.0, 0.0, pio_pSurface->GetSurfaceDescriptor()->GetWidth(), pio_pSurface->GetSurfaceDescriptor()->GetHeight(), pio_pSurface->GetSurfaceCoordSys());
+        HVEShape DestSurfaceShape(0.0, 0.0, pio_destSurface.GetSurfaceDescriptor()->GetWidth(), pio_destSurface.GetSurfaceDescriptor()->GetHeight(), pio_destSurface.GetSurfaceCoordSys());
 
         // Set a quarter of a pixel stroke tolerance
-        double CenterX = pio_pSurface->GetSurfaceDescriptor()->GetWidth() / 2.0;
-        double CenterY = pio_pSurface->GetSurfaceDescriptor()->GetHeight() / 2.0;
+        double CenterX = pio_destSurface.GetSurfaceDescriptor()->GetWidth() / 2.0;
+        double CenterY = pio_destSurface.GetSurfaceDescriptor()->GetHeight() / 2.0;
         HFCPtr<HGFTolerance> pTol (new HGFTolerance(CenterX - DEFAULT_PIXEL_TOLERANCE,
                                                     CenterY - DEFAULT_PIXEL_TOLERANCE,
                                                     CenterX + DEFAULT_PIXEL_TOLERANCE,
                                                     CenterY + DEFAULT_PIXEL_TOLERANCE,
-                                                    pio_pSurface->GetSurfaceCoordSys()));
+                                                    pio_destSurface.GetSurfaceCoordSys()));
         DestSurfaceShape.SetStrokeTolerance(pTol);
 
-        //TR 287453 - Ensure that the destination surface is intersected in the
-        //            destination world instead of the world of the region to
-        //            draw because it is possible that both of these worlds be
-        //            connected by a projective, and only the region to draw
-        //            has been intersected with the valid shape by the application
-        //            (i.e. : Descartes).
+        //NEEDS_WORK_DCHG_ImagePP; this patch below is used by Descartes - see warpToArea.cpp)
+        if (0/*&&AR m_IntersectForWarpToShape == TRUE*/)
+            {
+            //TR 287453/290748 - Ensure that the destination surface is intersected in the
+            //            destination world instead of the world of the region to
+            //            draw because it is possible that both of these worlds be
+            //            connected by a projective, and only the region to draw
+            //            has been intersected with the valid shape by the application
+            //            (i.e. : Descartes).
 
-        //Move the region to draw to the reference world.
-        pRegionToDraw->ChangeCoordSys(GetCoordSys());
-        pRegionToDraw->SetCoordSys(Options.GetReplacingCoordSys());
+            //Move the region to draw to the reference world.
+            pRegionToDraw->ChangeCoordSys(GetCoordSys());
+            pRegionToDraw->SetCoordSys(Options.GetReplacingCoordSys());
 
-        //Change the region to draw coordinate system to the
-        //destination coordinate system.
-        pRegionToDraw->ChangeCoordSys(pio_pSurface->GetSurfaceCoordSys());
+            //Change the region to draw coordinate system to the
+            //destination coordinate system.
+            pRegionToDraw->ChangeCoordSys(pio_destSurface.GetSurfaceCoordSys());
 
-        pRegionToDraw->Intersect(DestSurfaceShape);
+            pRegionToDraw->Intersect(DestSurfaceShape);
 
-        //Move the region to draw back to source world.
-        pRegionToDraw->ChangeCoordSys(Options.GetReplacingCoordSys());
-        pRegionToDraw->SetCoordSys(GetCoordSys());
+            //Move the region to draw back to source world.
+            pRegionToDraw->ChangeCoordSys(Options.GetReplacingCoordSys());
+            pRegionToDraw->SetCoordSys(GetCoordSys());
+            }
+        else
+            {
+            DestSurfaceShape.ChangeCoordSys(Options.GetReplacingCoordSys());
+            DestSurfaceShape.SetCoordSys(GetCoordSys());
+
+            pRegionToDraw->Intersect(DestSurfaceShape);
+            }
         }
 
     Options.SetShape(pRegionToDraw);
@@ -1616,17 +1648,17 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
         {
         // Optimization
         // If no alpha in the source and destination bitmap, we can skip the temporary copy.
-        if (!pi_pOptions->ApplyAlphaBlend() ||
+        if (!pi_Options.ApplyAlphaBlend() ||
             (GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) == HRPChannelType::FREE &&
-             pio_pSurface->GetImplementation()->GetSurfaceDescriptor()->IsCompatibleWith(HGSMemoryBaseSurfaceDescriptor::CLASS_ID) &&
-             ((HFCPtr<HGSMemoryBaseSurfaceDescriptor>&)(pio_pSurface->GetImplementation()->GetSurfaceDescriptor()))->GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0)
+             pio_destSurface.GetSurfaceDescriptor()->IsCompatibleWith(HGSMemoryBaseSurfaceDescriptor::CLASS_ID) &&
+             ((HFCPtr<HGSMemoryBaseSurfaceDescriptor>&)(pio_destSurface.GetSurfaceDescriptor()))->GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0)
              == HRPChannelType::FREE) )
             {
             HFCPtr<HRATiledRaster::HRATile> pTile;
             do
                 {
                 HFCPtr<HVEShape> pCurrentClip(new HVEShape(*pRegionToDraw));
-                pTile = GetTile(Index);
+                pTile = GetTileByIndex(Index);
                 pCurrentClip->Intersect(*pTile->GetTile()->GetEffectiveShape());
                 Options.SetShape(pCurrentClip);
 
@@ -1634,7 +1666,7 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
                 //TR 300554 : Set the size of the data in the tile, which can be less than the tile size,
                 //            to ensure that the sampler doesn't take a pixel outside the valid range.
                 if ((Options.GetDataDimensionFix() == true) &&
-                    (pTile->GetTile()->IsCompatibleWith(HRABitmapBase::CLASS_ID) == true))
+                    (pTile->GetTile()->IsCompatibleWith(HRABitmapBase::CLASS_ID)))
                     {
                     uint64_t dataWidth;
                     uint64_t dataHeight;
@@ -1643,12 +1675,12 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
 
                     HASSERT((dataWidth <= ULONG_MAX) && (dataHeight <= ULONG_MAX));
 
-                    HFCPtr<HGSSurfaceDescriptor> pSurfaceDescriptor(((HFCPtr<HRABitmapBase>&)pTile->GetTile())->GetSurfaceDescriptor());
+                    HFCPtr<HGSSurfaceDescriptor> pSurfaceDescriptor(pTile->GetTile()->GetSurfaceDescriptor());
 
                     pSurfaceDescriptor->SetDataDimensions((uint32_t)dataWidth, (uint32_t)dataHeight);
                     }
 
-                pTile->GetTile()->Draw(pio_pSurface, &Options);
+                pTile->GetTile()->Draw(pio_destSurface, Options);
 
                 Options.SetShape(0);
 
@@ -1661,11 +1693,11 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
         else if (TileIterator.GetNextTileIndex() == HGFTileIDDescriptor::INDEX_NOT_FOUND)
             {
             HFCPtr<HVEShape> pClipShape(new HVEShape(*pRegionToDraw));
-            HFCPtr<HRATiledRaster::HRATile> pTile(GetTile(Index));
+            HFCPtr<HRATiledRaster::HRATile> pTile(GetTileByIndex(Index));
             pClipShape->Intersect(*pTile->GetTile()->GetEffectiveShape());
             Options.SetShape(pClipShape);
 
-            pTile->GetTile()->Draw(pio_pSurface, &Options);
+            pTile->GetTile()->Draw(pio_destSurface, Options);
             }
         else
             // We need a temporary copy to resolve problem with the translucent pixel, by default we can set more than one
@@ -1677,10 +1709,10 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
             GetSize(&Width, &Height);
 
             // ToDrawExtent is in physical
-            uint64_t XMin = (uint64_t)max(ToDrawExtent.GetXMin() + HGLOBAL_EPSILON - Neighborhood, 0.0);
-            uint64_t YMin = (uint64_t)max(ToDrawExtent.GetYMin() + HGLOBAL_EPSILON - Neighborhood, 0.0);
-            uint64_t XMax = min((uint64_t)max(ToDrawExtent.GetXMax() - HGLOBAL_EPSILON + Neighborhood, 0.0), Width - 1);
-            uint64_t YMax = min((uint64_t)max(ToDrawExtent.GetYMax() - HGLOBAL_EPSILON + Neighborhood, 0.0), Height - 1);
+            uint64_t XMin = (uint64_t)MAX(ToDrawExtent.GetXMin() + HGLOBAL_EPSILON - Neighborhood, 0.0);
+            uint64_t YMin = (uint64_t)MAX(ToDrawExtent.GetYMin() + HGLOBAL_EPSILON - Neighborhood, 0.0);
+            uint64_t XMax = MIN((uint64_t)MAX(ToDrawExtent.GetXMax() - HGLOBAL_EPSILON + Neighborhood, 0.0), Width - 1);
+            uint64_t YMax = MIN((uint64_t)MAX(ToDrawExtent.GetYMax() - HGLOBAL_EPSILON + Neighborhood, 0.0), Height - 1);
 
             Width = XMax + 1 - XMin;
             Height = YMax + 1 - YMin;
@@ -1690,7 +1722,7 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
             uint64_t StripHeight = Height;
             uint64_t StripSize = Width * Height;
 
-            HFCPtr<HRABitmap> pTempBitmap((HRABitmap*)m_pRasterModel->Clone());
+            HFCPtr<HRABitmapBase> pTempBitmap((HRABitmapBase*)m_pBitmapModel->Clone());
 
             if (StripSize <= TEMPORARY_SURFACE_MAX_MEMORY_SIZE)
                 {
@@ -1699,7 +1731,7 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
             else
                 {
                 StripHeight = TEMPORARY_SURFACE_MAX_MEMORY_SIZE / StripWidthInPixel;
-                StripHeight = max(StripHeight, 1);
+                StripHeight = MAX(StripHeight, 1);
                 pTempBitmap->InitSize (Width, StripHeight);
                 }
 
@@ -1730,10 +1762,7 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
                     HFCPtr<HGSSurfaceDescriptor> pDescriptor(pTempBitmap->GetSurfaceDescriptor());
 
                     // create a surface for the destination
-                    HFCPtr<HGFMappedSurface> pSurface(new HGFMappedSurface(pDescriptor,
-                                                                           0,
-                                                                           0,
-                                                                           pTempBitmap->GetPhysicalCoordSys()));
+                    HGFMappedSurface destSurface(pDescriptor, pTempBitmap->GetPhysicalCoordSys());
 
                     HFCPtr<HVEShape> pTempBitmapShape(new HVEShape(*pTempBitmap->GetEffectiveShape()));
                     pTempBitmapShape->ChangeCoordSys(GetPhysicalCoordSys());
@@ -1745,11 +1774,11 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
                     while (TempIndex != HGFTileIDDescriptor::INDEX_NOT_FOUND)
                         {
                         HFCPtr<HVEShape> pDrawShape(new HVEShape(*pTempBitmapShape));
-                        pTile = GetTile(TempIndex)->GetTile();
+                        pTile = GetTileByIndex(TempIndex)->GetTile();
                         pDrawShape->Intersect(*pTile->GetEffectiveShape());
 
                         TempOptions.SetShape(pDrawShape);
-                        pTile->Draw(pSurface, &TempOptions);
+                        pTile->Draw(destSurface, TempOptions);
 
                         TempIndex = TempTileIterator.GetNextTileIndex();
                         }
@@ -1759,17 +1788,13 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
                     pTempBitmapShape->Intersect(*pRegionToDraw);
                     Options.SetShape(pTempBitmapShape);
 
-                    pTempBitmap->Draw(pio_pSurface, &Options);
+                    pTempBitmap->Draw(pio_destSurface, Options);
 
                     YMin += StripHeight;
                     }
-                catch(HFCException& Exception )
+                catch(HFCOutOfMemoryException&)
                     {
-                    if (Exception.GetID() != HFC_OUT_OF_MEMORY_EXCEPTION)
-                        throw Exception;
-
                     // separate tiles case.
-
                     pTempBitmap = 0;
 
                     HWARNING(0, L"HRATiledRaster::Draw out of memory. Drawing tiles separately");
@@ -1779,11 +1804,11 @@ void HRATiledRaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HG
                     while (Index != HGFTileIDDescriptor::INDEX_NOT_FOUND)
                         {
                         HFCPtr<HVEShape> pCurrentClip(new HVEShape(*pRegionToDraw));
-                        pTile = GetTile(Index);
+                        pTile = GetTileByIndex(Index);
                         pCurrentClip->Intersect(*pTile->GetTile()->GetEffectiveShape());
                         Options.SetShape(pCurrentClip);
 
-                        pTile->GetTile()->Draw(pio_pSurface, &Options);
+                        pTile->GetTile()->Draw(pio_destSurface, Options);
 
                         Options.SetShape(0);
 
@@ -1915,7 +1940,7 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
     uint64_t ImageHeight;
     GetSize(&ImageWidth, &ImageHeight);
 
-    HFCPtr<HGSEditor> pEditor;
+    HRAEditor* pEditor = NULL;
     HAutoPtr<HRABitmapEditor> pBitmapEditor;
 
     if (m_NumberOfTileX == 1)
@@ -1923,7 +1948,7 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
         HAutoPtr<HCDPacketRLE::RLEScanlineGenerator> pScanlineGenerator;
         HUINTX PixelCount;
         HUINTX PosX;
-        HFCPtr<HRABitmap> pTile;
+        HFCPtr<HRABitmapBase> pTile;
         uint64_t BlockPosX = 0;
         uint64_t CurrentTileIndex = -1;
         HUINTX TileXPosInRaster=0;
@@ -1943,18 +1968,17 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
                     if (pTile)
                         pTile->Updated();
 
-                    pTile = (HFCPtr<HRABitmap>&)GetTile(TileIndex)->GetTile();
+                    pTile = GetTileByIndex(TileIndex)->GetTile();
                     pTile->GetPosInRaster(&TileXPosInRaster, &TileYPosInRaster);
                     pBitmapEditor = (HRABitmapEditor*)pTile->CreateEditor(HFC_WRITE_ONLY);
                     pEditor = pBitmapEditor->GetSurfaceEditor();
                     CurrentTileIndex = TileIndex;
 
                     HPRECONDITION(pEditor != 0);
-                    HPRECONDITION(pEditor->GetSurface() != 0);
-                    HPRECONDITION(pEditor->GetSurface()->GetSurfaceDescriptor() != 0);
-                    HPRECONDITION(pEditor->GetSurface()->GetSurfaceDescriptor()->IsCompatibleWith(HGSMemoryBaseSurfaceDescriptor::CLASS_ID));
+                    HPRECONDITION(pEditor->GetSurface().GetSurfaceDescriptor() != 0);
+                    HPRECONDITION(pEditor->GetSurface().GetSurfaceDescriptor()->IsCompatibleWith(HGSMemoryBaseSurfaceDescriptor::CLASS_ID));
 
-                    HFCPtr<HRPPixelType> pPixelTypeRLE1 = ((const HFCPtr<HGSMemoryBaseSurfaceDescriptor>&)pEditor->GetSurface()->GetSurfaceDescriptor())->GetPixelType();
+                    HFCPtr<HRPPixelType> pPixelTypeRLE1 = ((const HFCPtr<HGSMemoryBaseSurfaceDescriptor>&)pEditor->GetSurface().GetSurfaceDescriptor())->GetPixelType();
 
                     // We assume the converter will return RLE run
                     if (pPixelTypeRLE1 != 0 &&
@@ -1964,7 +1988,7 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
                         pConverter->Convert((pi_rOptions.GetRawDataValue() != 0 ? pi_rOptions.GetRawDataValue() : GetPixelType()->GetDefaultRawData()),
                                             &OutData);
                         OutData[0] = OutData[0] ? 0 : 1; // TR 159986: must clear with state(0,1) not RLE run.
-                        pRawData = (void*)OutData;
+                        pRawData = OutData;
                         }
                     }
 
@@ -1991,7 +2015,7 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
         for (HUINTX Strip = 0; Strip < m_NumberOfTileY; ++Strip)
             {
             HUINTX StripPos = Strip * (HUINTX)m_TileSizeY;
-            HUINTX LineCount = min((HUINTX)m_TileSizeY, (HUINTX)ImageHeight - StripPos);
+            HUINTX LineCount = MIN((HUINTX)m_TileSizeY, (HUINTX)ImageHeight - StripPos);
             HUINTX NextPosX = HUINTX_MAX;
             HUINTX PosX;
 
@@ -2001,7 +2025,7 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
                 {
                 pScanlinesGenerator[i] = pi_rOptions.GetRLEMask()->GetRLEScanlineGenerator(StripPos + i, true); // state = 1
                 if (pScanlinesGenerator[i]->GetFirstScanline(&PosX) != 0)
-                    NextPosX = min(NextPosX, PosX);
+                    NextPosX = MIN(NextPosX, PosX);
                 }
 
             while (NextPosX < ImageWidth)
@@ -2011,7 +2035,7 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
                 uint64_t TileIndex = m_pTileDescriptor->ComputeIndex(TilePosX * m_TileSizeX, Strip * m_TileSizeY);
 
                 // get the tile and process it
-                HFCPtr<HRABitmap> pTile((HFCPtr<HRABitmap>&)GetTile(TileIndex)->GetTile());
+                HFCPtr<HRABitmapBase> pTile(GetTileByIndex(TileIndex)->GetTile());
                 pBitmapEditor = (HRABitmapEditor*)pTile->CreateEditor(HFC_WRITE_ONLY);
                 pEditor = pBitmapEditor->GetSurfaceEditor();
 
@@ -2043,13 +2067,13 @@ void HRATiledRaster::ClearWithRLEMask(const HRAClearOptions& pi_rOptions)
 
                         if (PosX >= NextTilePosX)
                             {
-                            NextPosX = min(NextPosX, PosX);
+                            NextPosX = MIN(NextPosX, PosX);
                             break;  // Don't process the run yet, go to next line.
                             }
 
                         // If we get here, there is an intersection between the run and the tile.
-                        HUINTX StartX = max (PosX, TilePosXInRaster);
-                        HUINTX EndX   = min (EndPos, NextTilePosX);
+                        HUINTX StartX = MAX (PosX, TilePosXInRaster);
+                        HUINTX EndX   = MIN (EndPos, NextTilePosX);
                         HASSERT (EndX > StartX);
 
                         pEditor->ClearRun(StartX - TilePosXInRaster,
@@ -2121,8 +2145,7 @@ void HRATiledRaster::InvalidateRaster()
 // public
 // Clone -
 //-----------------------------------------------------------------------------
-HRARaster* HRATiledRaster::Clone (HPMObjectStore* pi_pStore,
-    HPMPool*        pi_pPool) const
+HFCPtr<HRARaster> HRATiledRaster::Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pPool) const
     {
     // Store Specify ?
     if (pi_pStore)
@@ -2234,7 +2257,7 @@ inline uint64_t HRATiledRaster::ComputeTileID (uint32_t pi_RasterID,
 //-----------------------------------------------------------------------------
 const HFCPtr<HRATiledRaster::HRATile> HRATiledRaster::GetTile (uint64_t pi_PosX, uint64_t pi_PosY) const
     {
-    return (GetTile(ComputeIndexFromTile (pi_PosX, pi_PosY)));
+    return (GetTileByIndex(ComputeIndexFromTile (pi_PosX, pi_PosY)));
     }
 
 
@@ -2256,21 +2279,20 @@ void HRATiledRaster::CopyMembers (const HRATiledRaster& pi_rObj)
 
 
 //-----------------------------------------------------------------------------
+// Returns pointer to pool
+//-----------------------------------------------------------------------------
+HPMPool* HRATiledRaster::GetPool()
+    {
+    return m_pPool;
+    }
+
+
+//-----------------------------------------------------------------------------
 // Return a new copy of self
 //-----------------------------------------------------------------------------
 HPMPersistentObject* HRATiledRaster::Clone () const
     {
     return new HRATiledRaster(*this);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// GetRawDataPtr    - Get the buffer's raw data pointer
-//-----------------------------------------------------------------------------
-const void* HRATiledRaster::GetRawDataPtr () const
-    {
-    // Get buffer's raw data pointer...
-    return 0;
     }
 
 //-----------------------------------------------------------------------------
@@ -2310,3 +2332,738 @@ HGFTileIDDescriptor* HRATiledRaster::GetPtrTileDescription() const
     {
     return m_pTileDescriptor;
     }
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+struct TiledImageSourceNode : ImageSourceNode
+{
+protected:
+    TiledImageSourceNode(HRATiledRaster& tiledRaster, HFCPtr<HGF2DCoordSys>& pPhysicalCoordSys, HFCPtr<HRPPixelType>& pixelType)
+        :ImageSourceNode(pixelType),
+        m_tiledRaster(tiledRaster)
+        {
+        // If we have a replacer, it must have same the pixelsize.
+        BeAssert(pixelType->CountPixelRawDataBits() == m_tiledRaster.GetPixelType()->CountPixelRawDataBits());
+        
+        uint64_t width, height;
+        tiledRaster.GetSize(&width, &height);
+        m_physicalExtent = HGF2DExtent(0, 0, (double)width, (double)height, pPhysicalCoordSys);
+        }
+
+    virtual ~TiledImageSourceNode()
+        {
+        }
+
+    virtual HGF2DExtent const& _GetPhysicalExtent() const override { return m_physicalExtent; }
+    virtual HFCPtr<HGF2DCoordSys>& _GetPhysicalCoordSys() override { return const_cast<HFCPtr<HGF2DCoordSys>&>(m_physicalExtent.GetCoordSys()); }
+
+protected:
+    HRATiledRaster&       m_tiledRaster;
+    HGF2DExtent           m_physicalExtent;
+    };
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+struct TiledN8ImageSourceNode : TiledImageSourceNode
+{
+public:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  10/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static RefCountedPtr<TiledImageSourceNode> Create(HRATiledRaster& tiledRaster, HFCPtr<HGF2DCoordSys>& pPhysicalCoordSys, HFCPtr<HRPPixelType>& pixelType, uint32_t scaleShift, HGSResampling const& scaleShiftMethod)
+        {
+        return new TiledN8ImageSourceNode(tiledRaster, pPhysicalCoordSys, pixelType, scaleShift, scaleShiftMethod);
+        }
+
+protected:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    TiledN8ImageSourceNode(HRATiledRaster& tiledRaster, HFCPtr<HGF2DCoordSys>& pPhysicalCoordSys, HFCPtr<HRPPixelType>& pixelType, uint32_t scaleShift, HGSResampling const& scaleShiftMethod)
+        :TiledImageSourceNode(tiledRaster, pPhysicalCoordSys, pixelType), 
+        m_scaleShift(scaleShift), m_scaleFactor(1)
+        {
+#ifdef ENABLE_STRIP_CACHING
+        m_useCacheGrid = false;
+#endif
+        // pixel must be byte aligned, otherwise we cannot reference our internal buffer because that would mean
+        // that a pixel doesn't always start at a byte boundary.
+        HPRECONDITION(m_tiledRaster.GetPixelType()->CountPixelRawDataBits() % 8 == 0); 
+            
+        m_resWidth = (uint64_t)m_tiledRaster.GetPhysicalExtent().GetCorner().GetX();
+        m_resHeight = (uint64_t)m_tiledRaster.GetPhysicalExtent().GetCorner().GetY();
+
+        if (scaleShift > 0)
+            {
+            m_scaleFactor = (0x01 << m_scaleShift);
+            m_stretcherN = (CreateGenericStretcherN(*pixelType, scaleShiftMethod));
+             BeAssert(NULL != m_stretcherN);
+
+            // Compute the size of the resolution we are producing
+            for (uint64_t i = 0; i < m_scaleShift; ++i)
+                {
+                m_resWidth = (m_resWidth + 1) >> 1;
+                m_resHeight = (m_resHeight + 1) >> 1;
+                }
+            }
+        // If we ref only one tile we return it directly.
+        // We cannot refernce the bitmap packet only because HRABitmap must be the last one to reference 
+        // the packet when a memory manager is present. 
+        // Because bitmap dpool allocated packet. see comment in TiledImageSurfaceIterator::NotifyAndInvalidate()
+        else if(m_tiledRaster.GetNumberOfTileX() == 1 && m_tiledRaster.GetNumberOfTileY() == 1)
+            {
+            BeAssert(0 == scaleShift);
+
+            HFCPtr<HRABitmapBase> pTile = m_tiledRaster.GetTile(0, 0)->GetTile();
+            if(pTile->_AsHRABitmapP() != NULL)
+                {
+                m_pSingleBitmap = pTile->_AsHRABitmapP();
+                m_pSingleSurface = HRAPacketSurface::Create((uint32_t)m_resWidth, (uint32_t)m_resHeight, GetPixelType(), const_cast<HFCPtr<HCDPacket>&>(m_pSingleBitmap->GetPacket()), m_pSingleBitmap->ComputeBytesPerWidth());
+                }
+            }
+
+        EvaluateCopyClampPixelsMethods(m_CopyPixelMethod, m_ClampPixelMethod, tiledRaster.GetPixelType()->CountPixelRawDataBits() / 8);
+        }
+
+    ~TiledN8ImageSourceNode()
+        {
+        // Release the surface and sample before before we release the bitmap. No one should be holding the surface at this point.
+        BeAssert(m_pSingleSurface != NULL ? m_pSingleSurface->GetRefCount() == 1 : true);
+        m_pSingleSurface = NULL;
+        m_pSingleBitmap = NULL;
+
+#ifdef ENABLE_STRIP_CACHING
+        // Release the surface and sample before before we delete the allocator. No one should be holding the surface at this point.
+        BeAssert(m_pCachedStrip != NULL ? m_pCachedStrip->GetRefCount() == 1 && m_pCachedStrip->GetSample().GetRefCount() == 1 : true);
+        m_pCachedStrip = NULL;
+#endif
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  12/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef ENABLE_STRIP_CACHING
+    virtual ImagePPStatus _PrepareForStrip(HFCInclusiveGrid const& strip) override
+        {
+
+        m_pCachedStrip = NULL;
+        
+        if (0 == m_scaleShift)
+            {
+            m_useCacheGrid = false;
+            m_cachedGrid.InitEmpty();
+            }
+        else
+            {
+            m_useCacheGrid = true;
+            m_cachedGrid = strip;
+            }
+
+        return TiledImageSourceNode::_PrepareForStrip(strip);
+        }
+#endif        
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual ImagePPStatus _GetRegion(HRAImageSurfacePtr& pOutSurface, PixelOffset64& outOffset, HFCInclusiveGrid const& region, IImageAllocatorR allocator) override
+        {
+        ImagePPStatus status = IMAGEPP_STATUS_Success;
+
+        if(m_pSingleSurface != NULL)
+            {
+            outOffset.x = outOffset.y = 0;
+
+            pOutSurface = m_pSingleSurface;
+            return IMAGEPP_STATUS_Success;
+            }
+
+#ifdef ENABLE_STRIP_CACHING
+        if(m_useCacheGrid)
+            {
+            if(m_pCachedStrip == NULL)
+                {
+                ImagePPStatus status;
+                HRAImageSamplePtr pStripSample = HRAImageSample::CreateSample(status, m_cachedGrid.GetWidth(), m_cachedGrid.GetHeight(), GetPixelType(), m_cachedBlockAllocator);
+
+                // If requested region is outside the physical region GenerateSampleData will clamp the missing data.
+                if (IMAGEPP_STATUS_Success != (status = GenerateSampleData(*pStripSample, m_cachedGrid)))
+                    return status;
+
+                m_pCachedStrip = HRASampleSurface::Create(*pStripSample);
+                }
+
+            outOffset.x = m_cachedGrid.GetXMin();
+            outOffset.y = m_cachedGrid.GetYMin();
+            pOutSurface = m_pCachedStrip;
+            return IMAGEPP_STATUS_Success;
+            }
+#endif
+
+        HRAImageSamplePtr pSample = HRAImageSample::CreateSample(status, (uint32_t)region.GetWidth(), (uint32_t)region.GetHeight(), GetPixelType(), allocator);
+        if (IMAGEPP_STATUS_Success != status)
+            return status;
+
+        // If requested region is outside the physical region GenerateSampleData will clamp the missing data.
+        if (IMAGEPP_STATUS_Success != (status = GenerateSampleData(*pSample, region)))
+            return status;
+
+        outOffset.x = region.GetXMin();
+        outOffset.y = region.GetYMin();
+        pOutSurface = HRASampleSurface::Create(*pSample);
+
+        return pOutSurface.get() != NULL ? IMAGEPP_STATUS_Success : IMAGEPP_STATUS_UnknownError;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Stephane.Poulin                 07/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    ImagePPStatus GenerateSampleData(HRAImageSampleR outSample, HFCInclusiveGrid const& srcGrid)
+        {
+        HPRECONDITION(srcGrid.GetWidth() < ULONG_MAX && srcGrid.GetHeight() < ULONG_MAX);
+        HPRECONDITION(srcGrid.GetWidth() <= outSample.GetWidth() && srcGrid.GetHeight() <= outSample.GetHeight());
+
+        if(m_CopyPixelMethod == NULL || m_ClampPixelMethod == NULL)
+            return IMAGEPP_STATUS_NoImplementation;
+
+        if (outSample.GetBufferP() == NULL)
+            return IMAGEPP_STATUS_UnknownError;
+
+        const size_t bytePerPixel = (outSample.GetPixelType().CountPixelRawDataBits() + 7) / 8;
+        const uint32_t blockWidth  = (uint32_t)m_tiledRaster.GetTileSizeX();
+        const uint32_t blockHeight = (uint32_t)m_tiledRaster.GetTileSizeY();
+
+        const uint64_t tiledRasterWidth = (uint64_t)m_tiledRaster.GetPhysicalExtent().GetCorner().GetX();
+        const uint64_t tiledRasterHeight = (uint64_t)m_tiledRaster.GetPhysicalExtent().GetCorner().GetY();
+        const uint64_t lastTilePosX = (m_tiledRaster.GetNumberOfTileX() - 1)*blockWidth;
+        const uint64_t lastTilePosY = (m_tiledRaster.GetNumberOfTileY() - 1)*blockHeight;
+
+        HFCInclusiveGrid availableGrid;
+        availableGrid.InitFromLenght(0.0, 0.0, m_resWidth, m_resHeight);
+
+        // Compute the position in source coordinates
+        const int64_t scaledXMin = MAX(MIN(srcGrid.GetXMin() * m_scaleFactor, (int64_t)tiledRasterWidth), 0);
+        const int64_t scaledYMin = MAX(MIN(srcGrid.GetYMin() * m_scaleFactor, (int64_t)tiledRasterHeight), 0);
+        const int64_t scaledXMax = MAX(MIN((srcGrid.GetXMax() + 1) * m_scaleFactor, (int64_t)tiledRasterWidth), 0);
+        const int64_t scaledYMax = MAX(MIN((srcGrid.GetYMax() + 1) * m_scaleFactor, (int64_t)tiledRasterHeight), 0);
+
+        HFCInclusiveGrid scaledSrcGrid((double)scaledXMin, (double)scaledYMin, (double)scaledXMax, (double)scaledYMax);
+
+        size_t outPitch;
+        Byte* pOutBuffer = outSample.GetBufferP()->GetDataP(outPitch);
+
+        HRAImageBufferPtr pDownSampledSrcBufPtr;
+        SquareTessellation srcTessellation(scaledSrcGrid, blockWidth, blockHeight);
+
+        for (auto srcTileItr : srcTessellation)
+            {
+            // Must be within source physical. Clamp occurs in a later step.
+            BeAssert(IN_RANGE(srcTileItr.GetXMin(), 0, (int64_t)lastTilePosX) && IN_RANGE(srcTileItr.GetYMin(), 0, (int64_t)lastTilePosY));
+            const uint64_t tilePosX = srcTileItr.GetXMin();
+            const uint64_t tilePosY = srcTileItr.GetYMin();
+
+            HFCPtr<HRABitmapBase> pSrcBaseTile = m_tiledRaster.GetTile(tilePosX, tilePosY)->GetTile();
+            BeAssert(pSrcBaseTile->IsCompatibleWith(HRABitmap::CLASS_ID));
+            HFCPtr<HRABitmap> pSrcTile = static_cast<HRABitmap*>(pSrcBaseTile.GetPtr());
+
+            uint64_t tileSizeX, tileSizeY;
+            pSrcTile->GetSize(&tileSizeX, &tileSizeY);
+            Byte const* pSrcBuffer = pSrcTile->GetPacket()->GetBufferAddress();
+            size_t srcPitch = pSrcTile->ComputeBytesPerWidth();
+
+            // DownSample source tile.
+            if (m_scaleShift > 0)
+                {
+                HFCInclusiveGrid tileGrid, effectiveTileGrid;
+                tileGrid.InitFromLenght((double)srcTileItr.GetXMin(), (double)srcTileItr.GetYMin(), tileSizeX, tileSizeY);
+                effectiveTileGrid.InitFromIntersectionOf(tileGrid, scaledSrcGrid);
+                double xmin = effectiveTileGrid.GetXMin() / (double)m_scaleFactor;
+                double ymin = effectiveTileGrid.GetYMin() / (double)m_scaleFactor;
+                double xmax = (effectiveTileGrid.GetXMax()+1) / (double)m_scaleFactor;
+                double ymax = (effectiveTileGrid.GetYMax()+1) / (double)m_scaleFactor;
+
+                HFCInclusiveGrid effectiveDstGrid(xmin, ymin, xmax, ymax);
+
+                const uint64_t tileOffsetX = effectiveTileGrid.GetXMin() - tilePosX;
+                const uint64_t tileOffsetY = effectiveTileGrid.GetYMin() - tilePosY;
+                
+                const uint64_t dstOffsetX = effectiveDstGrid.GetXMin() - srcGrid.GetXMin();
+                const uint64_t dstOffsetY = effectiveDstGrid.GetYMin() - srcGrid.GetYMin();
+
+                uint32_t outWidth = (uint32_t)effectiveDstGrid.GetWidth();
+                uint32_t outHeight = (uint32_t)effectiveDstGrid.GetHeight();
+                uint32_t inWidth = (uint32_t)effectiveTileGrid.GetWidth();
+                uint32_t inHeight = (uint32_t)effectiveTileGrid.GetHeight();
+
+                Byte const* pInData = pSrcBuffer + tileOffsetY*srcPitch + tileOffsetX*bytePerPixel;
+                Byte*       pOutData = pOutBuffer + dstOffsetY*outPitch + dstOffsetX*bytePerPixel;
+
+                (*m_stretcherN)(outWidth, outHeight, pOutData, outPitch, inWidth, inHeight, pInData, srcPitch, 1 << m_scaleShift);
+                }
+            else
+                {
+                // Compute the position of the src into the destination
+                const int64_t srcPosX = srcTileItr.GetXMin() / m_scaleFactor;
+                const int64_t srcPosY = srcTileItr.GetYMin() / m_scaleFactor;
+
+                // Compute the first valid src pixel to copy in the dst
+                const int64_t firstSrcX = srcPosX > srcGrid.GetXMin() ? 0 : srcGrid.GetXMin() - srcPosX;
+                const int64_t firstSrcY = srcPosY > srcGrid.GetYMin() ? 0 : srcGrid.GetYMin() - srcPosY;
+
+                // Compute the last valid pixel of the src
+                const int64_t lastSrcX = MIN(srcPosX + (int64_t)tileSizeX - 1, srcGrid.GetXMax());
+                const int64_t lastSrcY = MIN(srcPosY + (int64_t)tileSizeY - 1, srcGrid.GetYMax());
+
+                const uint32_t width = (uint32_t)(lastSrcX - (srcPosX + firstSrcX) + 1);
+                const uint32_t height = (uint32_t)(lastSrcY - (srcPosY + firstSrcY) + 1);
+
+                // Compute destination positions
+                const int64_t dstPosX = MAX(srcPosX, srcGrid.GetXMin());
+                const int64_t dstPosY = MAX(srcPosY, srcGrid.GetYMin());
+                const int64_t dstOffsetX = dstPosX - srcGrid.GetXMin();
+                const int64_t dstOffsetY = dstPosY - srcGrid.GetYMin();
+
+                Byte const* pSrc = pSrcBuffer + firstSrcY*srcPitch + firstSrcX*bytePerPixel;
+                Byte*       pDst = pOutBuffer + dstOffsetY*outPitch + dstOffsetX*bytePerPixel;
+
+                PixelOffset64 srcOffsetX(0, 0);
+                (*m_CopyPixelMethod)(width, height, pDst, outPitch, width, height, pSrc, srcPitch, srcOffsetX);
+                }
+            }
+
+        (*m_ClampPixelMethod)(availableGrid, srcGrid, outSample.GetWidth(), outSample.GetHeight(), pOutBuffer, outPitch);
+        return IMAGEPP_STATUS_Success;
+        }
+
+protected:
+    uint64_t                  m_resWidth;
+    uint64_t                  m_resHeight;
+    uint32_t                  m_scaleFactor;
+    uint32_t                  m_scaleShift;
+    Stretch_1N_FunctionP      m_stretcherN;
+
+    // For case where there is only one block in the tiledRaster:
+    // We must hold the bitmap since surface will reference its packet and HRABitmap does a nasty packet allocation/desallocation trick 
+    // when GetPool()->IsMemoryMgrEnabled(). See HRABitmap::~HRABitmap()
+    HRAImageSurfacePtr        m_pSingleSurface;
+    HFCPtr<HRABitmap>         m_pSingleBitmap; 
+    
+#ifdef ENABLE_STRIP_CACHING
+    bool                      m_useCacheGrid;
+    HFCInclusiveGrid          m_cachedGrid;
+    HRASampleSurfacePtr       m_pCachedStrip;
+    KeepLastBlockAllocator    m_cachedBlockAllocator;
+#endif
+
+    CopyPixelsMethodN8_T      m_CopyPixelMethod;
+    ClampPixelsMethodN8_T     m_ClampPixelMethod;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+struct TiledRLEImageSourceNode : TiledImageSourceNode
+{
+public:
+    static RefCountedPtr<TiledImageSourceNode> Create(HRATiledRaster& tiledRaster, HFCPtr<HGF2DCoordSys>& pPhysicalCoordSys, HFCPtr<HRPPixelType>& pixelType)
+        {
+        // Only strip is supported.
+        if (tiledRaster.GetNumberOfTileX() != 1)
+            return NULL;
+
+        return new TiledRLEImageSourceNode(tiledRaster, pPhysicalCoordSys, pixelType);
+        }
+
+protected:
+    ~TiledRLEImageSourceNode(){}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    TiledRLEImageSourceNode(HRATiledRaster& tiledRaster, HFCPtr<HGF2DCoordSys>& pPhysicalCoordSys, HFCPtr<HRPPixelType>& pixelType)
+        :TiledImageSourceNode(tiledRaster, pPhysicalCoordSys, pixelType)
+        {
+        BeAssert(GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID) || GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID));
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual ImagePPStatus _GetRegion(HRAImageSurfacePtr& pOutSurface, PixelOffset64& outOffset, HFCInclusiveGrid const& region, IImageAllocatorR allocator) override
+        {
+        // For RLE we do not care about the asked region.  It returns a ref to all the required strip, without copying memory. 
+        // If extra clamping pixels are required it is assumed that the transformNode sampler will do it.
+
+        BeAssert(m_tiledRaster.GetNumberOfTileX() == 1); // Only strip is supported.
+
+        uint64_t width64, height64;
+        m_tiledRaster.GetSize(&width64, &height64);
+
+        uint64_t firstStrip = MAX(0, region.GetYMin() / m_tiledRaster.GetTileSizeY());
+        uint64_t lastStrip = MIN(region.GetYMax() / m_tiledRaster.GetTileSizeY(), m_tiledRaster.GetNumberOfTileY()-1);
+
+        HRAPacketRleSurfacePtr pSurfaceRle = HRAPacketRleSurface::CreateSurface((uint32_t)width64, (uint32_t)MIN((lastStrip+1)*m_tiledRaster.GetTileSizeY(), height64), GetPixelType(), (uint32_t)m_tiledRaster.GetTileSizeY());
+
+        for (uint64_t strip = firstStrip; strip <= lastStrip; ++strip)
+            {
+            uint64_t stripPos = strip*m_tiledRaster.GetTileSizeY();
+
+            HFCPtr<HRABitmapBase> pTile = m_tiledRaster.GetTile(0, stripPos)->GetTile();
+            BeAssert(pTile->IsCompatibleWith(HRABitmapRLE::CLASS_ID));
+
+            if (pTile->IsCompatibleWith(HRABitmapRLE::CLASS_ID))
+                {
+                HFCPtr<HRABitmapRLE> pSrcTile = static_cast<HRABitmapRLE*>(pTile.GetPtr());
+                pSurfaceRle->AppendStrip(pSrcTile);
+                }
+            }       
+
+        outOffset.x = 0;        // RLE is always stripped.
+        outOffset.y = firstStrip * m_tiledRaster.GetTileSizeY();
+        pOutSurface = pSurfaceRle;
+
+        return IMAGEPP_STATUS_Success;
+        }
+
+private:
+    HFCPtr<HCDPacketRLE> m_pRLERaster;
+    list<HFCPtr<HRABitmapBase>> m_pStripsInUse;
+    };
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+template<typename SinkNode_T>
+struct TiledImageSurfaceIterator : public ImageSurfaceIterator
+{
+public:
+    TiledImageSurfaceIterator(SinkNode_T& sinkNode, HFCInclusiveGrid const& grid)
+    :ImageSurfaceIterator(),
+     m_sinkNode(sinkNode),
+     m_pCurrentTile(NULL),
+     m_tessellation(grid, (uint32_t)sinkNode.GetRaster().GetTileSizeX(), (uint32_t)sinkNode.GetRaster().GetTileSizeY())
+        {
+        m_blockItr = m_tessellation.begin();
+        LoadCurrentTile();
+        }
+
+    virtual ~TiledImageSurfaceIterator()
+        {
+        NotifyAndInvalidate();
+        }
+    
+    HRATiledRaster& GetRaster() { return m_sinkNode.GetRaster(); }
+    virtual bool _Next() override { ++m_blockItr; return LoadCurrentTile();}
+    HFCInclusiveGrid const& GetGrid() const { return m_tessellation.GetGrid(); }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  10/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void NotifyAndInvalidate()
+        {
+        if (m_pCurrentTile != NULL)
+            {
+            BeAssert(IsValid());
+
+            HFCInclusiveGrid tileGrid;
+            tileGrid.InitFromLenght(0, 0, GetRaster().GetTileSizeX(), GetRaster().GetTileSizeY());
+
+            HFCInclusiveGrid effectiveGrid;
+            effectiveGrid.InitFromIntersectionOf(m_tessellation.m_grid, tileGrid);
+
+            HVEShape rect((double)effectiveGrid.GetXMin(), (double)effectiveGrid.GetYMin(), (double)effectiveGrid.GetXMax() + 1.0, (double)effectiveGrid.GetYMax() + 1.0, m_pCurrentTile->GetTile()->GetPhysicalCoordSys());
+            m_pCurrentTile->GetTile()->Updated(&rect);
+            
+            }
+            
+        // ***  IMPORTANT ***
+        // The cleanup order is important here because Bitmap hack the packet allocation by using its pool alloc/free memory(see HRABitmap destructor). 
+        // So in these cases, we cannot hold a packet longer than the lifetime of the bitmap. If we do, bitmap special cleanup won't be executed and the 
+        // packet will try to delete memory that was allocated by the bitmap pool(crash!). 
+        // First invalidate the surface which hold the packet and then release the HRATile, that hold the bitmap that hold the packet.
+        Invalidate();   // Release the surface and packet. 
+        m_pCurrentTile = NULL;      // Release the tile and maybe cleanup bitmap and its packet.
+        }
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  10/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bool LoadCurrentTile()
+        {
+        NotifyAndInvalidate();       
+
+        if (!(m_blockItr != m_tessellation.end()))
+            return false;
+        
+        BeAssert((*m_blockItr).GetXMin() % GetRaster().GetTileSizeX() == 0 && (*m_blockItr).GetYMin() % GetRaster().GetTileSizeY() == 0);
+
+        uint64_t tilePosX = (*m_blockItr).GetXMin();
+        uint64_t tilePosY = (*m_blockItr).GetYMin();
+
+        m_pCurrentTile = GetRaster().GetTile(tilePosX, tilePosY);
+
+        HFCInclusiveGrid tileGrid((double)(MAX((uint64_t)GetGrid().GetXMin(), tilePosX) - tilePosX),
+                                  (double)(MAX((uint64_t)GetGrid().GetYMin(), tilePosY) - tilePosY),
+                                  (double)(MIN((uint64_t)GetGrid().GetXMax() + 1, tilePosX + GetRaster().GetTileSizeX()) - tilePosX),
+                                  (double)(MIN((uint64_t)GetGrid().GetYMax() + 1, tilePosY + GetRaster().GetTileSizeY()) - tilePosY));
+
+        HRATransaction* pTransaction = m_sinkNode.GetTransaction(); 
+      
+        if (m_pCurrentTile->GetTile()->IsCompatibleWith(HRABitmap::CLASS_ID))
+            {
+            HRABitmap* pBitmap = static_cast<HRABitmap*>(m_pCurrentTile->GetTile().GetPtr());
+
+            BeAssert(pBitmap->GetPixelType()->CountPixelRawDataBits() % 8 == 0);    // N1 is not supported, it should have 
+
+            // Use sink node pixeltype that take replacing pixeltype into account.
+            HRAImageSurfacePtr pSurface = HRAPacketSurface::Create((uint32_t)GetRaster().GetTileSizeX(), (uint32_t)GetRaster().GetTileSizeY(), m_sinkNode.GetPixelType(), const_cast<HFCPtr<HCDPacket>&>(pBitmap->GetPacket()), pBitmap->ComputeBytesPerWidth());
+            
+            SetCurrent(*pSurface, PixelOffset64(tilePosX, tilePosY));   // take owenership of surface.
+
+            // Saved data for undo
+            if (NULL != pTransaction)
+                {
+                if (tileGrid.GetWidth() == GetRaster().GetTileSizeX() && tileGrid.GetHeight() == GetRaster().GetTileSizeY())
+                    {
+                    // push entire tile, one shot.
+                    pTransaction->PushEntry(tilePosX, tilePosY, (uint32_t)GetRaster().GetTileSizeX(), (uint32_t)GetRaster().GetTileSizeY(), pBitmap->GetPacket()->GetBufferSize(), pBitmap->GetPacket()->GetBufferAddress());
+                    }
+                else
+                    {
+                    size_t pixelSize = pBitmap->GetPixelType()->CountPixelRawDataBits() / 8;
+                    size_t lineSize = ((uint32_t)tileGrid.GetWidth())*pixelSize;
+                    size_t pitch = ((uint32_t)GetRaster().GetTileSizeX())*pixelSize;
+                    Byte const* pBuffer = pBitmap->GetPacket()->GetBufferAddress() + (tileGrid.GetXMin()*pixelSize);
+                    // push line that touches.
+                    for (int64_t line = tileGrid.GetYMin(); line < tileGrid.GetYMax() + 1; ++line)
+                        {
+                        BeAssert(pBuffer + line*pitch + lineSize <= pBitmap->GetPacket()->GetBufferAddress() + pBitmap->GetPacket()->GetDataSize());
+
+                        // push entire line
+                        pTransaction->PushEntry(tilePosX + tileGrid.GetXMin(), tilePosY + line, (uint32_t)tileGrid.GetWidth(), 1, lineSize, pBuffer + line*pitch);
+                        }
+                    }
+                }
+            }
+        else if (m_pCurrentTile->GetTile()->IsCompatibleWith(HRABitmapRLE::CLASS_ID))
+            {
+            BeAssert(m_sinkNode.GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8RLE::CLASS_ID) || m_sinkNode.GetPixelType()->IsCompatibleWith(HRPPixelTypeI1R8G8B8A8RLE::CLASS_ID));
+
+            HRABitmapRLE* pBitmap = static_cast<HRABitmapRLE*>(m_pCurrentTile->GetTile().GetPtr());
+
+            // Use sink node pixeltype that take replacing pixeltype into account.
+            HRAPacketRleSurfacePtr pSurfaceRle = HRAPacketRleSurface::CreateSurface((uint32_t)GetRaster().GetTileSizeX(), (uint32_t)GetRaster().GetTileSizeY(), m_sinkNode.GetPixelType(), (uint32_t)GetRaster().GetTileSizeY());
+
+            HFCPtr<HRABitmapRLE> pBitmapRle(pBitmap); // HRABitmapRLE is always an HFCPtr.
+            pSurfaceRle->AppendStrip(pBitmapRle);
+
+            SetCurrent(*pSurfaceRle, PixelOffset64(tilePosX, tilePosY));   // take owenership of surface.
+
+            // Saved data for undo
+            if (NULL != pTransaction)
+                {
+                // push entire line that intersect
+                for (int64_t line = tileGrid.GetYMin(); line < tileGrid.GetYMax() + 1; ++line)
+                    {
+                    pTransaction->PushEntry(0, tilePosY + line, (uint32_t)GetRaster().GetTileSizeX(), 1, pBitmap->GetPacket()->GetLineDataSize((uint32_t)line), pBitmap->GetPacket()->GetLineBuffer((uint32_t)line));
+                    }
+                }
+            }
+
+        return IsValid();
+        }
+
+
+    SinkNode_T& m_sinkNode;
+    HFCPtr<HRATiledRaster::HRATile> m_pCurrentTile;
+    SquareTessellation m_tessellation;
+    SquareTessellation::const_iterator m_blockItr;
+};
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+struct ImagePP::TiledImageSinkNode : ImageSinkNode
+{
+public:
+    static ImageSinkNodePtr Create(HRATiledRaster& raster, HVEShape const& sinkShape, HFCPtr<HGF2DCoordSys> pPhysicalCoordSys, HFCPtr<HRPPixelType>& pReplacingPixelType)
+        {
+        uint64_t width, height;
+        raster.GetSize(&width, &height);
+
+        return new TiledImageSinkNode(raster, sinkShape, pReplacingPixelType, HGF2DExtent(0, 0, (double)width, (double)height, pPhysicalCoordSys));
+        }
+
+    HRATiledRaster& GetRaster() { return m_raster; }
+
+protected:
+        
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  10/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    TiledImageSinkNode(HRATiledRaster& raster, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType, HGF2DExtent const& physicalExtent)
+        :ImageSinkNode(sinkShape, pReplacingPixelType, physicalExtent), 
+        m_raster(raster)
+        {      
+        //Must be within raster physical extent.
+        HDEBUGCODE
+            (
+            HFCInclusiveGrid __grid(sinkShape.GetExtent().GetXMin(), sinkShape.GetExtent().GetYMin(), sinkShape.GetExtent().GetXMax(), sinkShape.GetExtent().GetYMax());
+            BeAssert(__grid.GetXMin() >= 0 && __grid.GetYMin() >= 0);
+            BeAssert(__grid.GetXMax() + 1 <= GetPhysicalExtent().GetXMax() && __grid.GetYMax() + 1 <= GetPhysicalExtent().GetYMax());
+            )
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  10/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    ~TiledImageSinkNode(){}
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  10/2014
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual ImageSurfaceIterator* _GetImageSurfaceIterator(HFCInclusiveGrid& strip) override 
+        {
+        BeAssert(strip.GetXMin() >= 0 && strip.GetYMin() >= 0);
+        BeAssert(strip.GetXMax() + 1 <= m_raster.GetPhysicalExtent().GetXMax() && strip.GetYMax() + 1 <= m_raster.GetPhysicalExtent().GetYMax());
+
+        return new TiledImageSurfaceIterator<TiledImageSinkNode>(*this, strip); 
+        }
+    
+    //! Native block size of the sink.
+    virtual uint32_t _GetBlockSizeX() override { return (uint32_t)m_raster.GetTileSizeX(); }
+    virtual uint32_t _GetBlockSizeY() override { return (uint32_t)m_raster.GetTileSizeY(); }
+
+private:
+    HRATiledRaster& m_raster;
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageSinkNodePtr HRATiledRaster::_GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType)
+    {
+    status = IMAGEPP_STATUS_Success;
+
+    HFCPtr<HRPPixelType> pEffectivePixelType = pReplacingPixelType ? pReplacingPixelType : GetPixelType();
+
+    if (m_pBitmapModel->IsCompatibleWith(HRABitmapRLE::CLASS_ID))
+        {
+        //Image Node and Image sample use the pixel type to differentiate between 1bit and Rle data. Unlike HRABitmap[RLE] that use pixeltype and codec.
+        HFCPtr<HRPPixelType> pRlePixelType = ImageNode::TransformToRleEquivalent(pEffectivePixelType);
+        if (pRlePixelType == NULL)
+            {
+            BeAssert(!"Incompatible replacing pixelType");
+            status = COPYFROM_STATUS_IncompatiblePixelTypeReplacer;
+            return NULL;
+            }
+
+        pEffectivePixelType = pRlePixelType;
+        }
+    else if (pEffectivePixelType->CountPixelRawDataBits() % 8 == 0)
+        {
+        // OK..
+        }
+    else
+        {
+        // We support only RLE and N8.
+        BeAssert(!"HRATiledRaster unsupported pixeltype");
+        status = IMAGEPP_STATUS_NoImplementation;
+        return NULL;
+        }
+
+    return TiledImageSinkNode::Create(*this, sinkShape, GetPhysicalCoordSys(), pEffectivePixelType);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRATiledRaster::_BuildCopyToContext(ImageTransformNodeR parentNode, HRACopyToOptionsCR options)
+    {
+    BeAssert(options.GetReplacingPixelType() == NULL || options.GetReplacingPixelType()->CountPixelRawDataBits() == GetPixelType()->CountPixelRawDataBits());
+    HFCPtr<HRPPixelType> pEffectivePixelType = (options.GetReplacingPixelType() != NULL) ? options.GetReplacingPixelType() : GetPixelType();
+
+    // Get the effective logical and physical coordsys
+    HFCPtr<HGF2DCoordSys> pEffLogCS(GetCoordSys());
+    HFCPtr<HGF2DCoordSys> pEffPhyCS(GetPhysicalCoordSys());
+    if (NULL != options.GetReplacingCoordSys().GetPtr())
+        {
+        pEffLogCS = options.GetReplacingCoordSys();
+
+        HFCPtr<HGF2DTransfoModel> pPhysicalToLogical(GetPhysicalCoordSys()->GetTransfoModelTo(GetCoordSys()));
+        HFCPtr<HGF2DTransfoModel> pSimplModel(pPhysicalToLogical->CreateSimplifiedModel());
+        if (NULL != pSimplModel)
+            pPhysicalToLogical = pSimplModel;
+
+        pEffPhyCS = new HGF2DCoordSys(*pPhysicalToLogical, pEffLogCS);
+        }
+
+    // Validate that we intersect with copyRegion.
+    HDEBUGCODE
+        (
+        HVEShape myPhysicalExtent(GetPhysicalExtent());
+        myPhysicalExtent.SetCoordSys(pEffPhyCS);
+
+        BeAssert(options.GetShape()->HasIntersect(myPhysicalExtent));
+        );
+
+    ImagePPStatus status = IMAGEPP_STATUS_Success;
+
+    RefCountedPtr<TiledImageSourceNode> pSource;
+    
+    if (m_pBitmapModel->IsCompatibleWith(HRABitmapRLE::CLASS_ID))
+        {
+        //Image Node and Image sample use the pixel type to differentiate between 1bit and Rle data. Unlike HRABitmap[RLE] that use pixeltype and codec.
+        HFCPtr<HRPPixelType> pRlePixelType = ImageNode::TransformToRleEquivalent(pEffectivePixelType);
+        if (pRlePixelType == NULL)
+            {
+            BeAssert(!"Incompatible replacing pixelType");
+            status = COPYFROM_STATUS_IncompatiblePixelTypeReplacer;
+            }
+        else
+            {
+            pSource = TiledRLEImageSourceNode::Create(*this, pEffPhyCS, pRlePixelType);
+            }
+        }
+    else if (pEffectivePixelType->CountPixelRawDataBits() % 8 == 0)
+        {
+        uint32_t scaleShift = 0;
+        uint64_t width, height;
+        GetSize(&width, &height);
+
+        // Do not downsample if the size of the tiled raster is <= MANAGEABLE_RASTER_PHYSICAL_SIZE
+        // Do not scale shift if we have only one block. We will return it directly.
+        if(!(GetNumberOfTileX() == 1 && GetNumberOfTileY() == 1) &&     // isSingleBlock?
+            (width > MANAGEABLE_RASTER_PHYSICAL_SIZE || height > MANAGEABLE_RASTER_PHYSICAL_SIZE))
+            {
+            // Evaluate the scale factor between the physical coord sys of the source and the destination.
+            scaleShift = EvaluateScaleFactorPowerOf2(parentNode.GetPhysicalCoordSys(), pEffPhyCS, *options.GetShape());
+            if (scaleShift > 0)
+                {
+                const double scaleFactor = pow(2, scaleShift);
+                HFCPtr<HGF2DStretch> pStretch(new HGF2DStretch(HGF2DDisplacement(), scaleFactor, scaleFactor));
+                pEffPhyCS = new HGF2DCoordSys(*pStretch, pEffPhyCS);
+                }
+            }
+
+        pSource = TiledN8ImageSourceNode::Create(*this, pEffPhyCS, pEffectivePixelType, scaleShift, options.GetResamplingMode());
+        }
+    else
+        {
+        // We support only RLE and N8.
+        BeAssert(!"HRATiledRaster unsupported pixeltype");
+        status = IMAGEPP_STATUS_NoImplementation;
+        }
+
+    if (IMAGEPP_STATUS_Success != status)
+        return status;
+
+    if (pSource == NULL)
+        return IMAGEPP_STATUS_NoImplementation;
+  
+    return parentNode.LinkTo(*pSource);
+    }
+

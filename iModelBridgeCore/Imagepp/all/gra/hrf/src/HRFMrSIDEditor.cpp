@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFMrSIDEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-// Class HRFBmpLineEditor
+// Class HRFMrSIDEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFMrSIDFile.h>
 #include <Imagepp/all/h/HRFMrSIDEditor.h>
@@ -80,13 +80,14 @@ HRFMrSIDEditor::~HRFMrSIDEditor()
 // Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFMrSIDEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                  uint32_t pi_PosBlockY,
-                                  Byte* po_pData,
+HSTATUS HRFMrSIDEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                  uint64_t pi_PosBlockY,
+                                  Byte*  po_pData,
                                   HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     HSTATUS Status = H_ERROR;
     HRFMrSIDFile* pMrSIDFile = (HRFMrSIDFile*)m_pRasterFile.GetPtr();
@@ -106,8 +107,8 @@ HSTATUS HRFMrSIDEditor::ReadBlock(uint32_t pi_PosBlockX,
             {
             LT_STATUS sts = LT_STS_Uninit;
 
-            int BlockHeight = __min(__max((int)pMrSIDFile->m_pStdViewHeight[m_ResNb] - (int)pi_PosBlockY, 0), BLOCK_HEIGHT);
-            int BlockWidth  = __min(__max((int)pMrSIDFile->m_pStdViewWidth[m_ResNb]  - (int)pi_PosBlockX, 0), BLOCK_WIDTH);
+            int BlockHeight = MIN(MAX((int)pMrSIDFile->m_pStdViewHeight[m_ResNb] - (int)pi_PosBlockY, 0), BLOCK_HEIGHT);
+            int BlockWidth  = MIN(MAX((int)pMrSIDFile->m_pStdViewWidth[m_ResNb]  - (int)pi_PosBlockX, 0), BLOCK_WIDTH);
 
             // Lock the sister file
             if(pi_pSisterFileLock == 0)
@@ -120,7 +121,7 @@ HSTATUS HRFMrSIDEditor::ReadBlock(uint32_t pi_PosBlockX,
             delete pMrSIDFile->m_pSceneBuffer;
             pMrSIDFile->m_pSceneBuffer = new LTISceneBuffer(pMrSIDFile->m_pImageReader->getPixelProps(), BlockWidth, BlockHeight, 0);
 
-            const LTIScene scene(pi_PosBlockX, pi_PosBlockY, BlockWidth, BlockHeight,  pMrSIDFile->m_pRatio[m_ResNb]);
+            const LTIScene scene((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, BlockWidth, BlockHeight,  pMrSIDFile->m_pRatio[m_ResNb]);
             sts = pMrSIDFile->m_pImageReader->read(scene, *pMrSIDFile->m_pSceneBuffer);
 
             if (LT_SUCCESS(sts))
@@ -150,9 +151,9 @@ HSTATUS HRFMrSIDEditor::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFMrSIDEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                   uint32_t     pi_PosBlockY,
-                                   const Byte* pi_pData,
+HSTATUS HRFMrSIDEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                   uint64_t     pi_PosBlockY,
+                                   const Byte*  pi_pData,
                                    HFCLockMonitor const* pi_pSisterFileLock)
     {
     HASSERT(0); // not supported

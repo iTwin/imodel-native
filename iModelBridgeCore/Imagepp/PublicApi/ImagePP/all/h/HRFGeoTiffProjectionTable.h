@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoTiffProjectionTable.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -31,11 +31,12 @@
     -----------------------------------------------------------------------------
 */
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFGeoTiffProjectionTable : public HRFGeoTiffCompressedTable
     {
 public:
 
-    HDECLARE_CLASS_ID(1493, HRFGeoTiffCompressedTable);
+    HDECLARE_CLASS_ID(HRFGeoTiffId_ProjectionTable, HRFGeoTiffCompressedTable);
     /** -----------------------------------------------------------------------------
         HRFGeoTiffProjectionRecord
         -----------------------------------------------------------------------------
@@ -55,7 +56,7 @@ public:
                                       HRFGeoTiffProjectionRecord*   po_pRecord) const;
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg , HRFGeoTiffProjectionTable)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT , HRFGeoTiffProjectionTable)
 
     static HRFGeoTiffCompressedTable::ColumnInfo    s_TableDef[];
     static Byte                                    s_NbColumns;
@@ -71,4 +72,5 @@ private:
     HRFGeoTiffProjectionTable(const HRFGeoTiffProjectionTable&);
     HRFGeoTiffProjectionTable& operator=(const HRFGeoTiffProjectionTable&);
     };
+END_IMAGEPP_NAMESPACE
 

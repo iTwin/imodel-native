@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DSimilitude.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     This method extracts the translation component of the model.
 
@@ -82,3 +83,4 @@ inline uint32_t HGF2DSimilitude::GetMinimumNumberOfTiePoints()
     }
 
 
+END_IMAGEPP_NAMESPACE

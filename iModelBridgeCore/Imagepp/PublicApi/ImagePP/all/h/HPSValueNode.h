@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSValueNode.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPSValueNode.h
@@ -14,6 +14,8 @@
 #pragma once
 
 #include <Imagepp/all/h/HPANode.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HPSObjectValue : public HFCShareableObject<HPSObjectValue>
     {
@@ -78,3 +80,5 @@ private:
     ValueType           m_Type;
     Value               m_Value;
     };
+
+END_IMAGEPP_NAMESPACE

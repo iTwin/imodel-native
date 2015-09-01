@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarper.cpp 21167 2010-11-24 15:19:51Z warmerdam $
+ * $Id: gdalwarper.cpp 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implementation of high level convenience APIs for warper.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2003, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@
 #include "ogr_api.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalwarper.cpp 21167 2010-11-24 15:19:51Z warmerdam $");
+CPL_CVSID("$Id: gdalwarper.cpp 27739 2014-09-25 18:49:52Z goatbar $");
 
 /************************************************************************/
 /*                         GDALReprojectImage()                         */
@@ -72,13 +73,13 @@ CPL_CVSID("$Id: gdalwarper.cpp 21167 2010-11-24 15:19:51Z warmerdam $");
  * @return CE_None on success or CE_Failure if something goes wrong.
  */
 
-CPLErr CPL_STDCALL 
-GDALReprojectImage( GDALDatasetH hSrcDS, const char *pszSrcWKT, 
+CPLErr CPL_STDCALL
+GDALReprojectImage( GDALDatasetH hSrcDS, const char *pszSrcWKT,
                     GDALDatasetH hDstDS, const char *pszDstWKT,
-                    GDALResampleAlg eResampleAlg, 
-                    double dfWarpMemoryLimit, 
+                    GDALResampleAlg eResampleAlg,
+                    CPL_UNUSED double dfWarpMemoryLimit,
                     double dfMaxError,
-                    GDALProgressFunc pfnProgress, void *pProgressArg, 
+                    GDALProgressFunc pfnProgress, void *pProgressArg,
                     GDALWarpOptions *psOptions )
 
 {
@@ -429,7 +430,7 @@ GDALWarpNoDataMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
           for( iOffset = nXSize*nYSize-1; iOffset >= 0; iOffset-- )
           {
               float fVal = pafData[iOffset];
-              if( (bIsNoDataNan && CPLIsNan(fVal)) || EQUAL_TO_NODATA(fVal, fNoData) )
+              if( (bIsNoDataNan && CPLIsNan(fVal)) || (!bIsNoDataNan && ARE_REAL_EQUAL(fVal, fNoData)) )
               {
                   panValidityMask[iOffset>>5] &= ~(0x01 << (iOffset & 0x1f));
               }
@@ -451,7 +452,7 @@ GDALWarpNoDataMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
           for( iOffset = nXSize*nYSize-1; iOffset >= 0; iOffset-- )
           {
               double dfVal = padfData[iOffset];
-              if( (bIsNoDataNan && CPLIsNan(dfVal)) || EQUAL_TO_NODATA(dfVal, dfNoData) )
+              if( (bIsNoDataNan && CPLIsNan(dfVal)) || (!bIsNoDataNan && ARE_REAL_EQUAL(dfVal, dfNoData)) )
               {
                   panValidityMask[iOffset>>5] &= ~(0x01 << (iOffset & 0x1f));
               }
@@ -478,9 +479,9 @@ GDALWarpNoDataMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
               for( iPixel = 0; iPixel < nXSize; iPixel++ )
               {
                   if( ((bIsNoDataRealNan && CPLIsNan(padfWrk[iPixel*2])) ||
-                        EQUAL_TO_NODATA(padfWrk[iPixel*2], padfNoData[0]))
+                       (!bIsNoDataRealNan && ARE_REAL_EQUAL(padfWrk[iPixel*2], padfNoData[0])))
                       && ((bIsNoDataImagNan && CPLIsNan(padfWrk[iPixel*2+1])) ||
-                        EQUAL_TO_NODATA(padfWrk[iPixel*2+1], padfNoData[1])) )
+                          (!bIsNoDataImagNan && ARE_REAL_EQUAL(padfWrk[iPixel*2+1], padfNoData[1]))) )
                   {
                       int iOffset = iPixel + iLine * nXSize;
                       
@@ -508,7 +509,7 @@ GDALWarpNoDataMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
 /************************************************************************/
 
 CPLErr 
-GDALWarpSrcAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType, 
+GDALWarpSrcAlphaMasker( void *pMaskFuncArg, CPL_UNUSED int nBandCount, CPL_UNUSED GDALDataType eType, 
                         int nXOff, int nYOff, int nXSize, int nYSize,
                         GByte ** /*ppImageData */,
                         int bMaskIsFloat, void *pValidityMask )
@@ -567,7 +568,7 @@ GDALWarpSrcAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
 /************************************************************************/
 
 CPLErr 
-GDALWarpSrcMaskMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType, 
+GDALWarpSrcMaskMasker( void *pMaskFuncArg, CPL_UNUSED int nBandCount, CPL_UNUSED GDALDataType eType, 
                        int nXOff, int nYOff, int nXSize, int nYSize,
                        GByte ** /*ppImageData */,
                        int bMaskIsFloat, void *pValidityMask )
@@ -658,7 +659,7 @@ GDALWarpSrcMaskMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
 /************************************************************************/
 
 CPLErr 
-GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
+GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount, CPL_UNUSED GDALDataType eType,
                         int nXOff, int nYOff, int nXSize, int nYSize,
                         GByte ** /*ppImageData */,
                         int bMaskIsFloat, void *pValidityMask )
@@ -837,6 +838,10 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
  * avoids partial writes of compressed blocks and lost space when they are rewritten
  * at the end of the file. However sticking to target block size may cause major
  * processing slowdown for some particular reprojections.
+ *
+ * - NUM_THREADS: (GDAL >= 1.10) Can be set to a numeric value or ALL_CPUS to
+ * set the number of threads to use to parallelize the computation part of the
+ * warping. If not set, computation will be done in a single thread.
  */
 
 /************************************************************************/
@@ -850,6 +855,7 @@ GDALWarpOptions * CPL_STDCALL GDALCreateWarpOptions()
 
     psOptions = (GDALWarpOptions *) CPLCalloc(sizeof(GDALWarpOptions),1);
 
+    psOptions->nBandCount = 0;
     psOptions->eResampleAlg = GRA_NearestNeighbour;
     psOptions->pfnProgress = GDALDummyProgress;
     psOptions->eWorkingDataType = GDT_Unknown;
@@ -884,12 +890,14 @@ void CPL_STDCALL GDALDestroyWarpOptions( GDALWarpOptions *psOptions )
 
 
 #define COPY_MEM(target,type,count)					\
-   if( (psSrcOptions->target) != NULL && (count) != 0 ) 		\
+   do { if( (psSrcOptions->target) != NULL && (count) != 0 ) 		\
    { 									\
-       (psDstOptions->target) = (type *) CPLMalloc(sizeof(type)*count); \
+       (psDstOptions->target) = (type *) CPLMalloc(sizeof(type)*(count)); \
        memcpy( (psDstOptions->target), (psSrcOptions->target),		\
- 	       sizeof(type) * count ); 	        			\
-   }
+ 	       sizeof(type) * (count) ); 	        			\
+   } \
+   else \
+       (psDstOptions->target) = NULL; } while(0)
 
 /************************************************************************/
 /*                        GDALCloneWarpOptions()                        */
@@ -915,6 +923,7 @@ GDALCloneWarpOptions( const GDALWarpOptions *psSrcOptions )
     COPY_MEM( padfDstNoDataImag, double, psSrcOptions->nBandCount );
     COPY_MEM( papfnSrcPerBandValidityMaskFunc, GDALMaskFunc, 
               psSrcOptions->nBandCount );
+    psDstOptions->papSrcPerBandValidityMaskFuncArg = NULL;
 
     if( psSrcOptions->hCutline != NULL )
         psDstOptions->hCutline = 
@@ -961,6 +970,10 @@ GDALSerializeWarpOptions( const GDALWarpOptions *psWO )
         pszAlgName = "CubicSpline";
     else if( psWO->eResampleAlg == GRA_Lanczos )
         pszAlgName = "Lanczos";
+    else if( psWO->eResampleAlg == GRA_Average )
+        pszAlgName = "Average";
+    else if( psWO->eResampleAlg == GRA_Mode )
+        pszAlgName = "Mode";
     else
         pszAlgName = "Unknown";
 
@@ -1180,6 +1193,10 @@ GDALWarpOptions * CPL_STDCALL GDALDeserializeWarpOptions( CPLXMLNode *psTree )
         psWO->eResampleAlg = GRA_CubicSpline;
     else if( EQUAL(pszValue,"Lanczos") )
         psWO->eResampleAlg = GRA_Lanczos;
+    else if( EQUAL(pszValue,"Average") )
+        psWO->eResampleAlg = GRA_Average;
+    else if( EQUAL(pszValue,"Mode") )
+        psWO->eResampleAlg = GRA_Mode;
     else if( EQUAL(pszValue,"Default") )
         /* leave as is */;
     else

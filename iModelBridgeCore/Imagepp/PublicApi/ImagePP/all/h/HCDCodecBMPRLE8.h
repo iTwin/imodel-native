@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecBMPRLE8.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecBMPRLE8
@@ -13,13 +13,15 @@
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecBMPRLE8 : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1239, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_BMPRLE8, HCDCodecImage)
 
 public:
 
-    _HDLLu                 HCDCodecBMPRLE8();
+    IMAGEPP_EXPORT                 HCDCodecBMPRLE8();
 
     HCDCodecBMPRLE8(  size_t pi_Width,
                       size_t pi_Height);
@@ -51,3 +53,4 @@ protected:
 private:
     };
 
+END_IMAGEPP_NAMESPACE

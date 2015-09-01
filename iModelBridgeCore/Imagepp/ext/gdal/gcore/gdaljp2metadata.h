@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2metadata.h 22650 2011-07-06 00:59:22Z warmerdam $
+ * $Id: gdaljp2metadata.h 27181 2014-04-14 19:32:33Z rouault $
  *
  * Project:  GDAL 
  * Purpose:  JP2 Box Reader (and GMLJP2 Interpreter)
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2005, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -74,7 +75,7 @@ public:
 
     int         IsSuperBox();
 
-    int         DumpReadable( FILE * );
+    int         DumpReadable( FILE *, int nIndentLevel = 0 );
 
     VSILFILE   *GetFILE() { return fpVSIL; }
 
@@ -98,6 +99,8 @@ public:
 /*                           GDALJP2Metadata                            */
 /************************************************************************/
 
+typedef struct _GDALJP2GeoTIFFBox GDALJP2GeoTIFFBox;
+
 class CPL_DLL GDALJP2Metadata
 
 {
@@ -105,8 +108,8 @@ private:
     void    CollectGMLData( GDALJP2Box * );
     int     GMLSRSLookup( const char *pszURN );
 
-    int    nGeoTIFFSize;
-    GByte  *pabyGeoTIFFData;
+    int    nGeoTIFFBoxesCount;
+    GDALJP2GeoTIFFBox  *pasGeoTIFFBoxes;
 
     int    nMSIGSize;
     GByte  *pabyMSIGData;
@@ -116,11 +119,15 @@ public:
     
     int     bHaveGeoTransform;
     double  adfGeoTransform[6];
+    int     bPixelIsPoint;
 
     char   *pszProjection;
 
     int         nGCPCount;
     GDAL_GCP    *pasGCPList;
+
+    char  **papszMetadata;
+    char   *pszXMPMetadata;
 
 public:
             GDALJP2Metadata();

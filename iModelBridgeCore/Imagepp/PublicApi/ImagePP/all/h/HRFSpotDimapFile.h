@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSpotDimapFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -17,6 +17,7 @@
 
 
 
+BEGIN_IMAGEPP_NAMESPACE
 typedef struct SpotDimapXmlHeader
     {
     WString  DataFileFormat;
@@ -46,17 +47,17 @@ class HRFSpotDimapFile : public HRFGeoTiffFile
     {
 public:
     //:> Class ID for this class
-    HDECLARE_CLASS_ID(1508, HRFGeoTiffFile)
+    HDECLARE_CLASS_ID(HRFFileId_SpotDimap, HRFGeoTiffFile)
 
 
 
-    _HDLLg                         HRFSpotDimapFile(const HFCPtr<HFCURL>& pi_rpURL,
+    IMAGEPP_EXPORT                         HRFSpotDimapFile(const HFCPtr<HFCURL>& pi_rpURL,
                                                     HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                                     uint64_t             pi_Offset = 0);
 
 
 
-    _HDLLg virtual                 ~HRFSpotDimapFile               ();
+    IMAGEPP_EXPORT virtual                 ~HRFSpotDimapFile               ();
 
     //:> File capabilities
     virtual const HFCPtr<HRFRasterFileCapabilities>&
@@ -143,10 +144,11 @@ struct HRFSpotDimapCreator : public HRFGeoTiffCreator
                                          uint64_t             pi_Offset = 0) const;
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFSpotDimapCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFSpotDimapCreator)
 
     //:> Disabled methods
     HRFSpotDimapCreator();
     };
+END_IMAGEPP_NAMESPACE
 
 

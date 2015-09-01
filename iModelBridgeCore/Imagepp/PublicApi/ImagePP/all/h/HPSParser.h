@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSParser.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPSParser
@@ -16,6 +16,8 @@
 #include "HPAParser.h"
 #include "HPSNode.h"
 #include "HPSWorldCluster.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HPMPool;
 class HFCBinStream;
@@ -329,3 +331,4 @@ private:
     //This list contains all the world related nodes found in the PSS.
     HPANodeList m_WorldRelatedNodes;
     };
+END_IMAGEPP_NAMESPACE

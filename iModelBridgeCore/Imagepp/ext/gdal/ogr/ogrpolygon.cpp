@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpolygon.cpp 20260 2010-08-11 20:39:54Z rouault $
+ * $Id: ogrpolygon.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRPolygon geometry class.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2008-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +33,7 @@
 #include "ogr_geos.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: ogrpolygon.cpp 20260 2010-08-11 20:39:54Z rouault $");
+CPL_CVSID("$Id: ogrpolygon.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                             OGRPolygon()                             */
@@ -106,11 +107,12 @@ void OGRPolygon::empty()
 OGRwkbGeometryType OGRPolygon::getGeometryType() const
 
 {
-    if( getCoordinateDimension() == 3 )
+    if( nCoordDimension == 3 )
         return wkbPolygon25D;
     else
         return wkbPolygon;
 }
+
 
 /************************************************************************/
 /*                            getDimension()                            */
@@ -182,6 +184,28 @@ const OGRLinearRing *OGRPolygon::getExteriorRing() const
 }
 
 /************************************************************************/
+/*                          stealExteriorRing()                         */
+/************************************************************************/
+
+/**
+ * \brief "Steal" reference to external polygon ring.
+ *
+ * After the call to that function, only call to stealInteriorRing() or
+ * destruction of the OGRPolygon is valid. Other operations may crash.
+ *
+ * @return pointer to external ring.  May be NULL if the OGRPolygon is empty.
+ */
+
+OGRLinearRing *OGRPolygon::stealExteriorRing()
+{
+    if( nRingCount == 0 )
+        return NULL;
+    OGRLinearRing *poRet = papoRings[0];
+    papoRings[0] = NULL;
+    return poRet;
+}
+
+/************************************************************************/
 /*                        getNumInteriorRings()                         */
 /************************************************************************/
 
@@ -220,7 +244,7 @@ int OGRPolygon::getNumInteriorRings() const
  *
  * @param iRing internal ring index from 0 to getNumInternalRings() - 1.
  *
- * @return pointer to external ring.  May be NULL if the OGRPolygon is empty.
+ * @return pointer to interior ring.  May be NULL.
  */
 
 OGRLinearRing *OGRPolygon::getInteriorRing( int iRing )
@@ -239,6 +263,29 @@ const OGRLinearRing *OGRPolygon::getInteriorRing( int iRing ) const
         return NULL;
     else
         return papoRings[iRing+1];
+}
+
+/************************************************************************/
+/*                          stealInteriorRing()                         */
+/************************************************************************/
+
+/**
+ * \brief "Steal" reference to indicated interior ring.
+ *
+ * After the call to that function, only call to stealInteriorRing() or
+ * destruction of the OGRPolygon is valid. Other operations may crash.
+ *
+ * @param iRing internal ring index from 0 to getNumInternalRings() - 1.
+ * @return pointer to interior ring.  May be NULL.
+ */
+
+OGRLinearRing *OGRPolygon::stealInteriorRing(int iRing)
+{
+    if( iRing < 0 || iRing >= nRingCount-1 )
+        return NULL;
+    OGRLinearRing *poRet = papoRings[iRing+1];
+    papoRings[iRing+1] = NULL;
+    return poRet;
 }
 
 /************************************************************************/
@@ -337,7 +384,7 @@ OGRErr OGRPolygon::importFromWkb( unsigned char * pabyData,
 
 {
     OGRwkbByteOrder     eByteOrder;
-    int                 nDataOffset, b3D;
+    int                 nDataOffset;
     
     if( nSize < 9 && nSize != -1 )
         return OGRERR_NOT_ENOUGH_DATA;
@@ -354,27 +401,19 @@ OGRErr OGRPolygon::importFromWkb( unsigned char * pabyData,
 /*      geometry type is between 0 and 255 so we only have to fetch     */
 /*      one byte.                                                       */
 /* -------------------------------------------------------------------- */
-#ifdef DEBUG
+
+    OGRBoolean b3D;
     OGRwkbGeometryType eGeometryType;
-    
-    if( eByteOrder == wkbNDR )
-        eGeometryType = (OGRwkbGeometryType) pabyData[1];
-    else
-        eGeometryType = (OGRwkbGeometryType) pabyData[4];
+    OGRErr err = OGRReadWKBGeometryType( pabyData, &eGeometryType, &b3D );
 
-    if( eGeometryType != wkbPolygon )
+    if( err != OGRERR_NONE || eGeometryType != wkbPolygon )
         return OGRERR_CORRUPT_DATA;
-#endif    
-
-    if( eByteOrder == wkbNDR )
-        b3D = pabyData[4] & 0x80 || pabyData[2] & 0x80;
-    else
-        b3D = pabyData[1] & 0x80 || pabyData[3] & 0x80;
 
     if( b3D )
         nCoordDimension = 3;
     else
         nCoordDimension = 2;
+
 
 /* -------------------------------------------------------------------- */
 /*      Do we already have some rings?                                  */
@@ -456,7 +495,8 @@ OGRErr OGRPolygon::importFromWkb( unsigned char * pabyData,
 /************************************************************************/
 
 OGRErr  OGRPolygon::exportToWkb( OGRwkbByteOrder eByteOrder,
-                                 unsigned char * pabyData ) const
+                                 unsigned char * pabyData,
+                                 OGRwkbVariant eWkbVariant ) const
 
 {
     int         nOffset;
@@ -471,6 +511,9 @@ OGRErr  OGRPolygon::exportToWkb( OGRwkbByteOrder eByteOrder,
 /*      Set the geometry feature type.                                  */
 /* -------------------------------------------------------------------- */
     GUInt32 nGType = getGeometryType();
+
+    if ( eWkbVariant == wkbVariantIso )
+        nGType = getIsoGeometryType();
     
     if( eByteOrder == wkbNDR )
         nGType = CPL_LSBWORD32( nGType );
@@ -522,19 +565,11 @@ OGRErr OGRPolygon::importFromWkt( char ** ppszInput )
 {
     char        szToken[OGR_WKT_TOKEN_MAX];
     const char  *pszInput = *ppszInput;
-    int         iRing;
 
 /* -------------------------------------------------------------------- */
 /*      Clear existing rings.                                           */
 /* -------------------------------------------------------------------- */
-    if( nRingCount > 0 )
-    {
-        for( iRing = 0; iRing < nRingCount; iRing++ )
-            delete papoRings[iRing];
-        
-        nRingCount = 0;
-        CPLFree( papoRings );
-    }
+    empty();
 
 /* -------------------------------------------------------------------- */
 /*      Read and verify the ``POLYGON'' keyword token.                  */
@@ -730,8 +765,8 @@ OGRErr OGRPolygon::exportToWkt( char ** ppszDstText ) const
 /* -------------------------------------------------------------------- */
 /*      If we have no valid exterior ring, return POLYGON EMPTY.        */
 /* -------------------------------------------------------------------- */
-    if (getExteriorRing() == NULL ||
-        getExteriorRing()->IsEmpty())
+    if (getExteriorRing() == NULL || 
+        getExteriorRing()->IsEmpty() )
     {
         *ppszDstText = CPLStrdup("POLYGON EMPTY");
         return OGRERR_NONE;
@@ -818,58 +853,30 @@ error:
 int OGRPolygon::PointOnSurface( OGRPoint *poPoint ) const
 
 {
-    if( poPoint == NULL )
+    if( poPoint == NULL || poPoint->IsEmpty() )
         return OGRERR_FAILURE;
- 
-#ifndef HAVE_GEOS
-    return OGRERR_FAILURE;
-#else
-    GEOSGeom hThisGeosGeom = NULL;
-    GEOSGeom hOtherGeosGeom = NULL;
-     
-    hThisGeosGeom = exportToGEOS();
- 
-    if( hThisGeosGeom != NULL )
-    {
-     	hOtherGeosGeom = GEOSPointOnSurface( hThisGeosGeom );
-        GEOSGeom_destroy( hThisGeosGeom );
 
-        if( hOtherGeosGeom == NULL )
-            return OGRERR_FAILURE;
+    OGRGeometryH hInsidePoint = OGR_G_PointOnSurface( (OGRGeometryH) this );
+    if( hInsidePoint == NULL )
+        return OGRERR_FAILURE;
 
-        OGRGeometry *poInsidePointGeom = (OGRGeometry *) 
-            OGRGeometryFactory::createFromGEOS( hOtherGeosGeom );
- 
-        GEOSGeom_destroy( hOtherGeosGeom );
-
-        if (poInsidePointGeom == NULL)
-            return OGRERR_FAILURE;
-        if (wkbFlatten(poInsidePointGeom->getGeometryType()) != wkbPoint)
-        {
-            delete poInsidePointGeom;
-            return OGRERR_FAILURE;
-        }
-
-        OGRPoint *poInsidePoint = (OGRPoint *) poInsidePointGeom;
- 	poPoint->setX( poInsidePoint->getX() );
- 	poPoint->setY( poInsidePoint->getY() );
- 
-        delete poInsidePointGeom;
- 
-     	return OGRERR_NONE;
-    }
+    OGRPoint *poInsidePoint = (OGRPoint *) hInsidePoint;
+    if( poInsidePoint->IsEmpty() )
+        poPoint->empty();
     else
     {
-     	return OGRERR_FAILURE;
+        poPoint->setX( poInsidePoint->getX() );
+        poPoint->setY( poInsidePoint->getY() );
     }
-#endif /* HAVE_GEOS */
+
+    return OGRERR_NONE;
 }
 
 
 /************************************************************************/
 /*                            getEnvelope()                             */
 /************************************************************************/
- 
+
 void OGRPolygon::getEnvelope( OGREnvelope * psEnvelope ) const
 
 {
@@ -909,6 +916,53 @@ void OGRPolygon::getEnvelope( OGREnvelope * psEnvelope ) const
 }
 
 /************************************************************************/
+/*                            getEnvelope()                             */
+/************************************************************************/
+ 
+void OGRPolygon::getEnvelope( OGREnvelope3D * psEnvelope ) const
+
+{
+    OGREnvelope3D       oRingEnv;
+    int                 bExtentSet = FALSE;
+
+    for( int iRing = 0; iRing < nRingCount; iRing++ )
+    {
+        if (!papoRings[iRing]->IsEmpty())
+        {
+            if (!bExtentSet)
+            {
+                papoRings[iRing]->getEnvelope( psEnvelope );
+                bExtentSet = TRUE;
+            }
+            else
+            {
+                papoRings[iRing]->getEnvelope( &oRingEnv );
+
+                if( psEnvelope->MinX > oRingEnv.MinX )
+                    psEnvelope->MinX = oRingEnv.MinX;
+                if( psEnvelope->MinY > oRingEnv.MinY )
+                    psEnvelope->MinY = oRingEnv.MinY;
+                if( psEnvelope->MaxX < oRingEnv.MaxX )
+                    psEnvelope->MaxX = oRingEnv.MaxX;
+                if( psEnvelope->MaxY < oRingEnv.MaxY )
+                    psEnvelope->MaxY = oRingEnv.MaxY;
+
+                if( psEnvelope->MinZ > oRingEnv.MinZ )
+                    psEnvelope->MinZ = oRingEnv.MinZ;
+                if( psEnvelope->MaxZ < oRingEnv.MaxZ )
+                    psEnvelope->MaxZ = oRingEnv.MaxZ;
+            }
+        }
+    }
+
+    if (!bExtentSet)
+    {
+        psEnvelope->MinX = psEnvelope->MinY = psEnvelope->MinZ = 0;
+        psEnvelope->MaxX = psEnvelope->MaxY = psEnvelope->MaxZ = 0;
+    }
+}
+
+/************************************************************************/
 /*                               Equal()                                */
 /************************************************************************/
 
@@ -922,6 +976,9 @@ OGRBoolean OGRPolygon::Equals( OGRGeometry * poOther ) const
     
     if( poOther->getGeometryType() != getGeometryType() )
         return FALSE;
+
+    if ( IsEmpty() && poOther->IsEmpty() )
+        return TRUE;
 
     if( getNumInteriorRings() != poOPoly->getNumInteriorRings() )
         return FALSE;
@@ -1064,7 +1121,7 @@ void OGRPolygon::setCoordinateDimension( int nNewDimension )
 OGRBoolean OGRPolygon::IsEmpty(  ) const
 {
     for( int iRing = 0; iRing < nRingCount; iRing++ )
-        if (papoRings[iRing]->IsEmpty() == FALSE)
+        if ( papoRings[iRing]->IsEmpty() == FALSE )
             return FALSE;
     return TRUE;
 }

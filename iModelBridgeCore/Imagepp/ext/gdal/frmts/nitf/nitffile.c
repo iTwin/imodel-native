@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitffile.c 21305 2010-12-22 17:22:53Z rouault $
+ * $Id: nitffile.c 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Module responsible for opening NITF file, populating NITFFile
@@ -8,6 +8,7 @@
  *
  **********************************************************************
  * Copyright (c) 2002, Frank Warmerdam
+ * Copyright (c) 2007-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,15 +34,14 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: nitffile.c 21305 2010-12-22 17:22:53Z rouault $");
+CPL_CVSID("$Id: nitffile.c 27739 2014-09-25 18:49:52Z goatbar $");
 
 static int NITFWriteBLOCKA( VSILFILE* fp, vsi_l_offset nOffsetUDIDL,
-                            vsi_l_offset nOffsetTRE, 
                             int *pnOffset,
                             char **papszOptions );
 static int NITFWriteTREsFromOptions(
     VSILFILE* fp,
-    vsi_l_offset nOffsetUDIDL, vsi_l_offset nOffsetTRE,
+    vsi_l_offset nOffsetUDIDL,
     int *pnOffset,
     char **papszOptions,
     const char* pszTREPrefix);
@@ -275,7 +275,7 @@ retry_read_header:
             abyDELIM2_L2[2] == 0x14 && abyDELIM2_L2[3] == 0xBF)
         {
             int SFHL2 = atoi((const char*)(abyDELIM2_L2 + 4));
-            if (SFHL2 > 0 && nFileSize > 11 + SFHL2 + 11 )
+            if (SFHL2 > 0 && nFileSize > (GUIntBig)(11 + SFHL2 + 11) )
             {
                 VSIFSeekL( fp, nFileSize - 11 - SFHL2 - 11 , SEEK_SET );
 
@@ -313,32 +313,25 @@ retry_read_header:
 
     nOffset = NITFCollectSegmentInfo( psFile, nHeaderLen, nOffset,"IM",6, 10, &nNextData );
 
-    //IPP - TR 211112 : Those sections differ in previous version of the specification.
-    if(EQUAL(psFile->szVersion,"NITF02.10") || EQUAL(psFile->szVersion,"NSIF01.00"))
-    {
+    if (nOffset != -1)
         nOffset = NITFCollectSegmentInfo( psFile, nHeaderLen, nOffset, "GR", 4, 6, &nNextData);
 
-        /* LA Called NUMX in NITF 2.1 */
+    /* LA Called NUMX in NITF 2.1 */
+    if (nOffset != -1)
         nOffset = NITFCollectSegmentInfo( psFile, nHeaderLen, nOffset, "LA", 4, 3, &nNextData);
 
+    if (nOffset != -1)
         nOffset = NITFCollectSegmentInfo( psFile, nHeaderLen, nOffset, "TX", 4, 5, &nNextData);
 
+    if (nOffset != -1)
         nOffset = NITFCollectSegmentInfo( psFile, nHeaderLen, nOffset, "DE", 4, 9, &nNextData);
 
+    if (nOffset != -1)
         nOffset = NITFCollectSegmentInfo( psFile, nHeaderLen, nOffset, "RE", 4, 7, &nNextData);
-    }
     else
-    if(EQUAL(psFile->szVersion,"NITF02.00"))
     {
-        nOffset = NITFCollectSegmentInfo( psFile, nHeaderLen, nOffset, "SM", 4, 6, &nNextData);
-
-        nOffset = NITFCollectSegmentInfo( psFile, nHeaderLen, nOffset, "LB", 4, 3, &nNextData);
-
-        nOffset = NITFCollectSegmentInfo( psFile, nHeaderLen, nOffset, "TX", 4, 5, &nNextData);
-
-        nOffset = NITFCollectSegmentInfo( psFile, nHeaderLen, nOffset, "DE", 4, 9, &nNextData);
-
-        nOffset = NITFCollectSegmentInfo( psFile, nHeaderLen, nOffset, "RE", 4, 7, &nNextData);
+        NITFClose(psFile);
+        return NULL;
     }
 
 /* -------------------------------------------------------------------- */
@@ -473,16 +466,20 @@ void NITFClose( NITFFile *psFile )
     CPLFree( psFile->pachHeader );
     CSLDestroy( psFile->papszMetadata );
     CPLFree( psFile->pachTRE );
+
+    if (psFile->psNITFSpecNode)
+        CPLDestroyXMLNode(psFile->psNITFSpecNode);
+
     CPLFree( psFile );
 }
 
 static void NITFGotoOffset(VSILFILE* fp, GUIntBig nLocation)
 {
+    GUIntBig iFill;
     GUIntBig nCurrentLocation = VSIFTellL(fp);
     if (nLocation > nCurrentLocation)
     {
         GUIntBig nFileSize;
-        int iFill;
         char cSpace = ' ';
 
         VSIFSeekL(fp, 0, SEEK_END);
@@ -524,7 +521,7 @@ int NITFCreate( const char *pszFilename,
     int nCLevel;
     const char *pszNUMT;
     int nHL, nNUMT = 0;
-    int nUDIDLOffset;
+    vsi_l_offset nOffsetUDIDL;
     const char *pszVersion;
     int iIM, nIM = 1;
     const char *pszNUMI;
@@ -628,6 +625,50 @@ int NITFCreate( const char *pszFilename,
         nImageSize = 
             ((nBitsPerSample)/8) 
             * ((GIntBig) nPixels *nLines)
+            * nBands;
+    }
+    else if (EQUAL(pszIC, "NC") &&
+             nPixels > 8192 && nNPPBH == nPixels)
+    {
+        /* See MIL-STD-2500-C, paragraph 5.4.2.2-d */
+        nNBPR = 1;
+        nNPPBH = 0;
+        nNBPC = (nLines + nNPPBV - 1) / nNPPBV;
+
+        if ( nNBPC > 9999 )
+        {
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "Unable to create file %s,\n"
+                      "Too many blocks : %d x %d",
+                     pszFilename, nNBPR, nNBPC);
+            return FALSE;
+        }
+
+        nImageSize =
+            ((nBitsPerSample)/8)
+            * ((GIntBig) nPixels * (nNBPC * nNPPBV))
+            * nBands;
+    }
+    else if (EQUAL(pszIC, "NC") &&
+             nLines > 8192 && nNPPBV == nLines)
+    {
+        /* See MIL-STD-2500-C, paragraph 5.4.2.2-d */
+        nNBPC = 1;
+        nNPPBV = 0;
+        nNBPR = (nPixels + nNPPBH - 1) / nNPPBH;
+
+        if ( nNBPR > 9999 )
+        {
+            CPLError( CE_Failure, CPLE_AppDefined,
+                      "Unable to create file %s,\n"
+                      "Too many blocks : %d x %d",
+                     pszFilename, nNBPR, nNBPC);
+            return FALSE;
+        }
+
+        nImageSize =
+            ((nBitsPerSample)/8)
+            * ((GIntBig) nLines * (nNBPR * nNPPBH))
             * nBands;
     }
     else
@@ -807,7 +848,6 @@ int NITFCreate( const char *pszFilename,
         NITFWriteTREsFromOptions(
             fp,
             nHL - 10,
-            nHL,
             &nHL,
             papszOptions, "FILE_TRE=" );
     }
@@ -830,6 +870,30 @@ int NITFCreate( const char *pszFilename,
 /* -------------------------------------------------------------------- */
   for(iIM=0;iIM<nIM;iIM++)
   {
+    char** papszIREPBANDTokens = NULL;
+    char** papszISUBCATTokens = NULL;
+
+    if( CSLFetchNameValue(papszOptions,"IREPBAND") != NULL )
+    {
+        papszIREPBANDTokens = CSLTokenizeStringComplex(
+            CSLFetchNameValue(papszOptions,"IREPBAND"), ",", 0, 0 );
+        if( papszIREPBANDTokens != NULL && CSLCount( papszIREPBANDTokens ) != nBands)
+        {
+            CSLDestroy(  papszIREPBANDTokens );
+            papszIREPBANDTokens = NULL;
+        }
+    }
+    if( CSLFetchNameValue(papszOptions,"ISUBCAT") != NULL )
+    {
+        papszISUBCATTokens = CSLTokenizeStringComplex(
+            CSLFetchNameValue(papszOptions,"ISUBCAT"), ",", 0, 0 );
+        if( papszISUBCATTokens != NULL && CSLCount( papszISUBCATTokens ) != nBands)
+        {
+            CSLDestroy( papszISUBCATTokens );
+            papszISUBCATTokens = NULL;
+        }
+    }
+
     VSIFSeekL(fp, nCur, SEEK_SET);
 
     PLACE (nCur+  0, IM           , "IM"                           );
@@ -927,7 +991,18 @@ int NITFCreate( const char *pszFilename,
     {
         const char *pszIREPBAND = "M";
 
-        if( EQUAL(pszIREP,"RGB/LUT") )
+        if( papszIREPBANDTokens != NULL )
+        {
+            if (strlen(papszIREPBANDTokens[iBand]) > 2)
+            {
+                papszIREPBANDTokens[iBand][2] = '\0';
+                CPLError(CE_Warning, CPLE_NotSupported,
+                         "Truncating IREPBAND[%d] to '%s'",
+                         iBand + 1, papszIREPBANDTokens[iBand]);
+            }
+            pszIREPBAND = papszIREPBANDTokens[iBand];
+        }
+        else if( EQUAL(pszIREP,"RGB/LUT") )
             pszIREPBAND = "LU";
         else if( EQUAL(pszIREP,"RGB") )
         {
@@ -949,7 +1024,21 @@ int NITFCreate( const char *pszFilename,
         }
 
         PLACE(nCur+nOffset+ 0, IREPBANDn, pszIREPBAND                 );
-//      PLACE(nCur+nOffset+ 2, ISUBCATn, ""                           );
+
+        if( papszISUBCATTokens != NULL )
+        {
+            if (strlen(papszISUBCATTokens[iBand]) > 6)
+            {
+                papszISUBCATTokens[iBand][6] = '\0';
+                CPLError(CE_Warning, CPLE_NotSupported,
+                         "Truncating ISUBCAT[%d] to '%s'",
+                         iBand + 1, papszISUBCATTokens[iBand]);
+            }
+            PLACE(nCur+nOffset+ 2, ISUBCATn, papszISUBCATTokens[iBand] );
+        }
+//      else
+//          PLACE(nCur+nOffset+ 2, ISUBCATn, ""                           );
+
         PLACE(nCur+nOffset+ 8, IFCn  , "N"                            );
 //      PLACE(nCur+nOffset+ 9, IMFLTn, ""                             );
 
@@ -984,6 +1073,9 @@ int NITFCreate( const char *pszFilename,
         }
     }
 
+    CSLDestroy(papszIREPBANDTokens);
+    CSLDestroy(papszISUBCATTokens);
+
 /* -------------------------------------------------------------------- */
 /*      Remainder of image header info.                                 */
 /* -------------------------------------------------------------------- */
@@ -1010,7 +1102,7 @@ int NITFCreate( const char *pszFilename,
     PLACE(nCur+nOffset+ 40, UDIDL , "00000"                        );
     PLACE(nCur+nOffset+ 45, IXSHDL, "00000"                        );
 
-    nUDIDLOffset = nOffset + 40;
+    nOffsetUDIDL = nCur + nOffset + 40;
     nOffset += 50;
 
 /* -------------------------------------------------------------------- */
@@ -1019,8 +1111,7 @@ int NITFCreate( const char *pszFilename,
     if( CSLFetchNameValue(papszOptions,"BLOCKA_BLOCK_COUNT") != NULL )
     {
         NITFWriteBLOCKA( fp,
-                         nCur + (GUIntBig)nUDIDLOffset, 
-                         nCur + (GUIntBig)nOffset, 
+                         nOffsetUDIDL, 
                          &nOffset, 
                          papszOptions );
     }
@@ -1029,8 +1120,7 @@ int NITFCreate( const char *pszFilename,
     {
         NITFWriteTREsFromOptions(
             fp,
-            nCur + (GUIntBig)nUDIDLOffset, 
-            nCur + (GUIntBig)nOffset, 
+            nOffsetUDIDL, 
             &nOffset, 
             papszOptions, "TRE=" );
     }
@@ -1114,7 +1204,6 @@ int NITFCreate( const char *pszFilename,
 
 static int NITFWriteTRE( VSILFILE* fp,
                          vsi_l_offset nOffsetUDIDL, 
-                         vsi_l_offset nOffsetTREInHeader, 
                          int  *pnOffset,
                          const char *pszTREName, char *pabyTREData, int nTREDataSize )
 
@@ -1151,7 +1240,7 @@ static int NITFWriteTRE( VSILFILE* fp,
 /* -------------------------------------------------------------------- */
     sprintf( szTemp, "%-6s%05d", 
              pszTREName, nTREDataSize );
-    VSIFSeekL(fp, nOffsetTREInHeader + nOldOffset, SEEK_SET);
+    VSIFSeekL(fp, nOffsetUDIDL + 10 + nOldOffset, SEEK_SET);
     VSIFWriteL(szTemp, 11, 1, fp);
     VSIFWriteL(pabyTREData, nTREDataSize, 1, fp);
 
@@ -1169,7 +1258,7 @@ static int NITFWriteTRE( VSILFILE* fp,
 
 static int NITFWriteTREsFromOptions(
     VSILFILE* fp,
-    vsi_l_offset nOffsetUDIDL, vsi_l_offset nOffsetTRE,
+    vsi_l_offset nOffsetUDIDL,
     int *pnOffset,
     char **papszOptions, const char* pszTREPrefix )    
 
@@ -1208,7 +1297,7 @@ static int NITFWriteTREsFromOptions(
         }
         
         pszTREName = CPLStrdup(papszOptions[iOption]+nTREPrefixLen);
-        pszTREName[pszSpace - (papszOptions[iOption]+nTREPrefixLen)] = '\0';
+        pszTREName[MIN(6, pszSpace - (papszOptions[iOption]+nTREPrefixLen))] = '\0';
         pszEscapedContents = pszSpace + 1;
 
         pszUnescapedContents = 
@@ -1216,7 +1305,7 @@ static int NITFWriteTREsFromOptions(
                                CPLES_BackslashQuotable );
 
         if( !NITFWriteTRE( fp,
-                           nOffsetUDIDL, nOffsetTRE,
+                           nOffsetUDIDL,
                            pnOffset,
                            pszTREName, pszUnescapedContents, 
                            nContentLength ) )
@@ -1239,7 +1328,6 @@ static int NITFWriteTREsFromOptions(
 /************************************************************************/
 
 static int NITFWriteBLOCKA( VSILFILE* fp, vsi_l_offset nOffsetUDIDL,
-                            vsi_l_offset nOffsetTRE, 
                             int *pnOffset,
                             char **papszOptions )
 
@@ -1278,7 +1366,7 @@ static int NITFWriteBLOCKA( VSILFILE* fp, vsi_l_offset nOffsetUDIDL,
             int  iSize = atoi(apszFields[iField*3+2]);
             const char *pszValue;
 
-            sprintf( szFullFieldName, "BLOCKA_%s_%02d", 
+            sprintf( szFullFieldName, "BLOCKA_%s_%02d",
                      apszFields[iField*3 + 0], iBlock );
 
             pszValue = CSLFetchNameValue( papszOptions, szFullFieldName );
@@ -1295,25 +1383,25 @@ static int NITFWriteBLOCKA( VSILFILE* fp, vsi_l_offset nOffsetUDIDL,
 
             /* Right align value and left pad with spaces */
             memset( szBLOCKA + iStart, ' ', iSize );
-            memcpy( szBLOCKA + iStart + 
-                    MAX(0,(size_t)iSize-strlen(pszValue)),           //IPP
-                    pszValue, MIN((size_t)iSize,strlen(pszValue)) );   //IPP
-
+            /* unsigned is always >= 0 */
+            /* memcpy( szBLOCKA + iStart + MAX((size_t)0,iSize-strlen(pszValue)), */
+            memcpy( szBLOCKA + iStart + iSize-strlen(pszValue),
+                    pszValue, strlen(pszValue) );
         }
 
-        // required field - semantics unknown. 
+        // required field - semantics unknown.
         memcpy( szBLOCKA + 118, "010.0", 5);
 
         if( !NITFWriteTRE( fp,
-                           nOffsetUDIDL, nOffsetTRE, 
+                           nOffsetUDIDL,
                            pnOffset,
                            "BLOCKA", szBLOCKA, 123 ) )
             return FALSE;
     }
-    
+
     return TRUE;
 }
-                      
+
 /************************************************************************/
 /*                       NITFCollectSegmentInfo()                       */
 /*                                                                      */
@@ -1557,7 +1645,7 @@ void NITFExtractMetadata( char ***ppapszMetadata, const char *pachHeader,
     char szWork[400];
     char* pszWork;
 
-    if (nLength >= sizeof(szWork) - 1)
+    if ((size_t)nLength >= sizeof(szWork) - 1)
         pszWork = (char*)CPLMalloc(nLength + 1);
     else
         pszWork = szWork;
@@ -1619,45 +1707,14 @@ double NITF_WGS84_Geocentric_Latitude_To_Geodetic_Latitude( double dfLat )
 /*                        NITFGetSeriesInfo()                           */
 /************************************************************************/
 
+/* From http://trac.osgeo.org/gdal/attachment/ticket/5353/MIL-STD-2411_1_CHG-3.pdf */
 static const NITFSeries nitfSeries[] =
 {
-    { "GN", "GNC", "1:5M", "Global Navigation Chart", "CADRG"},
-    { "JN", "JNC", "1:2M", "Jet Navigation Chart", "CADRG"},
-    { "OH", "VHRC", "1:1M", "VFR Helicopter Route Chart", "CADRG"},
-    { "ON", "ONC", "1:1M", "Operational Navigation Chart", "CADRG"},
-    { "OW", "WAC", "1:1M", "High Flying Chart - Host Nation", "CADRG"},
-    { "TP", "TPC", "1:500K", "Tactical Pilotage Chart", "CADRG"},
-    { "LF", "LFC-FR (Day)", "1:500K", "Low Flying Chart (Day) - Host Nation", "CADRG"},
-    { "L1", "LFC-1", "1:500K", "Low Flying Chart (TED #1)", "CADRG"},
-    { "L2", "LFC-2", "1:500K", "Low Flying Chart (TED #2)", "CADRG"},
-    { "L3", "LFC-3", "1:500K", "Low Flying Chart (TED #3)", "CADRG"},
-    { "L4", "LFC-4", "1:500K", "Low Flying Chart (TED #4)", "CADRG"},
-    { "L5", "LFC-5", "1:500K", "Low Flying Chart (TED #5)", "CADRG"},
-    { "LN", "LN (Night)", "1:500K", "Low Flying Chart (Night) - Host Nation", "CADRG"},
-    { "JG", "JOG", "1:250K", "Joint Operation Graphic", "CADRG"},
-    { "JA", "JOG-A", "1:250K", "Joint Operation Graphic - Air", "CADRG"},
-    { "JR", "JOG-R", "1:250K", "Joint Operation Graphic - Radar", "CADRG"},
-    { "JO", "OPG", "1:250K", "Operational Planning Graphic", "CADRG"},
-    { "VT", "VTAC", "1:250K", "VFR Terminal Area Chart", "CADRG"},
-    { "F1", "TFC-1", "1:250K", "Transit Flying Chart (TED #1)", "CADRG"},
-    { "F2", "TFC-2", "1:250K", "Transit Flying Chart (TED #2)", "CADRG"},
-    { "F3", "TFC-3", "1:250K", "Transit Flying Chart (TED #3)", "CADRG"},
-    { "F4", "TFC-4", "1:250K", "Transit Flying Chart (TED #4)", "CADRG"},
-    { "F5", "TFC-5", "1:250K", "Transit Flying Chart (TED #5)", "CADRG"},
+    { "A1", "CM", "1:10K", "Combat Charts (1:10K)", "CADRG"},
+    { "A2", "CM", "1:25K", "Combat Charts (1:25K)", "CADRG"},
+    { "A3", "CM", "1:50K", "Combat Charts (1:50K)", "CADRG"},
+    { "A4", "CM", "1:100K", "Combat Charts (1:100K)", "CADRG"},
     { "AT", "ATC", "1:200K", "Series 200 Air Target Chart", "CADRG"},
-    { "VH", "HRC", "1:125K", "Helicopter Route Chart", "CADRG"},
-    { "TN", "TFC (Night)", "1:250K", "Transit Flying Charget (Night) - Host Nation", "CADRG"},
-    { "TR", "TLM 200", "1:200K", "Topographic Line Map 1:200,000 scale", "CADRG"},
-    { "TC", "TLM 100", "1:100K", "Topographic Line Map 1:100,000 scale", "CADRG"},
-    { "RV", "Riverine", "1:50K", "Riverine Map 1:50,000 scale", "CADRG"},
-    { "TL", "TLM 50", "1:50K", "Topographic Line Map 1:50,000 scale", "CADRG"},
-    { "UL", "TLM 50 - Other", "1:50K", "Topographic Line Map (other 1:50,000 scale)", "CADRG"},
-    { "TT", "TLM 25", "1:25K", "Topographic Line Map 1:25,000 scale", "CADRG"},
-    { "TQ", "TLM 24", "1:24K", "Topographic Line Map 1:24,000 scale", "CADRG"},
-    { "HA", "HA", "Various", "Harbor and Approach Charts", "CADRG"},
-    { "CO", "CO", "Various", "Coastal Charts", "CADRG"},
-    { "OA", "OPAREA", "Various", "Naval Range Operation Area Chart", "CADRG"},
-    { "CG", "CG", "Various", "City Graphics", "CADRG"},
     { "C1", "CG", "1:10000", "City Graphics", "CADRG"},
     { "C2", "CG", "1:10560", "City Graphics", "CADRG"},
     { "C3", "CG", "1:11000", "City Graphics", "CADRG"},
@@ -1673,36 +1730,168 @@ static const NITFSeries nitfSeries[] =
     { "CD", "CG", "1:16666", "City Graphics", "CADRG"},
     { "CE", "CG", "1:17000", "City Graphics", "CADRG"},
     { "CF", "CG", "1:17500", "City Graphics", "CADRG"},
+    { "CG", "CG", "Various", "City Graphics", "CADRG"},
     { "CH", "CG", "1:18000", "City Graphics", "CADRG"},
     { "CJ", "CG", "1:20000", "City Graphics", "CADRG"},
     { "CK", "CG", "1:21000", "City Graphics", "CADRG"},
     { "CL", "CG", "1:21120", "City Graphics", "CADRG"},
+    { "CM", "CM", "Various", "Combat Charts", "CADRG"},
     { "CN", "CG", "1:22000", "City Graphics", "CADRG"},
+    { "CO", "CO", "Various", "Coastal Charts", "CADRG"},
     { "CP", "CG", "1:23000", "City Graphics", "CADRG"},
     { "CQ", "CG", "1:25000", "City Graphics", "CADRG"},
     { "CR", "CG", "1:26000", "City Graphics", "CADRG"},
     { "CS", "CG", "1:35000", "City Graphics", "CADRG"},
     { "CT", "CG", "1:36000", "City Graphics", "CADRG"},
-    { "CM", "CM", "Various", "Combat Charts", "CADRG"},
-    { "A1", "CM", "1:10K", "Combat Charts (1:10K)", "CADRG"},
-    { "A2", "CM", "1:25K", "Combat Charts (1:25K)", "CADRG"},
-    { "A3", "CM", "1:50K", "Combat Charts (1:50K)", "CADRG"},
-    { "A4", "CM", "1:100K", "Combat Charts (1:100K)", "CADRG"},
-    { "MI", "MIM", "1:50K", "Military Installation Maps", "CADRG"},
-    { "M1", "MIM", "Various", "Military Installation Maps (TED #1)", "CADRG"},
-    { "M2", "MIM", "Various", "Military Installation Maps (TED #2)", "CADRG"},
-    { "VN", "VNC", "1:500K", "Visual Navigation Charts", "CADRG"},
-    { "MM", "", "Various", "(Miscellaneous Maps & Charts)", "CADRG"},
-    
+    { "D1", "", "100m", "Elevation Data from DTED level 1", "CDTED"},
+    { "D2", "", "30m", "Elevation Data from DTED level 2", "CDTED"},
+    { "EG", "NARC", "1:11,000,000", "North Atlantic Route Chart", "CADRG"},
+    { "ES", "SEC", "1:500K", "VFR Sectional", "CADRG"},
+    { "ET", "SEC", "1:250K", "VFR Sectional Inserts", "CADRG"},
+    { "F1", "TFC-1", "1:250K", "Transit Flying Chart (TBD #1)", "CADRG"},
+    { "F2", "TFC-2", "1:250K", "Transit Flying Chart (TBD #2)", "CADRG"},
+    { "F3", "TFC-3", "1:250K", "Transit Flying Chart (TBD #3)", "CADRG"},
+    { "F4", "TFC-4", "1:250K", "Transit Flying Chart (TBD #4)", "CADRG"},
+    { "F5", "TFC-5", "1:250K", "Transit Flying Chart (TBD #5)", "CADRG"},
+    { "GN", "GNC", "1:5M", "Global Navigation Chart", "CADRG"},
+    { "HA", "HA", "Various", "Harbor and Approach Charts", "CADRG"},
     { "I1", "", "10m", "Imagery, 10 meter resolution", "CIB"},
     { "I2", "", "5m", "Imagery, 5 meter resolution", "CIB"},
     { "I3", "", "2m", "Imagery, 2 meter resolution", "CIB"},
     { "I4", "", "1m", "Imagery, 1 meter resolution", "CIB"},
     { "I5", "", ".5m", "Imagery, .5 (half) meter resolution", "CIB"},
     { "IV", "", "Various > 10m", "Imagery, greater than 10 meter resolution", "CIB"},
-    
-    { "D1", "", "100m", "Elevation Data from DTED level 1", "CDTED"},
-    { "D2", "", "30m", "Elevation Data from DTED level 2", "CDTED"},
+    { "JA", "JOG-A", "1:250K", "Joint Operation Graphic - Air", "CADRG"},
+    { "JG", "JOG", "1:250K", "Joint Operation Graphic", "CADRG"},
+    { "JN", "JNC", "1:2M", "Jet Navigation Chart", "CADRG"},
+    { "JO", "OPG", "1:250K", "Operational Planning Graphic", "CADRG"},
+    { "JR", "JOG-R", "1:250K", "Joint Operation Graphic - Radar", "CADRG"},
+    { "K1", "ICM", "1:8K", "Image City Maps", "CADRG"},
+    { "K2", "ICM", "1:10K", "Image City Maps", "CADRG"},
+    { "K3", "ICM", "1:10560", "Image City Maps", "CADRG"},
+    { "K7", "ICM", "1:12500", "Image City Maps", "CADRG"},
+    { "K8", "ICM", "1:12800", "Image City Maps", "CADRG"},
+    { "KB", "ICM", "1:15K", "Image City Maps", "CADRG"},
+    { "KE", "ICM", "1:16666", "Image City Maps", "CADRG"},
+    { "KM", "ICM", "1:21120", "Image City Maps", "CADRG"},
+    { "KR", "ICM", "1:25K", "Image City Maps", "CADRG"},
+    { "KS", "ICM", "1:26K", "Image City Maps", "CADRG"},
+    { "KU", "ICM", "1:36K", "Image City Maps", "CADRG"},
+    { "L1", "LFC-1", "1:500K", "Low Flying Chart (TBD #1)", "CADRG"},
+    { "L2", "LFC-2", "1:500K", "Low Flying Chart (TBD #2)", "CADRG"},
+    { "L3", "LFC-3", "1:500K", "Low Flying Chart (TBD #3)", "CADRG"},
+    { "L4", "LFC-4", "1:500K", "Low Flying Chart (TBD #4)", "CADRG"},
+    { "L5", "LFC-5", "1:500K", "Low Flying Chart (TBD #5)", "CADRG"},
+    { "LF", "LFC-FR (Day)", "1:500K", "Low Flying Chart (Day) - Host Nation", "CADRG"},
+    { "LN", "LN (Night)", "1:500K", "Low Flying Chart (Night) - Host Nation", "CADRG"},
+    { "M1", "MIM", "Various", "Military Installation Maps (TBD #1)", "CADRG"},
+    { "M2", "MIM", "Various", "Military Installation Maps (TBD #2)", "CADRG"},
+    { "MH", "MIM", "1:25K", "Military Installation Maps", "CADRG"},
+    { "MI", "MIM", "1:50K", "Military Installation Maps", "CADRG"},
+    { "MJ", "MIM", "1:100K", "Military Installation Maps", "CADRG"},
+    { "MM", "", "Various", "(Miscellaneous Maps & Charts)", "CADRG"},
+    { "OA", "OPAREA", "Various", "Naval Range Operation Area Chart", "CADRG"},
+    { "OH", "VHRC", "1:1M", "VFR Helicopter Route Chart", "CADRG"},
+    { "ON", "ONC", "1:1M", "Operational Navigation Chart", "CADRG"},
+    { "OW", "WAC", "1:1M", "High Flying Chart - Host Nation", "CADRG"},
+    { "P1", "", "1:25K", "Special Military Map - Overlay", "CADRG"},
+    { "P2", "", "1:25K", "Special Military Purpose", "CADRG"},
+    { "P3", "", "1:25K", "Special Military Purpose", "CADRG"},
+    { "P4", "", "1:25K", "Special Military Purpose", "CADRG"},
+    { "P5", "", "1:50K", "Special Military Map - Overlay", "CADRG"},
+    { "P6", "", "1:50K", "Special Military Purpose", "CADRG"},
+    { "P7", "", "1:50K", "Special Military Purpose", "CADRG"},
+    { "P8", "", "1:50K", "Special Military Purpose", "CADRG"},
+    { "P9", "", "1:100K", "Special Military Map - Overlay", "CADRG"},
+    { "PA", "", "1:100K", "Special Military Purpose", "CADRG"},
+    { "PB", "", "1:100K", "Special Military Purpose", "CADRG"},
+    { "PC", "", "1:100K", "Special Military Purpose", "CADRG"},
+    { "PD", "", "1:250K", "Special Military Map - Overlay", "CADRG"},
+    { "PE", "", "1:250K", "Special Military Purpose", "CADRG"},
+    { "PF", "", "1:250K", "Special Military Purpose", "CADRG"},
+    { "PG", "", "1:250K", "Special Military Purpose", "CADRG"},
+    { "PH", "", "1:500K", "Special Military Map - Overlay", "CADRG"},
+    { "PI", "", "1:500K", "Special Military Purpose", "CADRG"},
+    { "PJ", "", "1:500K", "Special Military Purpose", "CADRG"},
+    { "PK", "", "1:500K", "Special Military Purpose", "CADRG"},
+    { "PL", "", "1:1M", "Special Military Map - Overlay", "CADRG"},
+    { "PM", "", "1:1M", "Special Military Purpose", "CADRG"},
+    { "PN", "", "1:1M", "Special Military Purpose", "CADRG"},
+    { "PO", "", "1:1M", "Special Military Purpose", "CADRG"},
+    { "PP", "", "1:2M", "Special Military Map - Overlay", "CADRG"},
+    { "PQ", "", "1:2M", "Special Military Purpose", "CADRG"},
+    { "PR", "", "1:2M", "Special Military Purpose", "CADRG"},
+    { "PS", "", "1:5M", "Special Military Map - Overlay", "CADRG"},
+    { "PT", "", "1:5M", "Special Military Purpose", "CADRG"},
+    { "PU", "", "1:5M", "Special Military Purpose", "CADRG"},
+    { "PV", "", "1:5M", "Special Military Purpose", "CADRG"},
+    { "R1", "", "1:50K", "Range Charts", "CADRG"},
+    { "R2", "", "1:100K", "Range Charts", "CADRG"},
+    { "R3", "", "1:250K", "Range Charts", "CADRG"},
+    { "R4", "", "1:500K", "Range Charts", "CADRG"},
+    { "R5", "", "1:1M", "Range Charts", "CADRG"},
+    { "RC", "RGS-100", "1:100K", "Russian General Staff Maps", "CADRG"},
+    { "RL", "RGS-50", "1:50K", "Russian General Staff Maps", "CADRG"},
+    { "RR", "RGS-200", "1:200K", "Russian General Staff Maps", "CADRG"},
+    { "RV", "Riverine", "1:50K", "Riverine Map 1:50,000 scale", "CADRG"},
+    { "TC", "TLM 100", "1:100K", "Topographic Line Map 1:100,000 scale", "CADRG"},
+    { "TF", "TFC (Day)", "1:250K", "Transit Flying Chart (Day)", "CADRG"},
+    { "TL", "TLM50", "1:50K", "Topographic Line Map", "CADRG"},
+    { "TN", "TFC (Night)", "1:250K", "Transit Flying Chart (Night) - Host Nation", "CADRG"},
+    { "TP", "TPC", "1:500K", "Tactical Pilotage Chart", "CADRG"},
+    { "TQ", "TLM24", "1:24K", "Topographic Line Map 1:24,000 scale", "CADRG"},
+    { "TR", "TLM200", "1:200K", "Topographic Line Map 1:200,000 scale", "CADRG"},
+    { "TT", "TLM25", "1:25K", "Topographic Line Map 1:25,000 scale", "CADRG"},
+    { "UL", "TLM50 - Other", "1:50K", "Topographic Line Map (other 1:50,000 scale)", "CADRG"},
+    { "V1", "Inset HRC", "1:50", "Helicopter Route Chart Inset", "CADRG"},
+    { "V2", "Inset HRC", "1:62500", "Helicopter Route Chart Inset", "CADRG"},
+    { "V3", "Inset HRC", "1:90K", "Helicopter Route Chart Inset", "CADRG"},
+    { "V4", "Inset HRC", "1:250K", "Helicopter Route Chart Inset", "CADRG"},
+    { "VH", "HRC", "1:125K", "Helicopter Route Chart", "CADRG"},
+    { "VN", "VNC", "1:500K", "Visual Navigation Charts", "CADRG"},
+    { "VT", "VTAC", "1:250K", "VFR Terminal Area Chart", "CADRG"},
+    { "WA", "", "1:250K", "IFR Enroute Low", "CADRG"},
+    { "WB", "", "1:500K", "IFR Enroute Low", "CADRG"},
+    { "WC", "", "1:750K", "IFR Enroute Low", "CADRG"},
+    { "WD", "", "1:1M", "IFR Enroute Low", "CADRG"},
+    { "WE", "", "1:1.5M", "IFR Enroute Low", "CADRG"},
+    { "WF", "", "1:2M", "IFR Enroute Low", "CADRG"},
+    { "WG", "", "1:2.5M", "IFR Enroute Low", "CADRG"},
+    { "WH", "", "1:3M", "IFR Enroute Low", "CADRG"},
+    { "WI", "", "1:3.5M", "IFR Enroute Low", "CADRG"},
+    { "WK", "", "1:4M", "IFR Enroute Low", "CADRG"},
+    { "XD", "", "1:1M", "IFR Enroute High", "CADRG"},
+    { "XE", "", "1:1.5M", "IFR Enroute High", "CADRG"},
+    { "XF", "", "1:2M", "IFR Enroute High", "CADRG"},
+    { "XG", "", "1:2.5M", "IFR Enroute High", "CADRG"},
+    { "XH", "", "1:3M", "IFR Enroute High", "CADRG"},
+    { "XI", "", "1:3.5M", "IFR Enroute High", "CADRG"},
+    { "XJ", "", "1:4M", "IFR Enroute High", "CADRG"},
+    { "XK", "", "1:4.5M", "IFR Enroute High", "CADRG"},
+    { "Y9", "", "1:16.5M", "IFR Enroute Area", "CADRG"},
+    { "YA", "", "1:250K", "IFR Enroute Area", "CADRG"},
+    { "YB", "", "1:500K", "IFR Enroute Area", "CADRG"},
+    { "YC", "", "1:750K", "IFR Enroute Area", "CADRG"},
+    { "YD", "", "1:1M", "IFR Enroute Area", "CADRG"},
+    { "YE", "", "1:1.5M", "IFR Enroute Area", "CADRG"},
+    { "YF", "", "1:2M", "IFR Enroute Area", "CADRG"},
+    { "YI", "", "1:3.5M", "IFR Enroute Area", "CADRG"},
+    { "YJ", "", "1:4M", "IFR Enroute Area", "CADRG"},
+    { "YZ", "", "1:12M", "IFR Enroute Area", "CADRG"},
+    { "ZA", "", "1:250K", "IFR Enroute High/Low", "CADRG"},
+    { "ZB", "", "1:500K", "IFR Enroute High/Low", "CADRG"},
+    { "ZC", "", "1:750K", "IFR Enroute High/Low", "CADRG"},
+    { "ZD", "", "1:1M", "IFR Enroute High/Low", "CADRG"},
+    { "ZE", "", "1:1.5M", "IFR Enroute High/Low", "CADRG"},
+    { "ZF", "", "1:2M", "IFR Enroute High/Low", "CADRG"},
+    { "ZG", "", "1:2.5M", "IFR Enroute High/Low", "CADRG"},
+    { "ZH", "", "1:3M", "IFR Enroute High/Low", "CADRG"},
+    { "ZI", "", "1:3.5M", "IFR Enroute High/Low", "CADRG"},
+    { "ZJ", "", "1:4M", "IFR Enroute High/Low", "CADRG"},
+    { "ZK", "", "1:4.5M", "IFR Enroute High/Low", "CADRG"},
+    { "ZT", "", "1:9M", "IFR Enroute High/Low", "CADRG"},
+    { "ZV", "", "1:10M", "IFR Enroute High/Low", "CADRG"},
+    { "ZZ", "", "1:12M", "IFR Enroute High/Low", "CADRG"}
 };
 
 /* See 24111CN1.pdf paragraph 5.1.4 */
@@ -1719,7 +1908,7 @@ const NITFSeries* NITFGetSeriesInfo(const char* pszFilename)
             {
                 seriesCode[0] = pszFilename[i+1];
                 seriesCode[1] = pszFilename[i+2];
-                for(i=0;i<sizeof(nitfSeries) / sizeof(nitfSeries[0]); i++)
+                for(i=0;(size_t)i<sizeof(nitfSeries) / sizeof(nitfSeries[0]); i++)
                 {
                     if (EQUAL(seriesCode, nitfSeries[i].code))
                     {
@@ -1880,4 +2069,779 @@ int NITFReconcileAttachments( NITFFile *psFile )
         return bSuccess;
     else
         return NITFReconcileAttachments( psFile );
+}
+
+/************************************************************************/
+/*                        NITFFindValFromEnd()                          */
+/************************************************************************/
+
+static const char* NITFFindValFromEnd(char** papszMD,
+                                      int nMDSize,
+                                      const char* pszVar,
+                                      CPL_UNUSED const char* pszDefault)
+{
+    int nVarLen = strlen(pszVar);
+    int nIter = nMDSize-1;
+    for(;nIter >= 0;nIter--)
+    {
+        if (strncmp(papszMD[nIter], pszVar, nVarLen) == 0 &&
+            papszMD[nIter][nVarLen] == '=')
+            return papszMD[nIter] + nVarLen + 1;
+    }
+    return NULL;
+}
+
+/************************************************************************/
+/*                  NITFGenericMetadataReadTREInternal()                */
+/************************************************************************/
+
+static char** NITFGenericMetadataReadTREInternal(char **papszMD,
+                                                 int* pnMDSize,
+                                                 int* pnMDAlloc,
+                                                 CPLXMLNode* psOutXMLNode,
+                                                 const char* pszTREName,
+                                                 const char *pachTRE,
+                                                 int nTRESize,
+                                                 CPLXMLNode* psTreNode,
+                                                 int *pnTreOffset,
+                                                 const char* pszMDPrefix,
+                                                 int *pbError)
+{
+    CPLXMLNode* psIter;
+    for(psIter = psTreNode->psChild;
+        psIter != NULL && *pbError == FALSE;
+        psIter = psIter->psNext)
+    {
+        if (psIter->eType == CXT_Element &&
+            psIter->pszValue != NULL &&
+            strcmp(psIter->pszValue, "field") == 0)
+        {
+            const char* pszName = CPLGetXMLValue(psIter, "name", NULL);
+            const char* pszLongName = CPLGetXMLValue(psIter, "longname", NULL);
+            const char* pszLength = CPLGetXMLValue(psIter, "length", NULL);
+            int nLength = -1;
+            if (pszLength != NULL)
+                nLength = atoi(pszLength);
+            else
+            {
+                const char* pszLengthVar = CPLGetXMLValue(psIter, "length_var", NULL);
+                if (pszLengthVar != NULL)
+                {
+                    char** papszMDIter = papszMD;
+                    while(papszMDIter != NULL && *papszMDIter != NULL)
+                    {
+                        if (strstr(*papszMDIter, pszLengthVar) != NULL)
+                        {
+                            const char* pszEqual = strchr(*papszMDIter, '=');
+                            if (pszEqual != NULL)
+                            {
+                                nLength = atoi(pszEqual + 1);
+                                break;
+                            }
+                        }
+                        papszMDIter ++;
+                    }
+                }
+            }
+            if (pszName != NULL && nLength > 0)
+            {
+                char* pszMDItemName;
+                char** papszTmp = NULL;
+
+                if (*pnTreOffset + nLength > nTRESize)
+                {
+                    *pbError = TRUE;
+                    CPLError( CE_Warning, CPLE_AppDefined,
+                              "Not enough bytes when reading %s TRE "
+                              "(at least %d needed, only %d available)",
+                              pszTREName, *pnTreOffset + nLength, nTRESize );
+                    break;
+                }
+
+                pszMDItemName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, pszName));
+
+                NITFExtractMetadata( &papszTmp, pachTRE, *pnTreOffset,
+                                     nLength, pszMDItemName );
+                if (*pnMDSize + 1 >= *pnMDAlloc)
+                {
+                    *pnMDAlloc = (*pnMDAlloc * 4 / 3) + 32;
+                    papszMD = (char**)CPLRealloc(papszMD, *pnMDAlloc * sizeof(char**));
+                }
+                papszMD[*pnMDSize] = papszTmp[0];
+                papszMD[(*pnMDSize) + 1] = NULL;
+                (*pnMDSize) ++;
+                papszTmp[0] = NULL;
+                CPLFree(papszTmp);
+
+                if (psOutXMLNode != NULL)
+                {
+                    const char* pszVal = strchr(papszMD[(*pnMDSize) - 1], '=') + 1;
+                    CPLXMLNode* psFieldNode;
+                    CPLXMLNode* psNameNode;
+                    CPLXMLNode* psValueNode;
+
+                    CPLAssert(pszVal != NULL);
+                    psFieldNode =
+                        CPLCreateXMLNode(psOutXMLNode, CXT_Element, "field");
+                    psNameNode =
+                        CPLCreateXMLNode(psFieldNode, CXT_Attribute, "name");
+                    psValueNode =
+                        CPLCreateXMLNode(psFieldNode, CXT_Attribute, "value");
+                    CPLCreateXMLNode(psNameNode, CXT_Text,
+                       (pszName[0] || pszLongName == NULL) ? pszName : pszLongName);
+                    CPLCreateXMLNode(psValueNode, CXT_Text, pszVal);
+                }
+
+                CPLFree(pszMDItemName);
+
+                *pnTreOffset += nLength;
+            }
+            else if (nLength > 0)
+            {
+                *pnTreOffset += nLength;
+            }
+            else
+            {
+                *pbError = TRUE;
+                CPLError( CE_Warning, CPLE_AppDefined,
+                          "Invalid item construct in %s TRE in XML ressource",
+                          pszTREName );
+                break;
+            }
+        }
+        else if (psIter->eType == CXT_Element &&
+                 psIter->pszValue != NULL &&
+                 strcmp(psIter->pszValue, "loop") == 0)
+        {
+            const char* pszCounter = CPLGetXMLValue(psIter, "counter", NULL);
+            const char* pszIterations = CPLGetXMLValue(psIter, "iterations", NULL);
+            const char* pszFormula = CPLGetXMLValue(psIter, "formula", NULL);
+            const char* pszMDSubPrefix = CPLGetXMLValue(psIter, "md_prefix", NULL);
+            int nIterations = -1;
+
+            if (pszCounter != NULL)
+            {
+                char* pszMDItemName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, pszCounter));
+                nIterations = atoi(NITFFindValFromEnd(papszMD, *pnMDSize, pszMDItemName, "-1"));
+                CPLFree(pszMDItemName);
+                if (nIterations < 0)
+                {
+                    CPLError( CE_Warning, CPLE_AppDefined,
+                            "Invalid loop construct in %s TRE in XML ressource : "
+                            "invalid 'counter' %s",
+                            pszTREName, pszCounter );
+                    *pbError = TRUE;
+                    break;
+                }
+            }
+            else if (pszIterations != NULL)
+            {
+                nIterations = atoi(pszIterations);
+            }
+            else if (pszFormula != NULL &&
+                     strcmp(pszFormula, "(NPART+1)*(NPART)/2") == 0)
+            {
+                char* pszMDItemName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, "NPART"));
+                int NPART = atoi(NITFFindValFromEnd(papszMD, *pnMDSize, pszMDItemName, "-1"));
+                CPLFree(pszMDItemName);
+                if (NPART < 0)
+                {
+                    CPLError( CE_Warning, CPLE_AppDefined,
+                            "Invalid loop construct in %s TRE in XML ressource : "
+                            "invalid 'counter' %s",
+                            pszTREName, "NPART" );
+                    *pbError = TRUE;
+                    break;
+                }
+                nIterations = NPART * (NPART + 1) / 2;
+            }
+            else if (pszFormula != NULL &&
+                     strcmp(pszFormula, "(NUMOPG+1)*(NUMOPG)/2") == 0)
+            {
+                char* pszMDItemName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, "NUMOPG"));
+                int NUMOPG = atoi(NITFFindValFromEnd(papszMD, *pnMDSize, pszMDItemName, "-1"));
+                CPLFree(pszMDItemName);
+                if (NUMOPG < 0)
+                {
+                    CPLError( CE_Warning, CPLE_AppDefined,
+                            "Invalid loop construct in %s TRE in XML ressource : "
+                            "invalid 'counter' %s",
+                            pszTREName, "NUMOPG" );
+                    *pbError = TRUE;
+                    break;
+                }
+                nIterations = NUMOPG * (NUMOPG + 1) / 2;
+            }
+            else if (pszFormula != NULL &&
+                     strcmp(pszFormula, "NPAR*NPARO") == 0)
+            {
+                char* pszMDNPARName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, "NPAR"));
+                int NPAR = atoi(NITFFindValFromEnd(papszMD, *pnMDSize, pszMDNPARName, "-1"));
+                char* pszMDNPAROName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, "NPARO"));
+                int NPARO= atoi(NITFFindValFromEnd(papszMD, *pnMDSize, pszMDNPAROName, "-1"));
+                CPLFree(pszMDNPARName);
+                CPLFree(pszMDNPAROName);
+                if (NPAR < 0)
+                {
+                    CPLError( CE_Warning, CPLE_AppDefined,
+                            "Invalid loop construct in %s TRE in XML ressource : "
+                            "invalid 'counter' %s",
+                            pszTREName, "NPAR" );
+                    *pbError = TRUE;
+                    break;
+                }
+                if (NPARO < 0)
+                {
+                    CPLError( CE_Warning, CPLE_AppDefined,
+                            "Invalid loop construct in %s TRE in XML ressource : "
+                            "invalid 'counter' %s",
+                            pszTREName, "NPAR0" );
+                    *pbError = TRUE;
+                    break;
+                }
+                nIterations = NPAR*NPARO;
+            }
+            else if (pszFormula != NULL &&
+                     strcmp(pszFormula, "NPLN-1") == 0)
+            {
+                char* pszMDItemName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, "NPLN"));
+                int NPLN = atoi(NITFFindValFromEnd(papszMD, *pnMDSize, pszMDItemName, "-1"));
+                CPLFree(pszMDItemName);
+                if (NPLN < 0)
+                {
+                    CPLError( CE_Warning, CPLE_AppDefined,
+                            "Invalid loop construct in %s TRE in XML ressource : "
+                            "invalid 'counter' %s",
+                            pszTREName, "NPLN" );
+                    *pbError = TRUE;
+                    break;
+                }
+                nIterations = NPLN-1;
+            }
+            else if (pszFormula != NULL &&
+                     strcmp(pszFormula, "NXPTS*NYPTS") == 0)
+            {
+                char* pszMDNPARName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, "NXPTS"));
+                int NXPTS = atoi(NITFFindValFromEnd(papszMD, *pnMDSize, pszMDNPARName, "-1"));
+                char* pszMDNPAROName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, "NYPTS"));
+                int NYPTS= atoi(NITFFindValFromEnd(papszMD, *pnMDSize, pszMDNPAROName, "-1"));
+                CPLFree(pszMDNPARName);
+                CPLFree(pszMDNPAROName);
+                if (NXPTS < 0)
+                {
+                    CPLError( CE_Warning, CPLE_AppDefined,
+                            "Invalid loop construct in %s TRE in XML ressource : "
+                            "invalid 'counter' %s",
+                            pszTREName, "NXPTS" );
+                    *pbError = TRUE;
+                    break;
+                }
+                if (NYPTS < 0)
+                {
+                    CPLError( CE_Warning, CPLE_AppDefined,
+                            "Invalid loop construct in %s TRE in XML ressource : "
+                            "invalid 'counter' %s",
+                            pszTREName, "NYPTS" );
+                    *pbError = TRUE;
+                    break;
+                }
+                nIterations = NXPTS*NYPTS;
+            }
+            else
+            {
+                CPLError( CE_Warning, CPLE_AppDefined,
+                          "Invalid loop construct in %s TRE in XML ressource : "
+                          "missing or invalid 'counter' or 'iterations' or 'formula'",
+                          pszTREName );
+                *pbError = TRUE;
+                break;
+            }
+
+            if (nIterations > 0)
+            {
+                int iIter;
+                const char* pszPercent;
+                int bHasValidPercentD = FALSE;
+                CPLXMLNode* psRepeatedNode = NULL;
+                CPLXMLNode* psLastChild = NULL;
+
+                /* Check that md_prefix has one and only %XXXXd pattern */
+                if (pszMDSubPrefix != NULL &&
+                    (pszPercent = strchr(pszMDSubPrefix, '%')) != NULL &&
+                    strchr(pszPercent+1,'%') == NULL)
+                {
+                    const char* pszIter = pszPercent + 1;
+                    while(*pszIter != '\0')
+                    {
+                        if (*pszIter >= '0' && *pszIter <= '9')
+                            pszIter ++;
+                        else if (*pszIter == 'd')
+                        {
+                            bHasValidPercentD = atoi(pszPercent + 1) <= 10;
+                            break;
+                        }
+                        else
+                            break;
+                    }
+                }
+
+                if (psOutXMLNode != NULL)
+                {
+                    CPLXMLNode* psNumberNode;
+                    CPLXMLNode* psNameNode;
+                    const char* pszName = CPLGetXMLValue(psIter, "name", NULL);
+                    psRepeatedNode = CPLCreateXMLNode(psOutXMLNode, CXT_Element, "repeated");
+                    if (pszName)
+                    {
+                        psNameNode = CPLCreateXMLNode(psRepeatedNode, CXT_Attribute, "name");
+                        CPLCreateXMLNode(psNameNode, CXT_Text, pszName);
+                    }
+                    psNumberNode = CPLCreateXMLNode(psRepeatedNode, CXT_Attribute, "number");
+                    CPLCreateXMLNode(psNumberNode, CXT_Text, CPLSPrintf("%d", nIterations));
+
+                    psLastChild = psRepeatedNode->psChild;
+                    while(psLastChild->psNext != NULL)
+                        psLastChild = psLastChild->psNext;
+                }
+
+                for(iIter = 0; iIter < nIterations && *pbError == FALSE; iIter++)
+                {
+                    char* pszMDNewPrefix = NULL;
+                    CPLXMLNode* psGroupNode = NULL;
+                    if (pszMDSubPrefix != NULL)
+                    {
+                        if (bHasValidPercentD)
+                        {
+                            char* szTmp = (char*)CPLMalloc(
+                                            strlen(pszMDSubPrefix) + 10 + 1);
+                            sprintf(szTmp, pszMDSubPrefix, iIter + 1);
+                            pszMDNewPrefix = CPLStrdup(CPLSPrintf("%s%s",
+                                                       pszMDPrefix, szTmp));
+                            CPLFree(szTmp);
+                        }
+                        else
+                            pszMDNewPrefix = CPLStrdup(CPLSPrintf("%s%s%04d_",
+                                      pszMDPrefix, pszMDSubPrefix, iIter + 1));
+                    }
+                    else
+                        pszMDNewPrefix = CPLStrdup(CPLSPrintf("%s%04d_",
+                                                   pszMDPrefix, iIter + 1));
+
+                    if (psRepeatedNode != NULL)
+                    {
+                        CPLXMLNode* psIndexNode;
+                        psGroupNode = CPLCreateXMLNode(NULL, CXT_Element, "group");
+                        CPLAssert(psLastChild->psNext == NULL);
+                        psLastChild->psNext = psGroupNode;
+                        psLastChild = psGroupNode;
+                        psIndexNode = CPLCreateXMLNode(psGroupNode, CXT_Attribute, "index");
+                        CPLCreateXMLNode(psIndexNode, CXT_Text, CPLSPrintf("%d", iIter));
+                    }
+
+                    papszMD = NITFGenericMetadataReadTREInternal(papszMD,
+                                                                 pnMDSize,
+                                                                 pnMDAlloc,
+                                                                 psGroupNode,
+                                                                 pszTREName,
+                                                                 pachTRE,
+                                                                 nTRESize,
+                                                                 psIter,
+                                                                 pnTreOffset,
+                                                                 pszMDNewPrefix,
+                                                                 pbError);
+                    CPLFree(pszMDNewPrefix);
+                }
+            }
+        }
+        else if (psIter->eType == CXT_Element &&
+                 psIter->pszValue != NULL &&
+                 strcmp(psIter->pszValue, "if") == 0)
+        {
+            const char* pszCond = CPLGetXMLValue(psIter, "cond", NULL);
+            const char* pszEqual = NULL;
+            if (pszCond != NULL && strcmp(pszCond, "QSS!=U AND QOD!=Y") == 0)
+            {
+                char* pszQSSName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, "QSS"));
+                char* pszQODName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, "QOD"));
+                const char* pszQSSVal = NITFFindValFromEnd(papszMD, *pnMDSize, pszQSSName, NULL);
+                const char* pszQODVal = NITFFindValFromEnd(papszMD, *pnMDSize, pszQODName, NULL);
+                if (pszQSSVal == NULL)
+                {
+                    CPLDebug("NITF", "Cannot find if cond variable %s", "QSS");
+                }
+                else if (pszQODVal == NULL)
+                {
+                    CPLDebug("NITF", "Cannot find if cond variable %s", "QOD");
+                }
+                else if (strcmp(pszQSSVal, "U") != 0 && strcmp(pszQODVal, "Y") != 0)
+                {
+                    papszMD = NITFGenericMetadataReadTREInternal(papszMD,
+                                                                 pnMDSize,
+                                                                 pnMDAlloc,
+                                                                 psOutXMLNode,
+                                                                 pszTREName,
+                                                                 pachTRE,
+                                                                 nTRESize,
+                                                                 psIter,
+                                                                 pnTreOffset,
+                                                                 pszMDPrefix,
+                                                                 pbError);
+                }
+                CPLFree(pszQSSName);
+                CPLFree(pszQODName);
+            }
+            else if (pszCond != NULL && (pszEqual = strchr(pszCond, '=')) != NULL)
+            {
+                char* pszCondVar = (char*)CPLMalloc(pszEqual - pszCond + 1);
+                const char* pszCondExpectedVal = pszEqual + 1;
+                char* pszMDItemName;
+                const char* pszCondVal;
+                int bTestEqual = TRUE;
+                memcpy(pszCondVar, pszCond, pszEqual - pszCond);
+                if (pszEqual - pszCond > 1 && pszCondVar[pszEqual - pszCond - 1] == '!')
+                {
+                    bTestEqual = FALSE;
+                    pszCondVar[pszEqual - pszCond - 1] = '\0';
+                }
+                pszCondVar[pszEqual - pszCond] = '\0';
+                pszMDItemName = CPLStrdup(
+                            CPLSPrintf("%s%s", pszMDPrefix, pszCondVar));
+                pszCondVal = NITFFindValFromEnd(papszMD, *pnMDSize, pszMDItemName, NULL);
+                if (pszCondVal == NULL)
+                {
+                    CPLDebug("NITF", "Cannot find if cond variable %s",
+                             pszMDItemName);
+                }
+                else if ((bTestEqual && strcmp(pszCondVal, pszCondExpectedVal) == 0) ||
+                         (!bTestEqual && strcmp(pszCondVal, pszCondExpectedVal) != 0))
+                {
+                    papszMD = NITFGenericMetadataReadTREInternal(papszMD,
+                                                                 pnMDSize,
+                                                                 pnMDAlloc,
+                                                                 psOutXMLNode,
+                                                                 pszTREName,
+                                                                 pachTRE,
+                                                                 nTRESize,
+                                                                 psIter,
+                                                                 pnTreOffset,
+                                                                 pszMDPrefix,
+                                                                 pbError);
+                }
+                CPLFree(pszMDItemName);
+                CPLFree(pszCondVar);
+            }
+            else
+            {
+                CPLError( CE_Warning, CPLE_AppDefined,
+                          "Invalid if construct in %s TRE in XML ressource : "
+                          "missing or invalid 'cond' attribute",
+                          pszTREName );
+                *pbError = TRUE;
+                break;
+            }
+        }
+        else if (psIter->eType == CXT_Element &&
+                 psIter->pszValue != NULL &&
+                 strcmp(psIter->pszValue, "if_remaining_bytes") == 0)
+        {
+            if (*pnTreOffset < nTRESize)
+            {
+                papszMD = NITFGenericMetadataReadTREInternal(papszMD,
+                                                             pnMDSize,
+                                                             pnMDAlloc,
+                                                             psOutXMLNode,
+                                                             pszTREName,
+                                                             pachTRE,
+                                                             nTRESize,
+                                                             psIter,
+                                                             pnTreOffset,
+                                                             pszMDPrefix,
+                                                             pbError);
+        }
+        }
+        else
+        {
+            //CPLDebug("NITF", "Unknown element : %s", psIter->pszValue ? psIter->pszValue : "null");
+        }
+    }
+    return papszMD;
+}
+
+/************************************************************************/
+/*                      NITFGenericMetadataReadTRE()                    */
+/************************************************************************/
+
+static
+char **NITFGenericMetadataReadTRE(char **papszMD,
+                                  const char* pszTREName,
+                                  const char *pachTRE,
+                                  int nTRESize,
+                                  CPLXMLNode* psTreNode)
+{
+    int nTreLength, nTreMinLength = -1 /*, nTreMaxLength = -1 */;
+    int bError = FALSE;
+    int nTreOffset = 0;
+    const char* pszMDPrefix;
+    int nMDSize, nMDAlloc;
+
+    nTreLength = atoi(CPLGetXMLValue(psTreNode, "length", "-1"));
+    nTreMinLength = atoi(CPLGetXMLValue(psTreNode, "minlength", "-1"));
+    /* nTreMaxLength = atoi(CPLGetXMLValue(psTreNode, "maxlength", "-1")); */
+
+    if( (nTreLength > 0 && nTRESize != nTreLength) ||
+        (nTreMinLength > 0 && nTRESize < nTreMinLength) )
+    {
+        CPLError( CE_Warning, CPLE_AppDefined,
+                  "%s TRE wrong size, ignoring.", pszTREName );
+        return papszMD;
+    }
+
+    pszMDPrefix = CPLGetXMLValue(psTreNode, "md_prefix", "");
+
+    nMDSize = nMDAlloc = CSLCount(papszMD);
+
+    papszMD = NITFGenericMetadataReadTREInternal(papszMD,
+                                                 &nMDSize,
+                                                 &nMDAlloc,
+                                                 NULL,
+                                                 pszTREName,
+                                                 pachTRE,
+                                                 nTRESize,
+                                                 psTreNode,
+                                                 &nTreOffset,
+                                                 pszMDPrefix,
+                                                 &bError);
+
+    if (bError == FALSE && nTreLength > 0 && nTreOffset != nTreLength)
+    {
+        CPLError( CE_Warning, CPLE_AppDefined,
+                  "Inconsistant declaration of %s TRE",
+                  pszTREName );
+    }
+    if (nTreOffset < nTRESize)
+        CPLDebug("NITF", "%d remaining bytes at end of %s TRE",
+                 nTRESize -nTreOffset, pszTREName);
+
+    return papszMD;
+}
+
+
+/************************************************************************/
+/*                           NITFLoadXMLSpec()                          */
+/************************************************************************/
+
+#define NITF_SPEC_FILE "nitf_spec.xml"
+
+static CPLXMLNode* NITFLoadXMLSpec(NITFFile* psFile)
+{
+
+    if (psFile->psNITFSpecNode == NULL)
+    {
+        const char* pszXMLDescFilename = CPLFindFile("gdal", NITF_SPEC_FILE);
+        if (pszXMLDescFilename == NULL)
+        {
+            CPLDebug("NITF", "Cannot find XML file : %s", NITF_SPEC_FILE);
+            return NULL;
+        }
+        psFile->psNITFSpecNode = CPLParseXMLFile(pszXMLDescFilename);
+        if (psFile->psNITFSpecNode == NULL)
+        {
+            CPLDebug("NITF", "Invalid XML file : %s", pszXMLDescFilename);
+            return NULL;
+        }
+    }
+
+    return psFile->psNITFSpecNode;
+}
+
+/************************************************************************/
+/*                      NITFFindTREXMLDescFromName()                    */
+/************************************************************************/
+
+static CPLXMLNode* NITFFindTREXMLDescFromName(NITFFile* psFile,
+                                              const char* pszTREName)
+{
+    CPLXMLNode* psTreeNode;
+    CPLXMLNode* psTresNode;
+    CPLXMLNode* psIter;
+
+    psTreeNode = NITFLoadXMLSpec(psFile);
+    if (psTreeNode == NULL)
+        return NULL;
+
+    psTresNode = CPLGetXMLNode(psTreeNode, "=tres");
+    if (psTresNode == NULL)
+    {
+        CPLDebug("NITF", "Cannot find <tres> root element");
+        return NULL;
+    }
+
+    for(psIter = psTresNode->psChild;psIter != NULL;psIter = psIter->psNext)
+    {
+        if (psIter->eType == CXT_Element &&
+            psIter->pszValue != NULL &&
+            strcmp(psIter->pszValue, "tre") == 0)
+        {
+            const char* pszName = CPLGetXMLValue(psIter, "name", NULL);
+            if (pszName != NULL && strcmp(pszName, pszTREName) == 0)
+            {
+                return psIter;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+/************************************************************************/
+/*                         NITFCreateXMLTre()                           */
+/************************************************************************/
+
+CPLXMLNode* NITFCreateXMLTre(NITFFile* psFile,
+                             const char* pszTREName,
+                             const char *pachTRE,
+                             int nTRESize)
+{
+    int nTreLength, nTreMinLength = -1 /* , nTreMaxLength = -1 */;
+    int bError = FALSE;
+    int nTreOffset = 0;
+    CPLXMLNode* psTreNode;
+    CPLXMLNode* psOutXMLNode = NULL;
+    int nMDSize = 0, nMDAlloc = 0;
+
+    psTreNode = NITFFindTREXMLDescFromName(psFile, pszTREName);
+    if (psTreNode == NULL)
+    {
+        if (!(EQUALN(pszTREName, "RPF", 3) || strcmp(pszTREName, "XXXXXX") == 0))
+        {
+            CPLDebug("NITF", "Cannot find definition of TRE %s in %s",
+                    pszTREName, NITF_SPEC_FILE);
+        }
+        return NULL;
+    }
+
+    nTreLength = atoi(CPLGetXMLValue(psTreNode, "length", "-1"));
+    nTreMinLength = atoi(CPLGetXMLValue(psTreNode, "minlength", "-1"));
+    /* nTreMaxLength = atoi(CPLGetXMLValue(psTreNode, "maxlength", "-1")); */
+
+    if( (nTreLength > 0 && nTRESize != nTreLength) ||
+        (nTreMinLength > 0 && nTRESize < nTreMinLength) )
+    {
+        CPLError( CE_Warning, CPLE_AppDefined,
+                  "%s TRE wrong size, ignoring.", pszTREName );
+        return NULL;
+    }
+
+    psOutXMLNode = CPLCreateXMLNode(NULL, CXT_Element, "tre");
+    CPLCreateXMLNode(CPLCreateXMLNode(psOutXMLNode, CXT_Attribute, "name"),
+                     CXT_Text, pszTREName);
+
+    CSLDestroy(NITFGenericMetadataReadTREInternal(NULL,
+                                                  &nMDSize,
+                                                  &nMDAlloc,
+                                                  psOutXMLNode,
+                                                  pszTREName,
+                                                  pachTRE,
+                                                  nTRESize,
+                                                  psTreNode,
+                                                  &nTreOffset,
+                                                  "",
+                                                  &bError));
+
+    if (bError == FALSE && nTreLength > 0 && nTreOffset != nTreLength)
+    {
+        CPLError( CE_Warning, CPLE_AppDefined,
+                  "Inconsistant declaration of %s TRE",
+                  pszTREName );
+    }
+    if (nTreOffset < nTRESize)
+        CPLDebug("NITF", "%d remaining bytes at end of %s TRE",
+                 nTRESize -nTreOffset, pszTREName);
+
+    return psOutXMLNode;
+}
+
+/************************************************************************/
+/*                        NITFGenericMetadataRead()                     */
+/*                                                                      */
+/* Add metadata from TREs of file and image objects in the papszMD list */
+/* pszSpecificTRE can be NULL, in which case all TREs listed in         */
+/* data/nitf_resources.xml that have md_prefix defined will be looked   */
+/* for. If not NULL, only the specified one will be looked for.         */
+/************************************************************************/
+
+char **NITFGenericMetadataRead( char **papszMD,
+                                NITFFile* psFile,
+                                NITFImage *psImage,
+                                const char* pszSpecificTREName)
+{
+    CPLXMLNode* psTreeNode = NULL;
+    CPLXMLNode* psTresNode = NULL;
+    CPLXMLNode* psIter = NULL;
+
+    if (psFile == NULL && psImage == NULL)
+        return papszMD;
+
+    psTreeNode = NITFLoadXMLSpec(psFile ? psFile : psImage->psFile);
+    if (psTreeNode == NULL)
+        return papszMD;
+
+    psTresNode = CPLGetXMLNode(psTreeNode, "=tres");
+    if (psTresNode == NULL)
+    {
+        CPLDebug("NITF", "Cannot find <tres> root element");
+        return papszMD;
+    }
+
+    for(psIter = psTresNode->psChild;psIter!=NULL;psIter = psIter->psNext)
+    {
+        if (psIter->eType == CXT_Element &&
+            psIter->pszValue != NULL &&
+            strcmp(psIter->pszValue, "tre") == 0)
+        {
+            const char* pszName = CPLGetXMLValue(psIter, "name", NULL);
+            const char* pszMDPrefix = CPLGetXMLValue(psIter, "md_prefix", NULL);
+            if (pszName != NULL && ((pszSpecificTREName == NULL && pszMDPrefix != NULL) ||
+                                    (pszSpecificTREName != NULL && strcmp(pszName, pszSpecificTREName) == 0)))
+            {
+                if (psFile != NULL)
+                {
+                    const char *pachTRE = NULL;
+                    int  nTRESize = 0;
+
+                    pachTRE = NITFFindTRE( psFile->pachTRE, psFile->nTREBytes,
+                                           pszName, &nTRESize);
+                    if( pachTRE != NULL )
+                        papszMD = NITFGenericMetadataReadTRE(
+                                  papszMD, pszName, pachTRE, nTRESize, psIter);
+                }
+                if (psImage != NULL)
+                {
+                    const char *pachTRE = NULL;
+                    int  nTRESize = 0;
+
+                    pachTRE = NITFFindTRE( psImage->pachTRE, psImage->nTREBytes,
+                                           pszName, &nTRESize);
+                    if( pachTRE != NULL )
+                       papszMD = NITFGenericMetadataReadTRE(
+                                  papszMD, pszName, pachTRE, nTRESize, psIter);
+                }
+                if (pszSpecificTREName)
+                    break;
+            }
+        }
+    }
+
+    return papszMD;
 }

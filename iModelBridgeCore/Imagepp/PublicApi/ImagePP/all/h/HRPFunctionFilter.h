@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPFunctionFilter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,17 +14,18 @@
 
 #include "HRPTypedFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPFunctionFilter : public HRPTypedFilter
     {
-    HDECLARE_CLASS_ID(1134, HRPTypedFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_Function, HRPTypedFilter)
 
 public:
 
     // Primary methods
-    _HDLLg virtual         ~HRPFunctionFilter();
+    IMAGEPP_EXPORT virtual         ~HRPFunctionFilter();
 
     // Conversion
-    _HDLLg void             Convert(HRPPixelBuffer* pi_pInputBuffer,
+    IMAGEPP_EXPORT void             Convert(HRPPixelBuffer* pi_pInputBuffer,
                                     HRPPixelBuffer* pio_pOutputBuffer);
 
     // Cloning
@@ -33,8 +34,8 @@ public:
 protected:
 
     // Primary methods
-    _HDLLg HRPFunctionFilter(const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
-    _HDLLg HRPFunctionFilter(const HRPFunctionFilter& pi_rFilter);
+    IMAGEPP_EXPORT HRPFunctionFilter(const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
+    IMAGEPP_EXPORT HRPFunctionFilter(const HRPFunctionFilter& pi_rFilter);
 
     // Function called by this class
     virtual void    Function(const void* pi_pSrcRawData,
@@ -43,4 +44,5 @@ protected:
 
 private:
     };
+END_IMAGEPP_NAMESPACE
 

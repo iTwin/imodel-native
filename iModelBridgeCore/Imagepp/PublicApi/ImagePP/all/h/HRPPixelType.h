@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelType.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPPixelType
@@ -16,6 +16,7 @@
 #include "HPMPersistentObject.h"
 #include "HMGMessageSender.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelType1BitInterface;
 class HRPPixelConverter;
 class HRPQuantizedPalette;
@@ -34,53 +35,56 @@ class HRPPixelType : public HPMPersistentObject,
     public HPMShareableObject<HRPPixelType>,
     public HMGMessageSender
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1004)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRPPixelTypeId_Base)
 
 public:
+    // The max size needed to hold one pixel in bits and bytes(rounded up).
+    enum { 
+            MAX_PIXEL_BITS  = 96,     // HRPPixelTypeV96R32G32B32
+            MAX_PIXEL_BYTES = (MAX_PIXEL_BITS + 7) / 8
+         };
+
     // Primary methods
     virtual         ~HRPPixelType();
 
-    // operators
-    virtual bool   operator==(const HRPPixelType& pi_rObj) const;
-    virtual bool   operator!=(const HRPPixelType& pi_rObj) const;
-
     // Not a const methos because it returns a non const pointer to this.
-    virtual HRPPixelType1BitInterface*
-    Get1BitInterface ();
+    virtual HRPPixelType1BitInterface*          Get1BitInterface ();
 
-    virtual HFCPtr<HRPPixelConverter>
-    GetConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const;
+    virtual HFCPtr<HRPPixelConverter>           GetConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const;
 
-    _HDLLg virtual HFCPtr<HRPPixelConverter>
-    GetConverterTo(const HRPPixelType* pi_pPixelTypeTo) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HRPPixelConverter>    GetConverterTo(const HRPPixelType* pi_pPixelTypeTo) const;
 
-    const HRPPixelPalette&
-    GetPalette() const;
+    const HRPPixelPalette&                      GetPalette() const;
 
     const HRPChannelOrg&
     GetChannelOrg() const;
 
-    virtual HRPQuantizedPalette*
-    CreateQuantizedPalette(uint32_t pi_MaxEntries) const;
+    virtual HRPQuantizedPalette*                CreateQuantizedPalette(uint32_t pi_MaxEntries) const;
 
-    _HDLLg HRPPixelPalette&
-    LockPalette();
+    IMAGEPP_EXPORT HRPPixelPalette&                     LockPalette();
 
-    _HDLLg void            UnlockPalette();
+    IMAGEPP_EXPORT void                                 UnlockPalette();
+
+    //! Based on the same input, will both pixeltypes output the same value?
+    //! Basically an equal operator but without the rawData and others states, metadatas...
+    IMAGEPP_EXPORT bool HasSamePixelInterpretation(HRPPixelType const& obj) const;
 
     // Please do not override this method.
-    uint32_t CountPixelRawDataBits() const;
+    uint32_t                                   CountPixelRawDataBits() const;
 
     // Other methods
-    virtual unsigned short CountIndexBits()        const;
-    virtual unsigned short CountValueBits()        const = 0;
+    virtual unsigned short                      CountIndexBits()        const;
+    virtual unsigned short                      CountValueBits()        const = 0;
 
-    _HDLLg const void*        GetDefaultRawData() const;
-    _HDLLg void            SetDefaultRawData(const void* pi_pValue);
+    IMAGEPP_EXPORT const void*        GetDefaultRawData() const;
+    IMAGEPP_EXPORT void            SetDefaultRawData(const void* pi_pValue);
 
-    _HDLLg virtual void    SetDefaultCompositeValue(const void* pi_pValue);
+    IMAGEPP_EXPORT virtual void    SetDefaultCompositeValue(const void* pi_pValue);
 
-    virtual uint32_t FindNearestEntryInPalette(const void* pi_pValue) const;
+    virtual uint32_t                           FindNearestEntryInPalette(const void* pi_pValue) const;
+
+    bool HasConverterFrom(HRPPixelType const& from) const {return HasConverterFrom(&from) != NULL;}
+    bool HasConverterTo(HRPPixelType const& to) const {return HasConverterTo(&to) != NULL;}
 
 protected:
     // member
@@ -98,34 +102,35 @@ protected:
     HRPPixelType(const HRPPixelType& pi_rObj);
 
 
-    virtual const HRPPixelConverter*
-    HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const = 0;
-
-    virtual const HRPPixelConverter*
-    HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const = 0;
+    virtual const HRPPixelConverter*            HasConverterFrom(const HRPPixelType* pi_pPixelTypeFrom) const = 0;
+    virtual const HRPPixelConverter*            HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const = 0;
 
 private:
 
     // operator= DISABLED
     HRPPixelType&   operator=(const HRPPixelType& pi_rObj);
 
-    void           DeepDelete();
-    void           DeepCopy(const HRPPixelType& pi_rObj);
-    HFCPtr<HRPPixelConverter>
-    CreateConverter(const HRPPixelConverter*  pi_pConverter,
-                    const HRPPixelType* pi_pPixelType) const;
+    //*** Diasabled because they use m_pDefaultRawData which we usually want to ignore.
+    //    For now, use HasSamePixelInterpretation() that will ignore rawData.
+    bool   operator==(const HRPPixelType& pi_rObj) const;
+    bool   operator!=(const HRPPixelType& pi_rObj) const;
+
+    void                             DeepDelete();
+    void                             DeepCopy(const HRPPixelType& pi_rObj);
+    HFCPtr<HRPPixelConverter>        CreateConverter(const HRPPixelConverter*  pi_pConverter,
+                                                     const HRPPixelType* pi_pPixelType) const;
 
     // greater than 0 if pixels are indices, equal to 0 if pixels are values.
-    unsigned short                 m_IndexBits;
+    unsigned short                  m_IndexBits;
 
     HRPPixelPalette                 m_PixelPalette;
 
     HRPChannelOrg                   m_ChannelOrg;
 
-    bool                           m_HasUserDefaultRawData;
-    HArrayAutoPtr<Byte>            m_pDefaultRawData;
+    HArrayAutoPtr<Byte>             m_pDefaultRawData;
 
     HFCExclusiveKey                 m_PaletteAccess;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRPPixelType.hpp"

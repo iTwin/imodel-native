@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMStoredRasterEquivalentTransfo.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -11,7 +11,7 @@
 
 #include "HRARaster.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     This is a utility object. Its sole purpose is to decapsulate rasters in
@@ -56,12 +56,12 @@ class HIMStoredRasterEquivalentTransfo
 public:
 
     //:> Primary methods
-    _HDLLg HIMStoredRasterEquivalentTransfo(const HFCPtr<HRARaster>& pi_pRaster);
+    IMAGEPP_EXPORT HIMStoredRasterEquivalentTransfo(const HFCPtr<HRARaster>& pi_pRaster);
 
-    _HDLLg ~HIMStoredRasterEquivalentTransfo();
+    IMAGEPP_EXPORT ~HIMStoredRasterEquivalentTransfo();
 
 
-    _HDLLg bool    EquivalentTransfoCanBeComputed() const;
+    IMAGEPP_EXPORT bool    EquivalentTransfoCanBeComputed() const;
 
     bool           UsesLogicalTransformations() const;
 
@@ -73,7 +73,7 @@ public:
     HFCPtr<HGF2DCoordSys>
     GetPhysicalCoordSys() const;
 
-    _HDLLg void     TransformLogicalShapeIntoPhysical(HVEShape& pio_rShape) const;
+    IMAGEPP_EXPORT void     TransformLogicalShapeIntoPhysical(HVEShape& pio_rShape) const;
     void            TransformPhysicalShapeIntoLogical(HVEShape& pio_rShape) const;
 
 protected:
@@ -121,3 +121,4 @@ private:
     m_pPhysicalCoordSys;
     };
 
+END_IMAGEPP_NAMESPACE

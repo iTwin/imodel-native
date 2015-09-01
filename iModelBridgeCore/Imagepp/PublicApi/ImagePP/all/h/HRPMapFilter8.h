@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMapFilter8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,10 @@
 
 #include "HRPFunctionFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPMapFilter8 : public HRPFunctionFilter
     {
-    HDECLARE_CLASS_ID(1145, HRPFunctionFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_Map8, HRPFunctionFilter)
 
 public:
 
@@ -34,14 +35,13 @@ public:
 
     // Composing
 
-    virtual HRPFilter*
-    ComposeWith(const HRPFilter* pi_pFilter);
+    virtual HRPFilter* ComposeWith(const HRPFilter* pi_pFilter);
 
 
     // Map methods
 
-    virtual void    SetMap(size_t pi_ChannelIndex, const Byte* pi_pMap);
-    virtual Byte* GetMap(uint32_t pi_ChannelIndex);
+    IMAGEPP_EXPORT virtual void  SetMap(size_t pi_ChannelIndex, const Byte* pi_pMap);
+    IMAGEPP_EXPORT virtual Byte* GetMap(uint32_t pi_ChannelIndex);
 
 protected:
     HRPMapFilter8(const HRPMapFilter8& pi_rFilter);
@@ -62,4 +62,5 @@ private:
     void Initialize();
     void DeepDelete();
     };
+END_IMAGEPP_NAMESPACE
 

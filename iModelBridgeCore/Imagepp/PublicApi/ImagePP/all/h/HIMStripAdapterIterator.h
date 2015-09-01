@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMStripAdapterIterator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIMStripAdapterIterator
@@ -11,11 +11,12 @@
 
 #pragma once
 
-#include "HVEShape.h"
 #include "HRARasterIterator.h"
-#include "HIMStripAdapter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRARaster;
+class HRABitmap;
+class HIMStripAdapter;
 
 class HIMStripAdapterIterator: public HRARasterIterator
     {
@@ -53,7 +54,7 @@ private:
     uint32_t            m_CurStrip;
     uint32_t            m_NumberOfStrips;
 
-    HFCPtr<HRARaster>   m_pRasterToReturn;
+    HFCPtr<HRABitmap>   m_pRasterToReturn;
     HFCPtr<HGF2DCoordSys>
     m_pResolutionPhysicalCoordSys;
 
@@ -65,3 +66,5 @@ private:
     HIMStripAdapterIterator&
     operator=(const HIMStripAdapterIterator& pi_rObj);
     };
+
+END_IMAGEPP_NAMESPACE

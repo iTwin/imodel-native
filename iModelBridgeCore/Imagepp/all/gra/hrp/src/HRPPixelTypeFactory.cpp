@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeFactory.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPPixelTypeFactory
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
 
@@ -18,7 +18,6 @@
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
-#include <Imagepp/all/h/HRPPixelTypeI2R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeI4R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeI4R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
@@ -64,7 +63,7 @@ HRPPixelTypeFactory::HRPPixelTypeFactory ()
     Register(new HRPPixelTypeI1R8G8B8RLE);
     Register(new HRPPixelTypeI1R8G8B8A8);
     Register(new HRPPixelTypeI1R8G8B8A8RLE);
-    Register(new HRPPixelTypeI2R8G8B8);
+    //not working Register(new HRPPixelTypeI2R8G8B8);
     Register(new HRPPixelTypeI4R8G8B8);
     Register(new HRPPixelTypeI4R8G8B8A8);
     Register(new HRPPixelTypeI8R8G8B8);
@@ -182,7 +181,7 @@ HFCPtr<HRPPixelType> HRPPixelTypeFactory::Create(const HCLASS_ID& pi_rClassKey) 
         HRPPixelPalette& rPalette = pPixelType->LockPalette();
 
         // set the palette entries
-        void* pRawData = (void*)rPalette.GetCompositeValue(0);
+        void* pRawData = rPalette.GetCompositeValue(0);
         memcpy(pRawData, pi_pPalette, rPalette.CountUsedEntries() * ((pPixelType->GetChannelOrg().CountPixelCompositeValueBits() + 7) / 8));
 
         pPixelType->UnlockPalette();
@@ -198,6 +197,7 @@ HFCPtr<HRPPixelType> HRPPixelTypeFactory::Create(const HCLASS_ID& pi_rClassKey) 
 void HRPPixelTypeFactory::Register(HFCPtr<HRPPixelType> pPixelType)
     {
     HPRECONDITION(m_PixelTypes.find(pPixelType->GetClassID()) == m_PixelTypes.end());
+    HPRECONDITION("Update HRPPixelType::MAX_PIXEL_BITS" || pPixelType->CountPixelRawDataBits() <= HRPPixelType::MAX_PIXEL_BITS);
 
     m_PixelTypes.insert(PixelTypeMap::value_type(pPixelType->GetClassID(), pPixelType));
     }

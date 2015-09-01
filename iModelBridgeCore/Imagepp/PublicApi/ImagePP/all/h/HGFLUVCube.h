@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFLUVCube.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -13,9 +13,11 @@
 
 #include "HGFColorSet.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HGFLUVCube : public HGFColorSet
     {
-    HDECLARE_CLASS_ID(1539, HGFColorSet)
+    HDECLARE_CLASS_ID(HGFLUVCubeId, HGFColorSet)
 
 public:
     static const double L_MIN;
@@ -100,4 +102,6 @@ private:
     static double s_VPrime;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGFLUVCube.hpp"
+

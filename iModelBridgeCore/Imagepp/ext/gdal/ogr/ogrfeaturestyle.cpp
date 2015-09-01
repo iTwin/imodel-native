@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrfeaturestyle.cpp 21193 2010-12-04 17:13:26Z rouault $
+ * $Id: ogrfeaturestyle.cpp 27071 2014-03-21 21:52:46Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Feature Representation string API
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000-2001, Stephane Villeneuve
+ * Copyright (c) 2008-2010, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@
 #include "ogr_featurestyle.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: ogrfeaturestyle.cpp 21193 2010-12-04 17:13:26Z rouault $");
+CPL_CVSID("$Id: ogrfeaturestyle.cpp 27071 2014-03-21 21:52:46Z rouault $");
 
 CPL_C_START
 void OGRFeatureStylePuller() {}
@@ -435,7 +436,7 @@ GBool OGRStyleMgr::AddStyle(const char *pszStyleName,
 /************************************************************************/
 
 /**
- * Add a style to the current style table.
+ * \brief Add a style to the current style table.
  *
  * This function is the same as the C++ method OGRStyleMgr::AddStyle().
  *
@@ -462,6 +463,19 @@ int OGR_SM_AddStyle(OGRStyleMgrH hSM, const char *pszStyleName,
 /*                                                                          */
 /****************************************************************************/
 
+/**
+ * \brief Get the style string from the style manager.
+ *
+ * @param poFeature feature object from which to read the style or NULL to
+ *                  get the style string stored in the manager.
+ *
+ * @return the style string stored in the feature or the style string stored
+ *          in the style manager if poFeature is NULL
+ *
+ * NOTE: this method will call OGRStyleMgr::InitFromFeature() if poFeature is
+ *       not NULL and replace the style string stored in the style manager
+ */
+
 const char *OGRStyleMgr::GetStyleString(OGRFeature *poFeature)
 {
     if (poFeature == NULL)
@@ -469,6 +483,19 @@ const char *OGRStyleMgr::GetStyleString(OGRFeature *poFeature)
     else
       return InitFromFeature(poFeature);
 }
+
+/****************************************************************************/
+/*            GBool OGRStyleMgr::AddPart(const char *pszPart)               */
+/*            Add a new part in the current style                           */
+/****************************************************************************/
+
+/**
+ * \brief Add a part (style string) to the current style.
+ *
+ * @param pszPart the style string defining the part to add.
+ *
+ * @return TRUE on success, FALSE on errors. 
+ */
 
 GBool OGRStyleMgr::AddPart(const char *pszPart)
 {
@@ -759,6 +786,7 @@ OGRStyleTool *OGRStyleMgr::CreateStyleToolFromStyleString(const char *
 OGRStyleTable::OGRStyleTable()
 {
     m_papszStyleTable = NULL;
+    iNextStyle = 0;
 }
 
 /************************************************************************/
@@ -895,6 +923,31 @@ GBool OGRStyleTable::AddStyle(const char *pszName, const char *pszStyleString)
         return TRUE;
     }
     return FALSE;
+}
+
+/************************************************************************/
+/*                       OGR_STBL_AddStyle()                            */
+/************************************************************************/
+
+/**
+ * \brief Add a new style in the table.
+ * No comparison will be done on the
+ * Style string, only on the name.
+ * This function is the same as the C++ method OGRStyleTable::AddStyle().
+ *
+ * @param hStyleTable handle to the style table.
+ * @param pszName the name the style to add.
+ * @param pszStyleString the style string to add.
+ *
+ * @return TRUE on success, FALSE on error
+ */
+
+int OGR_STBL_AddStyle( OGRStyleTableH hStyleTable,
+                       const char *pszName, const char *pszStyleString)
+{
+    VALIDATE_POINTER1( hStyleTable, "OGR_STBL_AddStyle", FALSE );
+    
+    return ((OGRStyleTable *) hStyleTable)->AddStyle( pszName, pszStyleString );
 }
 
 /****************************************************************************/
@@ -1755,9 +1808,12 @@ GBool OGRStyleTool::Parse(const OGRStyleParamId *pasStyle,
     for ( i = 0; i < nElements; i++ )
     {
         char    **papszStylePair =
-            CSLTokenizeString2( papszToken2[i], ":", CSLT_HONOURSTRINGS
-                                                     | CSLT_STRIPLEADSPACES
-                                                     | CSLT_STRIPENDSPACES );
+            CSLTokenizeString2( papszToken2[i], ":", 
+                                CSLT_HONOURSTRINGS 
+                                | CSLT_STRIPLEADSPACES
+                                | CSLT_STRIPENDSPACES 
+                                | CSLT_ALLOWEMPTYTOKENS );
+
         int     j, nTokens = CSLCount(papszStylePair);
 
         if ( nTokens < 1 || nTokens > 2 )

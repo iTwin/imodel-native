@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: aaigriddataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: aaigriddataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Implements Arc/Info ASCII Grid Format.
@@ -7,6 +7,8 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam (warmerdam@pobox.com)
+ * Copyright (c) 2007-2012, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2014, Kyle Shannon <kyle at pobox dot com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,14 +35,21 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: aaigriddataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: aaigriddataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 CPL_C_START
 void    GDALRegister_AAIGrid(void);
+void    GDALRegister_GRASSASCIIGrid(void);
 CPL_C_END
 
 static CPLString OSR_GDS( char **papszNV, const char * pszField, 
                            const char *pszDefaultValue );
+
+typedef enum
+{
+    FORMAT_AAIG,
+    FORMAT_GRASSASCII
+} GridFormat;
 
 /************************************************************************/
 /* ==================================================================== */
@@ -56,13 +65,10 @@ class CPL_DLL AAIGDataset : public GDALPamDataset
     
     VSILFILE   *fp;
 
-    double      adfGeoTransform[6];
     char        **papszPrj;
     CPLString   osPrjFilename;
     char        *pszProjection;
 
-    int         bNoDataSet;
-    double      dfNoDataValue;
 
     unsigned char achReadBuf[256];
     GUIntBig    nBufferOffset;
@@ -72,18 +78,51 @@ class CPL_DLL AAIGDataset : public GDALPamDataset
     GUIntBig    Tell();
     int         Seek( GUIntBig nOffset );
 
+  protected:
+    GDALDataType eDataType;
+    double      adfGeoTransform[6];
+    int         bNoDataSet;
+    double      dfNoDataValue;
+    
+
+    virtual int ParseHeader(const char* pszHeader, const char* pszDataType);
+
   public:
                 AAIGDataset();
                 ~AAIGDataset();
 
     virtual char **GetFileList(void);
 
+    static GDALDataset *CommonOpen( GDALOpenInfo * poOpenInfo,
+                                    GridFormat eFormat );
+
     static GDALDataset *Open( GDALOpenInfo * );
+    static int          Identify( GDALOpenInfo * );
     static CPLErr       Delete( const char *pszFilename );
     static CPLErr       Remove( const char *pszFilename, int bRepError );
+    static GDALDataset *CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
+                                int bStrict, char ** papszOptions,
+                                GDALProgressFunc pfnProgress, void * pProgressData );
 
     virtual CPLErr GetGeoTransform( double * );
     virtual const char *GetProjectionRef(void);
+};
+
+/************************************************************************/
+/* ==================================================================== */
+/*                        GRASSASCIIDataset                             */
+/* ==================================================================== */
+/************************************************************************/
+
+class GRASSASCIIDataset : public AAIGDataset
+{
+    virtual int ParseHeader(const char* pszHeader, const char* pszDataType);
+
+  public:
+                GRASSASCIIDataset() : AAIGDataset() {}
+
+    static GDALDataset *Open( GDALOpenInfo * );
+    static int          Identify( GDALOpenInfo * );
 };
 
 /************************************************************************/
@@ -100,7 +139,7 @@ class AAIGRasterBand : public GDALPamRasterBand
 
   public:
 
-                   AAIGRasterBand( AAIGDataset *, int, GDALDataType );
+                   AAIGRasterBand( AAIGDataset *, int );
     virtual       ~AAIGRasterBand();
 
     virtual double GetNoDataValue( int * );
@@ -112,14 +151,13 @@ class AAIGRasterBand : public GDALPamRasterBand
 /*                           AAIGRasterBand()                            */
 /************************************************************************/
 
-AAIGRasterBand::AAIGRasterBand( AAIGDataset *poDS, int nDataStart, 
-                                GDALDataType eTypeIn )
+AAIGRasterBand::AAIGRasterBand( AAIGDataset *poDS, int nDataStart )
 
 {
     this->poDS = poDS;
 
     nBand = 1;
-    eDataType = eTypeIn;
+    eDataType = poDS->eDataType;
 
     nBlockXSize = poDS->nRasterXSize;
     nBlockYSize = 1;
@@ -157,8 +195,8 @@ CPLErr AAIGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     AAIGDataset *poODS = (AAIGDataset *) poDS;
     int         iPixel;
 
-    if( nBlockYOff < 0 || nBlockYOff > poODS->nRasterYSize - 1 
-        || nBlockXOff != 0 || panLineOffset == NULL)
+    if( nBlockYOff < 0 || nBlockYOff > poODS->nRasterYSize - 1
+        || nBlockXOff != 0 || panLineOffset == NULL || poODS->fp == NULL )
         return CE_Failure;
 
     if( panLineOffset[nBlockYOff] == 0 )
@@ -286,6 +324,7 @@ AAIGDataset::AAIGDataset()
     papszPrj = NULL;
     pszProjection = CPLStrdup("");
     fp = NULL;
+    eDataType = GDT_Int32;
     bNoDataSet = FALSE;
     dfNoDataValue = -9999.0;
 
@@ -377,37 +416,16 @@ char **AAIGDataset::GetFileList()
 }
 
 /************************************************************************/
-/*                                Open()                                */
+/*                            Identify()                                */
 /************************************************************************/
 
-GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
+int AAIGDataset::Identify( GDALOpenInfo * poOpenInfo )
 
 {
-    int i = 0;
-    int j = 0;
-    char **papszTokens = NULL;
-
-    /* Default data type */
-    GDALDataType eDataType = GDT_Int32;
-
-    const char* pszDataType = CPLGetConfigOption("AAIGRID_DATATYPE", NULL);
-    if (pszDataType != NULL)
-    {
-        eDataType = GDALGetDataTypeByName(pszDataType);
-        if (!(eDataType == GDT_Int32 || eDataType == GDT_Float32 ||
-              eDataType == GDT_Float64))
-        {
-            CPLError(CE_Warning, CPLE_NotSupported,
-                     "Unsupported value for AAIGRID_DATATYPE : %s", pszDataType);
-            eDataType = GDT_Int32;
-            pszDataType = NULL;
-        }
-    }
-
 /* -------------------------------------------------------------------- */
 /*      Does this look like an AI grid file?                            */
 /* -------------------------------------------------------------------- */
-    if( poOpenInfo->nHeaderBytes < 100
+    if( poOpenInfo->nHeaderBytes < 40
         || !( EQUALN((const char *) poOpenInfo->pabyHeader,"ncols",5) ||
               EQUALN((const char *) poOpenInfo->pabyHeader,"nrows",5) ||
               EQUALN((const char *) poOpenInfo->pabyHeader,"xllcorner",9)||
@@ -417,23 +435,55 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
               EQUALN((const char *) poOpenInfo->pabyHeader,"dx",2)||
               EQUALN((const char *) poOpenInfo->pabyHeader,"dy",2)||
               EQUALN((const char *) poOpenInfo->pabyHeader,"cellsize",8)) )
+        return FALSE;
+
+    return TRUE;
+}
+
+/************************************************************************/
+/*                            Identify()                                */
+/************************************************************************/
+
+int GRASSASCIIDataset::Identify( GDALOpenInfo * poOpenInfo )
+
+{
+/* -------------------------------------------------------------------- */
+/*      Does this look like a GRASS ASCII grid file?                    */
+/* -------------------------------------------------------------------- */
+    if( poOpenInfo->nHeaderBytes < 40
+        || !( EQUALN((const char *) poOpenInfo->pabyHeader,"north:",6) ||
+              EQUALN((const char *) poOpenInfo->pabyHeader,"south:",6) ||
+              EQUALN((const char *) poOpenInfo->pabyHeader,"east:",5)||
+              EQUALN((const char *) poOpenInfo->pabyHeader,"west:",5)||
+              EQUALN((const char *) poOpenInfo->pabyHeader,"rows:",5)||
+              EQUALN((const char *) poOpenInfo->pabyHeader,"cols:",5) ) )
+        return FALSE;
+
+    return TRUE;
+}
+
+/************************************************************************/
+/*                                Open()                                */
+/************************************************************************/
+
+GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
+{
+    if (!Identify(poOpenInfo))
         return NULL;
 
-    papszTokens =  
-        CSLTokenizeString2( (const char *) poOpenInfo->pabyHeader,
-                                  " \n\r\t", 0 );
+    return CommonOpen(poOpenInfo, FORMAT_AAIG);
+}
+
+/************************************************************************/
+/*                          ParseHeader()                               */
+/************************************************************************/
+
+int AAIGDataset::ParseHeader(const char* pszHeader, const char* pszDataType)
+{
+    int i, j;
+    char** papszTokens =
+        CSLTokenizeString2( pszHeader,  " \n\r\t" , 0 );
     int nTokens = CSLCount(papszTokens);
-
-/* -------------------------------------------------------------------- */
-/*      Create a corresponding GDALDataset.                             */
-/* -------------------------------------------------------------------- */
-    AAIGDataset         *poDS;
-
-    poDS = new AAIGDataset();
-
-/* -------------------------------------------------------------------- */
-/*      Parse the header.                                               */
-/* -------------------------------------------------------------------- */
     double dfCellDX = 0;
     double dfCellDY = 0;
 
@@ -441,48 +491,44 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
          i + 1 >= nTokens)
     {
         CSLDestroy( papszTokens );
-        delete poDS;
-        return NULL;
+        return FALSE;
     }
-    poDS->nRasterXSize = atoi(papszTokens[i + 1]);
+    nRasterXSize = atoi(papszTokens[i + 1]);
     if ( (i = CSLFindString( papszTokens, "nrows" )) < 0 ||
          i + 1 >= nTokens)
     {
         CSLDestroy( papszTokens );
-        delete poDS;
-        return NULL;
+        return FALSE;
     }
-    poDS->nRasterYSize = atoi(papszTokens[i + 1]);
+    nRasterYSize = atoi(papszTokens[i + 1]);
 
-    if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize))
+    if (!GDALCheckDatasetDimensions(nRasterXSize, nRasterYSize))
     {
-        delete poDS;
-        return NULL;
+        CSLDestroy( papszTokens );
+        return FALSE;
     }
 
     if ( (i = CSLFindString( papszTokens, "cellsize" )) < 0 )
     {
         int iDX, iDY;
-        if( (iDX = CSLFindString(papszTokens,"dx")) < 0 
+        if( (iDX = CSLFindString(papszTokens,"dx")) < 0
             || (iDY = CSLFindString(papszTokens,"dy")) < 0
             || iDX+1 >= nTokens
             || iDY+1 >= nTokens)
         {
             CSLDestroy( papszTokens );
-            delete poDS;
-            return NULL;
+            return FALSE;
         }
 
         dfCellDX = CPLAtofM( papszTokens[iDX+1] );
         dfCellDY = CPLAtofM( papszTokens[iDY+1] );
-    }    
+    }
     else
     {
         if (i + 1 >= nTokens)
         {
             CSLDestroy( papszTokens );
-            delete poDS;
-            return NULL;
+            return FALSE;
         }
         dfCellDX = dfCellDY = CPLAtofM( papszTokens[i + 1] );
     }
@@ -491,37 +537,48 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
         (j = CSLFindString( papszTokens, "yllcorner" )) >= 0 &&
         i + 1 < nTokens && j + 1 < nTokens)
     {
-        poDS->adfGeoTransform[0] = CPLAtofM( papszTokens[i + 1] );
-        poDS->adfGeoTransform[1] = dfCellDX;
-        poDS->adfGeoTransform[2] = 0.0;
-        poDS->adfGeoTransform[3] = CPLAtofM( papszTokens[j + 1] )
-            + poDS->nRasterYSize * dfCellDY;
-        poDS->adfGeoTransform[4] = 0.0;
-        poDS->adfGeoTransform[5] = - dfCellDY;
+        adfGeoTransform[0] = CPLAtofM( papszTokens[i + 1] );
+       
+        /* Small hack to compensate from insufficient precision in cellsize */
+        /* parameter in datasets of http://ccafs-climate.org/data/A2a_2020s/hccpr_hadcm3 */
+        if ((nRasterXSize % 360) == 0 &&
+            fabs(adfGeoTransform[0] - (-180.0)) < 1e-12 &&
+            dfCellDX == dfCellDY &&
+            fabs(dfCellDX - (360.0 / nRasterXSize)) < 1e-9)
+        {
+            dfCellDX = dfCellDY = 360.0 / nRasterXSize;
+        }
+            
+        adfGeoTransform[1] = dfCellDX;
+        adfGeoTransform[2] = 0.0;
+        adfGeoTransform[3] = CPLAtofM( papszTokens[j + 1] )
+            + nRasterYSize * dfCellDY;
+        adfGeoTransform[4] = 0.0;
+        adfGeoTransform[5] = - dfCellDY;
     }
     else if ((i = CSLFindString( papszTokens, "xllcenter" )) >= 0 &&
              (j = CSLFindString( papszTokens, "yllcenter" )) >= 0  &&
              i + 1 < nTokens && j + 1 < nTokens)
     {
-        poDS->SetMetadataItem( GDALMD_AREA_OR_POINT, GDALMD_AOP_POINT );
+        SetMetadataItem( GDALMD_AREA_OR_POINT, GDALMD_AOP_POINT );
 
-        poDS->adfGeoTransform[0] = CPLAtofM(papszTokens[i + 1]) - 0.5 * dfCellDX;
-        poDS->adfGeoTransform[1] = dfCellDX;
-        poDS->adfGeoTransform[2] = 0.0;
-        poDS->adfGeoTransform[3] = CPLAtofM( papszTokens[j + 1] )
+        adfGeoTransform[0] = CPLAtofM(papszTokens[i + 1]) - 0.5 * dfCellDX;
+        adfGeoTransform[1] = dfCellDX;
+        adfGeoTransform[2] = 0.0;
+        adfGeoTransform[3] = CPLAtofM( papszTokens[j + 1] )
             - 0.5 * dfCellDY
-            + poDS->nRasterYSize * dfCellDY;
-        poDS->adfGeoTransform[4] = 0.0;
-        poDS->adfGeoTransform[5] = - dfCellDY;
+            + nRasterYSize * dfCellDY;
+        adfGeoTransform[4] = 0.0;
+        adfGeoTransform[5] = - dfCellDY;
     }
     else
     {
-        poDS->adfGeoTransform[0] = 0.0;
-        poDS->adfGeoTransform[1] = dfCellDX;
-        poDS->adfGeoTransform[2] = 0.0;
-        poDS->adfGeoTransform[3] = 0.0;
-        poDS->adfGeoTransform[4] = 0.0;
-        poDS->adfGeoTransform[5] = - dfCellDY;
+        adfGeoTransform[0] = 0.0;
+        adfGeoTransform[1] = dfCellDX;
+        adfGeoTransform[2] = 0.0;
+        adfGeoTransform[3] = 0.0;
+        adfGeoTransform[4] = 0.0;
+        adfGeoTransform[5] = - dfCellDY;
     }
 
     if( (i = CSLFindString( papszTokens, "NODATA_value" )) >= 0 &&
@@ -529,22 +586,182 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
     {
         const char* pszNoData = papszTokens[i + 1];
 
-        poDS->bNoDataSet = TRUE;
-        poDS->dfNoDataValue = CPLAtofM(pszNoData);
+        bNoDataSet = TRUE;
+        dfNoDataValue = CPLAtofM(pszNoData);
         if( pszDataType == NULL &&
             (strchr( pszNoData, '.' ) != NULL ||
              strchr( pszNoData, ',' ) != NULL ||
-             INT_MIN > poDS->dfNoDataValue || poDS->dfNoDataValue > INT_MAX) )
+             INT_MIN > dfNoDataValue || dfNoDataValue > INT_MAX) )
         {
             eDataType = GDT_Float32;
         }
         if( eDataType == GDT_Float32 )
         {
-            poDS->dfNoDataValue = (double) (float) poDS->dfNoDataValue;
+            dfNoDataValue = (double) (float) dfNoDataValue;
+        }
+    }
+
+    CSLDestroy( papszTokens );
+
+    return TRUE;
+}
+
+/************************************************************************/
+/*                                Open()                                */
+/************************************************************************/
+
+GDALDataset *GRASSASCIIDataset::Open( GDALOpenInfo * poOpenInfo )
+{
+    if (!Identify(poOpenInfo))
+        return NULL;
+
+    return CommonOpen(poOpenInfo, FORMAT_GRASSASCII);
+}
+
+
+/************************************************************************/
+/*                          ParseHeader()                               */
+/************************************************************************/
+
+int GRASSASCIIDataset::ParseHeader(const char* pszHeader, const char* pszDataType)
+{
+    int i;
+    char** papszTokens =
+        CSLTokenizeString2( pszHeader,  " \n\r\t:" , 0 );
+    int nTokens = CSLCount(papszTokens);
+    if ( (i = CSLFindString( papszTokens, "cols" )) < 0 ||
+         i + 1 >= nTokens)
+    {
+        CSLDestroy( papszTokens );
+        return FALSE;
+    }
+    nRasterXSize = atoi(papszTokens[i + 1]);
+    if ( (i = CSLFindString( papszTokens, "rows" )) < 0 ||
+         i + 1 >= nTokens)
+    {
+        CSLDestroy( papszTokens );
+        return FALSE;
+    }
+    nRasterYSize = atoi(papszTokens[i + 1]);
+
+    if (!GDALCheckDatasetDimensions(nRasterXSize, nRasterYSize))
+    {
+        CSLDestroy( papszTokens );
+        return FALSE;
+    }
+
+    int iNorth = CSLFindString( papszTokens, "north" );
+    int iSouth = CSLFindString( papszTokens, "south" );
+    int iEast = CSLFindString( papszTokens, "east" );
+    int iWest = CSLFindString( papszTokens, "west" );
+
+    if (iNorth == -1 || iSouth == -1 || iEast == -1 || iWest == -1 ||
+        MAX(MAX(iNorth, iSouth), MAX(iEast, iWest)) + 1 >= nTokens)
+    {
+        CSLDestroy( papszTokens );
+        return FALSE;
+    }
+
+    double dfNorth = CPLAtofM( papszTokens[iNorth + 1] );
+    double dfSouth = CPLAtofM( papszTokens[iSouth + 1] );
+    double dfEast = CPLAtofM( papszTokens[iEast + 1] );
+    double dfWest = CPLAtofM( papszTokens[iWest + 1] );
+    double dfPixelXSize = (dfEast - dfWest) / nRasterXSize;
+    double dfPixelYSize = (dfNorth - dfSouth) / nRasterYSize;
+
+    adfGeoTransform[0] = dfWest;
+    adfGeoTransform[1] = dfPixelXSize;
+    adfGeoTransform[2] = 0.0;
+    adfGeoTransform[3] = dfNorth;
+    adfGeoTransform[4] = 0.0;
+    adfGeoTransform[5] = - dfPixelYSize;
+
+    if( (i = CSLFindString( papszTokens, "null" )) >= 0 &&
+        i + 1 < nTokens)
+    {
+        const char* pszNoData = papszTokens[i + 1];
+
+        bNoDataSet = TRUE;
+        dfNoDataValue = CPLAtofM(pszNoData);
+        if( pszDataType == NULL &&
+            (strchr( pszNoData, '.' ) != NULL ||
+             strchr( pszNoData, ',' ) != NULL ||
+             INT_MIN > dfNoDataValue || dfNoDataValue > INT_MAX) )
+        {
+            eDataType = GDT_Float32;
+        }
+        if( eDataType == GDT_Float32 )
+        {
+            dfNoDataValue = (double) (float) dfNoDataValue;
+        }
+    }
+
+    if( (i = CSLFindString( papszTokens, "type" )) >= 0 &&
+        i + 1 < nTokens)
+    {
+        const char* pszType = papszTokens[i + 1];
+        if (EQUAL(pszType, "int"))
+            eDataType = GDT_Int32;
+        else if (EQUAL(pszType, "float"))
+            eDataType = GDT_Float32;
+        else if (EQUAL(pszType, "double"))
+            eDataType = GDT_Float64;
+        else
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                     "Invalid value for type parameter : %s", pszType);
+        }
+    }
+
+    CSLDestroy(papszTokens);
+
+    return TRUE;
+}
+
+/************************************************************************/
+/*                           CommonOpen()                               */
+/************************************************************************/
+
+GDALDataset *AAIGDataset::CommonOpen( GDALOpenInfo * poOpenInfo,
+                                            GridFormat eFormat )
+{
+    int i = 0;
+
+/* -------------------------------------------------------------------- */
+/*      Create a corresponding GDALDataset.                             */
+/* -------------------------------------------------------------------- */
+    AAIGDataset         *poDS;
+
+    if (eFormat == FORMAT_AAIG)
+        poDS = new AAIGDataset();
+    else
+        poDS = new GRASSASCIIDataset();
+
+
+    const char* pszDataTypeOption = (eFormat == FORMAT_AAIG) ? "AAIGRID_DATATYPE":
+                                                               "GRASSASCIIGRID_DATATYPE";
+    const char* pszDataType = CPLGetConfigOption(pszDataTypeOption, NULL);
+    if (pszDataType != NULL)
+    {
+        poDS->eDataType = GDALGetDataTypeByName(pszDataType);
+        if (!(poDS->eDataType == GDT_Int32 || poDS->eDataType == GDT_Float32 ||
+              poDS->eDataType == GDT_Float64))
+        {
+            CPLError(CE_Warning, CPLE_NotSupported,
+                     "Unsupported value for %s : %s", pszDataTypeOption, pszDataType);
+            poDS->eDataType = GDT_Int32;
+            pszDataType = NULL;
         }
     }
     
-    CSLDestroy( papszTokens );
+/* -------------------------------------------------------------------- */
+/*      Parse the header.                                               */
+/* -------------------------------------------------------------------- */
+    if (!poDS->ParseHeader((const char *) poOpenInfo->pabyHeader, pszDataType))
+    {
+        delete poDS;
+        return NULL;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Open file with large file API.                                  */
@@ -597,11 +814,17 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     CPLAssert( NULL != poDS->fp );
 
-    if( pszDataType == NULL && eDataType != GDT_Float32)
+    if( pszDataType == NULL && poDS->eDataType != GDT_Float32)
     {
         /* Allocate 100K chunk + 1 extra byte for NULL character. */
         const size_t nChunkSize = 1024 * 100;
-        GByte* pabyChunk = (GByte *) CPLCalloc( nChunkSize + 1, sizeof(GByte) );
+        GByte* pabyChunk = (GByte *) VSICalloc( nChunkSize + 1, sizeof(GByte) );
+        if (pabyChunk == NULL)
+        {
+            CPLError( CE_Failure, CPLE_OutOfMemory, "Out of memory");
+            delete poDS;
+            return NULL;
+        }
         pabyChunk[nChunkSize] = '\0';
 
         VSIFSeekL( poDS->fp, nStartOfData, SEEK_SET );
@@ -617,7 +840,7 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
                 GByte ch = pabyChunk[i];
                 if (ch == '.' || ch == ',' || ch == 'e' || ch == 'E')
                 {
-                    eDataType = GDT_Float32;
+                    poDS->eDataType = GDT_Float32;
                     break;
                 }
             }
@@ -630,7 +853,7 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
-    AAIGRasterBand* band = new AAIGRasterBand( poDS, nStartOfData, eDataType );
+    AAIGRasterBand* band = new AAIGRasterBand( poDS, nStartOfData );
     poDS->SetBand( 1, band );
     if (band->panLineOffset == NULL)
     {
@@ -694,6 +917,11 @@ GDALDataset *AAIGDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
+/* -------------------------------------------------------------------- */
+/*      Check for external overviews.                                   */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
+
     return( poDS );
 }
 
@@ -719,12 +947,12 @@ const char *AAIGDataset::GetProjectionRef()
 }
 
 /************************************************************************/
-/*                        AAIGCreateCopy()                              */
+/*                          CreateCopy()                                */
 /************************************************************************/
 
-static GDALDataset *
-AAIGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS, 
-                int bStrict, char ** papszOptions, 
+GDALDataset * AAIGDataset::CreateCopy(
+                const char * pszFilename, GDALDataset *poSrcDS,
+                CPL_UNUSED int bStrict, char ** papszOptions, 
                 GDALProgressFunc pfnProgress, void * pProgressData )
 
 {
@@ -808,47 +1036,70 @@ AAIGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     }
 
 /* -------------------------------------------------------------------- */
+/*     Builds the format string used for printing float values.         */
+/* -------------------------------------------------------------------- */
+    char szFormatFloat[32];
+    strcpy(szFormatFloat, " %.20g");
+    const char *pszDecimalPrecision = 
+        CSLFetchNameValue( papszOptions, "DECIMAL_PRECISION" );
+    const char *pszSignificantDigits =
+        CSLFetchNameValue( papszOptions, "SIGNIFICANT_DIGITS" );
+    int bIgnoreSigDigits = FALSE;
+    if( pszDecimalPrecision && pszSignificantDigits )
+    {
+        CPLError( CE_Warning, CPLE_AppDefined,
+                  "Conflicting precision arguments, using DECIMAL_PRECISION" );
+        bIgnoreSigDigits = TRUE;
+    }
+    int nPrecision;
+    if ( pszSignificantDigits && !bIgnoreSigDigits )
+    {
+        nPrecision = atoi( pszSignificantDigits );
+        if (nPrecision >= 0)
+            sprintf( szFormatFloat, " %%.%dg", nPrecision );
+        CPLDebug( "AAIGrid", "Setting precision format: %s", szFormatFloat );
+    }
+    else if( pszDecimalPrecision )
+    {
+        nPrecision = atoi( pszDecimalPrecision );
+        if ( nPrecision >= 0 )
+            sprintf( szFormatFloat, " %%.%dlf", nPrecision );
+        CPLDebug( "AAIGrid", "Setting precision format: %s", szFormatFloat );
+    }
+
+/* -------------------------------------------------------------------- */
 /*      Handle nodata (optionally).                                     */
 /* -------------------------------------------------------------------- */
     GDALRasterBand * poBand = poSrcDS->GetRasterBand( 1 );
     double dfNoData;
     int bSuccess;
+    int bReadAsInt;
+    bReadAsInt = ( poBand->GetRasterDataType() == GDT_Byte
+                || poBand->GetRasterDataType() == GDT_Int16
+                || poBand->GetRasterDataType() == GDT_UInt16
+                || poBand->GetRasterDataType() == GDT_Int32 );
 
     // Write `nodata' value to header if it is exists in source dataset
     dfNoData = poBand->GetNoDataValue( &bSuccess );
     if ( bSuccess )
-        sprintf( szHeader+strlen(szHeader), "NODATA_value %6.20g\n", 
-                 dfNoData );
-    
-    VSIFWriteL( szHeader, 1, strlen(szHeader), fpImage );
-
-/* -------------------------------------------------------------------- */
-/*     Builds the format string used for printing float values.         */
-/* -------------------------------------------------------------------- */
-    char szFormatFloat[32];
-    strcpy(szFormatFloat, " %6.20g");
-    const char *pszDecimalPrecision = 
-        CSLFetchNameValue( papszOptions, "DECIMAL_PRECISION" );
-    if (pszDecimalPrecision)
     {
-        int nDecimal = atoi(pszDecimalPrecision);
-        if (nDecimal >= 0)
-            sprintf(szFormatFloat, " %%.%df", nDecimal);
+        sprintf( szHeader+strlen( szHeader ), "NODATA_value " );
+        if( bReadAsInt )
+            sprintf( szHeader+strlen( szHeader ), "%d", (int)dfNoData );
+        else
+            sprintf( szHeader+strlen( szHeader ), szFormatFloat, dfNoData );
+        sprintf( szHeader+strlen( szHeader ), "\n" );
     }
+
+    VSIFWriteL( szHeader, 1, strlen(szHeader), fpImage );
 
 /* -------------------------------------------------------------------- */
 /*      Loop over image, copying image data.                            */
 /* -------------------------------------------------------------------- */
     int         *panScanline = NULL;
     double      *padfScanline = NULL;
-    int         bReadAsInt;
     int         iLine, iPixel;
     CPLErr      eErr = CE_None;
-    
-    bReadAsInt = ( poBand->GetRasterDataType() == GDT_Byte 
-                || poBand->GetRasterDataType() == GDT_Int16
-                || poBand->GetRasterDataType() == GDT_UInt16
-                || poBand->GetRasterDataType() == GDT_Int32 );
 
     // Write scanlines to output file
     if (bReadAsInt)
@@ -919,6 +1170,9 @@ AAIGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     CPLFree( padfScanline );
     VSIFCloseL( fpImage );
 
+    if( eErr != CE_None )
+        return NULL;
+
 /* -------------------------------------------------------------------- */
 /*      Try to write projection file.                                   */
 /* -------------------------------------------------------------------- */
@@ -961,13 +1215,26 @@ AAIGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Re-open dataset, and copy any auxilary pam information.         */
 /* -------------------------------------------------------------------- */
-    GDALPamDataset *poDS = (GDALPamDataset *) 
-        GDALOpen( pszFilename, GA_ReadOnly );
 
-    if( poDS )
+    /* If outputing to stdout, we can't reopen it, so we'll return */
+    /* a fake dataset to make the caller happy */
+    CPLPushErrorHandler(CPLQuietErrorHandler);
+    GDALPamDataset* poDS = (GDALPamDataset*) GDALOpen(pszFilename, GA_ReadOnly);
+    CPLPopErrorHandler();
+    if (poDS)
+    {
         poDS->CloneInfo( poSrcDS, GCIF_PAM_DEFAULT );
+        return poDS;
+    }
 
-    return poDS;
+    CPLErrorReset();
+
+    AAIGDataset* poAAIG_DS = new AAIGDataset();
+    poAAIG_DS->nRasterXSize = nXSize;
+    poAAIG_DS->nRasterYSize = nYSize;
+    poAAIG_DS->nBands = 1;
+    poAAIG_DS->SetBand( 1, new AAIGRasterBand( poAAIG_DS, 1 ) );
+    return poAAIG_DS;
 }
 
 /************************************************************************/
@@ -1027,19 +1294,48 @@ void GDALRegister_AAIGrid()
                                    "frmt_various.html#AAIGrid" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "asc" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Byte uint16_t int16_t int32_t Float32" );
+                                   "Byte UInt16 Int16 Int32 Float32" );
 
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST, 
 "<CreationOptionList>\n"
 "   <Option name='FORCE_CELLSIZE' type='boolean' description='Force use of CELLSIZE, default is FALSE.'/>\n"
-"   <Option name='DECIMAL_PRECISION' type='int' description='Number of decimal when writing floating-point numbers.'/>\n"
+"   <Option name='DECIMAL_PRECISION' type='int' description='Number of decimal when writing floating-point numbers(%f).'/>\n"
+"   <Option name='SIGNIFICANT_DIGITS' type='int' description='Number of significant digits when writing floating-point numbers(%g).'/>\n"
 "</CreationOptionList>\n" );
 
         poDriver->pfnOpen = AAIGDataset::Open;
-        poDriver->pfnCreateCopy = AAIGCreateCopy;
+        poDriver->pfnIdentify = AAIGDataset::Identify;
+        poDriver->pfnCreateCopy = AAIGDataset::CreateCopy;
         
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }
 }
 
+/************************************************************************/
+/*                   GDALRegister_GRASSASCIIGrid()                      */
+/************************************************************************/
+
+void GDALRegister_GRASSASCIIGrid()
+
+{
+    GDALDriver  *poDriver;
+
+    if( GDALGetDriverByName( "GRASSASCIIGrid" ) == NULL )
+    {
+        poDriver = new GDALDriver();
+
+        poDriver->SetDescription( "GRASSASCIIGrid" );
+        poDriver->SetMetadataItem( GDAL_DMD_LONGNAME,
+                                   "GRASS ASCII Grid" );
+        poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC,
+                                   "frmt_various.html#GRASSASCIIGrid" );
+
+        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+
+        poDriver->pfnOpen = GRASSASCIIDataset::Open;
+        poDriver->pfnIdentify = GRASSASCIIDataset::Identify;
+
+        GetGDALDriverManager()->RegisterDriver( poDriver );
+    }
+}

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFRaster.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,6 +15,8 @@
 #pragma once
 
 #include "HGFGraphicObject.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DCoordSys;
 template<class T> class HFCPtr;
@@ -33,7 +35,7 @@ template<class T> class HFCPtr;
 */
 class HNOVTABLEINIT HGFRaster : public HGFGraphicObject
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1216)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HGFRasterId)
 
 public:
 
@@ -54,3 +56,4 @@ private:
     };
 
 
+END_IMAGEPP_NAMESPACE

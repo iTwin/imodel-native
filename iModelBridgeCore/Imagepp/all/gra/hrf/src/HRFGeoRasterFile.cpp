@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFGeoRaster
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HFCURLMemFile.h>
@@ -44,7 +44,6 @@
 #include <Imagepp/all/h/HCDCodecIJG.h>
 #include <Imagepp/all/h/HCDCodecZlib.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include <Imagepp/all/h/HVETileIDIterator.h>
@@ -129,7 +128,7 @@ class OracleAuthenticationError : public HFCAuthenticationError
 public:
     OracleAuthenticationError  (const HRFOracleException& pi_rException)
         :   m_RelatedException(pi_rException),
-            HFCAuthenticationError(static_cast<ExceptionID>(pi_rException.GetID()))
+            HFCAuthenticationError()
         {
         }
 
@@ -399,7 +398,7 @@ bool HRFGeoRasterCreator::CanRegister() const
     {
     HINSTANCE hWnd;
 
-    UINT CurErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
+    uint32_t CurErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 
 
     //hWnd = LoadLibraryW(L"Bentley.ImagePP3.dll");
@@ -422,8 +421,7 @@ WString HRFGeoRasterCreator::GetLabel() const
     {
 
 // to be define
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_SDOGeoRaster); // SDO GeoRaster File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_SDOGeoRaster()); // SDO GeoRaster File Format
     }
 
 // Identification information
@@ -637,14 +635,14 @@ HRFGeoRasterFile::HRFGeoRasterFile(const HFCPtr<HFCURL>& pi_rpURL,
         pXmlDom = BeXmlDom::CreateAndReadFromMemory(xmlStatus, pData, dataSize);
         }
     else
-        throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HFCFileNotSupportedException(GetURL()->GetURL());
 
     if(!pXmlDom.IsValid() || BEXML_Success != xmlStatus)
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, pi_rpURL->GetURL());
+        throw HFCCorruptedFileException(pi_rpURL->GetURL());
 
     BeXmlNodeP pMainNode = pXmlDom->GetRootElement();
     if (NULL == pMainNode || BeStringUtilities::Stricmp (pMainNode->GetName(), "BentleyOracleGeoRaster") != 0)
-        throw HFCFileException(HRF_MISSING_PARAMETER_EXCEPTION, pi_rpURL->GetURL(), L"BentleyOracleGeoRaster");
+        throw HRFMissingParameterException(pi_rpURL->GetURL(), L"");
 
     // Optional "version" tag. Default is 1.0 if not present.
     WString versionStr(L"1.0");    
@@ -660,7 +658,7 @@ HRFGeoRasterFile::HRFGeoRasterFile(const HFCPtr<HFCURL>& pi_rpURL,
     else if (BeStringUtilities::Wcsicmp(versionStr.c_str(), L"1.1") == 0)
         ReadXORA_1_1(pMainNode, SDOGeoRasterWrapper::IsConnected());
     else
-        throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HFCFileNotSupportedException(GetURL()->GetURL());
 
     SharingControlCreate();
 
@@ -671,13 +669,13 @@ HRFGeoRasterFile::HRFGeoRasterFile(const HFCPtr<HFCURL>& pi_rpURL,
 
         HFCOracleAuthentication OracleAuthentication;
         if (pCallback == 0)
-            throw HFCException(HFC_LOGIN_INFORMATION_NOT_AVAILABLE_EXCEPTION);
+            throw HFCLoginInformationNotAvailableException();
 
         bool IsConnect;
         do
             {
             if (!pCallback->GetAuthentication(&OracleAuthentication))
-                throw HFCException(HFC_LOGIN_INFORMATION_NOT_AVAILABLE_EXCEPTION);
+                throw HFCLoginInformationNotAvailableException();
 
 
             SDOGeoRasterWrapper::OracleError OracleError;
@@ -704,7 +702,7 @@ HRFGeoRasterFile::HRFGeoRasterFile(const HFCPtr<HFCURL>& pi_rpURL,
 
         if (IsConnect == false)
             {
-            throw HFCException(HFC_CANNOT_CONNECT_TO_DB_EXCEPTION);
+            throw HFCCannotConnectToDBException(L"");
             }
         }
 
@@ -726,46 +724,46 @@ void HRFGeoRasterFile::CreateDescriptors()
     m_pSDOGeoRasterWrapper->GetHeader(&pHeader, &HeaderSize);
 
     BeXmlStatus xmlStatus;
-    BeXmlDomPtr pXMLHeader = BeXmlDom::CreateAndReadFromString(xmlStatus, pHeader, HeaderSize / sizeof (uint16_t));
+    BeXmlDomPtr pXMLHeader = BeXmlDom::CreateAndReadFromString(xmlStatus, pHeader, HeaderSize / sizeof(Utf16Char));
     if (!pXMLHeader.IsValid() || BEXML_Success != xmlStatus)
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+        throw HFCCorruptedFileException(GetURL()->GetURL());
 
     pXMLHeader->RegisterNamespace(GEORASTER_NAMESPACE_PREFIX, GEORASTER_XML_NAMESPACE);
         
     BeXmlNodeP pMainNode = pXMLHeader->GetRootElement();
     if (NULL == pMainNode || BeStringUtilities::Stricmp (pMainNode->GetName(), "geoRasterMetadata") != 0)
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+        throw HFCCorruptedFileException(GetURL()->GetURL());
 
     //-----------------------------------------------------------------------------
     // Object Info section
     BeXmlNodeP pObjectInfoNode = pMainNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "objectInfo");
     if (NULL == pObjectInfoNode)
-        throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HFCFileNotSupportedException(GetURL()->GetURL());
 
     SDOObjectInfo ObjectInfo;
     ReadObjectInfo(pObjectInfoNode, &ObjectInfo);
 
     if (!ObjectInfo.IsValid)
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+        throw HFCCorruptedFileException(GetURL()->GetURL());
 
     if (!ObjectInfo.IsSupported)
-        throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HFCFileNotSupportedException(GetURL()->GetURL());
 
 
     //-----------------------------------------------------------------------------
     // Raster Info section
     BeXmlNodeP pRasterInfoNode = pMainNode->SelectSingleNode(GEORASTER_NAMESPACE_PREFIX ":" "rasterInfo");
     if (NULL == pRasterInfoNode)
-        throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HFCFileNotSupportedException(GetURL()->GetURL());
 
     SDORasterInfo RasterInfo;
     ReadRasterInfo(pRasterInfoNode, &RasterInfo);
 
     if (!RasterInfo.IsValid)
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+        throw HFCCorruptedFileException(GetURL()->GetURL());
 
     if (!RasterInfo.IsSupported)
-        throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HFCFileNotSupportedException(GetURL()->GetURL());
 
     //-----------------------------------------------------------------------------
     // Spatial Referecence section
@@ -778,10 +776,10 @@ void HRFGeoRasterFile::CreateDescriptors()
         ReadSpatialReferenceInfo(pSpatialRefNode, pSpatialReferenceInfo);
 
         if (!pSpatialReferenceInfo->IsValid)
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+            throw HFCCorruptedFileException(GetURL()->GetURL());
 
         if (!pSpatialReferenceInfo->IsSupported)
-            throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HFCFileNotSupportedException(GetURL()->GetURL());
         }
 
     //-----------------------------------------------------------------------------
@@ -793,10 +791,10 @@ void HRFGeoRasterFile::CreateDescriptors()
         pLayerInfo = new SDOLayerInfo;
         ReadLayerInfo(pLayerInfoNode, pLayerInfo);
         if (!pLayerInfo->IsValid)
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+            throw HFCCorruptedFileException(GetURL()->GetURL());
 
         if (!pLayerInfo->IsSupported)
-            throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HFCFileNotSupportedException(GetURL()->GetURL());
         }
 
     // now, build the descriptor with the XML info
@@ -813,19 +811,19 @@ void HRFGeoRasterFile::CreateDescriptors()
                 if (pLayerInfo == 0)
                     {
                     HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
-                    throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                    throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
 
                 if (pLayerInfo->PaletteEntryCount != 0)
                     {
                     pPixelType = new HRPPixelTypeI1R8G8B8A8;
                     (const_cast<HRPPixelPalette&>(pPixelType->GetPalette())).SetPalette(pLayerInfo->pPalette,
-                                                                                        min<unsigned short>(pLayerInfo->PaletteEntryCount, 2));
+                                                                                        std::min<unsigned short>(pLayerInfo->PaletteEntryCount, 2));
                     }
                 else
                     {
                     HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
-                    throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                    throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
                 }
             break;
@@ -842,19 +840,19 @@ void HRFGeoRasterFile::CreateDescriptors()
                 if (pLayerInfo == 0)
                     {
                     HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
-                    throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                    throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
 
                 if (pLayerInfo->PaletteEntryCount != 0)
                     {
                     pPixelType = new HRPPixelTypeI4R8G8B8A8;
                     (const_cast<HRPPixelPalette&>(pPixelType->GetPalette())).SetPalette(pLayerInfo->pPalette,
-                                                                                        min<unsigned short>(pLayerInfo->PaletteEntryCount, 16));
+                                                                                        std::min<unsigned short>(pLayerInfo->PaletteEntryCount, 16));
                     }
                 else
                     {
                     HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
-                    throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                    throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
                 }
             break;
@@ -867,7 +865,7 @@ void HRFGeoRasterFile::CreateDescriptors()
                 if (pLayerInfo == 0)
                     {
                     HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
-                    throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                    throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
 
                 switch (RasterInfo.Band)
@@ -894,7 +892,7 @@ void HRFGeoRasterFile::CreateDescriptors()
                         else
                             {
                             HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
-                            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                            throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                             }
                         break;
 
@@ -902,14 +900,14 @@ void HRFGeoRasterFile::CreateDescriptors()
                         if (ObjectInfo.DefaultRed != 1 || ObjectInfo.DefaultGreen != 2 || ObjectInfo.DefaultBlue != 3)
                             {
                             HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
-                            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                            throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                             }
                         pPixelType = new HRPPixelTypeV32R8G8B8A8();
                         break;
 
                     default:
                         HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported pixel type");
-                        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                        throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
                     }
                 }
             break;
@@ -951,12 +949,12 @@ void HRFGeoRasterFile::CreateDescriptors()
 
         default:
             // not supported for now
-            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
         }
 
     if (pPixelType == 0)
         {
-        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
         }
 
     // compression
@@ -972,7 +970,7 @@ void HRFGeoRasterFile::CreateDescriptors()
             else
                 {
                 HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported compression");
-                throw HRFException(HRF_CODEC_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                throw HRFCodecNotSupportedException(GetURL()->GetURL());
                 }
 
             ((HFCPtr<HCDCodecIJG>&)pCodec)->SetSourceColorMode(HCDCodecIJG::BGR);
@@ -988,7 +986,7 @@ void HRFGeoRasterFile::CreateDescriptors()
             else
                 {
                 HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported compression");
-                throw HFCFileException(HRF_CODEC_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                throw HRFCodecNotSupportedException(GetURL()->GetURL());
                 }
 
             ((HFCPtr<HCDCodecIJG>&)pCodec)->SetSourceColorMode(HCDCodecIJG::BGR);
@@ -1008,7 +1006,7 @@ void HRFGeoRasterFile::CreateDescriptors()
         else
             {
             HASSERT(!L"HRFGeoRasterFile::CreateDescriptor() : unsupported compression type");
-            throw HFCFileException(HRF_CODEC_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFCodecNotSupportedException(GetURL()->GetURL());
             }
         }
     else
@@ -1060,8 +1058,9 @@ void HRFGeoRasterFile::CreateDescriptors()
         ResFactor *= 2;
         }
 
-    IRasterBaseGcsPtr             pGeocoding;
     HFCPtr<HGF2DTransfoModel>     pModel;
+    RasterFileGeocodingPtr pGeocoding(RasterFileGeocoding::Create());
+
 
     if (pSpatialReferenceInfo != 0 && pSpatialReferenceInfo->IsReferenced)
         {
@@ -1092,13 +1091,10 @@ void HRFGeoRasterFile::CreateDescriptors()
 
         if (pModel != 0)
             {
-            GetGeocoding(*pSpatialReferenceInfo, pGeocoding);
+            pGeocoding = ExtractGeocodingInformation(*pSpatialReferenceInfo);
 
             //Translate the geo-reference to meter
-            if (pGeocoding != 0)
-                {
-                pModel = HCPGeoTiffKeys::TranslateToMeter(pModel, 1.0, true, false, 0, pGeocoding);
-                }
+            pModel = pGeocoding->TranslateToMeter(pModel, 1.0, false, 0);
             }
         }
 
@@ -1112,15 +1108,7 @@ void HRFGeoRasterFile::CreateDescriptors()
                                                              pModel,
                                                              0);
 
-    if (pGeocoding != 0)
-        {
-        HFCPtr<HMDMetaDataContainerList> pMDContainers(new HMDMetaDataContainerList());
-
-        //HMD_GEOCODING_INFO
-        pMDContainers->SetMetaDataContainer((HFCPtr<HMDMetaDataContainer>&)pGeocoding);
-
-        pPage->SetListOfMetaDataContainer(pMDContainers);
-        }
+    pPage->InitFromRasterFileGeocoding(*pGeocoding);
 
     m_ListOfPageDescriptor.push_back(pPage);
     }
@@ -1149,21 +1137,21 @@ bool HRFGeoRasterFile::ConnectToOracle (WStringCR pi_rConnectionString)
 
         HFCOracleAuthentication OracleAuthentication;
         if (pCallback == 0)
-            throw HFCException(HFC_LOGIN_INFORMATION_NOT_AVAILABLE_EXCEPTION);
+            throw HFCLoginInformationNotAvailableException();
 
         do
             {
             if (OracleAuthentication.GetRetryCount() >= pCallback->RetryCount(HFCOracleAuthentication::CLASS_ID))
                 {
-                throw HRFException(HRF_AUTHENTICATION_MAX_RETRY_COUNT_REACHED_EXCEPTION, GetURL()->GetURL());
+                throw HRFAuthenticationMaxRetryCountReachedException(GetURL()->GetURL());
                 }
 
             if (!pCallback->GetAuthentication(&OracleAuthentication))
                 {
                 if (pCallback->IsCancelled())
-                    throw HRFException(HRF_AUTHENTICATION_CANCELLED_EXCEPTION, GetURL()->GetURL());
+                    throw HRFAuthenticationCancelledException(GetURL()->GetURL());
                 else
-                    throw HFCException(HFC_LOGIN_INFORMATION_NOT_AVAILABLE_EXCEPTION);
+                    throw HFCLoginInformationNotAvailableException();
                 }
 
             SDOGeoRasterWrapper::OracleError OracleError;
@@ -1211,7 +1199,7 @@ bool HRFGeoRasterFile::ConnectToOracle (WStringCR pi_rConnectionString)
 //-----------------------------------------------------------------------------
 void HRFGeoRasterFile::ReadXORA_1_0(BeXmlNodeP pi_pMainNode, bool pi_Connected)
     {
-    uint32_t codePage;
+    LangCodePage codePage;
     BeStringUtilities::GetCurrentCodePage (codePage);
 
     if (!pi_Connected)
@@ -1224,7 +1212,7 @@ void HRFGeoRasterFile::ReadXORA_1_0(BeXmlNodeP pi_pMainNode, bool pi_Connected)
             {
             SDOGeoRasterWrapper::OracleError Error;
             if (!SDOGeoRasterWrapper::Connect(WString(),&Error))
-                throw HFCException(HFC_CANNOT_CONNECT_TO_DB_EXCEPTION);
+                throw HFCCannotConnectToDBException(L"");
             }
         else if (NULL != pUsr)
             {
@@ -1245,10 +1233,10 @@ void HRFGeoRasterFile::ReadXORA_1_0(BeXmlNodeP pi_pMainNode, bool pi_Connected)
                 }
 
             if (!ConnectToOracle(ConnectionString))
-                throw HFCException(HFC_CANNOT_CONNECT_TO_DB_EXCEPTION);
+                throw HFCCannotConnectToDBException(L"");
             }
         else
-            throw HFCException(HFC_CANNOT_CONNECT_TO_DB_EXCEPTION);
+            throw HFCCannotConnectToDBException(L"");
         }
 
     BeXmlNodeP pTableNameNode = pi_pMainNode->SelectSingleNode("tablename");
@@ -1258,16 +1246,13 @@ void HRFGeoRasterFile::ReadXORA_1_0(BeXmlNodeP pi_pMainNode, bool pi_Connected)
     WString tableName, ColumnName, RasterId;
 
     if (NULL == pTableNameNode || BEXML_Success != pTableNameNode->GetContent(tableName))
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"tablename");
     if (NULL == pColumnNameNode || BEXML_Success != pColumnNameNode->GetContent(ColumnName))
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"columnname");
     if (NULL == pRasterIDNode || BEXML_Success != pRasterIDNode->GetContent(RasterId))
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"rasterid");
 
     m_pSDOGeoRasterWrapper = SDOGeoRasterWrapper::GetWrapper(tableName, ColumnName, RasterId);
@@ -1280,7 +1265,7 @@ void HRFGeoRasterFile::ReadXORA_1_0(BeXmlNodeP pi_pMainNode, bool pi_Connected)
 //-----------------------------------------------------------------------------
 void HRFGeoRasterFile::ReadXORA_1_1(BeXmlNodeP pi_pMainNode, bool pi_Connected)
     {
-    uint32_t codePage;
+    LangCodePage codePage;
     BeStringUtilities::GetCurrentCodePage (codePage);
 
     if (!pi_Connected)
@@ -1291,7 +1276,7 @@ void HRFGeoRasterFile::ReadXORA_1_1(BeXmlNodeP pi_pMainNode, bool pi_Connected)
         pConnectionString->GetContent(connectString);
 
         if (!ConnectToOracle(connectString))
-            throw HFCException(HFC_CANNOT_CONNECT_TO_DB_EXCEPTION);
+            throw HFCCannotConnectToDBException(L"");
         }
 
     //New XML reader is case sensitive and it seems we can have both "version" and "Version"...
@@ -1301,26 +1286,22 @@ void HRFGeoRasterFile::ReadXORA_1_1(BeXmlNodeP pi_pMainNode, bool pi_Connected)
         //some where created with lower case
         pGeoRaster = pi_pMainNode->SelectSingleNode("georaster");
         if (NULL == pGeoRaster)
-            throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                GetURL()->GetURL(),
+            throw HRFMissingParameterException(GetURL()->GetURL(),
                 L"GEORASTER");
         }
 
     WString tableAttribute, ColumnAttribute, RasterIdAttribute;
 
     if (BEXML_Success != pGeoRaster->GetAttributeStringValue(tableAttribute, "table") || tableAttribute.empty())
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"table");
 
     if (BEXML_Success != pGeoRaster->GetAttributeStringValue(ColumnAttribute, "column") || ColumnAttribute.empty())
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"column");
 
     if (BEXML_Success != pGeoRaster->GetAttributeStringValue(RasterIdAttribute, "rasterid") || RasterIdAttribute.empty())
-        throw HRFFileParameterException(HRF_MISSING_PARAMETER_EXCEPTION,
-                                        GetURL()->GetURL(),
+        throw HRFMissingParameterException(GetURL()->GetURL(),
                                         L"rasterid");
 
     m_pSDOGeoRasterWrapper = SDOGeoRasterWrapper::GetWrapper(tableAttribute, ColumnAttribute, RasterIdAttribute);
@@ -2108,10 +2089,9 @@ WRAPUP:
 // private
 // GetGeocoding
 //-----------------------------------------------------------------------------
-void  HRFGeoRasterFile::GetGeocoding(SDOSpatialReferenceInfo const&     pi_rSpatialRefInfo,
-                                     IRasterBaseGcsPtr                  po_pGeocoding)
+RasterFileGeocodingPtr HRFGeoRasterFile::ExtractGeocodingInformation(SDOSpatialReferenceInfo const&     pi_rSpatialRefInfo)
     {
-    HPRECONDITION(po_pGeocoding == 0);
+    RasterFileGeocodingPtr pGeocoding(RasterFileGeocoding::Create());
 
     // If the SRID is in the 0 to 32767 range it should be an EPSG code ..
     // We try to obtain the baseGCS directly from dictionary
@@ -2131,7 +2111,8 @@ void  HRFGeoRasterFile::GetGeocoding(SDOSpatialReferenceInfo const&     pi_rSpat
 
         try
             {
-            po_pGeocoding = GCSServices->_CreateRasterBaseGcsFromKeyName(EspgBasedKeyName.c_str());
+            IRasterBaseGcsPtr pRasterGcs = GCSServices->_CreateRasterBaseGcsFromKeyName(EspgBasedKeyName.c_str());
+            pGeocoding = RasterFileGeocoding::Create(pRasterGcs.get());
             }
         catch(HFCException&)
             {
@@ -2139,20 +2120,22 @@ void  HRFGeoRasterFile::GetGeocoding(SDOSpatialReferenceInfo const&     pi_rSpat
         }
 
     // If the baseGCS was not determined ... we will try parsing the WKT
-    if ((po_pGeocoding == 0) && GCSServices->_IsAvailable())
+    if (GCSServices->_IsAvailable() && pGeocoding->GetGeocodingCP()==NULL)
         {
         WString WKTFromOracle;
         if (m_pSDOGeoRasterWrapper->GetWkt(pi_rSpatialRefInfo.SRID, WKTFromOracle))
             {
             try
                 {
-                po_pGeocoding = HRFGeoCoordinateProvider::CreateRasterGcsFromFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorOracle, WKTFromOracle.c_str());
+                IRasterBaseGcsPtr pRasterGcs = HRFGeoCoordinateProvider::CreateRasterGcsFromFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorOracle, WKTFromOracle.c_str());
+                pGeocoding = RasterFileGeocoding::Create(pRasterGcs.get());
                 }
             catch(HFCException&)
                 {
                 }
             }
         }
+    return pGeocoding;
     }
 
 //-----------------------------------------------------------------------------

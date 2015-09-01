@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DAffine.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     This method extracts the translation component of the model.
 
@@ -127,3 +128,4 @@ inline uint32_t HGF2DAffine::GetMinimumNumberOfTiePoints()
     return AFFINE_MIN_NB_TIE_PTS;
     }
 
+END_IMAGEPP_NAMESPACE

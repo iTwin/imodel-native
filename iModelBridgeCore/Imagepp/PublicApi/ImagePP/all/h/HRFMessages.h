@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFMessages.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,6 +15,7 @@
 
 #include "HMGMessage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 // Forward declarations
 class HMGMessageSender;
 
@@ -24,17 +25,17 @@ class HMGMessageSender;
 
 class HRFProgressImageChangedMsg : public HMGAsynchronousMessage
     {
-    HDECLARE_CLASS_ID(1089, HMGAsynchronousMessage)
+    HDECLARE_CLASS_ID(HRFProgressImageChangedMsgId, HMGAsynchronousMessage)
 
 public:
     HRFProgressImageChangedMsg();
     HRFProgressImageChangedMsg(const HRFProgressImageChangedMsg& pi_rObj);
-    HRFProgressImageChangedMsg(uint32_t pi_Page,
+    IMAGEPP_EXPORT HRFProgressImageChangedMsg(uint32_t pi_Page,
                                unsigned short pi_SubResolution,
                                uint64_t pi_XPos,
                                uint64_t pi_YPos,
                                bool    pi_Ended = false);
-    virtual ~HRFProgressImageChangedMsg();
+    IMAGEPP_EXPORT virtual ~HRFProgressImageChangedMsg();
 
     uint32_t GetPage() const;
     unsigned short GetSubResolution () const;
@@ -61,7 +62,7 @@ private:
 
 class HRFBlockNotificationMsg : public HMGAsynchronousMessage
     {
-    HDECLARE_CLASS_ID(1245, HMGAsynchronousMessage)
+    HDECLARE_CLASS_ID(HRFBlockNotificationMsgId, HMGAsynchronousMessage)
 
 public:
     //--------------------------------------
@@ -101,6 +102,7 @@ private:
     uint32_t        m_Page;
     uint64_t       m_BlockID;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HRFMessages.hpp"

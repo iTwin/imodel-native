@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDLayerInfoWMS.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,12 +10,13 @@
 
 #include "HMDLayerInfo.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HMDLayerInfoWMS : public HMDLayerInfo
     {
-    HDECLARE_CLASS_ID(7002, HMDLayerInfo);
+    HDECLARE_CLASS_ID(HMDLayerInfoId_WMS, HMDLayerInfo);
 
 public :
-    _HDLLu  HMDLayerInfoWMS(const WString&  pi_rKeyName,
+    IMAGEPP_EXPORT  HMDLayerInfoWMS(const WString&  pi_rKeyName,
                             const WString&  pi_rLayerName,
                             const WString&  pi_rLayerTitle,
                             const WString&  pi_rLayerAbstract,
@@ -25,17 +26,17 @@ public :
                             const WString&  pi_rStyleTitle,
                             const WString&  pi_rStyleAbstract,
                             bool           pi_Opaque);
-    _HDLLu virtual  ~HMDLayerInfoWMS();
+    IMAGEPP_EXPORT virtual  ~HMDLayerInfoWMS();
 
-    _HDLLu const WString&  GetLayerName() const;
-    _HDLLu const WString&  GetLayerTitle() const;
-    _HDLLu const WString&  GetLayerAbstract() const;
-    _HDLLu const WString&  GetStyleName() const;
-    _HDLLu const WString&  GetStyleTitle() const;
-    _HDLLu const WString&  GetStyleAbstract() const;
-    _HDLLu double         GetMinScaleHint() const;
-    _HDLLu double         GetMaxScaleHint() const;
-    _HDLLu bool           IsOpaque() const;
+    IMAGEPP_EXPORT const WString&  GetLayerName() const;
+    IMAGEPP_EXPORT const WString&  GetLayerTitle() const;
+    IMAGEPP_EXPORT const WString&  GetLayerAbstract() const;
+    IMAGEPP_EXPORT const WString&  GetStyleName() const;
+    IMAGEPP_EXPORT const WString&  GetStyleTitle() const;
+    IMAGEPP_EXPORT const WString&  GetStyleAbstract() const;
+    IMAGEPP_EXPORT double         GetMinScaleHint() const;
+    IMAGEPP_EXPORT double         GetMaxScaleHint() const;
+    IMAGEPP_EXPORT bool           IsOpaque() const;
 
 protected:
 
@@ -56,3 +57,4 @@ private :
     HMDLayerInfoWMS& operator=(const HMDLayerInfoWMS& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

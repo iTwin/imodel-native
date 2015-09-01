@@ -1,6 +1,0 @@
-Others repositories
-        imagepp-root\apps
-        imagepp-root\cert
-        imagepp-root\docs
-        imagepp-root\genitorsurveyor
-

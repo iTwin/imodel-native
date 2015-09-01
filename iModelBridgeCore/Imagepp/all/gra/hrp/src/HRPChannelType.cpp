@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPChannelType.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPChannelType
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRPChannelType.h>
 
 
@@ -168,4 +168,18 @@ bool HRPChannelType::operator!=(const HRPChannelType& pi_rObj) const
 const double* HRPChannelType::GetNoDataValue() const
     {
     return m_pNoDataValue.get();
+    }
+
+//-----------------------------------------------------------------------------
+
+// Returns true only if both channel types are not equal
+
+//-----------------------------------------------------------------------------
+
+void HRPChannelType::SetNoDataValue (double noDataValue)
+
+    {
+
+    m_pNoDataValue = new double(noDataValue);
+
     }

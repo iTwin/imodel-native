@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCConnection.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCConnection
@@ -13,20 +13,22 @@
 #include "HFCPtr.h"
 #include "HFCInterlockedValue.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 //-----------------------------------------------------------------------------
 // HFCConnection class
 //-----------------------------------------------------------------------------
 class HFCConnection : public HFCShareableObject<HFCConnection>
     {
 public:
-    HDECLARE_BASECLASS_ID(1800)
+    HDECLARE_BASECLASS_ID(HFCConnectionId_Base)
 
     //--------------------------------------
     // Construction/Destruction
     //--------------------------------------
 
-    _HDLLu                 HFCConnection(const WString& pi_rServer);
-    _HDLLu virtual         ~HFCConnection() = 0;
+    IMAGEPP_EXPORT                 HFCConnection(const WString& pi_rServer);
+    IMAGEPP_EXPORT virtual         ~HFCConnection() = 0;
 
 
     //--------------------------------------
@@ -44,10 +46,10 @@ public:
     virtual bool   ValidateConnect(uint32_t pi_TimeOut) = 0;
 
     // Connection State methods
-    bool           IsConnected() const;
+    bool           IsConnected() const {return m_ConnectionState;}
 
     // Get the host
-    const WString&  GetServer() const;
+    const WString&  GetServer() const {return m_Server;}
 
 
 protected:
@@ -57,7 +59,7 @@ protected:
 
     // Derived classes may use this method to change the state
     // of the connection.
-    void            SetConnected(bool pi_IsConnected);
+    void            SetConnected(bool pi_IsConnected) {m_ConnectionState = pi_IsConnected;}
 
 
 private:
@@ -74,5 +76,6 @@ private:
     m_ConnectionState;
     };
 
-#include "HFCConnection.hpp"
+END_IMAGEPP_NAMESPACE
+
 

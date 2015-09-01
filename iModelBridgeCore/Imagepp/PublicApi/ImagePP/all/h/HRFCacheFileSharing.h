@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFCacheFileSharing.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFCacheFileSharing
@@ -13,6 +13,7 @@
 #include "HRFSharingControl.h"
 #include "HFCBinStreamLockManager.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //:Ignore
 class HFCLocalBinStream;
 class HFCBinStream;
@@ -28,7 +29,7 @@ class HFCBinStream;
 // ------------------------------------------------------------------------- */
 class HRFCacheFileSharing : public HRFSharingControl
     {
-    HDECLARE_CLASS_ID(1415, HRFSharingControl);
+    HDECLARE_CLASS_ID(HRFFileId_CacheSharing, HRFSharingControl);
 
 public:
     //:> Default constructor.
@@ -52,5 +53,6 @@ protected:
 
 private :
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRFCacheFileSharing.hpp"

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCEmbedBinStream.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCMemoryBinStream
@@ -16,19 +16,20 @@
 #include "HFCBuffer.h"
 #include "Imagepp/all/h/interface/IFileReaderHandler.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HFCEmbedBinStream : public HFCBinStream
     {
 public:
-    HDECLARE_CLASS_ID (1313, HFCBinStream);
+    HDECLARE_CLASS_ID (HFCBinStreamId_Embed, HFCBinStream);
 
     // Primary methods
-    _HDLLu                  HFCEmbedBinStream();
+    IMAGEPP_EXPORT                  HFCEmbedBinStream();
 
-    _HDLLu                  HFCEmbedBinStream(const WString&      pi_Filename,
+    IMAGEPP_EXPORT                  HFCEmbedBinStream(const WString&      pi_Filename,
                                               IFileReaderHandler* pi_pHandler);
 
-    _HDLLu virtual          ~HFCEmbedBinStream();
+    IMAGEPP_EXPORT virtual          ~HFCEmbedBinStream();
 
     // Information methods
 
@@ -55,8 +56,6 @@ public:
     // Content access
     virtual size_t          Read(void* po_pData, size_t pi_DataSize);
     virtual size_t          Write(const void* pi_pData, size_t pi_DataSize);
-    virtual size_t          Read(WChar* po_pData, size_t pi_DataSize);
-    virtual size_t          Write(const WChar* pi_pData, size_t pi_DataSize);
     virtual bool           Flush();
 
 #ifdef __HMR_DEBUG_MEMBER
@@ -78,3 +77,5 @@ private:
     WString             m_Filename;
 
     };
+
+END_IMAGEPP_NAMESPACE

@@ -121,6 +121,9 @@ static void PrintTag(int tag, int nrows, double *dptr, int ncols,
 		{
 			sprintf(message,FMT_DOUBLE,*data++);
 			print(message,aux);
+
+                        if( j < ncols-1 )
+                            print(" ",aux);
 		}
 		print("\n",aux);
 	}
@@ -177,7 +180,7 @@ static void PrintKey(GeoKey *key, GTIFPrintMethod print, void *aux)
                   message[out_char++] = ch;
 
               /* flush message if buffer full */
-              if( out_char >= sizeof(message)-3 )
+              if( (size_t)out_char >= sizeof(message)-3 )
               {
                   message[out_char] = '\0';
                   print(message,aux);
@@ -263,10 +266,10 @@ int GTIFImport(GTIF *gtif, GTIFReadMethod scan,void *aux)
     scan(message,aux);
     if (strncmp(message,FMT_GEOTIFF,8)) return 0; 
     scan(message,aux);
-    if (!sscanf(message,FMT_VERSION,&gtif->gt_version)) return 0;
+    if (!sscanf(message,FMT_VERSION,(short int*)&gtif->gt_version)) return 0;
     scan(message,aux);
-    if (sscanf(message,FMT_REV,&gtif->gt_rev_major,
-               &gtif->gt_rev_minor) !=2) return 0;
+    if (sscanf(message,FMT_REV,(short int*)&gtif->gt_rev_major,
+               (short int*)&gtif->gt_rev_minor) !=2) return 0;
 
     scan(message,aux);
     if (strncmp(message,FMT_TAGS,8)) return 0;
@@ -472,11 +475,11 @@ static int ReadKey(GTIF *gt, GTIFReadMethod scan, void *aux)
                     vptr = message;
                 }
             }
-            GTIFKeySet(gt,key,ktype,outcount,sptr);			
+            GTIFKeySet(gt,key,ktype,outcount,sptr);
         }
         break;
-        
-      default: 
+
+      default:
         return -1;
     }
     return 1;
@@ -485,7 +488,10 @@ static int ReadKey(GTIF *gt, GTIFReadMethod scan, void *aux)
 
 static void DefaultRead(char *string, void *aux)
 {
-	/* Pretty boring */
-	fscanf((FILE *)aux,"%[^\n]\n",string);
+    /* Pretty boring */
+    int num_read;
+    num_read = fscanf((FILE *)aux, "%[^\n]\n", string);
+    if (num_read != 0) {
+      fprintf(stderr, "geo_print.c DefaultRead failed to read anything.\n");
+    }
 }
-

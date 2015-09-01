@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCMutex.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCMutex
@@ -13,8 +13,8 @@
 // INCLUDE FILES
 //####################################################
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCMutex.h>
 #include <Imagepp/all/h/HFCException.h>
 
@@ -22,7 +22,8 @@
 //DM-Android
 #elif defined (_WIN32)
 HFCMutex::InternalKey* HFCMutex::s_pInternalKey = 0;
-static struct EventKeyCreator
+
+static struct ImagePP::EventKeyCreator
     {
     EventKeyCreator()
         {
@@ -34,6 +35,7 @@ static struct EventKeyCreator
     // This will cause a leak, but this is necessary to support static event keys.
     // We cannot control the order of deletion of static objects.
     } s_EventKeyCreator;
+
 #endif
 
 

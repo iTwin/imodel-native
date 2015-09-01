@@ -2,13 +2,15 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPATokenizer.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HPATokenizer
 //---------------------------------------------------------------------------
 
 #include <ImagePP/all/h/HPAToken.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -48,3 +50,4 @@ inline void HPADefaultTokenizer::SetErrorToken(HPAToken& pi_rToken)
     m_pErrorToken = &pi_rToken;
     pi_rToken.SetName(L"Error token");
     }
+END_IMAGEPP_NAMESPACE

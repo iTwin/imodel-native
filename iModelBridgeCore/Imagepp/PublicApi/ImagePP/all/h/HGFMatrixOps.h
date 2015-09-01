@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicApi/ImagePP/all/h/HGFMatrixOps.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -7,7 +14,7 @@
 
 #include "HFCMatrix.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 // For some reason, the compiler does not compute
 #if (0)
@@ -51,7 +58,7 @@ HFCMatrix<1, 1> ExtractSubMatrix(const HFCMatrix<2, 2>& pi_rMatrix,
 #endif
 
 
-
+END_IMAGEPP_NAMESPACE
 
 #include "HGFMatrixOps.hpp"
 

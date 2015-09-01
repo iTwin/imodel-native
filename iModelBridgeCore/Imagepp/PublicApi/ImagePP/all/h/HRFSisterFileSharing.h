@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSisterFileSharing.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSisterFileSharing
@@ -20,17 +20,18 @@
 
     @see HRFSharingControl
 // ------------------------------------------------------------------------- */
+BEGIN_IMAGEPP_NAMESPACE
 class HRFSisterFileSharing : public HRFSharingControl
     {
-    HDECLARE_CLASS_ID(1414, HRFSharingControl);
+    HDECLARE_CLASS_ID(HRFSisterFileSharingId, HRFSharingControl);
 
 public:
     //:> Default constructor.
-    _HDLLg HRFSisterFileSharing(const HFCPtr<HFCURL>& pi_rpURL,
+    IMAGEPP_EXPORT HRFSisterFileSharing(const HFCPtr<HFCURL>& pi_rpURL,
                                 HFCAccessMode         pi_AccessMode = HFC_READ_ONLY);
 
     //:> Special constructor: Bypass sharing control
-    _HDLLg HRFSisterFileSharing(const HFCPtr<HFCURL>& pi_rpURL,
+    IMAGEPP_EXPORT HRFSisterFileSharing(const HFCPtr<HFCURL>& pi_rpURL,
                                 HFCAccessMode         pi_AccessMode,
                                 bool                 pi_BypassSharing);
 
@@ -57,5 +58,6 @@ private:
     //:> Try to open a sister file if it exist.
     void OpenFile();
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRFSisterFileSharing.hpp"

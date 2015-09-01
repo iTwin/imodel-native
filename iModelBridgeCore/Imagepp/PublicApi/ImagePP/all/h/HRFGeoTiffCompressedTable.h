@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoTiffCompressedTable.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGeoTiffCompressedTable
@@ -22,11 +22,12 @@
     -----------------------------------------------------------------------------
 */
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFGeoTiffCompressedTable : public HFCShareableObject<HRFGeoTiffCompressedTable>
     {
 public:
 
-    HDECLARE_BASECLASS_ID(1490);
+    HDECLARE_BASECLASS_ID(HRFGeoTiffCompressedTableId_Base);
 
 
     /** -----------------------------------------------------------------------------
@@ -76,10 +77,10 @@ public:
     GetColumnsInfo() const;
 
 
-    _HDLLg void                    LockTable();
-    _HDLLg void                    ReleaseTable();
+    IMAGEPP_EXPORT void                    LockTable();
+    IMAGEPP_EXPORT void                    ReleaseTable();
 
-    _HDLLg void             SetTableFile(const HFCPtr<HFCURL>& pi_rpCompressedTableFile);
+    IMAGEPP_EXPORT void             SetTableFile(const HFCPtr<HFCURL>& pi_rpCompressedTableFile);
     const HFCPtr<HFCURL>&   GetTableFileName() const;
 
     virtual const Byte*    GetTableRawData() const;
@@ -144,6 +145,7 @@ private:
     HRFGeoTiffCompressedTable(const HRFGeoTiffCompressedTable&);
     HRFGeoTiffCompressedTable& operator=(const HRFGeoTiffCompressedTable&);
     };
+END_IMAGEPP_NAMESPACE
 
 
 

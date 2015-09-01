@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DShape.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DShape
@@ -11,6 +11,7 @@
 
 #include "HVE2DVector.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HVE2DSimpleShape;
 class HVE2DHoledShape;
 class HVE2DLinear;
@@ -37,7 +38,7 @@ typedef uint32_t HVE2DShapeTypeId;
 */
 class HNOVTABLEINIT HVE2DShape : public HVE2DVector
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1110)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DShapeId_Base)
 
 public:
 
@@ -58,6 +59,10 @@ public:
         S_ON,
         S_PARTIALY_IN
         };
+
+
+    // Static helper function
+    static HVE2DShape* fCreateShapeFromLightShape(const HGF2DShape& pi_rShape, const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
 
     // Primary methods
     /** -----------------------------------------------------------------------------
@@ -223,13 +228,13 @@ public:
     virtual HGF2DShape* GetLightShape() const = 0;
 
     // Scanlines generation
-    virtual void       Rasterize(HGFScanLines& pio_rScanlines) const;
+    IMAGEPP_EXPORT virtual void           Rasterize(HGFScanLines& pio_rScanlines) const;
 
 
     // Area oriented operations
-    _HDLLg virtual HVE2DShape*    DifferentiateShape(const HVE2DShape& pi_rShape) const;
-    _HDLLg virtual HVE2DShape*    IntersectShape(const HVE2DShape& pi_rShape) const;
-    _HDLLg virtual HVE2DShape*    UnifyShape(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HVE2DShape*    DifferentiateShape(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HVE2DShape*    IntersectShape(const HVE2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HVE2DShape*    UnifyShape(const HVE2DShape& pi_rShape) const;
 
 
     /** -----------------------------------------------------------------------------
@@ -386,10 +391,10 @@ public:
     virtual double    CalculatePerimeter() const = 0;
 
 
-    _HDLLg virtual SpatialPosition    CalculateSpatialPositionOf(const HVE2DVector& pi_rVector) const;
-    _HDLLg virtual SpatialPosition    CalculateSpatialPositionOfNonCrossingLinear(
+    IMAGEPP_EXPORT virtual SpatialPosition    CalculateSpatialPositionOf(const HVE2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual SpatialPosition    CalculateSpatialPositionOfNonCrossingLinear(
                                                                  const HVE2DLinear& pi_rLinear) const;
-    _HDLLg virtual SpatialPosition    CalculateSpatialPositionOf(const HGF2DLocation& pi_rLocation) const;
+    IMAGEPP_EXPORT virtual SpatialPosition    CalculateSpatialPositionOf(const HGF2DLocation& pi_rLocation) const;
 
     /** -----------------------------------------------------------------------------
         This method checks if the given point is located inside the area defined
@@ -443,12 +448,12 @@ public:
 
 
     // Should be somehow hidden
-    _HDLLg virtual SpatialPosition    CalculateSpatialPositionOfSingleComponentVector(
+    IMAGEPP_EXPORT virtual SpatialPosition    CalculateSpatialPositionOfSingleComponentVector(
                                                                const HVE2DVector& pi_rVector) const;
-    _HDLLg virtual SpatialPosition    CalculateSpatialPositionOfNonCrossingSimpleShape(
+    IMAGEPP_EXPORT virtual SpatialPosition    CalculateSpatialPositionOfNonCrossingSimpleShape(
                                                                const HVE2DSimpleShape& pi_rSimpleShape) const;
 
-    _HDLLg virtual void          SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
+    IMAGEPP_EXPORT virtual void          SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys);
 
 protected:
 
@@ -459,6 +464,7 @@ private:
     SpatialPosition              CalculateSpatialPositionOfHoledShape(const HVE2DHoledShape& pi_rHoledShape) const;
 
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DShape.hpp"

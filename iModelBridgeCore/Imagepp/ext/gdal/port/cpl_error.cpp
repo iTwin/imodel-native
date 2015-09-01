@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_error.cpp 19588 2010-04-30 19:56:38Z rouault $
+ * $Id: cpl_error.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Name:     cpl_error.cpp
  * Project:  CPL - Common Portability Library
@@ -8,6 +8,7 @@
  *
  **********************************************************************
  * Copyright (c) 1998, Daniel Morissette
+ * Copyright (c) 2007-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -39,10 +40,12 @@
 #endif
  
 #define TIMESTAMP_DEBUG
+//#define MEMORY_DEBUG
 
-CPL_CVSID("$Id: cpl_error.cpp 19588 2010-04-30 19:56:38Z rouault $");
+CPL_CVSID("$Id: cpl_error.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 static void *hErrorMutex = NULL;
+static void *pErrorHandlerUserData = NULL; 
 static CPLErrorHandler pfnErrorHandler = CPLDefaultErrorHandler;
 
 #if !defined(HAVE_VSNPRINTF)
@@ -54,6 +57,7 @@ static CPLErrorHandler pfnErrorHandler = CPLDefaultErrorHandler;
 typedef struct errHandler
 {
     struct errHandler   *psNext;
+    void                *pUserData;
     CPLErrorHandler     pfnHandler;
 } CPLErrorHandlerNode;
 
@@ -79,7 +83,10 @@ static CPLErrorContext *CPLGetErrorContext()
 
     if( psCtx == NULL )
     {
-        psCtx = (CPLErrorContext *) CPLCalloc(sizeof(CPLErrorContext),1);
+        psCtx = (CPLErrorContext *) VSICalloc(sizeof(CPLErrorContext),1);
+        if (psCtx == NULL) {
+            CPLEmergencyError("Out of memory attempting to report error");
+        }
         psCtx->eLastErrType = CE_None;
         psCtx->nLastErrMsgMax = sizeof(psCtx->szLastErrMsg);
         CPLSetTLS( CTLS_ERRORCONTEXT, psCtx, TRUE );
@@ -88,6 +95,28 @@ static CPLErrorContext *CPLGetErrorContext()
     return psCtx;
 }
 
+/************************************************************************/
+/*                         CPLGetErrorHandlerUserData()                 */
+/************************************************************************/
+
+/**
+ * Fetch the user data for the error context
+ *
+ * Fetches the user data for the current error context.  You can 
+ * set the user data for the error context when you add your handler by 
+ * issuing CPLSetErrorHandlerEx() and CPLPushErrorHandlerEx().  Note that 
+ * user data is primarily intended for providing context within error handlers
+ * themselves, but they could potentially be abused in other useful ways with the usual 
+ * caveat emptor understanding.
+ *
+ * @return the user data pointer for the error context
+ */
+
+void* CPL_STDCALL CPLGetErrorHandlerUserData(void)
+{
+    CPLErrorContext *psCtx = CPLGetErrorContext();
+    return (void*) psCtx->psHandlerStack ? psCtx->psHandlerStack->pUserData : pErrorHandlerUserData;
+}
 
 /**********************************************************************
  *                          CPLError()
@@ -238,6 +267,89 @@ void    CPLErrorV(CPLErr eErrClass, int err_no, const char *fmt, va_list args )
 }
 
 /************************************************************************/
+/*                         CPLEmergencyError()                          */
+/************************************************************************/
+
+/**
+ * Fatal error when things are bad. 
+ *
+ * This function should be called in an emergency situation where
+ * it is unlikely that a regular error report would work.  This would 
+ * include in the case of heap exhaustion for even small allocations, 
+ * or any failure in the process of reporting an error (such as TLS 
+ * allocations). 
+ *
+ * This function should never return.  After the error message has been
+ * reported as best possible, the application will abort() similarly to how
+ * CPLError() aborts on CE_Fatal class errors.
+ *
+ * @param pszMessage the error message to report.
+ */
+
+void CPLEmergencyError( const char *pszMessage )
+{
+    CPLErrorContext *psCtx = NULL;
+    static int bInEmergencyError = FALSE;
+
+    // If we are already in emergency error then one of the 
+    // following failed, so avoid them the second time through.
+    if( !bInEmergencyError )
+    {
+        bInEmergencyError = TRUE;
+        psCtx = (CPLErrorContext *) CPLGetTLS( CTLS_ERRORCONTEXT );
+
+        if( psCtx != NULL && psCtx->psHandlerStack != NULL )
+        {
+            psCtx->psHandlerStack->pfnHandler( CE_Fatal, CPLE_AppDefined, 
+                                               pszMessage );
+        }
+        else if( pfnErrorHandler != NULL )
+        {
+            pfnErrorHandler( CE_Fatal, CPLE_AppDefined, pszMessage );
+        }
+    }
+
+    // Ultimate fallback.
+    fprintf( stderr, "FATAL: %s\n", pszMessage );
+
+    abort();
+}
+
+/************************************************************************/
+/*                    CPLGetProcessMemorySize()                         */
+/************************************************************************/
+
+#ifdef MEMORY_DEBUG
+
+#ifdef __linux
+static int CPLGetProcessMemorySize()
+{
+    FILE* fp = fopen("/proc/self/status", "r");
+    if( fp == NULL )
+        return -1;
+    int nRet = -1;
+    char szLine[128];
+    while (fgets(szLine, sizeof(szLine), fp) != NULL)
+    {
+        if (strncmp(szLine, "VmSize:", 7) == 0)
+        {
+            const char* pszPtr = szLine;
+            while( !(*pszPtr == '\0' || (*pszPtr >= '0' && *pszPtr <= '9')) )
+                 pszPtr ++;
+            nRet = atoi(pszPtr);
+            break;
+        }
+    }
+    fclose(fp);
+    return nRet;
+}
+#else
+#error CPLGetProcessMemorySize() unimplemented for this OS
+#endif
+
+#endif // def MEMORY_DEBUG
+
+/************************************************************************/
 /*                              CPLDebug()                              */
 /************************************************************************/
 
@@ -321,6 +433,17 @@ void CPLDebug( const char * pszCategory, const char * pszFormat, ... )
         strcat( pszMessage, ": " );
     }
 #endif
+
+/* -------------------------------------------------------------------- */
+/*      Add the process memory size.                                    */
+/* -------------------------------------------------------------------- */
+#ifdef MEMORY_DEBUG
+    char szVmSize[32];
+    sprintf( szVmSize, "[VmSize: %d] ", CPLGetProcessMemorySize());
+    strcat( pszMessage, szVmSize );
+#endif
+
+    //sprintf(pszMessage,"[%d] ", (int)getpid());
 
 /* -------------------------------------------------------------------- */
 /*      Add the category.                                               */
@@ -605,7 +728,54 @@ void CPLTurnFailureIntoWarning(int bOn )
 }
 
 /**********************************************************************
- *                          CPLSetErrorHandler()
+ *                          CPLSetErrorHandlerEx()                    *
+ **********************************************************************/
+
+/**
+ * Install custom error handle with user's data. This method is 
+ * essentially CPLSetErrorHandler with an added pointer to pUserData.  
+ * The pUserData is not returned in the CPLErrorHandler, however, and 
+ * must be fetched via CPLGetLastErrorUserData
+ *
+ * @param pfnErrorHandlerNew new error handler function.
+ * @param pUserData User data to carry along with the error context.
+ * @return returns the previously installed error handler.
+ */ 
+
+CPLErrorHandler CPL_STDCALL 
+CPLSetErrorHandlerEx( CPLErrorHandler pfnErrorHandlerNew, 
+                      void* pUserData )
+{
+    CPLErrorHandler     pfnOldHandler = pfnErrorHandler;
+    CPLErrorContext *psCtx = CPLGetErrorContext();
+
+    if( psCtx->psHandlerStack != NULL )
+    {
+        CPLDebug( "CPL", 
+                  "CPLSetErrorHandler() called with an error handler on\n"
+                  "the local stack.  New error handler will not be used immediately.\n" );
+    }
+
+
+    {
+        CPLMutexHolderD( &hErrorMutex );
+
+        pfnOldHandler = pfnErrorHandler;
+        
+        if( pfnErrorHandler == NULL )
+            pfnErrorHandler = CPLDefaultErrorHandler;
+        else
+            pfnErrorHandler = pfnErrorHandlerNew;
+            
+        pErrorHandlerUserData = pUserData;
+    }
+
+    return pfnOldHandler;
+}
+
+
+/**********************************************************************
+ *                          CPLSetErrorHandler()                      *
  **********************************************************************/
 
 /**
@@ -646,33 +816,10 @@ void CPLTurnFailureIntoWarning(int bOn )
  * @param pfnErrorHandlerNew new error handler function.
  * @return returns the previously installed error handler.
  */ 
-
 CPLErrorHandler CPL_STDCALL 
 CPLSetErrorHandler( CPLErrorHandler pfnErrorHandlerNew )
 {
-    CPLErrorHandler     pfnOldHandler = pfnErrorHandler;
-    CPLErrorContext *psCtx = CPLGetErrorContext();
-
-    if( psCtx->psHandlerStack != NULL )
-    {
-        CPLDebug( "CPL", 
-                  "CPLSetErrorHandler() called with an error handler on\n"
-                  "the local stack.  New error handler will not be used immediately.\n" );
-    }
-
-
-    {
-        CPLMutexHolderD( &hErrorMutex );
-
-        pfnOldHandler = pfnErrorHandler;
-        
-        if( pfnErrorHandler == NULL )
-            pfnErrorHandler = CPLDefaultErrorHandler;
-        else
-            pfnErrorHandler = pfnErrorHandlerNew;
-    }
-
-    return pfnOldHandler;
+    return CPLSetErrorHandlerEx(pfnErrorHandlerNew, NULL);
 }
 
 /************************************************************************/
@@ -683,7 +830,7 @@ CPLSetErrorHandler( CPLErrorHandler pfnErrorHandlerNew )
  * Push a new CPLError handler.
  *
  * This pushes a new error handler on the thread-local error handler
- * stack.  This handler will be used untill removed with CPLPopErrorHandler().
+ * stack.  This handler will be used until removed with CPLPopErrorHandler().
  *
  * The CPLSetErrorHandler() docs have further information on how 
  * CPLError handlers work.
@@ -694,13 +841,38 @@ CPLSetErrorHandler( CPLErrorHandler pfnErrorHandlerNew )
 void CPL_STDCALL CPLPushErrorHandler( CPLErrorHandler pfnErrorHandlerNew )
 
 {
+    CPLPushErrorHandlerEx(pfnErrorHandlerNew, NULL);
+}
+
+
+/************************************************************************/
+/*                        CPLPushErrorHandlerEx()                       */
+/************************************************************************/
+
+/**
+ * Push a new CPLError handler with user data on the error context.
+ *
+ * This pushes a new error handler on the thread-local error handler
+ * stack.  This handler will be used until removed with CPLPopErrorHandler(). 
+ * Obtain the user data back by using CPLGetErrorContext().
+ *
+ * The CPLSetErrorHandler() docs have further information on how 
+ * CPLError handlers work.
+ *
+ * @param pfnErrorHandlerNew new error handler function.
+ * @param pUserData User data to put on the error context. 
+ */
+void CPL_STDCALL CPLPushErrorHandlerEx( CPLErrorHandler pfnErrorHandlerNew, 
+                                        void* pUserData )
+
+{
     CPLErrorContext *psCtx = CPLGetErrorContext();
     CPLErrorHandlerNode         *psNode;
 
-    psNode = (CPLErrorHandlerNode *) VSIMalloc(sizeof(CPLErrorHandlerNode));
+    psNode = (CPLErrorHandlerNode *) CPLMalloc(sizeof(CPLErrorHandlerNode));
     psNode->psNext = psCtx->psHandlerStack;
     psNode->pfnHandler = pfnErrorHandlerNew;
-
+    psNode->pUserData = pUserData;
     psCtx->psHandlerStack = psNode;
 }
 
@@ -759,3 +931,16 @@ void CPL_STDCALL _CPLAssert( const char * pszExpression, const char * pszFile,
               pszExpression, pszFile, iLine );
 }
 
+
+/************************************************************************/
+/*                       CPLCleanupErrorMutex()                         */
+/************************************************************************/
+
+void CPLCleanupErrorMutex()
+{
+    if( hErrorMutex != NULL )
+    {
+        CPLDestroyMutex(hErrorMutex);
+        hErrorMutex = NULL;
+    }
+}

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DSpatialIndex.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -16,6 +16,8 @@
 //#include "HVE2DGenFacet.h"
 
 #include "ZLib.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 #define DefaultTreshold (10)
 #define MinimalTreshold (3)
@@ -171,7 +173,7 @@ public:
             }
 
         void* newMemory = new DataType[NewCount];
-        memcpy (newMemory, poolItem->GetMemory(), min (NewCount, poolItem->GetMemoryCount()) *sizeof(DataType));
+        memcpy (newMemory, poolItem->GetMemory(), MIN (NewCount, poolItem->GetMemoryCount()) *sizeof(DataType));
         m_totalUsedCount -= poolItem->GetMemoryCount();
         delete [] poolItem->GetMemory();
         poolItem->SetMemory (reinterpret_cast<DataType*>(newMemory), NewCount);
@@ -537,10 +539,10 @@ public:
 
     static EXTENT MergeExtents (const EXTENT& extent1, const EXTENT& extent2)
         {
-        return EXTENT(min(extent1.GetXMin(), extent2.GetXMin()),
-                      min(extent1.GetYMin(), extent2.GetYMin()),
-                      max(extent1.GetXMax(), extent2.GetXMax()),
-                      max(extent1.GetYMax(), extent2.GetYMax()));
+        return EXTENT(MIN(extent1.GetXMin(), extent2.GetXMin()),
+                      MIN(extent1.GetYMin(), extent2.GetYMin()),
+                      MAX(extent1.GetXMax(), extent2.GetXMax()),
+                      MAX(extent1.GetYMax(), extent2.GetYMax()));
         }
 
     static bool IsSpatialInExtent (const SPATIAL& spatial, const EXTENT& extent)
@@ -568,10 +570,10 @@ public:
 
     static EXTENT MergeExtents (const EXTENT& extent1, const EXTENT& extent2)
         {
-        return EXTENT(min(extent1.GetXMin(), extent2.GetXMin()),
-                      min(extent1.GetYMin(), extent2.GetYMin()),
-                      max(extent1.GetXMax(), extent2.GetXMax()),
-                      max(extent1.GetYMax(), extent2.GetYMax()));
+        return EXTENT(MIN(extent1.GetXMin(), extent2.GetXMin()),
+                      MIN(extent1.GetYMin(), extent2.GetYMin()),
+                      MAX(extent1.GetXMax(), extent2.GetXMax()),
+                      MAX(extent1.GetYMax(), extent2.GetYMax()));
         }
     static bool IsSpatialInExtent (const SPATIAL* spatial, const EXTENT& extent)
         {
@@ -597,10 +599,10 @@ public:
 
     static EXTENT MergeExtents (const EXTENT& extent1, const EXTENT& extent2)
         {
-        return EXTENT(min(extent1.GetXMin(), extent2.GetXMin()),
-                      min(extent1.GetYMin(), extent2.GetYMin()),
-                      max(extent1.GetXMax(), extent2.GetXMax()),
-                      max(extent1.GetYMax(), extent2.GetYMax()));
+        return EXTENT(MIN(extent1.GetXMin(), extent2.GetXMin()),
+                      MIN(extent1.GetYMin(), extent2.GetYMin()),
+                      MAX(extent1.GetXMax(), extent2.GetXMax()),
+                      MAX(extent1.GetYMax(), extent2.GetYMax()));
         }
     static bool IsSpatialInExtent (const HFCPtr<SPATIAL> spatial, const EXTENT& extent)
         {
@@ -625,10 +627,10 @@ public:
 
     static HGF2DLiteExtent MergeExtents (const HGF2DLiteExtent& extent1, const HGF2DLiteExtent& extent2)
         {
-        return HGF2DLiteExtent(min(extent1.GetXMin(), extent2.GetXMin()),
-                               min(extent1.GetYMin(), extent2.GetYMin()),
-                               max(extent1.GetXMax(), extent2.GetXMax()),
-                               max(extent1.GetYMax(), extent2.GetYMax()));
+        return HGF2DLiteExtent(MIN(extent1.GetXMin(), extent2.GetXMin()),
+                               MIN(extent1.GetYMin(), extent2.GetYMin()),
+                               MAX(extent1.GetXMax(), extent2.GetXMax()),
+                               MAX(extent1.GetYMax(), extent2.GetYMax()));
         }
     static bool IsSpatialInExtent (const HGF2DPosition& spatial, const HGF2DLiteExtent& extent)
         {
@@ -653,10 +655,10 @@ public:
 
     static HGF2DLiteExtent MergeExtents (const HGF2DLiteExtent& extent1, const HGF2DLiteExtent& extent2)
         {
-        return HGF2DLiteExtent(min(extent1.GetXMin(), extent2.GetXMin()),
-                               min(extent1.GetYMin(), extent2.GetYMin()),
-                               max(extent1.GetXMax(), extent2.GetXMax()),
-                               max(extent1.GetYMax(), extent2.GetYMax()));
+        return HGF2DLiteExtent(MIN(extent1.GetXMin(), extent2.GetXMin()),
+                               MIN(extent1.GetYMin(), extent2.GetYMin()),
+                               MAX(extent1.GetXMax(), extent2.GetXMax()),
+                               MAX(extent1.GetYMax(), extent2.GetYMax()));
         }
     static bool IsSpatialInExtent (const HGF2DLiteExtent& spatial, const HGF2DLiteExtent& extent)
         {
@@ -1060,9 +1062,9 @@ public:
 
         // Do not allow NULL sized extent ...
         if (!(m_Extent.GetXMax() > m_Extent.GetXMin()))
-            m_Extent.SetXMax (m_Extent.GetXMin() + max (fabs(m_Extent.GetXMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
+            m_Extent.SetXMax (m_Extent.GetXMin() + MAX (fabs(m_Extent.GetXMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
         if (!(m_Extent.GetYMax() > m_Extent.GetYMin()))
-            m_Extent.SetYMax (m_Extent.GetYMin() + max (fabs(m_Extent.GetYMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
+            m_Extent.SetYMax (m_Extent.GetYMin() + MAX (fabs(m_Extent.GetYMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
 
         HINVARIANTS;
         }
@@ -1761,9 +1763,9 @@ public:
         {
         // Do not allow NULL sized extent ...
         if (!(m_Extent.GetXMax() > m_Extent.GetXMin()))
-            m_Extent.SetXMax (m_Extent.GetXMin() + max (fabs(m_Extent.GetXMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
+            m_Extent.SetXMax (m_Extent.GetXMin() + MAX (fabs(m_Extent.GetXMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
         if (!(m_Extent.GetYMax() > m_Extent.GetYMin()))
-            m_Extent.SetYMax (m_Extent.GetYMin() + max (fabs(m_Extent.GetYMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
+            m_Extent.SetYMax (m_Extent.GetYMin() + MAX (fabs(m_Extent.GetYMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
 
         HINVARIANTS;
         }
@@ -2491,9 +2493,9 @@ public:
         {
         // Do not allow NULL sized extent ...
         if (!(m_Extent.GetXMax() > m_Extent.GetXMin()))
-            m_Extent.SetXMax (m_Extent.GetXMin() + max (fabs(m_Extent.GetXMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
+            m_Extent.SetXMax (m_Extent.GetXMin() + MAX (fabs(m_Extent.GetXMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
         if (!(m_Extent.GetYMax() > m_Extent.GetYMin()))
-            m_Extent.SetYMax (m_Extent.GetYMin() + max (fabs(m_Extent.GetYMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
+            m_Extent.SetYMax (m_Extent.GetYMin() + MAX (fabs(m_Extent.GetYMin() * HNumeric<double>::EPSILON_MULTIPLICATOR() * 1000.0), 1.0));
 
         HINVARIANTS;
         }
@@ -3354,6 +3356,7 @@ private:
     FastVectorCountLimitedPool<SPATIAL>* m_pool;
     };
 
+END_IMAGEPP_NAMESPACE
 
 #include "HGF2DSpatialIndex.hpp"
 

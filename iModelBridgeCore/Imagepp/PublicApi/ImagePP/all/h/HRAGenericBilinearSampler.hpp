@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAGenericBilinearSampler.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** ---------------------------------------------------------------------------
     Constructor
     ---------------------------------------------------------------------------
@@ -71,7 +72,7 @@ inline uint32_t HRAGenericBilinearSampler<T>::Sample::GetFirstLine() const
     if (m_YIsPastCenter)
         return (uint32_t)m_PositionY;
     else
-        return (uint32_t)max(m_PositionY - 1.0, 0.0);
+        return (uint32_t)MAX(m_PositionY - 1.0, 0.0);
     }
 
 
@@ -99,7 +100,7 @@ inline uint32_t HRAGenericBilinearSampler<T>::Sample::GetFirstColumn() const
     if (m_XIsPastCenter)
         return (uint32_t)m_PositionX;
     else
-        return (uint32_t)max(m_PositionX - 1.0, 0.0);
+        return (uint32_t)MAX(m_PositionX - 1.0, 0.0);
     }
 
 
@@ -161,3 +162,4 @@ inline double HRAGenericBilinearSampler<T>::Sample::GetYDeltaOfFirstPixel() cons
         return m_PositionY - ((double)((int32_t)m_PositionY) - 0.5);
         }
     }
+END_IMAGEPP_NAMESPACE

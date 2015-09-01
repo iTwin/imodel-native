@@ -6,7 +6,7 @@
 //:>       $Date: 2011/12/22 14:03:54 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGeoreferenceContext
@@ -17,10 +17,11 @@
 #include <Imagepp/all/h/HRFRasterFile.h>
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFGeoreferenceContext : public HFCShareableObject<HRFGeoreferenceContext>
 {
     // Class ID for this class.
-    HDECLARE_BASECLASS_ID(1410)    
+    HDECLARE_BASECLASS_ID(HRFGeoreferenceContextId_Base)    
     
     public : 
         
@@ -28,7 +29,6 @@ class HRFGeoreferenceContext : public HFCShareableObject<HRFGeoreferenceContext>
                                double pi_defaultRatioToMeterForSisterFile,
                                bool   pi_useSisterFile,
                                bool   pi_usePCSLinearUnit,
-                               bool   pi_useDefaultUnitForGeoModel,
                                bool   pi_interpretAsIntergraphUnit);
         
         virtual ~HRFGeoreferenceContext();
@@ -46,6 +46,6 @@ class HRFGeoreferenceContext : public HFCShareableObject<HRFGeoreferenceContext>
         double m_defaultRatioToMeterForSisterFile;
         bool   m_useSisterFile;
         bool   m_usePCSLinearUnit;
-        bool   m_useDefaultUnitForGeoModel;
         bool   m_interpretAsIntergraphUnit;        
 };
+END_IMAGEPP_NAMESPACE

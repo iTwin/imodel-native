@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DProjectiveTriangleMeshAdapter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DProjectiveTriangleMeshAdapter
@@ -22,7 +22,7 @@
 #include "HVE2DMesh.h"
 #include "HVE2DGenMesh.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert 
@@ -49,7 +49,7 @@
 */
 class HGF2DProjectiveTriangleMeshAdapter : public HGF2DProjectiveMeshAdapter
     {
-    HDECLARE_CLASS_ID(9994, HGF2DProjectiveMeshAdapter)
+    HDECLARE_CLASS_ID(HGF2DProjectiveId_TriangleMeshAdapter, HGF2DProjectiveMeshAdapter)
 
 public:
 
@@ -71,7 +71,7 @@ public:
                                   uint32_t   pi_NumLoc,
                                   double    pi_XInStep,
                                   double*   po_pXOut,
-                                  double*   po_pYOut) const;
+                                  double*   po_pYOut) const override;
 
 
     virtual void    ConvertInverse(double    pi_YIn,
@@ -79,7 +79,7 @@ public:
                                    uint32_t   pi_NumLoc,
                                    double    pi_XInStep,
                                    double*   po_pXOut,
-                                   double*   po_pYOut) const;
+                                   double*   po_pYOut) const override;
 
 
 
@@ -125,3 +125,4 @@ private:
     };
 
 
+END_IMAGEPP_NAMESPACE

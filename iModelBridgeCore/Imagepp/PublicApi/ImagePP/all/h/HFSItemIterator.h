@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFSItemIterator.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>---------------------------------------------------------------------------
@@ -14,6 +14,7 @@
 #include "HFCNodeIterator.h"
 #include "HFSItem.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author  Ghislain Tardif (${mailto:Ghislain.Tardif@Bentley.com})
@@ -27,7 +28,7 @@
 class HFSItemIterator : public HFCNodeIterator
     {
 public:
-    HDECLARE_CLASS_ID(5011, HFCNodeIterator);
+    HDECLARE_CLASS_ID(HFSItemId_Iterator, HFCNodeIterator);
 
     HFSItemIterator(const HFCPtr<HFSItem>& pi_rpItem);
     HFSItemIterator(const HFSItemIterator& pi_rObj);
@@ -45,5 +46,6 @@ private:
     HFSItemIterator();
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HFSItemIterator.hpp"
 

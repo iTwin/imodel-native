@@ -2,32 +2,26 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPDEMFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HIMFilteredImage
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
-
+#include <ImagePPInternal/hstdcpp.h>
 
 #include <Imagepp/all/h/HRPDEMFilter.h>
 #include <Imagepp/all/h/HRPPixelType.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HGSEditor.h>
+#include <Imagepp/all/h/HRAEditor.h>
 #include <Imagepp/all/h/HGF2DTransfoModel.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
+#include <Imagepp/all/h/HGF2DDisplacement.h>
+#include <Imagepp/all/h/HRASurface.h>
+#include <Imagepp/all/h/HRAImageOp.h>
 
-// Conflict with the use of std::numeric_limits<T>::max()
-#ifdef max
-#undef max
-#endif
-#ifdef min
-#undef min
-#endif
 
 // [a, b, c]
 // [d, e, f]
@@ -412,7 +406,7 @@ inline double ComputeAzimuthRad(unsigned short const& pi_AzimuthDeg)
 //-----------------------------------------------------------------------------
 // DEMFilterImplementation
 //-----------------------------------------------------------------------------
-class DEMFilterImplementation
+class ImagePP::DEMFilterImplementation
     {
 public:
     DEMFilterImplementation(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSettings, unsigned short const& pi_rVerticalExaggeration, Byte const* pi_pDefaultRGBA)
@@ -502,9 +496,9 @@ public:
                                HRPPixelNeighbourhood const& pi_rNeighbourhood, double pi_ScalingX, double pi_ScalingY) override
         {
         // Clear with default color.
-        HFCPtr<HGSEditor> pEditor = new HGSEditor();
-        pEditor->SetFor(new HGSSurface(pi_pDestination.GetPtr()));
-        pEditor->Clear(&m_DefaultRGBA);
+        HRASurface surface(pi_pDestination.GetPtr());
+        HRAEditor editor(surface);
+        editor.Clear(&m_DefaultRGBA);
         }
 
     virtual void SetNoDataValue(double const& pi_rNoDataValue) {
@@ -797,7 +791,7 @@ public:
                     double Aspect_rad = ComputeAspectRad(RateX, RateY);
 
                     double hillShade = (Zenith_cos * cos(Slope_rad)) + (Zenith_sin * sin(Slope_rad) * cos(Azimuth_rad-Aspect_rad));
-                    if(hillShade > 0) //&&MM test speed with test of hillShade > 1/255
+                    if(hillShade > 0) 
                         {
                         // rise_run = ( (dz/dx)^2 + (dz/dy)^2 )^0.5
                         double slopePercent = sqrt((RateX*RateX) + (RateY*RateY)) * 100;
@@ -1188,6 +1182,19 @@ public:
     };
 
 //-----------------------------------------------------------------------------
+// IntensityFilterImpl
+//-----------------------------------------------------------------------------
+template<class _SrcT>
+class IntensityFilterImpl : public ElevationFilterImpl<_SrcT>
+    {
+public:
+    IntensityFilterImpl(double const& pi_UnitSizeX, double const& pi_UnitSizeY, const HRPDEMFilter::HillShadingSettings& pi_HillShadingSetting, unsigned short const& pi_rVerticalExaggeration, bool pi_ClipToEndValues, Byte const* pi_pDefaultRGB, HRPDEMFilter::UpperRangeValues const& pi_rUpperRangeValues) 
+        :ElevationFilterImpl<_SrcT>(pi_UnitSizeX, pi_UnitSizeY, pi_HillShadingSetting, pi_rVerticalExaggeration, pi_ClipToEndValues, pi_pDefaultRGB, pi_rUpperRangeValues)
+        {
+        }
+    };
+
+//-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
 HRPDEMFilter::HillShadingSettings::HillShadingSettings()
@@ -1201,7 +1208,8 @@ HRPDEMFilter::HillShadingSettings::HillShadingSettings()
 // Constructor
 //-----------------------------------------------------------------------------
 HRPDEMFilter::HillShadingSettings::HillShadingSettings(unsigned short pi_AltitudeAngle, unsigned short pi_AzimuthDegree)
-    :m_AltitudeAngle(pi_AltitudeAngle),
+    :m_HillShadingState(false),
+     m_AltitudeAngle(pi_AltitudeAngle),
      m_AzimuthDegree(pi_AzimuthDegree)
     {
     }
@@ -1534,6 +1542,11 @@ DEMFilterImplementation* HRPDEMFilter::CreateFilterImplementation(const HRPChann
             pFilterImpl = new AspectFilterImpl<T> (pi_PixelSizeX, pi_PixelSizeY, m_HillShadingSettings, m_VerticalExaggeration, m_ClipToEndValues, m_DefaultRGBAColor, m_RangeValues);
             break;
             }
+        case Style_Intensity:
+            {
+            pFilterImpl = new IntensityFilterImpl<T> (pi_PixelSizeX, pi_PixelSizeY, m_HillShadingSettings, m_VerticalExaggeration, m_ClipToEndValues, m_DefaultRGBAColor, m_RangeValues);
+            break;
+            }
         case Style_Unknown:
         default:
             {
@@ -1547,4 +1560,886 @@ DEMFilterImplementation* HRPDEMFilter::CreateFilterImplementation(const HRPChann
         pFilterImpl->SetNoDataValue(*pi_pChannelType->GetNoDataValue());
 
     return pFilterImpl;
+    }
+
+
+/*-------------------------------------------------------------------------------------------------------------*/
+/*---------------------------------------DEMFilterProcessor_T--------------------------------------------------*/
+/*-------------------------------------------------------------------------------------------------------------*/
+template <class Src_T, class RangeValue_T, bool HasNoDataValue_T>
+//&&Backlog: Could we make dest template? Current code use UInt32 == RGBA.
+//         we probably could make it more versatile and template the associated value of a range. The ranges are already converted 
+//         to the input type so we would simply need to template the destination color.
+struct DEMFilterProcessor_T : public HRAImageOpDEMFilter::DEMFilterProcessor
+{
+public:
+    typedef RangeMap<RangeValue_T, uint32_t> UpperRangeValuesT;       // <RangeValue, RGBAColor>
+    
+    typedef Src_T                          SourcePixelT; 
+    typedef RangeValue_T                   RangeValueT;
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    DEMFilterProcessor_T(HRAImageOpDEMFilter const& imgOpDEMFilter, HGF2DTransfoModel const& orientation, HRPChannelType const& channelType)
+        :m_DEMImageOPRef(imgOpDEMFilter),
+        m_00(1.0),
+        m_01(0.0),
+        m_10(0.0),
+        m_11(1.0)
+        {
+        HPRECONDITION (orientation.CanBeRepresentedByAMatrix());
+
+        memcpy(&m_defaultRGBA, imgOpDEMFilter.GetDefaultRGBA(), sizeof(m_defaultRGBA));
+
+        if (HasNoDataValue_T)
+            m_noDataValue = (SourcePixelT)*channelType.GetNoDataValue();
+                    
+        HFCMatrix<3,3> orientationMatrix(orientation.GetMatrix());
+        HASSERT(orientationMatrix[0][2] == 0.0);    // No translation assumed.
+        HASSERT(orientationMatrix[1][2] == 0.0);    // No translation assumed.
+        m_00 = orientationMatrix[0][0];
+        m_01 = orientationMatrix[0][1];
+        m_10 = orientationMatrix[1][0];
+        m_11 = orientationMatrix[1][1];
+              
+        // Build range value in RangeValueT
+        HRPDEMFilter::UpperRangeValues const&  upperRangeValues = imgOpDEMFilter.GetUpperRangeValues();
+        for(HRPDEMFilter::UpperRangeValues::const_iterator itr(upperRangeValues.begin()); itr != upperRangeValues.end(); ++itr)
+            {
+            HRPDEMFilter::RangeInfo const& rangeInfo = itr->second;
+
+            if(rangeInfo.m_IsOn)
+                {
+                m_upperRangeValues.insert(typename UpperRangeValuesT::value_type((RangeValue_T)itr->first, MakeRGBA(rangeInfo.m_rgb[0], rangeInfo.m_rgb[1], rangeInfo.m_rgb[2], 0xFF)));
+                }
+            else
+                {
+                m_upperRangeValues.insert(typename UpperRangeValuesT::value_type((RangeValue_T)itr->first, m_defaultRGBA));
+                }
+            }
+
+        if(imgOpDEMFilter.GetClipToEndValue())
+            {
+            // Everything that goes beyond the max or below the min value will be set to the default color.
+            m_upperRangeValues.SetUpperDefaultValue(m_defaultRGBA);
+            m_upperRangeValues.SetLowerDefaultValue(m_defaultRGBA);
+            }
+
+        m_upperRangeValues.update_hash();
+        }
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual ~DEMFilterProcessor_T(){}
+
+protected:
+
+
+    HRPDEMFilter::HillShadingSettings const& GetHillShadingSettings() const {return m_DEMImageOPRef.GetHillShadingSettings();}
+    double GetUnitSizeX() const {return m_DEMImageOPRef.GetUnitSizeX();}
+    double GetUnitSizeY() const {return m_DEMImageOPRef.GetUnitSizeY();}
+    unsigned short GetVerticalExaggeration() const {return m_DEMImageOPRef.GetVerticalExaggeration();}
+    HRPPixelNeighbourhood const& GetNeighbourhood() const {return m_DEMImageOPRef.GetNeighbourhood();}
+    
+
+    HRAImageOpDEMFilter const& m_DEMImageOPRef;     // A ref to do filter.
+    
+    double              m_00;       // Transform pieces use when shading.
+    double              m_01;
+    double              m_10;
+    double              m_11;
+    uint32_t            m_defaultRGBA;
+    UpperRangeValuesT   m_upperRangeValues;         
+    SourcePixelT        m_noDataValue;              // valid only when HasNoDataValue_T=true
+
+};
+
+/*-------------------------------------------------------------------------------------------------------------*/
+/*---------------------------------------ElevationFilterProcessorT---------------------------------------------*/
+/*-------------------------------------------------------------------------------------------------------------*/
+template <class Src_T, bool HasNoDataValue_T>
+struct ElevationFilterProcessorT : public DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>
+    {
+    typedef Src_T                          SourcePixelT;
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    ElevationFilterProcessorT(HRAImageOpDEMFilter const& imgOpDEMFilter, HGF2DTransfoModel const& orientation, HRPChannelType const& channelType)
+        :DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>(imgOpDEMFilter, orientation, channelType)
+        {
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual ~ElevationFilterProcessorT(){}
+
+    virtual void _ProcessPixelsWithShading(HRAImageSampleR outData, HRAImageSampleCR inputData, double scalingX, double scalingY) override
+        {
+        HPRECONDITION(outData.GetWidth() + (DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::GetNeighbourhood().GetWidth() - 1) == inputData.GetWidth());
+        HPRECONDITION(outData.GetHeight() + (DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::GetNeighbourhood().GetHeight() - 1) == inputData.GetHeight());
+#ifndef DISABLE_BUFFER_GETDATA
+
+        size_t inPitch, outPitch;
+        Byte const* pSrcBuffer = inputData.GetBufferCP()->GetDataCP(inPitch);
+        Byte*       pDstBuffer = outData.GetBufferP()->GetDataP(outPitch);
+
+        uint32_t Width = outData.GetWidth();
+        uint32_t Heigh = outData.GetHeight();
+
+        // Pre-computed variables
+        double Zenith_rad = ComputeZenithRad(DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::GetHillShadingSettings().GetAltitudeAngle());
+        double Zenith_cos = cos(Zenith_rad);
+        double Zenith_sin = sin(Zenith_rad);
+        double Azimuth_rad = ComputeAzimuthRad(DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::GetHillShadingSettings().GetAzimuthDegree());
+        double RateMultiplierX = 1 / (8.0 * DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::GetUnitSizeX() * scalingX);
+        double RateMultiplierY = 1 / (8.0 * DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::GetUnitSizeY() * scalingY);
+
+        HRPPixelNeighbourhood const& neighbourhood = DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::GetNeighbourhood();
+
+        unsigned short verticalExaggeration = DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::GetVerticalExaggeration();
+
+        for(uint32_t Line=neighbourhood.GetYOrigin(); Line < Heigh + neighbourhood.GetYOrigin(); ++Line)
+            {
+            SourcePixelT const* pSrcLinePre = (SourcePixelT const*)(pSrcBuffer + (inPitch*(Line - 1)));
+            SourcePixelT const* pSrcLine     = (SourcePixelT const*)(pSrcBuffer + (inPitch*Line));
+            SourcePixelT const* pSrcLineNext = (SourcePixelT const*)(pSrcBuffer + (inPitch*(Line+1)));
+            uint32_t*     pDstLineBuffer       = (uint32_t*)(pDstBuffer + (outPitch*(Line-1)));
+
+            for(uint32_t Column=neighbourhood.GetXOrigin(); Column < Width + neighbourhood.GetXOrigin(); ++Column)
+                {
+                // HasNoDataValue_T resolves to a constant, compiler will optimize it.
+                if (HasNoDataValue_T && E_Val == DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_noDataValue)
+                    {
+                    pDstLineBuffer[Column - 1] = DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_defaultRGBA;
+                    continue;
+                    }
+
+                // HasNoDataValue_T resolves to a constant, compiler will optimize it.
+                SourcePixelT A = (HasNoDataValue_T && A_Val == DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_noDataValue) ? E_Val : A_Val;
+                SourcePixelT B = (HasNoDataValue_T && B_Val == DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_noDataValue) ? E_Val : B_Val;
+                SourcePixelT C = (HasNoDataValue_T && C_Val == DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_noDataValue) ? E_Val : C_Val;
+                SourcePixelT D = (HasNoDataValue_T && D_Val == DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_noDataValue) ? E_Val : D_Val;
+                SourcePixelT F = (HasNoDataValue_T && F_Val == DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_noDataValue) ? E_Val : F_Val;
+                SourcePixelT G = (HasNoDataValue_T && G_Val == DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_noDataValue) ? E_Val : G_Val;
+                SourcePixelT H = (HasNoDataValue_T && H_Val == DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_noDataValue) ? E_Val : H_Val;
+                SourcePixelT I = (HasNoDataValue_T && I_Val == DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_noDataValue) ? E_Val : I_Val;
+
+                // dz/dx = ((c + 2f + i) - (a + 2d + g)) / 8 * x_cell_size)
+                // dz/dy = ((g + 2h + i) - (a + 2b + c)) / 8 * y_cell_size)
+                double tempRateX = ((C + 2*F + I) - (A + 2*D + G)) * RateMultiplierX;
+                double tempRateY = ((G + 2*H + I) - (A + 2*B + C)) * RateMultiplierY;
+                double RateX, RateY;
+
+                RateX = DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_00 * tempRateX + DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_01 * tempRateY;
+                RateY = DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_10 * tempRateX + DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_11 * tempRateY;
+
+                double Slope_rad  = ComputeSlopeRad(RateX, RateY, verticalExaggeration);
+                double Aspect_rad = ComputeAspectRad(RateX, RateY);
+
+                double hillShade = (Zenith_cos * cos(Slope_rad)) + (Zenith_sin * sin(Slope_rad) * cos(Azimuth_rad-Aspect_rad));
+                if(hillShade > 0)
+                    {
+                    uint32_t const RGBAColor = DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_upperRangeValues.lower_bound(E_Val);
+                    pDstLineBuffer[Column-1] = MakeRGBA((Byte)(GetRed(RGBAColor)*hillShade),
+                                                        (Byte)(GetGreen(RGBAColor)*hillShade),
+                                                        (Byte)(GetBlue(RGBAColor)*hillShade),
+                                                        GetAlpha(RGBAColor));
+                    }
+                else    // 100% shaded
+                    {
+                    pDstLineBuffer[Column-1] = 0xFF000000;  // Opaque black.
+                    }
+                }
+            }
+#endif
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual void _ProcessPixels(HRAImageSampleR outData, HRAImageSampleCR inputData, double scalingX, double scalingY) override
+        {
+#ifndef DISABLE_BUFFER_GETDATA
+        size_t inPitch, outPitch;
+        Byte const* pSrcBuffer = inputData.GetBufferCP()->GetDataCP(inPitch);
+        Byte*       pDstBuffer = outData.GetBufferP()->GetDataP(outPitch);
+
+        uint32_t Width = outData.GetWidth();
+        uint32_t Heigh = outData.GetHeight();
+
+        for(uint32_t Line=0; Line < Heigh; ++Line)
+            {
+            SourcePixelT const* pSrcLine  =  (SourcePixelT const*)(pSrcBuffer + (inPitch*Line));
+
+            uint32_t*  pDstLineBuffer = (uint32_t*)(pDstBuffer + (outPitch*Line));  // RGBA
+
+            for(uint32_t Column=0; Column < Width; ++Column)
+                {
+                // HasNoDataValue_T resolves to a constant, compiler will optimize it.
+                if (HasNoDataValue_T && pSrcLine[Column] == DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_noDataValue)
+                    {
+                    pDstLineBuffer[Column] = DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_defaultRGBA;
+                    }
+                else
+                    {
+                    pDstLineBuffer[Column] = DEMFilterProcessor_T<Src_T, Src_T, HasNoDataValue_T>::m_upperRangeValues.lower_bound(E_Val);
+                    }
+                }
+            }
+#endif
+        }
+    };
+
+//-----------------------------------------------------------------------------
+// SlopePercentFilterProcessorT
+//-----------------------------------------------------------------------------
+template<class _SrcT, bool HasNoDataValue_T>
+class SlopePercentFilterProcessorT : public DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>
+    {
+    typedef _SrcT SourcePixelT;
+
+public:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    SlopePercentFilterProcessorT(HRAImageOpDEMFilter const& imgOpDEMFilter, HGF2DTransfoModel const& orientation, HRPChannelType const& channelType)
+        :DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>(imgOpDEMFilter, orientation, channelType)
+        {
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual ~SlopePercentFilterProcessorT(){}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual void _ProcessPixelsWithShading(HRAImageSampleR outData, HRAImageSampleCR inputData, double scalingX, double scalingY) override
+        {
+#ifndef DISABLE_BUFFER_GETDATA
+        HPRECONDITION(outData.GetWidth() + (DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetNeighbourhood().GetWidth() - 1) == inputData.GetWidth());
+        HPRECONDITION(outData.GetHeight() + (DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetNeighbourhood().GetHeight() - 1) == inputData.GetHeight());
+
+        size_t inPitch, outPitch;
+        Byte const* pSrcBuffer = inputData.GetBufferCP()->GetDataCP(inPitch);
+        Byte*       pDstBuffer = outData.GetBufferP()->GetDataP(outPitch);
+
+        uint32_t Width = outData.GetWidth();
+        uint32_t Heigh = outData.GetHeight();
+
+        // Pre-computed variables
+        double Zenith_rad = ComputeZenithRad(DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetHillShadingSettings().GetAltitudeAngle());
+        double Zenith_cos = cos(Zenith_rad);
+        double Zenith_sin = sin(Zenith_rad);
+        double Azimuth_rad = ComputeAzimuthRad(DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetHillShadingSettings().GetAzimuthDegree());
+        double RateMultiplierX = 1 / (8.0 * DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetUnitSizeX() * scalingX);
+        double RateMultiplierY = 1 / (8.0 * DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetUnitSizeY() * scalingY);
+
+        HRPPixelNeighbourhood const& neighbourhood = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetNeighbourhood();
+
+        unsigned short verticalExaggeration = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetVerticalExaggeration();
+
+        for(uint32_t Line=neighbourhood.GetYOrigin(); Line < Heigh + neighbourhood.GetYOrigin(); ++Line)
+            {
+            SourcePixelT const* pSrcLinePre  = (SourcePixelT*)(pSrcBuffer + (inPitch*(Line-1)));
+            SourcePixelT const* pSrcLine     = (SourcePixelT*)(pSrcBuffer + (inPitch*Line));
+            SourcePixelT const* pSrcLineNext = (SourcePixelT*)(pSrcBuffer + (inPitch*(Line+1)));
+            uint32_t*     pDstLineBuffer       = (uint32_t*)(pDstBuffer + (outPitch*(Line-1)));
+
+            for(uint32_t Column=neighbourhood.GetXOrigin(); Column < Width + neighbourhood.GetXOrigin(); ++Column)
+                {
+                // HasNoDataValue_T resolves to a constant, compiler will optimize it.
+                if (HasNoDataValue_T && E_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue)
+                    {
+                    pDstLineBuffer[Column - 1] = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_defaultRGBA;
+                    continue;
+                    }
+
+                // HasNoDataValue_T resolves to a constant, compiler will optimize it.
+                SourcePixelT A = (HasNoDataValue_T && A_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : A_Val;
+                SourcePixelT B = (HasNoDataValue_T && B_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : B_Val;
+                SourcePixelT C = (HasNoDataValue_T && C_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : C_Val;
+                SourcePixelT D = (HasNoDataValue_T && D_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : D_Val;
+                SourcePixelT F = (HasNoDataValue_T && F_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : F_Val;
+                SourcePixelT G = (HasNoDataValue_T && G_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : G_Val;
+                SourcePixelT H = (HasNoDataValue_T && H_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : H_Val;
+                SourcePixelT I = (HasNoDataValue_T && I_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : I_Val;
+
+                // dz/dx = ((c + 2f + i) - (a + 2d + g)) / 8 * x_cell_size)
+                // dz/dy = ((g + 2h + i) - (a + 2b + c)) / 8 * y_cell_size)
+                double tempRateX = ((C + 2*F + I) - (A + 2*D + G)) * RateMultiplierX;
+                double tempRateY = ((G + 2*H + I) - (A + 2*B + C)) * RateMultiplierY;
+                double RateX, RateY;
+
+                RateX = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_00 * tempRateX + DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_01 * tempRateY;
+                RateY = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_10 * tempRateX + DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_11 * tempRateY;
+
+                double Slope_rad  = ComputeSlopeRad(RateX, RateY, verticalExaggeration);
+                double Aspect_rad = ComputeAspectRad(RateX, RateY);
+
+                double hillShade = (Zenith_cos * cos(Slope_rad)) + (Zenith_sin * sin(Slope_rad) * cos(Azimuth_rad-Aspect_rad));
+                if(hillShade > 0)
+                    {
+                    // rise_run = ( (dz/dx)^2 + (dz/dy)^2 )^0.5
+                    double slopePercent = sqrt((RateX*RateX) + (RateY*RateY)) * 100;
+
+                    uint32_t const RGBAColor = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_upperRangeValues.lower_bound(slopePercent);
+                    pDstLineBuffer[Column-1] = MakeRGBA((Byte)(GetRed(RGBAColor)*hillShade),
+                                                        (Byte)(GetGreen(RGBAColor)*hillShade),
+                                                        (Byte)(GetBlue(RGBAColor)*hillShade),
+                                                        GetAlpha(RGBAColor));
+                    }
+                else        // 100% shaded
+                    {
+                    pDstLineBuffer[Column-1] = 0xFF000000;  // Opaque black.
+                    }
+                }
+            }
+#endif
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual void _ProcessPixels(HRAImageSampleR outData, HRAImageSampleCR inputData, double scalingX, double scalingY) override
+        {
+#ifndef DISABLE_BUFFER_GETDATA
+        size_t inPitch, outPitch;
+        Byte const* pSrcBuffer = inputData.GetBufferCP()->GetDataCP(inPitch);
+        Byte*       pDstBuffer = outData.GetBufferP()->GetDataP(outPitch);
+
+        uint32_t Width = outData.GetWidth();
+        uint32_t Heigh = outData.GetHeight();
+
+        // Pre-computed variables
+        double RateMultiplierX = 1 / (8.0 * DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetUnitSizeX() * scalingX);
+        double RateMultiplierY = 1 / (8.0 * DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetUnitSizeY() * scalingY);
+
+        HRPPixelNeighbourhood const& neighbourhood = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetNeighbourhood();
+
+        for(uint32_t Line=neighbourhood.GetYOrigin(); Line < Heigh + neighbourhood.GetYOrigin(); ++Line)
+            {
+            SourcePixelT const* pSrcLinePre  = (SourcePixelT*)(pSrcBuffer + (inPitch*(Line-1)));
+            SourcePixelT const* pSrcLine     = (SourcePixelT*)(pSrcBuffer + (inPitch*Line));
+            SourcePixelT const* pSrcLineNext = (SourcePixelT*)(pSrcBuffer + (inPitch*(Line+1)));
+            uint32_t*     pDstLineBuffer       = (uint32_t*)(pDstBuffer + (outPitch*(Line-1)));
+
+            for(uint32_t Column=neighbourhood.GetXOrigin(); Column < Width + neighbourhood.GetXOrigin(); ++Column)
+                {
+                // HasNoDataValue_T resolves to a constant, compiler will optimize it.
+                if (HasNoDataValue_T && E_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue)
+                    {
+                    pDstLineBuffer[Column - 1] = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_defaultRGBA;
+                    continue;
+                    }
+
+                // HasNoDataValue_T resolves to a constant, compiler will optimize it.
+                SourcePixelT A = (HasNoDataValue_T && A_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : A_Val;
+                SourcePixelT B = (HasNoDataValue_T && B_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : B_Val;
+                SourcePixelT C = (HasNoDataValue_T && C_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : C_Val;
+                SourcePixelT D = (HasNoDataValue_T && D_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : D_Val;
+                SourcePixelT F = (HasNoDataValue_T && F_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : F_Val;
+                SourcePixelT G = (HasNoDataValue_T && G_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : G_Val;
+                SourcePixelT H = (HasNoDataValue_T && H_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : H_Val;
+                SourcePixelT I = (HasNoDataValue_T && I_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : I_Val;
+
+                // dz/dx = ((c + 2f + i) - (a + 2d + g)) / 8 * x_cell_size)
+                // dz/dy = ((g + 2h + i) - (a + 2b + c)) / 8 * y_cell_size)
+                double RateX = ((C + 2 * F + I) - (A + 2 * D + G)) * RateMultiplierX;
+                double RateY = ((G + 2 * H + I) - (A + 2 * B + C)) * RateMultiplierY;
+
+                // *** Does not require to apply orientation transform.
+
+                // rise_run = ( (dz/dx)^2 + (dz/dy)^2 )^0.5
+                double slopePercent = sqrt((RateX*RateX) + (RateY*RateY)) * 100;
+
+                pDstLineBuffer[Column - 1] = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_upperRangeValues.lower_bound(slopePercent);
+                }
+            }
+#endif
+        }
+    };
+
+//-----------------------------------------------------------------------------
+// AspectFilterProcessorT
+//-----------------------------------------------------------------------------
+template<class _SrcT, bool HasNoDataValue_T>
+class AspectFilterProcessorT : public DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>
+    {
+public:
+    typedef _SrcT SourcePixelT;
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    AspectFilterProcessorT(HRAImageOpDEMFilter const& imgOpDEMFilter, HGF2DTransfoModel const& orientation, HRPChannelType const& channelType)
+        :DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>(imgOpDEMFilter, orientation, channelType)
+        {
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual ~AspectFilterProcessorT(){}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual void _ProcessPixelsWithShading(HRAImageSampleR outData, HRAImageSampleCR inputData, double scalingX, double scalingY) override
+        {
+#ifndef DISABLE_BUFFER_GETDATA
+        HPRECONDITION(outData.GetWidth() + (DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetNeighbourhood().GetWidth() - 1) == inputData.GetWidth());
+        HPRECONDITION(outData.GetHeight() + (DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetNeighbourhood().GetHeight() - 1) == inputData.GetHeight());
+
+        size_t inPitch, outPitch;
+        Byte const* pSrcBuffer = inputData.GetBufferCP()->GetDataCP(inPitch);
+        Byte*       pDstBuffer = outData.GetBufferP()->GetDataP(outPitch);
+
+        uint32_t Width = outData.GetWidth();
+        uint32_t Heigh = outData.GetHeight();
+
+        // Pre-computed variables
+        double Zenith_rad = ComputeZenithRad(DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetHillShadingSettings().GetAltitudeAngle());
+        double Zenith_cos = cos(Zenith_rad);
+        double Zenith_sin = sin(Zenith_rad);
+        double Azimuth_rad = ComputeAzimuthRad(DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetHillShadingSettings().GetAzimuthDegree());
+        double RateMultiplierX = 1 / (8.0 * DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetUnitSizeX() * scalingX);
+        double RateMultiplierY = 1 / (8.0 * DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetUnitSizeY() * scalingY);
+
+        HRPPixelNeighbourhood const& neighbourhood = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetNeighbourhood();
+
+        unsigned short verticalExaggeration = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetVerticalExaggeration();
+
+        for(uint32_t Line=neighbourhood.GetYOrigin(); Line < Heigh + neighbourhood.GetYOrigin(); ++Line)
+            {
+            SourcePixelT const* pSrcLinePre  = (SourcePixelT*)(pSrcBuffer + (inPitch*(Line-1)));
+            SourcePixelT const* pSrcLine     = (SourcePixelT*)(pSrcBuffer + (inPitch*Line));
+            SourcePixelT const* pSrcLineNext = (SourcePixelT*)(pSrcBuffer + (inPitch*(Line+1)));
+            uint32_t*     pDstLineBuffer       = (uint32_t*)(pDstBuffer + (outPitch*(Line-1)));
+
+            for(uint32_t Column=neighbourhood.GetXOrigin(); Column < Width + neighbourhood.GetXOrigin(); ++Column)
+                {
+                // HasNoDataValue_T resolves to a constant, compiler will optimize it.
+                if (HasNoDataValue_T && E_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue)
+                    {
+                    pDstLineBuffer[Column - 1] = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_defaultRGBA;
+                    continue;
+                    }
+
+                // HasNoDataValue_T resolves to a constant, compiler will optimize it.
+                SourcePixelT A = (HasNoDataValue_T && A_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : A_Val;
+                SourcePixelT B = (HasNoDataValue_T && B_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : B_Val;
+                SourcePixelT C = (HasNoDataValue_T && C_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : C_Val;
+                SourcePixelT D = (HasNoDataValue_T && D_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : D_Val;
+                SourcePixelT F = (HasNoDataValue_T && F_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : F_Val;
+                SourcePixelT G = (HasNoDataValue_T && G_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : G_Val;
+                SourcePixelT H = (HasNoDataValue_T && H_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : H_Val;
+                SourcePixelT I = (HasNoDataValue_T && I_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : I_Val;
+
+                // dz/dx = ((c + 2f + i) - (a + 2d + g)) / 8 * x_cell_size)
+                // dz/dy = ((g + 2h + i) - (a + 2b + c)) / 8 * y_cell_size)
+                double tempRateX = ((C + 2*F + I) - (A + 2*D + G)) * RateMultiplierX;
+                double tempRateY = ((G + 2*H + I) - (A + 2*B + C)) * RateMultiplierY;
+                double RateX, RateY;
+
+                RateX = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_00 * tempRateX + DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_01 * tempRateY;
+                RateY = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_10 * tempRateX + DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_11 * tempRateY;
+
+                // Flat areas are set to the default color
+                if(RateX != 0.0 && RateY != 0.0)
+                    {
+                    double Slope_rad  = ComputeSlopeRad(RateX, RateY, verticalExaggeration);
+                    double Aspect_rad = ComputeAspectRad(RateX, RateY);
+
+                    double hillShade = (Zenith_cos * cos(Slope_rad)) + (Zenith_sin * sin(Slope_rad) * cos(Azimuth_rad-Aspect_rad));
+                    if(hillShade > 0)
+                        {
+                        uint32_t RGBAColor;
+
+                        // Aspect_rad = atan2( (dz/dx), -(dz/dx) )
+                        double Aspect_deg = 57.29578 * atan2(RateY, -RateX);
+
+                        // Convert to compass direction.
+                        if(Aspect_deg > 90)
+                            RGBAColor = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_upperRangeValues.lower_bound(360 - Aspect_deg + 90);
+                        else
+                            RGBAColor = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_upperRangeValues.lower_bound(90 - Aspect_deg);
+
+                        pDstLineBuffer[Column-1] = MakeRGBA((Byte)(GetRed(RGBAColor)*hillShade),
+                                                            (Byte)(GetGreen(RGBAColor)*hillShade),
+                                                            (Byte)(GetBlue(RGBAColor)*hillShade),
+                                                            GetAlpha(RGBAColor));
+                        }
+                    else    // 100% shaded
+                        {
+                        pDstLineBuffer[Column-1] = 0xFF000000;  // Opaque black.
+                        }
+                    }
+                else
+                    {
+                    pDstLineBuffer[Column - 1] = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_defaultRGBA;
+                    }
+                }
+            }
+#endif
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                   Mathieu.Marchand  09/2012
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual void _ProcessPixels(HRAImageSampleR outData, HRAImageSampleCR inputData, double scalingX, double scalingY) override
+        {
+#ifndef DISABLE_BUFFER_GETDATA
+        size_t inPitch, outPitch;
+        Byte const* pSrcBuffer = inputData.GetBufferCP()->GetDataCP(inPitch);
+        Byte*       pDstBuffer = outData.GetBufferP()->GetDataP(outPitch);
+
+        uint32_t Width = outData.GetWidth();
+        uint32_t Heigh = outData.GetHeight();
+
+        // Pre-computed variables
+        double RateMultiplierX = 1 / (8.0 * DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetUnitSizeX() * scalingX);
+        double RateMultiplierY = 1 / (8.0 * DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetUnitSizeY() * scalingY);
+
+        HRPPixelNeighbourhood const& neighbourhood = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::GetNeighbourhood();
+
+        for(uint32_t Line=neighbourhood.GetYOrigin(); Line < Heigh + neighbourhood.GetYOrigin(); ++Line)
+            {
+            SourcePixelT const* pSrcLinePre = (SourcePixelT*)(pSrcBuffer + (inPitch*(Line - 1)));
+            SourcePixelT const* pSrcLine = (SourcePixelT*)(pSrcBuffer + (inPitch*Line));
+            SourcePixelT const* pSrcLineNext = (SourcePixelT*)(pSrcBuffer + (inPitch*(Line + 1)));
+            uint32_t*     pDstLineBuffer = (uint32_t*)(pDstBuffer + (outPitch*(Line-1)));
+
+            for(uint32_t Column=neighbourhood.GetXOrigin(); Column < Width + neighbourhood.GetXOrigin(); ++Column)
+                {
+                // HasNoDataValue_T resolves to a constant, compiler will optimize it.
+                if (HasNoDataValue_T && E_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue)
+                    {
+                    pDstLineBuffer[Column - 1] = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_defaultRGBA;
+                    continue;
+                    }
+
+                // HasNoDataValue_T resolves to a constant, compiler will optimize it.
+                SourcePixelT A = (HasNoDataValue_T && A_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : A_Val;
+                SourcePixelT B = (HasNoDataValue_T && B_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : B_Val;
+                SourcePixelT C = (HasNoDataValue_T && C_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : C_Val;
+                SourcePixelT D = (HasNoDataValue_T && D_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : D_Val;
+                SourcePixelT F = (HasNoDataValue_T && F_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : F_Val;
+                SourcePixelT G = (HasNoDataValue_T && G_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : G_Val;
+                SourcePixelT H = (HasNoDataValue_T && H_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : H_Val;
+                SourcePixelT I = (HasNoDataValue_T && I_Val == DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_noDataValue) ? E_Val : I_Val;
+
+                // dz/dx = ((c + 2f + i) - (a + 2d + g)) / 8 * x_cell_size)
+                // dz/dy = ((g + 2h + i) - (a + 2b + c)) / 8 * y_cell_size)
+                double tempRateX = ((C + 2*F + I) - (A + 2*D + G)) * RateMultiplierX;
+                double tempRateY = ((G + 2*H + I) - (A + 2*B + C)) * RateMultiplierY;
+                double RateX, RateY;
+
+                RateX = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_00 * tempRateX + DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_01 * tempRateY;
+                RateY = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_10 * tempRateX + DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_11 * tempRateY;
+
+                // Flat areas are set to the default color
+                if(RateX != 0.0 && RateY != 0.0)
+                    {
+                    // Aspect_rad = atan2( (dz/dx), -(dz/dx) )
+                    double Aspect_deg = 57.29578 * atan2(RateY, -RateX);
+
+                    // Convert to compass direction.
+                    if(Aspect_deg > 90)
+                        pDstLineBuffer[Column - 1] = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_upperRangeValues.lower_bound(360 - Aspect_deg + 90);
+                    else
+                        pDstLineBuffer[Column - 1] = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_upperRangeValues.lower_bound(90 - Aspect_deg);
+                    }
+                else
+                    {
+                    pDstLineBuffer[Column - 1] = DEMFilterProcessor_T<_SrcT, double, HasNoDataValue_T>::m_defaultRGBA;
+                    }
+                }
+            }
+#endif
+        }
+    };
+
+/*-------------------------------------------------------------------------------------------------------------*/
+/*---------------------------------------HRAImageOpDEMFilter---------------------------------------------------*/
+/*-------------------------------------------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+HRAImageOpDEMFilterPtr HRAImageOpDEMFilter::CreateDEMFilter(HRPDEMFilter::Style style, HRPDEMFilter::UpperRangeValues const& upperRangeValues,
+                                                   double unitSizeX, double unitSizeY, HGF2DTransfoModel const& orientation)
+    {
+    return new HRAImageOpDEMFilter(style, upperRangeValues, unitSizeX, unitSizeY, orientation);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+HRAImageOpDEMFilter::HRAImageOpDEMFilter(HRPDEMFilter::Style style, HRPDEMFilter::UpperRangeValues const& upperRangeValues,
+                                         double unitSizeX, double unitSizeY, HGF2DTransfoModel const& orientation)
+    :HRAImageOp(),
+    m_style(style),
+    m_defaultRGBA(0xff000000),       // Opaque black.
+    m_upperRangeValues(upperRangeValues),
+    m_pDEMFilterProcessor(),
+    m_pOrientationTransfo(orientation.Clone()),
+    m_verticalExaggeration(1),
+    m_hillShadingSettings(),
+    m_clipToEndValue(false),
+    m_unitSizeX(unitSizeX),
+    m_unitSizeY(unitSizeY)
+    {
+    UpdatePixelNeighbourhood();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+HRAImageOpDEMFilter::~HRAImageOpDEMFilter()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+Byte const* HRAImageOpDEMFilter::GetDefaultRGBA() const             {return (Byte*)&m_defaultRGBA;}
+void        HRAImageOpDEMFilter::SetDefaultRGBA(Byte const* rgba)   {memcpy(&m_defaultRGBA, rgba, sizeof(m_defaultRGBA));}
+unsigned short HRAImageOpDEMFilter::GetVerticalExaggeration() const                 {return m_verticalExaggeration;}
+void        HRAImageOpDEMFilter::SetVerticalExaggeration(unsigned short newExaggeration) {m_verticalExaggeration=newExaggeration;}
+bool        HRAImageOpDEMFilter::GetClipToEndValue() const          {return m_clipToEndValue;}
+void        HRAImageOpDEMFilter::SetClipToEndValue(bool clipToEnd)  {m_clipToEndValue=clipToEnd;}
+double      HRAImageOpDEMFilter::GetUnitSizeX() const               {return m_unitSizeX;}
+double      HRAImageOpDEMFilter::GetUnitSizeY() const               {return m_unitSizeY;}
+HRPDEMFilter::HillShadingSettings const&  HRAImageOpDEMFilter::GetHillShadingSettings() const {return m_hillShadingSettings;}
+HRPDEMFilter::UpperRangeValues const& HRAImageOpDEMFilter::GetUpperRangeValues() const {return m_upperRangeValues;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void HRAImageOpDEMFilter::UpdatePixelNeighbourhood()
+    {
+    if(GetHillShadingSettings().GetHillShadingState())
+        {
+        m_pPixelNeighbourhood = new HRPPixelNeighbourhood(3,3,1,1);
+        return;
+        }
+
+    switch(m_style)
+        {
+        case HRPDEMFilter::Style_SlopePercent:
+        case HRPDEMFilter::Style_Aspect:
+            m_pPixelNeighbourhood = new HRPPixelNeighbourhood(3,3,1,1);
+            break;
+        case HRPDEMFilter::Style_Elevation:
+            m_pPixelNeighbourhood = new HRPPixelNeighbourhood(1,1,0,0);
+            break;
+        case HRPDEMFilter::Style_Unknown:
+        default:
+            HASSERT(!"Unknown DEM filter style: HRAImageOpDEMFilter::UpdatePixelNeighbourhood");
+            break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void        HRAImageOpDEMFilter::SetHillShadingSettings(HRPDEMFilter::HillShadingSettings const& pi_HillShading)
+    {
+    m_hillShadingSettings = pi_HillShading;
+    UpdatePixelNeighbourhood();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRAImageOpDEMFilter::_GetAvailableInputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch)
+    {
+    return IMAGEOP_STATUS_NoMorePixelType;      // We have no default.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRAImageOpDEMFilter::_GetAvailableOutputPixelType(HFCPtr<HRPPixelType>& pixelType, uint32_t index, const HFCPtr<HRPPixelType> pixelTypeToMatch)
+    {
+    if(index > 0)
+        return IMAGEOP_STATUS_NoMorePixelType;      
+
+    pixelType = new HRPPixelTypeV32R8G8B8A8();
+
+    return IMAGEPP_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRAImageOpDEMFilter::_SetInputPixelType(HFCPtr<HRPPixelType> pixelType)
+    {
+    if(pixelType == NULL)
+        {
+        m_pInputPixelType = NULL;
+        UpdateProcessor();
+        return IMAGEPP_STATUS_Success;
+        }
+
+    // For now, we only support single channel pixelType.
+    if(pixelType->GetChannelOrg().CountChannels() != 1 || pixelType->CountValueBits() % 8 != 0)
+        return IMAGEOP_STATUS_InvalidPixelType;
+
+    m_pInputPixelType = pixelType;
+
+    UpdateProcessor();
+    
+    return IMAGEPP_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRAImageOpDEMFilter::_SetOutputPixelType(HFCPtr<HRPPixelType> pixelType)
+    {
+    if(pixelType == NULL)
+        {
+        m_pOutputPixelType = NULL;
+        UpdateProcessor();
+        return IMAGEPP_STATUS_Success;
+        }
+
+    // DEM filter always output
+    if(!pixelType->IsCompatibleWith(HRPPixelTypeV32R8G8B8A8::CLASS_ID))
+        return IMAGEOP_STATUS_InvalidPixelType;
+     
+    m_pOutputPixelType = pixelType;
+
+    UpdateProcessor();
+
+    return IMAGEPP_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRAImageOpDEMFilter::_Process(HRAImageSampleR out, HRAImageSampleCR inputData, ImagepOpParams& params)
+    {
+    //&&OPTIMIZATION: need to do this once once and not for every sample we do. Maybe it could be part of ImageOpParams?
+    // Compute scaling between source and destination
+    double            ScaleFactorX;
+    double            ScaleFactorY;
+    HGF2DDisplacement  Displacement;
+    params.GetTransfoModel().GetStretchParams(&ScaleFactorX, &ScaleFactorY, &Displacement);
+
+    if (GetHillShadingSettings().GetHillShadingState())
+        m_pDEMFilterProcessor->_ProcessPixelsWithShading(out, inputData, ScaleFactorX, ScaleFactorY);
+    else    
+        m_pDEMFilterProcessor->_ProcessPixels(out, inputData, ScaleFactorX, ScaleFactorY);
+
+    return IMAGEPP_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+template<class Src_T>
+HRAImageOpDEMFilter::DEMFilterProcessor* HRAImageOpDEMFilter::CreateProcessor(HRPChannelType const& srcChannelType)
+    {
+    DEMFilterProcessor* pProcessor = NULL;
+
+    switch(m_style)
+        {
+        case HRPDEMFilter::Style_Elevation:
+            if (srcChannelType.GetNoDataValue() != NULL)
+                pProcessor = new ElevationFilterProcessorT<Src_T, true>(*this, *m_pOrientationTransfo, srcChannelType);
+            else
+                pProcessor = new ElevationFilterProcessorT<Src_T, false>(*this, *m_pOrientationTransfo, srcChannelType);            
+            break;
+        case HRPDEMFilter::Style_SlopePercent:
+            if (srcChannelType.GetNoDataValue() != NULL)
+                pProcessor = new SlopePercentFilterProcessorT<Src_T, true>(*this, *m_pOrientationTransfo, srcChannelType);
+            else
+                pProcessor = new SlopePercentFilterProcessorT<Src_T, false>(*this, *m_pOrientationTransfo, srcChannelType);
+            break;
+        case HRPDEMFilter::Style_Aspect:      
+            if (srcChannelType.GetNoDataValue() != NULL)
+                pProcessor = new AspectFilterProcessorT<Src_T, true>(*this, *m_pOrientationTransfo, srcChannelType);
+            else
+                pProcessor = new AspectFilterProcessorT<Src_T, false>(*this, *m_pOrientationTransfo, srcChannelType);
+            break;
+        case HRPDEMFilter::Style_Unknown:
+        default:
+            break;
+        }
+
+    return pProcessor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  09/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRAImageOpDEMFilter::UpdateProcessor()
+    {
+    // Reset processor in any case; even if inputPixelType or outputPixelType is NULL
+    m_pDEMFilterProcessor.reset();
+
+    if(GetInputPixelType() == NULL || GetOutputPixelType() == NULL)
+        return IMAGEPP_STATUS_UnknownError;     // Not ready.
+
+    const HRPChannelType* pChannelType = GetInputPixelType()->GetChannelOrg().GetChannelPtr(0);
+
+    switch(pChannelType->GetSize())
+        {
+        case 8:
+            switch(pChannelType->GetDataType())
+                {
+                case HRPChannelType::INT_CH:
+                case HRPChannelType::VOID_CH:
+                    m_pDEMFilterProcessor.reset(CreateProcessor<uint8_t>(*pChannelType));
+                    break;
+                case HRPChannelType::SINT_CH:
+                    m_pDEMFilterProcessor.reset(CreateProcessor<int8_t>(*pChannelType));
+                    break;
+                default:
+                    break;
+                }
+            break;
+        case 16:
+            switch(pChannelType->GetDataType())
+                {
+                case HRPChannelType::INT_CH:
+                case HRPChannelType::VOID_CH:
+                    m_pDEMFilterProcessor.reset(CreateProcessor<uint16_t>(*pChannelType));
+                    break;
+                case HRPChannelType::SINT_CH:
+                    m_pDEMFilterProcessor.reset(CreateProcessor<int16_t>(*pChannelType));
+                    break;
+                default:
+                    break;
+                }
+            break;
+        case 32:
+            switch(pChannelType->GetDataType())
+                {
+                case HRPChannelType::INT_CH:
+                case HRPChannelType::VOID_CH:
+                    m_pDEMFilterProcessor.reset(CreateProcessor<uint32_t>(*pChannelType));
+                    break;
+                case HRPChannelType::SINT_CH:
+                    m_pDEMFilterProcessor.reset(CreateProcessor<int32_t>(*pChannelType));
+                    break;
+                case HRPChannelType::FLOAT_CH:
+                    m_pDEMFilterProcessor.reset(CreateProcessor<float>(*pChannelType));
+                    break;
+                default:
+                    break;
+                }
+            break;
+        default:
+            break;
+        }
+
+    return m_pDEMFilterProcessor.get() != NULL ? IMAGEPP_STATUS_Success : IMAGEPP_STATUS_UnknownError;
     }

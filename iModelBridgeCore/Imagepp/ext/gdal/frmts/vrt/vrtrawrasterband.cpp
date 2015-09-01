@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtrawrasterband.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: vrtrawrasterband.cpp 27502 2014-07-06 15:18:51Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTRawRasterBand
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2004, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2007-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +33,7 @@
 #include "cpl_string.h"
 #include "rawdataset.h"
 
-CPL_CVSID("$Id: vrtrawrasterband.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: vrtrawrasterband.cpp 27502 2014-07-06 15:18:51Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -200,6 +201,11 @@ CPLErr VRTRawRasterBand::SetRawLink( const char *pszFilename,
     if( fp == NULL )
         fp = CPLOpenShared( pszExpandedFilename, "rb", TRUE );
 
+    if( fp == NULL && ((VRTDataset *)poDS)->GetAccess() == GA_Update )
+    {
+        fp = CPLOpenShared( pszExpandedFilename, "wb+", TRUE );
+    }
+
     if( fp == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 
@@ -326,7 +332,8 @@ CPLErr VRTRawRasterBand::XMLInit( CPLXMLNode * psTree,
     int nPixelOffset, nLineOffset;
     int nWordDataSize = GDALGetDataTypeSize( GetRasterDataType() ) / 8;
 
-    nImageOffset = atoi(CPLGetXMLValue( psTree, "ImageOffset", "0") );
+    nImageOffset = CPLScanUIntBig(
+        CPLGetXMLValue( psTree, "ImageOffset", "0"), 20);
 
     if( CPLGetXMLValue( psTree, "PixelOffset", NULL ) == NULL )
         nPixelOffset = nWordDataSize;
@@ -352,6 +359,17 @@ CPLErr VRTRawRasterBand::XMLInit( CPLXMLNode * psTree,
     return SetRawLink( pszFilename, pszVRTPath, bRelativeToVRT, 
                        nImageOffset, nPixelOffset, nLineOffset, 
                        pszByteOrder );
+}
+
+/************************************************************************/
+/*                           VRTRawStripSpace()                         */
+/************************************************************************/
+
+static const char* VRTRawStripSpace(const char* pszStr)
+{
+    while( *pszStr == ' ' )
+        pszStr ++;
+    return pszStr;
 }
 
 /************************************************************************/
@@ -398,20 +416,25 @@ CPLXMLNode *VRTRawRasterBand::SerializeToXML( const char *pszVRTPath )
 /* -------------------------------------------------------------------- */
 /*      Set other layout information.                                   */
 /* -------------------------------------------------------------------- */
-    CPLCreateXMLElementAndValue( 
-        psTree, "ImageOffset", 
-        CPLSPrintf("%d",(int) poRawRaster->GetImgOffset()) );
+    char szOffset[22];
     
-    CPLCreateXMLElementAndValue( 
-        psTree, "PixelOffset", 
-        CPLSPrintf("%d",(int) poRawRaster->GetPixelOffset()) );
+    CPLPrintUIntBig(szOffset, poRawRaster->GetImgOffset(), sizeof(szOffset)-1);
+    szOffset[sizeof(szOffset)-1] = '\0';
+    CPLCreateXMLElementAndValue(psTree, "ImageOffset", VRTRawStripSpace(szOffset));
     
-    CPLCreateXMLElementAndValue( 
-        psTree, "LineOffset", 
-        CPLSPrintf("%d",(int) poRawRaster->GetLineOffset()) );
+    CPLPrintUIntBig(szOffset, poRawRaster->GetPixelOffset(),sizeof(szOffset)-1);
+    szOffset[sizeof(szOffset)-1] = '\0';
+    CPLCreateXMLElementAndValue(psTree, "PixelOffset", VRTRawStripSpace(szOffset));
+    
+    CPLPrintUIntBig(szOffset, poRawRaster->GetLineOffset(), sizeof(szOffset)-1);
+    szOffset[sizeof(szOffset)-1] = '\0';
+    CPLCreateXMLElementAndValue(psTree, "LineOffset", VRTRawStripSpace(szOffset));
 
-    if( (poRawRaster->GetNativeOrder() && CPL_IS_LSB)
-        || (!poRawRaster->GetNativeOrder() && !CPL_IS_LSB) )
+#if CPL_IS_LSB == 1
+    if( poRawRaster->GetNativeOrder() )
+#else
+    if( !poRawRaster->GetNativeOrder() )
+#endif
         CPLCreateXMLElementAndValue( psTree, "ByteOrder", "LSB" );
     else
         CPLCreateXMLElementAndValue( psTree, "ByteOrder", "MSB" );

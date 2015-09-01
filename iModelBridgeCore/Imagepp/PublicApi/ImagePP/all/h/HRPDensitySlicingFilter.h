@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPDensitySlicingFilter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,10 @@
 
 #include "HRPFunctionFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPDensitySlicingFilter : public HRPFunctionFilter
     {
-    HDECLARE_CLASS_ID(1356, HRPFunctionFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_DensitySlicing, HRPFunctionFilter)
     
 
 public:                       // Primary methods
@@ -62,7 +63,7 @@ public:                       // Primary methods
 
     virtual int32_t    GetSliceCount() const;
 
-    _HDLLg  virtual void      SetDesaturationFactor(double pi_DesaturationFactor);
+    IMAGEPP_EXPORT  virtual void      SetDesaturationFactor(double pi_DesaturationFactor);
     virtual double   GetDesaturationFactor() const;
 
 protected:
@@ -107,3 +108,4 @@ private:
                                        void*  po_pDestRawData,
                                        uint32_t pi_PixelsCount) const;
     };
+END_IMAGEPP_NAMESPACE

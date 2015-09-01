@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTransfoModelAdapter.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Returns a constant reference to the internal copy of the adapted model.
 
@@ -23,9 +24,9 @@ inline const HFCPtr<HGF2DTransfoModel>& HGF2DTransfoModelAdapter::GetAdaptedTran
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<class T, class U> void StudyPrecision
 (
-    const T& pi_firstModel,
-    const U& pi_secondModel,
-    const HGF2DLiteExtent&   pi_PrecisionArea,
+    const T&                pi_firstModel,
+    const U&                pi_secondModel,
+    const HGF2DLiteExtent&  pi_PrecisionArea,
     double                  pi_StepX,
     double                  pi_StepY,
     double*                 po_pMeanError,
@@ -65,21 +66,21 @@ template<class T, class U> void StudyPrecision
             {
             try
                 {
-                pi_firstModel.ConvertDirect(CurrentX, CurrentY, &TempX, &TempY);
+                //Ignore point that cannot be converted, we don't want to compute model precision using point outside valid domain
+                if ((SUCCESS == pi_firstModel.ConvertDirect(CurrentX, CurrentY, &TempX, &TempY)) && 
+                    (SUCCESS == pi_secondModel.ConvertDirect(CurrentX, CurrentY, &TempX1, &TempY1)))
+                    {
+                    // Compute difference
+                    double DeltaX = fabs(TempX - TempX1);
+                    double DeltaY = fabs(TempY - TempY1);
 
-                // Apply non-linear transformation
-                pi_secondModel.ConvertDirect(CurrentX, CurrentY, &TempX1, &TempY1);
+                    // Add deltas
+                    DirectStatSumX += DeltaX;
+                    DirectStatSumY += DeltaY;
+                    DirectStatNumSamples++;
 
-                // Compute difference
-                double DeltaX = fabs(TempX - TempX1);
-                double DeltaY = fabs(TempY - TempY1);
-
-                // Add deltas
-                DirectStatSumX += DeltaX;
-                DirectStatSumY += DeltaY;
-                DirectStatNumSamples++;
-
-                MaxDirectError = max(MaxDirectError, max(DeltaX, DeltaY));
+                    MaxDirectError = MAX(MaxDirectError, MAX(DeltaX, DeltaY));
+                    }
                 }
             catch (...)
                 {
@@ -130,7 +131,7 @@ template<class T, class U> void StudyPrecision
         DirectStatSumY += DeltaY;
         DirectStatNumSamples++;
 
-        MaxDirectError = max(MaxDirectError, max(DeltaX, DeltaY));
+        MaxDirectError = MAX(MaxDirectError, MAX(DeltaX, DeltaY));
         }
 
     // Compute precision results
@@ -139,3 +140,4 @@ template<class T, class U> void StudyPrecision
     }
 
 
+END_IMAGEPP_NAMESPACE

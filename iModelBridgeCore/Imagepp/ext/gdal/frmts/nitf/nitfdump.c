@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitfdump.c 21182 2010-11-30 16:49:59Z rouault $
+ * $Id: nitfdump.c 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Simple test mainline to dump info about NITF file. 
@@ -7,6 +7,7 @@
  *
  **********************************************************************
  * Copyright (c) 2002, Frank Warmerdam
+ * Copyright (c) 2009-2010, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -36,7 +37,7 @@
 #include "ogr_api.h"
 #endif
 
-CPL_CVSID("$Id: nitfdump.c 21182 2010-11-30 16:49:59Z rouault $");
+CPL_CVSID("$Id: nitfdump.c 27044 2014-03-16 23:41:27Z rouault $");
 
 static void DumpRPC( NITFImage *psImage, NITFRPC00BInfo *psRPC );
 static void DumpMetadata( const char *, const char *, char ** );

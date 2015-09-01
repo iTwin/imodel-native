@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DDisjointedComplexLinear.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DDisjointedComplexLinear
@@ -27,18 +27,19 @@
 
     -----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 class HVE2DDisjointedComplexLinear : public HVE2DComplexLinear
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg, 1373)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT, HVE2DLinearId_DisjointedComplex)
 
 public:
     DEFINE_T_SUPER(HVE2DComplexLinear)
 
     // Primary methods
-    _HDLLg                    HVE2DDisjointedComplexLinear ();
-    _HDLLg                    HVE2DDisjointedComplexLinear (const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
-    _HDLLg                    HVE2DDisjointedComplexLinear (const HVE2DDisjointedComplexLinear&    pi_rObject);
-    _HDLLg virtual            ~HVE2DDisjointedComplexLinear();
+    IMAGEPP_EXPORT                    HVE2DDisjointedComplexLinear ();
+    IMAGEPP_EXPORT                    HVE2DDisjointedComplexLinear (const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    IMAGEPP_EXPORT                    HVE2DDisjointedComplexLinear (const HVE2DDisjointedComplexLinear&    pi_rObject);
+    IMAGEPP_EXPORT virtual            ~HVE2DDisjointedComplexLinear();
 
     HVE2DDisjointedComplexLinear&
                               operator=(const HVE2DDisjointedComplexLinear& pi_rObj);
@@ -65,6 +66,7 @@ public:
     // From HPMPersistentObject
     virtual HPMPersistentObject* Clone() const;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DDisjointedComplexLinear.hpp"

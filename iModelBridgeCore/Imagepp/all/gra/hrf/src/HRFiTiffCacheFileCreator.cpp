@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFiTiffCacheFileCreator.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,17 +11,16 @@
 // This class describes the CacheFile implementation
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
 #include <Imagepp/all/h/HRFcTiffFile.h>
-#include <Imagepp/all/h/HRFInternetImagingFile.h>
 #include <Imagepp/all/h/HFCStat.h>
 #include <Imagepp/all/h/HRFRasterFileCache.h>
 #include <Imagepp/all/h/HRFLocalCacheFileCreator.h>
 #include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFCacheSize.h>
+#include <Imagepp/all/h/HRFCacheController.h>
 #include <Imagepp/all/h/HRFBilFile.h>
 
 // MakeDir and Access
@@ -66,10 +65,7 @@ bool HRFiTiffCacheFileCreator::HasCacheFor(const HFCPtr<HRFRasterFile>&    pi_rp
 
     // get the file's modification time
     time_t FileModificationTime;
-    if (pi_rpForRasterFile->GetClassID() == HRFInternetImagingFile::CLASS_ID)
-        FileModificationTime = ((const HFCPtr<HRFInternetImagingFile>&)pRasterFile)->GetModificationTime();
-    else
-        FileModificationTime = HFCStat(pRasterFile->GetURL()).GetModificationTime();
+    pi_rpForRasterFile->GetFileStatistics(NULL, &FileModificationTime, NULL);
 
     // Get the Orignal file
     HFCPtr<HRFRasterFile> pOriginalFile = pRasterFile;
@@ -145,19 +141,9 @@ HFCPtr<HRFRasterFile> HRFiTiffCacheFileCreator::GetCacheFileFor(HFCPtr<HRFRaster
     HFCPtr<HRFRasterFile> pRasterFile = pi_rpForRasterFile;
 
     // Get the file's modification time
-    time_t FileModificationTime;
+    time_t FileModificationTime;    // *** That information is only keep for back compatible between V8i, on Windows platform.
     time_t FileCreationTime;
-    if (pi_rpForRasterFile->GetClassID() == HRFInternetImagingFile::CLASS_ID)
-        {
-        FileModificationTime = ((HFCPtr<HRFInternetImagingFile>&)pRasterFile)->GetModificationTime();
-        FileCreationTime = ((HFCPtr<HRFInternetImagingFile>&)pRasterFile)->GetCreationTime();
-        }
-    else
-        {
-        HFCStat FileStat(pRasterFile->GetURL());
-        FileModificationTime = FileStat.GetModificationTime();
-        FileCreationTime = FileStat.GetCreationTime();
-        }
+    pi_rpForRasterFile->GetFileStatistics(&FileCreationTime, &FileModificationTime, NULL);
 
     // Get the Orignal file
     HFCPtr<HRFRasterFile> pOriginalFile = pRasterFile;
@@ -176,8 +162,10 @@ HFCPtr<HRFRasterFile> HRFiTiffCacheFileCreator::GetCacheFileFor(HFCPtr<HRFRaster
         if (TmpFileModificationTime > FileModificationTime)
             FileModificationTime = TmpFileModificationTime;
 
-        // The the creationTime of the source file
+        // The creationTime of the source file
+        // *** That information is only keep for back compatible between V8i, on Windows platform.
         FileCreationTime = FileStatInfo.GetCreationTime();
+
         }
 
     // Compose the decoration file name
@@ -243,31 +231,11 @@ HFCPtr<HRFRasterFile> HRFiTiffCacheFileCreator::GetCacheFileFor(HFCPtr<HRFRaster
 
     catch(HFCFileException& rException)
         {
-        if ((rException.GetID() != HFC_FILE_NOT_SUPPORTED_EXCEPTION) &&
-            (rException.GetID() != HFC_FILE_NOT_FOUND_EXCEPTION))
+        if ((dynamic_cast<HFCFileNotFoundException*>(&rException) == 0) &&
+            (dynamic_cast<HFCFileNotSupportedException*>(&rException) == 0))
             throw;
 
         OpenNewFile = true;
-        }
-
-    // If we found a valid Cachefile, verify if the creationTime fit too.
-    if (!OpenNewFile)
-        {
-        const char* pCreationSrcFile = ((HFCPtr<HRFcTiffFile>&)pCacheFile)->GetSourceFile_CreationDateTime();
-        if (pCreationSrcFile == 0)
-            {
-            // Old cache without this tag, add it
-
-            ((HFCPtr<HRFcTiffFile>&)pCacheFile)->SetSourceFile_CreationDateTime(ctime(&FileCreationTime));
-            }
-        else
-            {
-            if (strcmp(pCreationSrcFile, ctime(&FileCreationTime)) != 0)
-                {
-                OpenNewFile = true;
-                pCacheFile = 0;
-                }
-            }
         }
 
     // A new file must be created.  (Overwrites any existing file)
@@ -278,17 +246,18 @@ HFCPtr<HRFRasterFile> HRFiTiffCacheFileCreator::GetCacheFileFor(HFCPtr<HRFRaster
         }
 
     // control the size of the cache directory
-    if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetDirectoryCacheSize() > 0)
+    if (ImageppLib::GetHost().GetImageppLibAdmin()._GetDirectoryCacheSize() > 0)
         {
         HPRECONDITION(CacheURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
 
         BeFileName localPath;
-        ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetLocalCacheDirPath(localPath);
+        ImageppLib::GetHost().GetImageppLibAdmin()._GetLocalCacheDirPath(localPath);
 
         HFCPtr<HFCURL> pUrl = HFCURL::CreateFrom(localPath);
 
-        HRFCacheSize CacheSize(*pUrl, ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetDirectoryCacheSize());
-        CacheSize.ControlDirCacheSize();
+        HRFCacheController CacheSize(pUrl);
+        CacheSize.SetCacheSize(ImageppLib::GetHost().GetImageppLibAdmin()._GetDirectoryCacheSize());
+        CacheSize.Control(HRFCacheController::CACHE_CONTROL_SIZE);
         }
 
     ((HFCPtr<HRFcTiffFile>&)pCacheFile)->SetOriginalFileAccessMode(pRasterFile->GetAccessMode());
@@ -332,7 +301,8 @@ HFCPtr<HFCURL> HRFiTiffCacheFileCreator::ComposeURLFor(const HFCPtr<HFCURL>& pi_
 bool HRFiTiffCacheFileCreator::IsModificationTimeValid(time_t pi_FileModificationTime,
                                                        time_t pi_CacheFileModificationTime) const
     {
-    return ((pi_FileModificationTime - 5) <= pi_CacheFileModificationTime);
+    return ((pi_FileModificationTime - 3.0) <= pi_CacheFileModificationTime &&
+            pi_CacheFileModificationTime <= (pi_FileModificationTime + 3.0));
     }
 
 //-----------------------------------------------------------------------------
@@ -341,7 +311,7 @@ bool HRFiTiffCacheFileCreator::IsModificationTimeValid(time_t pi_FileModificatio
 //-----------------------------------------------------------------------------
 bool HRFiTiffCacheFileCreator::HasCacheFor(const HFCPtr<HFCURL>& pi_rForRasterFileURL,
                                             time_t               pi_FileModificationTime,
-                                            uint32_t            pi_Page,
+                                            uint32_t             pi_Page,
                                             uint64_t             pi_Offset) const
     {
     bool HasCacheFor = false;

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMatrix.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 //*****************************************************************************
 // Friend functions
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // operator* template function
 // Multiplies a number by a row.
@@ -1035,3 +1035,4 @@ HFCMatrix<Rows, Columns, NumericType>::CalculateTranspose() const
     // Return result
     return(NewMatrix);
     }
+END_IMAGEPP_NAMESPACE

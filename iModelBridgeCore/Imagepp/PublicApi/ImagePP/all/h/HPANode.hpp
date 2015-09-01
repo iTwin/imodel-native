@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPANode.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Inline methods for class HPANode
 //---------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 inline void HPANode::SetOwner(HPANode* pi_pNode)
@@ -58,3 +58,4 @@ inline const HPASourcePos& HPANode::GetEndPos() const
     {
     return m_EndPos;
     }
+END_IMAGEPP_NAMESPACE

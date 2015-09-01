@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFScanLineOrientation.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,6 +14,7 @@
 #include "HGF2DTransfoModel.h"
 #include "HGF2DPosition.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 // The order of value in the enum HGFSLO is very important. Please do not change it.
 // with this specific order you can examine the origine an the orientation easily .
 // Bit 0 == 0 : Origin is at the left
@@ -70,3 +71,4 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsil_sparsefile.cpp 21167 2010-11-24 15:19:51Z warmerdam $
+ * $Id: cpl_vsil_sparsefile.cpp 27722 2014-09-22 15:37:31Z goatbar $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation of sparse file virtual io driver.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2010, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -37,7 +38,7 @@
 #  include <wce_errno.h>
 #endif
 
-CPL_CVSID("$Id: cpl_vsil_sparsefile.cpp 21167 2010-11-24 15:19:51Z warmerdam $");
+CPL_CVSID("$Id: cpl_vsil_sparsefile.cpp 27722 2014-09-22 15:37:31Z goatbar $");
 
 class SFRegion { 
 public:
@@ -59,10 +60,14 @@ public:
 /* ==================================================================== */
 /************************************************************************/
 
+class VSISparseFileFilesystemHandler;
+
 class VSISparseFileHandle : public VSIVirtualHandle
 { 
+    VSISparseFileFilesystemHandler* poFS;
+
   public:
-    VSISparseFileHandle() : nCurOffset(0) {}
+    VSISparseFileHandle(VSISparseFileFilesystemHandler* poFS) : poFS(poFS), nOverallLength(0), nCurOffset(0) {}
 
     GUIntBig           nOverallLength;
     GUIntBig           nCurOffset;
@@ -85,6 +90,8 @@ class VSISparseFileHandle : public VSIVirtualHandle
 
 class VSISparseFileFilesystemHandler : public VSIFilesystemHandler 
 {
+    std::map<GIntBig, int> oRecOpenCount;
+
 public:
                      VSISparseFileFilesystemHandler();
     virtual          ~VSISparseFileFilesystemHandler();
@@ -101,6 +108,10 @@ public:
     virtual int      Mkdir( const char *pszDirname, long nMode );
     virtual int      Rmdir( const char *pszDirname );
     virtual char   **ReadDir( const char *pszDirname );
+    
+    int              GetRecCounter() { return oRecOpenCount[CPLGetPID()]; }
+    void             IncRecCounter() { oRecOpenCount[CPLGetPID()] ++; }
+    void             DecRecCounter() { oRecOpenCount[CPLGetPID()] --; }
 };
 
 /************************************************************************/
@@ -262,8 +273,10 @@ size_t VSISparseFileHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
                        SEEK_SET ) != 0 )
             return 0;
 
+        poFS->IncRecCounter();
         size_t nBytesRead = VSIFReadL( pBuffer, 1, (size_t) nBytesRequested, 
                                        aoRegions[iRegion].fp );
+        poFS->DecRecCounter();
 
         if( nBytesAvailable < nBytesRequested )
             nReturnCount = nBytesRead / nSize;
@@ -278,8 +291,7 @@ size_t VSISparseFileHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
 /*                               Write()                                */
 /************************************************************************/
 
-size_t VSISparseFileHandle::Write( const void * pBuffer, size_t nSize, size_t nCount )
-
+size_t VSISparseFileHandle::Write( CPL_UNUSED const void * pBuffer, CPL_UNUSED size_t nSize, CPL_UNUSED size_t nCount )
 {
     errno = EBADF;
     return 0;
@@ -336,6 +348,10 @@ VSISparseFileFilesystemHandler::Open( const char *pszFilename,
         return NULL;
     }
 
+    /* Arbitrary number */
+    if( GetRecCounter() == 32 )
+        return NULL;
+
     CPLString osSparseFilePath = pszFilename + 11;
 
 /* -------------------------------------------------------------------- */
@@ -357,7 +373,7 @@ VSISparseFileFilesystemHandler::Open( const char *pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Setup the file handle on this file.                             */
 /* -------------------------------------------------------------------- */
-    VSISparseFileHandle *poHandle = new VSISparseFileHandle;
+    VSISparseFileHandle *poHandle = new VSISparseFileHandle(this);
 
 /* -------------------------------------------------------------------- */
 /*      Translate the desired fields out of the XML tree.               */
@@ -455,8 +471,7 @@ int VSISparseFileFilesystemHandler::Stat( const char * pszFilename,
 /*                               Unlink()                               */
 /************************************************************************/
 
-int VSISparseFileFilesystemHandler::Unlink( const char * pszFilename )
-
+int VSISparseFileFilesystemHandler::Unlink( CPL_UNUSED const char * pszFilename )
 {
     errno = EACCES;
     return -1;
@@ -466,9 +481,8 @@ int VSISparseFileFilesystemHandler::Unlink( const char * pszFilename )
 /*                               Mkdir()                                */
 /************************************************************************/
 
-int VSISparseFileFilesystemHandler::Mkdir( const char * pszPathname,
-                                    long nMode )
-
+int VSISparseFileFilesystemHandler::Mkdir( CPL_UNUSED const char * pszPathname,
+                                           CPL_UNUSED long nMode )
 {
     errno = EACCES;
     return -1;
@@ -478,8 +492,7 @@ int VSISparseFileFilesystemHandler::Mkdir( const char * pszPathname,
 /*                               Rmdir()                                */
 /************************************************************************/
 
-int VSISparseFileFilesystemHandler::Rmdir( const char * pszPathname )
-
+int VSISparseFileFilesystemHandler::Rmdir( CPL_UNUSED const char * pszPathname )
 {
     errno = EACCES;
     return -1;
@@ -489,8 +502,7 @@ int VSISparseFileFilesystemHandler::Rmdir( const char * pszPathname )
 /*                              ReadDir()                               */
 /************************************************************************/
 
-char **VSISparseFileFilesystemHandler::ReadDir( const char *pszPath )
-
+char **VSISparseFileFilesystemHandler::ReadDir( CPL_UNUSED const char *pszPath )
 {
     errno = EACCES;
     return NULL;

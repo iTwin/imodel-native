@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFOGCService.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFOGCServiceFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFOGCService.h>
 #include <Imagepp/all/h/HRFOGCServiceEditor.h>
@@ -29,7 +29,6 @@
 #include <Imagepp/all/h/HRFException.h>
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include <Imagepp/all/h/HFCURLMemFile.h>
@@ -42,7 +41,7 @@
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 //-----------------------------------------------------------------------------
 // class OGRAuthenticationError
@@ -53,24 +52,23 @@ class OGRAuthenticationError : public HFCAuthenticationError
     {
 public:
     explicit OGRAuthenticationError(const HFCInternetConnectionException& pi_rException)
-        :   m_RelatedException(pi_rException),
-            HFCAuthenticationError(static_cast<ExceptionID>(pi_rException.GetID()))
+        :   m_RelatedException(pi_rException)            
         {
         }
 
 private:
-    virtual WString _ToString() const
+    virtual WString _ToString() const override
         {
         return m_RelatedException.GetExceptionMessage();
         }
 
-    virtual void _Throw() const
+    virtual void _Throw() const override
         {
         throw m_RelatedException;
         }
 
     HFCInternetConnectionException m_RelatedException;
-    };
+    }; 
 
 
 
@@ -222,7 +220,7 @@ HRFOGCServiceBlockCapabilities::HRFOGCServiceBlockCapabilities ()
     :HRFRasterFileCapabilities()
     {
     Add(new HRFTileCapability(HFC_READ_ONLY,    // AccessMode
-                              MAXLONG,          // MaxSizeInBytes
+                              LONG_MAX,          // MaxSizeInBytes
                               256,              // MinWidth
                               256,              // MaxWidth
                               0,                // WidthIncrement
@@ -453,7 +451,7 @@ void HRFOGCService::CancelLookAhead(uint32_t pi_Page)
 //This method create a HGF2DTransfoModel using the information found in the
 //geo tiff file tag.
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HRFOGCService::CreateTransfoModel(IRasterBaseGcsPtr    pi_pGeocoding,
+HFCPtr<HGF2DTransfoModel> HRFOGCService::CreateTransfoModel(IRasterBaseGcsCP     pi_pGeocoding,
                                                             uint64_t             pi_Width,
                                                             uint64_t             pi_Height)
     {
@@ -489,12 +487,11 @@ HFCPtr<HGF2DTransfoModel> HRFOGCService::CreateTransfoModel(IRasterBaseGcsPtr   
 
     bool DefaultUnitWasFound = false;
 
-    pTransfoModel = HCPGeoTiffKeys::TranslateToMeter(pTransfoModel,
+    RasterFileGeocodingPtr pFileGeocoding(RasterFileGeocoding::Create(pi_pGeocoding->Clone().get()));
+    pTransfoModel = pFileGeocoding->TranslateToMeter(pTransfoModel,
                                                        1.0,
-                                                       true,
                                                        false,
-                                                       &DefaultUnitWasFound,
-                                                       pi_pGeocoding);
+                                                       &DefaultUnitWasFound);
 
     SetUnitFoundInFile(DefaultUnitWasFound);
 

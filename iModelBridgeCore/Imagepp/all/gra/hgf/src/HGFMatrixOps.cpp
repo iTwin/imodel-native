@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFMatrixOps.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,7 +10,6 @@
 
 
 #include "hstdcpp.h"
-#include "HDllSupport.h"
 #include "HGFMatrixOps.h"
 
 

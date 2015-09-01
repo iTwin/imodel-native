@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfaopen.cpp 21764 2011-02-20 16:19:53Z warmerdam $
+ * $Id: hfaopen.cpp 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Supporting functions for HFA (.img) ... main (C callable) API
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Intergraph Corporation
+ * Copyright (c) 2007-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -41,7 +42,7 @@
 #include <limits.h>
 #include <vector>
 
-CPL_CVSID("$Id: hfaopen.cpp 21764 2011-02-20 16:19:53Z warmerdam $");
+CPL_CVSID("$Id: hfaopen.cpp 27739 2014-09-25 18:49:52Z goatbar $");
 
 
 static const char *apszAuxMetadataItems[] = {
@@ -144,11 +145,11 @@ HFAHandle HFAOpen( const char * pszFilename, const char * pszAccess )
     if( VSIFReadL( szHeader, 16, 1, fp ) < 1 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "Attempt to read 16 Byte header failed for\n%s.",
+                  "Attempt to read 16 byte header failed for\n%s.",
                   pszFilename );
 
         //IPP Correct a sticky file problem found by ImageOpener
-        VSIFCloseL( fp );
+        VSIFCloseL (fp);
 
         return NULL;
     }
@@ -160,7 +161,7 @@ HFAHandle HFAOpen( const char * pszFilename, const char * pszAccess )
                   pszFilename );
 
         //IPP Correct a sticky file problem found by ImageOpener
-        VSIFCloseL( fp );
+        VSIFCloseL (fp);
 
         return NULL;
     }
@@ -441,10 +442,10 @@ void HFAClose( HFAHandle hHFA )
     }
 
     //IPP - Delete the elevation information allocated memory, if any.
-    if( hHFA->pElevationInfo != NULL )
+    if (hHFA->pElevationInfo != NULL)
     {
-        CPLFree( ((Eprj_ElevationInfo *) hHFA->pElevationInfo)->elevationUnitName);
-        CPLFree( hHFA->pElevationInfo );
+        CPLFree (((Eprj_ElevationInfo *)hHFA->pElevationInfo)->elevationUnitName);
+        CPLFree (hHFA->pElevationInfo);
     }
 
     CPLFree( hHFA );
@@ -599,6 +600,13 @@ int HFAGetBandNoData( HFAHandle hHFA, int nBand, double *pdfNoData )
 
     HFABand *poBand = hHFA->papoBand[nBand-1];
 
+    if( !poBand->bNoDataSet && poBand->nOverviews > 0 )
+    {
+      poBand = poBand->papoOverviews[0];
+      if( poBand == NULL )
+          return FALSE;
+    }
+
     *pdfNoData = poBand->dfNoData;
     return poBand->bNoDataSet;
 }
@@ -671,6 +679,10 @@ CPLErr HFAGetOverviewInfo( HFAHandle hHFA, int nBand, int iOverview,
         return CE_Failure;
     }
     poBand = poBand->papoOverviews[iOverview];
+    if( poBand == NULL )
+    {
+        return CE_Failure;
+    }
 
     if( pnXSize != NULL )
         *pnXSize = poBand->nWidth;
@@ -1020,45 +1032,44 @@ static int HFAInvGeoTransform( double *gt_in, double *gt_out )
 /*                           HFAGetElevationInfo()                      */
 /************************************************************************/
 
-const Eprj_ElevationInfo *HFAGetElevationInfo( HFAHandle hHFA )
+const Eprj_ElevationInfo *HFAGetElevationInfo (HFAHandle hHFA)
 
 {
     HFAEntry    *poMIEntry;
     Eprj_ElevationInfo *psElevationInfo;
 
     //More than 1 band DEM, for whatever it means, is not supported.
-    if( hHFA->nBands < 1 && hHFA->nBands > 1 )
+    if (hHFA->nBands < 1 && hHFA->nBands > 1)
         return NULL;
 
-/* -------------------------------------------------------------------- */
-/*      Do we already have it?                                          */
-/* -------------------------------------------------------------------- */
-    if( hHFA->pElevationInfo != NULL )
-        return( (Eprj_ElevationInfo *) hHFA->pElevationInfo );
+    /* -------------------------------------------------------------------- */
+    /*      Do we already have it?                                          */
+    /* -------------------------------------------------------------------- */
+    if (hHFA->pElevationInfo != NULL)
+        return((Eprj_ElevationInfo *)hHFA->pElevationInfo);
 
-/* -------------------------------------------------------------------- */
-/*      Get the HFA node.                                               */
-/* -------------------------------------------------------------------- */
-    poMIEntry = hHFA->papoBand[0]->poNode->GetNamedChild( "Elevation_Info" );
-    if( poMIEntry == NULL )
+    /* -------------------------------------------------------------------- */
+    /*      Get the HFA node.                                               */
+    /* -------------------------------------------------------------------- */
+    poMIEntry = hHFA->papoBand[0]->poNode->GetNamedChild ("Elevation_Info");
+    if (poMIEntry == NULL)
         return NULL;
 
-/* -------------------------------------------------------------------- */
-/*      Allocate the structure.                                         */
-/* -------------------------------------------------------------------- */
-    psElevationInfo = (Eprj_ElevationInfo *) CPLCalloc(sizeof(Eprj_ElevationInfo),1);
+    /* -------------------------------------------------------------------- */
+    /*      Allocate the structure.                                         */
+    /* -------------------------------------------------------------------- */
+    psElevationInfo = (Eprj_ElevationInfo *)CPLCalloc (sizeof (Eprj_ElevationInfo), 1);
 
-/* -------------------------------------------------------------------- */
-/*      Fetch the fields.                                               */
-/* -------------------------------------------------------------------- */
+    /* -------------------------------------------------------------------- */
+    /*      Fetch the fields.                                               */
+    /* -------------------------------------------------------------------- */
 
-    psElevationInfo->elevationUnitName = CPLStrdup(poMIEntry->GetStringField("elevationUnit"));
+    psElevationInfo->elevationUnitName = CPLStrdup (poMIEntry->GetStringField ("elevationUnit"));
 
-    hHFA->pElevationInfo = (void *) psElevationInfo;
+    hHFA->pElevationInfo = (void *)psElevationInfo;
 
     return psElevationInfo;
 }
-
 
 /************************************************************************/
 /*                         HFAGetGeoTransform()                         */
@@ -1084,11 +1095,15 @@ int HFAGetGeoTransform( HFAHandle hHFA, double *padfGeoTransform )
         padfGeoTransform[0] = psMapInfo->upperLeftCenter.x
             - psMapInfo->pixelSize.width*0.5;
         padfGeoTransform[1] = psMapInfo->pixelSize.width;
+        if(padfGeoTransform[1] == 0.0)
+            padfGeoTransform[1] = 1.0;
         padfGeoTransform[2] = 0.0;
         if( psMapInfo->upperLeftCenter.y >= psMapInfo->lowerRightCenter.y )
             padfGeoTransform[5] = - psMapInfo->pixelSize.height;
         else
             padfGeoTransform[5] = psMapInfo->pixelSize.height;
+        if(padfGeoTransform[5] == 0.0)
+            padfGeoTransform[5] = 1.0;
 
         padfGeoTransform[3] = psMapInfo->upperLeftCenter.y
             - padfGeoTransform[5]*0.5;
@@ -1499,6 +1514,9 @@ CPLErr HFASetProParameters( HFAHandle hHFA, const Eprj_ProParameters *poPro )
             nSize += strlen(poPro->proExeName) + 1;
 
         pabyData = poMIEntry->MakeData( nSize );
+        if(!pabyData)
+            return CE_Failure;
+
         poMIEntry->SetPosition();
 
         // Initialize the whole thing to zeros for a clean start.
@@ -1644,6 +1662,9 @@ CPLErr HFASetDatum( HFAHandle hHFA, const Eprj_Datum *poDatum )
             nSize += strlen(poDatum->gridname) + 1;
 
         pabyData = poDatumEntry->MakeData( nSize );
+        if(!pabyData)
+            return CE_Failure;
+
         poDatumEntry->SetPosition();
 
         // Initialize the whole thing to zeros for a clean start.
@@ -2078,7 +2099,7 @@ HFACreateLayer( HFAHandle psInfo, HFAEntry *poParent,
                 int bCreateCompressed, int bCreateLargeRaster, 
                 int bDependentLayer,
                 int nXSize, int nYSize, int nDataType, 
-                char **papszOptions,
+                CPL_UNUSED char **papszOptions,
                 
                 // these are only related to external (large) files
                 GIntBig nStackValidFlagsOffset, 
@@ -2779,7 +2800,7 @@ CPLErr HFASetMetadata( HFAHandle hHFA, int nBand, char **papszMD )
                     // first because the SetStringField sets the count for the object
                     // BinFunction to the length of the string
                     poEntry->MakeData( 70 );
-                    poEntry->SetStringField( "BinFunction.binFunctionType", "linear" );
+                    poEntry->SetStringField( "BinFunction.binFunctionType", "direct" );
                     
                     bCreatedHistogramParameters = TRUE;
                 }
@@ -2858,7 +2879,11 @@ CPLErr HFASetMetadata( HFAHandle hHFA, int nBand, char **papszMD )
             poBinFunc->SetIntField( "numBins", nNumBins );
             poBinFunc->SetDoubleField( "minLimit", dMinLimit );
             poBinFunc->SetDoubleField( "maxLimit", dMaxLimit );
-            poBinFunc->SetStringField( "binFunctionType", "linear" ); // we use always a linear
+            // direct for thematic layers, linear otherwise
+            if ( EQUALN ( poNode->GetStringField("layerType"), "thematic", 8) )
+                poBinFunc->SetStringField( "binFunctionType", "direct" );
+            else
+                poBinFunc->SetStringField( "binFunctionType", "linear" );
 
             // we need a child named histogram
             HFAEntry * poHisto = poEntry->GetNamedChild( "Histogram" );
@@ -2867,9 +2892,9 @@ CPLErr HFASetMetadata( HFAHandle hHFA, int nBand, char **papszMD )
                 
             poHisto->SetIntField( "numRows", nNumBins );
             // allocate space for the bin values
-            GUInt32 nOffset = HFAAllocateSpace( hHFA, nNumBins*4 );
+            GUInt32 nOffset = HFAAllocateSpace( hHFA, nNumBins*8 );
             poHisto->SetIntField( "columnDataPtr", nOffset );
-            poHisto->SetStringField( "dataType", "integer" );
+            poHisto->SetStringField( "dataType", "real" );
             poHisto->SetIntField( "maxNumChars", 0 );
             // write out histogram data
             char * pszWork = pszBinValues;
@@ -2879,12 +2904,64 @@ CPLErr HFASetMetadata( HFAHandle hHFA, int nBand, char **papszMD )
                 if ( pszEnd != NULL )
                 {
                     *pszEnd = 0;
-                    VSIFSeekL( hHFA->fp, nOffset + 4*nBin, SEEK_SET );
-                    int nValue = atoi( pszWork );
-                    HFAStandard( 4, &nValue );
+                    VSIFSeekL( hHFA->fp, nOffset + 8*nBin, SEEK_SET );
+                    double nValue = atof( pszWork );
+                    HFAStandard( 8, &nValue );
 
-                    VSIFWriteL( (void *)&nValue, 1, 4, hHFA->fp );
+                    VSIFWriteL( (void *)&nValue, 1, 8, hHFA->fp );
                     pszWork = pszEnd + 1;
+                }
+            }
+        }
+        else if ( poEntry != NULL )
+        {
+            // In this case, there are HistogramParameters present, but we did not
+            // create them. However, we might be modifying them, in the case where 
+            // the data has changed and the histogram counts need to be updated. It could 
+            // be worse than that, but that is all we are going to cope with for now. 
+            // We are assuming that we did not change any of the other stuff, like 
+            // skip factors and so forth. The main need for this case is for programs
+            // (such as Imagine itself) which will happily modify the pixel values
+            // without re-calculating the histogram counts. 
+            int nNumBins = poEntry->GetIntField( "BinFunction.numBins" );
+            HFAEntry *poEntryDescrTbl = poNode->GetNamedChild( "Descriptor_Table" );
+            HFAEntry *poHisto = NULL;
+            if ( poEntryDescrTbl != NULL) {
+                poHisto = poEntryDescrTbl->GetNamedChild( "Histogram" );
+            }
+            if ( poHisto != NULL ) {
+                int nOffset = poHisto->GetIntField( "columnDataPtr" );
+                // write out histogram data
+                char * pszWork = pszBinValues;
+                
+                // Check whether histogram counts were written as int or double
+                bool bCountIsInt = TRUE;
+                const char *pszDataType = poHisto->GetStringField("dataType");
+                if ( EQUALN(pszDataType, "real", strlen(pszDataType)) )
+                {
+                    bCountIsInt = FALSE;
+                }
+                for ( int nBin = 0; nBin < nNumBins; ++nBin )
+                {
+                    char * pszEnd = strchr( pszWork, '|' );
+                    if ( pszEnd != NULL )
+                    {
+                        *pszEnd = 0;
+                        if ( bCountIsInt ) {
+                            // Histogram counts were written as ints, so re-write them the same way
+                            VSIFSeekL( hHFA->fp, nOffset + 4*nBin, SEEK_SET );
+                            int nValue = atoi( pszWork );
+                            HFAStandard( 4, &nValue );
+                            VSIFWriteL( (void *)&nValue, 1, 4, hHFA->fp );
+                        } else {
+                            // Histogram were written as doubles, as is now the default behaviour
+                            VSIFSeekL( hHFA->fp, nOffset + 8*nBin, SEEK_SET );
+                            double nValue = atof( pszWork );
+                            HFAStandard( 8, &nValue );
+                            VSIFWriteL( (void *)&nValue, 1, 8, hHFA->fp );
+                        }
+                        pszWork = pszEnd + 1;
+                    }
                 }
             }
         }
@@ -3042,12 +3119,12 @@ int HFACreateSpillStack( HFAInfo_t *psInfo, int nXSize, int nYSize,
         fpVSIL = VSIFOpenL( pszFullFilename, "w+" );
         if( fpVSIL == NULL )
         {
-            CPLError( CE_Failure, CPLE_OpenFailed, 
+            CPLError( CE_Failure, CPLE_OpenFailed,
                       "Failed to create spill file %s.\n%s",
                       psInfo->pszIGEFilename, VSIStrerror( errno ) );
             return FALSE;
         }
-        
+
         VSIFWriteL( (void *) pszMagick, 1, strlen(pszMagick)+1, fpVSIL );
     }
 
@@ -3056,18 +3133,18 @@ int HFACreateSpillStack( HFAInfo_t *psInfo, int nXSize, int nYSize,
 /* -------------------------------------------------------------------- */
 /*      Work out some details about the tiling scheme.                  */
 /* -------------------------------------------------------------------- */
-    int	nBlocksPerRow, nBlocksPerColumn, nBlocks, nBytesPerBlock;
-    int	nBytesPerRow, nBlockMapSize, iFlagsSize;
+    int	nBlocksPerRow, nBlocksPerColumn, /* nBlocks, */ nBytesPerBlock;
+    int	nBytesPerRow, nBlockMapSize /* , iFlagsSize */;
 
     nBlocksPerRow = (nXSize + nBlockSize - 1) / nBlockSize;
     nBlocksPerColumn = (nYSize + nBlockSize - 1) / nBlockSize;
-    nBlocks = nBlocksPerRow * nBlocksPerColumn;
+    /* nBlocks = nBlocksPerRow * nBlocksPerColumn; */
     nBytesPerBlock = (nBlockSize * nBlockSize
                       * HFAGetDataTypeBits(nDataType) + 7) / 8;
 
     nBytesPerRow = ( nBlocksPerRow + 7 ) / 8;
     nBlockMapSize = nBytesPerRow * nBlocksPerColumn;
-    iFlagsSize = nBlockMapSize + 20;
+    /* iFlagsSize = nBlockMapSize + 20; */
 
 /* -------------------------------------------------------------------- */
 /*      Write stack prefix information.                                 */

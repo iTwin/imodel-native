@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFHMRStdWorldCluster.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFHMRStdWorldCluster
@@ -15,6 +15,7 @@
 #include <Imagepp/all/h/HGF2DWorld.h>
 #include <Imagepp/all/h/HGF2DWorldCluster.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert
@@ -85,15 +86,15 @@
 */
 class HGFHMRStdWorldCluster : public HGF2DWorldCluster
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1125)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HGFHMRStdWorldClusterId)
 
 public:
 
-    _HDLLg                     HGFHMRStdWorldCluster();
-    _HDLLg virtual             ~HGFHMRStdWorldCluster();
+    IMAGEPP_EXPORT                     HGFHMRStdWorldCluster();
+    IMAGEPP_EXPORT virtual             ~HGFHMRStdWorldCluster();
 
     // From HGF2DWorldCluster
-    _HDLLg virtual HFCPtr<HGF2DWorld>
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DWorld>
     GetWorldReference(HGF2DWorldIdentificator pi_Identifier) const;
 
 private:
@@ -103,3 +104,5 @@ private:
     // Assignement operator (desactivated)
     HGFHMRStdWorldCluster&     operator=(const HGFHMRStdWorldCluster& pi_rObj);
     };
+
+END_IMAGEPP_NAMESPACE

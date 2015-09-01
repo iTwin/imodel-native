@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srsnode.cpp 20835 2010-10-15 20:00:50Z rouault $
+ * $Id: ogr_srsnode.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGR_SRSNode class.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999,  Les Technologies SoftMap Inc.
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogr_srsnode.cpp 20835 2010-10-15 20:00:50Z rouault $");
+CPL_CVSID("$Id: ogr_srsnode.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                            OGR_SRSNode()                             */
@@ -577,8 +578,25 @@ OGRErr OGR_SRSNode::exportToPrettyWkt( char ** ppszResult, int nDepth ) const
 OGRErr OGR_SRSNode::importFromWkt( char ** ppszInput )
 
 {
+    int nNodes = 0;
+    return importFromWkt( ppszInput, 0, &nNodes );
+}
+
+OGRErr OGR_SRSNode::importFromWkt( char ** ppszInput, int nRecLevel, int* pnNodes )
+
+{
     const char  *pszInput = *ppszInput;
     int         bInQuotedString = FALSE;
+
+    /* Sanity checks */
+    if( nRecLevel == 10 )
+    {
+        return OGRERR_CORRUPT_DATA;
+    }
+    if( *pnNodes == 1000 )
+    {
+        return OGRERR_CORRUPT_DATA;
+    }
     
 /* -------------------------------------------------------------------- */
 /*      Clear any existing children of this node.                       */
@@ -637,7 +655,8 @@ OGRErr OGR_SRSNode::importFromWkt( char ** ppszInput )
 
             poNewChild = new OGR_SRSNode();
 
-            eErr = poNewChild->importFromWkt( (char **) &pszInput );
+            (*pnNodes) ++;
+            eErr = poNewChild->importFromWkt( (char **) &pszInput, nRecLevel + 1, pnNodes );
             if( eErr != OGRERR_NONE )
             {
                 delete poNewChild;
@@ -646,6 +665,10 @@ OGRErr OGR_SRSNode::importFromWkt( char ** ppszInput )
 
             AddChild( poNewChild );
             
+            // swallow whitespace
+            while( isspace(*pszInput) ) 
+                pszInput++;
+
         } while( *pszInput == ',' );
 
         if( *pszInput != ')' && *pszInput != ']' )
@@ -765,7 +788,8 @@ OGRErr OGR_SRSNode::applyRemapper( const char *pszNode,
     {
         for( i = 0; papszSrcValues[i] != NULL; i += nStepSize )
         {
-            if( EQUAL(papszSrcValues[i],pszValue) )
+            if( EQUAL(papszSrcValues[i],pszValue) && 
+                ! EQUAL(papszDstValues[i],"") )
             {
                 SetValue( papszDstValues[i] );
                 break;
@@ -824,6 +848,26 @@ void OGR_SRSNode::StripNodes( const char * pszName )
 /*                           FixupOrdering()                            */
 /************************************************************************/
 
+/* EXTENSION ... being a OSR extension... is arbitrary placed before the AUTHORITY */
+static const char * const apszPROJCSRule[] = 
+{ "PROJCS", "GEOGCS", "PROJECTION", "PARAMETER", "UNIT", "AXIS", "EXTENSION", "AUTHORITY", 
+  NULL };
+
+static const char * const apszDATUMRule[] = 
+{ "DATUM", "SPHEROID", "TOWGS84", "AUTHORITY", NULL };
+
+static const char * const apszGEOGCSRule[] = 
+{ "GEOGCS", "DATUM", "PRIMEM", "UNIT", "AXIS", "AUTHORITY", NULL };
+
+static const char * const apszGEOCCSRule[] = 
+{ "GEOCCS", "DATUM", "PRIMEM", "UNIT", "AXIS", "AUTHORITY", NULL };
+
+static const char * const apszVERTCSRule[] = 
+{ "VERT_CS", "VERT_DATUM", "UNIT", "AXIS", "AUTHORITY", NULL };
+
+static const char * const *apszOrderingRules[] = {
+    apszPROJCSRule, apszGEOGCSRule, apszDATUMRule, apszGEOCCSRule, apszVERTCSRule, NULL };
+
 /**
  * Correct parameter ordering to match CT Specification.
  *
@@ -838,20 +882,6 @@ void OGR_SRSNode::StripNodes( const char * pszName )
  * @return OGRERR_NONE on success or an error code if something goes 
  * wrong.  
  */
-
-/* EXTENSION ... being a OSR extension... is arbitrary placed before the AUTHORITY */
-static const char * const apszPROJCSRule[] = 
-{ "PROJCS", "GEOGCS", "PROJECTION", "PARAMETER", "UNIT", "AXIS", "EXTENSION", "AUTHORITY", 
-  NULL };
-
-static const char * const apszDATUMRule[] = 
-{ "DATUM", "SPHEROID", "TOWGS84", "AUTHORITY", NULL };
-
-static const char * const apszGEOGCSRule[] = 
-{ "GEOGCS", "DATUM", "PRIMEM", "UNIT", "AXIS", "AUTHORITY", NULL };
-
-static const char * const *apszOrderingRules[] = {
-    apszPROJCSRule, apszGEOGCSRule, apszDATUMRule, NULL };
 
 OGRErr OGR_SRSNode::FixupOrdering()
 

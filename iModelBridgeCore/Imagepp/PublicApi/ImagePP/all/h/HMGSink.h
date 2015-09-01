@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMGSink.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HMGSink
@@ -11,6 +11,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 
 // Forward class declarations. These are defined elsewhere.
 class HMGMessageReceiver;
@@ -24,7 +25,7 @@ class HMGMessage;
 
 class HMGMessageEnvelope : public HFCShareableObject<HMGMessageEnvelope>
     {
-    HDECLARE_SEALEDCLASS_ID(1099)
+    HDECLARE_SEALEDCLASS_ID(HMGMessageId_Envelope)
 
 public:
 
@@ -72,7 +73,7 @@ private:
 
 class HMGSink : public HFCShareableObject<HMGSink>
     {
-    HDECLARE_SEALEDCLASS_ID(1090)
+    HDECLARE_SEALEDCLASS_ID(HMGSinkId_Base)
 
 public:
 
@@ -80,9 +81,9 @@ public:
     // Primary methods
     ///////////////////
 
-    _HDLLu HMGSink(HMGMessageReceiver* pi_pReceiver = 0);
+    IMAGEPP_EXPORT HMGSink(HMGMessageReceiver* pi_pReceiver = 0);
 
-    _HDLLu ~HMGSink();
+    IMAGEPP_EXPORT ~HMGSink();
 
     ////////////////
     // Added
@@ -99,7 +100,7 @@ public:
     // Sender management
     void            SenderSaved(HMGMessageSender* pi_pSender);
     void            SenderDestroyed(HMGMessageSender* pi_pSender);
-    _HDLLu void     SenderUnlinked(HMGMessageSender* pi_pSender);
+    IMAGEPP_EXPORT void     SenderUnlinked(HMGMessageSender* pi_pSender);
 
     // Validation
     bool           IsSinkValid() const;
@@ -145,3 +146,5 @@ private:
     };
 
 
+
+END_IMAGEPP_NAMESPACE

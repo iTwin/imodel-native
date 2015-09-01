@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCInterlockedValue.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,6 +10,8 @@
 //-----------------------------------------------------------------------------
 
 #include "HFCMonitor.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 /**----------------------------------------------------------------------------
  Default constructor for this class.  The value is set to zero by this
@@ -798,3 +800,5 @@ HFCInterlockedValue<T>::operator T() const
 
     return (m_Value);
     }
+
+END_IMAGEPP_NAMESPACE

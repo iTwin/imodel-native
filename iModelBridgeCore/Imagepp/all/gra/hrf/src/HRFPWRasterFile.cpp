@@ -2,17 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPWRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
 //-----------------------------------------------------------------------------
-#pragma once
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFPWRasterFile.h>
 #include <Imagepp/all/h/HRFPWEditor.h>
+
+#if defined(IPP_HAVE_PROJECTWISE_SUPPORT) 
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFRasterFileFactory.h>
@@ -20,8 +21,6 @@
 #include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HRFGeoRasterFile.h>
-#include <Imagepp/all/h/HRFWMSFile.h>
 #include <Imagepp/all/h/HRFException.h>
 
 #include <Imagepp/all/h/interface/IHRFPWFileHandler.h>
@@ -76,8 +75,8 @@ HFCPtr<HRFRasterFile> HRFPWRasterFile::Create(const HFCPtr<HRFRasterFile>&  pi_r
     // multipage is not supported yet
     if (pi_rpRasterFile->CountPages() > 1 ||
         pi_rpRasterFile->GetPageDescriptor(0)->IsUnlimitedResolution() ||
-        pi_rpRasterFile->IsCompatibleWith(HRFWMSFile::CLASS_ID) ||
-        pi_rpRasterFile->IsCompatibleWith(HRFGeoRasterFile::CLASS_ID))
+        pi_rpRasterFile->IsCompatibleWith(HRFFileId_WMS/*HRFWMSFile::CLASS_ID*/) ||
+        pi_rpRasterFile->IsCompatibleWith(HRFFileId_GeoRaster/*HRFGeoRasterFile::CLASS_ID*/))
         return 0;
 
     HFCPtr<HRFPWRasterFile> pPWFile;
@@ -179,32 +178,30 @@ HFCPtr<HRFRasterFile> HRFPWRasterFile::Create(const HFCPtr<HRFRasterFile>&  pi_r
             uint32_t Buffer2Size = 1024;
             HArrayAutoPtr<Byte> pBuffer2(new Byte[Buffer2Size]);
 
-            HAutoPtr<HFCBinStream> pFile(HFCBinStream::Instanciate(pi_rpPWUrl, HFC_READ_WRITE));
-
-            ThrowFileExceptionIfError(pFile, pi_rpPWUrl->GetURL());
+            HAutoPtr<HFCBinStream> pFile(HFCBinStream::Instanciate(pi_rpPWUrl, HFC_READ_WRITE, 0, true));
 
             uint64_t FileSize = pFile->GetSize();
             FileSize += Buffer1Size;
 
-            size_t Count = pFile->Read((void*)pBuffer2, Buffer2Size);
+            size_t Count = pFile->Read(pBuffer2, Buffer2Size);
             pFile->SeekToPos(0);
-            pFile->Write((void*)pBuffer1, Buffer1Size); // write header
+            pFile->Write(pBuffer1, Buffer1Size); // write header
             uint64_t FilePos;
             while (Count > 0)
                 {
                 if (Count < Buffer2Size)
                     {
-                    pFile->Write((void*)pBuffer2, Count);
+                    pFile->Write(pBuffer2, Count);
                     Count = 0;
                     }
                 else
                     {
-                    pFile->Write((void*)pBuffer2, (Buffer2Size - Buffer1Size));
+                    pFile->Write(pBuffer2, (Buffer2Size - Buffer1Size));
                     memcpy(pBuffer1, &pBuffer2[Buffer2Size - Buffer1Size], Buffer1Size);
                     FilePos = pFile->GetCurrentPos();
-                    Count = pFile->Read((void*)pBuffer2, Buffer2Size);
+                    Count = pFile->Read(pBuffer2, Buffer2Size);
                     pFile->SeekToPos(FilePos);
-                    pFile->Write((void*)pBuffer1, Buffer1Size);
+                    pFile->Write(pBuffer1, Buffer1Size);
                     }
                 }
             pFile = 0;  // close the file
@@ -244,7 +241,7 @@ HRFResolutionEditor* HRFPWRasterFile::CreateResolutionEditor(uint32_t       pi_P
     if (m_pPWHandler != 0)
         return new HRFPWEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
     else
-        throw HRFException(HRF_PW_NO_HANDLER_EXCEPTION, GetURL()->GetURL());
+        throw HRFPWNoHandlerException(GetURL()->GetURL());
     }
 
 
@@ -312,7 +309,7 @@ bool HRFPWCreator::IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
     (const_cast<HRFPWCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    pTiff = new HTIFFFile (CreateCombinedURLAndOffset(pi_rpURL, pi_Offset + sizeof(HRFPWRasterFile::Header)), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pTiff = new HTIFFFile (pi_rpURL, pi_Offset + sizeof(HRFPWRasterFile::Header), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     if ((pTiff->IsValid(&pErr)) || ((pErr != 0) && !pErr->IsFatal()))
         {
@@ -398,3 +395,5 @@ const HGF2DWorldIdentificator HRFPWRasterFile::GetWorldIdentificator () const
     {
     return (m_OriginalFileInfo.WorldID);
     }
+
+#endif  // IPP_HAVE_PROJECTWISE_SUPPORT

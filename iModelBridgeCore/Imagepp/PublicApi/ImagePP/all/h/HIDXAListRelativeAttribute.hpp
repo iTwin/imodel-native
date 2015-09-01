@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXAListRelativeAttribute.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HIDXAListRelativeAttribute
 //-----------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
@@ -115,3 +115,4 @@ template<class T, int C> inline void HIDXAListRelativeAttribute<T, C>::SetRelati
     m_pBlock = pi_pBlock;
     m_AbsolutePosition = HIDXALIST_ABSOLUTE_POS(m_pBlock, pi_RelativePosition);
     }
+END_IMAGEPP_NAMESPACE

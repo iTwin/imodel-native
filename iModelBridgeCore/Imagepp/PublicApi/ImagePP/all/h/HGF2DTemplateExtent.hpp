@@ -2,9 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTemplateExtent.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -38,10 +40,10 @@ template <class DataType, class COORD> HGF2DTemplateExtent<DataType, COORD>::HGF
         DataType pi_Y1,
         DataType pi_X2,
         DataType pi_Y2)
-    : m_XMin(min(pi_X1, pi_X2)),
-      m_XMax(max(pi_X1, pi_X2)),
-      m_YMin(min(pi_Y1, pi_Y2)),
-      m_YMax(max(pi_Y1, pi_Y2))
+    : m_XMin(MIN(pi_X1, pi_X2)),
+      m_XMax(MAX(pi_X1, pi_X2)),
+      m_YMin(MIN(pi_Y1, pi_Y2)),
+      m_YMax(MAX(pi_Y1, pi_Y2))
     {
     }
 
@@ -522,3 +524,4 @@ template <class DataType, class COORD> void HGF2DTemplateExtent<DataType, COORD>
         m_YMax = pi_rExtent.m_YMax;
     }
 
+END_IMAGEPP_NAMESPACE

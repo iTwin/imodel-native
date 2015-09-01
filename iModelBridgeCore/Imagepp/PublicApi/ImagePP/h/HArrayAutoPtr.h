@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HArrayAutoPtr.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HArrayAutoPtr.
@@ -15,6 +15,8 @@
 #pragma once
 
 #include "HTypes.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 #define HARRAYAUTOPTR(Type, Pointer) (HArrayAutoPtr<Type> (Pointer).get())
 
@@ -99,5 +101,5 @@ private:
     P*                reset(P* pi_Ptr = 0);
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HArrayAutoPtr.hpp"

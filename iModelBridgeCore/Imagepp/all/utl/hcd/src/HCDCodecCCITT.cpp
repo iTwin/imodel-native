@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecCCITT.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecCCITT
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HCDCodecCCITT.h>
 
 #define HCDCODECCCITT_WORSTCASEINFLATION            6
@@ -29,7 +29,7 @@ HCDCodecCCITT::HCDCodecCCITT()
     : HCDCodecImage(HCD_CODEC_NAME)
     {
     m_bitrevtable = false;
-    m_photometric = ImagePP::CCITT_PHOTOMETRIC_MINISWHITE;
+    m_photometric = CCITT_PHOTOMETRIC_MINISWHITE;
     }
 
 //-----------------------------------------------------------------------------
@@ -44,7 +44,7 @@ HCDCodecCCITT::HCDCodecCCITT( size_t pi_Width,
                     1)
     {
     m_bitrevtable = false;
-    m_photometric = ImagePP::CCITT_PHOTOMETRIC_MINISWHITE;
+    m_photometric = CCITT_PHOTOMETRIC_MINISWHITE;
     }
 
 //-----------------------------------------------------------------------------

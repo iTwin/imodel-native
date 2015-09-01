@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFAdaptTileToImage.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFAdaptTileToImage
@@ -15,6 +15,7 @@
 #include "HFCMacros.h"
 #include "HRFBlockAdapter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class  HRFRasterFile;
 
 //-----------------------------------------------------------------------------
@@ -23,7 +24,7 @@ class  HRFRasterFile;
 //-----------------------------------------------------------------------------
 class HRFAdaptTileToImageCapabilities : public HRFBlockAdapterCapabilities
     {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFAdaptTileToImageCapabilities)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFAdaptTileToImageCapabilities)
 
 public:
     HRFAdaptTileToImageCapabilities();
@@ -36,7 +37,7 @@ public:
 //-----------------------------------------------------------------------------
 class HRFAdaptTileToImageCreator : public HRFBlockAdapterCreator
     {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFAdaptTileToImageCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFAdaptTileToImageCreator)
 
 public:
     // Obtain the capabilities of stretcher
@@ -68,25 +69,25 @@ public:
     virtual                ~HRFAdaptTileToImage();
 
     // Edition by Block
-    virtual HSTATUS        ReadBlock     (uint32_t                 pi_PosBlockX,
-                                          uint32_t                 pi_PosBlockY,
-                                          Byte*                   po_pData,
-                                          HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+    virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
+                              uint64_t                 pi_PosBlockY,
+                              Byte*                    po_pData,
+                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS        ReadBlock     (uint32_t                 pi_PosBlockX,
-                                          uint32_t                 pi_PosBlockY,
-                                          HFCPtr<HCDPacket>&       po_rpPacket,
-                                          HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+    virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
+                              uint64_t                 pi_PosBlockY,
+                              HFCPtr<HCDPacket>&       po_rpPacket,
+                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS        WriteBlock    (uint32_t                 pi_PosBlockX,
-                                          uint32_t                 pi_PosBlockY,
-                                          const Byte*             pi_pData,
-                                          HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+    virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
+                               uint64_t                 pi_PosBlockY,
+                               const Byte*              pi_pData,
+                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS        WriteBlock    (uint32_t                 pi_PosBlockX,
-                                          uint32_t                 pi_PosBlockY,
-                                          const HFCPtr<HCDPacket>& pi_rpPacket,
-                                          HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+    virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
+                               uint64_t                 pi_PosBlockY,
+                               const HFCPtr<HCDPacket>& pi_rpPacket,
+                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
 
 protected:
 
@@ -109,4 +110,5 @@ private:
     HRFAdaptTileToImage(const HRFAdaptTileToImage& pi_rObj);
     HRFAdaptTileToImage& operator=(const HRFAdaptTileToImage& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 

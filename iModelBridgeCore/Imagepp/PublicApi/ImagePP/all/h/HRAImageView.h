@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAImageView.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HRARaster.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HRAClearOptions;
 
@@ -22,7 +24,7 @@ class HRAClearOptions;
 */
 class HRAImageView : public HRARaster
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1142)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRAImageViewId)
 
 public:
 
@@ -35,15 +37,12 @@ public:
     virtual bool   ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role,
                                               Byte                      pi_Id = 0) const;
 
-    virtual void    CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster);
+    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster);
 
-    virtual void    CopyFrom(   const HFCPtr<HRARaster>& pi_pSrcRaster,
-                                const HRACopyFromOptions& pi_rOptions);
+    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions);
 
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
-
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions);
 
     virtual HRARasterEditor*
     CreateEditor   (HFCAccessMode pi_Mode);
@@ -89,7 +88,7 @@ public:
     virtual void    SetShape    (const HVEShape& pi_rShape);
 
     // Source
-    _HDLLg const HFCPtr<HRARaster>&
+    IMAGEPP_EXPORT const HFCPtr<HRARaster>&
     GetSource() const;
 
     // LookAhead Methods
@@ -107,16 +106,15 @@ public:
 protected:
 
     // Primary methods
-
     HRAImageView();
-
     HRAImageView(const HFCPtr<HRARaster>& pi_pSource);
-
     HRAImageView(const HRAImageView& pi_rImageView);
 
-private:
+    virtual ImagePPStatus _CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options) override;
 
-    HFCPtr<HRARaster>
-    m_pSource;
+private:
+    
+    HFCPtr<HRARaster> m_pSource;
     };
 
+END_IMAGEPP_NAMESPACE

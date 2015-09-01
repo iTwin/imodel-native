@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DMeshBasedTransfoModel.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DMeshBasedTransfoModel
@@ -12,6 +12,7 @@
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 class HVE2DRawMesh;
 
 // HPM_DECLARE_HEADER(HGF2DMeshBasedTransfoModel)
@@ -31,7 +32,7 @@ class HVE2DRawMesh;
 */
 class HGF2DMeshBasedTransfoModel : public HGF2DTransfoModel
     {
-    HDECLARE_CLASS_ID(9998, HGF2DTransfoModel)
+    HDECLARE_CLASS_ID(HGF2DTransfoModelId_MeshBased, HGF2DTransfoModel)
 
 public:
 
@@ -59,3 +60,4 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE

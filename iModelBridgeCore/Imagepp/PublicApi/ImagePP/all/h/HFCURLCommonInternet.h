@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLCommonInternet.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,6 +13,7 @@
 
 #include <Imagepp/all/h/HFCURL.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 //:Ignore
 // URL specification at this level is:
 // <scheme-type>[//][user[:password]@]host[:port][/[URLPath]]
@@ -51,7 +52,7 @@ class HFCURLCommonInternet : public HFCURL
     {
 public:
 
-    HDECLARE_CLASS_ID(1301, HFCURL);
+    HDECLARE_CLASS_ID(HFCURLId_CommonInternet, HFCURL);
 
     //:> Primary methods
 
@@ -65,7 +66,7 @@ public:
     HFCURLCommonInternet() { } // required for persistence
     virtual               ~HFCURLCommonInternet();
 
-    _HDLLu static void    SplitPath(const WString& pi_rURL,
+    IMAGEPP_EXPORT static void    SplitPath(const WString& pi_rURL,
                                     WString*       po_pScheme,
                                     WString*       po_pHost,
                                     WString*       po_pPort,
@@ -73,7 +74,7 @@ public:
                                     WString*       po_pPassword,
                                     WString*       po_pPath);
 
-    _HDLLu static string  EscapeURLParamValue(const string& pi_rURLPart);
+    IMAGEPP_EXPORT static string  EscapeURLParamValue(const string& pi_rURLPart);
 
     //:> Content access methods
 
@@ -106,4 +107,5 @@ private:
     HFCURLCommonInternet& operator=(const HFCURLCommonInternet&);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HFCURLCommonInternet.hpp"

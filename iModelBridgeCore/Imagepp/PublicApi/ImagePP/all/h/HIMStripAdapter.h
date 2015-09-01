@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMStripAdapter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIMStripAdapter
@@ -14,87 +14,77 @@
 #include "HRAImageView.h"
 #include "HRABitmap.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HIMStripAdapterIterator;
 
-
+/*---------------------------------------------------------------------------------**//**
+* HIMStripAdapter
++---------------+---------------+---------------+---------------+---------------+------*/
 class HIMStripAdapter : public HRAImageView
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1760)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT, HIMStripAdapterId)
 
     friend class HIMStripAdapterIterator;
 
-public:
+    public:
 
-    //:> Primary methods
-    _HDLLg                 HIMStripAdapter();
+        //:> Primary methods
+        IMAGEPP_EXPORT                 HIMStripAdapter();
 
-    _HDLLg                 HIMStripAdapter(    const HFCPtr<HRARaster>&    pi_rpSource,
-                                               const Byte*               pi_pRGBBackgroundColor,
-                                               double                     pi_QualityFactor = 1.0,
-                                               size_t                      pi_MaxSizeInBytes = (1024 * 1024L));
+        IMAGEPP_EXPORT                 HIMStripAdapter(const HFCPtr<HRARaster>&    pi_rpSource,
+                                                      const Byte*                 pi_pRGBBackgroundColor,
+                                                      double                      pi_QualityFactor = 1.0,
+                                                      size_t                      pi_MaxSizeInBytes = (1024 * 1024L));
 
-    _HDLLg                 HIMStripAdapter(const HFCPtr<HRARaster>&    pi_rpSource,
-                                           const HFCPtr<HRPPixelType>& pi_rpStripPixelType,
-                                           double                     pi_QualityFactor = 1.0,
-                                           size_t                      pi_MaxSizeInBytes = (1024 * 1024L));
+        IMAGEPP_EXPORT                 HIMStripAdapter(const HFCPtr<HRARaster>&    pi_rpSource,
+                                                      const HFCPtr<HRPPixelType>& pi_rpStripPixelType,
+                                                      double                      pi_QualityFactor = 1.0,
+                                                      size_t                      pi_MaxSizeInBytes = (1024 * 1024L));
 
-    _HDLLg                 HIMStripAdapter(    const HFCPtr<HRARaster>& pi_rpSource,
-                                               const Byte*            pi_pRGBBackgroundColor,
-                                               uint32_t                 pi_StripWidth,
-                                               uint32_t                 pi_StripHeigth,
-                                               HRABitmap::SLO           pi_SLO);
+        IMAGEPP_EXPORT                 HIMStripAdapter(const HFCPtr<HRARaster>&    pi_rpSource,
+                                                      const Byte*                 pi_pRGBBackgroundColor,
+                                                      uint32_t                    pi_StripWidth,
+                                                      uint32_t                    pi_StripHeigth);
 
-    _HDLLg                 HIMStripAdapter(const HIMStripAdapter& pi_rObj);
+        IMAGEPP_EXPORT                 HIMStripAdapter(const HIMStripAdapter& pi_rObj);
 
-    _HDLLg virtual         ~HIMStripAdapter();
-
-
-    //:> Overriden methods
-    virtual HPMPersistentObject* Clone () const;
-    virtual HRARaster* Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const;
-
-    virtual HRARasterIterator*
-    CreateIterator (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
-
-    virtual bool   IsStoredRaster  () const;
-
-    virtual HFCPtr<HRPPixelType>
-    GetPixelType() const;
-
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions);
-
-    virtual void    Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const;
-
-    //:> Added methods
-
-    HFCPtr<HRABitmap>
-    GetInputBitmapExample() const;
-
-    size_t          GetMaxSizeInBytes() const;
-    void            SetMaxSizeInBytes(size_t pi_MaxSize);
-
-    double         GetQualityFactor() const;
-    void            SetQualityFactor(double pi_Factor);
-
-    bool           StripsWillBeClipped() const;
-    void            ClipStripsBasedOnSource(bool pi_Clip);
-
-protected:
+        IMAGEPP_EXPORT virtual         ~HIMStripAdapter();
 
 
-private:
-    size_t                m_MaxSizeInBytes;
-    double               m_QualityFactor;
-    HFCPtr<HRABitmap>     m_pInputBitmapExample;
-    bool                 m_ApplyClipping;
+        //:> Overriden methods
+        virtual HPMPersistentObject* Clone() const;
+        virtual HFCPtr<HRARaster>    Clone(HPMObjectStore* pi_pStore, HPMPool* pi_pLog = 0) const override;
 
-    uint32_t              m_StripWidth;
-    uint32_t              m_StripHeigth;
+        virtual HRARasterIterator*   CreateIterator(const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
+        virtual bool                 IsStoredRaster() const;
+        virtual HFCPtr<HRPPixelType> GetPixelType() const;
 
-    uint32_t    SetBackgroundColor  (const HFCPtr<HRPPixelType>& pio_pPixelType,
-                                     const HFCPtr<HRARaster>&    pi_pSource,
-                                     const Byte*               pi_pRGBBackgroundColor,
-                                     HRABitmap::SLO              pi_SLO);
+        //:> Added methods
+        HFCPtr<HRABitmap>            GetInputBitmapExample() const;
+        size_t                       GetMaxSizeInBytes() const;
+        void                         SetMaxSizeInBytes(size_t pi_MaxSize);
+        double                       GetQualityFactor() const;
+        void                         SetQualityFactor(double pi_Factor);
+        bool                         StripsWillBeClipped() const;
+        void                         ClipStripsBasedOnSource(bool pi_Clip);
+
+    protected:
+        virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
+        virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
+
+
+    private:
+        size_t                m_MaxSizeInBytes;
+        double                m_QualityFactor;
+        HFCPtr<HRABitmap>     m_pInputBitmapExample;
+        bool                  m_ApplyClipping;
+        uint32_t              m_StripWidth;
+        uint32_t              m_StripHeigth;
+
+        uint32_t    SetBackgroundColor(const HFCPtr<HRPPixelType>& pio_pPixelType,
+                                       const HFCPtr<HRARaster>&    pi_pSource,
+                                       const Byte*                 pi_pRGBBackgroundColor);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HIMStripAdapter.hpp"

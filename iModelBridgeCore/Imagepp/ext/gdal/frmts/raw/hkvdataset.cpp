@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hkvdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: hkvdataset.cpp 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis HKV labelled blob support
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@
 #include "ogr_spatialref.h"
 #include "atlsci_spheroid.h"
 
-CPL_CVSID("$Id: hkvdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: hkvdataset.cpp 27739 2014-09-25 18:49:52Z goatbar $");
 
 CPL_C_START
 void	GDALRegister_HKV(void);
@@ -1073,9 +1074,9 @@ void HKVDataset::ProcessGeoref( const char * pszFilename )
 /*      Do we have a recognised projection?                             */
 /* -------------------------------------------------------------------- */
     const char *pszProjName, *pszOriginLong, *pszSpheroidName;
-    double eq_radius, inv_flattening;
+    /* double eq_radius, inv_flattening; */
 
-    pszProjName = CSLFetchNameValue(papszGeoref, 
+    pszProjName = CSLFetchNameValue(papszGeoref,
                                     "projection.name");
     pszOriginLong = CSLFetchNameValue(papszGeoref, 
                                       "projection.origin_longitude");
@@ -1085,14 +1086,14 @@ void HKVDataset::ProcessGeoref( const char * pszFilename )
 
     if ((pszSpheroidName != NULL) && (hkvEllipsoids->SpheroidInList(pszSpheroidName)))
     {
-      eq_radius=hkvEllipsoids->GetSpheroidEqRadius(pszSpheroidName);
-      inv_flattening=hkvEllipsoids->GetSpheroidInverseFlattening(pszSpheroidName);
+      /* eq_radius=hkvEllipsoids->GetSpheroidEqRadius(pszSpheroidName); */
+      /* inv_flattening=hkvEllipsoids->GetSpheroidInverseFlattening(pszSpheroidName); */
     }
     else if (pszProjName != NULL)
     {
       CPLError(CE_Warning,CPLE_AppDefined,"Warning- unrecognized ellipsoid.  Using wgs-84 parameters.\n");
-      eq_radius=hkvEllipsoids->GetSpheroidEqRadius("wgs-84");
-      inv_flattening=hkvEllipsoids->GetSpheroidInverseFlattening("wgs-84");
+      /* eq_radius=hkvEllipsoids->GetSpheroidEqRadius("wgs-84"); */
+      /* inv_flattening=hkvEllipsoids->GetSpheroidInverseFlattening("wgs-84"); */
     }
 
     if( (pszProjName != NULL) && EQUAL(pszProjName,"utm") && (nGCPCount == 5) )
@@ -1404,26 +1405,27 @@ GDALDataset *HKVDataset::Open( GDALOpenInfo * poOpenInfo )
                        atof(CSLFetchNameValue(papszAttrib, "version")));
     else
       poDS->SetVersion(1.0);
-    
+
 /* -------------------------------------------------------------------- */
 /*      Figure out the datatype                                         */
 /* -------------------------------------------------------------------- */
     const char * pszEncoding;
     int          nSize = 1;
-    int          nPseudoBands;
+    /* int          nPseudoBands; */
     GDALDataType eType;
-   
+
     pszEncoding = CSLFetchNameValue(papszAttrib,"pixel.encoding");
     if( pszEncoding == NULL )
         pszEncoding = "{ *unsigned }";
-  
+
     if( CSLFetchNameValue(papszAttrib,"pixel.size") != NULL )
         nSize = atoi(CSLFetchNameValue(papszAttrib,"pixel.size"))/8;
-        
+#if 0
     if( bComplex )
         nPseudoBands = 2;
-    else 
+    else
         nPseudoBands = 1;
+#endif
 
     if( nSize == 1 )
         eType = GDT_Byte;
@@ -1712,7 +1714,7 @@ CPLErr HKVDataset::Delete( const char * pszName )
 
 GDALDataset *
 HKVDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS, 
-                        int bStrict, char ** papszOptions, 
+                        CPL_UNUSED int bStrict, char ** papszOptions, 
                         GDALProgressFunc pfnProgress, void * pProgressData )
 
 {
@@ -1795,6 +1797,7 @@ HKVDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                     CPLError( CE_Failure, CPLE_UserInterrupt, 
                               "User terminated" );
                     delete poDS;
+                    CPLFree(pData);
 
                     GDALDriver *poHKVDriver = 
                         (GDALDriver *) GDALGetDriverByName( "MFF2" );
@@ -1812,6 +1815,8 @@ HKVDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                                             eType, 0, 0 );
                 if( eErr != CE_None )
                 {
+                    delete poDS;
+                    CPLFree(pData);
                     return NULL;
                 }
             
@@ -1823,6 +1828,8 @@ HKVDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
                 if( eErr != CE_None )
                 {
+                    delete poDS;
+                    CPLFree(pData);
                     return NULL;
                 }
             }
@@ -1906,7 +1913,7 @@ void GDALRegister_HKV()
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_mff2.html" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Byte int16_t uint16_t int32_t uint32_t CInt16 CInt32 Float32 Float64 CFloat32 CFloat64" );
+                                   "Byte Int16 UInt16 Int32 UInt32 CInt16 CInt32 Float32 Float64 CFloat32 CFloat64" );
         
         poDriver->pfnOpen = HKVDataset::Open;
         poDriver->pfnCreate = HKVDataset::Create;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF3DCameraTransfoModel.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF3DCameraTransfoModel
@@ -14,6 +14,7 @@
 #include "HGFCameraData.h"
 #include "HGF3DTransfoModel.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 // HPM_DECLARE_HEADER(HGF3DCameraTransfoModel)
 
 class HGF3DCameraTransfoModel: public HGF3DTransfoModel
@@ -70,3 +71,4 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE

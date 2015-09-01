@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_api.cpp 20555 2010-09-10 18:54:34Z rouault $
+ * $Id: ogr_api.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  C API Functions that don't correspond one-to-one with C++ 
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2002, Frank Warmerdam
+ * Copyright (c) 2009-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -65,6 +66,38 @@ int OGR_G_GetPointCount( OGRGeometryH hGeom )
         // autotest/pymod/ogrtest.py calls this method on any geometry. So keep silent
         //CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
         return 0;
+    }
+}
+
+/************************************************************************/
+/*                        OGR_G_SetPointCount()                         */
+/************************************************************************/
+/**
+ * \brief Set number of points in a geometry.
+ *
+ * This method primary exists to preset the number of points in a linestring
+ * geometry before setPoint() is used to assign them to avoid reallocating
+ * the array larger with each call to addPoint(). 
+ *
+ * @param nNewPointCount the new number of points for geometry.
+ */
+
+void OGR_G_SetPointCount( OGRGeometryH hGeom, int nNewPointCount )
+
+{
+    VALIDATE_POINTER0( hGeom, "OGR_G_SetPointCount" );
+
+    switch( wkbFlatten(((OGRGeometry *) hGeom)->getGeometryType()) )
+    {
+      case wkbLineString:
+      {
+        OGRLineString *poLine = (OGRLineString *) hGeom;
+        poLine->setNumPoints( nNewPointCount );
+        break;
+      }
+      default:
+        CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
+        break;
     }
 }
 
@@ -207,6 +240,65 @@ double OGR_G_GetZ( OGRGeometryH hGeom, int i )
 }
 
 /************************************************************************/
+/*                          OGR_G_GetPoints()                           */
+/************************************************************************/
+
+/**
+ * \brief Returns all points of line string.
+ *
+ * This method copies all points into user arrays. The user provides the
+ * stride between 2 consecutives elements of the array.
+ *
+ * On some CPU architectures, care must be taken so that the arrays are properly aligned.
+ *
+ * @param hGeom handle to the geometry from which to get the coordinates.
+ * @param pabyX a buffer of at least (sizeof(double) * nXStride * nPointCount) bytes, may be NULL.
+ * @param nXStride the number of bytes between 2 elements of pabyX.
+ * @param pabyY a buffer of at least (sizeof(double) * nYStride * nPointCount) bytes, may be NULL.
+ * @param nYStride the number of bytes between 2 elements of pabyY.
+ * @param pabyZ a buffer of at last size (sizeof(double) * nZStride * nPointCount) bytes, may be NULL.
+ * @param nZStride the number of bytes between 2 elements of pabyZ.
+ *
+ * @return the number of points
+ *
+ * @since OGR 1.9.0
+ */
+
+int OGR_G_GetPoints( OGRGeometryH hGeom,
+                     void* pabyX, int nXStride,
+                     void* pabyY, int nYStride,
+                     void* pabyZ, int nZStride)
+{
+    VALIDATE_POINTER1( hGeom, "OGR_G_GetPoints", 0 );
+
+    switch( wkbFlatten(((OGRGeometry *) hGeom)->getGeometryType()) )
+    {
+      case wkbPoint:
+      {
+        if (pabyX) *((double*)pabyX) = ((OGRPoint *)hGeom)->getX();
+        if (pabyY) *((double*)pabyY) = ((OGRPoint *)hGeom)->getY();
+        if (pabyZ) *((double*)pabyZ) = ((OGRPoint *)hGeom)->getZ();
+        return 1;
+      }
+      break;
+
+      case wkbLineString:
+      {
+          OGRLineString* poLS = (OGRLineString *) hGeom;
+          poLS->getPoints(pabyX, nXStride, pabyY, nYStride, pabyZ, nZStride);
+          return poLS->getNumPoints();
+      }
+      break;
+
+      default:
+        CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
+        return 0;
+        break;
+    }
+}
+
+
+/************************************************************************/
 /*                           OGR_G_GetPoint()                           */
 /************************************************************************/
 
@@ -264,6 +356,73 @@ void OGR_G_GetPoint( OGRGeometryH hGeom, int i,
       }
       break;
 
+      default:
+        CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
+        break;
+    }
+}
+
+/************************************************************************/
+/*                           OGR_G_SetPoint()                           */
+/************************************************************************/
+/**
+ * \brief Assign all points in a point or a line string geometry.
+ *
+ * This method clear any existing points assigned to this geometry,
+ * and assigns a whole new set.
+ *
+ * @param hGeom handle to the geometry to set the coordinates.
+ * @param nPointsIn number of points being passed in padfX and padfY.
+ * @param padfX list of X coordinates of points being assigned.
+ * @param nXStride the number of bytes between 2 elements of pabyX.
+ * @param padfY list of Y coordinates of points being assigned.
+ * @param nYStride the number of bytes between 2 elements of pabyY.
+ * @param padfZ list of Z coordinates of points being assigned (defaults to NULL for 2D objects).
+ * @param nZStride the number of bytes between 2 elements of pabyZ.
+ */
+
+void CPL_DLL OGR_G_SetPoints( OGRGeometryH hGeom, int nPointsIn,
+                              void* pabyX, int nXStride,
+                              void* pabyY, int nYStride,
+                              void* pabyZ, int nZStride )
+
+{
+    VALIDATE_POINTER0( hGeom, "OGR_G_SetPoints" );
+
+    switch( wkbFlatten(((OGRGeometry *) hGeom)->getGeometryType()) )
+    {
+      case wkbPoint:
+      {
+        ((OGRPoint *) hGeom)->setX( pabyX ? *( (double *)pabyX ) : 0.0 );
+        ((OGRPoint *) hGeom)->setY( pabyY ? *( (double *)pabyY ) : 0.0 );
+        ((OGRPoint *) hGeom)->setZ( pabyZ ? *( (double *)pabyZ ) : 0.0 );
+        break;
+      }
+      case wkbLineString:
+      {
+        OGRLineString* poLine = (OGRLineString *) hGeom;
+
+        if( nXStride == 0 && nYStride == 0 && nZStride == 0 )
+        {
+          poLine->setPoints( nPointsIn, (double *)pabyX, (double *)pabyY, (double *)pabyZ ); 
+        }
+        else
+        {
+          double x, y, z;		  
+          x = y = z = 0;
+          poLine->setNumPoints( nPointsIn );
+
+          for (int i = 0; i < nPointsIn; ++i)
+          {
+            if( pabyX ) x = *(double*)((char*)pabyX + i * nXStride);
+            if( pabyY ) y = *(double*)((char*)pabyY + i * nYStride);
+            if( pabyZ ) z = *(double*)((char*)pabyZ + i * nZStride);
+
+            poLine->setPoint( i, x, y, z );
+          }
+        }
+        break;
+      }
       default:
         CPLError(CE_Failure, CPLE_NotSupported, "Incompatible geometry for operation");
         break;

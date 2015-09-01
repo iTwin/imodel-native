@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVEShape.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HVEShape
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Assignment operator.  It duplicates another shape object.
 //-----------------------------------------------------------------------------
@@ -129,6 +130,25 @@ inline HGF2DExtent HVEShape::GetExtent() const
     return (m_pShape->GetExtent());
     }
 
+//&&OPTIMIZATION: we need to improve the efficiency of HVEShape.
+// 1) GetExtent is computed every time it is called. Can HVEShape or HVE2DShape keep the computed extent and return a ref?
+// 2) It would be nice to have an allocateCopyInCoordSys to avoid a copy. 
+// Ex:
+    #if 0 
+        HVEShape destShape(shape);      // A copy
+        destShape.ChangeCoordSys(somethingElseCS);  
+    #endif    
+    // We would avoid a shape copy if we could do shape->AllocateCopyInCS() 
+    // Can we think of something that would not do any copy if HVEShape was already in somethingElseCS. i.e. introduce copy on write concept for HVEShape.
+// 3) We doing intersection/union, we do an extra shape copy because of HVEShape::Intersect.
+    // Ex:
+    #if 0
+        HFCPtr<HVEShape> pDestShape(new HVEShape(*GetEffectiveShape()));        // This is an extra copy that we do not need.
+        pDestShape->Intersect(*pi_pSrcRaster->GetEffectiveShape());         
+    #endif
+    // In this case, pDestShape copy is useless because the intersect won't be modiying it's internal shape but instead create a new shape.
+    // Need something like that to avoid a copy:
+    //      HFCPtr<HVEShape> pDestShape = HVEShape::Intersect(*GetEffectiveShape(), *pi_pSrcRaster->GetEffectiveShape())
 
 //-----------------------------------------------------------------------------
 // Shape intersection.
@@ -144,6 +164,24 @@ inline void HVEShape::Intersect(const HVEShape& pi_rObj)
     m_pShape = pShape;
 
     HVESHAPE_SYNCH_DEBUG_CODE
+    }
+
+//-----------------------------------------------------------------------------
+// Shape intersection.
+//-----------------------------------------------------------------------------
+inline bool HVEShape::HasIntersect(const HVEShape& pi_rObj) const
+    {
+    // INVARIANT
+    HPRECONDITION(m_pShape->GetCoordSys() == GetCoordSys());
+
+    // &&OPTIMIZATION &&AR - Optimization: We should implement HasIntersect without calculation the true intersection.
+    // Unfortunately, CalculateSpatialPositionOf is not reliable enough.
+    // HVE2DShape::SpatialPosition spatialPos = m_pShape->CalculateSpatialPositionOf(*pi_rObj.m_pShape);
+    // return (spatialPos == HVE2DShape::S_IN || spatialPos == HVE2DShape::S_ON || spatialPos == HVE2DShape::S_PARTIALY_IN);
+
+    HAutoPtr<HVE2DShape> pShape(m_pShape->IntersectShape(*pi_rObj.m_pShape));
+
+    return !pShape->IsEmpty();
     }
 
 
@@ -227,3 +265,4 @@ inline bool HVEShape::Matches(const HVEShape& pi_rObj) const
     return (m_pShape->CalculateSpatialPositionOf(*pi_rObj.m_pShape) ==
             HVE2DShape::S_ON);
     }
+END_IMAGEPP_NAMESPACE

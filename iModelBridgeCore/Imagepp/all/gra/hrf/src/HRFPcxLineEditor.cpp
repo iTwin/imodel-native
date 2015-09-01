@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPcxLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPcxLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>                //:> must be first for PreCompiledHeader Option
+#include <ImagePPInternal/hstdcpp.h>
+                //:> must be first for PreCompiledHeader Option
 #include <Imagepp/all/h/HRFPcxLineEditor.h>
 #include <Imagepp/all/h/HRFPcxFile.h>
 
@@ -73,9 +73,9 @@ HRFPcxLineEditor::~HRFPcxLineEditor()
 
  @return HSTATUS H_SUCCESS if the readint operation went right.
 ------------------------------------------------------------------------------*/
-HSTATUS HRFPcxLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                    uint32_t pi_PosBlockY,
-                                    Byte* po_pData,
+HSTATUS HRFPcxLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                    uint64_t pi_PosBlockY,
+                                    Byte*  po_pData,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     /**
@@ -120,8 +120,8 @@ HSTATUS HRFPcxLineEditor::ReadBlock(uint32_t pi_PosBlockX,
         m_FilePos           = END_OF_HEADER_OFFSET;
         pPcxFile->m_pPcxFile->SeekToPos(END_OF_HEADER_OFFSET);
 
-        uint32_t ReadSize = (uint32_t)min(pPcxFile->m_pPcxFile->GetSize() - pPcxFile->m_pPcxFile->GetCurrentPos(), (uint64_t)m_FileBufferSize);
-        if (pPcxFile->m_pPcxFile->Read((void*)m_pFileBuffer, ReadSize) != ReadSize)
+        uint32_t ReadSize = (uint32_t)MIN(pPcxFile->m_pPcxFile->GetSize() - pPcxFile->m_pPcxFile->GetCurrentPos(), (uint64_t)m_FileBufferSize);
+        if (pPcxFile->m_pPcxFile->Read(m_pFileBuffer, ReadSize) != ReadSize)
             {
             Status = H_ERROR;
             goto WRAPUP;    // H_ERROR;
@@ -210,8 +210,8 @@ HSTATUS HRFPcxLineEditor::ReadAndDecompressPcxLine(Byte* po_pConvert, HFCLockMon
                 }
 
             pPcxFile->m_pPcxFile->SeekToPos(m_FilePos+m_FileBufferIndex);
-            uint32_t ReadSize = (uint32_t)min(pPcxFile->m_pPcxFile->GetSize() - pPcxFile->m_pPcxFile->GetCurrentPos(), (uint64_t)m_FileBufferSize);
-            if (pPcxFile->m_pPcxFile->Read((void*)m_pFileBuffer, ReadSize) != ReadSize)
+            uint32_t ReadSize = (uint32_t)MIN(pPcxFile->m_pPcxFile->GetSize() - pPcxFile->m_pPcxFile->GetCurrentPos(), (uint64_t)m_FileBufferSize);
+            if (pPcxFile->m_pPcxFile->Read(m_pFileBuffer, ReadSize) != ReadSize)
                 goto WRAPUP;    // H_ERROR;
 
             //:> Unlock the sister file.
@@ -224,8 +224,8 @@ HSTATUS HRFPcxLineEditor::ReadAndDecompressPcxLine(Byte* po_pConvert, HFCLockMon
         }
     while (DataIndex < m_ConvertSize);
 
-    //:> Assert that we have decoded the exact size of a line.
-    HPOSTCONDITION (DataIndex == m_ConvertSize);
+    //:> Assert that we have decoded at least the exact size of a line.
+    HPOSTCONDITION (DataIndex >= m_ConvertSize);
 
     Status = H_SUCCESS;
 
@@ -346,9 +346,9 @@ bool HRFPcxLineEditor::ConvertDataToPcxFormat(Byte* pi_pConvert, Byte* po_pData)
 
  @return HSTATUS H_SUCCESS if the writing operation went right.
 ------------------------------------------------------------------------------*/
-HSTATUS HRFPcxLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                     uint32_t     pi_PosBlockY,
-                                     const Byte* pi_pData,
+HSTATUS HRFPcxLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                     uint64_t     pi_PosBlockY,
+                                     const Byte*  pi_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -480,8 +480,8 @@ HSTATUS HRFPcxLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
         HASSERT (!GetRasterFile()->GetAccessMode().m_HasCreateAccess);
 
         pPcxFile->m_pPcxFile->SeekToPos(END_OF_HEADER_OFFSET);
-        uint32_t ReadSize = (uint32_t)min(pPcxFile->m_pPcxFile->GetSize() - pPcxFile->m_pPcxFile->GetCurrentPos(), (uint64_t)m_FileBufferSize);
-        if (pPcxFile->m_pPcxFile->Read((void*)m_pFileBuffer, ReadSize) != ReadSize)
+        uint32_t ReadSize = (uint32_t)MIN(pPcxFile->m_pPcxFile->GetSize() - pPcxFile->m_pPcxFile->GetCurrentPos(), (uint64_t)m_FileBufferSize);
+        if (pPcxFile->m_pPcxFile->Read(m_pFileBuffer, ReadSize) != ReadSize)
             goto WRAPUP;    // H_ERROR
 
         m_CurrentLineNumber = 0;
@@ -496,7 +496,7 @@ HSTATUS HRFPcxLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
         }
 
     //:> Write the encoded scan line to the file.
-    if(pPcxFile->m_pPcxFile->Write((void*)m_pEncoded, EncodedIndex) != EncodedIndex)
+    if(pPcxFile->m_pPcxFile->Write(m_pEncoded, EncodedIndex) != EncodedIndex)
         goto WRAPUP;    // H_ERROR
 
     //:> Increment the modifications counter;
@@ -539,5 +539,5 @@ void HRFPcxLineEditor::OnSynchronizedSharingControl()
     m_FileBufferIndex   = 0;
     m_FilePos           = END_OF_HEADER_OFFSET;
     static_cast<HRFPcxFile*>(GetRasterFile().GetPtr())->m_pPcxFile->SeekToPos(END_OF_HEADER_OFFSET);
-    static_cast<HRFPcxFile*>(GetRasterFile().GetPtr())->m_pPcxFile->Read((void*)m_pFileBuffer, m_FileBufferSize);
+    static_cast<HRFPcxFile*>(GetRasterFile().GetPtr())->m_pPcxFile->Read(m_pFileBuffer, m_FileBufferSize);
     }

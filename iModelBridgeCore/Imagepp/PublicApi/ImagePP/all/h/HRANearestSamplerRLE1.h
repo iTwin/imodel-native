@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRANearestSamplerRLE1.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HRANearestSampler.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HGSMemorySurfaceDescriptor;
 class HGSMemoryRLESurfaceDescriptor;
 class HCDPacket;
@@ -19,7 +20,7 @@ class HCDPacketRLE;
 //:>-----------------------------------------------------------------------------
 class HRANearestSamplerRLE1Base : public HRANearestSampler
     {
-    HDECLARE_CLASS_ID(1764, HRANearestSampler)
+    HDECLARE_CLASS_ID(HRANearestSamplerId_RLE1Base, HRANearestSampler)
 
 public:
 
@@ -30,18 +31,17 @@ public:
                               double                                pi_DeltaY);
     virtual         ~HRANearestSamplerRLE1Base();
 
-    virtual void*   GetPixel(double            pi_PosX,
-                             double            pi_PosY) const;
+    virtual void const* GetPixel(double pi_PosX, double pi_PosY) const override;
 
     virtual void    GetPixels(const double*    pi_pPositionsX,
                               const double*    pi_pPositionsY,
                               size_t            pi_PixelCount,
-                              void*             po_pBuffer) const;
+                              void*             po_pBuffer) const override;
 
     virtual void    GetPixels(double           pi_PositionX,
                               double           pi_PositionY,
                               size_t            pi_PixelCount,
-                              void*             po_pBuffer) const;
+                              void*             po_pBuffer) const override;
 
 protected:
 
@@ -91,7 +91,7 @@ private:
 //:>-----------------------------------------------------------------------------
 class HRANearestSamplerRLE1 : public HRANearestSamplerRLE1Base
     {
-    HDECLARE_CLASS_ID(1755, HRANearestSamplerRLE1Base)
+    HDECLARE_CLASS_ID(HRANearestSamplerId_RLE1, HRANearestSamplerRLE1Base)
 
 public:
     HRANearestSamplerRLE1(HGSMemorySurfaceDescriptor const&    pi_rMemorySurface,
@@ -120,7 +120,7 @@ private:
 //:>-----------------------------------------------------------------------------
 class HRANearestSamplerRLE1Line : public HRANearestSamplerRLE1Base
     {
-    HDECLARE_CLASS_ID(1765, HRANearestSamplerRLE1Base)
+    HDECLARE_CLASS_ID(HRANearestSamplerId_RLE1Line, HRANearestSamplerRLE1Base)
 
 public:
     HRANearestSamplerRLE1Line(HGSMemoryRLESurfaceDescriptor const& pi_rMemorySurface,
@@ -141,3 +141,4 @@ private:
     HRANearestSamplerRLE1Line(const HRANearestSamplerRLE1Line& pi_rObj);
     HRANearestSamplerRLE1Line&      operator=(const HRANearestSamplerRLE1Line& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

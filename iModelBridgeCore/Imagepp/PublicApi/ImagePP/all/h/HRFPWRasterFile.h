@@ -2,17 +2,24 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPWRasterFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
 //-----------------------------------------------------------------------------
 #pragma once
 
+#if defined(_WIN32)
+#define IPP_HAVE_PROJECTWISE_SUPPORT
+#endif
+
+#if defined(IPP_HAVE_PROJECTWISE_SUPPORT) 
+
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"
 #include "HRFcTiffFile.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class IHRFPWFileHandler;
 
 //-----------------------------------------------------------------------------
@@ -36,9 +43,9 @@ public:
     friend struct HRFPWCreator;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1336, HRFcTiffFile)
+    HDECLARE_CLASS_ID(HRFFileId_PWRaster, HRFcTiffFile)
 
-    _HDLLg    HRFPWRasterFile    (const HFCPtr<HFCURL>&          pi_rpURL,
+    IMAGEPP_EXPORT    HRFPWRasterFile    (const HFCPtr<HFCURL>&          pi_rpURL,
                                   HFCAccessMode                  pi_AccessMode = HFC_READ_ONLY,
                                   uint64_t                      pi_Offset = 0);
 
@@ -46,11 +53,11 @@ public:
 
 
 
-    _HDLLg static HFCPtr<HRFRasterFile> HRFPWRasterFile::Create(const HFCPtr<HFCURL>&   pi_rpURL,
+    IMAGEPP_EXPORT static HFCPtr<HRFRasterFile> Create(const HFCPtr<HFCURL>&   pi_rpURL,
                                                                 GUID                    pi_DocumentID,
                                                                 const HFCPtr<HFCURL>&   pi_rpPWUrl);
 
-    _HDLLg static HFCPtr<HRFRasterFile> HRFPWRasterFile::Create(const HFCPtr<HRFRasterFile>&    pi_rpRasterFile,
+    IMAGEPP_EXPORT static HFCPtr<HRFRasterFile> Create(const HFCPtr<HRFRasterFile>&    pi_rpRasterFile,
                                                                 GUID                            pi_DocumentID,
                                                                 const HFCPtr<HFCURL>&           pi_rpPWUrl);
 
@@ -63,7 +70,7 @@ public:
                                                                  unsigned short           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
-    _HDLLg HCLASS_ID           GetOriginalClassID() const;
+    IMAGEPP_EXPORT HCLASS_ID           GetOriginalClassID() const;
 
     bool               ReadProjectWiseBlob(uint32_t pi_Page, Byte* po_pData, uint32_t* po_pSize) const;
     bool               WriteProjectWiseBlob(uint32_t pi_Page, const Byte* pi_pData, uint32_t pi_Size);
@@ -127,10 +134,12 @@ struct HRFPWCreator : public HRFcTiffCreator
                                              uint64_t             pi_Offset = 0) const;
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFPWCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFPWCreator)
 
 
     // Disabled methodes
     HRFPWCreator();
     };
+END_IMAGEPP_NAMESPACE
 
+#endif  // IPP_HAVE_PROJECTWISE_SUPPORT

@@ -9,11 +9,6 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-// Normally included by hstdcpp.h and HDllSupport.h
-#ifndef _HDLLNone
-#define _HDLLNone
-#endif
-
 //////////////////////////////////////////////////
 // For HMGMessageDuplex and HMGMessageReceiver
 //////////////////////////////////////////////////
@@ -25,6 +20,7 @@
 //#define HMG_NEEDS_COHERENCE_SECURITY    true              // Must be used now, Persistence is removed.
 #define HMG_NO_NEED_COHERENCE_SECURITY  false
 
+#define HMG_NO_ARG
 
 // Macro to call inside declaration of receiver class.
 
@@ -34,7 +30,7 @@
     protected: \
         HDLL virtual bool NeedsCoherenceSecurity() const;
 
-#define HMG_DECLARE_MESSAGE_MAP()   HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLNone)
+#define HMG_DECLARE_MESSAGE_MAP()   HMG_DECLARE_MESSAGE_MAP_DLL(HMG_NO_ARG)
 
 
 // Macro to call in .cpp file of a receiver or duplex class, to

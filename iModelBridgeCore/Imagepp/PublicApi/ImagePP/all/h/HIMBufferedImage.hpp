@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMBufferedImage.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HIMBufferedImage
 //-----------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /////////////////////////////
 // HIMBufferedImageTileID
 /////////////////////////////
@@ -298,24 +298,12 @@ inline HFCExclusiveKey& HIMBufferedImageTile::GetExclusiveKey()
 /////////////////////////////
 
 //-----------------------------------------------------------------------------
-// Get the buffer's raw data pointer
-//-----------------------------------------------------------------------------
-inline const void* HIMBufferedImage::GetRawDataPtr () const
-    {
-    // Impossible to get
-    return 0;
-    }
-
-
-//-----------------------------------------------------------------------------
 // Does the buffer have a homogeneous pixel type? Sure.
 //-----------------------------------------------------------------------------
 inline bool HIMBufferedImage::HasSinglePixelType() const
     {
     return true;
     }
-
-
 
 //-----------------------------------------------------------------------------
 // Get the buffered image's shape
@@ -377,24 +365,6 @@ inline double HIMBufferedImage::GetYRatio() const
 inline const HFCPtr<HRARaster>& HIMBufferedImage::GetSource() const
     {
     return m_pSource;
-    }
-
-//-----------------------------------------------------------------------------
-// Return a new copy of self
-//-----------------------------------------------------------------------------
-inline HRARaster* HIMBufferedImage::Clone (HPMObjectStore* pi_pStore,
-                                           HPMPool*        pi_pLog) const
-    {
-    return new HIMBufferedImage(*this);
-    }
-
-/** ---------------------------------------------------------------------------
-    Return a new copy of self
-    ---------------------------------------------------------------------------
-*/
-inline  HPMPersistentObject* HIMBufferedImage::Clone () const
-    {
-    return new HIMBufferedImage(*this);
     }
 
 //-----------------------------------------------------------------------------
@@ -534,3 +504,4 @@ inline void HIMBufferedImage::SetMaxSourceResolutionStretchingFactor(uint8_t pi_
         Invalidate(true);
         }
     }
+END_IMAGEPP_NAMESPACE

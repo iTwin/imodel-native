@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPMapFilters16.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,11 +11,10 @@
 // Map filters
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPMapFilters16.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 
 //-----------------------------------------------------------------------------
 //  Custom Map8  Filter
@@ -323,7 +322,7 @@ void HRPContrastFilter16::Init(short pi_Var)
             Map[X] = 0;
 
         for(X = pi_Var; X <= 65535 - pi_Var; X++)
-            Map[X] = (unsigned short)(65535 * (X - pi_Var) / (65535 - 2 * pi_Var));
+            Map[X] = (unsigned short)(65535.0 * ((X - pi_Var) / (65535 - 2.0 * pi_Var)));
 
         for(X = 65536 - pi_Var; X <= 65535; X++)
             Map[X] = 65535;
@@ -502,6 +501,7 @@ HRPHistogramScalingFilter16::HistogramScalingMode HRPHistogramScalingFilter16::G
 HRPGammaFilter16::HRPGammaFilter16()
     {
     // Do nothing. As if gamma == 1.
+    m_gamma = 1.0;
     }
 
 //-----------------------------------------------------------------------------
@@ -525,6 +525,8 @@ HRPGammaFilter16::HRPGammaFilter16(double pi_Gamma)
         for(Byte Channel = 0; Channel < 3; ++Channel)
             SetMap(Channel, Map);
         }
+
+    m_gamma = pi_Gamma;
     }
 
 //-----------------------------------------------------------------------------
@@ -534,7 +536,13 @@ HRPGammaFilter16::HRPGammaFilter16(double pi_Gamma)
 HRPGammaFilter16::HRPGammaFilter16(const HRPGammaFilter16& pi_rObj)
     :HRPMapFilter16(pi_rObj)
     {
+    m_gamma = pi_rObj.m_gamma;
     }
+
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+double HRPGammaFilter16::GetGamma() const {return m_gamma;}
 
 //-----------------------------------------------------------------------------
 //

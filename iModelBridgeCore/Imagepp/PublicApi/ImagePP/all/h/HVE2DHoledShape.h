@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DHoledShape.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -31,16 +31,18 @@
 
     -----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 class HVE2DHoledShape : public HVE2DShape
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1104)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DShapeId_Holed)
 
 public:
 
     // Primary methods
     HVE2DHoledShape();
     HVE2DHoledShape(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    HVE2DHoledShape(const HGF2DHoledShape& pi_rLighShape, const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     HVE2DHoledShape(const HVE2DSimpleShape& pi_rSimpleShape);
     HVE2DHoledShape(const HVE2DHoledShape&   pi_rObject);
     virtual            ~HVE2DHoledShape();
@@ -153,6 +155,7 @@ private:
     // List of holes
     HoleList           m_HoleList;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DHoledShape.hpp"

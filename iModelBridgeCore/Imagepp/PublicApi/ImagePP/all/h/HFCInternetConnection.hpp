@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCInternetConnection.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class : HFCInternetConnection
 //-----------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // Changes the time out value.
@@ -110,3 +110,4 @@ inline const WString& HFCInternetConnection::GetProxyPassword() const
 // HFCInternetConnectionException
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+END_IMAGEPP_NAMESPACE

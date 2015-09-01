@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFSInternetLister.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HFSInternetLister
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 // Max timeout in seconde
 static const uint32_t s_MAX_WAITTIME_LIST = 120;
 
@@ -450,3 +451,5 @@ inline bool HFSInternetLister::SupportFileSize() const
     {
     return m_UseExtendedProtocol;
     }
+
+END_IMAGEPP_NAMESPACE

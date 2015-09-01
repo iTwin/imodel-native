@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF3DTransfoModel.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF3DTransfoModel (inline methods)
@@ -117,7 +117,7 @@ void HGF3DTransfoModel::StudyReversibilityPrecisionOver(const HGF2DLiteExtent& p
                 StatSumZ += DeltaZ;
                 StatNumSamples++;
 
-                MaxError = max(MaxError, max(DeltaX, max(DeltaY, DeltaZ)));
+                MaxError = MAX(MaxError, MAX(DeltaX, MAX(DeltaY, DeltaZ)));
                 }
             }
         }

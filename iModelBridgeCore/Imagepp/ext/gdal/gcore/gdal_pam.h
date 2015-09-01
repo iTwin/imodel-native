@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_pam.h 21291 2010-12-19 20:42:06Z rouault $
+ * $Id: gdal_pam.h 26117 2013-06-29 20:22:34Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Declaration for Peristable Auxilary Metadata classes.
@@ -67,6 +67,7 @@ class GDALPamRasterBand;
                                  GCIF_BAND_DESCRIPTION) 
 
 /* GDAL PAM Flags */
+/* ERO 2011/04/13 : GPF_AUXMODE seems to be unimplemented */
 #define GPF_DIRTY		0x01  // .pam file needs to be written on close
 #define GPF_TRIED_READ_FAILED   0x02  // no need to keep trying to read .pam.
 #define GPF_DISABLED            0x04  // do not try any PAM stuff. 
@@ -108,6 +109,9 @@ class CPL_DLL GDALPamDataset : public GDALDataset
 {
     friend class GDALPamRasterBand;
 
+  private:
+    int IsPamFilenameAPotentialSiblingFile();
+
   protected:
                 GDALPamDataset(void);
 
@@ -117,10 +121,10 @@ class CPL_DLL GDALPamDataset : public GDALDataset
     virtual CPLXMLNode *SerializeToXML( const char *);
     virtual CPLErr      XMLInit( CPLXMLNode *, const char * );
     
-    virtual CPLErr TryLoadXML();
+    virtual CPLErr TryLoadXML(char **papszSiblingFiles = NULL);
     virtual CPLErr TrySaveXML();
 
-    CPLErr  TryLoadAux();
+    CPLErr  TryLoadAux(char **papszSiblingFiles = NULL);
     CPLErr  TrySaveAux();
 
     virtual const char *BuildPamFilename();
@@ -277,7 +281,7 @@ class CPL_DLL GDALPamRasterBand : public GDALRasterBand
                                          const char * pszValue,
                                          const char * pszDomain = "" );
 
-    virtual const GDALRasterAttributeTable *GetDefaultRAT();
+    virtual GDALRasterAttributeTable *GetDefaultRAT();
     virtual CPLErr SetDefaultRAT( const GDALRasterAttributeTable * );
 
     // new in GDALPamRasterBand. 

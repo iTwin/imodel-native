@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAPixelTypeReplacer.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAPixelTypeReplacer
@@ -16,9 +16,10 @@
 #include "HRAStoredRaster.h"
 #include "HRPAlphaRange.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRAPixelTypeReplacer : public HRAImageView
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1210)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRAPixelTypeReplacerId)
 
 public:
     DEFINE_T_SUPER(HRAImageView)
@@ -27,7 +28,7 @@ public:
     // Primary methods
     HRAPixelTypeReplacer();
 
-    _HDLLg                 HRAPixelTypeReplacer(const HFCPtr<HRARaster>& pi_pSource,
+    IMAGEPP_EXPORT                 HRAPixelTypeReplacer(const HFCPtr<HRARaster>& pi_pSource,
                                                 const HFCPtr<HRPPixelType>& pi_pPixelType);
 
     HRAPixelTypeReplacer(const HRAPixelTypeReplacer& pi_rObject);
@@ -38,7 +39,7 @@ public:
     // Overriden methods
 
     virtual HPMPersistentObject* Clone () const;
-    virtual HRARaster* Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
     virtual unsigned short GetRepresentativePalette(
         HRARepPalParms* pio_pRepPalParms);
@@ -60,20 +61,21 @@ public:
         HRPChannelType::ChannelRole pi_Role,
         Byte                      pi_Id) const;
 
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions);
-
-    virtual void    Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const;
-
-    virtual void    CopyFrom   (const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromOptions& pi_rOptions) override;
-    virtual void    CopyFrom   (const HFCPtr<HRARaster>& pi_pSrcRaster) override;
+    virtual void    CopyFromLegacy   (const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions) override;
+    virtual void    CopyFromLegacy   (const HFCPtr<HRARaster>& pi_pSrcRaster) override;
 
 protected:
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
+
+    virtual ImagePPStatus _CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& pi_rOptions) override;
+    virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
 
 
 private:
 
     HFCPtr<HRPPixelType>    m_pPixelType;
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLg)
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT)
     };
+END_IMAGEPP_NAMESPACE
 

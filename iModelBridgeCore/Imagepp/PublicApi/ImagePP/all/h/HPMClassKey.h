@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMClassKey.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 /**-------------------------------------------------------------------------
     This is the type used to define object IDs, numerical values that
     establish a unique identity tag for a given instance in a given store.
@@ -26,3 +27,4 @@ typedef uint64_t HPMObjectID;
 
 
 
+END_IMAGEPP_NAMESPACE

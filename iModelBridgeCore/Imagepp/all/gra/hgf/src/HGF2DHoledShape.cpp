@@ -8,8 +8,8 @@
 // Methods for class HGF2DHoledShape
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DHoledShape.h>
 #include <Imagepp/all/h/HGF2DDisplacement.h>
@@ -240,7 +240,7 @@ bool HGF2DHoledShape::AreContiguousAt(const HGF2DVector& pi_rVector,
     bool           DoAreContiguous = false;
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
     // Find if the point is on the outter boundary
     if (m_pBaseShape->IsPointOn(pi_rPoint, HGF2DVector::INCLUDE_EXTREMITIES, Tolerance))
@@ -358,7 +358,7 @@ void HGF2DHoledShape::ObtainContiguousnessPointsAt(const HGF2DVector& pi_rVector
     HPRECONDITION(AreContiguousAt(pi_rVector, pi_rPoint));
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
     // If the given point is on base shape and they are contiguous at this point ...
     if (m_pBaseShape->IsPointOn(pi_rPoint, HGF2DVector::INCLUDE_EXTREMITIES, Tolerance) &&
@@ -1920,7 +1920,7 @@ void HGF2DHoledShape::PrintState(ostream& po_rOutput) const
     HDUMP0("Object is a HGF2DHoledShape\n");
 
     po_rOutput << "The holed shape contains " << m_HoleList.size() << "holes" << endl;
-    HDUMP1("The holed shape contains %lld holes", (uint64_t)m_HoleList.size());
+    HDUMP1("The holed shape contains %" PRIu64 " holes", (uint64_t)m_HoleList.size());
 
     m_pBaseShape->PrintState(po_rOutput);
 
@@ -2001,4 +2001,42 @@ void HGF2DHoledShape::Rasterize(HGFScanLines& pio_rScanlines) const
                 }
             }
         }
+    }
+
+
+//-----------------------------------------------------------------------------
+// @bsimethod                                            Alain.Robert 2014/06
+//-----------------------------------------------------------------------------
+HFCPtr<HGF2DShape> HGF2DHoledShape::AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const
+    {
+    HFCPtr<HGF2DShape>    pResultShape;
+
+    if (pi_rModel.IsIdentity())
+        {
+        return new HGF2DHoledShape(*this);
+        }
+    else
+        {
+        // Transform the outter shape ... note that the result may be of a different nature and even be
+        // a complex shape.
+        HFCPtr<HGF2DShape>  pNewOutterShape = m_pBaseShape->AllocTransformDirect(pi_rModel);
+
+        // We then check if there are any holes
+        if (m_HoleList.size() > 0)
+            {
+            // There are some holes ... we generate a complex shape from those holes
+            HGF2DComplexShape    HoleComplexShape(m_HoleList);
+
+            // We differentiate this complex shape from new outter shape
+            pResultShape = pNewOutterShape->DifferentiateShape(HoleComplexShape);
+            }
+        else
+            {
+            pResultShape = pNewOutterShape;
+            }
+
+        pResultShape->SetStrokeTolerance(m_pStrokeTolerance);
+        }
+
+    return (pResultShape);
     }

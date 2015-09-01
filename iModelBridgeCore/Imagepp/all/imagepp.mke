@@ -1,0 +1,1457 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: all/imagepp.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+PolicyFile = $(_MakeFilePath)../mki/AssertImagePPPolicy.mki 
+
+appName = ImagePP
+
+
+%include mdl.mki
+
+%if $(TARGET_PLATFORM) == "Windows"
+    %if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
+    # PDF library dependency    
+    pdflsdkInc=$(BuildContext)VendorAPI/adobe/
+    pdflsdkLib=$(BuildContext)SubParts/Libs/
+    
+    # Oracle library dependency
+    oracleInc=$(BuildContext)VendorAPI/oracle/
+    oracleLib=$(BuildContext)SubParts/Libs/
+    
+    %endif
+%else
+#   DisableMultiCompile=1
+%endif
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine=__IMAGEPP_BUILD__
+%include cdefapnd.mki
+
+# Static libraries need to have a hard-coded file name for MUI lookup; control this via makefiles, which know this information.
+# Note that at this time, MUI files always have a DLL suffix, regardless of platform. The biggest part of this is really getting the API number.
+nameToDefine = DLL_NAME_FOR_RESOURCES=L\"ImagePP$(DLM_API_NUMBER).dll\"
+%include cdefapnd.mki
+
+
+%if $(TARGET_PLATFORM) == "Windows"
+%if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
+%if !defined(DEBUG_RUNTIME) 
+
+    # Have to include oracle dir because it has nested includes that don't use quotes.
+    dirToSearch = $(oracleInc)
+    %include cincapnd.mki
+
+    #To satisfy PDFLInitHFT.c and PDFLInitCommon.c included by all/gra/hrf/src/HRFPDFLibInterface.cpp
+    dirToSearch=$(pdflsdkInc)Headers/
+    %include cincapnd.mki
+%endif
+    
+    #to statisfy pdflsdk\Include\Headers\environ.h
+    nameToDefine=WIN_ENV
+    %include cdefapnd.mki
+    
+    #to statisfy pdf
+    nameToDefine=WIN_PLATFORM
+    %include cdefapnd.mki
+
+    #to statisfy pdf
+    nameToDefine=PRODUCT=\"HFTLibrary.h\"
+    %include cdefapnd.mki
+    
+    nameToDefine=STRICT_HFT_VERSION_CHECKING
+    %include cdefapnd.mki
+    
+    nameToDefine = DLL_NAME_FOR_OCI=L\"$(OCIName).dll\"
+    %include cdefapnd.mki
+%endif
+%endif
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+HRasterDepends = $(ippAllInc)HRARaster.h \
+                 $(ippAllInc)HRABitmapBase.h \
+                 $(ippAllInc)HRABitmap.h \
+                 $(ippAllInc)HRABitmapRLE.h \
+                 $(ippAllInc)HRAStoredRaster.h \
+                 $(ippAllInc)HRAPyramidRaster.h \
+                 $(ippAllInc)HRATiledRaster.h \
+                 $(ippAllInc)HRAStripedRaster.h
+            
+# Create PCH
+CCPchOpts = -YcImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110
+$(o)HStdcpp$(oext) $(o)$(appName).pch : $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.cpp $(SrcImagepp)PrivateApi/ImagePPInternal/HStdcpp.h
+
+# Use PCH
+#CCPchOpts = -YuImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110 -showIncludes
+CCPchOpts = -YuImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+
+#----------------------------------------------------------------------
+#   Utl
+#----------------------------------------------------------------------
+
+$(o)HFCRasterGeoCoordinateServices$(oext) : $(ippUtlDir)hfc/src/HFCRasterGeoCoordinateServices.cpp $(ippAllInc)HFCRasterGeoCoordinateServices.h ${MultiCompileDepends}
+
+$(o)HFCBinStream$(oext) : $(ippUtlDir)hfc/src/HFCBinStream.cpp $(ippAllInc)HFCBinStream.h $(ippAllInc)HFCBinStream.h ${MultiCompileDepends}
+
+$(o)HFCBufferedBinStream$(oext) : $(ippUtlDir)hfc/src/HFCBufferedBinStream.cpp $(ippAllInc)HFCBufferedBinStream.h $(ippAllInc)HFCBufferedBinStream.h ${MultiCompileDepends}
+
+$(o)HFCCallbackRegistry$(oext) : $(ippUtlDir)hfc/src/HFCCallbackRegistry.cpp $(ippAllInc)HFCCallbackRegistry.h $(ippAllInc)HFCCallbackRegistry.h ${MultiCompileDepends}
+
+$(o)HFCCallbacks$(oext) : $(ippUtlDir)hfc/src/HFCCallbacks.cpp $(ippAllInc)HFCCallbacks.h $(ippAllInc)HFCCallbacks.h ${MultiCompileDepends}
+
+$(o)HFCCapabilities$(oext) : $(ippUtlDir)hfc/src/HFCCapabilities.cpp $(ippAllInc)HFCCapabilities.h $(ippAllInc)HFCCapabilities.h ${MultiCompileDepends}
+
+$(o)HFCConnection$(oext) : $(ippUtlDir)hfc/src/HFCConnection.cpp $(ippAllInc)HFCConnection.h $(ippAllInc)HFCConnection.h ${MultiCompileDepends}
+
+$(o)HFCEncodeDecodeASCII$(oext) : $(ippUtlDir)hfc/src/HFCEncodeDecodeASCII.cpp $(ippAllInc)HFCEncodeDecodeASCII.h ${MultiCompileDepends}
+
+$(o)HFCEvent$(oext) : $(ippUtlDir)hfc/src/HFCEvent.cpp $(ippAllInc)HFCEvent.h ${MultiCompileDepends}
+
+$(o)HFCException$(oext) : $(ippUtlDir)hfc/src/HFCException.cpp $(ippAllInc)HFCException.h ${MultiCompileDepends}
+
+$(o)HFCExceptionHandler$(oext) : $(ippUtlDir)hfc/src/HFCExceptionHandler.cpp $(ippAllInc)HFCExceptionHandler.h ${MultiCompileDepends}
+
+$(o)HFCHTTPConnection$(oext) : $(ippUtlDir)hfc/src/HFCHTTPConnection.cpp $(ippAllInc)HFCHTTPConnection.h ${MultiCompileDepends}
+
+$(o)HFCIniFileBrowser$(oext) : $(ippUtlDir)hfc/src/HFCIniFileBrowser.cpp $(ippAllInc)HFCIniFileBrowser.h ${MultiCompileDepends}
+
+$(o)HFCInternetConnection$(oext) : $(ippUtlDir)hfc/src/HFCInternetConnection.cpp $(ippAllInc)HFCInternetConnection.h ${MultiCompileDepends}
+
+$(o)HFCLocalBinStream$(oext) : $(ippUtlDir)hfc/src/HFCLocalBinStream.cpp $(ippAllInc)HFCLocalBinStream.h ${MultiCompileDepends}
+
+$(o)HFCLocalConnection$(oext) : $(ippUtlDir)hfc/src/HFCLocalConnection.cpp $(ippAllInc)HFCLocalConnection.h ${MultiCompileDepends}
+
+$(o)HFCMath$(oext) : $(ippUtlDir)hfc/src/HFCMath.cpp $(ippAllInc)HFCMath.h ${MultiCompileDepends}
+
+$(o)HFCMemcpy$(oext) : $(ippUtlDir)hfc/src/HFCMemcpy.cpp $(ippAllInc)HFCMemcpy.h ${MultiCompileDepends}
+
+$(o)HFCMemoryBinStream$(oext) : $(ippUtlDir)hfc/src/HFCMemoryBinStream.cpp $(ippAllInc)HFCMemoryBinStream.h ${MultiCompileDepends}
+
+$(o)HFCMemoryLineStream$(oext) : $(ippUtlDir)hfc/src/HFCMemoryLineStream.cpp $(ippAllInc)HFCMemoryLineStream.h ${MultiCompileDepends}
+
+$(o)HFCEmbedBinStream$(oext) : $(ippUtlDir)hfc/src/HFCEmbedBinStream.cpp $(ippAllInc)HFCEmbedBinStream.h ${MultiCompileDepends}
+
+$(o)HFCMutex$(oext) : $(ippUtlDir)hfc/src/HFCMutex.cpp $(ippAllInc)HFCMutex.h ${MultiCompileDepends}
+
+$(o)HFCNode$(oext) : $(ippUtlDir)hfc/src/HFCNode.cpp $(ippAllInc)HFCNode.h ${MultiCompileDepends}
+
+$(o)HFCNodeIterator$(oext) : $(ippUtlDir)hfc/src/HFCNodeIterator.cpp $(ippAllInc)HFCNodeIterator.h ${MultiCompileDepends}
+
+$(o)HFCProgressEvaluator$(oext) : $(ippUtlDir)hfc/src/HFCProgressEvaluator.cpp $(ippAllInc)HFCProgressEvaluator.h ${MultiCompileDepends}
+
+$(o)HFCProgressIndicator$(oext) : $(ippUtlDir)hfc/src/HFCProgressIndicator.cpp $(ippAllInc)HFCProgressIndicator.h ${MultiCompileDepends}
+
+$(o)HFCSemaphore$(oext) : $(ippUtlDir)hfc/src/HFCSemaphore.cpp $(ippAllInc)HFCSemaphore.h ${MultiCompileDepends}
+
+$(o)HFCSocketConnection$(oext) : $(ippUtlDir)hfc/src/HFCSocketConnection.cpp $(ippAllInc)HFCSocketConnection.h ${MultiCompileDepends}
+
+$(o)HFCStat$(oext) : $(ippUtlDir)hfc/src/HFCStat.cpp $(ippAllInc)HFCStat.h ${MultiCompileDepends}
+
+$(o)HFCThread$(oext) : $(ippUtlDir)hfc/src/HFCThread.cpp $(ippAllInc)HFCThread.h ${MultiCompileDepends}
+
+$(o)HFCTimer$(oext) : $(ippUtlDir)hfc/src/HFCTimer.cpp $(ippAllInc)HFCTimer.h ${MultiCompileDepends}
+
+$(o)HFCURL$(oext) : $(ippUtlDir)hfc/src/HFCURL.cpp $(ippAllInc)HFCURL.h ${MultiCompileDepends}
+
+$(o)HFCURLCommonInternet$(oext) : $(ippUtlDir)hfc/src/HFCURLCommonInternet.cpp $(ippAllInc)HFCURLCommonInternet.h ${MultiCompileDepends}
+
+$(o)HFCURLECWP$(oext) : $(ippUtlDir)hfc/src/HFCURLECWP.cpp $(ippAllInc)HFCURLECWP.h ${MultiCompileDepends}
+
+$(o)HFCURLECWPS$(oext) : $(ippUtlDir)hfc/src/HFCURLECWPS.cpp $(ippAllInc)HFCURLECWPS.h ${MultiCompileDepends}
+
+$(o)HFCURLEmbedFile$(oext) : $(ippUtlDir)hfc/src/HFCURLEmbedFile.cpp $(ippAllInc)HFCURLEmbedFile.h ${MultiCompileDepends}
+
+$(o)HFCURLFile$(oext) : $(ippUtlDir)hfc/src/HFCURLFile.cpp $(ippAllInc)HFCURLFile.h ${MultiCompileDepends}
+
+$(o)HFCURLHTTP$(oext) : $(ippUtlDir)hfc/src/HFCURLHTTP.cpp $(ippAllInc)HFCURLHTTP.h ${MultiCompileDepends}
+
+$(o)HFCURLHTTPBase$(oext) : $(ippUtlDir)hfc/src/HFCURLHTTPBase.cpp $(ippAllInc)HFCURLHTTPBase.h ${MultiCompileDepends}
+
+$(o)HFCURLHTTPS$(oext) : $(ippUtlDir)hfc/src/HFCURLHTTPS.cpp $(ippAllInc)HFCURLHTTPS.h ${MultiCompileDepends}
+
+$(o)HFCURLInternetImagingSocket$(oext) : $(ippUtlDir)hfc/src/HFCURLInternetImagingSocket.cpp $(ippAllInc)HFCURLInternetImagingSocket.h ${MultiCompileDepends}
+
+$(o)HFCURLMemFile$(oext) : $(ippUtlDir)hfc/src/HFCURLMemFile.cpp $(ippAllInc)HFCURLMemFile.h ${MultiCompileDepends}
+
+$(o)HFCURLOracleFile$(oext) : $(ippUtlDir)hfc/src/HFCURLOracleFile.cpp $(ippAllInc)HFCURLOracleFile.h ${MultiCompileDepends}
+
+$(o)HFCURLSql$(oext) : $(ippUtlDir)hfc/src/HFCURLSql.cpp $(ippAllInc)HFCURLSql.h ${MultiCompileDepends}
+
+$(o)HCDCodec$(oext) : $(ippUtlDir)hcd/src/HCDCodec.cpp $(ippAllInc)HCDCodec.h ${MultiCompileDepends}
+
+$(o)HCDCodecBMPRLE4$(oext) : $(ippUtlDir)hcd/src/HCDCodecBMPRLE4.cpp $(ippAllInc)HCDCodecBMPRLE4.h ${MultiCompileDepends}
+
+$(o)HCDCodecBMPRLE8$(oext) : $(ippUtlDir)hcd/src/HCDCodecBMPRLE8.cpp $(ippAllInc)HCDCodecBMPRLE8.h ${MultiCompileDepends}
+
+$(o)HCDCodecCCITT$(oext) : $(ippUtlDir)hcd/src/HCDCodecCCITT.cpp $(ippAllInc)HCDCodecCCITT.h ${MultiCompileDepends}
+
+$(o)HCDCodecCCITTFax4$(oext) : $(ippUtlDir)hcd/src/HCDCodecCCITTFax4.cpp $(ippAllInc)HCDCodecCCITTFax4.h ${MultiCompileDepends}
+
+$(o)HCDCodecCCITTRLE$(oext) : $(ippUtlDir)hcd/src/HCDCodecCCITTRLE.cpp $(ippAllInc)HCDCodecCCITTRLE.h ${MultiCompileDepends}
+
+$(o)HCDCodecCRL8$(oext) : $(ippUtlDir)hcd/src/HCDCodecCRL8.cpp $(ippAllInc)HCDCodecCRL8.h ${MultiCompileDepends}
+
+$(o)HCDCodecDeflate$(oext) : $(ippUtlDir)hcd/src/HCDCodecDeflate.cpp $(ippAllInc)HCDCodecDeflate.h ${MultiCompileDepends}
+
+$(o)HCDCodecECW$(oext) : $(ippUtlDir)hcd/src/HCDCodecECW.cpp $(ippAllInc)HCDCodecECW.h ${MultiCompileDepends}
+
+$(o)HCDCodecErMapperSupported$(oext) : $(ippUtlDir)hcd/src/HCDCodecErMapperSupported.cpp $(ippAllInc)HCDCodecErMapperSupported.h ${MultiCompileDepends}
+
+$(o)HCDCodecFactory$(oext) : $(ippUtlDir)hcd/src/HCDCodecFactory.cpp $(ippAllInc)HCDCodecFactory.h ${MultiCompileDepends}
+
+$(o)HCDCodecFlashpix$(oext) : $(ippUtlDir)hcd/src/HCDCodecFlashpix.cpp $(ippAllInc)HCDCodecFlashpix.h ${MultiCompileDepends}
+
+$(o)HCDCodecFlashpixOLDForMSI10$(oext) : $(ippUtlDir)hcd/src/HCDCodecFlashpixOLDForMSI10.cpp $(ippAllInc)HCDCodecFlashpixOLDForMSI10.h ${MultiCompileDepends}
+
+$(o)HCDCodecFLIRLE8$(oext) : $(ippUtlDir)hcd/src/HCDCodecFLIRLE8.cpp $(ippAllInc)HCDCodecFLIRLE8.h ${MultiCompileDepends}
+
+$(o)HCDCodecFPXSingleColor$(oext) : $(ippUtlDir)hcd/src/HCDCodecFPXSingleColor.cpp $(ippAllInc)HCDCodecFPXSingleColor.h ${MultiCompileDepends}
+
+$(o)HCDCodecGIF$(oext) : $(ippUtlDir)hcd/src/HCDCodecGIF.cpp $(ippAllInc)HCDCodecGIF.h ${MultiCompileDepends}
+
+$(o)HCDCodecHMRCCITT$(oext) : $(ippUtlDir)hcd/src/HCDCodecHMRCCITT.cpp $(ippAllInc)HCDCodecHMRCCITT.h ${MultiCompileDepends}
+
+$(o)HCDCodecHMRGIF$(oext) : $(ippUtlDir)hcd/src/HCDCodecHMRGIF.cpp $(ippAllInc)HCDCodecHMRGIF.h ${MultiCompileDepends}
+
+$(o)HCDCodecHMRPackBits$(oext) : $(ippUtlDir)hcd/src/HCDCodecHMRPackBits.cpp $(ippAllInc)HCDCodecHMRPackBits.h ${MultiCompileDepends}
+
+$(o)HCDCodecHMRRLE1$(oext) : $(ippUtlDir)hcd/src/HCDCodecHMRRLE1.cpp $(ippAllInc)HCDCodecHMRRLE1.h ${MultiCompileDepends}
+
+$(o)HCDCodecIdentity$(oext) : $(ippUtlDir)hcd/src/HCDCodecIdentity.cpp $(ippAllInc)HCDCodecIdentity.h ${MultiCompileDepends}
+
+$(o)HCDCodecIJG$(oext) : $(ippUtlDir)hcd/src/HCDCodecIJG.cpp $(ippAllInc)HCDCodecIJG.h $(ippUtlDir)hcd/src/HCDCodecIJG8Bits.h ${MultiCompileDepends}
+
+$(o)HCDCodecIJG12Bits$(oext) : $(ippUtlDir)hcd/src/HCDCodecIJG12Bits.cpp $(ippUtlDir)hcd/src/HCDCodecIJG12Bits.h $(ippUtlDir)hcd/src/HCDCodecIJG8Bits.h ${MultiCompileDepends}
+
+$(o)HCDCodecIJG8Bits$(oext) : $(ippUtlDir)hcd/src/HCDCodecIJG8Bits.cpp $(ippUtlDir)hcd/src/HCDCodecIJG8Bits.h ${MultiCompileDepends}
+
+$(o)HCDCodecIJGAltaPhoto$(oext) : $(ippUtlDir)hcd/src/HCDCodecIJGAltaPhoto.cpp $(ippAllInc)HCDCodecIJGAltaPhoto.h ${MultiCompileDepends}
+
+$(o)HCDCodecImage$(oext) : $(ippUtlDir)hcd/src/HCDCodecImage.cpp $(ippAllInc)HCDCodecImage.h ${MultiCompileDepends}
+
+$(o)HCDCodecJPEG$(oext) : $(ippUtlDir)hcd/src/HCDCodecJPEG.cpp $(ippAllInc)HCDCodecJPEG.h ${MultiCompileDepends}
+
+$(o)HCDCodecJPEG2000$(oext) : $(ippUtlDir)hcd/src/HCDCodecJPEG2000.cpp $(ippAllInc)HCDCodecJPEG2000.h ${MultiCompileDepends}
+
+$(o)HCDCodecJPEGAlpha$(oext) : $(ippUtlDir)hcd/src/HCDCodecJPEGAlpha.cpp $(ippAllInc)HCDCodecJPEGAlpha.h ${MultiCompileDepends}
+
+$(o)HCDCodecLRDRLE$(oext) : $(ippUtlDir)hcd/src/HCDCodecLRDRLE.cpp $(ippAllInc)HCDCodecLRDRLE.h ${MultiCompileDepends}
+
+$(o)HCDCodecLZW$(oext) : $(ippUtlDir)hcd/src/HCDCodecLZW.cpp $(ippAllInc)HCDCodecLZW.h ${MultiCompileDepends}
+
+$(o)HCDCodecPackBits$(oext) : $(ippUtlDir)hcd/src/HCDCodecPackBits.cpp $(ippAllInc)HCDCodecPackBits.h ${MultiCompileDepends}
+
+$(o)HCDCodecPCX$(oext) : $(ippUtlDir)hcd/src/HCDCodecPCX.cpp $(ippAllInc)HCDCodecPCX.h ${MultiCompileDepends}
+
+$(o)HCDCodecRLE1$(oext) : $(ippUtlDir)hcd/src/HCDCodecRLE1.cpp $(ippAllInc)HCDCodecRLE1.h ${MultiCompileDepends}
+
+$(o)HCDCodecRLE8$(oext) : $(ippUtlDir)hcd/src/HCDCodecRLE8.cpp $(ippAllInc)HCDCodecRLE8.h ${MultiCompileDepends}
+
+$(o)HCDCodecSingleColor$(oext) : $(ippUtlDir)hcd/src/HCDCodecSingleColor.cpp $(ippAllInc)HCDCodecSingleColor.h ${MultiCompileDepends}
+
+$(o)HCDCodecTgaRLE$(oext) : $(ippUtlDir)hcd/src/HCDCodecTgaRLE.cpp $(ippAllInc)HCDCodecTgaRLE.h ${MultiCompileDepends}
+
+$(o)HCDCodecVector$(oext) : $(ippUtlDir)hcd/src/HCDCodecVector.cpp $(ippAllInc)HCDCodecVector.h ${MultiCompileDepends}
+
+$(o)HCDCodecZlib$(oext) : $(ippUtlDir)hcd/src/HCDCodecZlib.cpp $(ippAllInc)HCDCodecZlib.h ${MultiCompileDepends}
+
+$(o)HCDException$(oext) : $(ippUtlDir)hcd/src/HCDException.cpp $(ippAllInc)HCDException.h $(ippAllInc)HCDException.h ${MultiCompileDepends}
+
+$(o)HCDLZWDecoder$(oext) : $(ippUtlDir)hcd/src/HCDLZWDecoder.cpp $(ippAllInc)HCDLZWDecoder.h ${MultiCompileDepends}
+
+$(o)HCDLZWEncoder$(oext) : $(ippUtlDir)hcd/src/HCDLZWEncoder.cpp $(ippAllInc)HCDLZWEncoder.h ${MultiCompileDepends}
+
+$(o)HCDPacket$(oext) : $(ippUtlDir)hcd/src/HCDPacket.cpp $(ippAllInc)HCDPacket.h ${MultiCompileDepends}
+
+$(o)HCDPacketRLE$(oext) : $(ippUtlDir)hcd/src/HCDPacketRLE.cpp $(ippAllInc)HCDPacketRLE.h ${MultiCompileDepends}
+
+$(o)HFSFileSystem$(oext) : $(ippUtlDir)hfs/src/HFSFileSystem.cpp $(ippAllInc)HFSFileSystem.h ${MultiCompileDepends}
+
+$(o)HFSItem$(oext) : $(ippUtlDir)hfs/src/HFSItem.cpp $(ippAllInc)HFSItem.h ${MultiCompileDepends}
+
+$(o)HFSItemIterator$(oext) : $(ippUtlDir)hfs/src/HFSItemIterator.cpp $(ippAllInc)HFSItemIterator.h ${MultiCompileDepends}
+
+$(o)HFSException$(oext) : $(ippUtlDir)hfs/src/HFSException.cpp $(ippAllInc)HFSException.h ${MultiCompileDepends}
+
+$(o)HIDXSearchCriteria$(oext) : $(ippUtlDir)hidx/src/HIDXSearchCriteria.cpp $(ippAllInc)HIDXSearchCriteria.h ${MultiCompileDepends}
+
+$(o)HMGMessage$(oext) : $(ippUtlDir)hmg/src/HMGMessage.cpp $(ippAllInc)HMGMessage.h ${MultiCompileDepends}
+
+$(o)HMGMessageDuplex$(oext) : $(ippUtlDir)hmg/src/HMGMessageDuplex.cpp $(ippAllInc)HMGMessageDuplex.h ${MultiCompileDepends}
+
+$(o)HMGMessageReceiver$(oext) : $(ippUtlDir)hmg/src/HMGMessageReceiver.cpp $(ippAllInc)HMGMessageReceiver.h ${MultiCompileDepends}
+
+$(o)HMGMessageSender$(oext) : $(ippUtlDir)hmg/src/HMGMessageSender.cpp $(ippAllInc)HMGMessageSender.h ${MultiCompileDepends}
+
+$(o)HMGSink$(oext) : $(ippUtlDir)hmg/src/HMGSink.cpp $(ippAllInc)HMGSink.h ${MultiCompileDepends}
+
+$(o)HMGThread$(oext) : $(ippUtlDir)hmg/src/HMGThread.cpp $(ippAllInc)HMGThread.h ${MultiCompileDepends}
+
+$(o)HPADynamicParser$(oext) : $(ippUtlDir)hpa/src/HPADynamicParser.cpp $(ippAllInc)HPADynamicParser.h ${MultiCompileDepends}
+
+$(o)HPAGrammarObject$(oext) : $(ippUtlDir)hpa/src/HPAGrammarObject.cpp $(ippAllInc)HPAGrammarObject.h ${MultiCompileDepends}
+
+$(o)HPANode$(oext) : $(ippUtlDir)hpa/src/HPANode.cpp $(ippAllInc)HPANode.h ${MultiCompileDepends}
+
+$(o)HPAParser$(oext) : $(ippUtlDir)hpa/src/HPAParser.cpp $(ippAllInc)HPAParser.h ${MultiCompileDepends}
+
+$(o)HPAProduction$(oext) : $(ippUtlDir)hpa/src/HPAProduction.cpp $(ippAllInc)HPAProduction.h ${MultiCompileDepends}
+
+$(o)HPARule$(oext) : $(ippUtlDir)hpa/src/HPARule.cpp $(ippAllInc)HPARule.h ${MultiCompileDepends}
+
+$(o)HPASession$(oext) : $(ippUtlDir)hpa/src/HPASession.cpp $(ippAllInc)HPASession.h ${MultiCompileDepends}
+
+$(o)HPAToken$(oext) : $(ippUtlDir)hpa/src/HPAToken.cpp $(ippAllInc)HPAToken.h ${MultiCompileDepends}
+
+$(o)HPATokenizer$(oext) : $(ippUtlDir)hpa/src/HPATokenizer.cpp $(ippAllInc)HPATokenizer.h ${MultiCompileDepends}
+
+$(o)HPAException$(oext) : $(ippUtlDir)hpa/src/HPAException.cpp $(ippAllInc)HPAException.h $(ippAllInc)HPAException.h ${MultiCompileDepends}
+
+$(o)HPMAttribute$(oext) : $(ippUtlDir)hpm/src/HPMAttribute.cpp $(ippAllInc)HPMAttribute.h $(ippAllInc)HPMAttribute.hpp ${MultiCompileDepends}
+
+$(o)HPMAttributeSet$(oext) : $(ippUtlDir)hpm/src/HPMAttributeSet.cpp $(ippAllInc)HPMAttributeSet.h $(ippAllInc)HPMAttribute.h $(ippAllInc)HPMAttribute.hpp ${MultiCompileDepends}
+
+$(o)HPMObjectStore$(oext) : $(ippUtlDir)hpm/src/HPMObjectStore.cpp $(ippAllInc)HPMObjectStore.h ${MultiCompileDepends}
+
+$(o)HPMPersistentObject$(oext) : $(ippUtlDir)hpm/src/HPMPersistentObject.cpp $(ippAllInc)HPMPersistentObject.h ${MultiCompileDepends}
+
+$(o)HPMPool$(oext) : $(ippUtlDir)hpm/src/HPMPool.cpp $(ippAllInc)HPMPool.h ${MultiCompileDepends}
+
+$(o)HMDContext$(oext) : $(ippUtlDir)hmd/src/HMDContext.cpp $(ippAllInc)HMDContext.h ${MultiCompileDepends}
+
+$(o)HMDAnnotations$(oext) : $(ippUtlDir)hmd/src/HMDAnnotations.cpp $(ippAllInc)HMDAnnotations.h ${MultiCompileDepends}
+
+$(o)HMDAnnotationInfo$(oext) : $(ippUtlDir)hmd/src/HMDAnnotationInfo.cpp $(ippAllInc)HMDAnnotationInfo.h ${MultiCompileDepends}
+
+$(o)HMDAnnotationIconsPDF$(oext) : $(ippUtlDir)hmd/src/HMDAnnotationIconsPDF.cpp $(ippAllInc)HMDAnnotationIconsPDF.h ${MultiCompileDepends}
+
+$(o)HMDLayers$(oext) : $(ippUtlDir)hmd/src/HMDLayers.cpp $(ippAllInc)HMDLayers.h ${MultiCompileDepends}
+
+$(o)HMDLayersPDF$(oext) : $(ippUtlDir)hmd/src/HMDLayersPDF.cpp $(ippAllInc)HMDLayersPDF.h ${MultiCompileDepends}
+
+$(o)HMDLayersWMS$(oext) : $(ippUtlDir)hmd/src/HMDLayersWMS.cpp $(ippAllInc)HMDLayersWMS.h ${MultiCompileDepends}
+
+$(o)HMDVolatileLayers$(oext) : $(ippUtlDir)hmd/src/HMDVolatileLayers.cpp $(ippAllInc)HMDVolatileLayers.h ${MultiCompileDepends}
+
+$(o)HMDVolatileLayerInfo$(oext) : $(ippUtlDir)hmd/src/HMDVolatileLayerInfo.cpp $(ippAllInc)HMDVolatileLayerInfo.h ${MultiCompileDepends}
+
+$(o)HMDMetaData$(oext) : $(ippUtlDir)hmd/src/HMDMetaData.cpp $(ippAllInc)HMDMetaData.h ${MultiCompileDepends}
+
+$(o)HMDLayerInfo$(oext) : $(ippUtlDir)hmd/src/HMDLayerInfo.cpp $(ippAllInc)HMDLayerInfo.h ${MultiCompileDepends}
+
+$(o)HMDLayerInfoWMS$(oext) : $(ippUtlDir)hmd/src/HMDLayerInfoWMS.cpp $(ippAllInc)HMDLayerInfoWMS.h ${MultiCompileDepends}
+
+$(o)HMDLayerInfoPDF$(oext) : $(ippUtlDir)hmd/src/HMDLayerInfoPDF.cpp $(ippAllInc)HMDLayerInfoPDF.h ${MultiCompileDepends}
+
+$(o)HMDMetaDataContainer$(oext) : $(ippUtlDir)hmd/src/HMDMetaDataContainer.cpp $(ippAllInc)HMDMetaDataContainer.h ${MultiCompileDepends}
+
+$(o)HMDMetaDataContainerList$(oext) : $(ippUtlDir)hmd/src/HMDMetaDataContainerList.cpp $(ippAllInc)HMDMetaDataContainerList.h ${MultiCompileDepends}
+
+
+#----------------------------------------------------------------------
+#   Gra
+#----------------------------------------------------------------------
+
+$(o)ImageppLib$(oext) : $(ippGraDir)ImageppLib.cpp $(ippAllInc)ImageppLib.h ${MultiCompileDepends}
+
+$(o)HRPAlphaRange$(oext) : $(ippGraDir)hrp/src/HRPAlphaRange.cpp $(ippAllInc)HRPAlphaRange.h ${MultiCompileDepends}
+
+$(o)HRPChannelOrg$(oext) : $(ippGraDir)hrp/src/HRPChannelOrg.cpp $(ippAllInc)HRPChannelOrg.h ${MultiCompileDepends}
+
+$(o)HRPChannelType$(oext) : $(ippGraDir)hrp/src/HRPChannelType.cpp $(ippAllInc)HRPChannelType.h ${MultiCompileDepends}
+
+$(o)HRPComplexConverter$(oext) : $(ippGraDir)hrp/src/HRPComplexConverter.cpp $(ippAllInc)HRPComplexConverter.h ${MultiCompileDepends}
+
+$(o)HRPComplexFilter$(oext) : $(ippGraDir)hrp/src/HRPComplexFilter.cpp $(ippAllInc)HRPComplexFilter.h ${MultiCompileDepends}
+
+$(o)HRPContrastStretchFilter16$(oext) : $(ippGraDir)hrp/src/HRPContrastStretchFilter16.cpp $(ippAllInc)HRPContrastStretchFilter16.h ${MultiCompileDepends}
+
+$(o)HRPContrastStretchFilter8$(oext) : $(ippGraDir)hrp/src/HRPContrastStretchFilter8.cpp $(ippAllInc)HRPContrastStretchFilter8.h ${MultiCompileDepends}
+
+$(o)HRPConvFilter$(oext) : $(ippGraDir)hrp/src/HRPConvFilter.cpp $(ippAllInc)HRPConvFilter.h ${MultiCompileDepends}
+
+$(o)HRPConvFiltersV24PhotoYCC$(oext) : $(ippGraDir)hrp/src/HRPConvFiltersV24PhotoYCC.cpp $(ippAllInc)HRPConvFiltersV24PhotoYCC.h ${MultiCompileDepends}
+
+$(o)HRPConvFiltersV24R8G8B8$(oext) : $(ippGraDir)hrp/src/HRPConvFiltersV24R8G8B8.cpp $(ippAllInc)HRPConvFiltersV24R8G8B8.h ${MultiCompileDepends}
+
+$(o)HRPConvFilterV24PhotoYCC$(oext) : $(ippGraDir)hrp/src/HRPConvFilterV24PhotoYCC.cpp $(ippAllInc)HRPConvFilterV24PhotoYCC.h ${MultiCompileDepends}
+
+$(o)HRPConvFilterV24R8G8B8$(oext) : $(ippGraDir)hrp/src/HRPConvFilterV24R8G8B8.cpp $(ippAllInc)HRPConvFilterV24R8G8B8.h ${MultiCompileDepends}
+
+$(o)HRPCustomConvFilter$(oext) : $(ippGraDir)hrp/src/HRPCustomConvFilter.cpp $(ippAllInc)HRPCustomConvFilter.h ${MultiCompileDepends}
+
+$(o)HRPDEMFilter$(oext) : $(ippGraDir)hrp/src/HRPDEMFilter.cpp $(ippAllInc)HRPDEMFilter.h ${MultiCompileDepends}
+
+$(o)HRPDensitySlicingFilter$(oext) : $(ippGraDir)hrp/src/HRPDensitySlicingFilter.cpp $(ippAllInc)HRPDensitySlicingFilter.h ${MultiCompileDepends}
+
+$(o)HRPDensitySlicingFilter16$(oext) : $(ippGraDir)hrp/src/HRPDensitySlicingFilter16.cpp $(ippAllInc)HRPDensitySlicingFilter16.h ${MultiCompileDepends}
+
+$(o)HRPDensitySlicingFilter8$(oext) : $(ippGraDir)hrp/src/HRPDensitySlicingFilter8.cpp $(ippAllInc)HRPDensitySlicingFilter8.h ${MultiCompileDepends}
+
+$(o)HRPDitherFilter$(oext) : $(ippGraDir)hrp/src/HRPDitherFilter.cpp $(ippAllInc)HRPDitherFilter.h ${MultiCompileDepends}
+
+$(o)HRPFilter$(oext) : $(ippGraDir)hrp/src/HRPFilter.cpp $(ippAllInc)HRPFilter.h ${MultiCompileDepends}
+
+$(o)HRPFunctionFilter$(oext) : $(ippGraDir)hrp/src/HRPFunctionFilter.cpp $(ippAllInc)HRPFunctionFilter.h ${MultiCompileDepends}
+
+$(o)HRPFunctionFilters$(oext) : $(ippGraDir)hrp/src/HRPFunctionFilters.cpp $(ippAllInc)HRPFunctionFilters.h ${MultiCompileDepends}
+
+$(o)HRPHistogram$(oext) : $(ippGraDir)hrp/src/HRPHistogram.cpp $(ippAllInc)HRPHistogram.h ${MultiCompileDepends}
+
+$(o)HRPLigthnessContrastStretch$(oext) : $(ippGraDir)hrp/src/HRPLigthnessContrastStretch.cpp $(ippAllInc)HRPLigthnessContrastStretch.h ${MultiCompileDepends}
+
+$(o)HRPLigthnessContrastStretch16$(oext) : $(ippGraDir)hrp/src/HRPLigthnessContrastStretch16.cpp $(ippAllInc)HRPLigthnessContrastStretch16.h ${MultiCompileDepends}
+
+$(o)HRPLigthnessContrastStretch8$(oext) : $(ippGraDir)hrp/src/HRPLigthnessContrastStretch8.cpp $(ippAllInc)HRPLigthnessContrastStretch8.h ${MultiCompileDepends}
+
+$(o)HRPLigthnessDensitySlicingFilter$(oext) : $(ippGraDir)hrp/src/HRPLigthnessDensitySlicingFilter.cpp $(ippAllInc)HRPLigthnessDensitySlicingFilter.h ${MultiCompileDepends}
+
+$(o)HRPLigthnessDensitySlicingFilter16$(oext) : $(ippGraDir)hrp/src/HRPLigthnessDensitySlicingFilter16.cpp $(ippAllInc)HRPLigthnessDensitySlicingFilter16.h ${MultiCompileDepends}
+
+$(o)HRPLigthnessDensitySlicingFilter8$(oext) : $(ippGraDir)hrp/src/HRPLigthnessDensitySlicingFilter8.cpp $(ippAllInc)HRPLigthnessDensitySlicingFilter8.h ${MultiCompileDepends}
+
+$(o)HRPMapFilter16$(oext) : $(ippGraDir)hrp/src/HRPMapFilter16.cpp $(ippAllInc)HRPMapFilter16.h ${MultiCompileDepends}
+
+$(o)HRPMapFilter8$(oext) : $(ippGraDir)hrp/src/HRPMapFilter8.cpp $(ippAllInc)HRPMapFilter8.h ${MultiCompileDepends}
+
+$(o)HRPMapFilters16$(oext) : $(ippGraDir)hrp/src/HRPMapFilters16.cpp $(ippAllInc)HRPMapFilters16.h ${MultiCompileDepends}
+
+$(o)HRPMapFilters8$(oext) : $(ippGraDir)hrp/src/HRPMapFilters8.cpp $(ippAllInc)HRPMapFilters8.h ${MultiCompileDepends}
+
+$(o)HRPMedianFilter$(oext) : $(ippGraDir)hrp/src/HRPMedianFilter.cpp $(ippAllInc)HRPMedianFilter.h ${MultiCompileDepends}
+
+$(o)HRPMedianFilter1BitV32R8G8B8A8$(oext) : $(ippGraDir)hrp/src/HRPMedianFilter1BitV32R8G8B8A8.cpp $(ippAllInc)HRPMedianFilter1BitV32R8G8B8A8.h ${MultiCompileDepends}
+
+$(o)HRPMedianFilterV24R8G8B8$(oext) : $(ippGraDir)hrp/src/HRPMedianFilterV24R8G8B8.cpp $(ippAllInc)HRPMedianFilterV24R8G8B8.h ${MultiCompileDepends}
+
+$(o)HRPMessages$(oext) : $(ippGraDir)hrp/src/HRPMessages.cpp $(ippAllInc)HRPMessages.h ${MultiCompileDepends}
+
+$(o)HRPOrFilter$(oext) : $(ippGraDir)hrp/src/HRPOrFilter.cpp $(ippAllInc)HRPOrFilter.h ${MultiCompileDepends}
+
+$(o)HRPPaletteOctreeR8G8B8$(oext) : $(ippGraDir)hrp/src/HRPPaletteOctreeR8G8B8.cpp $(ippAllInc)HRPPaletteOctreeR8G8B8.h ${MultiCompileDepends}
+
+$(o)HRPPaletteOctreeR8G8B8A8$(oext) : $(ippGraDir)hrp/src/HRPPaletteOctreeR8G8B8A8.cpp $(ippAllInc)HRPPaletteOctreeR8G8B8A8.h ${MultiCompileDepends}
+
+$(o)HRPPixelBuffer$(oext) : $(ippGraDir)hrp/src/HRPPixelBuffer.cpp $(ippAllInc)HRPPixelBuffer.h ${MultiCompileDepends}
+
+$(o)HRPPixelConverter$(oext) : $(ippGraDir)hrp/src/HRPPixelConverter.cpp $(ippAllInc)HRPPixelConverter.h ${MultiCompileDepends}
+
+$(o)HRPPixelNeighbourhood$(oext) : $(ippGraDir)hrp/src/HRPPixelNeighbourhood.cpp $(ippAllInc)HRPPixelNeighbourhood.h ${MultiCompileDepends}
+
+$(o)HRPPixelPalette$(oext) : $(ippGraDir)hrp/src/HRPPixelPalette.cpp $(ippAllInc)HRPPixelPalette.h ${MultiCompileDepends}
+
+$(o)HRPPixelType$(oext) : $(ippGraDir)hrp/src/HRPPixelType.cpp $(ippAllInc)HRPPixelType.h ${MultiCompileDepends}
+
+$(o)HRPPixelType1BitInterface$(oext) : $(ippGraDir)hrp/src/HRPPixelType1BitInterface.cpp $(ippAllInc)HRPPixelType1BitInterface.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeBGR$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeBGR.cpp $(ippAllInc)HRPPixelTypeBGR.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeFactory$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeFactory.cpp $(ippAllInc)HRPPixelTypeFactory.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeGray$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeGray.cpp $(ippAllInc)HRPPixelTypeGray.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeI1R8G8B8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI1R8G8B8.cpp $(ippAllInc)HRPPixelTypeI1R8G8B8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeI1R8G8B8A8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI1R8G8B8A8.cpp $(ippAllInc)HRPPixelTypeI1R8G8B8A8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeI1R8G8B8A8RLE$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI1R8G8B8A8RLE.cpp $(ippAllInc)HRPPixelTypeI1R8G8B8A8RLE.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeI1R8G8B8RLE$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI1R8G8B8RLE.cpp $(ippAllInc)HRPPixelTypeI1R8G8B8RLE.h ${MultiCompileDepends}
+
+# Disabled. Need review before we enable it.
+#$(o)HRPPixelTypeI2R8G8B8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI2R8G8B8.cpp $(ippAllInc)HRPPixelTypeI2R8G8B8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeI4R8G8B8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI4R8G8B8.cpp $(ippAllInc)HRPPixelTypeI4R8G8B8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeI4R8G8B8A8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI4R8G8B8A8.cpp $(ippAllInc)HRPPixelTypeI4R8G8B8A8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeI8Gray8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI8Gray8.cpp $(ippAllInc)HRPPixelTypeI8Gray8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeI8R8G8B8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI8R8G8B8.cpp $(ippAllInc)HRPPixelTypeI8R8G8B8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeI8R8G8B8A8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI8R8G8B8A8.cpp $(ippAllInc)HRPPixelTypeI8R8G8B8A8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeI8R8G8B8Mask$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI8R8G8B8Mask.cpp $(ippAllInc)HRPPixelTypeI8R8G8B8Mask.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeI8VA8R8G8B8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeI8VA8R8G8B8.cpp $(ippAllInc)HRPPixelTypeI8VA8R8G8B8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeRGB$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeRGB.cpp $(ippAllInc)HRPPixelTypeRGB.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV16B5G5R5$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV16B5G5R5.cpp $(ippAllInc)HRPPixelTypeV16B5G5R5.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV16Gray16$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV16Gray16.cpp $(ippAllInc)HRPPixelTypeV16Gray16.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV16Int16$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV16Int16.cpp $(ippAllInc)HRPPixelTypeV16Int16.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV16PRGray8A8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV16PRGray8A8.cpp $(ippAllInc)HRPPixelTypeV16PRGray8A8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV16R5G6B5$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV16R5G6B5.cpp $(ippAllInc)HRPPixelTypeV16R5G6B5.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV1Gray1$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV1Gray1.cpp $(ippAllInc)HRPPixelTypeV1Gray1.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV1GrayWhite1$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV1GrayWhite1.cpp $(ippAllInc)HRPPixelTypeV1GrayWhite1.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV24B8G8R8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV24B8G8R8.cpp $(ippAllInc)HRPPixelTypeV24B8G8R8.h $(ippGraDir)hrp/src/v24rgb.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV24PhotoYCC$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV24PhotoYCC.cpp $(ippAllInc)HRPPixelTypeV24PhotoYCC.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV24R8G8B8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV24R8G8B8.cpp $(ippAllInc)HRPPixelTypeV24R8G8B8.h $(ippGraDir)hrp/src/v24rgb.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV32A8R8G8B8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV32A8R8G8B8.cpp $(ippAllInc)HRPPixelTypeV32A8R8G8B8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV32B8G8R8X8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV32B8G8R8X8.cpp $(ippAllInc)HRPPixelTypeV32B8G8R8X8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV32CMYK$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV32CMYK.cpp $(ippAllInc)HRPPixelTypeV32CMYK.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV32Float32$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV32Float32.cpp $(ippAllInc)HRPPixelTypeV32Float32.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV32PR8PG8PB8A8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV32PR8PG8PB8A8.cpp $(ippAllInc)HRPPixelTypeV32PR8PG8PB8A8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV32PRPhotoYCCA8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV32PRPhotoYCCA8.cpp $(ippAllInc)HRPPixelTypeV32PRPhotoYCCA8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV32R8G8B8A8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV32R8G8B8A8.cpp $(ippAllInc)HRPPixelTypeV32R8G8B8A8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV32R8G8B8X8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV32R8G8B8X8.cpp $(ippAllInc)HRPPixelTypeV32R8G8B8X8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV48R16G16B16$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV48R16G16B16.cpp $(ippAllInc)HRPPixelTypeV48R16G16B16.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV64R16G16B16A16$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV64R16G16B16A16.cpp $(ippAllInc)HRPPixelTypeV64R16G16B16A16.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV64R16G16B16X16$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV64R16G16B16X16.cpp $(ippAllInc)HRPPixelTypeV64R16G16B16X16.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV8Gray8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV8Gray8.cpp $(ippAllInc)HRPPixelTypeV8Gray8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV8GrayWhite8$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV8GrayWhite8.cpp $(ippAllInc)HRPPixelTypeV8GrayWhite8.h ${MultiCompileDepends}
+
+$(o)HRPPixelTypeV96R32G32B32$(oext) : $(ippGraDir)hrp/src/HRPPixelTypeV96R32G32B32.cpp $(ippAllInc)HRPPixelTypeV96R32G32B32.h ${MultiCompileDepends}
+
+$(o)HRPQuantizedPalette$(oext) : $(ippGraDir)hrp/src/HRPQuantizedPalette.cpp $(ippAllInc)HRPQuantizedPalette.h ${MultiCompileDepends}
+
+$(o)HRPQuantizedPaletteR8G8B8$(oext) : $(ippGraDir)hrp/src/HRPQuantizedPaletteR8G8B8.cpp $(ippAllInc)HRPQuantizedPaletteR8G8B8.h ${MultiCompileDepends}
+
+$(o)HRPQuantizedPaletteR8G8B8A8$(oext) : $(ippGraDir)hrp/src/HRPQuantizedPaletteR8G8B8A8.cpp $(ippAllInc)HRPQuantizedPaletteR8G8B8A8.h ${MultiCompileDepends}
+
+$(o)HRPTypeAdaptFilter$(oext) : $(ippGraDir)hrp/src/HRPTypeAdaptFilter.cpp $(ippAllInc)HRPTypeAdaptFilter.h ${MultiCompileDepends}
+
+$(o)HRPTypeAdaptFilters$(oext) : $(ippGraDir)hrp/src/HRPTypeAdaptFilters.cpp $(ippAllInc)HRPTypeAdaptFilters.h ${MultiCompileDepends}
+
+$(o)HRPTypedFilter$(oext) : $(ippGraDir)hrp/src/HRPTypedFilter.cpp $(ippAllInc)HRPTypedFilter.h ${MultiCompileDepends}
+
+$(o)HTIFFDirectory$(oext) : $(ippGraDir)HTiff/src/HTIFFDirectory.cpp $(ippAllInc)HTIFFDirectory.h ${MultiCompileDepends}
+
+$(o)HTIFFFile$(oext) : $(ippGraDir)HTiff/src/HTIFFFile.cpp $(ippAllInc)HTIFFFile.h ${MultiCompileDepends}
+
+$(o)HTIFFFileCoDec$(oext) : $(ippGraDir)HTiff/src/HTIFFFileCoDec.cpp $(ippAllInc)HTIFFFile.h ${MultiCompileDepends}
+
+$(o)HTIFFFilePrint$(oext) : $(ippGraDir)HTiff/src/HTIFFFilePrint.cpp $(ippAllInc)HTIFFFile.h ${MultiCompileDepends}
+
+$(o)HTIFFGeoKey$(oext) : $(ippGraDir)HTiff/src/HTIFFGeoKey.cpp $(ippAllInc)HTIFFGeoKey.h ${MultiCompileDepends}
+
+$(o)HTIFFTagDefinition$(oext) : $(ippGraDir)HTiff/src/HTIFFTagDefinition.cpp $(ippAllInc)HTIFFTagDefinition.h ${MultiCompileDepends}
+
+$(o)HTIFFTagEntry$(oext) : $(ippGraDir)HTiff/src/HTIFFTagEntry.cpp $(ippAllInc)HTIFFTagEntry.h ${MultiCompileDepends}
+
+$(o)HTIFFUtils$(oext) : $(ippGraDir)HTiff/src/HTIFFUtils.cpp $(ippAllInc)HTIFFUtils.h ${MultiCompileDepends}
+
+$(o)HTagFile$(oext) : $(ippGraDir)HTiff/src/HTagFile.cpp $(ippAllInc)HTagFile.h ${MultiCompileDepends}
+
+$(o)HTagDefinition$(oext) : $(ippGraDir)HTiff/src/HTagDefinition.cpp $(ippAllInc)HTagDefinition.h ${MultiCompileDepends}
+
+$(o)HTagIdIterator$(oext) : $(ippGraDir)HTiff/src/HTagIdIterator.cpp $(ippAllInc)HTagIdIterator.h ${MultiCompileDepends}
+
+$(o)HUTClassIDDescriptor$(oext) : $(ippGraDir)hut/src/HUTClassIDDescriptor.cpp $(ippAllInc)HUTClassIDDescriptor.h ${MultiCompileDepends}
+
+$(o)HUTDEMRasterXYZPointsExtractor$(oext) : $(ippGraDir)hut/src/HUTDEMRasterXYZPointsExtractor.cpp $(ippAllInc)HUTDEMRasterXYZPointsExtractor.h ${MultiCompileDepends}
+
+$(o)HUTDEMRasterXYZPointsIterator$(oext) : $(ippGraDir)hut/src/HUTDEMRasterXYZPointsIterator.cpp $(ippAllInc)HUTDEMRasterXYZPointsIterator.h ${MultiCompileDepends}
+
+$(o)HUTExportProgressIndicator$(oext) : $(ippGraDir)hut/src/HUTExportProgressIndicator.cpp $(ippAllInc)HUTExportProgressIndicator.h ${MultiCompileDepends}
+
+$(o)HUTExportToFile$(oext) : $(ippGraDir)hut/src/HUTExportToFile.cpp $(ippAllInc)HUTExportToFile.h ${MultiCompileDepends}
+
+$(o)HUTImportFromFileExportToFile$(oext) : $(ippGraDir)hut/src/HUTImportFromFileExportToFile.cpp $(ippAllInc)HUTImportFromFileExportToFile.h ${MultiCompileDepends}
+
+$(o)HUTImportFromRasterExportToFile$(oext) : $(ippGraDir)hut/src/HUTImportFromRasterExportToFile.cpp $(ippAllInc)HUTImportFromRasterExportToFile.h ${MultiCompileDepends}
+
+$(o)HPSInternalNodes$(oext) : $(ippGraDir)hps/src/HPSInternalNodes.cpp $(ippGraDir)hps/src/HPSInternalNodes.h $(ippAllInc)HPSValueNode.h ${MultiCompileDepends}
+
+$(o)HPSNode$(oext) : $(ippGraDir)hps/src/HPSNode.cpp $(ippAllInc)HPSNode.h $(ippGraDir)hps/src/HPSInternalNodes.h ${MultiCompileDepends}
+
+$(o)HPSObjectStore$(oext) : $(ippGraDir)hps/src/HPSObjectStore.cpp $(ippAllInc)HPSObjectStore.h ${MultiCompileDepends}
+
+$(o)HPSParser$(oext) : $(ippGraDir)hps/src/HPSParser.cpp $(ippAllInc)HPSParser.h $(ippGraDir)hps/src/HPSInternalNodes.h ${MultiCompileDepends}
+
+$(o)HPSParserScope$(oext) : $(ippGraDir)hps/src/HPSParserScope.cpp $(ippGraDir)hps/src/HPSParserScope.h $(ippGraDir)hps/src/HPSInternalNodes.h ${MultiCompileDepends}
+
+$(o)HPSPssFile$(oext) : $(ippGraDir)hps/src/HPSPssFile.cpp $(ippAllInc)HPSPssFile.h ${MultiCompileDepends}
+
+$(o)HPSPssFileCreator$(oext) : $(ippGraDir)hps/src/HPSPssFileCreator.cpp $(ippAllInc)HPSPssFileCreator.h ${MultiCompileDepends}
+
+$(o)HPSSession$(oext) : $(ippGraDir)hps/src/HPSSession.cpp $(ippGraDir)hps/src/HPSSession.h $(ippGraDir)hps/src/HPSSession.hpp ${MultiCompileDepends}
+
+$(o)HPSTokenizer$(oext) : $(ippGraDir)hps/src/HPSTokenizer.cpp $(ippAllInc)HPSTokenizer.h $(ippAllInc)HPSValueNode.h ${MultiCompileDepends}
+
+$(o)HPSValueNode$(oext) : $(ippGraDir)hps/src/HPSValueNode.cpp $(ippAllInc)HPSValueNode.h ${MultiCompileDepends}
+
+$(o)HPSWorldCluster$(oext) : $(ippGraDir)hps/src/HPSWorldCluster.cpp $(ippAllInc)HPSWorldCluster.h ${MultiCompileDepends}
+
+$(o)HPSException$(oext) : $(ippGraDir)hps/src/HPSException.cpp $(ippAllInc)HPSException.h $(ippAllInc)HPSException.h ${MultiCompileDepends}
+
+$(o)HGF2DAffine$(oext) : $(ippGraDir)hgf/src/HGF2DAffine.cpp $(ippAllInc)HGF2DAffine.h ${MultiCompileDepends}
+
+$(o)HGF2DBoundaryModel$(oext) : $(ippGraDir)hgf/src/HGF2DBoundaryModel.cpp $(ippAllInc)HGF2DBoundaryModel.h ${MultiCompileDepends}
+
+$(o)HGF2DBoundaryModelBooster$(oext) : $(ippGraDir)hgf/src/HGF2DBoundaryModelBooster.cpp $(ippAllInc)HGF2DBoundaryModelBooster.h ${MultiCompileDepends}
+
+$(o)HGF2DComplexTransfoModel$(oext) : $(ippGraDir)hgf/src/HGF2DComplexTransfoModel.cpp $(ippAllInc)HGF2DComplexTransfoModel.h ${MultiCompileDepends}
+
+$(o)HGF2DCoordSys$(oext) : $(ippGraDir)hgf/src/HGF2DCoordSys.cpp $(ippAllInc)HGF2DCoordSys.h ${MultiCompileDepends}
+
+$(o)HGF2DDCTransfoModel$(oext) : $(ippGraDir)hgf/src/HGF2DDCTransfoModel.cpp $(ippAllInc)HGF2DDCTransfoModel.h ${MultiCompileDepends}
+
+$(o)HGFAngle$(oext) : $(ippGraDir)hgf/src/HGFAngle.cpp $(ippAllInc)HGFAngle.h ${MultiCompileDepends}
+
+$(o)HGF2DDisplacement$(oext) : $(ippGraDir)hgf/src/HGF2DDisplacement.cpp $(ippAllInc)HGF2DDisplacement.h ${MultiCompileDepends}
+
+$(o)HGF2DExtent$(oext) : $(ippGraDir)hgf/src/HGF2DExtent.cpp $(ippAllInc)HGF2DExtent.h ${MultiCompileDepends}
+
+$(o)HGF2DGridModel$(oext) : $(ippGraDir)hgf/src/HGF2DGridModel.cpp $(ippAllInc)HGF2DGridModel.h ${MultiCompileDepends}
+
+$(o)HGF2DGridModelBooster$(oext) : $(ippGraDir)hgf/src/HGF2DGridModelBooster.cpp $(ippAllInc)HGF2DGridModelBooster.h ${MultiCompileDepends}
+
+$(o)HGF2DHelmert$(oext) : $(ippGraDir)hgf/src/HGF2DHelmert.cpp $(ippAllInc)HGF2DHelmert.h ${MultiCompileDepends}
+
+$(o)HGF2DIdentity$(oext) : $(ippGraDir)hgf/src/HGF2DIdentity.cpp $(ippAllInc)HGF2DIdentity.h ${MultiCompileDepends}
+
+$(o)HGF2DLine$(oext) : $(ippGraDir)hgf/src/HGF2DLine.cpp $(ippAllInc)HGF2DLine.h ${MultiCompileDepends}
+
+$(o)HGF2DLiteLine$(oext) : $(ippGraDir)hgf/src/HGF2DLiteLine.cpp $(ippAllInc)HGF2DLiteLine.h ${MultiCompileDepends}
+
+$(o)HGF2DLinearModelAdapter$(oext) : $(ippGraDir)hgf/src/HGF2DLinearModelAdapter.cpp $(ippAllInc)HGF2DLinearModelAdapter.h ${MultiCompileDepends}
+
+$(o)HGF2DLiteExtent$(oext) : $(ippGraDir)hgf/src/HGF2DLiteExtent.cpp $(ippAllInc)HGF2DLiteExtent.h ${MultiCompileDepends}
+
+$(o)HGF2DLiteQuadrilateral$(oext) : $(ippGraDir)hgf/src/HGF2DLiteQuadrilateral.cpp $(ippAllInc)HGF2DLiteQuadrilateral.h ${MultiCompileDepends}
+
+$(o)HGF2DLiteSegment$(oext) : $(ippGraDir)hgf/src/HGF2DLiteSegment.cpp $(ippAllInc)HGF2DLiteSegment.h ${MultiCompileDepends}
+
+$(o)HGF2DLocalProjectiveGrid$(oext) : $(ippGraDir)hgf/src/HGF2DLocalProjectiveGrid.cpp $(ippAllInc)HGF2DLocalProjectiveGrid.h ${MultiCompileDepends}
+
+$(o)HGF2DLocation$(oext) : $(ippGraDir)hgf/src/HGF2DLocation.cpp $(ippAllInc)HGF2DLocation.h ${MultiCompileDepends}
+
+$(o)HGF2DPieceWiseModel$(oext) : $(ippGraDir)hgf/src/HGF2DPieceWiseModel.cpp $(ippAllInc)HGF2DPieceWiseModel.h ${MultiCompileDepends}
+
+$(o)HGF2DPosition$(oext) : $(ippGraDir)hgf/src/HGF2DPosition.cpp $(ippAllInc)HGF2DPosition.h ${MultiCompileDepends}
+
+$(o)HGF2DProjective$(oext) : $(ippGraDir)hgf/src/HGF2DProjective.cpp $(ippAllInc)HGF2DProjective.h ${MultiCompileDepends}
+
+$(o)HGF2DProjectiveGrid$(oext) : $(ippGraDir)hgf/src/HGF2DProjectiveGrid.cpp $(ippAllInc)HGF2DProjectiveGrid.h ${MultiCompileDepends}
+
+$(o)HGF2DSimilitude$(oext) : $(ippGraDir)hgf/src/HGF2DSimilitude.cpp $(ippAllInc)HGF2DSimilitude.h ${MultiCompileDepends}
+
+$(o)HGF2DStretch$(oext) : $(ippGraDir)hgf/src/HGF2DStretch.cpp $(ippAllInc)HGF2DStretch.h ${MultiCompileDepends}
+
+$(o)HGF2DTransfoModel$(oext) : $(ippGraDir)hgf/src/HGF2DTransfoModel.cpp $(ippAllInc)HGF2DTransfoModel.h ${MultiCompileDepends}
+
+$(o)HGF2DTransfoModelAdapter$(oext) : $(ippGraDir)hgf/src/HGF2DTransfoModelAdapter.cpp $(ippAllInc)HGF2DTransfoModelAdapter.h ${MultiCompileDepends}
+
+$(o)HGF2DTranslation$(oext) : $(ippGraDir)hgf/src/HGF2DTranslation.cpp $(ippAllInc)HGF2DTranslation.h ${MultiCompileDepends}
+
+$(o)HGF2DTriangle$(oext) : $(ippGraDir)hgf/src/HGF2DTriangle.cpp $(ippAllInc)HGF2DTriangle.h ${MultiCompileDepends}
+
+$(o)HGF2DWorld$(oext) : $(ippGraDir)hgf/src/HGF2DWorld.cpp $(ippAllInc)HGF2DWorld.h ${MultiCompileDepends}
+
+$(o)HGF2DWorldCluster$(oext) : $(ippGraDir)hgf/src/HGF2DWorldCluster.cpp $(ippAllInc)HGF2DWorldCluster.h ${MultiCompileDepends}
+
+$(o)HGFBasicColorSpace$(oext) : $(ippGraDir)hgf/src/HGFBasicColorSpace.cpp $(ippAllInc)HGFBasicColorSpace.h ${MultiCompileDepends}
+
+$(o)HGFBearing$(oext) : $(ippGraDir)hgf/src/HGFBearing.cpp $(ippAllInc)HGFBearing.h ${MultiCompileDepends}
+
+$(o)HGFCMYKColorSpace$(oext) : $(ippGraDir)hgf/src/HGFCMYKColorSpace.cpp $(ippAllInc)HGFCMYKColorSpace.h ${MultiCompileDepends}
+
+$(o)HGFColorSet$(oext) : $(ippGraDir)hgf/src/HGFColorSet.cpp $(ippAllInc)HGFColorSet.h ${MultiCompileDepends}
+
+$(o)HGFCoordSysContainer$(oext) : $(ippGraDir)hgf/src/HGFCoordSysContainer.cpp $(ippAllInc)HGFCoordSysContainer.h ${MultiCompileDepends}
+
+$(o)HGFException$(oext) : $(ippGraDir)hgf/src/HGFException.cpp $(ippAllInc)HGFException.h ${MultiCompileDepends}
+
+$(o)HGFGraphicObject$(oext) : $(ippGraDir)hgf/src/HGFGraphicObject.cpp $(ippAllInc)HGFGraphicObject.h ${MultiCompileDepends}
+
+$(o)HGFHMRStdWorldCluster$(oext) : $(ippGraDir)hgf/src/HGFHMRStdWorldCluster.cpp $(ippAllInc)HGFHMRStdWorldCluster.h ${MultiCompileDepends}
+
+$(o)HGFLabColorSpace$(oext) : $(ippGraDir)hgf/src/HGFLabColorSpace.cpp $(ippAllInc)HGFLabColorSpace.h ${MultiCompileDepends}
+
+$(o)HGFLightnessColorSpace$(oext) : $(ippGraDir)hgf/src/HGFLightnessColorSpace.cpp $(ippAllInc)HGFLightnessColorSpace.h ${MultiCompileDepends}
+
+$(o)HGFLuvColorSpace$(oext) : $(ippGraDir)hgf/src/HGFLuvColorSpace.cpp $(ippAllInc)HGFLuvColorSpace.h ${MultiCompileDepends}
+
+$(o)HGFLUVCube$(oext) : $(ippGraDir)hgf/src/HGFLUVCube.cpp $(ippAllInc)HGFLUVCube.h ${MultiCompileDepends}
+
+$(o)HGFMappedSurface$(oext) : $(ippGraDir)hgf/src/HGFMappedSurface.cpp $(ippAllInc)HGFMappedSurface.h ${MultiCompileDepends}
+
+$(o)HGFMessages$(oext) : $(ippGraDir)hgf/src/HGFMessages.cpp $(ippAllInc)HGFMessages.h ${MultiCompileDepends}
+
+$(o)HGFRaster$(oext) : $(ippGraDir)hgf/src/HGFRaster.cpp $(ippAllInc)HGFRaster.h ${MultiCompileDepends}
+
+$(o)HGFResolutionDescriptor$(oext) : $(ippGraDir)hgf/src/HGFResolutionDescriptor.cpp $(ippAllInc)HGFResolutionDescriptor.h ${MultiCompileDepends}
+
+$(o)HGFRGBCube$(oext) : $(ippGraDir)hgf/src/HGFRGBCube.cpp $(ippAllInc)HGFRGBCube.h ${MultiCompileDepends}
+
+$(o)HGFRGBSet$(oext) : $(ippGraDir)hgf/src/HGFRGBSet.cpp $(ippAllInc)HGFRGBSet.h ${MultiCompileDepends}
+
+$(o)HGFScanLineOrientation$(oext) : $(ippGraDir)hgf/src/HGFScanLineOrientation.cpp $(ippAllInc)HGFScanLineOrientation.h ${MultiCompileDepends}
+
+$(o)HGFScanlines$(oext) : $(ippGraDir)hgf/src/HGFScanlines.cpp $(ippAllInc)HGFScanlines.h ${MultiCompileDepends}
+
+$(o)HGFTileIDDescriptor$(oext) : $(ippGraDir)hgf/src/HGFTileIDDescriptor.cpp $(ippAllInc)HGFTileIDDescriptor.h ${MultiCompileDepends}
+
+$(o)HGFTolerance$(oext) : $(ippGraDir)hgf/src/HGFTolerance.cpp $(ippAllInc)HGFTolerance.h ${MultiCompileDepends}
+
+$(o)HGF2DBasicLinear$(oext) : $(ippGraDir)hgf/src/HGF2DBasicLinear.cpp $(ippAllInc)HGF2DBasicLinear.h ${MultiCompileDepends}
+
+$(o)HGF2DComplexShape$(oext) : $(ippGraDir)hgf/src/HGF2DComplexShape.cpp $(ippAllInc)HGF2DComplexShape.h ${MultiCompileDepends}
+
+$(o)HGF2DHoledShape$(oext) : $(ippGraDir)hgf/src/HGF2DHoledShape.cpp $(ippAllInc)HGF2DHoledShape.h ${MultiCompileDepends}
+
+$(o)HGF2DLinear$(oext) : $(ippGraDir)hgf/src/HGF2DLinear.cpp $(ippAllInc)HGF2DLinear.h ${MultiCompileDepends}
+
+$(o)HGF2DPolygonOfSegments$(oext) : $(ippGraDir)hgf/src/HGF2DPolygonOfSegments.cpp $(ippAllInc)HGF2DPolygonOfSegments.h ${MultiCompileDepends}
+
+$(o)HGF2DPolySegment$(oext) : $(ippGraDir)hgf/src/HGF2DPolySegment.cpp $(ippAllInc)HGF2DPolySegment.h ${MultiCompileDepends}
+
+$(o)HGF2DRectangle$(oext) : $(ippGraDir)hgf/src/HGF2DRectangle.cpp $(ippAllInc)HGF2DRectangle.h ${MultiCompileDepends}
+
+$(o)HGF2DSegment$(oext) : $(ippGraDir)hgf/src/HGF2DSegment.cpp $(ippAllInc)HGF2DSegment.h ${MultiCompileDepends}
+
+$(o)HGF2DShape$(oext) : $(ippGraDir)hgf/src/HGF2DShape.cpp $(ippAllInc)HGF2DShape.h ${MultiCompileDepends}
+
+$(o)HGFLiteTolerance$(oext) : $(ippGraDir)hgf/src/HGFLiteTolerance.cpp $(ippAllInc)HGFLiteTolerance.h ${MultiCompileDepends}
+
+$(o)HGF2DSimpleShape$(oext) : $(ippGraDir)hgf/src/HGF2DSimpleShape.cpp $(ippAllInc)HGF2DSimpleShape.h ${MultiCompileDepends}
+
+$(o)HGF2DUniverse$(oext) : $(ippGraDir)hgf/src/HGF2DUniverse.cpp $(ippAllInc)HGF2DUniverse.h ${MultiCompileDepends}
+
+$(o)HGF2DVector$(oext) : $(ippGraDir)hgf/src/HGF2DVector.cpp $(ippAllInc)HGF2DVector.h ${MultiCompileDepends}
+
+$(o)HGF2DVoidShape$(oext) : $(ippGraDir)hgf/src/HGF2DVoidShape.cpp $(ippAllInc)HGF2DVoidShape.h ${MultiCompileDepends}
+
+$(o)HGFPolynomialModelAdapter$(oext) : $(ippGraDir)hgf/src/HGFPolynomialModelAdapter.cpp $(ippAllInc)HGFPolynomialModelAdapter.h ${MultiCompileDepends}
+
+$(o)HVE2DBasicLinear$(oext) : $(ippGraDir)hve/src/HVE2DBasicLinear.cpp $(ippAllInc)HVE2DBasicLinear.h ${MultiCompileDepends}
+
+$(o)HVE2DComplexLinear$(oext) : $(ippGraDir)hve/src/HVE2DComplexLinear.cpp $(ippAllInc)HVE2DComplexLinear.h ${MultiCompileDepends}
+
+$(o)HVE2DComplexShape$(oext) : $(ippGraDir)hve/src/HVE2DComplexShape.cpp $(ippAllInc)HVE2DComplexShape.h ${MultiCompileDepends}
+
+$(o)HVE2DDisjointedComplexLinear$(oext) : $(ippGraDir)hve/src/HVE2DDisjointedComplexLinear.cpp $(ippAllInc)HVE2DDisjointedComplexLinear.h ${MultiCompileDepends}
+
+$(o)HVE2DEllipse$(oext) : $(ippGraDir)hve/src/HVE2DEllipse.cpp $(ippAllInc)HVE2DEllipse.h ${MultiCompileDepends}
+
+$(o)HVE2DHoledShape$(oext) : $(ippGraDir)hve/src/HVE2DHoledShape.cpp $(ippAllInc)HVE2DHoledShape.h ${MultiCompileDepends}
+
+$(o)HVE2DLinear$(oext) : $(ippGraDir)hve/src/HVE2DLinear.cpp $(ippAllInc)HVE2DLinear.h ${MultiCompileDepends}
+
+$(o)HVE2DPolygon$(oext) : $(ippGraDir)hve/src/HVE2DPolygon.cpp $(ippAllInc)HVE2DPolygon.h ${MultiCompileDepends}
+
+$(o)HVE2DPolygonOfSegments$(oext) : $(ippGraDir)hve/src/HVE2DPolygonOfSegments.cpp $(ippAllInc)HVE2DPolygonOfSegments.h ${MultiCompileDepends}
+
+$(o)HVE2DPolySegment$(oext) : $(ippGraDir)hve/src/HVE2DPolySegment.cpp $(ippAllInc)HVE2DPolySegment.h ${MultiCompileDepends}
+
+$(o)HVE2DRectangle$(oext) : $(ippGraDir)hve/src/HVE2DRectangle.cpp $(ippAllInc)HVE2DRectangle.h ${MultiCompileDepends}
+
+$(o)HVE2DSegment$(oext) : $(ippGraDir)hve/src/HVE2DSegment.cpp $(ippAllInc)HVE2DSegment.h ${MultiCompileDepends}
+
+$(o)HVE2DShape$(oext) : $(ippGraDir)hve/src/HVE2DShape.cpp $(ippAllInc)HVE2DShape.h ${MultiCompileDepends}
+
+$(o)HVE2DSimpleShape$(oext) : $(ippGraDir)hve/src/HVE2DSimpleShape.cpp $(ippAllInc)HVE2DSimpleShape.h ${MultiCompileDepends}
+
+$(o)HVE2DUniverse$(oext) : $(ippGraDir)hve/src/HVE2DUniverse.cpp $(ippAllInc)HVE2DUniverse.h ${MultiCompileDepends}
+
+$(o)HVE2DVector$(oext) : $(ippGraDir)hve/src/HVE2DVector.cpp $(ippAllInc)HVE2DVector.h ${MultiCompileDepends}
+
+$(o)HVE2DVectorGroup$(oext) : $(ippGraDir)hve/src/HVE2DVectorGroup.cpp $(ippAllInc)HVE2DVectorGroup.h ${MultiCompileDepends}
+
+$(o)HVE2DVoidShape$(oext) : $(ippGraDir)hve/src/HVE2DVoidShape.cpp $(ippAllInc)HVE2DVoidShape.h ${MultiCompileDepends}
+
+$(o)HVE3DPolyLine$(oext) : $(ippGraDir)hve/src/HVE3DPolyLine.cpp $(ippAllInc)HVE3DPolyLine.h ${MultiCompileDepends}
+
+$(o)HVEShape$(oext) : $(ippGraDir)hve/src/HVEShape.cpp $(ippAllInc)HVEShape.h ${MultiCompileDepends}
+
+$(o)HGSMemoryBaseSurfaceDescriptor$(oext) : $(ippGraDir)hgs/src/HGSMemoryBaseSurfaceDescriptor.cpp $(ippAllInc)HGSMemoryBaseSurfaceDescriptor.h ${MultiCompileDepends}
+
+$(o)HGSMemoryRLESurfaceDescriptor$(oext) : $(ippGraDir)hgs/src/HGSMemoryRLESurfaceDescriptor.cpp $(ippAllInc)HGSMemoryRLESurfaceDescriptor.h ${MultiCompileDepends}
+
+$(o)HGSMemorySurfaceDescriptor$(oext) : $(ippGraDir)hgs/src/HGSMemorySurfaceDescriptor.cpp $(ippAllInc)HGSMemorySurfaceDescriptor.h ${MultiCompileDepends}
+
+$(o)HGSRegion$(oext) : $(ippGraDir)hgs/src/HGSRegion.cpp $(ippAllInc)HGSRegion.h ${MultiCompileDepends}
+
+$(o)HGSSurfaceDescriptor$(oext) : $(ippGraDir)hgs/src/HGSSurfaceDescriptor.cpp $(ippAllInc)HGSSurfaceDescriptor.h ${MultiCompileDepends}
+
+$(o)HCPGeoTiffKeys$(oext) : $(ippGraDir)hcp/src/HCPGeoTiffKeys.cpp $(ippAllInc)HCPGeoTiffKeys.h ${MultiCompileDepends}
+
+$(o)HCPGCoordModel$(oext) : $(ippGraDir)hcp/src/HCPGCoordModel.cpp $(ippAllInc)HCPGCoordModel.h ${MultiCompileDepends}
+
+$(o)HCPGCoordContiguousModelAdapter$(oext) : $(ippGraDir)hcp/src/HCPGCoordContiguousModelAdapter.cpp $(ippAllInc)HCPGCoordContiguousModelAdapter.h ${MultiCompileDepends}
+
+$(o)HCPGCoordLatLongModel$(oext) : $(ippGraDir)hcp/src/HCPGCoordLatLongModel.cpp $(ippAllInc)HCPGCoordLatLongModel.h ${MultiCompileDepends}
+
+$(o)HCPGCoordUtility$(oext) : $(ippGraDir)hcp/src/HCPGCoordUtility.cpp $(ippAllInc)HCPGCoordUtility.h ${MultiCompileDepends}
+
+$(o)HCPWellKnownText$(oext) : $(ippGraDir)hcp/src/HCPWellKnownText.cpp $(ippAllInc)HCPWellKnownText.h ${MultiCompileDepends}
+
+$(o)DownSampling$(oext) : $(ippGraDir)hra/src/DownSampling.cpp $(ippGraPrivateAPISrc)DownSampling.h ${MultiCompileDepends}
+
+$(o)ImageCommon$(oext) : $(ippGraDir)hra/src/ImageCommon.cpp $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)ImageAllocator$(oext) : $(ippGraDir)hra/src/ImageAllocator.cpp $(ippGraPrivateAPISrc)ImageAllocator.h ${MultiCompileDepends}
+
+$(o)HRAAverageSamplerN8$(oext) : $(ippGraDir)hra/src/HRAAverageSamplerN8.cpp $(ippAllInc)HRAAverageSamplerN8.h ${MultiCompileDepends}
+
+$(o)HRABicubicSamplerN8$(oext) : $(ippGraDir)hra/src/HRABicubicSamplerN8.cpp $(ippAllInc)HRABicubicSamplerN8.h ${MultiCompileDepends}
+
+$(o)HRABilinearSamplerN8$(oext) : $(ippGraDir)hra/src/HRABilinearSamplerN8.cpp $(ippAllInc)HRABilinearSamplerN8.h ${MultiCompileDepends}
+
+$(o)HRABitmap$(oext) : $(ippGraDir)hra/src/HRABitmap.cpp $(ippAllInc)HRABitmap.h $(ippAllInc)HRABitmapBase.h $(ippGraPrivateAPISrc)ImageCommon.h $(HRasterDepends) ${MultiCompileDepends}
+
+$(o)HRABitmapBase$(oext) : $(ippGraDir)hra/src/HRABitmapBase.cpp $(ippAllInc)HRABitmapBase.h $(HRasterDepends) ${MultiCompileDepends}
+
+$(o)HRABitmapEditor$(oext) : $(ippGraDir)hra/src/HRABitmapEditor.cpp $(ippAllInc)HRABitmapEditor.h ${MultiCompileDepends}
+
+$(o)HRABitmapIterator$(oext) : $(ippGraDir)hra/src/HRABitmapIterator.cpp $(ippAllInc)HRABitmapIterator.h ${MultiCompileDepends}
+
+$(o)HRABitmapRLE$(oext) : $(ippGraDir)hra/src/HRABitmapRLE.cpp $(ippAllInc)HRABitmapRLE.h $(ippAllInc)HRABitmapBase.h $(ippGraPrivateAPISrc)ImageCommon.h $(HRasterDepends) ${MultiCompileDepends}
+
+$(o)HRABlitter$(oext) : $(ippGraDir)hra/src/HRABlitter.cpp $(ippAllInc)HRABlitter.h ${MultiCompileDepends}
+
+$(o)HRACopyFromOptions$(oext) : $(ippGraDir)hra/src/HRACopyFromOptions.cpp $(ippAllInc)HRACopyFromOptions.h ${MultiCompileDepends}
+
+$(o)HRACopyToOptions$(oext) : $(ippGraDir)hra/src/HRACopyToOptions.cpp $(ippGraPrivateAPISrc)HRACopyToOptions.h ${MultiCompileDepends}
+
+$(o)HRADEMRaster$(oext) : $(ippGraDir)hra/src/HRADEMRaster.cpp $(ippAllInc)HRADEMRaster.h $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)HRADrawOptions$(oext) : $(ippGraDir)hra/src/HRADrawOptions.cpp $(ippAllInc)HRADrawOptions.h ${MultiCompileDepends}
+
+$(o)HRADrawProgressIndicator$(oext) : $(ippGraDir)hra/src/HRADrawProgressIndicator.cpp $(ippAllInc)HRADrawProgressIndicator.h ${MultiCompileDepends}
+
+$(o)HRAEditor$(oext) : $(ippGraDir)hra/src/HRAEditor.cpp $(ippAllInc)HRAEditor.h ${MultiCompileDepends}
+
+$(o)HRAEditorN1$(oext) : $(ippGraDir)hra/src/HRAEditorN1.cpp $(ippAllInc)HRAEditorN1.h ${MultiCompileDepends}
+
+$(o)HRAEditorN8$(oext) : $(ippGraDir)hra/src/HRAEditorN8.cpp $(ippAllInc)HRAEditorN8.h ${MultiCompileDepends}
+
+$(o)HRAEditorRLE1$(oext) : $(ippGraDir)hra/src/HRAEditorRLE1.cpp $(ippAllInc)HRAEditorRLE1.h ${MultiCompileDepends}
+
+$(o)HRAEditorRLE1Line$(oext) : $(ippGraDir)hra/src/HRAEditorRLE1Line.cpp $(ippAllInc)HRAEditorRLE1Line.h ${MultiCompileDepends}
+
+$(o)HRAGenEditor$(oext) : $(ippGraDir)hra/src/HRAGenEditor.cpp $(ippAllInc)HRAGenEditor.h ${MultiCompileDepends}
+
+$(o)HRAGenericAverageSampler$(oext) : $(ippGraDir)hra/src/HRAGenericAverageSampler.cpp $(ippAllInc)HRAGenericAverageSampler.h ${MultiCompileDepends}
+
+$(o)HRAGenericSampler$(oext) : $(ippGraDir)hra/src/HRAGenericSampler.cpp $(ippAllInc)HRAGenericSampler.h ${MultiCompileDepends}
+
+$(o)HRAHistogramOptions$(oext) : $(ippGraDir)hra/src/HRAHistogramOptions.cpp $(ippAllInc)HRAHistogramOptions.h ${MultiCompileDepends}
+
+$(o)HRAHistogramProgressIndicator$(oext) : $(ippGraDir)hra/src/HRAHistogramProgressIndicator.cpp $(ippAllInc)HRAHistogramProgressIndicator.h ${MultiCompileDepends}
+
+$(o)HRAImageNode$(oext) : $(ippGraDir)hra/src/HRAImageNode.cpp $(ippGraPrivateAPISrc)HRAImageNode.h $(ippGraPrivateAPISrc)ImageCommon.h $(ippAllInc)HRAImageOp.h $(ippGraPrivateAPISrc)HRAImageSurface.h $(ippGraPrivateAPISrc)HRAImageEditor.h ${MultiCompileDepends}
+
+$(o)HRAImageOp$(oext) : $(ippGraDir)hra/src/HRAImageOp.cpp $(ippAllInc)HRAImageOp.h $(ippGraPrivateAPISrc)ImageCommon.h $(ippGraPrivateAPISrc)ImageAllocator.h ${MultiCompileDepends}
+
+$(o)HRAImageOpFunctionFilters$(oext) : $(ippGraDir)hra/src/HRAImageOpFunctionFilters.cpp $(ippAllInc)HRAImageOpFunctionFilters.h ${MultiCompileDepends}
+
+$(o)HRAImageOpDensitySlicingFilter$(oext) : $(ippGraDir)hra/src/HRAImageOpDensitySlicingFilter.cpp $(ippAllInc)HRAImageOpDensitySlicingFilter.h ${MultiCompileDepends}
+
+$(o)HRAImageOpContrastStretchFilter$(oext) : $(ippGraDir)hra/src/HRAImageOpContrastStretchFilter.cpp $(ippAllInc)HRAImageOpContrastStretchFilter.h ${MultiCompileDepends}
+
+$(o)HRAImageOpConvFilter$(oext) : $(ippGraDir)hra/src/HRAImageOpConvFilter.cpp $(ippAllInc)HRAImageOpConvFilter.h $(ippAllInc)HRAImageOp.h ${MultiCompileDepends}
+
+$(o)HRAImageOpMapFilters$(oext) : $(ippGraDir)hra/src/HRAImageOpMapFilters.cpp $(ippAllInc)HRAImageOpMapFilters.h $(ippAllInc)HRAImageOp.h ${MultiCompileDepends}
+
+$(o)HRAImageSampler$(oext) : $(ippGraDir)hra/src/HRAImageSampler.cpp $(ippGraPrivateAPISrc)HRAImageSampler.h $(ippAllInc)HRAImageOp.h $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)HRAImageSurface$(oext) : $(ippGraDir)hra/src/HRAImageSurface.cpp $(ippGraPrivateAPISrc)HRAImageSurface.h $(ippAllInc)HRAImageOp.h $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)HRAImageNearestSamplerN8$(oext) : $(ippGraDir)hra/src/HRAImageNearestSamplerN8.cpp $(ippGraPrivateAPISrc)HRAImageNearestSamplerN8.h $(ippGraPrivateAPISrc)HRAImageSampler.h $(ippAllInc)HRAImageOp.h ${MultiCompileDepends}
+
+$(o)HRAImageNearestSamplerN1$(oext) : $(ippGraDir)hra/src/HRAImageNearestSamplerN1.cpp $(ippGraPrivateAPISrc)HRAImageNearestSamplerN1.h $(ippGraPrivateAPISrc)HRAImageSampler.h $(ippAllInc)HRAImageOp.h ${MultiCompileDepends}
+
+$(o)HRAImageNearestSamplerRLE$(oext) : $(ippGraDir)hra/src/HRAImageNearestSamplerRLE.cpp $(ippGraPrivateAPISrc)HRAImageNearestSamplerRLE.h $(ippGraPrivateAPISrc)HRAImageSampler.h $(ippAllInc)HRAImageOp.h ${MultiCompileDepends}
+
+$(o)HRAImageBilinearSamplerN8$(oext) : $(ippGraDir)hra/src/HRAImageBilinearSamplerN8.cpp $(ippGraPrivateAPISrc)HRAImageBilinearSamplerN8.h $(ippGraPrivateAPISrc)HRAImageSampler.h $(ippAllInc)HRAImageOp.h $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)HRAImageBicubicSamplerN8$(oext) : $(ippGraDir)hra/src/HRAImageBicubicSamplerN8.cpp $(ippGraPrivateAPISrc)HRAImageBicubicSamplerN8.h $(ippGraPrivateAPISrc)HRAImageSampler.h $(ippAllInc)HRAImageOp.h $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)HRAImageView$(oext) : $(ippGraDir)hra/src/HRAImageView.cpp $(ippAllInc)HRAImageView.h ${MultiCompileDepends}
+
+$(o)HRAIteratorOptions$(oext) : $(ippGraDir)hra/src/HRAIteratorOptions.cpp $(ippAllInc)HRAIteratorOptions.h ${MultiCompileDepends}
+
+$(o)HRAMessages$(oext) : $(ippGraDir)hra/src/HRAMessages.cpp $(ippAllInc)HRAMessages.h ${MultiCompileDepends}
+
+$(o)HRANearestSampler$(oext) : $(ippGraDir)hra/src/HRANearestSampler.cpp $(ippAllInc)HRANearestSampler.h ${MultiCompileDepends}
+
+$(o)HRANearestSamplerN1$(oext) : $(ippGraDir)hra/src/HRANearestSamplerN1.cpp $(ippAllInc)HRANearestSamplerN1.h ${MultiCompileDepends}
+
+$(o)HRANearestSamplerN8$(oext) : $(ippGraDir)hra/src/HRANearestSamplerN8.cpp $(ippAllInc)HRANearestSamplerN8.h ${MultiCompileDepends}
+
+$(o)HRANearestSamplerRLE1$(oext) : $(ippGraDir)hra/src/HRANearestSamplerRLE1.cpp $(ippAllInc)HRANearestSamplerRLE1.h ${MultiCompileDepends}
+
+$(o)HRAOnDemandRaster$(oext) : $(ippGraDir)hra/src/HRAOnDemandRaster.cpp $(ippAllInc)HRAOnDemandRaster.h ${MultiCompileDepends}
+
+$(o)HRAPixelTypeReplacer$(oext) : $(ippGraDir)hra/src/HRAPixelTypeReplacer.cpp $(ippAllInc)HRAPixelTypeReplacer.h ${MultiCompileDepends}
+
+$(o)HRAPyramidRaster$(oext) : $(ippGraDir)hra/src/HRAPyramidRaster.cpp $(ippAllInc)HRAPyramidRaster.h $(HRasterDepends) $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)HRAPyramidRasterIterator$(oext) : $(ippGraDir)hra/src/HRAPyramidRasterIterator.cpp $(ippAllInc)HRAPyramidRasterIterator.h ${MultiCompileDepends}
+
+$(o)HRARaster$(oext) : $(ippGraDir)hra/src/HRARaster.cpp $(ippAllInc)HRARaster.h $(HRasterDepends) ${MultiCompileDepends}
+
+$(o)HRARasterEditor$(oext) : $(ippGraDir)hra/src/HRARasterEditor.cpp $(ippAllInc)HRARasterEditor.h ${MultiCompileDepends}
+
+$(o)HRARasterIterator$(oext) : $(ippGraDir)hra/src/HRARasterIterator.cpp $(ippAllInc)HRARasterIterator.h ${MultiCompileDepends}
+
+$(o)HRAReferenceToRaster$(oext) : $(ippGraDir)hra/src/HRAReferenceToRaster.cpp $(HRasterDepends) $(ippAllInc)HRAReferenceToRaster.h $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)HRAReferenceToRasterEditor$(oext) : $(ippGraDir)hra/src/HRAReferenceToRasterEditor.cpp $(ippAllInc)HRAReferenceToRasterEditor.h ${MultiCompileDepends}
+
+$(o)HRAReferenceToRasterIterator$(oext) : $(ippGraDir)hra/src/HRAReferenceToRasterIterator.cpp $(ippAllInc)HRAReferenceToRasterIterator.h ${MultiCompileDepends}
+
+$(o)HRAReferenceToStoredRaster$(oext) : $(ippGraDir)hra/src/HRAReferenceToStoredRaster.cpp $(ippAllInc)HRAReferenceToStoredRaster.h ${MultiCompileDepends}
+
+$(o)HRARepPalParms$(oext) : $(ippGraDir)hra/src/HRARepPalParms.cpp $(ippAllInc)HRARepPalParms.h ${MultiCompileDepends}
+
+$(o)HRASampler$(oext) : $(ippGraDir)hra/src/HRASampler.cpp $(ippAllInc)HRASampler.h ${MultiCompileDepends}
+
+$(o)HRASamplingOptions$(oext) : $(ippGraDir)hra/src/HRASamplingOptions.cpp $(ippAllInc)HRASamplingOptions.h ${MultiCompileDepends}
+
+$(o)HRAStoredRaster$(oext) : $(ippGraDir)hra/src/HRAStoredRaster.cpp $(ippAllInc)HRAStoredRaster.h $(HRasterDepends) $(ippGraPrivateAPISrc)ImageCommon.h $(ippGraPrivateAPISrc)ImageAllocator.h ${MultiCompileDepends}
+
+$(o)HRAStripedRaster$(oext) : $(ippGraDir)hra/src/HRAStripedRaster.cpp $(ippAllInc)HRAStripedRaster.h $(HRasterDepends) ${MultiCompileDepends}
+
+$(o)HRASurface$(oext) : $(ippGraDir)hra/src/HRASurface.cpp $(ippAllInc)HRASurface.h ${MultiCompileDepends}
+
+$(o)HRATIFFFileTransactionRecorder$(oext) : $(ippGraDir)hra/src/HRATIFFFileTransactionRecorder.cpp $(ippAllInc)HRATIFFFileTransactionRecorder.h ${MultiCompileDepends}
+
+$(o)HRATiledRaster$(oext) : $(ippGraDir)hra/src/HRATiledRaster.cpp $(ippAllInc)HRATiledRaster.h $(ippGraPrivateAPISrc)ImageCommon.h $(HRasterDepends) ${MultiCompileDepends}
+
+$(o)HRATiledRasterIterator$(oext) : $(ippGraDir)hra/src/HRATiledRasterIterator.cpp $(ippAllInc)HRATiledRasterIterator.h ${MultiCompileDepends}
+
+$(o)HRATransaction$(oext) : $(ippGraDir)hra/src/HRATransaction.cpp $(ippAllInc)HRATransaction.h ${MultiCompileDepends}
+
+$(o)HRATransactionRecorder$(oext) : $(ippGraDir)hra/src/HRATransactionRecorder.cpp $(ippAllInc)HRATransactionRecorder.h ${MultiCompileDepends}
+
+$(o)HRAUnlimitedResolutionRaster$(oext) : $(ippGraDir)hra/src/HRAUnlimitedResolutionRaster.cpp $(ippAllInc)HRAUnlimitedResolutionRaster.h $(HRasterDepends) $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)HRAUnlimitedResolutionRasterIterator$(oext) : $(ippGraDir)hra/src/HRAUnlimitedResolutionRasterIterator.cpp $(ippAllInc)HRAUnlimitedResolutionRasterIterator.h ${MultiCompileDepends}
+
+$(o)HRAUpdateSubResProgressIndicator$(oext) : $(ippGraDir)hra/src/HRAUpdateSubResProgressIndicator.cpp $(ippAllInc)HRAUpdateSubResProgressIndicator.h ${MultiCompileDepends}
+
+$(o)HRAWarper$(oext) : $(ippGraDir)hra/src/HRAWarper.cpp $(ippAllInc)HRAWarper.h ${MultiCompileDepends}
+
+$(o)HRSObjectStore$(oext) : $(ippGraDir)hrs/src/HRSObjectStore.cpp $(ippAllInc)HRSObjectStore.h ${MultiCompileDepends}
+
+$(o)HRFCacheController$(oext) : $(ippGraDir)hrf/src/HRFCacheController.cpp $(ippAllInc)HRFCacheController.h ${MultiCompileDepends}
+
+$(o)HRFCacheFileSharing$(oext) : $(ippGraDir)hrf/src/HRFCacheFileSharing.cpp $(ippAllInc)HRFCacheFileSharing.h ${MultiCompileDepends}
+
+$(o)HRFCapability$(oext) : $(ippGraDir)hrf/src/HRFCapability.cpp $(ippAllInc)HRFCapability.h ${MultiCompileDepends}
+
+$(o)HRFExportOptions$(oext) : $(ippGraDir)hrf/src/HRFExportOptions.cpp $(ippAllInc)HRFExportOptions.h ${MultiCompileDepends}
+
+$(o)HRFException$(oext) : $(ippGraDir)hrf/src/HRFException.cpp $(ippAllInc)HRFException.h ${MultiCompileDepends}
+
+$(o)HRFGeoreferenceContext$(oext) : $(ippGraDir)hrf/src/HRFGeoreferenceContext.cpp $(ippAllInc)HRFGeoreferenceContext.h ${MultiCompileDepends}
+
+$(o)HRFImportExport$(oext) : $(ippGraDir)hrf/src/HRFImportExport.cpp $(ippAllInc)HRFImportExport.h ${MultiCompileDepends}
+
+$(o)HRFMessages$(oext) : $(ippGraDir)hrf/src/HRFMessages.cpp $(ippAllInc)HRFMessages.h ${MultiCompileDepends}
+
+$(o)HRFPageDescriptor$(oext) : $(ippGraDir)hrf/src/HRFPageDescriptor.cpp $(ippAllInc)HRFPageDescriptor.h ${MultiCompileDepends}
+
+$(o)HRFRasterFile$(oext) : $(ippGraDir)hrf/src/HRFRasterFile.cpp $(ippAllInc)HRFRasterFile.h ${MultiCompileDepends}
+
+$(o)HRFRasterFileCapabilities$(oext) : $(ippGraDir)hrf/src/HRFRasterFileCapabilities.cpp $(ippAllInc)HRFRasterFileCapabilities.h ${MultiCompileDepends}
+
+$(o)HRFRasterFileFactory$(oext) : $(ippGraDir)hrf/src/HRFRasterFileFactory.cpp $(ippAllInc)HRFRasterFileFactory.h ${MultiCompileDepends}
+
+$(o)HRFGeoCoordinateProvider$(oext) : $(ippGraDir)hrf/src/HRFGeoCoordinateProvider.cpp $(ippInterfaceInc)IRasterGeoCoordinateServices.h ${MultiCompileDepends}
+
+$(o)HRFResolutionDescriptor$(oext) : $(ippGraDir)hrf/src/HRFResolutionDescriptor.cpp $(ippAllInc)HRFResolutionDescriptor.h ${MultiCompileDepends}
+
+$(o)HRFResolutionEditor$(oext) : $(ippGraDir)hrf/src/HRFResolutionEditor.cpp $(ippAllInc)HRFResolutionEditor.h ${MultiCompileDepends}
+
+$(o)HRFSharingControl$(oext) : $(ippGraDir)hrf/src/HRFSharingControl.cpp $(ippAllInc)HRFSharingControl.h ${MultiCompileDepends}
+
+$(o)HRFSisterFileSharing$(oext) : $(ippGraDir)hrf/src/HRFSisterFileSharing.cpp $(ippAllInc)HRFSisterFileSharing.h ${MultiCompileDepends}
+
+$(o)HRFThumbnail$(oext) : $(ippGraDir)hrf/src/HRFThumbnail.cpp $(ippAllInc)HRFThumbnail.h ${MultiCompileDepends}
+
+$(o)HRFTypes$(oext) : $(ippGraDir)hrf/src/HRFTypes.cpp $(ippAllInc)HRFTypes.h ${MultiCompileDepends}
+
+$(o)HRFUtility$(oext) : $(ippGraDir)hrf/src/HRFUtility.cpp $(ippAllInc)HRFUtility.h ${MultiCompileDepends}
+
+%if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
+$(o)HRFAnnotationInfoPDF$(oext) : $(ippGraDir)hrf/src/HRFAnnotationInfoPDF.cpp $(ippAllInc)HRFAnnotationInfoPDF.h ${MultiCompileDepends}
+%endif
+
+$(o)HRFArcInfoAsciiGridFile$(oext) : $(ippGraDir)hrf/src/HRFArcInfoAsciiGridFile.cpp $(ippAllInc)HRFArcInfoAsciiGridFile.h $(ippAllInc)HRFGdalSupportedFile.h  ${MultiCompileDepends}
+
+$(o)HRFArcInfoGridFile$(oext) : $(ippGraDir)hrf/src/HRFArcInfoGridFile.cpp $(ippAllInc)HRFArcInfoGridFile.h $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
+
+$(o)HRFBilFile$(oext) : $(ippGraDir)hrf/src/HRFBilFile.cpp $(ippAllInc)HRFBilFile.h ${MultiCompileDepends}
+
+$(o)HRFBilLineEditor$(oext) : $(ippGraDir)hrf/src/HRFBilLineEditor.cpp $(ippAllInc)HRFBilLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFBmpCompressImageEditor$(oext) : $(ippGraDir)hrf/src/HRFBmpCompressImageEditor.cpp $(ippAllInc)HRFBmpCompressImageEditor.h ${MultiCompileDepends}
+
+$(o)HRFBmpFile$(oext) : $(ippGraDir)hrf/src/HRFBmpFile.cpp $(ippAllInc)HRFBmpFile.h ${MultiCompileDepends}
+
+$(o)HRFBmpLineEditor$(oext) : $(ippGraDir)hrf/src/HRFBmpLineEditor.cpp $(ippAllInc)HRFBmpLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFBsbFile$(oext) : $(ippGraDir)hrf/src/HRFBsbFile.cpp $(ippAllInc)HRFBsbFile.h $(ippAllInc)HRFGdalSupportedFile.h  ${MultiCompileDepends}
+
+$(o)HRFCalsFile$(oext) : $(ippGraDir)hrf/src/HRFCalsFile.cpp $(ippAllInc)HRFCalsFile.h ${MultiCompileDepends}
+
+$(o)HRFCalsLineEditor$(oext) : $(ippGraDir)hrf/src/HRFCalsLineEditor.cpp $(ippAllInc)HRFCalsLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFcTiffFile$(oext) : $(ippGraDir)hrf/src/HRFcTiffFile.cpp $(ippAllInc)HRFcTiffFile.h ${MultiCompileDepends}
+
+$(o)HRFDoqEditor$(oext) : $(ippGraDir)hrf/src/HRFDoqEditor.cpp $(ippAllInc)HRFDoqEditor.h ${MultiCompileDepends}
+
+$(o)HRFDoqFile$(oext) : $(ippGraDir)hrf/src/HRFDoqFile.cpp $(ippAllInc)HRFDoqFile.h ${MultiCompileDepends}
+
+$(o)HRFDtedEditor$(oext) : $(ippGraDir)hrf/src/HRFDtedEditor.cpp $(ippAllInc)HRFDtedEditor.h $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
+
+$(o)HRFDtedFile$(oext) : $(ippGraDir)hrf/src/HRFDtedFile.cpp $(ippAllInc)HRFDtedFile.h $(ippAllInc)HRFGdalSupportedFile.h  ${MultiCompileDepends}
+
+$(o)HRFEpsFile$(oext) : $(ippGraDir)hrf/src/HRFEpsFile.cpp $(ippAllInc)HRFEpsFile.h ${MultiCompileDepends}
+
+$(o)HRFEpsLineEditor$(oext) : $(ippGraDir)hrf/src/HRFEpsLineEditor.cpp $(ippAllInc)HRFEpsLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFErdasImgEditor$(oext) : $(ippGraDir)hrf/src/HRFErdasImgEditor.cpp $(ippAllInc)HRFErdasImgEditor.h $(ippAllInc)HRFGdalSupportedFile.h  ${MultiCompileDepends}
+
+$(o)HRFErdasImgFile$(oext) : $(ippGraDir)hrf/src/HRFErdasImgFile.cpp $(ippAllInc)HRFErdasImgFile.h $(ippAllInc)HRFGdalSupportedFile.h  ${MultiCompileDepends}
+
+$(o)HRFFliCompressLineEditor$(oext) : $(ippGraDir)hrf/src/HRFFliCompressLineEditor.cpp $(ippAllInc)HRFFliCompressLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFFliFile$(oext) : $(ippGraDir)hrf/src/HRFFliFile.cpp $(ippAllInc)HRFFliFile.h ${MultiCompileDepends}
+
+$(o)HRFFliLineEditor$(oext) : $(ippGraDir)hrf/src/HRFFliLineEditor.cpp $(ippAllInc)HRFFliLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFGdalSupportedFile$(oext) : $(ippGraDir)hrf/src/HRFGdalSupportedFile.cpp $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
+
+$(o)HRFGdalSupportedFileEditor$(oext) : $(ippGraDir)hrf/src/HRFGdalSupportedFileEditor.cpp $(ippAllInc)HRFGdalSupportedFileEditor.h ${MultiCompileDepends}
+
+$(o)HRFGdalUtilities$(oext) : $(ippGraDir)hrf/src/HRFGdalUtilities.cpp $(ippAllInc)HRFGdalUtilities.h ${MultiCompileDepends}
+
+%if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
+    $(o)OCIGeoRasterWrapper$(oext) : $(ippGraDir)hrf/src/OCIGeoRasterWrapper.cpp ${MultiCompileDepends} $(ippAllInc)OCIGeoRasterWrapper.h
+    
+    $(o)SDOGeoRasterWrapper$(oext) : $(ippGraDir)hrf/src/SDOGeoRasterWrapper.cpp ${MultiCompileDepends} $(ippAllInc)SDOGeoRasterWrapper.h 
+    
+    $(o)HRFGeoRasterEditor$(oext) : $(ippGraDir)hrf/src/HRFGeoRasterEditor.cpp $(ippAllInc)HRFGeoRasterEditor.h ${MultiCompileDepends}
+    
+    $(o)HRFGeoRasterFile$(oext) : $(ippGraDir)hrf/src/HRFGeoRasterFile.cpp $(ippAllInc)HRFGeoRasterFile.h ${MultiCompileDepends}
+%endif
+
+$(o)HRFGeoTiffFile$(oext) : $(ippGraDir)hrf/src/HRFGeoTiffFile.cpp $(ippAllInc)HRFGeoTiffFile.h ${MultiCompileDepends}
+
+$(o)HRFGeoTiffTable$(oext) : $(ippGraDir)hrf/src/HRFGeoTiffTable.cpp $(ippGraDir)hrf/src/HRFGeoTiffTable.h ${MultiCompileDepends}
+
+$(o)HRFGifFile$(oext) : $(ippGraDir)hrf/src/HRFGifFile.cpp $(ippAllInc)HRFGifFile.h ${MultiCompileDepends}
+
+$(o)HRFGifImageEditor$(oext) : $(ippGraDir)hrf/src/HRFGifImageEditor.cpp $(ippAllInc)HRFGifImageEditor.h ${MultiCompileDepends}
+
+$(o)HRFGifLineEditor$(oext) : $(ippGraDir)hrf/src/HRFGifLineEditor.cpp $(ippAllInc)HRFGifLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFHMRFile$(oext) : $(ippGraDir)hrf/src/HRFHMRFile.cpp $(ippAllInc)HRFHMRFile.h ${MultiCompileDepends}
+
+$(o)HRFHMRTileEditor$(oext) : $(ippGraDir)hrf/src/HRFHMRTileEditor.cpp $(ippAllInc)HRFHMRTileEditor.h ${MultiCompileDepends}
+
+$(o)HRFImgMappedFile$(oext) : $(ippGraDir)hrf/src/HRFImgMappedFile.cpp $(ippAllInc)HRFImgMappedFile.h ${MultiCompileDepends}
+
+$(o)HRFImgMappedLineEditor$(oext) : $(ippGraDir)hrf/src/HRFImgMappedLineEditor.cpp $(ippAllInc)HRFImgMappedLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFImgRGBFile$(oext) : $(ippGraDir)hrf/src/HRFImgRGBFile.cpp $(ippAllInc)HRFImgRGBFile.h ${MultiCompileDepends}
+
+$(o)HRFImgRGBLineEditor$(oext) : $(ippGraDir)hrf/src/HRFImgRGBLineEditor.cpp $(ippAllInc)HRFImgRGBLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphC30File$(oext) : $(ippGraDir)hrf/src/HRFIntergraphC30File.cpp $(ippAllInc)HRFIntergraphC30File.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphC31File$(oext) : $(ippGraDir)hrf/src/HRFIntergraphC31File.cpp $(ippAllInc)HRFIntergraphC31File.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphCITFile$(oext) : $(ippGraDir)hrf/src/HRFIntergraphCITFile.cpp $(ippAllInc)HRFIntergraphCITFile.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphColorFile$(oext) : $(ippGraDir)hrf/src/HRFIntergraphColorFile.cpp $(ippAllInc)HRFIntergraphColorFile.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphCOT29File$(oext) : $(ippGraDir)hrf/src/HRFIntergraphCOT29File.cpp $(ippAllInc)HRFIntergraphCOT29File.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphCotFile$(oext) : $(ippGraDir)hrf/src/HRFIntergraphCotFile.cpp $(ippAllInc)HRFIntergraphCotFile.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphCRLFile$(oext) : $(ippGraDir)hrf/src/HRFIntergraphCRLFile.cpp $(ippAllInc)HRFIntergraphCRLFile.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphFile$(oext) : $(ippGraDir)hrf/src/HRFIntergraphFile.cpp $(ippAllInc)HRFIntergraphFile.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphLineEditor$(oext) : $(ippGraDir)hrf/src/HRFIntergraphLineEditor.cpp $(ippAllInc)HRFIntergraphLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphMonochromeFile$(oext) : $(ippGraDir)hrf/src/HRFIntergraphMonochromeFile.cpp $(ippAllInc)HRFIntergraphMonochromeFile.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphMPFFile$(oext) : $(ippGraDir)hrf/src/HRFIntergraphMPFFile.cpp $(ippAllInc)HRFIntergraphMPFFile.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphRGBFile$(oext) : $(ippGraDir)hrf/src/HRFIntergraphRGBFile.cpp $(ippAllInc)HRFIntergraphRGBFile.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphRLEFile$(oext) : $(ippGraDir)hrf/src/HRFIntergraphRLEFile.cpp $(ippAllInc)HRFIntergraphRLEFile.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphTG4File$(oext) : $(ippGraDir)hrf/src/HRFIntergraphTG4File.cpp $(ippAllInc)HRFIntergraphTG4File.h ${MultiCompileDepends}
+
+$(o)HRFIntergraphTileEditor$(oext) : $(ippGraDir)hrf/src/HRFIntergraphTileEditor.cpp $(ippAllInc)HRFIntergraphTileEditor.h ${MultiCompileDepends}
+
+$(o)HRFIrasbRSTFile$(oext) : $(ippGraDir)hrf/src/HRFIrasbRSTFile.cpp $(ippAllInc)HRFIrasbRSTFile.h ${MultiCompileDepends}
+
+$(o)HRFiTiffFile$(oext) : $(ippGraDir)hrf/src/HRFiTiffFile.cpp $(ippAllInc)HRFiTiffFile.h ${MultiCompileDepends}
+
+$(o)HRFiTiffStripEditor$(oext) : $(ippGraDir)hrf/src/HRFiTiffStripEditor.cpp $(ippAllInc)HRFiTiffStripEditor.h ${MultiCompileDepends}
+
+$(o)HRFiTiffTileEditor$(oext) : $(ippGraDir)hrf/src/HRFiTiffTileEditor.cpp $(ippAllInc)HRFiTiffTileEditor.h ${MultiCompileDepends}
+
+$(o)HRFJpegFile$(oext) : $(ippGraDir)hrf/src/HRFJpegFile.cpp $(ippAllInc)HRFJpegFile.h ${MultiCompileDepends}
+
+$(o)HRFJpegLineEditor$(oext) : $(ippGraDir)hrf/src/HRFJpegLineEditor.cpp $(ippAllInc)HRFJpegLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFLRDFile$(oext) : $(ippGraDir)hrf/src/HRFLRDFile.cpp $(ippAllInc)HRFLRDFile.h ${MultiCompileDepends}
+
+$(o)HRFLRDLineEditor$(oext) : $(ippGraDir)hrf/src/HRFLRDLineEditor.cpp $(ippAllInc)HRFLRDLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFMrSIDEditor$(oext) : $(ippGraDir)hrf/src/HRFMrSIDEditor.cpp $(ippAllInc)HRFMrSIDEditor.h ${MultiCompileDepends}
+
+$(o)HRFMrSIDFile$(oext) : $(ippGraDir)hrf/src/HRFMrSIDFile.cpp $(ippAllInc)HRFMrSIDFile.h ${MultiCompileDepends}
+
+$(o)HRFNitfEditor$(oext) : $(ippGraDir)hrf/src/HRFNitfEditor.cpp $(ippAllInc)HRFNitfEditor.h $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
+
+$(o)HRFNitfFile$(oext) : $(ippGraDir)hrf/src/HRFNitfFile.cpp $(ippAllInc)HRFNitfFile.h $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
+
+$(o)HRFOGCService$(oext) : $(ippGraDir)hrf/src/HRFOGCService.cpp $(ippAllInc)HRFOGCService.h ${MultiCompileDepends}
+
+$(o)HRFOGCServiceEditor$(oext) : $(ippGraDir)hrf/src/HRFOGCServiceEditor.cpp $(ippAllInc)HRFOGCServiceEditor.h ${MultiCompileDepends}
+
+$(o)HRFPcxFile$(oext) : $(ippGraDir)hrf/src/HRFPcxFile.cpp $(ippAllInc)HRFPcxFile.h ${MultiCompileDepends}
+
+$(o)HRFPcxLineEditor$(oext) : $(ippGraDir)hrf/src/HRFPcxLineEditor.cpp $(ippAllInc)HRFPcxLineEditor.h ${MultiCompileDepends}
+
+%if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
+$(o)HRFPDFEditor$(oext) : $(ippGraDir)hrf/src/HRFPDFEditor.cpp $(ippAllInc)HRFPDFEditor.h ${MultiCompileDepends}
+
+$(o)HRFPDFFile$(oext) : $(ippGraDir)hrf/src/HRFPDFFile.cpp $(ippAllInc)HRFPDFFile.h ${MultiCompileDepends}
+
+$(o)HRFPDFLibInterface$(oext) : $(ippGraDir)hrf/src/HRFPDFLibInterface.cpp $(ippGraDir)hrf/src/HRFPDFLibInterface.h ${MultiCompileDepends}
+%endif
+
+$(o)HRFPictFile$(oext) : $(ippGraDir)hrf/src/HRFPictFile.cpp $(ippAllInc)HRFPictFile.h ${MultiCompileDepends}
+
+$(o)HRFPictLineEditor$(oext) : $(ippGraDir)hrf/src/HRFPictLineEditor.cpp $(ippAllInc)HRFPictLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFPngFile$(oext) : $(ippGraDir)hrf/src/HRFPngFile.cpp $(ippAllInc)HRFPngFile.h ${MultiCompileDepends}
+
+$(o)HRFPngImageEditor$(oext) : $(ippGraDir)hrf/src/HRFPngImageEditor.cpp $(ippAllInc)HRFPngImageEditor.h ${MultiCompileDepends}
+
+$(o)HRFPngLineEditor$(oext) : $(ippGraDir)hrf/src/HRFPngLineEditor.cpp $(ippAllInc)HRFPngLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFPWEditor$(oext) : $(ippGraDir)hrf/src/HRFPWEditor.cpp $(ippAllInc)HRFPWEditor.h ${MultiCompileDepends}
+
+$(o)HRFPWRasterFile$(oext) : $(ippGraDir)hrf/src/HRFPWRasterFile.cpp $(ippAllInc)HRFPWRasterFile.h ${MultiCompileDepends}
+
+$(o)HRFRawFile$(oext) : $(ippGraDir)hrf/src/HRFRawFile.cpp $(ippAllInc)HRFRawFile.h ${MultiCompileDepends}
+
+$(o)HRFRawLineEditor$(oext) : $(ippGraDir)hrf/src/HRFRawLineEditor.cpp $(ippAllInc)HRFRawLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFRLCFile$(oext) : $(ippGraDir)hrf/src/HRFRLCFile.cpp $(ippAllInc)HRFRLCFile.h ${MultiCompileDepends}
+
+$(o)HRFRLCLineEditor$(oext) : $(ippGraDir)hrf/src/HRFRLCLineEditor.cpp $(ippAllInc)HRFRLCLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFSpotCAPFile$(oext) : $(ippGraDir)hrf/src/HRFSpotCAPFile.cpp $(ippAllInc)HRFSpotCAPFile.h ${MultiCompileDepends}
+
+$(o)HRFSpotCAPLineEditor$(oext) : $(ippGraDir)hrf/src/HRFSpotCAPLineEditor.cpp $(ippAllInc)HRFSpotCAPLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFSpotDimapFile$(oext) : $(ippGraDir)hrf/src/HRFSpotDimapFile.cpp $(ippAllInc)HRFSpotDimapFile.h ${MultiCompileDepends}
+
+$(o)HRFSunRasterEditor$(oext) : $(ippGraDir)hrf/src/HRFSunRasterEditor.cpp $(ippAllInc)HRFSunRasterEditor.h ${MultiCompileDepends}
+
+$(o)HRFSunRasterFile$(oext) : $(ippGraDir)hrf/src/HRFSunRasterFile.cpp $(ippAllInc)HRFSunRasterFile.h ${MultiCompileDepends}
+
+$(o)HRFTgaCompressImageEditor$(oext) : $(ippGraDir)hrf/src/HRFTgaCompressImageEditor.cpp $(ippAllInc)HRFTgaCompressImageEditor.h ${MultiCompileDepends}
+
+$(o)HRFTgaCompressLineEditor$(oext) : $(ippGraDir)hrf/src/HRFTgaCompressLineEditor.cpp $(ippAllInc)HRFTgaCompressLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFTgaFile$(oext) : $(ippGraDir)hrf/src/HRFTgaFile.cpp $(ippAllInc)HRFTgaFile.h ${MultiCompileDepends}
+
+$(o)HRFTgaLineEditor$(oext) : $(ippGraDir)hrf/src/HRFTgaLineEditor.cpp $(ippAllInc)HRFTgaLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFTiffFile$(oext) : $(ippGraDir)hrf/src/HRFTiffFile.cpp $(ippAllInc)HRFTiffFile.h ${MultiCompileDepends}
+
+$(o)HRFTiffIntgrFile$(oext) : $(ippGraDir)hrf/src/HRFTiffIntgrFile.cpp $(ippAllInc)HRFTiffIntgrFile.h ${MultiCompileDepends}
+
+$(o)HRFTiffStripEditor$(oext) : $(ippGraDir)hrf/src/HRFTiffStripEditor.cpp $(ippAllInc)HRFTiffStripEditor.h ${MultiCompileDepends}
+
+$(o)HRFTiffTileEditor$(oext) : $(ippGraDir)hrf/src/HRFTiffTileEditor.cpp $(ippAllInc)HRFTiffTileEditor.h ${MultiCompileDepends}
+
+$(o)HRFUSgsDEMEditor$(oext) : $(ippGraDir)hrf/src/HRFUSgsDEMEditor.cpp $(ippAllInc)HRFUSgsDEMEditor.h $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
+
+$(o)HRFUSgsDEMFile$(oext) : $(ippGraDir)hrf/src/HRFUSgsDEMFile.cpp $(ippAllInc)HRFUSgsDEMFile.h $(ippAllInc)HRFGdalSupportedFile.h  ${MultiCompileDepends}
+
+$(o)HRFUSgsFastL7AFile$(oext) : $(ippGraDir)hrf/src/HRFUSgsFastL7AFile.cpp $(ippAllInc)HRFUSgsFastL7AFile.h ${MultiCompileDepends}
+
+$(o)HRFUSgsFastL7ALineEditor$(oext) : $(ippGraDir)hrf/src/HRFUSgsFastL7ALineEditor.cpp $(ippAllInc)HRFUSgsFastL7ALineEditor.h ${MultiCompileDepends}
+
+$(o)HRFUSgsNDFFile$(oext) : $(ippGraDir)hrf/src/HRFUSgsNDFFile.cpp $(ippAllInc)HRFUSgsNDFFile.h ${MultiCompileDepends}
+
+$(o)HRFUSgsNDFLineEditor$(oext) : $(ippGraDir)hrf/src/HRFUSgsNDFLineEditor.cpp $(ippAllInc)HRFUSgsNDFLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFUSgsSDTSDEMEditor$(oext) : $(ippGraDir)hrf/src/HRFUSgsSDTSDEMEditor.cpp $(ippAllInc)HRFUSgsSDTSDEMEditor.h $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
+
+$(o)HRFUSgsSDTSDEMFile$(oext) : $(ippGraDir)hrf/src/HRFUSgsSDTSDEMFile.cpp $(ippAllInc)HRFUSgsSDTSDEMFile.h $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
+
+$(o)HRFVirtualEarthEditor$(oext) : $(ippGraDir)hrf/src/HRFVirtualEarthEditor.cpp $(ippAllInc)HRFVirtualEarthEditor.h ${MultiCompileDepends}
+
+$(o)HRFVirtualEarthFile$(oext) : $(ippGraDir)hrf/src/HRFVirtualEarthFile.cpp $(ippAllInc)HRFVirtualEarthFile.h ${MultiCompileDepends}
+
+$(o)HRFWbmpFile$(oext) : $(ippGraDir)hrf/src/HRFWbmpFile.cpp $(ippAllInc)HRFWbmpFile.h ${MultiCompileDepends}
+
+$(o)HRFWbmpLineEditor$(oext) : $(ippGraDir)hrf/src/HRFWbmpLineEditor.cpp $(ippAllInc)HRFWbmpLineEditor.h ${MultiCompileDepends}
+
+$(o)HRFWebFile$(oext) : $(ippGraDir)hrf/src/HRFWebFile.cpp $(ippAllInc)HRFWebFile.h ${MultiCompileDepends}
+
+$(o)HRFWCSFile$(oext) : $(ippGraDir)hrf/src/HRFWCSFile.cpp $(ippAllInc)HRFWCSFile.h ${MultiCompileDepends}
+
+$(o)HRFWMSFile$(oext) : $(ippGraDir)hrf/src/HRFWMSFile.cpp $(ippAllInc)HRFWMSFile.h ${MultiCompileDepends}
+
+$(o)HRFxChEditor$(oext) : $(ippGraDir)hrf/src/HRFxChEditor.cpp $(ippAllInc)HRFxChEditor.h ${MultiCompileDepends}
+
+$(o)HRFxChFile$(oext) : $(ippGraDir)hrf/src/HRFxChFile.cpp $(ippAllInc)HRFxChFile.h ${MultiCompileDepends}
+
+$(o)HRFURLInternetImagingHTTP$(oext) : $(ippGraDir)hrf/src/HRFURLInternetImagingHTTP.cpp $(ippAllInc)HRFURLInternetImagingHTTP.h ${MultiCompileDepends}
+
+$(o)HRFAdaptImageToLine$(oext) : $(ippGraDir)hrf/src/HRFAdaptImageToLine.cpp $(ippAllInc)HRFAdaptImageToLine.h ${MultiCompileDepends}
+
+$(o)HRFAdaptLineToImage$(oext) : $(ippGraDir)hrf/src/HRFAdaptLineToImage.cpp $(ippAllInc)HRFAdaptLineToImage.h ${MultiCompileDepends}
+
+$(o)HRFAdaptLineToStrip$(oext) : $(ippGraDir)hrf/src/HRFAdaptLineToStrip.cpp $(ippAllInc)HRFAdaptLineToStrip.h ${MultiCompileDepends}
+
+$(o)HRFAdaptLineToTile$(oext) : $(ippGraDir)hrf/src/HRFAdaptLineToTile.cpp $(ippAllInc)HRFAdaptLineToTile.h ${MultiCompileDepends}
+
+$(o)HRFAdaptNTileToTile$(oext) : $(ippGraDir)hrf/src/HRFAdaptNTileToTile.cpp $(ippAllInc)HRFAdaptNTileToTile.h ${MultiCompileDepends}
+
+$(o)HRFAdaptStripToImage$(oext) : $(ippGraDir)hrf/src/HRFAdaptStripToImage.cpp $(ippAllInc)HRFAdaptStripToImage.h ${MultiCompileDepends}
+
+$(o)HRFAdaptStripToLine$(oext) : $(ippGraDir)hrf/src/HRFAdaptStripToLine.cpp $(ippAllInc)HRFAdaptStripToLine.h ${MultiCompileDepends}
+
+$(o)HRFAdaptStripToNStrip$(oext) : $(ippGraDir)hrf/src/HRFAdaptStripToNStrip.cpp $(ippAllInc)HRFAdaptStripToNStrip.h ${MultiCompileDepends}
+
+$(o)HRFAdaptStripToTile$(oext) : $(ippGraDir)hrf/src/HRFAdaptStripToTile.cpp $(ippAllInc)HRFAdaptStripToTile.h ${MultiCompileDepends}
+
+$(o)HRFAdaptTileToImage$(oext) : $(ippGraDir)hrf/src/HRFAdaptTileToImage.cpp $(ippAllInc)HRFAdaptTileToImage.h ${MultiCompileDepends}
+
+$(o)HRFAdaptTileToLine$(oext) : $(ippGraDir)hrf/src/HRFAdaptTileToLine.cpp $(ippAllInc)HRFAdaptTileToLine.h ${MultiCompileDepends}
+
+$(o)HRFAdaptTileToStrip$(oext) : $(ippGraDir)hrf/src/HRFAdaptTileToStrip.cpp $(ippAllInc)HRFAdaptTileToStrip.h ${MultiCompileDepends}
+
+$(o)HRFBlockAdapter$(oext) : $(ippGraDir)hrf/src/HRFBlockAdapter.cpp $(ippAllInc)HRFBlockAdapter.h ${MultiCompileDepends}
+
+$(o)HRFBlockAdapterFactory$(oext) : $(ippGraDir)hrf/src/HRFBlockAdapterFactory.cpp $(ippAllInc)HRFBlockAdapterFactory.h ${MultiCompileDepends}
+
+$(o)HRFCacheFileCreator$(oext) : $(ippGraDir)hrf/src/HRFCacheFileCreator.cpp $(ippAllInc)HRFCacheFileCreator.h ${MultiCompileDepends}
+
+$(o)HRFCacheRandomBlockEditor$(oext) : $(ippGraDir)hrf/src/HRFCacheRandomBlockEditor.cpp $(ippAllInc)HRFCacheRandomBlockEditor.h ${MultiCompileDepends}
+
+$(o)HRFCacheSequentialBlockEditor$(oext) : $(ippGraDir)hrf/src/HRFCacheSequentialBlockEditor.cpp $(ippAllInc)HRFCacheSequentialBlockEditor.h ${MultiCompileDepends}
+
+$(o)HRFCombinedRasterFileCapabilities$(oext) : $(ippGraDir)hrf/src/HRFCombinedRasterFileCapabilities.cpp $(ippAllInc)HRFCombinedRasterFileCapabilities.h ${MultiCompileDepends}
+
+$(o)HRFERSPageFile$(oext) : $(ippGraDir)hrf/src/HRFERSPageFile.cpp $(ippAllInc)HRFERSPageFile.h ${MultiCompileDepends}
+
+$(o)HRFHGRPageFile$(oext) : $(ippGraDir)hrf/src/HRFHGRPageFile.cpp $(ippAllInc)HRFHGRPageFile.h ${MultiCompileDepends}
+
+$(o)HRFiTiffCacheFileCreator$(oext) : $(ippGraDir)hrf/src/HRFiTiffCacheFileCreator.cpp $(ippAllInc)HRFiTiffCacheFileCreator.h ${MultiCompileDepends}
+
+$(o)HRFLocalCacheFileCreator$(oext) : $(ippGraDir)hrf/src/HRFLocalCacheFileCreator.cpp $(ippAllInc)HRFLocalCacheFileCreator.h ${MultiCompileDepends}
+
+$(o)HRFPageFile$(oext) : $(ippGraDir)hrf/src/HRFPageFile.cpp $(ippAllInc)HRFPageFile.h ${MultiCompileDepends}
+
+$(o)HRFPageFileFactory$(oext) : $(ippGraDir)hrf/src/HRFPageFileFactory.cpp $(ippAllInc)HRFPageFileFactory.h ${MultiCompileDepends}
+
+$(o)HRFRasterFileBlockAdapter$(oext) : $(ippGraDir)hrf/src/HRFRasterFileBlockAdapter.cpp $(ippAllInc)HRFRasterFileBlockAdapter.h ${MultiCompileDepends}
+
+$(o)HRFRasterFileCache$(oext) : $(ippGraDir)hrf/src/HRFRasterFileCache.cpp $(ippAllInc)HRFRasterFileCache.h ${MultiCompileDepends}
+
+$(o)HRFRasterFileExtender$(oext) : $(ippGraDir)hrf/src/HRFRasterFileExtender.cpp $(ippAllInc)HRFRasterFileExtender.h ${MultiCompileDepends}
+
+$(o)HRFRasterFilePageDecorator$(oext) : $(ippGraDir)hrf/src/HRFRasterFilePageDecorator.cpp $(ippAllInc)HRFRasterFilePageDecorator.h ${MultiCompileDepends}
+
+$(o)HRFRasterFileResBooster$(oext) : $(ippGraDir)hrf/src/HRFRasterFileResBooster.cpp $(ippAllInc)HRFRasterFileResBooster.h ${MultiCompileDepends}
+
+$(o)HRFResBoosterEditor$(oext) : $(ippGraDir)hrf/src/HRFResBoosterEditor.cpp $(ippAllInc)HRFResBoosterEditor.h ${MultiCompileDepends}
+
+$(o)HRFSLOModelComposer$(oext) : $(ippGraDir)hrf/src/HRFSLOModelComposer.cpp $(ippAllInc)HRFSLOModelComposer.h ${MultiCompileDepends}
+
+$(o)HRFSLOStripAdapter$(oext) : $(ippGraDir)hrf/src/HRFSLOStripAdapter.cpp $(ippAllInc)HRFSLOStripAdapter.h ${MultiCompileDepends}
+
+$(o)HRFSLOStripEditor$(oext) : $(ippGraDir)hrf/src/HRFSLOStripEditor.cpp $(ippAllInc)HRFSLOStripEditor.h ${MultiCompileDepends}
+
+$(o)HRFTWFPageFile$(oext) : $(ippGraDir)hrf/src/HRFTWFPageFile.cpp $(ippAllInc)HRFTWFPageFile.h ${MultiCompileDepends}
+
+$(o)HRFGeoTiffCompressedTable$(oext) : $(ippGraDir)hrf/src/HRFGeoTiffCompressedTable.cpp $(ippAllInc)HRFGeoTiffCompressedTable.h ${MultiCompileDepends}
+
+$(o)HRFGeoTiffCoordSysTable$(oext) : $(ippGraDir)hrf/src/HRFGeoTiffCoordSysTable.cpp $(ippAllInc)HRFGeoTiffCoordSysTable.h ${MultiCompileDepends}
+
+$(o)HRFGeoTiffProjectionTable$(oext) : $(ippGraDir)hrf/src/HRFGeoTiffProjectionTable.cpp $(ippAllInc)HRFGeoTiffProjectionTable.h ${MultiCompileDepends}
+
+$(o)HRFGeoTiffUnitsTable$(oext) : $(ippGraDir)hrf/src/HRFGeoTiffUnitsTable.cpp $(ippAllInc)HRFGeoTiffUnitsTable.h ${MultiCompileDepends}
+
+%if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
+$(o)HRFOracleException$(oext) : $(ippGraDir)hrf/src/HRFOracleException.cpp $(ippAllInc)HRFOracleException.h ${MultiCompileDepends}
+%endif
+
+$(o)HIMFilteredImage$(oext) : $(ippGraDir)him/src/HIMFilteredImage.cpp $(ippAllInc)HIMFilteredImage.h $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)HIMMosaic$(oext) : $(ippGraDir)him/src/HIMMosaic.cpp $(ippAllInc)HIMMosaic.h $(HRasterDepends) $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)HIMOnDemandMosaic$(oext) : $(ippGraDir)him/src/HIMOnDemandMosaic.cpp $(ippAllInc)HIMOnDemandMosaic.h $(HRasterDepends) $(ippGraPrivateAPISrc)ImageCommon.h ${MultiCompileDepends}
+
+$(o)HIMBufferedImage$(oext) : $(ippGraDir)him/src/HIMBufferedImage.cpp $(ippAllInc)HIMBufferedImage.h $(HRasterDepends) ${MultiCompileDepends}
+
+$(o)HIMBufferedImageIterator$(oext) : $(ippGraDir)him/src/HIMBufferedImageIterator.cpp $(ippAllInc)HIMBufferedImageIterator.h ${MultiCompileDepends}
+
+$(o)HIMStoredRasterEquivalentTransfo$(oext) : $(ippGraDir)him/src/HIMStoredRasterEquivalentTransfo.cpp $(ippAllInc)HIMStoredRasterEquivalentTransfo.h ${MultiCompileDepends}
+
+$(o)HIMStripAdapter$(oext) : $(ippGraDir)him/src/HIMStripAdapter.cpp $(ippAllInc)HIMStripAdapter.h $(HRasterDepends) ${MultiCompileDepends}
+
+$(o)HIMStripAdapterIterator$(oext) : $(ippGraDir)him/src/HIMStripAdapterIterator.cpp $(ippAllInc)HIMStripAdapterIterator.h ${MultiCompileDepends}
+
+$(o)HIMStripProgressIndicator$(oext) : $(ippGraDir)him/src/HIMStripProgressIndicator.cpp $(ippAllInc)HIMStripProgressIndicator.h ${MultiCompileDepends}
+
+$(o)HIMTranslucentImageCreator$(oext) : $(ippGraDir)him/src/HIMTranslucentImageCreator.cpp $(ippAllInc)HIMTranslucentImageCreator.h ${MultiCompileDepends}
+
+#--------------------------------------------------------------------------------------------------------------------------------------------
+# not ported yet.
+%if 0
+
+$(o)HRACachedHistogramRaster$(oext) : $(ippGraDir)hra/src/HRACachedHistogramRaster.cpp $(ippAllInc)HRACachedHistogramRaster.h ${MultiCompileDepends}
+
+$(o)HIMBlendCorridor$(oext) : $(ippGraDir)him/src/HIMBlendCorridor.cpp $(ippAllInc)HIMBlendCorridor.h ${MultiCompileDepends}
+
+$(o)HIMBlendCorridorIterator$(oext) : $(ippGraDir)him/src/HIMBlendCorridorIterator.cpp $(ippAllInc)HIMBlendCorridorIterator.h ${MultiCompileDepends}
+
+$(o)HIMColorBalancedImage$(oext) : $(ippGraDir)him/src/HIMColorBalancedImage.cpp $(ippAllInc)HIMColorBalancedImage.h ${MultiCompileDepends}
+
+$(o)HIMColorBalancedImageIterator$(oext) : $(ippGraDir)him/src/HIMColorBalancedImageIterator.cpp $(ippAllInc)HIMColorBalancedImageIterator.h ${MultiCompileDepends}
+
+$(o)HIMSeamlessMosaic$(oext) : $(ippGraDir)him/src/HIMSeamlessMosaic.cpp $(ippAllInc)HIMSeamlessMosaic.h ${MultiCompileDepends}
+
+%endif
+
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList)
+
+#------------------------------------------------------------------------------------------------------------------
+# -------------------------- Non Uniform Objects  -----------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------
+
+%if $(TARGET_PLATFORM) == "Windows"
+# ErMapper headers have errors when compiled with 'Zc:strictStrings' disable this option only for these files.
+CCompOpts + -Zc:strictStrings-
+nonUniformObjs = \
+    $(o)HRFErMapperSupportedFile$(oext) \
+    $(o)HRFErMapperSupportedFileEditor$(oext)
+    
+$(o)HRFErMapperSupportedFile$(oext) : $(ippGraDir)hrf/src/HRFErMapperSupportedFile.cpp $(ippAllInc)HRFErMapperSupportedFile.h
+
+$(o)HRFErMapperSupportedFileEditor$(oext) : $(ippGraDir)hrf/src/HRFErMapperSupportedFileEditor.cpp $(ippAllInc)HRFErMapperSupportedFileEditor.h
+%endif
+
+#----------------------------------------------------------------------
+#       DLL/LIB creation
+#----------------------------------------------------------------------
+DLM_NAME            = $(appName)
+DLM_OBJECT_FILES    = $(objs) $(nonUniformObjs)
+DLM_OBJECT_PCH      = $(o)HStdcpp$(oext)
+LINKER_LIBRARIES_DELAYLOADED =  \
+                        $(ntPlatformLib)wsock32.lib $(ntPlatformLib)ws2_32.lib  \
+                        $(ntPlatformLib)Crypt32.lib $(ntPlatformLib)Dbghelp.lib \
+                        $(ntPlatformLib)shlwapi.lib $(BaseGeocoordLibExportLib) \
+                        $(ntPlatformLib)Winmm$(libext)
+
+
+%if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
+    # Adobe pdf support 
+    LINKER_LIBRARIES_DELAYLOADED   + $(pdflsdkLib)AdobePDFL.lib  $(PdfLibInitializerExportLib) 
+    
+    # Oracle support 
+    LINKER_LIBRARIES_DELAYLOADED   + $(oracleLib)$(OCIName).lib 
+%endif
+    
+# MrSID support
+LINKER_LIBRARIES_DELAYLOADED   + $(ContextSubpartsLibs)lti_dsdk.lib $(ContextSubpartsLibs)lti_dsdk_cdll.lib 
+
+# ECW/Jpeg2000 support (delay-load removed - see comment below)
+# LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)NCSEcw.lib 
+
+
+LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
+                    $(IppJpegLib12Bits) \
+                    $(BuildContext)SubParts/Libs/BePng.lib \
+                    $(BuildContext)SubParts/Libs/BeZLib.lib \
+                    $(BuildContext)SubParts/Libs/BeSQLite.lib \
+                    $(ntPlatformLib)Urlmon.lib \
+                    $(IppGdalLib) \
+                    $(ippOutPrivateLibs)$(libprefix)MatrixFromTiePts$(libext) \
+                    $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext) \
+                    $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext) \
+                    $(ContextSubpartsLibs)NCSEcw.lib
+
+                    # Delaying the load of NCSEcw.lib creates a linker error 
+                    # due to the import of the data symbol 
+                    # "__declspec(dllimport) const NCS::CMutex::`vftable". 
+                    # This is why the dll is added above without delay-load. 
+
+
+%if defined (CREATE_STATIC_LIBRARIES)
+    # embed our private external static lib into gralib.
+    DLM_OBJECT_FILES + $(ippOutPrivateLibs)$(libprefix)MatrixFromTiePts$(stlibext) $(IppGdalLib) $(BeLibJpegTurbo) $(IppJpegLib12Bits) $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) $(ContextSubpartsLibs)$(libprefix)BeZLib$(stlibext)
+%endif
+
+%include $(sharedMki)linkLibrary.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)xliffs/
+
+SQLANG_CHeader      = $(ippPublicAPISrc)all/h/ImagePPMessages.xliff.h
+SQLANG_Xliff        = $(o)xliffs/ImagePPMessages_en.xliff
+
+%include $(sharedMki)CHeaderToXliff.mki
+
+SQLANG_CHeader      = $(ippPublicAPISrc)h/ImagePPExceptionMessages.xliff.h
+SQLANG_Xliff        = $(o)xliffs/ImagePPExceptionMessages_en.xliff
+
+%include $(sharedMki)CHeaderToXliff.mki

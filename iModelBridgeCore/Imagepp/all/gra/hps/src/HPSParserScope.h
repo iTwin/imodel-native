@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSParserScope.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Header for class : HPSParserScope
@@ -15,6 +15,8 @@
 
 #include <Imagepp/all/h/HFCPtr.h>
 #include "HPSInternalNodes.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HPSParser;
 class ExpressionNode;
@@ -64,6 +66,8 @@ private:
     StatementList       m_StatementList;
 
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HPSParserScope.hpp"
 

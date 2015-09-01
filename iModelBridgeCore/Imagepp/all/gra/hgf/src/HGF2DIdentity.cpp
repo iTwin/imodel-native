@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DIdentity.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DIdentity
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HGF2DDisplacement.h>
@@ -62,26 +62,42 @@ HGF2DIdentity& HGF2DIdentity::operator=(const HGF2DIdentity& pi_rObj)
     return (*this);
     }
 
-//-----------------------------------------------------------------------------
-// Converter (direct)
-//-----------------------------------------------------------------------------
-void HGF2DIdentity::ConvertDirect(double* pio_pXInOut,
-                                  double* pio_pYInOut) const
-    {
-    // Make sure that recipient variables are provided
-    HPRECONDITION(pio_pXInOut != 0);
-    HPRECONDITION(pio_pYInOut != 0);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alexandre.Gariepy               06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HGF2DIdentity::IsConvertDirectThreadSafe() const 
+    { 
+    return true; 
+    }
 
-    // Nothing to do
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alexandre.Gariepy               06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HGF2DIdentity::IsConvertInverseThreadSafe() const 
+    { 
+    return true; 
     }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DIdentity::ConvertDirect(double   pi_XIn,
-                                  double   pi_YIn,
-                                  double*  po_pXOut,
-                                  double*  po_pYOut) const
+StatusInt HGF2DIdentity::ConvertDirect(double* pio_pXInOut,
+                                       double* pio_pYInOut) const
+    {
+    // Make sure that recipient variables are provided
+    HPRECONDITION(pio_pXInOut != 0);
+    HPRECONDITION(pio_pYInOut != 0);
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DIdentity::ConvertDirect(double   pi_XIn,
+                                       double   pi_YIn,
+                                       double*  po_pXOut,
+                                       double*  po_pYOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(po_pXOut != 0);
@@ -90,17 +106,18 @@ void HGF2DIdentity::ConvertDirect(double   pi_XIn,
     *po_pXOut = pi_XIn;
     *po_pYOut = pi_YIn;
 
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DIdentity::ConvertDirect(double    pi_YIn,
-                                  double    pi_XInStart,
-                                  size_t     pi_NumLoc,
-                                  double    pi_XInStep,
-                                  double*   po_aXOut,
-                                  double*   po_aYOut) const
+StatusInt HGF2DIdentity::ConvertDirect(double    pi_YIn,
+                                       double    pi_XInStart,
+                                       size_t    pi_NumLoc,
+                                       double    pi_XInStep,
+                                       double*   po_aXOut,
+                                       double*   po_aYOut) const
     {
     // Make sure recipient arrays are provided
     HPRECONDITION(po_aXOut != 0);
@@ -117,29 +134,43 @@ void HGF2DIdentity::ConvertDirect(double    pi_YIn,
         *pCurrentX = X;
         *pCurrentY = pi_YIn;
         }
+
+    return SUCCESS;
     }
 
-
-
+//-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DIdentity::ConvertDirect(size_t    pi_NumLoc,
+                                       double*   pio_aXInOut,
+                                       double*   pio_aYInOut) const
+    {
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+    //Nothing to do because the arrays in argument are input/output arrays
+    return SUCCESS;
+    }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DIdentity::ConvertInverse(double* pio_pXInOut,
-                                   double* pio_pYInOut) const
+StatusInt HGF2DIdentity::ConvertInverse(double* pio_pXInOut,
+                                        double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(pio_pXInOut != 0);
     HPRECONDITION(pio_pYInOut != 0);
+
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DIdentity::ConvertInverse(double  pi_XIn,
-                                   double  pi_YIn,
-                                   double* po_pXOut,
-                                   double* po_pYOut) const
+StatusInt HGF2DIdentity::ConvertInverse(double  pi_XIn,
+                                        double  pi_YIn,
+                                        double* po_pXOut,
+                                        double* po_pYOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(po_pXOut != 0);
@@ -147,17 +178,19 @@ void HGF2DIdentity::ConvertInverse(double  pi_XIn,
 
     *po_pXOut = pi_XIn;
     *po_pYOut = pi_YIn;
+
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DIdentity::ConvertInverse(double    pi_YIn,
-                                   double    pi_XInStart,
-                                   size_t     pi_NumLoc,
-                                   double    pi_XInStep,
-                                   double*   po_aXOut,
-                                   double*   po_aYOut) const
+StatusInt HGF2DIdentity::ConvertInverse(double    pi_YIn,
+                                        double    pi_XInStart,
+                                        size_t    pi_NumLoc,
+                                        double    pi_XInStep,
+                                        double*   po_aXOut,
+                                        double*   po_aYOut) const
     {
     // Make sure recipient arrays are provided
     HPRECONDITION(po_aXOut != 0);
@@ -174,8 +207,22 @@ void HGF2DIdentity::ConvertInverse(double    pi_YIn,
         *pCurrentX = X;
         *pCurrentY = pi_YIn;
         }
+
+    return SUCCESS;
     }
 
+//-----------------------------------------------------------------------------
+// Converter (inverse)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DIdentity::ConvertInverse(size_t    pi_NumLoc,
+                                        double*   pio_aXInOut,
+                                        double*   pio_aYInOut) const
+    {
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+    //Nothing to do because the arrays in argument are input/output arrays
+    return SUCCESS;
+    }
 
 
 //-----------------------------------------------------------------------------

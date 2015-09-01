@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DFacet.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -32,6 +32,7 @@
 
     -----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 template<class ATTRIBUTE> class HVE2DFacet
     {
 
@@ -89,6 +90,7 @@ private:
     mutable HGF2DLiteExtent m_LiteExtent;
 
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HVE2DFacet.hpp"
 

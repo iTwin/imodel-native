@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF3DCoord.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HGF3DCoord
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -806,7 +806,7 @@ template<> inline void HGF3DCoord<float>::PrintState(ostream& po_rOutput) const
 
 
 
-
+END_IMAGEPP_NAMESPACE
 
 
 

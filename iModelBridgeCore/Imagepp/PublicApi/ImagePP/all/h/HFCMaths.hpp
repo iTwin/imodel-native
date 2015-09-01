@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMaths.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline functions for maths utility.
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //----------------------------------------------------------------------------
 // This fast cubic root method has been optimized. The valid domain
 // range is [-MAX_DOUBLE, MAX_DOUBLE].  If the domain is restricted fom [0, 1]. We
@@ -243,3 +244,5 @@ inline double HarmonicMean(double pi_FirstValue, double pi_SecondValue)
 
     return 2.0 / ((1.0 / pi_FirstValue) + (1.0 / pi_SecondValue));
     }
+
+END_IMAGEPP_NAMESPACE

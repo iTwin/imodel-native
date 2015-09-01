@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCProfiler.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>    //:> must be first for PreCompiledHeader Option
+#include <ImagePPInternal/hstdcpp.h>
+    //:> must be first for PreCompiledHeader Option
 
 #include <Imagepp/all/h/HFCProfiler.h>
 
@@ -49,7 +49,7 @@ HFCProfiler::HFCProfiler()
         Stop(1, BValue);
         QueryPerformanceCounter(&StopStamp);
         CurrentOverhead = ((double)StopStamp.QuadPart - (double)StartStamp.QuadPart) * m_FrequencyInverseForMillis;
-        MinimumOverhead = min(MinimumOverhead, CurrentOverhead);
+        MinimumOverhead = MIN(MinimumOverhead, CurrentOverhead);
         }
     Stop(0, AValue);
 

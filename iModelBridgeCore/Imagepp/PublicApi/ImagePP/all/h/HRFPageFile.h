@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPageFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -21,11 +21,12 @@
 #include "HRFRasterFile.h"
 #include "HGF2DWorld.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFPageFile : public HFCShareableObject<HRFPageFile>
     {
 public:
     // Class ID for this class.
-    HDECLARE_BASECLASS_ID(1495)
+    HDECLARE_BASECLASS_ID(HRFPageFileId_Base)
 
     virtual                               ~HRFPageFile ();
 
@@ -45,7 +46,7 @@ public:
 
     virtual void                          WriteToDisk() = 0;
 
-    _HDLLg virtual void                   SetDefaultRatioToMeter(double pi_RatioToMeter);
+    IMAGEPP_EXPORT virtual void                   SetDefaultRatioToMeter(double pi_RatioToMeter);
     virtual double                       GetDefaultRatioToMeter() const;
 
 protected:
@@ -98,6 +99,7 @@ protected:
     // capabilities instance member definition
     HFCPtr<HRFRasterFileCapabilities> m_pCapabilities;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRFPageFile.hpp"
 

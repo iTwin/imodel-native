@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPContrastStretchFilter16.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPContrastStretchFilter16
@@ -13,13 +13,14 @@
 
 #include "HRPMapFilter16.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPContrastStretchFilter16 : public HRPMapFilter16
     {
-    HDECLARE_CLASS_ID(1349, HRPMapFilter16)
+    HDECLARE_CLASS_ID(HRPFilterId_ContrastStretch16, HRPMapFilter16)
 
 public:             // Primary methods
-    HRPContrastStretchFilter16();
-    HRPContrastStretchFilter16(const HFCPtr<HRPPixelType>&       pi_pFilterPixelType);
+    IMAGEPP_EXPORT          HRPContrastStretchFilter16();
+    IMAGEPP_EXPORT          HRPContrastStretchFilter16(const HFCPtr<HRPPixelType>&       pi_pFilterPixelType);
     HRPContrastStretchFilter16(const HRPContrastStretchFilter16& pi_rFilter);
 
     virtual            ~HRPContrastStretchFilter16();
@@ -75,5 +76,6 @@ private:
 
     double*     m_pGammaFactor;
     };
+END_IMAGEPP_NAMESPACE
 
 

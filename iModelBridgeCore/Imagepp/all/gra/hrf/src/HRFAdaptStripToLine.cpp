@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptStripToLine.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptStripToLine
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCAccessMode.h>
 
@@ -107,15 +107,17 @@ HRFAdaptStripToLine::~HRFAdaptStripToLine()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptStripToLine::ReadBlock (uint32_t pi_PosBlockX,
-                                        uint32_t pi_PosBlockY,
-                                        Byte* po_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFAdaptStripToLine::ReadBlock(uint64_t pi_PosBlockX,
+                                       uint64_t pi_PosBlockY,
+                                       Byte*  po_pData,
+                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
-    uint32_t StripIndexY = pi_PosBlockY / m_StripHeight;
+    uint32_t StripIndexY = (uint32_t)pi_PosBlockY / m_StripHeight;
 
     if (StripIndexY != m_BufferedStripIndexY)
         {
@@ -138,12 +140,14 @@ HSTATUS HRFAdaptStripToLine::ReadBlock (uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptStripToLine::WriteBlock(uint32_t    pi_PosBlockX,
-                                        uint32_t     pi_PosBlockY,
+HSTATUS HRFAdaptStripToLine::WriteBlock(uint64_t    pi_PosBlockX,
+                                        uint64_t    pi_PosBlockY,
                                         const Byte* pi_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     HASSERT (m_NextLineToWrite == pi_PosBlockY);
@@ -158,7 +162,7 @@ HSTATUS HRFAdaptStripToLine::WriteBlock(uint32_t    pi_PosBlockX,
 
     if ((pi_PosBlockY % m_StripHeight) == m_StripHeight - 1 ||
         pi_PosBlockY == m_RasterHeight-1)
-        Status = WriteAStrip (pi_PosBlockY / m_StripHeight, pi_pSisterFileLock);
+        Status = WriteAStrip ((uint32_t)pi_PosBlockY / m_StripHeight, pi_pSisterFileLock);
 
     if (pi_PosBlockY == m_RasterHeight-1)
         Delete_m_pStrip();

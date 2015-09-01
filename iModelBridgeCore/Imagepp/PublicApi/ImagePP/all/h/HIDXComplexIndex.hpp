@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXComplexIndex.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIDXComplexIndex
@@ -11,7 +11,7 @@
 //-----------------------------------------------------------------------------
 
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
@@ -354,3 +354,4 @@ typename HIDXComplexIndex<O, I1, I2, SI>::Predicate HIDXComplexIndex<O, I1, I2, 
     typename I2::Predicate predicate2 = m_pIndex2->GetPredicate();
     return Predicate(predicate1, predicate2);
     }
+END_IMAGEPP_NAMESPACE

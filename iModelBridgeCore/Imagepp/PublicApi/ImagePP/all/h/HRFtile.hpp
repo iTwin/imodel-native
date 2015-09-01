@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFtile.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,6 +11,7 @@
 
 #include "HFCMonitor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Public
 // COnstructor
@@ -169,22 +170,4 @@ inline void HRFTile::SetData(const Byte*   pi_pData,
     m_Valid    = true;
 
     }
-
-//-----------------------------------------------------------------------------
-// Public
-// Set an exception for the tile. Will be set to invalid.
-//-----------------------------------------------------------------------------
-inline void HRFTile::SetException(const HFCException*   pi_pException)
-    {
-    m_pException = (HFCException*)pi_pException->Clone();
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Return the current exception for the tile.
-//-----------------------------------------------------------------------------
-inline const HFCException* HRFTile::GetException() const
-    {
-    return m_pException;
-    }
+END_IMAGEPP_NAMESPACE

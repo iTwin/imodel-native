@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMath.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCMath
@@ -13,9 +13,10 @@
 
 #include <Imagepp/all/h/HFCMacros.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 //----------------------------------------------------------------------------
 
-#define CONVERT_TO_BYTE(Value)  (0xFF & Value)
+#define CONVERT_TO_BYTE(Value)  (0xFF & (Value))
 
 //#define CONVERT_8BIT_TO_16BITx(ubyteValue)  (((UShort)(ubyteValue))  << 8)
 //#define CONVERT_8BIT_TO_16BITxx(ubyteValue)  ((((UShort)0|ubyteValue)<<8) |ubyteValue)
@@ -34,7 +35,7 @@
 
 class HFCMath
     {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLu, HFCMath)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HFCMath)
 
 private:
     HFCMath();
@@ -49,13 +50,15 @@ private:
 
 public:
     // Interface
-    inline int32_t DivideBy255(int32_t pi_Numerator) const;
-    inline Byte DivideBy255ToByte(int32_t pi_Numerator) const;
+    int32_t DivideBy255(int32_t pi_Numerator) const;
+    Byte DivideBy255ToByte(int32_t pi_Numerator) const;
     // Only positive value here.
-    inline Byte UnsignedDivideBy255(unsigned short pi_Numerator) const;
+    Byte UnsignedDivideBy255(unsigned short pi_Numerator) const;
 
-    inline uint32_t MultiplyBy0X01010101(Byte pi_Value) const;
+    uint32_t MultiplyBy0X01010101(Byte pi_Value) const;
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include <Imagepp/all/h/HFCMath.hpp>
 //----------------------------------------------------------------------------

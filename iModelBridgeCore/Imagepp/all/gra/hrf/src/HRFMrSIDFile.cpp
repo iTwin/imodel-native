@@ -2,19 +2,16 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFMrSIDFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFMrSIDFile
 //-----------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 
-#include <Imagepp/all/h/HCPException.h>
-
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 
@@ -61,7 +58,7 @@
 
 #include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
 
-USING_NAMESPACE_IMAGEPP
+
 using namespace LizardTech;
 
 #ifndef HGLOBAL_EPSILON
@@ -235,8 +232,7 @@ HRFMrSIDCreator::HRFMrSIDCreator()
 //-----------------------------------------------------------------------------
 WString HRFMrSIDCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_MrSid); // MrSID File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_MrSid()); // MrSID File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -314,7 +310,7 @@ bool HRFMrSIDCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         pImageReader->getDimsAtMag( 1.0, Width, Height);
 
         //Limit the width, to protect against very large images.
-        Width = min(10, Width);
+        Width = MIN(10, Width);
 
         const LTIScene scene(0, 0, Width, 1,  1.0);
 
@@ -360,7 +356,7 @@ HRFMrSIDFile::HRFMrSIDFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException( pi_rURL->GetURL());
         }
 
     // The ancestor store the access mode
@@ -410,15 +406,17 @@ const HGF2DWorldIdentificator HRFMrSIDFile::GetWorldIdentificator () const
 
     // Check geotiff tags
     HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(0);
-    HFCPtr<HCPGeoTiffKeys> pGeoKeyContainer = static_cast<HCPGeoTiffKeys*>(pPageDescriptor->GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO).GetPtr());
+    RasterFileGeocoding const& fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
 
-    if (pGeoKeyContainer != 0 && pGeoKeyContainer->HasKey(GTModelType))
+    HCPGeoTiffKeys const& geoKeyContainer = fileGeocoding.GetGeoTiffKeys();
+
+    if (geoKeyContainer.HasKey(GTModelType))
         {
         World = HGF2DWorld_GEOTIFFUNKNOWN;
 
         // Change world id if GTModelType is ModelTypeGeographic
         uint32_t GeoLongValue;
-        pGeoKeyContainer->GetValue(GTModelType, &GeoLongValue);
+        geoKeyContainer.GetValue(GTModelType, &GeoLongValue);
 
         switch (GeoLongValue)
             {
@@ -589,7 +587,6 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFMrSIDFile::GetCapabilities () const
 void HRFMrSIDFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                           uint32_t pi_Page,
                                           bool   pi_CheckSpecificUnitSpec,
-                                          bool   pi_GeoModelDefaultUnit,
                                           bool   pi_InterpretUnitINTGR)
     {
     HPRECONDITION(CountPages() == 1);
@@ -597,30 +594,29 @@ void HRFMrSIDFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
 
     // Update the model in each page
     HFCPtr<HRFPageDescriptor>     pPageDescriptor     = GetPageDescriptor(0);
-    IRasterBaseGcsPtr pBaseGCS = pPageDescriptor->GetGeocoding();
+    RasterFileGeocoding const& pFileGeocoding(pPageDescriptor->GetRasterFileGeocoding());
+    IRasterBaseGcsCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
     // In addition to the georeference, for some weird reason the fact the original georeference possesed an indication that of
     // the model type is used int he creation of the transformation matrix below
-    HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys;
-
-    pGeoTiffKeys = static_cast<HCPGeoTiffKeys*>(pPageDescriptor->GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO).GetPtr());
-
     if (pBaseGCS != 0)
         {
         HFCPtr<HGF2DTransfoModel> pTransfoModel;
         bool                     DefaultUnitWasFound = false;
 
+        bool hasGTModel(false);
+        hasGTModel = pFileGeocoding.GetGeoTiffKeys().HasKey(GTModelType);
+
+
         // TranfoModel
-        BuildTransfoModelMatrix(pGeoTiffKeys->HasKey(GTModelType), pTransfoModel);
+        BuildTransfoModelMatrix(hasGTModel, pTransfoModel);
 
         //Ensure that a new GeoCoord is created based on the pi_CheckSpecificUnitSpec
         //configuration.
-        pTransfoModel = HCPGeoTiffKeys::TranslateToMeter(pTransfoModel,
-                                                       pi_RatioToMeter,
-                                                       pi_GeoModelDefaultUnit,
-                                                       pi_CheckSpecificUnitSpec,
-                                                       &DefaultUnitWasFound, 
-                                                       pBaseGCS);
+        pTransfoModel = pPageDescriptor->GetRasterFileGeocoding().TranslateToMeter(pTransfoModel,
+                                                                                   pi_RatioToMeter,
+                                                                                   pi_CheckSpecificUnitSpec,
+                                                                                   &DefaultUnitWasFound);
 
         SetUnitFoundInFile(DefaultUnitWasFound, 0);
 
@@ -744,10 +740,10 @@ void HRFMrSIDFile::SetLookAhead(uint32_t               pi_Page,
                 HASSERT(PosX <= ULONG_MAX);
                 HASSERT(PosY <= ULONG_MAX);
 
-                MinX = min(MinX, (uint32_t)PosX);
-                MinY = min(MinY, (uint32_t)PosY);
-                MaxX = max(MaxX, (uint32_t)PosX + BlockWidth);
-                MaxY = max(MaxY, (uint32_t)PosY + BlockHeight);
+                MinX = MIN(MinX, (uint32_t)PosX);
+                MinY = MIN(MinY, (uint32_t)PosY);
+                MaxX = MAX(MaxX, (uint32_t)PosX + BlockWidth);
+                MaxY = MAX(MaxY, (uint32_t)PosY + BlockHeight);
 
                 BlockIndex = TileIterator.GetNextTileIndex();
                 }
@@ -876,7 +872,7 @@ void HRFMrSIDFile::CreateDescriptors ()
         }
     while (ZoomRatio > 1);
 
-    ResCount = __min(ResCount, 254);  // don't use 255, 255 means Unlimited resolution.
+    ResCount = MIN(ResCount, 254);  // don't use 255, 255 means Unlimited resolution.
     m_ResCount = ResCount;
 
     // Allocate memory for ReadBlock() utilities (optimization)
@@ -937,24 +933,24 @@ void HRFMrSIDFile::CreateDescriptors ()
 
     
     // Geokeys are used as part of MrSID files (but apparently not always)
-    HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys;
-    IRasterBaseGcsPtr pBaseGCS;
-    GetFileInfo(TagList, pGeoTiffKeys, pBaseGCS);
+    RasterFileGeocodingPtr pFileGeocoding;
+    GetFileInfo(TagList, pFileGeocoding);
 
     HFCPtr<HGF2DTransfoModel> pTransfoModel;
     bool                     DefaultUnitWasFound = false;
 
-    BuildTransfoModelMatrix(pGeoTiffKeys->HasKey(GTModelType), pTransfoModel);
+    bool hasGTModel(false);
+    hasGTModel = pFileGeocoding->GetGeoTiffKeys().HasKey(GTModelType);
 
-    if ((pBaseGCS != 0) && (pBaseGCS->IsValid()))
+    BuildTransfoModelMatrix(hasGTModel, pTransfoModel);
+
+    if ((pFileGeocoding->GetGeocodingCP() != 0) && (pFileGeocoding->GetGeocodingCP()->IsValid()))
         {
         // If file is a kind of "geotiff" then translate transfo model
-        pTransfoModel = pGeoTiffKeys->TranslateToMeter(pTransfoModel,
+        pTransfoModel = pFileGeocoding->TranslateToMeter(pTransfoModel,
                                                        1.0,
-                                                       true,
                                                        false,
-                                                       &DefaultUnitWasFound,
-                                                       pBaseGCS);
+                                                       &DefaultUnitWasFound);
         }
 
     SetUnitFoundInFile(DefaultUnitWasFound);
@@ -972,20 +968,7 @@ void HRFMrSIDFile::CreateDescriptors ()
                                    &TagList,                    // Tag
                                    0);                          // Duration
 
-    pPage->SetGeocoding(pBaseGCS);
-
-    // If geokeys were present then these must be stored
-    if (pGeoTiffKeys->GetNbKeys() > 0)
-        {
-        HFCPtr<HMDMetaDataContainerList> pMetaDataContainers;
-
-        pMetaDataContainers = new HMDMetaDataContainerList();
-
-        //HMD_GEOCODING_INFO
-        pMetaDataContainers->SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>(pGeoTiffKeys));
-
-        pPage->SetListOfMetaDataContainer(pMetaDataContainers);
-        }
+    pPage->InitFromRasterFileGeocoding(*pFileGeocoding);
 
     m_ListOfPageDescriptor.push_back(pPage);
     }
@@ -997,12 +980,11 @@ void HRFMrSIDFile::CreateDescriptors ()
 // Get a list of relevant tags found embedded in the file.
 //-----------------------------------------------------------------------------
 void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
-                               HFCPtr<HCPGeoTiffKeys>&        po_rpGeoTiffKeys,
-                               IRasterBaseGcsPtr&             pio_BaseGCS)
+                               RasterFileGeocodingPtr&        po_pFileGeocoding)
     {
-    HPRECONDITION(po_rpGeoTiffKeys == 0);
+    po_pFileGeocoding = RasterFileGeocoding::Create();
 
-    po_rpGeoTiffKeys = new HCPGeoTiffKeys();
+    HFCPtr<HCPGeoTiffKeys> po_rpGeoTiffKeys = new HCPGeoTiffKeys();
 
     try
         {
@@ -1041,11 +1023,6 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
 
                     po_rpGeoTiffKeys->AddKey(ProjectedCSType, (uint32_t)*((unsigned short*)pData));
                     }
-                }
-            else
-                {   // We would like to see the default unit in the RM dialog in the tag MrSid
-                // We generate a default ProjectedCSType --> HRFIsGeoCoded will return true.
-                po_rpGeoTiffKeys->AddKey(ProjectedCSType, (uint32_t)0);
                 }
 
             if (MyMetaDataReader.has("GEOTIFF_NUM::3073::PCSCitationGeoKey")) // unsigned short
@@ -1161,7 +1138,7 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                 }
 
             // Try creating the base GCS with geokeys
-            pio_BaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, *po_rpGeoTiffKeys);
+            po_pFileGeocoding = RasterFileGeocoding::Create(po_rpGeoTiffKeys.GetPtr());
 
             WString WKT;
 
@@ -1181,11 +1158,11 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
 
                 if ((WKT != L"") && (po_rpGeoTiffKeys->GetNbKeys() > 0))
                     {
-                    if (pio_BaseGCS == NULL || !pio_BaseGCS->IsValid())
+                    if (po_pFileGeocoding->GetGeocodingCP() == NULL || !(po_pFileGeocoding->GetGeocodingCP()->IsValid()))
                         {
                         //If a basegeocoord cannot be created with the GeoTIFF tags found
                         //and there is a WKT string, try with the WKT string
-                        pio_BaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorOGC, WKT.c_str());
+                        po_pFileGeocoding = RasterFileGeocoding::Create(HRFGeoCoordinateProvider::CreateRasterGcsFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorOGC, WKT.c_str()).get());
                         }
                     }
                 }

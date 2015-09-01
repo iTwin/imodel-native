@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFUSgsNDFLineEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HRFResolutionEditor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFUSgsNDFFile;
 
 class HRFUSgsNDFLineEditor : public HRFResolutionEditor
@@ -21,15 +22,15 @@ public:
     virtual ~HRFUSgsNDFLineEditor  ();
 
     // Edition by Block
-    virtual HSTATUS                 ReadBlock (uint32_t                 pi_PosBlockX,
-                                               uint32_t                 pi_PosBlockY,
-                                               Byte*                   po_pData,
-                                               HFCLockMonitor const*    pi_pSisterFileLock = 0);
+    virtual HSTATUS ReadBlock(uint64_t                pi_PosBlockX,
+                              uint64_t                pi_PosBlockY,
+                              Byte*                   po_pData,
+                              HFCLockMonitor const*   pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS          ReadBlock     (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            HFCPtr<HCDPacket>&       po_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0)
+    virtual HSTATUS ReadBlock(uint64_t                pi_PosBlockX,
+                              uint64_t                pi_PosBlockY,
+                              HFCPtr<HCDPacket>&      po_rpPacket,
+                              HFCLockMonitor const*   pi_pSisterFileLock = 0)
         {
         return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
         }
@@ -50,4 +51,5 @@ private:
     HRFUSgsNDFLineEditor& operator=(const HRFUSgsNDFLineEditor& pi_rObj);
 
     };
+END_IMAGEPP_NAMESPACE
 

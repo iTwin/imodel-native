@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfa_p.h 21476 2011-01-13 00:58:39Z warmerdam $
+ * $Id: hfa_p.h 23495 2011-12-08 00:16:33Z rouault $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Private class declarations for the HFA classes used to read
@@ -93,7 +93,7 @@ typedef struct hfainfo {
 
     void	*pMapInfo;
     //IPP - Elevation information found in some ErdasIMG file.
-    void    *pElevationInfo;
+    void        *pElevationInfo;
     void        *pDatum;
     void        *pProParameters;
 
@@ -275,7 +275,8 @@ public:
     HFAEntry	*GetNext();
     HFAEntry    *GetNamedChild( const char * );
     std::vector<HFAEntry*> FindChildren( const char *pszName, 
-                                         const char *pszType );
+                                         const char *pszType,
+                                         int nRecLevel = 0);
 
     GInt32	GetIntField( const char *, CPLErr * = NULL );
     double	GetDoubleField( const char *, CPLErr * = NULL );
@@ -354,6 +355,8 @@ class HFAField
 
 class HFAType
 {
+    int     bInCompleteDefn;
+
   public:
     int		nBytes;
     

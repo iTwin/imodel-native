@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pnmdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: pnmdataset.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  PNM Driver
  * Purpose:  Portable anymap file format imlementation
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam
+ * Copyright (c) 2008-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: pnmdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: pnmdataset.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 CPL_C_START
 void    GDALRegister_PNM(void);
@@ -119,7 +120,7 @@ int PNMDataset::Identify( GDALOpenInfo * poOpenInfo )
 /*      Verify that this is a _raw_ ppm or pgm file.  Note, we don't    */
 /*      support ascii files, or pbm (1bit) files.                       */
 /* -------------------------------------------------------------------- */
-    if( poOpenInfo->nHeaderBytes < 10 || poOpenInfo->fp == NULL )
+    if( poOpenInfo->nHeaderBytes < 10 )
         return FALSE;
 
     if( poOpenInfo->pabyHeader[0] != 'P'  ||
@@ -217,10 +218,8 @@ GDALDataset *PNMDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->nRasterYSize = nHeight;
 
 /* -------------------------------------------------------------------- */
-/*      Assume ownership of the file handled from the GDALOpenInfo.     */
+/*      Open file                                                       */
 /* -------------------------------------------------------------------- */
-    VSIFClose( poOpenInfo->fp );
-    poOpenInfo->fp = NULL;
 
     if( poOpenInfo->eAccess == GA_Update )
         poDS->fpImage = VSIFOpenL( poOpenInfo->pszFilename, "rb+" );
@@ -332,7 +331,7 @@ GDALDataset *PNMDataset::Create( const char * pszFilename,
     {
         CPLError( CE_Failure, CPLE_AppDefined,
               "Attempt to create PNM dataset with an illegal\n"
-              "data type (%s), only Byte and uint16_t supported.\n",
+              "data type (%s), only Byte and UInt16 supported.\n",
               GDALGetDataTypeName(eType) );
 
         return NULL;
@@ -423,11 +422,12 @@ void GDALRegister_PNM()
         poDriver->SetMetadataItem( GDAL_DMD_MIMETYPE,
                                    "image/x-portable-anymap" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
-                                   "Byte uint16_t" );
+                                   "Byte UInt16" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,
 "<CreationOptionList>"
 "   <Option name='MAXVAL' type='unsigned int' description='Maximum color value'/>"
 "</CreationOptionList>" );
+        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = PNMDataset::Open;
         poDriver->pfnCreate = PNMDataset::Create;

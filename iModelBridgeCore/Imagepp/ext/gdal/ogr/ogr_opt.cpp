@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_opt.cpp 19782 2010-05-31 13:03:17Z dron $
+ * $Id: ogr_opt.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features
  * Purpose:  Functions for getting list of projection types, and their parms.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam
+ * Copyright (c) 2009-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "ogr_srs_api.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogr_opt.cpp 19782 2010-05-31 13:03:17Z dron $");
+CPL_CVSID("$Id: ogr_opt.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 static const char *papszParameterDefinitions[] = {
     SRS_PP_CENTRAL_MERIDIAN,    "Central Meridian",     "Long",  "0.0",
@@ -208,6 +209,10 @@ static const char *papszProjectionDefinitions[] = {
     SRS_PP_CENTRAL_MERIDIAN, 
     SRS_PP_FALSE_EASTING, 
     SRS_PP_FALSE_NORTHING,
+
+    "*",
+    SRS_PT_IGH,
+    "Interrupted Goode Homolosine",
 
     "*",
     SRS_PT_GEOSTATIONARY_SATELLITE,
@@ -540,6 +545,8 @@ char **OPTGetParameterList( const char *pszProjectionMethod,
                                           papszProjectionDefinitions[i] );
                 i++;
             }
+            if( papszList == NULL) /* IGH has no parameter, so return an empty list instead of NULL */
+                papszList = (char**) CPLCalloc(1, sizeof(char*));
             return papszList;
         }
     }

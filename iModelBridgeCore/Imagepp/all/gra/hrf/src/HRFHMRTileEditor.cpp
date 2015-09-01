@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFHMRTileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFHMRTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HTIFFFile.h>
 #include <Imagepp/all/h/HRFHMRFile.h>
@@ -52,14 +52,15 @@ HRFHMRTileEditor::~HRFHMRTileEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFHMRTileEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                    uint32_t pi_PosBlockY,
-                                    Byte* po_pData,
+HSTATUS HRFHMRTileEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                    uint64_t pi_PosBlockY,
+                                    Byte*  po_pData,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     HSTATUS Status = H_SUCCESS;
 
@@ -76,7 +77,7 @@ HSTATUS HRFHMRTileEditor::ReadBlock(uint32_t pi_PosBlockX,
     static_cast<HRFHMRFile*>(GetRasterFile().GetPtr())->SetImageInSubImage (m_IndexOfPage+m_Resolution);
 
     // Read the first tile
-    Status = RASTERFILEPTR->TileRead(HMR_RASTERFILE->m_pTileBuffer, pi_PosBlockX, pi_PosBlockY);
+    Status = RASTERFILEPTR->TileRead(HMR_RASTERFILE->m_pTileBuffer, (uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
 
     if (Status == H_SUCCESS)
         {
@@ -97,8 +98,8 @@ HSTATUS HRFHMRTileEditor::ReadBlock(uint32_t pi_PosBlockX,
         if (pi_PosBlockY+m_pResolutionDescriptor->GetBlockHeight() < (m_pResolutionDescriptor->GetHeight()+m_PaddingLines))
             {
             Status = RASTERFILEPTR->TileRead(HMR_RASTERFILE->m_pTileBuffer,
-                                             pi_PosBlockX,
-                                             pi_PosBlockY+m_pResolutionDescriptor->GetBlockHeight());
+                                             (uint32_t)pi_PosBlockX,
+                                             (uint32_t)pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight());
 
             // Unlock the sister file
             SisterFileLock.ReleaseKey();
@@ -117,8 +118,8 @@ HSTATUS HRFHMRTileEditor::ReadBlock(uint32_t pi_PosBlockX,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFHMRTileEditor::ReadBlock(uint32_t           pi_PosBlockX,
-                                    uint32_t           pi_PosBlockY,
+HSTATUS HRFHMRTileEditor::ReadBlock(uint64_t           pi_PosBlockX,
+                                    uint64_t           pi_PosBlockY,
                                     HFCPtr<HCDPacket>& po_rpPacket,
                                     HFCLockMonitor const* pi_pSisterFileLock)
 
@@ -166,9 +167,9 @@ HSTATUS HRFHMRTileEditor::ReadBlock(uint32_t           pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFHMRTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                     uint32_t     pi_PosBlockY,
-                                     const Byte* pi_pData,
+HSTATUS HRFHMRTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                     uint64_t     pi_PosBlockY,
+                                     const Byte*  pi_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -189,7 +190,7 @@ HSTATUS HRFHMRTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
     static_cast<HRFHMRFile*>(GetRasterFile().GetPtr())->SetImageInSubImage (m_IndexOfPage+m_Resolution);
 
     // Read the tiles and update it
-    Status = RASTERFILEPTR->TileRead(HMR_RASTERFILE->m_pTileBuffer, pi_PosBlockX, pi_PosBlockY);
+    Status = RASTERFILEPTR->TileRead(HMR_RASTERFILE->m_pTileBuffer, (uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
 
 
     if ((Status == H_SUCCESS) || (Status == H_DATA_NOT_AVAILABLE))
@@ -204,12 +205,16 @@ HSTATUS HRFHMRTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
                                 m_pResolutionDescriptor->GetBlockWidth() *
                                 HMR_RASTERFILE->m_BytesByPixel) / HMR_RASTERFILE->m_Pixel1_4Bits;
 
+        // Clear uninitialized padding.
+        if(H_DATA_NOT_AVAILABLE == Status && LenghtPadding)
+            memset (HMR_RASTERFILE->m_pTileBuffer, 0, LenghtPadding);
+            
         // Copy the last part of the tile. (skip padding)
         memcpy (&(HMR_RASTERFILE->m_pTileBuffer[LenghtPadding]), pi_pData, Lenght);
 
         Status = RASTERFILEPTR->TileWrite(HMR_RASTERFILE->m_pTileBuffer,
-                                          pi_PosBlockX,
-                                          pi_PosBlockY);
+                                          (uint32_t)pi_PosBlockX,
+                                          (uint32_t)pi_PosBlockY);
 
         // Complete the tile with the next if present.
         if (Status == H_SUCCESS)
@@ -218,16 +223,23 @@ HSTATUS HRFHMRTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
             if (pi_PosBlockY+m_pResolutionDescriptor->GetBlockHeight() < m_pResolutionDescriptor->GetHeight())
                 {
                 Status = RASTERFILEPTR->TileRead(HMR_RASTERFILE->m_pTileBuffer,
-                                                 pi_PosBlockX,
-                                                 pi_PosBlockY+m_pResolutionDescriptor->GetBlockHeight());
+                                                 (uint32_t)pi_PosBlockX,
+                                                 (uint32_t)pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight());
 
                 if ((Status == H_SUCCESS) || (Status == H_DATA_NOT_AVAILABLE))
                     {
+                    // Clear uninitialized padding.
+                    if(H_DATA_NOT_AVAILABLE == Status)
+                        {
+                        size_t tileSize = (m_pResolutionDescriptor->GetBlockWidth() * m_pResolutionDescriptor->GetBlockHeight() * HMR_RASTERFILE->m_BytesByPixel) / HMR_RASTERFILE->m_Pixel1_4Bits;
+                        memset(HMR_RASTERFILE->m_pTileBuffer + LenghtPadding, 0, tileSize-LenghtPadding);
+                        }
+
                     memcpy (HMR_RASTERFILE->m_pTileBuffer, &(pi_pData[Lenght]), LenghtPadding);
 
                     Status = RASTERFILEPTR->TileWrite(HMR_RASTERFILE->m_pTileBuffer,
-                                                      pi_PosBlockX,
-                                                      pi_PosBlockY+m_pResolutionDescriptor->GetBlockHeight());
+                                                      (uint32_t)pi_PosBlockX,
+                                                      (uint32_t)pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight());
                     }
                 }
             }
@@ -248,10 +260,10 @@ HSTATUS HRFHMRTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFHMRTileEditor::WriteBlock (uint32_t                 pi_PosBlockX,
-                                      uint32_t                 pi_PosBlockY,
-                                      const HFCPtr<HCDPacket>& pi_rpPacket,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFHMRTileEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                     uint64_t                 pi_PosBlockY,
+                                     const HFCPtr<HCDPacket>& pi_rpPacket,
+                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (pi_rpPacket != 0);
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -277,7 +289,7 @@ HSTATUS HRFHMRTileEditor::WriteBlock (uint32_t                 pi_PosBlockX,
         // Prepare the uncompressed packet
         size_t UncompressedSize = (m_pResolutionDescriptor->GetBlockWidth() *
                                    m_pResolutionDescriptor->GetPixelType()->CountPixelRawDataBits() + 7) / 8 *
-                                  m_pResolutionDescriptor->GetBlockHeight();
+                                   m_pResolutionDescriptor->GetBlockHeight();
 
         HCDPacket Uncompressed(new Byte[UncompressedSize], UncompressedSize);
         Uncompressed.SetBufferOwnership(true);

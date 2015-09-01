@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DShape.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DShape
@@ -11,10 +11,14 @@
 
 #include "HGF2DVector.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HGF2DSimpleShape;
 class HGF2DHoledShape;
 class HGF2DLinear;
 class HGFScanLines;
+class HGF2DTransfoModel;
+class HGF2DComplexTransfoModel;
 
 typedef uint32_t HGF2DShapeTypeId;
 
@@ -36,7 +40,7 @@ typedef uint32_t HGF2DShapeTypeId;
 */
 class HNOVTABLEINIT HGF2DShape : public HGF2DVector
     {
-    HDECLARE_CLASS_ID(8306, HGF2DVector)
+    HDECLARE_CLASS_ID(HGF2DShapeId_Base, HGF2DVector)
 
 public:
 
@@ -77,11 +81,11 @@ public:
 
         -----------------------------------------------------------------------------
     */
-    HGF2DShape();
-    HGF2DShape(const HGF2DShape& pi_rObject);
-    virtual            ~HGF2DShape();
+                                    HGF2DShape();
+                                    HGF2DShape(const HGF2DShape& pi_rObject);
+    virtual                         ~HGF2DShape();
 
-    HGF2DShape&        operator=(const HGF2DShape& pi_rObj);
+    HGF2DShape&                     operator=(const HGF2DShape& pi_rObj);
 
     // Shape type determination
     /** -----------------------------------------------------------------------------
@@ -99,7 +103,7 @@ public:
         @see IsComplex()
         -----------------------------------------------------------------------------
     */
-    virtual bool      IsSimple() const = 0;
+    virtual bool                    IsSimple() const = 0;
 
     /** -----------------------------------------------------------------------------
         This method returns true if the shape is complex and false
@@ -116,7 +120,7 @@ public:
         @see IsSimple()
         -----------------------------------------------------------------------------
     */
-    virtual bool      IsComplex() const = 0;
+    virtual bool                    IsComplex() const = 0;
 
     /** -----------------------------------------------------------------------------
         Returns true if the shape does not define any area.
@@ -130,7 +134,7 @@ public:
         @see CalculateArea()
         -----------------------------------------------------------------------------
     */
-    virtual bool      IsEmpty     () const = 0;
+    virtual bool                    IsEmpty     () const = 0;
 
 
     /** -----------------------------------------------------------------------------
@@ -143,7 +147,7 @@ public:
         @end
         -----------------------------------------------------------------------------
     */
-    virtual HGF2DShapeTypeId      GetShapeType() const = 0;
+    virtual HGF2DShapeTypeId        GetShapeType() const = 0;
 
     // Iteration on component shapes
     /** -----------------------------------------------------------------------------
@@ -163,7 +167,7 @@ public:
         @see GetHoleList()
         -----------------------------------------------------------------------------
     */
-    virtual const ShapeList&      GetShapeList() const = 0;
+    virtual const ShapeList&            GetShapeList() const = 0;
 
     // Iteration on component holes
     /** -----------------------------------------------------------------------------
@@ -182,7 +186,7 @@ public:
         @see GetHoleList()
         -----------------------------------------------------------------------------
     */
-    virtual bool      HasHoles() const = 0;
+    virtual bool                        HasHoles() const = 0;
 
     /** -----------------------------------------------------------------------------
         This method returns a constant reference to the internal list of
@@ -202,10 +206,10 @@ public:
         @see GetShapeList()
         -----------------------------------------------------------------------------
     */
-    virtual const HoleList&    GetHoleList() const = 0;
+    virtual const HoleList&             GetHoleList() const = 0;
 
     // Scanlines generation
-    virtual void       Rasterize(HGFScanLines& pio_rScanlines) const;
+    virtual void                        Rasterize(HGFScanLines& pio_rScanlines) const;
 
 
     // Area oriented operations
@@ -235,7 +239,7 @@ public:
         @see UnifyShape
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual HGF2DShape*  DifferentiateFromShape(const HGF2DShape& pi_rShape) const = 0;
+    IMAGEPP_EXPORT virtual HGF2DShape*       DifferentiateFromShape(const HGF2DShape& pi_rShape) const = 0;
     /** -----------------------------------------------------------------------------
         This method returns a pointer to a dynamically allocated shape that
         defines an area containing the area defined by one shape which is
@@ -265,7 +269,7 @@ public:
         @see UnifyShape
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual HGF2DShape*  DifferentiateShape(const HGF2DShape& pi_rShape) const = 0;
+    IMAGEPP_EXPORT virtual HGF2DShape*       DifferentiateShape(const HGF2DShape& pi_rShape) const = 0;
 
     /** -----------------------------------------------------------------------------
         These methods returns a pointer to a dynamically allocated shape that
@@ -292,7 +296,7 @@ public:
         @see UnifyShape()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual HGF2DShape*    IntersectShape(const HGF2DShape& pi_rShape) const = 0;
+    IMAGEPP_EXPORT virtual HGF2DShape*       IntersectShape(const HGF2DShape& pi_rShape) const = 0;
 
     /** -----------------------------------------------------------------------------
         This methods returns a pointer to a dynamically allocated
@@ -319,7 +323,7 @@ public:
         @see UnifyShape()
         -----------------------------------------------------------------------------
     */
-    _HDLLg virtual HGF2DShape*    UnifyShape(const HGF2DShape& pi_rShape) const = 0;
+    IMAGEPP_EXPORT virtual HGF2DShape*       UnifyShape(const HGF2DShape& pi_rShape) const = 0;
 
 
     // Geometric properties and information
@@ -338,7 +342,7 @@ public:
         @see CalculatePerimeter()
         -----------------------------------------------------------------------------
     */
-    virtual double    CalculateArea() const = 0;
+    virtual double                          CalculateArea() const = 0;
 
     /** -----------------------------------------------------------------------------
         This method returns the length of the perimeter of the
@@ -357,12 +361,12 @@ public:
         @see CalculateArea()
         -----------------------------------------------------------------------------
     */
-    virtual double    CalculatePerimeter() const = 0;
+    virtual double                          CalculatePerimeter() const = 0;
 
 
-    _HDLLg virtual SpatialPosition    CalculateSpatialPositionOf(const HGF2DVector& pi_rVector) const;
-    _HDLLg virtual SpatialPosition    CalculateSpatialPositionOfNonCrossingLinear(const HGF2DLinear& pi_rLinear) const;
-    _HDLLg virtual SpatialPosition    CalculateSpatialPositionOf(const HGF2DPosition& pi_rPosition) const;
+    IMAGEPP_EXPORT virtual SpatialPosition   CalculateSpatialPositionOf(const HGF2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual SpatialPosition   CalculateSpatialPositionOfNonCrossingLinear(const HGF2DLinear& pi_rLinear) const;
+    IMAGEPP_EXPORT virtual SpatialPosition   CalculateSpatialPositionOf(const HGF2DPosition& pi_rPosition) const;
 
     /** -----------------------------------------------------------------------------
         This method checks if the given point is located inside the area defined
@@ -389,46 +393,76 @@ public:
         @see IsPointOn()
         -----------------------------------------------------------------------------
     */
-    virtual bool      IsPointIn(const HGF2DPosition& pi_rPoint, double Tolerance = HGF_USE_INTERNAL_EPSILON) const = 0;
+    virtual bool                            IsPointIn(const HGF2DPosition& pi_rPoint, double Tolerance = HGF_USE_INTERNAL_EPSILON) const = 0;
 
-    virtual bool      IsPointOn(const HGF2DPosition& pi_rPoint, HGF2DVector::ExtremityProcessing pi_ExtremityProcessing = HGF2DVector::INCLUDE_EXTREMITIES,
-                                 double Tolerance = HGF_USE_INTERNAL_EPSILON) const = 0;
+    virtual bool                            IsPointOn(const HGF2DPosition& pi_rPoint, HGF2DVector::ExtremityProcessing pi_ExtremityProcessing = HGF2DVector::INCLUDE_EXTREMITIES,
+                                                      double Tolerance = HGF_USE_INTERNAL_EPSILON) const = 0;
 
 
 
     // Modification
-    virtual void       MakeEmpty() = 0;
+    virtual void                            MakeEmpty() = 0;
 
-    virtual void       Drop(HGF2DPositionCollection* po_pPoint,
-                            double                   pi_rTolerance) const = 0;
+    virtual void                            Drop(HGF2DPositionCollection* po_pPoint,
+                                                 double                   pi_rTolerance) const = 0;
 
 
-    virtual HGF2DVector::Location    Locate(const HGF2DPosition& pi_rPoint) const;
+    virtual HGF2DVector::Location           Locate(const HGF2DPosition& pi_rPoint) const;
 
     // From HGF2DVector
-    virtual HGF2DVectorTypeId
-    GetMainVectorType() const;
-    virtual bool      IsAtAnExtremity(const HGF2DPosition& pi_rPosition,
-                                       double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
-    virtual bool      IsNull() const;
+    virtual HGF2DVectorTypeId               GetMainVectorType() const;
+    virtual bool                            IsAtAnExtremity(const HGF2DPosition& pi_rPosition,
+                                                            double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
+    virtual bool                            IsNull() const;
 
     // Debugging
-    virtual void       PrintState(ostream& po_rOutput) const;
+    virtual void                            PrintState(ostream& po_rOutput) const;
 
 
     // Should be somehow hidden
-    _HDLLg virtual SpatialPosition    CalculateSpatialPositionOfSingleComponentVector(const HGF2DVector& pi_rVector) const;
-    _HDLLg virtual SpatialPosition    CalculateSpatialPositionOfNonCrossingSimpleShape(const HGF2DSimpleShape& pi_rSimpleShape) const;
+    IMAGEPP_EXPORT virtual SpatialPosition   CalculateSpatialPositionOfSingleComponentVector(const HGF2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual SpatialPosition   CalculateSpatialPositionOfNonCrossingSimpleShape(const HGF2DSimpleShape& pi_rSimpleShape) const;
+
+
+
+    /** -----------------------------------------------------------------------------
+        AllocTransformDirect()
+        This method returns a transformed copy of the shape passing through the model 
+        provided. The process will make use of various geometry methods provided to
+        obtain a cohesive solution that may or may not be of the same original
+        shape type. The process is supposed to take into account high or low scale value
+        that may result into shape folding and vanishing, becoming smaller than tolerance
+        and the process will then return a void shape. The method will also process
+        correctly shapes that become autocontiguous or autocrossing as a result
+        of high scale or the presence of a vanishing point or a vanishing line. The
+        result shape is guaranteed to comform to all common shape properties, autocrossing 
+        points being removed by introduction of a complex shape with flirting or almost flirting 
+        result components.
+        -----------------------------------------------------------------------------
+    */
+    virtual HFCPtr<HGF2DShape>              AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const = 0;
+    /** -----------------------------------------------------------------------------
+        AllocTransformInverse()
+        This method is the complement of the AllocTransformDirect() method. The default 
+        implementation will clone the model, reverse it and call AllocTransformDirect().
+        For this reason, the method is necessarily slower to execute than the former
+        method and care should be given to manually reverse the model and call
+        AllocTransformDirect() instead when more than one shape is involved.
+        -----------------------------------------------------------------------------
+    */
+    virtual HFCPtr<HGF2DShape>              AllocTransformInverse(const HGF2DTransfoModel& pi_rModel) const;
 
 protected:
 
+
 private:
 
-    SpatialPosition    CalculateSpatialPositionOfMultipleComponentVector(const HGF2DVector& pi_rVector) const;
-    SpatialPosition    CalculateSpatialPositionOfComplexShape(const HGF2DShape& pi_rShape) const;
-    SpatialPosition    CalculateSpatialPositionOfHoledShape(const HGF2DHoledShape& pi_rHoledShape) const;
+    SpatialPosition                         CalculateSpatialPositionOfMultipleComponentVector(const HGF2DVector& pi_rVector) const;
+    SpatialPosition                         CalculateSpatialPositionOfComplexShape(const HGF2DShape& pi_rShape) const;
+    SpatialPosition                         CalculateSpatialPositionOfHoledShape(const HGF2DHoledShape& pi_rHoledShape) const;
 
     };
 
+END_IMAGEPP_NAMESPACE
 
 #include "HGF2DShape.hpp"

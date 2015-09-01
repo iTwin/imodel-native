@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMemoryBinStream.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HFCMemoryBinStream
 //---------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //---------------------------------------------------------------------------
 //
 //---------------------------------------------------------------------------
@@ -97,9 +97,8 @@ inline bool HFCMemoryBinStream::EndOfFile()
 
 inline size_t HFCMemoryBinStream::Read(void* po_pData, size_t pi_DataSize)
     {
-    pi_DataSize = min(pi_DataSize, m_BinStreamBuffer->GetDataSize() - m_CurrentOffset);
-    HPOSTCONDITION(pi_DataSize > 0);
-
+    pi_DataSize = MIN(pi_DataSize, m_BinStreamBuffer->GetDataSize() - m_CurrentOffset);
+    
     memcpy(po_pData, m_BinStreamBuffer->GetData() + m_CurrentOffset, pi_DataSize);
     m_CurrentOffset += pi_DataSize;
 
@@ -153,3 +152,4 @@ inline HFCPtr<HFCBuffer > HFCMemoryBinStream::GetBuffer() const
     return m_BinStreamBuffer;
     }
 
+END_IMAGEPP_NAMESPACE

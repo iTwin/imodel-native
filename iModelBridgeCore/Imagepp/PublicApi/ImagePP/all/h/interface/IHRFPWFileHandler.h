@@ -2,11 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/interface/IHRFPWFileHandler.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class IHRFPWFileHandler
     {
@@ -31,3 +32,5 @@ public:
 
 
     };
+
+END_IMAGEPP_NAMESPACE

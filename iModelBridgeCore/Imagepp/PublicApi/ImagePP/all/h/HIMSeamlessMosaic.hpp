@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMSeamlessMosaic.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include "HRPPixelTypeV24R8G8B8.h"
 #include "HRPPixelTypeGray.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /** ---------------------------------------------------------------------------
     Start to iterate on the images. The iterator must be destroyed by calling
     StopIteration when done.
@@ -128,3 +128,5 @@ inline bool HIMSeamlessMosaic::IsAValidSource(const HFCPtr<HRARaster>& pi_rpRast
     return (pi_rpRaster->GetPixelType()->IsCompatibleWith(HRPPixelTypeV24R8G8B8::CLASS_ID) ||
             pi_rpRaster->GetPixelType()->IsCompatibleWith(HRPPixelTypeGray::CLASS_ID));
     }
+
+END_IMAGEPP_NAMESPACE

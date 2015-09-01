@@ -2,25 +2,28 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPFunctionFilters.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for HRPFunctionFilters
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPFunctionFilters.h>
+#include <Imagepp/all/h/HRAImageOp.h>
+#include <ImagePPInternal/gra/HRAImageSampler.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeV24PhotoYCC.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8.h>
 #include <Imagepp/all/h/HFCMath.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 
 #define CLAMP(A)((A)<=(0) ? (0) : (A)<(256) ? (A) : (255))
+
+typedef list<HGFRGBSet>  RGBSetList;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 // HRPColortwistFilter
@@ -226,11 +229,35 @@ HRPFilter* HRPAlphaReplacer::Clone() const
     }
 
 //-----------------------------------------------------------------------------
+// GetDefaultAlpha
+//-----------------------------------------------------------------------------
+Byte HRPAlphaReplacer::GetDefaultAlpha() const
+    {
+    return m_DefaultAlpha;
+    }
+
+//-----------------------------------------------------------------------------
 // SetDefaultAlpha
 //-----------------------------------------------------------------------------
 void HRPAlphaReplacer::SetDefaultAlpha(Byte pi_DefaultAlpha)
     {
     m_DefaultAlpha = pi_DefaultAlpha;
+    }
+
+//-----------------------------------------------------------------------------
+// GetAlphaRanges
+//-----------------------------------------------------------------------------
+ListHRPAlphaRange HRPAlphaReplacer::GetAlphaRanges() const
+    {
+    return m_Ranges;
+    }
+
+//-----------------------------------------------------------------------------
+// SetAlphaRanges
+//-----------------------------------------------------------------------------
+void HRPAlphaReplacer::SetAlphaRanges(const ListHRPAlphaRange& pi_rRanges)
+    {
+    m_Ranges = pi_rRanges;
     }
 
 //-----------------------------------------------------------------------------
@@ -383,11 +410,27 @@ HRPFilter* HRPAlphaComposer::Clone() const
     }
 
 //-----------------------------------------------------------------------------
+// GetDefaultAlpha
+//-----------------------------------------------------------------------------
+Byte HRPAlphaComposer::GetDefaultAlpha() const
+    {
+    return m_DefaultAlpha;
+    }
+
+//-----------------------------------------------------------------------------
 // SetDefaultAlpha
 //-----------------------------------------------------------------------------
 void HRPAlphaComposer::SetDefaultAlpha(Byte pi_DefaultAlpha)
     {
     m_DefaultAlpha = pi_DefaultAlpha;
+    }
+
+//-----------------------------------------------------------------------------
+// GetAlphaRanges
+//-----------------------------------------------------------------------------
+ListHRPAlphaRange HRPAlphaComposer::GetAlphaRanges() const
+    {
+    return m_Ranges;
     }
 
 //-----------------------------------------------------------------------------
@@ -582,6 +625,30 @@ void HRPColorReplacerFilter::SetNewColor(Byte pi_Red, Byte pi_Green, Byte pi_Blu
     m_NewRGBColor[0] = pi_Red;
     m_NewRGBColor[1] = pi_Green;
     m_NewRGBColor[2] = pi_Blue;
+    }
+
+//-----------------------------------------------------------------------------
+// public GetNewColor
+//-----------------------------------------------------------------------------
+const Byte* HRPColorReplacerFilter::GetNewColor() const
+    {
+    return m_NewRGBColor;
+    }
+
+//-----------------------------------------------------------------------------
+// public GetSelectedRGBSet
+//-----------------------------------------------------------------------------
+const RGBSetList& HRPColorReplacerFilter::GetSelectedRGBSet() const
+    {
+    return m_RGBSetList;
+    }
+
+//-----------------------------------------------------------------------------
+// public GetSelectedRemoveRGBSet
+//-----------------------------------------------------------------------------
+const RGBSetList& HRPColorReplacerFilter::GetSelectedRemoveRGBSet() const
+    {
+    return m_RGBSetRemoveList;
     }
 
 //-----------------------------------------------------------------------------

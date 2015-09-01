@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pngdataset.cpp 21526 2011-01-17 19:32:03Z rouault $
+ * $Id: pngdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  PNG Driver
  * Purpose:  Implement GDAL PNG Support
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -45,11 +46,11 @@
  */
 
 #include "gdal_pam.h"
-#include "png.h"
+#include <png/png.h>    //IPP
 #include "cpl_string.h"
 #include <setjmp.h>
 
-CPL_CVSID("$Id: pngdataset.cpp 21526 2011-01-17 19:32:03Z rouault $");
+CPL_CVSID("$Id: pngdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 CPL_C_START
 void	GDALRegister_PNG(void);
@@ -64,6 +65,10 @@ CPL_C_END
 // at the same time. Do NOT use it unless you're ready to fix it
 //#define SUPPORT_CREATE
 
+// we believe it is ok to use setjmp() in this situation.
+#ifdef _MSC_VER
+#  pragma warning(disable:4611)
+#endif
 
 static void
 png_vsi_read_data(png_structp png_ptr, png_bytep data, png_size_t length);
@@ -107,9 +112,20 @@ class PNGDataset : public GDALPamDataset
 
 
     void        CollectMetadata();
+
+    int         bHasReadXMPMetadata;
+    void        CollectXMPMetadata();
+
     CPLErr      LoadScanline( int );
     CPLErr      LoadInterlacedChunk( int );
     void        Restart();
+
+    int         bHasTriedLoadWorldFile;
+    void        LoadWorldFile();
+    CPLString   osWldFilename;
+
+    int         bHasReadICCMetadata;
+    void        LoadICCProfile();
 
   public:
                  PNGDataset();
@@ -117,9 +133,22 @@ class PNGDataset : public GDALPamDataset
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
+    static GDALDataset* CreateCopy( const char * pszFilename,
+                                    GDALDataset *poSrcDS,
+                                    int bStrict, char ** papszOptions,
+                                    GDALProgressFunc pfnProgress,
+                                    void * pProgressData );
+
+    virtual char **GetFileList(void);
 
     virtual CPLErr GetGeoTransform( double * );
     virtual void FlushCache( void );
+
+    virtual char      **GetMetadataDomainList();
+
+    virtual char  **GetMetadata( const char * pszDomain = "" );
+    virtual const char *GetMetadataItem( const char * pszName,
+                                         const char * pszDomain = NULL );
 
     // semi-private.
     jmp_buf     sSetJmpContext;
@@ -227,13 +256,21 @@ CPLErr PNGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     CPLErr      eErr;
     GByte       *pabyScanline;
     int         i, nPixelSize, nPixelOffset, nXSize = GetXSize();
-    
+
     CPLAssert( nBlockXOff == 0 );
 
     if( poGDS->nBitDepth == 16 )
         nPixelSize = 2;
     else
         nPixelSize = 1;
+
+
+    if (poGDS->fpImage == NULL)
+    {
+        memset( pImage, 0, nPixelSize * nXSize );
+        return CE_None;
+    }
+
     nPixelOffset = poGDS->nBands * nPixelSize;
 
 /* -------------------------------------------------------------------- */
@@ -277,7 +314,8 @@ CPLErr PNGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
         poBlock = 
             poGDS->GetRasterBand(iBand+1)->GetLockedBlockRef(nBlockXOff,nBlockYOff);
-        poBlock->DropLock();
+        if( poBlock != NULL )
+            poBlock->DropLock();
     }
 
     return CE_None;
@@ -383,6 +421,7 @@ double PNGRasterBand::GetNoDataValue( int *pbSuccess )
 PNGDataset::PNGDataset()
 
 {
+    fpImage = NULL;
     hPNG = NULL;
     psPNGInfo = NULL;
     pabyBuffer = NULL;
@@ -390,6 +429,7 @@ PNGDataset::PNGDataset()
     nBufferLines = 0;
     nLastLineRead = -1;
     poColorTable = NULL;
+    nBitDepth = 8;
 
     bGeoTransformValid = FALSE;
     adfGeoTransform[0] = 0.0;
@@ -398,6 +438,10 @@ PNGDataset::PNGDataset()
     adfGeoTransform[3] = 0.0;
     adfGeoTransform[4] = 0.0;
     adfGeoTransform[5] = 1.0;
+
+    bHasTriedLoadWorldFile = FALSE;
+    bHasReadXMPMetadata = FALSE;
+    bHasReadICCMetadata = FALSE;
 }
 
 /************************************************************************/
@@ -426,6 +470,7 @@ PNGDataset::~PNGDataset()
 CPLErr PNGDataset::GetGeoTransform( double * padfTransform )
 
 {
+    LoadWorldFile();
 
     if( bGeoTransformValid )
     {
@@ -702,6 +747,220 @@ void PNGDataset::CollectMetadata()
 }
 
 /************************************************************************/
+/*                       CollectXMPMetadata()                           */
+/************************************************************************/
+
+/* See §2.1.5 of http://wwwimages.adobe.com/www.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/XMPSpecificationPart3.pdf */
+
+void PNGDataset::CollectXMPMetadata()
+
+{
+    if (fpImage == NULL || bHasReadXMPMetadata)
+        return;
+
+    /* Save current position to avoid disturbing PNG stream decoding */
+    vsi_l_offset nCurOffset = VSIFTellL(fpImage);
+
+    vsi_l_offset nOffset = 8;
+    VSIFSeekL( fpImage, nOffset, SEEK_SET );
+
+    /* Loop over chunks */
+    while(TRUE)
+    {
+        int nLength;
+        char pszChunkType[5];
+        int nCRC;
+
+        if (VSIFReadL( &nLength, 4, 1, fpImage ) != 1)
+            break;
+        nOffset += 4;
+        CPL_MSBPTR32(&nLength);
+        if (nLength <= 0)
+            break;
+        if (VSIFReadL( pszChunkType, 4, 1, fpImage ) != 1)
+            break;
+        nOffset += 4;
+        pszChunkType[4] = 0;
+
+        if (strcmp(pszChunkType, "iTXt") == 0 && nLength > 22)
+        {
+            char* pszContent = (char*)VSIMalloc(nLength + 1);
+            if (pszContent == NULL)
+                break;
+            if (VSIFReadL( pszContent, nLength, 1, fpImage) != 1)
+            {
+                VSIFree(pszContent);
+                break;
+            }
+            nOffset += nLength;
+            pszContent[nLength] = '\0';
+            if (memcmp(pszContent, "XML:com.adobe.xmp\0\0\0\0\0", 22) == 0)
+            {
+                /* Avoid setting the PAM dirty bit just for that */
+                int nOldPamFlags = nPamFlags;
+
+                char *apszMDList[2];
+                apszMDList[0] = pszContent + 22;
+                apszMDList[1] = NULL;
+                SetMetadata(apszMDList, "xml:XMP");
+
+                nPamFlags = nOldPamFlags;
+
+                VSIFree(pszContent);
+
+                break;
+            }
+            else
+            {
+                VSIFree(pszContent);
+            }
+        }
+        else
+        {
+            nOffset += nLength;
+            VSIFSeekL( fpImage, nOffset, SEEK_SET );
+        }
+
+        nOffset += 4;
+        if (VSIFReadL( &nCRC, 4, 1, fpImage ) != 1)
+            break;
+    }
+
+    VSIFSeekL( fpImage, nCurOffset, SEEK_SET );
+
+    bHasReadXMPMetadata = TRUE;
+}
+
+/************************************************************************/
+/*                           LoadICCProfile()                           */
+/************************************************************************/
+
+void PNGDataset::LoadICCProfile()
+{
+    if (hPNG == NULL || bHasReadICCMetadata)
+        return;
+    bHasReadICCMetadata = TRUE;
+
+    png_charp pszProfileName;
+    png_uint_32 nProfileLength;
+#if (PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR > 4) || PNG_LIBPNG_VER_MAJOR > 1
+    png_bytep pProfileData;
+#else
+    png_charp pProfileData;
+#endif
+    int nCompressionType;
+    int nsRGBIntent;
+    double dfGamma;
+    bool bGammaAvailable = false;
+
+    /* Avoid setting the PAM dirty bit just for that */
+    int nOldPamFlags = nPamFlags;
+
+    if (png_get_iCCP(hPNG, psPNGInfo, &pszProfileName,
+       &nCompressionType, &pProfileData, &nProfileLength) != 0)
+    {
+        /* Escape the profile */
+        char *pszBase64Profile = CPLBase64Encode(nProfileLength, (const GByte*)pProfileData);
+
+        /* Set ICC profile metadata */
+        SetMetadataItem( "SOURCE_ICC_PROFILE", pszBase64Profile, "COLOR_PROFILE" );
+        SetMetadataItem( "SOURCE_ICC_PROFILE_NAME", pszProfileName, "COLOR_PROFILE" );
+
+        nPamFlags = nOldPamFlags;
+
+        CPLFree(pszBase64Profile);
+
+        return;
+    }
+
+    if (png_get_sRGB(hPNG, psPNGInfo, &nsRGBIntent) != 0)
+    {
+        SetMetadataItem( "SOURCE_ICC_PROFILE_NAME", "sRGB", "COLOR_PROFILE" );
+
+        nPamFlags = nOldPamFlags;
+
+        return;
+    }
+
+    if (png_get_valid(hPNG, psPNGInfo, PNG_INFO_gAMA))
+    {
+        bGammaAvailable = true;
+
+        png_get_gAMA(hPNG,psPNGInfo, &dfGamma);
+
+        SetMetadataItem( "PNG_GAMMA", 
+            CPLString().Printf( "%.9f", dfGamma ) , "COLOR_PROFILE" );
+    }
+
+    // Check if both cHRM and gAMA available
+    if (bGammaAvailable && png_get_valid(hPNG, psPNGInfo, PNG_INFO_cHRM))
+    {
+        double dfaWhitepoint[2];
+        double dfaCHR[6];
+
+        png_get_cHRM(hPNG, psPNGInfo,
+                    &dfaWhitepoint[0], &dfaWhitepoint[1],
+                    &dfaCHR[0], &dfaCHR[1],
+                    &dfaCHR[2], &dfaCHR[3],
+                    &dfaCHR[4], &dfaCHR[5]);
+
+        // Set all the colorimetric metadata.
+        SetMetadataItem( "SOURCE_PRIMARIES_RED", 
+            CPLString().Printf( "%.9f, %.9f, 1.0", dfaCHR[0], dfaCHR[1] ) , "COLOR_PROFILE" );
+        SetMetadataItem( "SOURCE_PRIMARIES_GREEN", 
+            CPLString().Printf( "%.9f, %.9f, 1.0", dfaCHR[2], dfaCHR[3] ) , "COLOR_PROFILE" );
+        SetMetadataItem( "SOURCE_PRIMARIES_BLUE", 
+            CPLString().Printf( "%.9f, %.9f, 1.0", dfaCHR[4], dfaCHR[5] ) , "COLOR_PROFILE" );
+
+        SetMetadataItem( "SOURCE_WHITEPOINT", 
+            CPLString().Printf( "%.9f, %.9f, 1.0", dfaWhitepoint[0], dfaWhitepoint[1] ) , "COLOR_PROFILE" );
+
+    }
+
+    nPamFlags = nOldPamFlags;
+}
+
+/************************************************************************/
+/*                      GetMetadataDomainList()                         */
+/************************************************************************/
+
+char **PNGDataset::GetMetadataDomainList()
+{
+    return BuildMetadataDomainList(GDALPamDataset::GetMetadataDomainList(),
+                                   TRUE,
+                                   "xml:XMP", "COLOR_PROFILE", NULL);
+}
+
+/************************************************************************/
+/*                           GetMetadata()                              */
+/************************************************************************/
+
+char  **PNGDataset::GetMetadata( const char * pszDomain )
+{
+    if (fpImage == NULL)
+        return NULL;
+    if (eAccess == GA_ReadOnly && !bHasReadXMPMetadata &&
+        pszDomain != NULL && EQUAL(pszDomain, "xml:XMP"))
+        CollectXMPMetadata();
+    if (eAccess == GA_ReadOnly && !bHasReadICCMetadata &&
+        pszDomain != NULL && EQUAL(pszDomain, "COLOR_PROFILE"))
+        LoadICCProfile();
+    return GDALPamDataset::GetMetadata(pszDomain);
+}
+
+/************************************************************************/
+/*                       GetMetadataItem()                              */
+/************************************************************************/
+const char *PNGDataset::GetMetadataItem( const char * pszName,
+                                         const char * pszDomain )
+{
+    if (eAccess == GA_ReadOnly && !bHasReadICCMetadata &&
+        pszDomain != NULL && EQUAL(pszDomain, "COLOR_PROFILE"))
+        LoadICCProfile();
+    return GDALPamDataset::GetMetadataItem(pszName, pszDomain);
+}
+
+/************************************************************************/
 /*                              Identify()                              */
 /************************************************************************/
 
@@ -762,7 +1021,7 @@ GDALDataset *PNGDataset::Open( GDALOpenInfo * poOpenInfo )
                                          NULL, NULL );
     if (poDS->hPNG == NULL)
     {
-#if LIBPNG_VER_MINOR >= 2 || LIBPNG_VER_MAJOR > 1
+#if (PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR >= 2) || PNG_LIBPNG_VER_MAJOR > 1
         int version = png_access_version_number();
         CPLError( CE_Failure, CPLE_NotSupported, 
                   "The PNG driver failed to access libpng with version '%s',"
@@ -785,7 +1044,10 @@ GDALDataset *PNGDataset::Open( GDALOpenInfo * poOpenInfo )
     png_set_error_fn( poDS->hPNG, &poDS->sSetJmpContext, png_gdal_error, png_gdal_warning );
 
     if( setjmp( poDS->sSetJmpContext ) != 0 )
+    {
+        delete poDS;
         return NULL;
+    }
 
 /* -------------------------------------------------------------------- */
 /*	Read pre-image data after ensuring the file is rewound.         */
@@ -948,7 +1210,7 @@ GDALDataset *PNGDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
-    poDS->TryLoadXML();
+    poDS->TryLoadXML( poOpenInfo->papszSiblingFiles );
 
 /* -------------------------------------------------------------------- */
 /*      Open overviews.                                                 */
@@ -956,27 +1218,64 @@ GDALDataset *PNGDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename,
                                  poOpenInfo->papszSiblingFiles );
 
-/* -------------------------------------------------------------------- */
-/*      Check for world file.                                           */
-/* -------------------------------------------------------------------- */
-    poDS->bGeoTransformValid = 
-        GDALReadWorldFile( poOpenInfo->pszFilename, NULL, 
-                           poDS->adfGeoTransform );
-
-    if( !poDS->bGeoTransformValid )
-        poDS->bGeoTransformValid = 
-            GDALReadWorldFile( poOpenInfo->pszFilename, ".wld", 
-                               poDS->adfGeoTransform );
-
     return poDS;
 }
 
 /************************************************************************/
-/*                           PNGCreateCopy()                            */
+/*                        LoadWorldFile()                               */
 /************************************************************************/
 
-static GDALDataset *
-PNGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS, 
+void PNGDataset::LoadWorldFile()
+{
+    if (bHasTriedLoadWorldFile)
+        return;
+    bHasTriedLoadWorldFile = TRUE;
+
+    char* pszWldFilename = NULL;
+    bGeoTransformValid =
+        GDALReadWorldFile2( GetDescription(), NULL,
+                            adfGeoTransform, oOvManager.GetSiblingFiles(),
+                            &pszWldFilename);
+
+    if( !bGeoTransformValid )
+        bGeoTransformValid =
+            GDALReadWorldFile2( GetDescription(), ".wld",
+                                adfGeoTransform, oOvManager.GetSiblingFiles(),
+                                &pszWldFilename);
+
+    if (pszWldFilename)
+    {
+        osWldFilename = pszWldFilename;
+        CPLFree(pszWldFilename);
+    }
+}
+
+/************************************************************************/
+/*                            GetFileList()                             */
+/************************************************************************/
+
+char **PNGDataset::GetFileList()
+
+{
+    char **papszFileList = GDALPamDataset::GetFileList();
+
+    LoadWorldFile();
+
+    if (osWldFilename.size() != 0 &&
+        CSLFindString(papszFileList, osWldFilename) == -1)
+    {
+        papszFileList = CSLAddString( papszFileList, osWldFilename );
+    }
+
+    return papszFileList;
+}
+
+/************************************************************************/
+/*                             CreateCopy()                             */
+/************************************************************************/
+
+GDALDataset *
+PNGDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS, 
                int bStrict, char ** papszOptions, 
                GDALProgressFunc pfnProgress, void * pProgressData )
 
@@ -1003,7 +1302,7 @@ PNGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     {
         CPLError( (bStrict) ? CE_Failure : CE_Warning, CPLE_NotSupported, 
                   "PNG driver doesn't support data type %s. "
-                  "Only eight bit (Byte) and sixteen bit (uint16_t) bands supported. %s\n", 
+                  "Only eight bit (Byte) and sixteen bit (UInt16) bands supported. %s\n", 
                   GDALGetDataTypeName( 
                       poSrcDS->GetRasterBand(1)->GetRasterDataType()),
                   (bStrict) ? "" : "Defaulting to Byte" );
@@ -1165,6 +1464,136 @@ PNGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     }
     
 /* -------------------------------------------------------------------- */
+/*      Copy colour profile data                                        */
+/* -------------------------------------------------------------------- */
+    const char *pszICCProfile = CSLFetchNameValue(papszOptions, "SOURCE_ICC_PROFILE");
+    const char *pszICCProfileName = CSLFetchNameValue(papszOptions, "SOURCE_ICC_PROFILE_NAME");
+    if (pszICCProfileName == NULL)
+        pszICCProfileName = poSrcDS->GetMetadataItem( "SOURCE_ICC_PROFILE_NAME", "COLOR_PROFILE" );
+
+    if (pszICCProfile == NULL)
+        pszICCProfile = poSrcDS->GetMetadataItem( "SOURCE_ICC_PROFILE", "COLOR_PROFILE" );
+
+    if ((pszICCProfileName != NULL) && EQUAL(pszICCProfileName, "sRGB"))
+    {
+        pszICCProfile = NULL;
+
+        png_set_sRGB(hPNG, psPNGInfo, PNG_sRGB_INTENT_PERCEPTUAL);
+    }
+
+    if (pszICCProfile != NULL)
+    {
+        char *pEmbedBuffer = CPLStrdup(pszICCProfile);
+        png_uint_32 nEmbedLen = CPLBase64DecodeInPlace((GByte*)pEmbedBuffer);
+        const char* pszLocalICCProfileName = (pszICCProfileName!=NULL)?pszICCProfileName:"ICC Profile";
+
+        png_set_iCCP(hPNG, psPNGInfo,
+#if (PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR > 4) || PNG_LIBPNG_VER_MAJOR > 1
+            pszLocalICCProfileName,
+#else
+            (png_charp)pszLocalICCProfileName,
+#endif
+            0,
+#if (PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR > 4) || PNG_LIBPNG_VER_MAJOR > 1
+            (png_const_bytep)pEmbedBuffer,
+#else
+            (png_charp)pEmbedBuffer,
+#endif
+            nEmbedLen);
+
+        CPLFree(pEmbedBuffer);
+    }
+    else if ((pszICCProfileName == NULL) || !EQUAL(pszICCProfileName, "sRGB"))
+    {
+        // Output gamma, primaries and whitepoint
+        const char *pszGamma = CSLFetchNameValue(papszOptions, "PNG_GAMMA");
+        if (pszGamma == NULL)
+            pszGamma = poSrcDS->GetMetadataItem( "PNG_GAMMA", "COLOR_PROFILE" );
+
+        if (pszGamma != NULL)
+        {
+            double dfGamma = atof(pszGamma);
+            png_set_gAMA(hPNG, psPNGInfo, dfGamma);
+        }
+
+        const char *pszPrimariesRed = CSLFetchNameValue(papszOptions, "SOURCE_PRIMARIES_RED");
+        if (pszPrimariesRed == NULL)
+            pszPrimariesRed = poSrcDS->GetMetadataItem( "SOURCE_PRIMARIES_RED", "COLOR_PROFILE" );
+        const char *pszPrimariesGreen = CSLFetchNameValue(papszOptions, "SOURCE_PRIMARIES_GREEN");
+        if (pszPrimariesGreen == NULL)
+            pszPrimariesGreen = poSrcDS->GetMetadataItem( "SOURCE_PRIMARIES_GREEN", "COLOR_PROFILE" );
+        const char *pszPrimariesBlue = CSLFetchNameValue(papszOptions, "SOURCE_PRIMARIES_BLUE");
+        if (pszPrimariesBlue == NULL)
+            pszPrimariesBlue = poSrcDS->GetMetadataItem( "SOURCE_PRIMARIES_BLUE", "COLOR_PROFILE" );
+        const char *pszWhitepoint = CSLFetchNameValue(papszOptions, "SOURCE_WHITEPOINT");
+        if (pszWhitepoint == NULL)
+            pszWhitepoint = poSrcDS->GetMetadataItem( "SOURCE_WHITEPOINT", "COLOR_PROFILE" );
+
+        if ((pszPrimariesRed != NULL) && (pszPrimariesGreen != NULL) && (pszPrimariesBlue != NULL) &&
+            (pszWhitepoint != NULL))
+        {
+            bool bOk = true;
+            double faColour[8];
+            char** apapszTokenList[4];
+
+            apapszTokenList[0] = CSLTokenizeString2( pszWhitepoint, ",", 
+                CSLT_ALLOWEMPTYTOKENS | CSLT_STRIPLEADSPACES | CSLT_STRIPENDSPACES );
+            apapszTokenList[1] = CSLTokenizeString2( pszPrimariesRed, ",", 
+                CSLT_ALLOWEMPTYTOKENS | CSLT_STRIPLEADSPACES | CSLT_STRIPENDSPACES );
+            apapszTokenList[2] = CSLTokenizeString2( pszPrimariesGreen, ",", 
+                CSLT_ALLOWEMPTYTOKENS | CSLT_STRIPLEADSPACES | CSLT_STRIPENDSPACES );
+            apapszTokenList[3] = CSLTokenizeString2( pszPrimariesBlue, ",", 
+                CSLT_ALLOWEMPTYTOKENS | CSLT_STRIPLEADSPACES | CSLT_STRIPENDSPACES );
+
+            if ((CSLCount( apapszTokenList[0] ) == 3) &&
+                (CSLCount( apapszTokenList[1] ) == 3) &&
+                (CSLCount( apapszTokenList[2] ) == 3) &&
+                (CSLCount( apapszTokenList[3] ) == 3))
+            {
+                for( int i = 0; i < 4; i++ )
+                {
+                    for( int j = 0; j < 3; j++ )
+                    {
+                        double v = atof(apapszTokenList[i][j]);
+
+                        if (j == 2)
+                        {
+                            /* Last term of xyY colour must be 1.0 */
+                            if (v != 1.0)
+                            {
+                                bOk = false;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            faColour[i*2 + j] = v;
+                        }
+                    }
+                    if (!bOk)
+                        break;
+                }
+
+                if (bOk)
+                {
+                    png_set_cHRM(hPNG, psPNGInfo, 
+                        faColour[0], faColour[1], 
+                        faColour[2], faColour[3], 
+                        faColour[4], faColour[5], 
+                        faColour[6], faColour[7]);
+
+                }
+            }
+
+            CSLDestroy( apapszTokenList[0] );
+            CSLDestroy( apapszTokenList[1] );
+            CSLDestroy( apapszTokenList[2] );
+            CSLDestroy( apapszTokenList[3] );
+        }
+
+    }
+    
+/* -------------------------------------------------------------------- */
 /*      Write palette if there is one.  Technically, I think it is      */
 /*      possible to write 16bit palettes for PNG, but we will omit      */
 /*      this for now.                                                   */
@@ -1292,12 +1721,31 @@ PNGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Re-open dataset, and copy any auxilary pam information.         */
 /* -------------------------------------------------------------------- */
-    PNGDataset *poDS = (PNGDataset *) GDALOpen( pszFilename, GA_ReadOnly );
 
-    if( poDS )
-        poDS->CloneInfo( poSrcDS, GCIF_PAM_DEFAULT );
+    /* If outputing to stdout, we can't reopen it, so we'll return */
+    /* a fake dataset to make the caller happy */
+    if( CSLTestBoolean(CPLGetConfigOption("GDAL_OPEN_AFTER_COPY", "YES")) )
+    {
+        GDALOpenInfo oOpenInfo(pszFilename, GA_ReadOnly);
 
-    return poDS;
+        CPLPushErrorHandler(CPLQuietErrorHandler);
+        PNGDataset *poDS = (PNGDataset*) PNGDataset::Open( &oOpenInfo );
+        CPLPopErrorHandler();
+        if( poDS )
+        {
+            poDS->CloneInfo( poSrcDS, GCIF_PAM_DEFAULT );
+            return poDS;
+        }
+        CPLErrorReset();
+    }
+
+    PNGDataset* poPNG_DS = new PNGDataset();
+    poPNG_DS->nRasterXSize = nXSize;
+    poPNG_DS->nRasterYSize = nYSize;
+    poPNG_DS->nBitDepth = nBitDepth;
+    for(int i=0;i<nBands;i++)
+        poPNG_DS->SetBand( i+1, new PNGRasterBand( poPNG_DS, i+1) );
+    return poPNG_DS;
 }
 
 /************************************************************************/
@@ -1368,7 +1816,7 @@ static void png_gdal_error( png_structp png_ptr, const char *error_message )
 /*                          png_gdal_warning()                          */
 /************************************************************************/
 
-static void png_gdal_warning( png_structp png_ptr, const char *error_message )
+static void png_gdal_warning( CPL_UNUSED png_structp png_ptr, const char *error_message )
 {
     CPLError( CE_Warning, CPLE_AppDefined, 
               "libpng: %s", error_message );
@@ -1396,17 +1844,24 @@ void GDALRegister_PNG()
         poDriver->SetMetadataItem( GDAL_DMD_MIMETYPE, "image/png" );
 
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Byte uint16_t" );
+                                   "Byte UInt16" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST, 
 "<CreationOptionList>\n"
 "   <Option name='WORLDFILE' type='boolean' description='Create world file'/>\n"
-"   <Option name='ZLEVEL' type='int' description='DEFLATE compression level 1-9' default='6'/>"
+"   <Option name='ZLEVEL' type='int' description='DEFLATE compression level 1-9' default='6'/>\n"
+"   <Option name='SOURCE_ICC_PROFILE' type='string' description='ICC Profile'/>\n"
+"   <Option name='SOURCE_ICC_PROFILE_NAME' type='string' descriptor='ICC Profile name'/>\n"
+"   <Option name='SOURCE_PRIMARIES_RED' type='string' description='x,y,1.0 (xyY) red chromaticity'/>\n"
+"   <Option name='SOURCE_PRIMARIES_GREEN' type='string' description='x,y,1.0 (xyY) green chromaticity'/>\n"
+"   <Option name='SOURCE_PRIMARIES_BLUE' type='string' description='x,y,1.0 (xyY) blue chromaticity'/>\n"
+"   <Option name='SOURCE_WHITEPOINT' type='string' description='x,y,1.0 (xyY) whitepoint'/>\n"
+"   <Option name='PNG_GAMMA' type='string' description='Gamma'/>\n"
 "</CreationOptionList>\n" );
 
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = PNGDataset::Open;
-        poDriver->pfnCreateCopy = PNGCreateCopy;
+        poDriver->pfnCreateCopy = PNGDataset::CreateCopy;
         poDriver->pfnIdentify = PNGDataset::Identify;
 #ifdef SUPPORT_CREATE
         poDriver->pfnCreate = PNGDataset::Create;
@@ -1707,7 +2162,7 @@ GDALDataset *PNGDataset::Create
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Attempt to create PNG dataset with an illegal\n"
-                  "data type (%s), only Byte and uint16_t supported by the format.\n",
+                  "data type (%s), only Byte and UInt16 supported by the format.\n",
                   GDALGetDataTypeName(eType) );
 
         return NULL;

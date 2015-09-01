@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCProgressEvaluator.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCProgressEvaluator
 //----------------------------------------------------------------------------
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HFCProgressEvaluator : public HFCShareableObject<HFCProgressEvaluator>
     {
@@ -19,13 +20,13 @@ public:
         COMPRESSED_DATA_ESTIMATED_SIZE = 0 //Estimated size of compressed data during an export.
         };
 
-    _HDLLu HFCProgressEvaluator(ProgressEvaluatorID pi_EvaluatorID);
-    _HDLLu virtual ~HFCProgressEvaluator();
+    IMAGEPP_EXPORT HFCProgressEvaluator(ProgressEvaluatorID pi_EvaluatorID);
+    IMAGEPP_EXPORT virtual ~HFCProgressEvaluator();
 
-    _HDLLu ProgressEvaluatorID GetID() const;
+    IMAGEPP_EXPORT ProgressEvaluatorID GetID() const;
 
-    _HDLLu void                SetValue(double pi_Value);
-    _HDLLu double                GetValue() const;
+    IMAGEPP_EXPORT void                SetValue(double pi_Value);
+    IMAGEPP_EXPORT double                GetValue() const;
 
 protected:
 
@@ -39,5 +40,6 @@ private:
     HFCProgressEvaluator& operator=(const HFCProgressEvaluator& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE
 
 #include "HFCProgressEvaluator.hpp"

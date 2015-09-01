@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphTG4File.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphTG4File
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFIntergraphTG4File.h>
@@ -31,7 +31,6 @@
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HRFException.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //-----------------------------------------------------------------------------
@@ -168,8 +167,7 @@ HRFIntergraphTG4Creator::HRFIntergraphTG4Creator()
 
 WString HRFIntergraphTG4Creator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_TG4); //Intergraph tg4 File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_TG4()); //Intergraph tg4 File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -220,20 +218,20 @@ bool HRFIntergraphTG4Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the TG4 File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
         // Check if the file was a valid Intergraph TG4...
         pFile->SeekToBegin();
-        if (pFile->Read((void*)&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+        if (pFile->Read(&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
             goto WRAPUP;
 
         if (HeaderTypeCode == 0x0908)
             {
-            if (pFile->Read((void*)&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short))
                 goto WRAPUP;
 
-            if (pFile->Read((void*)&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
                 goto WRAPUP;
 
             if (DataTypeCode == 65) //  && (pi_Offset || !IsMultiPage(*pFile, (WordToFollow + 2)/256)) )
@@ -243,7 +241,7 @@ bool HRFIntergraphTG4Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                     HeaderLen = ((WordToFollow + 2) /256) * 512;
                     HeaderLen += 18;
                     pFile->SeekToPos(HeaderLen);
-                    if (pFile->Read((void*)&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+                    if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
                         goto WRAPUP;
 
                     if ((DataTypeCode == 24) && (pi_Offset || !IsMultiPage(*pFile, (WordToFollow + 2)/256)) )
@@ -346,7 +344,7 @@ void HRFIntergraphTG4File::CreateDescriptors()
                 {
                 WString CurrentFileName(GetURL()->GetURL());
 
-                throw HRFException(HRF_SUB_RES_ACCESS_DIFFER_READ_ONLY_EXCEPTION, CurrentFileName);
+                throw HRFSubResAccessDifferReadOnlyException(CurrentFileName);
                 }
 
             // Do not support invalid sub res.  Any res smaller than 32 x 32 should be consider as invalid.

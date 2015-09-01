@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DWorld.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -19,6 +19,7 @@
 #include <Imagepp/all/h/HFCPtr.h>
 #include <Imagepp/all/h/HGF2DCoordSys.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 
 typedef uint32_t HGF2DWorldIdentificator;
 
@@ -42,7 +43,7 @@ typedef uint32_t HGF2DWorldIdentificator;
 */
 class HGF2DWorld : public HGF2DCoordSys
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1121)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HGF2DWorldId_Base)
 
 public:
 
@@ -75,5 +76,6 @@ private:
     HGF2DWorld&  operator=(const HGF2DWorld& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGF2DWorld.hpp"
 

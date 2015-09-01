@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAMessages.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16,6 +16,7 @@
 // HRAEffectiveShapeChangedMsg
 ////////////////////////////////
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
@@ -334,3 +335,4 @@ inline uint64_t HRAModifiedTileNotSavedMsg::GetTileIndex() const
     return m_TileIndex;
     }
 
+END_IMAGEPP_NAMESPACE

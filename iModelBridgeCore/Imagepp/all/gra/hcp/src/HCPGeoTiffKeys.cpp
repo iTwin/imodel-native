@@ -2,17 +2,15 @@
 //:>
 //:>     $Source: all/gra/hcp/src/HCPGeoTiffKeys.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCPGeoTiffKeys
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
+#include <ImagePPInternal/hstdcpp.h>
 
-#include <ImagePP/h/HDllSupport.h>
 
-#include <Imagepp/all/h/HCPException.h>
 #include <Imagepp/all/h/HCPGCoordModel.h>
 #include <Imagepp/all/h/HCPGCoordUtility.h>
 #include <Imagepp/all/h/HGF2DAffine.h>
@@ -31,7 +29,7 @@
 
 
 
-USING_NAMESPACE_IMAGEPP
+
 
 
 
@@ -40,8 +38,6 @@ USING_NAMESPACE_IMAGEPP
 // Constructor
 //-----------------------------------------------------------------------------
 HCPGeoTiffKeys::HCPGeoTiffKeys()
-    : HMDMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO)
-
     {
     m_ErrorCode               = GEOCODING_NO_ERROR;
     //For now, the only time this variable should be false is when a WKT cannot be
@@ -58,10 +54,9 @@ HCPGeoTiffKeys::HCPGeoTiffKeys()
 // Copy constructor
 //-----------------------------------------------------------------------------
 HCPGeoTiffKeys::HCPGeoTiffKeys(const HCPGeoTiffKeys& pi_rObj)
-    : HMDMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO)
     {
     m_GeoKeyList              = pi_rObj.m_GeoKeyList;
-    m_GeoKeyListItr           = m_GeoKeyList.end();
+    m_GeoKeyListItr           = m_GeoKeyList.cend();
 
     m_ErrorCode               = pi_rObj.m_ErrorCode;
     m_HasValidGeoTIFFKeysList = pi_rObj.m_HasValidGeoTIFFKeysList;
@@ -81,7 +76,7 @@ HCPGeoTiffKeys::~HCPGeoTiffKeys()
 //  Clone
 //  This method dynamically allocates a copy of this
 //-----------------------------------------------------------------------------
-HFCPtr<HMDMetaDataContainer> HCPGeoTiffKeys::Clone() const
+HFCPtr<HCPGeoTiffKeys> HCPGeoTiffKeys::Clone() const
     {
     return new HCPGeoTiffKeys(*this);
     }
@@ -226,24 +221,24 @@ bool HCPGeoTiffKeys::SetValue (unsigned short pi_Key, WString& pi_Val)
 // public
 // methods from IGeoTiffKeysList
 //-----------------------------------------------------------------------------
-bool HCPGeoTiffKeys::GetFirstKey(GeoKeyItem* po_Key)
+bool HCPGeoTiffKeys::GetFirstKey(GeoKeyItem* po_Key) const
     {
     HPRECONDITION(po_Key != 0);
 
-    m_GeoKeyListItr = m_GeoKeyList.begin();
+    m_GeoKeyListItr = m_GeoKeyList.cbegin();
 
-    if (m_GeoKeyListItr != m_GeoKeyList.end())
+    if (m_GeoKeyListItr != m_GeoKeyList.cend())
         {
         *po_Key =  (*m_GeoKeyListItr).second;
         return true;
         }
     return false;
     }
-bool HCPGeoTiffKeys::GetNextKey(GeoKeyItem* po_Key)
+bool HCPGeoTiffKeys::GetNextKey(GeoKeyItem* po_Key) const
     {
     m_GeoKeyListItr++;
 
-    if (m_GeoKeyListItr != m_GeoKeyList.end())
+    if (m_GeoKeyListItr != m_GeoKeyList.cend())
         {
         *po_Key =  (*m_GeoKeyListItr).second;
         return true;
@@ -252,7 +247,7 @@ bool HCPGeoTiffKeys::GetNextKey(GeoKeyItem* po_Key)
     return false;
     }
 
-void HCPGeoTiffKeys::AddKey (unsigned short pi_KeyID, unsigned int pi_value)
+void HCPGeoTiffKeys::AddKey (unsigned short pi_KeyID, uint32_t pi_value)
     {
     //Currently BaseGCS has no knowledge of what a vertical datum is, so adding a
     //vertical unit key won't changed its definition or behavior.
@@ -311,16 +306,24 @@ void HCPGeoTiffKeys::AddKey (unsigned short pi_KeyID, const std::string& pi_valu
 // public
 // Return true if the requested key is found, otherwise false
 //-----------------------------------------------------------------------------
-bool HCPGeoTiffKeys::HasKey(unsigned short pi_KeyID)
+bool HCPGeoTiffKeys::HasKey(unsigned short pi_KeyID) const
     {
     return m_GeoKeyList.find(pi_KeyID) != m_GeoKeyList.end();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t HCPGeoTiffKeys::EraseKey(unsigned short pi_KeyID)
+    {
+    return m_GeoKeyList.erase(pi_KeyID);
     }
 
 //-----------------------------------------------------------------------------
 // public
 // Return the number of GeoTiff keys
 //-----------------------------------------------------------------------------
-unsigned short HCPGeoTiffKeys::GetNbKeys()
+unsigned short HCPGeoTiffKeys::GetNbKeys() const
     {
     return (unsigned short)m_GeoKeyList.size();
     }
@@ -527,9 +530,9 @@ HCPGeoTiffKeys::KeysValidStatus HCPGeoTiffKeys::ValidateGeoTIFFKey()
 // public
 // GetTransfoModelToMeters
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::GetTransfoModelToMeters(IRasterBaseGcsPtr pi_rpProjection)
+HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::GetTransfoModelToMeters(IRasterBaseGcsCR pi_rpProjection)
     {
-    double ToMeters = 1.0 / pi_rpProjection->GetUnitsFromMeters();
+    double ToMeters = 1.0 / pi_rpProjection.GetUnitsFromMeters();
 
     HFCPtr<HGF2DTransfoModel> pUnitConvertion(new HGF2DStretch(HGF2DDisplacement(0.0, 0.0),
                                                                ToMeters,
@@ -541,9 +544,9 @@ HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::GetTransfoModelToMeters(IRasterBaseGcs
 // public
 // GetTransfoModelFromMeters
 //-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::GetTransfoModelFromMeters(IRasterBaseGcsPtr pi_rpProjection)
+HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::GetTransfoModelFromMeters(IRasterBaseGcsCR pi_rpProjection)
     {
-    double FromMeters = pi_rpProjection->GetUnitsFromMeters();
+    double FromMeters = pi_rpProjection.GetUnitsFromMeters();
 
     HFCPtr<HGF2DTransfoModel> pUnitConvertion(new HGF2DStretch(HGF2DDisplacement(0.0, 0.0),
                                                                FromMeters,
@@ -552,6 +555,82 @@ HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::GetTransfoModelFromMeters(IRasterBaseG
     }
 
 
+
+
+/** -----------------------------------------------------------------------------
+Public / Static
+This method must be called before any Geoding requested to know if the
+given file (using the file format capabilities) support the minimal Geocoding
+information.
+
+@param pi_rpRasterFile    The rasterfile will be use to retreive it's file
+formats capabilities.  Then the function will verify
+if three tags are supported :
+
+GTModelType
+Projection
+ProjectedCSType 
+
+Return true if at least ONE of these two TAG are supported.
+-----------------------------------------------------------------------------
+*/
+HFCPtr<HGF2DTransfoModel> 
+HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HGF2DCoordSys>&     pi_rpRasterCoordSys,
+                                               const HGF2DExtent&               pi_rRasterExtent,
+                                               const HGF2DExtent&               pi_rMinimumRasterPixelRange,
+                                               const IRasterBaseGcsCP           pi_rpSourceCoordSys,
+                                               const IRasterBaseGcsCP           pi_rpDestCoordSys,
+                                               const HFCPtr<HGF2DWorldCluster>& pi_rpWorldCluster)
+{
+    HPRECONDITION(pi_rpWorldCluster != 0);
+    HPRECONDITION(pi_rpSourceCoordSys != 0);
+    HPRECONDITION(pi_rpDestCoordSys != 0);
+    
+    // Georeference
+    IRasterBaseGcsPtr pSrcProjection(pi_rpSourceCoordSys->Clone());
+    IRasterBaseGcsPtr pDstProjection(pi_rpDestCoordSys->Clone());
+                
+    // Create the reprojection transfo model (non adapted)
+    HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDstProjection.get(), *pSrcProjection.get()));
+        
+    // Create the reprojected coordSys
+    HFCPtr<HGF2DCoordSys> pDstCoordSys(new HGF2DCoordSys(*pDstToSrcTransfoModel, pi_rpRasterCoordSys));
+    
+    HGF2DLiteExtent ImageLiteExtent(pi_rRasterExtent.GetXMin(), pi_rRasterExtent.GetYMin(), pi_rRasterExtent.GetXMax(), pi_rRasterExtent.GetYMax());
+    
+    // Compute step
+    long   NbPoints (5);
+    double Step(MIN(pi_rRasterExtent.GetHeight(),pi_rRasterExtent.GetWidth()) / NbPoints);
+
+    // Compute the expected mean error
+    double ImageCenter_x(pi_rRasterExtent.GetXMin() + pi_rRasterExtent.GetWidth() / 2);
+    double ImageCenter_y(pi_rRasterExtent.GetYMin() + pi_rRasterExtent.GetHeight() / 2);
+    
+    HFCPtr<HVEShape> pPixelShape(new HVEShape(HVE2DRectangle(ImageCenter_x - pi_rMinimumRasterPixelRange.GetWidth() / 2, 
+                                                             ImageCenter_y - pi_rMinimumRasterPixelRange.GetHeight() / 2, 
+                                                             ImageCenter_x + pi_rMinimumRasterPixelRange.GetWidth() / 2, 
+                                                             ImageCenter_y + pi_rMinimumRasterPixelRange.GetHeight() / 2, 
+                                                             pi_rRasterExtent.GetCoordSys())));
+    pPixelShape->ChangeCoordSys(pDstCoordSys);
+    HGF2DExtent PixelExtent(pPixelShape->GetExtent());
+    double ExpectedMeanError(MIN(PixelExtent.GetWidth() * 0.5, PixelExtent.GetHeight() * 0.5));
+    double ExpectedMaxError(MIN(PixelExtent.GetWidth(), PixelExtent.GetHeight()));
+
+    HFCPtr<HGF2DTransfoModel> pTransfoModelForReprojection;
+
+    pTransfoModelForReprojection = HCPGCoordUtility::GetInstance()->CreateGCoordAdaptedModel(*pSrcProjection.get(), 
+                                                                                             *pDstProjection.get(), 
+                                                                                             ImageLiteExtent, 
+                                                                                             Step, 
+                                                                                             ExpectedMeanError, 
+                                                                                             ExpectedMaxError, 
+                                                                                             NULL, 
+                                                                                             NULL, 
+                                                                                             NULL, 
+                                                                                             NULL);
+
+    return pTransfoModelForReprojection;
+}
 
 /** -----------------------------------------------------------------------------
 Public / Static
@@ -571,16 +650,16 @@ Return true if at least ONE of these two TAG are supported.
 -----------------------------------------------------------------------------
 */
 HFCPtr<HGF2DTransfoModel>
-HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&         pi_rpSrcRasterFile,
-                                               uint32_t                            pi_PageNumber,
-                                               const IRasterBaseGcsPtr              pi_rpDestCoordSys,
-                                               const HFCPtr<HGF2DWorldCluster>&     pi_rpWorldCluster,
-                                               const IRasterBaseGcsPtr              pi_rpOverwriteSourceCoordSys)
+HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     pi_rpSrcRasterFile,
+                                               uint32_t                         pi_PageNumber,
+                                               IRasterBaseGcsCP                 pi_rpDestCoordSys,
+                                               const HFCPtr<HGF2DWorldCluster>& pi_rpWorldCluster,
+                                               IRasterBaseGcsCP                 pi_rpOverwriteSourceCoordSys)
     {
     HPRECONDITION(pi_rpWorldCluster != 0);
 
     HFCPtr<HGF2DTransfoModel>     pTransfoModelForReprojection;
-    IRasterBaseGcsPtr pSrcFileGeocoding;
+    IRasterBaseGcsCP pSrcFileGeocoding;
 
     if (pi_rpOverwriteSourceCoordSys != 0)
         {
@@ -588,7 +667,7 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
         }
     else
         {
-        pSrcFileGeocoding = pi_rpSrcRasterFile->GetPageDescriptor(pi_PageNumber)->GetGeocoding();
+        pSrcFileGeocoding = pi_rpSrcRasterFile->GetPageDescriptor(pi_PageNumber)->GetGeocodingCP();
         }
 
     // Georeference
@@ -596,11 +675,11 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
         (pSrcFileGeocoding->IsValid()) &&
         (pi_rpDestCoordSys->IsValid()))
         {
-
+        IRasterBaseGcsPtr pDestCoordSys(pi_rpDestCoordSys->Clone());
         // Compute the image extent expressed in the src projection units
         HFCPtr<HGF2DCoordSys> pSrcWorldMeters(pi_rpWorldCluster->GetCoordSysReference(HGF2DWorld_HMRWORLD));
 
-        HFCPtr<HGF2DCoordSys> pSrcUnitCoordSys = new HGF2DCoordSys(*GetTransfoModelToMeters(pSrcFileGeocoding), pSrcWorldMeters);
+        HFCPtr<HGF2DCoordSys> pSrcUnitCoordSys = new HGF2DCoordSys(*GetTransfoModelToMeters(*(pSrcFileGeocoding->Clone())), pSrcWorldMeters);
         HFCPtr<HGF2DCoordSys> pPhysicalCoordSys;
 
         HFCPtr<HRFPageDescriptor>       pPage(pi_rpSrcRasterFile->GetPageDescriptor(pi_PageNumber));
@@ -622,7 +701,7 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
             }
 
         // Create the reprojection transfo model (non adapted)
-        HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(pi_rpDestCoordSys, pSrcFileGeocoding));
+        HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDestCoordSys, *(pSrcFileGeocoding->Clone())));
 
         // Create the reprojected coordSys
         HFCPtr<HGF2DCoordSys> pDstCoordSys(new HGF2DCoordSys(*pDstToSrcTransfoModel, pSrcUnitCoordSys));
@@ -640,7 +719,7 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
 
         // Compute step
         int32_t NbPoints (5);
-        double Step(min(ImageExtent.GetHeight(), ImageExtent.GetWidth()) / NbPoints);
+        double Step(MIN(ImageExtent.GetHeight(), ImageExtent.GetWidth()) / NbPoints);
 
         // Compute the expected mean error
         double ImageCenter_x(ImageWidth / 2.0);
@@ -649,11 +728,11 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
         HFCPtr<HVEShape> pPixelShape(new HVEShape(HVE2DRectangle(ImageCenter_x - 0.5, ImageCenter_y - 0.5, ImageCenter_x + 0.5, ImageCenter_y + 0.5, pPhysicalCoordSys)));
         pPixelShape->ChangeCoordSys(pDstCoordSys);
         HGF2DExtent PixelExtent(pPixelShape->GetExtent());
-        double ExpectedMeanError(min(PixelExtent.GetWidth() * 0.5, PixelExtent.GetHeight() * 0.5));
-        double ExpectedMaxError (min(PixelExtent.GetWidth(), PixelExtent.GetHeight()));
+        double ExpectedMeanError(MIN(PixelExtent.GetWidth() * 0.5, PixelExtent.GetHeight() * 0.5));
+        double ExpectedMaxError (MIN(PixelExtent.GetWidth(), PixelExtent.GetHeight()));
 
-        pTransfoModelForReprojection = HCPGCoordUtility::GetInstance()->CreateGCoordAdaptedModel(pSrcFileGeocoding,
-                                       pi_rpDestCoordSys,
+        pTransfoModelForReprojection = HCPGCoordUtility::GetInstance()->CreateGCoordAdaptedModel(*(pSrcFileGeocoding->Clone()),
+                                       *pDestCoordSys,
                                        ImageLiteExtent,
                                        Step,
                                        ExpectedMeanError,
@@ -670,8 +749,8 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
         HFCPtr<HGF2DTransfoModel> pLogiqueToHmr(pSrcFileLogicalCoordSys->
                                                 GetTransfoModelTo(pi_rpWorldCluster->
                                                                   GetCoordSysReference(HGF2DWorld_HMRWORLD)));
-        HFCPtr<HGF2DTransfoModel> pFromMeters(GetTransfoModelFromMeters(pSrcFileGeocoding));
-        HFCPtr<HGF2DTransfoModel> pToMeters(GetTransfoModelToMeters(pi_rpDestCoordSys));
+        HFCPtr<HGF2DTransfoModel> pFromMeters(GetTransfoModelFromMeters(*pSrcFileGeocoding));
+        HFCPtr<HGF2DTransfoModel> pToMeters(GetTransfoModelToMeters(*pDestCoordSys));
 
         pTransfoModelForReprojection = pLogiqueToHmr->ComposeInverseWithDirectOf(*pFromMeters)->
                                        ComposeInverseWithDirectOf(*pTransfoModelForReprojection)->
@@ -683,75 +762,562 @@ HCPGeoTiffKeys::GetTransfoModelForReprojection(const HFCPtr<HRFRasterFile>&     
     }
 
 
-//-----------------------------------------------------------------------------
-// public
-// TranslateToMeter
-//-----------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel>
-HCPGeoTiffKeys::TranslateToMeter (const HFCPtr<HGF2DTransfoModel>& pi_pModel,
-                                  double                           pi_FactorModelToMeter,
-                                  bool                             pi_ModelTypeGeographicConsiderDefaultUnit,
-                                  bool                             pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
-                                  bool*                            po_pDefaultUnitWasFound,
-                                  IRasterBaseGcsPtr                pi_pBaseGcs)
+#include <Imagepp/all/h/HGF2DTranslation.h>
+#include <Imagepp/all/h/HGF2DSimilitude.h>
+#include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
+
+/** -----------------------------------------------------------------------------
+This method create a HGF2DTransfoModel using the information found in the
+geo tiff file tag and geo reference information
+-----------------------------------------------------------------------------
+*/
+HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::CreateTransfoModelFromGeoTiff(
+                                                        HCPGeoTiffKeys const*   pi_rpGeoTiffKeys,
+                                                        double                  pi_FactorModelToMeter,
+                                                        double*                 pi_pMatrix,    // 4 x 4
+                                                        uint32_t                pi_MatSize,
+                                                        double*                 pi_pPixelScale,
+                                                        uint32_t                pi_NbPixelScale,
+                                                        double*                 pi_pTiePoints, 
+                                                        uint32_t                pi_NbTiePoints,
+                                                        bool                    pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
+                                                        bool*                   po_DefaultUnitWasFound)
     {
-    HPRECONDITION(pi_pModel != 0);
-    HFCPtr<HGF2DTransfoModel> pTransfo              = pi_pModel;
+    HFCPtr<HGF2DTransfoModel> pTransfoModel = new HGF2DIdentity();
 
+    bool IsValidModel = false;
+    bool NeedFlip = false;
 
-    double effectiveFactorModelToMeter = pi_FactorModelToMeter;
-
-    if ((pi_pBaseGcs != NULL) && (pi_pBaseGcs->IsValid()))
+    // Case 0 : No positionning tag in the file.
+    if (pi_NbTiePoints == 0 && pi_NbPixelScale == 0 && pi_MatSize == 0)
         {
-        effectiveFactorModelToMeter = 1.0 / pi_pBaseGcs->GetUnitsFromMeters();
+        IsValidModel = true;
+        NeedFlip = true;
         }
 
-
-    // Apply to Matrix
-    if (effectiveFactorModelToMeter != 1.0)
+    // Case 1: One pair of tie point present. (And Case 6)
+    else if (pi_NbTiePoints == 6 && pi_NbPixelScale == 0)
         {
-        HFCPtr<HGF2DStretch> pScaleModel = new HGF2DStretch();
+        // We do not support both tie point and matrix to be present
+        // This is Case 6, so we ignore the matrix.
+        HWARNING((pi_MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
 
-        pScaleModel->SetXScaling(effectiveFactorModelToMeter);
-        pScaleModel->SetYScaling(effectiveFactorModelToMeter);
+        double OffsetX = pi_pTiePoints[3] - pi_pTiePoints[0];
+        double OffsetY = pi_pTiePoints[4] + pi_pTiePoints[1];
 
-        pTransfo = pTransfo->ComposeInverseWithDirectOf(*pScaleModel);
+        pTransfoModel = new HGF2DTranslation(HGF2DDisplacement(OffsetX, OffsetY));
+
+        IsValidModel = true;
+        NeedFlip = true;        // if modified see the same case in WriteTransfoModelFromGeoTiff
         }
 
-    return pTransfo;
+    // Case 3: One pair of tie point present and pixelscale. (And Case 6)
+    else if (pi_NbTiePoints == 6 && pi_NbPixelScale == 3)
+        {
+        // We do not support both tie point and matrix to be present
+        // This is Case 6, so we ignore the matrix.
+        HWARNING((pi_MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
+
+        double OffsetX = pi_pTiePoints[3] - (pi_pTiePoints[0] * pi_pPixelScale[0]);
+        double OffsetY = pi_pTiePoints[4] + (pi_pTiePoints[1] * pi_pPixelScale[1]);
+
+        pTransfoModel = new HGF2DStretch(HGF2DDisplacement(OffsetX, OffsetY),
+            pi_pPixelScale[0],
+            pi_pPixelScale[1]);
+        IsValidModel = true;
+        NeedFlip = true;        // if modified see the same case in WriteTransfoModelFromGeoTiff
+        }
+
+    // Case 4: Model Transformation tag present. (And Case 7)
+    else if (pi_NbTiePoints == 0 && pi_MatSize == 16)
+        {
+        // We do not support both pixelscale and matrix to be present
+        // This is Case 7, so we ignore the pixelscale.
+        HASSERT(pi_NbPixelScale == 0);
+
+        HFCMatrix<3, 3> TheMatrix;
+
+        TheMatrix[0][0] = pi_pMatrix[0];
+        TheMatrix[0][1] = pi_pMatrix[1];
+        TheMatrix[0][2] = pi_pMatrix[3];
+        TheMatrix[1][0] = pi_pMatrix[4];
+        TheMatrix[1][1] = pi_pMatrix[5];
+        TheMatrix[1][2] = pi_pMatrix[7];
+        TheMatrix[2][0] = pi_pMatrix[12];
+        TheMatrix[2][1] = pi_pMatrix[13];
+
+        // Try to not invalidate the model just because the
+        // global scale is not set. TR# 138746
+        if (!HDOUBLE_EQUAL_EPSILON(pi_pMatrix[15], 0.0))
+            TheMatrix[2][2] = pi_pMatrix[15];
+        else
+            TheMatrix[2][2] = 1.0;
+
+        pTransfoModel = new HGF2DProjective(TheMatrix);
+
+        // Get the simplest model possible.
+        HFCPtr<HGF2DTransfoModel> pTempTransfoModel = pTransfoModel->CreateSimplifiedModel();
+
+        if (pTempTransfoModel != 0)
+            pTransfoModel = pTempTransfoModel;
+
+        IsValidModel = true;
+        }
+
+    // Case 5: Many pairs of tie points defined. (And Case 9, Case 6)
+    else if (pi_NbTiePoints > 6 && pi_NbTiePoints <= 24)
+        {
+        // We do not support both, more than one ties points and matrix to be present
+        // This is Case 6, so we ignore the matrix.
+        HWARNING((pi_MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
+        // We do not support both, more than one ties points and pixelscale to be present
+        // This is Case 6, so we ignore the pixelscale.
+        HWARNING((pi_NbPixelScale == 0), L"HRFGeoTiff: TiePoints are used, Pixelscale ignored...");
+
+        double pMatrix[4][4];
+
+        GetTransfoMatrixFromScaleAndTiePts(pMatrix, (unsigned short)pi_NbTiePoints, pi_pTiePoints, 0, 0);
+
+        HFCMatrix<3, 3> TheMatrix;
+
+        TheMatrix[0][0] = pMatrix[0][0];
+        TheMatrix[0][1] = pMatrix[0][1];
+        TheMatrix[0][2] = pMatrix[0][3];
+        TheMatrix[1][0] = pMatrix[1][0];
+        TheMatrix[1][1] = pMatrix[1][1];
+        TheMatrix[1][2] = pMatrix[1][3];
+        TheMatrix[2][0] = pMatrix[3][0];
+        TheMatrix[2][1] = pMatrix[3][1];
+        TheMatrix[2][2] = pMatrix[3][3];
+
+        pTransfoModel = new HGF2DProjective(TheMatrix);
+
+        // Get the simplest model possible.
+        HFCPtr<HGF2DTransfoModel> pTempTransfoModel = pTransfoModel->CreateSimplifiedModel();
+
+        if (pTempTransfoModel != 0)
+            pTransfoModel = pTempTransfoModel;
+
+        IsValidModel = true;
+        if (ImageppLib::GetHost().GetImageppLibAdmin()._IsSetFlipInY_IfModelDefinedBy7to24TiePoints())
+            NeedFlip = true;
     }
+    else if (pi_NbTiePoints > 24)
+        {
+        // We do not support both, more than one ties points and matrix to be present
+        // This is Case 6, so we ignore the matrix.
+        HWARNING((pi_MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
+        // We do not support both, more than one ties points and pixelscale to be present
+        // This is Case 6, so we ignore the pixelscale.
+        HWARNING((pi_NbPixelScale == 0), L"HRFGeoTiff: TiePoints are used, Pixelscale ignored...");
 
-//-----------------------------------------------------------------------------
-// public
-// TranslateFromMeter
-//-----------------------------------------------------------------------------
+        double pMatrix[4][4];
 
-HFCPtr<HGF2DTransfoModel>
-HCPGeoTiffKeys::TranslateFromMeter (const HFCPtr<HGF2DTransfoModel>& pi_pModel,
-                                           bool                            pi_ModelTypeGeographicConsiderDefaultUnit,
-                                           bool                            pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
-                                           bool*                           po_pDefaultUnitWasFound,
-                                           IRasterBaseGcsPtr               pi_pBaseGcs)
+        GetTransfoMatrixFromScaleAndTiePts(pMatrix, (unsigned short)pi_NbTiePoints, pi_pTiePoints, (unsigned short)pi_NbPixelScale, pi_pPixelScale);
+        HFCMatrix<3, 3> TheMatrix;
+
+        TheMatrix[0][0] = pMatrix[0][0];
+        TheMatrix[0][1] = pMatrix[0][1];
+        TheMatrix[0][2] = pMatrix[0][3];
+        TheMatrix[1][0] = pMatrix[1][0];
+        TheMatrix[1][1] = pMatrix[1][1];
+        TheMatrix[1][2] = pMatrix[1][3];
+        TheMatrix[2][0] = pMatrix[3][0];
+        TheMatrix[2][1] = pMatrix[3][1];
+        TheMatrix[2][2] = pMatrix[3][3];
+
+        pTransfoModel = new HGF2DProjective(TheMatrix);
+
+        // Get the simplest model possible.
+        HFCPtr<HGF2DTransfoModel> pTempTransfoModel = pTransfoModel->CreateSimplifiedModel();
+
+        if (pTempTransfoModel != 0)
+            pTransfoModel = pTempTransfoModel;
+
+        IsValidModel = true;
+        NeedFlip = false;       // if modified see the same case in WriteTransfoModelFromGeoTiff
+        }
+
+    // If pixelIsPoint(origin center of the pixel), we need to translate the origin to
+    // the upper-left corner.
+    uint32_t GTRasterTypeValue(TIFFGeo_RasterPixelIsArea);
+    if (pi_rpGeoTiffKeys->HasKey(GTRasterType))
+        pi_rpGeoTiffKeys->GetValue(GTRasterType, &GTRasterTypeValue);
+    if (GTRasterTypeValue == TIFFGeo_RasterPixelIsPoint)
+        {
+        HGF2DDisplacement Depl(-0.5, -0.5);
+        HGF2DTranslation TranslateModel(Depl);
+        pTransfoModel = TranslateModel.ComposeInverseWithDirectOf(*pTransfoModel);
+        }
+
+    // Flip the model if needed
+    if (IsValidModel && NeedFlip)
+        {
+        // Flip the Y Axe because the origin of ModelSpace is lower-left
+        HFCPtr<HGF2DStretch> pFlipModel = new HGF2DStretch();
+
+        pFlipModel->SetYScaling(-1.0);
+        pTransfoModel = pFlipModel->ComposeInverseWithDirectOf(*pTransfoModel);
+        }
+
+    if (pi_rpGeoTiffKeys != 0)
     {
-    HPRECONDITION(pi_pModel != 0);
+        RasterFileGeocodingPtr pFileGeocoding(RasterFileGeocoding::Create(pi_rpGeoTiffKeys));
+        pTransfoModel = pFileGeocoding->TranslateToMeter(pTransfoModel,
+            pi_FactorModelToMeter,
+            pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
+            po_DefaultUnitWasFound);
+    }
+    else if (po_DefaultUnitWasFound != 0)
+        *po_DefaultUnitWasFound = false;
 
-    double                   FactorModelToMeter = 1.0;
-    if ((pi_pBaseGcs != NULL) && (pi_pBaseGcs->IsValid()))
-        FactorModelToMeter = 1.0 / pi_pBaseGcs->GetUnitsFromMeters();
+    return pTransfoModel;
+}
 
-    HFCPtr<HGF2DTransfoModel> pTransfo = pi_pModel;
+void HCPGeoTiffKeys::WriteTransfoModelFromGeoTiff(HCPGeoTiffKeys const*                 pi_rpGeoTiffKeys,
+                                                  const HFCPtr<HGF2DTransfoModel>&      pi_pModel,
+                                                  uint64_t                              pi_ImageWidth,
+                                                  uint64_t                              pi_ImageHeight,
+                                                  bool                                  pi_StoreUsingMatrix,
+                                                  double*                               po_pMatrix,           // 4 x 4  array[16]
+                                                  uint32_t&                               pio_MatSize,
+                                                  double*                               po_pPixelScale,       // array[3]
+                                                  uint32_t&                               pio_NbPixelScale,
+                                                  double*                               po_pTiePoints,        // array[24]
+                                                  uint32_t&                               pio_NbTiePoints,
+                                                  bool                                  pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
+                                                  bool*                                 po_DefaultUnitWasFound)
 
+{
 
-    // Apply inverse factor to Matrix
-    if (FactorModelToMeter != 1.0)
+    // Translate the model units in geotiff units.
+    HFCPtr<HGF2DTransfoModel> pTransfoModel(pi_pModel);
+    if (pi_rpGeoTiffKeys != 0)
+    {
+        RasterFileGeocodingPtr pFileGeocoding(RasterFileGeocoding::Create(pi_rpGeoTiffKeys));
+        pTransfoModel = pFileGeocoding->TranslateFromMeter(pi_pModel,
+            pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
+            po_DefaultUnitWasFound);
+    }
+    else if (po_DefaultUnitWasFound != 0)
+        *po_DefaultUnitWasFound = false;
+
+    // Get the simplest model possible.
+    HFCPtr<HGF2DTransfoModel> pTempTransfoModel = pTransfoModel->CreateSimplifiedModel();
+    if (pTempTransfoModel != 0)
+        pTransfoModel = pTempTransfoModel;
+
+    // Write a matrix, if ask for(pi_StoreUsingMatrix),
+    //                 if the file already have a matrix((pio_NbTiePoints == 0 && pio_MatSize == 16))
+    //                 if ask for limited Tiepoints model(m_sStoreLimitedTiePoints) and
+    //                      model is not (Translation or stretch)
+    //
+    bool UseMatrix = pi_StoreUsingMatrix || (pio_NbTiePoints == 0 && pio_MatSize == 16) ||
+        (ImageppLib::GetHost().GetImageppLibAdmin()._IsGeoTiffFileStoreLimitedTiePointsModel() &&
+        !pTransfoModel->IsCompatibleWith(HGF2DTranslation::CLASS_ID) &&
+        !pTransfoModel->IsCompatibleWith(HGF2DStretch::CLASS_ID));
+
+    // Set the model using matix if the user had ask so or
+    // if the file already have a matrix.
+    if (UseMatrix && pTransfoModel->CanBeRepresentedByAMatrix())
+    {
+        HFCMatrix<3, 3> TheMatrix;
+
+        // Atention: Same code in the else below
+        //
+        // If pixelIsPoint(origin center of the pixel), we need to translate the origin to
+        // the upper-left corner.
+        uint32_t GTRasterTypeValue(TIFFGeo_RasterPixelIsArea);
+        if (pi_rpGeoTiffKeys->HasKey(GTRasterType))
+            pi_rpGeoTiffKeys->GetValue(GTRasterType, &GTRasterTypeValue);
+        if (GTRasterTypeValue == TIFFGeo_RasterPixelIsPoint)
         {
-        HASSERT(FactorModelToMeter != 0.0);
-        HFCPtr<HGF2DStretch> pScaleModel = new HGF2DStretch();
-        pScaleModel->SetXScaling(1.0 / FactorModelToMeter);
-        pScaleModel->SetYScaling(1.0 / FactorModelToMeter);
-
-        pTransfo = pTransfo->ComposeInverseWithDirectOf(*pScaleModel);
+            HGF2DDisplacement Depl(-0.5, -0.5);
+            HGF2DTranslation TranslateModel(Depl);
+            pTransfoModel = TranslateModel.ComposeInverseWithDirectOf(*pTransfoModel);
         }
 
-    return pTransfo;
+
+        TheMatrix = pTransfoModel->GetMatrix();
+
+        // a-b-c-d
+        po_pMatrix[0] = TheMatrix[0][0];
+        po_pMatrix[1] = TheMatrix[0][1];
+        po_pMatrix[2] = 0.0;
+        po_pMatrix[3] = TheMatrix[0][2];
+
+        // e-f-g-h
+        po_pMatrix[4] = TheMatrix[1][0];
+        po_pMatrix[5] = TheMatrix[1][1];
+        po_pMatrix[6] = 0.0;
+        po_pMatrix[7] = TheMatrix[1][2];
+
+        // i-j-k-l
+        po_pMatrix[8] = 0.0;
+        po_pMatrix[9] = 0.0;
+        po_pMatrix[10] = 1.0;
+        po_pMatrix[11] = 0.0;
+
+        // m-n-o-p
+        po_pMatrix[12] = TheMatrix[2][0];
+        po_pMatrix[13] = TheMatrix[2][1];
+        po_pMatrix[14] = 0.0;
+        po_pMatrix[15] = TheMatrix[2][2];
+
+        pio_MatSize = 16;   // Mat is used
+        pio_NbPixelScale = 0;
+        pio_NbTiePoints = 0;
     }
+    else
+    {
+        // TiePoints cases
+
+        bool NeedToFlip = false;
+        // Case 1: One pair of tie point present. (And Case 6)
+        if (pio_NbTiePoints == 6 && pio_NbPixelScale == 0)
+            NeedToFlip = true;
+        // Case 3: One pair of tie point present and pixelscale. (And Case 6)
+        else if (pio_NbTiePoints == 6 && pio_NbPixelScale == 3)
+            NeedToFlip = true;
+        // Case 5: Many pairs of tie points defined. (And Case 9, Case 6)
+        else if (pio_NbTiePoints > 6 && pio_NbTiePoints <= 24)
+        {
+            if (ImageppLib::GetHost().GetImageppLibAdmin()._IsSetFlipInY_IfModelDefinedBy7to24TiePoints())
+                NeedToFlip = true;
+        }
+        // A new file
+        else if (pio_NbPixelScale == 0 && pio_NbTiePoints == 0 && (pTransfoModel->IsCompatibleWith(HGF2DTranslation::CLASS_ID) || 
+                                                                   pTransfoModel->IsCompatibleWith(HGF2DStretch::CLASS_ID)))
+            NeedToFlip = true;
+
+
+        // Flip the model if needed
+        if (NeedToFlip)
+        {
+            // Flip the Y Axe because the origin of ModelSpace is lower-left
+            HFCPtr<HGF2DStretch> pFlipModel = new HGF2DStretch();
+
+            pFlipModel->SetYScaling(-1.0);
+            pTransfoModel = pFlipModel->ComposeInverseWithDirectOf(*pTransfoModel);
+        }
+
+        // Atention: Same code in the if above
+        //
+        // If pixelIsPoint(origin center of the pixel), we need to translate the origin from
+        // the upper-left corner to center.
+        uint32_t GTRasterTypeValue(TIFFGeo_RasterPixelIsArea);
+        if (pi_rpGeoTiffKeys->HasKey(GTRasterType))
+            pi_rpGeoTiffKeys->GetValue(GTRasterType, &GTRasterTypeValue);
+        if (GTRasterTypeValue == TIFFGeo_RasterPixelIsPoint)
+        {
+            HGF2DDisplacement Depl(-0.5, -0.5);
+            HGF2DTranslation TranslateModel(Depl);
+            pTransfoModel = TranslateModel.ComposeInverseWithDirectOf(*pTransfoModel);
+        }
+
+        // Try to set the georef tag as it was originaly in the file
+
+        // Case 1: One pair of tie point present. (And Case 6)
+        if ((pio_NbTiePoints == 6 && pio_NbPixelScale == 0) && pTransfoModel->IsCompatibleWith(HGF2DTranslation::CLASS_ID))
+        {
+            po_pTiePoints[0] = 0.0;
+            po_pTiePoints[1] = 0.0;
+            po_pTiePoints[2] = 0.0;
+
+            // Transfome the pixel (0,0)
+            pTransfoModel->ConvertDirect(po_pTiePoints[0], po_pTiePoints[1], &po_pTiePoints[3], &po_pTiePoints[4]);
+            po_pTiePoints[5] = 0.0;
+
+            pio_MatSize = 0;      
+            pio_NbPixelScale = 0;
+            pio_NbTiePoints = 6;    // Tie point used
+        }
+
+        // Case 3: One pair of tie point present and pixelscale. (And Case 6)
+        else if ((pio_NbTiePoints == 6 && pio_NbPixelScale == 3) && pTransfoModel->IsCompatibleWith(HGF2DStretch::CLASS_ID))
+        {
+            HGF2DDisplacement Displacement;
+
+            pTransfoModel->GetStretchParams(&po_pPixelScale[0], &po_pPixelScale[1], &Displacement);
+
+            // Scale x,y,z
+            po_pPixelScale[2] = 0.0;
+
+            po_pTiePoints[0] = 0.0;
+            po_pTiePoints[1] = 0.0;
+            po_pTiePoints[2] = 0.0;
+
+            // Transfome the point (0,0)
+            pTransfoModel->ConvertDirect(po_pTiePoints[0], po_pTiePoints[1], &po_pTiePoints[3], &po_pTiePoints[4]);
+            po_pTiePoints[5] = 0.0;
+
+            // TiePoint Pixel(0,0,0) System(T(0),T(0),T(0)) ...
+            pio_MatSize = 0;
+            pio_NbPixelScale = 3;   // PixelScale is used
+            pio_NbTiePoints = 6;    // Tie point is used
+        }
+
+        // In all other case set set the georef using the rule discribe in HRFGeoTiffFile.doc
+        else
+        {
+            if (pTransfoModel->IsCompatibleWith(HGF2DTranslation::CLASS_ID))
+            {
+                // 1 pair of tie points is needed.
+
+                po_pTiePoints[0] = 0.0;
+                po_pTiePoints[1] = 0.0;
+                po_pTiePoints[2] = 0.0;
+
+                // Transfome the pixel (0,0)
+                pTransfoModel->ConvertDirect(po_pTiePoints[0], po_pTiePoints[1], &po_pTiePoints[3], &po_pTiePoints[4]);
+                po_pTiePoints[5] = 0.0;
+
+                // TiePoint Pixel(0,0,0) System(T(0),T(0),T(0)) ...
+                pio_MatSize = 0;
+                pio_NbPixelScale = 0;   
+                pio_NbTiePoints = 6;    // Tie point is used
+            }
+            else if (pTransfoModel->IsCompatibleWith(HGF2DStretch::CLASS_ID))
+            {
+                // 1 pair of tie points + a scaling is needed.
+                HGF2DDisplacement Displacement;
+
+                pTransfoModel->GetStretchParams(&po_pPixelScale[0], &po_pPixelScale[1], &Displacement);
+
+                // Scale x,y,z
+                po_pPixelScale[2] = 0.0;
+
+                po_pTiePoints[0] = 0.0;
+                po_pTiePoints[1] = 0.0;
+                po_pTiePoints[2] = 0.0;
+
+                // Transfome the point (0,0)
+                pTransfoModel->ConvertDirect(po_pTiePoints[0], po_pTiePoints[1], &po_pTiePoints[3], &po_pTiePoints[4]);
+                po_pTiePoints[5] = 0.0;
+
+                // TiePoint Pixel(0,0,0) System(T(0),T(0),T(0)) ...
+                pio_MatSize = 0;
+                pio_NbPixelScale = 3;   // PixelScale is used
+                pio_NbTiePoints = 6;    // Tie point is used
+            }
+            else if (pTransfoModel->IsCompatibleWith(HGF2DSimilitude::CLASS_ID))
+            {
+                // 2 pairs of tie points is needed.
+
+                // Frist pair.
+                po_pTiePoints[0] = 0.0;
+                po_pTiePoints[1] = 0.0;
+                po_pTiePoints[2] = 0.0;
+
+                // Transfome the pixel (0,0)
+                pTransfoModel->ConvertDirect(po_pTiePoints[0], po_pTiePoints[1], &po_pTiePoints[3], &po_pTiePoints[4]);
+                po_pTiePoints[5] = 0.0;
+
+                // Second pair.
+                po_pTiePoints[6] = (double)pi_ImageWidth;
+                po_pTiePoints[7] = (double)pi_ImageHeight;
+                po_pTiePoints[8] = 0.0;
+
+                // Transfome the pixel (pi_ImageWidth,pi_ImageHeight)
+                pTransfoModel->ConvertDirect(po_pTiePoints[6], po_pTiePoints[7], &po_pTiePoints[9], &po_pTiePoints[10]);
+                po_pTiePoints[11] = 0.0;
+
+                // TiePoint Pixel(0,0,0)                     System(T(0),T(0),T(0)) ...
+                // TiePoint Pixel(pi_ImageWidth,pi_ImageHeight,0)  System(T(pi_ImageWidth),T(pi_ImageHeight),T(0)) ...
+                pio_MatSize = 0;
+                pio_NbPixelScale = 0; 
+                pio_NbTiePoints = 12;    // Tie point is used
+            }
+            else if (pTransfoModel->IsCompatibleWith(HGF2DAffine::CLASS_ID))
+            {
+                // 3 pairs of tie points is needed.
+
+                // Frist pair.
+                po_pTiePoints[0] = 0.0;
+                po_pTiePoints[1] = 0.0;
+                po_pTiePoints[2] = 0.0;
+
+                // Transfome the pixel (0,0)
+                pTransfoModel->ConvertDirect(po_pTiePoints[0], po_pTiePoints[1], &po_pTiePoints[3], &po_pTiePoints[4]);
+                po_pTiePoints[5] = 0.0;
+
+                // Second pair.
+                po_pTiePoints[6] = (double)pi_ImageWidth;
+                po_pTiePoints[7] = (double)pi_ImageHeight;
+                po_pTiePoints[8] = 0.0;
+
+                // Transfome the pixel (pi_ImageWidth,pi_ImageHeight)
+                pTransfoModel->ConvertDirect(po_pTiePoints[6], po_pTiePoints[7], &po_pTiePoints[9], &po_pTiePoints[10]);
+                po_pTiePoints[11] = 0.0;
+
+                // Third pair.
+                po_pTiePoints[12] = (double)pi_ImageWidth;
+                po_pTiePoints[13] = 0.0;
+                po_pTiePoints[14] = 0.0;
+
+                // Transfome the pixel (pi_ImageWidth,pi_ImageHeight)
+                pTransfoModel->ConvertDirect(po_pTiePoints[12], po_pTiePoints[13], &po_pTiePoints[15], &po_pTiePoints[16]);
+                po_pTiePoints[17] = 0.0;
+
+                // TiePoint Pixel(0,0,0)                     System(T(0),T(0),T(0)) ...
+                // TiePoint Pixel(pi_ImageWidth,pi_ImageHeight,0)  System(T(pi_ImageWidth),T(pi_ImageHeight),T(0)) ...
+                // TiePoint Pixel(pi_ImageWidth,0,0)            System(T(pi_ImageWidth),T(0),T(0)) ...
+                pio_MatSize = 0;
+                pio_NbPixelScale = 0;
+                pio_NbTiePoints = 18;    // Tie point is used
+            }
+            else if (pTransfoModel->IsCompatibleWith(HGF2DProjective::CLASS_ID))
+            {
+                // 4 pairs of tie points is needed.
+
+                // Frist pair.
+                po_pTiePoints[0] = 0.0;
+                po_pTiePoints[1] = 0.0;
+                po_pTiePoints[2] = 0.0;
+
+                // Transfome the pixel (0,0)
+                pTransfoModel->ConvertDirect(po_pTiePoints[0], po_pTiePoints[1], &po_pTiePoints[3], &po_pTiePoints[4]);
+                po_pTiePoints[5] = 0.0;
+
+                // Second pair.
+                po_pTiePoints[6] = (double)pi_ImageWidth;
+                po_pTiePoints[7] = (double)pi_ImageHeight;
+                po_pTiePoints[8] = 0.0;
+
+                // Transfome the pixel (pi_ImageWidth,pi_ImageHeight)
+                pTransfoModel->ConvertDirect(po_pTiePoints[6], po_pTiePoints[7], &po_pTiePoints[9], &po_pTiePoints[10]);
+                po_pTiePoints[11] = 0.0;
+
+                // Third pair.
+                po_pTiePoints[12] = (double)pi_ImageWidth;
+                po_pTiePoints[13] = 0.0;
+                po_pTiePoints[14] = 0.0;
+
+                // Transfome the pixel (pi_ImageWidth,pi_ImageHeight)
+                pTransfoModel->ConvertDirect(po_pTiePoints[12], po_pTiePoints[13], &po_pTiePoints[15], &po_pTiePoints[16]);
+                po_pTiePoints[17] = 0.0;
+
+                // Forth pair.
+                po_pTiePoints[18] = 0.0;
+                po_pTiePoints[19] = (double)pi_ImageHeight;
+                po_pTiePoints[20] = 0.0;
+
+                // Transfome the pixel (pi_ImageWidth,pi_ImageHeight)
+                pTransfoModel->ConvertDirect(po_pTiePoints[18], po_pTiePoints[19], &po_pTiePoints[21], &po_pTiePoints[22]);
+                po_pTiePoints[23] = 0.0;
+
+                // TiePoint Pixel(0,0,0)                     System(T(0),T(0),T(0)) ...
+                // TiePoint Pixel(pi_ImageWidth,pi_ImageHeight,0)  System(T(pi_ImageWidth),T(pi_ImageHeight),T(0)) ...
+                // TiePoint Pixel(pi_ImageWidth,0,0)            System(T(pi_ImageWidth),T(0),T(0)) ...
+                // TiePoint Pixel(0,pi_ImageHeight,0)           System(T(0),T(pi_ImageHeight),T(0)) ...
+                pio_MatSize = 0;
+                pio_NbPixelScale = 0;
+                pio_NbTiePoints = 24;    // Tie point is used
+            }
+            else
+            {
+                HASSERT(0);
+            }
+        }
+    }
+}

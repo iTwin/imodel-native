@@ -2,21 +2,20 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUSgsSDTSDEMFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFUSgsSDTSDEMFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 
 #include <Imagepp/all/h/HFCBinStream.h>
 #include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 
 #include <Imagepp/all/h/HGF2DAffine.h>
@@ -40,10 +39,10 @@
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //GDAL
-#include <ImagePPInternal/ext/gdal/gdal_priv.h>
-#include <ImagePPInternal/ext/gdal/cpl_string.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
+#include <ImagePP-GdalLib/cpl_string.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 
 
@@ -192,7 +191,7 @@ HRFUSgsSDTSDEMCreator::HRFUSgsSDTSDEMCreator()
 // Identification information
 WString HRFUSgsSDTSDEMCreator::GetLabel() const
     {
-    return HFCResourceLoader::GetInstance()->GetString(IDS_FILEFORMAT_USGS_SDTS); // SDTS DEM File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_USGS_SDTS()); // SDTS DEM File Format
     }
 
 // Identification information
@@ -229,7 +228,9 @@ bool HRFUSgsSDTSDEMCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                           uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
+    
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
 
     //Will initialize GDal if not already initialize
     HRFGdalSupportedFile::Initialize();
@@ -242,7 +243,7 @@ bool HRFUSgsSDTSDEMCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock (GetLockManager());
 
     // Open the IMG File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     if (pFile->GetSize() >= 24)
         {
@@ -289,7 +290,7 @@ HRFUSgsSDTSDEMFile::HRFUSgsSDTSDEMFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
 
     // The ancestor store the access mode
@@ -338,17 +339,22 @@ HRFUSgsSDTSDEMFile::~HRFUSgsSDTSDEMFile()
 // BuildTransfoModel
 //
 //-----------------------------------------------------------------------------
-IRasterBaseGcsPtr HRFUSgsSDTSDEMFile::GetGeocodingInformation()
+RasterFileGeocodingPtr HRFUSgsSDTSDEMFile::ExtractGeocodingInformation()
     {
     HPRECONDITION(m_NbBands == 1);
 
-    IRasterBaseGcsPtr pGeocoding = HRFGdalSupportedFile::GetGeocodingInformation();
+    RasterFileGeocodingPtr pGeocoding = HRFGdalSupportedFile::ExtractGeocodingInformation();
 
-    if (pGeocoding != 0)
-        AddVerticalUnitToGeocoding(pGeocoding);
+    if (pGeocoding->GetGeocodingCP() != NULL)
+        {
+        // Need to clone GCS to modify the vertical unit.
+        IRasterBaseGcsPtr pNewGcs = pGeocoding->GetGeocodingCP()->Clone();
+        AddVerticalUnitToGeocoding(*pNewGcs);
+
+        pGeocoding = RasterFileGeocoding::Create(pNewGcs.get());
+        }
 
     return pGeocoding;
-
     }
 
 //-----------------------------------------------------------------------------
@@ -388,7 +394,7 @@ void HRFUSgsSDTSDEMFile::CreateDescriptors()
 
     if (Pos == string::npos)
     {
-        throw HFCFileException(HFC_INVALID_FILE_NAME_EXCEPTION, FileName);
+        throw HFCInvalidFileNameException(FileName);
     }
 
     FileName   = FileName.replace(Pos, 4, L"DDOM");
@@ -397,7 +403,7 @@ void HRFUSgsSDTSDEMFile::CreateDescriptors()
 
     HAutoPtr<HFCBinStream> pDDOMFileStream(HFCBinStream::Instanciate(pURL.GetPtr(), HFC_READ_ONLY));
 
-    if (pDDOMFileStream != NULL && pDDOMFileStream->GetLastExceptionID() == NO_EXCEPTION)
+    if (pDDOMFileStream != NULL && pDDOMFileStream->GetLastException() == 0)
         {
         //This file is assumed to be small so that loading it all in memory isn't costly.
         HASSERT(pDDOMFileStream->GetSize() < 20000);

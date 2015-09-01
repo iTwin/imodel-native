@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFBlockAdapter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -19,6 +19,7 @@
 //#include "HFCAccessMode.h"
 #include "HRFResolutionEditor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class  HRFRasterFile;
 
 //-----------------------------------------------------------------------------
@@ -89,7 +90,7 @@ public:
 
     virtual const HRFResolutionEditor* GetAdaptedResolutionEditor() const;
 
-    _HDLLg virtual void             SetPalette    (const HRPPixelPalette& pi_rPalette);
+    IMAGEPP_EXPORT virtual void             SetPalette    (const HRPPixelPalette& pi_rPalette);
 
     // Used by HRSObjectStore to synchronize TileDataFlag before the save.
     virtual void                    SaveDataFlag();
@@ -123,5 +124,6 @@ public:
                                                 unsigned short       pi_Resolution,
                                                 HFCAccessMode         pi_AccessMode) const = 0;
     };
+END_IMAGEPP_NAMESPACE
 
 

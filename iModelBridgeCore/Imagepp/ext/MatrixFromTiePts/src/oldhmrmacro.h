@@ -1,8 +1,10 @@
-/*----------------------------------------------------------------------+
-|                                                                       |
-|       $Source: ext/MatrixFromTiePts/src/oldhmrmacro.h $
-|                                                                       |
-+----------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ext/MatrixFromTiePts/src/oldhmrmacro.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <malloc.h>
@@ -157,7 +159,7 @@
 
 
 #if !defined(round)
-#if _MSC_VER < 1800
+#if defined (_WIN32) && (_MSC_VER < 1800)
 /* #   define round(a) ((long)((a)<0.0?(a)-0.5:(a)+0.5)) */
 #   define round(a) ((long)(HDOUBLE_SMALLER_EPSILON((a),0.0)?(a)-0.5:(a)+0.5))
 #endif

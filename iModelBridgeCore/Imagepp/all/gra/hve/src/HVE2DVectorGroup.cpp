@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DVectorGroup.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HVE2DVectorGroup.h>
 
@@ -140,10 +140,10 @@ void HVE2DVectorGroup::Move(const HGF2DDisplacement& pi_rDisplacement)
         if (NewExtent.IsDefined())
             {
 
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
             }
 
         // Set tolerance
@@ -184,10 +184,10 @@ void HVE2DVectorGroup::Scale(double pi_ScaleFactor, const HGF2DLocation& pi_rSca
 
         if (NewExtent.IsDefined())
             {
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
             }
 
         // Set tolerance
@@ -573,10 +573,10 @@ HVE2DVector* HVE2DVectorGroup::AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys
         if (NewExtent.IsDefined())
             {
 
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetXMax()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMin()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(NewExtent.GetYMax()));
             }
 
         // Set tolerance

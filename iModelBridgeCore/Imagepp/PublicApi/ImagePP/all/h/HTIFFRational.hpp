@@ -2,13 +2,14 @@
 //:>
 //:>    $Source: PublicApi/ImagePP/all/h/HTIFFRational.hpp $
 //:>
-//:>    $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>    $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HTIFFRational
 //-----------------------------------------------------------------------------
 
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Public
 // Constructor
@@ -57,3 +58,4 @@ inline double HTIFFRational<T>::ConvertToDouble() const
     else
         return m_Numerator / static_cast<double>(m_Denominator);
     }
+END_IMAGEPP_NAMESPACE

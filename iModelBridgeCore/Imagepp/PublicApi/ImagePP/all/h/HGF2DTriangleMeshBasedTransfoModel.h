@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTriangleMeshBasedTransfoModel.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DTriangleMeshBasedTransfoModel
@@ -17,6 +17,8 @@
 #include "HFCMatrix.h"
 #include "HGF2DLiteExtent.h"
 #include "HGF2DMeshBasedTransfoModel.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -33,7 +35,7 @@
 */
 class HGF2DTriangleMeshBasedTransfoModel : public HGF2DMeshBasedTransfoModel
     {
-    HDECLARE_CLASS_ID(9997, HGF2DMeshBasedTransfoModel)
+    HDECLARE_CLASS_ID(HGF2DTransfoModelId_TriangleMeshBased, HGF2DMeshBasedTransfoModel)
 
 public:
 
@@ -56,4 +58,4 @@ private:
         }
 
     };
-
+END_IMAGEPP_NAMESPACE

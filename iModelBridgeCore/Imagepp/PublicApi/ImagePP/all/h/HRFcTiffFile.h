@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFcTiffFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFcTiffFile
@@ -17,6 +17,7 @@
 
 #include "HRFiTiffFile.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFcTiffCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -34,30 +35,28 @@ public:
     friend class HRFiTiffStripEditor;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1464, HRFiTiffFile)
+    HDECLARE_CLASS_ID(HRFFileId_cTiff, HRFiTiffFile)
 
     // allow to Open an image file
     HRFcTiffFile          (const HFCPtr<HFCURL>&          pi_rpURL,
-                           HFCAccessMode                  pi_AccessMode = HFC_READ_ONLY,
-                           uint64_t                      pi_Offset = 0);
+						   HFCAccessMode                  pi_AccessMode = HFC_READ_ONLY,
+						   uint64_t                       pi_Offset = 0);
 
     virtual                                 ~HRFcTiffFile         ();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities       () const;
+    virtual const HFCPtr<HRFRasterFileCapabilities>&      GetCapabilities       () const;
 
-    bool                                   AddPage(HFCPtr<HRFPageDescriptor> pi_pPage);
+    bool                                    AddPage(HFCPtr<HRFPageDescriptor> pi_pPage);
 
     void                                    SetOriginalFileAccessMode (HFCAccessMode pi_AccessMode);
 
     // The format of the string must be idem at ctime() function
-    const char*                            GetSourceFile_CreationDateTime();
     void                                    SetSourceFile_CreationDateTime(const char* pi_DateTime);
 
     virtual void                            Save();
 
-    virtual uint64_t                          GetFileCurrentSize() const;
+    virtual uint64_t                        GetFileCurrentSize() const;
 
 protected:
 
@@ -129,9 +128,10 @@ protected:
     virtual bool ValidatePageDirectory(HTIFFFile* pi_pTiffFilePtr, uint32_t pi_Page, uint32_t pi_HMRVersion) const;
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFcTiffCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFcTiffCreator)
 
 
     };
+END_IMAGEPP_NAMESPACE
 
 

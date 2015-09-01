@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeV16B5G5R5.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,9 +13,10 @@
 
 #include "HRPPixelType.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelTypeV16B5G5R5 : public HRPPixelType
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1049)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRPPixelTypeId_V16B5G5R5)
 
 public:
 
@@ -44,4 +45,5 @@ protected:
 private:
 
     };
+END_IMAGEPP_NAMESPACE
 

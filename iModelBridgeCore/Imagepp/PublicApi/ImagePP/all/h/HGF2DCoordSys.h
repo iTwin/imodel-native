@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DCoordSys.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DCoordSys
@@ -17,6 +17,7 @@
 #include <Imagepp/all/h/HPMPersistentObject.h>
 #include <Imagepp/all/h/HFCExclusiveKey.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HGF2DTransfoModel;
 class HGF2DCoordSysImpl;
 
@@ -113,43 +114,43 @@ class HGF2DCoordSysImpl;
 
 class HGF2DCoordSys : public HPMPersistentObject, public HPMShareableObject<HGF2DCoordSys>
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1011)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HGF2DCoordSysId)
 
 public:
 
     // Primary methods
-    _HDLLg                 HGF2DCoordSys();
-    _HDLLg                 HGF2DCoordSys(const HGF2DTransfoModel&       pi_rModelToRef,
+    IMAGEPP_EXPORT                 HGF2DCoordSys();
+    IMAGEPP_EXPORT                 HGF2DCoordSys(const HGF2DTransfoModel&       pi_rModelToRef,
                                          const HFCPtr<HGF2DCoordSys>&   pi_rpRefSys);
-    _HDLLg                 HGF2DCoordSys(const HGF2DCoordSys&           pi_rObj);
-    _HDLLg virtual         ~HGF2DCoordSys();
+    IMAGEPP_EXPORT                 HGF2DCoordSys(const HGF2DCoordSys&           pi_rObj);
+    IMAGEPP_EXPORT virtual         ~HGF2DCoordSys();
 
     // Conversion interface
-    _HDLLg void             ConvertFrom (const HFCPtr<HGF2DCoordSys>&   pi_rpCoordSys,
+    IMAGEPP_EXPORT void             ConvertFrom (const HFCPtr<HGF2DCoordSys>&   pi_rpCoordSys,
                                          double                        pi_XIn,
                                          double                        pi_YIn,
                                          double*                       po_pNewX,
                                          double*                       po_pNewY) const;
 
-    _HDLLg void             ConvertFrom (const HFCPtr<HGF2DCoordSys>&   pi_rpCoordSys,
+    IMAGEPP_EXPORT void             ConvertFrom (const HFCPtr<HGF2DCoordSys>&   pi_rpCoordSys,
                                          double*                       pio_pX,
                                          double*                       pio_pY) const;
 
-    _HDLLg void             ConvertTo   (const HFCPtr<HGF2DCoordSys>&   pi_rpCoordSys,
+    IMAGEPP_EXPORT void             ConvertTo   (const HFCPtr<HGF2DCoordSys>&   pi_rpCoordSys,
                                          double                        pi_XIn,
                                          double                        pi_YIn,
                                          double*                       po_pNewX,
                                          double*                       po_pNewY) const;
 
-    _HDLLg void             ConvertTo(const HFCPtr<HGF2DCoordSys>&      pi_rpCoordSys,
+    IMAGEPP_EXPORT void             ConvertTo(const HFCPtr<HGF2DCoordSys>&      pi_rpCoordSys,
                                       double*                           pio_pX,
                                       double*                           pio_pY) const;
 
 
     // Miscalenious
-    _HDLLg HFCPtr<HGF2DTransfoModel>    GetTransfoModelTo(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys) const;
+    IMAGEPP_EXPORT HFCPtr<HGF2DTransfoModel>    GetTransfoModelTo(const HFCPtr<HGF2DCoordSys>& pi_pCoordSys) const;
 
-    _HDLLg void             SetReference(const HGF2DTransfoModel&      pi_rModel,
+    IMAGEPP_EXPORT void             SetReference(const HGF2DTransfoModel&      pi_rModel,
                                          const HFCPtr<HGF2DCoordSys>&  pi_rpRefSys);
 
     const HFCPtr<HGF2DCoordSys>& GetReference() const;
@@ -186,7 +187,7 @@ public:
     HGF2DCoordSysImpl   ();
     HGF2DCoordSysImpl   (const HGF2DTransfoModel&           pi_rModel,
                          const HFCPtr<HGF2DCoordSysImpl>&   pi_rpRefSys);
-    _HDLLg HGF2DCoordSysImpl   (const HGF2DCoordSysImpl&           pi_rObj);
+    IMAGEPP_EXPORT HGF2DCoordSysImpl   (const HGF2DCoordSysImpl&           pi_rObj);
     virtual         ~HGF2DCoordSysImpl  ();
 
     // Conversion interface
@@ -227,7 +228,7 @@ public:
 
 
     // called by HGF2DCoordSys
-    _HDLLg void    RemoveReferences();
+    IMAGEPP_EXPORT void    RemoveReferences();
 
 
 #ifdef __HMR_DEBUG
@@ -315,5 +316,7 @@ private:
 
 
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HGF2DCoordSys.hpp"

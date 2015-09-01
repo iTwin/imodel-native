@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptNTileToTile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptNTileToTile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCAccessMode.h>
 
@@ -103,15 +103,15 @@ HRFAdaptNTileToTile::~HRFAdaptNTileToTile()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptNTileToTile::ReadBlock(uint32_t pi_PosBlockX,
-                                       uint32_t pi_PosBlockY,
-                                       Byte* po_pData,
+HSTATUS HRFAdaptNTileToTile::ReadBlock(uint64_t pi_PosBlockX,
+                                       uint64_t pi_PosBlockY,
+                                       Byte*  po_pData,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HSTATUS Status = H_SUCCESS;
-    Byte* pPosInBigTile = po_pData;
 
+    Byte* pPosInBigTile = po_pData;
     uint32_t NumberOfBlockToAccessPerHeight = m_TilePerBlockHeight;
     uint32_t NumberOfBlockToAccessPerWidth  = m_TilePerBlockWidth;
 
@@ -120,8 +120,7 @@ HSTATUS HRFAdaptNTileToTile::ReadBlock(uint32_t pi_PosBlockX,
         {
         HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
 
-        NumberOfBlockToAccessPerHeight = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_TileHeight -1)
-                                          - pi_PosBlockY) / m_TileHeight;
+        NumberOfBlockToAccessPerHeight = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_TileHeight -1) - (uint32_t)pi_PosBlockY) / m_TileHeight;
         }
 
     // Adjust if necessary the number of Tile at the resolution width
@@ -129,8 +128,7 @@ HSTATUS HRFAdaptNTileToTile::ReadBlock(uint32_t pi_PosBlockX,
         {
         HASSERT(m_pResolutionDescriptor->GetWidth() <= ULONG_MAX);
 
-        NumberOfBlockToAccessPerWidth = (((uint32_t)m_pResolutionDescriptor->GetWidth() + m_TileWidth -1)
-                                         - pi_PosBlockX) / m_TileWidth;
+        NumberOfBlockToAccessPerWidth = (((uint32_t)m_pResolutionDescriptor->GetWidth() + m_TileWidth -1) - (uint32_t)pi_PosBlockX) / m_TileWidth;
         }
 
     HArrayAutoPtr<Byte> pSmallTile(new Byte[m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlockSizeInBytes()]);
@@ -183,9 +181,9 @@ HSTATUS HRFAdaptNTileToTile::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptNTileToTile::WriteBlock(uint32_t     pi_PosBlockX,
-                                        uint32_t     pi_PosBlockY,
-                                        const Byte* pi_pData,
+HSTATUS HRFAdaptNTileToTile::WriteBlock(uint64_t     pi_PosBlockX,
+                                        uint64_t     pi_PosBlockY,
+                                        const Byte*  pi_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -201,8 +199,7 @@ HSTATUS HRFAdaptNTileToTile::WriteBlock(uint32_t     pi_PosBlockX,
         {
         HASSERT(m_pResolutionDescriptor->GetHeight() <= ULONG_MAX);
 
-        NumberOfBlockToAccessPerHeight = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_TileHeight -1)
-                                          - pi_PosBlockY) / m_TileHeight;
+        NumberOfBlockToAccessPerHeight = (((uint32_t)m_pResolutionDescriptor->GetHeight() + m_TileHeight -1) - (uint32_t)pi_PosBlockY) / m_TileHeight;
         }
 
     // Adjust if necessary the number of Tile at the resolution width
@@ -210,8 +207,7 @@ HSTATUS HRFAdaptNTileToTile::WriteBlock(uint32_t     pi_PosBlockX,
         {
         HASSERT(m_pResolutionDescriptor->GetWidth() <= ULONG_MAX);
 
-        NumberOfBlockToAccessPerWidth = (((uint32_t)m_pResolutionDescriptor->GetWidth() + m_TileWidth -1)
-                                         - pi_PosBlockX) / m_TileWidth;
+        NumberOfBlockToAccessPerWidth = (((uint32_t)m_pResolutionDescriptor->GetWidth() + m_TileWidth -1) - (uint32_t)pi_PosBlockX) / m_TileWidth;
         }
 
     HArrayAutoPtr<Byte> pSmallTile(new Byte[m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlockSizeInBytes()]);

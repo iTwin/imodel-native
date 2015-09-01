@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 // Class HRAEditor
 //---------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRAEditor.h>
 
@@ -26,38 +26,30 @@
 #include <Imagepp/all/h/HGFScanLines.h>
 #include <Imagepp/all/h/HCDPacketRLE.h>
 #include <Imagepp/all/h/HCDPacket.h>
+#include <Imagepp/all/h/HRAGenEditor.h>
+#include <Imagepp/all/h/HGSRegion.h>
+#include <Imagepp/all/h/HVEShape.h>
 
-
-HGS_BEGIN_GRAPHICCAPABILITIES_REGISTRATION(HRAEditor, HGSEditorImplementation, HRASurface)
-
-HGS_REGISTER_GRAPHICCAPABILITY(HGSScanlinesAttribute(HGSScanlineMethod::GRID))
-
-HGS_END_GRAPHICCAPABILITIES_REGISTRATION()
 
 //-----------------------------------------------------------------------------
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRAEditor::HRAEditor(const HGSGraphicToolAttributes*    pi_pAttributes,
-                     HGSSurfaceImplementation*          pi_pSurfaceImplementation)
-    : HGSEditorImplementation(pi_pAttributes,
-                              pi_pSurfaceImplementation)
+HRAEditor::HRAEditor(HRASurface& pi_surface, bool gridMode)
+    :m_surface(pi_surface)
     {
-    HPRECONDITION(pi_pSurfaceImplementation != 0);
-    HPRECONDITION(pi_pSurfaceImplementation->GetClassID() == HRASurface::CLASS_ID);
-    HPRECONDITION(pi_pSurfaceImplementation->GetSurfaceDescriptor() != 0);
-    HPRECONDITION(pi_pSurfaceImplementation->GetSurfaceDescriptor()->IsCompatibleWith(HGSMemoryBaseSurfaceDescriptor::CLASS_ID));
-
+    HPRECONDITION(pi_surface.GetSurfaceDescriptor() != 0);
+    HPRECONDITION(pi_surface.GetSurfaceDescriptor()->IsCompatibleWith(HGSMemoryBaseSurfaceDescriptor::CLASS_ID));
 
     // compute some useful information
     const HFCPtr<HGSMemoryBaseSurfaceDescriptor>& rpDescriptor =
-        (const HFCPtr<HGSMemoryBaseSurfaceDescriptor>&)pi_pSurfaceImplementation->GetSurfaceDescriptor();
+        (const HFCPtr<HGSMemoryBaseSurfaceDescriptor>&)pi_surface.GetSurfaceDescriptor();
 
     m_Height    = rpDescriptor->GetHeight();
     m_Width     = rpDescriptor->GetWidth();
 
     // test if there is a region
-    HFCPtr<HGSRegion> pClipRegion(static_cast<HGSRegion*>(pi_pSurfaceImplementation->GetOption(HGSRegion::CLASS_ID).GetPtr()));
+    HFCPtr<HGSRegion> pClipRegion(pi_surface.GetRegion());
     m_pScanLines = 0;
     if (pClipRegion != 0)
         {
@@ -77,8 +69,6 @@ HRAEditor::HRAEditor(const HGSGraphicToolAttributes*    pi_pAttributes,
                                               (double)m_Height,
                                               pShape->GetCoordSys()));
 
-
-            bool gridMode = pi_pAttributes ? pi_pAttributes->Contains(HGSScanlinesAttribute(HGSScanlineMethod::GRID)) : false;
             m_pScanLinesSmartPtr = new HGFScanLines(gridMode);
             m_pScanLines = m_pScanLinesSmartPtr.get();
             if(!pShape->IsEmpty())
@@ -107,9 +97,6 @@ HRAEditor::HRAEditor(const HGSGraphicToolAttributes*    pi_pAttributes,
         }
     }
 
-
-
-
 //-----------------------------------------------------------------------------
 // public
 // Destructor
@@ -117,6 +104,11 @@ HRAEditor::HRAEditor(const HGSGraphicToolAttributes*    pi_pAttributes,
 HRAEditor::~HRAEditor()
     {
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  05/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+HRASurface& HRAEditor::GetSurface() const {return m_surface;}
 
 //-----------------------------------------------------------------------------
 // public

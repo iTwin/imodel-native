@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPMapFilters8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -17,19 +17,20 @@
 //-----------------------------------------------------------------------------
 //  Custom Map8 Filter
 //-----------------------------------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
 class HRPCustomMap8Filter : public HRPMapFilter8
     {
-    HDECLARE_CLASS_ID(1546, HRPMapFilter8)
+    HDECLARE_CLASS_ID(HRPFilterId_CustomMap8, HRPMapFilter8)
     
 
 public:
 
     // Primary methods
 
-    _HDLLg                 HRPCustomMap8Filter();
-    _HDLLg                 HRPCustomMap8Filter(Byte pi_channels);
-    _HDLLg                 HRPCustomMap8Filter(const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
-    _HDLLg virtual         ~HRPCustomMap8Filter();
+    IMAGEPP_EXPORT                 HRPCustomMap8Filter();
+    IMAGEPP_EXPORT                 HRPCustomMap8Filter(Byte pi_channels);
+    IMAGEPP_EXPORT                 HRPCustomMap8Filter(const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
+    IMAGEPP_EXPORT virtual         ~HRPCustomMap8Filter();
 
     virtual HRPFilter* Clone() const override;
 
@@ -45,21 +46,21 @@ private:
 //-----------------------------------------------------------------------------
 class HRPColorBalanceFilter : public HRPMapFilter8
     {
-    HDECLARE_CLASS_ID(1206, HRPMapFilter8)
+    HDECLARE_CLASS_ID(HRPFilterId_ColorBalance, HRPMapFilter8)
     
 
 public:
 
     // Primary methods
 
-    _HDLLg                 HRPColorBalanceFilter();
-    _HDLLg                 HRPColorBalanceFilter(  int32_t pi_RedVar,
+    IMAGEPP_EXPORT                 HRPColorBalanceFilter();
+    IMAGEPP_EXPORT                 HRPColorBalanceFilter(  int32_t pi_RedVar,
                                                    int32_t pi_GreenVar,
                                                    int32_t pi_BlueVar);
-    _HDLLg                 HRPColorBalanceFilter(  int32_t pi_GlobalVar);
-    _HDLLg                 HRPColorBalanceFilter(int32_t pi_GlobalVar, const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
+    IMAGEPP_EXPORT                 HRPColorBalanceFilter(  int32_t pi_GlobalVar);
+    IMAGEPP_EXPORT                 HRPColorBalanceFilter(int32_t pi_GlobalVar, const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
 
-    _HDLLg virtual         ~HRPColorBalanceFilter();
+    IMAGEPP_EXPORT virtual         ~HRPColorBalanceFilter();
 
     virtual HRPFilter* Clone() const override;
 
@@ -90,19 +91,19 @@ private:
 //-----------------------------------------------------------------------------
 class HRPContrastFilter : public HRPMapFilter8
     {
-    HDECLARE_CLASS_ID(1205, HRPMapFilter8)
+    HDECLARE_CLASS_ID(HRPFilterId_Contrast, HRPMapFilter8)
     
 
 public:
 
-    _HDLLg                 HRPContrastFilter();
-    _HDLLg                 HRPContrastFilter(int8_t pi_Var);
-    _HDLLg                 HRPContrastFilter(int8_t pi_Var,const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
-    _HDLLg virtual         ~HRPContrastFilter();
+    IMAGEPP_EXPORT                 HRPContrastFilter();
+    IMAGEPP_EXPORT                 HRPContrastFilter(int8_t pi_Var);
+    IMAGEPP_EXPORT                 HRPContrastFilter(int8_t pi_Var,const HFCPtr<HRPPixelType>& pi_pFilterPixelType);
+    IMAGEPP_EXPORT virtual         ~HRPContrastFilter();
 
     virtual HRPFilter* Clone() const override;
 
-    _HDLLg int8_t        GetIntensity() const;
+    IMAGEPP_EXPORT int8_t        GetIntensity() const;
 
 protected:
     void            Init(int8_t pi_Var);
@@ -124,7 +125,7 @@ private:
 //-----------------------------------------------------------------------------
 class HRPHistogramScalingFilter : public HRPMapFilter8
     {
-    HDECLARE_CLASS_ID(1256, HRPMapFilter8)
+    HDECLARE_CLASS_ID(HRPFilterId_HistogramScaling, HRPMapFilter8)
     
 
 public:
@@ -135,15 +136,15 @@ public:
         };
 
     // Primary methods
-    _HDLLg                 HRPHistogramScalingFilter();
-    _HDLLg                 HRPHistogramScalingFilter(const HFCPtr<HRPPixelType>&   pi_pFilterPixelType,
+    IMAGEPP_EXPORT                 HRPHistogramScalingFilter();
+    IMAGEPP_EXPORT                 HRPHistogramScalingFilter(const HFCPtr<HRPPixelType>&   pi_pFilterPixelType,
                                                      HistogramScalingMode          pi_ScalingMode);
-    _HDLLg virtual         ~HRPHistogramScalingFilter();
+    IMAGEPP_EXPORT virtual         ~HRPHistogramScalingFilter();
 
     virtual HRPFilter* Clone() const override;
 
     // Get/Set methods
-    _HDLLg void            SetInterval(unsigned short pi_ChannelIndex,
+    IMAGEPP_EXPORT void            SetInterval(unsigned short pi_ChannelIndex,
                                        unsigned short pi_MinValue,
                                        unsigned short pi_MaxValue);
 
@@ -172,21 +173,23 @@ private:
 
 class HRPGammaFilter : public HRPMapFilter8
     {
-    HDECLARE_CLASS_ID(1264, HRPMapFilter8)
+    HDECLARE_CLASS_ID(HRPFilterId_Gamma, HRPMapFilter8)
     
 
 public:
 
-    _HDLLg HRPGammaFilter();
-    _HDLLg HRPGammaFilter(double pi_Gamma);
-    _HDLLg virtual ~HRPGammaFilter();
+    IMAGEPP_EXPORT HRPGammaFilter();
+    IMAGEPP_EXPORT HRPGammaFilter(double pi_Gamma);
+    IMAGEPP_EXPORT virtual ~HRPGammaFilter();
 
     virtual HRPFilter* Clone() const override;
 
+    double  GetGamma() const;
 protected:
     HRPGammaFilter(const HRPGammaFilter& pi_rObj);
 
 private:
+    double m_gamma;
     // Disabled methods
     HRPGammaFilter& operator=(const HRPGammaFilter& pi_rObj);
     };
@@ -196,13 +199,13 @@ private:
 
 class HRPInvertFilter : public HRPMapFilter8
     {
-    HDECLARE_CLASS_ID(1265, HRPMapFilter8)
+    HDECLARE_CLASS_ID(HRPFilterId_Invert, HRPMapFilter8)
     
 
 public:
 
-    _HDLLg HRPInvertFilter();
-    _HDLLg virtual ~HRPInvertFilter();
+    IMAGEPP_EXPORT HRPInvertFilter();
+    IMAGEPP_EXPORT virtual ~HRPInvertFilter();
 
     virtual HRPFilter* Clone() const override;
 
@@ -219,14 +222,14 @@ private:
 
 class HRPTintFilter : public HRPMapFilter8
     {
-    HDECLARE_CLASS_ID(1266, HRPMapFilter8)
+    HDECLARE_CLASS_ID(HRPFilterId_Tint, HRPMapFilter8)
     
 
 public:
 
-    _HDLLg HRPTintFilter();
-    _HDLLg HRPTintFilter(Byte pi_TintColor[3]);
-    _HDLLg virtual ~HRPTintFilter();
+    IMAGEPP_EXPORT HRPTintFilter();
+    IMAGEPP_EXPORT HRPTintFilter(Byte pi_TintColor[3]);
+    IMAGEPP_EXPORT virtual ~HRPTintFilter();
 
     virtual HRPFilter* Clone() const override;
 
@@ -237,5 +240,5 @@ private:
     // Disabled methods
     HRPTintFilter& operator =(const HRPTintFilter& pi_rObj);
     };
-
+END_IMAGEPP_NAMESPACE
 

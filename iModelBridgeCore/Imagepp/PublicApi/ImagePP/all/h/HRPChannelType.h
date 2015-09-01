@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelType.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPChannelType
@@ -14,12 +14,13 @@
 #include "HFCPtr.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 #define HRPCHANNELTYPE_NB_CHANNEL_ROLES (23)
 
 
 class HRPChannelType : public HFCShareableObject<HRPChannelType>
     {
-    HDECLARE_SEALEDCLASS_ID(1008)
+    HDECLARE_SEALEDCLASS_ID(HRPChannelTypeId_Base)
 
 public:
 
@@ -54,17 +55,19 @@ public:
     // Primary methods
 
     HRPChannelType();
-    _HDLLg                 HRPChannelType(ChannelRole     pi_Role,
+    IMAGEPP_EXPORT                 HRPChannelType(ChannelRole     pi_Role,
                                           DataType        pi_DataType,
                                           unsigned short pi_SizeBits,
                                           unsigned short pi_Id,
                                           const double* pi_pNoDataValue = 0);
 
-    _HDLLg                 HRPChannelType(const HRPChannelType& pi_rObj);
+    IMAGEPP_EXPORT                 HRPChannelType(const HRPChannelType& pi_rObj);
 
-    _HDLLg                ~HRPChannelType();
+    IMAGEPP_EXPORT                ~HRPChannelType();
 
-    _HDLLg const double*   GetNoDataValue() const;
+    IMAGEPP_EXPORT const double*   GetNoDataValue() const;
+
+    IMAGEPP_EXPORT void            SetNoDataValue (double noDataValue);
 
     HRPChannelType& operator=(const HRPChannelType& pi_rObj);
 
@@ -73,17 +76,18 @@ public:
 
     // Query methods
 
-    _HDLLg ChannelRole      GetRole() const;
-    _HDLLg DataType         GetDataType() const;
-    _HDLLg unsigned short   GetSize() const;
-    _HDLLg unsigned short   GetId() const;
+    IMAGEPP_EXPORT ChannelRole      GetRole() const;
+    IMAGEPP_EXPORT DataType         GetDataType() const;
+    IMAGEPP_EXPORT unsigned short   GetSize() const;
+    IMAGEPP_EXPORT unsigned short   GetId() const;
 
 private:
 
     ChannelRole        m_Role;
     DataType           m_DataType;
-    unsigned short    m_SizeBits;
-    unsigned short    m_Id;
-    HAutoPtr<double> m_pNoDataValue;
+    unsigned short     m_SizeBits;
+    unsigned short     m_Id;
+    HAutoPtr<double>   m_pNoDataValue;
     };
+END_IMAGEPP_NAMESPACE
 

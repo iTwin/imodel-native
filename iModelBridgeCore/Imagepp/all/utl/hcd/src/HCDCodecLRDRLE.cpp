@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecLRDRLE.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HCDCodecLRDRLE
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HCDCodecLRDRLE.h>
 
 #define HCD_CODEC_NAME L"LRDRLE1bits"
@@ -111,7 +111,7 @@ size_t HCDCodecLRDRLE::CompressSubset(const void* pi_pInData,
                 BytePosition++;
                 StartRunPosition += 8;
                 }
-            StartRunPosition = (unsigned short)(min(GetSubsetWidth(), StartRunPosition));
+            StartRunPosition = (unsigned short)(MIN(GetSubsetWidth(), StartRunPosition));
             }
         HASSERT(StartRunPosition <= GetSubsetWidth());
 
@@ -161,7 +161,7 @@ size_t HCDCodecLRDRLE::CompressSubset(const void* pi_pInData,
                         }
                     }
 
-                StopRunPosition = (unsigned short)(min(GetSubsetWidth(), StopRunPosition));
+                StopRunPosition = (unsigned short)(MIN(GetSubsetWidth(), StopRunPosition));
 
                 HASSERT(StopRunPosition >= StartRunPosition);
                 HASSERT(StartRunPosition <= GetSubsetWidth());

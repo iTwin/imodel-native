@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTagFile.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 inline bool HTagFile::IsTiff64() const
     {
     return m_pFile->m_IsTiff64;
@@ -319,16 +320,16 @@ inline bool HTagFile::SetField (HTagID pi_Tag, uint64_t pi_Val)
     return m_pCurDir->SetValues(pi_Tag, pi_Val);
     }
 
-inline bool HTagFile::SetField (HTagID pi_Tag, const char* pi_pVal)
+inline bool HTagFile::SetFieldA (HTagID pi_Tag, const char* pi_pVal)
     {
     HFCMonitor Monitor(m_Key);
-    return m_pCurDir->SetValues(pi_Tag, pi_pVal);
+    return m_pCurDir->SetValuesA(pi_Tag, pi_pVal);
     }
 
-inline bool HTagFile::SetField (HTagID pi_Tag, const WChar* pi_pVal)
+inline bool HTagFile::SetFieldW (HTagID pi_Tag, const WChar* pi_pVal)
     {
     HFCMonitor Monitor(m_Key);
-    return m_pCurDir->SetValues(pi_Tag, pi_pVal);
+    return m_pCurDir->SetValuesW(pi_Tag, pi_pVal);
     }
 
 inline bool HTagFile::SetField (HTagID pi_Tag, unsigned short pi_Val1, unsigned short pi_Val2)
@@ -366,3 +367,4 @@ inline bool HTagFile::SetField (HTagID pi_Tag, uint32_t pi_Count, const uint64_t
     HFCMonitor Monitor(m_Key);
     return m_pCurDir->SetValues(pi_Tag, pi_Count, pi_pVal);
     }
+END_IMAGEPP_NAMESPACE

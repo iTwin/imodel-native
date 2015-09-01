@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMOnDemandMosaic.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
+#include <Imagepp/all/h/HIMOnDemandMosaic.h>
 
 #include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCMemoryLineStream.h>
 #include <Imagepp/all/h/HFCStat.h>
 #include <Imagepp/all/h/HFCURLMemFile.h>
 
@@ -22,15 +22,7 @@
 #include <Imagepp/all/h/HGF2DTranslation.h>
 #include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
 #include <Imagepp/all/h/HGFMappedSurface.h>
-
-#include <Imagepp/all/h/HGSBlitter.h>
-#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HGSToolbox.h>
-#include <Imagepp/all/h/HGSEditor.h>
-
-#include <Imagepp/all/h/HIMBufferedImage.h>
-#include <Imagepp/all/h/HIMOnDemandMosaic.h>
-#include <Imagepp/all/h/HIMStripAdapter.h>
+#include <Imagepp/all/h/HGSSurfaceDescriptor.h>
 
 #include <Imagepp/all/h/HRADrawOptions.h>
 #include <Imagepp/all/h/HRAHistogramOptions.h>
@@ -53,10 +45,15 @@
 #include <ImagePP/all/h/HMDContext.h>
 #include <Imagepp/all/h/HVEShape.h>
 #include <Imagepp/all/h/HVE2DUniverse.h>
+#include <Imagepp/all/h/HGSRegion.h>
+#include <ImagePPInternal/gra/HRACopyToOptions.h>
 
 #include <Imagepp/all/h/HUTImportFromRasterExportToFile.h>
 
 #include <ImagePP/all/h/HRAMessages.h>
+
+#include <ImagePPInternal/gra/HRAImageNode.h>
+
 
 #include <BeXml/BeXml.h>
 
@@ -74,6 +71,8 @@ HMG_REGISTER_MESSAGE(HIMOnDemandMosaic, HGFGeometryChangedMsg, NotifyGeometryCha
 HMG_REGISTER_MESSAGE(HIMOnDemandMosaic, HRAEffectiveShapeChangedMsg, NotifyEffectiveShapeChanged)
 HMG_REGISTER_MESSAGE(HIMOnDemandMosaic, HRPPaletteChangedMsg, NotifyPaletteChanged)
 HMG_END_MESSAGE_MAP()
+
+
 
 static const unsigned short s_MaxNbLoadedRasters = 300;
 
@@ -276,12 +275,43 @@ HIMOnDemandMosaic& HIMOnDemandMosaic::operator=(const HIMOnDemandMosaic& pi_rObj
     }
 
 /** ---------------------------------------------------------------------------
+    Copy data from the specified source into the mosaic. Since the mosaic is
+    composed of many images, the copy will be made in these images.
+    ---------------------------------------------------------------------------*/
+ImagePPStatus HIMOnDemandMosaic::_CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& pi_rOptions)
+    {
+    HPRECONDITION(pi_rOptions.GetEffectiveCopyRegion() != NULL);
+
+    ImagePPStatus status = COPYFROM_STATUS_VoidRegion;
+
+    // Gather all images
+    HAutoPtr< IndexType::IndexableList > pObjects(m_pIndex->GetIndex1()->QueryIndexables(HIDXSearchCriteria()));
+    for(IndexType::IndexableList::const_iterator Itr(pObjects->begin()); Itr != pObjects->end(); ++Itr)
+        {
+        HFCPtr<HRARaster> pRaster = GetRaster((*Itr)->GetObject());
+        if (pRaster == 0)
+            continue;
+
+        // Compute clip shape for the source
+        HVEShape VisibleShape(*pi_rOptions.GetEffectiveCopyRegion());
+        VisibleShape.Intersect(*m_pIndex->GetIndex1()->GetVisibleSurfaceOf(*Itr));
+        HRACopyFromOptions ThisSourceOptions(pi_rOptions);
+        ThisSourceOptions.SetEffectiveCopyRegion(&VisibleShape);
+        
+        // Copy in this source. Stop on first error or keep going and do what we can? ==> for now stop on first error.
+        if(IMAGEPP_STATUS_Success != (status = pRaster->CopyFrom(srcRaster, ThisSourceOptions)))
+            break;
+        }
+
+    return status;
+    }
+
+/** ---------------------------------------------------------------------------
     Copy data from the specified source into the mosaic. Sicne the mosaic is
     composed of many images, the copy will be made in these images.
     ---------------------------------------------------------------------------
 */
-void HIMOnDemandMosaic::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
-                                 const HRACopyFromOptions& pi_rOptions)
+void HIMOnDemandMosaic::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
     {
     // Take the mosaic's effective shape
     HFCPtr<HVEShape> pDestShape(new HVEShape(*GetEffectiveShape()));
@@ -303,7 +333,7 @@ void HIMOnDemandMosaic::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
             // Compute clip shape for the source
             HVEShape VisibleShape(*pDestShape);
             VisibleShape.Intersect(*m_pIndex->GetIndex1()->GetVisibleSurfaceOf(*Itr));
-            HRACopyFromOptions ThisSourceOptions(pi_rOptions);
+            HRACopyFromLegacyOptions ThisSourceOptions(pi_rOptions);
             ThisSourceOptions.SetDestShape(&VisibleShape);
 
             HFCPtr<HRARaster> pRaster = GetRaster((*Itr)->GetObject());
@@ -311,7 +341,7 @@ void HIMOnDemandMosaic::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
             // Copy in this source
             if (pRaster != 0)
                 {
-                pRaster->CopyFrom(pi_pSrcRaster, ThisSourceOptions);
+                pRaster->CopyFromLegacy(pi_pSrcRaster, ThisSourceOptions);
                 }
 
             ++Itr;
@@ -377,9 +407,9 @@ HFCPtr<HRARaster> HIMOnDemandMosaic::GetRaster(const HFCPtr<HRAOnDemandRaster>& 
     composed of many images, the copy will be made in these images.
     ---------------------------------------------------------------------------
 */
-void HIMOnDemandMosaic::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster)
+void HIMOnDemandMosaic::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
     {
-    CopyFrom(pi_pSrcRaster, HRACopyFromOptions());
+    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
     }
 
 
@@ -397,47 +427,6 @@ void HIMOnDemandMosaic::Clear()
 void HIMOnDemandMosaic::Clear(const HRAClearOptions& pi_rOptions)
     {
     HASSERT(!"HIMOnDemandMosaic is currently used in read only mode.");
-    }
-
-/** ---------------------------------------------------------------------------
-Call before a draw for initialization purpose.
----------------------------------------------------------------------------
-*/
-void HIMOnDemandMosaic::PreDraw(HRADrawOptions* pio_pOptions)
-    {
-    // Set the lookahead of images that are in the region.
-    HAutoPtr< IndexType::IndexableList >     pObjects(m_pIndex->QueryIndexables(
-                                                          HIDXSearchCriteria(m_pIndex->GetIndex2(), new HGFSpatialCriteria(pio_pOptions->GetShape()->GetExtent())), true));
-    IndexType::IndexableList::const_iterator Itr(pObjects->begin());
-    HRADrawOptions                           DrawOptions = *pio_pOptions;
-    HFCPtr<HVEShape>                         pVisibleMosaic(new HVEShape(*pio_pOptions->GetShape()));
-
-    pVisibleMosaic->Intersect(HRARaster::GetShape());
-    if (!pVisibleMosaic->IsEmpty())
-        {
-        while (Itr != pObjects->end())
-            {
-            // Calculate the needed visible part of this image
-            HFCPtr<HVEShape> pVisibleShape(new HVEShape(*pVisibleMosaic));
-            pVisibleShape->Intersect(*m_pIndex->GetIndex1()->GetVisibleSurfaceOf(*Itr));
-
-            // Send part to the image, if there is one...
-            if (!pVisibleShape->IsEmpty())
-                {
-                DrawOptions.SetShape(pVisibleShape);
-
-                HFCPtr<HRARaster> pRaster(GetRaster((*Itr)->GetObject()));
-
-                if (pRaster != 0)
-                    {
-                    pRaster->PreDraw(&DrawOptions);
-                    }
-                }
-
-            // Proceed to the next element
-            ++Itr;
-            }
-        }
     }
 
 //-----------------------------------------------------------------------------
@@ -551,22 +540,17 @@ bool HIMOnDemandMosaic::Add(const string&                    pi_rOnDemandRasters
 
         BeStringUtilities::Utf8ToWChar(TempOnDemandRastersInfo, pi_rOnDemandRastersInfo.c_str());
 
-        BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (XmlStatus, TempOnDemandRastersInfo.c_str(), TempOnDemandRastersInfo.size()));
+        BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (XmlStatus, TempOnDemandRastersInfo.c_str(), TempOnDemandRastersInfo.length()));
 
         HASSERT(pXmlDom != 0);
-            /*
-        BeStringUtilities::Utf8ToWChar(TempOnDemandRastersInfo, pi_rOnDemandRastersInfo.c_str());
-       
-        BeXmlReaderPtr XmlReaderPtr(BeXmlReader::CreateAndReadFromString(XmlStatus, TempOnDemandRastersInfo.c_str(), TempOnDemandRastersInfo.szie()));
-        */
 
         Utf8String NodeName;
 
         BeXmlNodeP pRootNode(pXmlDom->GetRootElement());
            
-        HASSERT(0 != BeStringUtilities::Stricmp(pRootNode->GetName(), "OnDemandMosaic"));
+        HASSERT(0 == BeStringUtilities::Stricmp(pRootNode->GetName(), "OnDemandMosaic"));
                             
-        if (0 != BeStringUtilities::Stricmp(pRootNode->GetName(), "OnDemandMosaic"))
+        if (0 == BeStringUtilities::Stricmp(pRootNode->GetName(), "OnDemandMosaic"))
             {   
             double version;
             
@@ -641,10 +625,12 @@ bool HIMOnDemandMosaic::Add(const string&                    pi_rOnDemandRasters
                 string TempPSS(m_WorldDescriptivePSS);
         #endif    
         */		   		
-		        HFCPtr<HFCBuffer> pBuffer(new HFCBuffer(m_WorldDescriptivePSS.size()));
-		        pBuffer->AddData((Byte*)m_WorldDescriptivePSS.data(), m_WorldDescriptivePSS.size());
-
-		        HFCPtr<HFCURL> pURLMemFile = new HFCURLMemFile(L"", L"Raster", pBuffer);
+                // PSS data must be stored as UTF8.
+                Utf8String worldDescriptivePSS_UTF8(m_WorldDescriptivePSS.c_str());
+                HFCPtr<HFCBuffer> pBuffer(new HFCBuffer(worldDescriptivePSS_UTF8.size()));
+                pBuffer->AddData((Byte const*)worldDescriptivePSS_UTF8.c_str(), worldDescriptivePSS_UTF8.size());
+               
+		        HFCPtr<HFCURL> pURLMemFile = new HFCURLMemFile(HFCURLMemFile::s_SchemeName() + L"://Raster", pBuffer);
 		        HPSObjectStore PSSObjectStore(pi_pMemPool,
 		                                      pURLMemFile,
 		                                      pi_rAppWorldCluster,
@@ -694,7 +680,7 @@ bool HIMOnDemandMosaic::Add(const string&                    pi_rOnDemandRasters
                                                         pi_rpPSSUrl);
                 Rasters.push_back(pOnDemandRaster);
 
-                pOnDemandRasterNode = pODMOChildNode->GetNextSibling();
+                pOnDemandRasterNode = pOnDemandRasterNode->GetNextSibling();
                 }
 
             //Set the pixel type to a fixed value to avoid opening all the rasters for determining the pixel 
@@ -824,7 +810,7 @@ bool HIMOnDemandMosaic::HasSinglePixelType(const HFCPtr<HRARaster>& pi_rpSourceR
         else
             {
             // Check if same pixel type as previous sources
-            SinglePixelType = (*pio_rpPrevFoundPixelType == *pi_rpSourceRaster->GetPixelType());
+            SinglePixelType = pio_rpPrevFoundPixelType->HasSamePixelInterpretation(*pi_rpSourceRaster->GetPixelType());
             }
         }
     else
@@ -1341,16 +1327,6 @@ void HIMOnDemandMosaic::GetPixelSizeRange(HFCPtr<HRARaster>            pi_pRaste
     }
 
 /** ---------------------------------------------------------------------------
-    Get the raw data pointer.
-    @return NULL since there is no data pointer in a mosaic.
-    ---------------------------------------------------------------------------
-*/
-const void* HIMOnDemandMosaic::GetRawDataPtr() const
-    {
-    return NULL;
-    }
-
-/** ---------------------------------------------------------------------------
     Return the effective shape of the mosaic
     ---------------------------------------------------------------------------
 */
@@ -1457,9 +1433,7 @@ bool HIMOnDemandMosaic::IsCacheFileUpToDate()
                 {
                 HFCStat SourceFileStat(*URLIter);
 
-                if (HRFiTiffCacheFileCreator::GetInstance()->
-                            IsModificationTimeValid(SourceFileStat.GetModificationTime(), 
-                                        CacheFileStat.GetModificationTime()) == false)
+                if (SourceFileStat.GetModificationTime() > CacheFileStat.GetModificationTime())
                     {
                     break;
             	    }         
@@ -1535,7 +1509,7 @@ bool HIMOnDemandMosaic::SetCacheFile(const WString&                   pi_rCacheF
     ---------------------------------------------------------------------------
 */
 #define MAX_NB_CACHED_PIXELS        800000000
-#define MIN_GREATEST_DIMENSION_SIZE 512.0 //The minimum size of the greatest dimension size (i.e. : max(width, height)) to be allow.
+#define MIN_GREATEST_DIMENSION_SIZE 512.0 //The minimum size of the greatest dimension size (i.e. : MAX(width, height)) to be allow.
 
 void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_rCacheFileName, 
                                         const HFCPtr<HGF2DWorldCluster>& 		  pi_pWorldCluster, 
@@ -1548,7 +1522,7 @@ void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_
     if (HasSomeRasterLastLoadFailed() == true)
         {
         //Should eventually have something more meaningful. 
-        throw HFCFileException(HFC_FILE_NOT_FOUND_EXCEPTION, L"");  
+        throw HFCFileNotFoundException(L"");  
         }
 
     //Verify that a cache is present and is valid                                
@@ -1605,13 +1579,13 @@ void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_
     pImportExport->SetRGBADefaultColor(&blackTransparent);
     pImportExport->SetBlendAlpha(true);    
 
-    string OnDemandRastersInfo;
+    Utf8String onDemandRastersInfo;
 
-    GetOnDemandRastersInfo(&OnDemandRastersInfo);
+    GetOnDemandRastersInfo(&onDemandRastersInfo);    
 
     HFCPtr<HPMGenericAttribute> pTag;
 
-    pTag = new HRFAttributeOnDemandRastersInfo(OnDemandRastersInfo);
+    pTag = new HRFAttributeOnDemandRastersInfo(string(onDemandRastersInfo.c_str()));
 
     pImportExport->SetTag(pTag);
 
@@ -1622,7 +1596,7 @@ void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_
         }
         else
         {
-            UInt32  MaxDimension = max(pImportExport->GetImageWidth(),
+            UInt32  MaxDimension = MAX(pImportExport->GetImageWidth(),
                                        pImportExport->GetImageHeight());
             CacheSizeFactor = (double)pi_pExportProperties->PSSCacheDimension / MaxDimension;
         }
@@ -1630,7 +1604,7 @@ void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_
     uint32_t imageWidth;
     uint32_t imageHeight; 
 
-    if (max(pImportExport->GetImageHeight(), pImportExport->GetImageWidth()) < MIN_GREATEST_DIMENSION_SIZE)
+    if (MAX(pImportExport->GetImageHeight(), pImportExport->GetImageWidth()) < MIN_GREATEST_DIMENSION_SIZE)
         {
         //Don't create a cache greater then the 1:1 representation of the mosaic itself.
         imageWidth = pImportExport->GetImageWidth();
@@ -1638,12 +1612,12 @@ void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_
         }
     else
         {
-        imageWidth  = max((int32_t)(pImportExport->GetImageWidth() * cacheSizeFactor), 1);
-        imageHeight = max((int32_t)(pImportExport->GetImageHeight() * cacheSizeFactor), 1);                    
+        imageWidth  = MAX((int32_t)(pImportExport->GetImageWidth() * cacheSizeFactor), 1);
+        imageHeight = MAX((int32_t)(pImportExport->GetImageHeight() * cacheSizeFactor), 1);                    
         
         double limitAdjustementFactor = 1.0;
         
-        if (max(imageHeight, imageWidth) < MIN_GREATEST_DIMENSION_SIZE)
+        if (MAX(imageHeight, imageWidth) < MIN_GREATEST_DIMENSION_SIZE)
             {
             if (imageHeight > imageWidth)
                 {
@@ -1708,12 +1682,12 @@ void HIMOnDemandMosaic::CreateCacheFile(const WString&                   		  pi_
         }
     else
         {
-        _wremove(pi_rCacheFileName.c_str());           
+        BeFileName::BeDeleteFile(pi_rCacheFileName.c_str());
 
-        HASSERT(_waccess(pi_rCacheFileName.c_str(), 00) != 0);
+        HASSERT(!BeFileName::DoesPathExist(pi_rCacheFileName.c_str()));
 
         //Should eventually have something more meaningful. 
-        throw HFCFileException(HFC_FILE_NOT_FOUND_EXCEPTION, L"");  
+        throw HFCFileNotFoundException(L"");  
         }       
     }
 
@@ -1768,9 +1742,11 @@ void HIMOnDemandMosaic::CreatePssFile(const WString& pi_rFileName) const
         //Write the representative PSS of the image.                
         representativePSS += L"\r\n";
         
-        size_t nbCharsWritten = localBinStream.Write(representativePSS.c_str(), representativePSS.size());
+        // PSS is UTF8.
+        Utf8String representativePSS_UTF8(representativePSS.c_str());
+        size_t nbCharsWritten = localBinStream.Write(representativePSS_UTF8.c_str(), representativePSS_UTF8.size());
 
-        HASSERT(nbCharsWritten == representativePSS.size());
+        HASSERT(nbCharsWritten == representativePSS_UTF8.size());
 
         Itr++;
         }
@@ -1779,9 +1755,12 @@ void HIMOnDemandMosaic::CreatePssFile(const WString& pi_rFileName) const
     if (m_WorldDescriptivePSS.empty() == false)
         {
         WString worldDescriptivePSS = m_WorldDescriptivePSS + L"\r\n";
-        size_t nbCharsWritten = localBinStream.Write(worldDescriptivePSS.c_str(), worldDescriptivePSS.size());
+        
+        // PSS is UTF8.
+        Utf8String worldDescriptivePSS_UTF8(worldDescriptivePSS.c_str());
+        size_t nbCharsWritten = localBinStream.Write(worldDescriptivePSS_UTF8.c_str(), worldDescriptivePSS_UTF8.size());
 
-        HASSERT(nbCharsWritten == worldDescriptivePSS.size());                    
+        HASSERT(nbCharsWritten == worldDescriptivePSS_UTF8.size());                    
         }
      
     //Remove the ,
@@ -1789,9 +1768,11 @@ void HIMOnDemandMosaic::CreatePssFile(const WString& pi_rFileName) const
 
     onDemandMosaicStatement += L")\r\nPAGE(m0)";
 
-    size_t nbCharsWritten = localBinStream.Write(onDemandMosaicStatement.c_str(), onDemandMosaicStatement.size());
+    // PSS is UTF8
+    Utf8String onDemandMosaicStatement_UTF8(onDemandMosaicStatement.c_str());
+    size_t nbCharsWritten = localBinStream.Write(onDemandMosaicStatement_UTF8.c_str(), onDemandMosaicStatement_UTF8.size());
 
-    HASSERT(nbCharsWritten == onDemandMosaicStatement.size());
+    HASSERT(nbCharsWritten == onDemandMosaicStatement_UTF8.size());
     }
 
 /** ---------------------------------------------------------------------------
@@ -1846,7 +1827,7 @@ void HIMOnDemandMosaic::RemoveAll()
         {
         HASSERT(m_pPSSCacheFileUrl->IsCompatibleWith(HFCURLFile::CLASS_ID) == true);
 
-        _wremove(((HFCURLFile*)m_pPSSCacheFileUrl.GetPtr())->GetAbsoluteFileName().c_str());
+        BeFileName::BeDeleteFile(((HFCURLFile*)m_pPSSCacheFileUrl.GetPtr())->GetAbsoluteFileName().c_str());
         }
 
     // Notify linked rasters that mosaic's content has changed
@@ -1869,7 +1850,7 @@ void HIMOnDemandMosaic::RemoveAll()
         </OnDemandRasterList>
     --------------------------        
 **/
-void HIMOnDemandMosaic::GetOnDemandRastersInfo(string* po_pOnDemandRastersInfo) const
+void HIMOnDemandMosaic::GetOnDemandRastersInfo(Utf8String* po_pOnDemandRastersInfo) const
     {
     HPRECONDITION(po_pOnDemandRastersInfo->empty());
 
@@ -1878,8 +1859,15 @@ void HIMOnDemandMosaic::GetOnDemandRastersInfo(string* po_pOnDemandRastersInfo) 
     BeXmlDomPtr pOnDemandMosaicXMLInfo(BeXmlDom::CreateEmpty());
             
     BeXmlNodeP pRootNode = pOnDemandMosaicXMLInfo->AddNewElement("OnDemandMosaic", 0, 0);
+       
+    WChar doubleValueBuffer[DOUBLE_VALUE_BUFFER_LENGTH];
+    WChar format[DOUBLE_FORMATTING_BUFFER_LENGTH];
+
+    GetDoubleFormatting(format, DOUBLE_FORMATTING_BUFFER_LENGTH);
     
-    pRootNode->AddAttributeDoubleValue("version", ON_DEMAND_RASTER_INFO_LATEST_VERSION);
+    //Precision lost with the AddAttributeDoubleValue, so we are doing our own conversion.
+    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, ON_DEMAND_RASTER_INFO_LATEST_VERSION);       
+    pRootNode->AddAttributeStringValue("version", doubleValueBuffer);
                                        
     //onDemandMosaicXMLInfo.AddNode(*pOnDemandMosaicNode);
                                    
@@ -1925,11 +1913,19 @@ void HIMOnDemandMosaic::GetOnDemandRastersInfo(string* po_pOnDemandRastersInfo) 
     pODMOMinPixelSizeNode->AddAttribute("yMin", extentToSerialize.GetYMin(), ODMO_XML_SERIALIZATION_SIGNIFICANT_DIGITS);
     pODMOMinPixelSizeNode->AddAttribute("yMax", extentToSerialize.GetYMax(), ODMO_XML_SERIALIZATION_SIGNIFICANT_DIGITS);
     */
+           
+    //Precision lost with the AddAttributeDoubleValue, so we are doing our own conversion.
+    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMin());             
+    pODMOMinPixelSizeNode->AddAttributeStringValue("xMin", doubleValueBuffer);
 
-    pODMOMinPixelSizeNode->AddAttributeDoubleValue("xMin", extentToSerialize.GetXMin());
-    pODMOMinPixelSizeNode->AddAttributeDoubleValue("xMax", extentToSerialize.GetXMax());
-    pODMOMinPixelSizeNode->AddAttributeDoubleValue("yMin", extentToSerialize.GetYMin());
-    pODMOMinPixelSizeNode->AddAttributeDoubleValue("yMax", extentToSerialize.GetYMax());
+    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMax());             
+    pODMOMinPixelSizeNode->AddAttributeStringValue("xMax", doubleValueBuffer);
+
+    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMin());    
+    pODMOMinPixelSizeNode->AddAttributeStringValue("yMin", doubleValueBuffer);
+
+    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMax());    
+    pODMOMinPixelSizeNode->AddAttributeStringValue("yMax", doubleValueBuffer);
     
     //Maximum pixel size range
     BeXmlNodeP pODMOMaxPixelSizeNode = pRootNode->AddEmptyElement("MaximumPixelSize");
@@ -1940,10 +1936,17 @@ void HIMOnDemandMosaic::GetOnDemandRastersInfo(string* po_pOnDemandRastersInfo) 
 
     extentToSerialize.ChangeCoordSys(GetCoordSys());    
 
-    pODMOMaxPixelSizeNode->AddAttributeDoubleValue("xMin", extentToSerialize.GetXMin());
-    pODMOMaxPixelSizeNode->AddAttributeDoubleValue("xMax", extentToSerialize.GetXMax());
-    pODMOMaxPixelSizeNode->AddAttributeDoubleValue("yMin", extentToSerialize.GetYMin());
-    pODMOMaxPixelSizeNode->AddAttributeDoubleValue("yMax", extentToSerialize.GetYMax());
+    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMin());             
+    pODMOMaxPixelSizeNode->AddAttributeStringValue("xMin", doubleValueBuffer);
+
+    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetXMax());             
+    pODMOMaxPixelSizeNode->AddAttributeStringValue("xMax", doubleValueBuffer);
+
+    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMin());             
+    pODMOMaxPixelSizeNode->AddAttributeStringValue("yMin", doubleValueBuffer);
+
+    swprintf(doubleValueBuffer, DOUBLE_VALUE_BUFFER_LENGTH, format, extentToSerialize.GetYMax());             
+    pODMOMaxPixelSizeNode->AddAttributeStringValue("yMax", doubleValueBuffer);
     
     //Representative PSS of world statements serialized in UTF8 encoding.
     Utf8String utf8Str;
@@ -1967,9 +1970,11 @@ void HIMOnDemandMosaic::GetOnDemandRastersInfo(string* po_pOnDemandRastersInfo) 
         (*OnDemandRasterItr)->GetObject()->GetSerializationXMLNode(GetCoordSys(), pODMORasterListNode);
                                               
         OnDemandRasterItr++;
-        }
+        }    
 
-    HASSERT(po_pOnDemandRastersInfo->empty() == FALSE);    
+    pOnDemandMosaicXMLInfo->ToString(*po_pOnDemandRastersInfo, BeXmlDom::TO_STRING_OPTION_Default);
+    
+    HASSERT(po_pOnDemandRastersInfo->empty() == FALSE);        
     }
 
 /** ---------------------------------------------------------------------------
@@ -2301,7 +2306,7 @@ void HIMOnDemandMosaic::GetRasterSizeInPixel(const HFCPtr<HGF2DWorldCluster>& pi
     HGF2DExtent PixelSize(TmpExtentMin.CalculateApproxExtentIn(pi_pWorldCluster->GetCoordSysReference(HGF2DWorld_UNKNOWNWORLD)));
 
     // PixelSize Area.
-    double DefaultResampleScaleFactor = min(PixelSize.GetWidth(), PixelSize.GetHeight());
+    double DefaultResampleScaleFactor = MIN(PixelSize.GetWidth(), PixelSize.GetHeight());
 
     // The pixel size may not be 0.0 (exact compare)
     HASSERT(DefaultResampleScaleFactor != 0.0);
@@ -2430,15 +2435,14 @@ void HIMOnDemandMosaic::RecalculateEffectiveShape ()
 
 /** ---------------------------------------------------------------------------
     Draw the mosaic
-    ---------------------------------------------------------------------------
-*/
-void HIMOnDemandMosaic::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
-                             const HGFDrawOptions*           pi_pOptions) const
-    {
-    HPRECONDITION(pio_rpSurface != 0);
+    ---------------------------------------------------------------------------*/
+static bool s_multiThreadTest = false;
 
+
+void HIMOnDemandMosaic::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
+    {
     bool                  DrawDone     = false;
-    HRADrawOptions        Options(pi_pOptions);
+    HRADrawOptions        Options(pi_Options);
     HFCPtr<HGF2DCoordSys> pReplacingCS(Options.GetReplacingCoordSys());
     HVEShape              RegionToDraw(Options.GetShape() != 0 ? *Options.GetShape() : HRARaster::GetShape());
     double                SubResPyramidRes = DBL_MAX;
@@ -2446,7 +2450,7 @@ void HIMOnDemandMosaic::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
     //TR 300554 - Temporary fix activation.
     Options.SetDataDimensionFix(true);
 
-    HFCPtr<HGSRegion> pClipRegion(static_cast<HGSRegion*>(pio_rpSurface->GetOption(HGSRegion::CLASS_ID).GetPtr()));
+    HFCPtr<HGSRegion> pClipRegion(pio_destSurface.GetRegion());
 
     if (pClipRegion != 0)
         {
@@ -2465,17 +2469,17 @@ void HIMOnDemandMosaic::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
         {
         // Create a rectangular clip region to stay
         // inside the destination surface.
-        HVEShape DestSurfaceShape(0.0, 0.0, pio_rpSurface->GetSurfaceDescriptor()->GetWidth(), pio_rpSurface->GetSurfaceDescriptor()->GetHeight(), pio_rpSurface->GetSurfaceCoordSys());
+        HVEShape DestSurfaceShape(0.0, 0.0, pio_destSurface.GetSurfaceDescriptor()->GetWidth(), pio_destSurface.GetSurfaceDescriptor()->GetHeight(), pio_destSurface.GetSurfaceCoordSys());
 
         // Set the stroking tolerance for the surface's shape
         // Set a quarter of a pixel tolerance
-        double CenterX = pio_rpSurface->GetSurfaceDescriptor()->GetWidth() / 2.0;
-        double CenterY = pio_rpSurface->GetSurfaceDescriptor()->GetHeight() / 2.0;
+        double CenterX = pio_destSurface.GetSurfaceDescriptor()->GetWidth() / 2.0;
+        double CenterY = pio_destSurface.GetSurfaceDescriptor()->GetHeight() / 2.0;
         HFCPtr<HGFTolerance> pTol = new HGFTolerance (CenterX - DEFAULT_PIXEL_TOLERANCE,
                                                       CenterY - DEFAULT_PIXEL_TOLERANCE,
                                                       CenterX + DEFAULT_PIXEL_TOLERANCE,
                                                       CenterY + DEFAULT_PIXEL_TOLERANCE,
-                                                      pio_rpSurface->GetSurfaceCoordSys());
+                                                      pio_destSurface.GetSurfaceCoordSys());
 
         if (Options.GetReplacingCoordSys())
             {
@@ -2489,9 +2493,9 @@ void HIMOnDemandMosaic::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
 
     if (m_pSubRes != 0)
         {
-		HASSERT(IsDataChangingWithResolution() == false);
-	
-        SubResPyramidRes = ((HFCPtr<HRAPyramidRaster>&)m_pSubRes->GetSource())->FindTheBestResolution(pio_rpSurface->GetCoordSys(),
+        HASSERT(IsDataChangingWithResolution() == false);
+
+        SubResPyramidRes = ((HFCPtr<HRAPyramidRaster>&)m_pSubRes->GetSource())->FindTheBestResolution(pio_destSurface.GetCoordSys(),
                                                                                                       pReplacingCS);
 
         // If the resolution is equal or smaller than the cached sub resolution, use the cached
@@ -2522,166 +2526,11 @@ void HIMOnDemandMosaic::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
                 }
 
             Options.SetShape(pVisibleShape);
-            m_pSubRes->Draw(pio_rpSurface, &Options);
+            m_pSubRes->Draw(pio_destSurface, Options);
             DrawDone = true;
             }
         }
-
-    if (DrawDone == false)
-        {
-        //TDB_M
-        if (Options.ApplyMosaicSupersampling())
-            {
-            // Create memory surface like destination (4 times #pixels).
-            HFCPtr<HGSSurfaceDescriptor> pSuperDescriptor(new HGSMemorySurfaceDescriptor(pio_rpSurface->GetWidth() * 2,
-                                                                                         pio_rpSurface->GetHeight() * 2,
-                                                                                         GetPixelType(),
-                                                                                         (pio_rpSurface->GetWidth() * 2 * GetPixelType()->CountPixelRawDataBits() + 7) / 8));
-            HASSERT(pSuperDescriptor != 0);
-
-            HFCPtr<HGSSurface> pSuperSurface(pio_rpSurface->CreateCompatibleSurface(pSuperDescriptor));
-
-            if (pSuperSurface != 0)
-                {
-                try
-                    {
-                    // place the surface and scale it so it maps the same space
-                    // as the original destination surface.
-                    HFCPtr<HGFMappedSurface> pMappedSuperSurface(new HGFMappedSurface(pSuperSurface->GetSurfaceDescriptor(),
-                                                                                      0,
-                                                                                      0,
-                                                                                      pio_rpSurface->GetSurfaceCoordSys()));
-                    HASSERT(pMappedSuperSurface != 0);
-
-                    pMappedSuperSurface->Scale(2.0, 2.0);
-
-                    // Copy destination data in super surface if alpha blending is asked
-                    if(Options.ApplyAlphaBlend())
-                        {
-                        HFCPtr<HGSBlitter> pBlitter(new HGSBlitter());
-
-                        HFCPtr<HGF2DTransfoModel> pTransfoModel = pMappedSuperSurface->GetSurfaceCoordSys()->GetTransfoModelTo (pio_rpSurface->GetSurfaceCoordSys());
-
-                        pBlitter->SetFor((HFCPtr<HGSSurface>&)pMappedSuperSurface);
-
-                        // We're assuming
-                        // 1. Surfaces are compatible, since the super surface is the result of a CreateCompatibleSurface
-                        //    on the destination.
-                        // 2. The model is a stretch, since we only asked a scale between the two surfaces.
-
-                        pBlitter->BlitFrom(pio_rpSurface, *pTransfoModel);
-                        }
-                    else
-                        {
-                        // Clear the temp. surface, just in case one of the
-                        // draws fails.
-                        HFCPtr<HGSEditor> pEditor(new HGSEditor());
-                        pEditor->SetFor(pSuperSurface);
-                        pEditor->Clear(GetPixelType()->GetDefaultRawData());
-                        }
-
-                    // Take a copy of the shape to avoid modifying the original shape
-                    HVEShape RegionToDrawInCs(RegionToDraw);
-                    RegionToDrawInCs.ChangeCoordSys(GetCoordSys());
-
-                    // render images in temp. surface
-                    HAutoPtr< IndexType::IndexableList > pObjects(m_pIndex->QueryIndexables(
-                                                                      HIDXSearchCriteria(m_pIndex->GetIndex2(), new HGFSpatialCriteria(RegionToDrawInCs.GetExtent())), true));
-                    IndexType::IndexableList::const_iterator Itr(pObjects->begin());
-
-                    HFCPtr<HRARaster> pRaster;
-
-                    while (Itr != pObjects->end())
-                        {
-                        pRaster = GetRaster((*Itr)->GetObject());
-
-                        if (pRaster == 0)
-                            {
-                            Itr++;
-                            continue;
-                            }
-
-
-                        // Calculate the needed visible part of this image
-                        HFCPtr<HVEShape> pVisibleShape(new HVEShape(RegionToDraw));
-                        pVisibleShape->Intersect(*m_pIndex->GetIndex1()->GetVisibleSurfaceOf(*Itr));
-
-                        // Send part to the image, if there is one...
-                        if (!pVisibleShape->IsEmpty())
-                            {
-                            if (pReplacingCS != 0)
-                                {
-                                // Adapt replacing CS so that it works on the current image.
-
-                                // Extract the transformation we're applying to our source (T1)
-                                HFCPtr<HGF2DTransfoModel> pRefTransfo(pReplacingCS->GetTransfoModelTo(GetCoordSys()));
-
-                                // Calculate the transformation between our source's CS and the CS
-                                // the object to return uses. (T2)
-                                HFCPtr<HGF2DTransfoModel> pCurrentToSource(pRaster->GetCoordSys()->GetTransfoModelTo(GetCoordSys()));
-
-                                // Create the CS by composing everything correctly :)
-                                // T2 o T1 o -T2
-                                HFCPtr<HGF2DTransfoModel> pToApply(pCurrentToSource->ComposeInverseWithDirectOf(*pRefTransfo)->ComposeInverseWithInverseOf(*pCurrentToSource));
-                                HFCPtr<HGF2DCoordSys> pCSToApply = new HGF2DCoordSys(*pToApply, pRaster->GetCoordSys());
-
-                                Options.SetReplacingCoordSys(pCSToApply);
-                                }
-
-                            Options.SetShape(pVisibleShape);
-                            pRaster->Draw(pMappedSuperSurface, &Options);
-                            }
-
-                        // Proceed to the next element
-                        ++Itr;
-                        }
-
-                    // Draw temp. surface in destination (force average sampling)
-                    HFCPtr<HGSRegion> pOldClipRegion(static_cast<HGSRegion*>(pio_rpSurface->GetOption(HGSRegion::CLASS_ID).GetPtr()));
-                    pio_rpSurface->SetOption(new HGSRegion(new HVEShape(RegionToDraw), pio_rpSurface->GetSurfaceCoordSys()));
-
-                    HFCPtr<HGSBlitter> pBlitter(new HGSBlitter());
-                    pBlitter->AddAttribute(HGSResamplingAttribute(HGSResampling::AVERAGE));
-                    if(Options.ApplyAlphaBlend())
-                        pBlitter->AddAttribute(HGSColorConversionAttribute(HGSColorConversion::COMPOSE));
-
-                    if (Options.ApplyGridShape())
-                        pBlitter->AddAttribute(HGSScanlinesAttribute(HGSScanlineMethod::GRID));
-
-                    HFCPtr<HGF2DTransfoModel> pTransfoModel = pio_rpSurface->GetSurfaceCoordSys()->GetTransfoModelTo(pMappedSuperSurface->GetSurfaceCoordSys());
-
-                    pBlitter->SetFor((HFCPtr<HGSSurface>&)pio_rpSurface);
-
-                    // We're assuming
-                    // 1. Surfaces are compatible, since the super surface is the result of a CreateCompatibleSurface
-                    //    on the destination.
-                    // 2. The model is a stretch, since we only asked a scale between the two surfaces.
-
-                    pMappedSuperSurface->RemoveOption(HGSRegion::CLASS_ID);
-
-                    pBlitter->BlitFrom(pMappedSuperSurface, *pTransfoModel);
-
-                    if (pOldClipRegion == 0)
-                        pio_rpSurface->RemoveOption(HGSRegion::CLASS_ID);
-                    else
-                        pio_rpSurface->SetOption(pOldClipRegion.GetPtr());
-
-                    DrawDone = true;
-                    }
-                catch(HFCException& Exception)
-                    {
-                    // We will fall through in the standard case
-                    if (Exception.GetID() != HFC_OUT_OF_MEMORY_EXCEPTION)
-                        {
-                        throw Exception;
-                        }
-
-                    HWARNING(0, L"HIMOnDemandMosaic::Draw out of memory. No supersampling applied.");
-                    }
-                }
-            }
-        }
-
+    
     // Standard draw code, one image at a time, bottom up
     if (!DrawDone)
         {
@@ -2735,7 +2584,7 @@ void HIMOnDemandMosaic::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
                         }
 
                     Options.SetShape(pVisibleShape);
-                    pRaster->Draw(pio_rpSurface, &Options);
+                    pRaster->Draw(pio_destSurface, Options);
                     }
                 }
 
@@ -2743,4 +2592,201 @@ void HIMOnDemandMosaic::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
             ++Itr;
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HIMOnDemandMosaic::_BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options)
+    {
+    // Take a copy of the shape to avoid modifying the original shape
+    HVEShape RegionToDrawInCs(*options.GetShape());
+
+    // If a replacing CS is provided, we must move the region to draw since this region does not represents the real position of the mosaic.
+    // The replacing CS is a replacement of the mosaic logical CS. It represents the position of the mosaic as seen by the destination.
+    if (options.GetReplacingCoordSys())
+        {
+        // Express the region to draw in the replacing CS. Then set the CS of the mosaic. 
+        // This will move the region to draw at the right location in the mosaic CS.
+        RegionToDrawInCs.ChangeCoordSys(options.GetReplacingCoordSys());
+        RegionToDrawInCs.SetCoordSys(GetCoordSys());
+        }
+    else
+        {
+        RegionToDrawInCs.ChangeCoordSys(GetCoordSys());
+        }
+
+    HGF2DExtent enclosingShape(GetCoordSys());
+    std::vector< pair< HFCPtr<HRARaster>, HFCPtr<HVEShape> > > enclosedRasters;
+
+    // Try to use sub-res
+    if (m_pSubRes != 0)
+        {
+        HASSERT(IsDataChangingWithResolution() == false);
+
+        double SubResPyramidRes = ((HFCPtr<HRAPyramidRaster>&)m_pSubRes->GetSource())->FindTheBestResolution(imageNode.GetPhysicalCoordSys(), options.GetReplacingCoordSys());
+
+        // If the resolution is equal or smaller than the cached sub resolution, use the cached
+        // sub-resolution to draw.
+        if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(SubResPyramidRes, 1.0))
+            {
+            HFCPtr<HRARaster> pSrcRaster(m_pSubRes.GetPtr());
+            HFCPtr<HVEShape> pVisibleSurface = pSrcRaster->GetEffectiveShape();
+
+            if (RegionToDrawInCs.HasIntersect(*pVisibleSurface))
+                {
+                enclosedRasters.push_back(make_pair(pSrcRaster, pVisibleSurface));
+                enclosingShape.Add(pVisibleSurface->GetExtent());
+                }
+            }
+        }
+
+    if (enclosedRasters.empty())
+        {
+        // Query for visible items
+        HAutoPtr<IndexType::IndexableList> pObjects(m_pIndex->QueryIndexables(
+            HIDXSearchCriteria(m_pIndex->GetIndex2(), new HGFSpatialCriteria(RegionToDrawInCs.GetExtent())), true));
+
+        // Fill the list of rasters that intersect the region to draw
+        for (IndexType::IndexableList::const_iterator Itr(pObjects->begin()); Itr != pObjects->end(); ++Itr)
+            {
+            HFCPtr<HRARaster> pSrcRaster = GetRaster((*Itr)->GetObject());
+            if (pSrcRaster == 0)
+                continue;
+            HFCPtr<HVEShape> pVisibleSurface = m_pIndex->GetIndex1()->GetVisibleSurfaceOf(*Itr);
+
+            if (RegionToDrawInCs.HasIntersect(*pVisibleSurface))
+                enclosedRasters.push_back(make_pair(pSrcRaster, pVisibleSurface));
+            }
+
+        // Set the enclosing shape as the effective shape's extent. 
+        // This may be much larger than the extent of the rasters intersecting the given region to draw.
+        // HIMOnDemandMosaic::GetEffectiveShape returns the extent of the mosaic, not the real shape. 
+        // When the mosaic sample is copied into the destination, the mosaic's shape (extent) is used to
+        // compute the scanlines. This possibly results in more pixels than the effective mosaic can produce and clamping can occur.
+        // To avoid clamping, we set the effective shape's extent as the shape of the mosaic node. 
+        enclosingShape.Add(GetEffectiveShape()->GetExtent());
+        }
+
+    // Intersect with the region to draw
+    enclosingShape.Intersect(RegionToDrawInCs.GetExtent());
+
+    // If a replacing CS is provided, move the shape of visible rasters.
+    if (options.GetReplacingCoordSys())
+        {
+        enclosingShape.ChangeCoordSys(GetCoordSys());
+        enclosingShape.SetCoordSys(options.GetReplacingCoordSys());
+        }
+
+    // Express the shape in the destination node physical CS.
+    enclosingShape.ChangeCoordSys(imageNode.GetPhysicalCoordSys());
+
+    if (!enclosingShape.IsDefined())
+        return IMAGEPP_STATUS_Success;
+
+    // Take replacing pixeltype into account.
+    
+    BeAssert(options.GetReplacingPixelType() == NULL || options.GetReplacingPixelType()->CountPixelRawDataBits() == GetPixelType()->CountPixelRawDataBits());
+    HFCPtr<HRPPixelType> pEffectivePixelType = (options.GetReplacingPixelType() != NULL) ? options.GetReplacingPixelType() : GetPixelType();
+
+    // If we ware working with binary data we prefer RLE format.
+    if (pEffectivePixelType->CountPixelRawDataBits() == 1)
+        {
+        //Image Node and Image sample use the pixel type to differentiate between 1bit and Rle data. Unlike HRABitmap[RLE] that use pixeltype and codec.
+        HFCPtr<HRPPixelType> pRlePixelType = ImageNode::TransformToRleEquivalent(pEffectivePixelType);
+        if (pRlePixelType == NULL)
+            {
+            BeAssert(!"Incompatible replacing pixelType");
+            return COPYFROM_STATUS_IncompatiblePixelTypeReplacer;
+            }
+        pEffectivePixelType = pRlePixelType;
+        }
+
+    RefCountedPtr<MosaicNode> pMosaicNode = MosaicNode::Create(*this, imageNode.GetPhysicalCoordSys(), enclosingShape, pEffectivePixelType);
+    ImagePPStatus buildMosaicStatus = IMAGEPP_STATUS_Success;
+
+    // Process one image at a time, bottom up
+    for (auto srcRasterPair : enclosedRasters)
+        {
+        HFCPtr<HRARaster>& pSrcRaster = srcRasterPair.first;
+
+        // Always setup the clip per raster because the mosaic ::Produce will be called upon the rasters extent and this extent might
+        // be beyond this raster effective rectangle. If we do not provide a shape, the outputmerger will clip with the mosaic extent that
+        // is somehow generated the Produce iteration.
+        HFCPtr<HVEShape> pCurrShape = new HVEShape(*srcRasterPair.second);
+        
+        // Move the shape as seen by the destination
+        if (options.GetReplacingCoordSys())
+            {
+            pCurrShape->ChangeCoordSys(GetCoordSys());
+            pCurrShape->SetCoordSys(options.GetReplacingCoordSys());
+            }
+
+        // Convert to destination physical coordinates
+        pCurrShape->ChangeCoordSys(pMosaicNode->GetPhysicalCoordSys());
+
+        ImagePPStatus linkToStatus = IMAGEPP_STATUS_UnknownError;
+        ImageTransformNodePtr pTransformNode = ImageTransformNode::CreateAndLink(linkToStatus, *pMosaicNode, pCurrShape);
+        if (IMAGEPP_STATUS_Success != linkToStatus)
+            return linkToStatus;
+        
+        pTransformNode->SetResamplingMode(options.GetResamplingMode());
+        // It is assumed that mosaic rendering always need to blend to produce the right result
+        pTransformNode->SetAlphaBlend(enclosedRasters.size() > 1); 
+                
+        HRACopyToOptions newOptions(options);
+        if (options.GetReplacingCoordSys() != NULL)
+            {
+            // Adapt replacing CS so that it works on the current image.
+
+            // Extract the transformation we're applying to our source (T1)
+            HFCPtr<HGF2DTransfoModel> pRefTransfo(options.GetReplacingCoordSys()->GetTransfoModelTo(GetCoordSys()));
+
+            // Calculate the transformation between our source's CS and the CS
+            // the object to return uses. (T2)
+            HFCPtr<HGF2DTransfoModel> pCurrentToSource(pSrcRaster->GetCoordSys()->GetTransfoModelTo(GetCoordSys()));
+
+            // Create the CS by composing everything correctly :)
+            // T2 o T1 o -T2
+            HFCPtr<HGF2DTransfoModel> pToApply(pCurrentToSource->ComposeInverseWithDirectOf(*pRefTransfo)->ComposeInverseWithInverseOf(*pCurrentToSource));
+            HFCPtr<HGF2DCoordSys> pCSToApply = new HGF2DCoordSys(*pToApply, pSrcRaster->GetCoordSys());
+
+            newOptions.SetReplacingCoordSys(pCSToApply);
+            }
+
+        ImagePPStatus buildCopyToContextStatus = IMAGEPP_STATUS_Success;
+        if (IMAGEPP_STATUS_Success != (buildCopyToContextStatus = pSrcRaster->BuildCopyToContext(*pTransformNode, newOptions)))
+            {
+            // set global status but keep first error
+            if (IMAGEPP_STATUS_Success == buildMosaicStatus)
+                buildMosaicStatus = buildCopyToContextStatus;
+            }
+        }
+
+    if (pMosaicNode->GetChildCount() > 0)
+        {
+        ImagePPStatus linkToStatus = IMAGEPP_STATUS_UnknownError;
+        if (IMAGEPP_STATUS_Success != (linkToStatus = imageNode.LinkTo(*pMosaicNode)))
+            return linkToStatus;
+
+        BeAssert(pMosaicNode->GetPhysicalCoordSys() == imageNode.GetPhysicalCoordSys());
+        }
+
+    return buildMosaicStatus;
+    }
+
+/** ---------------------------------------------------------------------------
+Return a new copy of self
+---------------------------------------------------------------------------*/
+HFCPtr<HRARaster> HIMOnDemandMosaic::Clone(HPMObjectStore* pi_pStore, HPMPool* pi_pLog) const
+    {
+    return new HIMOnDemandMosaic(*this);
+    }
+
+/** ---------------------------------------------------------------------------
+Return a new copy of self
+---------------------------------------------------------------------------*/
+HPMPersistentObject* HIMOnDemandMosaic::Clone () const
+    {
+    return new HIMOnDemandMosaic(*this);
     }

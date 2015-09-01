@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLCommonInternet.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HFCURLCommonInternet
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------
  Returns a constant reference to a string that contains the name of the
  user included in this URL, that is used when the resource restricts its
@@ -106,3 +107,4 @@ inline const string& HFCURLCommonInternet::GetUTF8EscapedURLPath() const
     {
     return m_UTF8EscapedURLPath;
     }
+END_IMAGEPP_NAMESPACE

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecIJG8Bits.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HCDCodecIJG
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HCDException.h>
 
@@ -34,7 +34,7 @@
 
 //When the size of the subset is very small it is possible that the safety factor of
 //2 may be not enough. So add an offset that should be increased as required.
-#define MAX_COMPRESSED_SIZE_SAFETY_OFFSET 256
+#define MAX_COMPRESSED_SIZE_SAFETY_OFFSET 768
 
 
 // To support Jpeg compression 8 and 12 bits, we need to remove any references from the .h file.
@@ -98,7 +98,7 @@ METHODDEF (void) HCDJpegErrorExit(void* cinfo)
     pErrorManager = (IJG12BITS(HCDCodecIJG)::HCDJpegFileErrorManager*) ((j_common_ptr)cinfo)->err;
 
     // call a Jpeg exception
-    throw HCDException(HCD_IJG_LIBRARY_ERROR_EXCEPTION);
+    throw HCDCorruptedPackbitsDataException();
     }
 
 
@@ -214,7 +214,7 @@ size_t IJG12BITS(HCDCodecIJG)::CompressSubset(const void* pi_pInData,
     // Calculate the ending position for the current subset. Normally,
     // this is the current subset position + the subset height. For the last
     // subset, we must stop at the end of the block...
-    size_t EndPosY = min(GetSubsetPosY() + GetSubsetHeight(), GetHeight());
+    size_t EndPosY = MIN(GetSubsetPosY() + GetSubsetHeight(), GetHeight());
 
     while (cinfocomp->next_scanline < EndPosY) {
         row_pointer[0] = (JSAMPROW)&image_buffer[(cinfocomp->next_scanline - GetSubsetPosY())
@@ -616,7 +616,7 @@ void IJG12BITS(HCDCodecIJG)::SetProgressiveMode(bool pi_Enable)
         {
         if(cinfocomp->scan_info != NULL)
             {
-            free((void*)(cinfocomp->scan_info));
+            free(const_cast<jpeg_scan_info*>(cinfocomp->scan_info));
             cinfocomp->scan_info = NULL;
             cinfocomp->num_scans = 0;
             }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_panorama.cpp 19799 2010-06-04 10:48:04Z dron $
+ * $Id: ogr_srs_panorama.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference translation to/from "Panorama" GIS
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2005, Andrey Kiselev <dron@ak4719.spb.edu>
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogr_srs_panorama.cpp 19799 2010-06-04 10:48:04Z dron $");
+CPL_CVSID("$Id: ogr_srs_panorama.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 #define TO_DEGREES 57.2957795130823208766
 #define TO_RADIANS 0.017453292519943295769
@@ -67,7 +68,7 @@ CPL_CVSID("$Id: ogr_srs_panorama.cpp 19799 2010-06-04 10:48:04Z dron $");
 #define PAN_PROJ_EQC    27L     // Equirectangular
 #define PAN_PROJ_CEA    28L     // Cylindrical Equal Area (Lambert)
 #define PAN_PROJ_IMWP   29L     // International Map of the World Polyconic
-
+#define PAN_PROJ_MILLER 34L     // Miller
 /************************************************************************/
 /*  "Panorama" datum codes.                                             */
 /************************************************************************/
@@ -126,7 +127,18 @@ static const long aoEllips[] =
     7015,   // Everest, 1830
     7004,   // Bessel, 1841
     7001,   // Airy, 1830
-    7030    // WGS, 1984 (GPS)
+    7030,   // WGS, 1984 (GPS)
+    0,      // FIXME: PZ90.02
+    7019,   // GRS, 1980 (NAD1983)
+    7022,   // International, 1924 (Hayford, 1909) XXX?
+    7036,   // South American, 1969
+    7021,   // Indonesian, 1974
+    7020,   // Helmert 1906
+    0,      // FIXME: Fisher 1960
+    0,      // FIXME: Fisher 1968
+    0,      // FIXME: Haff 1960
+    7042,   // Everest, 1830
+    7003   // Australian National, 1965
 };
 
 #define NUMBER_OF_ELLIPSOIDS    (sizeof(aoEllips)/sizeof(aoEllips[0]))
@@ -140,6 +152,8 @@ OGRErr OSRImportFromPanorama( OGRSpatialReferenceH hSRS,
                               double *padfPrjParams )
 
 {
+    VALIDATE_POINTER1( hSRS, "OSRImportFromPanorama", CE_Failure );
+
     return ((OGRSpatialReference *) hSRS)->importFromPanorama( iProjSys,
                                                                iDatum,iEllips,
                                                                padfPrjParams );
@@ -390,6 +404,12 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
                              padfPrjParams[5], padfPrjParams[6] );
             break;
 
+        case PAN_PROJ_MILLER:
+            SetMC(TO_DEGREES * padfPrjParams[5],
+                TO_DEGREES * padfPrjParams[4],
+                padfPrjParams[6], padfPrjParams[7]);
+            break;
+
         default:
             CPLDebug( "OSR_Panorama", "Unsupported projection: %ld", iProjSys );
             SetLocalCS( CPLString().Printf("\"Panorama\" projection number %ld",
@@ -476,6 +496,12 @@ OGRErr OSRExportToPanorama( OGRSpatialReferenceH hSRS,
                             long *piZone, double *padfPrjParams )
 
 {
+    VALIDATE_POINTER1( hSRS, "OSRExportToPanorama", CE_Failure );
+    VALIDATE_POINTER1( piProjSys, "OSRExportToPanorama", CE_Failure );
+    VALIDATE_POINTER1( piDatum, "OSRExportToPanorama", CE_Failure );
+    VALIDATE_POINTER1( piEllips, "OSRExportToPanorama", CE_Failure );
+    VALIDATE_POINTER1( padfPrjParams, "OSRExportToPanorama", CE_Failure );
+
     return ((OGRSpatialReference *) hSRS)->exportToPanorama( piProjSys,
                                                              piDatum, piEllips,
                                                              piZone,

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCalsFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFCalsFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFCalsFile.h>
 #include <Imagepp/all/h/HRFCalsLineEditor.h>
@@ -27,10 +27,12 @@
 
 #include <Imagepp/all/h/HCDCodecHMRCCITT.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
-#include <Imagepp/all/h/HGF2DAffine.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
+#include <Imagepp/all/h/HGF2DSimilitude.h>
+#include <Imagepp/all/h/HGF2DTranslation.h>
+#include <Imagepp/all/h/HGF2DAffine.h>
+#include <Imagepp/all/h/HGF2DStretch.h>
 #include <Imagepp/all/h/HCDCodecCCITTFax4.h>
 
 
@@ -97,7 +99,10 @@ HRFCalsCapabilities::HRFCalsCapabilities()
     // The transformation model returned will only contain rotations and flips according to the scan line orientation of the file.
     // We don't support transformation model save, so transformation model is not saved to file
     Add(new HRFTransfoModelCapability(HFC_READ_WRITE, HGF2DAffine::CLASS_ID));
-    Add(new HRFTransfoModelCapability(HFC_READ_WRITE, HGF2DIdentity::CLASS_ID));    // Identity to suppress Assertion in the code.
+    Add(new HRFTransfoModelCapability(HFC_READ_WRITE, HGF2DSimilitude::CLASS_ID));
+    Add(new HRFTransfoModelCapability(HFC_READ_WRITE, HGF2DStretch::CLASS_ID));
+    Add(new HRFTransfoModelCapability(HFC_READ_WRITE, HGF2DTranslation::CLASS_ID));
+    Add(new HRFTransfoModelCapability(HFC_READ_WRITE, HGF2DIdentity::CLASS_ID));
 
     // Media type capability
     Add(new HRFStillImageCapability(HFC_READ_WRITE_CREATE));
@@ -134,9 +139,7 @@ HRFCalsCreator::HRFCalsCreator()
 
 WString HRFCalsCreator::GetLabel() const
     {
-
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_CALS); //Cals File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_CALS()); //Cals File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -200,11 +203,11 @@ bool HRFCalsCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the Cals File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
-    if (pFile->Read((void*)Marker, 8) != 8)
+    if (pFile->Read(Marker, 8) != 8)
         goto WRAPUP;
 
     // Verify if we have a basic Type 1
@@ -213,7 +216,7 @@ bool HRFCalsCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         pFile->SeekToPos(6 * HRF_CALS_TYPE1_RECORD_SIZE);
 
         // Read 6th record (of 128 byte each...)
-        if (pFile->Read((void*)Marker, 13) != 13)
+        if (pFile->Read(Marker, 13) != 13)
             goto WRAPUP;
 
         // On read success...
@@ -236,7 +239,7 @@ bool HRFCalsCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         pFile->SeekToPos(4 * HRF_CALS_TYPE1_RECORD_SIZE);
 
         // Read 4th record (of 128 byte each...)
-        if (pFile->Read((void*)Marker, 18) != 18)
+        if (pFile->Read(Marker, 18) != 18)
             goto WRAPUP;
 
         // On read success...
@@ -244,7 +247,7 @@ bool HRFCalsCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             {
             char StringBuffer[7];
 
-            strncpy(StringBuffer, (char*)&Marker[6], 6);
+            strncpy(StringBuffer, &Marker[6], 6);
             StringBuffer[6] = 0;
             uint32_t Version = atoi(StringBuffer);
 
@@ -266,7 +269,7 @@ bool HRFCalsCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             pFile->SeekToPos(3 * HRF_CALS_TYPE1_RECORD_SIZE);
 
             // Read 3th record (of 128 byte each...)
-            if (pFile->Read((void*)Marker, 18) != 18)
+            if (pFile->Read(Marker, 18) != 18)
                 goto WRAPUP;
 
             // On read success...
@@ -473,9 +476,7 @@ bool HRFCalsFile::Open()
     HPRECONDITION(!m_pCalsFile);
 
     // Be sure the Intergraph raster file is NOT already open.
-    m_pCalsFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pCalsFile, GetURL()->GetURL());
+    m_pCalsFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     m_IsOpen = true;
 
@@ -587,9 +588,7 @@ bool HRFCalsFile::Create()
     HPRECONDITION(!m_IsOpen);
     HPRECONDITION(!m_pCalsFile);
 
-    m_pCalsFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pCalsFile, GetURL()->GetURL());
+    m_pCalsFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     m_IsOpen = true;
 
@@ -776,7 +775,7 @@ bool HRFCalsFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
         HFCLockMonitor SisterFileLock(GetLockManager());
 
         // Write freshly created header physically into the file...
-        m_pCalsFile->Write((void*)m_pCalsHeader, HRF_CALS_TYPE1_BLOCK_SIZE);
+        m_pCalsFile->Write(m_pCalsHeader, HRF_CALS_TYPE1_BLOCK_SIZE);
 
         // Unlock the sister file
         SisterFileLock.ReleaseKey();
@@ -883,7 +882,7 @@ void HRFCalsFile::InitOpenedFile()
         HDEBUGCODE(else HASSERT(false););
 
         // Read and fill the Type1BlockHeader
-        m_pCalsFile->Read((void*)m_pCalsHeader, HRF_CALS_TYPICAL_READ_BUFFER_SIZE);
+        m_pCalsFile->Read(m_pCalsHeader, HRF_CALS_TYPICAL_READ_BUFFER_SIZE);
         m_HasHeaderFilled = true;
 
         // Unlock the sister file.
@@ -901,7 +900,7 @@ void HRFCalsFile::InitOpenedFile()
 
         // Create and initialise a new codec
         m_pCodec = new HCDCodecCCITTFax4(m_Width, m_Height);
-        m_pCodec->SetPhotometric((unsigned short)ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetDefaultPhotometricInterpretation());
+        m_pCodec->SetPhotometric((unsigned short)ImageppLib::GetHost().GetImageppLibAdmin()._GetDefaultPhotometricInterpretation());
         m_pCodec->SetSubset(m_Width,1);
 
         m_BitPerPixel     = 1;
@@ -933,13 +932,13 @@ HRFCalsFile::CALS_TYPE HRFCalsFile::GetCalsType()
         // Backup our file cursor position.
         uint64_t CurrentCursorPos = m_pCalsFile->GetCurrentPos();
 
-        if (m_pCalsFile->Read((void*)Marker, 8) == 8)
+        if (m_pCalsFile->Read(Marker, 8) == 8)
             {
             if (BeStringUtilities::Strnicmp(Marker, "srcdocid", 8) == 0)
                 {
                 // Read 7th record (of 128 byte each...)
                 m_pCalsFile->SeekToPos(6 * HRF_CALS_TYPE1_RECORD_SIZE);
-                if (m_pCalsFile->Read((void*)Marker, 13) == 13)
+                if (m_pCalsFile->Read(Marker, 13) == 13)
                     {
                     // On read success...
                     if (strncmp(Marker, "rtype:", 6) == 0)
@@ -961,7 +960,7 @@ HRFCalsFile::CALS_TYPE HRFCalsFile::GetCalsType()
                 {
                 // Read 4th record (of 128 byte each...)
                 m_pCalsFile->SeekToPos(4 * HRF_CALS_TYPE1_RECORD_SIZE);
-                if (m_pCalsFile->Read((void*)Marker, 13) == 13)
+                if (m_pCalsFile->Read(Marker, 13) == 13)
                     {
                     // On read success...
                     if (strncmp(Marker, "dtype:", 6) == 0)
@@ -980,7 +979,7 @@ HRFCalsFile::CALS_TYPE HRFCalsFile::GetCalsType()
                         {
                         // Read 3th record (of 128 byte each...)
                         m_pCalsFile->SeekToPos(3 * HRF_CALS_TYPE1_RECORD_SIZE);
-                        if (m_pCalsFile->Read((void*)Marker, 13) == 13)
+                        if (m_pCalsFile->Read(Marker, 13) == 13)
                             {
                             // On read success...
                             if (strncmp(Marker, "dtype:", 6) == 0)
@@ -1123,7 +1122,6 @@ const HRFScanlineOrientation HRFCalsFile::GetScanlineOrientation() const
 void HRFCalsFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                 uint32_t pi_Page,
                                                 bool   pi_CheckSpecificUnitSpec,
-                                                bool   pi_GeoModelDefaultUnit,
                                                 bool   pi_InterpretUnitINTGR)
     {
     //The transformation matrix is used only for SLO compensation,

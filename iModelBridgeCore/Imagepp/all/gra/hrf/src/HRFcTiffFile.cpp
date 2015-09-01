@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFcTiffFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFcTiffFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLFile.h>
 
@@ -58,7 +58,6 @@
 #include <Imagepp/all/h/HRPPixelTypeV16PRGray8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
 #include <Imagepp/all/h/HRPPixelTypeV16Int16.h>
-#include <Imagepp/all/h/HRPPixelTypeI2R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeI4R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeV1GrayWhite1.h>
 #include <Imagepp/all/h/HRPPixelTypeV8GrayWhite8.h>
@@ -80,10 +79,9 @@
 #include <Imagepp/all/h/HGF2DSimilitude.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 // Defintion of the string used to identify the filters.
 const string strBlur("BLUR");
@@ -818,7 +816,7 @@ HRFcTiffCreator::HRFcTiffCreator()
 // Identification information
 WString HRFcTiffCreator::GetLabel() const
     {
-    return HFCResourceLoader::GetInstance()->GetString(IDS_FILEFORMAT_cTiff); //Cache TIFF File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_cTiff()); //Cache TIFF File Format
     }
 
 // Identification information
@@ -864,7 +862,7 @@ bool HRFcTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     (const_cast<HRFcTiffCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    pTiff = new HTIFFFile (CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pTiff = new HTIFFFile (pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     if (((pTiff->IsValid(&pErr)) || ((pErr != 0) && !pErr->IsFatal())) && (pTiff->IsTiff64() == false))
         {
@@ -1180,26 +1178,14 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFcTiffFile::GetCapabilities () const
 
 //-----------------------------------------------------------------------------
 // Public
-// GetSourceFile_CreationDateTime
-// Return the DateTime of the source file, or 0(null)
-// The DateTime is formatted with ctime()
-//-----------------------------------------------------------------------------
-const char* HRFcTiffFile::GetSourceFile_CreationDateTime()
-    {
-    if (m_SourceFileCreationTime.empty())
-        return 0;
-    else
-        return m_SourceFileCreationTime.c_str();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
 // SetSourceFile_CreationDateTime
 // pi_DateTime : Must be the value return by ctime() function
 //
 // Note : This information is stored in the HMR private directory but it's a
 //        global information. For this reason, the HMR_SOURCEFILE_CREATIONDATE
 //        is always stored in the HMR directory in the first page
+//
+// *** That information is only keep for back compatible between V8i, on Windows platform.
 //-----------------------------------------------------------------------------
 void HRFcTiffFile::SetSourceFile_CreationDateTime(const char* pi_DateTime)
     {
@@ -1246,7 +1232,7 @@ void HRFcTiffFile::CreateDescriptors()
         SetImageInSubImage(PageIndex);
 
         if (!GetFilePtr()->GetField (SUBFILETYPE, &ImageType))
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+            throw HFCCorruptedFileException(GetURL()->GetURL());
 
         if (ImageType != FILETYPE_EMPTYPAGE)
             {
@@ -1255,9 +1241,10 @@ void HRFcTiffFile::CreateDescriptors()
             InitPrivateTagDefault (pHMRHeader);
 
             if (!ReadPrivateDirectory(Page, pHMRHeader))
-                throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                throw HFCFileNotSupportedException(GetURL()->GetURL());
 
             // initialize the creation date
+            // *** That information is only keep for back compatible between V8i, on Windows platform.
             if (Page == 0)
                 {
                 if (m_SourceFileCreationTime.empty())
@@ -1762,8 +1749,10 @@ void HRFcTiffFile::WritePrivateDirectory (uint32_t pi_Page)
 
     // HMR_SOURCEFILE_CREATIONDATE is stored in the HMR private directory but it's a global information,
     // we stored in the first directory
+    //
+    // *** That information is only keep for back compatible between V8i, on Windows platform.
     if (pi_Page == 0 && m_SourceFileCreationTimeChanged)
-        GetFilePtr()->SetField(HMR_SOURCEFILE_CREATIONDATE,  m_SourceFileCreationTime.c_str());
+        GetFilePtr()->SetFieldA(HMR_SOURCEFILE_CREATIONDATE,  m_SourceFileCreationTime.c_str());
 
     if (!pPageDesc->IsEmpty())
         {
@@ -1824,7 +1813,7 @@ void HRFcTiffFile::SavecTiffFile()
                     HRFAttributeInkNames const* pTag = pPageDescriptor->FindTagCP<HRFAttributeInkNames>();
                     if (pTag != NULL && (pPageDescriptor->TagHasChanged(*pTag) || GetAccessMode().m_HasCreateAccess))
                         {
-                        GetFilePtr()->SetField(INKNAMES, pTag->GetData().c_str());
+                        GetFilePtr()->SetFieldA(INKNAMES, AString(pTag->GetData().c_str()).c_str());
                         }
 
                     if (pPageDescriptor->ThumbnailHasChanged())
@@ -1951,7 +1940,7 @@ void HRFcTiffFile::SetFilter(const HRPFilter& pi_rFilter)
     // If we have filters we save it.
     if (!FilterStream.str().empty())
         {
-        GetFilePtr()->SetField(HMR_FILTERS, FilterStream.str().c_str());
+        GetFilePtr()->SetFieldA(HMR_FILTERS, FilterStream.str().c_str());
         }
     }
 
@@ -2113,11 +2102,19 @@ HRPFilter* HRFcTiffFile::UnstreamFilter(istringstream& pi_rStream) const
             {
             // Read the brightness filter values and create it.
             string RedValue(ReadString(pi_rStream));
+
+            // Assume a global value for brightess filter.
+#if 0
             string GreenValue(ReadString(pi_rStream));
             string BlueValue(ReadString(pi_rStream));
             pFilter = new HRPColorBalanceFilter(strtol(RedValue.c_str(), 0, 10),
                                                 strtol(GreenValue.c_str(), 0, 10),
                                                 strtol(BlueValue.c_str(), 0, 10));
+#else
+            pFilter = new HRPColorBalanceFilter(strtol(RedValue.c_str(), 0, 10));
+#endif
+
+
             }
         else if (Value == strSmooth)
             {

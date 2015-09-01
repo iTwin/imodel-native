@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXIndex.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIDXIndex
@@ -15,6 +15,7 @@
 #include "HIDXIndexable.h"
 #include "HIDXSearchCriteria.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 typedef enum
     {
@@ -45,5 +46,5 @@ public:
         return pi_rpObject;
         };
     };
-
+END_IMAGEPP_NAMESPACE
 

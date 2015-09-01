@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMObjectStore.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPMObjectStore
@@ -13,6 +13,7 @@
 #include <Imagepp/all/h/HFCExclusiveKey.h>
 #include <Imagepp/all/h/HPMClassKey.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HPMPool;
 class HPMPersistentObject;
 
@@ -93,25 +94,25 @@ class HPMObjectStore : public HFCShareableObject<HPMObjectStore>
 public:
 
     // Class ID for this class.
-    HDECLARE_BASECLASS_ID(1531)
+    HDECLARE_BASECLASS_ID(HPMObjectStoreId_Base)
 
     //:> Primary methods
 
-    _HDLLu                         HPMObjectStore(HPMPool* pi_pDefaultPool);
-    _HDLLu virtual                 ~HPMObjectStore();
+    IMAGEPP_EXPORT                         HPMObjectStore(HPMPool* pi_pDefaultPool);
+    IMAGEPP_EXPORT virtual                 ~HPMObjectStore();
 
     //:> Persistence methods : load/save methods
     virtual void            Save(HPMPersistentObject* pi_pObj) = 0;
 
     //:> Store management methods
-    virtual bool           IsReadOnly() const = 0;
+    virtual bool            IsReadOnly() const = 0;
     virtual void            ForceReadOnly(bool pi_ReadOnly) = 0;
 
     //:> Other methods
 
-    _HDLLu HPMPool*                GetPool() const;
-    _HDLLu void                    SaveAll();
-    _HDLLu void                    CleanUp();
+    IMAGEPP_EXPORT HPMPool*                GetPool() const;
+    IMAGEPP_EXPORT void                    SaveAll();
+    IMAGEPP_EXPORT void                    CleanUp();
 
 protected:
 
@@ -119,9 +120,9 @@ protected:
 
     //:> Object tracking
 
-    _HDLLu HPMPersistentObject*    GetLoaded(HPMObjectID pi_ObjectID) const;
-    _HDLLu void                    RegisterObject(HPMPersistentObject* pi_pObj);
-    _HDLLu void                    UnregisterObject(HPMPersistentObject* pi_pObj);
+    IMAGEPP_EXPORT HPMPersistentObject*    GetLoaded(HPMObjectID pi_ObjectID) const;
+    IMAGEPP_EXPORT void                    RegisterObject(HPMPersistentObject* pi_pObj);
+    IMAGEPP_EXPORT void                    UnregisterObject(HPMPersistentObject* pi_pObj);
 
 private:
 
@@ -144,4 +145,4 @@ private:
     };
 
 
-
+END_IMAGEPP_NAMESPACE

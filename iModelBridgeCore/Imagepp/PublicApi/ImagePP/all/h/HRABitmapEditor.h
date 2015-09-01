@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABitmapEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,19 +11,23 @@
 
 #pragma once
 
-#include "HRAStoredRasterEditor.h"
-#include "HGSEditor.h"
+#include "HRARasterEditor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRARaster;
 class HVEShape;
 class HRABitmapBase;
+class HRASurface;
+class HRAEditor;
+class HGSSurfaceDescriptor;
+class HGFScanLines;
 
-class HRABitmapEditor : public HRAStoredRasterEditor
+class HRABitmapEditor : public HRARasterEditor
     {
 public:
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1762, HRAStoredRasterEditor)
+    HDECLARE_CLASS_ID(HRABitmapId_Editor, HRARasterEditor)
 
     // Type used in type Error to specify error type
 
@@ -44,59 +48,16 @@ public:
 
     virtual         ~HRABitmapEditor  ();
 
-    // Editor control
-    /*
-            virtual const UInt32
-                            GetPositionX(void) const = 0;
-            virtual const UInt32
-                            GetPositionY(void) const = 0;
-            virtual bool   Goto(UInt32 pi_PosX, UInt32 pi_PosY) = 0;
-            virtual bool   GotoNextX() = 0;
-            virtual bool   GotoNextY() = 0;
-            virtual bool   GotoPreviousX() = 0;
-            virtual bool   GotoPreviousY() = 0;
-
-            virtual bool   GotoFirstOfFirstRow() = 0;
-            virtual bool   GotoFirstOfNextRow() = 0;
-            virtual bool   GotoNextOfCurrentRow() = 0;
-
-            virtual bool   GotoNextRunOfCurrentRow() = 0;
-            virtual UInt32  CountPixelsToEndOfRun() = 0;
-    */
-    // Generic Pixel data access
-    /*
-            virtual const void*
-                            GetCompositeValueAt(UInt32 pi_PosX, UInt32 pi_PosY) = 0;
-            virtual size_t  GetIndexValueAt    (UInt32 pi_PosX, UInt32 pi_PosY,
-                                                bool* po_pValidLocation) = 0;
-            virtual const void*
-                            GetRawDataAt       (UInt32 po_PosX, UInt32 po_PosY) = 0;
-            virtual bool   SetCompositeValueAt(const void *pi_pRawData,
-                                                UInt32 pi_PosX,
-                                                UInt32 pi_PosY) = 0;
-            virtual bool   SetIndexValueAt    (size_t pi_NewIndex,
-                                                UInt32 pi_PosX,
-                                                UInt32 pi_PosY) = 0;
-            virtual bool   SetRawDataAt       (const void *pi_pRawData,
-                                                UInt32 pi_PosX,
-                                                UInt32 pi_PosY) = 0;
-
-    */
 
     // get surface editor
-    _HDLLg HFCPtr<HGSEditor>
-    GetSurfaceEditor();
-
-
-    // Implementation methods (optimizing CopyFrom)
-
+    IMAGEPP_EXPORT HRAEditor* GetSurfaceEditor();
 
 protected:
 
 private:
 
-    HFCPtr<HGSEditor>
-    m_pEditor;
+    std::unique_ptr<HRAEditor>    m_pEditor;
+    std::unique_ptr<HRASurface>   m_pSurface;
 
     // private methods
     void            InitObject( const HFCPtr<HGSSurfaceDescriptor>& pi_rpSurDescriptor,
@@ -108,3 +69,5 @@ private:
     HRABitmapEditor& operator=(const HRABitmapEditor& pi_rObj);
 
     };
+
+END_IMAGEPP_NAMESPACE

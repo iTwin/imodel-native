@@ -8,8 +8,8 @@
 // Methods for class HGF2DPolySegment
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGFAngle.h>
 #include <Imagepp/all/h/HGF2DDisplacement.h>
@@ -69,10 +69,10 @@ size_t HGF2DPolySegment::AutoIntersect(HGF2DPositionCollection* po_pPoints) cons
         for (; Itr != m_Points.end() ; ++Itr , ++PreviousItr)
             {
             // Obtain extent of this segment
-            SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-            SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-            SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-            SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+            SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+            SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+            SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+            SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
             // Create a lite segment to represent current segment
             HGF2DLiteSegment TheLiteSegment(*PreviousItr, *Itr, Tolerance);
@@ -87,10 +87,10 @@ size_t HGF2DPolySegment::AutoIntersect(HGF2DPositionCollection* po_pPoints) cons
                 if (OtherItr != Itr)
                     {
                     // Check if current self segment and current other segment may interact
-                    Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, min(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
-                              HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, max(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
-                              HDOUBLE_GREATER_OR_EQUAL(SelfYMax, min(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance) &&
-                              HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, max(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance)
+                    Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
+                              HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
+                              HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance) &&
+                              HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance)
                              );
 
 
@@ -282,7 +282,7 @@ HGF2DPolySegment*  HGF2DPolySegment::AllocateParallelCopy(double pi_rOffset,
     HGF2DLiteExtent MyExtent(GetExtent());
 
     // Obtain largest dimension
-    double GreatestSize = max(MyExtent.GetWidth(), MyExtent.GetHeight());
+    double GreatestSize = MAX(MyExtent.GetWidth(), MyExtent.GetHeight());
 
     // Make sure we have the largest possible (greater than any size part of extent)
     GreatestSize *= 2.0;
@@ -984,10 +984,10 @@ bool HGF2DPolySegment::AutoCrosses() const
         for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
             {
             // Obtain extent of this segment
-            SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-            SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-            SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-            SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+            SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+            SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+            SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+            SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
             // Create a lite segment to represent current segment
             HGF2DLiteSegment TheLiteSegment(*PreviousItr, *Itr, Tolerance);
@@ -1002,10 +1002,10 @@ bool HGF2DPolySegment::AutoCrosses() const
                 if (OtherItr != Itr)
                     {
                     // Check if current self segment and current other segment may interact
-                    Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, min(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
-                              HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, max(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
-                              HDOUBLE_GREATER_OR_EQUAL(SelfYMax, min(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance) &&
-                              HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, max(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance)
+                    Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
+                              HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
+                              HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance) &&
+                              HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance)
                              );
 
 
@@ -1128,10 +1128,10 @@ bool HGF2DPolySegment::IsAutoContiguous() const
         for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
             {
             // Obtain extent of this segment
-            SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-            SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-            SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-            SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+            SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+            SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+            SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+            SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
             // Create a lite segment to represent current segment
             HGF2DLiteSegment TheLiteSegment(*PreviousItr, *Itr, Tolerance);
@@ -1146,10 +1146,10 @@ bool HGF2DPolySegment::IsAutoContiguous() const
                 if (OtherItr != Itr)
                     {
                     // Check if current self segment and current other segment may interact
-                    Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, min(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
-                              HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, max(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
-                              HDOUBLE_GREATER_OR_EQUAL(SelfYMax, min(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance) &&
-                              HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, max(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance)
+                    Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
+                              HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(OtherItr->GetX(), PreviousOtherItr->GetX()), Tolerance) &&
+                              HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance) &&
+                              HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(OtherItr->GetY(), PreviousOtherItr->GetY()), Tolerance)
                              );
 
 
@@ -1275,10 +1275,10 @@ HGFBearing HGF2DPolySegment::CalculateBearing(const HGF2DPosition& pi_rPoint,
     for (; !Found && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
         {
         // Check if current segment and point may interact
-        bool Result = (HDOUBLE_GREATER_OR_EQUAL(X, min(Itr->GetX(), PreviousItr->GetX()), GetTolerance()) &&
-                        HDOUBLE_SMALLER_OR_EQUAL(X, max(Itr->GetX(), PreviousItr->GetX()), GetTolerance()) &&
-                        HDOUBLE_GREATER_OR_EQUAL(Y, min(Itr->GetY(), PreviousItr->GetY()), GetTolerance()) &&
-                        HDOUBLE_SMALLER_OR_EQUAL(Y, max(Itr->GetY(), PreviousItr->GetY()), GetTolerance())
+        bool Result = (HDOUBLE_GREATER_OR_EQUAL(X, MIN(Itr->GetX(), PreviousItr->GetX()), GetTolerance()) &&
+                        HDOUBLE_SMALLER_OR_EQUAL(X, MAX(Itr->GetX(), PreviousItr->GetX()), GetTolerance()) &&
+                        HDOUBLE_GREATER_OR_EQUAL(Y, MIN(Itr->GetY(), PreviousItr->GetY()), GetTolerance()) &&
+                        HDOUBLE_SMALLER_OR_EQUAL(Y, MAX(Itr->GetY(), PreviousItr->GetY()), GetTolerance())
                        );
 
         if (Result)
@@ -1362,21 +1362,26 @@ inline HGF2DLiteExtent HGF2DPolySegment::GetExtent() const
     // Check if extent is calculated and up to date
     if (!m_ExtentUpToDate)
         {
-        // The extent is not up to date ...
-
-        // Reset extent to undefined
-        m_Extent = HGF2DLiteExtent();
-
-        // For every point of polysegment
-        HGF2DPositionCollection::const_iterator Itr;
-        for(Itr = m_Points.begin() ; Itr != m_Points.end() ; ++Itr)
+        if (m_Points.size() == 0)
+            m_Extent = HGF2DLiteExtent(); // Unitialised extent
+        else
             {
-            // Augment extent by point
-            m_Extent.Add(*Itr);
+            // The extent is not up to date ... and there are at least one point
+
+            // Reset extent contain the first point
+            m_Extent = HGF2DLiteExtent(*(m_Points.begin()), *(m_Points.begin()));
+
+            // For every point of polysegment
+            HGF2DPositionCollection::const_iterator Itr;
+            for(Itr = m_Points.begin() ; Itr != m_Points.end() ; ++Itr)
+                {
+                // Augment extent by point
+                m_Extent.Add(*Itr);
+                }
             }
 
-        // Indicate extent is up to date
-        m_ExtentUpToDate = true;
+            // Indicate extent is up to date
+            m_ExtentUpToDate = true;
         }
 
     return(m_Extent);
@@ -1402,8 +1407,8 @@ void HGF2DPolySegment::Move(const HGF2DDisplacement& pi_rDisplacement)
             m_Points[Index][HGF2DPosition::Y] += pi_rDisplacement.GetDeltaY();
 
             // Adjust tolerance
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Points[Index][HGF2DPosition::X]));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Points[Index][HGF2DPosition::Y]));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Points[Index][HGF2DPosition::X]));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Points[Index][HGF2DPosition::Y]));
             }
 
         SetTolerance(Tolerance);
@@ -1451,8 +1456,8 @@ void HGF2DPolySegment::Scale(double pi_ScaleFactor, const HGF2DPosition& pi_rSca
             m_Points[Index][HGF2DPosition::Y] = ScaleOriginY + (pi_ScaleFactor * (m_Points[Index][HGF2DPosition::Y] - ScaleOriginY));
 
             // Adjust tolerance
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Points[Index][HGF2DPosition::X]));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Points[Index][HGF2DPosition::Y]));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Points[Index][HGF2DPosition::X]));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Points[Index][HGF2DPosition::Y]));
             }
 
         SetTolerance(Tolerance);
@@ -1538,14 +1543,17 @@ void HGF2DPolySegment::RemovePoint(size_t pi_Index)
     // Erase point
     m_Points.erase(Itr);
 
-    // Reset start and end point if required
-    if (pi_Index == 0)
+    if(!m_Points.empty()) 
         {
-        m_StartPoint = m_Points.front();
-        }
-    if (pi_Index == m_Points.size())
-        {
-        m_EndPoint = m_Points.back();
+        // Reset start and end point if required
+        if (pi_Index == 0)
+            {
+            m_StartPoint = m_Points.front();
+            }
+        if (pi_Index == m_Points.size())
+            {
+            m_EndPoint = m_Points.back();
+            }
         }
 
     // Indicate extent in no more up to date
@@ -2397,10 +2405,10 @@ double HGF2DPolySegment::CalculateRelativePosition(const HGF2DPosition& pi_rPoin
         // We must now check if point is located ON
 
         // Check if current segment and segment may interact
-        bool Result = (HDOUBLE_GREATER_OR_EQUAL(X, min(Itr->GetX(), PreviousItr->GetX()), GetTolerance()) &&
-                       HDOUBLE_SMALLER_OR_EQUAL(X, max(Itr->GetX(), PreviousItr->GetX()), GetTolerance()) &&
-                       HDOUBLE_GREATER_OR_EQUAL(Y, min(Itr->GetY(), PreviousItr->GetY()), GetTolerance()) &&
-                       HDOUBLE_SMALLER_OR_EQUAL(Y, max(Itr->GetY(), PreviousItr->GetY()), GetTolerance())
+        bool Result = (HDOUBLE_GREATER_OR_EQUAL(X, MIN(Itr->GetX(), PreviousItr->GetX()), GetTolerance()) &&
+                       HDOUBLE_SMALLER_OR_EQUAL(X, MAX(Itr->GetX(), PreviousItr->GetX()), GetTolerance()) &&
+                       HDOUBLE_GREATER_OR_EQUAL(Y, MIN(Itr->GetY(), PreviousItr->GetY()), GetTolerance()) &&
+                       HDOUBLE_SMALLER_OR_EQUAL(Y, MAX(Itr->GetY(), PreviousItr->GetY()), GetTolerance())
                        );
 
 
@@ -2846,10 +2854,10 @@ bool   HGF2DPolySegment::IsPointOn(const HGF2DPosition& pi_rTestPoint,
             for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                XMin = min(Itr->GetX(), PreviousItr->GetX());
-                XMax = max(Itr->GetX(), PreviousItr->GetX());
-                YMin = min(Itr->GetY(), PreviousItr->GetY());
-                YMax = max(Itr->GetY(), PreviousItr->GetY());
+                XMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                XMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                YMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                YMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 bool Result = (HDOUBLE_GREATER_OR_EQUAL(X, XMin, Tolerance) &&
@@ -2994,7 +3002,7 @@ bool HGF2DPolySegment::IsContiguousToPolySegment(const HGF2DPolySegment& pi_rPol
     bool Answer = false;
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rPolySegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rPolySegment.GetTolerance());
 
     // Check if polysegments are not NULL
     if (m_Points.size() >= 2 && pi_rPolySegment.m_Points.size() >= 2)
@@ -3036,10 +3044,10 @@ bool HGF2DPolySegment::IsContiguousToPolySegment(const HGF2DPolySegment& pi_rPol
             for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-                SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-                SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-                SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+                SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -3063,10 +3071,10 @@ bool HGF2DPolySegment::IsContiguousToPolySegment(const HGF2DPolySegment& pi_rPol
                     for (; !Answer && GivenItr != pi_rPolySegment.m_Points.end() ; ++GivenItr , ++PreviousGivenItr)
                         {
                         // Check if current self segment and current given segment may interact
-                        Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, min(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                                  HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, max(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                                  HDOUBLE_GREATER_OR_EQUAL(SelfYMax, min(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
-                                  HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, max(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
+                        Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                                  HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                                  HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
+                                  HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
                                  );
 
 
@@ -3100,7 +3108,7 @@ bool HGF2DPolySegment::IsContiguousToSegment(const HGF2DSegment& pi_rSegment) co
     bool Answer = false;
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rSegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rSegment.GetTolerance());
 
     // Check if polysegment is not NULL
     if (m_Points.size() >= 2)
@@ -3114,10 +3122,10 @@ bool HGF2DPolySegment::IsContiguousToSegment(const HGF2DSegment& pi_rSegment) co
         double SelfYMax = PolyExtent.GetYMax();
 
         // Obtain extremes of segment
-        double GivenXMin = min(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-        double GivenXMax = max(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-        double GivenYMin = min(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
-        double GivenYMax = max(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+        double GivenXMin = MIN(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+        double GivenXMax = MAX(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+        double GivenYMin = MIN(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+        double GivenYMax = MAX(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
 
 
         // Check if segment and polysegment extents outter overlap
@@ -3145,10 +3153,10 @@ bool HGF2DPolySegment::IsContiguousToSegment(const HGF2DSegment& pi_rSegment) co
             for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-                SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-                SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-                SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+                SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -3195,7 +3203,7 @@ bool HGF2DPolySegment::IsContiguousToPolySegmentAt(const HGF2DPolySegment& pi_rP
     bool Answer = false;
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rPolySegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rPolySegment.GetTolerance());
 
     // Transform point into a position in self coordinate system
     // Check if polysegments are not NULL
@@ -3235,10 +3243,10 @@ bool HGF2DPolySegment::IsContiguousToPolySegmentAt(const HGF2DPolySegment& pi_rP
             for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-                SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-                SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-                SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+                SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -3267,10 +3275,10 @@ bool HGF2DPolySegment::IsContiguousToPolySegmentAt(const HGF2DPolySegment& pi_rP
                         for (; !Answer && GivenItr != pi_rPolySegment.m_Points.end() ; ++GivenItr , ++PreviousGivenItr)
                             {
                             // Check if current self segment and current given segment may interact
-                            Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, min(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                                      HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, max(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                                      HDOUBLE_GREATER_OR_EQUAL(SelfYMax, min(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
-                                      HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, max(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
+                            Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                                      HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                                      HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
+                                      HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
                                      );
 
 
@@ -3317,7 +3325,7 @@ bool HGF2DPolySegment::IsContiguousToSegmentAt(const HGF2DSegment&  pi_rSegment,
     bool Answer = false;
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rSegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rSegment.GetTolerance());
 
     // Check if polysegment is not NULL
     if (m_Points.size() >= 2)
@@ -3330,10 +3338,10 @@ bool HGF2DPolySegment::IsContiguousToSegmentAt(const HGF2DSegment&  pi_rSegment,
         double SelfYMin = PolyExtent.GetYMin();
         double SelfYMax = PolyExtent.GetYMax();
 
-        double GivenXMin = min(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-        double GivenXMax = max(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-        double GivenYMin = min(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
-        double GivenYMax = max(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+        double GivenXMin = MIN(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+        double GivenXMax = MAX(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+        double GivenYMin = MIN(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+        double GivenYMax = MAX(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
 
 
         bool Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -3359,10 +3367,10 @@ bool HGF2DPolySegment::IsContiguousToSegmentAt(const HGF2DSegment&  pi_rSegment,
             for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-                SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-                SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-                SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+                SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -3409,7 +3417,7 @@ bool HGF2DPolySegment::CrossesPolySegment(const HGF2DPolySegment& pi_rPolySegmen
     bool Answer = false;
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rPolySegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rPolySegment.GetTolerance());
 
     // Check if polysegments are not NULL
     if (m_Points.size() >= 2 && pi_rPolySegment.m_Points.size() >= 2)
@@ -3447,10 +3455,10 @@ bool HGF2DPolySegment::CrossesPolySegment(const HGF2DPolySegment& pi_rPolySegmen
             for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-                SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-                SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-                SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+                SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -3474,10 +3482,10 @@ bool HGF2DPolySegment::CrossesPolySegment(const HGF2DPolySegment& pi_rPolySegmen
                     for (; !Answer && GivenItr != pi_rPolySegment.m_Points.end() ; ++GivenItr , ++PreviousGivenItr)
                         {
                         // Check if current self segment and current given segment may interact
-                        Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, min(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                                  HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, max(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                                  HDOUBLE_GREATER_OR_EQUAL(SelfYMax, min(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
-                                  HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, max(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
+                        Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                                  HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                                  HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
+                                  HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
                                  );
 
 
@@ -3578,7 +3586,7 @@ bool HGF2DPolySegment::CrossesSegment(const HGF2DSegment& pi_rSegment) const
     bool Answer = false;
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rSegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rSegment.GetTolerance());
 
     // Check if polysegment is not NULL
     if (m_Points.size() >= 2)
@@ -3591,10 +3599,10 @@ bool HGF2DPolySegment::CrossesSegment(const HGF2DSegment& pi_rSegment) const
         double SelfYMin = PolyExtent.GetYMin();
         double SelfYMax = PolyExtent.GetYMax();
 
-        double GivenXMin = min(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-        double GivenXMax = max(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-        double GivenYMin = min(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
-        double GivenYMax = max(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+        double GivenXMin = MIN(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+        double GivenXMax = MAX(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+        double GivenYMin = MIN(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+        double GivenYMax = MAX(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
 
         // Check if their extent outter overlap
         bool Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -3621,10 +3629,10 @@ bool HGF2DPolySegment::CrossesSegment(const HGF2DSegment& pi_rSegment) const
             for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-                SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-                SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-                SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+                SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -3694,7 +3702,7 @@ bool HGF2DPolySegment::IsAdjacentToPolySegment(const HGF2DPolySegment& pi_rPolyS
     bool Answer = false;
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rPolySegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rPolySegment.GetTolerance());
 
     // Check if polysegments are not NULL
     if (m_Points.size() >= 2 && pi_rPolySegment.m_Points.size() >= 2)
@@ -3735,10 +3743,10 @@ bool HGF2DPolySegment::IsAdjacentToPolySegment(const HGF2DPolySegment& pi_rPolyS
             for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-                SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-                SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-                SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+                SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -3762,10 +3770,10 @@ bool HGF2DPolySegment::IsAdjacentToPolySegment(const HGF2DPolySegment& pi_rPolyS
                     for (; !Answer && GivenItr != pi_rPolySegment.m_Points.end() ; ++GivenItr , ++PreviousGivenItr)
                         {
                         // Check if current self segment and current given segment may interact
-                        Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, min(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                                  HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, max(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                                  HDOUBLE_GREATER_OR_EQUAL(SelfYMax, min(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
-                                  HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, max(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
+                        Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                                  HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                                  HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
+                                  HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
                                  );
 
 
@@ -3805,7 +3813,7 @@ bool HGF2DPolySegment::IsAdjacentToSegment(const HGF2DSegment& pi_rSegment) cons
     bool Answer = false;
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rSegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rSegment.GetTolerance());
 
     // Check if polysegment is not NULL
     if (m_Points.size() >= 2)
@@ -3819,10 +3827,10 @@ bool HGF2DPolySegment::IsAdjacentToSegment(const HGF2DSegment& pi_rSegment) cons
         double SelfYMax = PolyExtent.GetYMax();
 
         // Obtain extremes of segment
-        double GivenXMin = min(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-        double GivenXMax = max(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-        double GivenYMin = min(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
-        double GivenYMax = max(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+        double GivenXMin = MIN(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+        double GivenXMax = MAX(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+        double GivenYMin = MIN(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+        double GivenYMax = MAX(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
 
 
         // Check if segment and polysegment extents outter overlap
@@ -3850,10 +3858,10 @@ bool HGF2DPolySegment::IsAdjacentToSegment(const HGF2DSegment& pi_rSegment) cons
             for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-                SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-                SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-                SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+                SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -3895,7 +3903,7 @@ size_t HGF2DPolySegment::IntersectSegment(const HGF2DSegment& pi_rSegment,
     size_t  NumberOfNewPoints = 0;
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rSegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rSegment.GetTolerance());
 
     // Check if polysegment is not NULL
     if (m_Points.size() >= 2)
@@ -3908,10 +3916,10 @@ size_t HGF2DPolySegment::IntersectSegment(const HGF2DSegment& pi_rSegment,
         double SelfYMin = PolyExtent.GetYMin();
         double SelfYMax = PolyExtent.GetYMax();
 
-        double GivenXMin = min(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-        double GivenXMax = max(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-        double GivenYMin = min(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
-        double GivenYMax = max(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+        double GivenXMin = MIN(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+        double GivenXMax = MAX(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+        double GivenYMin = MIN(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+        double GivenYMax = MAX(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
 
         // Check if extents outter overlap
         bool Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -3938,10 +3946,10 @@ size_t HGF2DPolySegment::IntersectSegment(const HGF2DSegment& pi_rSegment,
             for (; Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-                SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-                SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-                SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+                SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -4015,7 +4023,7 @@ size_t HGF2DPolySegment::IntersectPolySegment(const HGF2DPolySegment& pi_rPolySe
     size_t  NumberOfNewPoints = 0;
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rPolySegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rPolySegment.GetTolerance());
 
     // Check if polysegments are not NULL
     if (m_Points.size() >= 2 && pi_rPolySegment.m_Points.size() >= 2)
@@ -4052,10 +4060,10 @@ size_t HGF2DPolySegment::IntersectPolySegment(const HGF2DPolySegment& pi_rPolySe
             for (; Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-                SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-                SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-                SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+                SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -4079,10 +4087,10 @@ size_t HGF2DPolySegment::IntersectPolySegment(const HGF2DPolySegment& pi_rPolySe
                     for (; GivenItr != pi_rPolySegment.m_Points.end() ; ++GivenItr , ++PreviousGivenItr)
                         {
                         // Check if current self segment and current given segment may interact
-                        Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, min(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                                  HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, max(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                                  HDOUBLE_GREATER_OR_EQUAL(SelfYMax, min(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
-                                  HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, max(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
+                        Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                                  HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                                  HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
+                                  HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
                                  );
 
 
@@ -4188,16 +4196,16 @@ size_t HGF2DPolySegment::ObtainContiguousnessPointsWithSegment(const HGF2DSegmen
     HPRECONDITION(po_pContiguousnessPoints != 0);
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rSegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rSegment.GetTolerance());
 
     // Save initial number of points
     size_t  InitialNumberOfPoints = po_pContiguousnessPoints->size();
 
     // Obtain extent of segment
-    double GivenXMin = min(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-    double GivenXMax = max(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-    double GivenYMin = min(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
-    double GivenYMax = max(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+    double GivenXMin = MIN(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+    double GivenXMax = MAX(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+    double GivenYMin = MIN(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+    double GivenYMax = MAX(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
 
     // No need to check extent overlap since we already know they are
     // contiguous
@@ -4215,10 +4223,10 @@ size_t HGF2DPolySegment::ObtainContiguousnessPointsWithSegment(const HGF2DSegmen
     for (; Itr != m_Points.end() ; ++Itr , ++PreviousItr)
         {
         // Check if current segment and segment may interact
-        bool Result = (HDOUBLE_GREATER_OR_EQUAL(max(Itr->GetX(), PreviousItr->GetX()), GivenXMin, Tolerance) &&
-                        HDOUBLE_SMALLER_OR_EQUAL(min(Itr->GetX(), PreviousItr->GetX()), GivenXMax, Tolerance) &&
-                        HDOUBLE_GREATER_OR_EQUAL(max(Itr->GetY(), PreviousItr->GetY()), GivenYMin, Tolerance) &&
-                        HDOUBLE_SMALLER_OR_EQUAL(min(Itr->GetY(), PreviousItr->GetY()), GivenYMax, Tolerance)
+        bool Result = (HDOUBLE_GREATER_OR_EQUAL(MAX(Itr->GetX(), PreviousItr->GetX()), GivenXMin, Tolerance) &&
+                        HDOUBLE_SMALLER_OR_EQUAL(MIN(Itr->GetX(), PreviousItr->GetX()), GivenXMax, Tolerance) &&
+                        HDOUBLE_GREATER_OR_EQUAL(MAX(Itr->GetY(), PreviousItr->GetY()), GivenYMin, Tolerance) &&
+                        HDOUBLE_SMALLER_OR_EQUAL(MIN(Itr->GetY(), PreviousItr->GetY()), GivenYMax, Tolerance)
                        );
 
 
@@ -4294,7 +4302,7 @@ size_t HGF2DPolySegment::ObtainContiguousnessPointsWithPolySegment(const HGF2DPo
     HPRECONDITION(po_pContiguousnessPoints != 0);
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rPolySegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rPolySegment.GetTolerance());
 
     // Save initial number of points
     size_t  InitialNumberOfPoints = po_pContiguousnessPoints->size();
@@ -4318,10 +4326,10 @@ size_t HGF2DPolySegment::ObtainContiguousnessPointsWithPolySegment(const HGF2DPo
     for (; Itr != m_Points.end() ; ++Itr , ++PreviousItr)
         {
         // Obtain extent of this segment
-        double SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-        double SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-        double SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-        double SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+        double SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+        double SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+        double SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+        double SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
         // Check if current segment and given polysegment may interact
         bool Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -4345,10 +4353,10 @@ size_t HGF2DPolySegment::ObtainContiguousnessPointsWithPolySegment(const HGF2DPo
             for (; GivenItr != pi_rPolySegment.m_Points.end() ; ++GivenItr , ++PreviousGivenItr)
                 {
                 // Check if current self segment and current given segment may interact
-                Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, min(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                          HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, max(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                          HDOUBLE_GREATER_OR_EQUAL(SelfYMax, min(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
-                          HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, max(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
+                Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                          HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                          HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
+                          HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
                          );
 
                 if (Result)
@@ -4445,12 +4453,12 @@ void HGF2DPolySegment::ObtainContiguousnessPointsWithSegmentAt(const HGF2DSegmen
     HGF2DPosition ThePoint(pi_rPoint);
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rSegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rSegment.GetTolerance());
 
-    double GivenXMin = min(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-    double GivenXMax = max(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-    double GivenYMin = min(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
-    double GivenYMax = max(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+    double GivenXMin = MIN(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+    double GivenXMax = MAX(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+    double GivenYMin = MIN(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+    double GivenYMax = MAX(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
 
     // No need to check extent overlap since we already know they are
     // contiguous
@@ -4470,10 +4478,10 @@ void HGF2DPolySegment::ObtainContiguousnessPointsWithSegmentAt(const HGF2DSegmen
     for (; (!Found) && (Itr != m_Points.end()) ; ++Itr , ++PreviousItr)
         {
         // Check if current segment and segment may interact
-        bool Result = (HDOUBLE_GREATER_OR_EQUAL(max(Itr->GetX(), PreviousItr->GetX()), GivenXMin, Tolerance) &&
-                       HDOUBLE_SMALLER_OR_EQUAL(min(Itr->GetX(), PreviousItr->GetX()), GivenXMax, Tolerance) &&
-                       HDOUBLE_GREATER_OR_EQUAL(max(Itr->GetY(), PreviousItr->GetY()), GivenYMin, Tolerance) &&
-                       HDOUBLE_SMALLER_OR_EQUAL(min(Itr->GetY(), PreviousItr->GetY()), GivenYMax, Tolerance)
+        bool Result = (HDOUBLE_GREATER_OR_EQUAL(MAX(Itr->GetX(), PreviousItr->GetX()), GivenXMin, Tolerance) &&
+                       HDOUBLE_SMALLER_OR_EQUAL(MIN(Itr->GetX(), PreviousItr->GetX()), GivenXMax, Tolerance) &&
+                       HDOUBLE_GREATER_OR_EQUAL(MAX(Itr->GetY(), PreviousItr->GetY()), GivenYMin, Tolerance) &&
+                       HDOUBLE_SMALLER_OR_EQUAL(MIN(Itr->GetY(), PreviousItr->GetY()), GivenYMax, Tolerance)
                       );
 
 
@@ -4645,7 +4653,7 @@ void HGF2DPolySegment::ObtainContiguousnessPointsWithPolySegmentAt(const HGF2DPo
     HGF2DPosition ThePoint(pi_rPoint);
 
     // Pre-calculate tolerance
-    double Tolerance = min(GetTolerance(), pi_rPolySegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rPolySegment.GetTolerance());
 
     HGF2DPosition FirstContiguousnessPosition;
     HGF2DPosition SecondContiguousnessPosition;
@@ -4672,10 +4680,10 @@ void HGF2DPolySegment::ObtainContiguousnessPointsWithPolySegmentAt(const HGF2DPo
     for (; (!Found) && (Itr != m_Points.end()) ; ++Itr , ++PreviousItr)
         {
         // Obtain extent of this segment
-        double SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-        double SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-        double SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-        double SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+        double SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+        double SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+        double SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+        double SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
         // Check if current segment and given polysegment may interact
         bool Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -4703,10 +4711,10 @@ void HGF2DPolySegment::ObtainContiguousnessPointsWithPolySegmentAt(const HGF2DPo
                 for (; (!Found) && GivenItr != pi_rPolySegment.m_Points.end() ; ++GivenItr , ++PreviousGivenItr)
                     {
                     // Check if current self segment and current given segment may interact
-                    Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, min(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                              HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, max(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
-                              HDOUBLE_GREATER_OR_EQUAL(SelfYMax, min(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
-                              HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, max(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
+                    Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                              HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(GivenItr->GetX(), PreviousGivenItr->GetX()), Tolerance) &&
+                              HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance) &&
+                              HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(GivenItr->GetY(), PreviousGivenItr->GetY()), Tolerance)
                              );
 
 
@@ -4910,24 +4918,24 @@ inline void HGF2DPolySegment::ResetTolerance()
         if (m_Points.size() >= 1)
             {
             HGF2DPositionCollection::const_iterator Itr = m_Points.begin();
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Itr->GetX()));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Itr->GetY()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Itr->GetX()));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Itr->GetY()));
 
 //            HGF2DPositionCollection::const_iterator PrevItr(Itr);
             ++Itr;
 
             for(; Itr != m_Points.end() ; ++Itr)
                 {
-                Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Itr->GetX()));
-                Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Itr->GetY()));
+                Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Itr->GetX()));
+                Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Itr->GetY()));
 
 //                double DeltaX = Itr->GetX() - PrevItr->GetX();
 //                double DeltaY = Itr->GetY() - PrevItr->GetY();
-//                Tolerance = max(Tolerance, HEPSILON_EXTENT_MULTIPLICATOR * (sqrt(DeltaX * DeltaX + DeltaY * DeltaY)));
+//                Tolerance = MAX(Tolerance, HEPSILON_EXTENT_MULTIPLICATOR * (sqrt(DeltaX * DeltaX + DeltaY * DeltaY)));
                 }
             }
 
-        SetTolerance(min(HMAX_EPSILON, Tolerance));
+        SetTolerance(MIN(HMAX_EPSILON, Tolerance));
         }
     }
 
@@ -4974,7 +4982,7 @@ bool HGF2DPolySegment::IntersectsAtAnySplitPointWithPolySegment(const HGF2DPolyS
     bool Answer = false;
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rPolySegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rPolySegment.GetTolerance());
 
     // Obtain extremes of poly segments
     HGF2DLiteExtent PolyExtent(GetExtent());
@@ -5008,10 +5016,10 @@ bool HGF2DPolySegment::IntersectsAtAnySplitPointWithPolySegment(const HGF2DPolyS
         for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
             {
             // Obtain extent of this segment
-            SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-            SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-            SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-            SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+            SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+            SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+            SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+            SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
             // Check if current segment and segment may interact
             Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -5048,10 +5056,10 @@ bool HGF2DPolySegment::IntersectsAtAnySplitPointWithPolySegment(const HGF2DPolyS
             for (; !Answer && Itr != pi_rPolySegment.m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                GivenXMin = min(Itr->GetX(), PreviousItr->GetX());
-                GivenXMax = max(Itr->GetX(), PreviousItr->GetX());
-                GivenYMin = min(Itr->GetY(), PreviousItr->GetY());
-                GivenYMax = max(Itr->GetY(), PreviousItr->GetY());
+                GivenXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                GivenXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                GivenYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                GivenYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(GivenXMax, SelfXMin, Tolerance) &&
@@ -5099,10 +5107,10 @@ bool HGF2DPolySegment::IntersectsAtAnySplitPointWithPolySegment(const HGF2DPolyS
             for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
                 {
                 // Obtain extent of this segment
-                SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-                SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-                SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-                SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+                SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+                SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+                SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+                SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
                 // Check if current segment and segment may interact
                 Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -5286,7 +5294,7 @@ bool HGF2DPolySegment::IntersectsAtAnySplitPointWithLiteSegment(const HGF2DLiteS
     bool Answer = false;
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rSegment.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rSegment.GetTolerance());
 
     // Obtain extremes of poly segments
     HGF2DLiteExtent PolyExtent(GetExtent());
@@ -5296,10 +5304,10 @@ bool HGF2DPolySegment::IntersectsAtAnySplitPointWithLiteSegment(const HGF2DLiteS
     double SelfYMin = PolyExtent.GetYMin();
     double SelfYMax = PolyExtent.GetYMax();
 
-    double GivenXMin = min(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-    double GivenXMax = max(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
-    double GivenYMin = min(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
-    double GivenYMax = max(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+    double GivenXMin = MIN(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+    double GivenXMax = MAX(pi_rSegment.GetStartPoint().GetX(), pi_rSegment.GetEndPoint().GetX());
+    double GivenYMin = MIN(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
+    double GivenYMax = MAX(pi_rSegment.GetStartPoint().GetY(), pi_rSegment.GetEndPoint().GetY());
 
     // Check if their extents outter overlap
     bool Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -5322,10 +5330,10 @@ bool HGF2DPolySegment::IntersectsAtAnySplitPointWithLiteSegment(const HGF2DLiteS
         for (; !Answer && Itr != m_Points.end() ; ++Itr , ++PreviousItr)
             {
             // Obtain extent of this segment
-            SelfXMin = min(Itr->GetX(), PreviousItr->GetX());
-            SelfXMax = max(Itr->GetX(), PreviousItr->GetX());
-            SelfYMin = min(Itr->GetY(), PreviousItr->GetY());
-            SelfYMax = max(Itr->GetY(), PreviousItr->GetY());
+            SelfXMin = MIN(Itr->GetX(), PreviousItr->GetX());
+            SelfXMax = MAX(Itr->GetX(), PreviousItr->GetX());
+            SelfYMin = MIN(Itr->GetY(), PreviousItr->GetY());
+            SelfYMax = MAX(Itr->GetY(), PreviousItr->GetY());
 
             // Check if current segment and segment may interact
             Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, GivenXMin, Tolerance) &&
@@ -5386,7 +5394,7 @@ void HGF2DPolySegment::PrintState(ostream& po_rOutput) const
 
     // Indicate number of points
     po_rOutput << "There is " << m_Points.size() << "Points in PolySegment" << endl;
-    HDUMP1("There is %llu Points in polysegment", (uint64_t)m_Points.size());
+    HDUMP1("There is %" PRIu64 " Points in polysegment", (uint64_t)m_Points.size());
 
     // Dump all points
     char    DumString[256];
@@ -5424,7 +5432,7 @@ bool HGF2DPolySegment::IntersectsAtSplitPointWithPolySegment(const HGF2DPolySegm
     bool Answer = false;
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
     // Check if end point is located on the given
     if (pi_rVector.IsPointOn(pi_rTestPoint, HGF2DVector::EXCLUDE_EXTREMITIES, Tolerance) &&
@@ -5892,10 +5900,254 @@ void HGF2DPolySegment::SortPointsAccordingToRelativePosition(HGF2DPositionCollec
             // Check if second point has a smaller relative position than first
             if (CalculateRelativePosition(*FirstPointItr) > CalculateRelativePosition(*SecondPointItr))
                 {
-                swap(*FirstPointItr, *SecondPointItr);
+                std::swap(*FirstPointItr, *SecondPointItr);
                 }
             ++SecondPointItr;
             }
         ++FirstPointItr;
         }
+    }
+
+
+//-----------------------------------------------------------------------------
+// @bsimethod                                          Alain Robert (2014/06/01)
+//-----------------------------------------------------------------------------
+HFCPtr<HGF2DPolySegment> HGF2DPolySegment::AllocPolySegmentTransformDirect(const HGF2DTransfoModel& pi_rModel) const
+    {
+    HFCPtr<HGF2DPolySegment>    pMyResultVector;
+
+    // Check if it is the same coordinate system
+    if (pi_rModel.IsIdentity())
+        {
+        pMyResultVector = new HGF2DPolySegment(*this);
+        }
+    else
+        {
+        // Check if this model between coordinate systems is linearity preserving
+        if (pi_rModel.PreservesLinearity())
+            {
+            // The model preserves linearity ... we can transform the points directly
+
+            // We will compute the appropriate tolerance on the fly (default is global epsilon)
+            double Tolerance = HGLOBAL_EPSILON;
+
+            // Create recipient polysegment
+            HFCPtr<HGF2DPolySegment> pMyResultPolySegment = new HGF2DPolySegment();
+
+            // For all points ...
+            HGF2DPositionCollection::const_iterator Itr(m_Points.begin());
+            while (Itr != m_Points.end())
+                {
+                // Transform position to a location
+                HGF2DPosition Point(*Itr);
+                ++Itr;
+
+                // Transform point
+                pi_rModel.ConvertPosDirect(&Point);
+
+                Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Point.GetX()));
+                Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(Point.GetY()));
+
+                // HChk MR
+                // We apply the currently calculated Tolerance when comparing two
+                // positions together. This is better than using the default Epsilon,
+                // but I'm not sure that it's OK.
+
+                // Add point to new PolySegment IFF it is not a double point
+                if (pMyResultPolySegment->m_Points.size() == 0)
+                    {
+                    pMyResultPolySegment->m_Points.push_back(Point);
+                    }
+                else
+                    {
+                    if (Point.IsEqualTo(*pMyResultPolySegment->m_Points.rbegin(), Tolerance))
+                        {
+                        if (Itr == m_Points.end())
+                            {
+                            // Special case: Points are equal, but we can't remove the last
+                            // point. Therefore, we remove the one just before.
+                            pMyResultPolySegment->m_Points.pop_back();
+                            pMyResultPolySegment->m_Points.push_back(Point);
+                            }
+                        }
+                    else
+                        {
+                        pMyResultPolySegment->m_Points.push_back(Point);
+                        }
+                    }
+                }
+
+            // Transform start and end points
+            pMyResultPolySegment->m_StartPoint = m_StartPoint;
+            pi_rModel.ConvertPosDirect(&(pMyResultPolySegment->m_StartPoint));
+            pMyResultPolySegment->m_EndPoint = m_EndPoint;
+            pi_rModel.ConvertPosDirect(&(pMyResultPolySegment->m_EndPoint));
+
+            // Reset tolerance of new polysegment
+            pMyResultPolySegment->SetTolerance(MIN(HMAX_EPSILON, Tolerance));
+
+            // Activate auto tolerance determination
+            pMyResultPolySegment->SetAutoToleranceActive(true);
+
+            // Move result polysegment to return variable
+            pMyResultVector = pMyResultPolySegment;
+            }
+        else
+            {
+            // The model does not preserve linearity
+            // We process more completely
+            pMyResultVector = AllocPolySegmentTransformDirectNonLinearModel(pi_rModel);
+            }
+
+        pMyResultVector->SetStrokeTolerance(m_pStrokeTolerance);
+        }
+
+    return pMyResultVector;
+    }
+
+
+
+
+
+
+
+
+
+
+//-----------------------------------------------------------------------------
+// AllocateCopyInComplexCoordSys
+// PRIVATE
+// Returns a dynamically allocated copy of the segment transformed according
+// in the given coordinate system
+//-----------------------------------------------------------------------------
+HFCPtr<HGF2DPolySegment> HGF2DPolySegment::AllocPolySegmentTransformDirectNonLinearModel(const HGF2DTransfoModel& pi_rModel) const
+    {
+    HINVARIANTS;
+
+    // Allocate polysegment linear to receive result
+    HFCPtr<HGF2DPolySegment>  pNewPolySegment = new HGF2DPolySegment();
+
+    // Desactivate auto tolerance
+    pNewPolySegment->SetAutoToleranceActive(false);
+    pNewPolySegment->SetTolerance(GetTolerance());
+
+    HFCPtr<HGFLiteTolerance> pTol (GetStrokeTolerance());
+
+    pNewPolySegment->SetStrokeTolerance(pTol);
+
+
+    // Transform start and end points.
+// HChk AR If domain error thrown ... we should do something!!!!
+    pNewPolySegment->m_StartPoint = m_StartPoint;
+    pi_rModel.ConvertPosDirect(&(pNewPolySegment->m_StartPoint));
+    pNewPolySegment->m_EndPoint   = m_EndPoint;
+    pi_rModel.ConvertPosDirect(&(pNewPolySegment->m_EndPoint));
+
+// HChk AR If domain error thrown ... we should do something!!!!
+    // Obtain a transformed value of start point
+    HGF2DPosition TransStartPoint = pNewPolySegment->m_StartPoint;
+
+    // Append start point first
+    pNewPolySegment->m_Points.push_back(TransStartPoint);
+
+#if (0)
+// HChk AR DOUBTFUL!
+    pNewPolySegment->SetAutoToleranceActive(true);
+    pNewPolySegment->ResetTolerance();
+    pNewPolySegment->SetAutoToleranceActive(false);
+
+    // Compute tolerance
+    pNewPolySegment->SetTolerance(pNewPolySegment->GetTolerance() * 1000.0);
+#endif
+
+    // For every segment of self polysegment
+    HGF2DPositionCollection::const_iterator Itr = m_Points.begin();
+    HGF2DPositionCollection::const_iterator PreviousItr = Itr;
+    ++Itr;
+    for (; Itr != m_Points.end() ; ++Itr , ++PreviousItr)
+        {
+        // Append this segment to the complex
+        HGF2DLiteSegment aSegment(*PreviousItr, *Itr);
+
+        pNewPolySegment->TransformAndAppendSegment(aSegment, pi_rModel);
+        }
+
+    // In some imprecise transformation models there could be a variation
+    // between conversion of two identical coordinates ... adjust if applicable
+    if (m_StartPoint.IsEqualTo(m_EndPoint))
+        pNewPolySegment->AdjustEndPointTo(pNewPolySegment->GetStartPoint());
+
+    // If the start point and end points were originally equal then they should be equal in the result
+    HASSERT(!m_StartPoint.IsEqualTo(m_EndPoint) || pNewPolySegment->GetStartPoint().IsEqualTo(pNewPolySegment->GetEndPoint()));
+
+    // Reactive auto tolearnce determination if applicable
+    pNewPolySegment->SetAutoToleranceActive(IsAutoToleranceActive());
+    pNewPolySegment->ResetTolerance();
+
+    return pNewPolySegment;
+    }
+
+//-----------------------------------------------------------------------------
+// PRIVATE
+// Adds to the self polysegment a transformed version of segment
+//-----------------------------------------------------------------------------
+void HGF2DPolySegment::TransformAndAppendSegment(const HGF2DLiteSegment& pi_rSegment, const HGF2DTransfoModel& pi_rModel)
+    {
+    HINVARIANTS;
+
+    HFCPtr<HGFLiteTolerance> pTol (GetStrokeTolerance());
+    double StrokeTolerance (GetTolerance());
+
+    // &&AR Transform stroke tolerance
+    pTol->TransformDirect(pi_rModel);
+
+    if (pTol->GetLinearTolerance() > 0.0)
+        {
+        StrokeTolerance = pTol->GetLinearTolerance();
+        }
+
+    // Obtain the segment intermediate point
+    HGF2DPosition   IntermediatePoint;
+    IntermediatePoint.SetX((pi_rSegment.GetStartPoint().GetX() + pi_rSegment.GetEndPoint().GetX()) / 2.0);
+    IntermediatePoint.SetY((pi_rSegment.GetStartPoint().GetY() + pi_rSegment.GetEndPoint().GetY()) / 2.0);
+
+    // Transform start point, end point and intermediate point
+// HChk AR If domain error thrown ... we should do something!!!!
+    HGF2DPosition   TransformedEndPoint = pi_rSegment.GetEndPoint();
+    pi_rModel.ConvertPosDirect(&TransformedEndPoint);
+    HGF2DPosition   TransformedStartPoint = pi_rSegment.GetStartPoint();
+    pi_rModel.ConvertPosDirect(&TransformedStartPoint);
+
+    HGF2DLiteSegment    TransformedSegment(TransformedStartPoint, TransformedEndPoint);
+
+    HGF2DPosition   NewIntermediatePoint = IntermediatePoint;
+    pi_rModel.ConvertPosDirect(&NewIntermediatePoint);
+
+    // Obtain distance from transformed segment
+    double TheDistanceFromTransformed = (TransformedSegment.CalculateClosestPoint(NewIntermediatePoint)
+                                              - NewIntermediatePoint).CalculateLength();
+
+
+    // Check if tolerance is respected
+    if (HDOUBLE_EQUAL(TheDistanceFromTransformed, 0.0, StrokeTolerance))
+        {
+        // The epsilon is respected ... we add this last segment to linear
+        m_Points.push_back(TransformedEndPoint);
+
+        m_EndPoint = TransformedEndPoint;
+        }
+    else
+        {
+        // Since the tolerance is not respected, we split the segment into two smaller ones
+        HGF2DLiteSegment    FirstSegment(pi_rSegment.GetStartPoint(), IntermediatePoint);
+
+        TransformAndAppendSegment(FirstSegment, pi_rModel);
+
+        HGF2DLiteSegment    SecondSegment(IntermediatePoint, pi_rSegment.GetEndPoint());
+
+        TransformAndAppendSegment(SecondSegment, pi_rModel);
+        }
+
+    HINVARIANTS;
+
     }

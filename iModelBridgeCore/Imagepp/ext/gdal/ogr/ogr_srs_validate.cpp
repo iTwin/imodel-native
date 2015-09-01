@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_validate.cpp 20665 2010-09-21 19:15:11Z rouault $
+ * $Id: ogr_srs_validate.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of the OGRSpatialReference::Validate() method and
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,8 +31,9 @@
 
 #include "ogr_spatialref.h"
 #include "ogr_p.h"
+#include "osr_cs_wkt.h"
 
-CPL_CVSID("$Id: ogr_srs_validate.cpp 20665 2010-09-21 19:15:11Z rouault $");
+CPL_CVSID("$Id: ogr_srs_validate.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /* why would fipszone and zone be paramers when they relate to a composite
    projection which renders done into a non-zoned projection? */
@@ -89,6 +91,7 @@ static const char *papszProjectionSupported[] =
     SRS_PT_ECKERT_VI,
     SRS_PT_MERCATOR_1SP,
     SRS_PT_MERCATOR_2SP,
+    SRS_PT_MOLLWEIDE,
     SRS_PT_ROBINSON,
     SRS_PT_ALBERS_CONIC_EQUAL_AREA,
     SRS_PT_LAMBERT_CONFORMAL_CONIC_1SP,
@@ -101,6 +104,7 @@ static const char *papszProjectionSupported[] =
     SRS_PT_POLAR_STEREOGRAPHIC,
     SRS_PT_HOTINE_OBLIQUE_MERCATOR,
     SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN,
+    SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER,
     SRS_PT_LABORDE_OBLIQUE_MERCATOR,
     SRS_PT_SWISS_OBLIQUE_CYLINDRICAL,
     SRS_PT_AZIMUTHAL_EQUIDISTANT,
@@ -109,6 +113,7 @@ static const char *papszProjectionSupported[] =
     SRS_PT_SINUSOIDAL,
     SRS_PT_STEREOGRAPHIC,
     SRS_PT_GNOMONIC,
+    SRS_PT_GALL_STEREOGRAPHIC,
     SRS_PT_ORTHOGRAPHIC,
     SRS_PT_POLYCONIC,
     SRS_PT_VANDERGRINTEN,
@@ -125,6 +130,8 @@ static const char *papszProjectionSupported[] =
     SRS_PT_GAUSSSCHREIBERTMERCATOR,
     SRS_PT_KROVAK,
     SRS_PT_CYLINDRICAL_EQUAL_AREA,
+    SRS_PT_GOODE_HOMOLOSINE, 
+    SRS_PT_IGH,
     NULL
 };
 
@@ -209,7 +216,31 @@ static const char *papszProjWithParms[] = {
     SRS_PP_FALSE_NORTHING,
     NULL,
 
+    SRS_PT_ECKERT_I,
+    SRS_PP_CENTRAL_MERIDIAN,
+    SRS_PP_FALSE_EASTING,
+    SRS_PP_FALSE_NORTHING,
+    NULL,
+
+    SRS_PT_ECKERT_II,
+    SRS_PP_CENTRAL_MERIDIAN,
+    SRS_PP_FALSE_EASTING,
+    SRS_PP_FALSE_NORTHING,
+    NULL,
+
+    SRS_PT_ECKERT_III,
+    SRS_PP_CENTRAL_MERIDIAN,
+    SRS_PP_FALSE_EASTING,
+    SRS_PP_FALSE_NORTHING,
+    NULL,
+
     SRS_PT_ECKERT_IV,
+    SRS_PP_CENTRAL_MERIDIAN,
+    SRS_PP_FALSE_EASTING,
+    SRS_PP_FALSE_NORTHING,
+    NULL,
+
+    SRS_PT_ECKERT_V,
     SRS_PP_CENTRAL_MERIDIAN,
     SRS_PP_FALSE_EASTING,
     SRS_PP_FALSE_NORTHING,
@@ -243,6 +274,16 @@ static const char *papszProjWithParms[] = {
     NULL,
 
     SRS_PT_HOTINE_OBLIQUE_MERCATOR,
+    SRS_PP_LATITUDE_OF_CENTER,
+    SRS_PP_LONGITUDE_OF_CENTER,
+    SRS_PP_AZIMUTH,
+    SRS_PP_RECTIFIED_GRID_ANGLE,
+    SRS_PP_SCALE_FACTOR,
+    SRS_PP_FALSE_EASTING,
+    SRS_PP_FALSE_NORTHING,
+    NULL,
+
+    SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER,
     SRS_PP_LATITUDE_OF_CENTER,
     SRS_PP_LONGITUDE_OF_CENTER,
     SRS_PP_AZIMUTH,
@@ -473,6 +514,15 @@ static const char *papszProjWithParms[] = {
     SRS_PP_FALSE_NORTHING,
     NULL,
 
+    SRS_PT_GOODE_HOMOLOSINE,
+    SRS_PP_CENTRAL_MERIDIAN,
+    SRS_PP_FALSE_EASTING,
+    SRS_PP_FALSE_NORTHING,
+    NULL,
+
+    SRS_PT_IGH,
+    NULL,
+
     NULL
 };
 
@@ -519,7 +569,36 @@ OGRErr OGRSpatialReference::Validate()
         return OGRERR_CORRUPT_DATA;
     }
 
-    return Validate(poRoot);
+    OGRErr eErr = Validate(poRoot);
+
+    /* Even if hand-validation has succeeded, try a more formal validation */
+    /* using the CT spec grammar */
+    static int bUseCTGrammar = -1;
+    if( bUseCTGrammar < 0 )
+        bUseCTGrammar = CSLTestBoolean(CPLGetConfigOption("OSR_USE_CT_GRAMMAR", "TRUE"));
+
+    if( eErr == OGRERR_NONE && bUseCTGrammar )
+    {
+        osr_cs_wkt_parse_context sContext;
+        char* pszWKT = NULL;
+
+        exportToWkt(&pszWKT);
+
+        sContext.pszInput = pszWKT;
+        sContext.pszLastSuccess = pszWKT;
+        sContext.pszNext = pszWKT;
+        sContext.szErrorMsg[0] = '\0';
+
+        if( osr_cs_wkt_parse(&sContext) != 0 )
+        {
+            CPLDebug( "OGRSpatialReference::Validate", "%s",
+                      sContext.szErrorMsg );
+            eErr = OGRERR_CORRUPT_DATA;
+        }
+
+        CPLFree(pszWKT);
+    }
+    return eErr;
 }
 
 
@@ -566,6 +645,11 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                 OGRErr eErr = ValidateAuthority(poNode);
                 if (eErr != OGRERR_NONE)
                     return eErr;
+            }
+            else if( EQUAL(poNode->GetValue(),"EXTENSION") )
+            {
+                // We do not try to control the sub-organization of 
+                // EXTENSION nodes.
             }
             else
             {
@@ -656,6 +740,104 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
             return OGRERR_CORRUPT_DATA;
         }
         return OGRERR_NONE;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Validate GEOCCS                                                 */
+/* -------------------------------------------------------------------- */
+    if( EQUAL(poRoot->GetValue(),"GEOCCS") )
+    {
+        OGR_SRSNode     *poNode;
+        int             i;
+        int             bGotDatum = FALSE;
+        int             bGotPrimeM = FALSE;
+        int             bGotUnit = FALSE;
+        int             nCountAxis = 0;
+
+        for( i = 1; i < poRoot->GetChildCount(); i++ )
+        {
+            poNode = poRoot->GetChild(i);
+
+            if( EQUAL(poNode->GetValue(),"DATUM") )
+            {
+                bGotDatum = TRUE;
+            }
+            else if( EQUAL(poNode->GetValue(),"PRIMEM") )
+            {
+                bGotPrimeM = TRUE;
+
+                if( poNode->GetChildCount() < 2 
+                    || poNode->GetChildCount() > 3 )
+                {
+                    CPLDebug( "OGRSpatialReference::Validate",
+                              "PRIMEM has wrong number of children (%d),"
+                              "not 2 or 3 as expected.\n",
+                              poNode->GetChildCount() );
+                    
+                    return OGRERR_CORRUPT_DATA;
+                }
+            }
+            else if( EQUAL(poNode->GetValue(),"UNIT") )
+            {
+                OGRErr eErr = ValidateUnit(poNode);
+                if (eErr != OGRERR_NONE)
+                    return eErr;
+                bGotUnit = TRUE;
+            }
+            else if( EQUAL(poNode->GetValue(),"AXIS") )
+            {
+                OGRErr eErr = ValidateAxis(poNode);
+                if (eErr != OGRERR_NONE)
+                    return eErr;
+                nCountAxis ++;
+            }
+            else if( EQUAL(poNode->GetValue(),"AUTHORITY") )
+            {
+                OGRErr eErr = ValidateAuthority(poNode);
+                if (eErr != OGRERR_NONE)
+                    return eErr;
+            }
+            else
+            {
+                CPLDebug( "OGRSpatialReference::Validate",
+                          "Unexpected child for GEOCCS `%s'.\n",
+                          poNode->GetValue() );
+
+                return OGRERR_CORRUPT_DATA;
+            }
+        }
+
+        if (!bGotDatum)
+        {
+            CPLDebug( "OGRSpatialReference::Validate",
+                      "No DATUM child in GEOCCS.\n" );
+
+            return OGRERR_CORRUPT_DATA;
+        }
+
+        if (!bGotPrimeM)
+        {
+            CPLDebug( "OGRSpatialReference::Validate",
+                      "No PRIMEM child in GEOCCS.\n" );
+
+            return OGRERR_CORRUPT_DATA;
+        }
+
+        if (!bGotUnit)
+        {
+            CPLDebug( "OGRSpatialReference::Validate",
+                      "No UNIT child in GEOCCS.\n" );
+
+            return OGRERR_CORRUPT_DATA;
+        }
+
+        if (nCountAxis != 0 && nCountAxis != 3 )
+        {
+            CPLDebug( "OGRSpatialReference::Validate",
+                      "Wrong number of AXIS children in GEOCCS.\n" );
+
+            return OGRERR_CORRUPT_DATA;
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -912,6 +1094,11 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
                     return OGRERR_CORRUPT_DATA;
                 }
             }
+            else if( EQUAL(poNode->GetValue(),"EXTENSION") )
+            {
+                // We do not try to control the sub-organization of 
+                // EXTENSION nodes.
+            }
             else
             {
                 CPLDebug( "OGRSpatialReference::Validate",
@@ -940,12 +1127,6 @@ OGRErr OGRSpatialReference::Validate(OGR_SRSNode *poRoot)
     eErr = ValidateProjection(poRoot);
     if( eErr != OGRERR_NONE )
         return eErr;
-
-/* -------------------------------------------------------------------- */
-/*      Final check.                                                    */
-/* -------------------------------------------------------------------- */
-    if( EQUAL(poRoot->GetValue(),"GEOCCS") )
-        return OGRERR_UNSUPPORTED_SRS;
 
     return OGRERR_NONE;
 }

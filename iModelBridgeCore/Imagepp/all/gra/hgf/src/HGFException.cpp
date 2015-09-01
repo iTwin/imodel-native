@@ -2,47 +2,34 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFException.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HGFException.h>
-#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
+
+
 
 //---------------------------------------------------------------------------
 // methods for class HGFException
 //---------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// public
-// Implementation of functions common to all exception classes
-//-----------------------------------------------------------------------------
-HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(HGFException)
-HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(HGFmzGCoordException)
-
 //-----------------------------------------------------------------------------
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HGFException::HGFException(ExceptionID        pi_ExceptionID)
-    : HFCException(pi_ExceptionID)
+HGFException::HGFException()
+    : HFCException()
     {
-    HPRECONDITION((pi_ExceptionID >= HGF_BASE) && (pi_ExceptionID < HGF_SEPARATOR_ID));
     }
-
-
 //-----------------------------------------------------------------------------
 // public
 // Copy Constructor
 //-----------------------------------------------------------------------------
-HGFException::HGFException(const HGFException& pi_rObj)
-    : HFCException(pi_rObj)
-    {
-    }
-
-
+ HGFException::HGFException(const HGFException&     pi_rObj) : HFCException(pi_rObj)
+ {
+ }
 //-----------------------------------------------------------------------------
 // public
 // Destructor
@@ -56,47 +43,29 @@ HGFException::~HGFException()
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-void HGFException::FormatExceptionMessage(WString& pio_rMessage) const
+WString HGFException::_BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const
     {
+    WString exceptionName(pi_rsID.m_str, true /*isUtf8*/);
+    WPrintfString message(L"%ls - [%ls]", GetRawMessageFromResource(pi_rsID).c_str(), exceptionName.c_str());
+    return message;
     }
-
 //-----------------------------------------------------------------------------
 // public
-// operator=
-//-----------------------------------------------------------------------------
-HGFException& HGFException::operator=(const HGFException& pi_rObj)
-    {
-    if (this != &pi_rObj)
-        {
-        HFCException::operator=(pi_rObj);
-        }
-    return *this;
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// ConstructorHGFmzGCoordException
+// Constructor for derived classes
 //-----------------------------------------------------------------------------
 HGFmzGCoordException::HGFmzGCoordException(int32_t pi_StatusCode)
-    : HGFException(HGF_MZ_G_COORD_EXCEPTION)
+    :HGFException()
     {
-    m_pInfo = new HGFmzGCoordExInfo;
-    ((HGFmzGCoordExInfo*)m_pInfo)->m_StatusCode = pi_StatusCode;
+    m_StatusCode = pi_StatusCode;
     }
-
-
 //-----------------------------------------------------------------------------
 // public
 // Copy Constructor
 //-----------------------------------------------------------------------------
-HGFmzGCoordException::HGFmzGCoordException(const HGFmzGCoordException& pi_rObj)
-    : HGFException(pi_rObj)
-    {
-    COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HGFmzGCoordExInfo)
-    }
-
-
+ HGFmzGCoordException::HGFmzGCoordException(const HGFmzGCoordException&     pi_rObj) : HGFException(pi_rObj)
+ {
+     m_StatusCode = pi_rObj.m_StatusCode;
+ }
 //-----------------------------------------------------------------------------
 // public
 // Destructor
@@ -104,31 +73,34 @@ HGFmzGCoordException::HGFmzGCoordException(const HGFmzGCoordException& pi_rObj)
 HGFmzGCoordException::~HGFmzGCoordException()
     {
     }
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCException* HGFmzGCoordException::Clone() const
+    {
+    return new HGFmzGCoordException(*this);
+    }
 
 //-----------------------------------------------------------------------------
 // public
 // Return the message formatted with specific information on the exception
 // that have occurred.
 //-----------------------------------------------------------------------------
-void HGFmzGCoordException::FormatExceptionMessage(WString& pio_rMessage) const
+WString HGFmzGCoordException::GetExceptionMessage() const
     {
+    WPrintfString rawMessage(GetRawMessageFromResource(ImagePPExceptions::HGFmzGCoordException()).c_str(), m_StatusCode);
+    WString exceptionName(ImagePPExceptions::HGFmzGCoordException().m_str, true/*isUtf8*/);
+    WPrintfString message(L"%ls - [%ls]", rawMessage.c_str(), exceptionName.c_str());
+    return message;
     }
-
 //-----------------------------------------------------------------------------
 // public
-// operator=
+// Return the exception synchro object type
 //-----------------------------------------------------------------------------
-HGFmzGCoordException& HGFmzGCoordException::operator=(const HGFmzGCoordException& pi_rObj)
-    {
-    if (this != &pi_rObj)
-        {
-        HFCException::operator=(pi_rObj);
-        COPY_EXCEPTION_INFO(m_pInfo, pi_rObj.m_pInfo, HGFmzGCoordExInfo)
-        }
-
-    return *this;
-    }
-
+const int32_t HGFmzGCoordException::GetStatusCode() const
+{
+    return m_StatusCode;
+}
 //-----------------------------------------------------------------------------
 // public
 // Return the message formatted with specific information on the exception
@@ -137,7 +109,7 @@ HGFmzGCoordException& HGFmzGCoordException::operator=(const HGFmzGCoordException
 WString HGFmzGCoordException::GetErrorText() const
     {
     WString errorStr;
-    GCSServices->_GetErrorMessage (errorStr, ((HGFmzGCoordExInfo*)m_pInfo)->m_StatusCode);
+    GCSServices->_GetErrorMessage (errorStr, m_StatusCode);
 
     return errorStr;
     }

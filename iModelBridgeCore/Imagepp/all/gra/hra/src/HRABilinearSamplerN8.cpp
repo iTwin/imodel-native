@@ -2,17 +2,16 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABilinearSamplerN8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRABilinearSamplerN8.h>
 
 #include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRASurface.h>
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
@@ -99,8 +98,7 @@ HRABilinearSamplerN8::~HRABilinearSamplerN8()
 
  @return const void* The current pixel.
 -----------------------------------------------------------------------------*/
-void* HRABilinearSamplerN8::GetPixel(double     pi_PosX,
-                                     double     pi_PosY) const
+void const* HRABilinearSamplerN8::GetPixel(double pi_PosX, double pi_PosY) const
     {
     HPRECONDITION(pi_PosX >= 0.0);
     HPRECONDITION(pi_PosY >= 0.0);
@@ -108,7 +106,7 @@ void* HRABilinearSamplerN8::GetPixel(double     pi_PosX,
     HPRECONDITION(pi_PosY <= (double)m_Height + 0.5);
 
     // Clear everything just in case.
-    memset((void*)m_TempData, 0, 4);
+    memset(m_TempData, 0, sizeof(m_TempData));
 
     Sample CurrentSample(pi_PosX, pi_PosY);
 
@@ -126,7 +124,7 @@ void* HRABilinearSamplerN8::GetPixel(double     pi_PosX,
     int     NextPixelOffset;
 
     pSrcFirstLine = ComputeAddress(XPosition, CurrentSample.GetFirstLine());
-    pSrcSecondLine = ComputeAddress(XPosition, min(CurrentSample.GetSecondLine(), m_Height-1));
+    pSrcSecondLine = ComputeAddress(XPosition, MIN(CurrentSample.GetSecondLine(), m_Height-1));
     HASSERT(CurrentSample.GetSecondLine() >= CurrentSample.GetFirstLine());
 
     if (CurrentSample.GetSecondColumn() > XPosition && XPosition < m_Width - 1)
@@ -139,7 +137,7 @@ void* HRABilinearSamplerN8::GetPixel(double     pi_PosX,
         ChannelResult = (Byte)(DyComplement * (DxComplement * (double) pSrcFirstLine[Channel] + Dx * (double) pSrcFirstLine[Channel + NextPixelOffset]) +
                                  Dy * (DxComplement * (double) pSrcSecondLine[Channel] + Dx * (double) pSrcSecondLine[Channel + NextPixelOffset]));
 
-        m_TempData[Channel] = (Byte) min( max(ChannelResult, 0.0), 255.0);
+        m_TempData[Channel] = (Byte) MIN( MAX(ChannelResult, 0.0), 255.0);
         }
 
     return m_TempData;
@@ -194,7 +192,7 @@ void HRABilinearSamplerN8::GetPixels(const double*  pi_pPositionsX,
         DyComplement = 1.0 - Dy;
 
         pSrcFirstLine = ComputeAddress(XPosition, CurrentSample.GetFirstLine());
-        pSrcSecondLine = ComputeAddress(XPosition, min(CurrentSample.GetSecondLine(), m_Height-1));
+        pSrcSecondLine = ComputeAddress(XPosition, MIN(CurrentSample.GetSecondLine(), m_Height-1));
         HASSERT(CurrentSample.GetSecondLine() >= CurrentSample.GetFirstLine());
 
         if (CurrentSample.GetSecondColumn() > XPosition && XPosition < m_Width - 1)
@@ -207,7 +205,7 @@ void HRABilinearSamplerN8::GetPixels(const double*  pi_pPositionsX,
             ChannelResult = (Byte)(DyComplement * (DxComplement * (double) pSrcFirstLine[Channel] + Dx * (double) pSrcFirstLine[Channel + NextPixelOffset]) +
                                      Dy * (DxComplement * (double) pSrcSecondLine[Channel] + Dx * (double) pSrcSecondLine[Channel + NextPixelOffset]));
 
-            *pOut++ = (Byte) min( max(ChannelResult, 0.0), 255.0);
+            *pOut++ = (Byte) MIN( MAX(ChannelResult, 0.0), 255.0);
             }
 
         ++pPosX;
@@ -246,7 +244,7 @@ void HRABilinearSamplerN8::GetPixels(double         pi_PositionX,
         uint32_t XPosition = CurrentSample.GetFirstColumn();
 
         Byte* pSrcFirstLine = ComputeAddress(XPosition, CurrentSample.GetFirstLine());
-        Byte* pSrcSecondLine = ComputeAddress(XPosition, min(CurrentSample.GetSecondLine(), m_Height-1));
+        Byte* pSrcSecondLine = ComputeAddress(XPosition, MIN(CurrentSample.GetSecondLine(), m_Height-1));
 
         HASSERT(CurrentSample.GetSecondLine() >= CurrentSample.GetFirstLine());
 
@@ -275,7 +273,7 @@ void HRABilinearSamplerN8::GetPixels(double         pi_PositionX,
                 ChannelResult = (Byte)(DyComplement * (DxComplement * (double) pSrcFirstLine[Channel] + Dx * (double) pSrcFirstLine[Channel + NextPixelOffset]) +
                                          Dy * (DxComplement * (double) pSrcSecondLine[Channel] + Dx * (double) pSrcSecondLine[Channel + NextPixelOffset]));
 
-                *pOut++ = (Byte) min( max(ChannelResult, 0.0), 255.0);
+                *pOut++ = (Byte) MIN( MAX(ChannelResult, 0.0), 255.0);
                 }
 
             CurrentSample.TranslateX(m_DeltaX);
@@ -363,8 +361,8 @@ Byte* HRABilinearSamplerN8::ComputeAddress(HUINTX  pi_PosX,
     HPRECONDITION(pi_PosX <= m_Width);
     HPRECONDITION(pi_PosY <= m_Height);
 
-    pi_PosX = min(pi_PosX, m_Width-1);
-    pi_PosY = min(pi_PosY, m_Height-1);
+    pi_PosX = MIN(pi_PosX, m_Width-1);
+    pi_PosY = MIN(pi_PosY, m_Height-1);
 
     HPRECONDITION(m_pPacket->GetBufferAddress() != 0);
 

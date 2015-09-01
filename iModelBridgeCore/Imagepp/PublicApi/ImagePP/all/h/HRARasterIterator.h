@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRARasterIterator.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,6 +18,7 @@
 #include "HVEShape.h"
 #include "HRARaster.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HNOVTABLEINIT HRARasterIterator
     {
 public:
@@ -62,6 +63,7 @@ private:
     // Pointer to iterated raster
     HFCPtr<HRARaster>       m_pRaster;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRARasterIterator.hpp"
 

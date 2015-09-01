@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphRLEFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphRleFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFIntergraphRleFile.h>
@@ -29,8 +29,8 @@
 #include <Imagepp/all/h/HGF2DAffine.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
 #include <Imagepp/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HFCException.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 
@@ -169,8 +169,7 @@ HRFIntergraphRleCreator::HRFIntergraphRleCreator()
 
 WString HRFIntergraphRleCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_RLE);  // Intergraph rle File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_RLE());  // Intergraph rle File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -221,20 +220,20 @@ bool HRFIntergraphRleCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the Rle File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
-    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    if (pFile != 0 && pFile->GetLastException() == 0)
         {
         // Check if the file was a valid Intergraph Rle...
         pFile->SeekToBegin();
-        if (pFile->Read((void*)&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+        if (pFile->Read(&HeaderTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
             goto WRAPUP;
 
         if (HeaderTypeCode == 0x0908)
             {
-            if (pFile->Read((void*)&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&WordToFollow, sizeof(unsigned short)) != sizeof(unsigned short))
                 goto WRAPUP;
 
-            if (pFile->Read((void*)&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+            if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
                 goto WRAPUP;
 
             if (DataTypeCode == 9) // && (pi_Offset || !IsMultiPage(*pFile, (WordToFollow + 2)/256)) )
@@ -248,7 +247,7 @@ bool HRFIntergraphRleCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                         HeaderLen = ((WordToFollow + 2) /256) * 512;
                         HeaderLen += 18;
                         pFile->SeekToPos(HeaderLen);
-                        if (pFile->Read((void*)&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
+                        if (pFile->Read(&DataTypeCode, sizeof(unsigned short)) != sizeof(unsigned short))
                             goto WRAPUP;
 
                         if ((DataTypeCode == 9))
@@ -297,7 +296,7 @@ void HRFIntergraphRleFile::CreateDescriptors()
         if ((m_IntergraphResDescriptors[0]->pOverviewEntry == 0) &&
             (GetFullResolutionSize() == 0))
             {
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+            throw HFCCorruptedFileException(GetURL()->GetURL());
             }
 
         // TranfoModel

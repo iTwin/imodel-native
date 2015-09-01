@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCHTTPConnection.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class : HFCHTTPConnection
 //-----------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 //
@@ -57,3 +57,4 @@ inline const HFCPtr<HFCURL>& HFCHTTPConnection::GetURL()
     {
     return (HFCPtr<HFCURL>&)m_pURL;
     }
+END_IMAGEPP_NAMESPACE

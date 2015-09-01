@@ -8,8 +8,8 @@
 // Methods for class HGF2DComplexShape
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 
 #include <Imagepp/all/h/HGF2DComplexShape.h>
@@ -516,6 +516,12 @@ HGF2DLiteExtent HGF2DComplexShape::GetExtent() const
     // For each shape in complex shape
     HGF2DShape::ShapeList::const_iterator  MyIterator = m_ShapeList.begin();
 
+    if (MyIterator != m_ShapeList.end())
+        {
+        MyExtent = (*MyIterator)->GetExtent();
+        ++MyIterator;
+        }
+
     // Loop till all shapes have been processed
     while (MyIterator != m_ShapeList.end())
         {
@@ -935,7 +941,7 @@ void HGF2DComplexShape::PrintState(ostream& po_rOutput) const
     HDUMP0("Object is a HGF2DComplexShape\n");
 
     po_rOutput << "The complex shape contains " << m_ShapeList.size() << " shapes" << endl;
-    HDUMP1("The complex shape contains %lld shapes\n", (uint64_t)m_ShapeList.size());
+    HDUMP1("The complex shape contains %" PRIu64 " shapes\n", (uint64_t)m_ShapeList.size());
 
     po_rOutput << "Begin component listing" << endl;
     HDUMP0("Begin component listing\n");
@@ -1093,3 +1099,87 @@ void HGF2DComplexShape::Rasterize(HGFScanLines& pio_rScanlines) const
             }
         }
     }
+
+
+//-----------------------------------------------------------------------------
+// @bsimethod                                            Alain.Robert 2014/06
+//-----------------------------------------------------------------------------
+HFCPtr<HGF2DShape> HGF2DComplexShape::AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const
+    {
+    HFCPtr<HGF2DShape>    pResultShape;
+
+    // We verify that the complex shape is not empty
+    if (m_ShapeList.size() > 0)
+        {
+        // We check that the coordsys is not allready the good one
+        if (pi_rModel.IsIdentity())
+            {
+            pResultShape = static_cast<HGF2DShape*>(Clone());
+            }
+        else
+            {
+            // The coord sys are different
+            // Create an iterator to the list of shapes
+            HGF2DShape::ShapeList::const_iterator MyIterator = m_ShapeList.begin();
+
+            // Create the initial shape
+            pResultShape = (*MyIterator)->AllocTransformDirect(pi_rModel);
+
+            // Advance to next shape
+            ++MyIterator;
+
+            // For all the remaining shapes (if any)
+            while (MyIterator != m_ShapeList.end())
+                {
+                // Save pointer to current result shape
+                HFCPtr<HGF2DShape> pCurrentResult = pResultShape;
+
+                // Transform current shape
+                HFCPtr<HGF2DShape> pCurrentShape = (*MyIterator)->AllocTransformDirect(pi_rModel);
+
+                // Obtain new result shape by unification of next shape
+                pResultShape = pCurrentResult->UnifyShape(*pCurrentShape);
+
+                // Go on to the next shape
+                ++MyIterator;
+                }
+            }
+        }
+    else
+        {
+        // Since the complex shape is empty, we return an empty shape
+        pResultShape = new HGF2DVoidShape();
+
+        // &&AR Check if stroke tolerance is still pertinent
+        HFCPtr<HGFLiteTolerance> pTol (GetStrokeTolerance());
+
+        if (pTol != NULL)
+            {
+            pResultShape->SetStrokeTolerance(pTol);
+            }
+        }
+
+    return (pResultShape);
+    }
+
+//-----------------------------------------------------------------------------
+// @bsimethod                                            Alain.Robert 2014/06
+//-----------------------------------------------------------------------------
+HGF2DShape::SpatialPosition HGF2DComplexShape::CalculateSpatialPositionOf(const HGF2DVector& pi_rVector) const
+    {
+    if (m_ShapeList.size() == 0)
+        return HGF2DShape::S_OUT;
+
+    return HGF2DShape::CalculateSpatialPositionOf(pi_rVector);
+    }
+
+//-----------------------------------------------------------------------------
+// @bsimethod                                            Alain.Robert 2014/06
+//-----------------------------------------------------------------------------
+HGF2DShape::SpatialPosition HGF2DComplexShape::CalculateSpatialPositionOf(const HGF2DPosition& pi_rPosition) const
+{
+    if (m_ShapeList.size() == 0)
+        return HGF2DShape::S_OUT;
+
+    return HGF2DShape::CalculateSpatialPositionOf(pi_rPosition);
+}

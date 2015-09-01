@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSParserScope.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HPSParserScope
 //---------------------------------------------------------------------------
 
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include "HPSParserScope.h"
 #include <Imagepp/all/h/HPAToken.h>
 #include <Imagepp/all/h/HPSException.h>

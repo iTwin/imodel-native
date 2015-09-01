@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMAttributeSet.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // HPMAttributeSet
@@ -13,35 +13,36 @@
 #include "HPMAttribute.h"
 #include "HPMPersistentObject.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HPMAttributeSet : public HPMPersistentObject,
     public HPMShareableObject<HPMAttributeSet>
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLu, 1611)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT, HPMAttributeSetId)
 
 public:
 
     // Primary methods.
 
-    _HDLLu HPMAttributeSet();
-    _HDLLu HPMAttributeSet(const HPMAttributeSet& pi_rObj);
-    _HDLLu HPMAttributeSet& operator=(const HPMAttributeSet& pi_rObj);
-    _HDLLu virtual ~HPMAttributeSet() {}
+    IMAGEPP_EXPORT HPMAttributeSet();
+    IMAGEPP_EXPORT HPMAttributeSet(const HPMAttributeSet& pi_rObj);
+    IMAGEPP_EXPORT HPMAttributeSet& operator=(const HPMAttributeSet& pi_rObj);
+    IMAGEPP_EXPORT virtual ~HPMAttributeSet() {}
     
     template <typename AttributeT> AttributeT const*        FindAttributeCP () const;
     template <typename AttributeT> AttributeT*              FindAttributeP  ();  
     
-    _HDLLu const HFCPtr<HPMGenericAttribute>                GetAttribute    (const HPMAttributesID& pi_rID) const;     
+    IMAGEPP_EXPORT const HFCPtr<HPMGenericAttribute>                GetAttribute    (const HPMAttributesID& pi_rID) const;     
        
-    _HDLLu bool                                             HasAttribute    (const HPMAttributesID& pi_rID) const;
+    IMAGEPP_EXPORT bool                                             HasAttribute    (const HPMAttributesID& pi_rID) const;
     template <typename AttributeT> bool                     HasAttribute    () const;
 
-    _HDLLu void                                             Set             (const HFCPtr<HPMGenericAttribute>& pi_rpAttribute);
+    IMAGEPP_EXPORT void                                             Set             (const HFCPtr<HPMGenericAttribute>& pi_rpAttribute);
 
-    _HDLLu void                                             Remove          (const HPMGenericAttribute& pi_rAttribute);
+    IMAGEPP_EXPORT void                                             Remove          (const HPMGenericAttribute& pi_rAttribute);
     template <typename AttributeT>  void                    Remove          ();
    
-    _HDLLu void                                             Clear           ();
+    IMAGEPP_EXPORT void                                             Clear           ();
 
     size_t                                                  size            () const;
 
@@ -110,6 +111,7 @@ private:
 // Typedef for the set's iterator class
 typedef HPMAttributeSet::HPMASiterator HPMAttributeSetIterator;
 
+END_IMAGEPP_NAMESPACE
 
 #include "HPMAttributeSet.hpp"
 

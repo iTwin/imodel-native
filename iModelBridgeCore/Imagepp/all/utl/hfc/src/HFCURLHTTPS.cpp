@@ -2,20 +2,19 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLHTTPS.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLHTTPS
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCURLHTTPS.h>
 
 //:Ignore
 
 // This is the creator that registers itself in the scheme list.
-
 struct URLHTTPSCreator : public HFCURL::Creator
     {
     URLHTTPSCreator()

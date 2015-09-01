@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecHMRPackBits.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecHMRPackBits
@@ -13,22 +13,24 @@
 
 #include "HCDCodecPackBits.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecHMRPackBits : public HCDCodecPackBits
     {
-    HDECLARE_CLASS_ID(1177, HCDCodecPackBits)
+    HDECLARE_CLASS_ID(HCDCodecId_PackBitsHMR, HCDCodecPackBits)
 
 public:
 
-    _HDLLu                 HCDCodecHMRPackBits();
+    IMAGEPP_EXPORT                 HCDCodecHMRPackBits();
 
 
-    _HDLLu                 HCDCodecHMRPackBits(   uint32_t pi_Width,
+    IMAGEPP_EXPORT                 HCDCodecHMRPackBits(   uint32_t pi_Width,
                                                   uint32_t pi_Height,
                                                   uint32_t pi_BitsPerPixel);
 
-    _HDLLu                 HCDCodecHMRPackBits(const HCDCodecHMRPackBits& pi_rObj);
+    IMAGEPP_EXPORT                 HCDCodecHMRPackBits(const HCDCodecHMRPackBits& pi_rObj);
 
-    _HDLLu                 ~HCDCodecHMRPackBits();
+    IMAGEPP_EXPORT                 ~HCDCodecHMRPackBits();
 
     size_t          GetSubsetMaxCompressedSize() const;
 
@@ -62,3 +64,4 @@ private:
                                  size_t pi_OutSize);
     };
 
+END_IMAGEPP_NAMESPACE

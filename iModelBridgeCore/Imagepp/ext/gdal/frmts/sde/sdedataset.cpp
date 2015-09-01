@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdedataset.cpp 17926 2009-10-30 12:59:56Z hobu $
+ * $Id: sdedataset.cpp 22255 2011-04-29 19:03:26Z warmerdam $
  *
  * Project:  ESRI ArcSDE Raster reader
  * Purpose:  Dataset implementaion for ESRI ArcSDE Rasters
@@ -78,7 +78,7 @@ CPLErr SDEDataset::ComputeRasterInfo() {
         return CE_Fatal;
     }
     
-    long nRasterColumnId = 0;
+    LONG nRasterColumnId = 0;
 
     nSDEErr = SE_rascolinfo_get_id( hRasterColumn, 
                                     &nRasterColumnId);
@@ -97,30 +97,35 @@ CPLErr SDEDataset::ComputeRasterInfo() {
         IssueSDEError( nSDEErr, "SE_rascolinfo_get_id" );
         return CE_Fatal;
     }
+    
+    LONG nBandsRet;
     nSDEErr = SE_raster_get_bands(  hConnection, 
                                     raster, 
                                     &paohSDERasterBands, 
-                                    (long*)&nBands);
+                                    &nBandsRet);
     if( nSDEErr != SE_SUCCESS )
     {
         IssueSDEError( nSDEErr, "SE_raster_get_bands" );
         return CE_Fatal;
     }
+
+    nBands = nBandsRet;
     
     SE_RASBANDINFO band;
     
     // grab our other stuff from the first band and hope for the best
     band = paohSDERasterBands[0];
     
-    
-    nSDEErr = SE_rasbandinfo_get_band_size( band, 
-                                            (long*)&nRasterXSize, 
-                                            (long*)&nRasterYSize);
+    LONG nXSRet, nYSRet;
+    nSDEErr = SE_rasbandinfo_get_band_size( band, &nXSRet, &nYSRet );
     if( nSDEErr != SE_SUCCESS )
     {
         IssueSDEError( nSDEErr, "SE_rasbandinfo_get_band_size" );
         return CE_Fatal;
     }
+
+    nRasterXSize = nXSRet;
+    nRasterYSize = nYSRet;
     
     SE_ENVELOPE extent;
     nSDEErr = SE_rasbandinfo_get_extent(band, &extent);

@@ -2,17 +2,16 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAAverageSamplerN8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRAAverageSamplerN8.h>
 
 #include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
-#include <Imagepp/all/h/HRASurface.h>
 #include <Imagepp/all/h/HRAAveragingGrid.h>
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
@@ -108,7 +107,7 @@ HRAAverageSamplerN8::~HRAAverageSamplerN8()
     @return const void* The current pixel.
     ----------------------------------------------------------------------------
 */
-void* HRAAverageSamplerN8::GetPixel(double     pi_PosX,
+void const* HRAAverageSamplerN8::GetPixel(double     pi_PosX,
                                     double     pi_PosY) const
     {
     HPRECONDITION(pi_PosX >= 0.0);
@@ -117,7 +116,7 @@ void* HRAAverageSamplerN8::GetPixel(double     pi_PosX,
     HPRECONDITION(pi_PosY < (double)m_Height);
 
     // Clear everything just in case.
-    memset((void*)m_TempData, 0, 4);
+    memset(m_TempData, 0, sizeof(m_TempData));
 
     double HalfScaleIncrementX = (GetSampleDimension().GetXMax() - GetSampleDimension().GetXMin()) * 0.5;
     double HalfScaleIncrementY = (GetSampleDimension().GetYMax() - GetSampleDimension().GetYMin()) * 0.5;
@@ -154,16 +153,13 @@ void* HRAAverageSamplerN8::GetPixel(double     pi_PosX,
                 pTotalChannel[Byte] += pSrcData[Column*m_BytesPerPixel+Byte];
             }
         }
-
-    Byte* pOut = (Byte*) &m_TempData;
-
     // Set result
     for (size_t aByte = 0 ; aByte < m_BytesPerPixel ; ++aByte)
-        *pOut++ = (Byte) (pTotalChannel[aByte] / NumberOfPixels);
+        m_TempData[aByte] = (Byte) (pTotalChannel[aByte] / NumberOfPixels);
 
     delete pTotalChannel;
 
-    return (Byte*) &m_TempData;
+    return m_TempData;
     }
 
 
@@ -273,7 +269,7 @@ void HRAAverageSamplerN8::GetPixels(double         pi_PositionX,
         // Adjust X,Y positions by 1 pixel, because stretch by two will read 2x2 pixels,
         // and the received coordinate represents the sample center.
 
-        StretchByTwo((uint32_t)max(pi_PositionX - 1.0, 0.0), (uint32_t)max(pi_PositionY - 1.0, 0.0), pi_PixelCount, (Byte*) po_pBuffer);
+        StretchByTwo((uint32_t)MAX(pi_PositionX - 1.0, 0.0), (uint32_t)MAX(pi_PositionY - 1.0, 0.0), pi_PixelCount, (Byte*) po_pBuffer);
         }
     else if (m_StretchByLine)
         {
@@ -598,8 +594,8 @@ Byte* HRAAverageSamplerN8::ComputeAddress(HUINTX  pi_PosX,
     HPRECONDITION(pi_PosX <= m_Width);
     HPRECONDITION(pi_PosY <= m_Height);
 
-    pi_PosX = min(pi_PosX, m_Width-1);
-    pi_PosY = min(pi_PosY, m_Height-1);
+    pi_PosX = MIN(pi_PosX, m_Width-1);
+    pi_PosY = MIN(pi_PosY, m_Height-1);
 
     HPRECONDITION(m_pPacket->GetBufferAddress() != 0);
 

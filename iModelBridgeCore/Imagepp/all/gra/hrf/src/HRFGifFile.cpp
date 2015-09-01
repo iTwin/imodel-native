@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGifFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFGifFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCMath.h>
 #include <Imagepp/all/h/HFCException.h>
@@ -31,7 +31,6 @@
 #include <Imagepp/all/h/HCDCodecHMRGIF.h>
 #include <Imagepp/all/h/HCDPacket.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //-----------------------------------------------------------------------------
@@ -143,8 +142,7 @@ HRFGifCreator::HRFGifCreator()
 //-----------------------------------------------------------------------------
 WString HRFGifCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_GIF); // Gif File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_GIF()); // Gif File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -213,8 +211,8 @@ bool HRFGifCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     bool   EndOfGifFile = false;
 
     // Open the Gif File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
     // Count of the number of table lines displayed.
@@ -236,7 +234,7 @@ bool HRFGifCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         ImageCount = 0;
         while(!EndOfGifFile)
             {
-            if (pFile->Read((void*)&Identifier, 1) != 1)
+            if (pFile->Read(&Identifier, 1) != 1)
                 goto WRAPUP;
 
             switch (Identifier)
@@ -253,8 +251,8 @@ bool HRFGifCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
                     // Skip past the encoded image data.
                     Byte LZWMinimumCodeSize;
-                    pFile->Read((void*)&LZWMinimumCodeSize, sizeof(Byte));
-                    while ((pFile->Read((void*)&DataSize, 1) == 1) && (DataSize != 0))
+                    pFile->Read(&LZWMinimumCodeSize, sizeof(Byte));
+                    while ((pFile->Read(&DataSize, 1) == 1) && (DataSize != 0))
                         pFile->SeekToPos(pFile->GetCurrentPos() + (long) DataSize);
 
                     break;
@@ -262,7 +260,7 @@ bool HRFGifCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                     // Extension Block.
                 case 0x21:
                     Byte Code;
-                    if (pFile->Read((void*)&Code, 1) != 1)
+                    if (pFile->Read(&Code, 1) != 1)
                         goto WRAPUP;
 
                     switch (Code)
@@ -423,7 +421,7 @@ bool HRFGifFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     if ((CountPages() > 0) &&
         (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess))
         {
-        throw HRFException(HRF_ANIMATED_GIF_READ_ONLY_EXCEPTION, GetURL()->GetURL());
+        throw HRFAnimatedGifReadOnlyException(GetURL()->GetURL());
         }
 
     // Add the page descriptor to the list
@@ -541,9 +539,7 @@ bool HRFGifFile::Open()
         {
         // Open the actual png file specified in the parameters.  The library
         // uses stdio HFCBinStream*, so open the file and satisfy the library
-        m_pGifFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(m_pGifFile, GetURL()->GetURL());
+        m_pGifFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -561,7 +557,7 @@ bool HRFGifFile::Open()
         if ((m_ImageCount > 1) &&
             (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess))
             {
-            throw HRFException(HRF_ANIMATED_GIF_READ_ONLY_EXCEPTION, GetURL()->GetURL());
+            throw HRFAnimatedGifReadOnlyException(GetURL()->GetURL());
             }
 
         m_IsOpen = true;
@@ -616,7 +612,7 @@ void HRFGifFile::CreateDescriptors ()
         pPixelTypeCapability = static_cast<HRFPixelTypeCapability*>(GetCapabilities()->
                                GetCapabilityOfType(((HFCPtr<HRFCapability>)pPixelTypeCapability)).GetPtr());
         if (pPixelTypeCapability == 0)
-            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
 
 
         // Create Resolution Descriptor
@@ -720,7 +716,7 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
             gifApp.Label           = 0xff;
             gifApp.BlockSize       = 11;
 
-            unsigned short IdenLength = (unsigned short)min(Software.size(), 8);
+            unsigned short IdenLength = (unsigned short)MIN(Software.size(), 8);
 
             for (unsigned short i = 0; i < IdenLength; i++)
                 {
@@ -729,7 +725,7 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
 
             if (IdenLength < 8)
                 {
-                memset((void*)&(gifApp.Identifier[IdenLength]), 0, 8 - IdenLength);
+                memset(&(gifApp.Identifier[IdenLength]), 0, 8 - IdenLength);
                 }
 
             if (ApplicationCode != "")
@@ -765,7 +761,7 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
         if(m_RasterIsDirty)
             {
             Byte Code = 0x3b;
-            if (m_pGifFile->Write((void*)&Code, 1) != 1)
+            if (m_pGifFile->Write(&Code, 1) != 1)
                 goto WRAPUP;
             }
 
@@ -773,7 +769,7 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
         if (Background != 0)
             {
             m_pGifFile->SeekToPos(0x0b);
-            if (m_pGifFile->Write((void*)&Background, sizeof(Background)) != sizeof(Background))
+            if (m_pGifFile->Write(&Background, sizeof(Background)) != sizeof(Background))
                 goto WRAPUP;
             }
 
@@ -849,9 +845,7 @@ WRAPUP:
 bool HRFGifFile::Create()
     {
     // Open the file.
-    m_pGifFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pGifFile, GetURL()->GetURL());
+    m_pGifFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     // Create the sister file for file sharing control if necessary.
     SharingControlCreate();
@@ -1035,7 +1029,7 @@ bool HRFGifFile::LookUpBlocks()
 
     while(!EndOfGifFile)
         {
-        if (m_pGifFile->Read((void*)&Identifier, 1) != 1)
+        if (m_pGifFile->Read(&Identifier, 1) != 1)
             goto WRAPUP;
 
         switch (Identifier)
@@ -1062,14 +1056,14 @@ bool HRFGifFile::LookUpBlocks()
 
                 // Adding the offset to the list
                 Byte DecompressMinCodeSize;
-                if (m_pGifFile->Read((void*)&DecompressMinCodeSize, 1) != 1)
+                if (m_pGifFile->Read(&DecompressMinCodeSize, 1) != 1)
                     goto WRAPUP;
 
                 m_ListPageDataOffset.push_back((int32_t)m_pGifFile->GetCurrentPos());
                 m_ListPageDecompressMinCodeSize.push_back((short)DecompressMinCodeSize);
 
                 BlockCount = 0;
-                while ((m_pGifFile->Read((void*)&DataSize, 1) == 1) && (DataSize != 0))
+                while ((m_pGifFile->Read(&DataSize, 1) == 1) && (DataSize != 0))
                     {
                     BlockCount++;
                     m_pGifFile->SeekToPos(m_pGifFile->GetCurrentPos() + (long) DataSize);
@@ -1129,7 +1123,7 @@ bool HRFGifFile::LookUpExtensionBlocks()
     Byte  Identifier = 0x21;
     Byte  Label;
 
-    if (m_pGifFile->Read((void*)&Label, 1) != 1)
+    if (m_pGifFile->Read(&Label, 1) != 1)
         goto WRAPUP;
 
     switch (Label)
@@ -1259,13 +1253,13 @@ bool HRFGifFile::ReadGifHeader(GifHeader* pio_pGifHeader, HFCBinStream* pi_pGifF
 
     bool Status = false;
 
-    if ((pi_pGifFile->Read((void*)&pio_pGifHeader->Signature,    sizeof(Byte) * 3)                  != (sizeof(Byte) * 3))                  ||
-        (pi_pGifFile->Read((void*)&pio_pGifHeader->Version,      sizeof(Byte) * 3)                  != (sizeof(Byte) * 3))                  ||
-        (pi_pGifFile->Read((void*)&pio_pGifHeader->ScreenWidth,  sizeof pio_pGifHeader->ScreenWidth)  != (sizeof pio_pGifHeader->ScreenWidth))  ||
-        (pi_pGifFile->Read((void*)&pio_pGifHeader->ScreenHeight, sizeof pio_pGifHeader->ScreenHeight) != (sizeof pio_pGifHeader->ScreenHeight)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifHeader->PackedField,  sizeof pio_pGifHeader->PackedField)  != (sizeof pio_pGifHeader->PackedField))  ||
-        (pi_pGifFile->Read((void*)&pio_pGifHeader->ColorIndex,   sizeof pio_pGifHeader->ColorIndex)   != (sizeof pio_pGifHeader->ColorIndex))   ||
-        (pi_pGifFile->Read((void*)&pio_pGifHeader->AspectRatio,  sizeof pio_pGifHeader->AspectRatio)  != (sizeof pio_pGifHeader->AspectRatio)))
+    if ((pi_pGifFile->Read(&pio_pGifHeader->Signature,    sizeof(Byte) * 3)                  != (sizeof(Byte) * 3))                  ||
+        (pi_pGifFile->Read(&pio_pGifHeader->Version,      sizeof(Byte) * 3)                  != (sizeof(Byte) * 3))                  ||
+        (pi_pGifFile->Read(&pio_pGifHeader->ScreenWidth,  sizeof pio_pGifHeader->ScreenWidth)  != (sizeof pio_pGifHeader->ScreenWidth))  ||
+        (pi_pGifFile->Read(&pio_pGifHeader->ScreenHeight, sizeof pio_pGifHeader->ScreenHeight) != (sizeof pio_pGifHeader->ScreenHeight)) ||
+        (pi_pGifFile->Read(&pio_pGifHeader->PackedField,  sizeof pio_pGifHeader->PackedField)  != (sizeof pio_pGifHeader->PackedField))  ||
+        (pi_pGifFile->Read(&pio_pGifHeader->ColorIndex,   sizeof pio_pGifHeader->ColorIndex)   != (sizeof pio_pGifHeader->ColorIndex))   ||
+        (pi_pGifFile->Read(&pio_pGifHeader->AspectRatio,  sizeof pio_pGifHeader->AspectRatio)  != (sizeof pio_pGifHeader->AspectRatio)))
         goto WRAPUP;
 
     // Check if a Global Color Table is present.
@@ -1302,11 +1296,11 @@ bool HRFGifFile::ReadGifImageDesc(GifImageDescriptor* pio_pGifImageDesc, HFCBinS
 
     bool Status = false;
 
-    if ((pi_pGifFile->Read((void*)&pio_pGifImageDesc->ImageLeft,   sizeof pio_pGifImageDesc->ImageLeft)   != (sizeof pio_pGifImageDesc->ImageLeft)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifImageDesc->ImageTop,    sizeof pio_pGifImageDesc->ImageTop)    != (sizeof pio_pGifImageDesc->ImageTop)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifImageDesc->ImageWidth,  sizeof pio_pGifImageDesc->ImageWidth)  != (sizeof pio_pGifImageDesc->ImageWidth)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifImageDesc->ImageHeight, sizeof pio_pGifImageDesc->ImageHeight) != (sizeof pio_pGifImageDesc->ImageHeight)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifImageDesc->PackedField, sizeof pio_pGifImageDesc->PackedField) != (sizeof pio_pGifImageDesc->PackedField)))
+    if ((pi_pGifFile->Read(&pio_pGifImageDesc->ImageLeft,   sizeof pio_pGifImageDesc->ImageLeft)   != (sizeof pio_pGifImageDesc->ImageLeft)) ||
+        (pi_pGifFile->Read(&pio_pGifImageDesc->ImageTop,    sizeof pio_pGifImageDesc->ImageTop)    != (sizeof pio_pGifImageDesc->ImageTop)) ||
+        (pi_pGifFile->Read(&pio_pGifImageDesc->ImageWidth,  sizeof pio_pGifImageDesc->ImageWidth)  != (sizeof pio_pGifImageDesc->ImageWidth)) ||
+        (pi_pGifFile->Read(&pio_pGifImageDesc->ImageHeight, sizeof pio_pGifImageDesc->ImageHeight) != (sizeof pio_pGifImageDesc->ImageHeight)) ||
+        (pi_pGifFile->Read(&pio_pGifImageDesc->PackedField, sizeof pio_pGifImageDesc->PackedField) != (sizeof pio_pGifImageDesc->PackedField)))
         goto WRAPUP;
 
     // Check if a Local Color Table is present.
@@ -1341,11 +1335,11 @@ bool HRFGifFile::ReadGifGraphicControl(GifGraphicControl* pio_pGifGraphicControl
 
     bool Status = true;
 
-    if ((pi_pGifFile->Read((void*)&pio_pGifGraphicControl->BlockSize,   sizeof pio_pGifGraphicControl->BlockSize)   != (sizeof pio_pGifGraphicControl->BlockSize)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifGraphicControl->PackedField, sizeof pio_pGifGraphicControl->PackedField) != (sizeof pio_pGifGraphicControl->PackedField)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifGraphicControl->DelayTime,   sizeof pio_pGifGraphicControl->DelayTime)   != (sizeof pio_pGifGraphicControl->DelayTime)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifGraphicControl->ColorIndex,  sizeof pio_pGifGraphicControl->ColorIndex)  != (sizeof pio_pGifGraphicControl->ColorIndex)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifGraphicControl->Terminator,  sizeof pio_pGifGraphicControl->Terminator)  != (sizeof pio_pGifGraphicControl->Terminator)))
+    if ((pi_pGifFile->Read(&pio_pGifGraphicControl->BlockSize,   sizeof pio_pGifGraphicControl->BlockSize)   != (sizeof pio_pGifGraphicControl->BlockSize)) ||
+        (pi_pGifFile->Read(&pio_pGifGraphicControl->PackedField, sizeof pio_pGifGraphicControl->PackedField) != (sizeof pio_pGifGraphicControl->PackedField)) ||
+        (pi_pGifFile->Read(&pio_pGifGraphicControl->DelayTime,   sizeof pio_pGifGraphicControl->DelayTime)   != (sizeof pio_pGifGraphicControl->DelayTime)) ||
+        (pi_pGifFile->Read(&pio_pGifGraphicControl->ColorIndex,  sizeof pio_pGifGraphicControl->ColorIndex)  != (sizeof pio_pGifGraphicControl->ColorIndex)) ||
+        (pi_pGifFile->Read(&pio_pGifGraphicControl->Terminator,  sizeof pio_pGifGraphicControl->Terminator)  != (sizeof pio_pGifGraphicControl->Terminator)))
         Status = false;
 
     return Status;
@@ -1365,15 +1359,15 @@ bool HRFGifFile::ReadGifPlainText(GifPlainText* pio_pGifPlainText, HFCBinStream*
 
     bool Status = false;
 
-    if ((pi_pGifFile->Read((void*)&pio_pGifPlainText->BlockSize,       sizeof pio_pGifPlainText->BlockSize)        != (sizeof pio_pGifPlainText->BlockSize)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifPlainText->TextGridLeft,    sizeof pio_pGifPlainText->TextGridLeft)     != (sizeof pio_pGifPlainText->TextGridLeft)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifPlainText->TextGridTop,     sizeof pio_pGifPlainText->TextGridTop)      != (sizeof pio_pGifPlainText->TextGridTop)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifPlainText->TextGridWidth,   sizeof pio_pGifPlainText->TextGridWidth)    != (sizeof pio_pGifPlainText->TextGridWidth)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifPlainText->TextGridHeight,  sizeof pio_pGifPlainText->TextGridHeight)   != (sizeof pio_pGifPlainText->TextGridHeight)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifPlainText->CellWidth,       sizeof pio_pGifPlainText->CellWidth)        != (sizeof pio_pGifPlainText->CellWidth)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifPlainText->CellHeight,      sizeof pio_pGifPlainText->CellHeight)       != (sizeof pio_pGifPlainText->CellHeight)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifPlainText->TextFgColorIndex,sizeof pio_pGifPlainText->TextFgColorIndex) != (sizeof pio_pGifPlainText->TextFgColorIndex)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifPlainText->TextBgColorIndex,sizeof pio_pGifPlainText->TextBgColorIndex) != (sizeof pio_pGifPlainText->TextBgColorIndex)))
+    if ((pi_pGifFile->Read(&pio_pGifPlainText->BlockSize,       sizeof pio_pGifPlainText->BlockSize)        != (sizeof pio_pGifPlainText->BlockSize)) ||
+        (pi_pGifFile->Read(&pio_pGifPlainText->TextGridLeft,    sizeof pio_pGifPlainText->TextGridLeft)     != (sizeof pio_pGifPlainText->TextGridLeft)) ||
+        (pi_pGifFile->Read(&pio_pGifPlainText->TextGridTop,     sizeof pio_pGifPlainText->TextGridTop)      != (sizeof pio_pGifPlainText->TextGridTop)) ||
+        (pi_pGifFile->Read(&pio_pGifPlainText->TextGridWidth,   sizeof pio_pGifPlainText->TextGridWidth)    != (sizeof pio_pGifPlainText->TextGridWidth)) ||
+        (pi_pGifFile->Read(&pio_pGifPlainText->TextGridHeight,  sizeof pio_pGifPlainText->TextGridHeight)   != (sizeof pio_pGifPlainText->TextGridHeight)) ||
+        (pi_pGifFile->Read(&pio_pGifPlainText->CellWidth,       sizeof pio_pGifPlainText->CellWidth)        != (sizeof pio_pGifPlainText->CellWidth)) ||
+        (pi_pGifFile->Read(&pio_pGifPlainText->CellHeight,      sizeof pio_pGifPlainText->CellHeight)       != (sizeof pio_pGifPlainText->CellHeight)) ||
+        (pi_pGifFile->Read(&pio_pGifPlainText->TextFgColorIndex,sizeof pio_pGifPlainText->TextFgColorIndex) != (sizeof pio_pGifPlainText->TextFgColorIndex)) ||
+        (pi_pGifFile->Read(&pio_pGifPlainText->TextBgColorIndex,sizeof pio_pGifPlainText->TextBgColorIndex) != (sizeof pio_pGifPlainText->TextBgColorIndex)))
         goto WRAPUP;
 
     // Read in the Plain Text data sub-blocks.
@@ -1402,9 +1396,9 @@ bool HRFGifFile::ReadGifApplication(GifApplication* pio_pGifApplication, HFCBinS
 
     bool Status = false;
 
-    if ((pi_pGifFile->Read((void*)&pio_pGifApplication->BlockSize,   sizeof(pio_pGifApplication->BlockSize)) != (sizeof(pio_pGifApplication->BlockSize))) ||
-        (pi_pGifFile->Read((void*)&pio_pGifApplication->Identifier,  sizeof(Byte) * 8) != (sizeof(Byte) * 8)) ||
-        (pi_pGifFile->Read((void*)&pio_pGifApplication->AuthentCode, sizeof(Byte) * 3) != (sizeof(Byte) * 3)))
+    if ((pi_pGifFile->Read(&pio_pGifApplication->BlockSize,   sizeof(pio_pGifApplication->BlockSize)) != (sizeof(pio_pGifApplication->BlockSize))) ||
+        (pi_pGifFile->Read(&pio_pGifApplication->Identifier,  sizeof(Byte) * 8) != (sizeof(Byte) * 8)) ||
+        (pi_pGifFile->Read(&pio_pGifApplication->AuthentCode, sizeof(Byte) * 3) != (sizeof(Byte) * 3)))
         goto WRAPUP;
 
     // Read in the Application data sub-blocks.
@@ -1513,13 +1507,13 @@ bool HRFGifFile::WriteGifHeader(GifHeader* pi_pGifHeader, HFCBinStream* pio_pGif
     // Number of entires in the Global Color Table.
     unsigned short tableSize;
 
-    if ((pio_pGifFile->Write((void*)&pi_pGifHeader->Signature,     sizeof(Byte) * 3)                  != (sizeof(Byte) * 3)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifHeader->Version,       sizeof(Byte) * 3)                  != (sizeof(Byte) * 3)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifHeader->ScreenWidth,   sizeof(pi_pGifHeader->ScreenWidth))  != (sizeof(pi_pGifHeader->ScreenWidth))) ||
-        (pio_pGifFile->Write((void*)&pi_pGifHeader->ScreenHeight,  sizeof(pi_pGifHeader->ScreenHeight)) != (sizeof(pi_pGifHeader->ScreenHeight))) ||
-        (pio_pGifFile->Write((void*)&pi_pGifHeader->PackedField,   sizeof(pi_pGifHeader->PackedField))  != (sizeof(pi_pGifHeader->PackedField))) ||
-        (pio_pGifFile->Write((void*)&pi_pGifHeader->ColorIndex,    sizeof(pi_pGifHeader->ColorIndex))   != (sizeof(pi_pGifHeader->ColorIndex))) ||
-        (pio_pGifFile->Write((void*)&pi_pGifHeader->AspectRatio,   sizeof(pi_pGifHeader->AspectRatio))  != (sizeof(pi_pGifHeader->AspectRatio))))
+    if ((pio_pGifFile->Write(&pi_pGifHeader->Signature,     sizeof(Byte) * 3)                  != (sizeof(Byte) * 3)) ||
+        (pio_pGifFile->Write(&pi_pGifHeader->Version,       sizeof(Byte) * 3)                  != (sizeof(Byte) * 3)) ||
+        (pio_pGifFile->Write(&pi_pGifHeader->ScreenWidth,   sizeof(pi_pGifHeader->ScreenWidth))  != (sizeof(pi_pGifHeader->ScreenWidth))) ||
+        (pio_pGifFile->Write(&pi_pGifHeader->ScreenHeight,  sizeof(pi_pGifHeader->ScreenHeight)) != (sizeof(pi_pGifHeader->ScreenHeight))) ||
+        (pio_pGifFile->Write(&pi_pGifHeader->PackedField,   sizeof(pi_pGifHeader->PackedField))  != (sizeof(pi_pGifHeader->PackedField))) ||
+        (pio_pGifFile->Write(&pi_pGifHeader->ColorIndex,    sizeof(pi_pGifHeader->ColorIndex))   != (sizeof(pi_pGifHeader->ColorIndex))) ||
+        (pio_pGifFile->Write(&pi_pGifHeader->AspectRatio,   sizeof(pi_pGifHeader->AspectRatio))  != (sizeof(pi_pGifHeader->AspectRatio))))
         goto WRAPUP;
 
     // Check if a Global Color Table is present.
@@ -1550,9 +1544,9 @@ bool HRFGifFile::WritePalette(GifColorTable pi_pColorTable, uint32_t pi_TableSiz
 
     for (unsigned short i = 0; i < pi_TableSize; i++)
         {
-        if (pio_pGifFile->Write((void*)&pi_pColorTable[i].Red,   sizeof pi_pColorTable[i].Red)   != sizeof Byte ||
-            pio_pGifFile->Write((void*)&pi_pColorTable[i].Green, sizeof pi_pColorTable[i].Green) != sizeof Byte ||
-            pio_pGifFile->Write((void*)&pi_pColorTable[i].Blue,  sizeof pi_pColorTable[i].Blue)  != sizeof Byte)
+        if (pio_pGifFile->Write(&pi_pColorTable[i].Red,   sizeof pi_pColorTable[i].Red)   != sizeof(Byte) ||
+            pio_pGifFile->Write(&pi_pColorTable[i].Green, sizeof pi_pColorTable[i].Green) != sizeof(Byte) ||
+            pio_pGifFile->Write(&pi_pColorTable[i].Blue,  sizeof pi_pColorTable[i].Blue)  != sizeof(Byte))
             return false;
         }
     return true;
@@ -1575,12 +1569,12 @@ bool HRFGifFile::WriteGifImageDesc(GifImageDescriptor* pi_pGifImageDesc, HFCBinS
     // Number of entries in the Local Color Table.
     unsigned short tableSize;
 
-    if ((pio_pGifFile->Write((void*)&pi_pGifImageDesc->ImageSeparator, sizeof pi_pGifImageDesc->ImageSeparator)    != (sizeof pi_pGifImageDesc->ImageSeparator)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifImageDesc->ImageLeft,      sizeof pi_pGifImageDesc->ImageLeft)         != (sizeof pi_pGifImageDesc->ImageLeft)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifImageDesc->ImageTop,       sizeof pi_pGifImageDesc->ImageTop)          != (sizeof pi_pGifImageDesc->ImageTop)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifImageDesc->ImageWidth,     sizeof pi_pGifImageDesc->ImageWidth)        != (sizeof pi_pGifImageDesc->ImageWidth)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifImageDesc->ImageHeight,    sizeof pi_pGifImageDesc->ImageHeight)       != (sizeof pi_pGifImageDesc->ImageHeight)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifImageDesc->PackedField,    sizeof pi_pGifImageDesc->PackedField)       != (sizeof pi_pGifImageDesc->PackedField)))
+    if ((pio_pGifFile->Write(&pi_pGifImageDesc->ImageSeparator, sizeof pi_pGifImageDesc->ImageSeparator)    != (sizeof pi_pGifImageDesc->ImageSeparator)) ||
+        (pio_pGifFile->Write(&pi_pGifImageDesc->ImageLeft,      sizeof pi_pGifImageDesc->ImageLeft)         != (sizeof pi_pGifImageDesc->ImageLeft)) ||
+        (pio_pGifFile->Write(&pi_pGifImageDesc->ImageTop,       sizeof pi_pGifImageDesc->ImageTop)          != (sizeof pi_pGifImageDesc->ImageTop)) ||
+        (pio_pGifFile->Write(&pi_pGifImageDesc->ImageWidth,     sizeof pi_pGifImageDesc->ImageWidth)        != (sizeof pi_pGifImageDesc->ImageWidth)) ||
+        (pio_pGifFile->Write(&pi_pGifImageDesc->ImageHeight,    sizeof pi_pGifImageDesc->ImageHeight)       != (sizeof pi_pGifImageDesc->ImageHeight)) ||
+        (pio_pGifFile->Write(&pi_pGifImageDesc->PackedField,    sizeof pi_pGifImageDesc->PackedField)       != (sizeof pi_pGifImageDesc->PackedField)))
         goto WRAPUP;
 
     // Check if a Local Color Table is present.
@@ -1612,13 +1606,13 @@ bool HRFGifFile::WriteGifGraphicControl(GifGraphicControl* pi_pGifGraphicControl
 
     bool Status = true;
 
-    if ((pio_pGifFile->Write((void*)&pi_pGifGraphicControl->Introducer,    sizeof pi_pGifGraphicControl->Introducer)     != (sizeof pi_pGifGraphicControl->Introducer)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifGraphicControl->Label,         sizeof pi_pGifGraphicControl->Label)          != (sizeof pi_pGifGraphicControl->Label)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifGraphicControl->BlockSize,     sizeof pi_pGifGraphicControl->BlockSize)      != (sizeof pi_pGifGraphicControl->BlockSize)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifGraphicControl->PackedField,   sizeof pi_pGifGraphicControl->PackedField)    != (sizeof pi_pGifGraphicControl->PackedField)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifGraphicControl->DelayTime,     sizeof pi_pGifGraphicControl->DelayTime)      != (sizeof pi_pGifGraphicControl->DelayTime)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifGraphicControl->ColorIndex,    sizeof pi_pGifGraphicControl->ColorIndex)     != (sizeof pi_pGifGraphicControl->ColorIndex)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifGraphicControl->Terminator,    sizeof pi_pGifGraphicControl->Terminator)     != (sizeof pi_pGifGraphicControl->Terminator)))
+    if ((pio_pGifFile->Write(&pi_pGifGraphicControl->Introducer,    sizeof pi_pGifGraphicControl->Introducer)     != (sizeof pi_pGifGraphicControl->Introducer)) ||
+        (pio_pGifFile->Write(&pi_pGifGraphicControl->Label,         sizeof pi_pGifGraphicControl->Label)          != (sizeof pi_pGifGraphicControl->Label)) ||
+        (pio_pGifFile->Write(&pi_pGifGraphicControl->BlockSize,     sizeof pi_pGifGraphicControl->BlockSize)      != (sizeof pi_pGifGraphicControl->BlockSize)) ||
+        (pio_pGifFile->Write(&pi_pGifGraphicControl->PackedField,   sizeof pi_pGifGraphicControl->PackedField)    != (sizeof pi_pGifGraphicControl->PackedField)) ||
+        (pio_pGifFile->Write(&pi_pGifGraphicControl->DelayTime,     sizeof pi_pGifGraphicControl->DelayTime)      != (sizeof pi_pGifGraphicControl->DelayTime)) ||
+        (pio_pGifFile->Write(&pi_pGifGraphicControl->ColorIndex,    sizeof pi_pGifGraphicControl->ColorIndex)     != (sizeof pi_pGifGraphicControl->ColorIndex)) ||
+        (pio_pGifFile->Write(&pi_pGifGraphicControl->Terminator,    sizeof pi_pGifGraphicControl->Terminator)     != (sizeof pi_pGifGraphicControl->Terminator)))
         {
         Status = false;
         }
@@ -1637,17 +1631,17 @@ bool HRFGifFile::WriteGifPlainText(GifPlainText* pi_pGifPlainText, uint32_t pi_S
 
     bool Status = false;
 
-    if ((pio_pGifFile->Write((void*)&pi_pGifPlainText->Introducer,         sizeof pi_pGifPlainText->Introducer)          != (sizeof pi_pGifPlainText->Introducer)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifPlainText->Label,              sizeof pi_pGifPlainText->Label)               != (sizeof pi_pGifPlainText->Label)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifPlainText->BlockSize,          sizeof pi_pGifPlainText->BlockSize)           != (sizeof pi_pGifPlainText->BlockSize)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifPlainText->TextGridLeft,       sizeof pi_pGifPlainText->TextGridLeft)        != (sizeof pi_pGifPlainText->TextGridLeft)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifPlainText->TextGridTop,        sizeof pi_pGifPlainText->TextGridTop)         != (sizeof pi_pGifPlainText->TextGridTop)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifPlainText->TextGridWidth,      sizeof pi_pGifPlainText->TextGridWidth)       != (sizeof pi_pGifPlainText->TextGridWidth)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifPlainText->TextGridHeight,     sizeof pi_pGifPlainText->TextGridHeight)      != (sizeof pi_pGifPlainText->TextGridHeight)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifPlainText->CellWidth,          sizeof pi_pGifPlainText->CellWidth)           != (sizeof pi_pGifPlainText->CellWidth)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifPlainText->CellHeight,         sizeof pi_pGifPlainText->CellHeight)          != (sizeof pi_pGifPlainText->CellHeight)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifPlainText->TextFgColorIndex,   sizeof pi_pGifPlainText->TextFgColorIndex)    != (sizeof pi_pGifPlainText->TextFgColorIndex)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifPlainText->TextBgColorIndex,   sizeof pi_pGifPlainText->TextBgColorIndex)    != (sizeof pi_pGifPlainText->TextBgColorIndex)))
+    if ((pio_pGifFile->Write(&pi_pGifPlainText->Introducer,         sizeof pi_pGifPlainText->Introducer)          != (sizeof pi_pGifPlainText->Introducer)) ||
+        (pio_pGifFile->Write(&pi_pGifPlainText->Label,              sizeof pi_pGifPlainText->Label)               != (sizeof pi_pGifPlainText->Label)) ||
+        (pio_pGifFile->Write(&pi_pGifPlainText->BlockSize,          sizeof pi_pGifPlainText->BlockSize)           != (sizeof pi_pGifPlainText->BlockSize)) ||
+        (pio_pGifFile->Write(&pi_pGifPlainText->TextGridLeft,       sizeof pi_pGifPlainText->TextGridLeft)        != (sizeof pi_pGifPlainText->TextGridLeft)) ||
+        (pio_pGifFile->Write(&pi_pGifPlainText->TextGridTop,        sizeof pi_pGifPlainText->TextGridTop)         != (sizeof pi_pGifPlainText->TextGridTop)) ||
+        (pio_pGifFile->Write(&pi_pGifPlainText->TextGridWidth,      sizeof pi_pGifPlainText->TextGridWidth)       != (sizeof pi_pGifPlainText->TextGridWidth)) ||
+        (pio_pGifFile->Write(&pi_pGifPlainText->TextGridHeight,     sizeof pi_pGifPlainText->TextGridHeight)      != (sizeof pi_pGifPlainText->TextGridHeight)) ||
+        (pio_pGifFile->Write(&pi_pGifPlainText->CellWidth,          sizeof pi_pGifPlainText->CellWidth)           != (sizeof pi_pGifPlainText->CellWidth)) ||
+        (pio_pGifFile->Write(&pi_pGifPlainText->CellHeight,         sizeof pi_pGifPlainText->CellHeight)          != (sizeof pi_pGifPlainText->CellHeight)) ||
+        (pio_pGifFile->Write(&pi_pGifPlainText->TextFgColorIndex,   sizeof pi_pGifPlainText->TextFgColorIndex)    != (sizeof pi_pGifPlainText->TextFgColorIndex)) ||
+        (pio_pGifFile->Write(&pi_pGifPlainText->TextBgColorIndex,   sizeof pi_pGifPlainText->TextBgColorIndex)    != (sizeof pi_pGifPlainText->TextBgColorIndex)))
         goto WRAPUP;
 
     // Read in the Plain Text data sub-blocks.
@@ -1674,11 +1668,11 @@ bool HRFGifFile::WriteGifApplication(GifApplication* pi_pGifApplication, uint32_
 
     bool Status = false;
 
-    if ((pio_pGifFile->Write((void*)&pi_pGifApplication->Introducer,   sizeof pi_pGifApplication->Introducer)   != (sizeof pi_pGifApplication->Introducer)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifApplication->Label,        sizeof pi_pGifApplication->Label)        != (sizeof pi_pGifApplication->Label)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifApplication->BlockSize,    sizeof pi_pGifApplication->BlockSize)    != (sizeof pi_pGifApplication->BlockSize)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifApplication->Identifier,   sizeof(Byte) * 8)                      != (sizeof(Byte) * 8)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifApplication->AuthentCode,  sizeof(Byte) * 3)                      != (sizeof(Byte) * 3)))
+    if ((pio_pGifFile->Write(&pi_pGifApplication->Introducer,   sizeof pi_pGifApplication->Introducer)   != (sizeof pi_pGifApplication->Introducer)) ||
+        (pio_pGifFile->Write(&pi_pGifApplication->Label,        sizeof pi_pGifApplication->Label)        != (sizeof pi_pGifApplication->Label)) ||
+        (pio_pGifFile->Write(&pi_pGifApplication->BlockSize,    sizeof pi_pGifApplication->BlockSize)    != (sizeof pi_pGifApplication->BlockSize)) ||
+        (pio_pGifFile->Write(&pi_pGifApplication->Identifier,   sizeof(Byte) * 8)                      != (sizeof(Byte) * 8)) ||
+        (pio_pGifFile->Write(&pi_pGifApplication->AuthentCode,  sizeof(Byte) * 3)                      != (sizeof(Byte) * 3)))
         goto WRAPUP;
 
     // Write the Application data sub-blocks and the terminator.
@@ -1703,8 +1697,8 @@ bool HRFGifFile::WriteGifComment(GifComment* pi_pGifComment, uint32_t pi_SizeOfD
 
     bool Status = false;
 
-    if ((pio_pGifFile->Write((void*)&pi_pGifComment->Introducer,   sizeof pi_pGifComment->Introducer)   != (sizeof pi_pGifComment->Introducer)) ||
-        (pio_pGifFile->Write((void*)&pi_pGifComment->Label,        sizeof pi_pGifComment->Label)        != (sizeof pi_pGifComment->Label)))
+    if ((pio_pGifFile->Write(&pi_pGifComment->Introducer,   sizeof pi_pGifComment->Introducer)   != (sizeof pi_pGifComment->Introducer)) ||
+        (pio_pGifFile->Write(&pi_pGifComment->Label,        sizeof pi_pGifComment->Label)        != (sizeof pi_pGifComment->Label)))
         goto WRAPUP;
 
 
@@ -1743,8 +1737,8 @@ bool HRFGifFile::WriteDataSubBlocks(uint32_t pi_BufferSize, Byte* pi_pBuffer, HF
     while(numberOfBlock != 0)
         {
         Byte Code = 255;
-        if (pio_pGifFile->Write((void*)&Code, 1) != 1 ||
-            pio_pGifFile->Write((void*)(pi_pBuffer+indexInBuffer), 255) != 255)
+        if (pio_pGifFile->Write(&Code, 1) != 1 ||
+            pio_pGifFile->Write((pi_pBuffer+indexInBuffer), 255) != 255)
             goto WRAPUP;
 
         indexInBuffer += 255;
@@ -1753,14 +1747,14 @@ bool HRFGifFile::WriteDataSubBlocks(uint32_t pi_BufferSize, Byte* pi_pBuffer, HF
 
     if (numberOfByteInLastBlock != 0)
         {
-        if ((pio_pGifFile->Write((void*)&numberOfByteInLastBlock, 1) != 1) ||
-            (pio_pGifFile->Write((void*)(pi_pBuffer+indexInBuffer), numberOfByteInLastBlock) == 0))
+        if ((pio_pGifFile->Write(&numberOfByteInLastBlock, 1) != 1) ||
+            (pio_pGifFile->Write((pi_pBuffer+indexInBuffer), numberOfByteInLastBlock) == 0))
             goto WRAPUP;
         indexInBuffer += numberOfByteInLastBlock;
         }
 
     // Terminator Block (0x00)
-    if (pio_pGifFile->Write((void*)&CodecZero, 1) != 1)
+    if (pio_pGifFile->Write(&CodecZero, 1) != 1)
         goto WRAPUP;
 
     Status = true;
@@ -1898,7 +1892,19 @@ void HRFGifFile::SetPalette (unsigned short  pi_BitsColorResolution,
 
     for (uint32_t Index=0 ; Index < MaxColors ; Index++)
         {
-        pPaletteValue = (Byte*)pi_pPalette->GetCompositeValue(Index);
+		Byte defaultColor[4];
+        if (Index < pi_pPalette->CountUsedEntries())
+            {
+            pPaletteValue = (Byte*)pi_pPalette->GetCompositeValue(Index);
+            }
+        else
+            {
+            defaultColor[0]   = (Byte)Index;
+            defaultColor[1]   = (Byte)Index;
+            defaultColor[2]   = (Byte)Index;
+			defaultColor[3]   = 255;
+			pPaletteValue = (Byte*)&defaultColor;
+            }
 
         po_ColorTable[Index].Red   = pPaletteValue[0];
         po_ColorTable[Index].Green = pPaletteValue[1];

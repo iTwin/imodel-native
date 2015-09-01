@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFHMRTileEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes the resolution editor interface
@@ -12,6 +12,7 @@
 
 #include "HRFTiffTileEditor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFTiffFile;
 class HRFHMRFile;
 
@@ -24,25 +25,25 @@ public:
     virtual         ~HRFHMRTileEditor  ();
 
     // Edition by Block
-    virtual HSTATUS ReadBlock (uint32_t                 pi_PosBlockX,
-                               uint32_t                 pi_PosBlockY,
-                               Byte*                   po_pData,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0);
+    virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
+                              uint64_t                 pi_PosBlockY,
+                              Byte*                    po_pData,
+                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS ReadBlock (uint32_t                 pi_PosBlockX,
-                               uint32_t                 pi_PosBlockY,
-                               HFCPtr<HCDPacket>&       po_rpPacket,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0);
+    virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
+                              uint64_t                 pi_PosBlockY,
+                              HFCPtr<HCDPacket>&       po_rpPacket,
+                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS WriteBlock(uint32_t                 pi_PosBlockX,
-                               uint32_t                 pi_PosBlockY,
-                               const Byte*             pi_pData,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0);
+    virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
+                               uint64_t                 pi_PosBlockY,
+                               const Byte*              pi_pData,
+                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS WriteBlock(uint32_t                 pi_PosBlockX,
-                               uint32_t                 pi_PosBlockY,
+    virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
+                               uint64_t                 pi_PosBlockY,
                                const HFCPtr<HCDPacket>& pi_rpPacket,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0);
+                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
 
 protected:
     // See the parent for Pointer to the raster file, to the resolution descriptor
@@ -51,10 +52,10 @@ protected:
     // Constructor
     HRFHMRTileEditor
     (HFCPtr<HRFRasterFile>    pi_rpRasterFile,
-     uint32_t                 pi_Page,
-     unsigned short          pi_Resolution,
+     uint32_t                pi_Page,
+     unsigned short           pi_Resolution,
      HFCAccessMode            pi_AccessMode,
-     uint32_t                 pi_PaddingLines);
+     uint32_t                pi_PaddingLines);
 
 private:
 
@@ -64,3 +65,4 @@ private:
 
     uint32_t        m_PaddingLines;
     };
+END_IMAGEPP_NAMESPACE

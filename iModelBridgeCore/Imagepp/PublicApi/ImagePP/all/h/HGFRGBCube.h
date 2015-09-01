@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFRGBCube.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -13,9 +13,11 @@
 
 #include "HGFColorSet.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HGFRGBCube : public HGFColorSet
     {
-    HDECLARE_CLASS_ID(1537, HGFColorSet)
+    HDECLARE_CLASS_ID(HGFRGBId_Cube, HGFColorSet)
 
 public:
 
@@ -42,6 +44,8 @@ private:
     Byte m_Bmax;
 
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HGFRGBCube.hpp"
 

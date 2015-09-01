@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCURLECWPS.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCURLECWPS
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCURLECWPS.h>
 
 // Constants
@@ -19,7 +19,6 @@ static const WString s_DefaultPort(L"443");
 //:Ignore
 
 // This is the creator that registers itself in the scheme list.
-
 struct URLECWPSCreator : public HFCURL::Creator
     {
     URLECWPSCreator()
@@ -31,7 +30,6 @@ struct URLECWPSCreator : public HFCURL::Creator
         return new HFCURLECWPS(pi_URL);
         }
     } g_URLECWPSCreator;
-
 
 //-----------------------------------------------------------------------------
 // This little static function builds the URLPath portion of URL string from

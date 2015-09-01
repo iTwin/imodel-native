@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAEditorN1.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAEditorN1
@@ -14,15 +14,14 @@
 
 #include "HRAGenEditor.h"
 
-class HGSSurfaceImplementation;
-class HGSGraphicToolAttributes;
+BEGIN_IMAGEPP_NAMESPACE
 class HCDPacket;
 class HGSMemorySurfaceDescriptor;
 
 
 class HRAEditorN1 : public HRAGenEditor
     {
-    HDECLARE_CLASS_ID(1769, HRAGenEditor)
+    HDECLARE_CLASS_ID(HRAEditorId_N1, HRAGenEditor)
 
 public:
 
@@ -87,33 +86,31 @@ protected:
 
 private:
 
-    HFCPtr<HCDPacket>
-    m_pPacket;
+    HFCPtr<HCDPacket>   m_pPacket;
 
-    Byte          m_BitsPerPixel;
-    Byte          m_PixelsPerByte;
-    size_t          m_BytesPerLine;
+    Byte                m_BitsPerPixel;
+    Byte                m_PixelsPerByte;
+    size_t              m_BytesPerLine;
 
-    HArrayAutoPtr<Byte>
-    m_pTmpRun;
+    HArrayAutoPtr<Byte> m_pTmpRun;
 
-    uint32_t        m_Width;
-    uint32_t        m_Height;
-    HUINTX          m_XPosInRaster;
-    HUINTX          m_YPosInRaster;
+    uint32_t           m_Width;
+    uint32_t           m_Height;
+    HUINTX              m_XPosInRaster;
+    HUINTX              m_YPosInRaster;
 
-    bool           m_SLO4;
+    bool                m_SLO4;
 
 
-    mutable size_t  m_PixelCount;
+    mutable size_t      m_PixelCount;
 
-    mutable Byte  m_TmpValue;
+    mutable Byte        m_TmpValue;
 
-    Byte          m_Mask;
+    Byte                m_Mask;
 
     // optimization variables
-    mutable Byte* m_pRawData;
-    mutable Byte  m_BitIndex;
+    mutable Byte*       m_pRawData;
+    mutable Byte        m_BitIndex;
 
     // private methods
     void            CopyBits(   Byte*         po_pDstBuffer,
@@ -138,3 +135,5 @@ private:
     bool             operator==(const HRAEditorN1& pi_rObj) const;
     bool             operator!=(const HRAEditorN1& pi_rObj);
     };
+
+END_IMAGEPP_NAMESPACE

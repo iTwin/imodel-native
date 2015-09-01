@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxfdataset.cpp 21085 2010-11-07 17:54:54Z warmerdam $
+ * $Id: gxfdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  GXF Reader
  * Purpose:  GDAL binding for GXF reader.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1998, Frank Warmerdam
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "gxfopen.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: gxfdataset.cpp 21085 2010-11-07 17:54:54Z warmerdam $");
+CPL_CVSID("$Id: gxfdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 #ifndef PI
 #  define PI 3.14159265358979323846
@@ -123,7 +124,7 @@ double GXFRasterBand::GetNoDataValue(int* bGotNoDataValue)
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr GXFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
+CPLErr GXFRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                   void * pImage )
 
 {
@@ -137,7 +138,9 @@ CPLErr GXFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
     if (eDataType == GDT_Float32)
     {
-        padfBuffer = (double *) CPLMalloc(sizeof(double) * nBlockXSize);
+        padfBuffer = (double *) VSIMalloc2(sizeof(double), nBlockXSize);
+        if( padfBuffer == NULL )
+            return CE_Failure;
         eErr = GXFGetScanline( poGXF_DS->hGXF, nBlockYOff, padfBuffer );
         
         for( i = 0; i < nBlockXSize; i++ )
@@ -271,22 +274,25 @@ GDALDataset *GXFDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      we also now verify that there is a #GRID keyword before         */
 /*      passing it off to GXFOpen().  We check in the first 50K.        */
 /* -------------------------------------------------------------------- */
+#define BIGBUFSIZE 50000
     int nBytesRead, bGotGrid = FALSE;
-    char szBigBuf[50000];
     FILE *fp;
 
     fp = VSIFOpen( poOpenInfo->pszFilename, "rb" );
     if( fp == NULL )
         return NULL;
 
-    nBytesRead = VSIFRead( szBigBuf, 1, sizeof(szBigBuf), fp );
+    char *pszBigBuf = (char *) CPLMalloc(BIGBUFSIZE);
+    nBytesRead = VSIFRead( pszBigBuf, 1, BIGBUFSIZE, fp );
     VSIFClose( fp );
 
     for( i = 0; i < nBytesRead - 5 && !bGotGrid; i++ )
     {
-        if( szBigBuf[i] == '#' && EQUALN(szBigBuf+i+1,"GRID",4) )
+        if( pszBigBuf[i] == '#' && EQUALN(pszBigBuf+i+1,"GRID",4) )
             bGotGrid = TRUE;
     }
+
+    CPLFree( pszBigBuf );
 
     if( !bGotGrid )
         return NULL;
@@ -362,6 +368,11 @@ GDALDataset *GXFDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
+
+/* -------------------------------------------------------------------- */
+/*      Check for external overviews.                                   */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
 
     return( poDS );
 }

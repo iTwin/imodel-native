@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DBoundaryModelBooster.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -14,6 +14,7 @@
 #include <Imagepp/all/h/HGFQuadTree.h>
 #include <Imagepp/all/h/HGF2DLiteExtent.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     HGF2DBoundaryModelBooster
     -----------------------------------------------------------------------------
@@ -63,3 +64,4 @@ private:
     HGF2DBoundaryModelBooster& operator=(HGF2DBoundaryModelBooster const&);
     };
 
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPATokenizer.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPATokenizer
@@ -15,17 +15,20 @@
 #pragma once
 
 #include <Imagepp/all/h/HPANode.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 class HPATokenNode;
 class HPAToken;
 class HFCBinStream;
 class HPASession;
+class HPAStreamReaderUTF8;
 
 class HPATokenizer
     {
 public:
 
-    _HDLLu                         HPATokenizer();
-    _HDLLu virtual                 ~HPATokenizer();
+    IMAGEPP_EXPORT                         HPATokenizer();
+    IMAGEPP_EXPORT virtual                 ~HPATokenizer();
 
     virtual bool           Include(HFCBinStream* pi_pStream) = 0;
 
@@ -68,13 +71,13 @@ class HPADefaultTokenizer : public HPATokenizer
     {
 public:
 
-    _HDLLu                     HPADefaultTokenizer(bool pi_IsCaseSensitive = false);
-    _HDLLu virtual             ~HPADefaultTokenizer();
+    IMAGEPP_EXPORT                     HPADefaultTokenizer(bool pi_IsCaseSensitive = false);
+    IMAGEPP_EXPORT virtual             ~HPADefaultTokenizer();
 
-    _HDLLu virtual bool       Include(HFCBinStream* pi_pStream);
+    IMAGEPP_EXPORT virtual bool       Include(HFCBinStream* pi_pStream);
 
     void                SetCommentMarker(WChar pi_Marker);
-    _HDLLu void                AddSymbol(const WString& pi_rString, HPAToken& pi_rToken);
+    IMAGEPP_EXPORT void                AddSymbol(const WString& pi_rString, HPAToken& pi_rToken);
     void                SetNumberToken(HPAToken& pi_rToken);
     void                SetStringToken(HPAToken& pi_rToken);
     void                SetIdentifierToken(HPAToken& pi_rToken);
@@ -82,16 +85,16 @@ public:
 
 protected:
 
-    _HDLLu virtual HPANode*        MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
+    IMAGEPP_EXPORT virtual HPANode*        MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
                                             const HPASourcePos& pi_rLeft,
                                             const HPASourcePos& pi_rRight,
                                             HPASession* pi_pSession);
-    _HDLLu virtual void            BeginSession(HFCBinStream* pi_pStream,
+    IMAGEPP_EXPORT virtual void            BeginSession(HFCBinStream* pi_pStream,
                                                 HPASession* pi_pSession);
-    _HDLLu virtual HPANode*        GetToken();
-    _HDLLu virtual void            EndSession();
+    IMAGEPP_EXPORT virtual HPANode*        GetToken();
+    IMAGEPP_EXPORT virtual void            EndSession();
 
-    bool                   GetChar(HFCBinStream* pi_pStream, WChar* po_pChar);
+    bool                   GetChar(HPAStreamReaderUTF8* pi_pStream, WChar* po_pChar);
     void                    PushChar(WChar pi_Char);
 
 #if (0)
@@ -104,7 +107,7 @@ protected:
 
     typedef map<WString, HPAToken*, less<WString> > SymbolTable;
 
-    typedef deque<HFCBinStream*> StreamRefStack;
+    typedef deque<HFCPtr<HPAStreamReaderUTF8>> StreamRefStack;
 
     typedef deque<HPASourcePos> StreamInfoStack;
 
@@ -153,6 +156,7 @@ protected:
 
     };
 
+END_IMAGEPP_NAMESPACE
 
 #include "HPATokenizer.hpp"
 

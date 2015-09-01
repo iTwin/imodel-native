@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecZlib.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecZlib
@@ -13,19 +13,21 @@
 
 #include "HCDCodecDeflate.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecZlib : public HCDCodecDeflate
     {
-    HDECLARE_CLASS_ID(1175, HCDCodecDeflate)
+    HDECLARE_CLASS_ID(HCDCodecId_Zlib, HCDCodecDeflate)
 
 public:
 
-    _HDLLu                 HCDCodecZlib();
+    IMAGEPP_EXPORT                 HCDCodecZlib();
 
-    _HDLLu                 HCDCodecZlib(size_t pi_DataSize);
+    IMAGEPP_EXPORT                 HCDCodecZlib(size_t pi_DataSize);
 
-    _HDLLu                 HCDCodecZlib(const HCDCodecZlib& pi_rObj);
+    IMAGEPP_EXPORT                 HCDCodecZlib(const HCDCodecZlib& pi_rObj);
 
-    _HDLLu                 ~HCDCodecZlib();
+    IMAGEPP_EXPORT                 ~HCDCodecZlib();
 
     size_t          CompressSubset(const void* pi_pInData,
                                    size_t pi_InDataSize,
@@ -47,3 +49,4 @@ protected:
 private:
     };
 
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPListPixelTypePtrs.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -17,7 +17,6 @@
 #include "HRPPixelTypeI1R8G8B8RLE.h"
 #include "HRPPixelTypeI1R8G8B8A8.h"
 #include "HRPPixelTypeI1R8G8B8A8RLE.h"
-#include "HRPPixelTypeI2R8G8B8.h"
 #include "HRPPixelTypeI4R8G8B8.h"
 #include "HRPPixelTypeI4R8G8B8A8.h"
 #include "HRPPixelTypeI8R8G8B8.h"
@@ -47,6 +46,7 @@
 #include "HRPPixelTypeI8R8G8B8Mask.h"
 #include "HRPPixelTypeI8Gray8.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPListPixelTypePtrs
     {
 public:
@@ -76,7 +76,7 @@ public:
         m_List.push_front(&m_I1R8G8B8RLE);
         m_List.push_front(&m_V16PRGray8A8);
         m_List.push_front(&m_V32A8R8G8B8);
-        m_List.push_front(&m_I2R8G8B8);
+        //m_List.push_front(&m_I2R8G8B8);
         m_List.push_front(&m_I4R8G8B8);
         m_List.push_front(&m_I4R8G8B8A8);
         m_List.push_front(&m_I1R8G8B8A8);
@@ -111,7 +111,7 @@ private:
     HRPPixelTypeI1R8G8B8RLE     m_I1R8G8B8RLE;
     HRPPixelTypeV16PRGray8A8    m_V16PRGray8A8;
     HRPPixelTypeV32A8R8G8B8     m_V32A8R8G8B8;
-    HRPPixelTypeI2R8G8B8        m_I2R8G8B8;
+    //Disabled. HRPPixelTypeI2R8G8B8        m_I2R8G8B8;
     HRPPixelTypeI4R8G8B8        m_I4R8G8B8;
     HRPPixelTypeI4R8G8B8A8      m_I4R8G8B8A8;
     HRPPixelTypeI1R8G8B8A8      m_I1R8G8B8A8;
@@ -127,3 +127,4 @@ private:
     HRPPixelTypeI8R8G8B8Mask    m_I8R8G8B8Mask;
     HRPPixelTypeI8Gray8         m_I8Gray8;
     };
+END_IMAGEPP_NAMESPACE

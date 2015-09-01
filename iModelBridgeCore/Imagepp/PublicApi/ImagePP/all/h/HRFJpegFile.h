@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFJpegFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -18,11 +18,14 @@
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"
 
+struct jpeg_compress_struct;
+struct jpeg_decompress_struct;
 struct jpeg_common_struct;
 struct jpeg_error_mgr;
 typedef struct jpeg_common_struct* j_common_ptr;
 struct HRFJpegFileErrorManager;
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFJpegCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -30,15 +33,23 @@ public:
 
     };
 
+static void HRFJpegErrorExit(j_common_ptr cinfo);
 
 class HRFJpegFile : public HRFRasterFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1421, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Jpeg, HRFRasterFile)
 
     friend class HRFJpegLineEditor;
-    friend static void HRFJpegErrorExit(j_common_ptr cinfo);
+
+#if defined (ANDROID) || defined (__APPLE__)
+    friend void HRFJpegErrorExit(j_common_ptr cinfo); 
+#elif defined (_WIN32)
+    friend static void HRFJpegErrorExit(j_common_ptr cinfo); 
+#endif
+
+
 
     // allow to Open an image file
     HRFJpegFile           (const HFCPtr<HFCURL>&          pi_rpURL,
@@ -85,8 +96,8 @@ protected:
         {
         // See the IJG JPEG library for a decription
         // of both these structures.
-        struct jpeg_decompress_struct* m_pDecompress;
-        struct jpeg_compress_struct*   m_pCompress;
+        jpeg_decompress_struct* m_pDecompress;
+        jpeg_compress_struct*   m_pCompress;
         } JPEG;
 
     // same comment as the CountPage method
@@ -148,9 +159,10 @@ struct HRFJpegCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFJpegCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFJpegCreator)
 
     // Disabled methodes
     HRFJpegCreator();
     };
+END_IMAGEPP_NAMESPACE
 

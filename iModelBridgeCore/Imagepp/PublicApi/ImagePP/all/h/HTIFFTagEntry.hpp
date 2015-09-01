@@ -2,9 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFTagEntry.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 inline bool HTIFFTagEntry::IsValid(HTIFFError**  po_ppError) const
     {
     if (po_ppError != 0)
@@ -44,3 +46,4 @@ inline void HTIFFTagEntry::Touched ()
     }
 
 
+END_IMAGEPP_NAMESPACE

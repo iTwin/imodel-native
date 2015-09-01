@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteLine.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DLiteLine
@@ -16,7 +16,7 @@
 #include "HGFBearing.h"
 #include "HGF2DPosition.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert
@@ -94,13 +94,13 @@ public:
 
     // Operations on lines
     HGFBearing          CalculateBearing() const;
-    HGF2DPosition   CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
-    double         CalculateShortestDistance(const HGF2DPosition& pi_rPoint) const;
+    HGF2DPosition       CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
+    double              CalculateShortestDistance(const HGF2DPosition& pi_rPoint) const;
     HGF2DLiteLine::CrossState     IntersectLine(const HGF2DLiteLine& pi_rLine, HGF2DPosition* po_pPoint) const;
-    double         GetIntercept() const;
-    double         GetSlope () const;
-    bool           IsParallelTo(const HGF2DLiteLine& pi_rLine) const;
-    bool           IsVertical() const;
+    double              GetIntercept() const;
+    double              GetSlope () const;
+    bool                IsParallelTo(const HGF2DLiteLine& pi_rLine) const;
+    bool                IsVertical() const;
 
 
 protected:
@@ -118,6 +118,6 @@ private:
     double         m_Slope;
     bool           m_InvertSlope;
     };
-
+END_IMAGEPP_NAMESPACE
 
 #include "HGF2DLiteLine.hpp"

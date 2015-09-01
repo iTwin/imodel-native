@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeV24PhotoYCC.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeV24PhotoYCC
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeV24PhotoYCC.h>
 
@@ -21,6 +21,7 @@
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeV32PR8PG8PB8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include "v24rgb.h" // for YCC conversion factor
 
 HPM_REGISTER_CLASS(HRPPixelTypeV24PhotoYCC, HRPPixelType)
 
@@ -28,6 +29,22 @@ HPM_REGISTER_CLASS(HRPPixelTypeV24PhotoYCC, HRPPixelType)
 typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<HRPPixelConverter*> >
 MapHRPPixelTypeToConverter;
 
+/* Important info: newYCC
+ *
+ * Coefficients are from MSDN (http://msdn.microsoft.com/en-us/library/ff635643.aspx)
+ *   => If link is broken, topic name is "Color Conversion (RGB to YCbCr)"
+ *
+ * Coefficients from Wikipedia (http://en.wikipedia.org/wiki/YCbCr) have also been considered,
+ *   and images ended up with small, yet noticeable differences compared to MSDN's and source image.
+ *
+ * Blending equations: http://en.wikipedia.org/wiki/Alpha_compositing
+ *
+ * Use inlined functions to convert (YCC/RGB) and to do the alpha compositing
+ * 
+ */
+ 
+
+#if oldYCC
 #define CLAMPTABLE(A)    ((A)<=(0) ? (0) : (A)<(343) ? (A) : (342))
 #define CLAMPINVTABLE(A) (Byte)((A)<=(0) ? (0) : (A)<(256) ? (A) : (255))
 
@@ -83,7 +100,7 @@ static const Byte s_LookUpTable[] =
 
    Values have been rounded.
 */
-#if 0
+
 static const unsigned short s_RGBGammaTable[] =
     {
     0,5,9,14,18,23,27,30,34,37,
@@ -113,7 +130,7 @@ static const unsigned short s_RGBGammaTable[] =
     247,248,248,249,249,250,251,251,252,252,
     253,253,254,254,255,255
     };
-#endif
+
 
 // L = 1.3584 * L8bits
 static const int32_t s_LTable[256] =
@@ -219,6 +236,132 @@ static const int32_t s_C2ProductTable[256] =
     80,81,82,83,84,85,86,87,88,89,89,90,91,92,93,94,
     95,96,97,98,99,100,101,101,102,103,104,105,106,107,108,109
     };
+    
+#else
+
+// 1.4 * (Y - 128)
+extern const float pixel_YCC_to_RGB_Convert_redTable[256] = 
+    {
+    -179.2,-177.8,-176.4,-175.0,-173.6,-172.2,-170.8,-169.4,-168.0,-166.6,-165.2,
+    -163.8,-162.4,-161.0,-159.6,-158.2,-156.8,-155.4,-154.0,-152.6,-151.2,
+    -149.8,-148.4,-147.0,-145.6,-144.2,-142.8,-141.4,-140.0,-138.6,-137.2,
+    -135.8,-134.4,-133.0,-131.6,-130.2,-128.8,-127.4,-126.0,-124.6,-123.2,
+    -121.8,-120.4,-119.0,-117.6,-116.2,-114.8,-113.4,-112.0,-110.6,-109.2,
+    -107.8,-106.4,-105.0,-103.6,-102.2,-100.8,-99.4,-98.0,-96.6,-95.2,
+    -93.8,-92.4,-91.0,-89.6,-88.2,-86.8,-85.4,-84.0,-82.6,-81.2,
+    -79.8,-78.4,-77.0,-75.6,-74.2,-72.8,-71.4,-70.0,-68.6,-67.2,
+    -65.8,-64.4,-63.0,-61.6,-60.2,-58.8,-57.4,-56.0,-54.6,-53.2,
+    -51.8,-50.4,-49.0,-47.6,-46.2,-44.8,-43.4,-42.0,-40.6,-39.2,
+    -37.8,-36.4,-35.0,-33.6,-32.2,-30.8,-29.4,-28.0,-26.6,-25.2,
+    -23.8,-22.4,-21.0,-19.6,-18.2,-16.8,-15.4,-14.0,-12.6,-11.2,
+    -9.8,-8.4,-7.0,-5.6,-4.2,-2.8,-1.4,0.0,1.4,2.8,
+    4.2,5.6,7.0,8.4,9.8,11.2,12.6,14.0,15.4,16.8,
+    18.2,19.6,21.0,22.4,23.8,25.2,26.6,28.0,29.4,30.8,
+    32.2,33.6,35.0,36.4,37.8,39.2,40.6,42.0,43.4,44.8,
+    46.2,47.6,49.0,50.4,51.8,53.2,54.6,56.0,57.4,58.8,
+    60.2,61.6,63.0,64.4,65.8,67.2,68.6,70.0,71.4,72.8,
+    74.2,75.6,77.0,78.4,79.8,81.2,82.6,84.0,85.4,86.8,
+    88.2,89.6,91.0,92.4,93.8,95.2,96.6,98.0,99.4,100.8,
+    102.2,103.6,105.0,106.4,107.8,109.2,110.6,112.0,113.4,114.8,
+    116.2,117.6,119.0,120.4,121.8,123.2,124.6,126.0,127.4,128.8,
+    130.2,131.6,133.0,134.4,135.8,137.2,138.6,140.0,141.4,142.8,
+    144.2,145.6,147.0,148.4,149.8,151.2,152.6,154.0,155.4,156.8,
+    158.2,159.6,161.0,162.4,163.8,165.2,166.6,168.0,169.4,170.8,
+    172.2,173.6,175.0,176.4
+    };
+
+// -0.343 * (Cb - 128)
+extern const float pixel_YCC_to_RGB_Convert_greenTable1[256] = 
+    {
+    43.904,43.561,43.218,42.875,42.532,42.189,41.846,41.503,41.16,40.817,40.474,
+    40.131,39.788,39.445,39.102,38.759,38.416,38.073,37.73,37.387,37.044,
+    36.701,36.358,36.015,35.672,35.329,34.986,34.643,34.3,33.957,33.614,
+    33.271,32.928,32.585,32.242,31.899,31.556,31.213,30.87,30.527,30.184,
+    29.841,29.498,29.155,28.812,28.469,28.126,27.783,27.44,27.097,26.754,
+    26.411,26.068,25.725,25.382,25.039,24.696,24.353,24.01,23.667,23.324,
+    22.981,22.638,22.295,21.952,21.609,21.266,20.923,20.58,20.237,19.894,
+    19.551,19.208,18.865,18.522,18.179,17.836,17.493,17.15,16.807,16.464,
+    16.121,15.778,15.435,15.092,14.749,14.406,14.063,13.72,13.377,13.034,
+    12.691,12.348,12.005,11.662,11.319,10.976,10.633,10.29,9.947,9.604,
+    9.261,8.918,8.575,8.232,7.889,7.546,7.203,6.86,6.517,6.174,
+    5.831,5.488,5.145,4.802,4.459,4.116,3.773,3.43,3.087,2.744,
+    2.401,2.058,1.715,1.372,1.029,0.686,0.343,-0.0,-0.343,-0.686,
+    -1.029,-1.372,-1.715,-2.058,-2.401,-2.744,-3.087,-3.43,-3.773,-4.116,
+    -4.459,-4.802,-5.145,-5.488,-5.831,-6.174,-6.517,-6.86,-7.203,-7.546,
+    -7.889,-8.232,-8.575,-8.918,-9.261,-9.604,-9.947,-10.29,-10.633,-10.976,
+    -11.319,-11.662,-12.005,-12.348,-12.691,-13.034,-13.377,-13.72,-14.063,-14.406,
+    -14.749,-15.092,-15.435,-15.778,-16.121,-16.464,-16.807,-17.15,-17.493,-17.836,
+    -18.179,-18.522,-18.865,-19.208,-19.551,-19.894,-20.237,-20.58,-20.923,-21.266,
+    -21.609,-21.952,-22.295,-22.638,-22.981,-23.324,-23.667,-24.01,-24.353,-24.696,
+    -25.039,-25.382,-25.725,-26.068,-26.411,-26.754,-27.097,-27.44,-27.783,-28.126,
+    -28.469,-28.812,-29.155,-29.498,-29.841,-30.184,-30.527,-30.87,-31.213,-31.556,
+    -31.899,-32.242,-32.585,-32.928,-33.271,-33.614,-33.957,-34.3,-34.643,-34.986,
+    -35.329,-35.672,-36.015,-36.358,-36.701,-37.044,-37.387,-37.73,-38.073,-38.416,
+    -38.759,-39.102,-39.445,-39.788,-40.131,-40.474,-40.817,-41.16,-41.503,-41.846,
+    -42.189,-42.532,-42.875,-43.218
+    };
+// -0.711 * (Cr - 128)
+extern const float pixel_YCC_to_RGB_Convert_greenTable2[256] = 
+    {
+    91.008,90.297,89.586,88.875,88.164,87.453,86.742,86.031,85.32,84.609,83.898,
+    83.187,82.476,81.765,81.054,80.343,79.632,78.921,78.21,77.499,76.788,
+    76.077,75.366,74.655,73.944,73.233,72.522,71.811,71.1,70.389,69.678,
+    68.967,68.256,67.545,66.834,66.123,65.412,64.701,63.99,63.279,62.568,
+    61.857,61.146,60.435,59.724,59.013,58.302,57.591,56.88,56.169,55.458,
+    54.747,54.036,53.325,52.614,51.903,51.192,50.481,49.77,49.059,48.348,
+    47.637,46.926,46.215,45.504,44.793,44.082,43.371,42.66,41.949,41.238,
+    40.527,39.816,39.105,38.394,37.683,36.972,36.261,35.55,34.839,34.128,
+    33.417,32.706,31.995,31.284,30.573,29.862,29.151,28.44,27.729,27.018,
+    26.307,25.596,24.885,24.174,23.463,22.752,22.041,21.33,20.619,19.908,
+    19.197,18.486,17.775,17.064,16.353,15.642,14.931,14.22,13.509,12.798,
+    12.087,11.376,10.665,9.954,9.243,8.532,7.821,7.11,6.399,5.688,
+    4.977,4.266,3.555,2.844,2.133,1.422,0.711,-0.0,-0.711,-1.422,
+    -2.133,-2.844,-3.555,-4.266,-4.977,-5.688,-6.399,-7.11,-7.821,-8.532,
+    -9.243,-9.954,-10.665,-11.376,-12.087,-12.798,-13.509,-14.22,-14.931,-15.642,
+    -16.353,-17.064,-17.775,-18.486,-19.197,-19.908,-20.619,-21.33,-22.041,-22.752,
+    -23.463,-24.174,-24.885,-25.596,-26.307,-27.018,-27.729,-28.44,-29.151,-29.862,
+    -30.573,-31.284,-31.995,-32.706,-33.417,-34.128,-34.839,-35.55,-36.261,-36.972,
+    -37.683,-38.394,-39.105,-39.816,-40.527,-41.238,-41.949,-42.66,-43.371,-44.082,
+    -44.793,-45.504,-46.215,-46.926,-47.637,-48.348,-49.059,-49.77,-50.481,-51.192,
+    -51.903,-52.614,-53.325,-54.036,-54.747,-55.458,-56.169,-56.88,-57.591,-58.302,
+    -59.013,-59.724,-60.435,-61.146,-61.857,-62.568,-63.279,-63.99,-64.701,-65.412,
+    -66.123,-66.834,-67.545,-68.256,-68.967,-69.678,-70.389,-71.1,-71.811,-72.522,
+    -73.233,-73.944,-74.655,-75.366,-76.077,-76.788,-77.499,-78.21,-78.921,-79.632,
+    -80.343,-81.054,-81.765,-82.476,-83.187,-83.898,-84.609,-85.32,-86.031,-86.742,
+    -87.453,-88.164,-88.875,-89.586
+    };
+// 1.765 * (Cb - 128)
+extern const float pixel_YCC_to_RGB_Convert_blueTable[256] = 
+    {
+    -225.92,-224.155,-222.39,-220.625,-218.86,-217.095,-215.33,-213.565,-211.8,-210.035,-208.27,
+    -206.505,-204.74,-202.975,-201.21,-199.445,-197.68,-195.915,-194.15,-192.385,-190.62,
+    -188.855,-187.09,-185.325,-183.56,-181.795,-180.03,-178.265,-176.5,-174.735,-172.97,
+    -171.205,-169.44,-167.675,-165.91,-164.145,-162.38,-160.615,-158.85,-157.085,-155.32,
+    -153.555,-151.79,-150.025,-148.26,-146.495,-144.73,-142.965,-141.2,-139.435,-137.67,
+    -135.905,-134.14,-132.375,-130.61,-128.845,-127.08,-125.315,-123.55,-121.785,-120.02,
+    -118.255,-116.49,-114.725,-112.96,-111.195,-109.43,-107.665,-105.9,-104.135,-102.37,
+    -100.605,-98.84,-97.075,-95.31,-93.545,-91.78,-90.015,-88.25,-86.485,-84.72,
+    -82.955,-81.19,-79.425,-77.66,-75.895,-74.13,-72.365,-70.6,-68.835,-67.07,
+    -65.305,-63.54,-61.775,-60.01,-58.245,-56.48,-54.715,-52.95,-51.185,-49.42,
+    -47.655,-45.89,-44.125,-42.36,-40.595,-38.83,-37.065,-35.3,-33.535,-31.77,
+    -30.005,-28.24,-26.475,-24.71,-22.945,-21.18,-19.415,-17.65,-15.885,-14.12,
+    -12.355,-10.59,-8.825,-7.06,-5.295,-3.53,-1.765,0.0,1.765,3.53,
+    5.295,7.06,8.825,10.59,12.355,14.12,15.885,17.65,19.415,21.18,
+    22.945,24.71,26.475,28.24,30.005,31.77,33.535,35.3,37.065,38.83,
+    40.595,42.36,44.125,45.89,47.655,49.42,51.185,52.95,54.715,56.48,
+    58.245,60.01,61.775,63.54,65.305,67.07,68.835,70.6,72.365,74.13,
+    75.895,77.66,79.425,81.19,82.955,84.72,86.485,88.25,90.015,91.78,
+    93.545,95.31,97.075,98.84,100.605,102.37,104.135,105.9,107.665,109.43,
+    111.195,112.96,114.725,116.49,118.255,120.02,121.785,123.55,125.315,127.08,
+    128.845,130.61,132.375,134.14,135.905,137.67,139.435,141.2,142.965,144.73,
+    146.495,148.26,150.025,151.79,153.555,155.32,157.085,158.85,160.615,162.38,
+    164.145,165.91,167.675,169.44,171.205,172.97,174.735,176.5,178.265,180.03,
+    181.795,183.56,185.325,187.09,188.855,190.62,192.385,194.15,195.915,197.68,
+    199.445,201.21,202.975,204.74,206.505,208.27,210.035,211.8,213.565,215.33,
+    217.095,218.86,220.625,222.39
+    };
+    
+#endif
 
 //-----------------------------------------------------------------------------
 //  s_V24PhotoYCC_V24PhotoYCC - Converter
@@ -228,25 +371,12 @@ struct ConverterV24PhotoYCC_V24PhotoYCC : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        memcpy(pio_pDestRawData, pi_pSourceRawData, 3);
-        }
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         memcpy(pio_pDestRawData, pi_pSourceRawData, pi_PixelsCount * 3);
-
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterV24PhotoYCC_V24PhotoYCC(*this));
         }
     };
@@ -254,30 +384,21 @@ static struct ConverterV24PhotoYCC_V24PhotoYCC        s_V24PhotoYCC_V24PhotoYCC;
 
 //-----------------------------------------------------------------------------
 //  s_V24PhotoYCC_V24R8G8B8 - Converter
+// Templated version that works for both V24R8G8B8 and V24B8G8R8 as output
+// R, G, B values represent their relative index within a pixel
 //-----------------------------------------------------------------------------
+template<uint32_t R, uint32_t G, uint32_t B>
 struct ConverterV24PhotoYCC_V24R8G8B8 : public HRPPixelConverter
     {
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        int32_t L  = s_LTable[((Byte*)pi_pSourceRawData)[0]];
-        int32_t C1 = s_C1Table[((Byte*)pi_pSourceRawData)[1]];
-        int32_t C2 = s_C2Table[((Byte*)pi_pSourceRawData)[2]];
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        int32_t Rdisplay = L + C2;
-        int32_t Gdisplay = L - s_C1ProductTable[((Byte*)pi_pSourceRawData)[1]] -
-                          s_C2ProductTable[((Byte*)pi_pSourceRawData)[2]];
-        int32_t Bdisplay = L + C1;
-
-        ((Byte*)pio_pDestRawData)[0] = s_LookUpTable[CLAMPTABLE(Rdisplay)];
-        ((Byte*)pio_pDestRawData)[1] = s_LookUpTable[CLAMPTABLE(Gdisplay)];
-        ((Byte*)pio_pDestRawData)[2] = s_LookUpTable[CLAMPTABLE(Bdisplay)];
-        }
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+#if oldYCC
         int32_t Rdisplay;
         int32_t Gdisplay;
         int32_t Bdisplay;
@@ -285,9 +406,6 @@ public:
         int32_t L;
         int32_t C1;
         int32_t C2;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -304,101 +422,31 @@ public:
             pDestComposite[1] = s_LookUpTable[CLAMPTABLE(Gdisplay)];
             pDestComposite[2] = s_LookUpTable[CLAMPTABLE(Bdisplay)];
 
-            pi_PixelsCount -= 1;
+            --pi_PixelsCount;
             pDestComposite += 3;
             pSourceComposite += 3;
             }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
+#else
 
-    HRPPixelConverter* AllocateCopy() const {
-        return(new ConverterV24PhotoYCC_V24R8G8B8(*this));
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            pDestComposite[3 * pix + R] = static_cast<Byte>(Convert_YCC_to_RGB_Red  (pSourceComposite[3 * pix], pSourceComposite[3 * pix + 2]));
+            pDestComposite[3 * pix + G] = static_cast<Byte>(Convert_YCC_to_RGB_Green(pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1], pSourceComposite[3 * pix + 2]) );
+            pDestComposite[3 * pix + B] = static_cast<Byte>(Convert_YCC_to_RGB_Blue (pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1]));
+            }
+#endif
+        };
+
+    HRPPixelConverter* AllocateCopy() const  override{
+        return(new ConverterV24PhotoYCC_V24R8G8B8<R,G,B>(*this));
         }
     };
-static struct ConverterV24PhotoYCC_V24R8G8B8        s_V24PhotoYCC_V24R8G8B8;
+static struct ConverterV24PhotoYCC_V24R8G8B8<0,1,2>        s_V24PhotoYCC_V24R8G8B8; // RGB
 
 //-----------------------------------------------------------------------------
 //  s_V24PhotoYCC_V24B8G8R8 - Converter
 //-----------------------------------------------------------------------------
-struct ConverterV24PhotoYCC_V24B8G8R8 : public HRPPixelConverter
-    {
-public:
-    DEFINE_T_SUPER(HRPPixelConverter)
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        int32_t L  = s_LTable[((Byte*)pi_pSourceRawData)[0]];
-        int32_t C1 = s_C1Table[((Byte*)pi_pSourceRawData)[1]];
-        int32_t C2 = s_C2Table[((Byte*)pi_pSourceRawData)[2]];
-
-        int32_t Rdisplay = L + C2;
-        int32_t Gdisplay = L - s_C1ProductTable[((Byte*)pi_pSourceRawData)[1]] -
-                          s_C2ProductTable[((Byte*)pi_pSourceRawData)[2]];
-        int32_t Bdisplay = L + C1;
-
-        ((Byte*)pio_pDestRawData)[2] = s_LookUpTable[CLAMPTABLE(Rdisplay)];
-        ((Byte*)pio_pDestRawData)[1] = s_LookUpTable[CLAMPTABLE(Gdisplay)];
-        ((Byte*)pio_pDestRawData)[0] = s_LookUpTable[CLAMPTABLE(Bdisplay)];
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        int32_t Rdisplay;
-        int32_t Gdisplay;
-        int32_t Bdisplay;
-
-        int32_t L;
-        int32_t C1;
-        int32_t C2;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
-        // Copy entire bytes
-        while(pi_PixelsCount)
-            {
-            L = s_LTable[pSourceComposite[0]];
-            C1 = s_C1Table[pSourceComposite[1]];
-            C2 = s_C2Table[pSourceComposite[2]];
-
-            Rdisplay = L + C2;
-            Gdisplay = L - s_C1ProductTable[pSourceComposite[1]] - s_C2ProductTable[pSourceComposite[2]];
-            Bdisplay = L + C1;
-
-            pDestComposite[2] = s_LookUpTable[CLAMPTABLE(Rdisplay)];
-            pDestComposite[1] = s_LookUpTable[CLAMPTABLE(Gdisplay)];
-            pDestComposite[0] = s_LookUpTable[CLAMPTABLE(Bdisplay)];
-
-            pi_PixelsCount -= 1;
-            pDestComposite += 3;
-            pSourceComposite += 3;
-            }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
-
-    // convert to BGR
-    virtual void ConvertToValue(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Convert(pi_pSourceRawData, pio_pDestRawData);
-        };
-
-    HRPPixelConverter* AllocateCopy() const {
-        return(new ConverterV24PhotoYCC_V24B8G8R8(*this));
-        }
-    };
-static struct ConverterV24PhotoYCC_V24B8G8R8        s_V24PhotoYCC_V24B8G8R8;
+static struct ConverterV24PhotoYCC_V24R8G8B8<2,1,0>        s_V24PhotoYCC_V24B8G8R8; // BGR
 
 //-----------------------------------------------------------------------------
 //  s_V24PhotoYCC_I8R8G8B8 - Converter
@@ -414,26 +462,12 @@ public:
         {
         };
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        int32_t L  = s_LTable[((Byte*)pi_pSourceRawData)[0]];
-        int32_t C1 = s_C1Table[((Byte*)pi_pSourceRawData)[1]];
-        int32_t C2 = s_C2Table[((Byte*)pi_pSourceRawData)[2]];
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestRawData = (Byte*)pio_pDestRawData;
 
-        int32_t Rdisplay = L + C2;
-        int32_t Gdisplay = L - s_C1ProductTable[((Byte*)pi_pSourceRawData)[1]] -
-                          s_C2ProductTable[((Byte*)pi_pSourceRawData)[2]];
-        int32_t Bdisplay = L + C1;
-
-        // get a good index for the R,G,B blend values
-        *((Byte*)pio_pDestRawData) = m_QuantizedPalette.GetIndex(
-                                           s_LookUpTable[CLAMPTABLE(Rdisplay)],
-                                           s_LookUpTable[CLAMPTABLE(Gdisplay)],
-                                           s_LookUpTable[CLAMPTABLE(Bdisplay)]);
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+#if oldYCC
         int32_t Rdisplay;
         int32_t Gdisplay;
         int32_t Bdisplay;
@@ -441,10 +475,6 @@ public:
         int32_t L;
         int32_t C1;
         int32_t C2;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestRawData = (Byte*)pio_pDestRawData;
-
         // Copy entire bytes
         while(pi_PixelsCount)
             {
@@ -466,39 +496,25 @@ public:
             pDestRawData += 1;
             pSourceComposite += 3;
             }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
+#else
 
-    // convert to RGB
-    virtual void ConvertToValue(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        int32_t L  = s_LTable[((Byte*)pi_pSourceRawData)[0]];
-        int32_t C1 = s_C1Table[((Byte*)pi_pSourceRawData)[1]];
-        int32_t C2 = s_C2Table[((Byte*)pi_pSourceRawData)[2]];
-
-        int32_t Rdisplay = L + C2;
-        int32_t Gdisplay = L - s_C1ProductTable[((Byte*)pi_pSourceRawData)[1]] -
-                          s_C2ProductTable[((Byte*)pi_pSourceRawData)[2]];
-        int32_t Bdisplay = L + C1;
-
-        ((Byte*)pio_pDestRawData)[0] = s_LookUpTable[CLAMPTABLE(Rdisplay)];
-        ((Byte*)pio_pDestRawData)[1] = s_LookUpTable[CLAMPTABLE(Gdisplay)];
-        ((Byte*)pio_pDestRawData)[2] = s_LookUpTable[CLAMPTABLE(Bdisplay)];
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {  
+            pDestRawData[pix] = m_QuantizedPalette.GetIndex(
+                    static_cast<Byte>( Convert_YCC_to_RGB_Red  (pSourceComposite[3 * pix], pSourceComposite[3 * pix + 2]) ),
+                    static_cast<Byte>( Convert_YCC_to_RGB_Green(pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1], pSourceComposite[3 * pix + 2]) ),
+                    static_cast<Byte>( Convert_YCC_to_RGB_Blue (pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1]) ));
+            }
+#endif
         };
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV24PhotoYCC_I8R8G8B8(*this));
         }
 
 protected:
 
-    virtual void Update()
+    virtual void Update() override
         {
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
@@ -519,38 +535,12 @@ struct ConverterV24R8G8B8_V24PhotoYCC : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        // Apply gamma correction
-//            Byte RCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[0]];
-//            Byte GCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[1]];
-//            Byte BCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[2]];
-        Byte RCorrected = ((Byte*)pi_pSourceRawData)[0];
-        Byte GCorrected = ((Byte*)pi_pSourceRawData)[1];
-        Byte BCorrected = ((Byte*)pi_pSourceRawData)[2];
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        // Premultiply some factors (opt)
-        double RMult = 0.299 * RCorrected;
-        double GMult = 0.587 * GCorrected;
-        double BMult = 0.114 * BCorrected;
-
-        // Compute luma and chroma values
-        double L = RMult + GMult + BMult;
-        double C1 = -RMult - GMult + 0.886 * BCorrected;
-        double C2 = 0.701 * RCorrected - GMult - BMult;
-
-        // Scale in [0, 255]
-        short LS  = (short)(L / 1.402);
-        short C1S = (short)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
-        short C2S = (short)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
-
-        ((Byte*)pio_pDestRawData)[0] = CLAMPINVTABLE(LS);
-        ((Byte*)pio_pDestRawData)[1] = CLAMPINVTABLE(C1S);
-        ((Byte*)pio_pDestRawData)[2] = CLAMPINVTABLE(C2S);
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+#if oldYCC
         Byte RCorrected;
         Byte GCorrected;
         Byte BCorrected;
@@ -567,16 +557,13 @@ public:
         short C1S;
         short C2S;
 
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
         // Copy entire bytes
         while(pi_PixelsCount)
             {
             // Apply gamma correction
-//                RCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[0]];
-//                GCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[1]];
-//                BCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[2]];
+//            RCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[0]];
+//            GCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[1]];
+//            BCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[2]];
             RCorrected = pSourceComposite[0];
             GCorrected = pSourceComposite[1];
             BCorrected = pSourceComposite[2];
@@ -600,20 +587,23 @@ public:
             pDestComposite[1] = CLAMPINVTABLE(C1S);
             pDestComposite[2] = CLAMPINVTABLE(C2S);
 
-            pi_PixelsCount -= 1;
+            --pi_PixelsCount;
             pDestComposite += 3;
             pSourceComposite += 3;
             }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
+#else
 
-    HRPPixelConverter* AllocateCopy() const {
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            pDestComposite[3 * pix]     = static_cast<Byte>( Convert_RGB_to_YCC_Y (pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1], pSourceComposite[3 * pix + 2]) );
+            pDestComposite[3 * pix + 1] = static_cast<Byte>( Convert_RGB_to_YCC_Cb(pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1], pSourceComposite[3 * pix + 2]) );
+            pDestComposite[3 * pix + 2] = static_cast<Byte>( Convert_RGB_to_YCC_Cr(pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1], pSourceComposite[3 * pix + 2]) );
+            }
+
+#endif
+        };
+
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV24R8G8B8_V24PhotoYCC(*this));
         }
     };
@@ -627,38 +617,11 @@ class ConverterV32R8G8B8A8_V24PhotoYCC : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        // Apply gamma correction
-//            Byte RCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[0]];
-//            Byte GCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[1]];
-//            Byte BCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[2]];
-        Byte RCorrected = ((Byte*)pi_pSourceRawData)[0];
-        Byte GCorrected = ((Byte*)pi_pSourceRawData)[1];
-        Byte BCorrected = ((Byte*)pi_pSourceRawData)[2];
-
-        // Premultiply some factors (opt)
-        double RMult = 0.299 * RCorrected;
-        double GMult = 0.587 * GCorrected;
-        double BMult = 0.114 * BCorrected;
-
-        // Compute luma and chroma values
-        double L = RMult + GMult + BMult;
-        double C1 = -RMult - GMult + 0.886 * BCorrected;
-        double C2 = 0.701 * RCorrected - GMult - BMult;
-
-        // Scale in [0, 255]
-        short LS = (short)(L / 1.402);
-        short C1S = (short)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
-        short C2S = (short)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
-
-        ((Byte*)pio_pDestRawData)[0] = CLAMPINVTABLE(LS);
-        ((Byte*)pio_pDestRawData)[1] = CLAMPINVTABLE(C1S);
-        ((Byte*)pio_pDestRawData)[2] = CLAMPINVTABLE(C2S);
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
+#if oldYCC
         Byte RCorrected;
         Byte GCorrected;
         Byte BCorrected;
@@ -675,16 +638,13 @@ public:
         short C1S;
         short C2S;
 
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
         // Copy entire bytes
         while(pi_PixelsCount)
             {
             // Apply gamma correction
-//                RCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[0]];
-//                GCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[1]];
-//                BCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[2]];
+//            RCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[0]];
+//            GCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[1]];
+//            BCorrected = s_RGBGammaTable[((Byte *)pSourceComposite)[2]];
             RCorrected = pSourceComposite[0];
             GCorrected = pSourceComposite[1];
             BCorrected = pSourceComposite[2];
@@ -714,42 +674,63 @@ public:
             pDestComposite[1] = CLAMPINVTABLE(C1S);
             pDestComposite[2] = CLAMPINVTABLE(C2S);
 
-            pi_PixelsCount -= 1;
+            --pi_PixelsCount;
             pDestComposite += 3;
             pSourceComposite += 4;
             }
+#else
+
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            pDestComposite[3 * pix]     = static_cast<Byte>( Convert_RGB_to_YCC_Y (pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]) );
+            pDestComposite[3 * pix + 1] = static_cast<Byte>( Convert_RGB_to_YCC_Cb(pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]) );
+            pDestComposite[3 * pix + 2] = static_cast<Byte>( Convert_RGB_to_YCC_Cr(pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]) );
+            }
+
+#endif
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
+
+
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
+        
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
+        
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            // If transparent, do nothing
+            if(0 != pSourceComposite[4 * pix + 3])
+                {
+                // Source temporarily in V32-PhotoYCC color space
+                uint32_t Y  = Convert_RGB_to_YCC_Y (pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]);
+                uint32_t Cb = Convert_RGB_to_YCC_Cb(pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]);
+                uint32_t Cr = Convert_RGB_to_YCC_Cr(pSourceComposite[4 * pix], pSourceComposite[4 * pix + 1], pSourceComposite[4 * pix + 2]);
+                
+                if(255 == pSourceComposite[4 * pix + 3])
+                    {
+                    // Only conversion is required. Overwrite dest.
+                    pDestComposite[3 * pix    ] = static_cast<Byte>(Y );
+                    pDestComposite[3 * pix + 1] = static_cast<Byte>(Cb);
+                    pDestComposite[3 * pix + 2] = static_cast<Byte>(Cr);
+                    }
+                else
+                    {
+                    pDestComposite[3 * pix    ] = Blend_src_OPAQUEdst(Y , pDestComposite[3 * pix    ], pSourceComposite[4 * pix + 3]);
+                    pDestComposite[3 * pix + 1] = Blend_src_OPAQUEdst(Cb, pDestComposite[3 * pix + 1], pSourceComposite[4 * pix + 3]);
+                    pDestComposite[3 * pix + 2] = Blend_src_OPAQUEdst(Cr, pDestComposite[3 * pix + 2], pSourceComposite[4 * pix + 3]);
+                    }
+                }
+            }
         }
 
-    //-----------------------------------------------------------------------------
-    // Compose / Call Convert for the moment.
-    //-----------------------------------------------------------------------------
-    virtual void Compose(const void* pi_pSourceRawData,
-                         void*       pio_pDestRawData) const
-        {
-        Convert(pi_pSourceRawData, pio_pDestRawData);
-        }
 
-    virtual void Compose(const void* pi_pSourceRawData,
-                         void*       pio_pDestRawData,
-                         size_t      pi_PixelsCount) const
-        {
-        Convert(pi_pSourceRawData, pio_pDestRawData, pi_PixelsCount);
-        }
-
-
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32R8G8B8A8_V24PhotoYCC(*this));
         }
 
@@ -768,57 +749,16 @@ struct ConverterV32PR8PG8PB8A8_V24PhotoYCC : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        Byte R;
-        Byte G;
-        Byte B;
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        if(((Byte*)pi_pSourceRawData)[3] != 0)
-            {
-            R = ((Byte*)pi_pSourceRawData)[0] * 255 / ((Byte*)pi_pSourceRawData)[3];
-            G = ((Byte*)pi_pSourceRawData)[1] * 255 / ((Byte*)pi_pSourceRawData)[3];
-            B = ((Byte*)pi_pSourceRawData)[2] * 255 / ((Byte*)pi_pSourceRawData)[3];
-            }
-        else
-            {
-            R = G = B = 0;
-            }
+        uint32_t RCorrected;
+        uint32_t GCorrected;
+        uint32_t BCorrected;
 
-        // Apply gamma correction
-//            Byte RCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[0]];
-//            Byte GCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[1]];
-//            Byte BCorrected = s_RGBGammaTable[((Byte *)pi_pSourceRawData)[2]];
-        Byte RCorrected = ((Byte*)pi_pSourceRawData)[0];
-        Byte GCorrected = ((Byte*)pi_pSourceRawData)[1];
-        Byte BCorrected = ((Byte*)pi_pSourceRawData)[2];
-
-        // Premultiply some factors (opt)
-        double RMult = 0.299 * RCorrected;
-        double GMult = 0.587 * GCorrected;
-        double BMult = 0.114 * BCorrected;
-
-        // Compute luma and chroma values
-        double L = RMult + GMult + BMult;
-        double C1 = -RMult - GMult + 0.886 * BCorrected;
-        double C2 = 0.701 * RCorrected - GMult - BMult;
-
-        // Scale in [0, 255]
-        short LS = (short)(L / 1.402);
-        short C1S = (short)(C1 * 0.436862745 + 156);   // 0.436862745 = 111.4 / 255
-        short C2S = (short)(C2 * 0.531921569 + 137);   // 0.531921569 = 135.64 / 255
-
-        ((Byte*)pio_pDestRawData)[0] = CLAMPINVTABLE(LS);
-        ((Byte*)pio_pDestRawData)[1] = CLAMPINVTABLE(C1S);
-        ((Byte*)pio_pDestRawData)[2] = CLAMPINVTABLE(C2S);
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        Byte RCorrected;
-        Byte GCorrected;
-        Byte BCorrected;
-
+#if oldYCC
         double RMult;
         double GMult;
         double BMult;
@@ -831,25 +771,22 @@ public:
         short C1S;
         short C2S;
 
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
         // Copy entire bytes
         while(pi_PixelsCount)
             {
             // Apply gamma correction
             if(pSourceComposite[3] != 0)
                 {
-//                    RCorrected = s_RGBGammaTable[pSourceComposite[0] * 255 / pSourceComposite[3]];
-//                    GCorrected = s_RGBGammaTable[pSourceComposite[1] * 255 / pSourceComposite[3]];
-//                    BCorrected = s_RGBGammaTable[pSourceComposite[2] * 255 / pSourceComposite[3]];
+//                RCorrected = s_RGBGammaTable[pSourceComposite[0] * 255 / pSourceComposite[3]];
+//                GCorrected = s_RGBGammaTable[pSourceComposite[1] * 255 / pSourceComposite[3]];
+//                BCorrected = s_RGBGammaTable[pSourceComposite[2] * 255 / pSourceComposite[3]];
                 RCorrected = pSourceComposite[0] * 255 / pSourceComposite[3];
                 GCorrected = pSourceComposite[1] * 255 / pSourceComposite[3];
                 BCorrected = pSourceComposite[2] * 255 / pSourceComposite[3];
                 }
             else
                 {
-//                    RCorrected = GCorrected = BCorrected = s_RGBGammaTable[0];
+//                RCorrected = GCorrected = BCorrected = s_RGBGammaTable[0];
                 RCorrected = GCorrected = BCorrected = 0;
                 }
 
@@ -872,42 +809,81 @@ public:
             pDestComposite[1] = CLAMPINVTABLE(C1S);
             pDestComposite[2] = CLAMPINVTABLE(C2S);
 
-            pi_PixelsCount -= 1;
+            --pi_PixelsCount;
             pDestComposite += 3;
             pSourceComposite += 4;
             }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
+#else
+
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            if (0 != pSourceComposite[4 * pix + 3])
+                {
+                RCorrected = pSourceComposite[4 * pix    ] * 255 / pSourceComposite[4 * pix + 3]; 
+                GCorrected = pSourceComposite[4 * pix + 1] * 255 / pSourceComposite[4 * pix + 3];
+                BCorrected = pSourceComposite[4 * pix + 2] * 255 / pSourceComposite[4 * pix + 3];
+                }
+            else
+                {
+                RCorrected = pSourceComposite[4 * pix    ];
+                GCorrected = pSourceComposite[4 * pix + 1];
+                BCorrected = pSourceComposite[4 * pix + 2];
+                }
+
+            pDestComposite[3 * pix]     = static_cast<Byte>( Convert_RGB_to_YCC_Y (RCorrected, GCorrected, BCorrected) ); 
+            pDestComposite[3 * pix + 1] = static_cast<Byte>( Convert_RGB_to_YCC_Cb(RCorrected, GCorrected, BCorrected) );            
+            pDestComposite[3 * pix + 2] = static_cast<Byte>( Convert_RGB_to_YCC_Cr(RCorrected, GCorrected, BCorrected) );            
+            }
+            
         }
+    
+    
+#endif
 
-    //-----------------------------------------------------------------------------
-    // Compose / Call Convert for the moment.
-    //-----------------------------------------------------------------------------
-    virtual void Compose(const void* pi_pSourceRawData,
-        void*       pio_pDestRawData) const
-    {
-        Convert(pi_pSourceRawData, pio_pDestRawData);
-    }
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
+        {
+        
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
+        
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            // If transparent, do nothing
+            if (0 != pSourceComposite[4 * pix + 3])
+                {
+                uint32_t RCorrected = (pSourceComposite[4 * pix    ] * 255) / pSourceComposite[4 * pix + 3];
+                uint32_t GCorrected = (pSourceComposite[4 * pix + 1] * 255) / pSourceComposite[4 * pix + 3];
+                uint32_t BCorrected = (pSourceComposite[4 * pix + 2] * 255) / pSourceComposite[4 * pix + 3];
+                
+                uint32_t Y  = Convert_RGB_to_YCC_Y (RCorrected, GCorrected, BCorrected);
+                uint32_t Cb = Convert_RGB_to_YCC_Cb(RCorrected, GCorrected, BCorrected);
+                uint32_t Cr = Convert_RGB_to_YCC_Cr(RCorrected, GCorrected, BCorrected);
+                
+                if(255 == pSourceComposite[4 * pix + 3])
+                    {
+                    // Only conversion is required. Overwrite dest.
+                    pDestComposite[3 * pix    ] = static_cast<Byte>(Y );
+                    pDestComposite[3 * pix + 1] = static_cast<Byte>(Cb);
+                    pDestComposite[3 * pix + 2] = static_cast<Byte>(Cr);
+                    }
+                else
+                    {          
+                    pDestComposite[3 * pix    ] = Blend_src_OPAQUEdst(Y , pDestComposite[3 * pix    ], pSourceComposite[4 * pix + 3]);
+                    pDestComposite[3 * pix + 1] = Blend_src_OPAQUEdst(Cb, pDestComposite[3 * pix + 1], pSourceComposite[4 * pix + 3]);
+                    pDestComposite[3 * pix + 2] = Blend_src_OPAQUEdst(Cr, pDestComposite[3 * pix + 2], pSourceComposite[4 * pix + 3]);
+                    }
+                }
+            }
+            
+        };
 
-    virtual void Compose(const void* pi_pSourceRawData,
-        void*       pio_pDestRawData,
-        size_t      pi_PixelsCount) const
-    {
-        Convert(pi_pSourceRawData, pio_pDestRawData, pi_PixelsCount);
-    }
 
-
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32PR8PG8PB8A8_V24PhotoYCC(*this));
         }
 
@@ -927,25 +903,13 @@ struct ConverterV24PhotoYCC_V32PR8PG8PB8A8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        int32_t L  = s_LTable[((Byte*)pi_pSourceRawData)[0]];
-        int32_t C1 = s_C1Table[((Byte*)pi_pSourceRawData)[1]];
-        int32_t C2 = s_C2Table[((Byte*)pi_pSourceRawData)[2]];
 
-        int32_t Rdisplay = L + C2;
-        int32_t Gdisplay = L - s_C1ProductTable[((Byte*)pi_pSourceRawData)[1]] -
-                          s_C2ProductTable[((Byte*)pi_pSourceRawData)[2]];
-        int32_t Bdisplay = L + C1;
+        Byte* const pSourceComposite =  (Byte*)pi_pSourceRawData;
+        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
-        ((Byte*)pio_pDestRawData)[0] = s_LookUpTable[CLAMPTABLE(Rdisplay)];
-        ((Byte*)pio_pDestRawData)[1] = s_LookUpTable[CLAMPTABLE(Gdisplay)];
-        ((Byte*)pio_pDestRawData)[2] = s_LookUpTable[CLAMPTABLE(Bdisplay)];
-        ((Byte*)pio_pDestRawData)[3] = 255;
-        }
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
+#if oldYCC
         int32_t Rdisplay;
         int32_t Gdisplay;
         int32_t Bdisplay;
@@ -953,9 +917,6 @@ public:
         int32_t L;
         int32_t C1;
         int32_t C2;
-
-        Byte* pSourceComposite =  (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
 
         // Copy entire bytes
         while(pi_PixelsCount)
@@ -973,20 +934,23 @@ public:
             pDestComposite[2] = s_LookUpTable[CLAMPTABLE(Bdisplay)];
             pDestComposite[3] = 255;
 
-            pi_PixelsCount -= 1;
+            --pi_PixelsCount;
             pDestComposite += 4;
             pSourceComposite += 3;
             }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
+#else
 
-    HRPPixelConverter* AllocateCopy() const {
+        for(uint32_t pix = 0; pix < pi_PixelsCount; ++pix)
+            {
+            pDestComposite[4 * pix    ] = static_cast<Byte>(Convert_YCC_to_RGB_Red  (pSourceComposite[3 * pix], pSourceComposite[3 * pix + 2]) );
+            pDestComposite[4 * pix + 1] = static_cast<Byte>(Convert_YCC_to_RGB_Green(pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1], pSourceComposite[3 * pix + 2]) );
+            pDestComposite[4 * pix + 2] = static_cast<Byte>(Convert_YCC_to_RGB_Blue (pSourceComposite[3 * pix], pSourceComposite[3 * pix + 1]) );
+            pDestComposite[4 * pix + 3] = 255;
+            }
+#endif
+        };
+
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV24PhotoYCC_V32PR8PG8PB8A8(*this));
         }
     };

@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeV16Gray16.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPPixelTypeV16Gray16
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
 #include <Imagepp/all/h/HRPChannelOrgGray.h>
@@ -23,8 +23,6 @@
 
 HPM_REGISTER_CLASS(HRPPixelTypeV16Gray16, HRPPixelTypeGray)
 
-
-
 // STL typeDef
 typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<HRPPixelConverter*> >
 MapHRPPixelTypeToConverter;
@@ -36,24 +34,12 @@ struct ConverterV16Gray16_V16Gray16 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        *((unsigned short*)pio_pDestRawData) = *((unsigned short*)pi_pSourceRawData);
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         memcpy(pio_pDestRawData, pi_pSourceRawData, pi_PixelsCount*2);
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV16Gray16_V16Gray16(*this));
         }
     };
@@ -66,14 +52,7 @@ struct ConverterV24R8G8B8_V16Gray16 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc  = (Byte*)pi_pSourceRawData;
-
-        *(unsigned short*)pio_pDestRawData = CONVERT_8BIT_TO_16BIT((Byte)(pSrc[0] * REDFACTOR + pSrc[1] * GREENFACTOR + pSrc[2] * BLUEFACTOR));
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc  = (Byte*)pi_pSourceRawData;
         unsigned short* pDest = (unsigned short*)pio_pDestRawData;
@@ -86,15 +65,8 @@ struct ConverterV24R8G8B8_V16Gray16 : public HRPPixelConverter
             pSrc+=3;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override {
         return(new ConverterV24R8G8B8_V16Gray16(*this));
         }
     };
@@ -108,14 +80,7 @@ struct ConverterV32R8G8B8A8_V16Gray16 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc  = (Byte*)pi_pSourceRawData;
-
-        *(unsigned short*)pio_pDestRawData = CONVERT_8BIT_TO_16BIT((Byte)(pSrc[0] * REDFACTOR + pSrc[1] * GREENFACTOR + pSrc[2] * BLUEFACTOR));
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte*  pSrc  = (Byte*)pi_pSourceRawData;
         unsigned short* pDest = (unsigned short*)pio_pDestRawData;
@@ -129,18 +94,7 @@ public:
             }
         };
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte*  pSrc = (Byte*)pi_pSourceRawData;
-        unsigned short* pDest = (unsigned short*)pio_pDestRawData;
-
-        unsigned short grayValue(CONVERT_8BIT_TO_16BIT((Byte)(pSrc[0] * REDFACTOR + pSrc[1] * GREENFACTOR + pSrc[2] * BLUEFACTOR)));
-
-        // ((Src * SrcAlpha) + (Dst * (MaxAlpha - SrcAlpha))) / MaxAlpha
-        *pDest = ((grayValue * CONVERT_8BIT_TO_16BIT(pSrc[3])) + (*pDest * (0xFFFF - CONVERT_8BIT_TO_16BIT(pSrc[3])))) / 0xFFFF;
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte*  pSrc = (Byte*)pi_pSourceRawData;
         unsigned short* pDest = (unsigned short*)pio_pDestRawData;
@@ -150,26 +104,19 @@ public:
             unsigned short grayValue(CONVERT_8BIT_TO_16BIT((Byte)(pSrc[0] * REDFACTOR + pSrc[1] * GREENFACTOR + pSrc[2] * BLUEFACTOR)));
 
             // ((Src * SrcAlpha) + (Dst * (MaxAlpha - SrcAlpha))) / MaxAlpha
-            pDest[i] = ((grayValue * CONVERT_8BIT_TO_16BIT(pSrc[3])) + (pDest[i] * (0xFFFF - CONVERT_8BIT_TO_16BIT(pSrc[3])))) / 0xFFFF;
+            pDest[i] = ((grayValue * (int64_t)CONVERT_8BIT_TO_16BIT(pSrc[3])) + (pDest[i] * (int64_t)(0xFFFF - CONVERT_8BIT_TO_16BIT(pSrc[3])))) / 0xFFFF;
 
             // next RGBA
             pSrc+=4;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         };
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32R8G8B8A8_V16Gray16(*this));
         }
 
@@ -188,14 +135,7 @@ struct ConverterV48R16G16B16_V16Gray16 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        unsigned short* pSrc  = (unsigned short*)pi_pSourceRawData;
-
-        *(unsigned short*)pio_pDestRawData = (unsigned short)(pSrc[0] * REDFACTOR + pSrc[1] * GREENFACTOR + pSrc[2] * BLUEFACTOR);
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrc  = (unsigned short*)pi_pSourceRawData;
         unsigned short* pDest = (unsigned short*)pio_pDestRawData;
@@ -208,15 +148,8 @@ public:
             pSrc+=3;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterV48R16G16B16_V16Gray16(*this));
         }
 
@@ -231,14 +164,7 @@ struct ConverterV64R16G16B16A16_V16Gray16 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
-
-        *(unsigned short*)pio_pDestRawData = (unsigned short)(pSrc[0] * REDFACTOR + pSrc[1] * GREENFACTOR + pSrc[2] * BLUEFACTOR);
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrc  = (unsigned short*)pi_pSourceRawData;
         unsigned short* pDest = (unsigned short*)pio_pDestRawData;
@@ -251,26 +177,8 @@ public:
             pSrc+=4;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        unsigned short* pSrc  = (unsigned short*)pi_pSourceRawData;
-        unsigned short* pDest = (unsigned short*)pio_pDestRawData;
-
-        unsigned short grayValue((unsigned short)(pSrc[0] * REDFACTOR + pSrc[1] * GREENFACTOR + pSrc[2] * BLUEFACTOR));
-
-        // ((Src * SrcAlpha) + (Dst * (MaxAlpha - SrcAlpha))) / MaxAlpha
-        *pDest = ((grayValue * pSrc[3]) + (*pDest * (0xFFFF - pSrc[3]))) / 0xFFFF;
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrc  = (unsigned short*)pi_pSourceRawData;
         unsigned short* pDest = (unsigned short*)pio_pDestRawData;
@@ -280,19 +188,19 @@ public:
             unsigned short grayValue((unsigned short)(pSrc[0] * REDFACTOR + pSrc[1] * GREENFACTOR + pSrc[2] * BLUEFACTOR));
 
             // ((Src * SrcAlpha) + (Dst * (MaxAlpha - SrcAlpha))) / MaxAlpha
-            pDest[i] = ((grayValue * pSrc[3]) + (pDest[i] * (0xFFFF - pSrc[3]))) / 0xFFFF;
+            pDest[i] = (((int64_t)grayValue * pSrc[3]) + ((int64_t)pDest[i] * (0xFFFF - pSrc[3]))) / 0xFFFF;
 
             // next RGBA
             pSrc+=4;
             }
         };
 
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         };
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV64R16G16B16A16_V16Gray16(*this));
         }
 
@@ -310,15 +218,7 @@ struct ConverterV16Gray16_V24R8G8B8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
-        Byte*  pDst = (Byte*)pio_pDestRawData;
-
-        pDst[0] = pDst[1] = pDst[2] = CONVERT_16BIT_TO_8BIT(*pSrc);
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
         Byte*  pDst = (Byte*)pio_pDestRawData;
@@ -331,15 +231,8 @@ struct ConverterV16Gray16_V24R8G8B8 : public HRPPixelConverter
             pDst+=3;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV16Gray16_V24R8G8B8(*this));
         }
     };
@@ -353,16 +246,7 @@ struct ConverterV16Gray16_V32R8G8B8A8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
-        Byte*  pDst = (Byte*)pio_pDestRawData;
-
-        pDst[0] = pDst[1] = pDst[2] = CONVERT_16BIT_TO_8BIT(*pSrc);
-        pDst[3] = 0xFF;
-        };
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short* pSrc = (unsigned short*)pi_pSourceRawData;
         Byte*  pDst = (Byte*)pio_pDestRawData;
@@ -376,15 +260,8 @@ struct ConverterV16Gray16_V32R8G8B8A8 : public HRPPixelConverter
             pDst+=4;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV16Gray16_V32R8G8B8A8(*this));
         }
     };
@@ -397,14 +274,7 @@ struct ConverterV16Gray16_V48R16G16B16 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        ((unsigned short*)pio_pDestRawData)[0] = *(unsigned short*)pi_pSourceRawData;
-        ((unsigned short*)pio_pDestRawData)[1] = *(unsigned short*)pi_pSourceRawData;
-        ((unsigned short*)pio_pDestRawData)[2] = *(unsigned short*)pi_pSourceRawData;
-        }
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short*  pSrc  = (unsigned short*) pi_pSourceRawData;
         unsigned short*  pDest = (unsigned short*) pio_pDestRawData;
@@ -417,15 +287,8 @@ struct ConverterV16Gray16_V48R16G16B16 : public HRPPixelConverter
             pDest+=3;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV16Gray16_V48R16G16B16(*this));
         }
     };
@@ -438,15 +301,7 @@ struct ConverterV16Gray16_V64R16G16B16A16 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        ((unsigned short*)pio_pDestRawData)[0] = *(unsigned short*)pi_pSourceRawData;
-        ((unsigned short*)pio_pDestRawData)[1] = *(unsigned short*)pi_pSourceRawData;
-        ((unsigned short*)pio_pDestRawData)[2] = *(unsigned short*)pi_pSourceRawData;
-        ((unsigned short*)pio_pDestRawData)[3] = 0xFFFF;
-        }
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         unsigned short*  pSrc  = (unsigned short*) pi_pSourceRawData;
         unsigned short*  pDest = (unsigned short*) pio_pDestRawData;
@@ -460,15 +315,8 @@ struct ConverterV16Gray16_V64R16G16B16A16 : public HRPPixelConverter
             pDest+=4;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV16Gray16_V64R16G16B16A16(*this));
         }
     };

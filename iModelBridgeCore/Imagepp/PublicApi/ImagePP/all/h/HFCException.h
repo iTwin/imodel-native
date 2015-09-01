@@ -2,496 +2,218 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCException.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Implementation of the exception classes.  The exception hierarchy look
 // like this:
 //
-//  HFCException                            (Info struct : -)
-//      HFCFileException                    (Info struct : HFCFileExInfo)
-//      HFCDeviceException                    (Info struct : HFCDeviceExInfo)
-//            HFCInternetConnectionException    (Info struct : HFCInternetConnectionExInfo)
-//      HFCCannotCreateSynchroObjException  (Info struct : HFCCannotCreateSynchroObjExInfo)
-//      HFCErrorCodeException               (Info struct : HFCErrorCodeExInfo)
+//  HFCException ABSTRACT                   
+//      HFCFileException ABSTRACT 
+//            HFCGenericException
+//            HFCCannotLockFileException
+//            HFCFileLockViolationException
+//            HFCCorruptedFileException
+//            HFCFileNotFoundException
+//            HFCFileExistException
+//            HFCFileReadOnlyException
+//            HFCFileNotCreatedException
+//            HFCFileNotSupportedException
+//            HFCFileOutOfRangeException
+//            HFCFilePermissionDeniedException
+//            HFCDllNotFoundException
+//            HFCInvalidFileNameException
+//            HFCSharingViolationException
+//            HFCCannotUnlockException
+//            HFCCannotOpenFileException
+//            HFCCannotConnectToDBException
+//            HFCInvalidUrlForSisterFileException
+//            HFCDirectoryReadOnlyException
+//            HFCSisterFileNotCreatedException
+//            HFCDirectoryNotCreatedException
+//            HFCCannotCloseFileException
+//            HFCWriteFaultException
+//            HFCReadFaultException
+//            HFCFileIOErrorException
+//            HFCFileNotSupportedInWriteModeException
+//      HFCDeviceException ABSTRACT                 
+//            HFCInternetConnectionException 
+//            HFCUndefinedDeviceException
+//            HFCNoDiskSpaceLeftException
+//            HFCDeviceAbortException
+//      HFCCannotCreateSynchroObjException  
+//      HFCErrorCodeException
+//      HFCUnknownException
+//      HFCUndefinedException
+//      HFCMemoryException
+//      HFCOutOfMemoryException
+//      HFCObjectNotInFactoryException
+//      HFCHttpRequestStringException
+//      HFCLoginInformationNotAvailableException
 //----------------------------------------------------------------------------
 
 #pragma once
 
 
-#include "HFCMacros.h"
-#include "HFCErrorCode.h"
+#include <Imagepp/all/h/HFCMacros.h>
+#include <Imagepp/h/ImagePPExceptionMessages.xliff.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HPANode;
-
-/**---------------------------------------------------------------------------
-
-These are the macros to use when a new class is created into the
-HFCException class hierarchy.  Using these macros shorten the
-development time, by implementing a part of the interface defined by the
-HFCException class, avoiding the need to program the methods Clone and
-ThrowCopy for each new class of exceptio n signaler.
-
-The macro HFC_DECLARE_EXCEPTION is designed to be used into the header
-file of the new class, inside the class declaration.  Place a call to
-this macro just after the enclosing bracket that marks the beginning of
-the declatation of the members.
-
-The macro HFC_IMPLEMENT_EXCEPTION is designed to be used into the
-implementation file of the class (the file with .cpp extension), which
-is compiled only once for a given class (having no inline method).
-
-@param pi_ExceptionType The name of the new exception signaler class.
-
-----------------------------------------------------------------------------*/
 class HFCException;
 
-
-//#if defined(__HMR_DEBUG) || defined(__ATP)
-struct HFCExceptionInfoATP
-    {
-    WString       m_ExceptionLabel;
-    HFCException* m_pException;
-    };
-
-typedef map<ExceptionID, HFCExceptionInfoATP> HFCExceptionATPMap;
-
-class HFCExceptionATP
-    {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLu, HFCExceptionATP)
-
-public :
-    HFCExceptionATP();
-    ~HFCExceptionATP();
-
-    void                               AddException(const WString&    pi_rLabelStr,
-                                                    HFCException*    pi_pException);
-    HFCExceptionATPMap::const_iterator Begin();
-    HFCExceptionATPMap::const_iterator End();
-    uint32_t                           GetNbExceptions();
-
-private :
-
-    HFCExceptionATPMap m_ToBeTestedExceptions;
-    };
-
-//#endif
-
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HFCException
-//----------------------------------------------------------------------------------
-struct HFCExInfo
-    {
-             HFCExInfo() {};
-    virtual ~HFCExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HFCFileException
-//----------------------------------------------------------------------------------
-struct HFCFileExInfo : public HFCExInfo
-    {
-    WString         m_FileName;
-
-    HFCFileExInfo() {};
-    HFCFileExInfo(const WString& pi_FileName) : m_FileName(pi_FileName) {};
-    virtual ~HFCFileExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HFCDeviceException
-//----------------------------------------------------------------------------------
-struct HFCDeviceExInfo : public HFCExInfo
-    {
-    WString            m_DeviceName;
-
-    virtual ~HFCDeviceExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HFCInternetConnectionException
-//----------------------------------------------------------------------------------
-struct HFCInternetConnectionExInfo : public HFCDeviceExInfo
-    {
-    short m_ErrorType; //see HFCInternetConnectionException::ErrorType
-
-    virtual ~HFCInternetConnectionExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HFCErrorCodeException
-//----------------------------------------------------------------------------------
-struct HFCErrorCodeExInfo : public HFCExInfo
-    {
-    HFCErrorCode    m_ErrorCode;
-
-    virtual ~HFCErrorCodeExInfo();
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HFCCannotCreateSynchroObjException
-//----------------------------------------------------------------------------------
-struct HFCCannotCreateSynchroObjExInfo : public HFCExInfo
-    {
-    unsigned short m_SynchroObject; //HFCCannotCreateSynchroObjExInfo::SynchroObject
-
-    virtual ~HFCCannotCreateSynchroObjExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HCDIJLErrorException
-//----------------------------------------------------------------------------------
-struct HCDIJLErrorExInfo : public HFCExInfo
-    {
-    short m_IJLErrorCode;
-
-    virtual ~HCDIJLErrorExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HGFmzGCoordException
-//----------------------------------------------------------------------------------
-struct HGFmzGCoordExInfo : public HFCExInfo
-    {
-    int32_t m_StatusCode;
-
-    virtual ~HGFmzGCoordExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HPAException
-//----------------------------------------------------------------------------------
-struct HPAExInfo : public HFCExInfo
-    {
-    HFCPtr<HPANode> m_pOffendingNode;
-
-    _HDLLu          HPAExInfo();
-    _HDLLu virtual ~HPAExInfo();
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HPAGenericException
-//----------------------------------------------------------------------------------
-struct HPAGenericExInfo : public HPAExInfo
-    {
-    WString            m_Message;
-
-    virtual ~HPAGenericExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HPSTypeMismatchException
-//----------------------------------------------------------------------------------
-struct HPSTypeMismatchExInfo : public HPAExInfo
-    {
-    unsigned short    m_ExpectedType;    //see HPSTypeMismatchExInfo::ExpectedType
-
-    virtual ~HPSTypeMismatchExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HPSOutOfRangeException
-//----------------------------------------------------------------------------------
-struct HPSOutOfRangeExInfo : public HPAExInfo
-    {
-    double         m_Lower;
-    double         m_Upper;
-
-    virtual ~HPSOutOfRangeExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HPSAlreadyDefinedException
-//----------------------------------------------------------------------------------
-struct HPSAlreadyDefinedExInfo : public HPAExInfo
-    {
-    WString         m_Name;
-
-    virtual ~HPSAlreadyDefinedExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HPSInvalidPathException
-//----------------------------------------------------------------------------------
-struct HFSInvalidPathExInfo : public HFCExInfo
-    {
-    WString            m_Path;
-
-    virtual ~HFSInvalidPathExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HFSHIBPInvalidResponseException
-//----------------------------------------------------------------------------------
-struct HFSHIBPInvalidResponseExInfo : public HFCExInfo
-    {
-    WString            m_Request;
-
-    virtual ~HFSHIBPInvalidResponseExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HFSHIBPUnsupportProtocolVersionException
-//----------------------------------------------------------------------------------
-struct HFSHIBPUnsupportProtocolVerExInfo : public HFCExInfo
-    {
-    double            m_Version;
-
-    virtual ~HFSHIBPUnsupportProtocolVerExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HFSHIBPErrorException
-//----------------------------------------------------------------------------------
-struct HFSHIBPErrorExInfo : public HFCExInfo
-    {
-    WString            m_ErrorMessage;
-
-    virtual ~HFSHIBPErrorExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HRFFileParameterException
-//----------------------------------------------------------------------------------
-struct HRFFileParameterExInfo : public HFCFileExInfo
-    {
-    WString            m_ParameterName;
-
-    virtual ~HRFFileParameterExInfo() {};
-    };
-
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HRFChildFileException
-//----------------------------------------------------------------------------------
-struct HRFChildFileExInfo : public HFCFileExInfo
-    {
-    WString            m_ChildFileName;
-
-    virtual ~HRFChildFileExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HRFChildFileParameterException
-//----------------------------------------------------------------------------------
-struct HRFChildFileParamExInfo : public HRFChildFileExInfo
-    {
-    WString            m_ParameterName;
-
-    virtual ~HRFChildFileParamExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HRFGdalErrorException
-//----------------------------------------------------------------------------------
-struct HRFGdalErrorExInfo : public HFCFileExInfo
-    {
-    int32_t          m_GdalErrorID;
-
-    virtual ~HRFGdalErrorExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HRFInvalidNewFileDimExInfo
-//----------------------------------------------------------------------------------
-struct HRFInvalidNewFileDimExInfo : public HFCFileExInfo
-    {
-    uint64_t       m_WidthLimit;
-    uint64_t       m_HeightLimit;
-
-    virtual ~HRFInvalidNewFileDimExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Exception information struct for HCPException
-//----------------------------------------------------------------------------------
-struct HCPGCoordExInfo : public HFCExInfo
-    {
-    int32_t         m_Code;
-
-    virtual ~HCPGCoordExInfo() {};
-    };
-
-//----------------------------------------------------------------------------------
-//Macro for catching one particular exception. Note that this macro cannot be
-//used within a stack of catches.
-//----------------------------------------------------------------------------------
-#define BEGIN_HFC_CATCH(pi_ExceptionID) \
-catch(HFCException& rException) \
-{ \
-    if (rException.GetID() != pi_ExceptionID) \
-    throw;
-
-#define END_HFC_CATCH }
-
-//----------------------------------------------------------------------------------
-//Macro for copying the pre-formatted message, if any
-//----------------------------------------------------------------------------------
-#define COPY_FORMATTED_ERR_MSG(pi_pFormattedErrMsg, pi_pCopiedFormattedErrMsg) \
-    if (pi_pCopiedFormattedErrMsg != 0) \
-    { \
-        if (pi_pFormattedErrMsg == 0) \
-        { \
-            pi_pFormattedErrMsg = new WString(*pi_pCopiedFormattedErrMsg); \
-        } \
-        else \
-        { \
-            *pi_pFormattedErrMsg = *pi_pCopiedFormattedErrMsg; \
-        } \
-    } \
-    else \
-    { \
-        if (pi_pFormattedErrMsg != 0) \
-        { \
-            delete pi_pFormattedErrMsg; \
-            pi_pFormattedErrMsg = 0; \
-        } \
-        HASSERT(pi_pFormattedErrMsg == 0); \
-    } \
- 
-//----------------------------------------------------------------------------------
-//Macro for copying an exception information structure
-//----------------------------------------------------------------------------------
-#define COPY_EXCEPTION_INFO(pi_pInfo, pi_pCopiedInfo, pi_InfoStructName) \
-if (pi_pCopiedInfo != 0) \
-{ \
-    if (pi_pInfo == 0) \
-    { \
-        pi_pInfo = new pi_InfoStructName; \
-    } \
-\
-    *((pi_InfoStructName*)pi_pInfo) = *((pi_InfoStructName*)pi_pCopiedInfo); \
-} \
-else \
-{ \
-    if (pi_pInfo != 0) \
-    { \
-        delete pi_pInfo; \
-    } \
-    pi_pInfo = 0; \
-} \
- 
-//----------------------------------------------------------------------------------
-//Macro for creating an exception common exception function
-//----------------------------------------------------------------------------------
-#define HFC_DECLARE_COMMON_EXCEPTION_FNC() \
-    public: \
-    virtual HFCException*   Clone() const; \
-    virtual void            ThrowCopy() const; \
-    virtual void            FormatExceptionMessage(WString& pio_rMessage) const;
-
-#define HFC_IMPLEMENT_COMMON_EXCEPTION_FNC(pi_ExceptionType) \
-    HFCException* pi_ExceptionType::Clone() const \
-{   return new pi_ExceptionType(*this);    } \
-    void pi_ExceptionType::ThrowCopy() const \
-{   throw pi_ExceptionType(*this);         }
-
-//----------------------------------------------------------------------------------
-//Macro for formatting parameterized exception message
-//----------------------------------------------------------------------------------
-#define FORMAT_EXCEPTION_MSG(pio_rMessage, ...) \
-{ \
-    WChar TempBuffer[2048]; \
-    BeStringUtilities::Snwprintf(TempBuffer, pio_rMessage.c_str(), __VA_ARGS__); \
-    pio_rMessage = WString(TempBuffer); \
-}
-
-//----------------------------------------------------------------------------------
-//Macro for formatting an exception message at the construction of the
-//exception object. The message is saved in the base class for being able to access
-//it into a catch.
-//----------------------------------------------------------------------------------
-#define GENERATE_FORMATTED_EXCEPTION_MSG() \
-{ \
-    m_pFormattedErrMsg = new WString; \
-    *m_pFormattedErrMsg = GetExceptionMessageFromResource(); \
-    FormatExceptionMessage(*m_pFormattedErrMsg); \
-}
-
 //----------------------------------------------------------------------------
-// Class HFCException
+// Class HFCException ABSTRACT
 //----------------------------------------------------------------------------
-class _HDLLu HFCException
+class HFCException
     {
-    HDECLARE_BASECLASS_ID(6000)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
 public :
-
-
-    HFCException                   ();
-    HFCException                   (ExceptionID             pi_ExceptionID);
-    virtual                     ~HFCException                  ();
-
-    HFCException                   (const HFCException&     pi_rObj);
-    HFCException&               operator=                      (const HFCException&     pi_rObj);
-
-    virtual ExceptionID         GetID                          () const;
-    virtual const HFCExInfo*    GetInfo                        () const;
-    virtual WString             GetExceptionMessage            () const;
-
+    IMAGEPP_EXPORT virtual ~HFCException();   
+    virtual WString GetExceptionMessage() const = 0;
+    virtual HFCException* Clone() const = 0;
+    virtual void ThrowMyself() const = 0;
 protected :
+    //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
+    IMAGEPP_EXPORT HFCException();
+    IMAGEPP_EXPORT HFCException(const HFCException& pi_rObj); 
 
-    WString                     GetExceptionMessageFromResource() const;
+    IMAGEPP_EXPORT WString GetRawMessageFromResource(const ImagePPExceptions::StringId& pi_ID) const;
 
-    HFCExInfo*                  m_pInfo; //Can be set only by a derived class
-    WString*                    m_pFormattedErrMsg;
-
-private :
-
-    ExceptionID                 m_ExceptionID;
+    IMAGEPP_EXPORT virtual WString _BuildMessage(const ImagePPExceptions::StringId& pi_ID) const;
+private:
+    HFCException&               operator=                      (const HFCException&     pi_rObj);
     };
 
-//----------------------------------------------------------------------------
-// Class HFCFileException
-//----------------------------------------------------------------------------
-class _HDLLu HFCFileException : public HFCException
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+template<ImagePPExceptions::StringId (*GetStringId)()>
+class HFCException_T : public HFCException
     {
-    HDECLARE_CLASS_ID(6001, HFCException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
-
-public :
-    HFCFileException                   (ExceptionID                 pi_ExceptionID,
-                                        const WString&              pi_rFileName,
-                                        bool                       pi_CreateExInfo = true);
-    virtual                 ~HFCFileException                  ();
-
-    HFCFileException                   (const HFCFileException&     pi_rObj);
-    HFCFileException&       operator=                          (const HFCFileException&     pi_rObj);
+    public:
+    HFCException_T() : HFCException(){}
+    HFCException_T (const HFCException_T& pi_rObj) : HFCException(pi_rObj){}
+    virtual HFCException* Clone() const override {return new HFCException_T(*this);}
+    virtual void ThrowMyself() const override {throw *this;} 
+    virtual WString GetExceptionMessage() const override
+        {
+        return HFCException::_BuildMessage(GetStringId());
+        }
     };
+typedef HFCException_T<ImagePPExceptions::Unknown> HFCUnknownException;
+typedef HFCException_T<ImagePPExceptions::HFCUndefined> HFCUndefinedException;
+typedef HFCException_T<ImagePPExceptions::HFCMemory> HFCMemoryException;
+typedef HFCException_T<ImagePPExceptions::HFCOutOfMemory> HFCOutOfMemoryException;
+typedef HFCException_T<ImagePPExceptions::HFCObjectNotInFactory> HFCObjectNotInFactoryException;
+typedef HFCException_T<ImagePPExceptions::HFCHtppRequestString> HFCHttpRequestStringException;
+typedef HFCException_T<ImagePPExceptions::HFCLoginInformationNotAvailable> HFCLoginInformationNotAvailableException;
+typedef HFCException_T<ImagePPExceptions::HFCUnsupportedFileVersion> HFCUnsupportedFileVersionException;
 
 //----------------------------------------------------------------------------
-// Class HFCDeviceException
+// Class HFCFileException ABSTRACT
 //----------------------------------------------------------------------------
-class _HDLLu HFCDeviceException : public HFCException
+class HFCFileException : public HFCException
     {
-    HDECLARE_CLASS_ID(6002, HFCException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
-
 public :
-    HFCDeviceException(const WString& pi_rDeviceName,
-                       bool          pi_CreateExceptionInfo = true);
-
-    HFCDeviceException(ExceptionID    pi_ExceptionID,
-                       const WString& pi_rDeviceName,
-                       bool          pi_CreateExceptionInfo = true);
-    virtual                 ~HFCDeviceException();
-
-    HFCDeviceException(const HFCDeviceException& pi_rObj);
-    HFCDeviceException&     operator=(const HFCDeviceException& pi_rObj);
+    IMAGEPP_EXPORT virtual ~HFCFileException ();
+    IMAGEPP_EXPORT WStringCR GetFileName () const;
+    IMAGEPP_EXPORT virtual bool IsInvalidAccess() const;
+protected : 
+    //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
+    IMAGEPP_EXPORT HFCFileException (WStringCR pi_rFileName);
+    IMAGEPP_EXPORT HFCFileException (const HFCFileException&     pi_rObj); 
+    WString m_FileName;
+    IMAGEPP_EXPORT virtual WString _BuildMessage(const ImagePPExceptions::StringId& rsID) const override;
     };
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+template<ImagePPExceptions::StringId (*GetStringId)(), bool IsInvalidAccessMode>
+class HFCFileException_T : public HFCFileException
+{
+public:
+    HFCFileException_T(WStringCR pi_rFileName) : HFCFileException(pi_rFileName){}
+    HFCFileException_T (const HFCFileException_T& pi_rObj) : HFCFileException(pi_rObj){} 
+    virtual HFCException* Clone() const override {return new HFCFileException_T(*this);}
+    virtual void ThrowMyself() const override {throw *this;} 
+    virtual bool IsInvalidAccess() const override {return IsInvalidAccessMode;} 
+    virtual WString GetExceptionMessage() const override
+        {
+        return HFCFileException::_BuildMessage(GetStringId());
+        }
+};
+
+typedef HFCFileException_T<ImagePPExceptions::HFCGenericFile, false> HFCGenericFileException;
+typedef HFCFileException_T<ImagePPExceptions::HFCCannotLockFile, true> HFCCannotLockFileException;
+typedef HFCFileException_T<ImagePPExceptions::HFCFileLockViolation, true> HFCFileLockViolationException;
+typedef HFCFileException_T<ImagePPExceptions::HFCCorruptedFile, false> HFCCorruptedFileException;
+typedef HFCFileException_T<ImagePPExceptions::HFCFileNotFound, false> HFCFileNotFoundException;
+typedef HFCFileException_T<ImagePPExceptions::HFCFileExist, false> HFCFileExistException;
+typedef HFCFileException_T<ImagePPExceptions::HFCFileReadOnly, true> HFCFileReadOnlyException;
+typedef HFCFileException_T<ImagePPExceptions::HFCFileNotCreated, false> HFCFileNotCreatedException;
+typedef HFCFileException_T<ImagePPExceptions::HFCFileNotSupported, false> HFCFileNotSupportedException;
+typedef HFCFileException_T<ImagePPExceptions::HFCFileOutOfRange, false> HFCFileOutOfRangeException;
+typedef HFCFileException_T<ImagePPExceptions::HFCFilePermissionDenied, true> HFCFilePermissionDeniedException;
+typedef HFCFileException_T<ImagePPExceptions::HFCDllNotFound, false> HFCDllNotFoundException;
+typedef HFCFileException_T<ImagePPExceptions::HFCInvalidFileName, false> HFCInvalidFileNameException;
+typedef HFCFileException_T<ImagePPExceptions::HFCSharingViolation, true> HFCSharingViolationException;
+typedef HFCFileException_T<ImagePPExceptions::HFCCannotUnlock, false> HFCCannotUnlockException;
+typedef HFCFileException_T<ImagePPExceptions::HFCCannotOpenFile, false> HFCCannotOpenFileException;
+typedef HFCFileException_T<ImagePPExceptions::HFCCannotConnectToDB, false> HFCCannotConnectToDBException;
+typedef HFCFileException_T<ImagePPExceptions::HFCInvalidUrlForSisterFile, false> HFCInvalidUrlForSisterFileException;
+typedef HFCFileException_T<ImagePPExceptions::HFCDirectoryReadOnly, false> HFCDirectoryReadOnlyException;
+typedef HFCFileException_T<ImagePPExceptions::HFCSisterFileNotCreated, false> HFCSisterFileNotCreatedException;
+typedef HFCFileException_T<ImagePPExceptions::HFCDirectoryNotCreated, false> HFCDirectoryNotCreatedException;
+typedef HFCFileException_T<ImagePPExceptions::HFCCannotCloseFile, false> HFCCannotCloseFileException;
+typedef HFCFileException_T<ImagePPExceptions::HFCWriteFault, false> HFCWriteFaultException;
+typedef HFCFileException_T<ImagePPExceptions::HFCReadFault, false> HFCReadFaultException;
+typedef HFCFileException_T<ImagePPExceptions::HFCFileIOError, false> HFCFileIOErrorException;
+typedef HFCFileException_T<ImagePPExceptions::HFCFileNotSupportedInWriteMode, true> HFCFileNotSupportedInWriteModeException; 
+
+//----------------------------------------------------------------------------
+// Class HFCDeviceException ABSTRACT
+//----------------------------------------------------------------------------
+class HFCDeviceException : public HFCException 
+{
+public :
+    IMAGEPP_EXPORT virtual ~HFCDeviceException();
+    IMAGEPP_EXPORT WStringCR GetDeviceName() const;
+protected :
+    //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
+    IMAGEPP_EXPORT HFCDeviceException (const HFCDeviceException&     pi_rObj); 
+    IMAGEPP_EXPORT HFCDeviceException(const WString& pi_rDeviceName);
+    WString m_DeviceName;    
+    IMAGEPP_EXPORT virtual WString _BuildMessage(const ImagePPExceptions::StringId& pi_ID) const;
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+template<ImagePPExceptions::StringId (*GetStringId)()>
+class HFCDeviceException_T : public HFCDeviceException
+{
+public:
+    HFCDeviceException_T(const WString& pi_rDeviceName) : HFCDeviceException(pi_rDeviceName){}
+    HFCDeviceException_T (const HFCDeviceException_T& pi_rObj) : HFCDeviceException(pi_rObj){}
+    virtual HFCException* Clone() const override {return new HFCDeviceException_T(*this);}
+    virtual void ThrowMyself() const override {throw *this;} 
+    virtual WString GetExceptionMessage() const override
+        {
+        return HFCDeviceException::_BuildMessage(GetStringId());
+        }
+};
+typedef HFCDeviceException_T<ImagePPExceptions::HFCUndefinedDevice> HFCUndefinedDeviceException;
+typedef HFCDeviceException_T<ImagePPExceptions::HFCNoDiskSpaceLeft> HFCNoDiskSpaceLeftException;
+typedef HFCDeviceException_T<ImagePPExceptions::HFCDeviceAbort> HFCDeviceAbortException;
 
 //-----------------------------------------------------------------------------
 // HFCInternetConnectionException class
 //-----------------------------------------------------------------------------
-class _HDLLu HFCInternetConnectionException : public HFCDeviceException
+class HFCInternetConnectionException : public HFCDeviceException
     {
-    HDECLARE_CLASS_ID(6003, HFCDeviceException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
-
 public :
-
     enum ErrorType
         {
         UNKNOWN = 0,
@@ -511,18 +233,16 @@ public :
         PERMISSION_DENIED,
         PROXY_PERMISSION_DENIED
         };
-
-    HFCInternetConnectionException(const WString&    pi_rDeviceName,
-                                   ErrorType        pi_ErrorType);
-    HFCInternetConnectionException(ExceptionID        pi_ExceptionID,
-                                   const WString&    pi_rDeviceName,
-                                   ErrorType        pi_ErrorType);
-    virtual         ~HFCInternetConnectionException();
-
-    HFCInternetConnectionException(const HFCInternetConnectionException& pi_rObj);
-    HFCInternetConnectionException&   operator=(const HFCInternetConnectionException& pi_rObj);
-
-    ErrorType     GetErrorType() const;
+    IMAGEPP_EXPORT HFCInternetConnectionException(const WString&    pi_rDeviceName,
+                    ErrorType        pi_ErrorType);
+    IMAGEPP_EXPORT virtual         ~HFCInternetConnectionException();
+    IMAGEPP_EXPORT const ErrorType     GetErrorType() const;
+    IMAGEPP_EXPORT HFCInternetConnectionException                   (const HFCInternetConnectionException&     pi_rObj); 
+    IMAGEPP_EXPORT virtual WString GetExceptionMessage() const override;
+    virtual HFCException* Clone() const override;
+    virtual void ThrowMyself() const override {throw *this;} 
+protected:
+    ErrorType            m_ErrorType;        
     };
 
 //-----------------------------------------------------------------------------
@@ -530,9 +250,6 @@ public :
 //-----------------------------------------------------------------------------
 class HFCCannotCreateSynchroObjException : public HFCException
     {
-    HDECLARE_CLASS_ID(6005, HFCException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
-
 public :
 
     enum SynchroObject
@@ -541,12 +258,16 @@ public :
         SEMAPHORE,
         EVENT
         };
-
+    
     HFCCannotCreateSynchroObjException(HFCCannotCreateSynchroObjException::SynchroObject pi_SynchroObj);
-    virtual         ~HFCCannotCreateSynchroObjException();
+    virtual ~HFCCannotCreateSynchroObjException();
+    const SynchroObject GetSynchroObject() const;
+    HFCCannotCreateSynchroObjException(const HFCCannotCreateSynchroObjException&     pi_rObj); 
+    virtual WString GetExceptionMessage() const override;
+    virtual HFCException* Clone() const override;
+    virtual void ThrowMyself() const override {throw *this;} 
+protected:
+    SynchroObject    m_SynchroObject;    
+};
 
-    HFCCannotCreateSynchroObjException(const HFCCannotCreateSynchroObjException& pi_rObj);
-    HFCCannotCreateSynchroObjException&   operator=(const HFCCannotCreateSynchroObjException& pi_rObj);
-    };
-
-
+END_IMAGEPP_NAMESPACE

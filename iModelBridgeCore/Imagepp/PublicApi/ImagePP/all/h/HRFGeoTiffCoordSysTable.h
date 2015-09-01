@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoTiffCoordSysTable.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -31,11 +31,12 @@
     -----------------------------------------------------------------------------
 */
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFGeoTiffCoordSysTable : public HRFGeoTiffCompressedTable
     {
 public:
 
-    HDECLARE_CLASS_ID(1491, HRFGeoTiffCompressedTable);
+    HDECLARE_CLASS_ID(HRFGeoTiffId_CoordSysTable, HRFGeoTiffCompressedTable);
 
     /** -----------------------------------------------------------------------------
         HRFGeoTiffCoordSysRecord
@@ -55,17 +56,17 @@ public:
     // this class is a singleton, use the method Instanciate to create this class
     virtual                 ~HRFGeoTiffCoordSysTable();
 
-    _HDLLg bool                   GetRecord(short pi_Code,
+    IMAGEPP_EXPORT bool                   GetRecord(short pi_Code,
                                              HRFGeoTiffCoordSysRecord* po_pRecord) const;
-    _HDLLg bool                   GetRecord(string pi_Datum,
+    IMAGEPP_EXPORT bool                   GetRecord(string pi_Datum,
                                              string pi_ProjName,
                                              string pi_Zone,
                                              HRFGeoTiffCoordSysRecord* po_pRecord) const;
-    _HDLLg bool                   GetFirst(HRFGeoTiffCoordSysRecord* po_pRecord) const;
-    _HDLLg bool                   GetNext (HRFGeoTiffCoordSysRecord* po_pRecord) const;
+    IMAGEPP_EXPORT bool                   GetFirst(HRFGeoTiffCoordSysRecord* po_pRecord) const;
+    IMAGEPP_EXPORT bool                   GetNext (HRFGeoTiffCoordSysRecord* po_pRecord) const;
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFGeoTiffCoordSysTable)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFGeoTiffCoordSysTable)
 
     static HRFGeoTiffCompressedTable::ColumnInfo    s_TableDef[];
     static Byte                                    s_NbColumns;
@@ -89,4 +90,5 @@ private:
     HRFGeoTiffCoordSysTable(const HRFGeoTiffCoordSysTable&);
     HRFGeoTiffCoordSysTable& operator=(const HRFGeoTiffCoordSysTable&);
     };
+END_IMAGEPP_NAMESPACE
 

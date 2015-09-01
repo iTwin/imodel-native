@@ -71,7 +71,7 @@ extern "C" {
 #endif
 
 #ifndef _ZLIB_H
-#include <zlib/zlib.h>
+#include <zlib/zlib.h>  //IPP 
 #endif
 
 #ifndef CPL_MINIZIP_IOAPI_H_INCLUDED

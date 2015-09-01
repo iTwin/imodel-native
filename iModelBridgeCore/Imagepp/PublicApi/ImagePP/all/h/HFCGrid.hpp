@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCGrid.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // Constructor
@@ -30,10 +30,10 @@ inline HFCGrid::HFCGrid (double pi_XMin,
     HPRECONDITION(HDOUBLE_SMALLER_OR_EQUAL_EPSILON(pi_XMin, pi_XMax) || HDOUBLE_EQUAL_EPSILON(pi_XMin, pi_XMax));
     HPRECONDITION(HDOUBLE_SMALLER_OR_EQUAL_EPSILON(pi_YMin, pi_YMax) || HDOUBLE_EQUAL_EPSILON(pi_YMin, pi_YMax));
 
-    m_XMin      = min(pi_XMin, pi_XMax);
-    m_YMin      = min(pi_YMin, pi_YMax);
-    m_XMax      = max(pi_XMax, pi_XMin);
-    m_YMax      = max(pi_YMax, pi_YMin);
+    m_XMin      = MIN(pi_XMin, pi_XMax);
+    m_YMin      = MIN(pi_YMin, pi_YMax);
+    m_XMax      = MAX(pi_XMax, pi_XMin);
+    m_YMax      = MAX(pi_YMax, pi_YMin);
     m_Precision = pi_Precision;
     }
 
@@ -93,10 +93,10 @@ inline void HFCGrid::SetExtent(double pi_XMin,
     HPRECONDITION(HDOUBLE_SMALLER_OR_EQUAL_EPSILON(pi_XMin, pi_XMax) || HDOUBLE_EQUAL_EPSILON(pi_XMin, pi_XMax));
     HPRECONDITION(HDOUBLE_SMALLER_OR_EQUAL_EPSILON(pi_YMin, pi_YMax) || HDOUBLE_EQUAL_EPSILON(pi_YMin, pi_YMax));
 
-    m_XMin      = min(pi_XMin, pi_XMax);
-    m_YMin      = min(pi_YMin, pi_YMax);
-    m_XMax      = max(pi_XMax, pi_XMin);
-    m_YMax      = max(pi_YMax, pi_YMin);
+    m_XMin      = MIN(pi_XMin, pi_XMax);
+    m_YMin      = MIN(pi_YMin, pi_YMax);
+    m_XMax      = MAX(pi_XMax, pi_XMin);
+    m_YMax      = MAX(pi_YMax, pi_YMin);
     }
 
 //-----------------------------------------------------------------------------
@@ -217,7 +217,7 @@ inline int64_t HFCGrid::GetYMax() const
 inline int64_t HFCGrid::GetWidth() const
     {
 #if defined (ANDROID) || defined (__APPLE__)
-        //DM-Android return abs64(GetXMax() - GetXMin() + 1);
+        return llabs(GetXMax() - GetXMin() + 1);       //DM-Android move that on BeNumeric? 
 #elif defined (_WIN32)
         return _abs64(GetXMax() - GetXMin() + 1);
 #endif
@@ -231,9 +231,10 @@ inline int64_t HFCGrid::GetWidth() const
 inline int64_t HFCGrid::GetHeight() const
     {
 #if defined (ANDROID) || defined (__APPLE__)
-        //DM-Android return abs64(GetYMax() - GetYMin() + 1);
+        return llabs(GetYMax() - GetYMin() + 1);
 #elif defined (_WIN32)
         return _abs64(GetYMax() - GetYMin() + 1);
 #endif
     }
 
+END_IMAGEPP_NAMESPACE

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGifLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFGifLineEditor
 //---------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFGifFile.h>
 #include <Imagepp/all/h/HCDCodecHMRGif.h>
@@ -82,7 +82,7 @@ bool HRFGifLineEditor::ReadFromFile(uint32_t&         pio_rLastValidIndex,
         {
         if(pi_pFile->GetCurrentPos() != m_PosInFile)
             pi_pFile->SeekToPos(m_PosInFile);
-        pi_pFile->Read((void*)&DataSize ,1);
+        pi_pFile->Read(&DataSize ,1);
         m_PosInFile = (uint32_t)pi_pFile->GetCurrentPos();
 
         if (DataSize == 0)
@@ -100,7 +100,7 @@ bool HRFGifLineEditor::ReadFromFile(uint32_t&         pio_rLastValidIndex,
 
         if(pi_pFile->GetCurrentPos() != m_PosInFile)
             pi_pFile->SeekToPos(m_PosInFile);
-        pi_pFile->Read((void*)(m_pCompressBuffer + pio_rLastValidIndex), sizeof(Byte) * DataSize);
+        pi_pFile->Read((m_pCompressBuffer + pio_rLastValidIndex), sizeof(Byte) * DataSize);
         m_PosInFile = (uint32_t)pi_pFile->GetCurrentPos();
 
         pio_rLastValidIndex += DataSize;
@@ -109,7 +109,7 @@ bool HRFGifLineEditor::ReadFromFile(uint32_t&         pio_rLastValidIndex,
             {
             if(pi_pFile->GetCurrentPos() != m_PosInFile)
                 pi_pFile->SeekToPos(m_PosInFile);
-            pi_pFile->Read((void*)&DataSize, 1);
+            pi_pFile->Read(&DataSize, 1);
             m_PosInFile = (uint32_t)pi_pFile->GetCurrentPos();
 
             if (DataSize == 0)
@@ -125,9 +125,9 @@ bool HRFGifLineEditor::ReadFromFile(uint32_t&         pio_rLastValidIndex,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFGifLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                    uint32_t pi_PosBlockY,
-                                    Byte*  po_pData,
+HSTATUS HRFGifLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
+                                    uint64_t  pi_PosBlockY,
+                                    Byte*     po_pData,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -251,9 +251,9 @@ HSTATUS HRFGifLineEditor::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS  HRFGifLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                      uint32_t     pi_PosBlockY,
-                                      const Byte* pi_pData,
+HSTATUS  HRFGifLineEditor::WriteBlock(uint64_t        pi_PosBlockX,
+                                      uint64_t        pi_PosBlockY,
+                                      const Byte*     pi_pData,
                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -338,10 +338,10 @@ HSTATUS  HRFGifLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFGifLineEditor::WriteBlock(uint32_t                 pi_PosBlockX,
-                                     uint32_t                 pi_PosBlockY,
+HSTATUS HRFGifLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                     uint64_t                 pi_PosBlockY,
                                      const HFCPtr<HCDPacket>& pi_rpPacket,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     HFCLockMonitor const*    pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_rpPacket != 0);
@@ -372,7 +372,7 @@ HSTATUS HRFGifLineEditor::WriteBlock(uint32_t                 pi_PosBlockX,
         }
 
     if (pi_rpPacket->GetDataSize() != 0)
-        if (m_pRasterFile->m_pGifFile->Write((void*)(pi_rpPacket->GetBufferAddress()), pi_rpPacket->GetDataSize()) != pi_rpPacket->GetDataSize())
+        if (m_pRasterFile->m_pGifFile->Write((pi_rpPacket->GetBufferAddress()), pi_rpPacket->GetDataSize()) != pi_rpPacket->GetDataSize())
             goto WRAPUP;
 
     // Increment the sharing control modification counter.

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DPolygon.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DPolygon
@@ -13,6 +13,7 @@
 
 #include "HVE2DSimpleShape.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HVE2DRectangle;
 
 /** -----------------------------------------------------------------------------
@@ -39,7 +40,7 @@ class HVE2DRectangle;
 class HVE2DPolygon : public HVE2DSimpleShape
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1107)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DPolygonId)
 
 public:
 
@@ -99,28 +100,28 @@ public:
     virtual HVE2DShapeTypeId      GetShapeType() const;
     virtual double                CalculateArea() const;
     virtual double                CalculatePerimeter() const;
-    virtual bool                  IsPointIn(const HGF2DLocation& pi_rPoint,
-                                             double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
+    IMAGEPP_EXPORT virtual bool           IsPointIn(const HGF2DLocation& pi_rPoint,
+                                            double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
     virtual void                  MakeEmpty();
 
     virtual void                  Drop(HGF2DLocationCollection* po_pPoint,
                                        double                   pi_Tolerance) const;
 
-    virtual HGF2DShape*           GetLightShape() const;
+    IMAGEPP_EXPORT virtual HGF2DShape*    GetLightShape() const;
 
 
     // From HVE2DVector
     virtual HGF2DLocation    CalculateClosestPoint(const HGF2DLocation& pi_rPoint) const;
-    virtual size_t           Intersect(const HVE2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual size_t    Intersect(const HVE2DVector& pi_rVector,
                                        HGF2DLocationCollection* po_pCrossPoints) const;
-    virtual size_t           ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
-                                                       HGF2DLocationCollection* po_pContiguousnessPoints) const;
-    virtual void             ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
+    IMAGEPP_EXPORT virtual size_t    ObtainContiguousnessPoints(const HVE2DVector& pi_rVector,
+                                                        HGF2DLocationCollection* po_pContiguousnessPoints) const;
+    IMAGEPP_EXPORT virtual void      ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector,
                                                           const HGF2DLocation& pi_rPoint,
                                                           HGF2DLocation* pi_pFirstContiguousnessPoint,
                                                           HGF2DLocation* pi_pSecondContiguousnessPoint) const;
-    virtual HVE2DVector*     AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) const;
-    virtual bool             Crosses(const HVE2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual HVE2DVector*     AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) const;
+    IMAGEPP_EXPORT virtual bool             Crosses(const HVE2DVector& pi_rVector) const;
     virtual bool             AreContiguous(const HVE2DVector& pi_rVector) const;
     virtual bool             AreAdjacent(const HVE2DVector& pi_rVector) const;
     virtual bool             IsPointOn(const HGF2DLocation& pi_rTestPoint,
@@ -133,12 +134,12 @@ public:
                                           double pi_Tolerance = HVE_USE_INTERNAL_EPSILON) const;
     virtual bool             AreContiguousAt(const HVE2DVector& pi_rVector,
                                              const HGF2DLocation& pi_rPoint) const;
-    virtual HGFBearing       CalculateBearing(const HGF2DLocation& pi_rPositionPoint,
+    IMAGEPP_EXPORT virtual HGFBearing       CalculateBearing(const HGF2DLocation& pi_rPositionPoint,
                                               HVE2DVector::ArbitraryDirection
                                               pi_Direction = HVE2DVector::BETA) const;
-    virtual double           CalculateAngularAcceleration(const HGF2DLocation& pi_rPositionPoint,
-                                                          HVE2DVector::ArbitraryDirection
-                                                          pi_Direction = HVE2DVector::BETA) const;
+    IMAGEPP_EXPORT virtual double    CalculateAngularAcceleration(const HGF2DLocation& pi_rPositionPoint,
+                                              HVE2DVector::ArbitraryDirection
+                                              pi_Direction = HVE2DVector::BETA) const;
 
     // From HGFGraphicObject
     virtual HGF2DExtent      GetExtent() const;
@@ -153,11 +154,11 @@ public:
     // From HPMPersistentObject
     virtual HPMPersistentObject*    Clone() const;
     // Debugging
-    virtual void            PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT  virtual void            PrintState(ostream& po_rOutput) const;
 
 protected:
 
-    virtual void       SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    IMAGEPP_EXPORT  virtual void       SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
 
 private:
 
@@ -168,6 +169,7 @@ private:
     // Member attribute ... a single complex linear
     HVE2DComplexLinear      m_ComplexLinear;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DPolygon.hpp"

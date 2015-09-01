@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFiTiffFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFiTiffFile
@@ -14,6 +14,7 @@
 #include "HRFTiffFile.h"
 #include "HRFRasterFileCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFiTiffCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -30,7 +31,7 @@ public:
     friend class HRFiTiffStripEditor;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1465, HRFTiffFile)
+    HDECLARE_CLASS_ID(HRFFileId_iTiff, HRFTiffFile)
 
     // allow to Open an image file
     HRFiTiffFile          (const HFCPtr<HFCURL>&          pi_rpURL,
@@ -40,20 +41,19 @@ public:
     virtual                               ~HRFiTiffFile           ();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities       () const;
+    virtual const HFCPtr<HRFRasterFileCapabilities>&     GetCapabilities       () const;
 
     // File information
     virtual const HGF2DWorldIdentificator GetWorldIdentificator () const;
 
     // File manipulation
-    virtual bool                         AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
+    virtual bool                          AddPage               (HFCPtr<HRFPageDescriptor> pi_pPage);
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
                                                                  unsigned short           pi_Resolution,
                                                                  HFCAccessMode             pi_AccessMode);
 
-    virtual void                          Save();
+    virtual void                         Save();
 
     // AltaPhoto project
     bool                                 Read_AltaPhotoBlob    (vector<Byte>* po_pData) const;
@@ -64,7 +64,6 @@ public:
     virtual void       SetDefaultRatioToMeter(double pi_RatioToMeter,
                                               uint32_t pi_Page = 0,
                                               bool   pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation = false,
-                                              bool   pi_ModelTypeGeographicConsiderDefaultUnit = true,
                                               bool   pi_InterpretUnitINTGR = false) override;
 
 
@@ -142,18 +141,18 @@ protected:
                  uint64_t              pi_Offset,
                  bool                  pi_DontOpenFile);
 
-    virtual bool           Open                (bool pi_CreateBigTifFormat=false);
-    virtual bool           Open                (const HFCPtr<HFCURL>&  pi_rpURL)   {
+    virtual bool    Open                (bool pi_CreateBigTifFormat=false);
+    virtual bool    Open                (const HFCPtr<HFCURL>&  pi_rpURL)   {
         return T_Super::Open(pi_rpURL);
         }
 
 
-    virtual void            CreateDescriptors();
-    virtual void            ReloadDescriptors();
-    virtual void            SaveDescriptors(uint32_t pi_Page = -1) override;
-    virtual void            InitPrivateTagDefault(HMRHeader* po_rpHMRHeader);
-    virtual bool            ReadPrivateDirectory(uint32_t pi_Page, HMRHeader* po_rpHMRHeader);
-    virtual void            WritePrivateDirectory(uint32_t pi_Page);
+    virtual void     CreateDescriptors();
+    virtual void     ReloadDescriptors();
+    virtual void     SaveDescriptors(uint32_t pi_Page = -1) override;
+    virtual void     InitPrivateTagDefault(HMRHeader* po_rpHMRHeader);
+    virtual bool     ReadPrivateDirectory(uint32_t pi_Page, HMRHeader* po_rpHMRHeader);
+    virtual void     WritePrivateDirectory(uint32_t pi_Page);
 
     Byte                    GetDownSamplingMethodCode(HRFDownSamplingMethod pi_DownSamplingMethod) const;
     HRFDownSamplingMethod   GetDownSamplingMethod(Byte pi_Sampling) const;
@@ -169,7 +168,7 @@ protected:
     bool                    Write3DMatrixToTiffTag(HFCMatrix<4, 4>& pi_r3DMatrix);
     HFCMatrix<4, 4>*        Create3DMatrixFromiTiffTag() const;
 
-    IRasterBaseGcsPtr       GetGeocodingInformationFromWKT(string& pi_wkt) const;
+    RasterFileGeocodingPtr  ExtractGeocodingInformationFromWKT(string& pi_wkt) const;
 
     static bool             IsSamePixelTypeForAllResolutions       (HFCPtr<HRFPageDescriptor>       pi_pPage);
     static void             GenerateNoDataValuesTagData            (ListOfChannelIndex*             po_pChannelsWithNoDataValue,
@@ -192,24 +191,22 @@ class HRFiTiff64File : public HRFiTiffFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1957, HRFTiffFile)
+    HDECLARE_CLASS_ID(HRFFileId_iTiff64, HRFTiffFile)
 
 
     // allow to Open an image file
-    HRFiTiff64File(const HFCPtr<HFCURL>& pi_rpURL,
-                   HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
-                   uint64_t             pi_Offset = 0);
+    IMAGEPP_EXPORT HRFiTiff64File(const HFCPtr<HFCURL>& pi_rpURL,
+                                 HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
+                                 uint64_t              pi_Offset = 0);
 
-    virtual                            ~HRFiTiff64File           ();
-
+    IMAGEPP_EXPORT virtual ~HRFiTiff64File();
 
     // File capabilities
-    virtual const HFCPtr<HRFRasterFileCapabilities>&
-    GetCapabilities       () const;
+    IMAGEPP_EXPORT virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() const;
 
 protected :
-    virtual bool           Open(bool pi_CreateBigTifFormat=true);
-    virtual bool           Open(const HFCPtr<HFCURL>&  pi_rpURL)   {
+    IMAGEPP_EXPORT virtual bool Open(bool pi_CreateBigTifFormat=true);
+    virtual bool               Open(const HFCPtr<HFCURL>&  pi_rpURL)   {
         return T_Super::Open(pi_rpURL);
         }
 
@@ -264,7 +261,7 @@ struct HRFiTiffCreator : public HRFiTiffCreatorBase
                                              uint64_t             pi_Offset = 0) const;
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFiTiffCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFiTiffCreator)
 
 
     // Disabled methodes
@@ -291,9 +288,10 @@ struct HRFiTiff64Creator : public HRFiTiffCreatorBase
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFiTiff64Creator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFiTiff64Creator)
 
     // Disabled methodes
     HRFiTiff64Creator();
     };
+END_IMAGEPP_NAMESPACE
 

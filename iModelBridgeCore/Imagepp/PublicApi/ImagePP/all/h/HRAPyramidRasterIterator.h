@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAPyramidRasterIterator.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //
@@ -12,8 +12,8 @@
 #pragma once
 
 #include "HRARasterIterator.h"
-#include "HRAReferenceToRaster.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRAPyramidRaster;
 
 // ----------------------------------------------------------------------------
@@ -62,6 +62,7 @@ private:
 
     void CreateIteratorResolution ();
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRAPyramidRasterIterator.hpp"
 

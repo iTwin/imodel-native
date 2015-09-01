@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ext/MatrixFromTiePts/src/matrix.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 /*====================================================================
 **
 **  Operations matricielles.
@@ -30,11 +37,6 @@
 **      Surveying Engineering (University of Calgary)   Sept. 1987
 **      Alain Lapierre (Mise a jour standard ANSI)      Jan. 93
 **====================================================================*/
-/*----------------------------------------------------------------------+
-|                                                                       |
-|       $Source: ext/MatrixFromTiePts/src/matrix.h $
-|                                                                       |
-+----------------------------------------------------------------------*/
 
 #ifndef __MATRIX_H__
 #define __MATRIX_H__

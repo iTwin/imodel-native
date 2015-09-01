@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCMemoryLineStream.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCMemoryLineStream
 //---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCMemoryLineStream.h>
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HFCURLMemFile.h>
@@ -96,7 +96,7 @@ size_t HFCMemoryLineStream::ReadLine(uint32_t pi_LineNb,
 
         if (BytesRead != NbBytesToRead)
             {
-            m_LastException = HFC_FILE_IO_ERROR_EXCEPTION;
+            m_pLastException.reset(new HFCFileIOErrorException(GetURL()->GetURL())); 
             NbBytesToRead = 0;
             }
         else
@@ -110,7 +110,7 @@ size_t HFCMemoryLineStream::ReadLine(uint32_t pi_LineNb,
         }
     else
         {
-        m_LastException = HFC_FILE_OUT_OF_RANGE_EXCEPTION;
+        m_pLastException.reset(new HFCFileOutOfRangeException(GetURL()->GetURL())); 
         }
 
     return (size_t)BytesRead;

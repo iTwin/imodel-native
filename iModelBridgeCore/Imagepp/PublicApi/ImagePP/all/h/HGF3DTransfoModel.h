@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF3DTransfoModel.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF3DTransfoModel
@@ -16,7 +16,7 @@
 #include "HFCMatrix.h"
 #include "HGF2DLiteExtent.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 class HGF3DTransfoModel
     {
 
@@ -72,5 +72,6 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGF3DTransfoModel.hpp"
 

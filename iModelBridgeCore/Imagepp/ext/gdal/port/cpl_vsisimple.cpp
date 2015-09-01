@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsisimple.cpp 20666 2010-09-21 23:13:27Z warmerdam $
+ * $Id: cpl_vsisimple.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  Common Portability Library 
  * Purpose:  Simple implementation of POSIX VSI functions.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1998, Frank Warmerdam
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -48,11 +49,19 @@
 /* DEBUG_VSIMALLOC must also be defined */
 //#define DEBUG_VSIMALLOC_STATS
 
+/* Highly experimental, and likely buggy. Do not use, except for fixing it! */
+/* DEBUG_VSIMALLOC must also be defined */
+//#define DEBUG_VSIMALLOC_MPROTECT
+
+#ifdef DEBUG_VSIMALLOC_MPROTECT
+#include <sys/mman.h>
+#endif
+
 /* Uncomment to print every memory allocation or deallocation. */
 /* DEBUG_VSIMALLOC must also be defined */
 //#define DEBUG_VSIMALLOC_VERBOSE
 
-CPL_CVSID("$Id: cpl_vsisimple.cpp 20666 2010-09-21 23:13:27Z warmerdam $");
+CPL_CVSID("$Id: cpl_vsisimple.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /* for stat() */
 
@@ -324,12 +333,20 @@ static GUIntBig nVSICallocs = 0;
 static GUIntBig nVSIReallocs = 0;
 static GUIntBig nVSIFrees = 0;
 
+/*size_t GetMaxTotalAllocs()
+{
+    return nMaxTotalAllocs;
+}*/
+
 /************************************************************************/
 /*                         VSIShowMemStats()                            */
 /************************************************************************/
 
 void VSIShowMemStats()
 {
+    char* pszShowMemStats = getenv("CPL_SHOW_MEM_STATS");
+    if (pszShowMemStats == NULL || pszShowMemStats[0] == '\0' )
+        return;
     printf("Current VSI memory usage        : " CPL_FRMT_GUIB " bytes\n",
             (GUIntBig)nCurrentTotalAllocs);
     printf("Maximum VSI memory usage        : " CPL_FRMT_GUIB " bytes\n",
@@ -347,6 +364,11 @@ void VSIShowMemStats()
 }
 #endif
 
+#ifdef DEBUG_VSIMALLOC
+static GIntBig nMaxPeakAllocSize = -1;
+static GIntBig nMaxCumulAllocSize = -1;
+#endif
+
 /************************************************************************/
 /*                             VSICalloc()                              */
 /************************************************************************/
@@ -362,19 +384,60 @@ void *VSICalloc( size_t nCount, size_t nSize )
                 (int)nCount, (int)nSize);
         return NULL;
     }
-    void* ptr = VSIMalloc(nCount * nSize);
+    if (nMaxPeakAllocSize < 0)
+    {
+        char* pszMaxPeakAllocSize = getenv("CPL_MAX_PEAK_ALLOC_SIZE");
+        nMaxPeakAllocSize = (pszMaxPeakAllocSize) ? atoi(pszMaxPeakAllocSize) : 0;
+        char* pszMaxCumulAllocSize = getenv("CPL_MAX_CUMUL_ALLOC_SIZE");
+        nMaxCumulAllocSize = (pszMaxCumulAllocSize) ? atoi(pszMaxCumulAllocSize) : 0;
+    }
+    if (nMaxPeakAllocSize > 0 && (GIntBig)nMul > nMaxPeakAllocSize)
+        return NULL;
+#ifdef DEBUG_VSIMALLOC_STATS
+    if (nMaxCumulAllocSize > 0 && (GIntBig)nCurrentTotalAllocs + (GIntBig)nMul > nMaxCumulAllocSize)
+        return NULL;
+#endif
+
+#ifdef DEBUG_VSIMALLOC_MPROTECT
+    char* ptr = NULL;
+    size_t nPageSize = getpagesize();
+    posix_memalign((void**)&ptr, nPageSize, (3 * sizeof(void*) + nMul + nPageSize - 1) & ~(nPageSize - 1));
     if (ptr == NULL)
         return NULL;
+    memset(ptr + 2 * sizeof(void*), 0, nMul);
+#else
+    char* ptr = (char*) calloc(1, 3 * sizeof(void*) + nMul);
+    if (ptr == NULL)
+        return NULL;
+#endif
 
-    memset(ptr, 0, nCount * nSize);
-#ifdef DEBUG_VSIMALLOC_STATS
+    ptr[0] = 'V';
+    ptr[1] = 'S';
+    ptr[2] = 'I';
+    ptr[3] = 'M';
+    memcpy(ptr + sizeof(void*), &nMul, sizeof(void*));
+    ptr[2 * sizeof(void*) + nMul + 0] = 'E';
+    ptr[2 * sizeof(void*) + nMul + 1] = 'V';
+    ptr[2 * sizeof(void*) + nMul + 2] = 'S';
+    ptr[2 * sizeof(void*) + nMul + 3] = 'I';
+#if defined(DEBUG_VSIMALLOC_STATS) || defined(DEBUG_VSIMALLOC_VERBOSE)
     {
         CPLMutexHolderD(&hMemStatMutex);
+#ifdef DEBUG_VSIMALLOC_VERBOSE
+        fprintf(stderr, "Thread[%p] VSICalloc(%d,%d) = %p\n",
+                (void*)CPLGetPID(), (int)nCount, (int)nSize, ptr + 2 * sizeof(void*));
+#endif
+#ifdef DEBUG_VSIMALLOC_STATS
         nVSICallocs ++;
-        nVSIMallocs --;
+        if (nMaxTotalAllocs == 0)
+            atexit(VSIShowMemStats);
+        nCurrentTotalAllocs += nMul;
+        if (nCurrentTotalAllocs > nMaxTotalAllocs)
+            nMaxTotalAllocs = nCurrentTotalAllocs;
+#endif
     }
 #endif
-    return ptr;
+    return ptr + 2 * sizeof(void*);
 #else
     return( calloc( nCount, nSize ) );
 #endif
@@ -388,7 +451,27 @@ void *VSIMalloc( size_t nSize )
 
 {
 #ifdef DEBUG_VSIMALLOC
-    char* ptr = (char*) malloc(2 * sizeof(void*) + nSize);
+    if (nMaxPeakAllocSize < 0)
+    {
+        char* pszMaxPeakAllocSize = getenv("CPL_MAX_PEAK_ALLOC_SIZE");
+        nMaxPeakAllocSize = (pszMaxPeakAllocSize) ? atoi(pszMaxPeakAllocSize) : 0;
+        char* pszMaxCumulAllocSize = getenv("CPL_MAX_CUMUL_ALLOC_SIZE");
+        nMaxCumulAllocSize = (pszMaxCumulAllocSize) ? atoi(pszMaxCumulAllocSize) : 0;
+    }
+    if (nMaxPeakAllocSize > 0 && (GIntBig)nSize > nMaxPeakAllocSize)
+        return NULL;
+#ifdef DEBUG_VSIMALLOC_STATS
+    if (nMaxCumulAllocSize > 0 && (GIntBig)nCurrentTotalAllocs + (GIntBig)nSize > nMaxCumulAllocSize)
+        return NULL;
+#endif
+
+#ifdef DEBUG_VSIMALLOC_MPROTECT
+    char* ptr = NULL;
+    size_t nPageSize = getpagesize();
+    posix_memalign((void**)&ptr, nPageSize, (3 * sizeof(void*) + nSize + nPageSize - 1) & ~(nPageSize - 1));
+#else
+    char* ptr = (char*) malloc(3 * sizeof(void*) + nSize);
+#endif
     if (ptr == NULL)
         return NULL;
     ptr[0] = 'V';
@@ -396,6 +479,10 @@ void *VSIMalloc( size_t nSize )
     ptr[2] = 'I';
     ptr[3] = 'M';
     memcpy(ptr + sizeof(void*), &nSize, sizeof(void*));
+    ptr[2 * sizeof(void*) + nSize + 0] = 'E';
+    ptr[2 * sizeof(void*) + nSize + 1] = 'V';
+    ptr[2 * sizeof(void*) + nSize + 2] = 'S';
+    ptr[2 * sizeof(void*) + nSize + 3] = 'I';
 #if defined(DEBUG_VSIMALLOC_STATS) || defined(DEBUG_VSIMALLOC_VERBOSE)
     {
         CPLMutexHolderD(&hMemStatMutex);
@@ -420,13 +507,22 @@ void *VSIMalloc( size_t nSize )
 }
 
 #ifdef DEBUG_VSIMALLOC
-void VSICheckMarker(char* ptr)
+void VSICheckMarkerBegin(char* ptr)
 {
     if (memcmp(ptr, "VSIM", 4) != 0)
     {
         CPLError(CE_Fatal, CPLE_AppDefined,
                  "Inconsistant use of VSI memory allocation primitives for %p : %c%c%c%c",
                  ptr, ptr[0], ptr[1], ptr[2], ptr[3]);
+    }
+}
+
+void VSICheckMarkerEnd(char* ptr, size_t nEnd)
+{
+    if (memcmp(ptr + nEnd, "EVSI", 4) != 0)
+    {
+        CPLError(CE_Fatal, CPLE_AppDefined,
+                 "Memory has been written after the end of %p", ptr);
     }
 }
 
@@ -444,16 +540,67 @@ void * VSIRealloc( void * pData, size_t nNewSize )
         return VSIMalloc(nNewSize);
         
     char* ptr = ((char*)pData) - 2 * sizeof(void*);
-    VSICheckMarker(ptr);
-#ifdef DEBUG_VSIMALLOC_STATS
+    VSICheckMarkerBegin(ptr);
+
     size_t nOldSize;
     memcpy(&nOldSize, ptr + sizeof(void*), sizeof(void*));
+    VSICheckMarkerEnd(ptr, 2 * sizeof(void*) + nOldSize);
+    ptr[2 * sizeof(void*) + nOldSize + 0] = 'I';
+    ptr[2 * sizeof(void*) + nOldSize + 1] = 'S';
+    ptr[2 * sizeof(void*) + nOldSize + 2] = 'V';
+    ptr[2 * sizeof(void*) + nOldSize + 3] = 'E';
+
+    if (nMaxPeakAllocSize < 0)
+    {
+        char* pszMaxPeakAllocSize = getenv("CPL_MAX_PEAK_ALLOC_SIZE");
+        nMaxPeakAllocSize = (pszMaxPeakAllocSize) ? atoi(pszMaxPeakAllocSize) : 0;
+    }
+    if (nMaxPeakAllocSize > 0 && (GIntBig)nNewSize > nMaxPeakAllocSize)
+        return NULL;
+#ifdef DEBUG_VSIMALLOC_STATS
+    if (nMaxCumulAllocSize > 0 && (GIntBig)nCurrentTotalAllocs + (GIntBig)nNewSize - (GIntBig)nOldSize > nMaxCumulAllocSize)
+        return NULL;
 #endif
 
-    ptr = (char*) realloc(ptr, nNewSize + 2 * sizeof(void*));
-    if (ptr == NULL)
+#ifdef DEBUG_VSIMALLOC_MPROTECT
+    char* newptr = NULL;
+    size_t nPageSize = getpagesize();
+    posix_memalign((void**)&newptr, nPageSize, (nNewSize + 3 * sizeof(void*) + nPageSize - 1) & ~(nPageSize - 1));
+    if (newptr == NULL)
+    {
+        ptr[2 * sizeof(void*) + nOldSize + 0] = 'E';
+        ptr[2 * sizeof(void*) + nOldSize + 1] = 'V';
+        ptr[2 * sizeof(void*) + nOldSize + 2] = 'S';
+        ptr[2 * sizeof(void*) + nOldSize + 3] = 'I';
         return NULL;
+    }
+    memcpy(newptr + 2 * sizeof(void*), pData, nOldSize);
+    ptr[0] = 'M';
+    ptr[1] = 'I';
+    ptr[2] = 'S';
+    ptr[3] = 'V';
+    free(ptr);
+    newptr[0] = 'V';
+    newptr[1] = 'S';
+    newptr[2] = 'I';
+    newptr[3] = 'M';
+#else
+    void* newptr = realloc(ptr, nNewSize + 3 * sizeof(void*));
+    if (newptr == NULL)
+    {
+        ptr[2 * sizeof(void*) + nOldSize + 0] = 'E';
+        ptr[2 * sizeof(void*) + nOldSize + 1] = 'V';
+        ptr[2 * sizeof(void*) + nOldSize + 2] = 'S';
+        ptr[2 * sizeof(void*) + nOldSize + 3] = 'I';
+        return NULL;
+    }
+#endif
+    ptr = (char*) newptr;
     memcpy(ptr + sizeof(void*), &nNewSize, sizeof(void*));
+    ptr[2 * sizeof(void*) + nNewSize + 0] = 'E';
+    ptr[2 * sizeof(void*) + nNewSize + 1] = 'V';
+    ptr[2 * sizeof(void*) + nNewSize + 2] = 'S';
+    ptr[2 * sizeof(void*) + nNewSize + 3] = 'I';
 
 #if defined(DEBUG_VSIMALLOC_STATS) || defined(DEBUG_VSIMALLOC_VERBOSE)
     {
@@ -489,14 +636,19 @@ void VSIFree( void * pData )
         return;
 
     char* ptr = ((char*)pData) - 2 * sizeof(void*);
-    VSICheckMarker(ptr);
+    VSICheckMarkerBegin(ptr);
+    size_t nOldSize;
+    memcpy(&nOldSize, ptr + sizeof(void*), sizeof(void*));
+    VSICheckMarkerEnd(ptr, 2 * sizeof(void*) + nOldSize);
     ptr[0] = 'M';
     ptr[1] = 'I';
     ptr[2] = 'S';
     ptr[3] = 'V';
+    ptr[2 * sizeof(void*) + nOldSize + 0] = 'I';
+    ptr[2 * sizeof(void*) + nOldSize + 1] = 'S';
+    ptr[2 * sizeof(void*) + nOldSize + 2] = 'V';
+    ptr[2 * sizeof(void*) + nOldSize + 3] = 'E';
 #if defined(DEBUG_VSIMALLOC_STATS) || defined(DEBUG_VSIMALLOC_VERBOSE)
-    size_t nOldSize;
-    memcpy(&nOldSize, ptr + sizeof(void*), sizeof(void*));
     {
         CPLMutexHolderD(&hMemStatMutex);
 #ifdef DEBUG_VSIMALLOC_VERBOSE
@@ -509,7 +661,13 @@ void VSIFree( void * pData )
 #endif
     }
 #endif
+
+#ifdef DEBUG_VSIMALLOC_MPROTECT
+    mprotect(ptr, nOldSize + 2 * sizeof(void*), PROT_NONE);
+#else
     free(ptr);
+#endif
+
 #else
     if( pData != NULL )
         free( pData );

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFFliFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -19,6 +19,8 @@
 #include "HRFRasterFileCapabilities.h"
 
 //////////////////////////////////////////////////////////////////////////
+
+BEGIN_IMAGEPP_NAMESPACE
 #define FLIC_HEADER_LENGTH 128
 #define FLIC_FRAME_HEADER_LENGTH 16
 #define FLIC_CHUNK_HEADER_LENGTH 6
@@ -91,7 +93,7 @@ class HRFFliFile : public HRFRasterFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1506, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Fli, HRFRasterFile)
 
 
     friend class HRFFliCompressLineEditor;
@@ -199,10 +201,11 @@ struct HRFFliCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFFliCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFFliCreator)
 
     // Disabled methods
     HRFFliCreator();
     };
 
+END_IMAGEPP_NAMESPACE
 

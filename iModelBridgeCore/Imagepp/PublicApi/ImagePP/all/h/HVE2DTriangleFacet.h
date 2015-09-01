@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicApi/ImagePP/all/h/HVE2DTriangleFacet.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class : HVE2DTriangleFacet
@@ -28,6 +35,7 @@
     non-null area.
     -----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 template<class ATTRIBUTE> class HVE2DTriangleFacet : public HVE2DFacet<ATTRIBUTE>
     {
 
@@ -71,6 +79,7 @@ private:
 
 
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HVE2DTriangleFacet.hpp"
 

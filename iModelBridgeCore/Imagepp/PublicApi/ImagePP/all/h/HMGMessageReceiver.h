@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMGMessageReceiver.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HMGMessageReceiver
@@ -11,6 +11,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 
 // Forward class declarations
 class HMGMessageSender;
@@ -31,22 +32,22 @@ public:
     // Primary methods
     ///////////////////
 
-    _HDLLu HMGMessageReceiver();
-    _HDLLu HMGMessageReceiver(const HMGMessageReceiver& pi_rObj);
+    IMAGEPP_EXPORT HMGMessageReceiver();
+    IMAGEPP_EXPORT HMGMessageReceiver(const HMGMessageReceiver& pi_rObj);
 
-    _HDLLu virtual ~HMGMessageReceiver();
+    IMAGEPP_EXPORT virtual ~HMGMessageReceiver();
 
     HMGMessageReceiver& operator=(const HMGMessageReceiver& pi_rObj);
 
     // Make the object process a received message
-    _HDLLu virtual bool   ProcessMessage(const HMGMessage& pi_rMessage);
+    IMAGEPP_EXPORT virtual bool   ProcessMessage(const HMGMessage& pi_rMessage);
 
     // Call Link() on the specified sender.
-    _HDLLu virtual void    LinkTo(HMGMessageSender* pi_pSender,
+    IMAGEPP_EXPORT virtual void    LinkTo(HMGMessageSender* pi_pSender,
                                   bool pi_ReceiveMessagesInCurrentThread = false) const;
 
     // Call Unlink() on the specified sender.
-    _HDLLu void            UnlinkFrom(HMGMessageSender* pi_pSender) const;
+    IMAGEPP_EXPORT void            UnlinkFrom(HMGMessageSender* pi_pSender) const;
 
 protected:
 
@@ -55,14 +56,14 @@ protected:
     ////////////////
 
     // Tell if the receiver needs the coherence security mechanism
-    _HDLLu virtual bool   NeedsCoherenceSecurity() const;
+    IMAGEPP_EXPORT virtual bool   NeedsCoherenceSecurity() const;
 
     // Constructs our sink object if necessary
-    _HDLLu void            EnsureSinkIsConstructed() const;
+    IMAGEPP_EXPORT void            EnsureSinkIsConstructed() const;
 
     // Called automatically when one of our linked senders
     // we're still linked to gets deleted.
-    _HDLLu virtual void    SenderDeleted(HMGMessageSender* pi_pSender);
+    IMAGEPP_EXPORT virtual void    SenderDeleted(HMGMessageSender* pi_pSender);
 
     ////////////////
     // Attributes
@@ -73,3 +74,4 @@ protected:
 
     };
 
+END_IMAGEPP_NAMESPACE

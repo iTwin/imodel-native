@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCacheController.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,16 +10,11 @@
 // Class HRFCacheController
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>    //:> must be first for PreCompiledHeader Option
+#include <ImagePPInternal/hstdcpp.h>
+    //:> must be first for PreCompiledHeader Option
 #include <Imagepp/all/h/HRFCacheController.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HFCStat.h>
-
-#if defined (ANDROID) || defined (__APPLE__)
-#include <Bentley/stg/dftypes.h>    //DM-Android
-#endif
-
 
 /**-----------------------------------------------------------------------------
  Public constructor of the class.
@@ -188,12 +183,11 @@ void HRFCacheController::Control(int pi_CacheControlFlags)
             // Move file only if needed
             if(BeStringUtilities::Wcsicmp(fileEntry.m_FileName.c_str(), newFilename.c_str()) != 0)
                 {
-#if defined (ANDROID) || defined (__APPLE__)
-                //DM-Android   - option MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING ?
+#if defined (_WIN32)
+                MoveFileExW(fileEntry.m_FileName.c_str(), newFilename.c_str(), MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING);
+#else
                 BeFileName::BeCopyFile(fileEntry.m_FileName.c_str(), newFilename.c_str(), false);
                 BeFileName::BeDeleteFile(fileEntry.m_FileName.c_str());
-#elif defined (_WIN32)
-                MoveFileExW(fileEntry.m_FileName.c_str(), newFilename.c_str(), MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING);
 #endif
                 }
             }
@@ -221,8 +215,6 @@ void HRFCacheController::GetFileInfo(const WString& pi_rPath, FileEntryList* pi_
 
     WString FindPath(pi_rPath + L"\\*.*");
 
-//DM-Android  To verify if it is working correctly
-//
     BeFileListIterator FileList (FindPath.c_str(), m_ScanSubDir);
     BeFileName fn;
     while (FileList.GetNextFileName (fn) == SUCCESS)

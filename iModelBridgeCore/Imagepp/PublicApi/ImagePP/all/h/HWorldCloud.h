@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HWorldCloud.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -13,6 +13,7 @@
 //
 // Temp World .....
 //
+BEGIN_IMAGEPP_NAMESPACE
 class HWorldCloud
     {
 
@@ -59,4 +60,4 @@ inline HFCPtr<HGF2DCoordSys>& HWorldCloud::GetCoordSys(HGF2DWorldIdentificator p
             break;
         }
     }
-
+END_IMAGEPP_NAMESPACE

@@ -1,4 +1,4 @@
-/* $Id: tiffiop.h,v 1.80 2010-07-01 15:33:28 dron Exp $ */
+/* $Id: tiffiop.h,v 1.84 2012-05-30 01:50:17 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -58,6 +58,7 @@ extern void *lfind(const void *, const void *, size_t *, size_t,
 #endif
 
 #include "tiffio.h"
+
 #include "tif_dir.h"
 
 #ifndef STRIP_SIZE_DEFAULT
@@ -70,28 +71,6 @@ extern void *lfind(const void *, const void *, size_t *, size_t,
 #define	TRUE	1
 #define	FALSE	0
 #endif
-
-/*
- * TIFF Image File Directories are comprised of a table of field
- * descriptors of the form shown below.  The table is sorted in
- * ascending order by tag.  The values associated with each entry are
- * disjoint and may appear anywhere in the file (so long as they are
- * placed on a word boundary).
- *
- * If the value is 4 bytes or less, in ClassicTIFF, or 8 bytes or less in
- * BigTIFF, then it is placed in the offset field to save space. If so,
- * it is left-justified in the offset field.
- */
-typedef struct {
-	uint16 tdir_tag;        /* see below */
-	uint16 tdir_type;       /* data type; see below */
-	uint64 tdir_count;      /* number of items; length in spec */
-	union {
-		uint16 toff_short;
-		uint32 toff_long;
-		uint64 toff_long8;
-	} tdir_offset;		/* either offset or the data itself if fits */
-} TIFFDirEntry;
 
 typedef struct client_info {
     struct client_info *next;
@@ -126,7 +105,7 @@ struct tiff {
 	#define TIFF_BUFFERSETUP 0x00010 /* data buffers setup */
 	#define TIFF_CODERSETUP  0x00020 /* encoder/decoder setup done */
 	#define TIFF_BEENWRITING 0x00040 /* written 1+ scanlines to file */
-	#define TIFF_SWAB        0x00080 /* Byte swap file information */
+	#define TIFF_SWAB        0x00080 /* byte swap file information */
 	#define TIFF_NOBITREV    0x00100 /* inhibit bit reversal logic */
 	#define TIFF_MYBUFFER    0x00200 /* my raw data buffer; free on close */
 	#define TIFF_ISTILED     0x00400 /* file is tile, not strip- based */
@@ -141,6 +120,8 @@ struct tiff {
 	#define TIFF_BIGTIFF     0x80000 /* read/write bigtiff */
         #define TIFF_BUF4WRITE  0x100000 /* rawcc bytes are for writing */
         #define TIFF_DIRTYSTRIP 0x200000 /* stripoffsets/stripbytecount dirty*/
+        #define TIFF_PERSAMPLE  0x400000 /* get/set per sample tags as arrays */
+        #define TIFF_BUFFERMMAP 0x800000 /* read buffer (tif_rawdata) points into mmap() memory */
 	uint64               tif_diroff;       /* file offset of current directory */
 	uint64               tif_nextdiroff;   /* file offset of following directory */
 	uint64*              tif_dirlist;      /* list of offsets to already seen directories to prevent IFD looping */
@@ -270,7 +251,7 @@ struct tiff {
 #define TIFFroundup_64(x, y) (TIFFhowmany_64(x,y)*(y))
 
 /* Safe multiply which returns zero if there is an integer overflow */
-#define TIFFSafeMultiply(t,v,m) ((((t)m != (t)0) && (((t)((v*m)/m)) == (t)v)) ? (t)(v*m) : (t)0)
+#define TIFFSafeMultiply(t,v,m) ((((t)(m) != (t)0) && (((t)(((v)*(m))/(m))) == (t)(v))) ? (t)((v)*(m)) : (t)0)
 
 #define TIFFmax(A,B) ((A)>(B)?(A):(B))
 #define TIFFmin(A,B) ((A)<(B)?(A):(B))

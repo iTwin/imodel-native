@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE3DPolyLine.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -136,7 +137,23 @@ inline HVE3DPolyLine& HVE3DPolyLine::operator=(const HVE3DPolyLine& i_rObj)
     return (*this);
     }
 
+//-----------------------------------------------------------------------------
+// SetCoordSys
+// Sets the coordinate system
+//-----------------------------------------------------------------------------
+inline void HVE3DPolyLine::SetCoordSys(const HFCPtr<HGF2DCoordSys>& i_rpCoordSys)
+    {
+    m_pCoordSys = i_rpCoordSys;
+    }
 
+//-----------------------------------------------------------------------------
+// GetCoordSys
+// Gets the coordinate system
+//-----------------------------------------------------------------------------
+inline HFCPtr<HGF2DCoordSys> HVE3DPolyLine::GetCoordSys()
+    {
+    return m_pCoordSys;
+    }
 
 //-----------------------------------------------------------------------------
 // AppendPoint
@@ -271,3 +288,4 @@ inline void HVE3DPolyLine::SetAutoToleranceActive(bool i_AutoToleranceActive)
 
     ResetTolerance();
     }
+END_IMAGEPP_NAMESPACE

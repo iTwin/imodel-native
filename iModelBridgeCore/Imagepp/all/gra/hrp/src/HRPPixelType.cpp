@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelType.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelType.h>
 #include <Imagepp/all/h/HRPComplexConverter.h>
@@ -32,8 +32,6 @@ HRPPixelType::HRPPixelType()
     uint32_t NumberOfBytes = (CountPixelRawDataBits() + 7) / 8;
     m_pDefaultRawData = new Byte[NumberOfBytes];
     memset(m_pDefaultRawData, 0, NumberOfBytes);
-
-    m_HasUserDefaultRawData = false;
     }
 
 //-----------------------------------------------------------------------------
@@ -50,8 +48,6 @@ HRPPixelType::HRPPixelType(const HRPChannelOrg& pi_rChannelOrg,
     uint32_t NumberOfBytes = (CountPixelRawDataBits() + 7) / 8;
     m_pDefaultRawData = new Byte[NumberOfBytes];
     memset(m_pDefaultRawData, 0, NumberOfBytes);
-
-    m_HasUserDefaultRawData = false;
     }
 
 //-----------------------------------------------------------------------------
@@ -68,14 +64,12 @@ HRPPixelType::HRPPixelType(const HRPChannelOrg& pi_rChannelOrg,
     : m_PixelPalette((pi_IndexBits ? 2 << (pi_IndexBits-1) : 0),pi_rPaletteChannelOrg),
       m_ChannelOrg(pi_rChannelOrg)
     {
-    uint32_t ValueBits = max(pi_rChannelOrg.CountPixelCompositeValueBits() - pi_rPaletteChannelOrg.CountPixelCompositeValueBits(), 0);
+    uint32_t ValueBits = MAX(pi_rChannelOrg.CountPixelCompositeValueBits() - pi_rPaletteChannelOrg.CountPixelCompositeValueBits(), 0);
     m_IndexBits = (unsigned short)(pi_IndexBits + ValueBits);
 
     uint32_t NumberOfBytes = (m_IndexBits + 7) / 8;
     m_pDefaultRawData = new Byte[NumberOfBytes];
     memset(m_pDefaultRawData, 0, NumberOfBytes);
-
-    m_HasUserDefaultRawData = false;
     }
 
 //-----------------------------------------------------------------------------
@@ -90,8 +84,6 @@ HRPPixelType::HRPPixelType(const HRPPixelPalette& pi_rPixelPalette)
     uint32_t NumberOfBytes = (CountPixelRawDataBits() + 7) / 8;
     m_pDefaultRawData = new Byte[NumberOfBytes];
     memset(m_pDefaultRawData, 0, NumberOfBytes);
-
-    m_HasUserDefaultRawData = false;
     }
 
 //-----------------------------------------------------------------------------
@@ -106,8 +98,6 @@ HRPPixelType::HRPPixelType(const HRPPixelType& pi_rObj)
     uint32_t NumberOfBytes = (CountPixelRawDataBits() + 7) / 8;
     m_pDefaultRawData = new Byte[NumberOfBytes];
     memcpy(m_pDefaultRawData, pi_rObj.m_pDefaultRawData, NumberOfBytes);
-
-    m_HasUserDefaultRawData = pi_rObj.m_HasUserDefaultRawData;
     }
 
 //-----------------------------------------------------------------------------
@@ -162,8 +152,22 @@ void HRPPixelType::DeepCopy(const HRPPixelType& pi_rObj)
     uint32_t NumberOfBytes = (pi_rObj.CountPixelRawDataBits() + 7) / 8;
     m_pDefaultRawData = new Byte[NumberOfBytes];
     memcpy(m_pDefaultRawData, pi_rObj.m_pDefaultRawData, NumberOfBytes);
+    }
 
-    m_HasUserDefaultRawData = pi_rObj.m_HasUserDefaultRawData;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HRPPixelType::HasSamePixelInterpretation(HRPPixelType const& obj) const
+    {
+    if (GetClassID() != obj.GetClassID())
+        return false;
+
+    // Indexed pixeltype must have the same palette.
+    if (CountIndexBits() > 0)
+        return m_PixelPalette == obj.m_PixelPalette;
+
+    return true;
     }
 
 //-----------------------------------------------------------------------------
@@ -183,8 +187,7 @@ bool HRPPixelType::operator==(const HRPPixelType& pi_rObj) const
 
         // Must have the same structure and the same palette
         Result = (Result &&
-                  m_PixelPalette == pi_rObj.m_PixelPalette &&
-                  m_HasUserDefaultRawData == pi_rObj.m_HasUserDefaultRawData);
+                  m_PixelPalette == pi_rObj.m_PixelPalette);
         }
 
     return Result;
@@ -299,7 +302,7 @@ void HRPPixelType::SetDefaultRawData(const void* pi_pValue)
     Byte NumberOfBits = (Byte)(CountPixelRawDataBits() % 8);
     if (NumberOfBits > 0)
         {
-        Byte Mask = 0xFF << (8 - NumberOfBits);
+        Byte Mask = 0xFF & (0xFF << (8 - NumberOfBits));
         m_pDefaultRawData[NumberOfBytes - 1] = m_pDefaultRawData[NumberOfBytes - 1] & Mask;
         }
     }

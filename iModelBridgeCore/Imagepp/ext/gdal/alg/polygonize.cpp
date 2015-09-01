@@ -1,11 +1,12 @@
 /******************************************************************************
- * $Id: polygonize.cpp 21236 2010-12-11 17:28:32Z rouault $
+ * $Id: polygonize.cpp 27044 2014-03-16 23:41:27Z rouault $
  * Project:  GDAL
  * Purpose:  Raster to Polygon Converter
  * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
  ******************************************************************************
  * Copyright (c) 2008, Frank Warmerdam
+ * Copyright (c) 2009-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "cpl_string.h"
 #include <vector>
 
-CPL_CVSID("$Id: polygonize.cpp 21236 2010-12-11 17:28:32Z rouault $");
+CPL_CVSID("$Id: polygonize.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 #define GP_NODATA_MARKER -51502112
 
@@ -446,7 +447,8 @@ GPMaskImageData( GDALRasterBandH hMaskBand, GByte* pabyMaskLine, int iY, int nXS
  *
  * Note that currently the source pixel band values are read into a
  * signed 32bit integer buffer (Int32), so floating point or complex 
- * bands will be implicitly truncated before processing.  
+ * bands will be implicitly truncated before processing. If you want to use a
+ * version using 32bit float buffers, see GDALFPolygonize() at fpolygonize.cpp.
  *
  * Polygon features will be created on the output layer, with polygon 
  * geometries representing the polygons.  The polygon geometries will be

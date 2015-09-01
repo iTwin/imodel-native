@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecFactory.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,6 +10,7 @@
 
 #include <Imagepp/all/h/HCDCodec.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 //=======================================================================================
 //! HCDCodecFactory
 // @bsiclass 
@@ -17,9 +18,9 @@
 class HCDCodecFactory
 {
 public:
-    _HDLLu HFCPtr<HCDCodec> Create(const HCLASS_ID& pi_rClassKey) const;
+    IMAGEPP_EXPORT HFCPtr<HCDCodec> Create(const HCLASS_ID& pi_rClassKey) const;
 
-    _HDLLu static HCDCodecFactory& GetInstance();
+    IMAGEPP_EXPORT static HCDCodecFactory& GetInstance();
 
 private:
     struct HCDCodecCreator
@@ -38,3 +39,5 @@ private:
 
     CodecCreatorMap  m_CodecCreators;
 };
+
+END_IMAGEPP_NAMESPACE

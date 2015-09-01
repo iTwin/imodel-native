@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DDisjointedComplexLinear.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Default constructor for a complex linear. This constructor creates an empty
     complex linear that does not contain any linear components. The interpretation
@@ -55,3 +56,5 @@ inline HPMPersistentObject* HVE2DDisjointedComplexLinear::Clone() const
     {
     return (new HVE2DDisjointedComplexLinear(*this));
     }
+
+END_IMAGEPP_NAMESPACE

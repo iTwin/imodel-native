@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPHistogram.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPHistogram
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRPHistogram.h>
 
 HPM_REGISTER_CLASS(HRPHistogram, HPMPersistentObject)
@@ -43,7 +43,7 @@ HRPHistogram::HRPHistogram(const HRPPixelPalette& pi_rPalette, HRPHistogram::COL
 
         uint32_t MaxChannelWidth = 0;
         for(uint32_t ChanelIndex= 0; ChanelIndex < pi_rPalette.GetChannelOrg().CountChannels(); ChanelIndex++)
-            MaxChannelWidth = max(MaxChannelWidth, pi_rPalette.GetChannelOrg().GetChannelPtr(ChanelIndex)->GetSize ());
+            MaxChannelWidth = MAX(MaxChannelWidth, pi_rPalette.GetChannelOrg().GetChannelPtr(ChanelIndex)->GetSize ());
 
 
         ConstructUsingRGBColorSpace(0, 1 << MaxChannelWidth, 1);

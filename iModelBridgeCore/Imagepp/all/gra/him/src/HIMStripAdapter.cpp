@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMStripAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,8 +10,8 @@
 // Methods for class HIMStripAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HIMStripAdapter.h>
 
@@ -32,8 +32,8 @@
 #include <Imagepp/all/h/HRADrawOptions.h>
 #include <Imagepp/all/h/HGFMappedSurface.h>
 #include <Imagepp/all/h/HVEShape.h>
-
-
+#include <Imagepp/all/h/HGSRegion.h>
+#include <Imagepp/all/h/HGSSurfaceDescriptor.h>
 
 
 HPM_REGISTER_CLASS(HIMStripAdapter, HRAImageView)
@@ -77,8 +77,7 @@ HIMStripAdapter::HIMStripAdapter(const HFCPtr<HRARaster>&    pi_rpSource,
 
     HFCPtr<HRPPixelType> pPixelType = pi_rpSource->GetPixelType();
 
-    SetBackgroundColor(pPixelType, pi_rpSource, pi_pRGBBackgroundColor,
-                       HRABitmap::LOWER_LEFT_HORIZONTAL);
+    SetBackgroundColor(pPixelType, pi_rpSource, pi_pRGBBackgroundColor);
 
     // To match the previous IncrementRef()
     DecrementRef();
@@ -103,13 +102,12 @@ HIMStripAdapter::HIMStripAdapter(const HFCPtr<HRARaster>&    pi_rpSource,
     m_StripWidth      = 0;
     m_StripHeigth     = 0;
 
-    m_pInputBitmapExample = new HRABitmap (1,
+    m_pInputBitmapExample = HRABitmap::Create (1,
                                            1,
                                            0,
                                            pi_rpSource->GetCoordSys(),
                                            pi_rpStripPixelType,     // Clone?
-                                           32,
-                                           HRABitmap::LOWER_LEFT_HORIZONTAL);
+                                           32);
     }
 
 //-----------------------------------------------------------------------------
@@ -120,12 +118,10 @@ HIMStripAdapter::HIMStripAdapter(const HFCPtr<HRARaster>&    pi_rpSource,
 HIMStripAdapter::HIMStripAdapter(   const HFCPtr<HRARaster>&    pi_rpSource,
                                     const Byte*               pi_pRGBBackgroundColor,
                                     uint32_t                    pi_StripWidth,
-                                    uint32_t                    pi_StripHeigth,
-                                    HRABitmap::SLO              pi_SLO)
+                                    uint32_t                    pi_StripHeigth)
     :   HRAImageView(pi_rpSource)
     {
     HPRECONDITION(pi_pRGBBackgroundColor != 0);
-    HPRECONDITION((pi_SLO == HRABitmap::UPPER_LEFT_HORIZONTAL) || (pi_SLO == HRABitmap::LOWER_LEFT_HORIZONTAL));
     HPRECONDITION(pi_StripWidth > 0 && pi_StripHeigth > 0);
 
     // We have to do this because we're gonna be sticked
@@ -136,7 +132,7 @@ HIMStripAdapter::HIMStripAdapter(   const HFCPtr<HRARaster>&    pi_rpSource,
     m_QualityFactor = 1.0; // Always use FULL Quality.
 
     HFCPtr<HRPPixelType> pPixelType = pi_rpSource->GetPixelType();
-    uint32_t BitmapBits = SetBackgroundColor(pPixelType, pi_rpSource, pi_pRGBBackgroundColor, pi_SLO);
+    uint32_t BitmapBits = SetBackgroundColor(pPixelType, pi_rpSource, pi_pRGBBackgroundColor);
 
     m_StripWidth      = pi_StripWidth;
     m_StripHeigth     = pi_StripHeigth;
@@ -175,8 +171,7 @@ HIMStripAdapter::~HIMStripAdapter()
 // public
 // Clone
 //-----------------------------------------------------------------------------
-HRARaster* HIMStripAdapter::Clone (HPMObjectStore* pi_pStore,
-                                   HPMPool*        pi_pLog) const
+HFCPtr<HRARaster> HIMStripAdapter::Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog) const
     {
     return new HIMStripAdapter(*this);
     }
@@ -235,8 +230,7 @@ HFCPtr<HRPPixelType> HIMStripAdapter::GetPixelType() const
 
 uint32_t HIMStripAdapter::SetBackgroundColor (const HFCPtr<HRPPixelType>& pio_pPixelType,
                                             const HFCPtr<HRARaster>&    pi_pSource,
-                                            const Byte*               pi_pRGBBackgroundColor,
-                                            HRABitmap::SLO              pi_SLO)
+                                            const Byte*               pi_pRGBBackgroundColor)
     {
     Byte BitmapBits;
 
@@ -329,7 +323,7 @@ uint32_t HIMStripAdapter::SetBackgroundColor (const HFCPtr<HRPPixelType>& pio_pP
         {
         case 1:
             {
-            m_pInputBitmapExample = new HRABitmap (1, 1, 0, pi_pSource->GetCoordSys(), new HRPPixelTypeI1R8G8B8(), 32, pi_SLO);
+            m_pInputBitmapExample = HRABitmap::Create (1, 1, 0, pi_pSource->GetCoordSys(), new HRPPixelTypeI1R8G8B8(), 32);
             HFCPtr<HRPPixelType> pPixelType(m_pInputBitmapExample->GetPixelType());
             HRPPixelPalette& rPalette = pPixelType->LockPalette();
             rPalette.SetCompositeValue(0, pi_pRGBBackgroundColor);
@@ -344,7 +338,7 @@ uint32_t HIMStripAdapter::SetBackgroundColor (const HFCPtr<HRPPixelType>& pio_pP
 
         case 8:
             {
-            m_pInputBitmapExample = new HRABitmap (1, 1, 0, pi_pSource->GetCoordSys(), new HRPPixelTypeI8R8G8B8(), 32, pi_SLO);
+            m_pInputBitmapExample = HRABitmap::Create (1, 1, 0, pi_pSource->GetCoordSys(), new HRPPixelTypeI8R8G8B8(), 32);
             HFCPtr<HRPPixelType> pPixelType(m_pInputBitmapExample->GetPixelType());
             HRPPixelPalette& rPalette = pPixelType->LockPalette();
             rPalette.SetCompositeValue(0, pi_pRGBBackgroundColor);
@@ -360,18 +354,18 @@ uint32_t HIMStripAdapter::SetBackgroundColor (const HFCPtr<HRPPixelType>& pio_pP
         case 24:
         default:
             {
-            m_pInputBitmapExample = new HRABitmap (1, 1, 0, pi_pSource->GetCoordSys(), new HRPPixelTypeV24B8G8R8(), 32, pi_SLO);
+            m_pInputBitmapExample = HRABitmap::Create (1, 1, 0, pi_pSource->GetCoordSys(), new HRPPixelTypeV24B8G8R8(), 32);
             HFCPtr<HRPPixelType> pPixelType(m_pInputBitmapExample->GetPixelType());
             HFCPtr<HRPPixelType> pPixelTypeRGB(new HRPPixelTypeV24B8G8R8());
             HFCPtr<HRPPixelConverter> pConverter = pPixelTypeRGB->GetConverterTo(pPixelType);
             Byte BackgroundRawData[3];
-            pConverter->Convert(pi_pRGBBackgroundColor, &BackgroundRawData);
-            pPixelType->SetDefaultRawData(&BackgroundRawData);
+            pConverter->Convert(pi_pRGBBackgroundColor, BackgroundRawData);
+            pPixelType->SetDefaultRawData(BackgroundRawData);
             }
         break;
         }
 
-    return (uint32_t)BitmapBits;
+    return BitmapBits;
     }
 
 
@@ -386,21 +380,11 @@ bool HIMStripAdapter::IsStoredRaster () const
 
 //-----------------------------------------------------------------------------
 // public
-// PreDraw
-//-----------------------------------------------------------------------------
-void HIMStripAdapter::PreDraw(HRADrawOptions* pio_pOptions)
-    {
-    HASSERT(0); //Not Implemented
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
 // Draw
 //-----------------------------------------------------------------------------
-void HIMStripAdapter::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const
+void HIMStripAdapter::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
     {
-    HRADrawOptions Options(pi_pOptions);
+    HRADrawOptions Options(pi_Options);
 
     HFCPtr<HVEShape> pRegionToDraw;
     if (Options.GetShape() != 0)
@@ -414,7 +398,7 @@ void HIMStripAdapter::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const H
         Options.SetReplacingCoordSys(GetCoordSys());
 
     // test if there is a clip region in the destination
-    HFCPtr<HGSRegion> pClipRegion(static_cast<HGSRegion*>(pio_pSurface->GetOption(HGSRegion::CLASS_ID).GetPtr()));
+    HFCPtr<HGSRegion> pClipRegion(pio_destSurface.GetRegion());
     if (pClipRegion != 0)
         {
         // if yes, intersect it with the destination
@@ -429,7 +413,7 @@ void HIMStripAdapter::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const H
         {
         // Create a rectangular clip region to stay
         // inside the destination surface.
-        HVEShape DestSurfaceShape(0.0, 0.0, pio_pSurface->GetSurfaceDescriptor()->GetWidth(), pio_pSurface->GetSurfaceDescriptor()->GetHeight(), pio_pSurface->GetSurfaceCoordSys());
+        HVEShape DestSurfaceShape(0.0, 0.0, pio_destSurface.GetSurfaceDescriptor()->GetWidth(), pio_destSurface.GetSurfaceDescriptor()->GetHeight(), pio_destSurface.GetSurfaceCoordSys());
         DestSurfaceShape.ChangeCoordSys(Options.GetReplacingCoordSys());
         DestSurfaceShape.SetCoordSys(GetCoordSys());
 
@@ -437,7 +421,7 @@ void HIMStripAdapter::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const H
         }
 
 
-    HAutoPtr<HRARasterIterator> pIterator(CreateIterator(HRAIteratorOptions(pRegionToDraw, pio_pSurface->GetSurfaceCoordSys())));
+    HAutoPtr<HRARasterIterator> pIterator(CreateIterator(HRAIteratorOptions(pRegionToDraw, pio_destSurface.GetSurfaceCoordSys())));
     HASSERT(pIterator != 0);
 
     if (pIterator != 0)
@@ -445,15 +429,27 @@ void HIMStripAdapter::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const H
         HFCPtr<HRARaster> pCurrentStrip = (*pIterator)();
         while (pCurrentStrip != 0)
             {
-            HRADrawOptions Options2(pi_pOptions);
+            HRADrawOptions Options2(pi_Options);
 
             HFCPtr<HVEShape> pClip(new HVEShape(*pRegionToDraw));
             pClip->Intersect(*pCurrentStrip->GetEffectiveShape());
             Options2.SetShape(pClip);
 
-            pCurrentStrip->Draw(pio_pSurface, &Options2);
+            pCurrentStrip->Draw(pio_destSurface, Options2);
 
             pCurrentStrip = pIterator->Next();
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Stephane.Poulin                 07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HIMStripAdapter::_BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options)
+    {
+    BeAssert(false);
+    return IMAGEPP_STATUS_NoImplementation;
+    // It doesn't make sense to adapt the source that way to produce pixels. The only good reason to use a strip adapter is to make iteration on the source.
+    // The current usage of the StripAdapter is to compute a representative palette. We should provide a way to compute a representative palette not requiring a StripAdapter.
+    // return GetSource()->BuildCopyToContext(imageNode, options);
     }

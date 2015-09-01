@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFUtils.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,6 +14,7 @@
 #include "HFCAccessMode.h"
 #include "HFCException.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HFCBinStream;
 class HFCURL;
 
@@ -130,7 +131,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_RationalValue, m_TagName.c_str())
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() , m_RationalValue,m_TagName.c_str()); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(NegativeValueForRationalErInfo)
@@ -152,7 +155,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_Offset, m_Length)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() , m_Offset,m_Length); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(CannotWritePWblobErInfo)
@@ -172,7 +177,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_MagicNb)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_MagicNb); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(BadMagicNbErInfo)
@@ -192,7 +199,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_VersionNb)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_VersionNb); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(BadVersionNbErInfo)
@@ -212,7 +221,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_BlockNb)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_BlockNb); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(BadBlockNbErInfo)
@@ -236,7 +247,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_BlockNb, m_Offset, m_Length)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() , m_BlockNb, m_Offset, m_Length); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(BadBlockNbErInfo)
@@ -244,7 +257,7 @@ public:
 
     struct UnknownCompressionErInfo : ErInfo
         {
-        short m_CompressionType;
+        unsigned short m_CompressionType;
 
         virtual ~UnknownCompressionErInfo() {}
 
@@ -256,7 +269,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_CompressionType)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() , m_CompressionType); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(UnknownCompressionErInfo)
@@ -276,7 +291,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_GeoKey)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() , m_GeoKey); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(InvalidGeotiffCountOrIndexErInfo)
@@ -298,7 +315,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_GeoKey, m_Tag)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,  m_GeoKey, m_Tag); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(InvalidGeotiffTagErInfo)
@@ -318,7 +337,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_Tag)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_Tag); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(UnknownTagEnumErInfo)
@@ -342,7 +363,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_TagName.c_str(), m_Type)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_TagName.c_str(), m_Type); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(WrongTagDataTypeErInfo)
@@ -368,7 +391,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_TagFileNb, m_Type.c_str(), m_Length, m_Offset)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_TagFileNb, m_Type.c_str(), m_Length, m_Offset); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(UnknownTagErInfo)
@@ -389,7 +414,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_TagFile)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_TagFile); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(UnkwnownFirstTagErInfo)
@@ -413,7 +440,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_TagName.c_str(), m_TagFileNb, m_DataLength)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_TagName.c_str(), m_TagFileNb, m_DataLength); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(TagIOErInfo)
@@ -437,7 +466,9 @@ public:
 
         virtual void FormatErrorMessage(WString& pio_rUnformattedErrMsg) const
             {
-            FORMAT_EXCEPTION_MSG(pio_rUnformattedErrMsg, m_TagName.c_str(), m_Count, m_ExpectedCount)
+            WChar TempBuffer[2048]; 
+            BeStringUtilities::Snwprintf(TempBuffer, pio_rUnformattedErrMsg.c_str() ,m_TagName.c_str(), m_Count, m_ExpectedCount); 
+            pio_rUnformattedErrMsg = WString(TempBuffer); 
             }
 
         IMPLEMENT_CLONE_FNC(BadTagCountIOErInfo)
@@ -492,15 +523,15 @@ public:
         ERROR_COUNT
         };
 
-    _HDLLg HTIFFError(bool pi_Fatal=false);
+    IMAGEPP_EXPORT HTIFFError(bool pi_Fatal=false);
 
     HTIFFError(HTIFFError::ErrorCode pi_ErrorCode,
                const ErInfo*         pi_pErrorInfo,
                bool                 pi_Fatal=false);
-    _HDLLg virtual     ~HTIFFError();
+    IMAGEPP_EXPORT virtual     ~HTIFFError();
 
     HTIFFError(const HTIFFError& pi_rObj);
-    _HDLLg HTIFFError& operator=(const HTIFFError& pi_rObj);
+    IMAGEPP_EXPORT HTIFFError& operator=(const HTIFFError& pi_rObj);
 
     void            AddError (ErrorCode pi_ErrorCode, const HTIFFError::ErInfo* pi_pErrorInfo, bool pi_Fatal=false);
     //void            AddMsg (const char* pi_pMsg, bool pi_Fatal=false);
@@ -512,7 +543,7 @@ public:
     const ErInfo*   GetErrorInfo ()   {
         return m_pErrorInfo;
         }
-    _HDLLg void     GetErrorMsg(WString& po_rErrorMsg);
+    IMAGEPP_EXPORT void     GetErrorMsg(WString& po_rErrorMsg) const;
     bool           IsFatal()   {
         return m_Fatal;
         }
@@ -529,7 +560,7 @@ private:
     };
 
 
-bool       ErrorMsg (HTIFFError** pio_pError, HTIFFError::ErrorCode pi_ErrorCode, const HTIFFError::ErInfo* pi_pErrorInfo, bool pi_Fatal);
+IMAGEPP_EXPORT bool       ErrorMsg (HTIFFError** pio_pError, HTIFFError::ErrorCode pi_ErrorCode, const HTIFFError::ErInfo* pi_pErrorInfo, bool pi_Fatal);
 //bool       ErrorMsg (HTIFFError** pio_pError, const char* pi_pMsg, bool pi_Fatal);
 bool       ErrorMsg (HTIFFError** pio_pError, HTIFFError& pi_rNewError);
 
@@ -588,15 +619,15 @@ class HTIFFStream
     {
 public:
     HTIFFStream(const WString& pi_rFilename, HFCAccessMode pi_Mode, uint64_t pi_OriginOffset=0);
-    HTIFFStream(const HFCPtr<HFCURL>& pi_rpURL, HFCAccessMode pi_AccessMode = HFC_READ_ONLY);
+    HTIFFStream(const HFCPtr<HFCURL>& pi_rpURL, HFCAccessMode pi_AccessMode = HFC_READ_ONLY, uint64_t pi_OriginOffset=0);
     virtual ~HTIFFStream();
 
 
     HFCPtr<HFCURL>      GetURL() const;
 
-    size_t              Read        (void* po_pBuffer, size_t pi_Size, size_t pi_Count);
-    size_t              Write       (const void* pi_pBuffer, size_t pi_Size, size_t pi_Count);
-    bool               Seek        (uint64_t pi_Offset, int pi_Origin);
+    IMAGEPP_EXPORT size_t              Read        (void* po_pBuffer, size_t pi_Size, size_t pi_Count);
+    IMAGEPP_EXPORT size_t              Write       (const void* pi_pBuffer, size_t pi_Size, size_t pi_Count);
+    IMAGEPP_EXPORT bool               Seek        (uint64_t pi_Offset, int pi_Origin);
     uint64_t           Tell        ();
     bool               SetEOF      ();
 
@@ -609,13 +640,13 @@ public:
     void                AddInitialFreeBlock (const uint32_t* pi_pOffset, const uint32_t* pi_pSize, uint32_t pi_Count);
 
     bool               GetListFreeBlock    (uint64_t** pi_ppOffset, uint64_t** pi_ppSize, uint32_t* pi_pCount);
-    void                CheckAlloc          (uint64_t* pio_pOffset, uint32_t pi_CurSize, uint32_t pi_NewSize);
-    void                ReleaseBlock        (uint64_t pi_Offset, uint32_t pi_Size);
+    IMAGEPP_EXPORT void                CheckAlloc          (uint64_t* pio_pOffset, uint32_t pi_CurSize, uint32_t pi_NewSize);
+    IMAGEPP_EXPORT void                ReleaseBlock        (uint64_t pi_Offset, uint32_t pi_Size);
     void                GetBlock            (uint64_t* po_pOffset, uint32_t pi_Size);
 
     bool               OverlapsFreeBlocks  (uint64_t pi_Offset, uint64_t pi_Size) const;
 
-    _HDLLg HFCBinStream* GetFilePtr          () const;
+    IMAGEPP_EXPORT HFCBinStream* GetFilePtr          () const;
 
     // Use only to allocate memory in file without memory management
     // Presently internally used to write TAGS FREEOFFSETS and FREEBYTECOUNTS
@@ -645,10 +676,10 @@ private:
 //
 void    SwabArrayOfShort    (unsigned short* pio_pData, register size_t pi_Count);
 void    SwabArrayOfLong     (register uint32_t* pio_pData, register size_t pi_Count);
-void    SwabArrayOfLong     (register uint32_t* pio_pData, register size_t pi_Count);
 void    SwabArrayOfDouble   (double* pio_pData, register size_t pi_Count);
 void    SwabArrayOfUInt64   (uint64_t* pio_pData, register size_t pi_Count);
 
 bool   SystemIsBigEndian   ();
 bool   IsValidDoubleArray  (const double* pi_pValues, int32_t pi_ArraySize);
+END_IMAGEPP_NAMESPACE
 

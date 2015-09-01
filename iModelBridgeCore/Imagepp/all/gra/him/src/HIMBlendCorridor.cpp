@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMBlendCorridor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRARasterIterator.h>
 
@@ -31,7 +31,7 @@
 #include <Imagepp/all/h/HRABitmap.h>
 #include <Imagepp/all/h/HRAReferenceToRaster.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGSEditor.h>
+#include <Imagepp/all/h/HRAEditor.h>
 #include <Imagepp/all/h/HRABitmapEditor.h>
 #include <Imagepp/all/h/HMDContext.h>
 
@@ -366,7 +366,7 @@ HRARasterIterator* HIMBlendCorridor::CreateIterator (const HRAIteratorOptions& p
     Notification for content changed
     ---------------------------------------------------------------------------
 */
-/*bool HIMColorBalancedImage::NotifyContentChanged(HMGMessage& pi_rMessage)
+/*bool HIMBlendCorridor::NotifyContentChanged(HMGMessage& pi_rMessage)
 {
     // create a new shape
     HVEShape Shape((((HRAContentChangedMsg&)pi_rMessage).GetShape()).GetExtent());
@@ -389,22 +389,22 @@ HRARasterIterator* HIMBlendCorridor::CreateIterator (const HRAIteratorOptions& p
 
 
 /** ---------------------------------------------------------------------------
-    CopyFrom. Do it on the sources
+    CopyFromLegacy. Do it on the sources
     ---------------------------------------------------------------------------
 */
-void HIMBlendCorridor::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
-                                const HRACopyFromOptions& pi_rOptions)
+void HIMBlendCorridor::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster,
+                                const HRACopyFromLegacyOptions& pi_rOptions)
     {
     }
 
 
 /** ---------------------------------------------------------------------------
-    CopyFrom
+    CopyFromLegacy
     ---------------------------------------------------------------------------
 */
-void HIMBlendCorridor::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster)
+void HIMBlendCorridor::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
     {
-    CopyFrom(pi_pSrcRaster, HRACopyFromOptions());
+    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
     }
 
 
@@ -558,17 +558,6 @@ void HIMBlendCorridor::SetLookAhead(const HVEShape& pi_rShape,
     if (m_pSource2->HasLookAhead())
         m_pSource2->SetLookAhead(UsefulShape, pi_ConsumerID, pi_Async);
     }
-
-/** ---------------------------------------------------------------------------
-Call before a draw for initialization purpose.
----------------------------------------------------------------------------
-*/
-void HIMBlendCorridor::PreDraw(HRADrawOptions* pio_pOptions)
-    {
-    m_pSource1->PreDraw(pio_pOptions);
-    m_pSource2->PreDraw(pio_pOptions);
-    }
-
 
 /** ---------------------------------------------------------------------------
     Move the source images
@@ -915,10 +904,9 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
     // Allocate and position the tile
     //
 
-    HFCPtr<HRARaster> pResult( (HRARaster*) m_pBaseTile->Clone() );
+    HFCPtr<HRABitmap> pResult( (HRABitmap*) m_pBaseTile->Clone() );
     HASSERT(pResult != 0);
-    ((HFCPtr<HRABitmap>&)pResult)->InitSize(m_pTileDescriptor->GetTileWidth(),
-                                            m_pTileDescriptor->GetTileHeight());
+    Result->InitSize(m_pTileDescriptor->GetTileWidth(),m_pTileDescriptor->GetTileHeight());
 
     uint64_t TilePosX;
     uint64_t TilePosY;
@@ -941,8 +929,8 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
     // the pixels inside the feathering corridor directly using editors.
     //
 
-    HFCPtr<HRARaster> pRaster1Bitmap((HRARaster*) pResult->Clone());
-    HFCPtr<HRARaster> pRaster2Bitmap((HRARaster*) pResult->Clone());
+    HFCPtr<HRABitmap> pRaster1Bitmap((HRABitmap*) pResult->Clone());
+    HFCPtr<HRABitmap> pRaster2Bitmap((HRABitmap*) pResult->Clone());
 
     pRaster1Bitmap->CopyFrom(m_pSource1, NoOptions);
     pRaster2Bitmap->CopyFrom(m_pSource2, NoOptions);
@@ -960,7 +948,7 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
     Byte* pCurrentRaster2Pixel;
 
     size_t NumPixels;
-    size_t BytesPerPixel = ((HFCPtr<HRAStoredRaster>&)pResult)->GetPixelType()->CountPixelRawDataBits() / 8;
+    size_t BytesPerPixel = pResult->GetPixelType()->CountPixelRawDataBits() / 8;
 
     // Now we process only the corridor
     HVEShape MyMaskCorridorShape(*m_pBlendCorridorShape);
@@ -968,7 +956,7 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
 
     if (!MyMaskCorridorShape.IsEmpty())
         {
-        MyMaskCorridorShape.ChangeCoordSys(((HFCPtr<HRAStoredRaster>&)pResult)->GetPhysicalCoordSys());
+        MyMaskCorridorShape.ChangeCoordSys(pResult->GetPhysicalCoordSys());
         HRARasterEditor* pFeatheredRasterEditor = pResult->CreateEditor(MyMaskCorridorShape, HFC_READ_WRITE);
         HRARasterEditor* pRaster1RasterEditor   = pRaster1Bitmap->CreateEditor(MyMaskCorridorShape, HFC_READ_WRITE);
         HRARasterEditor* pRaster2RasterEditor   = pRaster2Bitmap->CreateEditor(MyMaskCorridorShape, HFC_READ_WRITE);
@@ -978,9 +966,9 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
         HASSERT(pRaster1RasterEditor->IsCompatibleWith(HRABitmapEditor::CLASS_ID));
         HASSERT(pRaster2RasterEditor->IsCompatibleWith(HRABitmapEditor::CLASS_ID));
 
-        HFCPtr<HGSEditor> pFeatheredEditor = static_cast<HRABitmapEditor*>(pFeatheredRasterEditor)->GetSurfaceEditor();
-        HFCPtr<HGSEditor> pRaster1Editor   = static_cast<HRABitmapEditor*>(pRaster1RasterEditor)->GetSurfaceEditor();
-        HFCPtr<HGSEditor> pRaster2Editor   = static_cast<HRABitmapEditor*>(pRaster2RasterEditor)->GetSurfaceEditor();
+        HRAEditor* pFeatheredEditor = static_cast<HRABitmapEditor*>(pFeatheredRasterEditor)->GetSurfaceEditor();
+        HRAEditor* pRaster1Editor   = static_cast<HRABitmapEditor*>(pRaster1RasterEditor)->GetSurfaceEditor();
+        HRAEditor* pRaster2Editor   = static_cast<HRABitmapEditor*>(pRaster2RasterEditor)->GetSurfaceEditor();
 
         if (pFeatheredEditor->GetFirstRun(&XPhysical, &YPhysical, &NumPixels))
             {
@@ -996,7 +984,7 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
                     if (YPhysical < m_pTileDescriptor->GetImageHeight())
                         {
                         HASSERT(m_pTileDescriptor->GetImageWidth() <= ULONG_MAX);
-                        NumPixels = min(NumPixels, (uint32_t)m_pTileDescriptor->GetImageWidth() - XPhysical);
+                        NumPixels = MIN(NumPixels, (uint32_t)m_pTileDescriptor->GetImageWidth() - XPhysical);
 
                         // Obtain pointer to first pixel to process
                         pCurrentFeatherPixel = (Byte*) pFeatheredEditor->GetPixel(XPhysical, YPhysical);
@@ -1005,7 +993,7 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
 
                         while (NumPixels)
                             {
-                            HGF2DLocation ThePoint(XPhysical + 0.5, YPhysical + 0.5, ((HFCPtr<HRAStoredRaster>&)pResult)->GetPhysicalCoordSys());
+                            HGF2DLocation ThePoint(XPhysical + 0.5, YPhysical + 0.5, pResult->GetPhysicalCoordSys());
 
                             ThePoint.ChangeCoordSys(m_pFeatherLine->GetCoordSys());
 
@@ -1014,7 +1002,7 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
                             // Calculate distance between points
                             double TheDistance = (ThePoint-ClosestPoint).CalculateLength();
 
-                            TheWeight = max(min(TheDistance * WeightFactor, 1.0), 0.0);
+                            TheWeight = MAX(MIN(TheDistance * WeightFactor, 1.0), 0.0);
 
                             TheWeightComplement = 1.0 - TheWeight;
 
@@ -1044,7 +1032,7 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
                     if (YPhysical < m_pTileDescriptor->GetImageHeight())
                         {
                         HASSERT(m_pTileDescriptor->GetImageWidth() <= ULONG_MAX);
-                        NumPixels = min(NumPixels, (uint32_t)m_pTileDescriptor->GetImageWidth() - XPhysical);
+                        NumPixels = MIN(NumPixels, (uint32_t)m_pTileDescriptor->GetImageWidth() - XPhysical);
 
                         // Obtain pointer to first pixel to process
                         pCurrentFeatherPixel = (Byte*) pFeatheredEditor->GetPixel(XPhysical, YPhysical);
@@ -1053,7 +1041,7 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
 
                         while (NumPixels)
                             {
-                            HGF2DLocation ThePoint(XPhysical + 0.5, YPhysical + 0.5, ((HFCPtr<HRAStoredRaster>&)pResult)->GetPhysicalCoordSys());
+                            HGF2DLocation ThePoint(XPhysical + 0.5, YPhysical + 0.5, pResult->GetPhysicalCoordSys());
 
                             ThePoint.ChangeCoordSys(m_pFeatherLine->GetCoordSys());
 
@@ -1062,7 +1050,7 @@ HFCPtr<HRARaster> HIMBlendCorridor::CreateTile(uint64_t pi_Index) const
                             // Calculate distance between points
                             double TheDistance = (ThePoint-ClosestPoint).CalculateLength();
 
-                            TheWeight = max(min(TheDistance * WeightFactor, 1.0), 0.0);
+                            TheWeight = MAX(MIN(TheDistance * WeightFactor, 1.0), 0.0);
 
                             TheWeightComplement = 1.0 - TheWeight;
 

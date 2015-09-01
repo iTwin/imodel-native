@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIG4StripEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIG4StripEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFIG4StripEditor.h>
 #include <Imagepp/all/h/HRFIG4File.h>
 #include <Imagepp/all/h/HCDPacket.h>
@@ -64,9 +64,9 @@ HRFIG4StripEditor::~HRFIG4StripEditor()
 // Edition by block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFIG4StripEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                     uint32_t pi_PosBlockY,
-                                     Byte*  po_pData,
+HSTATUS HRFIG4StripEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                     uint64_t pi_PosBlockY,
+                                     Byte*    po_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     // We assume that we have check the header file integrity in the
@@ -124,7 +124,7 @@ HSTATUS HRFIG4StripEditor::ReadBlock(uint32_t pi_PosBlockX,
         // Read the entire compressed pixels in memory
         HAutoPtr<Byte> pCompressedData(new Byte[StripSizeInBytes]);
 
-        if(m_pIG4File->Read((void*)pCompressedData, StripSizeInBytes) != StripSizeInBytes)
+        if(m_pIG4File->Read(pCompressedData, StripSizeInBytes) != StripSizeInBytes)
             goto WRAPUP;
 
         // Unlock the sister file
@@ -158,9 +158,9 @@ WRAPUP:
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFIG4StripEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                      uint32_t     pi_PosBlockY,
-                                      const Byte* pi_pData,
+HSTATUS HRFIG4StripEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                      uint64_t     pi_PosBlockY,
+                                      const Byte*  pi_pData,
                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HASSERT(0); // not supported

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtxdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: gtxdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  Vertical Datum Transformation
  * Purpose:  Implementation of NOAA .gtx vertical datum shift file format.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2010, Frank Warmerdam
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gtxdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: gtxdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 /**
 
@@ -200,14 +201,30 @@ GDALDataset *GTXDataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
 /* -------------------------------------------------------------------- */
+/*      Guess the data type. Since October 1, 2009, it should be        */
+/*      Float32. Before it was double.                                  */
+/* -------------------------------------------------------------------- */
+    GDALDataType eDT = GDT_Float32;
+    VSIFSeekL(poDS->fpImage, 0, SEEK_END);
+    vsi_l_offset nSize = VSIFTellL(poDS->fpImage);
+    if( nSize == 40 + 8 * (vsi_l_offset)poDS->nRasterXSize * poDS->nRasterYSize )
+        eDT = GDT_Float64;
+    int nDTSize = GDALGetDataTypeSize(eDT) / 8;
+
+/* -------------------------------------------------------------------- */
 /*      Create band information object.                                 */
 /* -------------------------------------------------------------------- */
-    poDS->SetBand( 
-        1, new RawRasterBand( poDS, 1, poDS->fpImage, 
-                              (poDS->nRasterYSize-1)*poDS->nRasterXSize*4 + 40,
-                              4, poDS->nRasterXSize * -4,
-                              GDT_Float32,
-                              !CPL_IS_LSB, TRUE, FALSE ) );
+    RawRasterBand *poBand = new RawRasterBand( poDS, 1, poDS->fpImage, 
+                              (poDS->nRasterYSize-1)*poDS->nRasterXSize*nDTSize + 40,
+                              nDTSize, poDS->nRasterXSize * -nDTSize,
+                              eDT,
+                              !CPL_IS_LSB, TRUE, FALSE );
+    if (eDT == GDT_Float64)
+      poBand->SetNoDataValue( -88.8888 );
+    else
+      /* GDT_Float32 */
+      poBand->SetNoDataValue( (double)-88.8888f );
+    poDS->SetBand( 1, poBand );
 
 /* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
@@ -297,9 +314,9 @@ const char *GTXDataset::GetProjectionRef()
 /************************************************************************/
 
 GDALDataset *GTXDataset::Create( const char * pszFilename,
-                                 int nXSize, int nYSize, int nBands,
+                                 int nXSize, int nYSize, CPL_UNUSED int nBands,
                                  GDALDataType eType,
-                                 char ** papszOptions )
+                                 CPL_UNUSED char ** papszOptions )
 
 {
     if( eType != GDT_Float32 )
@@ -394,4 +411,3 @@ void GDALRegister_GTX()
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }
 }
-

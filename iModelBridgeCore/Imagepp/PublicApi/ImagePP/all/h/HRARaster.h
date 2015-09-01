@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRARaster.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -17,6 +17,7 @@
 #include "HRPChannelType.h"
 #include "HMGMacros.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRARasterIterator;
 class HRARasterEditor;
 class HPMObjectStore;
@@ -27,14 +28,22 @@ class HRAHistogramOptions;
 class HRAClearOptions;
 class HMDContext;
 class HRADrawOptions;
-class HRACopyFromOptions;
+class HRACopyFromLegacyOptions;
 class HRPPixelType;
 class HRPPixelPalette;
 class HVEShape;
+class HRABitmap;
+class HRAStoredRaster;
+class IHPMMemoryManager;
+class HRPFilter;
+struct HRACopyFromOptions;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
 class HNOVTABLEINIT HRARaster : public HGFRaster
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1000)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRARasterId)
 
 public:
 
@@ -52,10 +61,9 @@ public:
 
     // Other methods
 
-    virtual void    CopyFrom    (const HFCPtr<HRARaster>& pi_pSrcRaster,
-                                 const HRACopyFromOptions& pi_rOptions) = 0;
+    virtual void    CopyFromLegacy    (const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions) = 0;
 
-    virtual void    CopyFrom    (const HFCPtr<HRARaster>& pi_pSrcRaster) = 0;
+    virtual void    CopyFromLegacy    (const HFCPtr<HRARaster>& pi_pSrcRaster) = 0;
 
     virtual void    Clear() = 0;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) = 0;
@@ -164,14 +172,11 @@ public:
     */
     virtual void    GetPixelSizeRange(HGF2DExtent& po_rMinimum, HGF2DExtent& po_rMaximum) const = 0;
 
-    // virtual const void*
-    //               GetRawDataPtr () const;
-
     // If the raster has been created with a Store, you can specify
     // an other in parameters, else you can't.
     virtual HPMPersistentObject* Clone() const override;
 
-    virtual HRARaster* Clone (HPMObjectStore* pi_pStore,HPMPool* pi_pLog=0) const = 0;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const =0;
 
 
     virtual unsigned short GetRepresentativePalette(
@@ -182,7 +187,7 @@ public:
 
     virtual bool   StartHistogramEditMode();
 
-    _HDLLg const HRAHistogramOptions* GetHistogram() const;
+    IMAGEPP_EXPORT const HRAHistogramOptions* GetHistogram() const;
 
     // Debug function
     virtual void    PrintState(ostream& po_rOutput) const;
@@ -204,8 +209,6 @@ public:
 
     // Other inherited from HGFGraphicObject
     virtual Location    Locate(const HGF2DLocation& pi_rPoint) const override;
-    virtual IRasterBaseGcsPtr   GetGeocoding() const;
-    virtual void                SetGeocoding(IRasterBaseGcsPtr pi_pBaseGcs);
 
     // LookAhead Methods
     virtual bool   HasLookAhead() const;
@@ -213,14 +216,9 @@ public:
                                  uint32_t        pi_ConsumerID,
                                  bool           pi_Async = false);
 
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions);
-
-    virtual void    PreCopyFrom(HRACopyFromOptions* pio_pOptions);
-
     virtual bool   IsOpaque() const;
-
-
-    virtual void    Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const;
+    
+    void Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const;
 
     // This method must be Private, but HRSObjectStore must use it, to load
     // a Raster form a file.
@@ -233,7 +231,17 @@ public:
 
     virtual void                      InvalidateRaster();
 
-protected:
+    IMAGEPP_EXPORT ImagePPStatus CopyFrom(HRARaster& srcRaster);
+    IMAGEPP_EXPORT ImagePPStatus CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options);
+        
+    ImagePPStatus BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options);
+
+protected:       
+
+    virtual ImagePPStatus _CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options) = 0;
+
+    virtual ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) = 0;
+
 
     // Primary methods
     HRARaster   ();
@@ -257,6 +265,7 @@ protected:
 
     void            SetHistogram(const HRAHistogramOptions* pi_pHistogram);
 
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const = 0;
 
 private:
 
@@ -277,12 +286,11 @@ private:
     // Logical Shape on the raster
     HFCPtr<HVEShape>    m_pShape;
 
-    IRasterBaseGcsPtr   m_pGeocoding;
-
     // Methods
 
     void                InitRepPalCache ();
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLg)
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT)
     };
+END_IMAGEPP_NAMESPACE
 

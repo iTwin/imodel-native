@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeV8Gray8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeV8Gray8
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
 #include <Imagepp/all/h/HRPChannelOrgGray.h>
@@ -30,12 +30,7 @@ struct ConverterV8Gray8_V8Gray8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        *((Byte*)pio_pDestRawData) = *((Byte*)pi_pSourceRawData);
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         // Save a function call if only one pixel to copy
         if(pi_PixelsCount == 1)
@@ -43,15 +38,8 @@ struct ConverterV8Gray8_V8Gray8 : public HRPPixelConverter
         else
             memcpy(pio_pDestRawData, pi_pSourceRawData, pi_PixelsCount);
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV8Gray8_V8Gray8(*this));
         }
     };
@@ -65,13 +53,7 @@ class ConverterV32R8G8B8A8_V8Gray8 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        *((Byte*)pio_pDestRawData) = Byte(((Byte*)pi_pSourceRawData)[0] * REDFACTOR +
-                                              ((Byte*)pi_pSourceRawData)[1] * GREENFACTOR +
-                                              ((Byte*)pi_pSourceRawData)[2] * BLUEFACTOR);
-        }
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc  = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -90,30 +72,8 @@ public:
             pSrc+=4;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite = (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-        Byte Gray;
-
-        // calculate an average gray for the RGB value
-        Gray = Byte(pSourceComposite[0] * REDFACTOR +
-                      pSourceComposite[1] * GREENFACTOR +
-                      pSourceComposite[2] * BLUEFACTOR);
-
-        // (S * alpha) + (D * (1 - alpha))
-        *pDestComposite = HFCMath::GetInstance()->DivideBy255ToByte((Gray * pSourceComposite[3]) + (*pDestComposite * (255 - pSourceComposite[3])));
-        }
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc = (Byte*)pi_pSourceRawData;
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
@@ -138,12 +98,12 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32R8G8B8A8_V8Gray8(*this));
         }
 
@@ -161,15 +121,7 @@ struct ConverterV8Gray8_V32R8G8B8A8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        ((Byte*)pio_pDestRawData)[0] =
-            ((Byte*)pio_pDestRawData)[1] =
-                ((Byte*)pio_pDestRawData)[2] = *((Byte*)pi_pSourceRawData);
-        ((Byte*)pio_pDestRawData)[3] = 0xff;
-        }
-
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc  = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -188,15 +140,8 @@ struct ConverterV8Gray8_V32R8G8B8A8 : public HRPPixelConverter
             ++pSrc;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV8Gray8_V32R8G8B8A8(*this));
         }
     };

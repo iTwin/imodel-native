@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFiTiffCacheFileCreator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFiTiffCacheFileCreator
@@ -18,9 +18,10 @@
 // This is a helper class to instantiate a cache file object
 // without knowing the different cache file format.
 //-----------------------------------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
 class HRFiTiffCacheFileCreator :  public HRFLocalCacheFileCreator
     {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFiTiffCacheFileCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFiTiffCacheFileCreator)
 
 public:
     // Destructor
@@ -44,7 +45,7 @@ public:
     virtual HFCPtr<HRFRasterFile> GetCacheFileFor(HFCPtr<HRFRasterFile>&            pi_rpForRasterFile,
                                                   uint32_t                          pi_Page = -1) const;
 
-    _HDLLg HFCPtr<HFCURL>         ComposeURLFor(const HFCPtr<HFCURL>& pi_rpURLFileName,
+    IMAGEPP_EXPORT HFCPtr<HFCURL>         ComposeURLFor(const HFCPtr<HFCURL>& pi_rpURLFileName,
                                                 const WString&        pi_Extension,
                                                 uint64_t             pi_Offset = 0,
                                                 uint32_t              pi_Page = -1) const;
@@ -52,7 +53,7 @@ public:
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() const;
 
-    _HDLLg bool IsModificationTimeValid(time_t pi_FileModificationTime,
+    IMAGEPP_EXPORT bool IsModificationTimeValid(time_t pi_FileModificationTime,
                                         time_t pi_CacheFileModificationTime) const;
 
 protected:
@@ -69,4 +70,5 @@ private:
     HRFiTiffCacheFileCreator& operator=(const HRFiTiffCacheFileCreator&);
     HRFiTiffCacheFileCreator();
     };
+END_IMAGEPP_NAMESPACE
 

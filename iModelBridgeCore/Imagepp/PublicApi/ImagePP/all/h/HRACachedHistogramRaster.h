@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRACachedHistogramRaster.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HRAImageView.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     This is a wrapper class whose sole purpose is to cache a list of
@@ -24,7 +25,7 @@
 */
 class HRACachedHistogramRaster : public HRAImageView
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1276)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRACachedHistogramRasterId)
 
 
 public:
@@ -43,16 +44,16 @@ public:
 
     //:> Overriden methods
     virtual HPMPersistentObject* Clone () const;
-    virtual HRARaster* Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
     bool           NotifySomethingChanged(const HMGMessage& pi_rMessage);
 
     virtual void    ComputeHistogram(HRAHistogramOptions* pio_pOptions,
                                      bool                pi_ForceRecompute = false);
 
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions);
+protected:
 
-    virtual void    Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const;
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
 
 private:
 
@@ -62,6 +63,7 @@ private:
     typedef list< HRAHistogramOptions* > HistogramList;
     HistogramList   m_Histograms;
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLNone)
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT)
     };
 
+END_IMAGEPP_NAMESPACE

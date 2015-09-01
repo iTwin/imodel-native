@@ -2,19 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrs/src/HRSObjectStore.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRSObjectStore
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRSObjectStore.h>
 
-#include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HRATiledRaster.h>
 #include <Imagepp/all/h/HRAStripedRaster.h>
 #include <Imagepp/all/h/HRAPyramidRaster.h>
@@ -22,19 +21,15 @@
 #include <Imagepp/all/h/HGF2DStretch.h>
 #include <Imagepp/all/h/HVE2DRectangle.h>
 #include <Imagepp/all/h/HRFRasterFileCache.h>
-#include <Imagepp/all/h/HRFInternetImagingFile.h>
 #include <Imagepp/all/h/HFCExceptionHandler.h>
 #include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HFCInternetConnection.h>
 #include <Imagepp/all/h/HRABitmap.h>
 #include <Imagepp/all/h/HRABitmapRLE.h>
 #include <Imagepp/all/h/HCDCodecHMRRLE1.h>
 #include <ImagePP/all/h/HRAMessages.h>
+#include <ImagePP/all/h/HCDPacket.h>
 #include <ImagePP/all/h/HCDPacketRLE.h>
 
-#include <Imagepp/all/h/HRFIntergraphFile.h>
-#include <Imagepp/all/h/HRFVirtualEarthFile.h>
-#include <Imagepp/all/h/HRFPDFFile.h>
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HTiffTag.h>
@@ -42,9 +37,10 @@
 #include <Imagepp/all/h/HRABitmapBase.h>
 #include <Imagepp/all/h/HRAHistogramOptions.h>
 #include <Imagepp/all/h/HRATransactionRecorder.h>
+#include <Imagepp/all/h/HGSSurfaceDescriptor.h>
 
-#include <Imagepp/all/h/HGSEditor.h>
-#include <Imagepp/all/h/HGSToolbox.h>
+#include <Imagepp/all/h/HRASurface.h>
+#include <Imagepp/all/h/HRAEditor.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 
 #include <Imagepp/all/h/HRFRasterFileResBooster.h>
@@ -58,8 +54,26 @@
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HFCStat.h>
 
+#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
+#include <Imagepp/all/h/HRPPixelTypeI8R8G8B8A8.h>
+#include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
+
+// These pixeltypes below are hidden.
+//
+//    --> to RLE1Bit
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8.h>
+//
+//  --> to I8R8G8B8(A8)
+#include <Imagepp/all/h/HRPPixelTypeI2R8G8B8.h>
+#include <Imagepp/all/h/HRPPixelTypeI4R8G8B8.h>
+#include <Imagepp/all/h/HRPPixelTypeI4R8G8B8A8.h>
+//
+//  --> to V24R8G8B8
+#include <Imagepp/all/h/HRPPixelTypeV16R5G6B5.h>
+#include <Imagepp/all/h/HRPPixelTypeV16B5G5R5.h>
+
 
 #include <Imagepp/all/h/HUTExportProgressIndicator.h>
 
@@ -190,7 +204,7 @@ HMG_END_MESSAGE_MAP();
 //-----------------------------------------------------------------------------
 HRSObjectStore::HRSObjectStore(HPMPool*                      pi_pLog,
                                HFCPtr<HRFRasterFile>&        pi_pRasterFile,
-                               uint32_t                      pi_Page,
+                               uint32_t                     pi_Page,
                                const HFCPtr<HGF2DCoordSys>&  pi_rRefCoordSys)
     : HPMObjectStore (pi_pLog),
       m_LoadCurSubImage(0),
@@ -280,21 +294,21 @@ bool HRSObjectStore::VerifyResult(HSTATUS pi_Result, bool pi_IsThrowable) const
         case H_INVALID:
         case H_ERROR:
             if (pi_IsThrowable)
-                throw HFCException(UNKNOWN_EXCEPTION);
+                throw HFCUnknownException();
             else
                 return true;    // Fatal error
             break;
 
         case H_NOT_ENOUGH_MEMORY:
             if (pi_IsThrowable)
-                throw HFCException(HFC_MEMORY_EXCEPTION);
+                throw HFCOutOfMemoryException();
             else
                 return true;    // Fatal error
             break;
 
         case H_NO_SPACE_LEFT:
             if (pi_IsThrowable)
-                throw HFCDeviceException(HFC_NO_DISK_SPACE_LEFT_EXCEPTION, m_pRasterFile->GetURL()->GetURL());
+                throw HFCNoDiskSpaceLeftException(m_pRasterFile->GetURL()->GetURL());
             else
                 return true;    // Fatal error
             break;
@@ -302,7 +316,7 @@ bool HRSObjectStore::VerifyResult(HSTATUS pi_Result, bool pi_IsThrowable) const
         case H_DATA_CORRUPTED:
             if (pi_IsThrowable)
                 {
-                throw HFCException(HCD_CORRUPTED_DATA_EXCEPTION);
+                throw HFCCorruptedFileException((m_pRasterFile->GetURL()->GetURL()));
                 }
             else
                 return true;    // Fatal error
@@ -310,14 +324,14 @@ bool HRSObjectStore::VerifyResult(HSTATUS pi_Result, bool pi_IsThrowable) const
 
         case H_IOERROR:
             if (pi_IsThrowable)
-                throw HFCFileException(HFC_FILE_IO_ERROR_EXCEPTION, m_pRasterFile->GetURL()->GetURL());
+                throw HFCFileIOErrorException(m_pRasterFile->GetURL()->GetURL());
             else
                 return true;    // Fatal error
             break;
 
         case H_WRITE_ERROR:
             if (pi_IsThrowable)
-                throw HFCFileException(HFC_WRITE_FAULT_EXCEPTION, m_pRasterFile->GetURL()->GetURL());
+                throw HFCWriteFaultException(m_pRasterFile->GetURL()->GetURL());
             else
                 return true;    // Fatal error
             break;
@@ -352,7 +366,7 @@ bool HRSObjectStore::VerifyResult(HSTATUS pi_Result, bool pi_IsThrowable) const
         case H_OUT_OF_RANGE:
             if (pi_IsThrowable)
                 {
-                throw HFCFileException(HFC_FILE_OUT_OF_RANGE_EXCEPTION, m_pRasterFile->GetURL()->GetURL());
+                throw HFCFileOutOfRangeException(m_pRasterFile->GetURL()->GetURL());
                 }
             else
                 return true;    // Fatal error
@@ -446,7 +460,7 @@ void HRSObjectStore::Save(HPMPersistentObject* pi_pObj)
             unsigned short NumberOfImage(((HRAPyramidRaster*)pi_pObj)->CountSubImages());
 
             for(unsigned short i = 0; i < NumberOfImage; i++)
-                static_cast<HRATiledRaster*>(((HRAPyramidRaster*)pi_pObj)->GetSubImage(i).GetPtr())->Save();
+                ((HRAPyramidRaster*)pi_pObj)->GetSubImage(i)->Save();
 
             SaveHistogram((HRAPyramidRaster*)pi_pObj);
             SaveResamplingMethod((HRAPyramidRaster*)pi_pObj);
@@ -545,7 +559,7 @@ HFCPtr<HRABitmapBase> HRSObjectStore::LoadTile(uint64_t                  pi_Inde
     HSTATUS Result = H_SUCCESS;
 
     // Make a tile.
-    HFCPtr<HRABitmapBase> pTile = (HRABitmapBase*)m_pTileTemplate->Clone(0);
+    HFCPtr<HRABitmapBase> pTile = static_cast<HRABitmapBase*>(m_pTileTemplate->Clone(0).GetPtr());
     if(pTile->IsCompatibleWith(HRABitmap::CLASS_ID))
         static_cast<HRABitmap&>(*pTile).SetPool(pi_pPool);
     try
@@ -640,7 +654,7 @@ void HRSObjectStore::ConstructContextForRaster(const HFCPtr<HRFRasterFile>& pi_r
                                        HFCPtr<HMDMetaDataContainer>(new HMDAnnotationIconsPDF()));
         }
 
-    if(pi_rRasterFile->IsCompatibleWith(HRFPDFFile::CLASS_ID))
+    if(pi_rRasterFile->IsCompatibleWith(HRFFileId_PDF/*HRFPDFFile::CLASS_ID*/))
         {
         if (pContext == 0)
             pContext = new HMDContext();
@@ -921,7 +935,7 @@ void HRSObjectStore::Constructor (uint32_t pi_Page,
                 {
                 if (SupportMultiPixelType)
                     m_MultiPixelType = m_MultiPixelType ||
-                                       *pMainImagePixelType != *m_pPageDescriptor->GetResolutionDescriptor(i)->GetPixelType();
+                                       !pMainImagePixelType->HasSamePixelInterpretation(*m_pPageDescriptor->GetResolutionDescriptor(i)->GetPixelType());
 
                 if (GetRasterFileAccessMode().m_HasWriteAccess)
                     {
@@ -1017,72 +1031,118 @@ HFCPtr<HRABitmapBase> HRSObjectStore::MakeBitmap(uint32_t                      p
         {
         case 1:
             {
-            if(pi_rpPixelType->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) == HRPChannelType::FREE)
-                {
-                // Pixel type do not contain alpha value.
-                // Put it in a BitmapRLE, normally the raster completely
-                HFCPtr<HRPPixelTypeI1R8G8B8> pBitmapPixelType = new HRPPixelTypeI1R8G8B8();
-                pBitmap = new HRABitmapRLE (pi_Width,
-                                            pi_Height,
-                                            pTransfoModel,
-                                            m_pLogicalCoordSys,
-                                            (HFCPtr<HRPPixelType>&)pBitmapPixelType,
-                                            HRABitmapRLE::UPPER_LEFT_HORIZONTAL,
-                                            m_Resizable);
-
-                // Set palette
-                HRPPixelPalette&          rPalette = pBitmapPixelType->LockPalette();
-                HFCPtr<HRPPixelConverter> pConvert = pi_rpPixelType->GetConverterTo(pBitmapPixelType);
-                Byte                    Value1Bit;
-
-                Byte CompositeValue[3];
-                for (Byte i=0; i<2; i++)
-                    {
-                    Value1Bit = (i << 7);
-                    pConvert->ConvertToValue(&Value1Bit, CompositeValue);
-                    rPalette.SetCompositeValue(i, CompositeValue);
-                    }
-                pBitmapPixelType->UnlockPalette();
-
-                // Set default value
-                pBitmapPixelType->SetDefaultRawData(pi_rpPixelType->GetDefaultRawData());
-                }
+            HFCPtr<HRPPixelType> pBitmapPixelType;
+            if (pi_rpPixelType->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) == HRPChannelType::FREE)
+                pBitmapPixelType = new HRPPixelTypeI1R8G8B8();
             else
-                {
-                // Pixel type contain alpha.
-                // Put it in a BitmapRLE, normally the raster completly
-                HFCPtr<HRPPixelTypeI1R8G8B8A8> pBitmapPixelType = new HRPPixelTypeI1R8G8B8A8();
-                pBitmap = new HRABitmapRLE (pi_Width,
-                                            pi_Height,
-                                            pTransfoModel,
-                                            m_pLogicalCoordSys,
-                                            (HFCPtr<HRPPixelType>&)pBitmapPixelType,
-                                            HRABitmapRLE::UPPER_LEFT_HORIZONTAL,
-                                            m_Resizable);
+                pBitmapPixelType = new HRPPixelTypeI1R8G8B8A8();
 
-                // Set palette
-                HRPPixelPalette&          rPalette = pBitmapPixelType->LockPalette();
-                HFCPtr<HRPPixelConverter> pConvert = pi_rpPixelType->GetConverterTo(pBitmapPixelType);
-                Byte                    Value1Bit;
+            // Put it in a BitmapRLE, normally the raster completely
+            pBitmap = HRABitmapRLE::Create (pi_Width,
+                                        pi_Height,
+                                        pTransfoModel,
+                                        m_pLogicalCoordSys,
+                                        pBitmapPixelType,
+                                        m_Resizable).GetPtr();
 
-                Byte CompositeValue[4];
-                for (Byte i=0; i<2; i++)
-                    {
-                    Value1Bit = (i << 7);
-                    pConvert->ConvertToValue(&Value1Bit, CompositeValue);
-                    rPalette.SetCompositeValue(i, CompositeValue);
-                    }
-                pBitmapPixelType->UnlockPalette();
+            // Set palette
+            HRPPixelTypeV32R8G8B8A8   rgbaPixelType;
+            HRPPixelPalette&          rPalette = pBitmapPixelType->LockPalette();
+            HFCPtr<HRPPixelConverter> pConvertToRGBA = pi_rpPixelType->GetConverterTo(&rgbaPixelType);
+            Byte                      rgbaValues[8];
+            Byte                      binaryValues = 0x40; // 0100 0000
+            
+            // Get index 0 and 1 RGBA value.
+            pConvertToRGBA->Convert(&binaryValues, rgbaValues, 2);
+            
+            // Set RGB(alpha ignored) or RGBA palette entries.
+            rPalette.SetCompositeValue(0, rgbaValues);
+            rPalette.SetCompositeValue(1, rgbaValues+4);
+                
+            pBitmapPixelType->UnlockPalette();
 
-                // Set default value
-                pBitmapPixelType->SetDefaultRawData(pi_rpPixelType->GetDefaultRawData());
-                }
+            // Set default value
+            pBitmapPixelType->SetDefaultRawData(pi_rpPixelType->GetDefaultRawData());
             }
         break;
 
+        case 2:
+        case 4:
+            {
+            HPRECONDITION(pi_rpPixelType->CountValueBits() == 0);
+            HPRECONDITION(!m_Resizable);    // resizable supported only for 1 bit image for now
+
+            int     ShiftValue(0);
+            unsigned short NbColor(0);  
+              
+            if (pi_rpPixelType->GetClassID() == HRPPixelTypeId_I2R8G8B8)
+                {
+                ShiftValue = 6;
+                NbColor = 4;  
+                }
+            else if (pi_rpPixelType->GetClassID() == HRPPixelTypeI4R8G8B8::CLASS_ID ||
+                    (pi_rpPixelType->GetClassID() == HRPPixelTypeI4R8G8B8A8::CLASS_ID) )
+                {
+                ShiftValue = 4;
+                NbColor = 16;  
+                }
+            else
+                HASSERT(false);
+
+            if (ShiftValue != 0)
+                {
+                HFCPtr<HRPPixelType> pBitmapPixelType;
+                if(pi_rpPixelType->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) == HRPChannelType::FREE)
+                    pBitmapPixelType = new HRPPixelTypeI8R8G8B8(pi_rpPixelType->GetPalette());
+                else
+                    pBitmapPixelType = new HRPPixelTypeI8R8G8B8A8(pi_rpPixelType->GetPalette());
+
+                pBitmap = HRABitmap::Create(pi_Width,
+                                        pi_Height,
+                                        pTransfoModel,
+                                        m_pLogicalCoordSys,
+                                        pBitmapPixelType);
+
+                // Set Converters and temporary memory block also used in the load tile.
+                m_ConvertNativeToNormalize = pi_rpPixelType->GetConverterTo(pBitmapPixelType);
+                m_ConvertNormalizeToNative = pBitmapPixelType->GetConverterTo(pi_rpPixelType);
+
+                Byte normalizeRawValue;
+                m_ConvertNativeToNormalize->Convert(pi_rpPixelType->GetDefaultRawData(), &normalizeRawValue, 1);
+
+                // Set default value
+                pBitmapPixelType->SetDefaultRawData(&normalizeRawValue);
+                }
+            }
+            break;
+
+        case 16:
+            if (pi_rpPixelType->GetClassID() == HRPPixelTypeV16R5G6B5::CLASS_ID ||
+                pi_rpPixelType->GetClassID() == HRPPixelTypeV16B5G5R5::CLASS_ID)
+                {
+                HFCPtr<HRPPixelType> pBitmapPixelType = new HRPPixelTypeV24R8G8B8();
+                pBitmap = HRABitmap::Create(pi_Width,
+                                        pi_Height,
+                                        pTransfoModel,
+                                        m_pLogicalCoordSys,
+                                        pBitmapPixelType);
+
+                // Set Converters and temporary memory block also used in the load tile.
+                m_ConvertNativeToNormalize = pi_rpPixelType->GetConverterTo(pBitmapPixelType);
+                m_ConvertNormalizeToNative = pBitmapPixelType->GetConverterTo(pi_rpPixelType);
+                pBitmapPixelType->SetDefaultRawData(pi_rpPixelType->GetDefaultRawData());
+
+                Byte normalizeRawValue[3];
+                m_ConvertNativeToNormalize->Convert(pi_rpPixelType->GetDefaultRawData(), &normalizeRawValue, 1);
+
+                // Set default value
+                pBitmapPixelType->SetDefaultRawData(&normalizeRawValue);
+                break;
+                }
+
         default:
             HPRECONDITION(!m_Resizable);    // resizable supported only for 1 bit image for now
-            pBitmap = new HRABitmap (pi_Width,
+            pBitmap = HRABitmap::Create (pi_Width,
                                      pi_Height,
                                      pTransfoModel,
                                      m_pLogicalCoordSys,
@@ -1130,7 +1190,7 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
 
             pResDescriptor = m_pPageDescriptor->GetResolutionDescriptor(i);
 
-            if (HasSubResDirtyFlag == true)
+            if (HasSubResDirtyFlag)
                 {
                 HasDirtyFlag = true;
                 HasSubResDirtyFlag = false;
@@ -1190,65 +1250,45 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
 
             if (m_MultiPixelType)
                 {
-                HFCPtr<HRAStoredRaster> pTileTemplate(MakeBitmap(1,
-                                                                 1,
-                                                                 pResDescriptor->GetPixelType()));
+                HFCPtr<HRABitmapBase> pTileTemplate(MakeBitmap(1, 1, pResDescriptor->GetPixelType()));
 
                 HRFBlockType BlockType = pResDescriptor->GetBlockType();
                 if ((BlockType == HRFBlockType::STRIP) || (BlockType == HRFBlockType::IMAGE))
-                    pSubImageDesc[i].pRasterModel = (HRAStoredRaster*)new HRAStripedRaster((HFCPtr<HRAStoredRaster>&)pTileTemplate,
-                                                                                           pResDescriptor->GetBlockHeight(),
-                                                                                           1,
-                                                                                           1);
+                    pSubImageDesc[i].pTiledRaster = new HRAStripedRaster(pTileTemplate, pResDescriptor->GetBlockHeight(), 1, 1);
                 else
-                    pSubImageDesc[i].pRasterModel = (HRAStoredRaster*)new HRATiledRaster((HFCPtr<HRAStoredRaster>&)pTileTemplate,
-                                                                                         pResDescriptor->GetBlockWidth(),
-                                                                                         pResDescriptor->GetBlockHeight(),
-                                                                                         1,
-                                                                                         1);
+                    pSubImageDesc[i].pTiledRaster = new HRATiledRaster(pTileTemplate, pResDescriptor->GetBlockWidth(), pResDescriptor->GetBlockHeight(), 1, 1);
                 }
             }
 
         // Make TiledRaster or StripedRaster
         // We must do it, because the subResolution raster must ajuste de tileX size to the image
         // width. (the Class Striped do it)
-
-        HFCPtr<HRAStoredRaster> pMainImageRasterModel;
-        HFCPtr<HRAStoredRaster> pTileTemplate;
+        HFCPtr<HRABitmapBase> pTileTemplate;
         if (m_MultiPixelType)
-            pTileTemplate = MakeBitmap(1,
-                                       1,
-                                       m_pResDescriptor->GetPixelType());
+            pTileTemplate = MakeBitmap(1, 1, m_pResDescriptor->GetPixelType());
         else
             pTileTemplate = m_pTileTemplate;
 
-        HFCPtr<HRAStoredRaster> pModel;
+        HFCPtr<HRATiledRaster> pModel;
         HRFBlockType BlockType = m_pResDescriptor->GetBlockType();
 
         if ((BlockType == HRFBlockType::STRIP) || (BlockType == HRFBlockType::IMAGE))
-            pModel = (HRAStoredRaster*)new HRAStripedRaster((HFCPtr<HRAStoredRaster>&)pTileTemplate,
-                                                            m_pResDescriptor->GetBlockHeight(),
-                                                            1,
-                                                            1);
+            pModel = new HRAStripedRaster(pTileTemplate, m_pResDescriptor->GetBlockHeight(), 1, 1);
         else
-            pModel = (HRAStoredRaster*)new HRATiledRaster((HFCPtr<HRAStoredRaster>&)m_pTileTemplate,
-                                                          m_pResDescriptor->GetBlockWidth(),
-                                                          m_pResDescriptor->GetBlockHeight(),
-                                                          1,
-                                                          1);
+            pModel = new HRATiledRaster(m_pTileTemplate.GetPtr(), m_pResDescriptor->GetBlockWidth(), m_pResDescriptor->GetBlockHeight(), 1, 1);
 
         HASSERT(m_pResDescriptor->GetWidth() <= ULONG_MAX);
         HASSERT(m_pResDescriptor->GetHeight() <= ULONG_MAX);
 
         pOutputRaster = new HRAPyramidRaster(pModel,
-                                             (uint32_t)m_pResDescriptor->GetWidth(),
-                                             (uint32_t)m_pResDescriptor->GetHeight(),
+                                             m_pResDescriptor->GetWidth(),
+                                             m_pResDescriptor->GetHeight(),
                                              pSubImageDesc,
                                              NbSubImage,
                                              this,
                                              GetPool(),
-                                             pMainImageRasterModel,
-                                             m_pRasterFile->IsCompatibleWith(HRFVirtualEarthFile::CLASS_ID));
+                                             NULL,
+                                             m_pRasterFile->IsCompatibleWith(HRFFileId_VirtualEarth/*HRFVirtualEarthFile::CLASS_ID*/));
         // Disable TilesFlags if VE
 
         // Tell the pyramid that the RasterFile supports the LookAhead mechanism.
@@ -1280,26 +1320,19 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
         // Make TiledRaster or StripedRaster
         // We must do it, because the subResolution raster must adjust the tileX size to the image
         // width. (the Class Striped do it)
-        HFCPtr<HRAStoredRaster> pModel;
+        HFCPtr<HRATiledRaster> pModel;
         HRFBlockType BlockType = m_pResDescriptor->GetBlockType();
         if ((BlockType == HRFBlockType::STRIP) || (BlockType == HRFBlockType::IMAGE))
-            pModel = (HRAStoredRaster*)new HRAStripedRaster((HFCPtr<HRAStoredRaster>&) m_pTileTemplate,
-                                                            m_pResDescriptor->GetBlockHeight(),
-                                                            1,
-                                                            1);
+            pModel = new HRAStripedRaster(m_pTileTemplate.GetPtr(), m_pResDescriptor->GetBlockHeight(), 1, 1);
         else
-            pModel = (HRAStoredRaster*)new HRATiledRaster((HFCPtr<HRAStoredRaster>&) m_pTileTemplate,
-                                                          m_pResDescriptor->GetBlockWidth(),
-                                                          m_pResDescriptor->GetBlockHeight(),
-                                                          1,
-                                                          1);
+            pModel = new HRATiledRaster(m_pTileTemplate.GetPtr(), m_pResDescriptor->GetBlockWidth(), m_pResDescriptor->GetBlockHeight(), 1, 1);
 
         HASSERT(m_pResDescriptor->GetWidth() <= ULONG_MAX);
         HASSERT(m_pResDescriptor->GetHeight() <= ULONG_MAX);
 
         pOutputRaster = new HRAPyramidRaster (pModel,
-                                              (uint32_t)m_pResDescriptor->GetWidth(),
-                                              (uint32_t)m_pResDescriptor->GetHeight(),
+                                              m_pResDescriptor->GetWidth(),
+                                              m_pResDescriptor->GetHeight(),
                                               0,
                                               0,
                                               this,
@@ -1376,59 +1409,6 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
         // Set resampling method for sub-resolution.
         SetResamplingForDecimationInRaster(pOutputRaster);
         }
-    /*
-    // if there is a filter, encapsulate the raster in a filtered image
-    if(pOutputRaster && m_pPageDescriptor->HasFilter())
-    {
-    pOutputRaster = new HIMFilteredImage(HFCPtr<HRARaster>(pOutputRaster), &m_pPageDescriptor->GetFilter());
-    }
-    */
-
-    // Esxtract the real raster file from all the encapsulation in caches, booster, etc!
-    HFCPtr<HRFRasterFile> pRealFile;
-
-    // Get the REAL raster file, without caches or adapters, etc
-    if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterAttributesEnable() ||
-        ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterExtendedAttributesEnable())
-        {
-        pRealFile = GetRealRasterFile(m_pRasterFile);
-        HASSERT(pRealFile != 0);
-        }
-
-    // HRF attributes into the HRA object, if needed
-    if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterAttributesEnable())
-        {
-        HASSERT(pRealFile != 0);
-        HASSERT(pRealFile->CountPages() > 0);
-
-        // Get the page from the REAL raster file.  to avoid getting caches attributes
-        HFCPtr<HRFPageDescriptor> pRealPage(pRealFile->GetPageDescriptor(m_PageIndex));
-        HASSERT(pRealPage != 0);
-
-        // Give the pointer to the attributes to the HRA Object
-        pOutputRaster->SetAttributes(pRealPage->GetTagsPtr());
-
-        // Give the pointer to the metadata container list to the
-        // attributes to the HRA Object
-        pOutputRaster->SetMetaDataContainerList(pRealPage->GetListOfMetaDataContainer());
-        pOutputRaster->SetGeocoding(pRealPage->GetGeocoding());
-
-        }
-
-    // Add extended information, if needed
-    if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterExtendedAttributesEnable())
-        {
-        HASSERT(pRealFile != 0);
-
-        // Lock down the attributes
-        HPMAttributeSet& rAttributes = pOutputRaster->LockAttributes();
-
-        // extend the information with the real raster file
-        ExtendTagInformation(pRealFile, m_PageIndex, rAttributes);
-
-        // let go the attributes
-        pOutputRaster->UnlockAttributes();
-        }
 
     if (m_Resizable)
         m_Resizable = pOutputRaster->IsResizable();
@@ -1446,7 +1426,7 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
 HFCPtr<HRAUnlimitedResolutionRaster> HRSObjectStore::LoadUnlimitedResolutionRaster(HPMObjectID* po_pRasterID)
     {
     HFCPtr<HRAUnlimitedResolutionRaster> pOutputRaster;
-    HFCPtr<HRAStoredRaster> pModel;
+    HFCPtr<HRATiledRaster> pModel;
 
     HRFBlockType BlockType = m_pResDescriptor->GetBlockType();
     if ((BlockType == HRFBlockType::STRIP) || (BlockType == HRFBlockType::IMAGE))
@@ -1519,56 +1499,7 @@ HFCPtr<HRAUnlimitedResolutionRaster> HRSObjectStore::LoadUnlimitedResolutionRast
             }
         }
 
-    // Esxtract the real raster file from all the encapsulation in caches, booster, etc!
-    HFCPtr<HRFRasterFile> pRealFile;
-
-    // Get the REAL raster file, without caches or adapters, etc
-    if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterAttributesEnable()        ||
-        ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterExtendedAttributesEnable())
-        {
-        pRealFile = GetRealRasterFile(m_pRasterFile);
-        HASSERT(pRealFile != 0);
-        }
-
-    // HRF attributes into the HRA object, if needed
-    if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterAttributesEnable())
-        {
-        HASSERT(pRealFile != 0);
-        HASSERT(pRealFile->CountPages() > 0);
-
-        // Get the page from the REAL raster file.  to avoid getting caches attributes
-        HFCPtr<HRFPageDescriptor> pRealPage(pRealFile->GetPageDescriptor(m_PageIndex));
-        HASSERT(pRealPage != 0);
-
-        // Give the pointer to the attributes to the HRA Object
-        pOutputRaster->SetAttributes(pRealPage->GetTagsPtr());
-
-        // Give the pointer to the metadata container list to the
-        // attributes to the HRA Object
-        pOutputRaster->SetMetaDataContainerList(pRealPage->GetListOfMetaDataContainer());
-        }
-
-    // Add extended information, if needed
-    if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterExtendedAttributesEnable())
-        {
-        HASSERT(pRealFile != 0);
-
-        // Lock down the attributes
-        HPMAttributeSet& rAttributes = pOutputRaster->LockAttributes();
-
-        // extend the information with the real raster file
-        ExtendTagInformation(pRealFile, m_PageIndex, rAttributes);
-
-        // let go the attributes
-        pOutputRaster->UnlockAttributes();
-        }
-
-    HFCPtr<HMDMetaDataContainer> pMetaDataContainer;
-
-    if (pRealFile)
-        ConstructContextForRaster(pRealFile, m_PageIndex, pOutputRaster);
-    else
-        ConstructContextForRaster(m_pRasterFile, m_PageIndex, pOutputRaster);
+    ConstructContextForRaster(m_pRasterFile, m_PageIndex, pOutputRaster);
 
     return pOutputRaster;
     }
@@ -1600,22 +1531,18 @@ HFCPtr<HRABitmapRLE> HRSObjectStore::LoadResizableRaster(HPMObjectID* po_pRaster
     pTile = LoadTile(0, 0, &PosX, &PosY);
     HPOSTCONDITION(pTile->IsCompatibleWith(HRABitmapRLE::CLASS_ID));
 
-    // now, copy to original data into the resizable raster
-    HFCPtr<HGSEditor> pOutputEditor(new HGSEditor());
-    HGSToolbox OutputToolbox((HFCPtr<HGSGraphicTool>&)pOutputEditor);
-
     // create a surface from the descriptor and toolbox
-    HFCPtr<HGSSurface> pOutputSurface(new HGSSurface(pOutputRaster->GetSurfaceDescriptor(), &OutputToolbox));
+    HRASurface OutputSurface(pOutputRaster->GetSurfaceDescriptor());
 
-    // assign the toolbox to the surface
-    OutputToolbox.SetFor(pOutputSurface);
+    // now, copy to original data into the resizable raster
+    HRAEditor OutputEditor(OutputSurface);
 
     PosX = (m_RasterWidth - m_pResDescriptor->GetWidth()) / 2;
     PosY = (m_RasterHeight - m_pResDescriptor->GetHeight()) / 2;
 
     HFCPtr<HCDPacketRLE> pInputBitmap(((const HFCPtr<HRABitmapRLE>&)pTile)->GetPacket());
     for (uint64_t i = 0; i < m_pResDescriptor->GetHeight(); i++)
-        pOutputEditor->SetRun((uint32_t)PosX,
+        OutputEditor.SetRun((uint32_t)PosX,
                               (uint32_t)(PosY + i),
                               (uint32_t)m_pResDescriptor->GetWidth(),
                               pInputBitmap->GetLineBuffer((uint32_t)i));
@@ -1645,7 +1572,7 @@ HFCPtr<HRABitmapRLE> HRSObjectStore::LoadResizableRaster(HPMObjectID* po_pRaster
         HVEShape Shape(*m_pPageDescriptor->GetClipShape());
 
         if (m_pPageDescriptor->GetClipShape()->GetCoordinateType() == HRFCoordinateType::PHYSICAL)
-            Shape.SetCoordSys(((HFCPtr<HRAStoredRaster>&)pOutputRaster)->GetPhysicalCoordSys());
+            Shape.SetCoordSys(pOutputRaster->GetPhysicalCoordSys());
         else
             Shape.SetCoordSys(pOutputRaster->GetCoordSys());
 
@@ -1670,56 +1597,7 @@ HFCPtr<HRABitmapRLE> HRSObjectStore::LoadResizableRaster(HPMObjectID* po_pRaster
             }
         }
 
-    // Extract the real raster file from all the encapsulation in caches, booster, etc!
-    HFCPtr<HRFRasterFile> pRealFile;
-
-    // Get the REAL raster file, without caches or adapters, etc
-    if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterAttributesEnable() ||
-        ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterExtendedAttributesEnable())
-        {
-        pRealFile = GetRealRasterFile(m_pRasterFile);
-        HASSERT(pRealFile != 0);
-        }
-
-    // HRF attributes into the HRA object, if needed
-    if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterAttributesEnable())
-        {
-        HASSERT(pRealFile != 0);
-        HASSERT(pRealFile->CountPages() > 0);
-
-        // Get the page from the REAL raster file.  to avoid getting caches attributes
-        HFCPtr<HRFPageDescriptor> pRealPage(pRealFile->GetPageDescriptor(m_PageIndex));
-        HASSERT(pRealPage != 0);
-
-        // Give the pointer to the attributes to the HRA Object
-        pOutputRaster->SetAttributes(pRealPage->GetTagsPtr());
-
-        // Give the pointer to the metadata container list to the
-        // attributes to the HRA Object
-        pOutputRaster->SetMetaDataContainerList(pRealPage->GetListOfMetaDataContainer());
-        }
-
-    // Add extended information, if needed
-    if (ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsRasterExtendedAttributesEnable())
-        {
-        HASSERT(pRealFile != 0);
-
-        // Lock down the attributes
-        HPMAttributeSet& rAttributes = pOutputRaster->LockAttributes();
-
-        // extend the information with the real raster file
-        ExtendTagInformation(pRealFile, m_PageIndex, rAttributes);
-
-        // let go the attributes
-        pOutputRaster->UnlockAttributes();
-        }
-
-    HFCPtr<HMDMetaDataContainer> pMetaDataContainer;
-
-    if (pRealFile)
-        ConstructContextForRaster(pRealFile, m_PageIndex, pOutputRaster);
-    else
-        ConstructContextForRaster(m_pRasterFile, m_PageIndex, pOutputRaster);
+    ConstructContextForRaster(m_pRasterFile, m_PageIndex, pOutputRaster);
 
     // Tile not modified
     pOutputRaster->SetModificationState (false);
@@ -1758,7 +1636,7 @@ HSTATUS HRSObjectStore::SaveBitmap(HRABitmapBase* pi_pBitmap)
 
     HSTATUS Result = H_SUCCESS;
 
-    HAutoPtr<HRABitmapBase> pResizableBitmap;
+    HFCPtr<HRABitmapRLE> pResizableBitmap;
     HRABitmapBase* pBitmap(pi_pBitmap);
     if (pBitmap->IsResizable())
         {
@@ -1773,26 +1651,24 @@ HSTATUS HRSObjectStore::SaveBitmap(HRABitmapBase* pi_pBitmap)
 
         if (BitmapWidth != RasterWidth || BitmapHeight != RasterHeight)
             {
-            pResizableBitmap = (HRABitmapBase*)m_pTileTemplate->Clone();
+            HPRECONDITION(m_pTileTemplate->IsCompatibleWith(HRABitmapRLE::CLASS_ID));
+
+            pResizableBitmap = static_cast<HRABitmapRLE*>(m_pTileTemplate->Clone());
             pResizableBitmap->InitSize(RasterWidth, RasterHeight);
 
-            // create the input editor
-            HFCPtr<HGSEditor> pRasterEditor(new HGSEditor());
-            HGSToolbox RasterToolbox((HFCPtr<HGSGraphicTool>&)pRasterEditor);
-
             // create a surface from the descriptor and toolbox
-            HFCPtr<HGSSurface> pRasterSurface(new HGSSurface(pBitmap->GetSurfaceDescriptor(), &RasterToolbox));
+            HRASurface RasterSurface(pBitmap->GetSurfaceDescriptor());
 
-            // assign the toolbox to the surface
-            RasterToolbox.SetFor(pRasterSurface);
+            // create the input editor
+            HRAEditor rasterEditor(RasterSurface);
 
-            HFCPtr<HCDPacketRLE> pResizablePacket((HFCPtr<HCDPacketRLE>&)((HRABitmapRLE*)pResizableBitmap.get())->GetPacket());
+            HFCPtr<HCDPacketRLE> pResizablePacket(pResizableBitmap->GetPacket ());
             HFCPtr<HCDCodecHMRRLE1> pCodec(pResizablePacket->GetCodec());
             Byte* pRun;
             size_t RunSize;
             for (uint64_t i = 0; i < RasterHeight; i++)
                 {
-                pRun = (Byte*)pRasterEditor->GetRun((HUINTX)RasterPosX,
+                pRun = (Byte*)rasterEditor.GetRun((HUINTX)RasterPosX,
                                                      (HUINTX)(RasterPosY + i),
                                                      (size_t)RasterWidth);
 
@@ -1809,7 +1685,7 @@ HSTATUS HRSObjectStore::SaveBitmap(HRABitmapBase* pi_pBitmap)
                 pResizablePacket->SetLineDataSize((uint32_t)i, RunSize);
                 }
 
-            pBitmap = pResizableBitmap;
+            pBitmap = pResizableBitmap.GetPtr();
             }
         }
 
@@ -2069,7 +1945,7 @@ void HRSObjectStore::SaveDataFlag(HRAPyramidRaster* pi_pObj)
         for (unsigned short i=0; i<m_pPageDescriptor->CountResolutions(); i++)
             {
             pResDescriptor                  = m_pPageDescriptor->GetResolutionDescriptor(i);
-            HRATileStatus& rTileFlags = static_cast<HRATiledRaster*>(pi_pObj->GetSubImage(i).GetPtr())->GetInternalTileStatusList(&NbFlag);
+            HRATileStatus& rTileFlags = pi_pObj->GetSubImage(i)->GetInternalTileStatusList(&NbFlag);
             HASSERT(NbFlag == (pResDescriptor->GetBlocksPerWidth() * pResDescriptor->GetBlocksPerHeight()));
 
             // UPDATE HRFFlags with the HRATileStatus - LIKE a MIRROR
@@ -2122,7 +1998,7 @@ void HRSObjectStore::LoadDataFlag (HRAPyramidRaster* pi_pObj)
         {
         pResDescriptor                  = m_pPageDescriptor->GetResolutionDescriptor(i);
         const HRFDataFlag* pFlags       = pResDescriptor->GetBlocksDataFlag();
-        HRATileStatus& rTileFlags = static_cast<HRATiledRaster*>(pi_pObj->GetSubImage(i).GetPtr())->GetInternalTileStatusList(&NbFlag);
+        HRATileStatus& rTileFlags = pi_pObj->GetSubImage(i)->GetInternalTileStatusList(&NbFlag);
         HASSERT(NbFlag == (pResDescriptor->GetBlocksPerWidth() * pResDescriptor->GetBlocksPerHeight()));
 
         // Convert HRF Flags to HRATileStatus
@@ -2282,15 +2158,46 @@ HRFDownSamplingMethod HRSObjectStore::ResamplingMethodChangeType(HGSResampling::
 // ExceptionsSafeReadBlock
 //-----------------------------------------------------------------------------
 HSTATUS HRSObjectStore::ExceptionsSafeReadBlock(HRFResolutionEditor* pi_pEditor,
-                                                uint64_t            pi_PosX,
-                                                uint64_t            pi_PosY,
-                                                Byte*              pi_pBuffer)
+                                                uint64_t             pi_PosX,
+                                                uint64_t             pi_PosY,
+                                                Byte*                po_pBuffer)
     {
     HSTATUS Result = H_SUCCESS;
 
     try
         {
-        Result = pi_pEditor->ReadBlock64(pi_PosX, pi_PosY, pi_pBuffer);
+        // If the pixeltype is not supported natively in the  pipeline, we convert it.
+        //
+        if (m_ConvertNativeToNormalize != 0)
+            {
+            Result = pi_pEditor->ReadBlock(pi_PosX, pi_PosY, po_pBuffer);
+
+            // Convert in-place, starting by the last line
+            // The first line is treating separately, overlap src - dst pixel values.
+            uint32_t blockWidth = pi_pEditor->GetResolutionDescriptor()->GetBlockWidth();
+            uint32_t blockHeight= pi_pEditor->GetResolutionDescriptor()->GetBlockHeight();
+            uint32_t SrcByteByWidth = (m_ConvertNativeToNormalize->GetSourcePixelType()->CountPixelRawDataBits() * blockWidth + 7) / 8;
+            uint32_t DstByteByWidth = (m_ConvertNativeToNormalize->GetDestinationPixelType()->CountPixelRawDataBits() * blockWidth + 7) / 8;
+
+            Byte* pNativeData = po_pBuffer + (SrcByteByWidth * (blockHeight-1));
+            po_pBuffer += (DstByteByWidth * (blockHeight-1));
+
+            // The last(in fact the first one) line will convert outside of the "for" statement.
+            for (uint32_t i=1; i<blockHeight; ++i)
+            {
+                m_ConvertNativeToNormalize->Convert(pNativeData, po_pBuffer, blockWidth);
+                pNativeData -= SrcByteByWidth;
+                po_pBuffer  -= DstByteByWidth;
+            }
+
+            // Convert the Last line, overlap
+            
+            HAutoPtr<Byte> pLineNativeData(new Byte[SrcByteByWidth]);
+            memcpy(pLineNativeData, po_pBuffer, SrcByteByWidth); 
+            m_ConvertNativeToNormalize->Convert(pLineNativeData, po_pBuffer, blockWidth);
+            }
+        else
+            Result = pi_pEditor->ReadBlock(pi_PosX, pi_PosY, po_pBuffer);
         }
     catch(...)
         {
@@ -2311,15 +2218,15 @@ HSTATUS HRSObjectStore::ExceptionsSafeReadBlock(HRFResolutionEditor* pi_pEditor,
 // ExceptionsSafeReadBlock
 //-----------------------------------------------------------------------------
 HSTATUS HRSObjectStore::ExceptionsSafeReadBlock(HRFResolutionEditor* pi_pEditor,
-                                                uint64_t            pi_PosX,
-                                                uint64_t            pi_PosY,
-                                                HFCPtr<HCDPacket>    pi_pPacket)
+                                                uint64_t             pi_PosX,
+                                                uint64_t             pi_PosY,
+                                                HFCPtr<HCDPacket>    po_pPacket)
     {
     HSTATUS Result = H_SUCCESS;
 
     try
         {
-        Result = pi_pEditor->ReadBlock64(pi_PosX, pi_PosY, pi_pPacket);
+        Result = pi_pEditor->ReadBlock(pi_PosX, pi_PosY, po_pPacket);
         }
     catch(...)
         {
@@ -2339,15 +2246,15 @@ HSTATUS HRSObjectStore::ExceptionsSafeReadBlock(HRFResolutionEditor* pi_pEditor,
 // ExceptionsSafeReadBlockRLE
 //-----------------------------------------------------------------------------
 HSTATUS HRSObjectStore::ExceptionsSafeReadBlockRLE(HRFResolutionEditor* pi_pEditor,
-                                                   uint64_t            pi_PosX,
-                                                   uint64_t            pi_PosY,
-                                                   HFCPtr<HCDPacketRLE> pi_pPacket)
+                                                   uint64_t             pi_PosX,
+                                                   uint64_t             pi_PosY,
+                                                   HFCPtr<HCDPacketRLE> po_pPacket)
     {
     HSTATUS Result = H_SUCCESS;
 
     try
         {
-        Result = pi_pEditor->ReadBlockRLE64(pi_PosX, pi_PosY, pi_pPacket);
+        Result = pi_pEditor->ReadBlockRLE(pi_PosX, pi_PosY, po_pPacket);
         }
     catch(...)
         {
@@ -2367,9 +2274,9 @@ HSTATUS HRSObjectStore::ExceptionsSafeReadBlockRLE(HRFResolutionEditor* pi_pEdit
 // ExceptionsSafeWriteBlock
 //-----------------------------------------------------------------------------
 HSTATUS HRSObjectStore::ExceptionsSafeWriteBlock(HRFResolutionEditor* pi_pEditor,
-                                                 uint64_t            pi_PosX,
-                                                 uint64_t            pi_PosY,
-                                                 Byte*              pi_pBuffer)
+                                                 uint64_t             pi_PosX,
+                                                 uint64_t             pi_PosY,
+                                                 Byte*                pi_pBuffer)
     {
     HPRECONDITION((pi_PosX +
                    pi_pEditor->GetResolutionDescriptor()->GetBlockWidth() <= ULONG_MAX) &&
@@ -2380,7 +2287,25 @@ HSTATUS HRSObjectStore::ExceptionsSafeWriteBlock(HRFResolutionEditor* pi_pEditor
 
     try
         {
-        Result = pi_pEditor->WriteBlock((uint32_t)pi_PosX, (uint32_t)pi_PosY, pi_pBuffer);
+            // If the pixeltype is not supported natively in the  pipeline, we convert it.
+            if (m_ConvertNormalizeToNative != 0)
+            {
+                uint32_t blockWidth = pi_pEditor->GetResolutionDescriptor()->GetBlockWidth();
+                uint32_t SrcByteByWidth = (m_ConvertNormalizeToNative->GetSourcePixelType()->CountPixelRawDataBits() * blockWidth + 7) / 8;
+                uint32_t DstByteByWidth = (m_ConvertNormalizeToNative->GetDestinationPixelType()->CountPixelRawDataBits() * blockWidth + 7) / 8;
+                HAutoPtr<Byte> pNativeDataBuffer(new Byte[DstByteByWidth*pi_pEditor->GetResolutionDescriptor()->GetBlockHeight()]);
+                Byte* pNativeData = pNativeDataBuffer;
+
+                for (uint32_t i=0; i<pi_pEditor->GetResolutionDescriptor()->GetBlockHeight(); ++i)
+                {
+                    m_ConvertNormalizeToNative->Convert(pi_pBuffer, pNativeData, blockWidth);
+                    pNativeData += DstByteByWidth;
+                    pi_pBuffer  += SrcByteByWidth;
+                }
+                Result = pi_pEditor->WriteBlock((uint32_t)pi_PosX, (uint32_t)pi_PosY, pNativeDataBuffer);
+            }
+            else
+              Result = pi_pEditor->WriteBlock((uint32_t)pi_PosX, (uint32_t)pi_PosY, pi_pBuffer);
 
         //Update the indicator only if an export is in progress.
         HUTExportProgressIndicator::GetInstance()->ContinueIteration(pi_pEditor->GetRasterFile(), m_SaveCurSubImage);
@@ -2564,3 +2489,8 @@ HFCPtr<HRFRasterFile> const& HRSObjectStore::GetRasterFile() const
     {
     return m_pRasterFile;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  10/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t HRSObjectStore::GetPageIndex() const {return m_PageIndex;}

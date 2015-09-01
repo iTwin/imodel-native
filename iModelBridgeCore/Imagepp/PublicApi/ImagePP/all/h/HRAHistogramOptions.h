@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAHistogramOptions.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,6 +10,7 @@
 #include "HRPHistogram.h"
 #include "HRASamplingOptions.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelPalette;
 class HRPPixelType;
 
@@ -29,24 +30,24 @@ class HRAHistogramOptions
     {
 public:
     //:> Primary methods
-    _HDLLg                 HRAHistogramOptions( const HRAHistogramOptions&     pi_rOptions);
+    IMAGEPP_EXPORT                 HRAHistogramOptions( const HRAHistogramOptions&     pi_rOptions);
 
-    _HDLLg                 HRAHistogramOptions( const HRPPixelType*            pi_pPixelType,
+    IMAGEPP_EXPORT                 HRAHistogramOptions( const HRPPixelType*            pi_pPixelType,
                                                 HRPHistogram::COLOR_SPACE      pi_ColorSpace = HRPHistogram::NATIVE);
 
-    _HDLLg                 HRAHistogramOptions( const HFCPtr<HRPHistogram>&    pio_rpHistogram,
+    IMAGEPP_EXPORT                 HRAHistogramOptions( const HFCPtr<HRPHistogram>&    pio_rpHistogram,
                                                 const HRPPixelType*            pi_pPixelType);
 
-    _HDLLg                 HRAHistogramOptions( const HFCPtr<HRPHistogram>&    pio_rpHistogram,
+    IMAGEPP_EXPORT                 HRAHistogramOptions( const HFCPtr<HRPHistogram>&    pio_rpHistogram,
                                                 const HRPPixelType*            pi_pPixelType,
                                                 const HRASamplingOptions&      pi_rOptions);
 
-    _HDLLg virtual         ~HRAHistogramOptions();
+    IMAGEPP_EXPORT virtual         ~HRAHistogramOptions();
 
     //:> Parameters
     HRASamplingOptions&
     GetSamplingOptions() const;
-    _HDLLg void            SetSamplingOptions(const HRASamplingOptions& pi_rOptions);
+    IMAGEPP_EXPORT void            SetSamplingOptions(const HRASamplingOptions& pi_rOptions);
     const HRPPixelType*
     GetPixelType() const;
     void            SetHistogram(const HFCPtr<HRPHistogram>& pi_rpHistogram);
@@ -80,4 +81,5 @@ private:
     operator=(const HRAHistogramOptions& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HRAHistogramOptions.hpp"

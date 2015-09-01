@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFImgRGBFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -21,6 +21,7 @@
     (24 bits RGB, SLO upper left horizontal).
     ---------------------------------------------------------------------------
  */
+BEGIN_IMAGEPP_NAMESPACE
 class HRFImgRGBCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -46,7 +47,7 @@ class HRFImgRGBFile : public HRFRasterFile
     {
 public:
     //:> Class ID for this class
-    HDECLARE_CLASS_ID(1441, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_ImgRGB, HRFRasterFile)
 
     friend class HRFImgRGBLineEditor;
 
@@ -140,10 +141,11 @@ struct HRFImgRGBCreator : public HRFRasterFileCreator
                                          HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                          uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFImgRGBCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFImgRGBCreator)
 
     //:> Disabled methods
     HRFImgRGBCreator();
     };
+END_IMAGEPP_NAMESPACE
 
 

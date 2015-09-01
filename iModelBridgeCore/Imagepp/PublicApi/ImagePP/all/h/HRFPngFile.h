@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPngFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -18,6 +18,13 @@
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"
 
+// Forward declare png structs because we do not want to publish png.h
+struct png_struct_def;
+typedef png_struct_def* png_structp;
+struct png_info_struct;
+typedef png_info_struct* png_infop;
+
+BEGIN_IMAGEPP_NAMESPACE
 class HRFPngCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -25,18 +32,11 @@ public:
 
     };
 
-// Forward declare png structs because we do not want to publish png.h
-struct png_struct_def;
-typedef png_struct_def* png_structp;
-struct png_info_struct;
-typedef png_info_struct* png_infop;
-
-
 class HRFPngFile : public HRFRasterFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1423, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Png, HRFRasterFile)
 
     friend class HRFPngLineEditor;
     friend class HRFPngImageEditor;
@@ -130,9 +130,10 @@ struct HRFPngCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFPngCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFPngCreator)
 
     // Disabled methodes
     HRFPngCreator();
     };
+END_IMAGEPP_NAMESPACE
 

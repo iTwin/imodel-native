@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalopeninfo.cpp 21447 2011-01-09 16:02:28Z rouault $
+ * $Id: gdalopeninfo.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALOpenInfo class.
@@ -7,6 +7,7 @@
  *
  **********************************************************************
  * Copyright (c) 2002, Frank Warmerdam
+ * Copyright (c) 2008-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,7 +35,7 @@
 #include <unistd.h>
 #endif
 
-CPL_CVSID("$Id: gdalopeninfo.cpp 21447 2011-01-09 16:02:28Z rouault $");
+CPL_CVSID("$Id: gdalopeninfo.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -163,8 +164,13 @@ retry:
     }
     else if( bStatOK && !bIsDirectory )
     {
-        if( CSLTestBoolean( 
-                CPLGetConfigOption( "GDAL_DISABLE_READDIR_ON_OPEN", "NO" )) )
+        const char* pszOptionVal =
+            CPLGetConfigOption( "GDAL_DISABLE_READDIR_ON_OPEN", "NO" );
+        if (EQUAL(pszOptionVal, "EMPTY_DIR"))
+        {
+            papszSiblingFiles = CSLAddString( NULL, CPLGetFilename(pszFilename) );
+        }
+        else if( CSLTestBoolean(pszOptionVal) )
         {
             /* skip reading the directory */
             papszSiblingFiles = NULL;
@@ -173,6 +179,15 @@ retry:
         {
             CPLString osDir = CPLGetDirname( pszFilename );
             papszSiblingFiles = VSIReadDir( osDir );
+
+            /* Small optimization to avoid unnecessary stat'ing from PAux or ENVI */
+            /* drivers. The MBTiles driver needs no companion file. */
+            if( papszSiblingFiles == NULL &&
+                strncmp(pszFilename, "/vsicurl/", 9) == 0 &&
+                EQUAL(CPLGetExtension( pszFilename ),"mbtiles") )
+            {
+                papszSiblingFiles = CSLAddString( NULL, CPLGetFilename(pszFilename) );
+            }
         }
     }
     else

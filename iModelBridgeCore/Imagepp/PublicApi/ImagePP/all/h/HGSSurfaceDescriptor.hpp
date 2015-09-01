@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGSSurfaceDescriptor.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------------
 // General class for surfaces.
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // SetDimensions
@@ -90,3 +90,5 @@ inline void HGSSurfaceDescriptor::GetOffsets(HUINTX* po_pOffsetX,
     *po_pOffsetX = m_OffsetX;
     *po_pOffsetY = m_OffsetY;
     }
+
+END_IMAGEPP_NAMESPACE

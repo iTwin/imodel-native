@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ext/MatrixFromTiePts/src/oldhmrtypes.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 /*====================================================================
 **  oldhmrtypes.h
 **
@@ -29,11 +36,6 @@
 **      FALSE
 **
 **====================================================================*/
-/*----------------------------------------------------------------------+
-|                                                                       |
-|       $Source: ext/MatrixFromTiePts/src/oldhmrtypes.h $
-|                                                                       |
-+----------------------------------------------------------------------*/
 #ifndef __OLDHMRTYPES_H__
 #define __OLDHMRTYPES_H__
 
@@ -63,9 +65,6 @@
 #   define CLASS_IMPLEMENTATION
 #endif
 
-typedef char                int8_t;
-typedef unsigned short      uint16_t;
-typedef long                int32_t;
-typedef unsigned long       uint32_t;
+#include <Bentley/Bentley.r.h>
 
 #endif /*__OLDHMRTYPES_H__*/

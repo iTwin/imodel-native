@@ -2,9 +2,10 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteExtent.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -14,6 +15,10 @@ inline HGF2DLiteExtent::HGF2DLiteExtent ()
       m_YMin(0.0),
       m_YMax(0.0)
     {
+    HDEBUGCODE(m_initializedXMin = false;)
+    HDEBUGCODE(m_initializedYMin = false;)
+    HDEBUGCODE(m_initializedXMax = false;)
+    HDEBUGCODE(m_initializedYMax = false;)
     }
 
 //-----------------------------------------------------------------------------
@@ -29,6 +34,11 @@ inline HGF2DLiteExtent::HGF2DLiteExtent(const HGF2DPosition& pi_rOrigin,
     // The origin must contain lower or equal values to corner
     HPRECONDITION(pi_rOrigin.GetX() <= pi_rCorner.GetX());
     HPRECONDITION(pi_rOrigin.GetY() <= pi_rCorner.GetY());
+
+    HDEBUGCODE(m_initializedXMin = true;)
+    HDEBUGCODE(m_initializedYMin = true;)
+    HDEBUGCODE(m_initializedXMax = true;)
+    HDEBUGCODE(m_initializedYMax = true;)
     }
 
 //-----------------------------------------------------------------------------
@@ -38,11 +48,15 @@ inline HGF2DLiteExtent::HGF2DLiteExtent(double pi_X1,
                                         double pi_Y1,
                                         double pi_X2,
                                         double pi_Y2)
-    : m_XMin(min(pi_X1, pi_X2)),
-      m_XMax(max(pi_X1, pi_X2)),
-      m_YMin(min(pi_Y1, pi_Y2)),
-      m_YMax(max(pi_Y1, pi_Y2))
+    : m_XMin(MIN(pi_X1, pi_X2)),
+      m_XMax(MAX(pi_X1, pi_X2)),
+      m_YMin(MIN(pi_Y1, pi_Y2)),
+      m_YMax(MAX(pi_Y1, pi_Y2))
     {
+    HDEBUGCODE(m_initializedXMin = true;)
+    HDEBUGCODE(m_initializedYMin = true;)
+    HDEBUGCODE(m_initializedXMax = true;)
+    HDEBUGCODE(m_initializedYMax = true;)
     }
 
 
@@ -55,6 +69,10 @@ inline HGF2DLiteExtent::HGF2DLiteExtent(const HGF2DLiteExtent& pi_rObj)
       m_YMin (pi_rObj.m_YMin),
       m_YMax (pi_rObj.m_YMax)
     {
+    HDEBUGCODE(m_initializedXMin = pi_rObj.m_initializedXMin;)
+    HDEBUGCODE(m_initializedYMin = pi_rObj.m_initializedYMin;)
+    HDEBUGCODE(m_initializedXMax = pi_rObj.m_initializedXMax;)
+    HDEBUGCODE(m_initializedYMax = pi_rObj.m_initializedYMax;)
     }
 
 //-----------------------------------------------------------------------------
@@ -75,6 +93,11 @@ inline HGF2DLiteExtent& HGF2DLiteExtent::operator=(const HGF2DLiteExtent& pi_rOb
     m_YMin = pi_rObj.m_YMin;
     m_YMax = pi_rObj.m_YMax;
 
+    HDEBUGCODE(m_initializedXMin = pi_rObj.m_initializedXMin;)
+    HDEBUGCODE(m_initializedYMin = pi_rObj.m_initializedYMin;)
+    HDEBUGCODE(m_initializedXMax = pi_rObj.m_initializedXMax;)
+    HDEBUGCODE(m_initializedYMax = pi_rObj.m_initializedYMax;)
+
     return (*this);
     }
 
@@ -84,6 +107,15 @@ inline HGF2DLiteExtent& HGF2DLiteExtent::operator=(const HGF2DLiteExtent& pi_rOb
 //-----------------------------------------------------------------------------
 inline bool HGF2DLiteExtent::operator==(const HGF2DLiteExtent& pi_rObj) const
     {
+    HPRECONDITION(pi_rObj.m_initializedXMin);
+    HPRECONDITION(pi_rObj.m_initializedYMin);
+    HPRECONDITION(pi_rObj.m_initializedXMax);
+    HPRECONDITION(pi_rObj.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);    
+    HPRECONDITION(m_initializedXMax);    
+    HPRECONDITION(m_initializedYMin);    
+    HPRECONDITION(m_initializedYMax);
+
     // Compare origin and corners
     return(((pi_rObj.m_XMin == m_XMin) && (pi_rObj.m_XMax == m_XMax)) &&
            ((pi_rObj.m_YMin == m_YMin) && (pi_rObj.m_YMax == m_YMax)));
@@ -95,6 +127,15 @@ inline bool HGF2DLiteExtent::operator==(const HGF2DLiteExtent& pi_rObj) const
 //-----------------------------------------------------------------------------
 inline bool HGF2DLiteExtent::operator!=(const HGF2DLiteExtent& pi_rObj) const
     {
+    HPRECONDITION(pi_rObj.m_initializedXMin);
+    HPRECONDITION(pi_rObj.m_initializedYMin);
+    HPRECONDITION(pi_rObj.m_initializedXMax);
+    HPRECONDITION(pi_rObj.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     return (!operator==(pi_rObj));
     }
 
@@ -104,6 +145,15 @@ inline bool HGF2DLiteExtent::operator!=(const HGF2DLiteExtent& pi_rObj) const
 //-----------------------------------------------------------------------------
 inline bool HGF2DLiteExtent::IsEqualTo(const HGF2DLiteExtent& pi_rObj) const
     {
+    HPRECONDITION(pi_rObj.m_initializedXMin);
+    HPRECONDITION(pi_rObj.m_initializedYMin);
+    HPRECONDITION(pi_rObj.m_initializedXMax);
+    HPRECONDITION(pi_rObj.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     // Compare origin and corners
     return((HNumeric<double>::EQUAL_EPSILON(pi_rObj.m_XMin, m_XMin) &&
             HNumeric<double>::EQUAL_EPSILON(pi_rObj.m_XMax, m_XMax)) &&
@@ -118,6 +168,15 @@ inline bool HGF2DLiteExtent::IsEqualTo(const HGF2DLiteExtent& pi_rObj) const
 //-----------------------------------------------------------------------------
 inline bool HGF2DLiteExtent::IsEqualTo(const HGF2DLiteExtent& pi_rObj, double pi_Epsilon) const
     {
+    HPRECONDITION(pi_rObj.m_initializedXMin);
+    HPRECONDITION(pi_rObj.m_initializedYMin);
+    HPRECONDITION(pi_rObj.m_initializedXMax);
+    HPRECONDITION(pi_rObj.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     // Tolerance provided must be positive or null
     HPRECONDITION(pi_Epsilon >= 0.0);
 
@@ -138,6 +197,8 @@ inline void HGF2DLiteExtent::SetXMin(double pi_XMin)
 
     // Set XMin
     m_XMin = pi_XMin;
+
+    HDEBUGCODE(m_initializedXMin;)
     }
 
 //-----------------------------------------------------------------------------
@@ -150,6 +211,7 @@ inline void HGF2DLiteExtent::SetYMin(double pi_YMin)
 
     // Set YMin
     m_YMin = pi_YMin;
+    HDEBUGCODE(m_initializedYMin = true;)
     }
 
 
@@ -163,6 +225,8 @@ inline void HGF2DLiteExtent::SetXMax(double pi_XMax)
 
     // Set XMax
     m_XMax = pi_XMax;
+
+    HDEBUGCODE(m_initializedXMax = true;)
     }
 
 //-----------------------------------------------------------------------------
@@ -175,6 +239,8 @@ inline void HGF2DLiteExtent::SetYMax(double pi_YMax)
 
     // Set YMax
     m_YMax = pi_YMax;
+
+    HDEBUGCODE(m_initializedYMax = true;)
     }
 
 //-----------------------------------------------------------------------------
@@ -189,6 +255,9 @@ inline void HGF2DLiteExtent::SetOrigin(const HGF2DPosition& pi_rOrigin)
 
     m_XMin = pi_rOrigin.GetX();
     m_YMin = pi_rOrigin.GetY();
+
+    HDEBUGCODE(m_initializedXMin = true;)
+    HDEBUGCODE(m_initializedYMin = true;)
     }
 
 
@@ -204,6 +273,9 @@ inline void HGF2DLiteExtent::SetCorner(const HGF2DPosition& pi_rCorner)
 
     m_XMax = pi_rCorner.GetX();
     m_YMax = pi_rCorner.GetY();
+
+    HDEBUGCODE(m_initializedXMax = true;)
+    HDEBUGCODE(m_initializedYMax = true;)
     }
 
 
@@ -233,6 +305,11 @@ inline bool HGF2DLiteExtent::IsDefined () const
 //-----------------------------------------------------------------------------
 inline bool HGF2DLiteExtent::IsPointIn (const HGF2DPosition& pi_rPoint) const
     {
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     // Check if point lies inside (Borders are inclusive here)
     return ((pi_rPoint.GetX() >= m_XMin) &&
             (pi_rPoint.GetX() <= m_XMax) &&
@@ -246,6 +323,12 @@ inline bool HGF2DLiteExtent::IsPointIn (const HGF2DPosition& pi_rPoint) const
 //-----------------------------------------------------------------------------
 inline bool HGF2DLiteExtent::IsPointInnerIn (const HGF2DPosition& pi_rPoint) const
     {
+
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     // Check if point lies inside
     return (HNumeric<double>::GREATER_EPSILON(pi_rPoint.GetX(), m_XMin) &&
             HNumeric<double>::SMALLER_EPSILON(pi_rPoint.GetX(), m_XMax) &&
@@ -261,6 +344,11 @@ inline bool HGF2DLiteExtent::IsPointInnerIn (const HGF2DPosition& pi_rPoint) con
 //-----------------------------------------------------------------------------
 inline bool HGF2DLiteExtent::IsPointOutterIn (const HGF2DPosition& pi_rPoint) const
     {
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     // Check if point lies inside (Borders are inclusive here)
     return (HNumeric<double>::GREATER_OR_EQUAL_EPSILON(pi_rPoint.GetX(), m_XMin) &&
             HNumeric<double>::SMALLER_OR_EQUAL_EPSILON(pi_rPoint.GetX(), m_XMax) &&
@@ -276,6 +364,12 @@ inline bool HGF2DLiteExtent::IsPointOutterIn (const HGF2DPosition& pi_rPoint) co
 inline bool HGF2DLiteExtent::IsPointInnerIn(const HGF2DPosition& pi_rPoint,
                                              double pi_Tolerance) const
     {
+
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     // Tolerance provided must be positive or null
     HPRECONDITION(pi_Tolerance >= 0.0);
 
@@ -295,6 +389,11 @@ inline bool HGF2DLiteExtent::IsPointInnerIn(const HGF2DPosition& pi_rPoint,
 inline bool HGF2DLiteExtent::IsPointOutterIn(const HGF2DPosition& pi_rPoint,
                                               double pi_Tolerance) const
     {
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     // Tolerance provided must be positive or null
     HPRECONDITION(pi_Tolerance >= 0.0);
 
@@ -311,6 +410,9 @@ inline bool HGF2DLiteExtent::IsPointOutterIn(const HGF2DPosition& pi_rPoint,
 //-----------------------------------------------------------------------------
 inline double HGF2DLiteExtent::GetWidth() const
     {
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+
     return(m_XMax - m_XMin);
     }
 
@@ -320,6 +422,9 @@ inline double HGF2DLiteExtent::GetWidth() const
 //-----------------------------------------------------------------------------
 inline double HGF2DLiteExtent::GetHeight() const
     {
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     return(m_YMax - m_YMin);
     }
 
@@ -330,6 +435,8 @@ inline double HGF2DLiteExtent::GetHeight() const
 //-----------------------------------------------------------------------------
 inline double HGF2DLiteExtent::GetXMin() const
     {
+    HPRECONDITION(m_initializedXMin);
+
     return(m_XMin);
     }
 
@@ -340,6 +447,9 @@ inline double HGF2DLiteExtent::GetXMin() const
 //-----------------------------------------------------------------------------
 inline double HGF2DLiteExtent::GetYMin() const
     {
+
+    HPRECONDITION(m_initializedYMin);
+    
     return (m_YMin);
     }
 
@@ -350,6 +460,8 @@ inline double HGF2DLiteExtent::GetYMin() const
 //-----------------------------------------------------------------------------
 inline double HGF2DLiteExtent::GetXMax() const
     {
+    HPRECONDITION(m_initializedXMax);
+
     return (m_XMax);
     }
 
@@ -360,6 +472,8 @@ inline double HGF2DLiteExtent::GetXMax() const
 //-----------------------------------------------------------------------------
 inline double HGF2DLiteExtent::GetYMax() const
     {
+    HPRECONDITION(m_initializedYMax);
+
     return (m_YMax);
     }
 
@@ -369,6 +483,8 @@ inline double HGF2DLiteExtent::GetYMax() const
 //-----------------------------------------------------------------------------
 inline HGF2DPosition HGF2DLiteExtent::GetOrigin() const
     {
+    HPRECONDITION(m_initializedXMin && m_initializedYMin);
+
     return (HGF2DPosition(m_XMin, m_YMin));
     }
 
@@ -379,6 +495,8 @@ inline HGF2DPosition HGF2DLiteExtent::GetOrigin() const
 //-----------------------------------------------------------------------------
 inline HGF2DPosition HGF2DLiteExtent::GetCorner() const
     {
+    HPRECONDITION(m_initializedXMax && m_initializedYMax);
+
     return (HGF2DPosition(m_XMax, m_YMax));
     }
 
@@ -388,6 +506,15 @@ inline HGF2DPosition HGF2DLiteExtent::GetCorner() const
 //-----------------------------------------------------------------------------
 inline bool HGF2DLiteExtent::Overlaps(const HGF2DLiteExtent& pi_rExtent) const
     {
+    HPRECONDITION(pi_rExtent.m_initializedXMin);
+    HPRECONDITION(pi_rExtent.m_initializedYMin);
+    HPRECONDITION(pi_rExtent.m_initializedXMax);
+    HPRECONDITION(pi_rExtent.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     // The second part is required for horizontal or horizontal objects (0 thickness)
     // NOTE that two null sized extents may not overlap
     return((m_XMax > pi_rExtent.m_XMin) &&
@@ -403,6 +530,15 @@ inline bool HGF2DLiteExtent::Overlaps(const HGF2DLiteExtent& pi_rExtent) const
 //-----------------------------------------------------------------------------
 inline bool HGF2DLiteExtent::OutterOverlaps(const HGF2DLiteExtent& pi_rExtent) const
     {
+    HPRECONDITION(pi_rExtent.m_initializedXMin);
+    HPRECONDITION(pi_rExtent.m_initializedYMin);
+    HPRECONDITION(pi_rExtent.m_initializedXMax);
+    HPRECONDITION(pi_rExtent.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     // The second part is required for horizontal or horizontal objects (0 thickness)
     // NOTE that two null sized extents may not overlap
     return(HNumeric<double>::GREATER_OR_EQUAL_EPSILON(m_XMax, pi_rExtent.m_XMin) &&
@@ -420,6 +556,15 @@ inline bool HGF2DLiteExtent::OutterOverlaps(const HGF2DLiteExtent& pi_rExtent) c
 inline bool HGF2DLiteExtent::OutterOverlaps(const HGF2DLiteExtent& pi_rExtent,
                                              double pi_Epsilon) const
     {
+    HPRECONDITION(pi_rExtent.m_initializedXMin);
+    HPRECONDITION(pi_rExtent.m_initializedYMin);
+    HPRECONDITION(pi_rExtent.m_initializedXMax);
+    HPRECONDITION(pi_rExtent.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     // Tolerance provided must be positive or null
     HPRECONDITION(pi_Epsilon >= 0.0);
 
@@ -438,6 +583,15 @@ inline bool HGF2DLiteExtent::OutterOverlaps(const HGF2DLiteExtent& pi_rExtent,
 //-----------------------------------------------------------------------------
 inline bool HGF2DLiteExtent::InnerOverlaps(const HGF2DLiteExtent& pi_rExtent) const
     {
+    HPRECONDITION(pi_rExtent.m_initializedXMin);
+    HPRECONDITION(pi_rExtent.m_initializedYMin);
+    HPRECONDITION(pi_rExtent.m_initializedXMax);
+    HPRECONDITION(pi_rExtent.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     return(HNumeric<double>::GREATER_EPSILON(m_XMax, pi_rExtent.m_XMin) &&
            HNumeric<double>::SMALLER_EPSILON(m_XMin, pi_rExtent.m_XMax) &&
            HNumeric<double>::GREATER_EPSILON(m_YMax, pi_rExtent.m_YMin) &&
@@ -452,6 +606,15 @@ inline bool HGF2DLiteExtent::InnerOverlaps(const HGF2DLiteExtent& pi_rExtent) co
 inline bool HGF2DLiteExtent::InnerOverlaps(const HGF2DLiteExtent& pi_rExtent,
                                             double pi_Epsilon) const
     {
+    HPRECONDITION(pi_rExtent.m_initializedXMin);
+    HPRECONDITION(pi_rExtent.m_initializedYMin);
+    HPRECONDITION(pi_rExtent.m_initializedXMax);
+    HPRECONDITION(pi_rExtent.m_initializedYMax);
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     // Tolerance provided must be positive or null
     HPRECONDITION(pi_Epsilon >= 0.0);
 
@@ -473,6 +636,11 @@ inline void HGF2DLiteExtent::Set(double pi_X1,
                                  double pi_X2,
                                  double pi_Y2)
     {
+    HDEBUGCODE(m_initializedXMin = true;)
+    HDEBUGCODE(m_initializedYMin = true;)
+    HDEBUGCODE(m_initializedXMax = true;)
+    HDEBUGCODE(m_initializedYMax = true;)
+
     // Set X values
     if (pi_X1 < pi_X2)
         {
@@ -507,6 +675,11 @@ inline void HGF2DLiteExtent::Set(double pi_X1,
 //-----------------------------------------------------------------------------
 inline void HGF2DLiteExtent::Add(const HGF2DPosition& pi_rLocation)
     {
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     if (m_XMin > pi_rLocation.GetX())
         m_XMin = pi_rLocation.GetX();
 
@@ -528,6 +701,11 @@ inline void HGF2DLiteExtent::Add(const HGF2DPosition& pi_rLocation)
 //-----------------------------------------------------------------------------
 inline void HGF2DLiteExtent::Add (const HGF2DLiteExtent& pi_rExtent)
     {
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     if (m_XMin > pi_rExtent.m_XMin)
         m_XMin = pi_rExtent.m_XMin;
 
@@ -547,5 +725,11 @@ inline void HGF2DLiteExtent::Add (const HGF2DLiteExtent& pi_rExtent)
 //-----------------------------------------------------------------------------
 inline void HGF2DLiteExtent::Union(const HGF2DLiteExtent& pi_rExtent)
     {
+    HPRECONDITION(m_initializedXMin);
+    HPRECONDITION(m_initializedXMax);
+    HPRECONDITION(m_initializedYMin);
+    HPRECONDITION(m_initializedYMax);
+
     Add(pi_rExtent);
     }
+END_IMAGEPP_NAMESPACE

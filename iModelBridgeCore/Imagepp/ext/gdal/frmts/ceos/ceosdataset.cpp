@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosdataset.cpp 20504 2010-09-02 02:40:49Z warmerdam $
+ * $Id: ceosdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  CEOS Translator
  * Purpose:  GDALDataset driver for CEOS translator.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2009-2010, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "ceosopen.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: ceosdataset.cpp 20504 2010-09-02 02:40:49Z warmerdam $");
+CPL_CVSID("$Id: ceosdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 CPL_C_START
 void	GDALRegister_CEOS(void);
@@ -94,7 +95,7 @@ CEOSRasterBand::CEOSRasterBand( CEOSDataset *poDS, int nBand )
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr CEOSRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
+CPLErr CEOSRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                   void * pImage )
 
 {

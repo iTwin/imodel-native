@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTagFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,8 +10,8 @@
 //-----------------------------------------------------------------------------
 
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <ImagePP/all/h/HTagFile.h>
 #include <ImagePP/all/h/HFCLocalBinStream.h>
@@ -265,12 +265,12 @@ bool HTagFile::OpenTiffFile (const HFCPtr<HFCURL>* pi_pURL,       // by URL
     HAutoPtr<HFCLockMonitor> pCacheFileLock;
 
     if (pi_pURL != 0)
-        m_pFile = new HTIFFStream(*pi_pURL, pi_AccessMode);
+        m_pFile = new HTIFFStream(*pi_pURL, pi_AccessMode, pi_OriginOffset);
     else
         m_pFile = new HTIFFStream(*pi_pFilename, pi_AccessMode, pi_OriginOffset);
 
     bool ReadFail=true;
-    if (m_pFile->GetFilePtr() == 0 || m_pFile->GetFilePtr()->GetLastExceptionID() != 0)
+    if (m_pFile->GetFilePtr() == 0 || m_pFile->GetFilePtr()->GetLastException() != 0)
         {
         ErrorMsg(&m_pError, HTIFFError::CANNOT_OPEN_FILE, 0, true);
         goto WRAPUP;
@@ -436,7 +436,7 @@ bool HTagFile::CreateTiffFile (const HFCPtr<HFCURL>*  pi_pURL,
         }
 
     // Open Error.
-    if (m_pFile->GetFilePtr() == 0 || m_pFile->GetFilePtr()->GetLastExceptionID() != 0)
+    if (m_pFile->GetFilePtr() == 0 || m_pFile->GetFilePtr()->GetLastException() != 0)
         {
         ErrorMsg(&m_pError, HTIFFError::CANNOT_CREATE_FILE, 0, true);
         goto WRAPUP;

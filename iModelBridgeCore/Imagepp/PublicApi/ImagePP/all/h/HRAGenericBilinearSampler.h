@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAGenericBilinearSampler.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -16,19 +16,17 @@
 #include "HCDPacket.h"
 #include "HRPPixelConverter.h"
 
-class HGSGraphicToolAttributes;
-class HGSSurfaceImplementation;
+BEGIN_IMAGEPP_NAMESPACE
 
 template<class T>
 class HRAGenericBilinearSampler : public HRAGenericSampler
     {
-    HDECLARE_CLASS_ID(1773, HRAGenericSampler)
+    HDECLARE_CLASS_ID(HRAGenericId_BilinearSampler, HRAGenericSampler)
 
 public:
 
     // Primary methods
-    HRAGenericBilinearSampler(const HGSGraphicToolAttributes*        pi_pAttributes,
-                              const HGSSurfaceImplementation*        pi_pSurfaceImplementation,
+    HRAGenericBilinearSampler(HGSMemorySurfaceDescriptor const&      pi_rMemorySurface,
                               const HGF2DRectangle&                  pi_rSampleDimension,
                               double                                 pi_DeltaX,
                               double                                 pi_DeltaY);
@@ -58,7 +56,7 @@ private:
     T m_ChannelMaxValue;
 
     // Hold one pixel, used in GetPixel()
-    mutable HArrayAutoPtr<T> m_pTempData;
+    mutable Byte m_pTempData[HRPPixelType::MAX_PIXEL_BYTES];
 
     HFCPtr<HCDPacket>        m_pPacket;
 
@@ -100,4 +98,5 @@ private:
     HRAGenericBilinearSampler<T>& operator=(const HRAGenericBilinearSampler<T>& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HRAGenericBilinearSampler.hpp"

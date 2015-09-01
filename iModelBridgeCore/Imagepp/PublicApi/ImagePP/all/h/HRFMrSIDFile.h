@@ -2,13 +2,17 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFMrSIDFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#if (_MSC_VER < 1700) // 1700 => VC11 2012
-    #define IPP_HAVE_MRSID_SUPPORT
+#if defined(_WIN32)
+    #if !defined(_DEBUG)    // We do not support these format when using the debug version of the C run-time library
+        #if (_MSC_VER < 1900) // 1900 => VC14 2015  1800 => VC12 2013
+            #define IPP_HAVE_MRSID_SUPPORT
+        #endif
+    #endif
 #endif
 
 #if defined(IPP_HAVE_MRSID_SUPPORT) 
@@ -42,7 +46,7 @@ class MrSIDImageReader;
 
 
 
-
+BEGIN_IMAGEPP_NAMESPACE
 class HRFMrSIDCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -54,7 +58,7 @@ class HRFMrSIDFile : public HRFRasterFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1440, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_MrSID, HRFRasterFile)
 
     friend class HRFMrSIDEditor;
 
@@ -82,7 +86,6 @@ public:
     virtual void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                  uint32_t pi_Page = 0,
                                                                  bool   pi_CheckSpecificUnitSpec = false,
-                                                                 bool   pi_GeoModelDefaultUnit = false,
                                                                  bool   pi_InterpretUnitINTGR = false);
 
     virtual void                          Save();
@@ -126,8 +129,7 @@ protected:
     virtual void                        CreateDescriptors   ();
 
     void                                GetFileInfo(HPMAttributeSet&               po_rTagList,
-                                                    HFCPtr<HCPGeoTiffKeys>&        po_rpGeoTiffKeys,
-                                                    IRasterBaseGcsPtr&             po_pBaseGCS);
+                                                    RasterFileGeocodingPtr&        po_fileGeocoding);
 
     void                                BuildTransfoModelMatrix(bool pi_HasModelType, HFCPtr<HGF2DTransfoModel>& po_prTranfoModel);
 
@@ -180,7 +182,7 @@ struct HRFMrSIDCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFMrSIDCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFMrSIDCreator)
 
     // members
     LPWSTR            m_pLabel;
@@ -191,4 +193,5 @@ private:
     HRFMrSIDCreator();
     };
 
+END_IMAGEPP_NAMESPACE
 #endif      // IPP_HAVE_MRSID_SUPPORT

@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCExceptionHandler.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HFCExceptionHandler
 //-----------------------------------------------------------------------------
 #pragma once
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HFCException;
 
@@ -46,9 +48,9 @@ public:
 
     //:> Static interface for exception handling in destructors and elsewhere needed
 
-    _HDLLu static HSTATUS  HandleException();
-    _HDLLu static HSTATUS  HandleException(const HFCException* pi_pException);
-    _HDLLu static void     SetExceptionHandler(HFCExceptionHandler* pi_pHandler);
+    IMAGEPP_EXPORT static HSTATUS  HandleException();
+    IMAGEPP_EXPORT static HSTATUS  HandleException(const HFCException* pi_pException);
+    IMAGEPP_EXPORT static void     SetExceptionHandler(HFCExceptionHandler* pi_pHandler);
 
     // The interface that must be implemented by application's handler.
     // If pi_pException is set to 0, handles unknown or unsupported exception.
@@ -59,3 +61,5 @@ private:
 
     static HFCExceptionHandler* m_pHandler;
     };
+
+END_IMAGEPP_NAMESPACE

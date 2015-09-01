@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelOrg.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPChannelOrg
@@ -15,25 +15,26 @@
 #include "HRPChannelType.h"
 #include "HFCPtr.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 #define HRPCHANNELORG_MAX_CHANNELS_COUNT (254)
 
 
 class HRPChannelOrg : public HFCShareableObject<HRPChannelOrg>
     {
-    HDECLARE_BASECLASS_ID(1007)
+    HDECLARE_BASECLASS_ID(HRPChannelOrgId_Base)
 
 public:
 
     // Primary methods
 
-    _HDLLg                 HRPChannelOrg();
-    _HDLLg                 HRPChannelOrg(const HRPChannelOrg& pi_rObj);
-    _HDLLg virtual         ~HRPChannelOrg();
+    IMAGEPP_EXPORT                 HRPChannelOrg();
+    IMAGEPP_EXPORT                 HRPChannelOrg(const HRPChannelOrg& pi_rObj);
+    IMAGEPP_EXPORT virtual         ~HRPChannelOrg();
 
     HRPChannelOrg&  operator=(const HRPChannelOrg& pi_rObj);
 
     // Channel Setup
-    _HDLLg uint32_t AddChannel(const HRPChannelType& pi_rChannelType);
+    IMAGEPP_EXPORT uint32_t AddChannel(const HRPChannelType& pi_rChannelType);
     void            DeleteChannel(HRPChannelType* pi_pChannel);
 
     // Channel access methods
@@ -45,14 +46,19 @@ public:
     const HRPChannelType*
     operator[](uint32_t pi_Index) const;
 
-    _HDLLg /*IppImaging_Needs*/ bool    operator==(const HRPChannelOrg& pi_rChannelOrg) const;
+    IMAGEPP_EXPORT /*IppImaging_Needs*/ bool    operator==(const HRPChannelOrg& pi_rChannelOrg) const;
     bool           operator!=(const HRPChannelOrg& pi_rChannelOrg) const;
     uint32_t        GetChannelIndex(HRPChannelType::ChannelRole pi_Role,
                                     unsigned short pi_Id) const;
     // Other methods
     uint32_t        CountPixelCompositeValueBits() const;
 
+    //! All channels have the same size.    
+    bool HaveSameSize() const;
 
+    //! All channels have the same data type.
+    bool HaveSameDataType() const;
+    
 protected:
 
 private:
@@ -85,5 +91,6 @@ private:
     void           DeepCopy(const HRPChannelOrg& pi_rObj);
     bool            HasSameChannelsAs(const HRPChannelOrg& pi_rChannelOrg) const;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRPChannelOrg.hpp"

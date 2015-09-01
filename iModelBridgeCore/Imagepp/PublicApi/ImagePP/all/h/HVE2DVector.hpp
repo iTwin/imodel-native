@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DVector.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -196,7 +197,4 @@ inline HGFGraphicObject::Location HVE2DVector::Locate(const HGF2DLocation& pi_rP
     return(IsPointOn(pi_rPoint, INCLUDE_EXTREMITIES) ? S_ON_BOUNDARY : S_OUTSIDE);
     }
 
-
-
-
-
+END_IMAGEPP_NAMESPACE

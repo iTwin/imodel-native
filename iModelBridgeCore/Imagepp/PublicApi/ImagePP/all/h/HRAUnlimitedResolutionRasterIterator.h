@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAUnlimitedResolutionRasterIterator.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -14,6 +14,7 @@
 #include "HRARasterIterator.h"
 #include "HRAReferenceToRaster.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRAUnlimitedResolutionRaster;
 
 // ----------------------------------------------------------------------------
@@ -58,6 +59,7 @@ private:
 
     void CreateIteratorResolution ();
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRAUnlimitedResolutionRasterIterator.hpp"
 

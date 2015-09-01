@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecLRDRLE.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecLRDRLE
@@ -13,21 +13,22 @@
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HCDCodecLRDRLE : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1297, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_LRDRLE, HCDCodecImage)
 
 public:
 
-    _HDLLu                 HCDCodecLRDRLE();
+    IMAGEPP_EXPORT                 HCDCodecLRDRLE();
 
-    _HDLLu                 HCDCodecLRDRLE(size_t pi_Width,
+    IMAGEPP_EXPORT                 HCDCodecLRDRLE(size_t pi_Width,
                                           size_t pi_Height);
 
-    _HDLLu                 HCDCodecLRDRLE(const HCDCodecLRDRLE& pi_rObj);
+    IMAGEPP_EXPORT                 HCDCodecLRDRLE(const HCDCodecLRDRLE& pi_rObj);
 
-    _HDLLu                 ~HCDCodecLRDRLE();
+    IMAGEPP_EXPORT                 ~HCDCodecLRDRLE();
 
     size_t          CompressSubset(const void* pi_pInData,
                                    size_t pi_InDataSize,
@@ -54,3 +55,5 @@ protected:
 private:
     bool            m_OneLineMode;
     };
+
+END_IMAGEPP_NAMESPACE

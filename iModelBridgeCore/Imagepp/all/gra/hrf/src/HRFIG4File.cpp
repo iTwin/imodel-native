@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIG4File.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIG4File
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFIG4File.h>
 #include <Imagepp/all/h/HRFIG4StripEditor.h>
@@ -28,8 +28,6 @@
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 
 #include <Imagepp/all/h/HTIFFUtils.h>
-
-#include <Imagepp/all/h/HFCResourceLoader.h>
 
 
 #include <Imagepp/all/h/HCDCodecHMRCCITT.h>
@@ -120,8 +118,7 @@ HRFIG4Creator::HRFIG4Creator()
 //-----------------------------------------------------------------------------
 WString HRFIG4Creator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_GRA_HRF_IG4_FILE_FORMAT);  //IG4 File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::GRA_HRF_IG4_FILE_FORMAT());  //IG4 File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -167,7 +164,6 @@ bool HRFIG4Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                   uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
 
     bool Result = false;
 
@@ -309,9 +305,7 @@ bool HRFIG4File::Open()
     HPRECONDITION(!m_pIG4File);
 
     // Be sure the IG4 raster file is NOT already open.
-    m_pIG4File = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pIG4File, GetURL()->GetURL());
+    m_pIG4File = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     m_IsOpen = true;
 
@@ -321,7 +315,7 @@ bool HRFIG4File::Open()
 
     // read the image size
     unsigned short aBuffer[2];
-    m_pIG4File->Read((void*)aBuffer, 2 * sizeof(unsigned short));
+    m_pIG4File->Read(aBuffer, 2 * sizeof(unsigned short));
 
     // The file was write in little endian, we must swap bytes for big endian
     // this method come from HTIFFUtils

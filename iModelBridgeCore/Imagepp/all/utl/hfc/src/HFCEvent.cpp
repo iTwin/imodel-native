@@ -2,21 +2,21 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCEvent.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCEvent
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCEvent.h>
 #include <Imagepp/all/h/HFCException.h>
 
 //:Ignore
 #ifdef _WIN32
 HFCEvent::InternalKey* HFCEvent::s_pInternalKey = 0;
-static struct EventKeyCreator
+static struct ImagePP::EventKeyCreator
     {
     EventKeyCreator()
         {
@@ -58,7 +58,7 @@ HFCEvent::HFCEvent(bool pi_ManualReset,
 
     // since this is a named Event, create the handle now
     if (GetHandle() == 0)
-        throw HFCException();
+        throw HFCUnknownException();
     }
 
 

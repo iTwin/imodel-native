@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFSItem.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,6 +10,7 @@
 #include "HFCNode.h"
 #include "HPMAttributeSet.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author  Ghislain Tardif (${mailto:Ghislain.Tardif@Bentley.com})
@@ -27,13 +28,13 @@ class HFSItemIterator;
 class HFSItem : public HFCNode
     {
 public:
-    HDECLARE_CLASS_ID(5010, HFCNode);
+    HDECLARE_CLASS_ID(HFSItemId_Base, HFCNode);
 
     // Primary method
-    _HDLLu virtual                     ~HFSItem();
+    IMAGEPP_EXPORT virtual                     ~HFSItem();
 
     virtual const WString&      GetName() const;
-    _HDLLu virtual WString             GetPath() const;
+    IMAGEPP_EXPORT virtual WString             GetPath() const;
 
     virtual const HFCPtr<HPMAttributeSet>&
     GetAttributes() const;
@@ -41,18 +42,18 @@ public:
     virtual bool               IsFolder() const = 0;
     virtual void                Expand() = 0;
 
-    _HDLLu const HFCPtr<HFSItem>&      GetItem(const WString& pi_rItemName) const;
+    IMAGEPP_EXPORT const HFCPtr<HFSItem>&      GetItem(const WString& pi_rItemName) const;
 
-    _HDLLu virtual HFCNodeIterator*    CreateIterator() const;
+    IMAGEPP_EXPORT virtual HFCNodeIterator*    CreateIterator() const;
 
     const HFCPtr<HFSItem>&      GetRoot() const;
 
 protected:
 
-    _HDLLu                         HFSItem(const WString&                  pi_rName,
+    IMAGEPP_EXPORT                         HFSItem(const WString&                  pi_rName,
                                            const HFCPtr<HFSItem>&          pi_rpParent,
                                            const HFCPtr<HPMAttributeSet>&  pi_rpAttributes);
-    _HDLLu                         HFSItem();
+    IMAGEPP_EXPORT                         HFSItem();
 
     void                    SetName(const WString& pi_rName);
     void                    SetAttributes(const HFCPtr<HPMAttributeSet>& pi_rpEntryAttributes);
@@ -73,4 +74,5 @@ private:
     HFSItem& operator=(const HFSItem&);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HFSItem.hpp"

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFSpatialCriteria.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -17,6 +17,7 @@
 #include "HIDXCriteria.h"
 #include "HGF2DExtent.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Martin Roy
@@ -32,7 +33,7 @@
 */
 class HGFSpatialCriteria : public HIDXCriteria
     {
-    HDECLARE_BASECLASS_ID(3301)
+    HDECLARE_BASECLASS_ID(HGFSpatialCriteriaId_Base)
 
 public:
 
@@ -67,6 +68,7 @@ private:
     HGF2DExtent     m_Region;
     };
 
+END_IMAGEPP_NAMESPACE
 
 #include "HGFSpatialCriteria.hpp"
 

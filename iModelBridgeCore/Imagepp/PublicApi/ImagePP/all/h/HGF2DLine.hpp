@@ -2,10 +2,10 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLine.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     Constructor by mathematical parameters
@@ -226,3 +226,5 @@ inline void HGF2DLine::SetCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
     m_pCoordSys = pi_rpCoordSys;
     }
 
+
+END_IMAGEPP_NAMESPACE

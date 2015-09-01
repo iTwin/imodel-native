@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DCircle.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DCircle
@@ -13,13 +13,14 @@
 
 #include "HVE2DSimpleShape.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HVE2DSegment;
 class HGF2DLine;
 
 class HVE2DCircle : public HVE2DSimpleShape
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1120)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DCircleId)
 
 
 public:
@@ -162,6 +163,7 @@ private:
     HGF2DLocation   m_Center;
     double          m_Radius;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DCircle.hpp"

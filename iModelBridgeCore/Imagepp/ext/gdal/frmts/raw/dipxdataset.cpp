@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dipxdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: dipxdataset.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Implementation for ELAS DIPEx format variant.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2006, Frank Warmerdam
+ * Copyright (c) 2008-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: dipxdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: dipxdataset.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 CPL_C_START
 void	GDALRegister_DIPEx(void);
@@ -179,7 +180,7 @@ GDALDataset *DIPExDataset::Open( GDALOpenInfo * poOpenInfo )
     if( VSIFReadL( &(poDS->sHeader), 1024, 1, poDS->fp ) != 1 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
-                  "Attempt to read 1024 Byte header filed on file %s\n",
+                  "Attempt to read 1024 byte header filed on file %s\n",
                   poOpenInfo->pszFilename );
         delete poDS;
         return NULL;
@@ -300,6 +301,11 @@ GDALDataset *DIPExDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetDescription( poOpenInfo->pszFilename );
     poDS->TryLoadXML();
 
+/* -------------------------------------------------------------------- */
+/*      Check for external overviews.                                   */
+/* -------------------------------------------------------------------- */
+    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
+
     return( poDS );
 }
 
@@ -341,7 +347,8 @@ void GDALRegister_DIPEx()
         poDriver->SetDescription( "DIPEx" );
         poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, 
                                    "DIPEx" );
-        
+        poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+
         poDriver->pfnOpen = DIPExDataset::Open;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );

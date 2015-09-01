@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCPGCoordProjection.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -13,6 +13,8 @@
 #include <Imagepp/all/h/HFCPtr.h>
 #include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCPGeoTiffKeys;
 
 // ----------------------------------------------------------------------------
@@ -22,25 +24,24 @@ class HCPGCoordProjection : public HFCShareableObject<HCPGCoordProjection>
     {
 public:
     // Constructors
-    _HDLLg explicit        HCPGCoordProjection (HFCPtr<HCPGeoTiffKeys> const& pi_pGeoTiffKeys);
-    _HDLLg explicit        HCPGCoordProjection (IRasterBaseGcsPtr const& pi_pBaseGeoCoord);
+    IMAGEPP_EXPORT explicit        HCPGCoordProjection (HFCPtr<HCPGeoTiffKeys> const& pi_pGeoTiffKeys);
+    IMAGEPP_EXPORT explicit        HCPGCoordProjection(IRasterBaseGcsCP pi_pBaseGeoCoord);
 
 
     //Copy constructor
-    _HDLLg                 HCPGCoordProjection(const HCPGCoordProjection& pi_rObj);
-    _HDLLg HCPGCoordProjection&
-    operator=(const HCPGCoordProjection& pi_rObj);
+    IMAGEPP_EXPORT                 HCPGCoordProjection(const HCPGCoordProjection& pi_rObj);
+    IMAGEPP_EXPORT HCPGCoordProjection& operator=(const HCPGCoordProjection& pi_rObj);
 
     //Destructor
-    _HDLLg virtual         ~HCPGCoordProjection();
+    IMAGEPP_EXPORT virtual         ~HCPGCoordProjection();
 
     // Information extraction
-    _HDLLg double GetUnit () const;
+    IMAGEPP_EXPORT double GetUnit () const;
 
     // Validity
-    _HDLLg bool           IsValid() const;
+    IMAGEPP_EXPORT bool           IsValid() const;
 
-    _HDLLg IRasterBaseGcsPtr GetBaseGCS() const;
+    IMAGEPP_EXPORT IRasterBaseGcsCP GetBaseGCS() const;
 
 protected:
 
@@ -63,3 +64,5 @@ private:
     // Private member
     IRasterBaseGcsPtr m_pBaseGeoCoord;
     };
+
+END_IMAGEPP_NAMESPACE

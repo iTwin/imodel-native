@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXCriteria.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIDXCriteria
@@ -12,19 +12,19 @@
 
 #pragma once
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 class HIDXCriteria
     {
-    HDECLARE_BASECLASS_ID(3300)
+    HDECLARE_BASECLASS_ID(HIDXCriteriaId_Base)
 
 public:
 
 
-    HIDXCriteria();
+    HIDXCriteria(){};
 
 
-    virtual        ~HIDXCriteria();
+    virtual        ~HIDXCriteria(){};
 
 
 private:
@@ -35,7 +35,7 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE
 
-#include "HIDXCriteria.hpp"
 
 

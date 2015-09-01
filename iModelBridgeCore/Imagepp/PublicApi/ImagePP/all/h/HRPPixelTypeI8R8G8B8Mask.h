@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeI8R8G8B8Mask.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,20 +18,21 @@
 | This is a special pixel type that creates a mask that will be used
 | by DC to edit raster data.
 +----------------------------------------------------------------------------*/
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelTypeI8R8G8B8Mask : public HRPPixelTypeI8R8G8B8
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1278)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRPPixelTypeId_I8R8G8B8Mask)
 
 public:
     /*----------------------------------------------------------------------------+
     |    Public member Functions
     +----------------------------------------------------------------------------*/
-    _HDLLg                     HRPPixelTypeI8R8G8B8Mask();
-    _HDLLg                     HRPPixelTypeI8R8G8B8Mask(const HRPPixelPalette& pi_Palette);
-    _HDLLg                     HRPPixelTypeI8R8G8B8Mask(const HRPPixelTypeI8R8G8B8Mask& pi_rObj);
+    IMAGEPP_EXPORT                     HRPPixelTypeI8R8G8B8Mask();
+    IMAGEPP_EXPORT                     HRPPixelTypeI8R8G8B8Mask(const HRPPixelPalette& pi_Palette);
+    IMAGEPP_EXPORT                     HRPPixelTypeI8R8G8B8Mask(const HRPPixelTypeI8R8G8B8Mask& pi_rObj);
 
-    _HDLLg virtual             ~HRPPixelTypeI8R8G8B8Mask();
+    IMAGEPP_EXPORT virtual             ~HRPPixelTypeI8R8G8B8Mask();
 
     virtual HPMPersistentObject*
     Clone() const;
@@ -46,5 +47,6 @@ protected:
     virtual const HRPPixelConverter*
     HasConverterTo(const HRPPixelType* pi_pPixelTypeTo) const;
     };
+END_IMAGEPP_NAMESPACE
 
 

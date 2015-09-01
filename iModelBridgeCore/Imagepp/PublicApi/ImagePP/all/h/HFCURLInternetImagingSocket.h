@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLInternetImagingSocket.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLInternetImagingSocket.h
@@ -11,6 +11,7 @@
 
 #include "HFCURLCommonInternet.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //:Ignore
 // URL specification at this level is:
 // iip[//][user[:password]@]host[:port][/[SearchPart]]
@@ -43,7 +44,7 @@ class HFCURLInternetImagingSocket : public HFCURLCommonInternet
     {
 public:
 
-    HDECLARE_CLASS_ID(1304, HFCURLCommonInternet);
+    HDECLARE_CLASS_ID(HFCURLId_InternetImagingSocket, HFCURLCommonInternet);
 
     // Define the Scheme label
 
@@ -55,19 +56,19 @@ public:
 
     //:> Primary methods
 
-    _HDLLu                HFCURLInternetImagingSocket(const WString& pi_rURL);
-    _HDLLu                HFCURLInternetImagingSocket(const WString& pi_rUser,
+    IMAGEPP_EXPORT                HFCURLInternetImagingSocket(const WString& pi_rURL);
+    IMAGEPP_EXPORT                HFCURLInternetImagingSocket(const WString& pi_rUser,
                                                       const WString& pi_rPassword,
                                                       const WString& pi_rHost,
                                                       const WString& pi_rPort,
                                                       const WString& pi_rImage);
-    _HDLLu                 HFCURLInternetImagingSocket() { } //:> required for persistence
-    _HDLLu virtual         ~HFCURLInternetImagingSocket();
+    IMAGEPP_EXPORT                 HFCURLInternetImagingSocket() { } //:> required for persistence
+    IMAGEPP_EXPORT virtual         ~HFCURLInternetImagingSocket();
 
     //:> Content access methods
 
     virtual WString  GetURL() const;
-    const WString&   GetImage () const;
+    const WString&   GetImage () const {return GetURLPath();}
 
     //:>  Overriden methods, used in relative path management
 
@@ -92,5 +93,6 @@ private:
     HFCURLInternetImagingSocket& operator=(const HFCURLInternetImagingSocket&);
     };
 
-#include "HFCURLInternetImagingSocket.hpp"
+END_IMAGEPP_NAMESPACE
+
 

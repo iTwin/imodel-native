@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecVector.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,11 @@
 
 #include "HCDCodec.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecVector : public HCDCodec
     {
-    HDECLARE_CLASS_ID(1173, HCDCodec)
+    HDECLARE_CLASS_ID(HCDCodecId_Vector, HCDCodec)
 
 public:
 
@@ -76,6 +78,7 @@ private:
     size_t          m_SubsetPos;
     };
 
+END_IMAGEPP_NAMESPACE
 
 #include "HCDCodecVector.hpp"
 

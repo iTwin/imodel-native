@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFDirectory.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HTIFFDirectory
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HTIFFDirectory.h>
 #include <Imagepp/all/h/HTIFFTagEntry.h>
@@ -279,7 +279,7 @@ uint64_t HTIFFDirectory::WriteDirectory (HTIFFStream* pio_pFile,
 
         if (pASCIIParams != 0)
             {
-            SetValues (m_rTagInfo.GetGeoAsciiParamsTagID(), pASCIIParams);
+            SetValuesA (m_rTagInfo.GetGeoAsciiParamsTagID(), pASCIIParams);
             delete[] pASCIIParams;
             }
         else
@@ -298,6 +298,13 @@ uint64_t HTIFFDirectory::WriteDirectory (HTIFFStream* pio_pFile,
             // Write the Dir at the end, (?? MemManager if possible)
             pio_pFile->Seek(0L, SEEK_END);
             *pio_pOffset = (pio_pFile->Tell() + 1) &~ 1;    // Word Boundary
+
+            // Initialize the byte skipped to go to a Word boundary, otherwise the ATPs say Different randomly.
+            if ((pio_pFile->Tell() & 1) != 0)
+                {
+                Byte ZeroValue = 0;
+                pio_pFile->Write(&ZeroValue, sizeof(Byte), 1);
+                }
 
             m_Status.Resize = false;
             }
@@ -804,7 +811,7 @@ WRAPUP:
     }
 
 
-bool HTIFFDirectory::SetValues (HTagID pi_Tag, const char*  pi_pVal)
+bool HTIFFDirectory::SetValuesA (HTagID pi_Tag, const char*  pi_pVal)
     {
     HPRECONDITION(m_ppDirEntry != 0);
     HPRECONDITION(pi_pVal != 0);
@@ -818,12 +825,12 @@ bool HTIFFDirectory::SetValues (HTagID pi_Tag, const char*  pi_pVal)
             goto WRAPUP;
         }
 
-    return m_ppDirEntry[pi_Tag]->SetValues(pi_pVal);
+    return m_ppDirEntry[pi_Tag]->SetValuesA(pi_pVal);
 WRAPUP:
     return false;
     }
 
-bool HTIFFDirectory::SetValues (HTagID pi_Tag, const WChar*  pi_pVal)
+bool HTIFFDirectory::SetValuesW (HTagID pi_Tag, const WChar*  pi_pVal)
     {
     HPRECONDITION(m_ppDirEntry != 0);
     HPRECONDITION(pi_pVal != 0);
@@ -837,7 +844,7 @@ bool HTIFFDirectory::SetValues (HTagID pi_Tag, const WChar*  pi_pVal)
             goto WRAPUP;
         }
 
-    return m_ppDirEntry[pi_Tag]->SetValues(pi_pVal);
+    return m_ppDirEntry[pi_Tag]->SetValuesW(pi_pVal);
 WRAPUP:
     return false;
     }

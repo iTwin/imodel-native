@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPDensitySlicingFilter16.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRPDensitySlicingFilter16
@@ -13,14 +13,15 @@
 
 #include "HRPDensitySlicingFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPDensitySlicingFilter16 : public HRPDensitySlicingFilter
     {
-    HDECLARE_CLASS_ID(1358, HRPDensitySlicingFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_DensitySlicing16, HRPDensitySlicingFilter)
     
 
 public:             // Primary methods
     HRPDensitySlicingFilter16();
-    HRPDensitySlicingFilter16(const HFCPtr<HRPPixelType>&      pi_pFilterPixelType);
+    IMAGEPP_EXPORT HRPDensitySlicingFilter16(const HFCPtr<HRPPixelType>&      pi_pFilterPixelType);
     HRPDensitySlicingFilter16(const HRPDensitySlicingFilter16& pi_rFilter);
 
     virtual            ~HRPDensitySlicingFilter16();
@@ -33,5 +34,6 @@ private:
     operator=(const HRPDensitySlicingFilter16& pi_rFilter);
     void            DeepCopy(const HRPDensitySlicingFilter16& pi_rSrc);
     };
+END_IMAGEPP_NAMESPACE
 
 

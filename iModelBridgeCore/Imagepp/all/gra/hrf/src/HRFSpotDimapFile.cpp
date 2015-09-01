@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSpotDimapFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSpotDimapFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFTiffFile.h>
 #include <Imagepp/all/h/HRFSpotDimapFile.h>
 
@@ -62,12 +62,11 @@
 #include <Imagepp/all/h/HGF2DAffine.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include <BeXml/BeXml.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 #ifdef __HMR_DEBUG
 #include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
@@ -499,7 +498,7 @@ HRFSpotDimapCreator::HRFSpotDimapCreator()
  */
 WString HRFSpotDimapCreator::GetLabel() const
     {
-    return HFCResourceLoader::GetInstance()->GetString(IDS_FILEFORMAT_SpotDigital);
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_SpotDigital());
     }
 
 
@@ -563,7 +562,9 @@ HFCPtr<HRFRasterFile> HRFSpotDimapCreator::Create(const HFCPtr<HFCURL>& pi_rpURL
 bool HRFSpotDimapCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                         uint64_t             pi_Offset) const
     {
-    // (NOTE: extensive use of return here to simplify code)
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
+
     WString XMLFileName;
     
     // Extract the standard file name from the main URL
@@ -625,7 +626,7 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFSpotDimapCreator::GetCapabilities()
     @param pi_Offset     Starting point in the file.
     ---------------------------------------------------------------------------
  */
-_HDLLg HRFSpotDimapFile::HRFSpotDimapFile(const HFCPtr<HFCURL>& pi_rpURL,
+HRFSpotDimapFile::HRFSpotDimapFile(const HFCPtr<HFCURL>& pi_rpURL,
                                           HFCAccessMode         pi_AccessMode,
                                           uint64_t             pi_Offset)
     : HRFGeoTiffFile(pi_rpURL, pi_AccessMode, pi_Offset, false)
@@ -640,12 +641,12 @@ _HDLLg HRFSpotDimapFile::HRFSpotDimapFile(const HFCPtr<HFCURL>& pi_rpURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rpURL->GetURL());
+        throw HFCFileReadOnlyException( pi_rpURL->GetURL());
         }
 
     if(!Open())
         {
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, pi_rpURL->GetURL());
+        throw HFCCorruptedFileException(pi_rpURL->GetURL());
         }
     else
         CreateDescriptors();
@@ -664,7 +665,7 @@ _HDLLg HRFSpotDimapFile::HRFSpotDimapFile(const HFCPtr<HFCURL>& pi_rpURL,
     Destroy SpotDimap file object.
     ---------------------------------------------------------------------------
  */
-_HDLLg HRFSpotDimapFile::~HRFSpotDimapFile()
+HRFSpotDimapFile::~HRFSpotDimapFile()
     {
     // Nothing todo
     }
@@ -728,8 +729,7 @@ bool HRFSpotDimapFile::Open(bool pi_CreateBigTifFormat)
 
 
             if (!HRFGeoTiffFile::Open(pImageryFileURL))
-                throw HRFChildFileException(HRF_CANNOT_OPEN_CHILD_FILE_EXCEPTION,
-                                            GetURL()->GetURL(),
+                throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                             pImageryFileURL->GetURL());
 
             m_IsOpen = true;
@@ -788,6 +788,9 @@ bool HRFSpotDimapFile::ReadHeaderFromXMLFile()
 
     BeXmlNodeP pDataFormatNode = pMainNode->SelectSingleNode("Data_Access/DATA_FILE_FORMAT");
     BeXmlNodeP pDataPathNode   = pMainNode->SelectSingleNode("Data_Access/Data_File/DATA_FILE_PATH");
+    if (NULL == pDataPathNode)
+        pDataPathNode = pMainNode->SelectSingleNode("Data_Access/Data_file/DATA_FILE_PATH");    // XML is now case sensitive - the 'F' of Data_File
+
     if(NULL == pDataFormatNode || NULL == pDataPathNode)
         return false;
 

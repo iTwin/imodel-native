@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HIterators.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -287,7 +287,7 @@ public:
         }
 
     bool                        operator==             (const typename BaseIterator<IteratorType, BasePolicy>::iterator_t&           pi_rRight) const    {
-        return _EqualTo(pi_rRight);
+        return BaseIterator<IteratorType, BasePolicy>::_EqualTo(pi_rRight);
         }
     bool                        operator!=             (const typename BaseIterator<IteratorType, BasePolicy>::iterator_t&           pi_rRight) const    {
         return (!(BaseIterator<IteratorType, BasePolicy>::_GetIter() == pi_rRight));
@@ -1407,7 +1407,7 @@ public:
     ContainerInfo                       m_ContainerInfo;
     };
 
+END_IMAGEPP_NAMESPACE
 
 #include "HIterators.hpp"
 
-END_IMAGEPP_NAMESPACE

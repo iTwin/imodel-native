@@ -8,8 +8,8 @@
 // Methods for class HVE2DHoledShape
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HVE2DHoledShape.h>
 #include <Imagepp/all/h/HGF2DHoledShape.h>
@@ -54,6 +54,26 @@ HVE2DHoledShape::HVE2DHoledShape(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
     {
     // Set base shape to an empty shape
     m_pBaseShape = new HVE2DVoidShape(pi_rpCoordSys);
+    }
+
+
+/** -----------------------------------------------------------------------------
+    -----------------------------------------------------------------------------
+*/
+HVE2DHoledShape::HVE2DHoledShape(const HGF2DHoledShape& pi_rShape, const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
+    : HVE2DShape(pi_rpCoordSys)
+    {
+    // Set base shape to an empty shape
+    m_pBaseShape = static_cast<HVE2DSimpleShape*>(HVE2DShape::fCreateShapeFromLightShape(pi_rShape.GetBaseShape(), pi_rpCoordSys));
+
+    const HGF2DShape::HoleList& rHoleList = pi_rShape.GetHoleList();
+
+
+    HGF2DShape::HoleList::const_iterator holeItr = rHoleList.begin();
+    for ( ; holeItr != rHoleList.end() ; holeItr++)
+        {
+        AddHole(static_cast<HVE2DSimpleShape&>(*(HVE2DShape::fCreateShapeFromLightShape(**holeItr, pi_rpCoordSys))));
+        }
     }
 
 
@@ -329,10 +349,10 @@ bool HVE2DHoledShape::AreContiguousAt(const HVE2DVector& pi_rVector,
     // The point must be located on both vectors
     HPRECONDITION(IsPointOn(pi_rPoint) && pi_rVector.IsPointOn(pi_rPoint));
 
-    bool DoAreContiguous=false;
+    bool           DoAreContiguous = false;
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
     // Find if the point is on the outter boundary
     if (m_pBaseShape->IsPointOn(pi_rPoint, HVE2DVector::INCLUDE_EXTREMITIES, Tolerance))
@@ -450,7 +470,7 @@ void HVE2DHoledShape::ObtainContiguousnessPointsAt(const HVE2DVector& pi_rVector
     HPRECONDITION(AreContiguousAt(pi_rVector, pi_rPoint));
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
     // If the given point is on base shape and they are contiguous at this point ...
     if (m_pBaseShape->IsPointOn(pi_rPoint, HVE2DVector::INCLUDE_EXTREMITIES, Tolerance) &&
@@ -2090,7 +2110,7 @@ void HVE2DHoledShape::PrintState(ostream& po_rOutput) const
     HDUMP0("Object is a HVE2DHoledShape\n");
 
     po_rOutput << "The holed shape contains " << m_HoleList.size() << "holes" << endl;
-    HDUMP1("The holed shape contains %lld holes", (uint64_t)m_HoleList.size());
+    HDUMP1("The holed shape contains %" PRIu64 " holes", (uint64_t)m_HoleList.size());
 
     m_pBaseShape->PrintState(po_rOutput);
 

@@ -2,11 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DCircle.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include "HVE2DPolygon.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -581,15 +583,4 @@ inline HGFBearing HVE2DCircle::CalculateBearing(const HGF2DLocation& pi_rPoint,
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+END_IMAGEPP_NAMESPACE

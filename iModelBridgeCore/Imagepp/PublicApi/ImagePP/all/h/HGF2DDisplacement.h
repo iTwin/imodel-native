@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DDisplacement.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DDisplacement
@@ -15,6 +15,9 @@
 
 #include "HGF2DPosition.h"
 #include "HGFBearing.h"
+
+BEGIN_IMAGEPP_NAMESPACE
+//typedef BentleyApi::ImagePP::HGF2DCoord<double> HGF2DPosition;
 
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -47,52 +50,51 @@
 */
 class HGF2DDisplacement
     {
-    HDECLARE_SEALEDCLASS_ID(1103)
+    HDECLARE_SEALEDCLASS_ID(HGF2DDisplacementId_Base)
 
 public:
 
     // Primary methods
-    HGF2DDisplacement();
-    HGF2DDisplacement(const HGFBearing&   pi_rDirection,
-                      double              pi_rDistance);
-    HGF2DDisplacement(double  pi_rXOffset,
-					  double  pi_rYOffset);
-    HGF2DDisplacement(const HGF2DDisplacement& pi_rObj);
-                    ~HGF2DDisplacement();
-    HGF2DDisplacement& operator=(const HGF2DDisplacement& pi_rObj);
+                                HGF2DDisplacement();
+                                HGF2DDisplacement(const HGFBearing&   pi_rDirection,
+                                                  double              pi_rDistance);
+                                HGF2DDisplacement(double  pi_rXOffset,
+					                              double  pi_rYOffset);
+                                HGF2DDisplacement(const HGF2DDisplacement& pi_rObj);
+                                ~HGF2DDisplacement();
+    HGF2DDisplacement&          operator=(const HGF2DDisplacement& pi_rObj);
 
     // Logical operations
-    bool           operator==(const HGF2DDisplacement& pi_rObj) const;
-    bool           operator!=(const HGF2DDisplacement& pi_rObj) const;
+    bool                        operator==(const HGF2DDisplacement& pi_rObj) const;
+    bool                        operator!=(const HGF2DDisplacement& pi_rObj) const;
 
     // Displacement management
-    double           GetDeltaX() const;
-    double           GetDeltaY() const;
-    void             SetDeltaX(double pi_rNewDeltaX);
-    void             SetDeltaY(double pi_rNewDeltaY);
-    _HDLLg HGFBearing
-                     CalculateBearing() const;
-    _HDLLg double    CalculateLength() const;
-    void             SetByBearing(const HGFBearing&  pi_rDirection,
-                                  double             pi_NewLength);
-    void            SetBearing(const HGFBearing& pi_rDirection);
-    void            SetLength(double pi_NewLength);
+    double                      GetDeltaX() const;
+    double                      GetDeltaY() const;
+    void                        SetDeltaX(double pi_rNewDeltaX);
+    void                        SetDeltaY(double pi_rNewDeltaY);
+    IMAGEPP_EXPORT HGFBearing    CalculateBearing() const;
+    IMAGEPP_EXPORT double        CalculateLength() const;
+    void                        SetByBearing(const HGFBearing&  pi_rDirection,
+                                             double             pi_NewLength);
+    void                        SetBearing(const HGFBearing& pi_rDirection);
+    void                        SetLength(double pi_NewLength);
 
     // Operations
-    HGF2DDisplacement   operator+(const HGF2DDisplacement& pi_rDisp) const;
-    HGF2DDisplacement   operator-(const HGF2DDisplacement& pi_rDisp) const;
-    HGF2DDisplacement   operator-() const;
-    HGF2DDisplacement&  operator+=(const HGF2DDisplacement& pi_rDisp);
-    HGF2DDisplacement&  operator-=(const HGF2DDisplacement& pi_rDisp);
+    HGF2DDisplacement           operator+(const HGF2DDisplacement& pi_rDisp) const;
+    HGF2DDisplacement           operator-(const HGF2DDisplacement& pi_rDisp) const;
+    HGF2DDisplacement           operator-() const;
+    HGF2DDisplacement&          operator+=(const HGF2DDisplacement& pi_rDisp);
+    HGF2DDisplacement&          operator-=(const HGF2DDisplacement& pi_rDisp);
 
-    HGF2DDisplacement   operator*(double pi_Multipli) const;
-    HGF2DDisplacement   operator/(double pi_Divisor)const;
-    HGF2DDisplacement&  operator*=(double pi_Multipli);
-    HGF2DDisplacement&  operator/=(double pi_Divisor);
+    HGF2DDisplacement           operator*(double pi_Multipli) const;
+    HGF2DDisplacement           operator/(double pi_Divisor)const;
+    HGF2DDisplacement&          operator*=(double pi_Multipli);
+    HGF2DDisplacement&          operator/=(double pi_Divisor);
 
 
     friend HGF2DDisplacement    operator*(double   pi_Multipli,
-                                              const HGF2DDisplacement& pi_rDisp);
+                                          const HGF2DDisplacement& pi_rDisp);
 
 
 protected:
@@ -100,7 +102,7 @@ protected:
 private:
 
     // Private methods
-    void            Copy(const HGF2DDisplacement& pi_rObj);
+    void                        Copy(const HGF2DDisplacement& pi_rObj);
 
     // Coordinates of this location
     double     m_DeltaXDist;
@@ -120,12 +122,11 @@ inline HGF2DPosition operator+(const HGF2DPosition& position, const HGF2DDisplac
     return HGF2DPosition(position.GetX() + displacement.GetDeltaX(), position.GetY() + displacement.GetDeltaY());
     }
 
-
-
 inline HGF2DDisplacement operator-(const HGF2DPosition& pi_rFirstPoint, const HGF2DPosition& pi_rSecondPoint)
     {
     HGF2DDisplacement result(pi_rFirstPoint.GetX() - pi_rSecondPoint.GetX(), pi_rFirstPoint.GetY()- pi_rSecondPoint.GetY());
     return result;
     }
 
+END_IMAGEPP_NAMESPACE
 #include "HGF2DDisplacement.hpp"

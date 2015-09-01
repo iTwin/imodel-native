@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSNode.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -17,6 +17,7 @@
 #include <Imagepp/all/h/HGF2DWorldCluster.h>
 #include <Imagepp/all/h/HGF2DWorld.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class PageStatementNode;
 class HRARaster;
 
@@ -32,8 +33,8 @@ public:
     HFCPtr<HGF2DWorldCluster> GetWorldCluster() const;
     HGF2DWorldIdentificator   GetWorldID() const;
     HFCPtr<HRARaster>         GetPage(uint32_t pi_PageID = 0);
-    _HDLLg short CountPages() const;
-    _HDLLg const PageStatementNode*  GetPageStatementNode(HPMObjectID pi_PageID) const;
+    IMAGEPP_EXPORT short CountPages() const;
+    IMAGEPP_EXPORT const PageStatementNode*  GetPageStatementNode(HPMObjectID pi_PageID) const;
 
 protected:
 
@@ -41,3 +42,4 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE

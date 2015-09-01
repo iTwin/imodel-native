@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_erm.cpp 21667 2011-02-09 22:55:10Z warmerdam $
+ * $Id: ogr_srs_erm.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implement ERMapper projection conversions.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2007, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2008-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogr_srs_erm.cpp 21667 2011-02-09 22:55:10Z warmerdam $");
+CPL_CVSID("$Id: ogr_srs_erm.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 /************************************************************************/
 /*                         OSRImportFromERM()                           */
@@ -112,8 +113,8 @@ OGRErr OGRSpatialReference::importFromERM( const char *pszProj,
         if( EQUAL(pszUnits,"FEET") )
             SetLinearUnits( SRS_UL_US_FOOT, atof(SRS_UL_US_FOOT_CONV));
         else                                                            //IPP
-        if( EQUAL(pszUnits,"IFEET") )                                   //IPP
-            SetLinearUnits( SRS_UL_FOOT, atof(SRS_UL_FOOT_CONV));       //IPP
+        if (EQUAL (pszUnits, "IFEET"))                                  //IPP
+            SetLinearUnits (SRS_UL_FOOT, atof (SRS_UL_FOOT_CONV));      //IPP
         else
             SetLinearUnits( SRS_UL_METER, 1.0 );
     }
@@ -222,45 +223,48 @@ OGRErr OGRSpatialReference::exportToERM( char *pszProj, char *pszDatum,
 /* -------------------------------------------------------------------- */
     if( EQUAL(pszDatum,"RAW") )
     {
-        nEPSGCode = GetEPSGGeogCS();
+        int nEPSGGCSCode = GetEPSGGeogCS();
 
-        if( nEPSGCode == 4326 )
+        if( nEPSGGCSCode == 4326 )
             strcpy( pszDatum, "WGS84" );
 
-        else if( nEPSGCode == 4322 )
+        else if( nEPSGGCSCode == 4322 )
             strcpy( pszDatum, "WGS72DOD" );
         
-        else if( nEPSGCode == 4267 )
+        else if( nEPSGGCSCode == 4267 )
             strcpy( pszDatum, "NAD27" );
         
-        else if( nEPSGCode == 4269 )
+        else if( nEPSGGCSCode == 4269 )
             strcpy( pszDatum, "NAD83" );
 
-        else if( nEPSGCode == 4277 )
+        else if( nEPSGGCSCode == 4277 )
             strcpy( pszDatum, "OSGB36" );
 
-        else if( nEPSGCode == 4278 )
+        else if( nEPSGGCSCode == 4278 )
             strcpy( pszDatum, "OSGB78" );
 
-        else if( nEPSGCode == 4201 )
+        else if( nEPSGGCSCode == 4201 )
             strcpy( pszDatum, "ADINDAN" );
 
-        else if( nEPSGCode == 4202 )
+        else if( nEPSGGCSCode == 4202 )
             strcpy( pszDatum, "AGD66" );
 
-        else if( nEPSGCode == 4203 )
+        else if( nEPSGGCSCode == 4203 )
             strcpy( pszDatum, "AGD84" );
 
-        else if( nEPSGCode == 4209 )
+        else if( nEPSGGCSCode == 4209 )
             strcpy( pszDatum, "ARC1950" );
 
-        else if( nEPSGCode == 4210 )
+        else if( nEPSGGCSCode == 4210 )
             strcpy( pszDatum, "ARC1960" );
 
-        else if( nEPSGCode == 4275 )
+        else if( nEPSGGCSCode == 4275 )
             strcpy( pszDatum, "NTF" );
 
-        else if( nEPSGCode == 4284 )
+        else if( nEPSGGCSCode == 4283 )
+            strcpy( pszDatum, "GDA94" );
+
+        else if( nEPSGGCSCode == 4284 )
             strcpy( pszDatum, "PULKOVO" );
     }
 
@@ -287,10 +291,17 @@ OGRErr OGRSpatialReference::exportToERM( char *pszProj, char *pszDatum,
     nZone = GetUTMZone( &bNorth );
     if( nZone > 0 )
     {
-        if( bNorth )
-            sprintf( pszProj, "NUTM%02d", nZone );
+        if( EQUAL(pszDatum,"GDA94") && !bNorth && nZone >= 48 && nZone <= 58)
+        {
+            sprintf( pszProj, "MGA%02d", nZone );
+        }
         else
-            sprintf( pszProj, "SUTM%02d", nZone );
+        {
+            if( bNorth )
+                sprintf( pszProj, "NUTM%02d", nZone );
+            else
+                sprintf( pszProj, "SUTM%02d", nZone );
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -307,6 +318,16 @@ OGRErr OGRSpatialReference::exportToERM( char *pszProj, char *pszDatum,
             strncpy( pszProj, pszPROJCS, 32 );
             pszProj[31] = '\0';
         }
+    }
+
+/* -------------------------------------------------------------------- */
+/*      If we have not translated it yet, but we have an EPSG code      */
+/*      then use EPSG:n notation.                                       */
+/* -------------------------------------------------------------------- */
+    if( (EQUAL(pszDatum,"RAW") || EQUAL(pszProj,"RAW")) && nEPSGCode != 0 )
+    {
+        sprintf( pszProj, "EPSG:%d", nEPSGCode );
+        sprintf( pszDatum, "EPSG:%d", nEPSGCode );
     }
 
 /* -------------------------------------------------------------------- */

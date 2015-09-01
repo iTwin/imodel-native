@@ -2,15 +2,17 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DLiteSegment.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DLiteSegment
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HGF2DLiteSegment.h>
+#include <Imagepp/all/h/HGF2DDisplacement.h>
+#include <Imagepp/all/h/HGF2DLiteLine.h>
 
 
 /** -----------------------------------------------------------------------------
@@ -317,7 +319,7 @@ bool HGF2DLiteSegment::AreContiguous(const HGF2DLiteSegment& pi_rSegment) const
     // HChk AR Tolerance is not applied everywhere in the same manner
     //         For example, IsPointOn does not require a tolerance.
     //         ObtainContiguousPoints uses bad tolerance...
-    double Tolerance = min(m_Tolerance, pi_rSegment.m_Tolerance);
+    double Tolerance = MIN(m_Tolerance, pi_rSegment.m_Tolerance);
 
     int32_t NumberOfContiguousnessPoints = 0;
 
@@ -629,10 +631,10 @@ bool   HGF2DLiteSegment::IsPointOn(const HGF2DPosition& pi_rTestPoint, Extremity
     bool   Answer = false;
 
     // Obtain extremes of segment
-    double XMin = min(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double XMax = max(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double YMin = min(m_StartPoint.GetY(), m_EndPoint.GetY());
-    double YMax = max(m_StartPoint.GetY(), m_EndPoint.GetY());
+    double XMin = MIN(m_StartPoint.GetX(), m_EndPoint.GetX());
+    double XMax = MAX(m_StartPoint.GetX(), m_EndPoint.GetX());
+    double YMin = MIN(m_StartPoint.GetY(), m_EndPoint.GetY());
+    double YMax = MAX(m_StartPoint.GetY(), m_EndPoint.GetY());
 
     double X = pi_rTestPoint.GetX();
     double Y = pi_rTestPoint.GetY();
@@ -845,19 +847,19 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
     HGF2DLiteSegment::CrossState    Status = HGF2DLiteSegment::NO_CROSS;
 
     // Compute effective tolerance (smallest of the two given segment)
-    double EffectiveTolerance = min(m_Tolerance, pi_rSegment.m_Tolerance);
+    double EffectiveTolerance = MIN(m_Tolerance, pi_rSegment.m_Tolerance);
 
     // Obtain extremes of self segment
-    double XMin1 = min(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double XMax1 = max(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double YMin1 = min(m_StartPoint.GetY(), m_EndPoint.GetY());
-    double YMax1 = max(m_StartPoint.GetY(), m_EndPoint.GetY());
+    double XMin1 = MIN(m_StartPoint.GetX(), m_EndPoint.GetX());
+    double XMax1 = MAX(m_StartPoint.GetX(), m_EndPoint.GetX());
+    double YMin1 = MIN(m_StartPoint.GetY(), m_EndPoint.GetY());
+    double YMax1 = MAX(m_StartPoint.GetY(), m_EndPoint.GetY());
 
     // Obtain extremes of given segment
-    double XMin2 = min(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
-    double XMax2 = max(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
-    double YMin2 = min(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
-    double YMax2 = max(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
+    double XMin2 = MIN(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
+    double XMax2 = MAX(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
+    double YMin2 = MIN(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
+    double YMax2 = MAX(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
 
 
     // Check if their extent overlaps (outter overlap)
@@ -981,13 +983,13 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
             // line formed by self
 
             if ((HDOUBLE_GREATER(pi_rSegment.m_StartPoint.GetX(),
-                                 min(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance) &&
+                                 MIN(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance) &&
                  HDOUBLE_SMALLER(pi_rSegment.m_EndPoint.GetX(),
-                                 max(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance)) ||
+                                 MAX(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance)) ||
                 (HDOUBLE_GREATER(pi_rSegment.m_EndPoint.GetX(),
-                                 min(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance) &&
+                                 MIN(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance) &&
                  HDOUBLE_SMALLER(pi_rSegment.m_StartPoint.GetX(),
-                                 max(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance)))
+                                 MAX(m_StartPoint.GetX(), m_EndPoint.GetX()), EffectiveTolerance)))
             {
 
                 // Segments may cross ... if not contiguous
@@ -1126,16 +1128,16 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegment(
                         // line formed by self
 
                         if ((HDOUBLE_GREATER(pi_rSegment.m_StartPoint.GetY(),
-                                             min(m_StartPoint.GetY(), m_EndPoint.GetY()),
+                                             MIN(m_StartPoint.GetY(), m_EndPoint.GetY()),
                                              EffectiveTolerance) &&
                              HDOUBLE_SMALLER(pi_rSegment.m_EndPoint.GetY(),
-                                             max(m_StartPoint.GetY(), m_EndPoint.GetY()),
+                                             MAX(m_StartPoint.GetY(), m_EndPoint.GetY()),
                                              EffectiveTolerance)) ||
                             (HDOUBLE_GREATER(pi_rSegment.m_EndPoint.GetY(),
-                                             min(m_StartPoint.GetY(), m_EndPoint.GetY()),
+                                             MIN(m_StartPoint.GetY(), m_EndPoint.GetY()),
                                              EffectiveTolerance) &&
                              HDOUBLE_SMALLER(pi_rSegment.m_StartPoint.GetY(),
-                                             max(m_StartPoint.GetY(), m_EndPoint.GetY()),
+                                             MAX(m_StartPoint.GetY(), m_EndPoint.GetY()),
                                              EffectiveTolerance)))
                         {
                             // The Y coordinate are on opposite sides of self Y coordinate
@@ -1288,19 +1290,19 @@ HGF2DLiteSegment::CrossState HGF2DLiteSegment::IntersectSegmentExtremityIncluded
     HGF2DLiteSegment::CrossState    Status = HGF2DLiteSegment::NO_CROSS;
 
     // Compute effective tolerance (smallest of the two given segment)
-    double EffectiveTolerance = min(m_Tolerance, pi_rSegment.m_Tolerance);
+    double EffectiveTolerance = MIN(m_Tolerance, pi_rSegment.m_Tolerance);
 
     // Obtain extremes of self segment
-    double XMin1 = min(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double XMax1 = max(m_StartPoint.GetX(), m_EndPoint.GetX());
-    double YMin1 = min(m_StartPoint.GetY(), m_EndPoint.GetY());
-    double YMax1 = max(m_StartPoint.GetY(), m_EndPoint.GetY());
+    double XMin1 = MIN(m_StartPoint.GetX(), m_EndPoint.GetX());
+    double XMax1 = MAX(m_StartPoint.GetX(), m_EndPoint.GetX());
+    double YMin1 = MIN(m_StartPoint.GetY(), m_EndPoint.GetY());
+    double YMax1 = MAX(m_StartPoint.GetY(), m_EndPoint.GetY());
 
     // Obtain extremes of given segment
-    double XMin2 = min(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
-    double XMax2 = max(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
-    double YMin2 = min(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
-    double YMax2 = max(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
+    double XMin2 = MIN(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
+    double XMax2 = MAX(pi_rSegment.m_StartPoint.GetX(), pi_rSegment.m_EndPoint.GetX());
+    double YMin2 = MIN(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
+    double YMax2 = MAX(pi_rSegment.m_StartPoint.GetY(), pi_rSegment.m_EndPoint.GetY());
 
 
     // Check if their extent overlaps (outter overlap)
@@ -1436,3 +1438,100 @@ void HGF2DLiteSegment::GetDeltas(double* po_pDx,
 
 
     }
+
+
+//-----------------------------------------------------------------------------
+// CalculateClosestPoint
+// Calculates the closest point on segment to given point
+//-----------------------------------------------------------------------------
+HGF2DPosition HGF2DLiteSegment::CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const
+    {
+    // Calculate closest point to line the segment is part of
+    HGF2DPosition   ClosestPoint(HGF2DLiteLine(m_StartPoint, m_EndPoint).CalculateClosestPoint(pi_rPoint));
+
+    // Check if this point is not located on the segment
+    if (!IsPointOnLineOnSegment(ClosestPoint))
+        {
+        // Calculate distances from extremities to point
+        double FromStart = m_StartPoint.CalculateLengthTo(pi_rPoint);
+        double FromEnd = m_EndPoint.CalculateLengthTo(pi_rPoint);
+
+        // Check if distances are equal
+        // KEEP AS OPERATOR==
+        if (FromStart == FromEnd)
+            {
+            // The distances are identical ... may be a precision problem ...
+            // Check if length of segment is zero
+            if (CalculateLength() == 0.0)
+                {
+                // We have a null segment ... any point will do
+                ClosestPoint =  m_StartPoint;
+                }
+            else
+                {
+                // We have a precision problem ...
+                // We know that the tentative closest point is very far from either start
+                // or end point, and is aligned to it ... we use bearings if not infinity
+                if (!BeNumerical::BeFinite(FromStart))
+                    ClosestPoint = m_StartPoint;
+                else
+                    {
+                    HGF2DDisplacement displacement1(m_StartPoint.GetX() - ClosestPoint.GetX(), m_StartPoint.GetY() - ClosestPoint.GetY());
+                    HGFBearing   FromStartBearing = displacement1.CalculateBearing();
+                    HGF2DDisplacement displacement2(m_EndPoint.GetX() - m_StartPoint.GetX(), m_EndPoint.GetY() - m_StartPoint.GetY());
+                    HGFBearing   SegmentBearing = displacement2.CalculateBearing();
+
+                    ClosestPoint = ((FromStartBearing.IsEqualTo(SegmentBearing)) ? m_StartPoint : m_EndPoint);
+                    }
+                }
+            }
+        else
+            {
+            // Since the closest point on line is not located on segment, then the
+            // closest point is the closest of the start point or the end point.
+            ClosestPoint = ((FromStart < FromEnd) ? m_StartPoint : m_EndPoint);
+            }
+        }
+
+    return (ClosestPoint);
+    }
+
+
+//-----------------------------------------------------------------------------
+// IsPointOnLineOnSegmentSCS
+// Static method
+// Checks if the point is located on the segment knowing it is on the line
+//-----------------------------------------------------------------------------
+bool   HGF2DLiteSegment::IsPointOnLineOnSegment(const HGF2DPosition& pi_rTestPoint) const
+    {
+    double X = pi_rTestPoint.GetX();
+    double Y = pi_rTestPoint.GetY();
+
+    // Obtain extremes of segment
+    double XMin = MIN(m_StartPoint.GetX(), m_EndPoint.GetX());
+    double XMax = MAX(m_StartPoint.GetX(), m_EndPoint.GetX());
+    double YMin = MIN(m_StartPoint.GetY(), m_EndPoint.GetY());
+    double YMax = MAX(m_StartPoint.GetY(), m_EndPoint.GetY());
+
+    double Tolerance = GetTolerance();
+
+    // A point is on if it is within the extended extent.
+    return (HDOUBLE_GREATER_OR_EQUAL(X, XMin, Tolerance) &&
+            HDOUBLE_SMALLER_OR_EQUAL(X, XMax, Tolerance) &&
+            HDOUBLE_GREATER_OR_EQUAL(Y, YMin, Tolerance) &&
+            HDOUBLE_SMALLER_OR_EQUAL(Y, YMax, Tolerance));
+    }
+
+
+//-----------------------------------------------------------------------------
+// CalculateLength
+// Calculates and returns the length of segment
+//-----------------------------------------------------------------------------
+double HGF2DLiteSegment::CalculateLength() const
+    {
+    double DeltaX(m_EndPoint.GetX()-m_StartPoint.GetX());
+    double DeltaY(m_EndPoint.GetY()-m_StartPoint.GetY());
+
+    return sqrt((DeltaX * DeltaX) + (DeltaY * DeltaY));
+    }
+

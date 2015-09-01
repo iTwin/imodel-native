@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFUSgsNDFFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -18,6 +18,7 @@
 #include "HFCBinStream.h"
 #include "HCPGeoTiffKeys.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 typedef struct NDFWaveLengths
     {
     float m_Min;
@@ -228,7 +229,7 @@ public :
     int32_t                            GetGreenBand  ();
     int32_t                            GetBlueBand   ();
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFUSgsNDFCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFUSgsNDFCreator)
 
 private:
     int32_t                            m_RedBand;
@@ -246,7 +247,7 @@ class HRFUSgsNDFFile : public HRFRasterFile
     friend HRFUSgsNDFLineEditor;
 
 public:
-    HDECLARE_CLASS_ID(1416, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_USgsNDF, HRFRasterFile)
 
     HRFUSgsNDFFile        (const HFCPtr<HFCURL>& pi_rpURL,
                            int32_t                pi_RedBand,
@@ -272,7 +273,6 @@ public:
     virtual void                          SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                  uint32_t pi_Page = 0,
                                                                  bool   pi_CheckSpecificUnitSpec = false,
-                                                                 bool   pi_GeoModelDefaultUnit = true,
                                                                  bool   pi_InterpretUnitINTGR = false);
 
 protected:
@@ -311,3 +311,4 @@ private:
 
 
     };
+END_IMAGEPP_NAMESPACE

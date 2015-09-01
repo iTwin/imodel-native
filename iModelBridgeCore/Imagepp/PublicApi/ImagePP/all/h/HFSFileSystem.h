@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFSFileSystem.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Class : HFSFileSystem
@@ -12,6 +12,7 @@
 #include "HFCURL.h"
 #include "HFSItem.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author  Ghislain Tardif (${mailto:Ghislain.Tardif@Bentley.com})
@@ -26,10 +27,10 @@
 class HFSFileSystem : public HFCShareableObject<HFSFileSystem>
     {
 public:
-    HDECLARE_BASECLASS_ID(5012);
+    HDECLARE_BASECLASS_ID(HFSFileSystemId_Base);
 
     //:> Primary method
-    _HDLLu virtual                 ~HFSFileSystem();
+    IMAGEPP_EXPORT virtual                 ~HFSFileSystem();
 
     virtual HFCPtr<HFCURL>  GetCurrentURLPath() const = 0;
     virtual WString         GetCurrentPath() const = 0;
@@ -43,7 +44,7 @@ public:
 
 protected:
 
-    _HDLLu                         HFSFileSystem();
+    IMAGEPP_EXPORT                         HFSFileSystem();
 
 private:
 
@@ -51,3 +52,5 @@ private:
     HFSFileSystem(const HFSFileSystem&);
     HFSFileSystem& operator=(const HFSFileSystem&);
     };
+
+END_IMAGEPP_NAMESPACE

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DSimpleShape.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DSimpleShape
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DSimpleShape.h>
 #include <Imagepp/all/h/HGF2DComplexShape.h>
@@ -395,7 +395,7 @@ HGF2DShape* HGF2DSimpleShape::DifferentiateFromSimpleShape(const HGF2DSimpleShap
     // We separate the process depending on the fact that they cross or not
 
     // We first compare if their extent overlap
-    if (!GetExtent().InnerOverlaps(pi_rSimpleShape.GetExtent(), min(GetTolerance(), pi_rSimpleShape.GetTolerance())))
+    if (!GetExtent().InnerOverlaps(pi_rSimpleShape.GetExtent(), MIN(GetTolerance(), pi_rSimpleShape.GetTolerance())))
         {
         // The two simple shape cannot possibly intersect ... therefore, the difference is given
         pMyResultShape = static_cast<HGF2DShape*>(pi_rSimpleShape.Clone());
@@ -581,7 +581,7 @@ HGF2DShape* HGF2DSimpleShape::DifferentiateSimpleShape(const HGF2DSimpleShape& p
 
     // We separate the process depending on the fact that they cross or not
     // We compare if their extent overlap
-    if (!GetExtent().InnerOverlaps(pi_rSimpleShape.GetExtent(), min(GetTolerance(), pi_rSimpleShape.GetTolerance())))
+    if (!GetExtent().InnerOverlaps(pi_rSimpleShape.GetExtent(), MIN(GetTolerance(), pi_rSimpleShape.GetTolerance())))
         {
         // The two simple shape cannot possibly intersect ... therefore, the difference is self
         pMyResultShape = static_cast<HGF2DShape*>(Clone());
@@ -769,7 +769,7 @@ HGF2DShape* HGF2DSimpleShape::IntersectSimpleShape(const HGF2DSimpleShape& pi_rS
     // We separate the process depending on the fact that they cross or not
 
     // We first compare if their extent overlap
-    if (!GetExtent().InnerOverlaps(pi_rSimpleShape.GetExtent(), min(GetTolerance(), pi_rSimpleShape.GetTolerance())))
+    if (!GetExtent().InnerOverlaps(pi_rSimpleShape.GetExtent(), MIN(GetTolerance(), pi_rSimpleShape.GetTolerance())))
         {
         // The two simple shape cannot possibly intersect ... therefore, the intersection is empty
         pMyResultShape = new HGF2DVoidShape();
@@ -939,7 +939,7 @@ HGF2DShape* HGF2DSimpleShape::UnifySimpleShape(const HGF2DSimpleShape& pi_rSimpl
     // We separate the process depending on the fact that they cross or not
 
     // We first compare if their extent overlap
-    if (!GetExtent().OutterOverlaps(pi_rSimpleShape.GetExtent(), min(GetTolerance(),
+    if (!GetExtent().OutterOverlaps(pi_rSimpleShape.GetExtent(), MIN(GetTolerance(),
                                                                      pi_rSimpleShape.GetTolerance())) &&
         !(AreContiguous(pi_rSimpleShape)))
         {

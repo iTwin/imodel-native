@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAAveragingGrid.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,6 +11,7 @@
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HNOVTABLEINIT HRAAveragingGrid
     {
@@ -89,5 +90,6 @@ private:
     };
 
 
+END_IMAGEPP_NAMESPACE
 #include "HRAAveragingGrid.hpp"
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTilePool.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,6 +14,7 @@
 #include "HRFTile.h"
 #include <Imagepp/all/h/HFCExclusiveKey.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFTilePool : public HFCExclusiveKey
     {
 public:
@@ -82,6 +83,7 @@ private:
     // Map of tiles with the ID as key
     TileMap         m_TileMap;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRFTilePool.hpp"
 

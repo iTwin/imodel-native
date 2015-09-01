@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFLightnessColorSpace.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // L*u*v* ColorSpace converter class declaration.
@@ -11,6 +11,8 @@
 #pragma once
 
 #include "HGFBasicColorSpace.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HGFLightnessColorSpace : public HGFBasicColorSpace
     {
@@ -55,3 +57,4 @@ private:
     HGFLightnessColorSpace& operator=(const HGFLightnessColorSpace& pi_rSource);
     };
 
+END_IMAGEPP_NAMESPACE

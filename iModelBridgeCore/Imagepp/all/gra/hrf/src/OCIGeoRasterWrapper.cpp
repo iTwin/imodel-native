@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/OCIGeoRasterWrapper.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class OCIGeoRasterWrapper
 //-----------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
+#include <ImagePPInternal/hstdcpp.h>
+#include <ImagePP/all/h/HFCMacros.h>
 
 #include <oracle/oci.h>
 
@@ -198,23 +199,23 @@ public:
         //Bind variables
         OCIBind* bind_RASTERID;
         checkerr(&OraError, m_pError, OCIBindByName(stmtp,&bind_RASTERID,m_pError,
-            m_pRasterId.get(),m_pRasterIdBufLen,(void*)pRasterID,bufLen,SQLT_STR,0,0,0,0,0,OCI_DEFAULT));
+            m_pRasterId.get(),m_pRasterIdBufLen,pRasterID,bufLen,SQLT_STR,0,0,0,0,0,OCI_DEFAULT));
 
         OCIBind* bind_RESOLUTION;
         checkerr(&OraError, m_pError,OCIBindByName(stmtp,&bind_RESOLUTION,m_pError,
-            m_pRESOLUTION.get(),m_pRESOLUTIONBufLen,(void*)pi_Resolution,(sb4)sizeof(*pi_Resolution),SQLT_UIN,0,0,0,0,0,OCI_DEFAULT));
+            m_pRESOLUTION.get(),m_pRESOLUTIONBufLen,pi_Resolution,(sb4)sizeof(*pi_Resolution),SQLT_UIN,0,0,0,0,0,OCI_DEFAULT));
 
         OCIBind* bind_BAND;
         checkerr(&OraError,m_pError,OCIBindByName(stmtp,&bind_BAND,m_pError,
-            m_pBAND.get(),m_pBANDBufLen,(void*)pi_Band,(sb4)sizeof(*pi_Band),SQLT_UIN,0,0,0,0,0,OCI_DEFAULT));
+            m_pBAND.get(),m_pBANDBufLen,pi_Band,(sb4)sizeof(*pi_Band),SQLT_UIN,0,0,0,0,0,OCI_DEFAULT));
 
         OCIBind* bind_POSX;
         checkerr(&OraError, m_pError, OCIBindByName(stmtp,&bind_POSX,m_pError,
-            m_pPOSX.get(),m_pPOSXBufLen,(void*)pi_PosX,(sb4)sizeof(*pi_PosX),SQLT_UIN,0,0,0,0,0,OCI_DEFAULT));
+            m_pPOSX.get(),m_pPOSXBufLen,pi_PosX,(sb4)sizeof(*pi_PosX),SQLT_UIN,0,0,0,0,0,OCI_DEFAULT));
 
         OCIBind* bind_POSY;
         checkerr(&OraError, m_pError,OCIBindByName(stmtp,&bind_POSY,m_pError,
-            m_pPOSY.get(),m_pPOSYBufLen,(void*)pi_PosY,(sb4)sizeof(*pi_PosY),SQLT_UIN,0,0,0,0,0,OCI_DEFAULT));
+            m_pPOSY.get(),m_pPOSYBufLen,pi_PosY,(sb4)sizeof(*pi_PosY),SQLT_UIN,0,0,0,0,0,OCI_DEFAULT));
         }
 
 
@@ -223,11 +224,11 @@ private:
     OCIError*                           m_pError;
     OCISvcCtx*                          m_pSvcCtx;
 
-    auto_ptr<OraText>                   m_pRasterId;
-    auto_ptr<OraText>                   m_pRESOLUTION;
-    auto_ptr<OraText>                   m_pBAND;
-    auto_ptr<OraText>                   m_pPOSX;
-    auto_ptr<OraText>                   m_pPOSY;
+    unique_ptr<OraText>                   m_pRasterId;
+    unique_ptr<OraText>                   m_pRESOLUTION;
+    unique_ptr<OraText>                   m_pBAND;
+    unique_ptr<OraText>                   m_pPOSX;
+    unique_ptr<OraText>                   m_pPOSY;
     ub4                                 m_pRasterIdBufLen;
     ub4                                 m_pRESOLUTIONBufLen;
     ub4                                 m_pBANDBufLen;
@@ -266,17 +267,17 @@ bool OCIConnection::Connect(WStringCR                           pi_rUser,
     try
         {
         ub4               userBufLen;
-        auto_ptr<OraText> pUser (s_AllocOraTextP(pi_rUser,userBufLen));
+        unique_ptr<OraText> pUser (s_AllocOraTextP(pi_rUser,userBufLen));
         ub4               passwordBufLen;
-        auto_ptr<OraText> pPassword (s_AllocOraTextP(pi_rPassword,passwordBufLen));
+        unique_ptr<OraText> pPassword (s_AllocOraTextP(pi_rPassword,passwordBufLen));
         ub4               databaseBufLen;
-        auto_ptr<OraText> pDatabase (s_AllocOraTextP(pi_rDatabase,databaseBufLen));
+        unique_ptr<OraText> pDatabase (s_AllocOraTextP(pi_rDatabase,databaseBufLen));
         
         //Initilize the mode to be the threaded and object environment
         checkenv(po_pError,m_pEnv,OCIEnvNlsCreate(&m_pEnv,OCI_THREADED|OCI_OBJECT,NULL,NULL,NULL,NULL,(size_t)0,(void**)NULL,OCI_UTF16ID,OCI_UTF16ID));
 
         //allocation an error handle
-        checkerr(po_pError, GetOCIError(), OCIHandleAlloc((void*)m_pEnv, (void**)&m_pError, OCI_HTYPE_ERROR, 0, (void**)0));
+        checkerr(po_pError, GetOCIError(), OCIHandleAlloc(m_pEnv, (void**)&m_pError, OCI_HTYPE_ERROR, 0, (void**)0));
 
         //NOTICE: If an application uses this logon method, the service context, server, and user session handles will all be read-only;
         //the application cannot switch session or transaction by changing the appropriate attributes of the service context handle by means of an OCIAttrSet() call.
@@ -436,18 +437,18 @@ m_pConnection(OCIConnection::GetInstance()->GetConnection())
         Request += pi_rTableName + L" t where t." + pi_rColumnName + L".rasterid = " + pi_rImageID;
 
         ub4               requestBufLen;
-        auto_ptr<OraText> pRequest (s_AllocOraTextP(Request,requestBufLen));
+        unique_ptr<OraText> pRequest (s_AllocOraTextP(Request,requestBufLen));
 
         //Prepare the statement
         SDOGeoRasterWrapper::OracleError OraError;
         OCIStmt      *stmtp;
-        checkerr(&OraError, m_pConnection->GetOCIError(), OCIHandleAlloc((void*)m_pConnection->GetOCIEnv(), (void**)&stmtp, OCI_HTYPE_STMT, 0, (void**)0));
+        checkerr(&OraError, m_pConnection->GetOCIError(), OCIHandleAlloc(m_pConnection->GetOCIEnv(), (void**)&stmtp, OCI_HTYPE_STMT, 0, (void**)0));
         checkerr(&OraError, m_pConnection->GetOCIError(), OCIStmtPrepare(stmtp,m_pConnection->GetOCIError(),pRequest.get(),requestBufLen,OCI_NTV_SYNTAX,OCI_DEFAULT));
 
         //Execute statement
         checkerr(&OraError, m_pConnection->GetOCIError(),OCIStmtExecute (m_pConnection->GetOCISvcCtx(), stmtp, m_pConnection->GetOCIError(), 0, 0, (OCISnapshot *)0, (OCISnapshot *)0, OCI_DEFAULT));
 
-        auto_ptr<OraText> pRasterDataTable;
+        unique_ptr<OraText> pRasterDataTable;
 
         // Request a parameter descriptor for position 1 in the select-list 
         OCIParam     *mypard = (OCIParam *) 0;
@@ -459,35 +460,35 @@ m_pConnection(OCIConnection::GetInstance()->GetConnection())
 #if 0
             /* Retrieve the datatype attribute */
             ub2          dtype;
-            checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet((void*) mypard, (ub4) OCI_DTYPE_PARAM, (void*) &dtype,(ub4 *) 0, (ub4) OCI_ATTR_DATA_TYPE, m_pConnection->GetOCIError()));
+            checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet( mypard, (ub4) OCI_DTYPE_PARAM,  &dtype,(ub4 *) 0, (ub4) OCI_ATTR_DATA_TYPE, m_pConnection->GetOCIError()));
 
             /* Retrieve the column name attribute */
             ub4     col_name_len = 0;
             OraText* col_name;
-            checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet((void*) mypard, (ub4) OCI_DTYPE_PARAM, (void**) &col_name, (ub4 *) &col_name_len, (ub4) OCI_ATTR_NAME, m_pConnection->GetOCIError()));
+            checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet( mypard, (ub4) OCI_DTYPE_PARAM, (void**) &col_name, (ub4 *) &col_name_len, (ub4) OCI_ATTR_NAME, m_pConnection->GetOCIError()));
 #endif
             /* Retrieve the length semantics for the column */
             ub4 char_semantics = 0;
-            checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet((void*) mypard, (ub4) OCI_DTYPE_PARAM, (void*) &char_semantics,(ub4 *) 0, (ub4) OCI_ATTR_CHAR_USED, m_pConnection->GetOCIError()));
+            checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet( mypard, (ub4) OCI_DTYPE_PARAM,  &char_semantics,(ub4 *) 0, (ub4) OCI_ATTR_CHAR_USED, m_pConnection->GetOCIError()));
             ub2 col_width = 0;
             ub4 sizelen=0;
             if (char_semantics)
                 /* Retrieve the column width in characters */
-                checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet((void*) mypard, (ub4) OCI_DTYPE_PARAM,(void*) &col_width, &sizelen, (ub4) OCI_ATTR_CHAR_SIZE, m_pConnection->GetOCIError()));
+                checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet( mypard, (ub4) OCI_DTYPE_PARAM, &col_width, &sizelen, (ub4) OCI_ATTR_CHAR_SIZE, m_pConnection->GetOCIError()));
             else
                 /* Retrieve the column width in bytes */
-                checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet((void*) mypard, (ub4) OCI_DTYPE_PARAM,(void*) &col_width, &sizelen, (ub4) OCI_ATTR_DATA_SIZE,m_pConnection->GetOCIError()));
+                checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet( mypard, (ub4) OCI_DTYPE_PARAM, &col_width, &sizelen, (ub4) OCI_ATTR_DATA_SIZE,m_pConnection->GetOCIError()));
 
             //define placeholder
             OCIDefine    *defn1p=NULL;
-            pRasterDataTable = auto_ptr<OraText>(s_AllocOraTextP(col_width));
+            pRasterDataTable = unique_ptr<OraText>(s_AllocOraTextP(col_width));
             checkerr(&OraError, m_pConnection->GetOCIError(),OCIDefineByPos(stmtp,&defn1p,m_pConnection->GetOCIError(),1,pRasterDataTable.get(),col_width+1,SQLT_STR,0,0,0,OCI_DEFAULT));
             }
 
         //Define CLOB to read using locator
         OCILobLocator    *lob_loc=NULL;
         OCIDefine    *defn2p=NULL;
-        checkerr(&OraError, m_pConnection->GetOCIError(), OCIDescriptorAlloc((void*)m_pConnection->GetOCIEnv(), (void **)&lob_loc,  (ub4)OCI_DTYPE_LOB, (size_t)0, (void**)0));
+        checkerr(&OraError, m_pConnection->GetOCIError(), OCIDescriptorAlloc(m_pConnection->GetOCIEnv(), (void **)&lob_loc,  (ub4)OCI_DTYPE_LOB, (size_t)0, (void**)0));
         checkerr(&OraError, m_pConnection->GetOCIError(), OCIDefineByPos(stmtp,&defn2p,m_pConnection->GetOCIError(),2,(void *) &lob_loc, (sb4)0 ,SQLT_CLOB,0,0,0,OCI_DEFAULT));
 
         //Fetch and process data
@@ -502,9 +503,9 @@ m_pConnection(OCIConnection::GetInstance()->GetConnection())
         ub4 loblen = 0;
         checkerr(&OraError, m_pConnection->GetOCIError(),OCILobGetLength(m_pConnection->GetOCISvcCtx(), m_pConnection->GetOCIError(), lob_loc, &loblen));
         ub4               amtByteInLob = (loblen+1) * sizeof(Utf16Char);
-        auto_ptr<OraText> pXMLHeader;
+        unique_ptr<OraText> pXMLHeader;
 
-        pXMLHeader = auto_ptr<OraText>(s_AllocOraTextP(loblen));
+        pXMLHeader = unique_ptr<OraText>(s_AllocOraTextP(loblen));
         memset(pXMLHeader.get(),0,amtByteInLob);
         oraub8 byte_amt(amtByteInLob);
         oraub8 char_amt(loblen+1);
@@ -548,17 +549,17 @@ void OCIGeoRasterWrapper::GetBlock(unsigned short pi_Resolution,
     SDOGeoRasterWrapper::OracleError OraError;
     OCIStmt      *stmtp;
     ub4 KeyBufLen;
-    auto_ptr<OraText> pKey (s_AllocOraTextP(L"GetBlock",KeyBufLen));
+    unique_ptr<OraText> pKey (s_AllocOraTextP(L"GetBlock",KeyBufLen));
 
     ub4               requestBufLen;
-    auto_ptr<OraText> pRequest (s_AllocOraTextP(m_getBlockRequest,requestBufLen));
+    unique_ptr<OraText> pRequest (s_AllocOraTextP(m_getBlockRequest,requestBufLen));
 
     //Prepare the statement
     checkerr(&OraError, m_pConnection->GetOCIError(), OCIStmtPrepare2(m_pConnection->GetOCISvcCtx(), &stmtp, m_pConnection->GetOCIError(),pRequest.get(),requestBufLen,pKey.get(),KeyBufLen,OCI_NTV_SYNTAX,OCI_DEFAULT));
 
     //Bind variables
     ub4 bufLen;
-    auto_ptr<OraText> pRasterIdValue (s_AllocOraTextP(m_RasterID,bufLen));
+    unique_ptr<OraText> pRasterIdValue (s_AllocOraTextP(m_RasterID,bufLen));
     bufLen += sizeof(Utf16Char);//Must add 1 more character for the NULL terminated character.
 
     m_pConnection->BindGetBlockVariables(stmtp,pRasterIdValue.get(),bufLen,&pi_Resolution,&pi_Band,&pi_PosX,&pi_PosY);
@@ -595,17 +596,17 @@ void OCIGeoRasterWrapper::GetBlock(unsigned short pi_Resolution,
     SDOGeoRasterWrapper::OracleError OraError;
     OCIStmt      *stmtp;
     ub4 KeyBufLen;
-    auto_ptr<OraText> pKey (s_AllocOraTextP(L"GetBlock",KeyBufLen));
+    unique_ptr<OraText> pKey (s_AllocOraTextP(L"GetBlock",KeyBufLen));
 
     ub4               requestBufLen;
-    auto_ptr<OraText> pRequest (s_AllocOraTextP(m_getBlockRequest,requestBufLen));
+    unique_ptr<OraText> pRequest (s_AllocOraTextP(m_getBlockRequest,requestBufLen));
 
     //Prepare the statement
     checkerr(&OraError, m_pConnection->GetOCIError(), OCIStmtPrepare2(m_pConnection->GetOCISvcCtx(), &stmtp, m_pConnection->GetOCIError(),pRequest.get(),requestBufLen,pKey.get(),KeyBufLen,OCI_NTV_SYNTAX,OCI_DEFAULT));
 
     //Bind variables
     ub4 bufLen;
-    auto_ptr<OraText> pRasterIdValue (s_AllocOraTextP(m_RasterID,bufLen));
+    unique_ptr<OraText> pRasterIdValue (s_AllocOraTextP(m_RasterID,bufLen));
     bufLen += sizeof(Utf16Char);//Must add 1 more character for the NULL terminated character.
 
     m_pConnection->BindGetBlockVariables(stmtp,pRasterIdValue.get(),bufLen,&pi_Resolution,&pi_Band,&pi_PosX,&pi_PosY);
@@ -616,7 +617,7 @@ void OCIGeoRasterWrapper::GetBlock(unsigned short pi_Resolution,
     //Define BLOB to read using locator
     OCILobLocator    *lob_loc=NULL;
     OCIDefine    *defn1p=NULL;
-    checkerr(&OraError, m_pConnection->GetOCIError(), OCIDescriptorAlloc((void*)m_pConnection->GetOCIEnv(), (void **)&lob_loc,  (ub4)OCI_DTYPE_LOB, (size_t)0, (void**)0));
+    checkerr(&OraError, m_pConnection->GetOCIError(), OCIDescriptorAlloc(m_pConnection->GetOCIEnv(), (void **)&lob_loc,  (ub4)OCI_DTYPE_LOB, (size_t)0, (void**)0));
     checkerr(&OraError, m_pConnection->GetOCIError(), OCIDefineByPos(stmtp,&defn1p,m_pConnection->GetOCIError(),1,(void *) &lob_loc, (sb4)0 ,SQLT_BLOB,0,0,0,OCI_DEFAULT));
 
     //Fetch and process data
@@ -670,18 +671,18 @@ bool OCIGeoRasterWrapper::GetWkt(uint32_t pi_SRID, WStringR po_rWKT)
     Request << "SELECT WKTEXT FROM MDSYS.CS_SRS WHERE SRID=" << pi_SRID;
 
     ub4               requestBufLen;
-    auto_ptr<OraText> pRequest (s_AllocOraTextP(Request.str().c_str(),requestBufLen));
+    unique_ptr<OraText> pRequest (s_AllocOraTextP(Request.str().c_str(),requestBufLen));
 
     //Prepare the statement
     SDOGeoRasterWrapper::OracleError OraError;
     OCIStmt      *stmtp;
-    checkerr(&OraError, m_pConnection->GetOCIError(),OCIHandleAlloc((void*)m_pConnection->GetOCIEnv(), (void**)&stmtp, OCI_HTYPE_STMT, 0, (void**)0));
+    checkerr(&OraError, m_pConnection->GetOCIError(),OCIHandleAlloc(m_pConnection->GetOCIEnv(), (void**)&stmtp, OCI_HTYPE_STMT, 0, (void**)0));
     checkerr(&OraError, m_pConnection->GetOCIError(), OCIStmtPrepare(stmtp,m_pConnection->GetOCIError(),pRequest.get(),requestBufLen,OCI_NTV_SYNTAX,OCI_DEFAULT));
 
     //Execute statement
     checkerr(&OraError, m_pConnection->GetOCIError(),OCIStmtExecute (m_pConnection->GetOCISvcCtx(), stmtp, m_pConnection->GetOCIError(), 0, 0, (OCISnapshot *)0, (OCISnapshot *)0, OCI_DEFAULT));
 
-    auto_ptr<OraText> pRasterDataTable;
+    unique_ptr<OraText> pRasterDataTable;
 
     // Request a parameter descriptor for position 1 in the select-list 
     OCIParam     *mypard = (OCIParam *) 0;
@@ -693,28 +694,28 @@ bool OCIGeoRasterWrapper::GetWkt(uint32_t pi_SRID, WStringR po_rWKT)
 #if 0
         /* Retrieve the datatype attribute */
         ub2          dtype;
-        checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet((void*) mypard, (ub4) OCI_DTYPE_PARAM, (void*) &dtype,(ub4 *) 0, (ub4) OCI_ATTR_DATA_TYPE, m_pConnection->GetOCIError()));
+        checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet( mypard, (ub4) OCI_DTYPE_PARAM,  &dtype,(ub4 *) 0, (ub4) OCI_ATTR_DATA_TYPE, m_pConnection->GetOCIError()));
 
         /* Retrieve the column name attribute */
         ub4     col_name_len = 0;
         OraText* col_name;
-        checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet((void*) mypard, (ub4) OCI_DTYPE_PARAM, (void**) &col_name, (ub4 *) &col_name_len, (ub4) OCI_ATTR_NAME, m_pConnection->GetOCIError()));
+        checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet( mypard, (ub4) OCI_DTYPE_PARAM, (void**) &col_name, (ub4 *) &col_name_len, (ub4) OCI_ATTR_NAME, m_pConnection->GetOCIError()));
 #endif
         /* Retrieve the length semantics for the column */
         ub4 char_semantics = 0;
-        checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet((void*) mypard, (ub4) OCI_DTYPE_PARAM, (void*) &char_semantics,(ub4 *) 0, (ub4) OCI_ATTR_CHAR_USED, m_pConnection->GetOCIError()));
+        checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet( mypard, (ub4) OCI_DTYPE_PARAM,  &char_semantics,(ub4 *) 0, (ub4) OCI_ATTR_CHAR_USED, m_pConnection->GetOCIError()));
         ub2 col_width = 0;
         ub4 sizelen=0;
         if (char_semantics)
             /* Retrieve the column width in characters */
-            checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet((void*) mypard, (ub4) OCI_DTYPE_PARAM,(void*) &col_width, &sizelen, (ub4) OCI_ATTR_CHAR_SIZE, m_pConnection->GetOCIError()));
+            checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet( mypard, (ub4) OCI_DTYPE_PARAM, &col_width, &sizelen, (ub4) OCI_ATTR_CHAR_SIZE, m_pConnection->GetOCIError()));
         else
             /* Retrieve the column width in bytes */
-            checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet((void*) mypard, (ub4) OCI_DTYPE_PARAM,(void*) &col_width, &sizelen, (ub4) OCI_ATTR_DATA_SIZE,m_pConnection->GetOCIError()));
+            checkerr(&OraError, m_pConnection->GetOCIError(), OCIAttrGet( mypard, (ub4) OCI_DTYPE_PARAM, &col_width, &sizelen, (ub4) OCI_ATTR_DATA_SIZE,m_pConnection->GetOCIError()));
 
         //define placeholder
         OCIDefine    *defn1p=NULL;
-        pRasterDataTable = auto_ptr<OraText>(s_AllocOraTextP(col_width));
+        pRasterDataTable = unique_ptr<OraText>(s_AllocOraTextP(col_width));
         checkerr(&OraError, m_pConnection->GetOCIError(),OCIDefineByPos(stmtp,&defn1p,m_pConnection->GetOCIError(),1,pRasterDataTable.get(),col_width+1,SQLT_STR,0,0,0,OCI_DEFAULT));
         }
 

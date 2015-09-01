@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTiffIntgrFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTiffIntgrFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <ImagePP/all/h/ImageppLib.h>
 
@@ -51,10 +51,9 @@
 #include <Imagepp/all/h/HCDCodecZlib.h>
 #include <Imagepp/all/h/HCDCodecIJG.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 //-----------------------------------------------------------------------------
 // HRFTiffCodec1BitCapabilities
@@ -77,6 +76,10 @@ public:
         // Codec HMR PackBits
         Add(new HRFCodecCapability(HFC_READ_WRITE,
                                    HCDCodecHMRPackBits::CLASS_ID,
+                                   new HRFTiffBlockCapabilities()));
+        // Codec LZW
+        Add(new HRFCodecCapability(HFC_READ_WRITE,
+                                   HCDCodecLZW::CLASS_ID,
                                    new HRFTiffBlockCapabilities()));
         }
     };
@@ -364,8 +367,7 @@ HRFTiffIntgrCreator::HRFTiffIntgrCreator()
 // Identification information
 WString HRFTiffIntgrCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_IngrTiff); // Ingr. Tiff
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_IngrTiff()); // Ingr. Tiff
     }
 
 // Identification information
@@ -413,7 +415,7 @@ bool HRFTiffIntgrCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     (const_cast<HRFTiffIntgrCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    pTiff = new HTIFFFile (CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pTiff = new HTIFFFile (pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
     if ((pTiff->IsValid(&pErr) || ((pErr != 0) && !pErr->IsFatal())) && (pTiff->IsTiff64() == false))
         {
         // the tiff was opened successfully, verify if it is
@@ -438,7 +440,7 @@ bool HRFTiffIntgrCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             //the GeoTIFF tags. have priority over the TIFF Intergraph tags.
             if ((!pTiff->GetField(INTERGRAPH_MATRIX, &Count, &pMat4by4) &&
                  !pTiff->GetField(INTERGRAPH_RAGBAG, &Count, &pTagRagBag)) ||
-                ((ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._IsIgnoreGeotiffIntergraphTags() == true) &&
+                ((ImageppLib::GetHost().GetImageppLibAdmin()._IsIgnoreGeotiffIntergraphTags() == true) &&
                  (pTiff->GetField(GEOTRANSMATRIX, &Count, &pMat4by4) ||
                   pTiff->GetField(GEOTIEPOINTS, &Count, &pMat4by4)   ||
                   pTiff->GetField(GEOPIXELSCALE, &Count, &pMat4by4)  ||

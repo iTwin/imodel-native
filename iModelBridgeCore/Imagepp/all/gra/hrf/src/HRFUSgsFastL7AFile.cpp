@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUSgsFastL7AFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCStat.h>
 #include <Imagepp/all/h/HTIFFFile.h>
@@ -30,7 +30,6 @@
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
@@ -38,7 +37,7 @@
 
 #include <BeXml/BeXml.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 //-----------------------------------------------------------------------------
 // HRFUSgsFastL7ABlockCapabilities
@@ -135,8 +134,7 @@ HRFUSgsFastL7ACreator::HRFUSgsFastL7ACreator()
 //-----------------------------------------------------------------------------
 WString HRFUSgsFastL7ACreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_USGS_FastL7A);  // USGS FastL7A File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_USGS_FastL7A());  // USGS FastL7A File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -173,7 +171,7 @@ HRFUSgsFastL7AFile::HRFUSgsFastL7AFile(const HFCPtr<HFCURL>& pi_rURL,
     m_ImgBlueBand  = 2;
 
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
 
     Open();
     CreateDescriptors();
@@ -198,7 +196,6 @@ const HGF2DWorldIdentificator HRFUSgsFastL7AFile::GetWorldIdentificator () const
 void HRFUSgsFastL7AFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                        uint32_t pi_Page,
                                                        bool   pi_CheckSpecificUnitSpec,
-                                                       bool   pi_GeoModelDefaultUnit,
                                                        bool   pi_InterpretUnitINTGR)
     {
     //The following key and its value is always added to the page descriptor :
@@ -276,7 +273,9 @@ bool HRFUSgsFastL7ACreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                           uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
+
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
 
     bool   Result = false;
 
@@ -360,9 +359,9 @@ bool HRFUSgsFastL7ACreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         char buffer[8+1];
 
         // Open the FastL7A Header File and place file pointer at the start of the file
-        pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+        pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-        if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+        if (pFile == 0 || pFile->GetLastException() != 0)
             goto WRAPUP;
 
         if (pFile->Read(&buffer,8) != 8)
@@ -477,7 +476,7 @@ bool HRFUSgsFastL7AFile::Open()
             BeXmlStatus xmlStatus;
             BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, USGSFileName.c_str());
             if (pXmlDom.IsNull() || (BEXML_Success != xmlStatus))
-                throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, rpURL->GetURL());
+                throw HFCFileNotSupportedException(rpURL->GetURL());
     
             // Read data in USGS file (strings)
             BeXmlNodeP pHeaderNode       = pXmlDom->GetRootElement()->SelectSingleNode("HEADER");
@@ -486,7 +485,7 @@ bool HRFUSgsFastL7AFile::Open()
             BeXmlNodeP pBlueChannelNode  = pXmlDom->GetRootElement()->SelectSingleNode("CHANNELS/BLUE");
 
             if(NULL == pHeaderNode || NULL == pRedChannelNode || NULL == pGreenChannelNode || NULL == pBlueChannelNode)
-                throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, rpURL->GetURL());
+                throw HFCFileNotSupportedException(rpURL->GetURL());
 
             
             pHeaderNode->GetContent(HeaderFileNameStr);
@@ -495,8 +494,7 @@ bool HRFUSgsFastL7AFile::Open()
             pBlueChannelNode->GetContent(BlueFileNameStr);
 
             if (!(pHeaderFileURL = ComposeChannelURL(rpURL, HeaderFileNameStr)))
-                throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                            GetURL()->GetURL(),
+                throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                             HeaderFileNameStr);
 
             IsUSGSFile = true;
@@ -505,9 +503,7 @@ bool HRFUSgsFastL7AFile::Open()
             pHeaderFileURL = GetURL();
 
         HAutoPtr<HFCBinStream> pHeaderFile;
-        pHeaderFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pHeaderFileURL, m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(pHeaderFile, pHeaderFileURL->GetURL());
+        pHeaderFile = HFCBinStream::Instanciate(pHeaderFileURL, m_Offset, GetAccessMode(), 0, true);
 
         // Read header file
         if(GetHeaderFile(*pHeaderFile))
@@ -516,18 +512,15 @@ bool HRFUSgsFastL7AFile::Open()
                 {
                 // Get red band number
                 if (!GetBandNumber(m_ImgRedBand, RedFileNameStr))
-                    throw HRFFileParameterException(HRF_USGS_BAND_NOT_FOUND_IN_HEADER_FILE_EXCEPTION,
-                                                    GetURL()->GetURL(),
+                    throw HRFUSGSBandNotFoundInHeaderFileException(GetURL()->GetURL(),
                                                     L"RED");
                 // Get green band number
                 if (!GetBandNumber(m_ImgGreenBand, GreenFileNameStr))
-                    throw HRFFileParameterException(HRF_USGS_BAND_NOT_FOUND_IN_HEADER_FILE_EXCEPTION,
-                                                    GetURL()->GetURL(),
+                    throw HRFUSGSBandNotFoundInHeaderFileException(GetURL()->GetURL(),
                                                     L"GREEN");
                 // Get blue band number
                 if (!GetBandNumber(m_ImgBlueBand, BlueFileNameStr))
-                    throw HRFFileParameterException(HRF_USGS_BAND_NOT_FOUND_IN_HEADER_FILE_EXCEPTION,
-                                                    GetURL()->GetURL(),
+                    throw HRFUSGSBandNotFoundInHeaderFileException(GetURL()->GetURL(),
                                                     L"BLUE");
                 }
 
@@ -535,14 +528,11 @@ bool HRFUSgsFastL7AFile::Open()
 
 
             if (!(pRedFileURL = ComposeChannelURL(rpURL, RedFileNameStr)))
-                throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                            GetURL()->GetURL(),
+                throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                             RedFileNameStr);
 
             // Open files read-only
-            m_pRedFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pRedFileURL, m_Offset), GetAccessMode());
-
-            ThrowFileExceptionIfError(m_pRedFile, pRedFileURL->GetURL());
+            m_pRedFile = HFCBinStream::Instanciate(pRedFileURL, m_Offset, GetAccessMode(), 0, true);
 
             if (m_HeaderInfo.m_NumberOfBands > 2)
                 {
@@ -550,26 +540,23 @@ bool HRFUSgsFastL7AFile::Open()
                 BeStringUtilities::CurrentLocaleCharToWChar( BlueFileNameStr, m_HeaderInfo.m_Bands[m_ImgBlueBand].m_FileName);
 
                 if (!(pGreenFileURL = ComposeChannelURL(rpURL, GreenFileNameStr)))
-                    throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                                GetURL()->GetURL(),
+                    throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                                 GreenFileNameStr);
                 if (!(pBlueFileURL = ComposeChannelURL(rpURL, BlueFileNameStr)))
-                    throw HRFChildFileException(HRF_INVALID_CHILD_FILE_URL_EXCEPTION,
-                                                GetURL()->GetURL(),
+                    throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                                 BlueFileNameStr);
 
                 // Open files read-only
-                m_pGreenFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pGreenFileURL, m_Offset), GetAccessMode());
-                ThrowFileExceptionIfError(m_pGreenFile, pGreenFileURL->GetURL());
-                m_pBlueFile  = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pBlueFileURL, m_Offset), GetAccessMode());
-                ThrowFileExceptionIfError(m_pBlueFile, pBlueFileURL->GetURL());
+                m_pGreenFile = HFCBinStream::Instanciate(pGreenFileURL, m_Offset, GetAccessMode(), 0, true);
+                
+                m_pBlueFile  = HFCBinStream::Instanciate(pBlueFileURL, m_Offset, GetAccessMode(), 0, true);
                 }
 
             m_IsOpen = true;
 
             }
         else
-            throw(HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, rpURL->GetURL()));
+            throw(HFCFileNotSupportedException(rpURL->GetURL()));
 
         // Unlock the sister file
         SisterFileLock.ReleaseKey();
@@ -673,8 +660,6 @@ void HRFUSgsFastL7AFile::CreateDescriptors()
     // GeoRef Tag
     GetGeoKeyTag(pGeoTiffKeys);
 
-    IRasterBaseGcsPtr pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, *pGeoTiffKeys);
-
     // TranfoModel
     pTransfoModel = CreateTransfoModelFromFastL7A();
 
@@ -688,16 +673,8 @@ void HRFUSgsFastL7AFile::CreateDescriptors()
                                    pTransfoModel,        // TransfoModel,
                                    0);                   // Filters
 
-    HFCPtr<HMDMetaDataContainerList> pMetaDataContainers;
 
-    pMetaDataContainers = new HMDMetaDataContainerList();
-
-    //HMD_GEOCODING_INFO
-    pMetaDataContainers->SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>(pGeoTiffKeys));
-
-    pPage->SetListOfMetaDataContainer(pMetaDataContainers);
-
-    pPage->SetGeocoding(pBaseGCS);
+    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys));
 
     m_ListOfPageDescriptor.push_back(pPage);
     }
@@ -718,7 +695,7 @@ bool HRFUSgsFastL7AFile::GetHeaderFile(HFCBinStream& pi_rHeaderFile)
     char Blank[1000];
     int32_t i;
 
-    memset(&m_HeaderInfo, NULL, sizeof m_HeaderInfo);
+    memset(&m_HeaderInfo, 0, sizeof m_HeaderInfo);
 
     m_HeaderInfo.m_NumberOfBands = 0;
 

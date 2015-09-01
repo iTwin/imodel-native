@@ -2,10 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DComplexShape.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Default constructor for a complex shape. This constructor creates an empty
     complex shape that does not contain any components. The interpretation
@@ -109,10 +110,10 @@ inline HGF2DComplexShape::~HGF2DComplexShape()
 inline void HGF2DComplexShape::AddShape(const HGF2DShape& pi_rShape)
     {
     // The given shape must be out of current area defined
-    HPRECONDITION(CalculateSpatialPositionOf(pi_rShape) == HGF2DShape::S_OUT);
+    HPRECONDITION(m_ShapeList.size() == 0 || CalculateSpatialPositionOf(pi_rShape) == HGF2DShape::S_OUT);
 
     // The given shape must not be contiguous to shape
-    HPRECONDITION(!AreContiguous(pi_rShape));
+    HPRECONDITION(m_ShapeList.size() == 0 || !AreContiguous(pi_rShape));
 
     // We add shape expressed in self coordinate system
     HGF2DShape* pNewShape = static_cast<HGF2DShape*>(pi_rShape.Clone());
@@ -221,7 +222,7 @@ inline HGF2DShapeTypeId HGF2DComplexShape::GetShapeType() const
     }
 
 
-
+END_IMAGEPP_NAMESPACE
 
 
 

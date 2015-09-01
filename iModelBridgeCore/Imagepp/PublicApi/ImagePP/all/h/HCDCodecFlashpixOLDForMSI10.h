@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecFlashpixOLDForMSI10.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecFlashpix
@@ -13,11 +13,13 @@
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecIJG;
 
 class HCDCodecFlashpixOLDForMSI10 : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1299, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_FlashpixOLDForMSI10, HCDCodecImage)
 
 public:
 
@@ -34,12 +36,12 @@ public:
 
 
     // primary methods
-    _HDLLu                 HCDCodecFlashpixOLDForMSI10();
-    _HDLLu                 HCDCodecFlashpixOLDForMSI10(   size_t      pi_Width,
+    IMAGEPP_EXPORT                 HCDCodecFlashpixOLDForMSI10();
+    IMAGEPP_EXPORT                 HCDCodecFlashpixOLDForMSI10(   size_t      pi_Width,
                                                           size_t      pi_Height,
                                                           ColorModes  pi_Mode);
-    _HDLLu                 HCDCodecFlashpixOLDForMSI10(const HCDCodecFlashpixOLDForMSI10& pi_rObj);
-    _HDLLu virtual         ~HCDCodecFlashpixOLDForMSI10();
+    IMAGEPP_EXPORT                 HCDCodecFlashpixOLDForMSI10(const HCDCodecFlashpixOLDForMSI10& pi_rObj);
+    IMAGEPP_EXPORT virtual         ~HCDCodecFlashpixOLDForMSI10();
 
     // overriden methods
     virtual HCDCodec* Clone() const override;
@@ -60,14 +62,14 @@ public:
     // added methods
     void            SetQuality(Byte pi_Quality);
     Byte          GetQuality() const;
-    _HDLLu void            SetTable(uint32_t pi_Table,
+    IMAGEPP_EXPORT void            SetTable(uint32_t pi_Table,
                                     Byte* pi_pTable,
                                     uint32_t pi_TableSize);
-    _HDLLu void            EnableInterleave(bool pi_Enable);
+    IMAGEPP_EXPORT void            EnableInterleave(bool pi_Enable);
     bool           IsInterleaveEnabled() const;
-    _HDLLu void            SetSubSampling(Byte pi_SubSampling);
+    IMAGEPP_EXPORT void            SetSubSampling(Byte pi_SubSampling);
     Byte           GetSubSampling() const;
-    _HDLLu void            EnableColorConversion(bool pi_Enable);
+    IMAGEPP_EXPORT void            EnableColorConversion(bool pi_Enable);
     bool           IsColorConversionEnabled() const;
     ColorModes      GetColorMode() const;
     void            SetColorMode(ColorModes pi_Mode);
@@ -75,7 +77,7 @@ public:
     uint32_t        GetTableCount() const;
     const Byte*    GetTable(uint32_t pi_Index);
     uint32_t        GetTableSize(uint32_t pi_Index);
-    _HDLLu void            SetCurrentTable(uint32_t pi_Index);
+    IMAGEPP_EXPORT void            SetCurrentTable(uint32_t pi_Index);
     uint32_t        GetCurrentTable() const;
     void            UpdateDefaultTable();
 
@@ -110,3 +112,4 @@ private:
                                 size_t pi_Height);
     };
 
+END_IMAGEPP_NAMESPACE

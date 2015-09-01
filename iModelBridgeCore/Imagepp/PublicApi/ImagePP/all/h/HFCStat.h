@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCStat.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCStat
@@ -12,6 +12,7 @@
 #include "HFCPtr.h"
 #include "HFCURL.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HFCStatImpl;
 
 class HFCStat
@@ -20,6 +21,12 @@ class HFCStat
     friend struct HFCStatImplListDestroyer;
 
 public:
+//DM-Android    Not able to build if private member
+    // static list of implementation objects
+    typedef list<const HFCStatImpl*>    ImplList;       // From private
+    static ImplList*        s_pImplList;                // From private
+
+
     enum AccessStatus
         {
         AccessGranted = 0,
@@ -32,9 +39,9 @@ public:
     // Construction / Destruction
     //--------------------------------------
 
-    _HDLLu                         HFCStat(const HFCURL&         pi_rURL);
-    _HDLLu                         HFCStat(const HFCPtr<HFCURL>& pi_rpURL);
-    _HDLLu virtual                 ~HFCStat();
+    IMAGEPP_EXPORT                         HFCStat(const HFCURL&         pi_rURL);
+    IMAGEPP_EXPORT                         HFCStat(const HFCPtr<HFCURL>& pi_rpURL);
+    IMAGEPP_EXPORT virtual                 ~HFCStat();
 
 
     //--------------------------------------
@@ -77,10 +84,6 @@ private:
     HFCPtr<HFCURL>          m_pURL;
     const HFCStatImpl*      m_pImpl;
 
-    // static list of implementation objects
-    typedef list<const HFCStatImpl*>
-    ImplList;
-    static ImplList*        s_pImplList;
     };
 
 //--------------------------------------
@@ -94,8 +97,8 @@ public:
     // Construction / Destruction
     //--------------------------------------
 
-    _HDLLu                     HFCStatImpl();
-    _HDLLu virtual             ~HFCStatImpl();
+    IMAGEPP_EXPORT                     HFCStatImpl();
+    IMAGEPP_EXPORT virtual             ~HFCStatImpl();
 
 
     //--------------------------------------
@@ -131,9 +134,46 @@ protected:
     // Methods
     //--------------------------------------
 
-    _HDLLu void                    RegisterImpl(const HFCStatImpl* pi_pImpl) const;
+    IMAGEPP_EXPORT void                    RegisterImpl(const HFCStatImpl* pi_pImpl) const;
+    IMAGEPP_EXPORT void                    UnregisterImpl(const HFCStatImpl* pi_pImpl) const;
     };
 
+//------------------------------------------------------------------------------
+// HFCStatFile 
+//------------------------------------------------------------------------------
+class HFCStatFile
+    {
+    public:
+        IMAGEPP_EXPORT static void Register();
+    };
+//------------------------------------------------------------------------------
+// HFCStatMemFile 
+//------------------------------------------------------------------------------
+class HFCStatMemFile
+    {
+    public:
+        IMAGEPP_EXPORT static void Register();
+    };
+//------------------------------------------------------------------------------
+// HFCStatEmbedFile 
+//------------------------------------------------------------------------------
+class HFCStatEmbedFile
+    {
+    public:
+        IMAGEPP_EXPORT static void Register();
+    };
+
+
+//------------------------------------------------------------------------------
+// HFCStatHttpFile 
+//------------------------------------------------------------------------------
+class HFCStatHttpFile
+    {
+    public:
+        IMAGEPP_EXPORT static void Register();
+    };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCStat.hpp"
 

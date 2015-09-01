@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMColorBalancedImageIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HIMColorBalancedImageIterator.h>
 #include <Imagepp/all/h/HIMColorBalancedImage.h>
@@ -286,12 +286,12 @@ HFCPtr<HRARaster> HIMColorBalancedImageIterator::BalanceRaster(
 
                 SrcDisplacementX = X;
                 SrcDisplacementY = Y;
-                SrcDisplacementX = max(SrcDisplacementX, 0);
-                SrcDisplacementY = max(SrcDisplacementY, 0);
+                SrcDisplacementX = MAX(SrcDisplacementX, 0);
+                SrcDisplacementY = MAX(SrcDisplacementY, 0);
 
                 // Don't let destination overflow the source bitmap
-                Width = min(Width, SrcWidth - SrcDisplacementX);
-                Height = min(Height, SrcHeight - SrcDisplacementY);
+                Width = MIN(Width, SrcWidth - SrcDisplacementX);
+                Height = MIN(Height, SrcHeight - SrcDisplacementY);
                 }
             else
                 {
@@ -571,9 +571,9 @@ void HIMColorBalancedImageIterator::ApplyColorBalanceRGB(HRPPixelBuffer* pi_pSou
                 }
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Red, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Green, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Blue, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Red, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Green, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Blue, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + 3 * (pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth());
@@ -686,9 +686,9 @@ void HIMColorBalancedImageIterator::ApplyColorBalanceRGB4(HRPPixelBuffer* pi_pSo
                       WeightBottom * RGBDELTAS(M_BALANCEDIMAGE->m_pBottomDeltas)->Blue[SourceBlue] ) * 0.5;
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Red, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Green, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Blue, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Red, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Green, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Blue, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + 3 * (pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth());
@@ -846,9 +846,9 @@ void HIMColorBalancedImageIterator::ApplyColorBalanceRGBPositionalOnly(HRPPixelB
                 }
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Red, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Green, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Blue, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Red, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Green, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Blue, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + 3 * (pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth());
@@ -961,9 +961,9 @@ void HIMColorBalancedImageIterator::ApplyColorBalanceRGB4PositionalOnly(HRPPixel
                       WeightBottom * RGBDELTAS(M_BALANCEDIMAGE->m_pBottomDeltas)->Blue[SourceBlue] ) * 0.5;
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Red, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Green, 0.0), 255.0);
-            *pDst++ = (Byte) min( max(Blue, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Red, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Green, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Blue, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + 3 * (pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth());
@@ -1143,7 +1143,7 @@ void HIMColorBalancedImageIterator::ApplyColorBalanceGray(HRPPixelBuffer* pi_pSo
                 }
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Gray, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Gray, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth();
@@ -1240,7 +1240,7 @@ void HIMColorBalancedImageIterator::ApplyColorBalanceGray4(HRPPixelBuffer* pi_pS
                       WeightBottom * M_BALANCEDIMAGE->m_pBottomDeltas->Gray[SourceGray] ) * 0.5;
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Gray, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Gray, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth();
@@ -1382,7 +1382,7 @@ void HIMColorBalancedImageIterator::ApplyColorBalanceGrayPositionalOnly(HRPPixel
                 }
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Gray, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Gray, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth();
@@ -1479,7 +1479,7 @@ void HIMColorBalancedImageIterator::ApplyColorBalanceGray4PositionalOnly(HRPPixe
                       WeightBottom * M_BALANCEDIMAGE->m_pBottomDeltas->Gray[SourceGray] ) * 0.5;
 
             // Bound the results
-            *pDst++ = (Byte) min( max(Gray, 0.0), 255.0);
+            *pDst++ = (Byte) MIN( MAX(Gray, 0.0), 255.0);
             }
 
         pSrc += pi_pSourcePixels->GetPaddingBytes() + pi_pSourcePixels->GetWidth() - pi_pDestPixels->GetWidth();

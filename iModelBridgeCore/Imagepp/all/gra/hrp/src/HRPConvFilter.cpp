@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPConvFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPConvFilter
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPConvFilter.h>
 
@@ -169,7 +169,7 @@ void HRPConvFilter::Convert(const void*     pi_pInputData[],
         // copy the lost channels if there are
         if(AreThereLostChannels())
             {
-            GetInOutConverter()->Convert(pSrcLinesPtr[rNeighbourhood.GetYOrigin()],
+            GetInOutConverter()->ConvertLostChannel(pSrcLinesPtr[rNeighbourhood.GetYOrigin()],
                                          pDestRawDataPtr,
                                          1,
                                          GetLostChannelsMask());
@@ -314,7 +314,7 @@ void HRPConvFilter::Convert(HRPPixelBuffer* pi_pInputBuffer,
             // copy the lost channels if there are
             if(AreThereLostChannels())
                 {
-                GetInOutConverter()->Convert(   pSrcLinesPtr[rNeighbourhood.GetYOrigin()],
+                GetInOutConverter()->ConvertLostChannel(   pSrcLinesPtr[rNeighbourhood.GetYOrigin()],
                                                 pDestRawData,
                                                 pi_pInputBuffer->GetWidth(),
                                                 GetLostChannelsMask()
@@ -343,7 +343,7 @@ HRPFilter* HRPConvFilter::ComposeWith(const HRPFilter* pi_pFilter)
     if(IsAConvolutionFilter() == false ||
        !pi_pFilter->IsCompatibleWith(HRPConvFilter::CLASS_ID) ||
        ((HRPConvFilter*)pi_pFilter)->IsAConvolutionFilter() == false ||
-       *((HRPTypedFilter*)pi_pFilter)->GetFilterPixelType() != *GetFilterPixelType())
+       !((HRPTypedFilter*)pi_pFilter)->GetFilterPixelType()->HasSamePixelInterpretation(*GetFilterPixelType()))
         {
         // if not, call the parent method
         pFilter = HRPTypedFilter::ComposeWith(pi_pFilter);
@@ -357,9 +357,6 @@ HRPFilter* HRPConvFilter::ComposeWith(const HRPFilter* pi_pFilter)
 
         // clone the current filter
         HRPConvFilter* pConvFilter = (HRPConvFilter*)Clone();
-
-        // delete the weight matrix allocated in the cloning process
-        delete pConvFilter->m_pWeightMatrix;
 
         // set the division factor
         pConvFilter->m_DivisionFactor = m_DivisionFactor * ((HRPConvFilter*)pi_pFilter)->m_DivisionFactor;

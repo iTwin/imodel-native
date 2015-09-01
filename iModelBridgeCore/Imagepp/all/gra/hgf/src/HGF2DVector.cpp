@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DVector.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGFAngle.h>
 #include <Imagepp/all/h/HGF2DVector.h>
@@ -184,7 +184,7 @@ bool HGF2DVector::IntersectsAtSplitPoint(const HGF2DVector& pi_rVector,
     bool Answer = false;
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
     // Check if end point is located on the given
     if (pi_rVector.IsPointOn(pi_rTestPoint, HGF2DVector::EXCLUDE_EXTREMITIES, Tolerance) &&
@@ -647,8 +647,8 @@ HFCPtr<HGFLiteTolerance> HGF2DVector::GetStrokeTolerance() const
         // Make sure that widht or height are not smaller than resolution
         // An acceptable tolerance seems to be around 1/4 a pixels. Adding +/-
         // 1/8 of a pixel to the center gives 1/4 a pixel.
-        TolWidth  = max(TolWidth  * DEFAULT_PIXEL_TOLERANCE, GetTolerance());
-        TolHeight = max(TolHeight * DEFAULT_PIXEL_TOLERANCE, GetTolerance());
+        TolWidth  = MAX(TolWidth  * DEFAULT_PIXEL_TOLERANCE, GetTolerance());
+        TolHeight = MAX(TolHeight * DEFAULT_PIXEL_TOLERANCE, GetTolerance());
 
         m_pStrokeTolerance = new HGFLiteTolerance(CenterX - TolWidth, CenterY - TolHeight,
                                                   CenterX - TolWidth, CenterY + TolHeight,

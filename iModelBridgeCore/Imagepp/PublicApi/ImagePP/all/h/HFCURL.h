@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURL.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,6 +14,7 @@
 #include "HFCPtr.h"
 #include "HFCAccessMode.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //:Ignore
 // URL specification at this level is:
 // <scheme-type>:<scheme-specific-part>
@@ -181,7 +182,7 @@ class HNOVTABLEINIT HFCURL : public HFCShareableObject<HFCURL>
     {
 public:
 
-    HDECLARE_BASECLASS_ID(1300);
+    HDECLARE_BASECLASS_ID(HFCURLId_Base);
 
     //:> Primary methods.
 
@@ -194,8 +195,8 @@ public:
     //:> This static method replaces the constructor.  Use it to create
     //:> a correctly-typed object for specified URL.
 
-    _HDLLu static HFCURL*          Instanciate(const WString& pi_URL);
-    _HDLLu static HFCURL*          CreateFrom(const BeFileName& pi_beFilename);
+    IMAGEPP_EXPORT static HFCURL*          Instanciate(const WString& pi_URL);
+    IMAGEPP_EXPORT static HFCURL*          CreateFrom(const BeFileName& pi_beFilename);
 
     //:> Content access methods
 
@@ -204,11 +205,11 @@ public:
     const WString&          GetSchemeSpecificPart() const;
 
     //:> Specify if the URL is UTF8 or not, usefull when the URL is URL-Encoded
-    _HDLLu         void     SetUTF8URL (bool pi_UTF8);
+    IMAGEPP_EXPORT         void     SetUTF8URL (bool pi_UTF8);
     bool                   IsUTF8URL() const;
 
-    _HDLLu         void     SetEncodedURL(bool pi_Ecoded);
-    _HDLLu         bool    IsEncodedURL() const;
+    IMAGEPP_EXPORT         void     SetEncodedURL(bool pi_Ecoded);
+    IMAGEPP_EXPORT         bool    IsEncodedURL() const;
 
 
     //:> Methods used in relative path management
@@ -229,16 +230,15 @@ public:
     virtual void PrintState() const = 0;
 #endif
 
-protected:
 
+//DM-Android     Not able to build if private members
     // The type of the scheme list
-
     typedef map<WString, Creator*, CaseInsensitiveStringCompare, allocator<Creator*> >
-    SchemeList;
-
+        SchemeList;    // The scheme list.
+    static SchemeList*      s_pSchemeList;
     //:> Scheme list access
-
-    static SchemeList&         GetSchemeList();
+    static SchemeList&         GetSchemeList();     // from protected
+protected:
 
     //:> *** Relative paths support ***
 
@@ -258,9 +258,6 @@ private:
     bool                   m_UTF8URL;
     bool                   m_EncodedURL;
 
-    // The scheme list.
-
-    static SchemeList*      s_pSchemeList;
 
     // Disabled methods
 
@@ -268,7 +265,7 @@ private:
     HFCURL& operator=(const HFCURL&);
 
     };
-
+END_IMAGEPP_NAMESPACE
 
 #include "HFCURL.hpp"
 

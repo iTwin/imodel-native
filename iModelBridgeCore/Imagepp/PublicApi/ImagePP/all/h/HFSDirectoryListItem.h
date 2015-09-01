@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFSDirectoryListItem.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,7 +15,7 @@
 // INCLUDE FILES
 //############################
 
-
+BEGIN_IMAGEPP_NAMESPACE
 class HFSDirectoryListItem
     {
 public:
@@ -65,6 +65,6 @@ private:
     uint32_t m_EntrySize;
     bool   m_IsSQLItem;
     };
-
+END_IMAGEPP_NAMESPACE
 #include "HFSDirectoryListItem.hpp"
 

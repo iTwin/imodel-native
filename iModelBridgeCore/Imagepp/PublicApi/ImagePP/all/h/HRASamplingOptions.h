@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRASamplingOptions.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -22,16 +22,17 @@
     deleted before they are used in a later time.
     -----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 class HRASamplingOptions
     {
 public:
 
     //:> Primary methods
-    _HDLLg                 HRASamplingOptions();
-    _HDLLg                  HRASamplingOptions( const HRASamplingOptions& pi_rSamplingOptions);
-    _HDLLg  virtual         ~HRASamplingOptions();
+    IMAGEPP_EXPORT                 HRASamplingOptions();
+    IMAGEPP_EXPORT                  HRASamplingOptions( const HRASamplingOptions& pi_rSamplingOptions);
+    IMAGEPP_EXPORT  virtual         ~HRASamplingOptions();
 
-    _HDLLg  HRASamplingOptions&
+    IMAGEPP_EXPORT  HRASamplingOptions&
     operator=(const HRASamplingOptions& pi_rObj);
 
     //:> Settings
@@ -68,5 +69,6 @@ private:
     //:> private methods
     void                    DeepCopy(const HRASamplingOptions& pi_rSamplingOptions);
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRASamplingOptions.hpp"

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLiteSegment.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,6 +14,7 @@
 
 #include "HGF2DPosition.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert
@@ -66,15 +67,15 @@ public:
 
 
     // Primary methods
-    HGF2DLiteSegment();
-    HGF2DLiteSegment(const HGF2DPosition& pi_rStartPoint,
-                     const HGF2DPosition& pi_rEndPoint,
-                     double pi_Tolerance = HGLOBAL_EPSILON);
-    HGF2DLiteSegment(const HGF2DLiteSegment&    pi_rObject);
-    ~HGF2DLiteSegment();
+                            HGF2DLiteSegment();
+                            HGF2DLiteSegment(const HGF2DPosition& pi_rStartPoint,
+                                             const HGF2DPosition& pi_rEndPoint,
+                                             double pi_Tolerance = HGLOBAL_EPSILON);
+                            HGF2DLiteSegment(const HGF2DLiteSegment&    pi_rObject);
+                            ~HGF2DLiteSegment();
 
     HGF2DLiteSegment&       operator=(const HGF2DLiteSegment& pi_rObj);
-    bool                   operator==(const HGF2DLiteSegment& pi_rObj) const;
+    bool                    operator==(const HGF2DLiteSegment& pi_rObj) const;
 
     // Setting
     void                    SetStartPoint(const HGF2DPosition& pi_rNewStartPoint);
@@ -83,16 +84,16 @@ public:
     const HGF2DPosition&    GetEndPoint() const;
 
     // Tolerance
-    double                 GetTolerance() const;
+    double                  GetTolerance() const;
     void                    SetTolerance(double pi_Tolerance);
 
     // Geometric properties and behavior
     HGF2DLiteSegment::CrossState
-    IntersectSegment(const HGF2DLiteSegment& pi_rSegment,
-                     HGF2DPosition* po_pPoint) const;
+                            IntersectSegment(const HGF2DLiteSegment& pi_rSegment,
+                                             HGF2DPosition* po_pPoint) const;
 
     HGF2DLiteSegment::CrossState
-    IntersectSegmentExtremityIncluded(const HGF2DLiteSegment& pi_rSegment,
+                            IntersectSegmentExtremityIncluded(const HGF2DLiteSegment& pi_rSegment,
                                       HGF2DPosition* po_pPoint,
                                       bool* po_pCrossesAtExtremity = NULL) const;
 
@@ -100,23 +101,30 @@ public:
     size_t                  ObtainContiguousnessPoints(const HGF2DLiteSegment& pi_rSegment,
                                                        HGF2DPositionCollection* po_pContiguousnessPoints) const;
 
-    bool                   LinksTo(const HGF2DLiteSegment& pi_rSegment) const;
-    bool                   Crosses(const HGF2DLiteSegment& pi_rSegment) const;
-    bool                   AreContiguous(const HGF2DLiteSegment& pi_rSegment) const;
-    bool                   AreAdjacent(const HGF2DLiteSegment& pi_rSegment) const;
-    bool                   AreParallel(const HGF2DLiteSegment& pi_rSegment,
-                                        double pi_SlopeTolerance = 0.0) const;
-    bool                   IsPointOn(const HGF2DPosition& pi_rTestPoint, ExtremityProcessing pi_ExtremityProcessing = INCLUDE_EXTREMITIES) const;
-    bool                   ArePointsOnDifferentSides(const HGF2DPosition& pi_rPoint1, const HGF2DPosition& pi_rPoint2) const;
+    bool                    LinksTo(const HGF2DLiteSegment& pi_rSegment) const;
+    bool                    Crosses(const HGF2DLiteSegment& pi_rSegment) const;
+    bool                    AreContiguous(const HGF2DLiteSegment& pi_rSegment) const;
+    bool                    AreAdjacent(const HGF2DLiteSegment& pi_rSegment) const;
+    bool                    AreParallel(const HGF2DLiteSegment& pi_rSegment,
+                                         double pi_SlopeTolerance = 0.0) const;
+    bool                    IsPointOn(const HGF2DPosition& pi_rTestPoint, ExtremityProcessing pi_ExtremityProcessing = INCLUDE_EXTREMITIES) const;
+    bool                    ArePointsOnDifferentSides(const HGF2DPosition& pi_rPoint1, const HGF2DPosition& pi_rPoint2) const;
 
-    bool                   IntersectsAtSplitPoint(const HGF2DLiteSegment& pi_rFirstSegment,
+    bool                    IntersectsAtSplitPoint(const HGF2DLiteSegment& pi_rFirstSegment,
                                                    const HGF2DLiteSegment& pi_rSecondSegment) const;
+
+
+    HGF2DPosition           CalculateClosestPoint(const HGF2DPosition& pi_rPoint) const;
+
+    bool                    IsPointOnLineOnSegment(const HGF2DPosition& pi_rTestPoint) const;
+
+    double                  CalculateLength() const;
 
 protected:
 
 private:
 
-    bool                   AreDifficultSegmentsContiguous(const HGF2DLiteSegment& pi_rSegment) const;
+    bool                    AreDifficultSegmentsContiguous(const HGF2DLiteSegment& pi_rSegment) const;
     void                    GetDeltas(double* po_pDx, double* po_pDy) const;
 
     // The start and end point of segment
@@ -124,10 +132,11 @@ private:
     HGF2DPosition           m_EndPoint;
 
     // Tolerance to apply in operations
-    double                 m_Tolerance;
+    double                  m_Tolerance;
 
 
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGF2DLiteSegment.hpp"
 

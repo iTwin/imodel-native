@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DPolygonOfSegments.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DPolygonOfSegments
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
 #include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
@@ -75,7 +75,7 @@ public:
     Do not make a method out of it since externally the HVEShape does not
     know of HVE2DPolySegment
 +---------------+---------------+---------------+---------------+---------------+------*/
-HVE2DShape* fCreateShapeFromAutoCrossingPolySegment(const HVE2DPolySegment& pi_rAutoCrossingPolySegment)
+/*static*/ HVE2DShape* HVE2DPolygonOfSegments::CreateShapeFromAutoCrossingPolySegment(const HVE2DPolySegment& pi_rAutoCrossingPolySegment)
     {
     HVE2DShape* pResultShape = NULL;
 
@@ -350,7 +350,7 @@ HVE2DShape* HVE2DPolygonOfSegments::Clip(const HVE2DRectangle& pi_rRectangle) co
         // Neither shapes are empty
 
         // We first compare if their extent overlap
-        if (!GetExtent().InnerOverlaps(pi_rRectangle.GetExtent(), min(GetTolerance(), pi_rRectangle.GetTolerance())))
+        if (!GetExtent().InnerOverlaps(pi_rRectangle.GetExtent(), MIN(GetTolerance(), pi_rRectangle.GetTolerance())))
             {
             // The two shapes cannot possibly intersect ... therefore, the intersection is empty
             pResultShape = new HVE2DVoidShape(GetCoordSys());
@@ -471,7 +471,7 @@ void HVE2DPolygonOfSegments::Simplify()
         double Length1 = sqrt (x1*x1 + y1*y1);
         double Length2 = sqrt (x2*x2 + y2*y2);
 
-        double MaxLength = max(Length1, Length2);
+        double MaxLength = MAX(Length1, Length2);
 
         double AreaTolerance = MaxLength * GetTolerance();
 
@@ -670,7 +670,7 @@ HVE2DPolygonOfSegments::HVE2DPolygonOfSegments(const HVE2DComplexLinear& pi_rCom
     HVE2DVector::SetTolerance(m_PolySegment.GetTolerance());
 
     // The area of new polygon may not be 0.0
-    HPOSTCONDITION(!HDOUBLE_EQUAL(CalculateArea(), 0.0, min(HMAX_EPSILON, GetTolerance() * GetTolerance())));
+    HPOSTCONDITION(!HDOUBLE_EQUAL(CalculateArea(), 0.0, MIN(HMAX_EPSILON, GetTolerance() * GetTolerance())));
     }
 
 //-----------------------------------------------------------------------------
@@ -696,7 +696,7 @@ HVE2DPolygonOfSegments::HVE2DPolygonOfSegments(const HVE2DPolySegment& pi_rPolyS
     // The area of new polygon may not be 0.0
     // Note that this conditin may fail in some specific cases of parallel copy but the result should then be discarded
     // immediately after the copy.
-    HASSERTSUPERDEBUG(!HDOUBLE_EQUAL(CalculateArea(), 0.0, min(HMAX_EPSILON, GetTolerance() * GetTolerance())));
+    HASSERTSUPERDEBUG(!HDOUBLE_EQUAL(CalculateArea(), 0.0, MIN(HMAX_EPSILON, GetTolerance() * GetTolerance())));
 
     HINVARIANTS;
 
@@ -781,8 +781,8 @@ HVE2DPolygonOfSegments::HVE2DPolygonOfSegments(size_t  pi_BufferLength,
             m_PolySegment.AppendPoint(HGF2DPosition(pi_aBuffer[Index], pi_aBuffer[Index + 1]));
 
             // Adjust tolerance
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(pi_aBuffer[Index]));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(pi_aBuffer[Index+1]));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(pi_aBuffer[Index]));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(pi_aBuffer[Index+1]));
             }
 
         SetTolerance(Tolerance);
@@ -1407,10 +1407,10 @@ HVE2DShape::SpatialPosition HVE2DPolygonOfSegments::CalculateSpatialPositionOfPo
         for (Itr++ ; Itr != m_PolySegment.m_Points.end() && !PointIsOn ; Itr++)
             {
             // Check if the segment can possibly intersect
-            double XMin = min(PrevItr->GetX(), Itr->GetX());
-            double XMax = max(PrevItr->GetX(), Itr->GetX());
-            double YMin = min(PrevItr->GetY(), Itr->GetY());
-            double YMax = max(PrevItr->GetY(), Itr->GetY());
+            double XMin = MIN(PrevItr->GetX(), Itr->GetX());
+            double XMax = MAX(PrevItr->GetX(), Itr->GetX());
+            double YMin = MIN(PrevItr->GetY(), Itr->GetY());
+            double YMax = MAX(PrevItr->GetY(), Itr->GetY());
 
             // A segment which is all farther in any dimension cannot interact
             if (((XMax > X) || HDOUBLE_EQUAL(XMax, X, Tolerance)) &&
@@ -1501,7 +1501,7 @@ size_t HVE2DPolygonOfSegments::ObtainContiguousnessPoints(const HVE2DVector& pi_
     {
     HINVARIANTS;
 
-    double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
     // We save the initial number of points
     size_t  InitialNumberOfPoints = po_pContiguousnessPoints->size();
@@ -1675,7 +1675,17 @@ bool HVE2DPolygonOfSegments::Crosses(const HVE2DVector& pi_rVector) const
                 // It does not cross, but there still may be a crossing at auto-closing point
                 // We check if end point of complex is located on vector
                 // We exclude from the test the extremities of vector, since then it would not cross
-                Answer = IntersectsAtSplitPoint(pi_rVector, TheEndPoint, TheEndPoint, false);
+                // Unfortunately this method only works if the relationship between coordinate systems is direction preserving.
+                // So we first check
+                if ((GetCoordSys() == pi_rVector.GetCoordSys()) || GetCoordSys()->HasDirectionPreservingRelationTo(pi_rVector.GetCoordSys()))
+                    Answer = IntersectsAtSplitPoint(pi_rVector, TheEndPoint, TheEndPoint, false);
+                else
+                    {
+                    HFCPtr<HVE2DVector> pTempVector = pi_rVector.AllocateCopyInCoordSys(GetCoordSys());
+                    if (pTempVector != NULL)
+                        Answer = IntersectsAtSplitPoint(*pTempVector, TheEndPoint, TheEndPoint, false);
+
+                    }
                 }
             }
         }
@@ -1692,7 +1702,7 @@ bool HVE2DPolygonOfSegments::CrossesPolygonOfSegmentsSCS(const HVE2DPolygonOfSeg
     {
     bool Answer = false;
 
-    double Tolerance = min(GetTolerance(), pi_rPolygon.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rPolygon.GetTolerance());
 
     if (GetExtent().OutterOverlaps(pi_rPolygon.GetExtent(), GetTolerance()))
         {
@@ -2050,7 +2060,7 @@ HVE2DShape* HVE2DPolygonOfSegments::DifferentiateFromPolygonSCS(const HVE2DPolyg
     // We separate the process depending on the fact that they cross or not
 
     // We first compare if their extent overlap
-    if (!GetExtent().InnerOverlaps(pi_rPolygon.GetExtent(), min(GetTolerance(), pi_rPolygon.GetTolerance())))
+    if (!GetExtent().InnerOverlaps(pi_rPolygon.GetExtent(), MIN(GetTolerance(), pi_rPolygon.GetTolerance())))
         {
         // The two simple shape cannot possibly intersect ... therefore, the difference is given
         if (pi_rPolygon.RepresentsARectangle())
@@ -2242,7 +2252,7 @@ HVE2DShape* HVE2DPolygonOfSegments::DifferentiatePolygonSCS(const HVE2DPolygonOf
 
     // We separate the process depending on the fact that they cross or not
     // We  compare if their extent overlap
-    if (!GetExtent().InnerOverlaps(pi_rPolygon.GetExtent(), min(GetTolerance(), pi_rPolygon.GetTolerance())))
+    if (!GetExtent().InnerOverlaps(pi_rPolygon.GetExtent(), MIN(GetTolerance(), pi_rPolygon.GetTolerance())))
         {
         // The two simple shape cannot possibly intersect ... therefore, the difference is self
         pMyResultShape = (HVE2DShape*)Clone();
@@ -2451,7 +2461,7 @@ HVE2DShape* HVE2DPolygonOfSegments::IntersectPolygonSCS(const HVE2DPolygonOfSegm
     // We separate the process depending on the fact that they cross or not
 
     // We first compare if their extent overlap
-    if (!GetExtent().InnerOverlaps(pi_rPolygon.GetExtent(), min(GetTolerance(), pi_rPolygon.GetTolerance())))
+    if (!GetExtent().InnerOverlaps(pi_rPolygon.GetExtent(), MIN(GetTolerance(), pi_rPolygon.GetTolerance())))
         {
         // The two simple shape cannot possibly intersect ... therefore, the intersection is empty
         pMyResultShape = new HVE2DVoidShape(GetCoordSys());
@@ -2708,7 +2718,7 @@ HVE2DShape* HVE2DPolygonOfSegments::UnifyPolygonSCS(const HVE2DPolygonOfSegments
     // We separate the process depending on the fact that they cross or not
 
     // We first compare if their extent overlap
-    if (!GetExtent().OutterOverlaps(pi_rPolygon.GetExtent(), min(GetTolerance(), pi_rPolygon.GetTolerance())) && !AreContiguous(pi_rPolygon))
+    if (!GetExtent().OutterOverlaps(pi_rPolygon.GetExtent(), MIN(GetTolerance(), pi_rPolygon.GetTolerance())) && !AreContiguous(pi_rPolygon))
         {
         // The two simple shape cannot possibly intersect ... therefore, the union is a
         // complex shape containing both of them
@@ -2943,7 +2953,7 @@ void HVE2DPolygonOfSegments::SuperScan(const HVE2DPolygonOfSegments&  pi_rGiven,
 
     bool IrregularShapes = false;
 
-    double Tolerance = min(GetTolerance(), pi_rGiven.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rGiven.GetTolerance());
 
     HGF2DPosition MyStartPoint;
     HGF2DPosition CurrentPoint;
@@ -3559,7 +3569,7 @@ void HVE2DPolygonOfSegments::SuperScan2(const HVE2DPolygonOfSegments&  pi_rGiven
     size_t MaximumNumberOfOutterLoops = (ListPoly1.size() + ListPoly2.size()) * 50;
     size_t currentOutterLoop = 0;
 
-    double Tolerance = min(GetTolerance(), pi_rGiven.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rGiven.GetTolerance());
 
     HGF2DPosition MyStartPoint;
     HGF2DPosition CurrentPoint;
@@ -3965,7 +3975,7 @@ bool HVE2DPolygonOfSegments::InteractsWithSameUnits(const HVE2DPolygonOfSegments
         *po_pContiguousInteraction = false;
 
     // Define tolerance
-    double Tolerance = min(GetTolerance(), pi_rPolygon.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rPolygon.GetTolerance());
 
     // Pre-allocate some points in return lists
     po_pSelfPolyPoints->reserve(2 * m_PolySegment.GetSize() - 1);
@@ -4029,10 +4039,10 @@ bool HVE2DPolygonOfSegments::InteractsWithSameUnits(const HVE2DPolygonOfSegments
         // Create segment
         HGF2DLiteSegment    SelfSegment(*PrevSelfItr, *SelfItr, Tolerance);
 
-        double SelfXMin = min(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-        double SelfXMax = max(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-        double SelfYMin = min(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
-        double SelfYMax = max(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+        double SelfXMin = MIN(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+        double SelfXMax = MAX(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+        double SelfYMin = MIN(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+        double SelfYMax = MAX(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
 
         HGF2DPositionCollection::iterator   GivenItr(po_pGivenPolyPoints->begin());
         HGF2DPositionCollection::iterator   PrevGivenItr = GivenItr;
@@ -4045,10 +4055,10 @@ bool HVE2DPolygonOfSegments::InteractsWithSameUnits(const HVE2DPolygonOfSegments
 
             // Break in case of running conditions in debug mode
             // Check if the two segments can possibly interact
-            double GivenXMin = min(PrevGivenItr->GetX(), GivenItr->GetX());
-            double GivenXMax = max(PrevGivenItr->GetX(), GivenItr->GetX());
-            double GivenYMin = min(PrevGivenItr->GetY(), GivenItr->GetY());
-            double GivenYMax = max(PrevGivenItr->GetY(), GivenItr->GetY());
+            double GivenXMin = MIN(PrevGivenItr->GetX(), GivenItr->GetX());
+            double GivenXMax = MAX(PrevGivenItr->GetX(), GivenItr->GetX());
+            double GivenYMin = MIN(PrevGivenItr->GetY(), GivenItr->GetY());
+            double GivenYMax = MAX(PrevGivenItr->GetY(), GivenItr->GetY());
 
 
             bool Result = (((SelfXMax > GivenXMin) || HDOUBLE_EQUAL(SelfXMax, GivenXMin, Tolerance)) &&
@@ -4090,10 +4100,10 @@ bool HVE2DPolygonOfSegments::InteractsWithSameUnits(const HVE2DPolygonOfSegments
                     SelfSegment.SetEndPoint(CrossPoint);
 
                     // Update extent
-                    SelfXMin = min(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-                    SelfXMax = max(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-                    SelfYMin = min(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
-                    SelfYMax = max(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+                    SelfXMin = MIN(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+                    SelfXMax = MAX(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+                    SelfYMin = MIN(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+                    SelfYMax = MAX(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
 
                     ReturnValue = true;
                     }
@@ -4113,10 +4123,10 @@ bool HVE2DPolygonOfSegments::InteractsWithSameUnits(const HVE2DPolygonOfSegments
                                                                 GivenItr,
                                                                 PrevGivenItr);
 
-                    SelfXMin = min(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-                    SelfXMax = max(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-                    SelfYMin = min(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
-                    SelfYMax = max(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+                    SelfXMin = MIN(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+                    SelfXMax = MAX(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+                    SelfYMin = MIN(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+                    SelfYMax = MAX(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
                     }
                 else
                     {
@@ -4136,10 +4146,10 @@ bool HVE2DPolygonOfSegments::InteractsWithSameUnits(const HVE2DPolygonOfSegments
                             SelfSegment.SetEndPoint(GivenSegment.GetEndPoint());
 
                             // Update extent
-                            SelfXMin = min(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-                            SelfXMax = max(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-                            SelfYMin = min(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
-                            SelfYMax = max(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+                            SelfXMin = MIN(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+                            SelfXMax = MAX(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+                            SelfYMin = MIN(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+                            SelfYMax = MAX(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
                             }
 
                         // The fact that segments connect is not a sufficient reason to presume interaction
@@ -4594,7 +4604,7 @@ HVE2DShape::SpatialPosition HVE2DPolygonOfSegments::CalculateSpatialPositionOfPo
     HVE2DShape::SpatialPosition     ThePosition = HVE2DShape::S_OUT;
 
     // Check if their extents overlap
-    if (GetExtent().OutterOverlaps(pi_rPolygon.GetExtent(), min(GetTolerance(), pi_rPolygon.GetTolerance())))
+    if (GetExtent().OutterOverlaps(pi_rPolygon.GetExtent(), MIN(GetTolerance(), pi_rPolygon.GetTolerance())))
         {
         // The extents overlap ... check if they cross ?
         if (CrossesPolygonOfSegmentsSCS(pi_rPolygon))
@@ -4633,7 +4643,7 @@ HVE2DShape::SpatialPosition HVE2DPolygonOfSegments::CalculateSpatialPositionOfNo
     HVE2DShape::SpatialPosition     ThePosition = HVE2DShape::S_OUT;
 
     // Determine the tolerance
-    double Tolerance = min(GetTolerance(), pi_rPolygon.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rPolygon.GetTolerance());
 
     // Check if their extents overlap
     if (GetExtent().OutterOverlaps(pi_rPolygon.GetExtent(), Tolerance))
@@ -5035,10 +5045,10 @@ HVE2DPolygonOfSegments::PointUsage* HVE2DPolygonOfSegments::InsertAutoContiguous
     for ( ; Itr != pio_rPolySegment.m_Points.end() ; ++PrevItr, ++Itr, ++MyPointsUsageItr)
         {
         // Obtain extent of this segment
-        SelfXMin = min(Itr->GetX(), PrevItr->GetX());
-        SelfXMax = max(Itr->GetX(), PrevItr->GetX());
-        SelfYMin = min(Itr->GetY(), PrevItr->GetY());
-        SelfYMax = max(Itr->GetY(), PrevItr->GetY());
+        SelfXMin = MIN(Itr->GetX(), PrevItr->GetX());
+        SelfXMax = MAX(Itr->GetX(), PrevItr->GetX());
+        SelfYMin = MIN(Itr->GetY(), PrevItr->GetY());
+        SelfYMax = MAX(Itr->GetY(), PrevItr->GetY());
 
         // Create a lite segment to represent current segment
         HGF2DLiteSegment TheLiteSegment(*PrevItr, *Itr, Tolerance);
@@ -5061,10 +5071,10 @@ HVE2DPolygonOfSegments::PointUsage* HVE2DPolygonOfSegments::InsertAutoContiguous
                 {
 
                 // Check if current self segment and current other segment may interact
-                Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, min(OtherItr->GetX(), PrevOtherItr->GetX()), Tolerance) &&
-                          HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, max(OtherItr->GetX(), PrevOtherItr->GetX()), Tolerance) &&
-                          HDOUBLE_GREATER_OR_EQUAL(SelfYMax, min(OtherItr->GetY(), PrevOtherItr->GetY()), Tolerance) &&
-                          HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, max(OtherItr->GetY(), PrevOtherItr->GetY()), Tolerance)
+                Result = (HDOUBLE_GREATER_OR_EQUAL(SelfXMax, MIN(OtherItr->GetX(), PrevOtherItr->GetX()), Tolerance) &&
+                          HDOUBLE_SMALLER_OR_EQUAL(SelfXMin, MAX(OtherItr->GetX(), PrevOtherItr->GetX()), Tolerance) &&
+                          HDOUBLE_GREATER_OR_EQUAL(SelfYMax, MIN(OtherItr->GetY(), PrevOtherItr->GetY()), Tolerance) &&
+                          HDOUBLE_SMALLER_OR_EQUAL(SelfYMin, MAX(OtherItr->GetY(), PrevOtherItr->GetY()), Tolerance)
                          );
                 if (Result)
                     {
@@ -5235,10 +5245,10 @@ void HVE2DPolygonOfSegments::InsertAutoFlirtPoints(HGF2DPositionCollection& pio_
         // Create segment
         HGF2DLiteSegment    SelfSegment(*PrevSelfItr, *SelfItr, Tolerance);
 
-        double SelfXMin = min(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-        double SelfXMax = max(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-        double SelfYMin = min(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
-        double SelfYMax = max(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+        double SelfXMin = MIN(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+        double SelfXMax = MAX(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+        double SelfYMin = MIN(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+        double SelfYMax = MAX(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
 
         // Declare iterator for test point
         HGF2DPositionCollection::iterator   OtherItr(pio_rPoints.begin());
@@ -5278,10 +5288,10 @@ void HVE2DPolygonOfSegments::InsertAutoFlirtPoints(HGF2DPositionCollection& pio_
                         OtherItr = pio_rPoints.begin();
 
                         // Update extent
-                        SelfXMin = min(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-                        SelfXMax = max(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
-                        SelfYMin = min(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
-                        SelfYMax = max(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+                        SelfXMin = MIN(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+                        SelfXMax = MAX(SelfSegment.GetStartPoint().GetX(), SelfSegment.GetEndPoint().GetX());
+                        SelfYMin = MIN(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
+                        SelfYMax = MAX(SelfSegment.GetStartPoint().GetY(), SelfSegment.GetEndPoint().GetY());
                         }
                     }
                 }
@@ -5432,7 +5442,7 @@ bool HVE2DPolygonOfSegments::ChangeToShape(const HVE2DPolygonOfSegments* const* 
     long LastDesesperateIndex = -1;
 
     // Change shape followed
-    swap(ShapeIndex, TestShapeIndex);
+    std::swap(ShapeIndex, TestShapeIndex);
 
     // While point not found or no valid points to be found ...
     do
@@ -5467,8 +5477,10 @@ bool HVE2DPolygonOfSegments::ChangeToShape(const HVE2DPolygonOfSegments* const* 
                             FoundPoint = (Flags[ShapeIndex][0] != USED);
                             FoundIndex = Index;
                             }
-                        else
+                        else  if (Index <= apPoints[ShapeIndex]->size() - 2)
                             {
+                           // If we were to enter this in the case where the scan searched through the whole list of points and
+                            // did not found any (Index == size() -1) we would not be able to obtain the point.
                             FoundPoint = (Flags[ShapeIndex][Index+1] != USED);
                             FoundIndex = Index;
                             }
@@ -5561,8 +5573,8 @@ void HVE2DPolygonOfSegments::Rasterize(HGFScanLines& pio_rScanlines) const
                         YPolarity = CurrentPolarity;
                         }
 
-                    YMin = min(YMin, Itr->GetY());
-                    YMax = max(YMax, Itr->GetY());
+                    YMin = MIN(YMin, Itr->GetY());
+                    YMax = MAX(YMax, Itr->GetY());
                     }
 
                 // Advance iterator
@@ -5750,7 +5762,7 @@ HVE2DVector* HVE2DPolygonOfSegments::AllocateCopyInLinearityPreservingRelatedCoo
                 // The polysegment autocrosses.
                 // We will ask it to splits itself into non-autocrossings then generate the appropriate shape
                 // The result may be a holed shape or a complex shape.
-                pResultVector = fCreateShapeFromAutoCrossingPolySegment(*pMyPolySegment);
+                pResultVector = HVE2DPolygonOfSegments::CreateShapeFromAutoCrossingPolySegment(*pMyPolySegment);
                 }
             else
                 {
@@ -5845,7 +5857,7 @@ HVE2DVector* HVE2DPolygonOfSegments::AllocateCopyInGeneralRelatedCoordSys(const 
                     // The polysegment autocrosses.
                     // We will ask it to splits itself into non-autocrossings then generate the appropriate shape
                     // The result may be a holed shape or a complex shape.
-                    pResultVector = fCreateShapeFromAutoCrossingPolySegment(*pMyPolySegment);
+                    pResultVector = HVE2DPolygonOfSegments::CreateShapeFromAutoCrossingPolySegment(*pMyPolySegment);
                     }
                 else
                     {

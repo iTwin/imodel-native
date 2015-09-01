@@ -2,19 +2,16 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCStat.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCStat
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
 
-#if defined (ANDROID) || defined (__APPLE__)
-#include <Bentley/stg/dftypes.h>    //DM-Android
-#endif
-
+#include <Imagepp/all/h/HFCURLHTTP.h>
+#include <Imagepp/all/h/HFCURLHTTPS.h>
 #include <Imagepp/all/h/HFCStat.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HFCURLMemFile.h>
@@ -26,7 +23,6 @@
 //-----------------------------------------------------------------------------
 
 HFCStat::ImplList* HFCStat::s_pImplList = 0;
-
 struct HFCStatImplListDestroyer
     {
     ~HFCStatImplListDestroyer()
@@ -35,7 +31,6 @@ struct HFCStatImplListDestroyer
         HFCStat::s_pImplList = 0;
         }
     } s_ImplListDestroyer;
-
 
 //-----------------------------------------------------------------------------
 // File Implementation Declaration
@@ -63,8 +58,7 @@ public:
     virtual time_t      GetCreationTime(const HFCURL& pi_rURL) const override;
     virtual time_t      GetLastAccessTime(const HFCURL& pi_rURL) const override;
     virtual time_t      GetModificationTime(const HFCURL& pi_rURL) const override;
-    virtual void        SetModificationTime(const HFCURL& pi_rURL,
-                                            time_t        pi_NewTime) const override;
+    virtual void        SetModificationTime(const HFCURL& pi_rURL, time_t pi_NewTime) const override;
 
     // Resource size
     virtual uint64_t   GetSize(const HFCURL& pi_rURL) const override;
@@ -81,12 +75,16 @@ public:
 // Instantiate the file implementation
 //-----------------------------------------------------------------------------
 
-static HFCStatFileImpl      s_FileImpl;
-
-
 //-----------------------------------------------------------------------------
 // File Implementation Definition
 //-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void HFCStatFile::Register()
+    {
+    static HFCStatFileImpl s_impl;
+    }
 
 //-----------------------------------------------------------------------------
 // Public
@@ -104,6 +102,7 @@ HFCStatFileImpl::HFCStatFileImpl()
 //-----------------------------------------------------------------------------
 HFCStatFileImpl::~HFCStatFileImpl()
     {
+    UnregisterImpl(this);
     }
 
 
@@ -306,12 +305,18 @@ public:
 // Instantiate the file implementation
 //-----------------------------------------------------------------------------
 
-static HFCStatMemFileImpl      s_memFileImpl;
 
 
 //-----------------------------------------------------------------------------
 // Mem File Implementation Definition
 //-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void HFCStatMemFile::Register()
+    {
+    static HFCStatMemFileImpl s_impl;
+    }
 
 //-----------------------------------------------------------------------------
 // Public
@@ -329,6 +334,7 @@ HFCStatMemFileImpl::HFCStatMemFileImpl()
 //-----------------------------------------------------------------------------
 HFCStatMemFileImpl::~HFCStatMemFileImpl()
     {
+    UnregisterImpl(this);
     }
 
 
@@ -484,12 +490,17 @@ public:
 // Instantiate the file implementation
 //-----------------------------------------------------------------------------
 
-static HFCStatEmbedFileImpl      s_embedFileImpl;
-
 
 //-----------------------------------------------------------------------------
 // Mem File Implementation Definition
 //-----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void HFCStatEmbedFile::Register()
+    {
+    static HFCStatEmbedFileImpl s_impl;
+    }
 
 //-----------------------------------------------------------------------------
 // Public
@@ -507,6 +518,7 @@ HFCStatEmbedFileImpl::HFCStatEmbedFileImpl()
 //-----------------------------------------------------------------------------
 HFCStatEmbedFileImpl::~HFCStatEmbedFileImpl()
     {
+    UnregisterImpl(this);
     }
 
 
@@ -618,4 +630,261 @@ HFCAccessMode HFCStatEmbedFileImpl::GetAccessMode(const HFCURL& pi_rURL) const
     HFCAccessMode Result = HFC_READ_ONLY;
 
     return (Result);
+    }
+
+
+///-----------------------------------------------------------------------------
+// Http file HFCStat Implementation Declaration
+//-----------------------------------------------------------------------------
+
+class HFCStatHttpFileImpl : public HFCStatImpl
+    {
+    private:
+        bool IsURLInternetImaging(const HFCURL* pi_pURL) const;
+
+    public:
+        //--------------------------------------
+        // Construction / Destruction
+        //--------------------------------------
+
+        HFCStatHttpFileImpl();
+        virtual             ~HFCStatHttpFileImpl();
+
+
+        //--------------------------------------
+        // Methods
+        //--------------------------------------
+
+        // Indicates if an impl can handle an URL
+        virtual bool       CanHandle(const HFCURL& pi_rURL) const override;
+
+        // Resource time
+        virtual time_t      GetCreationTime     (const HFCURL& pi_rURL) const override;
+        virtual time_t      GetLastAccessTime   (const HFCURL& pi_rURL) const override;
+        virtual time_t      GetModificationTime (const HFCURL& pi_rURL) const override;
+        virtual void        SetModificationTime (const HFCURL& pi_rURL, time_t pi_NewTime) const override;
+
+        // Resource size
+        virtual uint64_t   GetSize(const HFCURL& pi_rURL) const override;
+
+        virtual HFCStat::AccessStatus
+            DetectAccess(const HFCURL& pi_rURL) const override;
+
+        // Resource access mode
+        virtual HFCAccessMode
+            GetAccessMode(const HFCURL& pi_rURL) const override;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void HFCStatHttpFile::Register()
+    {
+    static HFCStatHttpFileImpl s_impl;
+    }
+
+
+//-----------------------------------------------------------------------------
+// Public
+//
+//-----------------------------------------------------------------------------
+HFCStatHttpFileImpl::HFCStatHttpFileImpl()
+    {
+    RegisterImpl(this);
+    }
+
+
+//-----------------------------------------------------------------------------
+// Public
+//
+//-----------------------------------------------------------------------------
+HFCStatHttpFileImpl::~HFCStatHttpFileImpl()
+    {
+    UnregisterImpl(this);
+    }
+
+//-----------------------------------------------------------------------------
+// Indicates if the given URL is a HTTP-IIP url
+//-----------------------------------------------------------------------------
+bool HFCStatHttpFileImpl::IsURLInternetImaging(const HFCURL* pi_pURL) const
+    {
+    HPRECONDITION(pi_pURL != 0);
+    bool Result = false;
+
+    if ((pi_pURL->GetSchemeType() == HFCURLHTTP::s_SchemeName()) ||
+        (pi_pURL->GetSchemeType() == HFCURLHTTPS::s_SchemeName()))
+        {
+        // get the first 4 bytes of the search part and lower case them
+        WString SearchPart(((const HFCURLHTTPBase*)pi_pURL)->GetSearchPart(), 0, 4);
+
+        // verify that it starts with "fif="
+        Result = CaseInsensitiveStringTools().AreEqual(SearchPart, L"fif=");
+        }
+
+    return (Result);
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// Indicates if an impl can handle an URL
+//-----------------------------------------------------------------------------
+bool HFCStatHttpFileImpl::CanHandle(const HFCURL& pi_rURL) const
+    {
+    return (((pi_rURL.GetSchemeType() == HFCURLHTTP::s_SchemeName())) &&
+            (!IsURLInternetImaging(&pi_rURL))) ;
+    }
+
+
+//-----------------------------------------------------------------------------
+// Public
+// Resource modification time
+//-----------------------------------------------------------------------------
+time_t HFCStatHttpFileImpl::GetCreationTime(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+    time_t Result = 0;
+
+    /* NEEDS_WORK
+        It looks like there is no easy/safe way to retrieve file information without downloading the file.
+
+    try
+    {
+        // Copy the URL
+        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
+        HASSERT(pURL != 0);
+
+        // Create an web file but use the cache copy only. i.e. do not download the file
+        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetCreationTime();
+    }
+    catch(...)
+    {
+        HASSERT(false);
+    }
+    */
+
+    return Result;
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// Resource modification time
+//-----------------------------------------------------------------------------
+time_t HFCStatHttpFileImpl::GetLastAccessTime(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+    time_t Result = 0;
+
+    /* NEEDS_WORK
+        It seems like there is no easy/safe way to retrieve file information without downloading the file.
+
+    try
+    {
+        // Copy the URL
+        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
+        HASSERT(pURL != 0);
+
+        // Create an web file but use the cache copy only. i.e. do not download the file
+        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetLastAccessTime();
+    }
+    catch(...)
+    {
+        HASSERT(false);
+    }
+    */
+
+    return Result;
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// Resource modification time
+//-----------------------------------------------------------------------------
+time_t HFCStatHttpFileImpl::GetModificationTime(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+    time_t Result = 0;
+
+    /* NEEDS_WORK
+        It looks like there is no easy/safe way to retrieve file information without downloading the file.
+
+    try
+    {
+        // Copy the URL
+        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
+        HASSERT(pURL != 0);
+
+        // Create an web file but use the cache copy only. i.e. do not download the file
+        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetModificationTime();
+    }
+    catch(...)
+    {
+        HASSERT(false);
+    }
+    */
+
+    return Result;
+    }
+
+
+//-----------------------------------------------------------------------------
+// Public
+//
+//-----------------------------------------------------------------------------
+void HFCStatHttpFileImpl::SetModificationTime(const HFCURL& pi_rURL, time_t pi_NewTime) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+
+    // Cannot so do nothing
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// Resource size
+//-----------------------------------------------------------------------------
+uint64_t HFCStatHttpFileImpl::GetSize(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+    uint64_t Result = 0;
+
+    /* NEEDS_WORK
+        It looks like there is no easy/safe way to retrieve file information without downloading the file.
+
+    try
+    {
+        // Copy the URL
+        HFCPtr<HFCURL> pURL(HFCURL::Instanciate(pi_rURL.GetURL()));
+        HASSERT(pURL != 0);
+
+        // Create an web file but use the cache copy only. i.e. do not download the file
+        Result = HFCStat(HRFWebFile(pURL, HFC_READ_ONLY|HFC_SHARE_READ_WRITE).GetLocalURL()).GetSize();
+    }
+    catch(...)
+    {
+        HASSERT(false);
+    }
+    */
+
+    return Result;
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// Detect existence
+//-----------------------------------------------------------------------------
+HFCStat::AccessStatus HFCStatHttpFileImpl::DetectAccess(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+
+    return HFCStat::AccessGranted;
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// Resource access mode
+//-----------------------------------------------------------------------------
+HFCAccessMode HFCStatHttpFileImpl::GetAccessMode(const HFCURL& pi_rURL) const
+    {
+    HPRECONDITION(CanHandle(pi_rURL));
+
+    return (HFC_READ_ONLY);
     }

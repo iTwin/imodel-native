@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRARepPalParms.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRARepPalParms
@@ -15,20 +15,21 @@
 #include "HRASamplingOptions.h"
 #include "HRPHistogram.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRARepPalParms
     {
 public:
 
     // Primary methods
-    _HDLLg                 HRARepPalParms( const HRARepPalParms&       pi_rRepPalParms);
-    _HDLLg                 HRARepPalParms( const HFCPtr<HRPPixelType>& pi_pPixelType,
+    IMAGEPP_EXPORT                 HRARepPalParms( const HRARepPalParms&       pi_rRepPalParms);
+    IMAGEPP_EXPORT                 HRARepPalParms( const HFCPtr<HRPPixelType>& pi_pPixelType,
                                            bool                       pi_ComputeHistogram = false,
                                            uint32_t                    pi_MaxEntries = 0);
-    _HDLLg                 HRARepPalParms( const HFCPtr<HRPPixelType>& pi_pPixelType,
+    IMAGEPP_EXPORT                 HRARepPalParms( const HFCPtr<HRPPixelType>& pi_pPixelType,
                                            const HRASamplingOptions&   pi_rOptions,
                                            bool                       pi_ComputeHistogram = false,
                                            uint32_t                    pi_MaxEntries = 0);
-    _HDLLg virtual         ~HRARepPalParms();
+    IMAGEPP_EXPORT virtual         ~HRARepPalParms();
 
     // Settings
     const HFCPtr<HRPPixelType>&
@@ -38,7 +39,7 @@ public:
     void            SetMaxEntries(uint32_t pi_MaxEntries);
     uint32_t        GetMaxEntries() const;
 
-    _HDLLg HRPQuantizedPalette*
+    IMAGEPP_EXPORT HRPQuantizedPalette*
     CreateQuantizedPalette() const;
 
     bool           UseCache() const;
@@ -75,5 +76,6 @@ private:
                                         bool                       pi_ComputeHistogram,
                                         uint32_t                    pi_MaxEntries);
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRARepPalParms.hpp"

@@ -2,18 +2,18 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFFliFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSpotFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFFliFile.h>
 
-#include <Imagepp/all/h/HFCException.h>
+#include <Imagepp/all/h/HRFException.h>
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HFCMemoryBinStream.h>
 #include <Imagepp/all/h/HFCBuffer.h>
@@ -30,9 +30,7 @@
 #include <Imagepp/all/h/HCDCodecFLIRLE8.h>
 #include <Imagepp/all/h/HTIFFUtils.h>
 #include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HFCMemoryBinStream.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 
@@ -193,8 +191,7 @@ HRFFliCreator::HRFFliCreator()
 WString HRFFliCreator::GetLabel() const
     {
     // FLI/FLIC File Format
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_FLI); // FLI/FLIC File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_FLI()); // FLI/FLIC File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -258,36 +255,36 @@ bool HRFFliCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     // Open the FLI/FLIC File & place file pointer at the start of the file
 
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
-    if (pFile->Read((void*)&FileHeader.size, sizeof FileHeader.size) != sizeof FileHeader.size)
+    if (pFile->Read(&FileHeader.size, sizeof FileHeader.size) != sizeof FileHeader.size)
         goto WRAPUP;
 
     if (FileHeader.size != pFile->GetSize())
         goto WRAPUP;
 
-    if (pFile->Read((void*)&FileHeader.type, sizeof FileHeader.type) != sizeof FileHeader.type)
+    if (pFile->Read(&FileHeader.type, sizeof FileHeader.type) != sizeof FileHeader.type)
         goto WRAPUP;
 
     //only FLI and FLC with 8-bit depth are supported as of now
     if (FileHeader.type != 0xAF11 && FileHeader.type != 0xAF12)
         goto WRAPUP;
 
-    if (pFile->Read((void*)&FileHeader.frames, sizeof FileHeader.frames) != sizeof FileHeader.frames ||
-        pFile->Read((void*)&FileHeader.width,  sizeof FileHeader.width)  != sizeof FileHeader.width ||
-        pFile->Read((void*)&FileHeader.height, sizeof FileHeader.height) != sizeof FileHeader.height ||
-        pFile->Read((void*)&FileHeader.depth,  sizeof FileHeader.depth)  != sizeof FileHeader.depth)
+    if (pFile->Read(&FileHeader.frames, sizeof FileHeader.frames) != sizeof FileHeader.frames ||
+        pFile->Read(&FileHeader.width,  sizeof FileHeader.width)  != sizeof FileHeader.width ||
+        pFile->Read(&FileHeader.height, sizeof FileHeader.height) != sizeof FileHeader.height ||
+        pFile->Read(&FileHeader.depth,  sizeof FileHeader.depth)  != sizeof FileHeader.depth)
         goto WRAPUP;
 
     if(FileHeader.depth != 8)
         goto WRAPUP;
 
-    if (pFile->Read((void*)&FileHeader.flags,     sizeof FileHeader.flags)     != sizeof FileHeader.flags ||
-        pFile->Read((void*)&FileHeader.speed,     sizeof FileHeader.speed)     != sizeof FileHeader.speed ||
-        pFile->Read((void*)&FileHeader.reserved1, sizeof FileHeader.reserved1) != sizeof FileHeader.reserved1)
+    if (pFile->Read(&FileHeader.flags,     sizeof FileHeader.flags)     != sizeof FileHeader.flags ||
+        pFile->Read(&FileHeader.speed,     sizeof FileHeader.speed)     != sizeof FileHeader.speed ||
+        pFile->Read(&FileHeader.reserved1, sizeof FileHeader.reserved1) != sizeof FileHeader.reserved1)
         goto WRAPUP;
 
     if(FileHeader.reserved1 != 0x0000)
@@ -295,8 +292,8 @@ bool HRFFliCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     pFile->SeekToBegin();
     pFile->Seek(FLIC_HEADER_LENGTH);
-    if (pFile->Read((void*)&PrefixHeader.size,          sizeof PrefixHeader.size) != sizeof PrefixHeader.size ||
-        pFile->Read((void*)&PrefixHeader.type,          sizeof PrefixHeader.type) != sizeof PrefixHeader.type)
+    if (pFile->Read(&PrefixHeader.size,          sizeof PrefixHeader.size) != sizeof PrefixHeader.size ||
+        pFile->Read(&PrefixHeader.type,          sizeof PrefixHeader.type) != sizeof PrefixHeader.type)
         goto WRAPUP;
 
     if (PrefixHeader.type != 0xF1FA)
@@ -363,8 +360,7 @@ HRFResolutionEditor* HRFFliFile::CreateResolutionEditor(uint32_t       pi_Page,
         }
     else
         {
-        throw HFCFileException(HRF_CODEC_NOT_SUPPORTED_EXCEPTION,
-                               m_pURL->GetURL());
+        throw HRFCodecNotSupportedException(m_pURL->GetURL());
         }
 
 
@@ -432,9 +428,7 @@ bool HRFFliFile::Open()
     if (!m_IsOpen)
         {
 
-        m_pFliFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(m_pFliFile, GetURL()->GetURL());
+        m_pFliFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -483,12 +477,12 @@ void HRFFliFile::GetFileHeaderFromFile()
     // Lock the sister file for the getFileHeaderFromFile method
     HFCLockMonitor SisterFileLock(GetLockManager());
 
-    m_pFliFile->Read((void*)&m_FliFileHeader.size,              sizeof m_FliFileHeader.size);
-    m_pFliFile->Read((void*)&m_FliFileHeader.type,              sizeof m_FliFileHeader.type);
-    m_pFliFile->Read((void*)&m_FliFileHeader.frames,            sizeof m_FliFileHeader.frames);
-    m_pFliFile->Read((void*)&m_FliFileHeader.width,             sizeof m_FliFileHeader.width);
-    m_pFliFile->Read((void*)&m_FliFileHeader.height,            sizeof m_FliFileHeader.height);
-    m_pFliFile->Read((void*)&m_FliFileHeader.depth,             sizeof m_FliFileHeader.depth);
+    m_pFliFile->Read(&m_FliFileHeader.size,              sizeof m_FliFileHeader.size);
+    m_pFliFile->Read(&m_FliFileHeader.type,              sizeof m_FliFileHeader.type);
+    m_pFliFile->Read(&m_FliFileHeader.frames,            sizeof m_FliFileHeader.frames);
+    m_pFliFile->Read(&m_FliFileHeader.width,             sizeof m_FliFileHeader.width);
+    m_pFliFile->Read(&m_FliFileHeader.height,            sizeof m_FliFileHeader.height);
+    m_pFliFile->Read(&m_FliFileHeader.depth,             sizeof m_FliFileHeader.depth);
 
 
 
@@ -511,10 +505,10 @@ void HRFFliFile::GetFirstFrameHeaderFromFile()
     m_pFliFile->SeekToBegin();
     m_pFliFile->Seek(FLIC_HEADER_LENGTH);
 
-    m_pFliFile->Read((void*)&m_FliPrefixHeader.size,              sizeof m_FliPrefixHeader.size);
-    m_pFliFile->Read((void*)&m_FliPrefixHeader.type,              sizeof m_FliPrefixHeader.type);
-    m_pFliFile->Read((void*)&m_FliPrefixHeader.chunks,            sizeof m_FliPrefixHeader.chunks);
-    m_pFliFile->Read((void*)&m_FliPrefixHeader.reserved,          sizeof m_FliPrefixHeader.reserved);
+    m_pFliFile->Read(&m_FliPrefixHeader.size,              sizeof m_FliPrefixHeader.size);
+    m_pFliFile->Read(&m_FliPrefixHeader.type,              sizeof m_FliPrefixHeader.type);
+    m_pFliFile->Read(&m_FliPrefixHeader.chunks,            sizeof m_FliPrefixHeader.chunks);
+    m_pFliFile->Read(&m_FliPrefixHeader.reserved,          sizeof m_FliPrefixHeader.reserved);
 
     // Unlock the sister file
     SisterFileLock.ReleaseKey();
@@ -535,8 +529,8 @@ void HRFFliFile::GetFirstChunkHeaderFromFile()
     m_pFliFile->SeekToBegin();
     m_pFliFile->Seek(FLIC_HEADER_LENGTH + FLIC_FRAME_HEADER_LENGTH);
 
-    m_pFliFile->Read((void*)&m_FliChunkHeader[0].chunkSize,              sizeof m_FliChunkHeader[0].chunkSize);
-    m_pFliFile->Read((void*)&m_FliChunkHeader[0].chunkType,              sizeof m_FliChunkHeader[0].chunkType);
+    m_pFliFile->Read(&m_FliChunkHeader[0].chunkSize,              sizeof m_FliChunkHeader[0].chunkSize);
+    m_pFliFile->Read(&m_FliChunkHeader[0].chunkType,              sizeof m_FliChunkHeader[0].chunkType);
 
     //as the oframe1 field of the header is only used by FLC files,
     //we prefer to set the offset manually
@@ -559,8 +553,8 @@ void HRFFliFile::GetNextChunkHeaderFromFile()
     // Lock the sister file for the getFileHeaderFromFile method
     HFCLockMonitor SisterFileLock(GetLockManager());
 
-    m_pFliFile->Read((void*)&m_FliChunkHeader[1].chunkSize,              sizeof m_FliChunkHeader[1].chunkSize);
-    m_pFliFile->Read((void*)&m_FliChunkHeader[1].chunkType,              sizeof m_FliChunkHeader[1].chunkType);
+    m_pFliFile->Read(&m_FliChunkHeader[1].chunkSize,              sizeof m_FliChunkHeader[1].chunkSize);
+    m_pFliFile->Read(&m_FliChunkHeader[1].chunkType,              sizeof m_FliChunkHeader[1].chunkType);
 
     // Unlock the sister file
     SisterFileLock.ReleaseKey();
@@ -587,9 +581,9 @@ bool HRFFliFile::GetColorChunk()
     m_pFliFile->SeekToBegin();
     m_pFliFile->Seek(FLIC_HEADER_LENGTH + FLIC_FRAME_HEADER_LENGTH + FLIC_CHUNK_HEADER_LENGTH);
 
-    m_pFliFile->Read((void*)&nbPackets,              sizeof nbPackets);
-    m_pFliFile->Read((void*)&skipCount,              sizeof skipCount);
-    m_pFliFile->Read((void*)&copyCount,              sizeof copyCount);
+    m_pFliFile->Read(&nbPackets,              sizeof nbPackets);
+    m_pFliFile->Read(&skipCount,              sizeof skipCount);
+    m_pFliFile->Read(&copyCount,              sizeof copyCount);
 
     if(nbPackets == 1)
         {
@@ -658,8 +652,7 @@ void HRFFliFile::CreateDescriptors ()
         }
     else
         {
-        throw HFCFileException(HRF_CODEC_NOT_SUPPORTED_EXCEPTION,
-                               m_pURL->GetURL());
+        throw HRFCodecNotSupportedException(m_pURL->GetURL());
         }
 
     // Tag information
@@ -759,9 +752,7 @@ void HRFFliFile::SaveFliFile(bool pi_CloseFile)
 bool HRFFliFile::Create()
     {
     // Open the file.
-    m_pFliFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pFliFile, GetURL()->GetURL());
+    m_pFliFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     // Create the sister file for file sharing control
     SharingControlCreate();
@@ -793,18 +784,18 @@ void HRFFliFile::GetPaletteFromFile()
 
             for (uint32_t color=0; color < maxColor; color++)
                 {
-                m_pFliFile->Read((void*)&m_RgbColors[color].m_rgbRed,  sizeof m_RgbColors[color].m_rgbRed);
-                m_pFliFile->Read((void*)&m_RgbColors[color].m_rgbGreen, sizeof m_RgbColors[color].m_rgbGreen);
-                m_pFliFile->Read((void*)&m_RgbColors[color].m_rgbBlue,   sizeof m_RgbColors[color].m_rgbBlue);
+                m_pFliFile->Read(&m_RgbColors[color].m_rgbRed,  sizeof m_RgbColors[color].m_rgbRed);
+                m_pFliFile->Read(&m_RgbColors[color].m_rgbGreen, sizeof m_RgbColors[color].m_rgbGreen);
+                m_pFliFile->Read(&m_RgbColors[color].m_rgbBlue,   sizeof m_RgbColors[color].m_rgbBlue);
                 }
             break;
 
         case FLIC_COLOR_64:
             for (uint32_t color=0; color < maxColor; color++)
                 {
-                m_pFliFile->Read((void*)&m_RgbColors[color].m_rgbRed,  sizeof m_RgbColors[color].m_rgbRed);
-                m_pFliFile->Read((void*)&m_RgbColors[color].m_rgbGreen, sizeof m_RgbColors[color].m_rgbGreen);
-                m_pFliFile->Read((void*)&m_RgbColors[color].m_rgbBlue,   sizeof m_RgbColors[color].m_rgbBlue);
+                m_pFliFile->Read(&m_RgbColors[color].m_rgbRed,  sizeof m_RgbColors[color].m_rgbRed);
+                m_pFliFile->Read(&m_RgbColors[color].m_rgbGreen, sizeof m_RgbColors[color].m_rgbGreen);
+                m_pFliFile->Read(&m_RgbColors[color].m_rgbBlue,   sizeof m_RgbColors[color].m_rgbBlue);
                 }
             //we mult by 4 so the range goes from 0 to 256
             for (uint32_t color=0; color < maxColor; color++)
@@ -816,7 +807,7 @@ void HRFFliFile::GetPaletteFromFile()
             break;
 
         default :
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+            throw HFCCorruptedFileException(m_pURL->GetURL());
             break;
 
         }
@@ -913,13 +904,13 @@ HRFFliFile::HRFFliFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
     else
         {
         // if Open success and it is not a new file
         if(!Open())
-            throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, m_pURL->GetURL());
+            throw HFCCorruptedFileException(m_pURL->GetURL());
         // Create Page and Res Descriptors.
         CreateDescriptors();
         }
@@ -943,7 +934,7 @@ HRFFliFile::HRFFliFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
 
     }

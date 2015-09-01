@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIntergraphRLEFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -12,6 +12,7 @@
 #include "HRFIntergraphMonochromeFile.h"
 #include "HRFRasterFileCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFRLECapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -27,7 +28,7 @@ public:
     friend struct HRFIntergraphRleCreator;
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1484, HRFIntergraphMonochromeFile)
+    HDECLARE_CLASS_ID(HRFFileId_IntergraphRle, HRFIntergraphMonochromeFile)
 
     // allow to Open an image file
     HRFIntergraphRleFile (const HFCPtr<HFCURL>&  pi_rpURL,
@@ -80,9 +81,10 @@ struct HRFIntergraphRleCreator : public HRFIntergraphFile::Creator
            HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
            uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFIntergraphRleCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFIntergraphRleCreator)
 
     // Disabled methodes
     HRFIntergraphRleCreator();
     };
+END_IMAGEPP_NAMESPACE
 

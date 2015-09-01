@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_odbc.cpp 20862 2010-10-17 15:47:12Z tamas $
+ * $Id: cpl_odbc.cpp 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  OGR ODBC Driver
  * Purpose:  Declarations for ODBC Access Cover API.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2003, Frank Warmerdam
+ * Copyright (c) 2008, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,7 +36,7 @@
 
 #ifndef WIN32CE /* ODBC is not supported on Windows CE. */
 
-CPL_CVSID("$Id: cpl_odbc.cpp 20862 2010-10-17 15:47:12Z tamas $");
+CPL_CVSID("$Id: cpl_odbc.cpp 27739 2014-09-25 18:49:52Z goatbar $");
 
 #ifndef SQLColumns_TABLE_CAT 
 #define SQLColumns_TABLE_CAT 1
@@ -74,9 +75,10 @@ CPLODBCDriverInstaller::CPLODBCDriverInstaller()
 /************************************************************************/
 
 int CPLODBCDriverInstaller::InstallDriver( const char* pszDriver,
-        const char* pszPathIn, WORD fRequest )
+                                           CPL_UNUSED const char* pszPathIn,
+                                           WORD fRequest )
 {
-    CPLAssert( NULL != pszDriver ); 
+    CPLAssert( NULL != pszDriver );
 
     // Try to install driver to system-wide location
     if ( FALSE == SQLInstallDriverEx( pszDriver, NULL, m_szPathOut,
@@ -84,11 +86,11 @@ int CPLODBCDriverInstaller::InstallDriver( const char* pszDriver,
                     &m_nUsageCount ) )
     {
         const WORD nErrorNum = 1; // TODO - a function param?
-        RETCODE cRet = SQL_ERROR;
-        
+        CPL_UNUSED RETCODE cRet = SQL_ERROR;
+
         // Failure is likely related to no write permissions to
         // system-wide default location, so try to install to HOME
-       
+
         static char* pszEnvIni = NULL;
         if (pszEnvIni == NULL)
         {

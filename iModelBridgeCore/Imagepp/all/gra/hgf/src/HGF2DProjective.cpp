@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DProjective.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DProjective
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGFAngle.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
@@ -267,11 +267,26 @@ HGF2DProjective& HGF2DProjective::operator=(const HGF2DProjective& pi_rObj)
     return (*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alexandre.Gariepy               06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HGF2DProjective::IsConvertDirectThreadSafe() const 
+    { 
+    return true; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alexandre.Gariepy               06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HGF2DProjective::IsConvertInverseThreadSafe() const 
+    { 
+    return true; 
+    }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjective::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DProjective::ConvertDirect(double* pio_pXInOut,
                                     double* pio_pYInOut) const
     {
     HINVARIANTS;
@@ -288,20 +303,25 @@ void HGF2DProjective::ConvertDirect(double* pio_pXInOut,
     // The denominator must be different from 0.0
     HASSERT(Denominator != 0.0);
 
+    if (0.0L == Denominator)
+        return ERROR;
+
     // Transform coordinates
     *pio_pXInOut = ((X * m_D00) + (Y * m_D01) + m_D02) / Denominator;
     *pio_pYInOut = ((X * m_D10) + (Y * m_D11) + m_D12) / Denominator;
+
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjective::ConvertDirect(double    pi_YIn,
-                                    double    pi_XInStart,
-                                    size_t     pi_NumLoc,
-                                    double    pi_XInStep,
-                                    double*   po_pXOut,
-                                    double*   po_pYOut) const
+StatusInt HGF2DProjective::ConvertDirect(double    pi_YIn,
+                                         double    pi_XInStart,
+                                         size_t    pi_NumLoc,
+                                         double    pi_XInStep,
+                                         double*   po_pXOut,
+                                         double*   po_pYOut) const
     {
     HINVARIANTS;
 
@@ -309,6 +329,8 @@ void HGF2DProjective::ConvertDirect(double    pi_YIn,
     HPRECONDITION(po_pYOut != 0);
 
     uint32_t Index;
+
+    StatusInt status = SUCCESS;
     double X;
 
     // Compute the denominator part
@@ -325,19 +347,75 @@ void HGF2DProjective::ConvertDirect(double    pi_YIn,
 
         HASSERT(Denominator != 0.0);
 
-        po_pXOut[Index] = ((X * m_D00) + ByProdY1) / Denominator;
-        po_pYOut[Index] = ((X * m_D10) + ByProdY2) / Denominator;
+        // Note that even though a coordinate is invalid we continue with others.
+        if (0.0L == Denominator)
+            status = ERROR;
+        else
+            {
+            po_pXOut[Index] = ((X * m_D00) + ByProdY1) / Denominator;
+            po_pYOut[Index] = ((X * m_D10) + ByProdY2) / Denominator;
+            }
         }
+
+    return status;
+    }
+
+//-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DProjective::ConvertDirect(size_t    pi_NumLoc,
+                                         double*   pio_aXInOut,
+                                         double*   pio_aYInOut) const
+    {
+    HINVARIANTS;
+
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+
+
+    StatusInt status = SUCCESS;
+
+    double X;
+    double Y;
+
+    double Denominator;
+
+    double ByProdY1;
+    double ByProdY2;
+
+    for (uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        X = pio_aXInOut[i];
+        Y = pio_aYInOut[i];
+
+        ByProdY1 = ((Y * m_D01) + m_D02);
+        ByProdY2 = ((Y * m_D11) + m_D12);
+
+        Denominator = (m_D20 * X) + (m_D21 * Y) + m_D22;
+
+        HASSERT(Denominator != 0.0);
+
+        // Note that even though a coordinate is invalid we continue with others.
+        if (0.0L == Denominator)
+            status = ERROR;
+        else
+            {
+            pio_aXInOut[i] = ((X * m_D00) + ByProdY1) / Denominator;
+            pio_aYInOut[i] = ((X * m_D10) + ByProdY2) / Denominator;
+            }
+        }
+
+    return status;
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjective::ConvertDirect(double   pi_XIn,
-                                    double   pi_YIn,
-                                    double*  po_pXOut,
-                                    double*  po_pYOut) const
+StatusInt HGF2DProjective::ConvertDirect(double   pi_XIn,
+                                         double   pi_YIn,
+                                         double*  po_pXOut,
+                                         double*  po_pYOut) const
     {
     HINVARIANTS;
 
@@ -350,17 +428,22 @@ void HGF2DProjective::ConvertDirect(double   pi_XIn,
     // The denominator must be different from 0.0
     HASSERT(Denominator != 0.0);
 
+    if (0.0L == Denominator)
+        return ERROR;
+
     // Transform coordinates
     *po_pXOut = ((pi_XIn * m_D00) + (pi_YIn * m_D01) + m_D02) / Denominator;
     *po_pYOut = ((pi_XIn * m_D10) + (pi_YIn * m_D11) + m_D12) / Denominator;
+
+    return SUCCESS;
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DProjective::ConvertInverse(double* pio_pXInOut,
-                                     double* pio_pYInOut) const
+StatusInt HGF2DProjective::ConvertInverse(double* pio_pXInOut,
+                                          double* pio_pYInOut) const
     {
     HINVARIANTS;
 
@@ -376,26 +459,33 @@ void HGF2DProjective::ConvertInverse(double* pio_pXInOut,
     // The denominator must be different from 0.0
     HASSERT(Denominator != 0.0);
 
+    if (0.0L == Denominator)
+        return ERROR;
+
     // Transform coordinates
     *pio_pXInOut = ((X * m_I00) + (Y * m_I01) + m_I02) / Denominator;
     *pio_pYInOut = ((X * m_I10) + (Y * m_I11) + m_I12) / Denominator;
+
+    return SUCCESS;
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DProjective::ConvertInverse(double    pi_YIn,
-                                     double    pi_XInStart,
-                                     size_t     pi_NumLoc,
-                                     double    pi_XInStep,
-                                     double*   po_pXOut,
-                                     double*   po_pYOut) const
+StatusInt HGF2DProjective::ConvertInverse(double    pi_YIn,
+                                          double    pi_XInStart,
+                                          size_t    pi_NumLoc,
+                                          double    pi_XInStep,
+                                          double*   po_pXOut,
+                                          double*   po_pYOut) const
     {
     HINVARIANTS;
 
     HPRECONDITION(po_pXOut != 0);
     HPRECONDITION(po_pYOut != 0);
+
+    StatusInt status = SUCCESS;
 
     uint32_t Index;
     double X;
@@ -414,19 +504,75 @@ void HGF2DProjective::ConvertInverse(double    pi_YIn,
 
         HASSERT(Denominator != 0.0);
 
-        po_pXOut[Index] = ((X * m_I00) + ByProdY1) / Denominator;
-        po_pYOut[Index] = ((X * m_I10) + ByProdY2) / Denominator;
+        // If a single coordinate is on vanishing line we willr eturn error yet convert all other 
+        // valid coordinates.
+        if (0.0L == Denominator)
+            status = ERROR;
+        else
+            {
+            po_pXOut[Index] = ((X * m_I00) + ByProdY1) / Denominator;
+            po_pYOut[Index] = ((X * m_I10) + ByProdY2) / Denominator;
+            }
         }
-    }
 
+    return status;
+    }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DProjective::ConvertInverse(double  pi_XIn,
-                                     double  pi_YIn,
-                                     double* po_pXOut,
-                                     double* po_pYOut) const
+StatusInt HGF2DProjective::ConvertInverse(size_t    pi_NumLoc,
+                                          double*   pio_aXInOut,
+                                          double*   pio_aYInOut) const
+    {
+    HINVARIANTS;
+
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+
+    StatusInt status = SUCCESS;
+
+    double X;
+    double Y;
+
+    double Denominator;
+
+    double ByProdY1;
+    double ByProdY2;
+
+    for (uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        X = pio_aXInOut[i];
+        Y = pio_aYInOut[i];
+
+        Denominator = (m_I20 * X) + (m_I21 * Y) + m_I22;
+
+        HASSERT(Denominator != 0.0);
+
+        ByProdY1 = ((Y * m_I01) + m_I02);
+        ByProdY2 = ((Y * m_I11) + m_I12);
+
+        // If a single coordinate is on vanishing line we will return error yet convert all other 
+        // valid coordinates.
+        if (0.0L == Denominator)
+            status = ERROR;
+        else
+            {
+            pio_aXInOut[i] = ((X * m_I00) + ByProdY1) / Denominator;
+            pio_aYInOut[i] = ((X * m_I10) + ByProdY2) / Denominator;
+            }
+        }
+
+    return status;
+    }
+
+//-----------------------------------------------------------------------------
+// Converter (inverse)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DProjective::ConvertInverse(double  pi_XIn,
+                                          double  pi_YIn,
+                                          double* po_pXOut,
+                                          double* po_pYOut) const
     {
     HINVARIANTS;
 
@@ -439,9 +585,14 @@ void HGF2DProjective::ConvertInverse(double  pi_XIn,
     // The denominator must be different from 0.0
     HASSERT(Denominator != 0.0);
 
+    if (0.0L == Denominator)
+        return ERROR;
+
     // Transform coordinates
     *po_pXOut = ((pi_XIn * m_I00) + (pi_YIn * m_I01) + m_I02) / Denominator;
     *po_pYOut = ((pi_XIn * m_I10) + (pi_YIn * m_I11) + m_I12) / Denominator;
+
+    return SUCCESS;
     }
 
 

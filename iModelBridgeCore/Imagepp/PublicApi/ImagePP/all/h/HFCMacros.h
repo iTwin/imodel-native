@@ -2,17 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMacros.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCMacros
 //-----------------------------------------------------------------------------
 #pragma once
-
-// Normally included by hstdcpp.h and HDllSupport.h
-#ifndef _HDLLNone
-#define _HDLLNone
-#endif
 
 // MultiPlatform Note
 //
@@ -29,10 +24,10 @@
         HDLL static pi_ClassName* GetInstance(); \
         HDLL static bool         IsCreated(); \
     private: \
-        friend struct IPP##pi_ClassName##Destroyer; \
+        struct IPP##pi_ClassName##Destroyer; \
         static pi_ClassName*    s_pInstance;
 
-#define HFC_DECLARE_SINGLETON(pi_ClassName) HFC_DECLARE_SINGLETON_DLL(_HDLLNone, pi_ClassName)
+#define HFC_DECLARE_SINGLETON(pi_ClassName) HFC_DECLARE_SINGLETON_DLL(, pi_ClassName)
 
 
 //-----------------------------------------------------------------------------
@@ -53,7 +48,7 @@ pi_ClassName* pi_ClassName::GetInstance() \
         s_pInstance = new pi_ClassName(); \
     return s_pInstance; \
 } \
-static struct IPP##pi_ClassName##Destroyer \
+static struct pi_ClassName::IPP##pi_ClassName##Destroyer \
 { \
     ~IPP##pi_ClassName##Destroyer() \
     { \
@@ -63,7 +58,9 @@ static struct IPP##pi_ClassName##Destroyer \
             pi_ClassName::s_pInstance = 0; \
         } \
     } \
-} s_IPP##pi_ClassName##Destroyer;
+} s_IPP##pi_ClassName##Destroyer; \
+
+
 
 //-----------------------------------------------------------------------------
 // Declare a singleton with life cycle control by an Host
@@ -78,7 +75,7 @@ static struct IPP##pi_ClassName##Destroyer \
     private: \
     static pi_HostNamespace::Host::Key s_##pi_ClassName##Key;
 
-#define HFC_DECLARE_HOSTOBJECT_SINGLETON(pi_HostNamespace, pi_ClassName) HFC_DECLARE_HOSTOBJECT_SINGLETON_DLL(_HDLLNone, pi_HostNamespace, pi_ClassName)
+#define HFC_DECLARE_HOSTOBJECT_SINGLETON(pi_HostNamespace, pi_ClassName) HFC_DECLARE_HOSTOBJECT_SINGLETON_DLL(, pi_HostNamespace, pi_ClassName)
 
 
 //-----------------------------------------------------------------------------
@@ -94,7 +91,7 @@ static struct IPP##pi_ClassName##Destroyer \
 } \
     pi_ClassName* pi_ClassName::GetInstance() \
 { \
-    pi_ClassName*    pInstance = (pi_ClassName*)ImagePP::ImageppLib::GetHost().GetHostObject(s_##pi_ClassName##Key); \
+    pi_ClassName*    pInstance = (pi_ClassName*)BentleyApi::ImagePP::ImageppLib::GetHost().GetHostObject(s_##pi_ClassName##Key); \
     if (pInstance == 0) \
         pi_HostNamespace::GetHost().SetHostObject(s_##pi_ClassName##Key,pInstance = new pi_ClassName()); \
     return pInstance; \

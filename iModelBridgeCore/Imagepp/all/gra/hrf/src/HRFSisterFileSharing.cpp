@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSisterFileSharing.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSisterFileSharing
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFSisterFileSharing.h>
 #include <Imagepp/all/h/HFCURLFile.h>
@@ -19,32 +19,6 @@
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HFCMonitor.h>
 #include <Imagepp/all/h/HRFUtility.h>
-
-
-class HFileExistent
-    {
-public:
-    HFileExistent(WString& pi_Filename, bool* po_Exist)
-        {
-        m_Handle = CreateFileW(pi_Filename.c_str(), GENERIC_READ,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING,
-                              0, 0);
-
-        if (m_Handle != INVALID_HANDLE_VALUE)
-            *po_Exist = true;
-        else
-            *po_Exist = false;
-        };
-
-    virtual ~HFileExistent()
-        {
-        if (m_Handle != INVALID_HANDLE_VALUE)
-            CloseHandle(m_Handle);
-        };
-
-private:
-    HANDLE m_Handle;
-    };
 
 /**----------------------------------------------------------------------------
     Constructor
@@ -84,7 +58,7 @@ HRFSisterFileSharing::HRFSisterFileSharing(const HFCPtr<HFCURL>& pi_rpURL,
                                   HFC_SHARE_READ_WRITE | HFC_READ_ONLY,
                                   false, false, 0, -1/* didn't throw */) );
         bool IsExistent = true;
-        if (pIsExistentFile->GetLastExceptionID() == HFC_FILE_NOT_FOUND_EXCEPTION)
+        if (dynamic_cast<HFCFileNotFoundException*>(pIsExistentFile->GetLastException()) != 0)
             {
             IsExistent = false;
             }
@@ -99,8 +73,7 @@ HRFSisterFileSharing::HRFSisterFileSharing(const HFCPtr<HFCURL>& pi_rpURL,
             {
             HFCURLFile* pURL = (HFCURLFile*)m_pURL.GetPtr();
             WString Filename(pURL->GetHost() + L"\\" + pURL->GetPath());
-            bool IsExistent;
-            HFileExistent  FileEx(Filename, &IsExistent);
+            bool IsExistent = BeFileName::DoesPathExist(Filename.c_str());
 
             m_AccessMode.m_HasCreateAccess = IsExistent;
 
@@ -114,7 +87,7 @@ HRFSisterFileSharing::HRFSisterFileSharing(const HFCPtr<HFCURL>& pi_rpURL,
                                                                   true,                     // Auto Remove
                                                                   0,                        // File offset
                                                                   5);                       // Retry 5 times before throw
-                    ThrowFileExceptionIfError (m_pSharingControlFile, m_pURL->GetURL());
+                    m_pSharingControlFile->ThrowOnError(); 
                     }
                 catch(HFCFileException& )
                     {
@@ -126,7 +99,7 @@ HRFSisterFileSharing::HRFSisterFileSharing(const HFCPtr<HFCURL>& pi_rpURL,
                                                                   true,                     // Auto Remove
                                                                   0,                        // File offset
                                                                   5);                       // Retry 5 times before throw
-                    ThrowFileExceptionIfError (m_pSharingControlFile, m_pURL->GetURL());
+                    m_pSharingControlFile->ThrowOnError(); 
                     }
 
                 // Close file
@@ -172,7 +145,7 @@ HRFSisterFileSharing::HRFSisterFileSharing(const HFCPtr<HFCURL>& pi_rpURL,
     if (!pi_BypassSharing)
         {
         // Default constructor
-        HRFSisterFileSharing::HRFSisterFileSharing(pi_rpURL, pi_AccessMode);
+        HRFSisterFileSharing(pi_rpURL, pi_AccessMode);
         }
     else
         {
@@ -216,8 +189,8 @@ void HRFSisterFileSharing::OpenFile()
     WString Filename(pURL->GetHost() + L"\\" + pURL->GetPath());
 
 
-    bool IsExistent;
-    HFileExistent  FileEx(Filename, &IsExistent);
+    bool IsExistent = BeFileName::DoesPathExist(Filename.c_str());
+
 #if 0
     // Check if the file exist, don't use HFCStat, because if the file exist, I would like
     // to keep it alive, until open it.
@@ -227,7 +200,7 @@ void HRFSisterFileSharing::OpenFile()
                               HFC_SHARE_READ_WRITE | HFC_READ_ONLY,
                               false, false, 0, -1/* didn't throw */) );
     bool IsExistent = true;
-    if (pIsExistentFile->GetLastExceptionID() == HFC_FILE_NOT_FOUND_EXCEPTION)
+    if (dynamic_cast<HFCFileNotFoundException*>(pIsExistentFile->GetLastException()) != 0)
         {
         IsExistent = false;
         }
@@ -242,18 +215,15 @@ void HRFSisterFileSharing::OpenFile()
                                                           true,                 // Auto remove
                                                           0,                    // File offset
                                                           5);
-            ThrowFileExceptionIfError (m_pSharingControlFile, m_pURL->GetURL());
+            m_pSharingControlFile->ThrowOnError(); 
 
             // Set the pointer of the Sister file binStream in the LockManager object.
             m_pLockManager->SetSisterFileStream(m_pSharingControlFile);
 
             m_ModifCount = GetCurrentModifCount();
             }
-        catch(HFCFileException& Exception)
+        catch(HFCFileNotFoundException&)
             {
-            if (Exception.GetID() != HFC_FILE_NOT_FOUND_EXCEPTION)
-                throw;
-
             m_pSharingControlFile = 0;
             }
         }

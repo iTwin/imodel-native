@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAPyramidRaster.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,16 +14,7 @@
 #include "HGFTileIDDescriptor.h"
 #include "HRATiledRaster.h"
 
-//-----------------------------------------------------------------------------
-// public
-// GetRawDataPtr    - Get the buffer's raw data pointer
-//-----------------------------------------------------------------------------
-inline const void* HRAPyramidRaster::GetRawDataPtr () const
-    {
-    // Get buffer's raw data pointer...
-    return 0;
-    }
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // CreateIterator    - Create an iterator.
@@ -86,35 +77,6 @@ inline double HRAPyramidRaster::GetSubImagesResolution (unsigned short pi_SubIma
     }
 
 
-
-//-----------------------------------------------------------------------------
-// public
-// Clone -
-//-----------------------------------------------------------------------------
-inline HRARaster* HRAPyramidRaster::Clone (HPMObjectStore* pi_pStore,
-                                           HPMPool*        pi_pLog) const
-    {
-    // Make a tmp Raster
-    HRAPyramidRaster* pTmpRaster = new HRAPyramidRaster();
-
-    pTmpRaster->HRAStoredRaster::operator=(*this);
-
-    pTmpRaster->DeepDelete();
-    pTmpRaster->DeepCopy (*this, pi_pStore, pi_pLog);
-
-    return pTmpRaster;
-    }
-//-----------------------------------------------------------------------------
-// public
-// Clone -
-//-----------------------------------------------------------------------------
-inline HPMPersistentObject* HRAPyramidRaster::Clone () const
-    {
-    // Make a tmp Raster
-    return new HRAPyramidRaster(*this);
-    }
-
-
 //-----------------------------------------------------------------------------
 // public
 // HasSinglePixeltype -
@@ -129,7 +91,7 @@ inline bool HRAPyramidRaster::HasSinglePixelType  () const
 // private
 // GetSubImage - Get a Raster pointer for a specify sub-image.
 //-----------------------------------------------------------------------------
-inline  HFCPtr<HRAStoredRaster> HRAPyramidRaster::GetSubImage (unsigned short pi_Index) const
+inline  HFCPtr<HRATiledRaster> HRAPyramidRaster::GetSubImage (unsigned short pi_Index) const
     {
     if (pi_Index < m_pSubImageList.BufSize)
         return m_pSubImageList.pData[pi_Index].m_pSubImage;
@@ -202,9 +164,7 @@ inline void HRAPyramidRaster::EnableLookAhead (bool pi_ByBlock)
 
     m_LookAheadEnabled = true;
 
-    if (m_pRasterModel->IsCompatibleWith(HRATiledRaster::CLASS_ID))
-        {
-        for (uint32_t i = 0; i < m_pSubImageList.BufSize; i++)
-            ((HFCPtr<HRATiledRaster>&)m_pSubImageList.pData[i].m_pSubImage)->EnableLookAhead(pi_ByBlock);
-        }
+   for (uint32_t i = 0; i < m_pSubImageList.BufSize; i++)
+        m_pSubImageList.pData[i].m_pSubImage->EnableLookAhead(pi_ByBlock);
     }
+END_IMAGEPP_NAMESPACE

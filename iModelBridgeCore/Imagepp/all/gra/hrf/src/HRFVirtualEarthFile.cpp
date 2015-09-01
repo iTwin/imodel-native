@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFVirtualEarthFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFVirtualEarthFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLHTTP.h>
 #include <Imagepp/all/h/HRFVirtualEarthFile.h>
@@ -26,9 +26,6 @@
 #include <Imagepp/all/h/HFCCallbackRegistry.h>
 #include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
 
-#include <Imagepp/all/h/HCPException.h>
-
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include <BeXml/BeXml.h>
@@ -36,23 +33,16 @@
 // Do not change this number without validating resolution descriptor creation.
 #define NB_BLOCK_READER_THREAD 10
 
-USING_NAMESPACE_IMAGEPP
 
-// These are tags that we use to build a pseudo Bing map URL.
-// They cannot be changed since MicroStation will persist these URL in its DGN format.
-#define PSEUDO_VE_SERVER            L"BingMaps.com" 
-#define PSEUDO_VE_AERIAL            L"/Imagery/Aerial"
-#define PSEUDO_VE_AERIALWITHLABEL   L"/Imagery/AerialWithLabels"
-#define PSEUDO_VE_ROAD              L"/Imagery/Road" 
-#define PSEUDO_VE_SERVER_URL        HFCURLHTTP::s_SchemeName() + L"://" + PSEUDO_VE_SERVER
+
+// Debug only
+//#define BINGMAPS_AUTO_PASSWORD
+
 
 // These are the ImagerySet tag that we use when requesting tiles URI. 
 // See Bing map "Get Imagery Metadata": http://msdn.microsoft.com/en-us/library/ff701716.aspx
 // *** DO NOT MODIFY unless bing map API is changing.
-#define BING_IMAGERYSET_AERIAL          L"Aerial"
-#define BING_IMAGERYSET_AERIALWITHLABEL L"AerialWithLabels"
-#define BING_IMAGERYSET_ROAD            L"Road"
-#define BING_MAPS_SERVER                L"http://dev.virtualearth.net/REST/V1/Imagery/Metadata/{ImagerySet}?o=xml&key={BingMapsKey}"
+#define BING_MAPS_METADATA_URL    L"http://dev.virtualearth.net/REST/V1/Imagery/Metadata/{ImagerySet}?o=xml&incl=ImageryProviders&key={BingMapsKey}"
 
 // Tags use to format server request
 #define SUBDOMAIN_TAG   L"{subdomain}"
@@ -61,36 +51,108 @@ USING_NAMESPACE_IMAGEPP
 #define IMAGERYSET_TAG  L"{ImagerySet}"
 #define BINGMAPSKEY_TAG L"{BingMapsKey}"
 
+// These are tags that we use to build a pseudo Bing map URL.
+// They cannot be changed since MicroStation will persist these URL in its DGN format.
+// {ImagerySet} = "Road", "AerialWithLabels" or whatever bing map support
+#define PSEUDO_BING_PARTIAL_URL L"www.bing.com/maps/"
+#define PSEUDO_BING_URL L"http://" PSEUDO_BING_PARTIAL_URL IMAGERYSET_TAG    // http://www.bing.com/maps/{ImagerySet}
+
 // Xml Response 
 #define BING_XML_REST_1_0               "http://schemas.microsoft.com/search/local/ws/rest/v1"
 #define BING_NAMESPACE_PREFIX           "BingMaps"
 #define BING_RESPONSE_ELEMENT           "Response"
+#define BING_BRANDLOGOURI_ELEMENT       "BrandLogoUri"
 #define BING_RESOURCESETS_ELEMENT       "ResourceSets"
 #define BING_RESOURCESET_ELEMENT        "ResourceSet"
 #define BING_RESOURCES_ELEMENT          "Resources"
 #define BING_IMAGERYMETADATA_ELEMENT    "ImageryMetadata"
 #define BING_IMAGEURL_ELEMENT           "ImageUrl"
 #define BING_IMAGEURLSUBDOMAINS_ELEMENT "ImageUrlSubdomains"
-
-// Bentley master key to use when connecting to Microsoft Bing Maps server. From a Microsoft point of view, all of our users are using this key.
-#define BING_MAPS_MASTER_KEY      L"AuKdXwGWIqiRlk_8sjFecGpFMTfTnW1a3YtAQAz4liSCzcGdcwWC3YgGmN2Tfasn"
-#define BING_DEFAULT_CULTURE      L"en-US"
-
-// Terra Pixel authentication. The key is provided by the users. Response is in plain text : "VALID" or "INVALID"
-// License request ex: "http://license.terrapixel.com/bing/Register/license_check.php?KEY=9cd61748-be07-468b-b3bc-ce45b60750ac"
-#define TERRAPIXEL_SERVER       L"http://license.terrapixel.com/bing/Register/license_check.php?KEY={TerraPixelKey}"    
-#define TERRAPIXELKEY_TAG       L"{TerraPixelKey}"
-#define TERRAPIXELKEY_VALID     "VALID"
-
+#define BING_IMAGERYPROVIDER_ELEMENT    "ImageryProvider"
+#define BING_ATTRIBUTION_ELEMENT        "Attribution"
+#define BING_COVERAGEAREA_ELEMENT       "CoverageArea"
+#define BING_ZOOMMIN_ELEMENT            "ZoomMin"
+#define BING_ZOOMMAX_ELEMENT            "ZoomMax"
+#define BING_BOUNDINGBOX_ELEMENT        "BoundingBox"
+#define BING_SOUTHLATITUDE_ELEMENT      "SouthLatitude"
+#define BING_WESTLONGITUDE_ELEMENT      "WestLongitude"
+#define BING_NORTHLATITUDE_ELEMENT      "NorthLatitude"
+#define BING_EASTLONGITUDE_ELEMENT      "EastLongitude"
 
 #define VE_MAP_RESOLUTION       21
 #define VE_MAP_WIDTH            (256 * (1 << VE_MAP_RESOLUTION))
 #define VE_MAP_HEIGHT           (256 * (1 << VE_MAP_RESOLUTION))
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool GetNodeContentInt32(int32_t& value, BeXmlNodeP pNode, Utf8CP childPath)
+    {
+    if(NULL == pNode)
+        return false;
+
+    BeXmlNodeP pChildNode = pNode->SelectSingleNode(childPath);
+    if(NULL == pChildNode || BEXML_Success != pChildNode->GetContentInt32Value(value))
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool GetNodeContentDouble(double& value, BeXmlNodeP pNode, Utf8CP childPath)
+    {
+    if(NULL == pNode)
+        return false;
+
+    BeXmlNodeP pChildNode = pNode->SelectSingleNode(childPath);
+    if(NULL == pChildNode || BEXML_Success != pChildNode->GetContentDoubleValue(value))
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ReadImageryProvider(HRFVirtualEarthFile::ImageryProvider& provider, BeXmlNodeP pProviderNode)
+    {
+    if(NULL == pProviderNode)
+        return false;
+
+    provider.attribution.clear();
+    provider.coverage.clear();
+
+    for(BeXmlNodeP pSubProviderNode = pProviderNode->GetFirstChild (); NULL != pSubProviderNode; pSubProviderNode = pSubProviderNode->GetNextSibling())
+        {
+        if(pSubProviderNode->IsName(BING_ATTRIBUTION_ELEMENT))
+            {
+            pSubProviderNode->GetContent(provider.attribution);
+            }
+        else if(pSubProviderNode->IsName(BING_COVERAGEAREA_ELEMENT))
+            {
+            HRFVirtualEarthFile::CoverageArea area;
+            if(GetNodeContentInt32(area.levelOfDetailMin, pSubProviderNode, BING_NAMESPACE_PREFIX ":" BING_ZOOMMIN_ELEMENT) && 
+               GetNodeContentInt32(area.levelOfDetailMax, pSubProviderNode, BING_NAMESPACE_PREFIX ":" BING_ZOOMMAX_ELEMENT) && 
+               GetNodeContentDouble(area.southLatitude, pSubProviderNode, BING_NAMESPACE_PREFIX ":" BING_BOUNDINGBOX_ELEMENT "/" BING_NAMESPACE_PREFIX ":" BING_SOUTHLATITUDE_ELEMENT) && 
+               GetNodeContentDouble(area.westLongitude, pSubProviderNode, BING_NAMESPACE_PREFIX ":" BING_BOUNDINGBOX_ELEMENT "/" BING_NAMESPACE_PREFIX ":" BING_WESTLONGITUDE_ELEMENT) && 
+               GetNodeContentDouble(area.northLatitude, pSubProviderNode, BING_NAMESPACE_PREFIX ":" BING_BOUNDINGBOX_ELEMENT "/" BING_NAMESPACE_PREFIX ":" BING_NORTHLATITUDE_ELEMENT) && 
+               GetNodeContentDouble(area.eastLongitude, pSubProviderNode, BING_NAMESPACE_PREFIX ":" BING_BOUNDINGBOX_ELEMENT "/" BING_NAMESPACE_PREFIX ":" BING_EASTLONGITUDE_ELEMENT))
+                {
+                provider.coverage.push_back(area);
+                }
+            }
+        }
+
+    return !provider.coverage.empty();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HRFVirtualEarthFile::ReplaceTagInString(WStringR str, WStringCR tag, WStringCR tagValue) const
+static bool ReplaceTagInString(WStringR str, WStringCR tag, WStringCR tagValue)
 {
     WString::size_type pos = str.find(tag);
     if(WString::npos == pos)
@@ -103,24 +165,29 @@ bool HRFVirtualEarthFile::ReplaceTagInString(WStringR str, WStringCR tag, WStrin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HRFVirtualEarthFile::QueryImageURI()
+void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
     {
     m_ImageURI.clear();
     m_ImageURISubdomains.clear();
+    m_LogoURI.clear();
 
     WString imagerySetLabel;
-    if(!DetectImagerySetFromURL(imagerySetLabel, *GetURL()))
-        throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+    if(!FindImagerySetFromURL(imagerySetLabel, *GetURL()))
+        throw HFCCorruptedFileException(GetURL()->GetURL());
 
     // Query server info from Microsoft
-    WString URLRequest(BING_MAPS_SERVER);
-    ReplaceTagInString(URLRequest, IMAGERYSET_TAG, imagerySetLabel);
-    ReplaceTagInString(URLRequest, BINGMAPSKEY_TAG, BING_MAPS_MASTER_KEY);
+    // Need to send an http request like this:
+    // http://dev.virtualearth.net/REST/V1/Imagery/Metadata/Road?incl=ImageryProviders&o=xml&key=AjdiY0PuqXOEdT0JWVjvXqC3nydpHgDEhLcUwXtnKUUH_BW5u3pV3-Zhk5Ez_mwt
+    // http://dev.virtualearth.net/REST/V1/Imagery/Metadata/{ImagerySet}?incl=ImageryProviders&o=xml&key={bingMapKey}
+    // ref: http://msdn.microsoft.com/en-us/library/ff701716.aspx
+    WString urlRequest(BING_MAPS_METADATA_URL);
+    ReplaceTagInString(urlRequest, IMAGERYSET_TAG, imagerySetLabel);
+    ReplaceTagInString(urlRequest, BINGMAPSKEY_TAG, bingMapKey);
 
-    HFCPtr<HFCBuffer> pResponse = SendAndReceiveRequest(URLRequest);
+    HFCPtr<HFCBuffer> pResponse = SendAndReceiveRequest(urlRequest);
 
     if(pResponse == NULL ||  pResponse->GetDataSize() == 0)
-        throw HFCFileException(HFC_CANNOT_OPEN_FILE_EXCEPTION, GetURL()->GetURL());
+        throw HFCCannotOpenFileException(GetURL()->GetURL());
 
     // Analyse response
     BeXmlStatus xmlStatus;
@@ -128,11 +195,11 @@ void HRFVirtualEarthFile::QueryImageURI()
 
     //Validate pDom
     if (pXmlDom.IsNull() || (BEXML_Success != xmlStatus))
-        throw HFCFileException(HFC_CANNOT_OPEN_FILE_EXCEPTION, GetURL()->GetURL());
+        throw HFCCannotOpenFileException(GetURL()->GetURL());
 
     pXmlDom->RegisterNamespace(BING_NAMESPACE_PREFIX, BING_XML_REST_1_0);
 
-    // Validate main node presence
+    // Select ImageryMetaDataNode
     BeXmlNodeP pImageryMetaDataNode;
     if(BEXML_Success == pXmlDom->SelectNode (pImageryMetaDataNode, "/" BING_NAMESPACE_PREFIX ":" BING_RESPONSE_ELEMENT
                                                                    "/" BING_NAMESPACE_PREFIX ":" BING_RESOURCESETS_ELEMENT
@@ -141,37 +208,50 @@ void HRFVirtualEarthFile::QueryImageURI()
                                                                    "/" BING_NAMESPACE_PREFIX ":" BING_IMAGERYMETADATA_ELEMENT,
                                                                    NULL, BeXmlDom::NODE_BIAS_First))
         {
-        BeXmlNodeP pImageUrlNode = pImageryMetaDataNode->SelectSingleNode(BING_NAMESPACE_PREFIX ":" BING_IMAGEURL_ELEMENT);
-        BeXmlNodeP pImageUrlSubDomainsNode = pImageryMetaDataNode->SelectSingleNode(BING_NAMESPACE_PREFIX ":" BING_IMAGEURLSUBDOMAINS_ELEMENT);
-        if(NULL != pImageUrlNode && NULL != pImageUrlSubDomainsNode)
+        for(BeXmlNodeP pSubImageryMetaDataNode = pImageryMetaDataNode->GetFirstChild (); NULL != pSubImageryMetaDataNode; pSubImageryMetaDataNode = pSubImageryMetaDataNode->GetNextSibling())
             {
-            pImageUrlNode->GetContent(m_ImageURI);
-
-            for(BeXmlNodeP pSubDomainNode = pImageUrlSubDomainsNode->GetFirstChild (); 
-                NULL != pSubDomainNode || m_ImageURISubdomains.size() > 4; 
-                pSubDomainNode = pSubDomainNode->GetNextSibling())
+            if(pSubImageryMetaDataNode->IsName(BING_IMAGERYPROVIDER_ELEMENT))
                 {
-                WString subDomain;
-                if(BEXML_Success != pSubDomainNode->GetContent(subDomain))
-                    break;
+                ImageryProvider provider;
+                if(ReadImageryProvider(provider, pSubImageryMetaDataNode))
+                    m_Providers.push_back(provider);
+                }
+            else if(pSubImageryMetaDataNode->IsName(BING_IMAGEURL_ELEMENT))
+                {
+                pSubImageryMetaDataNode->GetContent(m_ImageURI);
+                }
+            else if(pSubImageryMetaDataNode->IsName(BING_IMAGEURLSUBDOMAINS_ELEMENT))
+                {
+                for(BeXmlNodeP pSubDomainNode = pSubImageryMetaDataNode->GetFirstChild (); NULL != pSubDomainNode || m_ImageURISubdomains.size() > 4; pSubDomainNode = pSubDomainNode->GetNextSibling())
+                    {
+                    WString subDomain;
+                    if(BEXML_Success != pSubDomainNode->GetContent(subDomain))
+                        break;
 
-                m_ImageURISubdomains.push_back(subDomain);
-                }   
+                    m_ImageURISubdomains.push_back(subDomain);
+                    }   
+                }            
             }
-        }
+        }        
 
+    pXmlDom->SelectNodeContent(m_LogoURI, "/" BING_NAMESPACE_PREFIX ":" BING_RESPONSE_ELEMENT "/" BING_NAMESPACE_PREFIX ":" BING_BRANDLOGOURI_ELEMENT, NULL, BeXmlDom::NODE_BIAS_First);
 
     // Image URI must have the following form : "http://{subdomain}.tiles.virtualearth.net/tiles/r{quadkey}.jpeg?g=266&mkt={culture}"
     if(m_ImageURI.empty() || m_ImageURI.find(SUBDOMAIN_TAG) == WString::npos ||
-       m_ImageURI.find(QUADKEY_TAG) == std::string::npos ||
-       //Not fatal! m_ImageURI.find(CULTURE_TAG) == WString::npos ||
+       m_ImageURI.find(QUADKEY_TAG) == WString::npos ||
+       // Not fatal! 
+       //       m_ImageURI.find(CULTURE_TAG) == WString::npos ||
+       // Not Fatal. Some layer(ex. 'OrdnanceSurvey' and 'CollinsBart') do not have providers.
+       //       m_Providers.empty() ||  
+       // PM: Not a fatal error.
+       //       m_LogoURI.empty()     
        m_ImageURISubdomains.size() != 4)
-        throw HFCFileException(HFC_CANNOT_OPEN_FILE_EXCEPTION, GetURL()->GetURL());
+        throw HFCCannotOpenFileException(GetURL()->GetURL());
 
     // Replace the culture tag now, it won't change
-    WString CultureVal = HFCResourceLoader::GetInstance()->GetString(IDS_BingMapsCultureId);
+    WString CultureVal = ImagePPMessages::GetStringW(ImagePPMessages::BingMapsCultureId());
 
-    ReplaceTagInString(m_ImageURI, CULTURE_TAG, !CultureVal.empty() ? CultureVal : BING_DEFAULT_CULTURE);
+    ReplaceTagInString(m_ImageURI, CULTURE_TAG, !CultureVal.empty() ? CultureVal : CULTURE_TAG);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -190,13 +270,13 @@ HFCPtr<HFCBuffer> HRFVirtualEarthFile::SendAndReceiveRequest(WStringCR URLReques
 
     if (pConnection->Connect(pConnection->GetUserName(), pConnection->GetPassword()))
         {
-        uint32_t codePage;
+        LangCodePage codePage;
         BeStringUtilities::GetCurrentCodePage (codePage);
 
         AString requestA;
         BeStringUtilities::WCharToLocaleChar (requestA, codePage, request.c_str());
 
-        //&&MM should have a unicode version of pConnection->Send
+        //&&Backlog should have a unicode version of pConnection->Send
         pConnection->Send((Byte const*)requestA.c_str(), requestA.size());
 
         HFCPtr<HFCBuffer> pResponse = new HFCBuffer(1,1);
@@ -243,24 +323,24 @@ WString HRFVirtualEarthFile::GetTileURI(unsigned int pixelX, unsigned int pixelY
 class VEAuthenticationError : public HFCAuthenticationError
     {
 public:
-    explicit VEAuthenticationError(const HRFException& pi_rException)
-        :   m_RelatedException(pi_rException),
-            HFCAuthenticationError(static_cast<ExceptionID>(pi_rException.GetID()))
+    explicit VEAuthenticationError(WStringCR url)
+        :  HFCAuthenticationError(),
+           m_URL(url)
         {
         }
 
 private:
     WString _ToString() const
         {
-        return m_RelatedException.GetExceptionMessage();
+        return HRFAuthenticationInvalidLoginException(m_URL).GetExceptionMessage();
         }
 
     void _Throw() const
         {
-        throw m_RelatedException;
+        throw HRFAuthenticationInvalidLoginException(m_URL);
         }
 
-    HRFException m_RelatedException;
+    WString m_URL;
     };
 
 
@@ -423,7 +503,7 @@ HRFVirtualEarthCreator::HRFVirtualEarthCreator()
 //-----------------------------------------------------------------------------
 WString HRFVirtualEarthCreator::GetLabel() const
     {
-    return HFCResourceLoader::GetInstance()->GetString(IDS_FILEFORMAT_BingMaps);
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_BingMaps());
     }
 
 //-----------------------------------------------------------------------------
@@ -464,7 +544,7 @@ HFCPtr<HRFRasterFile> HRFVirtualEarthCreator::Create(const HFCPtr<HFCURL>& pi_rp
 bool HRFVirtualEarthCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                            uint64_t             pi_Offset) const
     {
-    return HRFVirtualEarthFile::IsURLVirtualEarth(pi_rpURL);
+    return HRFVirtualEarthFile::IsURLVirtualEarth(*pi_rpURL);
     }
 
 //-----------------------------------------------------------------------------
@@ -569,61 +649,27 @@ HRFVirtualEarthFile::HRFVirtualEarthFile(const HFCPtr<HFCURL>& pi_rURL,
     HFCAuthenticationCallback* pCallback = (HFCAuthenticationCallback*)HFCCallbackRegistry::GetInstance()->GetCallback(HFCAuthenticationCallback::CLASS_ID);
 
     if(pCallback == 0)
-        throw HFCException(HFC_LOGIN_INFORMATION_NOT_AVAILABLE_EXCEPTION);
+        throw HFCLoginInformationNotAvailableException();
 
     if(!pi_rURL->IsCompatibleWith(HFCURLHTTPBase::CLASS_ID))
-        throw HFCFileException(HFC_CANNOT_OPEN_FILE_EXCEPTION, pi_rURL->GetURL());
-        
+        throw HFCCannotOpenFileException(pi_rURL->GetURL());
+
+#ifdef BINGMAPS_AUTO_PASSWORD        
+    QueryImageURI(L"AjdiY0PuqXOEdT0JWVjvXqC3nydpHgDEhLcUwXtnKUUH_BW5u3pV3-Zhk5Ez_mwt");
+#else
     HFCInternetAuthentication VEAuthentication(pi_rURL->GetURL());
 
-    bool  HasValidCredential = false;
-    bool MaxRetryCountReached = false;
-    do
+    if (!pCallback->GetAuthentication(&VEAuthentication))
         {
-        if (!pCallback->GetAuthentication(&VEAuthentication))
-            {
-            if (pCallback->IsCancelled())
-                throw HRFException(HRF_AUTHENTICATION_CANCELLED_EXCEPTION, GetURL()->GetURL());
-            else
-                throw HRFException(HRF_AUTHENTICATION_INVALID_LOGIN_EXCEPTION, GetURL()->GetURL());
-            }
-            
-        // Authenticate with Terra pixel server. Response in plain text : "VALID" or "INVALID"
-        WString serverURL(TERRAPIXEL_SERVER);
-        ReplaceTagInString(serverURL, TERRAPIXELKEY_TAG, VEAuthentication.GetPassword());
-
-        HFCPtr<HFCBuffer> pResponse = SendAndReceiveRequest(serverURL);
-        if(pResponse != NULL && pResponse->GetDataSize() != 0)
-        {
-            HArrayAutoPtr<char> ResponseString(new char[pResponse->GetDataSize() + 1]);
-            memcpy(ResponseString.get(), pResponse->GetData(), pResponse->GetDataSize());
-            ResponseString[pResponse->GetDataSize()] = '\0';
-
-            if(BeStringUtilities::Stricmp(TERRAPIXELKEY_VALID, ResponseString) == 0)
-                {
-                HasValidCredential = true;
-                break;
-            }
-        }
-
-        // TODO: Generate a more explicit exception
-        HFCPtr<HFCAuthenticationError> pAuthError(new VEAuthenticationError(HRFException(HRF_AUTHENTICATION_INVALID_LOGIN_EXCEPTION, GetURL()->GetURL())));
-        VEAuthentication.PushLastError(pAuthError);
-
-        VEAuthentication.IncrementRetryCount();    
-         
-        MaxRetryCountReached = VEAuthentication.GetRetryCount() > pCallback->RetryCount(HFCInternetAuthentication::CLASS_ID);
-        }
-    while (!MaxRetryCountReached);
-
-    if (MaxRetryCountReached)
-        throw HRFException(HRF_AUTHENTICATION_MAX_RETRY_COUNT_REACHED_EXCEPTION, GetURL()->GetURL());
-
-    if(!HasValidCredential)
-        throw HRFException(HRF_AUTHENTICATION_INVALID_LOGIN_EXCEPTION, GetURL()->GetURL());
+        if (pCallback->IsCancelled())
+            throw HRFAuthenticationCancelledException(GetURL()->GetURL());
+        else
+            throw HRFAuthenticationInvalidLoginException(GetURL()->GetURL());
+        }             
 
     // Will contact virtual earth server and request image URI. Will throw appropriate exception if an error occurs.
-    QueryImageURI();
+    QueryImageURI(VEAuthentication.GetPassword());
+#endif   
 
     // Create Page and Res Descriptors.
     CreateDescriptors();
@@ -668,89 +714,64 @@ HRFVirtualEarthFile::~HRFVirtualEarthFile()
 //-----------------------------------------------------------------------------
 // Compose a Virtual Earth URL
 //-----------------------------------------------------------------------------
-WString HRFVirtualEarthFile::ComposeVirtualEarthURL(MapStyle const& pi_Style)
+WString HRFVirtualEarthFile::ComposeURL(WStringCR imagerySet)
     {
-    switch(pi_Style)
-        {
-        case MAPSTYLE_Road:
-            return PSEUDO_VE_SERVER_URL + PSEUDO_VE_ROAD;
-        case MAPSTYLE_Aerial:
-            return PSEUDO_VE_SERVER_URL + PSEUDO_VE_AERIAL;
-        case MAPSTYLE_AerialWihtLabels:
-            return PSEUDO_VE_SERVER_URL + PSEUDO_VE_AERIALWITHLABEL;
-        default:
-            HASSERT(!"Invalid MapStyle : HRFVirtualEarthFile::CreateVirtualEarthURL");
-            break;
-        }
+    WString bingpseudoURL = PSEUDO_BING_URL;
+    ReplaceTagInString(bingpseudoURL, IMAGERYSET_TAG, imagerySet);
 
-    return L"";
+    return bingpseudoURL;
     }
-
-//-----------------------------------------------------------------------------
-// Find the map style from an URL
-//-----------------------------------------------------------------------------
-HRFVirtualEarthFile::MapStyle HRFVirtualEarthFile::FindMapStyleFromURL(WString const& pi_pURL)
-    {
-    HRFVirtualEarthFile::MapStyle MapStyle = (HRFVirtualEarthFile::MapStyle)-1;
-
-    if (CaseInsensitiveStringTools().Find(pi_pURL, PSEUDO_VE_ROAD) != WString::npos)
-        {
-        MapStyle = MAPSTYLE_Road;
-        }
-    else if (CaseInsensitiveStringTools().Find(pi_pURL, PSEUDO_VE_AERIALWITHLABEL) != WString::npos)
-        {
-        MapStyle = MAPSTYLE_AerialWihtLabels;
-        }
-    else if (CaseInsensitiveStringTools().Find(pi_pURL, PSEUDO_VE_AERIAL) != WString::npos)
-        {
-        MapStyle = MAPSTYLE_Aerial;
-        }
-
-    return MapStyle;
-}
 
 //-----------------------------------------------------------------------------
 // Find the map style from an URL and return the label needed for the http request.
 //-----------------------------------------------------------------------------
-bool HRFVirtualEarthFile::DetectImagerySetFromURL(WStringR po_imagerySetLabel, HFCURL const& pi_URL) const
-{
-    HPRECONDITION(IsURLVirtualEarth(&pi_URL));
-
-    const WString& urlSpec = pi_URL.GetSchemeSpecificPart();
-
-    if (CaseInsensitiveStringTools().Find(urlSpec, PSEUDO_VE_ROAD) != WString::npos)
+bool HRFVirtualEarthFile::FindImagerySetFromURL(WStringR imagerySet, HFCURL const& bingURL)
     {
-        po_imagerySetLabel = BING_IMAGERYSET_ROAD;
-        return true;
-    }
-    else if (CaseInsensitiveStringTools().Find(urlSpec, PSEUDO_VE_AERIALWITHLABEL) != WString::npos)
-    {
-        po_imagerySetLabel = BING_IMAGERYSET_AERIALWITHLABEL;        
-        return true;
-    }
-    else if (CaseInsensitiveStringTools().Find(urlSpec, PSEUDO_VE_AERIAL) != WString::npos)
-    {
-        po_imagerySetLabel = BING_IMAGERYSET_AERIAL;        
-        return true;
-    }
+    //Input: http://www.bing.com/maps/{ImagerySet}
+    imagerySet.clear();
 
-    // Not found.
-    po_imagerySetLabel.clear();
-    return false;
+    if(!bingURL.IsCompatibleWith(HFCURLHTTPBase::CLASS_ID) || bingURL.GetSchemeType() != HFCURLHTTP::s_SchemeName())
+        return false;
+
+    HFCURLHTTPBase const& HttpURL = static_cast<HFCURLHTTPBase const&>(bingURL);
+
+    // Avoid the default port(:80) added by HFCURLCommonInternet::GetURL()
+    WString cleanedUrl = HttpURL.GetHost() + L"/" + HttpURL.GetURLPath();
+
+    WString partialUrl(PSEUDO_BING_PARTIAL_URL);
+
+    WString::size_type partialPos = CaseInsensitiveStringTools().Find(cleanedUrl, partialUrl);
+    if(WString::npos == partialPos)
+        {
+        HASSERT(!"Invalid bing URL");
+        return false;
+        }        
+
+    // look for first delimiter and remove it if any.
+    WString::size_type imageryStartPos = partialPos + partialUrl.length();
+    WString::size_type imageryEndPos = cleanedUrl.find_first_of(L"\\/?", imageryStartPos);
+    imagerySet = cleanedUrl.substr(imageryStartPos, imageryEndPos-imageryStartPos);
+
+    return !imagerySet.empty();
     }
 
 //-----------------------------------------------------------------------------
 // Is a Virtual Earth URL
 //-----------------------------------------------------------------------------
-bool HRFVirtualEarthFile::IsURLVirtualEarth(const HFCURL* pi_pURL)
+bool HRFVirtualEarthFile::IsURLVirtualEarth(HFCURL const& bingURL)
     {
-    if(!pi_pURL->IsCompatibleWith(HFCURLHTTPBase::CLASS_ID) || 
-       pi_pURL->GetSchemeType() != HFCURLHTTP::s_SchemeName())
+    if(!bingURL.IsCompatibleWith(HFCURLHTTPBase::CLASS_ID) || 
+        bingURL.GetSchemeType() != HFCURLHTTP::s_SchemeName())
         return false;
 
-    const HFCURLHTTPBase* pHTTPUrl = (const HFCURLHTTPBase*)pi_pURL;
+    HFCURLHTTPBase const& HttpURL = static_cast<HFCURLHTTPBase const&>(bingURL);
 
-    return CaseInsensitiveStringTools().Find(pHTTPUrl->GetHost(), PSEUDO_VE_SERVER) != WString::npos;            
+    // Avoid the default port(:80) added by HFCURLCommonInternet::GetURL()
+    WString cleanedUurl = HttpURL.GetHost() + L"/" + HttpURL.GetURLPath();
+
+    WString::size_type partialPos = CaseInsensitiveStringTools().Find(cleanedUurl, PSEUDO_BING_PARTIAL_URL);
+
+    return WString::npos != partialPos;
     }
 
 //-----------------------------------------------------------------------------
@@ -793,7 +814,7 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFVirtualEarthFile::GetCapabilities ()
 //-----------------------------------------------------------------------------
 void HRFVirtualEarthFile::CreateDescriptors()
     {
-    HPRECONDITION (IsURLVirtualEarth(GetURL().GetPtr()));
+    HPRECONDITION (IsURLVirtualEarth(*GetURL()));
 
     // Pixel Type
     HFCPtr<HRPPixelType> PixelType = new HRPPixelTypeV24R8G8B8();
@@ -803,10 +824,10 @@ void HRFVirtualEarthFile::CreateDescriptors()
     double offsetLatitude;
     double offsetLongitude;
     HRFVirtualEarthEditor::VirtualEarthTileSystem::PixelXYToLatLong(0, 0, VE_MAP_RESOLUTION, &offsetLatitude, &offsetLongitude);
-    if (offsetLongitude < -179.9999)
-        offsetLongitude = -179.9999;
-    if (offsetLongitude > 179.9999)
-        offsetLongitude = 179.9999;
+    if (offsetLongitude < -179.9999999999)
+        offsetLongitude = -179.9999999999;
+    if (offsetLongitude > 179.9999999999)
+        offsetLongitude = 179.9999999999;
 
     // Geocoding and Reference
     HFCPtr<HGF2DTransfoModel> pTransfoModel;
@@ -834,7 +855,7 @@ void HRFVirtualEarthFile::CreateDescriptors()
                                        ]";
 
             // Obtain the GCS
-            baseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorOGC, WKTString.c_str());
+            baseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorOGC, WKTString.c_str());
             double cartesianPoint[3];
             double geoPoint[3];
             geoPoint[0] = offsetLongitude;
@@ -935,7 +956,8 @@ void HRFVirtualEarthFile::CreateDescriptors()
                                    0,                           // Filters
                                    0);                           // Defined tag
 
-    pPage->SetGeocoding(baseGCS);
+
+    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(baseGCS.get()));
 
 
     m_ListOfPageDescriptor.push_back(pPage);
@@ -1065,4 +1087,20 @@ bool HRFVirtualEarthFile::CanPerformLookAhead(uint32_t pi_Page) const
     {
     HPRECONDITION(pi_Page == 0);
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR HRFVirtualEarthFile::GetBrandLogoURI() const
+    {
+    return m_LogoURI;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+HRFVirtualEarthFile::ImageryProviders const& HRFVirtualEarthFile::GetProviders() const
+    {
+    return m_Providers;
     }

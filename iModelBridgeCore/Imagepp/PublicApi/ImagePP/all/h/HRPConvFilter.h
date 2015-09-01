@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPConvFilter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,10 @@
 
 #include "HRPTypedFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPConvFilter : public HRPTypedFilter
     {
-    HDECLARE_CLASS_ID(1132, HRPTypedFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_Conv, HRPTypedFilter)
 
 public:
 
@@ -48,6 +49,9 @@ public:
     // Cloning
     virtual HRPFilter* Clone() const override = 0;
 
+    int32_t        GetDivisionFactor() const;
+    
+    const int32_t*   GetWeightMatrix() const;
 
 protected:
 
@@ -61,16 +65,10 @@ protected:
                     int32_t pi_DivisionFactor = 0);
 
     HRPConvFilter( const HRPConvFilter& pi_rFilter);
-
-
+    
     void            SetNeighbourhood (const HRPPixelNeighbourhood& pi_rNeighbourhood);
 
-    // Weight matrix
-
-    int32_t        GetDivisionFactor() const;
-
-    const int32_t*   GetWeightMatrix() const;
-
+protected:
     void            SetWeightMatrix(const int32_t* pi_pWeightMatrix,
                                     int32_t pi_DivisionFactor);
 
@@ -102,6 +100,7 @@ private:
     // Optimization members
     uint32_t                m_FilterBytesPerPixel;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRPConvFilter.hpp"
 

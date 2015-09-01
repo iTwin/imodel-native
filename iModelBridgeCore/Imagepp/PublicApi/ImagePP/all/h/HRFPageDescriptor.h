@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPageDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -28,8 +28,50 @@
 
 #include <ImagePP/all/h/interface/IRasterGeoCoordinateServices.h>
 
+IMAGEPP_TYPEDEFS(RasterFileGeocoding)
+IMAGEPP_REF_COUNTED_PTR(RasterFileGeocoding)
 
+
+BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFile;
+class HCPGeoTiffKeys;
+
+/*=================================================================================**//**
+* This class is intended to be use as a proxy class to access geocoding created from raster file.
+* The class will keep a copy of the GeoTiff Keys used to create the geocoding object or extract them 
+* only when needed. That way, the relation between the geokeys and geocoding will be keep as 
+* one cannot always be recreate from the other.
+* @bsiclass                                     		Marc.Bedard     06/2013
++===============+===============+===============+===============+===============+======*/
+struct RasterFileGeocoding : public RefCountedBase
+    {
+private:
+    IRasterBaseGcsPtr                   m_pGeocoding;
+    mutable HFCPtr<HCPGeoTiffKeys>      m_pGeoTiffKeys;//Optimization: Will be query on first get if not provided at construction
+    mutable bool                        m_isGeotiffKeysCreated;
+
+    RasterFileGeocoding();
+    RasterFileGeocoding(IRasterBaseGcsP pi_pGeocoding);
+    RasterFileGeocoding(HCPGeoTiffKeys const* pi_pGeokeys);
+    RasterFileGeocoding(const RasterFileGeocoding& object);
+
+public:
+    IMAGEPP_EXPORT static RasterFileGeocodingPtr Create();
+    IMAGEPP_EXPORT static RasterFileGeocodingPtr Create(IRasterBaseGcsP pi_pGeocoding);
+    IMAGEPP_EXPORT static RasterFileGeocodingPtr Create(HCPGeoTiffKeys const* pi_pGeokeys);
+    IMAGEPP_EXPORT        RasterFileGeocodingPtr Clone() const;
+
+    IMAGEPP_EXPORT HFCPtr<HGF2DTransfoModel> TranslateToMeter (const HFCPtr<HGF2DTransfoModel>& pi_pModel,
+                                                              double                          pi_FactorModelToMeter=1.0,
+                                                              bool                            pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation=false,
+                                                              bool*                           po_DefaultUnitWasFound=0) const;
+    IMAGEPP_EXPORT HFCPtr<HGF2DTransfoModel> TranslateFromMeter (const HFCPtr<HGF2DTransfoModel>& pi_pModel,
+                                                                bool                            pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation=false,
+                                                                bool*                           po_DefaultUnitWasFound=0) const;
+
+    IRasterBaseGcsCP                       GetGeocodingCP() const;
+    IMAGEPP_EXPORT HCPGeoTiffKeys const&    GetGeoTiffKeys() const;
+    };
 
 /** -----------------------------------------------------------------------------
     @version 1.0c
@@ -75,7 +117,7 @@ class HRFRasterFile;
 */
 class HRFPageDescriptor : public HFCShareableObject<HRFPageDescriptor>
     {
-    HDECLARE_SEALEDCLASS_ID(1460)
+    HDECLARE_SEALEDCLASS_ID(HRFPageDescriptorId_Base)
 
 public:
     typedef vector<HFCPtr<HRFResolutionDescriptor>, allocator<HFCPtr<HRFResolutionDescriptor> > >
@@ -101,7 +143,7 @@ public:
                        uint64_t                                 pi_MaxWidth = UINT64_MAX,   // use only when pi_UnlimitedResolution is true
                        uint64_t                                 pi_MaxHeight = UINT64_MAX); // use only when pi_UnlimitedResolution is true
 
-    _HDLLg HRFPageDescriptor (HFCAccessMode                            pi_AccessMode,
+    IMAGEPP_EXPORT HRFPageDescriptor (HFCAccessMode                            pi_AccessMode,
                               const HFCPtr<HRFRasterFileCapabilities>& pi_rpPageCapabilities,
                               const ListOfResolutionDescriptor&        pi_rResolutionDescriptors,
                               const HRPPixelPalette*                   pi_pRepresentativePalette,
@@ -146,17 +188,16 @@ public:
                        const ListOfResolutionDescriptor&        pi_rResolutionDescriptors,
                        bool                                     pi_UnlimitedResolution = false);
 
-    _HDLLg ~HRFPageDescriptor();
+    IMAGEPP_EXPORT ~HRFPageDescriptor();
 
     HRFPageDescriptor   (const HRFPageDescriptor& pi_rObj);
     HRFPageDescriptor&  operator=(const HRFPageDescriptor& pi_rObj);
 
-    const HFCPtr<HMDMetaDataContainerList>&   GetListOfMetaDataContainer();
-    void                                      SetListOfMetaDataContainer(HFCPtr<HMDMetaDataContainerList>& pi_prMDContainers,
+    IMAGEPP_EXPORT const HFCPtr<HMDMetaDataContainerList>&   GetListOfMetaDataContainer();
+    IMAGEPP_EXPORT void                                      SetListOfMetaDataContainer(HFCPtr<HMDMetaDataContainerList>& pi_prMDContainers,
                                                                          bool                             pi_IsAModification = false);
-    _HDLLg const HFCPtr<HMDMetaDataContainer> GetMetaDataContainer(HMDMetaDataContainer::Type     pi_ContainerType) const;
-    _HDLLg void                               SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>&  pi_rpMDContainer,
-                                                                   bool                          pi_IsAModification = false);
+    IMAGEPP_EXPORT const HFCPtr<HMDMetaDataContainer> GetMetaDataContainer(HMDMetaDataContainer::Type     pi_ContainerType) const;
+    IMAGEPP_EXPORT void                               SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>&  pi_rpMDContainer);
 
     bool CanCreateWith(HFCAccessMode                            pi_AccessMode,
                         const HFCPtr<HRFRasterFileCapabilities>& pi_rpPageCapabilities,
@@ -190,7 +231,7 @@ public:
     // Page Transformation Model
     bool                                   HasTransfoModel         () const;
     const HFCPtr<HGF2DTransfoModel>&       GetTransfoModel         () const;
-    _HDLLg bool                            SetTransfoModel         (const HGF2DTransfoModel& pi_rTransfoModel, bool pi_IgnoreCapabilties=false);
+    IMAGEPP_EXPORT bool                            SetTransfoModel         (const HGF2DTransfoModel& pi_rTransfoModel, bool pi_IgnoreCapabilties=false);
     HRFScanlineOrientation                 GetTransfoModelOrientation () const;
 
     // Page Filtering
@@ -208,20 +249,18 @@ public:
     template <typename AttributeT> AttributeT const*	FindTagCP	() const; 
     template <typename AttributeT> AttributeT*          FindTagP	();
 
-    _HDLLg bool                                 SetTag 		(const HFCPtr<HPMGenericAttribute>& pi_rpTag);
+    IMAGEPP_EXPORT bool                                  SetTag 		(const HFCPtr<HPMGenericAttribute>& pi_rpTag);
 
     // Deprecated. Use non-ptr overload instead.
-    _HDLLg void                           		RemoveTag	(const HFCPtr<HPMGenericAttribute>& pi_rpTag);
-    _HDLLg void                           		RemoveTag	(const HPMGenericAttribute& pi_rTag);
+    IMAGEPP_EXPORT void                           		RemoveTag	(const HFCPtr<HPMGenericAttribute>& pi_rpTag);
+    IMAGEPP_EXPORT void                           		RemoveTag	(const HPMGenericAttribute& pi_rTag);
     template <typename AttributeT> void		    RemoveTag	 ();
 
-//    bool                                   GetGeoKeyValue          (ImagePP::TIFFGeoKey pi_Key, UInt32*  po_pVal) const;
-//    bool                                   GetGeoKeyValue          (ImagePP::TIFFGeoKey pi_Key, double* po_pVal) const;
-//    bool                                   GetGeoKeyValue          (ImagePP::TIFFGeoKey pi_Key, WString* po_pVal) const;
-//    bool                                   HasGeoKey               (ImagePP::TIFFGeoKey pi_GeoKey) const;
+    IMAGEPP_EXPORT void                      InitFromRasterFileGeocoding(RasterFileGeocodingR pi_geocoding,bool flagGeocodingAsModified=false);
+    IMAGEPP_EXPORT RasterFileGeocodingCR     GetRasterFileGeocoding() const;
 
-    IRasterBaseGcsPtr                      GetGeocoding() const;
-    void                                   SetGeocoding(IRasterBaseGcsPtr pi_pGeocoding);
+    IMAGEPP_EXPORT IRasterBaseGcsCP        GetGeocodingCP() const;
+    IMAGEPP_EXPORT void                                  SetGeocoding(IRasterBaseGcsP pi_pGeocoding);
 
     // Page Representative Palette
     bool                                   HasRepresentativePalette () const;
@@ -230,8 +269,8 @@ public:
 
     // Page Histogram
     bool                                   HasHistogram             () const;
-    const HFCPtr<HRPHistogram>&             GetHistogram             () const;
-    bool                                   SetHistogram             (const HRPHistogram& pi_rHistogram);
+    const HFCPtr<HRPHistogram>&            GetHistogram             () const;
+    IMAGEPP_EXPORT bool                     SetHistogram             (const HRPHistogram& pi_rHistogram);
 
     // Page Thumbnail
     bool                                   HasThumbnail             () const;
@@ -257,7 +296,7 @@ public:
     bool                                   PageSizeHasChanged      () const;
     bool                                   IsResizable             () const;
 
-    _HDLLg void                            Saved();
+    IMAGEPP_EXPORT void                            Saved();
 
 
 protected:
@@ -269,14 +308,16 @@ private:
     const HPMGenericAttribute*       FindTagImpl             (const HPMGenericAttribute& pi_rTag) const;
     HPMGenericAttribute*             FindTagImpl             (const HPMGenericAttribute& pi_rTag);
 
+    bool ValidateTagCapabilities() const;
+
     // Capabilities descriptor
     HFCPtr<HRFRasterFileCapabilities>   m_pPageCapabilities;
 
     // Page information
     ListOfResolutionDescriptor          m_ListOfResolutionDescriptor;
     HFCPtr<HMDMetaDataContainerList>    m_pListOfMetaDataContainer;
-    IRasterBaseGcsPtr                   m_pGeocoding;
-    uint32_t                           m_Duration;
+    RasterFileGeocodingPtr              m_pGeocoding;
+    uint32_t                            m_Duration;
     HFCAccessMode                       m_AccessMode;
     bool                                m_EmptyPage;
     bool                                m_Resizable;
@@ -312,6 +353,7 @@ private:
     bool                               m_GeocodingHasChanged;
     bool                               m_PageSizeHasChanged;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRFPageDescriptor.hpp"
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDLZWDecoder.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -26,6 +26,8 @@
 #define LZW_DEBUG_TRACE(x)
 #endif
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDLZWDecoder
     {
 public:
@@ -33,7 +35,7 @@ public:
     HCDLZWDecoder();
     ~HCDLZWDecoder();
 
-    HSTATUS Decode(Byte* pi_pInputBuffer, size_t pi_inputBytesCount, Byte* po_pOutputBuffer, size_t pi_outputBytesCount);
+    size_t Decode(Byte const* pi_pInputBuffer, size_t pi_inputBytesCount, Byte* po_pOutputBuffer, size_t pi_outputBytesCount);
 
 #ifdef LZW_A_SLOW_DECODER
     size_t  Decode2(Byte* pi_pInputBuffer, size_t pi_inputBytesCount, Byte* po_pOutputBuffer, size_t po_outputBytesCount);
@@ -63,7 +65,7 @@ private:
     int32_t m_NextCode;
     Byte* m_pStackTop;
 
-    Byte* m_pInputBuffer;      // compressed data
+    Byte const* m_pInputBuffer;      // compressed data
     size_t m_pInputBytesCount;
     uint32_t m_CurrentPos;
     unsigned short m_Predictor;
@@ -75,3 +77,4 @@ private:
     LZW_DEBUG_TRACE(HFCBinStream* m_pfile;)
     };
 
+END_IMAGEPP_NAMESPACE

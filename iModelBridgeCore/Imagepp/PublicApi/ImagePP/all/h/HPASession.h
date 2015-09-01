@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPASession.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPASession
@@ -13,6 +13,7 @@
 
 #include <Imagepp/all/h/HFCPtr.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HPAParser;
 class HFCBinStream;
 
@@ -20,7 +21,7 @@ class HPASession : public HFCShareableObject<HPASession>
     {
 public:
     HPASession(HFCBinStream* pi_pStream);
-    _HDLLu virtual             ~HPASession();
+    IMAGEPP_EXPORT virtual             ~HPASession();
 
     void                SetParser(HPAParser* pi_pParser);
     HPAParser*          GetParser() const;
@@ -41,4 +42,5 @@ private:
     HFCBinStream*       m_pStream;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HPASession.hpp"

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCSocketConnection.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCSocketConnection
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCSocketConnection.h>
 #include <Imagepp/all/h/HFCThread.h>
 
@@ -35,8 +35,7 @@ static const size_t s_ReadSize = 16 * 1024;
 //-----------------------------------------------------------------------------
 // SocketThread Declaration
 //-----------------------------------------------------------------------------
-
-class SocketThread : public HFCThread
+class ImagePP::SocketThread : public HFCThread
     {
 public:
     //--------------------------------------
@@ -64,8 +63,6 @@ private:
     m_rConnection;
     };
 
-
-
 //-----------------------------------------------------------------------------
 // public
 // Constructor
@@ -86,7 +83,7 @@ HFCSocketConnection::HFCSocketConnection(const WString& pi_rServer,
 #if defined (ANDROID) || defined (__APPLE__)
     //DM-Android
 #elif defined (_WIN32)
-    m_hSocket = NULL;
+    m_hSocket = 0;
 #endif
     }
 
@@ -193,7 +190,7 @@ void HFCSocketConnection::Receive(Byte* po_pData, size_t* pio_pDataSize)
     if ((DataAvailable = WaitDataAvailable()) > 0)
         {
         // Compute the size of the data to copy
-        *pio_pDataSize = min(DataAvailable, *pio_pDataSize);
+        *pio_pDataSize = MIN(DataAvailable, *pio_pDataSize);
 
         // Copy the data into the output buffer
         HFCMonitor BufferMonitor(m_BufferKey);
@@ -217,7 +214,7 @@ bool HFCSocketConnection::Connect(const WString& pi_rUserName,
     {
     HPRECONDITION(pi_TimeOut > 0);
     HPRECONDITION(!IsConnected());      // must not be already connected
-    HPRECONDITION(m_hSocket == NULL);   // see above
+    HPRECONDITION(m_hSocket == 0);      // see above
     //HPRECONDITION(m_pThread == 0);
     bool Result = true;
 
@@ -264,8 +261,8 @@ bool HFCSocketConnection::Connect(const WString& pi_rUserName,
             throw HFCInternetConnectionException(s_Device, HFCInternetConnectionException::CANNOT_CONNECT);
 
         // Set the socket in nonblocking mode
-        uint32_t NonBlocking = 1;
-        ioctlsocket(m_hSocket, FIONBIO, (DWORD*)&NonBlocking);
+        u_long NonBlocking = 1;
+        ioctlsocket(m_hSocket, FIONBIO, &NonBlocking);
 
         // Connect, if unable, throw
         if (connect(m_hSocket, (SOCKADDR*)&PeerAddr, sizeof(PeerAddr)) == SOCKET_ERROR)
@@ -286,7 +283,7 @@ bool HFCSocketConnection::Connect(const WString& pi_rUserName,
 
         // Reset the socket in blocking mode
         NonBlocking = 0;
-        ioctlsocket(m_hSocket, FIONBIO, (DWORD*)&NonBlocking);
+        ioctlsocket(m_hSocket, FIONBIO, &NonBlocking);
 
         // setup the socket input buffer size's to a single 256x256x32 bits tile size.
         uint32_t Size =  262144;
@@ -343,7 +340,7 @@ void HFCSocketConnection::Disconnect()
 
     // Close the socket
     closesocket(m_hSocket);
-    m_hSocket = NULL;
+    m_hSocket = 0;
 #endif
 
     // Destroy the thread
@@ -427,7 +424,7 @@ SocketThread::SocketThread(HFCSocketConnection& pi_rConnection)
     : HFCThread(false),
       m_rConnection(pi_rConnection)
     {
-    HPRECONDITION(pi_rConnection.m_hSocket != NULL);
+    HPRECONDITION(pi_rConnection.m_hSocket != 0);
 
     // Start the thread
     StartThread();
@@ -450,7 +447,7 @@ SocketThread::~SocketThread()
     // close the socket to force any blocking to end
     closesocket(m_rConnection.m_hSocket);
 #endif
-    m_rConnection.m_hSocket = NULL;
+    m_rConnection.m_hSocket = 0;
 
     // Signal that the thread can stop
     StopThread();
@@ -537,7 +534,7 @@ void SocketThread::Go()
 
     // close the socket
     closesocket(m_rConnection.m_hSocket);
-    m_rConnection.m_hSocket = NULL;
+    m_rConnection.m_hSocket = 0;
 #endif
 
     m_rConnection.m_SocketEvent.Signal();

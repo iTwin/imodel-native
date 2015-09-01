@@ -2,11 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTagDefinition.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Static method used by external module.
 //
+
+BEGIN_IMAGEPP_NAMESPACE
 inline size_t  HTagInfo::sGetDataLen(DataType pi_Type)
     {
     return sDataLen[pi_Type];
@@ -92,3 +94,4 @@ inline const char* HTagDefinition::GetTagName() const
     return m_pTagInfo->pTagName;
     }
 
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSharingControl.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSharingControl
@@ -12,6 +12,7 @@
 
 #include "HFCAccessMode.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //:Ignore
 class HFCBinStream;
 class HFCBinStreamLockManager;
@@ -30,7 +31,7 @@ class HFCBinStreamLockManager;
 // ------------------------------------------------------------------------- */
 class HRFSharingControl
     {
-    HDECLARE_BASECLASS_ID(1408)
+    HDECLARE_BASECLASS_ID(HRFSharingControlId_Base)
 
 public:
     //:> Default constructor. We must use the create method with this constructor
@@ -75,5 +76,6 @@ private:
     HRFSharingControl(const HRFSharingControl&);
     HRFSharingControl& operator=(const HRFSharingControl&);
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRFSharingControl.hpp"

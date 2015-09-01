@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFBasicColorSpace.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGFBasicColorSpace
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGFBasicColorSpace.h>
 
@@ -189,9 +189,9 @@ void HGFBasicColorSpace::BuildLookupTableFromXYZ()
         }
 
     // Compute reference white from RGB(255, 255, 255) to XYZ
-    ConvertToXYZ(m_ChannelSize - 1,
-                 m_ChannelSize - 1,
-                 m_ChannelSize - 1,
+    ConvertToXYZ((unsigned short)(m_ChannelSize - 1),
+                 (unsigned short)(m_ChannelSize - 1),
+                 (unsigned short)(m_ChannelSize - 1),
                  &m_ReferenceWhiteXYZ[0],
                  &m_ReferenceWhiteXYZ[1],
                  &m_ReferenceWhiteXYZ[2]);

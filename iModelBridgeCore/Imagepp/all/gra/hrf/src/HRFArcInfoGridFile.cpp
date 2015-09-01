@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFArcInfoGridFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFArcInfoGridFile
 //-----------------------------------------------------------------------------
 // This class describes a File Raster image.
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFArcInfoGridFile.h>
 #include <Imagepp/all/h/HFCURLFile.h>
@@ -34,15 +34,14 @@
 #include <Imagepp/all/h/HGF2DSimilitude.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 //GDAL
-#include <ImagePPInternal/ext/gdal/gdal_priv.h>
-#include <ImagePPInternal/ext/gdal/cpl_string.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
+#include <ImagePP-GdalLib/cpl_string.h>
 
 
-USING_NAMESPACE_IMAGEPP
+
 
 //-----------------------------------------------------------------------------
 // HRFArcInfoGridBlockCapabilities
@@ -173,7 +172,7 @@ HRFArcInfoGridCreator::HRFArcInfoGridCreator()
 // Identification information
 WString HRFArcInfoGridCreator::GetLabel() const
     {
-    return HFCResourceLoader::GetInstance()->GetString(IDS_FILEFORMAT_ArcInfoBinary);
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_ArcInfoBinary());
     }
 
 
@@ -216,7 +215,9 @@ bool HRFArcInfoGridCreator::IsKindOfFile  (const HFCPtr<HFCURL>&    pi_rpURL,
                                             uint64_t                pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
+    
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
 
     //Will initialize GDal if not already initialize
     HRFGdalSupportedFile::Initialize();
@@ -241,11 +242,9 @@ bool HRFArcInfoGridCreator::IsKindOfFile  (const HFCPtr<HFCURL>&    pi_rpURL,
     (const_cast<HRFArcInfoGridCreator*>(this))->SharingControlCreate(pHeaderURL);
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    HAutoPtr<HFCBinStream> pHeaderFile(HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pHeaderURL,
-                                                                 0),
-                                                                 HFC_READ_ONLY | HFC_SHARE_READ_WRITE));
+    HAutoPtr<HFCBinStream> pHeaderFile(HFCBinStream::Instanciate(pHeaderURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE));
 
-    if (pHeaderFile != 0 && pHeaderFile->GetLastExceptionID() == NO_EXCEPTION)
+    if (pHeaderFile != 0 && pHeaderFile->GetLastException() == NULL)
         {
         pHeaderFile->Read(HdrFieldBuffer, LONG_FIELD);
         string MagicString(HdrFieldBuffer, HdrFieldBuffer + (LONG_FIELD - 1));
@@ -297,7 +296,7 @@ HRFArcInfoGridFile::HRFArcInfoGridFile (const HFCPtr<HFCURL>&           pi_rpURL
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rpURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rpURL->GetURL());
         }
 
     // The ancestor store the access mode

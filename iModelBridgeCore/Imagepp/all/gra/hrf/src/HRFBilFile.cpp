@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBilFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFBilFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRFException.h>
@@ -36,8 +36,12 @@
 
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
+
+bool ConvertStringToDouble(const string& pi_rString, double* po_pDouble) ;
+bool ConvertStringToLong(const string& pi_rString, int32_t* po_pLong) ;
+bool ConvertStringToULong(const string& pi_rString, uint32_t* po_pLong) ;
+
 
 //-----------------------------------------------------------------------------
 // HRFBMPBlockCapabilities
@@ -133,8 +137,7 @@ HRFBilCreator::HRFBilCreator()
 //-----------------------------------------------------------------------------
 WString HRFBilCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_Bil); // BIL File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_Bil()); // BIL File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -215,9 +218,9 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
             HFCLockMonitor SisterFileLock(GetHdrLockManager());
 
             // Open the hdr file.
-            pHdrFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(HdrUrl, 0), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+            pHdrFile = HFCBinStream::Instanciate(HdrUrl, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-            if ((pHdrFile == 0) || (pHdrFile->GetLastExceptionID() != NO_EXCEPTION))
+            if ((pHdrFile == 0) || (pHdrFile->GetLastException() != 0))
                 {
                 SisterFileLock.ReleaseKey();
                 HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl->IsLocked());
@@ -237,7 +240,7 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
             Header = new char[HeaderLength + 1];
             Header[HeaderLength] = '\0';
             pHdrFile->SeekToBegin();
-            pHdrFile->Read((void*)Header, HeaderLength);
+            pHdrFile->Read(Header, HeaderLength);
 
             // Unlock the sister file
             SisterFileLock.ReleaseKey();
@@ -275,9 +278,9 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
                         HFCLockMonitor SisterFileLock(GetLockManager());
 
                         // Open the Bil File & place file pointer at the start of the file
-                        pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+                        pFile = HFCBinStream::Instanciate(pi_rpURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-                        if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+                        if (pFile != 0 && pFile->GetLastException() == 0)
                             {
                             pFile->SeekToEnd();
                             uint64_t SizeOfFile = pFile->GetCurrentPos();
@@ -316,9 +319,9 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
                     HFCLockMonitor SisterFileLock(GetLockManager());
 
                     // Open the Bil File & place file pointer at the start of the file
-                    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+                    pFile = HFCBinStream::Instanciate(pi_rpURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-                    if (pFile != 0 && pFile->GetLastExceptionID() == NO_EXCEPTION)
+                    if (pFile != 0 && pFile->GetLastException() == 0)
                         {
                         pFile->SeekToEnd();
                         uint64_t SizeOfFile = pFile->GetCurrentPos();
@@ -356,27 +359,27 @@ bool HRFBilCreator::IsKindOfFileWithInternalHeader(const HFCPtr<HFCURL>& pi_rpUR
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the BMP File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if ((pFile != 0) && (pFile->GetLastExceptionID() == NO_EXCEPTION))
+    if ((pFile != 0) && (pFile->GetLastException() == 0))
         {
-        pFile->Read((void*)&FileHeader.identifier, 4);
+        pFile->Read(&FileHeader.identifier, 4);
 
         // Verify that the type is BMP image
         if (strncmp((char*)FileHeader.identifier, RPIX_IDENTIFIER, 4) == 0)
             {
-            pFile->Read((void*)&FileHeader.hdrlength,      sizeof FileHeader.hdrlength);
-            pFile->Read((void*)&FileHeader.majorversion,   sizeof FileHeader.majorversion);
-            pFile->Read((void*)&FileHeader.minorversion,   sizeof FileHeader.minorversion);
-            pFile->Read((void*)&FileHeader.width,          sizeof FileHeader.width);
-            pFile->Read((void*)&FileHeader.height,         sizeof FileHeader.height);
-            pFile->Read((void*)&FileHeader.comptype,       sizeof FileHeader.comptype);
-            pFile->Read((void*)&FileHeader.interleave,     sizeof FileHeader.interleave);
-            pFile->Read((void*)&FileHeader.numbands,       sizeof FileHeader.numbands);
-            pFile->Read((void*)&FileHeader.rchannel,       sizeof FileHeader.rchannel);
-            pFile->Read((void*)&FileHeader.gchannel,       sizeof FileHeader.gchannel);
-            pFile->Read((void*)&FileHeader.bchannel,       sizeof FileHeader.bchannel);
-            pFile->Read((void*)&FileHeader.reserved,       sizeof FileHeader.reserved);
+            pFile->Read(&FileHeader.hdrlength,      sizeof FileHeader.hdrlength);
+            pFile->Read(&FileHeader.majorversion,   sizeof FileHeader.majorversion);
+            pFile->Read(&FileHeader.minorversion,   sizeof FileHeader.minorversion);
+            pFile->Read(&FileHeader.width,          sizeof FileHeader.width);
+            pFile->Read(&FileHeader.height,         sizeof FileHeader.height);
+            pFile->Read(&FileHeader.comptype,       sizeof FileHeader.comptype);
+            pFile->Read(&FileHeader.interleave,     sizeof FileHeader.interleave);
+            pFile->Read(&FileHeader.numbands,       sizeof FileHeader.numbands);
+            pFile->Read(&FileHeader.rchannel,       sizeof FileHeader.rchannel);
+            pFile->Read(&FileHeader.gchannel,       sizeof FileHeader.gchannel);
+            pFile->Read(&FileHeader.bchannel,       sizeof FileHeader.bchannel);
+            pFile->Read(&FileHeader.reserved,       sizeof FileHeader.reserved);
 
             if((RPIX_MAJOR_VERSION == FileHeader.majorversion)  &&
                (RPIX_MINOR_VERSION == FileHeader.minorversion)  &&
@@ -419,9 +422,9 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
     HFCLockMonitor SisterFileLock(GetHdrLockManager());
 
     // Open the hdr file.
-    pHdrFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, 0), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pHdrFile = HFCBinStream::Instanciate(pi_rpURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if ((pHdrFile == 0) || (pHdrFile->GetLastExceptionID() != NO_EXCEPTION))
+    if ((pHdrFile == 0) || (pHdrFile->GetLastException() != 0))
         {
         SisterFileLock.ReleaseKey();
         HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl->IsLocked());
@@ -447,7 +450,7 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
     Header = new char[HeaderLength + 1];
     Header[HeaderLength] = '\0';
     pHdrFile->SeekToBegin();
-    pHdrFile->Read((void*)Header, HeaderLength);
+    pHdrFile->Read(Header, HeaderLength);
 
     // Unlock the sister file
     SisterFileLock.ReleaseKey();
@@ -483,9 +486,9 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
                 HFCLockMonitor SisterFileLock(GetLockManager());
 
                 // Open the BMP File & place file pointer at the start of the file
-                pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(BILUrl, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+                pFile = HFCBinStream::Instanciate(BILUrl, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-                if ((pFile != 0) && (pFile->GetLastExceptionID() == NO_EXCEPTION))
+                if ((pFile != 0) && (pFile->GetLastException() == 0))
                     bResult = true;
 
                 SisterFileLock.ReleaseKey();
@@ -518,9 +521,9 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
             HFCLockMonitor SisterFileLock(GetLockManager());
 
             // Open the BMP File & place file pointer at the start of the file
-            pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(BILUrl, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+            pFile = HFCBinStream::Instanciate(BILUrl, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-            if ((pFile != 0) && (pFile->GetLastExceptionID() == NO_EXCEPTION))
+            if ((pFile != 0) && (pFile->GetLastException() == 0))
                 bResult = true;
 
             SisterFileLock.ReleaseKey();
@@ -559,7 +562,7 @@ uint32_t HRFBilCreator::GetULongValueFromHeader(const char*           pi_Header,
             if (NULL != ValueStartPos)
                 {
                 if (!ConvertStringToULong(ValueStartPos, &Result))
-                    throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, pi_rpURL->GetURL());
+                    throw HFCCorruptedFileException(pi_rpURL->GetURL());
                 }
             }
         }
@@ -577,6 +580,9 @@ bool HRFBilCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
     {
     HASSERT (pio_rRelatedURLs.size() == 0);
 
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
+    
     // Find the file extension
     WString Path = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
@@ -639,7 +645,7 @@ HRFBilFile::HRFBilFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
     else
         {
@@ -738,7 +744,7 @@ HRFBilFile::HRFBilFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
     }
 
@@ -922,7 +928,7 @@ bool HRFBilFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     // Lock the header file.
     HFCLockMonitor HdrFileLock(GetHdrLockManager());
 
-    m_pHdrFile->Write((void*)Header, strlen((char*)Header));
+    m_pHdrFile->Write(Header, strlen((char*)Header));
 
     HdrSharingControlIncrementCount();
 
@@ -938,7 +944,7 @@ bool HRFBilFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     // Lock the band file.
     HFCLockMonitor BndFileLock(GetBndLockManager());
 
-    m_pBndFile->Write((void*)Header, strlen((char*)Header));
+    m_pBndFile->Write(Header, strlen((char*)Header));
     BndSharingControlIncrementCount();
 
     // Unlock the band file.
@@ -1000,7 +1006,7 @@ HFCPtr<HRPPixelType> HRFBilFile::CreatePixelTypeFromFile() const
         }
 
     if (pPixelType == 0)
-        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
 
     return (pPixelType);
     }
@@ -1058,9 +1064,7 @@ bool HRFBilFile::Open()
         BILUrl = HFCURL::Instanciate(UrlString);
 
         // Open the actual bil file.
-        m_pBilFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(BILUrl, m_Offset), GetPhysicalAccessMode());
-
-        ThrowFileExceptionIfError(m_pBilFile, BILUrl->GetURL());
+        m_pBilFile = HFCBinStream::Instanciate(BILUrl, m_Offset, GetPhysicalAccessMode() , 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -1070,7 +1074,7 @@ bool HRFBilFile::Open()
 
         if(!ReadHdrHeader())
             {
-            m_pBilFile->Read((void*)&m_bilFileHeader, sizeof m_bilFileHeader);
+            m_pBilFile->Read(&m_bilFileHeader, sizeof m_bilFileHeader);
             m_bilFileInfo.NbBitsPerBandPerPixel = 8;
             m_bilFileInfo.NbBytesPerBand = m_bilFileHeader.width;
             m_bilFileInfo.NbBytesPerRow = m_bilFileInfo.NbBytesPerBand * m_bilFileHeader.numbands;
@@ -1109,9 +1113,9 @@ bool HRFBilFile::ReadHdrHeader()
     HdrUrl = HFCURL::Instanciate(UrlString);
 
     // Open the actual hdr file.
-    m_pHdrFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(HdrUrl, m_Offset), GetPhysicalAccessMode());
+    m_pHdrFile = HFCBinStream::Instanciate(HdrUrl, m_Offset, GetPhysicalAccessMode());
 
-    if ((m_pHdrFile == 0) || (m_pHdrFile->GetLastExceptionID() != NO_EXCEPTION))
+    if ((m_pHdrFile == 0) || (m_pHdrFile->GetLastException() != 0))
         return false;
 
     // This creates the sister file for file sharing control if necessary.
@@ -1148,14 +1152,12 @@ bool HRFBilFile::ReadHdrHeader()
     m_bilFileInfo.IsMsByteFirst = FileByteOrderMostSignificant(Header.c_str());
 
     if (0 == m_bilFileHeader.width)
-        throw HRFChildFileParameterException(HRF_CHILD_FILE_INVALID_PARAM_VALUE_EXCEPTION,
-                                             GetURL()->GetURL(),
+        throw HRFChildFileParameterException(GetURL()->GetURL(),
                                              m_pHdrFile->GetURL()->GetURL(),
                                              L"NCOLS");
 
     if (0 == m_bilFileHeader.height)
-        throw HRFChildFileParameterException(HRF_CHILD_FILE_INVALID_PARAM_VALUE_EXCEPTION,
-                                             GetURL()->GetURL(),
+        throw HRFChildFileParameterException(GetURL()->GetURL(),
                                              m_pHdrFile->GetURL()->GetURL(),
                                              L"NROWS");
 
@@ -1213,7 +1215,7 @@ void HRFBilFile::ModifyHdrHeader()
         Header += HeaderLine;
         }
 
-    m_pHdrFile->Write((void*)Header.c_str(), Header.length());
+    m_pHdrFile->Write(Header.c_str(), Header.length());
 
     // If the old header file was longer then the new one, erase the end of the file.
     if (m_pHdrFile->GetSize() > Header.length())
@@ -1225,12 +1227,12 @@ void HRFBilFile::ModifyHdrHeader()
         // clear the end of the file
         while (NewSize > 256)
             {
-            m_pHdrFile->Write((void*)aBuffer, 256);
+            m_pHdrFile->Write(aBuffer, 256);
             NewSize -= 256;
             }
 
         if (NewSize > 0)
-            m_pHdrFile->Write((void*)aBuffer, NewSize);
+            m_pHdrFile->Write(aBuffer, NewSize);
         }
 
     HdrSharingControlIncrementCount();
@@ -1315,9 +1317,8 @@ void HRFBilFile::GetBandsFromFile()
         // Open the actual bnd file.
         try
             {
-            m_pBndFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(BndUrl, 0), GetPhysicalAccessMode());
+            m_pBndFile = HFCBinStream::Instanciate(BndUrl, GetPhysicalAccessMode(), 0, true);
 
-            ThrowFileExceptionIfError(m_pBndFile, BndUrl->GetURL());
 
             // This creates the sister file for file sharing control if necessary.
             BndSharingControlCreate(BndUrl);
@@ -1330,7 +1331,7 @@ void HRFBilFile::GetBandsFromFile()
             BandFileContent = new char[BandFileLength + 1];
             BandFileContent[BandFileLength] = '\0';
             m_pBndFile->SeekToBegin();
-            m_pBndFile->Read((void*)BandFileContent, BandFileLength);
+            m_pBndFile->Read(BandFileContent, BandFileLength);
 
             // Unlock the sister file
             SisterFileLock.ReleaseKey();
@@ -1342,11 +1343,8 @@ void HRFBilFile::GetBandsFromFile()
             m_bilFileHeader.bchannel = (Byte)GetLongValueFromHeader(BandFileContent, "BLUE");
             delete [] BandFileContent;
             }
-        catch(HFCFileException& rException)
+        catch(HFCFileNotFoundException&)
             {
-            if (rException.GetID() != HFC_FILE_NOT_FOUND_EXCEPTION)
-                throw;
-
             FileNotFound = true;
             }
         }
@@ -1395,9 +1393,7 @@ void HRFBilFile::GetBandsStatsFromFile()
             HArrayAutoPtr<char>         Stats;
             uint32_t                    StatsLength;
 
-            m_pStxFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(StxUrl, 0), GetPhysicalAccessMode());
-
-            ThrowFileExceptionIfError(m_pStxFile, StxUrl->GetURL());
+            m_pStxFile = HFCBinStream::Instanciate(StxUrl, GetPhysicalAccessMode(), 0, true);
 
             // This creates the sister file for file sharing control if necessary.
             StxSharingControlCreate(StxUrl);
@@ -1410,7 +1406,7 @@ void HRFBilFile::GetBandsStatsFromFile()
             Stats = new char[StatsLength + 1];
             Stats[StatsLength] = '\0';
             m_pStxFile->SeekToBegin();
-            m_pStxFile->Read((void*)Stats, StatsLength);
+            m_pStxFile->Read(Stats, StatsLength);
 
             // Unlock the sister file
             SisterFileLock.ReleaseKey();
@@ -1436,8 +1432,9 @@ void HRFBilFile::GetBandsStatsFromFile()
                                                               &m_bilFileInfo.BlueMeanValue,
                                                               &m_bilFileInfo.BlueStdDeviation);
             }
-        BEGIN_HFC_CATCH(HFC_FILE_NOT_FOUND_EXCEPTION)
-        END_HFC_CATCH
+        catch(HFCFileNotFoundException&) 
+        { 
+        }
         }
     }
 
@@ -1524,7 +1521,7 @@ bool HRFBilFile::GetTransfoModel()
         }
     else
         {
-        throw HRFException(HRF_TRANSFO_CANNOT_BE_A_MATRIX_EXCEPTION, GetURL()->GetURL());
+        throw HRFTransfoCannotBeAMatrixException(GetURL()->GetURL());
         }
 
     return HasChanged;
@@ -1632,7 +1629,7 @@ void HRFBilFile::ReadLine
         memset(Buffer, 0, BufferSize);
         for (unsigned short i = 0; i < BufferSize && !EndOfLine; i++)
             {
-            pi_pFile->Read((void*)&Buffer[i], 1);
+            pi_pFile->Read(&Buffer[i], 1);
             EndOfLine = Buffer[i] == '\n' || pi_pFile->EndOfFile();
             }
 
@@ -1692,7 +1689,7 @@ bool HRFBilFile::FileByteOrderMostSignificant
                     ValueStartPos ++;
                     break;
                 default:
-                    throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                    throw HFCCorruptedFileException(GetURL()->GetURL());
                 }
 
             if (strncmp(ValueStartPos, "sbfirst", 7) == 0)
@@ -1703,7 +1700,7 @@ bool HRFBilFile::FileByteOrderMostSignificant
                 (*ValueStartPos != 10)    &&
                 (*ValueStartPos != 13))
                 {
-                throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                throw HFCCorruptedFileException(GetURL()->GetURL());
                 }
             }
         }
@@ -1737,7 +1734,7 @@ int32_t HRFBilFile::GetLongValueFromHeader
             if (0 != ValueStartPos)
                 {
                 if (!ConvertStringToLong(ValueStartPos, &Result))
-                    throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                    throw HFCCorruptedFileException(GetURL()->GetURL());
                 }
             }
         }
@@ -1771,7 +1768,7 @@ double HRFBilFile::GetDoubleValueFromHeader
             if (NULL != ValueStartPos)
                 {
                 if (!ConvertStringToDouble(ValueStartPos, &Result))
-                    throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                    throw HFCCorruptedFileException(GetURL()->GetURL());
                 }
             }
         }
@@ -1907,7 +1904,7 @@ bool HRFBilFile::GetBandStdDeviation (const char* pi_pStats,
                 break;
 
             if (!ConvertStringToLong(subString, po_pMinValue))
-                throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                throw HFCCorruptedFileException(GetURL()->GetURL());
 
             strtol(subString, &subString, 10);
             if (IsValidChar(*subString))
@@ -1918,7 +1915,7 @@ bool HRFBilFile::GetBandStdDeviation (const char* pi_pStats,
                 break;
 
             if (!ConvertStringToLong(subString, po_pMaxValue))
-                throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                throw HFCCorruptedFileException(GetURL()->GetURL());
 
 
             strtod(subString, &subString);
@@ -1930,7 +1927,7 @@ bool HRFBilFile::GetBandStdDeviation (const char* pi_pStats,
                 break;
 
             if(!ConvertStringToDouble(subString, po_pMeanValue))
-                throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                throw HFCCorruptedFileException(GetURL()->GetURL());
 
             strtod(subString, &subString);
             if (IsValidChar(*subString))
@@ -1941,7 +1938,7 @@ bool HRFBilFile::GetBandStdDeviation (const char* pi_pStats,
                 break;
 
             if(!ConvertStringToDouble(subString, po_pStdDeviation))
-                throw HFCFileException(HFC_CORRUPTED_FILE_EXCEPTION, GetURL()->GetURL());
+                throw HFCCorruptedFileException(GetURL()->GetURL());
             }
         else
             {

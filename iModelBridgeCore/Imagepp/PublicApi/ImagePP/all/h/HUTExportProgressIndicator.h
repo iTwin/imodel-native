@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HUTExportProgressIndicator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HUTExportProgressIndicator
@@ -17,11 +17,12 @@
 #include "HRFRasterFile.h"
 //----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 class HUTExportProgressIndicator : public HFCProgressIndicator
     {
 public:
 
-    _HDLLg virtual void StopIteration();
+    IMAGEPP_EXPORT virtual void StopIteration();
 
     void         SetExportedFile(HRFRasterFile*  pi_pRasterFile);
     bool        ContinueIteration(HRFRasterFile* pi_pWrittenRasterFile,
@@ -30,7 +31,7 @@ public:
     uint32_t    GetNbExportedBlocks(uint32_t pi_ResIndex);
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HUTExportProgressIndicator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HUTExportProgressIndicator)
 
     // Disabled methodes
     HUTExportProgressIndicator();
@@ -40,6 +41,7 @@ private:
     uint32_t         m_FirstResBlockAlreadyCount;
     vector<uint32_t>   m_NbBlocksPerRes; //Number of block already written for each resolution
     };
+END_IMAGEPP_NAMESPACE
 
 //----------------------------------------------------------------------------
 #include "HUTExportProgressIndicator.hpp"

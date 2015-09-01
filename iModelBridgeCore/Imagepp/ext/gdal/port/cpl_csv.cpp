@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_csv.cpp 21102 2010-11-08 20:47:38Z rouault $
+ * $Id: cpl_csv.cpp 27958 2014-11-13 21:58:48Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CSV (comma separated value) file access.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2009-2012, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +33,7 @@
 #include "cpl_multiproc.h"
 #include "gdal_csv.h"
 
-CPL_CVSID("$Id: cpl_csv.cpp 21102 2010-11-08 20:47:38Z rouault $");
+CPL_CVSID("$Id: cpl_csv.cpp 27958 2014-11-13 21:58:48Z goatbar $");
 
 /* ==================================================================== */
 /*      The CSVTable is a persistant set of info about an open CSV      */
@@ -120,7 +121,7 @@ static CSVTable *CSVAccess( const char * pszFilename )
              * Eventually we should consider promoting to the front of
              * the list to accelerate frequently accessed tables.
              */
-            
+
             return( psTable );
         }
     }
@@ -1080,7 +1081,7 @@ const char * GDALDefaultCSVFilename( const char *pszBasename )
 
         if( CPLGetConfigOption("GEOTIFF_CSV",NULL) != NULL )
             CPLPushFinderLocation( CPLGetConfigOption("GEOTIFF_CSV",NULL));
-            
+
         if( CPLGetConfigOption("GDAL_DATA",NULL) != NULL )
             CPLPushFinderLocation( CPLGetConfigOption("GDAL_DATA",NULL) );
 
@@ -1089,33 +1090,25 @@ const char * GDALDefaultCSVFilename( const char *pszBasename )
         if( pszResult != NULL )
             return pszResult;
     }
-            
-    if( (fp = fopen( "csv/horiz_cs.csv", "rt" )) != NULL )
-    {
-        strcpy( pTLSData->szPath, "csv/" );
-        CPLStrlcat( pTLSData->szPath, pszBasename, sizeof(pTLSData->szPath) );
-    }
-    else
-    {
+
 #ifdef GDAL_PREFIX
   #ifdef MACOSX_FRAMEWORK
-        strcpy( pTLSData->szPath, GDAL_PREFIX "/Resources/epsg_csv/" );
-        CPLStrlcat( pTLSData->szPath, pszBasename, sizeof(pTLSData->szPath) );
+    strcpy( pTLSData->szPath, GDAL_PREFIX "/Resources/epsg_csv/" );
+    CPLStrlcat( pTLSData->szPath, pszBasename, sizeof(pTLSData->szPath) );
   #else
-        strcpy( pTLSData->szPath, GDAL_PREFIX "/share/epsg_csv/" );
-        CPLStrlcat( pTLSData->szPath, pszBasename, sizeof(pTLSData->szPath) );
+    strcpy( pTLSData->szPath, GDAL_PREFIX "/share/epsg_csv/" );
+    CPLStrlcat( pTLSData->szPath, pszBasename, sizeof(pTLSData->szPath) );
   #endif
 #else
-        strcpy( pTLSData->szPath, "/usr/local/share/epsg_csv/" );
-        CPLStrlcat( pTLSData->szPath, pszBasename, sizeof(pTLSData->szPath) );
+    strcpy( pTLSData->szPath, "/usr/local/share/epsg_csv/" );
+    CPLStrlcat( pTLSData->szPath, pszBasename, sizeof(pTLSData->szPath) );
 #endif
-        if( (fp = fopen( pTLSData->szPath, "rt" )) == NULL )
-            CPLStrlcpy( pTLSData->szPath, pszBasename, sizeof(pTLSData->szPath) );
-    }
+    if( (fp = fopen( pTLSData->szPath, "rt" )) == NULL )
+        CPLStrlcpy( pTLSData->szPath, pszBasename, sizeof(pTLSData->szPath) );
 
     if( fp != NULL )
         fclose( fp );
-        
+
     return( pTLSData->szPath );
 }
 
@@ -1149,7 +1142,7 @@ const char * CSVFilename( const char *pszBasename )
 /**
  * Override CSV file search method.
  *
- * @param CSVFileOverride The pointer to a function which will return the
+ * @param pfnNewHook The pointer to a function which will return the
  * full path for a given filename.
   *
 
@@ -1197,4 +1190,3 @@ void SetCSVFilenameHook( const char *(*pfnNewHook)( const char * ) )
     pfnCSVFilenameHook = pfnNewHook;
 }
 CPL_C_END
-

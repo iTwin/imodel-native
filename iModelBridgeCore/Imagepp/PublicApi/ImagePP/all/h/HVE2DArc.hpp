@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DArc.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 #include "HVE2DCircle.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
@@ -563,6 +564,7 @@ inline void HVE2DArc::AdjustEndPointTo(const HGF2DLocation& pi_rPoint)
     m_EndPoint.Set(pi_rPoint);
     }
 
+END_IMAGEPP_NAMESPACE
 
 
 

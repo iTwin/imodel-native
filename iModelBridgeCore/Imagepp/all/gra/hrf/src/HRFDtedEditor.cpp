@@ -2,19 +2,19 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFDtedEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFDtedEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFDtedEditor.h>
 #include <Imagepp/all/h/HRFDtedFile.h>
 
-#include <ImagePPInternal/ext/gdal/gdal_priv.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
 
 #define BAND_1 0
 #define BAND_2 1
@@ -53,8 +53,8 @@
 // Construction
 //-----------------------------------------------------------------------------
 HRFDtedEditor::HRFDtedEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
-                             uint32_t              pi_Page,
-                             unsigned short       pi_Resolution,
+                             uint32_t             pi_Page,
+                             unsigned short        pi_Resolution,
                              HFCAccessMode         pi_AccessMode)
     : HRFGdalSupportedFileEditor(pi_rpRasterFile,
                                  pi_Page,
@@ -76,17 +76,19 @@ HRFDtedEditor::~HRFDtedEditor()
 // Read uncompressed Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFDtedEditor::ReadBlock (uint32_t                 pi_PosBlockX,
-                                  uint32_t                 pi_PosBlockY,
-                                  Byte*                   po_pData,
-                                  HFCLockMonitor const*    pi_pSisterFileLock)
+HSTATUS HRFDtedEditor::ReadBlock(uint64_t                 pi_PosBlockX,
+                                 uint64_t                 pi_PosBlockY,
+                                 Byte*                    po_pData,
+                                 HFCLockMonitor const*    pi_pSisterFileLock)
     {
-    //TR 210848 Inverse the image by returning columns instead
+    HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
+    //TR 210848 Reverse the image by returning columns instead
     //of lines of the underlying image
-    //(e.g. : inverse pi_PosBlockX and pi_PosBlockY in the parameter list).
+    //(e.g. : reverse pi_PosBlockX and pi_PosBlockY in the parameter list).
     m_pRasterBands[0]->RasterIO(GF_Read,
-                                pi_PosBlockY,
-                                pi_PosBlockX,
+                                (uint32_t)pi_PosBlockY,
+                                (uint32_t)pi_PosBlockX,
                                 m_pResolutionDescriptor->GetBlockHeight(),
                                 m_pResolutionDescriptor->GetBlockWidth(),
                                 po_pData,

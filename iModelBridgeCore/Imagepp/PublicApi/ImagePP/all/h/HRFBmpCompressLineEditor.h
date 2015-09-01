@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFBmpCompressLineEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16,6 +16,7 @@
 #include "HRFResolutionEditor.h"
 #include "HCDCodecBMPRLE8.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFBmpFile;
 
 class HRFBmpCompressLineEditor : public HRFResolutionEditor
@@ -28,17 +29,17 @@ public:
     virtual ~HRFBmpCompressLineEditor  ();
 
     // Edition by block
-    virtual HSTATUS        ReadBlock     (uint32_t                 pi_PosBlockX,
-                                          uint32_t                 pi_PosBlockY,
-                                          HFCPtr<HCDPacket>&       po_rpPacket) override;
+    virtual HSTATUS        ReadBlock     (uint64_t            pi_PosBlockX,
+                                          uint64_t            pi_PosBlockY,
+                                          HFCPtr<HCDPacket>&  po_rpPacket) override;
 
-    virtual HSTATUS        WriteBlock    (uint32_t     pi_PosBlockX,
-                                          uint32_t     pi_PosBlockY,
-                                          const Byte* pi_pData) override;
+    virtual HSTATUS        WriteBlock    (uint64_t        pi_PosBlockX,
+                                          uint64_t        pi_PosBlockY,
+                                          const Byte*     pi_pData) override;
 
-    virtual HSTATUS        WriteBlock    (uint32_t                 pi_PosBlockX,
-                                          uint32_t                 pi_PosBlockY,
-                                          const HFCPtr<HCDPacket>& pi_rpPacket) override;
+    virtual HSTATUS        WriteBlock    (uint64_t                    pi_PosBlockX,
+                                          uint64_t                    pi_PosBlockY,
+                                          const HFCPtr<HCDPacket>&    pi_rpPacket) override;
 
 protected:
     // See the parent for Pointer to the raster file, to the resolution descriptor
@@ -81,4 +82,5 @@ private:
     HRFBmpCompressLineEditor(const HRFBmpCompressLineEditor& pi_rObj);
     HRFBmpCompressLineEditor& operator=(const HRFBmpCompressLineEditor& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSunRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSunRasterFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRFException.h>
@@ -28,7 +28,6 @@
 
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 // Constant initialisation
@@ -156,8 +155,7 @@ HRFSunRasterCreator::HRFSunRasterCreator()
 //-----------------------------------------------------------------------------
 WString HRFSunRasterCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_SunRaster); // SunRaster File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_SunRaster()); // SunRaster File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -216,9 +214,9 @@ bool HRFSunRasterCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the SunRaster File & place file pointer at the start of the file
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
     uint32_t MagicNumber;
@@ -226,14 +224,14 @@ bool HRFSunRasterCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     uint32_t SkipValue;
     uint32_t Type;
 
-    if (pFile->Read((void*)&MagicNumber, sizeof MagicNumber) != sizeof MagicNumber  ||
-        pFile->Read((void*)&SkipValue,   sizeof SkipValue)   != sizeof SkipValue    ||
-        pFile->Read((void*)&SkipValue,   sizeof SkipValue)   != sizeof SkipValue    ||
-        pFile->Read((void*)&Depth,       sizeof Depth)       != sizeof Depth        ||
-        pFile->Read((void*)&SkipValue,   sizeof SkipValue)   != sizeof SkipValue    ||
-        pFile->Read((void*)&Type,        sizeof Type)        != sizeof Type         ||
-        pFile->Read((void*)&SkipValue,   sizeof SkipValue)   != sizeof SkipValue    ||
-        pFile->Read((void*)&SkipValue,   sizeof SkipValue)   != sizeof SkipValue)
+    if (pFile->Read(&MagicNumber, sizeof MagicNumber) != sizeof MagicNumber  ||
+        pFile->Read(&SkipValue,   sizeof SkipValue)   != sizeof SkipValue    ||
+        pFile->Read(&SkipValue,   sizeof SkipValue)   != sizeof SkipValue    ||
+        pFile->Read(&Depth,       sizeof Depth)       != sizeof Depth        ||
+        pFile->Read(&SkipValue,   sizeof SkipValue)   != sizeof SkipValue    ||
+        pFile->Read(&Type,        sizeof Type)        != sizeof Type         ||
+        pFile->Read(&SkipValue,   sizeof SkipValue)   != sizeof SkipValue    ||
+        pFile->Read(&SkipValue,   sizeof SkipValue)   != sizeof SkipValue)
         goto WRAPUP;
 
     // Utility from HTIFFUtils
@@ -467,9 +465,7 @@ bool HRFSunRasterFile::Open()
     // Open the file
     if (!m_IsOpen)
         {
-        m_pSunRasterFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset), GetAccessMode());
-
-        ThrowFileExceptionIfError(m_pSunRasterFile, GetURL()->GetURL());
+        m_pSunRasterFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -624,9 +620,7 @@ void HRFSunRasterFile::SaveSunRasterFile(bool pi_CloseFile)
 bool HRFSunRasterFile::Create()
     {
     // Open the file.
-    m_pSunRasterFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pSunRasterFile, GetURL()->GetURL());
+    m_pSunRasterFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
 
     // Instanciate the Sharing Control Object.
     SharingControlCreate();
@@ -807,14 +801,14 @@ void HRFSunRasterFile::GetFileHeaderFromFile()
 
     m_pSunRasterFile->SeekToPos(HEADER_OFFSET);
 
-    m_pSunRasterFile->Read((void*)&m_FileHeader.m_MagicNumber, sizeof m_FileHeader.m_MagicNumber);
-    m_pSunRasterFile->Read((void*)&m_FileHeader.m_Width,       sizeof m_FileHeader.m_Width);
-    m_pSunRasterFile->Read((void*)&m_FileHeader.m_Height,      sizeof m_FileHeader.m_Height);
-    m_pSunRasterFile->Read((void*)&m_FileHeader.m_Depth,       sizeof m_FileHeader.m_Depth);
-    m_pSunRasterFile->Read((void*)&m_FileHeader.m_Length,      sizeof m_FileHeader.m_Length);
-    m_pSunRasterFile->Read((void*)&m_FileHeader.m_Type,        sizeof m_FileHeader.m_Type);
-    m_pSunRasterFile->Read((void*)&m_FileHeader.m_Maptype,     sizeof m_FileHeader.m_Maptype);
-    m_pSunRasterFile->Read((void*)&m_FileHeader.m_Maplen,      sizeof m_FileHeader.m_Maplen);
+    m_pSunRasterFile->Read(&m_FileHeader.m_MagicNumber, sizeof m_FileHeader.m_MagicNumber);
+    m_pSunRasterFile->Read(&m_FileHeader.m_Width,       sizeof m_FileHeader.m_Width);
+    m_pSunRasterFile->Read(&m_FileHeader.m_Height,      sizeof m_FileHeader.m_Height);
+    m_pSunRasterFile->Read(&m_FileHeader.m_Depth,       sizeof m_FileHeader.m_Depth);
+    m_pSunRasterFile->Read(&m_FileHeader.m_Length,      sizeof m_FileHeader.m_Length);
+    m_pSunRasterFile->Read(&m_FileHeader.m_Type,        sizeof m_FileHeader.m_Type);
+    m_pSunRasterFile->Read(&m_FileHeader.m_Maptype,     sizeof m_FileHeader.m_Maptype);
+    m_pSunRasterFile->Read(&m_FileHeader.m_Maplen,      sizeof m_FileHeader.m_Maplen);
 
     // Utility from HTIFFUtils
     if (!SystemIsBigEndian())
@@ -875,14 +869,14 @@ void HRFSunRasterFile::SetFileHeaderToFile()
 
     m_pSunRasterFile->SeekToPos(HEADER_OFFSET);
 
-    m_pSunRasterFile->Write((void*)&MagicNumber, sizeof MagicNumber);
-    m_pSunRasterFile->Write((void*)&Width,    sizeof Width);
-    m_pSunRasterFile->Write((void*)&Height,   sizeof Height);
-    m_pSunRasterFile->Write((void*)&Depth,    sizeof Depth);
-    m_pSunRasterFile->Write((void*)&Length,   sizeof Length);
-    m_pSunRasterFile->Write((void*)&Type,     sizeof Type);
-    m_pSunRasterFile->Write((void*)&Maptype,  sizeof Maptype);
-    m_pSunRasterFile->Write((void*)&Maplen,   sizeof Maplen);
+    m_pSunRasterFile->Write(&MagicNumber, sizeof MagicNumber);
+    m_pSunRasterFile->Write(&Width,    sizeof Width);
+    m_pSunRasterFile->Write(&Height,   sizeof Height);
+    m_pSunRasterFile->Write(&Depth,    sizeof Depth);
+    m_pSunRasterFile->Write(&Length,   sizeof Length);
+    m_pSunRasterFile->Write(&Type,     sizeof Type);
+    m_pSunRasterFile->Write(&Maptype,  sizeof Maptype);
+    m_pSunRasterFile->Write(&Maplen,   sizeof Maplen);
 
     SetPaletteToFile();
 
@@ -910,9 +904,9 @@ void HRFSunRasterFile::GetPaletteFromFile()
         m_pColorMapG = new Byte[MapChannelLen];
         m_pColorMapB = new Byte[MapChannelLen];
 
-        m_pSunRasterFile->Read((void*)m_pColorMapR, MapChannelLen);
-        m_pSunRasterFile->Read((void*)m_pColorMapG, MapChannelLen);
-        m_pSunRasterFile->Read((void*)m_pColorMapB, MapChannelLen);
+        m_pSunRasterFile->Read(m_pColorMapR, MapChannelLen);
+        m_pSunRasterFile->Read(m_pColorMapG, MapChannelLen);
+        m_pSunRasterFile->Read(m_pColorMapB, MapChannelLen);
         }
     }
 
@@ -931,9 +925,9 @@ void HRFSunRasterFile::SetPaletteToFile()
         m_pSunRasterFile->SeekToPos(COLORMAP_OFFSET);
 
         uint32_t MapChannelLen = m_FileHeader.m_Maplen / 3;
-        m_pSunRasterFile->Write((void*)m_pColorMapR, MapChannelLen);
-        m_pSunRasterFile->Write((void*)m_pColorMapG, MapChannelLen);
-        m_pSunRasterFile->Write((void*)m_pColorMapB, MapChannelLen);
+        m_pSunRasterFile->Write(m_pColorMapR, MapChannelLen);
+        m_pSunRasterFile->Write(m_pColorMapG, MapChannelLen);
+        m_pSunRasterFile->Write(m_pColorMapB, MapChannelLen);
         }
     }
 

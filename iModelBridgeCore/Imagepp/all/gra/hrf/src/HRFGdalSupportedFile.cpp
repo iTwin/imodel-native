@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGdalSupportedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFGdalSupportedFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <ImagePP/all/h/ImageppLib.h>
 
@@ -46,7 +46,6 @@
 #include <Imagepp/all/h/HRPPixelTypeV96R32G32B32.h>
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
-#include <Imagepp/all/h/HCPException.h>
 
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 
@@ -58,7 +57,6 @@
 #include <Imagepp/all/h/HGF2DSimilitude.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
@@ -66,11 +64,11 @@
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 
 //GDAL
-#include <ImagePPInternal/ext/gdal/gdal_priv.h>
-#include <ImagePPInternal/ext/gdal/cpl_string.h>
-#include <ImagePPInternal/ext/gdal/cpl_error.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
+//#include <ImagePP-GdalLib/cpl_string.h>
+#include <ImagePP-GdalLib/cpl_error.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 //-----------------------------------------------------------------------------
 // ImagePP's own error handler for GDAL
@@ -90,12 +88,13 @@ private:
         {
         CPLCleanFinderLocation();
         WString rPathToGdalData;
-        if (BSISUCCESS == ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetGDalDataPath(rPathToGdalData))
+        if (BSISUCCESS == ImageppLib::GetHost().GetImageppLibAdmin()._GetGDalDataPath(rPathToGdalData))
             {
-            size_t      maxBytes = rPathToGdalData.GetMaxLocaleCharBytes();
-            char *localeChars = (char*) _alloca (maxBytes);
-            rPathToGdalData.ConvertToLocaleChars (localeChars, maxBytes);
-            CPLPushFinderLocation(localeChars);
+            // TFS#86887: GDAL_FILENAME_IS_UTF8
+            Utf8String localeChars;
+            BeStringUtilities::WCharToUtf8(localeChars, rPathToGdalData.c_str());
+
+            CPLPushFinderLocation(localeChars.c_str());
             //The path should exists, otherwise, there is a problem with the
             //build/installation procedure.
             BeAssert(!rPathToGdalData.empty() && BeFileName::IsDirectory(rPathToGdalData.c_str()));
@@ -194,7 +193,7 @@ void HRFGdalSupportedFile::Save()
             WriteColorTable();
             }
 
-        if ((m_poDataset != 0) && (pPageDescriptor->GeocodingHasChanged() == true))
+        if ((m_poDataset != 0) && pPageDescriptor->GeocodingHasChanged())
             {
             SetGeocodingInformation();
             SaveHeader = true;
@@ -241,7 +240,19 @@ void HRFGdalSupportedFile::WriteColorTable(uint32_t              pi_Page,
         case 1:
             for(size_t index = 0; index < pPagePixelType->GetPalette().GetMaxEntries(); index++)
                 {
-                pValue = (Byte*)pPagePixelType->GetPalette().GetCompositeValue((uint32_t)index);
+                Byte defaultValue[4];
+                if (index < pPagePixelType->GetPalette().CountUsedEntries())
+                    {
+                    pValue = (Byte*)pPagePixelType->GetPalette().GetCompositeValue((uint32_t)index);
+                    }
+                else
+                    {
+                    defaultValue[0] = (Byte)index;
+                    defaultValue[1] = (Byte)index;
+                    defaultValue[2] = (Byte)index;
+                    defaultValue[3] = 255;
+                    pValue = (Byte*)&defaultValue;
+                    }
                 colorEntry.c1 = pValue[0];
                 colorEntry.c2 = 0;
                 colorEntry.c3 = 0;
@@ -252,7 +263,19 @@ void HRFGdalSupportedFile::WriteColorTable(uint32_t              pi_Page,
         case 3:
             for(size_t index = 0; index < pPagePixelType->GetPalette().GetMaxEntries(); index++)
                 {
-                pValue = (Byte*)pPagePixelType->GetPalette().GetCompositeValue((uint32_t)index);
+                Byte defaultValue[4];
+                if (index < pPagePixelType->GetPalette().CountUsedEntries())
+                    {
+                    pValue = (Byte*)pPagePixelType->GetPalette().GetCompositeValue((uint32_t)index);
+                    }
+                else
+                    {
+                    defaultValue[0] = (Byte)index;
+                    defaultValue[1] = (Byte)index;
+                    defaultValue[2] = (Byte)index;
+                    defaultValue[3] = 255;
+                    pValue = (Byte*)&defaultValue;
+                    }
                 colorEntry.c1 = pValue[0];
                 colorEntry.c2 = pValue[1];
                 colorEntry.c3 = pValue[2];
@@ -263,7 +286,19 @@ void HRFGdalSupportedFile::WriteColorTable(uint32_t              pi_Page,
         case 4:
             for(size_t index = 0; index < pPagePixelType->GetPalette().GetMaxEntries(); index++)
                 {
-                pValue = (Byte*)pPagePixelType->GetPalette().GetCompositeValue((uint32_t)index);
+                Byte defaultValue[4];
+                if (index < pPagePixelType->GetPalette().CountUsedEntries())
+                    {
+                    pValue = (Byte*)pPagePixelType->GetPalette().GetCompositeValue((uint32_t)index);
+                    }
+                else
+                    {
+                    defaultValue[0] = (Byte)index;
+                    defaultValue[1] = (Byte)index;
+                    defaultValue[2] = (Byte)index;
+                    defaultValue[3] = 255;
+                    pValue = (Byte*)&defaultValue;
+                    }
                 colorEntry.c1 = pValue[0];
                 colorEntry.c2 = pValue[1];
                 colorEntry.c3 = pValue[2];
@@ -309,12 +344,13 @@ bool HRFGdalSupportedFile::Open()
 
     try
         {
-        AString filenameA;
-        BeStringUtilities::WCharToCurrentLocaleChar (filenameA, static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName().c_str());
+        // TFS#86887: GDAL_FILENAME_IS_UTF8
+        Utf8String filenameUtf8;
+        BeStringUtilities::WCharToUtf8(filenameUtf8, static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName().c_str());
 
         // Only allowed the expected driver to avoid hostile file format that might be registered.
         const char * const allowedDrivers[] = {GDALGetDriverShortName(m_pGdalDriver), NULL};       
-        CHECK_ERR(m_poDataset = (GDALDataset*)GDALOpenInternal(filenameA.c_str(), GdalAccess, allowedDrivers);)
+        CHECK_ERR(m_poDataset = (GDALDataset*) GDALOpenInternal(filenameUtf8.c_str(), GdalAccess, allowedDrivers);)
 
         if (m_poDataset == 0)
             {
@@ -324,11 +360,11 @@ bool HRFGdalSupportedFile::Open()
         DetectPixelType();
 
         if (m_pPixelType == 0)
-            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
             
         if (AreDataNeedToBeScaled() && (GdalAccess == GA_Update))
             {
-            throw HRFException(HRF_DATA_HAVE_BEEN_SCALED_READ_ONLY_EXCEPTION, GetURL()->GetURL());
+            throw HRFDataHaveBeenScaledReadOnlyException(GetURL()->GetURL());
             }
 
         m_IsOpen = true;
@@ -336,8 +372,8 @@ bool HRFGdalSupportedFile::Open()
     catch (HFCException& rException)
         {
         // If the exception is not specific enough throw an exception that represents the current context
-        if (rException.GetID() == HRF_EXCEPTION)
-            throw HFCFileException(HFC_CANNOT_OPEN_FILE_EXCEPTION, GetURL()->GetURL());
+        if (dynamic_cast<HFCUndefinedException*>(&rException) != 0)
+            throw HFCCannotOpenFileException(GetURL()->GetURL());
         else
             throw;
         }
@@ -897,13 +933,13 @@ void HRFGdalSupportedFile::CreateDescriptorsWith(const HFCPtr<HCDCodec>& pi_rpCo
     HFCPtr<HRFResolutionDescriptor> pResolution;
     HFCPtr<HRFPageDescriptor>       pPage;
     bool                           IsTransfoModel = false;
-    IRasterBaseGcsPtr               pBaseGCS;
+    RasterFileGeocodingPtr         pGeocoding = RasterFileGeocoding::Create();//No geocoding by default, HRFFile MUST set it if supported;
 
     //warning : GetGeoRefMatrix needs to be called before IsValidGeoRefInfo
     //if theres no valid transfo model, we dont check for GeoInfo
     if(GetGeoRefMatrix())
         {
-        pBaseGCS = GetGeocodingInformation();
+        pGeocoding = ExtractGeocodingInformation();
         IsTransfoModel = true;
         }
 
@@ -934,16 +970,14 @@ void HRFGdalSupportedFile::CreateDescriptorsWith(const HFCPtr<HCDCodec>& pi_rpCo
     //warning : GetGeoRefInfo needs to be called before IsValidGeoRefInfo
     if ((IsTransfoModel == true) && IsValidGeoRefInfo())
         {
-        if (pBaseGCS != 0)
+        if (pGeocoding != 0)
             {
             bool DefaultUnitWasFound = false;
 
-            pBuildTransfoModel = HCPGeoTiffKeys::TranslateToMeter(BuildTransfoModel(),
+            pBuildTransfoModel = pGeocoding->TranslateToMeter(BuildTransfoModel(),
                                                                 1.0,
-                                                                true,
                                                                 false,
-                                                                &DefaultUnitWasFound,
-                                                                pBaseGCS);
+                                                                &DefaultUnitWasFound);
 
             SetUnitFoundInFile(DefaultUnitWasFound);
             }
@@ -1003,7 +1037,7 @@ void HRFGdalSupportedFile::CreateDescriptorsWith(const HFCPtr<HCDCodec>& pi_rpCo
                                    0,                                       // Filters
                                    &pi_rTagList);                           // Attribute set
 
-    pPage->SetGeocoding (pBaseGCS);
+    pPage->InitFromRasterFileGeocoding(*pGeocoding);
 
     m_ListOfPageDescriptor.push_back(pPage);
     }
@@ -1169,13 +1203,13 @@ bool HRFGdalSupportedFile::SetGeoRefMatrix()
     HFCPtr<HGF2DTransfoModel> pTransfoModel = GetPageDescriptor(0)->GetTransfoModel();
 
     // Translate the model units in geotiff units.
-    IRasterBaseGcsPtr pBaseGcs = GetPageDescriptor(0)->GetGeocoding();
+    IRasterBaseGcsCP pBaseGcs = GetPageDescriptor(0)->GetGeocodingCP();
 
 
     //If some geocoding information is available, get the transformation model in meters
     if (pBaseGcs != 0)
         {
-        pTransfoModel = HCPGeoTiffKeys::TranslateFromMeter(pTransfoModel, true, false, &DefaultUnitWasFound, pBaseGcs);
+        pTransfoModel = GetPageDescriptor(0)->GetRasterFileGeocoding().TranslateFromMeter(pTransfoModel, false, &DefaultUnitWasFound);
         }
 
     SetUnitFoundInFile(DefaultUnitWasFound);
@@ -1444,7 +1478,7 @@ void HRFGdalSupportedFile::SetColorAttributes()
         GetRasterBand(m_ExtendedBandInd)->SetColorInterpretation(GCI_Undefined);
         }
     else
-        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
     }
 
 //-----------------------------------------------------------------------------
@@ -1684,10 +1718,11 @@ bool HRFGdalSupportedFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
 
             SetCreationOptions(pi_pPage, ppCreationOptions );
 
-            AString filenameA;
-            BeStringUtilities::WCharToCurrentLocaleChar (filenameA, static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName().c_str());
+            // TFS#86887: GDAL_FILENAME_IS_UTF8
+            Utf8String filenameUtf8;
+            BeStringUtilities::WCharToUtf8(filenameUtf8, static_cast<HFCURLFile*>(GetURL().GetPtr())->GetAbsoluteFileName().c_str());
 
-            CHECK_ERR(m_poDataset = m_pGdalDriver->Create(filenameA.c_str(),
+            CHECK_ERR(m_poDataset = m_pGdalDriver->Create(filenameUtf8.c_str(),
                                                          (uint32_t)pi_pPage->GetResolutionDescriptor(0)->GetWidth(),
                                                          (uint32_t)pi_pPage->GetResolutionDescriptor(0)->GetHeight(),
                                                          m_NbBands,
@@ -1714,6 +1749,10 @@ bool HRFGdalSupportedFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
 
         SetColorAttributes();
 
+        HFCPtr<HRPPixelType> pixelType(pi_pPage->GetResolutionDescriptor(0)->GetPixelType());
+        
+        SetNoDataValue(pixelType);
+               
         if (GetDispRep() == PALETTE)
             {
             HASSERT(m_PaletteBandInd != -1);
@@ -1730,6 +1769,26 @@ bool HRFGdalSupportedFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         }
 
     return IsPageAdded;
+}
+
+//-----------------------------------------------------------------------------
+// Protected
+// SetNoDataValue
+// 
+//-----------------------------------------------------------------------------
+void HRFGdalSupportedFile::SetNoDataValue(HFCPtr<HRPPixelType>& pixelType)
+    {
+    if (m_NbBands == 1)
+        {
+        assert((pixelType->GetChannelOrg().GetChannelPtr(0) != 0) && (GetRasterBand(1) != 0));
+              
+        const double* pNoDataValue = pixelType->GetChannelOrg().GetChannelPtr(0)->GetNoDataValue();
+
+        if (pNoDataValue != 0)
+            {                
+            ((GDALRasterBand*)(GetRasterBand(1)))->SetNoDataValue(*pNoDataValue);                            
+            }        
+        }   
     }
 
 //-----------------------------------------------------------------------------
@@ -1737,11 +1796,9 @@ bool HRFGdalSupportedFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
 // GetGeoRefInformation
 //
 //-----------------------------------------------------------------------------
-IRasterBaseGcsPtr HRFGdalSupportedFile::GetGeocodingInformation()
+RasterFileGeocodingPtr HRFGdalSupportedFile::ExtractGeocodingInformation()
     {
-    bool GeoInfoFound   = false;
-
-    IRasterBaseGcsPtr pBaseGCS;
+    RasterFileGeocodingPtr pGeocoding(RasterFileGeocoding::Create());
 
     //init
     m_GTModelType = TIFFGeo_Undefined;
@@ -1755,22 +1812,17 @@ IRasterBaseGcsPtr HRFGdalSupportedFile::GetGeocodingInformation()
 
         if (WktGeocode != L"")
             {
-            try
-                {
+
                 //TR 241854 According to the GDAL documentation, the flavor is
                 //WktFlavorOGC. But in some case, the WKT has an hybrid flavor,
                 //so unknown is used instead.
-                pBaseGCS = HRFGeoCoordinateProvider:: CreateRasterGcsFromFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorUnknown, WktGeocode.c_str());
-                GeoInfoFound = true;        
-                }
-            catch (HCPGCoordException&)
-                {
-                }
+                IRasterBaseGcsPtr  pBaseGCS = HRFGeoCoordinateProvider:: CreateRasterGcsFromWKT(NULL, NULL, IRasterGeoCoordinateServices::WktFlavorUnknown, WktGeocode.c_str());
+                                
             }
         }
 
     //If GeoCoord could not convert the WKT, try with OGR
-    if (GeoInfoFound == false)  //&&AR: Should we test pBaseGCS != NULL (and IsValid) instead of assuming validity after creationFromWKT?
+    if (pGeocoding->GetGeocodingCP()==NULL)  
         {
         //char* pLocalCS = "LOCAL_CS[\"Unknown\"";
 
@@ -1782,17 +1834,20 @@ IRasterBaseGcsPtr HRFGdalSupportedFile::GetGeocodingInformation()
             pGeoTiffKeys = HRFGdalUtilities::ConvertOGCWKTtoGeotiffKeys(sProj.c_str());
 
             if(pGeoTiffKeys != NULL)
-                pBaseGCS = HRFGeoCoordinateProvider::CreateRasterGcsFromGeoTiffKeys(NULL, NULL, *pGeoTiffKeys);
+                pGeocoding = RasterFileGeocoding::Create(pGeoTiffKeys);
             }
         }
 
     // Get common geotiff tags
-    if ((pBaseGCS != 0) && pBaseGCS->IsValid() && pBaseGCS->GetBaseGCS() != NULL)
+    if (pGeocoding->GetGeocodingCP()!=NULL)
         {
-        m_GTModelType = (pBaseGCS->IsProjected() ? 1 : 0);
+        if ((pGeocoding->GetGeocodingCP()->IsValid() && pGeocoding->GetGeocodingCP()->GetBaseGCS() != NULL))
+            {
+            m_GTModelType = (pGeocoding->GetGeocodingCP()->IsProjected() ? 1 : 0);
+            }
         }
 
-    return pBaseGCS;
+    return pGeocoding;
     }
 
 
@@ -1802,7 +1857,7 @@ IRasterBaseGcsPtr HRFGdalSupportedFile::GetGeocodingInformation()
 // Note that this function should currently be used only for obtaining the unit
 // of elevation measurements present in a DEM raster.
 //-----------------------------------------------------------------------------
-void HRFGdalSupportedFile::AddVerticalUnitToGeocoding(IRasterBaseGcsPtr pio_pBaseGCS) const
+void HRFGdalSupportedFile::AddVerticalUnitToGeocoding(IRasterBaseGcsR pio_pBaseGCS) const
     {
     const char* pUnitType = GetRasterBand(m_GrayBandInd)->GetUnitType();
     uint32_t     VerticalUnitValue;
@@ -1823,7 +1878,7 @@ void HRFGdalSupportedFile::AddVerticalUnitToGeocoding(IRasterBaseGcsPtr pio_pBas
         VerticalUnitRatioToMeter = 0.3048;
         }
 
-    pio_pBaseGCS->SetVerticalUnits(VerticalUnitRatioToMeter);
+    pio_pBaseGCS.SetVerticalUnits(VerticalUnitRatioToMeter);
     }
 
 
@@ -1856,7 +1911,7 @@ bool HRFGdalSupportedFile::SetGeocodingInformation()
     WString                      OGCWellKnownText;
     HFCPtr<HCPGeoTiffKeys>       pGeoTiffKeys;
 
-    IRasterBaseGcsPtr pBaseGCS = pPageDescriptor->GetGeocoding();
+    IRasterBaseGcsCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
     if (pBaseGCS != 0)
         {
@@ -1886,16 +1941,10 @@ bool HRFGdalSupportedFile::SetGeocodingInformation()
             char*   multiByteDestination= (char*)_alloca (destinationBuffSize);
 
             CHECK_ERR(m_poDataset->SetProjection(OGCWellKnownText.ConvertToLocaleChars(multiByteDestination, destinationBuffSize));)
-
-            // Get common geotiff tags
-            HCPGeoTiffKeys* pGeoKeyContainer = static_cast<HCPGeoTiffKeys*>(pPageDescriptor->GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO).GetPtr());
-
-            if (pGeoKeyContainer != 0 && pGeoKeyContainer->HasKey(GTModelType))
-                pGeoKeyContainer->GetValue(GTModelType, &m_GTModelType);
             }
         else
             {   //The georeference in the newly created file or saved file will be lost.
-            HASSERT(0);
+            HASSERT_DATA(0);
             }
         }
 
@@ -2036,30 +2085,30 @@ void HRFGdalSupportedFile::ThrowExBasedOnGDALErrorCode(uint32_t pi_GetLastErrorC
     switch (pi_GetLastErrorCode)
         {
         case CPLE_OutOfMemory :
-            throw HFCException(HFC_OUT_OF_MEMORY_EXCEPTION);
+            throw HFCOutOfMemoryException();
             break;
         case CPLE_FileIO :
-            throw HFCFileException(HFC_FILE_IO_ERROR_EXCEPTION, GetURL()->GetURL());
+            throw HFCFileIOErrorException(GetURL()->GetURL());
             break;
         case CPLE_OpenFailed :
-            throw HFCFileException(HFC_CANNOT_OPEN_FILE_EXCEPTION, GetURL()->GetURL());
+            throw HFCCannotOpenFileException(GetURL()->GetURL());
             break;
         case CPLE_NotSupported :
-            throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HFCFileNotSupportedException(GetURL()->GetURL());
             break;
         case CPLE_AssertionFailed : //Do nothing
             break;
         case CPLE_NoWriteAccess :
-            throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, GetURL()->GetURL());
+            throw HFCFileReadOnlyException(GetURL()->GetURL());
             break;
         case CPLE_UserInterrupt :
-            throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, GetURL()->GetURL());
+            throw HFCFileReadOnlyException(GetURL()->GetURL());
             break;
         case CPLE_IllegalArg :
         case CPLE_ObjectNull : //There is currently no exception in Imagepp which can maps to CPLE_ObjectNull.
         case CPLE_AppDefined : //It seems to be the default error code.
         default :
-            throw HRFException(HRF_EXCEPTION, GetURL()->GetURL());
+            throw HRFGenericException(GetURL()->GetURL());
             break;
         }
     }
@@ -2083,7 +2132,7 @@ HRFGdalSupportedFile::HRFGdalSupportedFile(const char*           pi_pDriverName,
     if(NULL == m_pGdalDriver)
         {
         HASSERT(!"HRFGdalSupportedFile: GDAL Driver not found");
-        throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileNotSupportedException( pi_rURL->GetURL());
         }
 
     // The ancestor store the access mode

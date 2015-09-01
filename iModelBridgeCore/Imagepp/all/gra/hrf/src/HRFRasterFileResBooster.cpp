@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileResBooster.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFRasterFileResBooster
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCStat.h>
 #include <Imagepp/all/h/HFCURLFile.h>
@@ -33,7 +33,7 @@
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCDCodecFactory.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 #define SMALL_IMAGE_SIZE    262144
 #define MEDIUM_IMAGE_SIZE   1024000
@@ -223,6 +223,16 @@ HRFResolutionEditor* HRFRasterFileResBooster::CreateResolutionEditor(uint32_t   
                 (pTheTrueOriginalFile->GetPageDescriptor(pi_Page)->GetResolutionDescriptor(pi_Resolution)->GetBlockType() == HRFBlockType::TILE))
                 {
                 pResolutionEditor = pOriginalResolutionEditor;
+
+                // Set all tiles in the 1:1 to LOADED, because we will read it directly from the original file instead of from the cache file.
+                //   Without these lines, you will have an assertion in HRFiTiffTileEditor::WriteBlock, try to rewrite a block already written, when
+                //   you try to reopen the cache file.
+                //
+                HFCPtr<HRFResolutionDescriptor> pResDescriptor = m_pBoosterFile->GetPageDescriptor(pi_Page)->GetResolutionDescriptor(pi_Resolution);
+                HArrayAutoPtr<HRFDataFlag> pBlocksDataFlag;
+                pBlocksDataFlag = new HRFDataFlag[(size_t)pResDescriptor->CountBlocks()];
+                memset(pBlocksDataFlag, HRFDATAFLAG_LOADED, (size_t)(pResDescriptor->CountBlocks() * sizeof(HRFDataFlag)));
+                pResDescriptor->SetBlocksDataFlag(pBlocksDataFlag);
                 }
             else
 #endif
@@ -426,11 +436,21 @@ void HRFRasterFileResBooster::Close()
     {
     SynchronizeFiles();
 
+    // Set the TimeStamp to the new booster file
+    // Keep a copy of URL
+    HFCPtr<HFCURL>  pOriginalURL = HFCURL::Instanciate(m_pOriginalFile->GetURL()->GetURL());
+    HFCPtr<HFCURL>  pBoosterURL  = HFCURL::Instanciate(m_pBoosterFile->GetURL()->GetURL());
+    HFCStat BoosterFileStat (m_pBoosterFile->GetURL());
+    HFCStat OriginalFileStat(m_pOriginalFile->GetURL());
+
     m_IsOpen = false;
 
     // Force to close these raster file
     m_pOriginalFile = 0;
     m_pBoosterFile  = 0;
+
+    // Update the booster modification time with the original file
+    BoosterFileStat.SetModificationTime(OriginalFileStat.GetModificationTime());
     }
 
 //-----------------------------------------------------------------------------
@@ -452,8 +472,6 @@ void HRFRasterFileResBooster::Save()
 //-----------------------------------------------------------------------------
 void HRFRasterFileResBooster::SynchronizeFiles()
     {
-    bool      UpdateTimeStamp = false;
-
     // close the ResBooster file
     if (m_IsOpen)
         {
@@ -472,10 +490,8 @@ void HRFRasterFileResBooster::SynchronizeFiles()
 
                 // Update to Source file
                 if (m_pOriginalFile->GetCapabilities()->Supports(pTransfoCapability))
-                    {
                     m_pOriginalFile->GetPageDescriptor(Page)->SetTransfoModel(*pPageDescriptor->GetTransfoModel());
-                    UpdateTimeStamp = true;
-                    }
+
                 // Update to Cache file
                 else if (m_pBoosterFile->GetCapabilities()->Supports(pTransfoCapability))
                     m_pBoosterFile->GetPageDescriptor(Page)->SetTransfoModel(*pPageDescriptor->GetTransfoModel());
@@ -487,10 +503,8 @@ void HRFRasterFileResBooster::SynchronizeFiles()
                 HFCPtr<HRFCapability> pFilterCapability = new HRFFilterCapability(HFC_WRITE_ONLY, pPageDescriptor->GetFilter().GetClassID());
                 // Update to Source file
                 if (m_pOriginalFile->GetCapabilities()->Supports(pFilterCapability))
-                    {
                     m_pOriginalFile->GetPageDescriptor(Page)->SetFilter(pPageDescriptor->GetFilter());
-                    UpdateTimeStamp = true;
-                    }
+
                 // Update to Cache file
                 else if (m_pBoosterFile->GetCapabilities()->Supports(pFilterCapability))
                     m_pBoosterFile->GetPageDescriptor(Page)->SetFilter(pPageDescriptor->GetFilter());
@@ -518,10 +532,8 @@ void HRFRasterFileResBooster::SynchronizeFiles()
 
                 // Update to Source file
                 if (m_pOriginalFile->GetCapabilities()->Supports(pHistogramCapability))
-                    {
                     m_pOriginalFile->GetPageDescriptor(Page)->SetHistogram(*pPageDescriptor->GetHistogram());
-                    UpdateTimeStamp = true;
-                    }
+
                 // Update to Cache file
                 else if (m_pBoosterFile->GetCapabilities()->Supports(pHistogramCapability))
                     m_pBoosterFile->GetPageDescriptor(Page)->SetHistogram(*pPageDescriptor->GetHistogram());
@@ -534,10 +546,8 @@ void HRFRasterFileResBooster::SynchronizeFiles()
 
                 // Update to Source file
                 if (m_pOriginalFile->GetCapabilities()->Supports(pThumbnailCapability))
-                    {
                     m_pOriginalFile->GetPageDescriptor(Page)->SetThumbnail(*pPageDescriptor->GetThumbnail());
-                    UpdateTimeStamp = true;
-                    }
+
                 // Update to Cache file
                 else if (m_pBoosterFile->GetCapabilities()->Supports(pThumbnailCapability))
                     m_pBoosterFile->GetPageDescriptor(Page)->SetThumbnail(*pPageDescriptor->GetThumbnail());
@@ -567,10 +577,8 @@ void HRFRasterFileResBooster::SynchronizeFiles()
 
                     // Update to Source file
                     if (m_pOriginalFile->GetCapabilities()->Supports(pWriteCapability))
-                        {
                         m_pOriginalFile->GetPageDescriptor(Page)->SetTag((*TagIterator)->Clone() );
-                        UpdateTimeStamp = true;
-                        }
+
                     // Update to Cache file
                     else if (m_pBoosterFile->GetCapabilities()->Supports(pWriteCapability))
                         m_pBoosterFile->GetPageDescriptor(Page)->SetTag((*TagIterator)->Clone() );
@@ -614,7 +622,6 @@ void HRFRasterFileResBooster::SynchronizeFiles()
                                 if (pResolution->GetBlockDataFlag(FlagIndex) & HRFDATAFLAG_OVERWRITTEN)
                                     {
                                     ToUpdate        = true;
-                                    UpdateTimeStamp = true;
                                     break;
                                     }
                                 }
@@ -702,20 +709,6 @@ void HRFRasterFileResBooster::SynchronizeFiles()
                     }
                 }
             }
-        }
-
-    // Set the TimeStamp to the new booster file
-    // Keep a copy of URL
-    HFCPtr<HFCURL>  pOriginalURL = HFCURL::Instanciate(m_pOriginalFile->GetURL()->GetURL());
-    HFCPtr<HFCURL>  pBoosterURL  = HFCURL::Instanciate(m_pBoosterFile->GetURL()->GetURL());
-
-    // Update the booster modification time with the original file
-    HFCStat BoosterFileStat (m_pBoosterFile->GetURL());
-    HFCStat OriginalFileStat(m_pOriginalFile->GetURL());
-
-    if (UpdateTimeStamp || (OriginalFileStat.GetModificationTime() > BoosterFileStat.GetModificationTime()))
-        {
-        BoosterFileStat.SetModificationTime(OriginalFileStat.GetModificationTime());
         }
     }
 

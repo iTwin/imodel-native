@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DVector.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGFAngle.h>
 #include <Imagepp/all/h/HVE2DVector.h>
@@ -181,9 +181,9 @@ bool HVE2DVector::IsConnectedBy(const HVE2DLinear& pi_rLinear) const
     -----------------------------------------------------------------------------
 */
 bool HVE2DVector::IntersectsAtSplitPoint(const HVE2DVector& pi_rVector,
-                                          const HGF2DLocation& pi_rTestPoint,
-                                          const HGF2DLocation& pi_rNextEndPoint,
-                                          bool pi_ProcessNext) const
+                                         const HGF2DLocation& pi_rTestPoint,
+                                         const HGF2DLocation& pi_rNextEndPoint,
+                                         bool pi_ProcessNext) const
     {
     // The test point must be on self
     HPRECONDITION(IsPointOn(pi_rTestPoint));
@@ -199,7 +199,7 @@ bool HVE2DVector::IntersectsAtSplitPoint(const HVE2DVector& pi_rVector,
     bool Answer = false;
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
     // Check if end point is located on the given
     if (pi_rVector.IsPointOn(pi_rTestPoint, HVE2DVector::EXCLUDE_EXTREMITIES, Tolerance) &&
@@ -663,8 +663,8 @@ HFCPtr<HGFTolerance> HVE2DVector::GetStrokeTolerance() const
         // Make sure that widht or height are not smaller than resolution
         // An acceptable tolerance seems to be around 1/4 a pixels. Adding +/-
         // 1/8 of a pixel to the center gives 1/4 a pixel.
-        TolWidth  = max(TolWidth  * DEFAULT_PIXEL_TOLERANCE, GetTolerance());
-        TolHeight = max(TolHeight * DEFAULT_PIXEL_TOLERANCE, GetTolerance());
+        TolWidth  = MAX(TolWidth  * DEFAULT_PIXEL_TOLERANCE, GetTolerance());
+        TolHeight = MAX(TolHeight * DEFAULT_PIXEL_TOLERANCE, GetTolerance());
 
         m_pStrokeTolerance = new HGFTolerance(CenterX - TolWidth, CenterY - TolHeight,
                                               CenterX - TolWidth, CenterY + TolHeight,

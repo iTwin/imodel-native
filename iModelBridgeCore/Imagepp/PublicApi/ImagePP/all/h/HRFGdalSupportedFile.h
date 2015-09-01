@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGdalSupportedFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGdalSupportedRasterFile.h
@@ -18,7 +18,12 @@
 #include "HRFMacros.h"
 #include "HTIFFTag.h"
 
+// From GdalLib
+class GDALDataset;
+class GDALDriver;
+class GDALRasterBand;
 
+BEGIN_IMAGEPP_NAMESPACE
 enum DISPLAY_REP
     {
     UNDEFINED = 0,
@@ -47,10 +52,6 @@ void GDALErrorHandler(UShort     pi_ErrClass,
 
 class HRFGdalSupportedFileEditor;
 
-class GDALDataset;
-class GDALDriver;
-class GDALRasterBand;
-
 class HRFGdalSupportedFile : public HRFRasterFile
     {
 public:
@@ -62,7 +63,7 @@ public:
                                       const char* pi_Msg);
       */
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1955, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_GdalSupported, HRFRasterFile)
 
     virtual HRFResolutionEditor*          CreateResolutionEditor(uint32_t                  pi_Page,
                                                                  unsigned short           pi_Resolution,
@@ -131,14 +132,15 @@ protected:
     uint32_t                GetTotalRowBytes() const;
     void                    SetHasPalette(bool pi_hasPalette);
     void                    SetColorAttributes();
+    void                    SetNoDataValue(HFCPtr<HRPPixelType>& pixelType);
 
     bool                               IsValidGeoRefInfo() const;
     virtual HFCPtr<HGF2DTransfoModel>   BuildTransfoModel();
     virtual HRFScanlineOrientation      GetScanLineOrientation()const;
 
-    virtual IRasterBaseGcsPtr           GetGeocodingInformation();
-    bool                                SetGeocodingInformation();
-    void                                 AddVerticalUnitToGeocoding(IRasterBaseGcsPtr pio_pBaseGCS) const;
+    virtual RasterFileGeocodingPtr       ExtractGeocodingInformation();
+    bool                                 SetGeocodingInformation();
+    void                                 AddVerticalUnitToGeocoding(IRasterBaseGcsR pio_pBaseGCS) const;
 
     typedef list<int32_t> BandIndList;
 
@@ -237,3 +239,4 @@ private:
     HRFGdalSupportedFile(const HRFGdalSupportedFile& pi_rObj);
     HRFGdalSupportedFile& operator=(const HRFGdalSupportedFile& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

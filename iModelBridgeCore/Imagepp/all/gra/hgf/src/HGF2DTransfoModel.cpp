@@ -2,20 +2,21 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DTransfoModel.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DTransfoModel
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 // The class declaration must be the last include file.
 #include <Imagepp/all/h/HGF2DTransfoModel.h>
 #include <Imagepp/all/h/HGF2DComplexTransfoModel.h>   // special case include turn around
 #include <Imagepp/all/h/HGF2DLiteExtent.h>
 #include <Imagepp/all/h/HGF2DDisplacement.h>
+#include <Imagepp/all/h/HGF2DUniverse.h>
 
 //-----------------------------------------------------------------------------
 // Default Constructor
@@ -80,10 +81,6 @@ HFCPtr<HGF2DTransfoModel>  HGF2DTransfoModel::ComposeInverseWithDirectOf (const 
     }
 
 
-
-
-
-
 /** -----------------------------------------------------------------------------
     This method converts direct the given coordinates by the relation of
     the HGF2DTransfoModel. The transformation model really transforms
@@ -110,10 +107,10 @@ HFCPtr<HGF2DTransfoModel>  HGF2DTransfoModel::ComposeInverseWithDirectOf (const 
     @see ConvertInverse()
     -----------------------------------------------------------------------------
 */
-void HGF2DTransfoModel::ConvertDirect(double   pi_XIn,
-                                      double   pi_YIn,
-                                      double*  po_pXOut,
-                                      double*  po_pYOut) const
+StatusInt HGF2DTransfoModel::ConvertDirect(double   pi_XIn,
+                                           double   pi_YIn,
+                                           double*  po_pXOut,
+                                           double*  po_pYOut) const
     {
     // Return value vars must be provided
     HPRECONDITION(po_pXOut != 0);
@@ -123,7 +120,7 @@ void HGF2DTransfoModel::ConvertDirect(double   pi_XIn,
     *po_pXOut = pi_XIn;
     *po_pYOut = pi_YIn;
 
-    ConvertDirect (po_pXOut, po_pYOut);
+    return ConvertDirect (po_pXOut, po_pYOut);
     }
 
 
@@ -157,15 +154,17 @@ void HGF2DTransfoModel::ConvertDirect(double   pi_XIn,
     @see ConvertInverse()
     -----------------------------------------------------------------------------
 */
-void HGF2DTransfoModel::ConvertDirect(double    pi_YIn,
-                                      double    pi_XInStart,
-                                      size_t    pi_NumLoc,
-                                      double    pi_XInStep,
-                                      double*   po_aXOut,
-                                      double*   po_aYOut) const
+StatusInt HGF2DTransfoModel::ConvertDirect(double    pi_YIn,
+                                           double    pi_XInStart,
+                                           size_t    pi_NumLoc,
+                                           double    pi_XInStep,
+                                           double*   po_aXOut,
+                                           double*   po_aYOut) const
     {
     HPRECONDITION(po_aXOut != 0);
     HPRECONDITION(po_aYOut != 0);
+
+    StatusInt status = SUCCESS;
 
     uint32_t Index;
     double X;
@@ -174,10 +173,58 @@ void HGF2DTransfoModel::ConvertDirect(double    pi_YIn,
         po_aXOut[Index] = X;
         po_aYOut[Index] = pi_YIn;
 
-        ConvertDirect (&(po_aXOut[Index]), &(po_aYOut[Index]));
+        StatusInt tempStatus = ConvertDirect (&(po_aXOut[Index]), &(po_aYOut[Index]));
+
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
         }
+
+    return status;
     }
 
+/** -----------------------------------------------------------------------------
+    This method converts direct the given coordinates by the relation of the
+    HGF2DTransfoModel. The transformation model really transforms distances,
+    therefore, the methods must be capable of transforming the given input into
+    distances. Since the numbers given are raw values, then the values are
+    interpreted in the units set in the model at its construction. This therefore
+    prevents requiring the convert method of performing a unit conversion,
+    but lets the user check that the values refer to the proper units.
+    This conversion method permits to convert many coordinates at the time.
+    The coordinates do not need to have the same Y coordinate.
+
+    @param pi_NumLoc A positive number indicating the number of coordinates that are
+                     to be converted.
+
+    @param pio_aXInOut An array of double that contains the X coordinates to convert and that 
+                       receives the X coordinates of the converted
+                       values. This array must have at least pi_NumLoc elements.
+
+    @param pio_aYInOut An array of double that contains the Y coordinates to convert and that 
+                       receives the Y coordinates of the converted
+                       values. This array must have at least pi_NumLoc elements.
+    -----------------------------------------------------------------------------
+*/
+StatusInt HGF2DTransfoModel::ConvertDirect(size_t    pi_NumLoc,
+                                           double*   pio_aXInOut,
+                                           double*   pio_aYInOut) const
+    {
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+
+    StatusInt status = SUCCESS;
+
+    uint32_t Index;
+    for (Index = 0L; Index < pi_NumLoc ; Index++)
+        {
+        StatusInt tempStatus = ConvertDirect (&(pio_aXInOut[Index]), &(pio_aYInOut[Index]));
+
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
+        }
+
+    return status;
+    }
 
 
 /** -----------------------------------------------------------------------------
@@ -206,10 +253,10 @@ void HGF2DTransfoModel::ConvertDirect(double    pi_YIn,
     @see ConvertDirect()
     -----------------------------------------------------------------------------
 */
-void HGF2DTransfoModel::ConvertInverse(double  pi_XIn,
-                                       double  pi_YIn,
-                                       double* po_pXOut,
-                                       double* po_pYOut) const
+StatusInt HGF2DTransfoModel::ConvertInverse(double  pi_XIn,
+                                            double  pi_YIn,
+                                            double* po_pXOut,
+                                           double* po_pYOut) const
     {
     HPRECONDITION(po_pXOut != 0);
     HPRECONDITION(po_pYOut != 0);
@@ -219,9 +266,31 @@ void HGF2DTransfoModel::ConvertInverse(double  pi_XIn,
     *po_pYOut = pi_YIn;
 
     // Use other method for transformations
-    ConvertInverse (po_pXOut, po_pYOut);
+    return ConvertInverse (po_pXOut, po_pYOut);
     }
 
+
+/** -----------------------------------------------------------------------------
+    This method converts direct the given coordinate
+
+    @see ConvertInverse()
+    -----------------------------------------------------------------------------
+*/
+StatusInt HGF2DTransfoModel::ConvertPosDirect(HGF2DPosition* pio_rpCoord) const
+    {
+    // Return value vars must be provided
+    HPRECONDITION(pio_rpCoord != 0);
+
+    double X = pio_rpCoord->GetX();
+    double Y = pio_rpCoord->GetY();
+
+    StatusInt status = ConvertDirect (&X, &Y);
+
+    pio_rpCoord->SetX(X);
+    pio_rpCoord->SetY(Y);
+
+    return status;
+    }
 
 
 /** -----------------------------------------------------------------------------
@@ -254,15 +323,18 @@ void HGF2DTransfoModel::ConvertInverse(double  pi_XIn,
     @see ConvertDirect()
     -----------------------------------------------------------------------------
 */
-void HGF2DTransfoModel::ConvertInverse (double    pi_YIn,
-                                        double    pi_XInStart,
-                                        size_t    pi_NumLoc,
-                                        double    pi_XInStep,
-                                        double*   po_aXOut,
-                                        double*   po_aYOut) const
+StatusInt HGF2DTransfoModel::ConvertInverse (double    pi_YIn,
+                                             double    pi_XInStart,
+                                             size_t    pi_NumLoc,
+                                             double    pi_XInStep,
+                                             double*   po_aXOut,
+                                             double*   po_aYOut) const
     {
     HPRECONDITION(po_aXOut != 0);
     HPRECONDITION(po_aYOut != 0);
+
+
+    StatusInt status = SUCCESS;
 
     uint32_t Index;
     double X;
@@ -272,10 +344,80 @@ void HGF2DTransfoModel::ConvertInverse (double    pi_YIn,
         po_aXOut[Index] = X;
         po_aYOut[Index] = pi_YIn;
 
-        ConvertInverse (&(po_aXOut[Index]), &(po_aYOut[Index]));
+        StatusInt tempStatus = ConvertInverse (&(po_aXOut[Index]), &(po_aYOut[Index]));
+
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
         }
+    return status;
     }
 
+/** -----------------------------------------------------------------------------
+    This method converts inverse the given coordinates by the relation of the
+    HGF2DTransfoModel. The transformation model really transforms distances,
+    therefore, the methods must be capable of transforming the given input into
+    distances. Since the numbers given are raw values, then the values are
+    interpreted in the units set in the model at its construction. This therefore
+    prevents requiring the convert method of performing a unit conversion,
+    but lets the user check that the values refer to the proper units.
+    This conversion method permits to convert many coordinates at the time.
+    The coordinates do not need to have the same Y coordinate.
+
+    @param pi_NumLoc A positive number indicating the number of coordinates that are
+                     to be converted.
+
+    @param pio_aXInOut An array of double that contains the X coordinates to convert and that
+                       receives the X coordinates of the converted
+                       values. This array must have at least pi_NumLoc elements.
+
+    @param pio_aYInOut An array of double that contains the Y coordinates to convert and that
+                       receives the Y coordinates of the converted
+                       values. This array must have at least pi_NumLoc elements.
+    -----------------------------------------------------------------------------
+*/
+StatusInt HGF2DTransfoModel::ConvertInverse(size_t    pi_NumLoc,
+                                            double*   pio_aXInOut,
+                                            double*   pio_aYInOut) const
+    {
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+
+    StatusInt status = SUCCESS;
+
+    uint32_t Index;
+    for (Index = 0L; Index < pi_NumLoc ; Index++)
+        {
+        StatusInt tempStatus = ConvertInverse (&(pio_aXInOut[Index]), &(pio_aYInOut[Index]));
+
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
+        }
+
+    return status;
+    }
+
+
+/** -----------------------------------------------------------------------------
+    This method converts direct the given coordinate
+
+    @see ConvertInverse()
+    -----------------------------------------------------------------------------
+*/
+StatusInt HGF2DTransfoModel::ConvertPosInverse(HGF2DPosition* pio_rpCoord) const
+    {
+    // Return value vars must be provided
+    HPRECONDITION(pio_rpCoord != 0);
+
+    double X = pio_rpCoord->GetX();
+    double Y = pio_rpCoord->GetY();
+
+    StatusInt status = ConvertInverse(&X, &Y);
+
+    pio_rpCoord->SetX(X);
+    pio_rpCoord->SetY(Y);
+       
+    return status;
+    }
 
 /** -----------------------------------------------------------------------------
     This method returns true if the present instance of the transformation model
@@ -458,7 +600,7 @@ void HGF2DTransfoModel::GetStretchParamsAt(double*  po_pScaleFactorX,
             {
             LocalEpsilon = 100 * HNumeric<double>::GLOBAL_EPSILON();
 
-            LocalEpsilon = max(LocalEpsilon, max(HNumeric<double>::EPSILON_MULTIPLICATOR() * pi_XLocation,
+            LocalEpsilon = MAX(LocalEpsilon, MAX(HNumeric<double>::EPSILON_MULTIPLICATOR() * pi_XLocation,
                                                  HNumeric<double>::EPSILON_MULTIPLICATOR() * pi_YLocation));
             }
 
@@ -523,7 +665,7 @@ void HGF2DTransfoModel::GetStretchParamsAt(double*  po_pScaleFactorX,
 
     @param po_pScaleChangeMean Pointer to double that receives the mean scale change
 
-    @param po_pScaleChangeMax Pointer to double that receives the max scale change
+    @param po_pScaleChangeMax Pointer to double that receives the MAX scale change
 
     @param pi_ScaleThreshold Value indicating the scale that will result in a stop
                              of study. Even if study is stopped, at least one
@@ -630,7 +772,7 @@ void HGF2DTransfoModel::StudyReversibilityPrecisionOver
             StatSumY += DeltaY;
             StatNumSamples++;
 
-            MaxError = max (MaxError, max (DeltaX, DeltaY));
+            MaxError = MAX (MaxError, MAX (DeltaX, DeltaY));
             }
         }
 
@@ -642,3 +784,38 @@ void HGF2DTransfoModel::StudyReversibilityPrecisionOver
 
     }
 
+
+
+
+
+
+/** -----------------------------------------------------------------------------
+    @bsimethod                                         Alain Robert 2014/06
+    -----------------------------------------------------------------------------
+*/
+bool  HGF2DTransfoModel::HasDomain() const
+    {
+    // Default implementation has no domain
+    return false;
+    }
+
+/** -----------------------------------------------------------------------------
+    @bsimethod                                         Alain Robert 2014/06
+    -----------------------------------------------------------------------------
+*/
+HFCPtr<HGF2DShape>  HGF2DTransfoModel::GetDirectDomain() const
+    {
+    // Default implementation has no domain implying there is no limit
+    return new HGF2DUniverse();
+    }
+
+
+/** -----------------------------------------------------------------------------
+    @bsimethod                                         Alain Robert 2014/06
+    -----------------------------------------------------------------------------
+*/
+HFCPtr<HGF2DShape>  HGF2DTransfoModel::GetInverseDomain() const
+    {
+    // Default implementation has no domain implying there is no limit
+    return new HGF2DUniverse();
+    }

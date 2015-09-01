@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDPacket.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,35 +15,37 @@
 
 #include "HFCPtr.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodec;
 
 class HCDPacket : public HFCShareableObject<HCDPacket>
     {
-    HDECLARE_BASECLASS_ID(1156)
+    HDECLARE_BASECLASS_ID(HCDPacketId_Base)
 
 public:
 
     // constructors
 
-    _HDLLu                    HCDPacket();
+    IMAGEPP_EXPORT                    HCDPacket();
 
-    _HDLLu                 HCDPacket(  Byte* pi_pBuffer,
+    IMAGEPP_EXPORT                 HCDPacket(  Byte* pi_pBuffer,
                                        size_t pi_BufferSize,
                                        size_t pi_DataSize = 0);
 
-    _HDLLu                 HCDPacket(  const HFCPtr<HCDCodec>& pi_pCodec,
+    IMAGEPP_EXPORT                 HCDPacket(  const HFCPtr<HCDCodec>& pi_pCodec,
                                        Byte* pi_pBuffer,
                                        size_t pi_BufferSize,
                                        size_t pi_DataSize = 0);
 
-    _HDLLu                 HCDPacket(const HCDPacket& pi_rPacket);
-    _HDLLu HCDPacket&      operator=(const HCDPacket& pi_rPacket);
+    IMAGEPP_EXPORT                 HCDPacket(const HCDPacket& pi_rPacket);
+    IMAGEPP_EXPORT HCDPacket&      operator=(const HCDPacket& pi_rPacket);
 
 
 
     // destructor
 
-    _HDLLu virtual         ~HCDPacket();
+    IMAGEPP_EXPORT virtual         ~HCDPacket();
 
 
     // settings
@@ -52,30 +54,30 @@ public:
 
     size_t          GetDataSize() const;
 
-    _HDLLu void            SetDataSize(size_t pi_DataSize);
+    IMAGEPP_EXPORT void            SetDataSize(size_t pi_DataSize);
 
     Byte*         GetBufferAddress() const;
 
-    _HDLLu void            SetBuffer(void* pi_pBuffer, size_t pi_BufferSize);
+    IMAGEPP_EXPORT void            SetBuffer(void* pi_pBuffer, size_t pi_BufferSize);
 
-    _HDLLu void            SetCodec(const HFCPtr<HCDCodec>& pi_pCodec);
+    IMAGEPP_EXPORT void            SetCodec(const HFCPtr<HCDCodec>& pi_pCodec);
 
-    _HDLLu HFCPtr<HCDCodec>& GetCodec() const;
+    IMAGEPP_EXPORT HFCPtr<HCDCodec>& GetCodec() const;
 
 
     // compression
 
-    _HDLLu bool           Compress(HCDPacket* pio_pOutPacket) const;
+    IMAGEPP_EXPORT bool           Compress(HCDPacket* pio_pOutPacket) const;
 
-    _HDLLu bool           Decompress(HCDPacket* pio_pOutPacket);
+    IMAGEPP_EXPORT bool           Decompress(HCDPacket* pio_pOutPacket);
 
 
     // memory management
 
     bool            HasBufferOwnership() const;
-    _HDLLu void            SetBufferOwnership(bool pi_Owner);
-    _HDLLu void            ShrinkBufferToDataSize();
-    _HDLLu void            ChangeBufferSize(size_t pi_NewBufferSize);
+    IMAGEPP_EXPORT void            SetBufferOwnership(bool pi_Owner);
+    IMAGEPP_EXPORT void            ShrinkBufferToDataSize();
+    IMAGEPP_EXPORT void            ChangeBufferSize(size_t pi_NewBufferSize);
 
 
     virtual HCDPacket* Clone() const;
@@ -95,6 +97,8 @@ private:
     HFCPtr<HCDCodec>
     m_pCodec;
     };
+
+END_IMAGEPP_NAMESPACE
 
 #include "HCDPacket.hpp"
 

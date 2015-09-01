@@ -2,18 +2,26 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABitmapBase.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRABitmapBase
 // ----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRABitmapBase.h>
 #include <Imagepp/all/h/HRABitmapIterator.h>
 #include <Imagepp/all/h/HRPPixelType.h>
+#include <Imagepp/all/h/HGF2DStretch.h>
+#include <Imagepp/all/h/HRABlitter.h>
+#include <Imagepp/all/h/HRAWarper.h>
+#include <Imagepp/all/h/HRASurface.h>
+#include <Imagepp/all/h/HGFMappedSurface.h>
+#include <Imagepp/all/h/HRADrawOptions.h>
+#include <Imagepp/all/h/HGSMemorySurfaceDescriptor.h>
+#include <Imagepp/all/h/HRATransaction.h>
 
 HPM_REGISTER_ABSTRACT_CLASS(HRABitmapBase, HRAStoredRaster)
 
@@ -28,7 +36,6 @@ HRABitmapBase::HRABitmapBase (HRPPixelType* pi_pPixelType,
     m_XPosInRaster(0),
     m_YPosInRaster(0)
     {
-    m_SLO           = UPPER_LEFT_HORIZONTAL;
     m_BitsAlignment = 8;
     }
 
@@ -42,7 +49,6 @@ HRABitmapBase::HRABitmapBase(size_t                         pi_WidthPixels,
                              const HFCPtr<HGF2DCoordSys>&   pi_rpLogicalCoordSys,
                              const HFCPtr<HRPPixelType>&    pi_rpPixel,
                              uint32_t                       pi_BitsAlignment,
-                             HRABitmapBase::SLO             pi_SLO,
                              bool                          pi_Resizable)
     : HRAStoredRaster(pi_WidthPixels,
                       pi_HeightPixels,
@@ -56,7 +62,6 @@ HRABitmapBase::HRABitmapBase(size_t                         pi_WidthPixels,
     HPRECONDITION(pi_rpPixel != 0);
 
     m_BitsAlignment = pi_BitsAlignment;
-    m_SLO           = pi_SLO;
     }
 
 //-----------------------------------------------------------------------------
@@ -75,7 +80,6 @@ HRABitmapBase::HRABitmapBase(const HRABitmapBase& pi_rBitmap)
     : HRAStoredRaster(pi_rBitmap)
     {
     m_BitsAlignment = pi_rBitmap.m_BitsAlignment;
-    m_SLO           = pi_rBitmap.m_SLO;
     m_XPosInRaster  = pi_rBitmap.m_XPosInRaster;
     m_YPosInRaster  = pi_rBitmap.m_YPosInRaster;
     }
@@ -91,7 +95,6 @@ HRABitmapBase& HRABitmapBase::operator=(const HRABitmapBase& pi_rBitmap)
         HRAStoredRaster::operator=(pi_rBitmap);
 
         m_BitsAlignment = pi_rBitmap.m_BitsAlignment;
-        m_SLO           = pi_rBitmap.m_SLO;
         }
 
     return(*this);
@@ -106,4 +109,50 @@ HRARasterIterator* HRABitmapBase::CreateIterator (const HRAIteratorOptions& pi_r
     HRARasterIterator* pItr = new HRABitmapIterator(HFCPtr<HRABitmapBase>((HRABitmapBase*)this), pi_rOptions);
 
     return pItr;
+    }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void HRABitmapBase::StretchWithHGS(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_pOptions, 
+                                   const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel) const
+    {
+    HPRECONDITION(pi_rpTransfoModel->IsCompatibleWith(HGF2DStretch::CLASS_ID));
+
+    HRABlitter blitter(pio_destSurface);
+    blitter.SetSamplingMode(pi_pOptions.GetResamplingMode());
+    
+    if(pi_pOptions.ApplyAlphaBlend())
+        blitter.SetAlphaBlend(true);
+    if (pi_pOptions.ApplyGridShape())
+        blitter.SetGridMode(true);
+    if (pi_pOptions.GetOverviewMode())
+        blitter.SetOverviewsMode(true);
+       
+    // create the descriptor for the source
+    HFCPtr<HRPPixelType> PixelReplace(pi_pOptions.GetReplacingPixelType());
+    HFCPtr<HGSSurfaceDescriptor> pSrcDescriptor(GetSurfaceDescriptor(&PixelReplace));
+    HRASurface SrcSurface(pSrcDescriptor);
+
+    blitter.BlitFrom(SrcSurface, *pi_rpTransfoModel, pi_pOptions.GetTransaction());
+    }
+
+//-----------------------------------------------------------------------------
+// WarpWithHGS
+//-----------------------------------------------------------------------------
+void HRABitmapBase::WarpWithHGS(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_pOptions, 
+                                const HFCPtr<HGF2DTransfoModel>& pi_rpTransfoModel) const
+    {
+    HRAWarper warper(pio_destSurface);
+    warper.SetSamplingMode(pi_pOptions.GetResamplingMode());
+    if(pi_pOptions.ApplyAlphaBlend())
+        warper.SetAlphaBlend(true);
+    if (pi_pOptions.ApplyGridShape())
+        warper.SetGridMode(true);
+    
+    // create the descriptor for the source
+    HFCPtr<HRPPixelType> PixelReplace(pi_pOptions.GetReplacingPixelType());
+    HFCPtr<HGSSurfaceDescriptor> pSrcDescriptor(GetSurfaceDescriptor(&PixelReplace));
+    HRASurface SrcSurface(pSrcDescriptor);        
+
+    warper.WarpFrom(SrcSurface, *pi_rpTransfoModel, pi_pOptions.GetTransaction());
     }

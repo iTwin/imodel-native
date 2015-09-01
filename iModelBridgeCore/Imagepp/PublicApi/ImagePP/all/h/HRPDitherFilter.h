@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPDitherFilter.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -19,9 +19,10 @@
 #include "HRPPaletteOctreeR8G8B8.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPDitherFilter : public HRPFilter, public HMGMessageReceiver
     {
-    HDECLARE_CLASS_ID(1165, HRPFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_Dither, HRPFilter)
 
 public:
 
@@ -72,6 +73,7 @@ private:
     Byte                              m_MinMaxTable[480];
 
     // Messaging
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLNone);
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT);
     };
+END_IMAGEPP_NAMESPACE
 

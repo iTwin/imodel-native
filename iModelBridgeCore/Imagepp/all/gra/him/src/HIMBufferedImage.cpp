@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMBufferedImage.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HIMBufferedImage
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HIMBufferedImage.h>
 #include <Imagepp/all/h/HIMBufferedImageIterator.h>
@@ -20,12 +20,10 @@
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HFCMonitor.h>
 #include <Imagepp/all/h/HGFMappedSurface.h>
-#include <Imagepp/all/h/HGFDrawOptions.h>
 #include <Imagepp/all/h/HRADrawProgressIndicator.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <Imagepp/all/h/HGSTypes.h>
-#include <Imagepp/all/h/HGFPreDrawOptions.h>
-
+#include <Imagepp/all/h/HGSRegion.h>
 #include <Imagepp/all/h/HRACopyFromOptions.h>
 #include <Imagepp/all/h/HRADrawOptions.h>
 #include <Imagepp/all/h/HRAClearOptions.h>
@@ -38,13 +36,6 @@
 #include <Imagepp/all/h/HRPMessages.h>
 
 #include <Imagepp/all/h/HMDContext.h>
-
-
-// TEMP TEMP TEMP
-// HChk MR: Activate-deactivate mosaic supersampling
-static const bool s_Supersampling = true;
-
-
 
 
 ///////////////////////////////////
@@ -118,11 +109,11 @@ HIMBufferedImage::HIMBufferedImage(const HFCPtr<HRARaster>&       pi_rpSource,
     SetCoordSysOfExample();
     m_pExample->InitSize(pi_TileSizeX, pi_TileSizeY);
 
-    m_pTmpTile = new HRABitmap(m_TileSizeX,
-                               m_TileSizeY,
-                               0,
-                               m_pPhysicalCS,
-                               m_pExample->GetPixelType());
+    m_pTmpTile = HRABitmap::Create(m_TileSizeX,
+                                   m_TileSizeY,
+                                   0,
+                                   m_pPhysicalCS,
+                                   m_pExample->GetPixelType());
 
     // by default, don't use dithering for the sources
     m_UseDithering = false;
@@ -159,7 +150,7 @@ HIMBufferedImage::HIMBufferedImage(const HIMBufferedImage& pi_rObj)
     m_MaxSourceResolutionStretchingFactor = pi_rObj.m_MaxSourceResolutionStretchingFactor;
 
     // Keep a copy of the example raster
-    m_pExample = (HRAStoredRaster*) pi_rObj.m_pExample->Clone(0);
+    m_pExample = static_cast<HRAStoredRaster*>(pi_rObj.m_pExample->Clone(0).GetPtr());
 
     // Copy construct the internal tile list??
 
@@ -227,7 +218,7 @@ HIMBufferedImage& HIMBufferedImage::operator=(const HIMBufferedImage& pi_rObj)
         m_pPhysicalCS = new HGF2DCoordSys(*pi_rObj.m_pPhysicalCS);
 
         // Keep a copy of the example raster
-        m_pExample = (HRAStoredRaster*) pi_rObj.m_pExample->Clone(0);
+        m_pExample = static_cast<HRAStoredRaster*>(pi_rObj.m_pExample->Clone(0).GetPtr());
 
         // Should we copy the tile list? For now, simply clear it.
         HFCMonitor Monitor(m_TileMapKey);
@@ -545,7 +536,7 @@ void HIMBufferedImage::SetCoordSysOfExample()
     m_pExample->SetTransfoModel(Transfo, GetCoordSys());
 
     // create the temporary tile
-    m_pTmpTile = new HRABitmap(m_TileSizeX,
+    m_pTmpTile = HRABitmap::Create(m_TileSizeX,
                                m_TileSizeY,
                                0,
                                m_pPhysicalCS,
@@ -598,20 +589,27 @@ void HIMBufferedImage::SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi
 
 //-----------------------------------------------------------------------------
 // public
-// CopyFrom
+// CopyFromLegacy
 //-----------------------------------------------------------------------------
-void HIMBufferedImage::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
-                                const HRACopyFromOptions& pi_rOptions)
+void HIMBufferedImage::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
     {
-    m_pSource->CopyFrom(pi_pSrcRaster, pi_rOptions);
+    m_pSource->CopyFromLegacy(pi_pSrcRaster, pi_rOptions);
     }
 
 //-----------------------------------------------------------------------------
-// CopyFrom
+// CopyFromLegacy
 //-----------------------------------------------------------------------------
-void HIMBufferedImage::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster)
+void HIMBufferedImage::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
     {
-    m_pSource->CopyFrom(pi_pSrcRaster);
+    m_pSource->CopyFromLegacy(pi_pSrcRaster);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HIMBufferedImage::_CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options)
+    {
+    return m_pSource->CopyFrom(srcRaster, options);
     }
 
 //-----------------------------------------------------------------------------
@@ -837,7 +835,7 @@ void HIMBufferedImage::Scale(double pi_ScaleFactorX,
 //-----------------------------------------------------------------------------
 // Get a tile
 //-----------------------------------------------------------------------------
-const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID, HGFPreDrawOptions* pi_pPreDrawOptions) const
+const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID) const
     {
 
     HPRECONDITION(pi_ID < m_NumberOfTilesX * m_NumberOfTilesY);
@@ -867,7 +865,7 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID, HGFPreDrawOpti
             {
             pRaster->Clear();
 
-            HRACopyFromOptions CopyFromOptions(true);
+            HRACopyFromLegacyOptions CopyFromOptions(true);
             if(m_UseDithering)
                 {
                 // HChk MR
@@ -876,7 +874,7 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID, HGFPreDrawOpti
             if(m_UseAveraging)
                 {
                 CopyFromOptions.SetResamplingMode(HGSResampling(HGSResampling::AVERAGE));
-                CopyFromOptions.SetMosaicSupersampling(s_Supersampling);
+                //CopyFromOptions.SetMosaicSupersampling(s_Supersampling);
                 }
             if (m_UseBilinear)
                 {
@@ -887,11 +885,9 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID, HGFPreDrawOpti
                 CopyFromOptions.SetResamplingMode(HGSResampling(HGSResampling::CUBIC_CONVOLUTION));
                 }
 
-            CopyFromOptions.SetPreDrawOptions(pi_pPreDrawOptions);
-
             HFCMonitor TileMonitor(pTile);
 
-            pRaster->CopyFrom(m_pSource, CopyFromOptions);
+            pRaster->CopyFromLegacy(m_pSource, CopyFromOptions);    //WIP_LEGACY_COPYFROM
 
             // Now the tile is valid
             pTile->SetValidState(true);
@@ -943,7 +939,7 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID, HGFPreDrawOpti
         if (!m_ShapeTheTiles || !LogicalTileShape.IsEmpty())
             {
             // Create the tile
-            pRaster = (HRAStoredRaster*) m_pExample->Clone(0);
+            pRaster = m_pExample->Clone(0);
 
             // The RasterModel already have the good dimension
             //
@@ -953,7 +949,7 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID, HGFPreDrawOpti
             pRaster->Clear();
 
             // Fill it with data
-            HRACopyFromOptions CopyFromOptions(true);
+            HRACopyFromLegacyOptions CopyFromOptions(true);
             CopyFromOptions.SetMaxResolutionStretchingFactor(m_MaxSourceResolutionStretchingFactor);
             if(m_UseDithering)
                 {
@@ -963,7 +959,7 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID, HGFPreDrawOpti
             if(m_UseAveraging)
                 {
                 CopyFromOptions.SetResamplingMode(HGSResampling(HGSResampling::AVERAGE));
-                CopyFromOptions.SetMosaicSupersampling(s_Supersampling);
+                //CopyFromOptions.SetMosaicSupersampling(s_Supersampling);
                 }
             if(m_UseBilinear)
                 {
@@ -973,8 +969,6 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID, HGFPreDrawOpti
                 {
                 CopyFromOptions.SetResamplingMode(HGSResampling(HGSResampling::CUBIC_CONVOLUTION));
                 }
-
-            CopyFromOptions.SetPreDrawOptions(pi_pPreDrawOptions);
 
             // Insert entry in tile map
             HFCPtr<HIMBufferedImageTile> pNewBufferedImageTile(
@@ -987,7 +981,7 @@ const HFCPtr<HRARaster> HIMBufferedImage::GetTile(uint64_t pi_ID, HGFPreDrawOpti
             TileMapMonitor.ReleaseKey();
 
 
-            pRaster->CopyFrom(m_pSource, CopyFromOptions);
+            pRaster->CopyFromLegacy(m_pSource, CopyFromOptions);    //WIP_LEGACY_COPYFROM
 
             // Apply the shape on the tile. Done after the copy because the
             // Previous CopyFrom does not need it. The copy will be made with
@@ -1031,10 +1025,10 @@ HIMBufImgTileIDSet* HIMBufferedImage::GetTileIDPoolFor(const HVEShape& pi_rShape
         HGF2DExtent Extent(TempShape.GetExtent());
 
         // See HGFTileIDDescriptor for details on the calculations...
-        uint64_t XMin = (uint64_t)max (0.0, Extent.GetXMin());
-        uint64_t YMin = (uint64_t)max (0.0, Extent.GetYMin());
-        uint64_t XMax = (uint64_t)min ((m_NumberOfTilesX * m_TileSizeX) - 1, (uint64_t)(max(0, ceil(Extent.GetXMax()))) - 1);
-        uint64_t YMax = (uint64_t)min ((m_NumberOfTilesY * m_TileSizeY) - 1, (uint64_t)(max(0, ceil(Extent.GetYMax()))) - 1);
+        uint64_t XMin = (uint64_t)MAX (0.0, Extent.GetXMin());
+        uint64_t YMin = (uint64_t)MAX (0.0, Extent.GetYMin());
+        uint64_t XMax = (uint64_t)MIN ((m_NumberOfTilesX * m_TileSizeX) - 1, (uint64_t)(MAX(0, ceil(Extent.GetXMax()))) - 1);
+        uint64_t YMax = (uint64_t)MIN ((m_NumberOfTilesY * m_TileSizeY) - 1, (uint64_t)(MAX(0, ceil(Extent.GetYMax()))) - 1);
 
         if ((XMin < XMax) && (YMin < YMax))
             {
@@ -1100,23 +1094,17 @@ HRARasterEditor* HIMBufferedImage::CreateEditorUnShaped (HFCAccessMode pi_Mode)
     return 0;
     }
 
-
-
 //-----------------------------------------------------------------------------
 // Draw the buffered image
 //-----------------------------------------------------------------------------
-void HIMBufferedImage::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
-                            const HGFDrawOptions* pi_pOptions) const
+void HIMBufferedImage::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
     {
-    HPRECONDITION(pio_rpSurface != 0);
-    HPRECONDITION(pi_pOptions != 0);
-
     HFCPtr<HVEShape> pClipShape;
-    HFCPtr<HGSRegion> pClipRegion(static_cast<HGSRegion*>(pio_rpSurface->GetOption(HGSRegion::CLASS_ID).GetPtr()));
+    const HFCPtr<HGSRegion>& pClipRegion(pio_destSurface.GetRegion());
     if (pClipRegion != 0)
         pClipShape = pClipRegion->GetShape();
     else
-        pClipShape = new HVEShape(pio_rpSurface->GetExtent());
+        pClipShape = new HVEShape(pio_destSurface.GetExtent());
 
     // Get list of tiles that we're gonna draw. GetTileIDPoolFor will
     // intersect the requested region with our effective shape...
@@ -1124,78 +1112,32 @@ void HIMBufferedImage::Draw(const HFCPtr<HGFMappedSurface>& pio_rpSurface,
 
     // Pass all tiles
     HIMBufImgTileIDSet::iterator IDSetIterator = pIDSet->begin();
-    while (IDSetIterator != pIDSet->end() && !pi_pOptions->ShouldAbort() &&
-           HRADrawProgressIndicator::GetInstance()->ContinueIteration())
+    while (IDSetIterator != pIDSet->end() && HRADrawProgressIndicator::GetInstance()->ContinueIteration())
         {
         try
             {
-            const HFCPtr<HRARaster> pTile(GetTile(*IDSetIterator, (const_cast<HGFDrawOptions*>(pi_pOptions))->GetPreDrawOptions()));
+            const HFCPtr<HRARaster> pTile(GetTile(*IDSetIterator));
             if (pTile != 0)
                 {
-                pTile->Draw(pio_rpSurface, pi_pOptions);
+                pTile->Draw(pio_destSurface, pi_Options);
                 }
-            }
-        BEGIN_HFC_CATCH(HGF_MZ_G_COORD_EXCEPTION)
-
-        END_HFC_CATCH
-
+		}
+        catch(HGFmzGCoordException&)
+		{
+		
+		}
         ++IDSetIterator;
         }
     }
 
-//-----------------------------------------------------------------------------
-// Call before a draw for initialization purpose.
-//-----------------------------------------------------------------------------
-void HIMBufferedImage::PreDraw(HRADrawOptions* pio_pOptions)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Stephane.Poulin                 07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HIMBufferedImage::_BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options)
     {
-    HPRECONDITION(pio_pOptions->GetPreDrawOptions() != 0);
-
-    // Start with an empty shape
-    HFCPtr<HVEShape> pDrawingRegion(new HVEShape(m_pPhysicalCS));
-    uint64_t XOrigin;
-    uint64_t YOrigin;
-
-    // Pass through all needed IDs
-    HIMBufImgTileIDSet* pNeededTiles = GetTileIDPoolFor(*pio_pOptions->GetShape());
-
-    HFCMonitor TileMapMonitor(m_TileMapKey);
-
-    HIMBufImgTileIDSet::iterator IDSetIterator = pNeededTiles->begin();
-    while (IDSetIterator != pNeededTiles->end())
-        {
-        HIMBufferedImageTileID SearchID(m_XRatio,
-                                        m_YRatio,
-                                        *IDSetIterator);
-
-        // Look for entry
-        TileMap::const_iterator MapItr(m_TileMap.find(SearchID));
-        if (MapItr == m_TileMap.end() || !(*MapItr).second->IsValid())
-            {
-            GetPositionFromIndex(*IDSetIterator, &XOrigin, &YOrigin);
-            CHECK_HUINT64_TO_HDOUBLE_CONV(XOrigin + m_TileSizeX);
-            CHECK_HUINT64_TO_HDOUBLE_CONV(YOrigin + m_TileSizeY);
-            pDrawingRegion->Unify(HVEShape((double)XOrigin,
-                                           (double)YOrigin,
-                                           (double)(XOrigin + m_TileSizeX),
-                                           (double)(YOrigin + m_TileSizeY),
-                                           m_pPhysicalCS));
-            }
-
-        ++IDSetIterator;
-        }
-
-    delete pNeededTiles;
-
-    // Release the key
-    TileMapMonitor.ReleaseKey();
-
-    if (pDrawingRegion->GetExtent().IsDefined())
-        {
-        pio_pOptions->SetShape(pDrawingRegion);
-
-        // Set the new region to the source
-        m_pSource->PreDraw(pio_pOptions);
-        }
+    BeAssert(false);
+    return IMAGEPP_STATUS_NoImplementation;
+    // return GetSource()->BuildCopyToContext(imageNode, options);
     }
 
 //-----------------------------------------------------------------------------
@@ -1276,3 +1218,22 @@ bool HIMBufferedImage::ContainsPixelsWithChannel(
     {
     return m_pExample->ContainsPixelsWithChannel(pi_Role, pi_Id);
     }
+
+
+//-----------------------------------------------------------------------------
+// Return a new copy of self
+//-----------------------------------------------------------------------------
+HFCPtr<HRARaster> HIMBufferedImage::Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog) const
+    {
+    return new HIMBufferedImage(*this);
+    }
+
+/** ---------------------------------------------------------------------------
+    Return a new copy of self
+    ---------------------------------------------------------------------------
+*/
+HPMPersistentObject* HIMBufferedImage::Clone () const
+    {
+    return new HIMBufferedImage(*this);
+    }
+

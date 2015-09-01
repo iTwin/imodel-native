@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DSpatialIndex.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 
 
 
@@ -1103,3 +1103,4 @@ template<class SPATIAL, class COORD, class EXTENT, class SPATIALFINDER, class NO
     // Set new root as root
     m_pRootNode = pNewRootNode;
     }
+END_IMAGEPP_NAMESPACE

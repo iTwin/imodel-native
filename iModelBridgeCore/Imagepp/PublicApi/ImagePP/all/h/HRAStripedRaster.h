@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAStripedRaster.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,16 +15,17 @@
 
 #include "HRATiledRaster.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRAStripedRaster : public HRATiledRaster
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1238)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRAStripedRasterId)
 
 public:
 
     // Primary methods
 
     HRAStripedRaster ();
-    HRAStripedRaster (const HFCPtr<HRAStoredRaster>& pi_pRasterModel,
+    HRAStripedRaster (const HFCPtr<HRABitmapBase>& pi_pRasterModel,
                       uint64_t        pi_StripHeight,
                       uint64_t        pi_WidthPixels,
                       uint64_t        pi_HeightPixels,
@@ -45,9 +46,7 @@ public:
 
     virtual HPMPersistentObject* Clone () const;
 
-    virtual HRARaster*
-    Clone (HPMObjectStore* pi_pStore,
-           HPMPool*        pi_pLog=0) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
 
 protected:
@@ -59,6 +58,5 @@ private:
     // Methods
 
     };
-
-#include "HRAStripedRaster.hpp"
+END_IMAGEPP_NAMESPACE
 

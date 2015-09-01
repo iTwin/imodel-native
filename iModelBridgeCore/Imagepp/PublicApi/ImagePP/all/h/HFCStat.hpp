@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCStat.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCStat
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Public
 //
@@ -214,3 +214,23 @@ inline void HFCStatImpl::RegisterImpl(const HFCStatImpl* pi_pImpl) const
 
     HFCStat::s_pImplList->push_back(pi_pImpl);
     }
+
+//-----------------------------------------------------------------------------
+// Protected
+//
+//-----------------------------------------------------------------------------
+inline void HFCStatImpl::UnregisterImpl(const HFCStatImpl* pi_pImpl) const
+    {
+    if (HFCStat::s_pImplList == 0)
+        return;
+
+    for (HFCStat::ImplList::iterator Itr = HFCStat::s_pImplList->begin(); (Itr != HFCStat::s_pImplList->end()); Itr++)
+        {
+        if ((*Itr) == pi_pImpl)
+            {
+            HFCStat::s_pImplList->erase(Itr);
+            return;
+            }
+        }
+    }
+END_IMAGEPP_NAMESPACE

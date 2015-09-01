@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGFCMYKColorSpace.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGFCMYKColorSpace
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGFCMYKColorSpace.h>
 
@@ -157,7 +157,7 @@ inline void HGFCMYKColorSpace::ConvertFromRGB (Byte pi_Red,   Byte pi_Green,    
 
     // Convert CMY to CMYK
     // Extract the black value
-    *pi_pBlack   = min(min(Cyan, Magenta), Yellow);
+    *pi_pBlack   = MIN(MIN(Cyan, Magenta), Yellow);
 
     *pi_pCyan    = (Cyan  - *pi_pBlack);
     *pi_pMagenta = (Magenta - *pi_pBlack); // (Magenta  * Divider) * 255;

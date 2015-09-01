@@ -21,8 +21,18 @@
 #include "HRFRasterFileCapabilities.h"
 #include "HRFTilePool.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelType;
 class HRFVirtualEarthTileReaderThread;
+
+// The most common ImagerySet that can be used with HRFVirtualEarthFile::ComposeURL. 
+// See Bing Maps REST API(http://msdn.microsoft.com/en-us/library/ff701721.aspx/)
+#define BINGMAPS_IMAGERYSET_ROAD                L"Road"
+#define BINGMAPS_IMAGERYSET_AERIAL              L"Aerial"
+#define BINGMAPS_IMAGERYSET_AERIALWITHLABELS    L"AerialWithLabels"
+// Less common:
+//#define BINGMAPS_IMAGERYSET_COLLINSBART      L"CollinsBart"       // This imagery is visible only for the London area.
+//#define BINGMAPS_IMAGERYSET_ORDNANCESURVEY   L"OrdnanceSurvey"    // This imagery is visible only for the London area.
 
 //-----------------------------------------------------------------------------
 // HRFVirtualEarthCapabilities class
@@ -93,14 +103,25 @@ public:
     friend class HRFVirtualEarthTileReaderThread;
 
     //Class ID for this class.
-    HDECLARE_CLASS_ID(1500, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_VirtualEarth, HRFRasterFile)
 
-    enum MapStyle
+    struct CoverageArea
         {
-        MAPSTYLE_Aerial = 0,
-        MAPSTYLE_AerialWihtLabels,
-        MAPSTYLE_Road,
+        int     levelOfDetailMin;   // from 1 (lowest detail)
+        int     levelOfDetailMax;   // from 1 (lowest detail)
+        double   southLatitude;
+        double   westLongitude;
+        double   northLatitude;
+        double   eastLongitude;
         };
+
+    struct ImageryProvider
+        {
+        WString attribution;
+        BentleyApi::bvector<CoverageArea> coverage;
+        };        
+
+    typedef BentleyApi::bvector<ImageryProvider> ImageryProviders;
 
     HRFVirtualEarthFile(const HFCPtr<HFCURL>& pi_rpURL,
                         HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
@@ -129,16 +150,22 @@ public:
     //Look ahead method.
     virtual bool                         CanPerformLookAhead(uint32_t pi_Page) const;
 
-        //This static method indicates if a plain URL can be represented
-        //by this specific URL
-    _HDLLg  static bool                  IsURLVirtualEarth(const HFCURL* pi_pURL);
+    //This static method indicates if a plain URL can be represented
+    //by this specific URL
+    IMAGEPP_EXPORT static bool IsURLVirtualEarth(HFCURL const& pi_pURL);
 
-        // Compose virtual earth pseudo URL. This is not a valid URL but a specially formatted URL to 
-        // identify it as virtual earth URL and which map style to use.
-    _HDLLg  static WString                ComposeVirtualEarthURL(MapStyle const& pi_Style);
+    // Compose virtual earth pseudo URL. This is not a valid URL but a specially formatted URL to 
+    // identify it as virtual earth URL and which imagery set to use.
+    IMAGEPP_EXPORT static WString ComposeURL(WStringCR imagerySet);
 
-        // Resolve map style from pseudo URL created by ComposeVirtualEarthURL.
-    _HDLLg  static MapStyle               FindMapStyleFromURL(WString const& pi_pURL);
+    // Resolve map style from pseudo URL created by ComposeVirtualEarthURL.
+    IMAGEPP_EXPORT static bool FindImagerySetFromURL(WStringR imagerySet, HFCURL const& pi_pURL);
+
+    // Get the logo URL
+    IMAGEPP_EXPORT WStringCR GetBrandLogoURI() const;
+
+    // Get the lists of provider for the specified extent and zoom
+    IMAGEPP_EXPORT ImageryProviders const& GetProviders() const;
 
 protected:
 
@@ -199,15 +226,15 @@ private:
         list<HRFVirtualEarthTileRequest> m_RequestList;
     HFCSemaphore      m_RequestEvent;
 
-
-    void                QueryImageURI();
+    void                QueryImageURI(WStringCR bingMapKey);
     HFCPtr<HFCBuffer>   SendAndReceiveRequest(WStringCR URLRequest) const;
-    bool                DetectImagerySetFromURL(WStringR po_imagerySetLabel, HFCURL const& pi_URL) const;
-    bool                ReplaceTagInString(WStringR str, WString const& tag, WStringCR tagValue) const;
     WString             GetTileURI(unsigned int pixelX, unsigned int pixelY, int levelOfDetail) const;
 
     WString             m_ImageURI;               // ex: "http://{subdomain}.tiles.virtualearth.net/tiles/r{quadkey}.jpeg?g=266&mkt={culture}"
-    bvector<WString>    m_ImageURISubdomains;     // ex: "t0","t1","t2","t3"
+    BentleyApi::bvector<WString>    m_ImageURISubdomains;     // ex: "t0","t1","t2","t3"
+
+    ImageryProviders    m_Providers;
+    WString             m_LogoURI;                // ex: "http://dev.virtualearth.net/Branding/logo_powered_by.png"
 
     HArrayAutoPtr<HAutoPtr<HRFVirtualEarthTileReaderThread>> m_ppBlocksReadersThread;
     HRFTilePool                                              m_TilePool;
@@ -244,8 +271,9 @@ struct HRFVirtualEarthCreator : public HRFRasterFileCreator
 
 private:
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFVirtualEarthCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFVirtualEarthCreator)
 
     // Disabled methodes
     HRFVirtualEarthCreator();
     };
+END_IMAGEPP_NAMESPACE

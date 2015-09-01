@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DDisjointedComplexLinear.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HVE2DDisjointedComplexLinear.h>
 
@@ -74,7 +74,7 @@ void HVE2DDisjointedComplexLinear::InsertLinear(const HVE2DLinear& pi_rLinear)
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance of self and new linear
-        SetTolerance(max(GetTolerance(), pi_rLinear.GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_rLinear.GetTolerance()));
         }
 
     // Create a copy of the given linear in the complex coordinate system
@@ -149,7 +149,7 @@ void HVE2DDisjointedComplexLinear::InsertLinearPtrSCS(HVE2DLinear* pi_pLinear)
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance of self and new linear
-        SetTolerance(max(GetTolerance(), pi_pLinear->GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_pLinear->GetTolerance()));
         }
 
     // Set its tolerance to the global complex tolerance and desactive automaic tolerance
@@ -208,7 +208,7 @@ void HVE2DDisjointedComplexLinear::AppendLinear(const HVE2DLinear& pi_rLinear)
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance of self and new linear
-        SetTolerance(max(GetTolerance(), pi_rLinear.GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_rLinear.GetTolerance()));
         }
 
     // Create a copy of the given linear in the complex coordinate system
@@ -278,7 +278,7 @@ void HVE2DDisjointedComplexLinear::AppendLinearPtrSCS(HVE2DLinear* pi_pLinear)
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance of self and new linear
-        SetTolerance(max(GetTolerance(), pi_pLinear->GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_pLinear->GetTolerance()));
         }
 
     // Set its tolerance to the global complex tolerance and desactive automaic tolerance
@@ -354,7 +354,7 @@ void HVE2DDisjointedComplexLinear::InsertComplexLinear(const HVE2DDisjointedComp
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance
-        SetTolerance(max(GetTolerance(), pi_rDisComplexLinear.GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_rDisComplexLinear.GetTolerance()));
         }
 
     HVE2DDisjointedComplexLinear::LinearList::const_reverse_iterator  MyIterator;
@@ -437,7 +437,7 @@ void HVE2DDisjointedComplexLinear::AppendComplexLinear(const HVE2DDisjointedComp
     if (IsAutoToleranceActive())
         {
         // Set tolerance to greatest tolerance
-        SetTolerance(max(GetTolerance(), pi_rDisComplexLinear.GetTolerance()));
+        SetTolerance(MAX(GetTolerance(), pi_rDisComplexLinear.GetTolerance()));
         }
 
     HVE2DComplexLinear::LinearList::const_iterator  MyIterator;

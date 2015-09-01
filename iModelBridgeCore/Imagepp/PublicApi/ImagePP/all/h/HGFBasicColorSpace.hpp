@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFBasicColorSpace.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Basic XYZ ColorSpace converter base class inline method
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
@@ -214,4 +215,4 @@ inline void HGFBasicColorSpace::GetPureColor(double  pi_X, double  pi_Y, double 
     // Little y calculation.
     *po_y = pi_Y * Divider;   // y = Y / (X + Y + Z)
     }
-
+END_IMAGEPP_NAMESPACE

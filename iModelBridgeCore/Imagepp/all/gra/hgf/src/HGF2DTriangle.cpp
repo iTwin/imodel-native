@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DTriangle.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HGF2DTriangle.h>
 
 /*---------------------------------------------------------------------------------**//**
@@ -23,8 +23,8 @@ HGF2DTriangle::HGF2DTriangle
 )
     {
     // Compute extent before centering the triangle
-    HGF2DPosition Origin(min(min(pi_x0,pi_x1), pi_x2), min(min(pi_y0,pi_y1), pi_y2));
-    HGF2DPosition Corner(max(max(pi_x0,pi_x1), pi_x2), max(max(pi_y0,pi_y1), pi_y2));
+    HGF2DPosition Origin(MIN(MIN(pi_x0,pi_x1), pi_x2), MIN(MIN(pi_y0,pi_y1), pi_y2));
+    HGF2DPosition Corner(MAX(MAX(pi_x0,pi_x1), pi_x2), MAX(MAX(pi_y0,pi_y1), pi_y2));
     m_Extent = HGF2DLiteExtent(Origin, Corner);
 
     // Compute the original triangle centroid

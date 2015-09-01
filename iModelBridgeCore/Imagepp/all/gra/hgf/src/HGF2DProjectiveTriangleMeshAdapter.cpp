@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DProjectiveTriangleMeshAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DProjectiveTriangleMeshAdapter
@@ -115,12 +115,12 @@ HGF2DProjectiveTriangleMeshAdapter& HGF2DProjectiveTriangleMeshAdapter::operator
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveTriangleMeshAdapter::ConvertDirect(double    pi_YIn,
-                                                       double    pi_XInStart,
-                                                       uint32_t   pi_NumLoc,
-                                                       double    pi_XInStep,
-                                                       double*   po_pXOut,
-                                                       double*   po_pYOut) const
+StatusInt HGF2DProjectiveTriangleMeshAdapter::ConvertDirect(double    pi_YIn,
+                                                            double    pi_XInStart,
+                                                            uint32_t  pi_NumLoc,
+                                                            double    pi_XInStep,
+                                                            double*   po_pXOut,
+                                                            double*   po_pYOut) const
     {
     KINVARIANTS;
 
@@ -133,9 +133,13 @@ void HGF2DProjectiveTriangleMeshAdapter::ConvertDirect(double    pi_YIn,
     double* pCurrentX = po_pXOut;
     double* pCurrentY = po_pYOut;
 
+
+    StatusInt status = SUCCESS;
+
     for (Index = 0, X = pi_XInStart;
          Index < pi_NumLoc ; ++Index, X+=pi_XInStep, ++pCurrentX, ++pCurrentY)
         {
+        StatusInt tempStatus = SUCCESS;
         if (m_LastTransformedDirectFacetPresent &&
             m_pLastTransformedDirectFacet->IsPointIn(HGF2DPosition(X, pi_YIn)))
             {
@@ -149,14 +153,9 @@ void HGF2DProjectiveTriangleMeshAdapter::ConvertDirect(double    pi_YIn,
 
             if (NumToDo >= TOTO)
                 {
-                m_pLastDirectModel->ConvertDirect(pi_YIn, X, NumToDo, pi_XInStep, pCurrentX, pCurrentY);
-#if (0)
-                pCurrentX += ((NumToDo -1) * sizeof(double));
-                pCurrentY += ((NumToDo -1) * sizeof(double));
-#else
+                tempStatus = m_pLastDirectModel->ConvertDirect(pi_YIn, X, NumToDo, pi_XInStep, pCurrentX, pCurrentY);
                 pCurrentX += (NumToDo - 1);
                 pCurrentY += (NumToDo - 1);
-#endif
                 X += ((NumToDo - 1) * pi_XInStep);
                 Index += (NumToDo - 1);
                 }
@@ -164,16 +163,21 @@ void HGF2DProjectiveTriangleMeshAdapter::ConvertDirect(double    pi_YIn,
                 {
                 *pCurrentX = X;
                 *pCurrentY = pi_YIn;
-                m_pLastDirectModel->ConvertDirect(pCurrentX, pCurrentY);
+                tempStatus = m_pLastDirectModel->ConvertDirect(pCurrentX, pCurrentY);
                 }
             }
         else
             {
             *pCurrentX = X;
             *pCurrentY = pi_YIn;
-            HGF2DProjectiveMeshAdapter::ConvertDirect(pCurrentX, pCurrentY);
+            tempStatus = HGF2DProjectiveMeshAdapter::ConvertDirect(pCurrentX, pCurrentY);
             }
+
+        // We will return the first non SUCCESS return status only yet continue on with all coordinates
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
         }
+    return status;
     }
 
 
@@ -182,18 +186,21 @@ void HGF2DProjectiveTriangleMeshAdapter::ConvertDirect(double    pi_YIn,
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DProjectiveTriangleMeshAdapter::ConvertInverse(double    pi_YIn,
-                                                        double    pi_XInStart,
-                                                        uint32_t   pi_NumLoc,
-                                                        double    pi_XInStep,
-                                                        double*   po_pXOut,
-                                                        double*   po_pYOut) const
+StatusInt HGF2DProjectiveTriangleMeshAdapter::ConvertInverse(double    pi_YIn,
+                                                             double    pi_XInStart,
+                                                             uint32_t  pi_NumLoc,
+                                                             double    pi_XInStep,
+                                                             double*   po_pXOut,
+                                                             double*   po_pYOut) const
     {
-    KINVARIANTS;
+    HINVARIANTS;
 
     // Make sure recipient arrays are provided
     KPRECONDITION(po_pXOut);
     KPRECONDITION(po_pYOut);
+
+
+    StatusInt status = SUCCESS;
 
     double  X;
     uint32_t Index;
@@ -203,6 +210,9 @@ void HGF2DProjectiveTriangleMeshAdapter::ConvertInverse(double    pi_YIn,
     for (Index = 0, X = pi_XInStart;
          Index < pi_NumLoc ; ++Index, X+=pi_XInStep, ++pCurrentX, ++pCurrentY)
         {
+
+        StatusInt tempStatus = SUCCESS;
+
         if (m_LastTransformedInverseFacetPresent &&
             m_pLastTransformedInverseFacet->IsPointIn(HGF2DPosition(X, pi_YIn)))
             {
@@ -234,7 +244,12 @@ void HGF2DProjectiveTriangleMeshAdapter::ConvertInverse(double    pi_YIn,
             *pCurrentY = pi_YIn;
             HGF2DProjectiveMeshAdapter::ConvertInverse(pCurrentX, pCurrentY);
             }
+        // We will return the first non SUCCESS return status only yet continue on with all coordinates
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
+
         }
+    return status;
     }
 
 

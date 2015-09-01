@@ -2,14 +2,16 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABicubicSamplerN8.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #pragma once
 
 #include "HRAGenericSampler.h"
+#include "HRPPixelType.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HCDPacket;
 class HRPPixelConverter;
 class HGSMemorySurfaceDescriptor;
@@ -17,7 +19,7 @@ class HGSMemorySurfaceDescriptor;
 
 class HRABicubicSamplerN8 : public HRAGenericSampler
     {
-    HDECLARE_CLASS_ID(1761, HRAGenericSampler)
+    HDECLARE_CLASS_ID(HRABicubicSamplerN8Id, HRAGenericSampler)
 
 public:
 
@@ -28,28 +30,26 @@ public:
                         double                                pi_DeltaY);
     virtual         ~HRABicubicSamplerN8();
 
-    virtual void*   GetPixel(double            pi_PosX,
-                             double            pi_PosY) const;
+    virtual void const* GetPixel(double pi_PosX, double pi_PosY) const override;
 
     virtual void    GetPixels(const double*    pi_pPositionsX,
                               const double*    pi_pPositionsY,
                               size_t            pi_PixelCount,
-                              void*             po_pBuffer) const;
+                              void*             po_pBuffer) const override;
 
     virtual void    GetPixels(double           pi_PositionX,
                               double           pi_PositionY,
                               size_t            pi_PixelCount,
-                              void*             po_pBuffer) const;
+                              void*             po_pBuffer) const override;
 
-    virtual HFCPtr<HRPPixelType>
-    GetOutputPixelType() const;
+    virtual HFCPtr<HRPPixelType> GetOutputPixelType() const override;
 
-    virtual bool   TryToUse(const HFCPtr<HRPPixelType>& pi_rpOutputPixelType);
+    virtual bool   TryToUse(const HFCPtr<HRPPixelType>& pi_rpOutputPixelType) override;
 
 private:
 
     // Hold one pixel, used in GetPixel()
-    mutable Byte   m_TempData[4];
+    mutable Byte   m_TempData[HRPPixelType::MAX_PIXEL_BYTES];
 
     //:> Information about the source data
     uint32_t        m_SourceBytesPerLine;
@@ -154,5 +154,6 @@ private:
     HRABicubicSamplerN8& operator=(const HRABicubicSamplerN8& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HRABicubicSamplerN8.hpp"
 

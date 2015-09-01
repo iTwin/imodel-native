@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfa_overviews.cpp 18859 2010-02-19 19:41:06Z warmerdam $
+ * $Id: hfa_overviews.cpp 25583 2013-01-30 18:48:22Z bishop $
  *
  * Project:  Erdas Imagine Driver
  * Purpose:  Entry point for building overviews, used by non-imagine formats.
@@ -31,7 +31,7 @@
 #include "hfa_p.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: hfa_overviews.cpp 18859 2010-02-19 19:41:06Z warmerdam $");
+CPL_CVSID("$Id: hfa_overviews.cpp 25583 2013-01-30 18:48:22Z bishop $");
 
 CPLErr HFAAuxBuildOverviews( const char *pszOvrFilename, 
                              GDALDataset *poParentDS,
@@ -98,7 +98,7 @@ CPLErr HFAAuxBuildOverviews( const char *pszOvrFilename,
             poHFADriver->Create( pszOvrFilename, 
                                  poParentDS->GetRasterXSize(), 
                                  poParentDS->GetRasterYSize(), 
-                                 nBands, eDT, (char **)apszOptions );
+                                 poParentDS->GetRasterCount(), eDT, (char **)apszOptions );
 
         if( *ppoODS == NULL )
             return CE_Failure;

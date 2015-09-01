@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeI8VA8R8G8B8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeI8VA8R8G8B8
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeI8VA8R8G8B8.h>
 
@@ -33,11 +33,6 @@ HPM_REGISTER_CLASS(HRPPixelTypeI8VA8R8G8B8, HRPPixelTypeRGB)
 // STL typeDef
 typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<HRPPixelConverter*> >
 MapHRPPixelTypeToConverter;
-
-//static Byte s_BitMask[8]    = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
-//static Byte s_NotBitMask[8] = {0x7F, 0xBF, 0xDF, 0xEF, 0xF7, 0xFB, 0xFD, 0xFE };
-//static Byte s_SrcMask[9]    = {0x00, 0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE, 0xFF };
-//static Byte s_DestMask[9]   = {0xFF, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01, 0x00 };
 
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -65,28 +60,6 @@ public:
         };
 
     /** -----------------------------------------------------------------------------
-        Convert a pixel to a other.
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 16 bits data pointer to a I8VA8 pixel
-        @param pio_pDestRawData  16 bits data pointer to a I8VA8 pixel
-        -----------------------------------------------------------------------------
-     */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc = (Byte*)pi_pSourceRawData;
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        // Copy the pre-calculated destination index that fit the best
-        pSrc[0] = EntryConversion[pDest[0]];
-
-        // Copy the alpha raw data directly.
-        pSrc[1] = pDest[1];
-        };
-
-    /** -----------------------------------------------------------------------------
         Convert pixels to a others.
 
         I8VA8Pointer[0] ==> Index data to a palette
@@ -97,9 +70,9 @@ public:
         @param pi_PixelsCount    Number of pixel to convert
         -----------------------------------------------------------------------------
      */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        Byte* pSrc = (Byte*)pi_pSourceRawData;
+        Byte const* pSrc = (Byte const*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
 
         while(pi_PixelsCount)
@@ -117,68 +90,7 @@ public:
             pi_PixelsCount--;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    /** -----------------------------------------------------------------------------
-        Compose a pixel source to a destination pixel. Compose take account of alpha
-        chanel.
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 16 bits data pointer to a I8VA8 pixel
-        @param pio_pDestRawData  16 bits data pointer to a I8VA8 pixel
-        -----------------------------------------------------------------------------
-     */
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc =  (Byte*)pi_pSourceRawData;
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        Byte* pSourceComposite = (Byte*)(GetSourcePixelType()->GetPalette().GetCompositeValue(pSrc[0]));
-        Byte* pDestComposite   = (Byte*)(GetDestinationPixelType()->GetPalette().GetCompositeValue(pDest[0]));
-        Byte Blend[3];
-
-        if (pDest[1] == 0 ||
-            pSrc[1] == 255)
-            {
-            // Destination pixel is fully transparent, or source pixel
-            // is fully opaque. Copy source pixel,
-            Blend[0] = pSourceComposite[0];
-            Blend[1] = pSourceComposite[1];
-            Blend[2] = pSourceComposite[2];
-
-            pDest[1] = pSrc[1];
-            }
-        else
-            {
-            HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-            // Cdst' = Asrc * (Csrc - (Adst * Cdst)) + (Adst * Cdst)
-            // Alphas are in [0, 255]. Tweak -> shift to divide, slight error induced.
-            Byte PremultDestColor = pQuotients->DivideBy255ToByte(pDest[1] * pDestComposite[0]);
-            Blend[0] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[0] - PremultDestColor)) + PremultDestColor;
-
-            PremultDestColor = pQuotients->DivideBy255ToByte(pDest[1] * pDestComposite[1]);
-            Blend[1] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[1] - PremultDestColor)) + PremultDestColor;
-
-            PremultDestColor = pQuotients->DivideBy255ToByte(pDest[1] * pDestComposite[2]);
-            Blend[2] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[2] - PremultDestColor)) + PremultDestColor;
-
-            // Adst' = 1 - ( (1 - Asrc) * (1 - Adst) )
-            // --> Transparency percentages are multiplied
-            pDest[1] = 255 - (pQuotients->DivideBy255ToByte((255 - pSrc[1]) * (255 - pDest[1])));
-            }
-
-        // Get a good index for the R,G,B blend values
-        pDest[0] = m_QuantizedPalette.GetIndex(Blend[0], Blend[1], Blend[2]);
-        }
 
     /** -----------------------------------------------------------------------------
         Compose pixels sources to destinations pixels. Compose take account of alpha
@@ -192,7 +104,7 @@ public:
         @param pi_PixelsCount    Number of pixel to convert
         -----------------------------------------------------------------------------
      */
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -250,36 +162,12 @@ public:
         };
 
     /** -----------------------------------------------------------------------------
-        Converts a single pixel from the source to a composite value at the destination
-        (even if the destination pixel type of the converter uses indexes, the result
-        will be a composite value).
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 16 bits data pointer to a I8VA8 pixel.
-        @param pio_pDestRawData  32 bits data pointer.
-        -----------------------------------------------------------------------------
-     */
-    virtual void ConvertToValue(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc =  (Byte*)pi_pSourceRawData;
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        memcpy(pDest,
-               GetSourcePixelType()->GetPalette().GetCompositeValue(pSrc[0]),
-               3);
-
-        pDest[3] = pSrc[1];
-        };
-
-    /** -----------------------------------------------------------------------------
         Creates a new instance of the current object.
 
         @return A new instance of a pixel converter.
         -----------------------------------------------------------------------------
      */
-    virtual HRPPixelConverter* AllocateCopy() const
+    virtual HRPPixelConverter* AllocateCopy() const override
         {
         return(new ConverterI8VA8R8G8B8_I8VA8R8G8B8(*this));
         }
@@ -291,7 +179,7 @@ protected:
         This metod is used to set the Entry Conversion table.
         -----------------------------------------------------------------------------
      */
-    virtual void Update()
+    virtual void Update() override
         {
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
@@ -405,29 +293,6 @@ public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
     /** -----------------------------------------------------------------------------
-        Convert a pixel to a other.
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 16 bits data pointer to a I8VA8 pixel
-        @param pio_pDestRawData  32 bits data pointer to a V32R8G8B8A8 pixel
-        -----------------------------------------------------------------------------
-     */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc =  (Byte*)pi_pSourceRawData;
-
-        Byte* pSourceComposite = (Byte*)(GetSourcePixelType()->GetPalette().GetCompositeValue(pSrc[0]));
-        Byte* pDestComposite   = (Byte*)pio_pDestRawData;
-
-        pDestComposite[0] = pSourceComposite[0];
-        pDestComposite[1] = pSourceComposite[1];
-        pDestComposite[2] = pSourceComposite[2];
-        pDestComposite[3] = pSrc[1];
-        }
-
-    /** -----------------------------------------------------------------------------
         Convert pixels to a others.
 
         I8VA8Pointer[0] ==> Index data to a palette
@@ -438,7 +303,7 @@ public:
         @param pi_PixelsCount    Number of pixel to convert
         -----------------------------------------------------------------------------
      */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
 
@@ -475,10 +340,10 @@ public:
         @param pi_pChannelsMask  Channel to mask
         -----------------------------------------------------------------------------
      */
-    virtual void Convert(const void*  pi_pSourceRawData,
+    virtual void ConvertLostChannel(const void*  pi_pSourceRawData,
                          void*        pio_pDestRawData,
                          size_t        pi_PixelsCount,
-                         const bool* pi_pChannelsMask) const
+                         const bool* pi_pChannelsMask) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
 
@@ -506,57 +371,6 @@ public:
         }
 
     /** -----------------------------------------------------------------------------
-        Compose a pixel source to a destination pixel. Compose take account of alpha
-        chanel.
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 16 bits data pointer to a I8VA8 pixel
-        @param pio_pDestRawData  32 bits data pointer to a V32R8G8B8A8 pixel
-        -----------------------------------------------------------------------------
-     */
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc = (Byte*)pi_pSourceRawData;
-
-        Byte* pSourceComposite = (Byte*)(GetSourcePixelType()->GetPalette().GetCompositeValue(*((Byte*)pi_pSourceRawData)));
-        Byte* pDestComposite   = (Byte*)pio_pDestRawData;
-
-        if (pDestComposite[3] == 0 ||
-            pSrc[1] == 255)
-            {
-            // Destination pixel is fully transparent, or source pixel
-            // is fully opaque. Copy source pixel,
-            pDestComposite[0] = pSourceComposite[0];
-            pDestComposite[1] = pSourceComposite[1];
-            pDestComposite[2] = pSourceComposite[2];
-
-            pDestComposite[3] = pSrc[1];
-            }
-        else
-            {
-            HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-            // Cdst' = Asrc * (Csrc - (Adst * Cdst)) + (Adst * Cdst)
-            // Alphas are in [0, 255]. Tweak -> shift to divide, slight error induced.
-            Byte PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[0]);
-            pDestComposite[0] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[0] - PremultDestColor)) + PremultDestColor;
-
-            PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[1]);
-            pDestComposite[1] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[1] - PremultDestColor)) + PremultDestColor;
-
-            PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[2]);
-            pDestComposite[2] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[2] - PremultDestColor)) + PremultDestColor;
-
-            // Adst' = 1 - ( (1 - Asrc) * (1 - Adst) )
-            // --> Transparency percentages are multiplied
-            pDestComposite[3] = 255 - (pQuotients->DivideBy255ToByte((255 - pSrc[1]) * (255 - pDestComposite[3])));
-            }
-        };
-
-
-    /** -----------------------------------------------------------------------------
         Compose pixels sources to destinations pixels. Compose take account of alpha
         chanel.
 
@@ -568,7 +382,7 @@ public:
         @param pi_PixelsCount    Number of pixel to convert
         -----------------------------------------------------------------------------
      */
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
 
@@ -626,7 +440,7 @@ public:
         @return A new instance of a pixel converter.
         -----------------------------------------------------------------------------
      */
-    virtual HRPPixelConverter* AllocateCopy() const
+    virtual HRPPixelConverter* AllocateCopy() const override
         {
         return(new ConverterI8VA8R8G8B8_V32R8G8B8A8(*this));
         }
@@ -651,28 +465,6 @@ public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
     /** -----------------------------------------------------------------------------
-        Convert a pixel to a other.
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 16 bits data pointer to a I8VA8 pixel
-        @param pio_pDestRawData  24 bits data pointer to a V24R8G8B8 pixel
-        -----------------------------------------------------------------------------
-     */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc =  (Byte*)pi_pSourceRawData;
-
-        Byte* pSourceComposite = (Byte*)(GetSourcePixelType()->GetPalette().GetCompositeValue(pSrc[0]));
-        Byte* pDestComposite   = (Byte*)pio_pDestRawData;
-
-        pDestComposite[0] = pSourceComposite[0];
-        pDestComposite[1] = pSourceComposite[1];
-        pDestComposite[2] = pSourceComposite[2];
-        }
-
-    /** -----------------------------------------------------------------------------
         Convert pixels to a others.
 
         I8VA8Pointer[0] ==> Index data to a palette
@@ -683,7 +475,7 @@ public:
         @param pi_PixelsCount    Number of pixel to convert
         -----------------------------------------------------------------------------
      */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
 
@@ -719,10 +511,10 @@ public:
         @param pi_pChannelsMask  Channel to mask
         -----------------------------------------------------------------------------
      */
-    virtual void Convert(const void*  pi_pSourceRawData,
+    virtual void ConvertLostChannel(const void*  pi_pSourceRawData,
                          void*        pio_pDestRawData,
                          size_t        pi_PixelsCount,
-                         const bool* pi_pChannelsMask) const
+                         const bool* pi_pChannelsMask) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
 
@@ -748,33 +540,6 @@ public:
         }
 
     /** -----------------------------------------------------------------------------
-        Compose a pixel source to a destination pixel. Compose take account of alpha
-        chanel.
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 16 bits data pointer to a I8VA8 pixel
-        @param pio_pDestRawData  24 bits data pointer to a V24R8G8B8 pixel
-        -----------------------------------------------------------------------------
-     */
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc = (Byte*)pi_pSourceRawData;
-
-        Byte* pSourceComposite = (Byte*)(GetSourcePixelType()->GetPalette().GetCompositeValue(*((Byte*)pi_pSourceRawData)));
-        Byte* pDestComposite   = (Byte*)pio_pDestRawData;
-
-        HFCMath (* pQuotients)(HFCMath::GetInstance());
-
-        // alpha * (S - D) + D
-        pDestComposite[0] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[0] - pDestComposite[0])) + pDestComposite[0];
-        pDestComposite[1] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[1] - pDestComposite[1])) + pDestComposite[1];
-        pDestComposite[2] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[2] - pDestComposite[2])) + pDestComposite[2];
-        };
-
-
-    /** -----------------------------------------------------------------------------
         Compose pixels sources to destinations pixels. Compose take account of alpha
         chanel.
 
@@ -786,7 +551,7 @@ public:
         @param pi_PixelsCount    Number of pixel to convert
         -----------------------------------------------------------------------------
      */
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
 
@@ -819,7 +584,7 @@ public:
         @return A new instance of a pixel converter.
         -----------------------------------------------------------------------------
      */
-    virtual HRPPixelConverter* AllocateCopy() const
+    virtual HRPPixelConverter* AllocateCopy() const override
         {
         return(new ConverterI8VA8R8G8B8_V24R8G8B8(*this));
         }
@@ -853,25 +618,6 @@ public:
         };
 
     /** -----------------------------------------------------------------------------
-        Convert a pixel to a other.
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 32 bits data pointer to a V32R8G8B8A8 pixel
-        @param pio_pDestRawData  16 bits data pointer to a I8VA8 pixel
-        -----------------------------------------------------------------------------
-    */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc  = (Byte*)pi_pSourceRawData;
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        pDest[0] = m_QuantizedPalette.GetIndex(pSrc[0], pSrc[1], pSrc[2]);
-        pDest[1] = pSrc[3];
-        };
-
-    /** -----------------------------------------------------------------------------
         Convert pixels to a others.
 
         I8VA8Pointer[0] ==> Index data to a palette
@@ -882,7 +628,7 @@ public:
         @param pi_PixelsCount    Number of pixel to convert
         -----------------------------------------------------------------------------
      */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc  = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -902,30 +648,12 @@ public:
             pi_PixelsCount--;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
+
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
+        // IPP_TODO_COMPOSE
+        Convert(pi_pSourceRawData, pio_pDestRawData, pi_PixelsCount);
         }
-
-    /** -----------------------------------------------------------------------------
-        Converts a single pixel from the source to a composite value at the destination
-        (even if the destination pixel type of the converter uses indexes, the result
-        will be a composite value).
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 32 bits data pointer.
-        @param pio_pDestRawData  32 bits data pointer.
-        -----------------------------------------------------------------------------
-     */
-    virtual void ConvertToValue(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        *((uint32_t*)pio_pDestRawData) = *((uint32_t*)pi_pSourceRawData);
-        };
 
     /** -----------------------------------------------------------------------------
         Creates a new instance of the current object.
@@ -933,7 +661,7 @@ public:
         @return A new instance of a pixel converter.
         -----------------------------------------------------------------------------
      */
-    HRPPixelConverter* AllocateCopy() const
+    HRPPixelConverter* AllocateCopy() const override
         {
         return(new ConverterV32R8G8B8A8_I8VA8R8G8B8(*this));
         }
@@ -946,7 +674,7 @@ protected:
         This metod is used to set the Entry Conversion table.
         -----------------------------------------------------------------------------
      */
-    virtual void Update()
+    virtual void Update() override
         {
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
@@ -987,25 +715,6 @@ public:
         };
 
     /** -----------------------------------------------------------------------------
-        Convert a pixel to a other.
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 24 bits data pointer to a V24R8G8B8 pixel
-        @param pio_pDestRawData  16 bits data pointer to a I8VA8 pixel
-        -----------------------------------------------------------------------------
-    */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc  = (Byte*)pi_pSourceRawData;
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        pDest[0] = m_QuantizedPalette.GetIndex(pSrc[0], pSrc[1], pSrc[2]);
-        pDest[1] = 0xff;
-        };
-
-    /** -----------------------------------------------------------------------------
         Convert pixels to a others.
 
         I8VA8Pointer[0] ==> Index data to a palette
@@ -1016,7 +725,7 @@ public:
         @param pi_PixelsCount    Number of pixel to convert
         -----------------------------------------------------------------------------
      */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc  = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -1036,33 +745,6 @@ public:
             pi_PixelsCount--;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
-
-    /** -----------------------------------------------------------------------------
-        Converts a single pixel from the source to a composite value at the destination
-        (even if the destination pixel type of the converter uses indexes, the result
-        will be a composite value).
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 24 bits data pointer.
-        @param pio_pDestRawData  32 bits data pointer.
-        -----------------------------------------------------------------------------
-     */
-    virtual void ConvertToValue(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        ((Byte*)pio_pDestRawData)[0] = ((Byte*)pi_pSourceRawData)[0];
-        ((Byte*)pio_pDestRawData)[1] = ((Byte*)pi_pSourceRawData)[1];
-        ((Byte*)pio_pDestRawData)[2] = ((Byte*)pi_pSourceRawData)[2];
-        ((Byte*)pio_pDestRawData)[3] = 0xff;
-        };
 
     /** -----------------------------------------------------------------------------
         Creates a new instance of the current object.
@@ -1070,7 +752,7 @@ public:
         @return A new instance of a pixel converter.
         -----------------------------------------------------------------------------
      */
-    HRPPixelConverter* AllocateCopy() const
+    HRPPixelConverter* AllocateCopy() const override
         {
         return(new ConverterV24R8G8B8_I8VA8R8G8B8(*this));
         }
@@ -1083,7 +765,7 @@ protected:
         This metod is used to set the Entry Conversion table.
         -----------------------------------------------------------------------------
      */
-    virtual void Update()
+    virtual void Update() override
         {
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
@@ -1122,28 +804,6 @@ public:
         };
 
     /** -----------------------------------------------------------------------------
-        Convert a pixel to a other.
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 16 bits data pointer to a I8VA8 pixel
-        @param pio_pDestRawData  8  bits data pointer to a I8 pixel
-        -----------------------------------------------------------------------------
-     */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc = (Byte*)pi_pSourceRawData;
-
-        Byte* pSourceComposite = (Byte*)(GetSourcePixelType()->GetPalette().GetCompositeValue(pSrc[0]));
-
-        *((Byte*)pio_pDestRawData) = (m_QuantizedPalette.GetIndex(pSourceComposite[0],
-                                                                    pSourceComposite[1],
-                                                                    pSourceComposite[2],
-                                                                    pSrc[1]));
-        };
-
-    /** -----------------------------------------------------------------------------
         Convert pixels to a others.
 
         I8VA8Pointer[0] ==> Index data to a palette
@@ -1154,7 +814,7 @@ public:
         @param pi_PixelsCount    Number of pixel to convert
         -----------------------------------------------------------------------------
      */
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc = (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -1176,71 +836,6 @@ public:
             pi_PixelsCount--;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
-
-    /** -----------------------------------------------------------------------------
-        Compose a pixel source to a destination pixel. Compose take account of alpha
-        chanel.
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 16 bits data pointer to a I8VA8 pixel
-        @param pio_pDestRawData  8  bits data pointer to a I8 pixel
-        -----------------------------------------------------------------------------
-     */
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc =  (Byte*)pi_pSourceRawData;
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        Byte* pSourceComposite = (Byte*)(GetSourcePixelType()->GetPalette().GetCompositeValue(pSrc[0]));
-        Byte* pDestComposite   = (Byte*)(GetDestinationPixelType()->GetPalette().GetCompositeValue(pDest[0]));
-        Byte Blend[4];
-
-        if (pDestComposite[3] == 0 ||
-            pSrc[1] == 255)
-            {
-            // Destination pixel is fully transparent, or source pixel
-            // is fully opaque. Copy source pixel,
-            Blend[0] = pSourceComposite[0];
-            Blend[1] = pSourceComposite[1];
-            Blend[2] = pSourceComposite[2];
-            Blend[3] = pSrc[1];
-            }
-        else
-            {
-            HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-            // Cdst' = Asrc * (Csrc - (Adst * Cdst)) + (Adst * Cdst)
-            // Alphas are in [0, 255]. Tweak -> shift to divide, slight error induced.
-            Byte PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[0]);
-            Blend[0] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[0] - PremultDestColor)) + PremultDestColor;
-
-            PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[1]);
-            Blend[1] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[1] - PremultDestColor)) + PremultDestColor;
-
-            PremultDestColor = pQuotients->DivideBy255ToByte(pDestComposite[3] * pDestComposite[2]);
-            Blend[2] = pQuotients->DivideBy255ToByte(pSrc[1] * (pSourceComposite[2] - PremultDestColor)) + PremultDestColor;
-
-            // Adst' = 1 - ( (1 - Asrc) * (1 - Adst) )
-            // --> Transparency percentages are multiplied
-            Blend[3] = 255 - (pQuotients->DivideBy255ToByte((255 - pSrc[1]) * (255 - pDestComposite[3])));
-            }
-
-        // get a good index for the R,G,B blend values
-        *((Byte*)pio_pDestRawData) = m_QuantizedPalette.GetIndex(
-                                           Blend[0],
-                                           Blend[1],
-                                           Blend[2],
-                                           Blend[3]);
-        }
 
     /** -----------------------------------------------------------------------------
         Compose pixels sources to destinations pixels. Compose take account of alpha
@@ -1254,7 +849,7 @@ public:
         @param pi_PixelsCount    Number of pixel to convert
         -----------------------------------------------------------------------------
      */
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -1315,36 +910,12 @@ public:
         };
 
     /** -----------------------------------------------------------------------------
-        Converts a single pixel from the source to a composite value at the destination
-        (even if the destination pixel type of the converter uses indexes, the result
-        will be a composite value).
-
-        I8VA8Pointer[0] ==> Index data to a palette
-        I8VA8Pointer[1] ==> 8 bits alpha raw data
-
-        @param pi_pSourceRawData 16 bits data pointer to a I8VA8 pixel.
-        @param pio_pDestRawData  32 bits data pointer.
-        -----------------------------------------------------------------------------
-     */
-    virtual void ConvertToValue(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSrc =  (Byte*)pi_pSourceRawData;
-        Byte* pDest = (Byte*)pio_pDestRawData;
-
-        memcpy(pDest,
-               GetSourcePixelType()->GetPalette().GetCompositeValue(pSrc[0]),
-               3);
-
-        pDest[3] = pSrc[1];
-        };
-
-    /** -----------------------------------------------------------------------------
         Creates a new instance of the current object.
 
         @return A new instance of a pixel converter.
         -----------------------------------------------------------------------------
      */
-    virtual HRPPixelConverter* AllocateCopy() const
+    virtual HRPPixelConverter* AllocateCopy() const override
         {
         return(new ConverterI8VA8R8G8B8_I8R8G8B8A8(*this));
         }
@@ -1356,7 +927,7 @@ protected:
         This metod is used to set the Entry Conversion table.
         -----------------------------------------------------------------------------
      */
-    virtual void Update()
+    virtual void Update() override
         {
         const HRPPixelPalette& rPalette = GetDestinationPixelType()->GetPalette();
 
@@ -1429,7 +1000,7 @@ HRPPixelTypeI8VA8R8G8B8::HRPPixelTypeI8VA8R8G8B8()
     for(int gray = 0; gray < NbIndex; gray++)
         {
         Value = (0xFF << 24) | (gray << 16) | (gray << 8) | gray;
-        rPixelPalette.AddEntry((const void*)&Value);
+        rPixelPalette.AddEntry(&Value);
         }
     }
 

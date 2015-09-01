@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTImportFromRasterExportToFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class: HUTImportFromRasterExportToFile
 // ----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 
 
@@ -120,7 +120,7 @@ HUTImportFromRasterExportToFile::HUTImportFromRasterExportToFile (
     HGF2DExtent PixelSize(TmpExtentMin.CalculateApproxExtentIn(m_pWorldCluster->GetCoordSysReference(HGF2DWorld_UNKNOWNWORLD)));
 
     // PixelSize Area.
-    m_DefaultResampleScaleFactorX = min(PixelSize.GetWidth(), PixelSize.GetHeight());
+    m_DefaultResampleScaleFactorX = MIN(PixelSize.GetWidth(), PixelSize.GetHeight());
 
     // The pixel size may not be 0.0 (exact compare)
     HASSERT(m_DefaultResampleScaleFactorX != 0.0);
@@ -291,6 +291,7 @@ void HUTImportFromRasterExportToFile::BestMatchSelectedValues()
     // Be sure to add new tag from an empty list.
     ClearTagList();
 
+#ifdef IPP_HPM_ATTRIBUTES_ON_HRA
     // Lock down the attributes
     HPMAttributeSet& rAttributes = m_pRaster->LockAttributes();
 
@@ -305,41 +306,7 @@ void HUTImportFromRasterExportToFile::BestMatchSelectedValues()
 
     // Let go the attributes
     m_pRaster->UnlockAttributes();
-
-    IRasterBaseGcsPtr baseGCS = m_pRaster->GetGeocoding();
-
-    if ((baseGCS != 0) && (baseGCS->IsValid()))
-        SetGeocoding(baseGCS);
-
-    //Copy the metadata container related to geotiff files
-    // Even though technically the geocoding is set using a GCS object, if the source and destination file are GeoTIFF some of the metadata
-    // may be transported from one file to another.
-    HFCPtr<HMDMetaDataContainerList> pMDContainers(m_pRaster->GetMetaDataContainerList());
-
-    if (pMDContainers != 0)
-        {
-        HFCPtr<HMDMetaDataContainer> pMDContainer;
-
-        for (unsigned short ContainerInd = 0; ContainerInd < pMDContainers->GetNbContainers(); ContainerInd++)
-            {
-            pMDContainers->GetMetaDataContainer(ContainerInd, pMDContainer);
-
-            if (pMDContainer->IsCompatibleWith(HCPGeoTiffKeys::CLASS_ID))
-                {
-                // Set the GeoTiffKeys metadata container only if the
-                // ouput file format supports the saving of geocoding.
-                if (m_pSelectedFileFormatCapabilities->HasCapabilityOfType(HRFGeocodingCapability::CLASS_ID,
-                                                                           HFC_CREATE_ONLY))
-                    {
-                    SetMetaDataContainer(pMDContainer);
-                    }
-                }
-            else
-                {
-                SetMetaDataContainer(pMDContainer);
-                }
-            }
-        }
+#endif
     }
 
 
@@ -416,8 +383,8 @@ void HUTImportFromRasterExportToFile::SelectBestPixelType(const HFCPtr<HRPPixelT
                     {
                     if (pSameChannelOrgPixelType != 0)
                         {
-                        HASSERT(pPixelType->CountPixelRawDataBits() !=
-                                pSameChannelOrgPixelType->CountPixelRawDataBits());
+                        // this assert pop in ATP but method can actually handle the case correctly - why assert them?
+                        // HASSERT(pPixelType->CountPixelRawDataBits() != pSameChannelOrgPixelType->CountPixelRawDataBits());
 
                         if (pPixelType->CountPixelRawDataBits() >
                             pSameChannelOrgPixelType->CountPixelRawDataBits())

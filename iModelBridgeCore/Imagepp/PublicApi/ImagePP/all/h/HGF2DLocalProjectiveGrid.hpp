@@ -2,11 +2,12 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLocalProjectiveGrid.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include "HGF2DComplexTransfoModel.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // GetDirectGridWidth
 //-----------------------------------------------------------------------------
@@ -99,3 +100,4 @@ inline void  HGF2DLocalProjectiveGrid::SetUseApproximation(bool pi_Value) const
     {
     m_useGlobalAffineApproximation = pi_Value;
     }
+END_IMAGEPP_NAMESPACE

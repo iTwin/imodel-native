@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRARasterEditor.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // Get the edited raster pointer
@@ -28,3 +29,4 @@ inline const HFCAccessMode HRARasterEditor::GetLockMode () const
     {
     return m_Mode;
     }
+END_IMAGEPP_NAMESPACE

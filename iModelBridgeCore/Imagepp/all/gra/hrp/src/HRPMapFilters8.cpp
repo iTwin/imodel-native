@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPMapFilters8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,11 +11,10 @@
 // Map filters
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPMapFilters8.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 
 //-----------------------------------------------------------------------------
 //  Custom Map8  Filter
@@ -431,8 +430,25 @@ void HRPHistogramScalingFilter::GetInterval(unsigned short pi_ChannelIndex,
     HPRECONDITION(po_pMaxValue != 0);
 
     Byte* pMap = GetMap(pi_ChannelIndex);
-    *po_pMinValue = pMap[0];
-    *po_pMaxValue = pMap[255];
+
+    if(m_ScalingMode == HRPHistogramScalingFilter::INPUT_RANGE_CLIPPING)
+        {
+        unsigned short minvalue = 0;
+        while(pMap[minvalue] == 0 && minvalue != 255)
+            ++minvalue;
+
+        unsigned short maxvalue = 255;
+        while(pMap[maxvalue] == 255 && maxvalue != 0)
+            --maxvalue;
+
+        *po_pMinValue = MAX(0, minvalue-1);
+        *po_pMaxValue = MIN(255, maxvalue+1);
+        }
+    else
+        {        
+        *po_pMinValue = pMap[0];
+        *po_pMaxValue = pMap[255];
+        }
     }
 
 //-----------------------------------------------------------------------------
@@ -464,12 +480,10 @@ void HRPHistogramScalingFilter::SetInterval(unsigned short pi_ChannelIndex,
         }
     else
         {
-        double Step = (double)(pi_MaxValue - pi_MinValue) / 256.0;
-        double Factor = 0;
+        double Step = (double)(pi_MaxValue - pi_MinValue) / 255.0;
         for (unsigned short i = 0; i < 256; i++)
             {
-            Map[i] = (Byte)((double)pi_MinValue + Factor);
-            Factor += Step;
+            Map[i] = (Byte)((double)pi_MinValue + (i*Step));
             }
         }
     SetMap(pi_ChannelIndex, Map);
@@ -506,6 +520,7 @@ HRPHistogramScalingFilter::HistogramScalingMode HRPHistogramScalingFilter::GetSc
 HRPGammaFilter::HRPGammaFilter()
     {
     // Do nothing. As if gamma == 1.
+    m_gamma = 1.0;
     }
 
 //-----------------------------------------------------------------------------
@@ -513,6 +528,7 @@ HRPGammaFilter::HRPGammaFilter()
 //-----------------------------------------------------------------------------
 
 HRPGammaFilter::HRPGammaFilter(double pi_Gamma)
+    :m_gamma(pi_Gamma)
     {
     HASSERT(pi_Gamma != 0);
 
@@ -536,7 +552,8 @@ HRPGammaFilter::HRPGammaFilter(double pi_Gamma)
 //-----------------------------------------------------------------------------
 
 HRPGammaFilter::HRPGammaFilter(const HRPGammaFilter& pi_rObj)
-    :HRPMapFilter8(pi_rObj)
+    :HRPMapFilter8(pi_rObj),
+    m_gamma(pi_rObj.m_gamma)
     {
     }
 
@@ -556,6 +573,11 @@ HRPFilter* HRPGammaFilter::Clone() const
 HRPGammaFilter::~HRPGammaFilter()
     {
     }
+
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+double HRPGammaFilter::GetGamma() const {return m_gamma;}
 
 //-----------------------------------------------------------------------------
 //  Invert Filter

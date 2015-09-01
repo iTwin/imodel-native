@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DComplexShape.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DComplexShape
@@ -14,6 +14,7 @@
 #include "HGF2DShape.h"
 #include "HGF2DDisplacement.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert
@@ -36,7 +37,7 @@
 class HGF2DComplexShape : public HGF2DShape
     {
 
-    HDECLARE_CLASS_ID(8308, HGF2DShape)
+    HDECLARE_CLASS_ID(HGF2DShapeId_Complex, HGF2DShape)
 
 public:
 
@@ -108,7 +109,11 @@ public:
     virtual double          CalculateAngularAcceleration(const HGF2DPosition& pi_rPositionPoint,
                                                          HGF2DVector::ArbitraryDirection
                                                          pi_Direction = HGF2DVector::BETA) const;
-
+    virtual HGF2DShape::SpatialPosition
+                            CalculateSpatialPositionOf(const HGF2DVector& pi_rVector) const;
+    virtual HGF2DShape::SpatialPosition
+                            CalculateSpatialPositionOf(const HGF2DPosition& pi_rPosition) const;
+    
     // From HGFGraphicObject
     virtual HGF2DLiteExtent GetExtent() const;
     virtual void            Move(const HGF2DDisplacement& pi_rDisplacement);
@@ -125,6 +130,9 @@ public:
     // Debugging
     virtual void            PrintState(ostream& po_rOutput) const;
 
+
+    virtual HFCPtr<HGF2DShape>              AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
+
 protected:
 
 private:
@@ -133,5 +141,5 @@ private:
     ShapeList      m_ShapeList;
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HGF2DComplexShape.hpp"

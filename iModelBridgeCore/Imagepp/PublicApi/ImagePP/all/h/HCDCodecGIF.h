@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecGIF.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,11 @@
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecGIF : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1242, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_GIF, HCDCodecImage)
 
 public:
 
@@ -46,3 +48,4 @@ private:
     HCDCodecGIF&    operator=(const HCDCodecGIF& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

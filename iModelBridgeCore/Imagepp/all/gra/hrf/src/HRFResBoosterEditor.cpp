@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFResBoosterEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFResBoosterEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFResBoosterEditor.h>
 #include <Imagepp/all/h/HRFRasterFileCache.h>
 
@@ -46,10 +46,10 @@ HRFResBoosterEditor::~HRFResBoosterEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFResBoosterEditor::ReadBlock(  uint32_t pi_PosBlockX,
-                                         uint32_t pi_PosBlockY,
-                                         Byte* po_pData,
-                                         HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFResBoosterEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                       uint64_t pi_PosBlockY,
+                                       Byte*  po_pData,
+                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
@@ -63,8 +63,8 @@ HSTATUS HRFResBoosterEditor::ReadBlock(  uint32_t pi_PosBlockX,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFResBoosterEditor::ReadBlock(uint32_t           pi_PosBlockX,
-                                       uint32_t           pi_PosBlockY,
+HSTATUS HRFResBoosterEditor::ReadBlock(uint64_t           pi_PosBlockX,
+                                       uint64_t           pi_PosBlockY,
                                        HFCPtr<HCDPacket>& po_rpPacket,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -79,10 +79,10 @@ HSTATUS HRFResBoosterEditor::ReadBlock(uint32_t           pi_PosBlockX,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFResBoosterEditor::ReadBlockRLE  (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
-                                            HFCLockMonitor const*    pi_pSisterFileLock)
+HSTATUS HRFResBoosterEditor::ReadBlockRLE(uint64_t                 pi_PosBlockX,
+                                          uint64_t                 pi_PosBlockY,
+                                          HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
+                                          HFCLockMonitor const*    pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
 
@@ -95,9 +95,9 @@ HSTATUS HRFResBoosterEditor::ReadBlockRLE  (uint32_t                 pi_PosBlock
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFResBoosterEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                        uint32_t     pi_PosBlockY,
-                                        const Byte* pi_pData,
+HSTATUS HRFResBoosterEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                        uint64_t     pi_PosBlockY,
+                                        const Byte*  pi_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -121,8 +121,8 @@ HSTATUS HRFResBoosterEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFResBoosterEditor::WriteBlock(uint32_t                 pi_PosBlockX,
-                                        uint32_t                 pi_PosBlockY,
+HSTATUS HRFResBoosterEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                        uint64_t                 pi_PosBlockY,
                                         const HFCPtr<HCDPacket>& pi_rpPacket,
                                         HFCLockMonitor const*    pi_pSisterFileLock)
     {
@@ -149,10 +149,10 @@ HSTATUS HRFResBoosterEditor::WriteBlock(uint32_t                 pi_PosBlockX,
 // WriteBlock
 // Edition by Image
 //-----------------------------------------------------------------------------
-HSTATUS HRFResBoosterEditor::WriteBlockRLE (uint32_t              pi_PosBlockX,
-                                            uint32_t              pi_PosBlockY,
-                                            HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFResBoosterEditor::WriteBlockRLE(uint64_t              pi_PosBlockX,
+                                           uint64_t              pi_PosBlockY,
+                                           HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
+                                           HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DProjectiveMeshAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DProjectiveMeshAdapter
@@ -414,10 +414,23 @@ void HGF2DProjectiveMeshAdapter::ConvertDirect(double    pi_YIn,
         }
     }
 
+//-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+void HGF2DProjectiveMeshAdapter::ConvertDirect(uint32_t  pi_NumLoc,
+                                               double*   pio_aXInOut,
+                                               double*   pio_aYInOut) const
+    {
+    HINVARIANTS;
 
+    HPRECONDITION(pio_aXInOut != NULL);
+    HPRECONDITION(pio_aYInOut != NULL);
 
-
-
+    for (uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        ConvertDirect(pio_aXInOut + i, pio_aYInOut + i);
+        }
+    }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
@@ -604,6 +617,23 @@ void HGF2DProjectiveMeshAdapter::ConvertInverse(double    pi_YIn,
         }
     }
 
+//-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+void HGF2DProjectiveMeshAdapter::ConvertInverse(uint32_t  pi_NumLoc,
+                                                double*   pio_aXInOut,
+                                                double*   pio_aYInOut) const
+    {
+    HINVARIANTS;
+
+    HPRECONDITION(pio_aXInOut != NULL);
+    HPRECONDITION(pio_aYInOut != NULL);
+
+    for (uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        ConvertInverse(pio_aXInOut + i, pio_aYInOut + i);
+        }
+    }
 
 
 
@@ -1290,7 +1320,7 @@ bool HGF2DProjectiveMeshAdapter::CreateModels() const
                         StatSumY += DeltaY;
                         StatNumSamples++;
 
-                        MaxError = max(MaxError, max(DeltaX, DeltaY));
+                        MaxError = MAX(MaxError, MAX(DeltaX, DeltaY));
 
                         }
                     }
@@ -1440,7 +1470,7 @@ bool HGF2DProjectiveMeshAdapter::CreateModels() const
                         StatSumY += DeltaY;
                         StatNumSamples++;
 
-                        MaxError = max(MaxError, max(DeltaX, DeltaY));
+                        MaxError = MAX(MaxError, MAX(DeltaX, DeltaY));
 
                         }
                     }
@@ -1560,7 +1590,7 @@ void HGF2DProjectiveMeshAdapter::StudyReversibilityPrecisionOver(const HGF2DLite
             StatSumY += DeltaY;
             StatNumSamples++;
 
-            MaxError = max(MaxError, max(DeltaX, DeltaY));
+            MaxError = MAX(MaxError, MAX(DeltaX, DeltaY));
             }
         }
 

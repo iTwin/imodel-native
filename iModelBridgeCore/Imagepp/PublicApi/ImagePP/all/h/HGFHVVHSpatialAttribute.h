@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFHVVHSpatialAttribute.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,6 +18,7 @@
 #include "HGFSpatialCriteria.h"
 #include "HIDXAttribute.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HGFHVVHSpatialAttribute : public HIDXAttribute
     {
@@ -48,6 +49,7 @@ private:
     m_Extent;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGFHVVHSpatialAttribute.hpp"
 
 

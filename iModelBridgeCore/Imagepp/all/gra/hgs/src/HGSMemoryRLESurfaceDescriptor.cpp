@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgs/src/HGSMemoryRLESurfaceDescriptor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HGSMemoryRLESurfaceDescriptor
 //---------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGSMemoryRLESurfaceDescriptor.h>
 #include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
@@ -43,21 +43,6 @@ HGSMemoryRLESurfaceDescriptor::HGSMemoryRLESurfaceDescriptor
 //-----------------------------------------------------------------------------
 HGSMemoryRLESurfaceDescriptor::~HGSMemoryRLESurfaceDescriptor()
     {
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// GetRequiredSurfaceCapabilities
-//-----------------------------------------------------------------------------
-HGSSurfaceCapabilities* HGSMemoryRLESurfaceDescriptor::GetRequiredSurfaceCapabilities() const
-    {
-    // first call the parent method
-    HGSSurfaceCapabilities* pCapabilities = HGSSurfaceDescriptor::GetRequiredSurfaceCapabilities();
-
-    // add the compression type
-    pCapabilities->Add(new HGSSurfaceCapability(HGSCompressionAttribute(HCDCodecHMRRLE1::CLASS_ID)));
-
-    return pCapabilities;
     }
 
 //-----------------------------------------------------------------------------

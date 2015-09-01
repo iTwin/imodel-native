@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCProfiler.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -13,7 +13,7 @@
 #include "HFCMacros.h"
 #include "HFCMonitor.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /**
 
   This class is a basic profiler that reports the same kind of
@@ -27,7 +27,7 @@
 */
 class HNOVTABLEINIT HFCProfiler
     {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLu, HFCProfiler)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HFCProfiler)
 
 public:
 
@@ -115,5 +115,6 @@ private:
     double          m_Overhead;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HFCProfiler.hpp"
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGSMemoryRLESurfaceDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGSMemorySurfaceDescriptor
@@ -15,30 +15,28 @@
 #include "HGFScanlineOrientation.h"
 #include "HGSMemorySurfaceDescriptor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HCDPacketRLE;
 class HRPPixelType;
 
 class HGSMemoryRLESurfaceDescriptor : public HGSMemoryBaseSurfaceDescriptor
     {
-    HDECLARE_CLASS_ID(1713, HGSMemoryBaseSurfaceDescriptor)
+    HDECLARE_CLASS_ID(HGSMemoryId_RLESurfaceDescriptor, HGSMemoryBaseSurfaceDescriptor)
 
 public:
 
-    _HDLLg          HGSMemoryRLESurfaceDescriptor(uint32_t                          pi_Width,
+    IMAGEPP_EXPORT          HGSMemoryRLESurfaceDescriptor(uint32_t                          pi_Width,
                                                   uint32_t                          pi_Height,
                                                   const HFCPtr<HRPPixelType>&       pi_rpPixelType,
                                                   const HFCPtr<HCDPacketRLE>&       pi_rpPacket,
                                                   HGFSLO                            pi_SLO);
 
-    _HDLLg virtual  ~HGSMemoryRLESurfaceDescriptor();
-
-    virtual HGSSurfaceCapabilities*
-    GetRequiredSurfaceCapabilities() const;
+    IMAGEPP_EXPORT virtual  ~HGSMemoryRLESurfaceDescriptor();
 
     virtual const HFCPtr<HCDCodec>&
     GetCodec() const override;
 
-    _HDLLg const HFCPtr<HCDPacketRLE>&
+    IMAGEPP_EXPORT const HFCPtr<HCDPacketRLE>&
     GetRLEPacket() const;
     void            SetRLEPacket(const HFCPtr<HCDPacketRLE>& pi_rpPacket);
 
@@ -57,3 +55,4 @@ private:
     HGSMemoryRLESurfaceDescriptor(const HGSMemoryRLESurfaceDescriptor& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFTag.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -176,7 +176,7 @@ enum TIFFTag {
 //            HMR_ALTAPHOTO_BLOB,
     HMR_PROJECTWISE_BLOB,
     HMR_FILTERS,
-    HMR_SOURCEFILE_CREATIONDATE,
+    HMR_SOURCEFILE_CREATIONDATE,    // That information is only keep for back compatible between V8i, on Windows platform only.
     HMR_SYNCHRONIZE_FIELD,
     MATTEING,
     DATATYPE,
@@ -252,6 +252,7 @@ enum TIFFTag {
     EXIF_SUBJECTDISTANCERANGE,
     EXIF_IMAGEUNIQUEID,             //42016L
 
+	GDALNODATA,
 
     // These Tags are not saved in the file.
     TAG_NOT_SAVED_FILE,
@@ -289,6 +290,7 @@ END_IMAGEPP_NAMESPACE
 #define        COMPRESSION_LZW        5                // Lempel-Ziv  & Welch
 #define        COMPRESSION_OJPEG        6            // !6.0 JPEG
 #define        COMPRESSION_JPEG        7            // %JPEG DCT compression
+#define        COMPRESSION_ADOBE_DEFLATE 8           // Same as COMPRESSION_DEFLATE
 #define        COMPRESSION_NEXT        32766        // NeXT 2-bit RLE
 #define        COMPRESSION_CCITTRLEW    32771        // #1 w/ word alignment
 #define        COMPRESSION_PACKBITS    32773        // Macintosh RLE
@@ -479,7 +481,8 @@ END_IMAGEPP_NAMESPACE
 //
 
 // tags 34263-34264 are private tags registered to NASA-JPL Carto Group
-#define TIFFTAG_GEOTRANSMATRIX          34264L  // New Matrix Tag replaces 33920
+#define HTIFFTAG_GEOTRANSMATRIX         34264L  // New Matrix Tag replaces 33920
+                                                // Add an 'H' in front to remove conflict with Ecw/Jpeg2000
 
 //
 // Private tags registered to HMR inc
@@ -498,9 +501,10 @@ END_IMAGEPP_NAMESPACE
 // GeoTiff
 //
 // tags 34735-3438 are private tags registered to SPOT Image, Inc
-#define TIFFTAG_GEOKEYDIRECTORY         34735L
-#define TIFFTAG_GEODOUBLEPARAMS         34736L
-#define TIFFTAG_GEOASCIIPARAMS          34737L
+                                                // Add an 'H' in front to remove conflict with Ecw/Jpeg2000
+#define HTIFFTAG_GEOKEYDIRECTORY         34735L
+#define HTIFFTAG_GEODOUBLEPARAMS         34736L
+#define HTIFFTAG_GEOASCIIPARAMS          34737L
 
 //-----------------------------------------------------------------------------
 //
@@ -622,8 +626,15 @@ END_IMAGEPP_NAMESPACE
 #define    TIFFTAG_FAXRECVPARAMS        34908        // encoded Class 2 ses. parms
 #define    TIFFTAG_FAXSUBADDRESS        34909        // received SubAddr string
 #define    TIFFTAG_FAXRECVTIME        34910            // receive time (secs)
+
+
+#define    TIFFTAG_GDAL_NODATA        42113            // Unregistered tag used by the GDAL library, contains an ASCII encoded nodata or background pixel value. 
+ 
+
 // tag 65535 is an undefined tag used by Eastman Kodak
 #define TIFFTAG_DCSHUESHIFTVALUES       65535   // hue shift correction data
+
+
 
 //
 // The following are ``pseudo tags'' that can be

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWbmpLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFWbmpLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFWbmpFile.h>
 #include <Imagepp/all/h/HRFWbmpLineEditor.h>
@@ -58,9 +58,9 @@ HRFWbmpLineEditor::~HRFWbmpLineEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFWbmpLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                     uint32_t pi_PosBlockY,
-                                     Byte* po_pData,
+HSTATUS HRFWbmpLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                     uint64_t pi_PosBlockY,
+                                     Byte*  po_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(po_pData != 0);
@@ -73,7 +73,7 @@ HSTATUS HRFWbmpLineEditor::ReadBlock(uint32_t pi_PosBlockX,
     if (GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         {
         Status = H_NOT_FOUND;
-        goto WRAPUP;
+        return Status;
         }
 
     // Lock the sister file
@@ -84,20 +84,17 @@ HSTATUS HRFWbmpLineEditor::ReadBlock(uint32_t pi_PosBlockX,
         pi_pSisterFileLock = &SisterFileLock;
         }
 
-    size_t offSetToLine = m_pRasterFile->m_OffsetToFirstRowInByte +
-                          (pi_PosBlockY * m_ExactBytesPerRow);
+    size_t offSetToLine = m_pRasterFile->m_OffsetToFirstRowInByte + ((uint32_t)pi_PosBlockY * m_ExactBytesPerRow);
 
     m_pRasterFile->m_pWbmpFile->SeekToPos(offSetToLine);
 
     uint32_t DataSize = GetResolutionDescriptor()->GetBytesPerBlockWidth();
-    if(m_pRasterFile->m_pWbmpFile->Read((void*)po_pData, DataSize) != DataSize)
-        goto WRAPUP;
+    if(m_pRasterFile->m_pWbmpFile->Read(po_pData, DataSize) != DataSize)
+        return Status;
 
     SisterFileLock.ReleaseKey();
 
     Status = H_SUCCESS;
-
-WRAPUP:
     return Status;
     }
 
@@ -106,9 +103,9 @@ WRAPUP:
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFWbmpLineEditor::WriteBlock(uint32_t              pi_PosBlockX,
-                                      uint32_t              pi_PosBlockY,
-                                      const Byte*          pi_pData,
+HSTATUS HRFWbmpLineEditor::WriteBlock(uint64_t              pi_PosBlockX,
+                                      uint64_t              pi_PosBlockY,
+                                      const Byte*           pi_pData,
                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -116,8 +113,7 @@ HSTATUS HRFWbmpLineEditor::WriteBlock(uint32_t              pi_PosBlockX,
 
     HSTATUS Status = H_ERROR;
 
-    size_t offSetToLine = m_pRasterFile->m_OffsetToFirstRowInByte +
-                          (pi_PosBlockY * m_ExactBytesPerRow);
+    size_t offSetToLine = m_pRasterFile->m_OffsetToFirstRowInByte + ((uint32_t)pi_PosBlockY * m_ExactBytesPerRow);
 
     memcpy(m_pLineBuffer, pi_pData, GetResolutionDescriptor()->GetBytesPerBlockWidth());
 
@@ -132,8 +128,8 @@ HSTATUS HRFWbmpLineEditor::WriteBlock(uint32_t              pi_PosBlockX,
 
     m_pRasterFile->m_pWbmpFile->SeekToPos(offSetToLine);
 
-    if(m_pRasterFile->m_pWbmpFile->Write((void*)m_pLineBuffer, m_ExactBytesPerRow) != m_ExactBytesPerRow)
-        goto WRAPUP;
+    if(m_pRasterFile->m_pWbmpFile->Write(m_pLineBuffer.get(), m_ExactBytesPerRow) != m_ExactBytesPerRow)
+        return Status;
 
     GetRasterFile()->SharingControlIncrementCount();
 
@@ -141,7 +137,5 @@ HSTATUS HRFWbmpLineEditor::WriteBlock(uint32_t              pi_PosBlockX,
     SisterFileLock.ReleaseKey();
 
     Status = H_SUCCESS;
-
-WRAPUP:
     return Status;
     }

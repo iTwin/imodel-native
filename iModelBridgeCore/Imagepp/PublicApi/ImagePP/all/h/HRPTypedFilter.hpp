@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPTypedFilter.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HRPTypedFilter
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // protected
 // AreThereLostChannels
@@ -62,3 +63,4 @@ inline const HFCPtr<HRPPixelConverter>& HRPTypedFilter::GetOutputConverter() con
     {
     return(m_pOutputConverter);
     }
+END_IMAGEPP_NAMESPACE

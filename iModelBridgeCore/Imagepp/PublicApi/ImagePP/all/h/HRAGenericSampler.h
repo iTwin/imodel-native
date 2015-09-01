@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAGenericSampler.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -15,12 +15,14 @@
 
 #include "HGF2DRectangle.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HRPPixelType;
 class HGSMemoryBaseSurfaceDescriptor;
 
 class HNOVTABLEINIT HRAGenericSampler
     {
-    HDECLARE_BASECLASS_ID(1751)
+    HDECLARE_BASECLASS_ID(HRAGenericId_Sampler)
 
 
 public:
@@ -32,8 +34,8 @@ public:
                       double                                pi_DeltaY);
     virtual        ~HRAGenericSampler();
 
-    virtual void*   GetPixel(double            pi_PosX,
-                             double            pi_PosY) const = 0;
+    virtual void const* GetPixel(double            pi_PosX,
+                                 double            pi_PosY) const = 0;
 
     virtual void    GetPixels(const double*    pi_pPositionsX,
                               const double*    pi_pPositionsY,
@@ -80,3 +82,4 @@ private:
     };
 
 
+END_IMAGEPP_NAMESPACE

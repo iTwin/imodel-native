@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCAccessMode.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,6 +11,7 @@
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 /**
 
 This extremely simple class defines objects representing access modes.
@@ -55,6 +56,8 @@ const HFCAccessMode HFC_READ_WRITE_OPEN      = {true,  true,  false, false, fals
 const HFCAccessMode HFC_READ_WRITE_CREATE    = {true,  true,  true,  false, false, false};
 const HFCAccessMode HFC_WRITE_AND_CREATE     = {false, true,  true,  false, false, false};
 const HFCAccessMode HFC_READ_CREATE          = {true,  false, true,  false, false, false};
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCAccessMode.hpp"
 

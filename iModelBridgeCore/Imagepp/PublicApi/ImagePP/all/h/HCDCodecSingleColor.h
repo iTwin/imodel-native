@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecSingleColor.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,9 +15,11 @@
 
 #include "HCDCodecImage.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecSingleColor : public HCDCodecImage
     {
-    HDECLARE_CLASS_ID(1155, HCDCodecImage)
+    HDECLARE_CLASS_ID(HCDCodecId_SingleColor, HCDCodecImage)
 
 public:
 
@@ -36,3 +38,4 @@ protected:
     virtual HCDCodec* Clone() const override = 0;
     };
 
+END_IMAGEPP_NAMESPACE

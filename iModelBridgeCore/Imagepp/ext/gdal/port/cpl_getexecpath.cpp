@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_getexecpath.cpp 20703 2010-09-26 19:54:15Z warmerdam $
+ * $Id: cpl_getexecpath.cpp 27720 2014-09-21 17:58:47Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement CPLGetExecPath().
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: cpl_getexecpath.cpp 20703 2010-09-26 19:54:15Z warmerdam $");
+CPL_CVSID("$Id: cpl_getexecpath.cpp 27720 2014-09-21 17:58:47Z goatbar $");
 
 #if defined(WIN32) || defined(WIN32CE)
 
@@ -125,7 +125,7 @@ int CPLGetExecPath( char *pszPathBuf, int nMaxLength )
  *
  * The path to the executable currently running is returned.  This path
  * includes the name of the executable.   Currently this only works on 
- * win32 platform.  The returned path is UTF-8 encoded.
+ * win32 and linux platforms.  The returned path is UTF-8 encoded.
  *
  * @param pszPathBuf the buffer into which the path is placed.
  * @param nMaxLength the buffer size, MAX_PATH+1 is suggested.
@@ -135,8 +135,7 @@ int CPLGetExecPath( char *pszPathBuf, int nMaxLength )
 
 #ifndef HAVE_IMPLEMENTATION
 
-int CPLGetExecPath( char *pszPathBuf, int nMaxLength )
-
+int CPLGetExecPath( CPL_UNUSED char *pszPathBuf, CPL_UNUSED int nMaxLength )
 {
     return FALSE;
 }

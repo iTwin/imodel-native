@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeV1GrayWhite1.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeV1GrayWhite1
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeV1GrayWhite1.h>
 #include <Imagepp/all/h/HRPChannelOrgGrayWhite.h>
@@ -45,45 +45,22 @@ struct ConverterV1GrayWhite1_V1GrayWhite1 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        *((Byte*)pio_pDestRawData) = (*((Byte*)pi_pSourceRawData) & 0x80) | (*((Byte*)pio_pDestRawData) & 0x7f);
-        }
+        Byte const* pSrc =  (Byte const*)pi_pSourceRawData;
+        Byte* pDest = (Byte*)pio_pDestRawData;
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        // Minimize overhead if only one pixel to copy.  In this case, we will do just one "if"
-        if(pi_PixelsCount <= 8)
-            // Copy n pixels (0 <= n <= 8)
-            *((Byte*)pio_pDestRawData) = (*((Byte*)pio_pDestRawData) & s_DestMask[pi_PixelsCount]) |
-                                           (*((Byte*)pi_pSourceRawData)& s_SrcMask[pi_PixelsCount]);
-        else
+        size_t fullByteToCopy = pi_PixelsCount / 8;
+        memcpy(pDest, pSrc, fullByteToCopy);
+
+        if(pi_PixelsCount != fullByteToCopy*8)
             {
-            Byte* pSrc =  (Byte*)pi_pSourceRawData;
-            Byte* pDest = (Byte*)pio_pDestRawData;
-
-            // Copy entire bytes
-            while(pi_PixelsCount >= 8)
-                {
-                *pDest = *pSrc;
-                pi_PixelsCount -= 8;
-                pDest++;
-                pSrc++;
-                }
-
             // Copy remaining n pixels (0 <= n <= 7)
-            *pDest = (*pDest & s_DestMask[pi_PixelsCount]) | (*pSrc & s_SrcMask[pi_PixelsCount]);
+            pDest[fullByteToCopy] = (pSrc[fullByteToCopy] & s_SrcMask[pi_PixelsCount - fullByteToCopy*8]);
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV1GrayWhite1_V1GrayWhite1(*this));
         }
     };
@@ -97,12 +74,7 @@ struct ConverterV1GrayWhite1_V32R8G8B8A8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        ((Byte*)pio_pDestRawData)[0] = ((Byte*)pio_pDestRawData)[1] = ((Byte*)pio_pDestRawData)[2] = (*((Byte*)pi_pSourceRawData) & 0x80 ? 0 : 255);
-        ((Byte*)pio_pDestRawData)[3] = 255;
-        }
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -192,15 +164,8 @@ struct ConverterV1GrayWhite1_V32R8G8B8A8 : public HRPPixelConverter
                         }
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV1GrayWhite1_V32R8G8B8A8(*this));
         }
     };
@@ -213,12 +178,7 @@ struct ConverterV1GrayWhite1_V8Gray8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        *((Byte*)pio_pDestRawData) = (*((Byte*)pi_pSourceRawData) & 0x80 ? 0 : 255);
-        }
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -245,15 +205,8 @@ struct ConverterV1GrayWhite1_V8Gray8 : public HRPPixelConverter
                 }
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV1GrayWhite1_V8Gray8(*this));
         }
     };
@@ -266,12 +219,7 @@ struct ConverterV1GrayWhite1_V8GrayWhite8 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        *((Byte*)pio_pDestRawData) = (*((Byte*)pi_pSourceRawData) & 0x80 ? 255 : 0);
-        }
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
@@ -298,15 +246,8 @@ struct ConverterV1GrayWhite1_V8GrayWhite8 : public HRPPixelConverter
                 }
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+    virtual HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV1GrayWhite1_V8GrayWhite8(*this));
         }
     };
@@ -321,51 +262,40 @@ struct ConverterV8Gray8_V1GrayWhite1 : public HRPPixelConverter
     {
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        if((*((Byte*)pi_pSourceRawData)) >= TWOCOLORTHRESHOLD)
-            (*((Byte*)pio_pDestRawData)) = (*((Byte*)pio_pDestRawData)) & 0x7F; // set bit
-        else
-            (*((Byte*)pio_pDestRawData)) = (*((Byte*)pio_pDestRawData)) | 0x80; // clear bit
-        }
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
-        Byte Index = 0;
+        uint32_t Index = 0;
 
         while(pi_PixelsCount)
             {
             if(*pSrc >= TWOCOLORTHRESHOLD)
-                *pDest = *pDest & s_BitMask[Index];
+                *pDest = *pDest & s_NotBitMask[Index];
             else
-                *pDest = *pDest | s_NotBitMask[Index];
+                *pDest = *pDest | s_BitMask[Index];
 
-            pi_PixelsCount--;
-
-            // Increment Source
-            pSrc++;
+            --pi_PixelsCount;
 
             // Increment Source
-            Index++;
+            ++pSrc;
+
+            // Increment Source
+            ++Index;
             if(Index == 8)
                 {
                 // Start writing to a new destination byte
                 Index = 0;
-                pDest++;
+                ++pDest;
                 }
             }
-        };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual HRPPixelConverter* AllocateCopy() const {
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
+        };
+
+    virtual HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV8Gray8_V1GrayWhite1(*this));
         }
     };
@@ -379,97 +309,44 @@ struct ConverterV32R8G8B8A8_V1GrayWhite1 : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
+    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
-        Byte Gray = Byte(((Byte*)pi_pSourceRawData)[0] * REDFACTOR +
-                             ((Byte*)pi_pSourceRawData)[1] * GREENFACTOR +
-                             ((Byte*)pi_pSourceRawData)[2] * BLUEFACTOR);
-
-        if(Gray >= TWOCOLORTHRESHOLD)
-            (*((Byte*)pio_pDestRawData)) = (*((Byte*)pio_pDestRawData)) & 0x7f; // clear bit
-        else
-            (*((Byte*)pio_pDestRawData)) = (*((Byte*)pio_pDestRawData)) | 0x80; // set bit
-
-        }
-    void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
-        {
-        Byte Gray;
-
         Byte* pSrc =  (Byte*)pi_pSourceRawData;
         Byte* pDest = (Byte*)pio_pDestRawData;
-        Byte Index = 0;
+        uint32_t Index = 0;
 
         while(pi_PixelsCount)
             {
-            Gray = Byte(pSrc[0] * REDFACTOR +
-                          pSrc[1] * GREENFACTOR +
-                          pSrc[2] * BLUEFACTOR);
-
-            if(Gray >= TWOCOLORTHRESHOLD)
+            if((pSrc[0] * REDFACTOR + pSrc[1] * GREENFACTOR + pSrc[2] * BLUEFACTOR) >= TWOCOLORTHRESHOLD)
                 *pDest = *pDest & s_NotBitMask[Index];  // clear bit
             else
                 *pDest = *pDest | s_BitMask[Index];     // set bit
 
-            pi_PixelsCount--;
+            --pi_PixelsCount;
 
             // Increment Source by 3 bytes !
             pSrc+=4;
 
             // Increment Source
-            Index++;
+            ++Index;
             if(Index == 8)
                 {
                 // Start writing to a new destination byte
                 Index = 0;
-                pDest++;
+                ++pDest;
                 }
             }
+
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte const* pSrc = (Byte const*)pi_pSourceRawData;
-
-        // If source pixel is fully transparent, destination is unaltered
-        if (pSrc[3] != 0)
-            {
-            Byte* pDest = (Byte*)pio_pDestRawData;
-
-            if (pSrc[3] == 255)
-                {
-                // Source pixel is fully opaque. Copy source pixel.
-                if((pSrc[0] * REDFACTOR + pSrc[1] * GREENFACTOR +  pSrc[2] * BLUEFACTOR) >= TWOCOLORTHRESHOLD)
-                    *pDest &= 0x7F; // clear bit
-                else
-                    *pDest |= 0x80; // set bit
-
-                }
-            else
-                {
-                Byte gray = (Byte)(pSrc[0] * REDFACTOR + pSrc[1] * GREENFACTOR +  pSrc[2] * BLUEFACTOR);
-
-                // (S * alpha) + (D * (1 - alpha))
-                if(HFCMath::GetInstance()->DivideBy255((gray * pSrc[3]) + (((*pDest >> 7) & 0x01) * (255 - pSrc[3]))) >= TWOCOLORTHRESHOLD)
-                    *pDest &= 0x7F; // clear bit
-
-                else
-                    *pDest |= 0x80; // set bit
-                }
-            }
-        }
-
-    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte const* pSrc  = (Byte const*)pi_pSourceRawData;
         Byte*       pDest = (Byte*)pio_pDestRawData;
-        Byte Index = 0;
+        uint32_t Index = 0;
 
         HFCMath (*pQuotients) (HFCMath::GetInstance());
 
@@ -514,9 +391,13 @@ public:
                 ++pDest;
                 }
             }
+
+        // Clear padding bits if we are not on a byte boundary.
+        if(Index != 0)
+            *pDest &= ~(0xFF >> Index);
         };
 
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
@@ -525,7 +406,7 @@ private:
 
     static short m_LostChannels[];
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32R8G8B8A8_V1GrayWhite1(*this));
         }
     };

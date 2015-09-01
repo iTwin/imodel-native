@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DShape.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DShape
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HVE2DShape.h>
 
@@ -19,9 +19,16 @@ HPM_REGISTER_ABSTRACT_CLASS(HVE2DShape, HVE2DVector)
 
 #include <Imagepp/all/h/HVE2DSimpleShape.h>
 #include <Imagepp/all/h/HVE2DHoledShape.h>
+#include <Imagepp/all/h/HVE2DComplexShape.h>
+#include <Imagepp/all/h/HVE2DRectangle.h>
+#include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
+#include <Imagepp/all/h/HVE2DVoidShape.h>
+#include <Imagepp/all/h/HVE2DUniverse.h>
 #include <Imagepp/all/h/HVE2DSegment.h>
 #include <Imagepp/all/h/HGFScanLines.h>
 
+#include <Imagepp/all/h/HGF2DHoledShape.h>
+#include <Imagepp/all/h/HGF2DComplexShape.h>
 
 //-----------------------------------------------------------------------------
 // Rasterize
@@ -294,7 +301,7 @@ HVE2DShape::SpatialPosition HVE2DShape::CalculateSpatialPositionOf(
 
     // Check if their extents overlap
     if (GetExtent().OutterOverlaps(pi_rVector.GetExtent(),
-                                   min(GetTolerance(), pi_rVector.GetTolerance())))
+                                   MIN(GetTolerance(), pi_rVector.GetTolerance())))
         {
 
         // Check if vector is made of multiple entities
@@ -333,7 +340,7 @@ HVE2DShape::SpatialPosition HVE2DShape::CalculateSpatialPositionOfSingleComponen
 
     // Check if their extents overlap
     if (GetExtent().OutterOverlaps(pi_rVector.GetExtent(),
-                                   min(GetTolerance(), pi_rVector.GetTolerance())))
+                                   MIN(GetTolerance(), pi_rVector.GetTolerance())))
         {
         // The extents overlap ... check if they cross ?
         if (Crosses(pi_rVector))
@@ -407,7 +414,7 @@ HVE2DShape::SpatialPosition HVE2DShape::CalculateSpatialPositionOfComplexShape(
     {
     // Their extent must overlap
     HPRECONDITION(GetExtent().OutterOverlaps(pi_rShape.GetExtent(),
-                                             min(GetTolerance(), pi_rShape.GetTolerance())));
+                                             MIN(GetTolerance(), pi_rShape.GetTolerance())));
 
     // The shape must be complex
     HPRECONDITION(pi_rShape.IsComplex());
@@ -460,7 +467,7 @@ HVE2DShape::SpatialPosition HVE2DShape::CalculateSpatialPositionOfHoledShape(
     {
     // Their extent must overlap
     HPRECONDITION(GetExtent().OutterOverlaps(pi_rHoledShape.GetExtent(),
-                                             min(GetTolerance(), pi_rHoledShape.GetTolerance())));
+                                             MIN(GetTolerance(), pi_rHoledShape.GetTolerance())));
 
     HVE2DShape::SpatialPosition     ThePosition = HVE2DShape::S_ON;
 
@@ -527,11 +534,11 @@ HVE2DShape::SpatialPosition HVE2DShape::CalculateSpatialPositionOfNonCrossingSim
 
     // Their extent must overlap
     HPRECONDITION(GetExtent().OutterOverlaps(pi_rSimpleShape.GetExtent(),
-                                             min(GetTolerance(), pi_rSimpleShape.GetTolerance())));
+                                             MIN(GetTolerance(), pi_rSimpleShape.GetTolerance())));
 
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rSimpleShape.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rSimpleShape.GetTolerance());
 
     HVE2DShape::SpatialPosition     ThePosition = HVE2DShape::S_OUT;
 
@@ -569,7 +576,7 @@ HVE2DShape::SpatialPosition HVE2DShape::CalculateSpatialPositionOfNonCrossingLin
     HVE2DShape::SpatialPosition     ThePosition = HVE2DShape::S_OUT;
 
     // Calculate Tolerance
-    double Tolerance = min(pi_rLinear.GetTolerance(), GetTolerance());
+    double Tolerance = MIN(pi_rLinear.GetTolerance(), GetTolerance());
 
     // Check if their extents overlap
     if (GetExtent().OutterOverlaps(pi_rLinear.GetExtent(), Tolerance))
@@ -752,3 +759,45 @@ void HVE2DShape::PrintState(ostream& po_rOutput) const
 
 #endif
     }
+
+
+//-----------------------------------------------------------------------------
+// Helper static method 
+// create a shape from a light shape
+//-----------------------------------------------------------------------------
+HVE2DShape* HVE2DShape::fCreateShapeFromLightShape(const HGF2DShape& pi_rShape, const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys)
+    {
+    if (pi_rShape.IsSimple())
+        {
+        const HGF2DSimpleShape& rSimpleShape = static_cast<const HGF2DSimpleShape&>(pi_rShape);
+        HGF2DShapeTypeId shapeType = rSimpleShape.GetShapeType();
+
+        if (shapeType == HGF2DRectangleId)
+            {
+            return new HVE2DRectangle(static_cast<const HGF2DRectangle&>(rSimpleShape), pi_rpCoordSys);
+            }
+        else if (shapeType == HGF2DPolygonOfSegmentsId)
+            {
+            return new HVE2DPolygonOfSegments(static_cast<const HGF2DPolygonOfSegments&>(rSimpleShape), pi_rpCoordSys);
+            }
+        else if (shapeType == HGF2DShapeId_Void)
+            {
+            return new HVE2DVoidShape(static_cast<const HGF2DVoidShape&>(rSimpleShape), pi_rpCoordSys);
+            }
+        else 
+            {
+            HASSERT(shapeType == HGF2DUniverseId);
+            return new HVE2DUniverse(static_cast<const HGF2DUniverse&>(rSimpleShape), pi_rpCoordSys);
+            }
+        }
+    else if (pi_rShape.HasHoles())
+        {
+        return new HVE2DHoledShape(static_cast<const HGF2DHoledShape&>(pi_rShape), pi_rpCoordSys);
+        }
+    else
+        {
+        HASSERT(pi_rShape.IsComplex());
+        return new HVE2DComplexShape(static_cast<const HGF2DComplexShape&>(pi_rShape), pi_rpCoordSys);
+        }
+    }
+

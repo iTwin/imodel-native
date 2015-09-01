@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTgaFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -19,13 +19,9 @@
 #include "HFCBinStream.h"
 
 //:Ignore
-// Want to hang on other plateform because pragma instruction is normally compiler dependent
-#ifdef _WIN32
 // Disable the automatic word alingnement for TGA structure.
 #pragma pack( push, TgaIdent,  1)
-#else
-#error
-#endif
+
 
 #define TGA_SIGNATURE "TRUEVISION-XFILE."
 //:End Ignore
@@ -35,6 +31,7 @@
 
     @see HRFRasterFileCapabilities
 ---------------------------------------------------------------------------  */
+BEGIN_IMAGEPP_NAMESPACE
 class HRFTgaCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -74,7 +71,7 @@ public :
                                              uint64_t             pi_Offset = 0) const;
 private:
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFTgaCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFTgaCreator)
 
     //:> Disabled methodes
     HRFTgaCreator();
@@ -97,7 +94,7 @@ class HRFTgaFile : public HRFRasterFile
     friend HRFTgaCompressImageEditor;
 
 public:
-    HDECLARE_CLASS_ID(1443, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Tga, HRFRasterFile)
 
     //:> allow to Open or to create an empty file
     HRFTgaFile       (const HFCPtr<HFCURL>& pi_rpURL,
@@ -278,14 +275,12 @@ private:
 
     bool                               RunLengthsSpanScanlines         ();
     };
+END_IMAGEPP_NAMESPACE
 
 //:Ignore
 // Re-enable the automatic word alignement by removing the previous pragma instruction
 // at the begining of this class
-#ifdef _WIN32
 #pragma pack( pop, TgaIdent)
-#else
-#error
-#endif
+
 //:End Ignore
 

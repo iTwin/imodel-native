@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLSql.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,6 +14,7 @@
 
 #include "HFCURL.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 // URL specification at this level is:
 // hsql:{//?sql}
 
@@ -69,6 +70,6 @@ private:
 
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HFCURLSql.hpp"
 

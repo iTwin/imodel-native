@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFCacheFileCreator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,6 +18,7 @@
 
 #include "HRFTypes.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFile;
 class HRFRasterFileCapabilities;
 
@@ -123,3 +124,4 @@ private:
     HRFCacheFileCreator(const HRFCacheFileCreator&);
     HRFCacheFileCreator& operator=(const HRFCacheFileCreator&);
     };
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DUniverse.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DUniverse
@@ -13,7 +13,7 @@
 
 #include "HGF2DSimpleShape.h"
 #include "HGF2DVoidShape.h"
-
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     @version 1.0
@@ -46,7 +46,7 @@
 class HGF2DUniverse : public HGF2DSimpleShape
     {
 
-    HDECLARE_CLASS_ID(8312, HGF2DSimpleShape)
+    HDECLARE_CLASS_ID(HGF2DUniverseId, HGF2DSimpleShape)
 
 public:
 
@@ -73,16 +73,16 @@ public:
         @see HGF2DVoidShape
         -----------------------------------------------------------------------------
     */
-    _HDLLg             HGF2DUniverse();
-    _HDLLg             HGF2DUniverse(const HGF2DUniverse&  pi_rObject);
-    _HDLLg virtual    ~HGF2DUniverse();
+    IMAGEPP_EXPORT             HGF2DUniverse();
+    IMAGEPP_EXPORT             HGF2DUniverse(const HGF2DUniverse&  pi_rObject);
+    IMAGEPP_EXPORT virtual    ~HGF2DUniverse();
 
     HGF2DUniverse&     operator=(const HGF2DUniverse& pi_rObj);
 
 
     // From HGF2DSimpleShape
-    _HDLLg virtual HFCPtr<HGF2DLinear>    GetLinear() const;
-    _HDLLg virtual HFCPtr<HGF2DLinear>    GetLinear(HGF2DSimpleShape::RotationDirection pi_DirectionDesired) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DLinear>    GetLinear() const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DLinear>    GetLinear(HGF2DSimpleShape::RotationDirection pi_DirectionDesired) const;
 
     // Scanlines generation
     virtual void       Rasterize(HGFScanLines& pio_rScanlines) const;
@@ -90,15 +90,15 @@ public:
 
     virtual bool      IsEmpty     () const;
     virtual HGF2DShapeTypeId     GetShapeType() const;
-    _HDLLg virtual HGF2DShape*   DifferentiateShape(const HGF2DShape& pi_rShape) const;
+    IMAGEPP_EXPORT virtual HGF2DShape*   DifferentiateShape(const HGF2DShape& pi_rShape) const;
     virtual HGF2DShape*          DifferentiateFromShape(const HGF2DShape& pi_rShape) const;
     virtual HGF2DShape*          IntersectShape(const HGF2DShape& pi_rShape) const;
     virtual HGF2DShape*          UnifyShape(const HGF2DShape& pi_rShape) const;
     // PLEASE NOTE THAT THE ABSENCE OF DifferentiateShape Overload IS VOLONTARY
     virtual double             CalculateArea() const;
     virtual double             CalculatePerimeter() const;
-    _HDLLg virtual HGF2DShape::SpatialPosition     CalculateSpatialPositionOf(const HGF2DVector& pi_rVector) const;
-    _HDLLg virtual HGF2DShape::SpatialPosition     CalculateSpatialPositionOf(const HGF2DPosition& pi_rLocation) const;
+    IMAGEPP_EXPORT virtual HGF2DShape::SpatialPosition     CalculateSpatialPositionOf(const HGF2DVector& pi_rVector) const;
+    IMAGEPP_EXPORT virtual HGF2DShape::SpatialPosition     CalculateSpatialPositionOf(const HGF2DPosition& pi_rLocation) const;
     virtual bool      IsPointIn(const HGF2DPosition& pi_rPoint, double pi_Tolerance = HGF_USE_INTERNAL_EPSILON) const;
     virtual void       MakeEmpty();
 
@@ -139,7 +139,11 @@ public:
     virtual HGF2DVector*    Clone() const;
 
     // Debugging
-    _HDLLg virtual void       PrintState(ostream& po_rOutput) const;
+    IMAGEPP_EXPORT virtual void       PrintState(ostream& po_rOutput) const;
+
+
+    virtual HFCPtr<HGF2DShape>              AllocTransformDirect(const HGF2DTransfoModel& pi_rModel) const override;
+    virtual HFCPtr<HGF2DShape>              AllocTransformInverse(const HGF2DTransfoModel& pi_rModel) const override;
 
 protected:
 
@@ -147,5 +151,5 @@ private:
 
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HGF2DUniverse.hpp"

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,7 +14,9 @@
 #include "HFCPtr.h"
 #include <Imagepp/all/h/HFCExclusiveKey.h>
 #include "HFCEvent.h"
+#include <ImagePP/all/h/HFCException.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFTile : public HFCShareableObject<HRFTile>,
     public HFCExclusiveKey,
     public HFCEvent
@@ -53,9 +55,6 @@ public:
                                 size_t                pi_DataSize);
     void                SetData(const Byte*          pi_pData,    // ownership will be transfered
                                 size_t                pi_DataSize);
-    void                SetException(const HFCException* pi_pException);
-    const HFCException* GetException() const;
-
 
 private:
     //--------------------------------------
@@ -75,8 +74,7 @@ private:
     // Tile Data
     HArrayAutoPtr<Byte>    m_pData;
     size_t                  m_DataSize;
-
-    HAutoPtr<HFCException>  m_pException;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRFTile.hpp"

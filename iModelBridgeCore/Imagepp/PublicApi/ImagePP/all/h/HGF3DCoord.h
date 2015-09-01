@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF3DCoord.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF3DCoord
@@ -15,6 +15,8 @@
 #include "HGF2DCoord.h"
 #include "HFCMatrix.h"
 #include "HGF3DTransfoModel.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert 
@@ -261,6 +263,7 @@ template <class DataType> std::ostream& operator<<(std::ostream& io_OutputStream
     return(io_OutputStream << i_rPoint.GetX() << ", " << i_rPoint.GetY() << ", " << i_rPoint.GetZ());
     }
 
+END_IMAGEPP_NAMESPACE
 
 
 #include "HGF3DCoord.hpp"

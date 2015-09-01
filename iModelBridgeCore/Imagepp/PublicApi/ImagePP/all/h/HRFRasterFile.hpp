@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFile.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRFRasterFile
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Public
 // CancelCreate
@@ -392,3 +393,4 @@ inline HRFResolutionEditor* HRFRasterFile::CreateUnlimitedResolutionEditor(uint3
 
     return 0;
     }
+END_IMAGEPP_NAMESPACE

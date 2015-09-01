@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBilLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFBilLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFBilLineEditor.h>
 #include <Imagepp/all/h/HRFBilFile.h>
 #include <Imagepp/all/h/HTIFFUtils.h>
@@ -68,8 +68,8 @@ HRFBilLineEditor::~HRFBilLineEditor()
 // Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFBilLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                    uint32_t pi_PosBlockY,
+HSTATUS HRFBilLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                    uint64_t pi_PosBlockY,
                                     Byte* po_pData,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -107,8 +107,8 @@ HSTATUS HRFBilLineEditor::ReadBlock(uint32_t pi_PosBlockX,
 // Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFBilLineEditor::Read24BitRgbBlock(uint32_t pi_PosBlockX,
-                                            uint32_t pi_PosBlockY,
+HSTATUS HRFBilLineEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
+                                            uint64_t pi_PosBlockY,
                                             Byte* po_pData,
                                             HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -145,17 +145,17 @@ HSTATUS HRFBilLineEditor::Read24BitRgbBlock(uint32_t pi_PosBlockX,
         offSetToLine += m_LineWidth * (RedChannel - 1);
         GetBilRasterFile()->m_pBilFile->SeekToPos(offSetToLine);
 
-        if(GetBilRasterFile()->m_pBilFile->Read((void*)m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
+        if(GetBilRasterFile()->m_pBilFile->Read(m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
 
         GetBilRasterFile()->m_pBilFile->Seek((GreenChannel - RedChannel - 1) * BytesPerBandRow);
 
-        if(GetBilRasterFile()->m_pBilFile->Read((void*)m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
+        if(GetBilRasterFile()->m_pBilFile->Read(m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
 
         GetBilRasterFile()->m_pBilFile->Seek((BlueChannel - GreenChannel - 1) * BytesPerBandRow);
 
-        if(GetBilRasterFile()->m_pBilFile->Read((void*)m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
+        if(GetBilRasterFile()->m_pBilFile->Read(m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
 
         }
@@ -164,17 +164,17 @@ HSTATUS HRFBilLineEditor::Read24BitRgbBlock(uint32_t pi_PosBlockX,
         GetBilRasterFile()->m_pBilFile->SeekToEnd();
         GetBilRasterFile()->m_pBilFile->Seek(BytesPerBandRow * (- RedChannel));
 
-        if(GetBilRasterFile()->m_pBilFile->Read((void*)m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
+        if(GetBilRasterFile()->m_pBilFile->Read(m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
 
         GetBilRasterFile()->m_pBilFile->Seek((RedChannel - GreenChannel - 1) * BytesPerBandRow);
 
-        if(GetBilRasterFile()->m_pBilFile->Read((void*)m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
+        if(GetBilRasterFile()->m_pBilFile->Read(m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
 
         GetBilRasterFile()->m_pBilFile->Seek((GreenChannel - BlueChannel - 1) * BytesPerBandRow);
 
-        if(GetBilRasterFile()->m_pBilFile->Read((void*)m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
+        if(GetBilRasterFile()->m_pBilFile->Read(m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
             goto WRAPUP;
         }
 
@@ -211,8 +211,8 @@ WRAPUP:
 // Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFBilLineEditor::Read48BitRgbBlock(uint32_t pi_PosBlockX,
-                                            uint32_t pi_PosBlockY,
+HSTATUS HRFBilLineEditor::Read48BitRgbBlock(uint64_t pi_PosBlockX,
+                                            uint64_t pi_PosBlockY,
                                             Byte* po_pData,
                                             HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -253,17 +253,17 @@ HSTATUS HRFBilLineEditor::Read48BitRgbBlock(uint32_t pi_PosBlockX,
     offSetToLine += m_LineWidth * (RedChannel - 1);
     GetBilRasterFile()->m_pBilFile->SeekToPos(offSetToLine);
 
-    if(GetBilRasterFile()->m_pBilFile->Read((void*)m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
+    if(GetBilRasterFile()->m_pBilFile->Read(m_pRedLineBuffer, m_LineWidth) != m_LineWidth)
         goto WRAPUP;
 
     GetBilRasterFile()->m_pBilFile->Seek((GreenChannel - RedChannel - 1) * BytesPerBandRow);
 
-    if(GetBilRasterFile()->m_pBilFile->Read((void*)m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
+    if(GetBilRasterFile()->m_pBilFile->Read(m_pGreenLineBuffer, m_LineWidth) != m_LineWidth)
         goto WRAPUP;
 
     GetBilRasterFile()->m_pBilFile->Seek((BlueChannel - GreenChannel - 1) * BytesPerBandRow);
 
-    if(GetBilRasterFile()->m_pBilFile->Read((void*)m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
+    if(GetBilRasterFile()->m_pBilFile->Read(m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
         goto WRAPUP;
 
     SisterFileLock.ReleaseKey();
@@ -307,8 +307,8 @@ WRAPUP:
 // Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFBilLineEditor::Read8BitGrayBlock(uint32_t pi_PosBlockX,
-                                            uint32_t pi_PosBlockY,
+HSTATUS HRFBilLineEditor::Read8BitGrayBlock(uint64_t pi_PosBlockX,
+                                            uint64_t pi_PosBlockY,
                                             Byte* po_pData,
                                             HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -342,7 +342,7 @@ HSTATUS HRFBilLineEditor::Read8BitGrayBlock(uint32_t pi_PosBlockX,
         GetBilRasterFile()->m_pBilFile->Seek(BytesPerBandRow * (- GrayChannel));
         }
 
-    if (GetBilRasterFile()->m_pBilFile->Read((void*)po_pData, m_LineWidth) != m_LineWidth)
+    if (GetBilRasterFile()->m_pBilFile->Read(po_pData, m_LineWidth) != m_LineWidth)
         goto WRAPUP;    // H_ERROR
 
     SisterFileLock.ReleaseKey();
@@ -369,8 +369,8 @@ WRAPUP:
 // Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFBilLineEditor::Read16BitGrayBlock(uint32_t pi_PosBlockX,
-                                             uint32_t pi_PosBlockY,
+HSTATUS HRFBilLineEditor::Read16BitGrayBlock(uint64_t pi_PosBlockX,
+                                             uint64_t pi_PosBlockY,
                                              Byte* po_pData,
                                              HFCLockMonitor const* pi_pSisterFileLock)
     {
@@ -397,7 +397,7 @@ HSTATUS HRFBilLineEditor::Read16BitGrayBlock(uint32_t pi_PosBlockX,
     offSetToLine += BytesPerBandRow * (GrayChannel - 1);
     GetBilRasterFile()->m_pBilFile->SeekToPos(offSetToLine);
 
-    if(GetBilRasterFile()->m_pBilFile->Read((void*)po_pData, m_LineWidth) != m_LineWidth)
+    if(GetBilRasterFile()->m_pBilFile->Read(po_pData, m_LineWidth) != m_LineWidth)
         goto WRAPUP;    // H_ERROR;
 
     SisterFileLock.ReleaseKey();
@@ -426,8 +426,8 @@ WRAPUP:
 // Write uncompressed Block
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFBilLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                     uint32_t     pi_PosBlockY,
+HSTATUS HRFBilLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                     uint64_t     pi_PosBlockY,
                                      const Byte* pi_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {

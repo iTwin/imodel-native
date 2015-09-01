@@ -2,9 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTriangle.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
-//:>+--------------------------------------------------------------------------------------
+//:>+-------------------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  07/2003
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -129,10 +131,10 @@ inline HGF2DPosition HGF2DTriangle::CalcCentroid(double x0, double y0,
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline double HGF2DTriangle::CalcEpsilon() const
     {
-    double xMax (max(max(fabs(m_x0), fabs(m_x1)), fabs(m_x2)));
-    double yMax (max(max(fabs(m_y0), fabs(m_y1)), fabs(m_y2)));
+    double xMax (MAX(MAX(fabs(m_x0), fabs(m_x1)), fabs(m_x2)));
+    double yMax (MAX(MAX(fabs(m_y0), fabs(m_y1)), fabs(m_y2)));
 
-    return max(xMax, yMax) * HEPSILON_MULTIPLICATOR;
+    return MAX(xMax, yMax) * HEPSILON_MULTIPLICATOR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -150,3 +152,5 @@ inline double HGF2DTriangle::Square (double x) const
     {
     return x * x;
     }
+
+END_IMAGEPP_NAMESPACE

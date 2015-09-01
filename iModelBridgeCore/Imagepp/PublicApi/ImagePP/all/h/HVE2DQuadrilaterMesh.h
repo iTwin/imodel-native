@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DQuadrilaterMesh.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -29,6 +29,7 @@
 
     -----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 template<class ATTRIBUTE> class HVE2DQuadrilaterMesh : public HVE2DMesh<ATTRIBUTE>
     {
 
@@ -51,6 +52,7 @@ private:
     HVE2DQuadrilaterMesh();
 
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HVE2DQuadrilaterMesh.hpp"
 

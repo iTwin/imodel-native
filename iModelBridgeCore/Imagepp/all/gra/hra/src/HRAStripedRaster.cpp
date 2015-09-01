@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAStripedRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRAStripedRaster
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRAStripedRaster.h>
 #include <Imagepp/all/h/HGF2DGrid.h>
@@ -35,7 +35,7 @@ HRAStripedRaster::HRAStripedRaster ()
 // public
 // Constructor
 //-----------------------------------------------------------------------------
-HRAStripedRaster::HRAStripedRaster  (const HFCPtr<HRAStoredRaster>& pi_pRasterModel,
+HRAStripedRaster::HRAStripedRaster  (const HFCPtr<HRABitmapBase>& pi_pRasterModel,
                                      uint64_t        pi_StripHeight,
                                      uint64_t        pi_WidthPixels,
                                      uint64_t        pi_HeightPixels,
@@ -49,8 +49,6 @@ HRAStripedRaster::HRAStripedRaster  (const HFCPtr<HRAStoredRaster>& pi_pRasterMo
                        pi_pStore, pi_pLog, pi_DisableTileStatus)
     {
     }
-
-
 
 
 //-----------------------------------------------------------------------------
@@ -70,9 +68,6 @@ HRAStripedRaster::HRAStripedRaster(const HRAStripedRaster& pi_rObj)
 HRAStripedRaster::~HRAStripedRaster()
     {
     }
-
-
-
 
 //-----------------------------------------------------------------------------
 // public
@@ -95,10 +90,7 @@ HRAStripedRaster& HRAStripedRaster::operator=(const HRAStripedRaster& pi_rObj)
 //-----------------------------------------------------------------------------
 void HRAStripedRaster::InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixels)
     {
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Marc.Bedard                     03/2011
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    HFCPtr<HRATiledRaster> pTmpRaster = new HRATiledRaster (m_pRasterModel,
+    HFCPtr<HRATiledRaster> pTmpRaster = new HRATiledRaster (m_pBitmapModel,
                                                             pi_WidthPixels,
                                                             GetTileSizeY(),
                                                             pi_WidthPixels,
@@ -113,12 +105,40 @@ void HRAStripedRaster::InitSize(uint64_t pi_WidthPixels, uint64_t pi_HeightPixel
     }
 
 
+//-----------------------------------------------------------------------------
+// public
+// Clone -
+//-----------------------------------------------------------------------------
+HFCPtr<HRARaster> HRAStripedRaster::Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog) const
+    {
+    // Store Specify ?
+    if (pi_pStore)
+        {
+        // Copy the Tile Raster
+        //
+        HRAStripedRaster* pTmpRaster = new HRAStripedRaster ();
 
+        pTmpRaster->HRAStoredRaster::operator=(*this);
 
+        pTmpRaster->DeepDelete();
 
-//----------------------------------------- Statics
+        pTmpRaster->CopyMembers(*this);
 
+        pTmpRaster->DeepCopy (*this, pi_pStore, pi_pLog);
 
+        return (pTmpRaster);
+        }
+    else
+        return new HRAStripedRaster (*this);
+    }
+
+//-----------------------------------------------------------------------------
+// Return a new copy of self
+//-----------------------------------------------------------------------------
+HPMPersistentObject* HRAStripedRaster::Clone () const
+    {
+    return new HRAStripedRaster(*this);
+    }
 
 
 

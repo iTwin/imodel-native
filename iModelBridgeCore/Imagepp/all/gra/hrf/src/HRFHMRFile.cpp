@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFHMRFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFHMRFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <ImagePP/all/h/ImageppLib.h>
 
@@ -44,7 +44,6 @@
 #include <Imagepp/all/h/HGF2DSimilitude.h>
 #include <Imagepp/all/h/HGF2DTranslation.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 
@@ -55,7 +54,7 @@
 #define TILESIZE            256
 #define HISTOGRAM_ENTRY     256
 
-USING_NAMESPACE_IMAGEPP
+
 
 
 //-----------------------------------------------------------------------------
@@ -226,7 +225,7 @@ HRFHMRCreator::HRFHMRCreator()
 // Identification information
 WString HRFHMRCreator::GetLabel() const
     {
-    return HFCResourceLoader::GetInstance()->GetString(IDS_FILEFORMAT_HMR); //HMR File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_HMR()); //HMR File Format
     }
 
 // Identification information
@@ -272,7 +271,7 @@ bool HRFHMRCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     (const_cast<HRFHMRCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    pTiff = new HTIFFFile (CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pTiff = new HTIFFFile (pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
     if ((pTiff->IsValid(&pErr) || ((pErr != 0) && !pErr->IsFatal())) && (pTiff->IsTiff64() == false))
         {
         // set the result to true, it will be false if an error
@@ -469,35 +468,35 @@ void HRFHMRFile::SaveHmrFile()
                         {
                         // DOCUMENTNAME Tag
                         if (pTag->GetID() == HRFAttributeDocumentName::ATTRIBUTE_ID)
-                            GetFilePtr()->SetField(DOCUMENTNAME, ((HFCPtr<HRFAttributeDocumentName>&)pTag)->GetData().c_str());
+                            GetFilePtr()->SetFieldA(DOCUMENTNAME, (AString(((HFCPtr<HRFAttributeDocumentName>&)pTag)->GetData().c_str()).c_str()));
 
                         // IMAGEDESCRIPTION Tag
                         if (pTag->GetID() == HRFAttributeImageDescription::ATTRIBUTE_ID)
-                            GetFilePtr()->SetField(IMAGEDESCRIPTION, ((HFCPtr<HRFAttributeImageDescription>&)pTag)->GetData().c_str());
+                            GetFilePtr()->SetFieldA(IMAGEDESCRIPTION, AString(((HFCPtr<HRFAttributeImageDescription>&)pTag)->GetData().c_str()).c_str());
 
                         // PAGENAME Tag
                         if (pTag->GetID() == HRFAttributePageName::ATTRIBUTE_ID)
-                            GetFilePtr()->SetField(PAGENAME, ((HFCPtr<HRFAttributePageName>&)pTag)->GetData().c_str());
+                            GetFilePtr()->SetFieldA(PAGENAME, AString(((HFCPtr<HRFAttributePageName>&)pTag)->GetData().c_str()).c_str());
 
                         // SOFTWARE Tag
                         if (pTag->GetID() == HRFAttributeSoftware::ATTRIBUTE_ID)
-                            GetFilePtr()->SetField(SOFTWARE, ((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str());
+                            GetFilePtr()->SetFieldA(SOFTWARE, AString(((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str()).c_str());
 
                         // DATETIME Tag
                         if (pTag->GetID() == HRFAttributeDateTime::ATTRIBUTE_ID)
-                            GetFilePtr()->SetField(DATETIME, ((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str());
+                            GetFilePtr()->SetFieldA(DATETIME, AString(((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str()).c_str());
 
                         // ARTIST Tag
                         if (pTag->GetID() == HRFAttributeArtist::ATTRIBUTE_ID)
-                            GetFilePtr()->SetField(ARTIST, ((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str());
+                            GetFilePtr()->SetFieldA(ARTIST, AString(((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str()).c_str());
 
                         // HOSTCOMPUTER Tag
                         if (pTag->GetID() == HRFAttributeHostComputer::ATTRIBUTE_ID)
-                            GetFilePtr()->SetField(HOSTCOMPUTER, ((HFCPtr<HRFAttributeHostComputer>&)pTag)->GetData().c_str());
+                            GetFilePtr()->SetFieldA(HOSTCOMPUTER, AString(((HFCPtr<HRFAttributeHostComputer>&)pTag)->GetData().c_str()).c_str());
 
                         // INKNAMES Tag
                         if (pTag->GetID() == HRFAttributeInkNames::ATTRIBUTE_ID)
-                            GetFilePtr()->SetField(INKNAMES, ((HFCPtr<HRFAttributeInkNames>&)pTag)->GetData().c_str());
+                            GetFilePtr()->SetFieldA(INKNAMES, AString(((HFCPtr<HRFAttributeInkNames>&)pTag)->GetData().c_str()).c_str());
 
                         // RESOLUTIONUNIT Tag
                         if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
@@ -520,7 +519,7 @@ void HRFHMRFile::SaveHmrFile()
 
                         // COPYRIGHT Tag
                         if (pTag->GetID() == HRFAttributeCopyright::ATTRIBUTE_ID)
-                            GetFilePtr()->SetField(COPYRIGHT, ((HFCPtr<HRFAttributeCopyright>&)pTag)->GetData().c_str());
+                            GetFilePtr()->SetFieldA(COPYRIGHT, AString(((HFCPtr<HRFAttributeCopyright>&)pTag)->GetData().c_str()).c_str());
                         }
 
                     }
@@ -632,7 +631,7 @@ bool HRFHMRFile::Open(bool pi_CreateBigTifFormat)
             // Valid HMR File
             // Check if the HMR Directory is present
             if (!GetFilePtr()->SetDirectory(HTIFFFile::MakeDirectoryID(HTIFFFile::HMR, 0)))  // HMR file is a single page
-                throw HFCFileException(HFC_FILE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                throw HFCFileNotSupportedException(GetURL()->GetURL());
             m_HMRDirDirty = false;
             ReadPrivateDirectory ();
             }
@@ -665,7 +664,7 @@ void HRFHMRFile::CreateDescriptors()
 
         if ((PixelType->GetClassID() != HRPPixelTypeI1R8G8B8::CLASS_ID) &&
             (PixelType->GetClassID() != HRPPixelTypeI8R8G8B8::CLASS_ID))
-            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
 
         //TR #206935 - If a grayscale palette is detected, change the pixel type to grayscale palette.
         if (PixelType->GetClassID() == HRPPixelTypeI8R8G8B8::CLASS_ID)
@@ -951,7 +950,7 @@ HFCPtr<HGF2DTransfoModel> HRFHMRFile::AddHMRInfoToTransfoModel(HFCPtr<HGF2DTrans
         }
 
     // Apply possible scaling and translation factor
-    double Factor(ImagePP::ImageppLib::GetHost().GetImageppLibAdmin()._GetHMRFileFactor());
+    double Factor(ImageppLib::GetHost().GetImageppLibAdmin()._GetHMRFileFactor());
     ((HFCPtr<HGF2DStretch>&)pTransfoModel)->SetXScaling (((HFCPtr<HGF2DStretch>&)pTransfoModel)->GetXScaling () * Factor);
     ((HFCPtr<HGF2DStretch>&)pTransfoModel)->SetYScaling (((HFCPtr<HGF2DStretch>&)pTransfoModel)->GetYScaling () * Factor);
 
@@ -1171,7 +1170,7 @@ void HRFHMRFile::WritePrivateDirectory ()
             char Description[HMR_LgStringDescriptor+1];
             memset (Description, ' ', HMR_LgStringDescriptor);
             Description[HMR_LgStringDescriptor-1] = '\0';
-            GetFilePtr()->SetField(IMAGEDESCRIPTION, Description);
+            GetFilePtr()->SetFieldA(IMAGEDESCRIPTION, Description);
             }
 
         // If directory not present, Add it.
@@ -1182,7 +1181,7 @@ void HRFHMRFile::WritePrivateDirectory ()
         // Tag HMR
         GetFilePtr()->SetField(HMR_VERSION,                m_Version);
         GetFilePtr()->SetField(HMR_PADDING,                m_PaddingLines);
-        GetFilePtr()->SetField(HMR_IMAGECOORDINATESYSTEM,  m_SystemCoord);
+        GetFilePtr()->SetFieldA(HMR_IMAGECOORDINATESYSTEM,  m_SystemCoord);
         GetFilePtr()->SetField(HMR_XORIGIN,                m_OriginX);
         GetFilePtr()->SetField(HMR_YORIGIN,                m_OriginY);
 
@@ -1193,7 +1192,7 @@ void HRFHMRFile::WritePrivateDirectory ()
 
         // DateTime
         GetSystemDateTime (m_HistoDateTime);
-        GetFilePtr()->SetField(HMR_HISTOGRAMDATETIME,  m_HistoDateTime);
+        GetFilePtr()->SetFieldA(HMR_HISTOGRAMDATETIME,  m_HistoDateTime);
 
 
         // logical, transparent and user data tag
@@ -1225,9 +1224,9 @@ void HRFHMRFile::WritePrivateDirectory ()
 
             // Set User data
             if (m_HMRUserDataLength > 0)
-                GetFilePtr()->SetField(HMR_USERDATA, (char*)m_pHMRUserData.get());
+                GetFilePtr()->SetFieldA(HMR_USERDATA, (char*)m_pHMRUserData.get());
             else
-                GetFilePtr()->SetField(HMR_USERDATA, defUserData);
+                GetFilePtr()->SetFieldA(HMR_USERDATA, defUserData);
             }
 
         // Reset Directory
@@ -1322,7 +1321,6 @@ const HGF2DWorldIdentificator HRFHMRFile::GetWorldIdentificator () const
 void HRFHMRFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                uint32_t pi_Page,
                                                bool   pi_CheckSpecificUnitSpec,
-                                               bool   pi_GeoModelDefaultUnit,
                                                bool   pi_InterpretUnitINTGR)
     {
     //The units is implicitly specified in the specification.

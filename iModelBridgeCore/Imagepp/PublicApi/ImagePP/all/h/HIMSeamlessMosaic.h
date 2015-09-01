@@ -11,6 +11,8 @@
 #include "HFCPtr.h"
 #include "HVE2DPolySegment.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HGF2DTransfoModel;
 class HRPPixelType;
 class HGF2DCoordSys;
@@ -105,13 +107,13 @@ public:
 */
 class HIMSeamlessMosaic : public HIMMosaic
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1272)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HIMMosaicId_Seamless)
 
 public:
 
     friend class HIMSeamlessMosaicIterator;
 
-    enum SamplingQuality
+    typedef enum SamplingQuality
         {
         SAMPLING_FAST,
         SAMPLING_NORMAL,
@@ -148,13 +150,12 @@ public:
 
     //:> Overriden from HRARaster
 
-    virtual void    CopyFrom(  const HFCPtr<HRARaster>& pi_pSrcRaster,
-                               const HRACopyFromOptions& pi_rOptions);
+    virtual void    CopyFromLegacy(  const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions);
 
-    virtual void    CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster);
+    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster);
 
     virtual HPMPersistentObject* Clone () const;
-    virtual HRARaster* Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
 
     //:> From HIMMosaic
@@ -209,7 +210,6 @@ public:
     void            UpdateClippingOf(const HFCPtr<HRARaster>& pi_rpImage);
 
 protected:
-
 
 private:
 
@@ -283,9 +283,9 @@ private:
     // The memory manager to give to the blend corridors
     HPMPool*        m_pPool;
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLNone)
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT)
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HIMSeamlessMosaic.hpp"
 

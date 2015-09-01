@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAProduction.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -15,6 +15,8 @@
 //---------------------------------------------------------------------------
 
 #pragma once
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HPARule;
 class HPAGrammarObject;
@@ -77,6 +79,7 @@ inline const HPAProductionList& operator||(const HPAProductionList& pi_rLeft,
 inline const HPAProductionList& operator||(const HPAProductionList& pi_rLeft,
                                            HPAGrammarObject& pi_rRight);
 
+END_IMAGEPP_NAMESPACE
 
 #include "HPAProduction.hpp"
 

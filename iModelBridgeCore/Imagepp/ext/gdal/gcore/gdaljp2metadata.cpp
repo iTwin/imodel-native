@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2metadata.cpp 22650 2011-07-06 00:59:22Z warmerdam $
+ * $Id: gdaljp2metadata.cpp 27182 2014-04-14 20:03:08Z rouault $
  *
  * Project:  GDAL 
  * Purpose:  GDALJP2Metadata - Read GeoTIFF and/or GML georef info.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2005, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,7 +36,7 @@
 #include "ogr_api.h"
 #include "gt_wkt_srs_for_gdal.h"
 
-CPL_CVSID("$Id: gdaljp2metadata.cpp 22650 2011-07-06 00:59:22Z warmerdam $");
+CPL_CVSID("$Id: gdaljp2metadata.cpp 27182 2014-04-14 20:03:08Z rouault $");
 
 static const unsigned char msi_uuid2[16] =
 {0xb1,0x4b,0xf8,0xbd,0x08,0x3d,0x4b,0x43,
@@ -44,6 +45,18 @@ static const unsigned char msi_uuid2[16] =
 static const unsigned char msig_uuid[16] = 
 { 0x96,0xA9,0xF1,0xF1,0xDC,0x98,0x40,0x2D,
   0xA7,0xAE,0xD6,0x8E,0x34,0x45,0x18,0x09 };
+
+static const unsigned char xmp_uuid[16] =
+{ 0xBE,0x7A,0xCF,0xCB,0x97,0xA9,0x42,0xE8,
+  0x9C,0x71,0x99,0x94,0x91,0xE3,0xAF,0xAC};
+
+struct _GDALJP2GeoTIFFBox
+{
+    int    nGeoTIFFSize;
+    GByte  *pabyGeoTIFFData;
+};
+
+#define MAX_JP2GEOTIFF_BOXES 2
 
 /************************************************************************/
 /*                          GDALJP2Metadata()                           */
@@ -58,12 +71,15 @@ GDALJP2Metadata::GDALJP2Metadata()
     pasGCPList = NULL;
 
     papszGMLMetadata = NULL;
+    papszMetadata = NULL;
 
-    nGeoTIFFSize = 0;
-    pabyGeoTIFFData = NULL;
+    nGeoTIFFBoxesCount = 0;
+    pasGeoTIFFBoxes = NULL;
 
     nMSIGSize = 0;
     pabyMSIGData = NULL;
+
+    pszXMPMetadata = NULL;
 
     bHaveGeoTransform = FALSE;
     adfGeoTransform[0] = 0.0;
@@ -72,6 +88,7 @@ GDALJP2Metadata::GDALJP2Metadata()
     adfGeoTransform[3] = 0.0;
     adfGeoTransform[4] = 0.0;
     adfGeoTransform[5] = 1.0;
+    bPixelIsPoint = FALSE;
 }
 
 /************************************************************************/
@@ -88,9 +105,15 @@ GDALJP2Metadata::~GDALJP2Metadata()
         CPLFree( pasGCPList );
     }
 
-    CPLFree( pabyGeoTIFFData );
+    for( int i=0; i < nGeoTIFFBoxesCount; i++ )
+    {
+        CPLFree( pasGeoTIFFBoxes[i].pabyGeoTIFFData );
+    }
+    CPLFree( pasGeoTIFFBoxes );
     CPLFree( pabyMSIGData );
     CSLDestroy( papszGMLMetadata );
+    CSLDestroy( papszMetadata );
+    CPLFree( pszXMPMetadata );
 }
 
 /************************************************************************/
@@ -201,18 +224,47 @@ int GDALJP2Metadata::ReadBoxes( VSILFILE *fpVSIL )
     GDALJP2Box oBox( fpVSIL );
     int iBox = 0;
 
-    oBox.ReadFirst(); 
+    if (!oBox.ReadFirst())
+        return FALSE;
 
     while( strlen(oBox.GetType()) > 0 )
     {
+#ifdef DEBUG
+        if (CSLTestBoolean(CPLGetConfigOption("DUMP_JP2_BOXES", "NO")))
+            oBox.DumpReadable(stderr);
+#endif
+
 /* -------------------------------------------------------------------- */
 /*      Collect geotiff box.                                            */
 /* -------------------------------------------------------------------- */
         if( EQUAL(oBox.GetType(),"uuid") 
             && memcmp( oBox.GetUUID(), msi_uuid2, 16 ) == 0 )
         {
-	    nGeoTIFFSize = (int) oBox.GetDataLength();
-            pabyGeoTIFFData = oBox.ReadBoxData();
+            /* Erdas JPEG2000 files can in some conditions contain 2 GeoTIFF */
+            /* UUID boxes. One that is correct, another one that does not contain */
+            /* correct georeferencing. So let's fetch at most 2 of them */
+            /* for later analysis. */
+            if( nGeoTIFFBoxesCount == MAX_JP2GEOTIFF_BOXES )
+            {
+                CPLDebug("GDALJP2", "Too many UUID GeoTIFF boxes. Ignoring this one");
+            }
+            else
+            {
+                int nGeoTIFFSize = (int) oBox.GetDataLength();
+                GByte* pabyGeoTIFFData = oBox.ReadBoxData();
+                if (pabyGeoTIFFData == NULL)
+                {
+                    CPLDebug("GDALJP2", "Cannot read data for UUID GeoTIFF box");
+                }
+                else
+                {
+                    pasGeoTIFFBoxes = (GDALJP2GeoTIFFBox*) CPLRealloc(
+                        pasGeoTIFFBoxes, sizeof(GDALJP2GeoTIFFBox) * (nGeoTIFFBoxesCount + 1) );
+                    pasGeoTIFFBoxes[nGeoTIFFBoxesCount].nGeoTIFFSize = nGeoTIFFSize;
+                    pasGeoTIFFBoxes[nGeoTIFFBoxesCount].pabyGeoTIFFData = pabyGeoTIFFData;
+                    nGeoTIFFBoxesCount ++;
+                }
+            }
         }
 
 /* -------------------------------------------------------------------- */
@@ -221,15 +273,40 @@ int GDALJP2Metadata::ReadBoxes( VSILFILE *fpVSIL )
         if( EQUAL(oBox.GetType(),"uuid") 
             && memcmp( oBox.GetUUID(), msig_uuid, 16 ) == 0 )
         {
-	    nMSIGSize = (int) oBox.GetDataLength();
-            pabyMSIGData = oBox.ReadBoxData();
-
-            if( nMSIGSize < 70 
-                || memcmp( pabyMSIGData, "MSIG/", 5 ) != 0 )
+            if( nMSIGSize == 0 )
             {
-                CPLFree( pabyMSIGData );
-                pabyMSIGData = NULL;
-                nMSIGSize = 0;
+                nMSIGSize = (int) oBox.GetDataLength();
+                pabyMSIGData = oBox.ReadBoxData();
+
+                if( nMSIGSize < 70
+                    || pabyMSIGData == NULL
+                    || memcmp( pabyMSIGData, "MSIG/", 5 ) != 0 )
+                {
+                    CPLFree( pabyMSIGData );
+                    pabyMSIGData = NULL;
+                    nMSIGSize = 0;
+                }
+            }
+            else
+            {
+                CPLDebug("GDALJP2", "Too many UUID MSIG boxes. Ignoring this one");
+            }
+        }
+
+/* -------------------------------------------------------------------- */
+/*      Collect XMP box.                                                */
+/* -------------------------------------------------------------------- */
+        if( EQUAL(oBox.GetType(),"uuid")
+            && memcmp( oBox.GetUUID(), xmp_uuid, 16 ) == 0 &&
+            pszXMPMetadata == NULL )
+        {
+            if( pszXMPMetadata == NULL )
+            {
+                pszXMPMetadata = (char*) oBox.ReadBoxData();
+            }
+            else
+            {
+                CPLDebug("GDALJP2", "Too many UUID XMP boxes. Ignoring this one");
             }
         }
 
@@ -244,7 +321,7 @@ int GDALJP2Metadata::ReadBoxes( VSILFILE *fpVSIL )
             if( EQUAL(oSubBox.GetType(),"lbl ") )
             {
                 char *pszLabel = (char *) oSubBox.ReadBoxData();
-                if( EQUAL(pszLabel,"gml.data") )
+                if( pszLabel != NULL && EQUAL(pszLabel,"gml.data") )
                 {
                     CollectGMLData( &oBox );
                 }
@@ -286,9 +363,10 @@ int GDALJP2Metadata::ReadBoxes( VSILFILE *fpVSIL )
                     
                     // we will use either the resd or resc box, which ever
                     // happens to be first.  Should we prefer resd?
-                    if( oResBox.GetDataLength() == 10 )
+                    unsigned char *pabyResData = NULL;
+                    if( oResBox.GetDataLength() == 10 &&
+                        (pabyResData = oResBox.ReadBoxData()) != NULL )
                     {
-                        unsigned char *pabyResData = oResBox.ReadBoxData();
                         int nVertNum, nVertDen, nVertExp;
                         int nHorzNum, nHorzDen, nHorzExp;
                         
@@ -306,17 +384,17 @@ int GDALJP2Metadata::ReadBoxes( VSILFILE *fpVSIL )
                             (nHorzNum/(double)nHorzDen) * pow(10.0,nHorzExp)/100;
                         CPLString osFormatter;
 
-                        papszGMLMetadata = CSLSetNameValue( 
-                            papszGMLMetadata, 
+                        papszMetadata = CSLSetNameValue( 
+                            papszMetadata, 
                             "TIFFTAG_XRESOLUTION",
                             osFormatter.Printf("%g",dfHorzRes) );
                         
-                        papszGMLMetadata = CSLSetNameValue( 
-                            papszGMLMetadata, 
+                        papszMetadata = CSLSetNameValue( 
+                            papszMetadata, 
                             "TIFFTAG_YRESOLUTION",
                             osFormatter.Printf("%g",dfVertRes) );
-                        papszGMLMetadata = CSLSetNameValue( 
-                            papszGMLMetadata, 
+                        papszMetadata = CSLSetNameValue( 
+                            papszMetadata, 
                             "TIFFTAG_RESOLUTIONUNIT", 
                             "3 (pixels/cm)" );
                         
@@ -326,9 +404,10 @@ int GDALJP2Metadata::ReadBoxes( VSILFILE *fpVSIL )
             }
         }
 
-        oBox.ReadNext();
+        if (!oBox.ReadNext())
+            break;
     }
-    
+
     return TRUE;
 }
 
@@ -339,38 +418,106 @@ int GDALJP2Metadata::ReadBoxes( VSILFILE *fpVSIL )
 int GDALJP2Metadata::ParseJP2GeoTIFF()
 
 {
-    if( nGeoTIFFSize < 1 )
-        return FALSE;
+    int abValidProjInfo[MAX_JP2GEOTIFF_BOXES] = { FALSE };
+    char* apszProjection[MAX_JP2GEOTIFF_BOXES] = { NULL };
+    double aadfGeoTransform[MAX_JP2GEOTIFF_BOXES][6];
+    int anGCPCount[MAX_JP2GEOTIFF_BOXES] = { 0 };
+    GDAL_GCP    *apasGCPList[MAX_JP2GEOTIFF_BOXES] = { NULL };
+    int abPixelIsPoint[MAX_JP2GEOTIFF_BOXES] = { 0 };
 
-/* -------------------------------------------------------------------- */
-/*      Convert raw data into projection and geotransform.              */
-/* -------------------------------------------------------------------- */
-    int bSuccess = TRUE;
-
-    if( GTIFWktFromMemBuf( nGeoTIFFSize, pabyGeoTIFFData,
-                           &pszProjection, adfGeoTransform,
-                           &nGCPCount, &pasGCPList ) != CE_None )
+    int i;
+    int nMax = MIN(nGeoTIFFBoxesCount, MAX_JP2GEOTIFF_BOXES);
+    for(i=0; i < nMax; i++)
     {
-        bSuccess = FALSE;
+    /* -------------------------------------------------------------------- */
+    /*      Convert raw data into projection and geotransform.              */
+    /* -------------------------------------------------------------------- */
+        aadfGeoTransform[i][0] = 0;
+        aadfGeoTransform[i][1] = 1;
+        aadfGeoTransform[i][2] = 0;
+        aadfGeoTransform[i][3] = 0;
+        aadfGeoTransform[i][4] = 0;
+        aadfGeoTransform[i][5] = 1;
+        if( GTIFWktFromMemBufEx( pasGeoTIFFBoxes[i].nGeoTIFFSize,
+                               pasGeoTIFFBoxes[i].pabyGeoTIFFData,
+                               &apszProjection[i], aadfGeoTransform[i],
+                               &anGCPCount[i], &apasGCPList[i], &abPixelIsPoint[i] ) == CE_None )
+        {
+            if( apszProjection[i] != NULL && strlen(apszProjection[i]) != 0 ) 
+                abValidProjInfo[i] = TRUE;
+        }
     }
 
-    if( pszProjection == NULL || strlen(pszProjection) == 0 )
-        bSuccess = FALSE;
+    /* Detect which box is the better one */
+    int iBestIndex = -1;
+    for(i=0; i < nMax; i++)
+    {
+        if( abValidProjInfo[i] && iBestIndex < 0 )
+        {
+            iBestIndex = i;
+        }
+        else if( abValidProjInfo[i] && apszProjection[i] != NULL )
+        {
+            /* Anything else than a LOCAL_CS will probably be better */
+            if( EQUALN(apszProjection[iBestIndex], "LOCAL_CS", strlen("LOCAL_CS")) )
+                iBestIndex = i;
+        }
+    }
 
-    if( bSuccess )
-        CPLDebug( "GDALJP2Metadata", 
-                  "Got projection from GeoJP2 (geotiff) box: %s", 
-                 pszProjection );
+    if( iBestIndex < 0 )
+    {
+        for(i=0; i < nMax; i++)
+        {
+            if( aadfGeoTransform[i][0] != 0 
+                || aadfGeoTransform[i][1] != 1 
+                || aadfGeoTransform[i][2] != 0
+                || aadfGeoTransform[i][3] != 0 
+                || aadfGeoTransform[i][4] != 0
+                || aadfGeoTransform[i][5] != 1
+                || anGCPCount[i] > 0)
+            {
+                iBestIndex = i;
+            }
+        }
+    }
 
-    if( adfGeoTransform[0] != 0 
-        || adfGeoTransform[1] != 1 
-        || adfGeoTransform[2] != 0
-        || adfGeoTransform[3] != 0 
-        || adfGeoTransform[4] != 0
-        || adfGeoTransform[5] != 1 )
-        bHaveGeoTransform = TRUE;
+    if( iBestIndex >= 0 )
+    {
+        pszProjection = apszProjection[iBestIndex];
+        memcpy(adfGeoTransform, aadfGeoTransform[iBestIndex], 6 * sizeof(double));
+        nGCPCount = anGCPCount[iBestIndex];
+        pasGCPList = apasGCPList[iBestIndex];
+        bPixelIsPoint = abPixelIsPoint[iBestIndex];
 
-    return bSuccess;;
+        if( adfGeoTransform[0] != 0 
+            || adfGeoTransform[1] != 1 
+            || adfGeoTransform[2] != 0
+            || adfGeoTransform[3] != 0 
+            || adfGeoTransform[4] != 0
+            || adfGeoTransform[5] != 1 )
+            bHaveGeoTransform = TRUE;
+
+        if( pszProjection )
+            CPLDebug( "GDALJP2Metadata", 
+                "Got projection from GeoJP2 (geotiff) box (%d): %s", 
+                iBestIndex, pszProjection );
+    }
+
+    /* Cleanup unused boxes */
+    for(i=0; i < nMax; i++)
+    {
+        if( i != iBestIndex )
+        {
+            CPLFree( apszProjection[i] );
+            if( anGCPCount[i] > 0 )
+            {
+                GDALDeinitGCPs( anGCPCount[i], apasGCPList[i] );
+                CPLFree( apasGCPList[i] );
+            }
+        }
+    }
+
+    return iBestIndex >= 0;
 }
 
 /************************************************************************/
@@ -440,7 +587,10 @@ GetDictionaryItem( char **papszGMLMetadata, const char *pszURN )
     for( i = 0; pszLabel[i] != '#'; i++ )
     {
         if( pszLabel[i] == '\0' )
+        {
+            CPLFree(pszLabel);
             return NULL;
+        }
     }
 
     pszFragmentId = pszLabel + i + 1;
@@ -453,7 +603,10 @@ GetDictionaryItem( char **papszGMLMetadata, const char *pszURN )
         CSLFetchNameValue( papszGMLMetadata, pszLabel );
 
     if( pszDictionary == NULL )
+    {
+        CPLFree(pszLabel);
         return NULL;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Try and parse the dictionary.                                   */
@@ -462,7 +615,7 @@ GetDictionaryItem( char **papszGMLMetadata, const char *pszURN )
 
     if( psDictTree == NULL )
     {
-        CPLDestroyXMLNode( psDictTree );
+        CPLFree(pszLabel);
         return NULL;
     }
 
@@ -473,6 +626,7 @@ GetDictionaryItem( char **papszGMLMetadata, const char *pszURN )
     if( psDictRoot == NULL )
     {
         CPLDestroyXMLNode( psDictTree );
+        CPLFree(pszLabel);
         return NULL;
     }
 
@@ -712,12 +866,10 @@ int GDALJP2Metadata::ParseGMLCoverageDesc()
                  && strstr(pszSRSName,":def:") != NULL
                  && oSRS.importFromURN(pszSRSName) == OGRERR_NONE )
         {
-            const char *pszCode = strrchr(pszSRSName,':') + 1;
-
             oSRS.exportToWkt( &pszProjection );
 
             // Per #2131
-            if( atoi(pszCode) >= 4000 && atoi(pszCode) <= 4999 )
+            if( oSRS.EPSGTreatsAsLatLong() || oSRS.EPSGTreatsAsNorthingEasting() )
             {
                 CPLDebug( "GMLJP2", "Request axis flip for SRS=%s",
                           pszSRSName );
@@ -762,13 +914,25 @@ int GDALJP2Metadata::ParseGMLCoverageDesc()
         adfGeoTransform[0] = adfGeoTransform[3];
         adfGeoTransform[3] = dfTemp;
 
+        int swapWith1Index = 4;
+        int swapWith2Index = 5;
+
+        if( CSLTestBoolean( CPLGetConfigOption( "GDAL_JP2K_ALT_OFFSETVECTOR_ORDER",
+                                                "FALSE" ) ) )
+        {
+            swapWith1Index = 5;
+            swapWith2Index = 4;
+            CPLDebug( "GMLJP2", "Choosing alternate GML \"<offsetVector>\" order based on "
+                "GDAL_JP2K_ALT_OFFSETVECTOR_ORDER." );
+        }
+
         dfTemp = adfGeoTransform[1];
-        adfGeoTransform[1] = adfGeoTransform[4];
-        adfGeoTransform[4] = dfTemp;
+        adfGeoTransform[1] = adfGeoTransform[swapWith1Index];
+        adfGeoTransform[swapWith1Index] = dfTemp;
 
         dfTemp = adfGeoTransform[2];
-        adfGeoTransform[2] = adfGeoTransform[5];
-        adfGeoTransform[5] = dfTemp;
+        adfGeoTransform[2] = adfGeoTransform[swapWith2Index];
+        adfGeoTransform[swapWith2Index] = dfTemp;
     }
 
     return pszProjection != NULL && bSuccess;
@@ -826,9 +990,9 @@ GDALJP2Box *GDALJP2Metadata::CreateJP2GeoTIFF()
     int         nGTBufSize = 0;
     unsigned char *pabyGTBuf = NULL;
 
-    if( GTIFMemBufFromWkt( pszProjection, adfGeoTransform, 
-                           nGCPCount, pasGCPList,
-                           &nGTBufSize, &pabyGTBuf ) != CE_None )
+    if( GTIFMemBufFromWktEx( pszProjection, adfGeoTransform, 
+                             nGCPCount, pasGCPList,
+                             &nGTBufSize, &pabyGTBuf, bPixelIsPoint ) != CE_None )
         return NULL;
 
     if( nGTBufSize == 0 )
@@ -968,6 +1132,23 @@ GDALJP2Box *GDALJP2Metadata::CreateGMLJP2( int nXSize, int nYSize )
         adfOrigin[0] = adfOrigin[1];
         adfOrigin[1] = dfTemp;
 
+        if( CSLTestBoolean( CPLGetConfigOption( "GDAL_JP2K_ALT_OFFSETVECTOR_ORDER",
+                                                "FALSE" ) ) )
+        {
+            CPLDebug( "GMLJP2", "Choosing alternate GML \"<offsetVector>\" order based on "
+                "GDAL_JP2K_ALT_OFFSETVECTOR_ORDER." );
+
+            /* In this case the swapping is done in an "X" pattern */
+            dfTemp = adfXVector[0];
+            adfXVector[0] = adfYVector[1];
+            adfYVector[1] = dfTemp;
+
+            dfTemp = adfYVector[0];
+            adfYVector[0] = adfXVector[1];
+            adfXVector[1] = dfTemp;
+        }
+        else
+        {
         dfTemp = adfXVector[0];
         adfXVector[0] = adfXVector[1];
         adfXVector[1] = dfTemp;
@@ -975,6 +1156,7 @@ GDALJP2Box *GDALJP2Metadata::CreateGMLJP2( int nXSize, int nYSize )
         dfTemp = adfYVector[0];
         adfYVector[0] = adfYVector[1];
         adfYVector[1] = dfTemp;
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -986,7 +1168,7 @@ GDALJP2Box *GDALJP2Metadata::CreateGMLJP2( int nXSize, int nYSize )
 "<gml:FeatureCollection\n"
 "   xmlns:gml=\"http://www.opengis.net/gml\"\n"
 "   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
-"   xsi:schemaLocation=\"http://www.opengeospatial.net/gml http://schemas.opengis.net/gml/3.1.1/profiles/gmlJP2Profile/1.0.0/gmlJP2Profile.xsd\">\n"
+"   xsi:schemaLocation=\"http://www.opengis.net/gml http://schemas.opengis.net/gml/3.1.1/profiles/gmlJP2Profile/1.0.0/gmlJP2Profile.xsd\">\n"
 "  <gml:boundedBy>\n"
 "    <gml:Null>withheld</gml:Null>\n"
 "  </gml:boundedBy>\n"

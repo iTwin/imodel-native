@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFAnnotationInfoPDF.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -12,6 +12,7 @@
 
 #include "HGF2DLocation.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HVE2DVector;
 class HRFAnnotationsPDF;
 
@@ -19,7 +20,7 @@ class HRFAnnotationInfoPDF : public HMDAnnotationInfo
     {
     friend class HRFAnnotationsPDF;
 
-    HDECLARE_CLASS_ID(8050, HMDAnnotationInfo);
+    HDECLARE_CLASS_ID(HRFAnnotationsPDFId_Info, HMDAnnotationInfo);
 
 public :
 
@@ -38,9 +39,9 @@ public :
     HRFAnnotationInfoPDF(const HRFAnnotationInfoPDF& pi_rObj);
 
     //Methods returning information about the selection zone
-    _HDLLg const PointCollections& GetSelectZonePoints() const;
-    _HDLLg unsigned short          GetLineWidth() const;
-    _HDLLg bool                    IsFilled() const;
+    IMAGEPP_EXPORT const PointCollections& GetSelectZonePoints() const;
+    IMAGEPP_EXPORT unsigned short          GetLineWidth() const;
+    IMAGEPP_EXPORT bool                    IsFilled() const;
 
 protected:
 
@@ -57,3 +58,4 @@ private :
     bool                              m_IsFilled;
     mutable PointCollections           m_SelectZonePointCollections;
     };
+END_IMAGEPP_NAMESPACE

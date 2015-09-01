@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DCoord.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,6 +13,7 @@
 
 #pragma once
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert
@@ -182,6 +183,9 @@ public:
         return ((pi_CoordinateRef == HGF2DCoord<DataType>::X) ? m_XValue : m_YValue);
         }
 
+
+    DataType CalculateLengthTo(const HGF2DCoord<DataType>& pi_rPoint) const;
+
     void       PrintState(ostream& po_rOutput) const;
 
 protected:
@@ -222,7 +226,7 @@ public:
 #endif
     };
 
-
+END_IMAGEPP_NAMESPACE
 
 #include "HGF2DCoord.hpp"
 

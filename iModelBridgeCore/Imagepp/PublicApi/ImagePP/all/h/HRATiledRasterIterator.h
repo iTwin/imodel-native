@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRATiledRasterIterator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //
@@ -13,10 +13,11 @@
 
 #include "HRARasterIterator.h"
 #include "HGFTileIDDescriptor.h"
-#include "HRAStoredRaster.h"
+#include "HRABitmapBase.h"
 #include "HVETileIDIterator.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRATiledRaster;
 
 // ----------------------------------------------------------------------------
@@ -39,10 +40,8 @@ public:
 
     // Inherited from HRARasterIterator
 
-    virtual const HFCPtr<HRARaster>&
-    Next();
-    virtual const HFCPtr<HRARaster>&
-    operator()();
+    virtual const HFCPtr<HRARaster>& Next();
+    virtual const HFCPtr<HRARaster>& operator()();
 
     virtual void    Reset();
 
@@ -64,15 +63,13 @@ private:
     // Copy of the tileDexription from the Raster
     HGFTileIDDescriptor m_TileDescription;
 
-    HFCPtr<HRAStoredRaster>
-    m_pCurrentTile;
+    HFCPtr<HRABitmapBase> m_pCurrentTile;
 
     // Methods
-
     void                PrepareCurrentTile  ();
     void                SearchNextIndex     (bool pi_FirstCall=false);
-
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRATiledRasterIterator.hpp"
 

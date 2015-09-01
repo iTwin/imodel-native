@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCHTTPConnection.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCHTTPConnection
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCHTTPConnection.h>
 #include <Imagepp/all/h/HFCURLHTTPS.h>
@@ -227,7 +227,7 @@ static const time_t s_SleepTime = 100;
 // This thread will perform the OpenURL which will request the data from the
 // server
 //-----------------------------------------------------------------------------
-class HTTPThread : public HFCThread
+class ImagePP::HTTPThread : public HFCThread
     {
 public:
     //--------------------------------------
@@ -318,7 +318,7 @@ HFCHTTPConnection::HFCHTTPConnection(const WString&     pi_rServer,
     m_HTTPEvent(true, false),
     m_Buffer(s_GrowSize, s_MaxSize)
     {
-    m_hConnection = NULL;
+    m_hConnection = 0;
 
     m_pURL = (HFCURLCommonInternet*)HFCURL::Instanciate(pi_rServer);
     m_SecureConnection = m_pURL->IsCompatibleWith(HFCURLHTTPS::CLASS_ID);
@@ -507,7 +507,7 @@ void HFCHTTPConnection::Receive(Byte* po_pData, size_t* pio_pDataSize)
     if ((DataAvailable = WaitDataAvailable()) > 0)
         {
         // Compute the size of the data to copy
-        *pio_pDataSize = min(DataAvailable, *pio_pDataSize);
+        *pio_pDataSize = MIN(DataAvailable, *pio_pDataSize);
 
         // Copy the data into the output buffer
         HFCMonitor BufferMonitor(m_BufferKey);
@@ -529,7 +529,7 @@ bool HFCHTTPConnection::Connect(const WString& pi_rUserName,
                                  const WString& pi_rPassword,
                                  time_t         pi_TimeOut)
     {
-    HPRECONDITION(m_hConnection == NULL);
+    HPRECONDITION(m_hConnection == 0);
     HPRECONDITION(pi_TimeOut > 0);
     bool Result = false;
 
@@ -613,7 +613,7 @@ void HFCHTTPConnection::Disconnect()
 #elif defined (_WIN32)
     // close the internet session
     InternetCloseHandle((HINTERNET)m_hConnection);
-    m_hConnection = NULL;
+    m_hConnection = 0;
 #endif
 
     // Stop the HTTP thread

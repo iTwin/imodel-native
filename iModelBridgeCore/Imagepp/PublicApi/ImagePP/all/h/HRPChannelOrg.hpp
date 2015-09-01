@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPChannelOrg.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRPChannelOrg
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // Returns the number of channels defined in this pixel type.
 //-----------------------------------------------------------------------------
@@ -61,3 +62,4 @@ inline uint32_t HRPChannelOrg::CountPixelCompositeValueBits() const
     return m_PixelCompositeValueBits;
     }
 
+END_IMAGEPP_NAMESPACE

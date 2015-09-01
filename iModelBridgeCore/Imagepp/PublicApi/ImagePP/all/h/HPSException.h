@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSException.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -12,88 +12,138 @@
 // Implementation of the exception classes.  The exception hierarchy look
 // like this:
 //
-//  HFCException
-//      HPSException                    (Info struct : -)
-//            HPSTypeMismatchException    (Info struct : HPSTypeMismatchExInfo)
-//            HPSOutOfRangeException        (Info struct : HPSOutOfRangeExInfo)
-//            HPSAlreadyDefinedException    (Info struct : HPSAlreadyDefinedExInfo)
+//  HFCException ABSTRACT
+//      HPSException ABSTRACT                   
+//            HPSTypeMismatchException  
+//            HPSOutOfRangeException    
+//            HPSAlreadyDefinedException
+//            HPSIncludeNotFoundException
+//            HPSInvalidObjectException
+//            HPSQualigierExpectedException
+//            HPSExpressionExpectedException
+//            HPSInvalidNumericException
+//            HPSInvalidUrlException
+//            HPSFileNotFoundException
+//            HPSNoImageInFileException
+//            HPSAlphaPaletteNotSupportedException
+//            HPSInvalidWorldException
+//            HPSTooFewParamException
+//            HPSTooManyParamException
+//            HPSTransfoParameterInvalidException
+//            HPSImageHasNoSizeException
+//            HPSInvalidCoordsException
+//            HPSPageNotFoundException
+//            HPSInvalidCPolygonException
+//            HPSShapeExpectedException
+//            HPSWorldAlreadyUsedException
+//            HPSTranslucentInfoNotFoundException
 //----------------------------------------------------------------------------
 #pragma once
 
 #include <Imagepp/all/h/HPAException.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 //----------------------------------------------------------------------------
-// Class HPSException
+// Class HPSException ABSTRACT
 //----------------------------------------------------------------------------
-class HPSException : public HPAException
+class HPSException : public HPAException 
     {
-    HDECLARE_CLASS_ID(6220, HPAException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
-
 public:
-    // Primary methods.
-    // Contructor and destructor.
-    HPSException(HFCPtr<HPANode>   pi_pOffendingNode);
-
-    HPSException(ExceptionID       pi_ExceptionID,
-                 HFCPtr<HPANode>   pi_pOffendingNode,
-                 bool               pi_CreateExInfo = true);
     virtual        ~HPSException();
-    HPSException& operator=(const HPSException& pi_rObj);
-    HPSException(const HPSException& pi_rObj);
+protected:
+    //Those constructors are protected to make sure we always throw a specific exception and don't lose type information
+    HPSException(HFCPtr<HPANode>   pi_pOffendingNode);
+    HPSException                   (const HPSException&     pi_rObj);
+    virtual WString _BuildMessage(const ImagePPExceptions::StringId& pi_rsID) const override;
     };
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                                   Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+template<ImagePPExceptions::StringId (*GetStringId)()>
+class HPSException_T : public HPSException
+{
+public:
+    HPSException_T(HFCPtr<HPANode>  pi_rpOffendingNode) : HPSException(pi_rpOffendingNode){}
+    HPSException_T (const HPSException_T& pi_rObj) : HPSException(pi_rObj){} 
+    virtual HFCException* Clone() const override {return new HPSException_T(*this);}
+    virtual void ThrowMyself() const override {throw *this;} 
+    virtual WString GetExceptionMessage()const override
+        {
+        return HPSException::_BuildMessage(GetStringId());
+        }
+};
+typedef HPSException_T<ImagePPExceptions::HPSIncludeNotFound> HPSIncludeNotFoundException;
+typedef HPSException_T<ImagePPExceptions::HPSInvalidObject> HPSInvalidObjectException;
+typedef HPSException_T<ImagePPExceptions::HPSQualifierExpected> HPSQualifierExpectedException;
+typedef HPSException_T<ImagePPExceptions::HPSExpressionExpected> HPSExpressionExpectedException;
+typedef HPSException_T<ImagePPExceptions::HPSInvalidNumeric> HPSInvalidNumericException;
+typedef HPSException_T<ImagePPExceptions::HPSInvalidUrl> HPSInvalidUrlException;
+typedef HPSException_T<ImagePPExceptions::HPSFileNotFound> HPSFileNotFoundException;
+typedef HPSException_T<ImagePPExceptions::HPSNoImageInFile> HPSNoImageInFileException;
+typedef HPSException_T<ImagePPExceptions::HPSAlphaPaletteNotSupported> HPSAlphaPaletteNotSupportedException;
+typedef HPSException_T<ImagePPExceptions::HPSInvalidWorld> HPSInvalidWorldException;
+typedef HPSException_T<ImagePPExceptions::HPSTooFewParam> HPSTooFewParamException;
+typedef HPSException_T<ImagePPExceptions::HPSTooManyParam> HPSTooManyParamException;
+typedef HPSException_T<ImagePPExceptions::HPSTransfoParameterInvalid> HPSTransfoParameterInvalidException;
+typedef HPSException_T<ImagePPExceptions::HPSImageHasNoSize> HPSImageHasNoSizeException;
+typedef HPSException_T<ImagePPExceptions::HPSInvalidCoord> HPSInvalidCoordsException;
+typedef HPSException_T<ImagePPExceptions::HPSPageNotFound> HPSPageNotFoundException;
+typedef HPSException_T<ImagePPExceptions::HPSInvalidPolygon> HPSInvalidCPolygonException;
+typedef HPSException_T<ImagePPExceptions::HPSShapeExpected> HPSShapeExpectedException;
+typedef HPSException_T<ImagePPExceptions::HPSWorldAlreadyUsed> HPSWorldAlreadyUsedException;
+typedef HPSException_T<ImagePPExceptions::HPSTranslucentInfoNotFound> HPSTranslucentInfoNotFoundException;
 
 //----------------------------------------------------------------------------
 // Class HPSTypeMismatchException
 //----------------------------------------------------------------------------
-class HPSTypeMismatchException  : public HPSException
-    {
-    HDECLARE_CLASS_ID(6221, HPSException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
-
+class HPSTypeMismatchException : public HPSException 
+{
 public:
-
     enum ExpectedType
         {
         STRING,
         NUMBER,
         OBJECT,
+        IMAGE,
+        TRANSFO,
+        WORLD,
+        COLOR_SET,
         OBJECT_OR_NUMBER,
-        INTEGER
+        IMAGE_CONTEXT,
+        FILTER,
+        INTEGER,
+        QUALIFIER
         };
 
-    // Primary methods.
-    // Contructor and destructor.
-    HPSTypeMismatchException(HFCPtr<HPANode>    pi_pOffendingNode,
-                             ExpectedType        pi_ExpectedType);
-
-    HPSTypeMismatchException(ExceptionID        pi_ExceptionID,
-                             HFCPtr<HPANode>    pi_pOffendingNode,
-                             ExpectedType        pi_ExpectedType);
+    HPSTypeMismatchException(HFCPtr<HPANode>    pi_pOffendingNode, ExpectedType        pi_ExpectedType);
     virtual        ~HPSTypeMismatchException();
-    HPSTypeMismatchException& operator=(const HPSTypeMismatchException& pi_rObj);
-    HPSTypeMismatchException(const HPSTypeMismatchException& pi_rObj);
-    };
-
+    const ExpectedType    GetExpectedType                        () const;
+    HPSTypeMismatchException                   (const HPSTypeMismatchException&     pi_rObj);
+    virtual HFCException* Clone() const override; 
+    virtual WString GetExceptionMessage() const override;
+    virtual void ThrowMyself() const override {throw *this;} 
+protected: 
+    ExpectedType m_ExpectedType;
+};
 
 //----------------------------------------------------------------------------
 // Class HPSOutOfRangeException
 //----------------------------------------------------------------------------
 class HPSOutOfRangeException : public HPSException
     {
-    HDECLARE_CLASS_ID(6222, HPSException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
-
 public:
-
-    // Primary methods.
-    // Contructor and destructor.
-    HPSOutOfRangeException(HFCPtr<HPANode>         pi_pOffendingNode,
-                           double                pi_Lower,
+    HPSOutOfRangeException(HFCPtr<HPANode>         pi_pOffendingNode, double                pi_Lower,
                            double              pi_Upper);
     virtual        ~HPSOutOfRangeException();
-    HPSOutOfRangeException& operator=(const HPSOutOfRangeException& pi_rObj);
-    HPSOutOfRangeException(const HPSOutOfRangeException& pi_rObj);
+    const double    GetLower                        () const;
+    const double    GetUpper                        () const;
+    HPSOutOfRangeException                   (const HPSOutOfRangeException&     pi_rObj); 
+    virtual WString GetExceptionMessage() const override;
+    virtual HFCException* Clone() const override; 
+    virtual void ThrowMyself() const override {throw *this;} 
+    protected:
+    double         m_Lower;
+    double         m_Upper;
     };
 
 //----------------------------------------------------------------------------
@@ -101,17 +151,16 @@ public:
 //----------------------------------------------------------------------------
 class HPSAlreadyDefinedException : public HPSException
     {
-    HDECLARE_CLASS_ID(6223, HPSException)
-    HFC_DECLARE_COMMON_EXCEPTION_FNC()
-
 public:
-
-    // Primary methods.
-    // Contructor and destructor.
-    HPSAlreadyDefinedException(HFCPtr<HPANode>        pi_pOffendingNode,
-                               const WString&       pi_rName);
+    HPSAlreadyDefinedException(HFCPtr<HPANode>        pi_pOffendingNode, const WString&       pi_rName);
     virtual        ~HPSAlreadyDefinedException();
-    HPSAlreadyDefinedException& operator=(const HPSAlreadyDefinedException& pi_rObj);
-    HPSAlreadyDefinedException(const HPSAlreadyDefinedException& pi_rObj);
+    WStringCR    GetName                        () const;
+    HPSAlreadyDefinedException                   (const HPSAlreadyDefinedException&     pi_rObj); 
+    virtual WString GetExceptionMessage() const override;
+    virtual HFCException* Clone() const override; 
+    virtual void ThrowMyself() const override {throw *this;} 
+    protected :
+    WString         m_Name;   
     };
 
+END_IMAGEPP_NAMESPACE

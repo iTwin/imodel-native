@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMStripAdapterIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HIMStripAdapterIterator
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HIMStripAdapterIterator.h>
 
@@ -20,6 +20,9 @@
 #include <Imagepp/all/h/HGF2DStretch.h>
 #include <Imagepp/all/h/HIMStripProgressIndicator.h>
 #include <Imagepp/all/h/HRACopyFromOptions.h>
+#include <Imagepp/all/h/HRABitmap.h>
+#include <Imagepp/all/h/HVEShape.h>
+#include <Imagepp/all/h/HIMStripAdapter.h>
 
 
 //-----------------------------------------------------------------------------
@@ -71,7 +74,7 @@ const HFCPtr<HRARaster>& HIMStripAdapterIterator::Next()
 const HFCPtr<HRARaster>& HIMStripAdapterIterator::operator()()
     {
     // return the current raster
-    return m_pRasterToReturn;
+    return (HFCPtr<HRARaster>&)m_pRasterToReturn;
     }
 
 
@@ -159,13 +162,13 @@ void HIMStripAdapterIterator::InitObject()
 
         // Be sure the given strip height fit into the pStripAdapter allocated memory.
         HASSERT( m_StripWidth  <= m_StripWidth);
-        HASSERT( m_StripHeight <= min(pStripAdapter->GetMaxSizeInBytes() / BytesPerLine, (uint32_t)Grid.GetHeight()));
+        HASSERT( m_StripHeight <= MIN(pStripAdapter->GetMaxSizeInBytes() / BytesPerLine, (uint32_t)Grid.GetHeight()));
         }
     else
         {
         // Compute the height of a strip if none have been specified at
         // the HIMStripAdapter construction.
-        m_StripHeight = (uint32_t)max(min(pStripAdapter->GetMaxSizeInBytes() / BytesPerLine, (uint32_t)Grid.GetHeight()), 1.0);
+        m_StripHeight = (uint32_t)MAX(MIN(pStripAdapter->GetMaxSizeInBytes() / BytesPerLine, (uint32_t)Grid.GetHeight()), 1.0);
         }
 
     // compute the number of strips
@@ -199,7 +202,7 @@ void HIMStripAdapterIterator::ComputeStrip()
                             m_pResolutionPhysicalCoordSys);
 
         // create the current strip from the example
-        HFCPtr<HRABitmap> pBitmap((HRABitmap*) pStripAdapter->GetInputBitmapExample()->Clone(0));
+        HFCPtr<HRABitmap> pBitmap(static_cast<HRABitmap*>(pStripAdapter->GetInputBitmapExample()->Clone(0).GetPtr()));
         HASSERT(pBitmap != 0);
 
         pBitmap->SetTransfoModel(HGF2DIdentity(), m_pResolutionPhysicalCoordSys);
@@ -216,7 +219,7 @@ void HIMStripAdapterIterator::ComputeStrip()
             pStripAdapter->SetLookAhead(Extent, false);
 
         HRACopyFromOptions Options(true);
-        pBitmap->CopyFrom(pStripAdapter->GetSource(), Options);
+        pBitmap->CopyFrom(*pStripAdapter->GetSource(), Options);
 
         if (((HFCPtr<HIMStripAdapter>&)GetRaster())->m_ApplyClipping)
             {
@@ -227,7 +230,7 @@ void HIMStripAdapterIterator::ComputeStrip()
             }
 
         // Set the shape of the raster over the strip
-        m_pRasterToReturn = (HFCPtr<HRARaster>&) pBitmap;
+        m_pRasterToReturn = pBitmap;
         }
     else
         {

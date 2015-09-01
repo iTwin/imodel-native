@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLFile.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLFile
@@ -11,6 +11,7 @@
 
 #include <Imagepp/all/h/HFCURL.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 //:> URL specification at this level is:
 //:> file:{//host/[path] | [//]drive/[path] | [//]relpath}
 
@@ -43,7 +44,7 @@ class HFCURLFile : public HFCURL
     {
 public:
 
-    HDECLARE_CLASS_ID(1302, HFCURL);
+    HDECLARE_CLASS_ID(HFCURLId_File, HFCURL);
 
     // Define the Scheme label
     static const WString& s_SchemeName()
@@ -54,20 +55,20 @@ public:
 
     //:> Primary methods
 
-    _HDLLu                         HFCURLFile(const WString& pi_URL);
-    _HDLLu                         HFCURLFile(const WString& pi_Host,
+    IMAGEPP_EXPORT                         HFCURLFile(const WString& pi_URL);
+    IMAGEPP_EXPORT                         HFCURLFile(const WString& pi_Host,
                                               const WString& pi_Path);
     HFCURLFile() { } //:> required for persistence
-    _HDLLu virtual                 ~HFCURLFile();
+    IMAGEPP_EXPORT virtual                 ~HFCURLFile();
 
     //:> Content access methods
 
-    _HDLLu virtual WString          GetURL() const;
-    _HDLLu const WString&           GetHost() const;
-    _HDLLu const WString&           GetPath() const;
-    _HDLLu WString                  GetFilename() const;
-    _HDLLu WString                  GetAbsoluteFileName() const;
-    _HDLLu WString                  GetExtension() const;
+    IMAGEPP_EXPORT virtual WString          GetURL() const;
+    IMAGEPP_EXPORT const WString&           GetHost() const;
+    IMAGEPP_EXPORT const WString&           GetPath() const;
+    IMAGEPP_EXPORT WString                  GetFilename() const;
+    IMAGEPP_EXPORT WString                  GetAbsoluteFileName() const;
+    IMAGEPP_EXPORT WString                  GetExtension() const;
 
     //:> Overriden methods, used in relative path management
 
@@ -77,8 +78,8 @@ public:
 
     //:> Utility methods
 
-    _HDLLu bool             CreatePath();
-    _HDLLu void             SetFileName(const WString& pi_rFileName);
+    IMAGEPP_EXPORT bool             CreatePath();
+    IMAGEPP_EXPORT void             SetFileName(const WString& pi_rFileName);
 
 
 #ifdef __HMR_DEBUG_MEMBER
@@ -103,5 +104,5 @@ private:
 
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HFCURLFile.hpp"

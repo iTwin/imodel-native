@@ -8,8 +8,8 @@
 // Methods for class HTIFFFilePrint
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HTIFFFile.h>
 #include <ImagePP/all/h/HTIFFTag.h>
@@ -17,7 +17,7 @@
 #include <Imagepp/all/h/HTIFFUtils.h>
 #include <Imagepp/all/h/HTIFFDirectory.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 static void s_PrintAscii    (FILE* po_pOutput, const char* pi_pCar, int32_t pi_NbCars = -1);
 static void s_PrintAsciiTag (FILE* po_pOutput, const char* pi_pTagName, const char* pi_pString);
@@ -40,19 +40,19 @@ public:
 
     void operator() (const double pi_rValue)
         {
-        fprintf(m_pOutputFile, "%8.6lf%s", pi_rValue, AString(m_Separator).c_str());
+        fprintf(m_pOutputFile, "%8.6lf%ls", pi_rValue, m_Separator);
         }
     void operator() (const float pi_rValue)
         {
-        fprintf(m_pOutputFile, "%8.6f%s", pi_rValue, AString(m_Separator).c_str());
+        fprintf(m_pOutputFile, "%8.6f%ls", pi_rValue, m_Separator);
         }
     void operator() (const unsigned short pi_rValue)
         {
-        fprintf(m_pOutputFile, "%u%s", pi_rValue, AString(m_Separator).c_str());
+        fprintf(m_pOutputFile, "%u%ls", pi_rValue, m_Separator);
         }
     void operator() (const uint32_t pi_rValue)
         {
-        fprintf(m_pOutputFile, "%u%s", pi_rValue, AString(m_Separator).c_str());
+        fprintf(m_pOutputFile, "%u%ls", pi_rValue, m_Separator);
         }
 
     // Add more types here as needed...
@@ -271,6 +271,10 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
                 fprintf(po_pOutput, "Deflate\n");
                 break;
 
+            case COMPRESSION_ADOBE_DEFLATE:
+                fprintf(po_pOutput, "Deflate (Adobe)\n");
+                break;
+                
             case COMPRESSION_HMR_FLASHPIX:
                 fprintf(po_pOutput, "FLASHPIX-JPEG (HMR)\n");
                 break;
@@ -307,35 +311,30 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
     if (m_pCurDir->TagIsPresent(EXTRASAMPLES))
         {
-        unsigned short**  ppExtraSample = new unsigned short*;
-        uint32_t*    NbSample      = new uint32_t[1];
-        NbSample[0] = 1;
+        unsigned short*   pExtraSample;
+        uint32_t    NbSample;
 
-        *ppExtraSample = new unsigned short[1];
-        GetField(EXTRASAMPLES, NbSample, ppExtraSample);
+        GetField(EXTRASAMPLES, &NbSample, &pExtraSample);
 
-        fprintf(po_pOutput, "  Extra Samples: %u<", **ppExtraSample);
-
-//     for (i = 0; i < td->td_extrasamples; i++)
-//     {
-
-        // For now we take only handel 1 extra sample.
-        switch (**ppExtraSample)
+        fprintf(po_pOutput, "  Extra Samples: %u :\n", NbSample);
+        for (uint32_t i = 0; i < NbSample; ++i)
             {
-                // Extra sample contain alpha value.
-            case EXTRASAMPLE_UNASSALPHA:
-                fprintf(po_pOutput, " unassoc-alpha\n");
-                break;
-                // Extra sample contain pre-multiplied alpha value.
-            case EXTRASAMPLE_ASSOCALPHA:
-                fprintf(po_pOutput, " assoc-alpha(premultiplied)\n");
-                break;
-                // Extra sample does not contain alpha value .
-            case EXTRASAMPLE_UNSPECIFIED:
-                fprintf(po_pOutput, " unspecified\n");
-                break;
+            switch (pExtraSample[i])
+                {
+                    // Extra sample contain alpha value.
+                case EXTRASAMPLE_UNASSALPHA:
+                    fprintf(po_pOutput, "      unassoc-alpha\n");
+                    break;
+                    // Extra sample contain pre-multiplied alpha value.
+                case EXTRASAMPLE_ASSOCALPHA:
+                    fprintf(po_pOutput, "      assoc-alpha(premultiplied)\n");
+                    break;
+                    // Extra sample does not contain alpha value .
+                case EXTRASAMPLE_UNSPECIFIED:
+                    fprintf(po_pOutput, "      unspecified\n");
+                    break;
+                }
             }
-//      }
         }
 
     if (m_pCurDir->TagIsPresent(INKSET))
@@ -726,6 +725,13 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
         fputc('\n', po_pOutput);
         }
 
+    if (m_pCurDir->TagIsPresent(GDALNODATA)) 
+        {
+        GetField (GDALNODATA, &pValC);
+
+        s_PrintAsciiTag(po_pOutput, GetTagNameString(GDALNODATA), pValC);
+        }
+
     /*
     ** GeoTiff
     */
@@ -950,7 +956,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
             fprintf(po_pOutput, "  %s : \n", GetTagNameString(HMR2_ONDEMANDRASTERS_INFO));
             HAutoPtr<char> pTempBuffer(new char[NbBytes + 1]);
 
-            BeStringUtilities::Memcpy((void*)pTempBuffer.get(), NbBytes, pBytes, NbBytes);
+            BeStringUtilities::Memcpy(pTempBuffer.get(), NbBytes, pBytes, NbBytes);
 
             pTempBuffer.get()[NbBytes] = '\0';
 
@@ -1110,7 +1116,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
             for (size_t i=0; i<ValL;)
                 {
-                fprintf (po_pOutput, " [%3llu] ", (uint64_t)i);
+                fprintf (po_pOutput, " [%3ld] ", (long)i);
                 for (size_t j=0; (j<8) && (i<ValL); j++, i++)
                     fprintf (po_pOutput, "%8u ", pVal[i]);
                 fprintf (po_pOutput, "\n");
@@ -2809,7 +2815,7 @@ void HTIFFFile::PrintEXIFTags(uint32_t pi_PageDirInd,
                                                  ConvRationalToDblVals);
 
         fprintf(po_pOutput,
-                "  %s: %.2f\n",
+                "  %s: %.2lf\n",
                 pDirToSearch->GetTagNameString(EXIF_EXPOSUREINDEX),
                 ConvRationalToDblVals[0]);
         }

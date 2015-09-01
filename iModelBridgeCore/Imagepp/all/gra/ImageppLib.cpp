@@ -2,16 +2,16 @@
 |
 |     $Source: all/gra/ImageppLib.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <ImagePP/all/h/ImageppLib.h>
 
 #include <ImagePP/all/h/HFCRasterGeoCoordinateServices.h>
 
-USING_NAMESPACE_IMAGEPP
+#include <ImagePP/all/h/HFCStat.h>
 
 #define RUNONCE_CHECK(var) {if (var) return; var=true;}
 #define TERMINATE_HOST_OBJECT(obj, isProgramExit) {if (obj) {obj->OnHostTermination(isProgramExit); obj = NULL;}}
@@ -179,6 +179,8 @@ void ImageppLib::Host::Initialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ImageppLib::Host::Terminate(bool onProgramExit)
     {
+    ImagePPHostCriticalSection __Serialize__;
+
     if (NULL == t_ImageppLibHost)
         return;
 
@@ -203,8 +205,19 @@ void ImageppLib::Host::Terminate(bool onProgramExit)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void     staticInitialize ()
     {
-    static bool s_onetime;
-    RUNONCE_CHECK(s_onetime);
+    static bool s_onetime = false;
+
+    if(!s_onetime)
+        {
+        //These HFCStat are always present
+        //Other specific implementation will be registered by
+        //corresponding creator, e.g.:ECWP, ECWPS and InternetImaging file.
+        HFCStatHttpFile::Register();
+        HFCStatFile::Register();
+        HFCStatMemFile::Register();
+        HFCStatEmbedFile::Register();
+        s_onetime = true;
+        }
     }
 
 
@@ -213,6 +226,8 @@ static void     staticInitialize ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ImageppLib::Initialize(ImageppLib::Host& host)
     {
+    ImagePPHostCriticalSection __Serialize__;
+
     BeAssert (NULL == t_ImageppLibHost);  // cannot be called twice on the same thread
     if (NULL != t_ImageppLibHost)
         return;
@@ -228,6 +243,8 @@ void ImageppLib::Initialize(ImageppLib::Host& host)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ImageppLib::IsInitialized ()
     {
+    ImagePPHostCriticalSection __Serialize__;
+
     return NULL != t_ImageppLibHost;
     }
 
@@ -236,6 +253,8 @@ bool ImageppLib::IsInitialized ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImageppLib::Host& ImageppLib::GetHost() 
     {
+    ImagePPHostCriticalSection __Serialize__;
+
     BeAssert (IsInitialized() && L"ImageppLib library needs to be initialize!");  
     return *t_ImageppLibHost;
     }
@@ -249,7 +268,7 @@ ImageppLib::Host& ImageppLib::GetHost()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IRasterGeoCoordinateServices* ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl()
     {
-    return ImagePP::HFCRasterGeoCoordinateServices::GetInstance();
+    return HFCRasterGeoCoordinateServices::GetInstance();
     }
 
 

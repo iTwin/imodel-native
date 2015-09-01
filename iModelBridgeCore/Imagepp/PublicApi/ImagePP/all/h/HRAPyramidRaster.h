@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAPyramidRaster.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAPyramidRaster
@@ -16,32 +16,27 @@
 #include "HGF2DGrid.h"
 #include "HGSTypes.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HIMOnDemandMosaic;
 class HRABitmapBase;
 class HRAPyramidRasterIterator;
 class HRSObjectStore;
 class HRABitmapBase;
 class HRAClearOptions;
+class HRABitmap;
+class HRATiledRaster;
 
 class HRAPyramidRaster : public HRAStoredRaster
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1041)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRAPyramidRasterId)
 
     friend class HIMOnDemandMosaic;
     friend class HRAPyramidRasterIterator;
     friend class HRSObjectStore;
 
-    //Data and objects used for drawing. Can be precomputed during the PreDraw call.
-    struct DrawingData
-        {
-    public :
-
-        unsigned short m_ResolutionIndex;
-        };
-
 public:
 
-    // Used by the constructor, to discribe each sub-images.
+    // Used by the constructor, to describe each sub-images.
     class SubImageDescription
         {
     public:
@@ -62,29 +57,27 @@ public:
         bool               ResolutionComputed;
         double             Resolution;
 
-        bool               UseDimension;   // true must have this dimension
-        uint32_t            DimX;           // Use to synchronise with a file
+        bool                 UseDimension;   // true must have this dimension
+        uint32_t            DimX;           // Use to synchronize with a file
         uint32_t            DimY;
         uint32_t            DimBlockX;
         uint32_t            DimBlockY;
-        HGSResampling::ResamplingMethod
-        ResamplingType;
-        HFCPtr<HRAStoredRaster>
-        pRasterModel;
+        HGSResampling::ResamplingMethod ResamplingType;
+        HFCPtr<HRATiledRaster> pTiledRaster;
         };
 
 
     // Primary methods
 
     HRAPyramidRaster ();
-    _HDLLg /*IppImaging_Needs*/  HRAPyramidRaster (HFCPtr<HRAStoredRaster>& pi_pRasterModel,
+    IMAGEPP_EXPORT /*IppImaging_Needs*/  HRAPyramidRaster (HFCPtr<HRATiledRaster>& pi_pRasterModel,
                                                   uint64_t                pi_WidthPixels,
                                                   uint64_t                pi_HeightPixels,
                                                   SubImageDescription*     pi_pSubImageDesc,
                                                   unsigned short          pi_NumberOfSubImage,
                                                   HPMObjectStore*          pi_pStore=0,
                                                   HPMPool*                 pi_pLog=0,
-                                                  HFCPtr<HRAStoredRaster>  pi_pMainImageRasterModel = 0,
+                                                  HFCPtr<HRATiledRaster>  pi_pMainImageRasterModel = 0,
                                                   bool                    pi_DisableTileStatus = false);   // Optimization if Raster ReadOnly
 
 
@@ -96,9 +89,6 @@ public:
 
 
     // Overriden from HRAStoredRaster
-
-    virtual const void*
-    GetRawDataPtr () const;
 
     virtual HRARasterIterator*
     CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
@@ -130,11 +120,7 @@ public:
 
     virtual HPMPersistentObject* Clone () const;
 
-    virtual HRARaster*
-    Clone (HPMObjectStore* pi_pStore,
-           HPMPool*        pi_pLog=0) const;
-
-    virtual void    Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
     virtual bool   HasSinglePixelType  () const;
 
@@ -143,7 +129,7 @@ public:
     // Include the main image.
     virtual unsigned short CountSubImages              () const;
     virtual double GetSubImagesResolution      (unsigned short pi_SubImageIndex) const;
-    _HDLLg    HGSResampling::ResamplingMethod
+    IMAGEPP_EXPORT    HGSResampling::ResamplingMethod
     GetResamplingForSubResolution(int32_t pi_SubImageIndex = -1) const;
     virtual bool   SetResamplingForSubResolution(const HGSResampling::ResamplingMethod pi_ResamplingType,
                                                   bool                                 pi_RecomputeSubResolution = false,
@@ -151,7 +137,7 @@ public:
     void            UpdateNextRes               (int32_t pi_SubResolution,
                                                  uint64_t pi_TileIndex,
                                                  HRABitmapBase* pi_pTile);
-    _HDLLg void     UpdateSubResolution         (int32_t           pi_SubResolution = -1,
+    IMAGEPP_EXPORT void     UpdateSubResolution         (int32_t           pi_SubResolution = -1,
                                                  const HGF2DExtent* pi_pExtent=0);
 
     uint64_t       GetNbSubResTilesToUpdate(unsigned short pi_ResIndex, HGF2DExtent& pi_rSurfaceExtent);
@@ -160,11 +146,9 @@ public:
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
 
     // CopyFrom methods
-    virtual void    CopyFrom   (const HFCPtr<HRARaster>& pi_rpSrcRaster,
-                                const HRACopyFromOptions& pi_rOptions);
-    virtual void    CopyFrom   (const HFCPtr<HRARaster>& pi_rpSrcRaster);
+    virtual void    CopyFromLegacy   (const HFCPtr<HRARaster>& pi_rpSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions);
+    virtual void    CopyFromLegacy   (const HFCPtr<HRARaster>& pi_rpSrcRaster);
 
-    virtual void    PreDraw       (HRADrawOptions* pi_pOptions);
 
     virtual void    SetContext(const HFCPtr<HMDContext>& pi_rpContext);
 
@@ -193,13 +177,19 @@ public:
 
     // STx: Think of MultiResRaster for the future
     // GetSubImage should be private.
-    _HDLLg /*IppImaging_Needs*/ void            EnableSubImageComputing(bool pi_Enable);
-    HFCPtr<HRAStoredRaster>
-    GetSubImage             (unsigned short pi_Index) const;
+    IMAGEPP_EXPORT /*IppImaging_Needs*/ void            EnableSubImageComputing(bool pi_Enable);
+    HFCPtr<HRATiledRaster> GetSubImage (unsigned short pi_Index) const;
 
-    _HDLLg void            SaveAndFlushAllTiles();
+    IMAGEPP_EXPORT void            SaveAndFlushAllTiles();
 
 protected:
+    virtual void _Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const override;
+
+    ImagePPStatus _BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options) override;
+
+    unsigned short EvaluateResolution(double Resolution) const;
+
+    virtual ImageSinkNodePtr _GetSinkNode(ImagePPStatus& status, HVEShape const& sinkShape, HFCPtr<HRPPixelType>& pReplacingPixelType) override;
 
     // From HGFGraphicObject
     virtual void    SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rOldCoordSys);
@@ -213,29 +203,29 @@ protected:
     // Find the best resolution
     double         FindTheBestResolution   (const HFCPtr<HGF2DCoordSys>& pi_rPhysicalCoordSys,
                                              const HFCPtr<HGF2DCoordSys>  pi_pNewLogicalCoordSys = 0) const;
-
 private:
 
     struct ResolutionInfo
         {
-        HFCPtr<HRAStoredRaster> m_pSubImage;
+        HFCPtr<HRATiledRaster> m_pSubImage;
         double                 m_ImageResolution;
         double                 m_PhysicalImageResolution;
+        double                 m_ScaleFromMainX;
+        double                 m_ScaleFromMainY;
         bool                   m_ComputeResWithOptimizedMethod;
         bool                   m_SubResolutionIsDirty;         // true--> the image have been dirty
         HGSResampling::ResamplingMethod m_ResamplingType;       // Resampling method to compute the sub-resolutions
         // See define value in the CPP
+        ~ResolutionInfo() {m_pSubImage = NULL;}
+
         };
     // Members
 
     // No persistent
     HPMPool*                m_pLog;
 
-    //Precomputed data storing ID
-    uint32_t                  m_StoringID;
-
     // Copy of the Model with an Extent (1,1)
-    HFCPtr<HRAStoredRaster>             m_pRasterModel;
+    HFCPtr<HRATiledRaster>             m_pRasterModel;
 
     // One entry by SubImage, the main image is included.
     struct SubImageList
@@ -265,22 +255,20 @@ private:
 
     // Methods
 
-    void            Constructor    (const HFCPtr<HRAStoredRaster>&  pi_rpRasterModel,
-                                    const HFCPtr<HRAStoredRaster>&  pi_rpMainImageRasterModel,
+    void            Constructor    (const HFCPtr<HRATiledRaster>&  pi_rpRasterModel,
+                                    const HFCPtr<HRATiledRaster>&  pi_rpMainImageRasterModel,
                                     uint64_t                        pi_WidthPixels,
                                     uint64_t                        pi_HeightPixels,
                                     SubImageDescription*            pi_pSubImageDesc,
                                     unsigned short                 pi_NumberOfSubImage);
 
-    HFCPtr<HRAStoredRaster>
-    CreateSubResRaster(const HFCPtr<HRAStoredRaster>&
-                       pi_rpRasterModel,
-                       uint64_t             pi_Width,
-                       uint64_t             pi_Height,
-                       uint64_t             pi_BlockWidth,
-                       uint64_t             pi_BlockHeight,
-                       bool                 pi_UseBlockSize,
-                       uint64_t             pi_TileID) const;
+    HFCPtr<HRATiledRaster> CreateSubResRaster (const HFCPtr<HRATiledRaster>& pi_rpRasterModel,
+                                               uint64_t             pi_Width,
+                                               uint64_t             pi_Height,
+                                               uint64_t             pi_BlockWidth,
+                                               uint64_t             pi_BlockHeight,
+                                               bool                 pi_UseBlockSize,
+                                               uint64_t             pi_TileID) const;
 
 
     void            DeepCopy        (const HRAPyramidRaster& pi_rdRaster,
@@ -302,9 +290,10 @@ private:
     SubImageDescription*
     MakeSubImageDescriptor();
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLg)
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT)
 
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRAPyramidRaster.hpp"
 

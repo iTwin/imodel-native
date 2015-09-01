@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_tps.cpp 16861 2009-04-26 19:22:29Z rouault $
+ * $Id: gdal_tps.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Thin Plate Spline transformer (GDAL wrapper portion)
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2004, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2011-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,10 +30,14 @@
 
 #include "thinplatespline.h"
 #include "gdal_alg.h"
+#include "gdal_alg_priv.h"
+#include "gdal_priv.h"
 #include "cpl_conv.h"
 #include "cpl_string.h"
+#include "cpl_atomic_ops.h"
+#include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: gdal_tps.cpp 16861 2009-04-26 19:22:29Z rouault $");
+CPL_CVSID("$Id: gdal_tps.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 CPL_C_START
 CPLXMLNode *GDALSerializeTPSTransformer( void *pTransformArg );
@@ -45,13 +50,35 @@ typedef struct
 
     VizGeorefSpline2D   *poForward;
     VizGeorefSpline2D   *poReverse;
+    int                  bForwardSolved;
+    int                  bReverseSolved;
 
     int       bReversed;
 
     int       nGCPCount;
     GDAL_GCP *pasGCPList;
     
+    volatile int nRefCount;
+    
 } TPSTransformInfo;
+
+/************************************************************************/
+/*                       GDALCloneTPSTransformer()                      */
+/************************************************************************/
+
+void* GDALCloneTPSTransformer( void *hTransformArg )
+{
+    VALIDATE_POINTER1( hTransformArg, "GDALCloneTPSTransformer", NULL );
+
+    TPSTransformInfo *psInfo = 
+        (TPSTransformInfo *) hTransformArg;
+
+    /* We can just use a ref count, since using the source transformation */
+    /* is thread-safe */
+    CPLAtomicInc(&(psInfo->nRefCount));
+
+    return psInfo;
+}
 
 /************************************************************************/
 /*                      GDALCreateTPSTransformer()                      */
@@ -81,13 +108,25 @@ typedef struct
  *
  * @param nGCPCount the number of GCPs in pasGCPList.
  * @param pasGCPList an array of GCPs to be used as input.
- * @Param bReversed 
+ * @param bReversed set it to TRUE to compute the reversed transformation.
  * 
  * @return the transform argument or NULL if creation fails. 
  */
 
 void *GDALCreateTPSTransformer( int nGCPCount, const GDAL_GCP *pasGCPList, 
                                 int bReversed )
+{
+    return GDALCreateTPSTransformerInt(nGCPCount, pasGCPList, bReversed, NULL);
+}
+
+static void GDALTPSComputeForwardInThread(void* pData)
+{
+    TPSTransformInfo *psInfo = (TPSTransformInfo *)pData;
+    psInfo->bForwardSolved = psInfo->poForward->solve() != 0;
+}
+
+void *GDALCreateTPSTransformerInt( int nGCPCount, const GDAL_GCP *pasGCPList, 
+                                   int bReversed, char** papszOptions )
 
 {
     TPSTransformInfo *psInfo;
@@ -135,8 +174,41 @@ void *GDALCreateTPSTransformer( int nGCPCount, const GDAL_GCP *pasGCPList,
         }
     }
 
-    psInfo->poForward->solve();
-    psInfo->poReverse->solve();
+    psInfo->nRefCount = 1;
+
+    int nThreads = 1;
+    if( nGCPCount > 100 )
+    {
+        const char* pszWarpThreads = CSLFetchNameValue(papszOptions, "NUM_THREADS");
+        if (pszWarpThreads == NULL)
+            pszWarpThreads = CPLGetConfigOption("GDAL_NUM_THREADS", "1");
+        if (EQUAL(pszWarpThreads, "ALL_CPUS"))
+            nThreads = CPLGetNumCPUs();
+        else
+            nThreads = atoi(pszWarpThreads);
+    }
+
+    if( nThreads > 1 )
+    {
+        /* Compute direct and reverse transforms in parallel */
+        void* hThread = CPLCreateJoinableThread(GDALTPSComputeForwardInThread, psInfo);
+        psInfo->bReverseSolved = psInfo->poReverse->solve() != 0;
+        if( hThread != NULL )
+            CPLJoinThread(hThread);
+        else
+            psInfo->bForwardSolved = psInfo->poForward->solve() != 0;
+    }
+    else
+    {
+        psInfo->bForwardSolved = psInfo->poForward->solve() != 0;
+        psInfo->bReverseSolved = psInfo->poReverse->solve() != 0;
+    }
+
+    if( !psInfo->bForwardSolved || !psInfo->bReverseSolved )
+    {
+        GDALDestroyTPSTransformer(psInfo);
+        return NULL;
+    }
 
     return psInfo;
 }
@@ -162,13 +234,16 @@ void GDALDestroyTPSTransformer( void *pTransformArg )
 
     TPSTransformInfo *psInfo = (TPSTransformInfo *) pTransformArg;
 
-    delete psInfo->poForward;
-    delete psInfo->poReverse;
+    if( CPLAtomicDec(&(psInfo->nRefCount)) == 0 )
+    {
+        delete psInfo->poForward;
+        delete psInfo->poReverse;
 
-    GDALDeinitGCPs( psInfo->nGCPCount, psInfo->pasGCPList );
-    CPLFree( psInfo->pasGCPList );
-    
-    CPLFree( pTransformArg );
+        GDALDeinitGCPs( psInfo->nGCPCount, psInfo->pasGCPList );
+        CPLFree( psInfo->pasGCPList );
+        
+        CPLFree( pTransformArg );
+    }
 }
 
 /************************************************************************/
@@ -198,7 +273,7 @@ void GDALDestroyTPSTransformer( void *pTransformArg )
 
 int GDALTPSTransform( void *pTransformArg, int bDstToSrc, 
                       int nPointCount, 
-                      double *x, double *y, double *z, 
+                      double *x, double *y, CPL_UNUSED double *z,
                       int *panSuccess )
 
 {
@@ -255,38 +330,10 @@ CPLXMLNode *GDALSerializeTPSTransformer( void *pTransformArg )
 /* -------------------------------------------------------------------- */
     if( psInfo->nGCPCount > 0 )
     {
-        int iGCP;
-        CPLXMLNode *psGCPList = CPLCreateXMLNode( psTree, CXT_Element, 
-                                                  "GCPList" );
-
-        for( iGCP = 0; iGCP < psInfo->nGCPCount; iGCP++ )
-        {
-            CPLXMLNode *psXMLGCP;
-            GDAL_GCP *psGCP = psInfo->pasGCPList + iGCP;
-
-            psXMLGCP = CPLCreateXMLNode( psGCPList, CXT_Element, "GCP" );
-
-            CPLSetXMLValue( psXMLGCP, "#Id", psGCP->pszId );
-
-            if( psGCP->pszInfo != NULL && strlen(psGCP->pszInfo) > 0 )
-                CPLSetXMLValue( psXMLGCP, "Info", psGCP->pszInfo );
-
-            CPLSetXMLValue( psXMLGCP, "#Pixel", 
-                            CPLString().Printf( "%.4f", psGCP->dfGCPPixel ) );
-
-            CPLSetXMLValue( psXMLGCP, "#Line", 
-                            CPLString().Printf( "%.4f", psGCP->dfGCPLine ) );
-
-            CPLSetXMLValue( psXMLGCP, "#X", 
-                            CPLString().Printf( "%.12E", psGCP->dfGCPX ) );
-
-            CPLSetXMLValue( psXMLGCP, "#Y", 
-                            CPLString().Printf( "%.12E", psGCP->dfGCPY ) );
-
-            if( psGCP->dfGCPZ != 0.0 )
-                CPLSetXMLValue( psXMLGCP, "#GCPZ", 
-                                CPLString().Printf( "%.12E", psGCP->dfGCPZ ) );
-        }
+        GDALSerializeGCPListToXML( psTree,
+                                   psInfo->pasGCPList,
+                                   psInfo->nGCPCount,
+                                   NULL );
     }
 
     return psTree;
@@ -311,41 +358,10 @@ void *GDALDeserializeTPSTransformer( CPLXMLNode *psTree )
 
     if( psGCPList != NULL )
     {
-        int  nGCPMax = 0;
-        CPLXMLNode *psXMLGCP;
-         
-        // Count GCPs.
-        for( psXMLGCP = psGCPList->psChild; psXMLGCP != NULL; 
-             psXMLGCP = psXMLGCP->psNext )
-            nGCPMax++;
-         
-        pasGCPList = (GDAL_GCP *) CPLCalloc(sizeof(GDAL_GCP),nGCPMax);
-
-        for( psXMLGCP = psGCPList->psChild; psXMLGCP != NULL; 
-             psXMLGCP = psXMLGCP->psNext )
-        {
-            GDAL_GCP *psGCP = pasGCPList + nGCPCount;
-
-            if( !EQUAL(psXMLGCP->pszValue,"GCP") || 
-                psXMLGCP->eType != CXT_Element )
-                continue;
-             
-            GDALInitGCPs( 1, psGCP );
-             
-            CPLFree( psGCP->pszId );
-            psGCP->pszId = CPLStrdup(CPLGetXMLValue(psXMLGCP,"Id",""));
-             
-            CPLFree( psGCP->pszInfo );
-            psGCP->pszInfo = CPLStrdup(CPLGetXMLValue(psXMLGCP,"Info",""));
-             
-            psGCP->dfGCPPixel = atof(CPLGetXMLValue(psXMLGCP,"Pixel","0.0"));
-            psGCP->dfGCPLine = atof(CPLGetXMLValue(psXMLGCP,"Line","0.0"));
-             
-            psGCP->dfGCPX = atof(CPLGetXMLValue(psXMLGCP,"X","0.0"));
-            psGCP->dfGCPY = atof(CPLGetXMLValue(psXMLGCP,"Y","0.0"));
-            psGCP->dfGCPZ = atof(CPLGetXMLValue(psXMLGCP,"Z","0.0"));
-            nGCPCount++;
-        }
+        GDALDeserializeGCPListFromXML( psGCPList,
+                                       &pasGCPList,
+                                       &nGCPCount,
+                                       NULL );
     }
 
 /* -------------------------------------------------------------------- */

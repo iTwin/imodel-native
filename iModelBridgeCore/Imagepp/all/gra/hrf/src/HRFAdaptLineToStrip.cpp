@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptLineToStrip.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFAdaptLineToStrip
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFAdaptLineToStrip.h>
 #include <Imagepp/all/h/HFCAccessMode.h>
@@ -101,18 +101,19 @@ HRFAdaptLineToStrip::~HRFAdaptLineToStrip()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToStrip::ReadBlock(uint32_t pi_PosBlockX,
-                                       uint32_t pi_PosBlockY,
+HSTATUS HRFAdaptLineToStrip::ReadBlock(uint64_t pi_PosBlockX,
+                                       uint64_t pi_PosBlockY,
                                        Byte* po_pData,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
+    RESOLUTION_EDITOR_NOT_64_BITS_READY
     HSTATUS Status = H_SUCCESS;
     uint32_t NumberOfLines;
 
     // Adjust if necessary the NumberOfLines to the resolution height
     if (pi_PosBlockY+m_BlockHeight > m_Height)
-        NumberOfLines = m_Height - pi_PosBlockY;
+        NumberOfLines = m_Height - (uint32_t)pi_PosBlockY;
     else
         NumberOfLines = m_BlockHeight;
 
@@ -159,16 +160,17 @@ HSTATUS HRFAdaptLineToStrip::ReadBlock(uint32_t pi_PosBlockX,
 // ReadBlock
 // Edition by Image
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToStrip::ReadBlockRLE(uint32_t pi_PosBlockX, uint32_t pi_PosBlockY,
+HSTATUS HRFAdaptLineToStrip::ReadBlockRLE(uint64_t pi_PosBlockX,
+                                          uint64_t pi_PosBlockY,
                                           HFCPtr<HCDPacketRLE>& po_rpPacketRLE,
                                           HFCLockMonitor const* pi_pSisterFileLock)
     {
+    RESOLUTION_EDITOR_NOT_64_BITS_READY
+
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffer.
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetWidth() == GetResolutionDescriptor()->GetBlockWidth());
     HPRECONDITION(po_rpPacketRLE->GetCodec()->GetHeight() >= GetResolutionDescriptor()->GetBlockHeight());
-    HPRECONDITION(GetResolutionDescriptor()->GetHeight() <= ULONG_MAX);
-    HPRECONDITION(GetResolutionDescriptor()->GetWidth() <= ULONG_MAX);
     HPRECONDITION(GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
     HPRECONDITION(m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBytesPerBlockWidth() <= ULONG_MAX);
 
@@ -178,7 +180,7 @@ HSTATUS HRFAdaptLineToStrip::ReadBlockRLE(uint32_t pi_PosBlockX, uint32_t pi_Pos
 
     // Adjust if necessary the NumberOfLines to the resolution height
     if (pi_PosBlockY+m_BlockHeight > m_Height)
-        NumberOfLines = m_Height - pi_PosBlockY;
+        NumberOfLines = m_Height - (uint32_t)pi_PosBlockY;
 
     size_t               workBufferSize = (ImageWidth* 2 + 2)*sizeof(unsigned short);     // Worst case for one line.
     HFCPtr<HCDPacketRLE> pLinePacket(new HCDPacketRLE(ImageWidth, 1));
@@ -223,11 +225,13 @@ HSTATUS HRFAdaptLineToStrip::ReadBlockRLE(uint32_t pi_PosBlockX, uint32_t pi_Pos
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToStrip::WriteBlock(uint32_t     pi_PosBlockX,
-                                        uint32_t     pi_PosBlockY,
+HSTATUS HRFAdaptLineToStrip::WriteBlock(uint64_t     pi_PosBlockX,
+                                        uint64_t     pi_PosBlockY,
                                         const Byte* pi_pData,
                                         HFCLockMonitor const* pi_pSisterFileLock)
     {
+    RESOLUTION_EDITOR_NOT_64_BITS_READY
+
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status = H_SUCCESS;
 
@@ -235,7 +239,7 @@ HSTATUS HRFAdaptLineToStrip::WriteBlock(uint32_t     pi_PosBlockX,
 
     // Adjust if necessary the NumberOfLines to the resolution height
     if (pi_PosBlockY+m_BlockHeight > m_Height)
-        NumberOfLines = m_Height - pi_PosBlockY;
+        NumberOfLines = m_Height - (uint32_t)pi_PosBlockY;
     else
         NumberOfLines = m_BlockHeight;
 
@@ -268,11 +272,13 @@ HSTATUS HRFAdaptLineToStrip::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlock
 // Edition by Image
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToStrip::WriteBlockRLE (uint32_t              pi_PosBlockX,
-                                            uint32_t              pi_PosBlockY,
-                                            HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFAdaptLineToStrip::WriteBlockRLE(uint64_t              pi_PosBlockX,
+                                           uint64_t              pi_PosBlockY,
+                                           HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
+                                           HFCLockMonitor const* pi_pSisterFileLock)
     {
+    RESOLUTION_EDITOR_NOT_64_BITS_READY
+
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status = H_SUCCESS;
 
@@ -280,7 +286,7 @@ HSTATUS HRFAdaptLineToStrip::WriteBlockRLE (uint32_t              pi_PosBlockX,
 
     // Adjust if necessary the NumberOfLines to the resolution height
     if (pi_PosBlockY+m_BlockHeight > m_Height)
-        NumberOfLines = m_Height - pi_PosBlockY;
+        NumberOfLines = m_Height - (uint32_t)pi_PosBlockY;
     else
         NumberOfLines = m_BlockHeight;
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFCoordSysContainer.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,11 +15,13 @@
 #pragma once
 
 #include "HFCPtr.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 class HGF2DCoordSys;
 
 class HGFCoordSysContainer : public HFCShareableObject<HGFCoordSysContainer>
     {
-    HDECLARE_BASECLASS_ID(1240)
+    HDECLARE_BASECLASS_ID(HGFCoordSysContainerId_Base)
 
 public:
 
@@ -46,3 +48,4 @@ private:
     };
 
 
+END_IMAGEPP_NAMESPACE

@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCEncodeDecodeASCII.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCEncodeDecodeASCII.h>
 
@@ -42,10 +42,10 @@ void HFCEncodeDecodeASCII::EscapeToASCII(string& pio_rString, bool pi_UTF8String
             {
             WString wideString;
             AString MBString;
-            uint32_t codePage;
+            LangCodePage codePage;
             BeStringUtilities::GetCurrentCodePage(codePage);
             BeStringUtilities::Utf8ToWChar(wideString,EncodedChar.c_str());
-            BeStringUtilities::WCharToLocaleChar(MBString,codePage,wideString.c_str());
+            BeStringUtilities::WCharToLocaleChar(MBString, codePage, wideString.c_str());
 
             pio_rString.replace(EncodedPos, EncodedChar.size()*3, MBString.c_str(), MBString.length());
             Pos = EncodedPos + MBString.length();

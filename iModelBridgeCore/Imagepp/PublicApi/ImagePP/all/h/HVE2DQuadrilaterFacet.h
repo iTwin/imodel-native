@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DQuadrilaterFacet.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -34,6 +34,7 @@
 
     -----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 template<class ATTRIBUTE> class HVE2DQuadrilaterFacet : public HVE2DFacet<ATTRIBUTE>
     {
 
@@ -70,6 +71,7 @@ private:
     HVE2DQuadrilaterFacet();
 
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HVE2DQuadrilaterFacet.hpp"
 

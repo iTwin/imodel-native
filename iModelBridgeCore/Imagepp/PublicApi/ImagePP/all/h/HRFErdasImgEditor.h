@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFErdasImgEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,6 +13,7 @@
 
 #include "HRFGdalSupportedFileEditor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFErdasImgFile;
 
 class HRFErdasImgEditor : public HRFGdalSupportedFileEditor
@@ -39,3 +40,4 @@ private:
     HRFErdasImgEditor(const HRFErdasImgEditor& pi_rObj);
     HRFErdasImgEditor& operator=(const HRFErdasImgEditor& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

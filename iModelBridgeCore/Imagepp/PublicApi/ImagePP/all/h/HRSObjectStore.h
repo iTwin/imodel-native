@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRSObjectStore.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRSObjectStore
@@ -25,6 +25,7 @@
 
 #include <ImagePP/all/h/HGSTypes.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HCDPacketRLE;
 class HRATiledRaster;
 class HRAPyramidRaster;
@@ -37,35 +38,35 @@ class HRSObjectStore : public HPMObjectStore, public HMGMessageReceiver
 public:
 
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1046, HPMObjectStore)
+    HDECLARE_CLASS_ID(HRSObjectStoreId, HPMObjectStore)
 
     // Constants
-    static const uint64_t       ID_TiledRaster;
-    static const uint64_t       ID_PyramidRaster;
-    static const uint64_t       ID_UnlimitedResolutionRaster;
-    static const uint64_t       ID_ResizableRaster;
-    static const uint32_t        CONFIGDATA_FixeLenght;
-    static const uint32_t        CONFIGDATA_PageNumberLenght;
-    static const uint32_t        CONFIGDATA_Filename;
+    static const uint64_t   ID_TiledRaster;
+    static const uint64_t   ID_PyramidRaster;
+    static const uint64_t   ID_UnlimitedResolutionRaster;
+    static const uint64_t   ID_ResizableRaster;
+    static const uint32_t  CONFIGDATA_FixeLenght;
+    static const uint32_t  CONFIGDATA_PageNumberLenght;
+    static const uint32_t  CONFIGDATA_Filename;
 
 
     // Primary methods
-    _HDLLg                  HRSObjectStore(HPMPool*                     pi_pLog,
+    IMAGEPP_EXPORT                  HRSObjectStore(HPMPool*                     pi_pLog,
                                            HFCPtr<HRFRasterFile>&       pi_pRasterFile,
-                                           uint32_t                     pi_Page,
+                                           uint32_t                    pi_Page,
                                            const HFCPtr<HGF2DCoordSys>& pi_rRefCoordSys);
 
-    _HDLLg virtual          ~HRSObjectStore();
+    IMAGEPP_EXPORT virtual          ~HRSObjectStore();
 
     // Default is true. If false the native clip shape won't be read and nor
     // modified by a save operation.
-    _HDLLg void             SetUseClipShape(bool pi_UseClipShape);
+    IMAGEPP_EXPORT void             SetUseClipShape(bool pi_UseClipShape);
 
     // Change the throw attribute of the class. If it is set to true, the class
     // will throw upon a HRF error in the Load and Save methods of the class
-    _HDLLg void                    SetThrowable(bool pi_Throwable);
+    IMAGEPP_EXPORT void                    SetThrowable(bool pi_Throwable);
 
-    _HDLLg HFCPtr<HRAStoredRaster> LoadRaster();
+    IMAGEPP_EXPORT HFCPtr<HRAStoredRaster> LoadRaster();
 
     // From HPMObjectStore
     virtual void            Save(HPMPersistentObject* pi_pObj) override;
@@ -87,13 +88,13 @@ public:
                                              uint64_t* po_pResHeight);
 
     // Keeps the 1 bit background color for future references
-    bool                   Has1BitBackgroundColor() const;
-    uint32_t                Get1BitBackgroundColor() const;
+    bool                    Has1BitBackgroundColor() const;
+    uint32_t               Get1BitBackgroundColor() const;
 
         
     // Message Handler...
-    bool                   NotifyHRALookAhead            (const HMGMessage& pi_rMessage);
-    bool                   NotifyHRAPyramidRasterClosing (const HMGMessage& pi_rMessage);
+    bool                    NotifyHRALookAhead            (const HMGMessage& pi_rMessage);
+    bool                    NotifyHRAPyramidRasterClosing (const HMGMessage& pi_rMessage);
 
     // CoordSys gestion...
     HFCPtr<HGF2DCoordSys>   GetPhysicalCoordSys() const;
@@ -102,8 +103,8 @@ public:
 
     // re sizable
     // this method must be call before Load()
-    bool                   CanBeResizable() const;
-    bool                   SetResizableRasterSize  (uint64_t pi_RasterWidth,
+    bool                    CanBeResizable() const;
+    bool                    SetResizableRasterSize  (uint64_t pi_RasterWidth,
                                                      uint64_t pi_RasterHeight);
     void                    RasterSizeChanged       (int64_t pi_Top,
                                                      int64_t pi_Bottom,
@@ -116,7 +117,10 @@ public:
                                     uint64_t*            po_pPosY,
                                     HPMPool*           pi_pPool=0);
 
-    _HDLLg HFCPtr<HRFRasterFile> const& GetRasterFile() const;
+    IMAGEPP_EXPORT HFCPtr<HRFRasterFile> const& GetRasterFile() const;
+
+    IMAGEPP_EXPORT uint32_t GetPageIndex() const;
+
     
 protected:
 
@@ -144,7 +148,7 @@ private:
     // Members
 
     HPMObjectID             m_RasterObjectID;
-    bool                   m_Loaded;
+    bool                    m_Loaded;
 
     // Input information
     HFCPtr<HRFRasterFile>   m_pRasterFile;
@@ -152,11 +156,11 @@ private:
     typedef vector<HRFResolutionEditor*, allocator<HRFResolutionEditor*> >
     ListOfResolutionEditor;
     ListOfResolutionEditor  m_ResolutionEditor;
-    uint32_t                m_PageIndex;
+    uint32_t               m_PageIndex;
     HFCPtr<HRFPageDescriptor>
-    m_pPageDescriptor;
+                            m_pPageDescriptor;
     HFCPtr<HRFResolutionDescriptor>
-    m_pResDescriptor;   // Res 0
+                            m_pResDescriptor;   // Res 0
 
     bool                   m_MultiPixelType;
 
@@ -166,30 +170,34 @@ private:
     uint64_t               m_RasterHeight;
 
     // CoordSys
-    HFCPtr<HGF2DCoordSys>   m_pPhysicalCoordSys;
-    HFCPtr<HGF2DCoordSys>   m_pLogicalCoordSys;
+    HFCPtr<HGF2DCoordSys>  m_pPhysicalCoordSys;
+    HFCPtr<HGF2DCoordSys>  m_pLogicalCoordSys;
 
 
     // Information
-    uint32_t                m_LoadCurSubImage;  // Current subImage
-    uint32_t                m_SaveCurSubImage;  // Current subImage
+    uint32_t               m_LoadCurSubImage;  // Current subImage
+    uint32_t               m_SaveCurSubImage;  // Current subImage
     HFCPtr<HRABitmapBase>   m_pTileTemplate;
 
     // AccesMode for the current Image
-    Byte                  m_CurrentAccesMode;     // See the .cpp for define
+    Byte                    m_CurrentAccesMode;     // See the .cpp for define
 
     // Note if we can throw an exception upon a HRFRasterFile invalid result.
-    bool                   m_IsThrowable;
+    bool                    m_IsThrowable;
 
-    bool                   m_ForceReadOnly;
+    bool                    m_ForceReadOnly;
 
     // Default is true. If false the native clip shape won't be read and nor
     // modified by a save operation.
-    bool                   m_UseClipShape;
+    bool                    m_UseClipShape;
 
     // Keeps the 1 bit background color for future references
-    bool                   m_Has1BitBackgroundColor;
-    uint32_t                m_BackgroundColor1Bit;
+    bool                    m_Has1BitBackgroundColor;
+    uint32_t               m_BackgroundColor1Bit;
+
+	// Converters used to hide some pixel types like I2 or I4.
+    HFCPtr<HRPPixelConverter>   m_ConvertNativeToNormalize;
+    HFCPtr<HRPPixelConverter>   m_ConvertNormalizeToNative;
 
     // Methods
 
@@ -205,14 +213,14 @@ private:
 
     HFCPtr<HRAUnlimitedResolutionRaster> LoadUnlimitedResolutionRaster (HPMObjectID*   po_pRasterID);
 
-    HFCPtr<HRABitmapRLE> LoadResizableRaster (HPMObjectID*   po_pRasterID);
+    HFCPtr<HRABitmapRLE>    LoadResizableRaster (HPMObjectID*   po_pRasterID);
 
 
     void                    ConstructContextForRaster(const HFCPtr<HRFRasterFile>& pi_rRasterFile,
                                                       uint32_t                     pi_PageInd,
                                                       HRARaster*                   po_rRaster);
 
-    HCLASS_ID             CheckObjectClassKey     (HPMPersistentObject& pi_rObj);
+    HCLASS_ID               CheckObjectClassKey     (HPMPersistentObject& pi_rObj);
     void                    CheckCurrentSubImageForLoad(uint32_t pi_SubImage);
     void                    CheckCurrentSubImageForSave(uint32_t pi_SubImage);
 
@@ -233,7 +241,7 @@ private:
     (HRAPyramidRaster* pio_pRaster);
 
     HGSResampling::ResamplingMethod
-    ResamplingMethodChangeType(HRFDownSamplingMethod pi_DownSamplingMethod);
+                            ResamplingMethodChangeType(HRFDownSamplingMethod pi_DownSamplingMethod);
 
     HRFDownSamplingMethod   ResamplingMethodChangeType(HGSResampling::ResamplingMethod pi_ResamplingMethod);
 
@@ -263,7 +271,7 @@ private:
                                                         HFCPtr<HCDPacketRLE> pi_pPacket);
 
 
-    HMG_DECLARE_MESSAGE_MAP_DLL(_HDLLg);
+    HMG_DECLARE_MESSAGE_MAP_DLL(IMAGEPP_EXPORT);
     };
 
 //----------------------------------------------------------------------------
@@ -279,19 +287,20 @@ public:
 class HRSBlockAccessIndicator
     {
 public:
-    _HDLLg void AddListener(HRSBlockAccessListener* pi_pListener);
-    _HDLLg void RemoveListener(HRSBlockAccessListener* pi_pListener);
+    IMAGEPP_EXPORT void AddListener(HRSBlockAccessListener* pi_pListener);
+    IMAGEPP_EXPORT void RemoveListener(HRSBlockAccessListener* pi_pListener);
 
     void NotifyReadBlockError(HSTATUS pi_Error, HFCPtr<HFCURL> const& pi_pURL);
     void NotifyWriteBlockError(HSTATUS pi_Error, HFCPtr<HFCURL> const& pi_pURL);
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRSBlockAccessIndicator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRSBlockAccessIndicator)
 
     typedef list<HRSBlockAccessListener*> ListenerList;
 
     ListenerList        m_Listeners;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRSObjectStore.hpp"
 

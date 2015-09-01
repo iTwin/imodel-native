@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCIniFileBrowser.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Definition of the HFCIniFileBrowser class.
@@ -12,6 +12,7 @@
 //#include <fstream>
 #include "HFCPtr.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HFCURLFile;
 class HFCBinStream;
 
@@ -79,27 +80,27 @@ class HFCIniFileBrowser
     {
 public:
     //:> Constructor and destructor.
-    _HDLLu                     HFCIniFileBrowser(HFCBinStream* pi_rpFile);
-    _HDLLu virtual             ~HFCIniFileBrowser();
+    IMAGEPP_EXPORT                     HFCIniFileBrowser(HFCBinStream* pi_rpFile);
+    IMAGEPP_EXPORT virtual             ~HFCIniFileBrowser();
 
     //:> Topic methods.
-    _HDLLu bool               FirstTopic();
-    _HDLLu bool               FindTopic(const string& pi_rTopicName);
-    _HDLLu bool               FindTopic(const WString& pi_rTopicName);
-    _HDLLu const WString&      GetTopicName();
-    _HDLLu bool               NextTopic();
-    _HDLLu void                ReadLine(string&  po_rString,
+    IMAGEPP_EXPORT bool               FirstTopic();
+    IMAGEPP_EXPORT bool               FindTopic(const string& pi_rTopicName);
+    IMAGEPP_EXPORT bool               FindTopic(const WString& pi_rTopicName);
+    IMAGEPP_EXPORT const WString&      GetTopicName();
+    IMAGEPP_EXPORT bool               NextTopic();
+    IMAGEPP_EXPORT void                ReadLine(string&  po_rString,
                                         bool    pi_KeepLineSeparator = false,
                                         uint32_t pi_MaxSize = -1);
-    _HDLLu void                ReadLine(WString& po_rString,
+    IMAGEPP_EXPORT void                ReadLine(WString& po_rString,
                                         bool    pi_KeepLineSeparator = false,
                                         uint32_t pi_MaxSize = -1);
 
     //:> Variable methods.
-    _HDLLu bool               GetVariableValue(const string&  pi_rVariableName,
+    IMAGEPP_EXPORT bool               GetVariableValue(const string&  pi_rVariableName,
                                                 string&        po_rValue,
                                                 bool          pi_KeepLineSeparator = false);
-    _HDLLu bool               GetVariableValue(const WString& pi_rVariableName,
+    IMAGEPP_EXPORT bool               GetVariableValue(const WString& pi_rVariableName,
                                                 WString&       po_rValue,
                                                 bool          pi_KeepLineSeparator = false);
 
@@ -125,3 +126,4 @@ private:
     HFCIniFileBrowser& operator=(const HFCIniFileBrowser& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

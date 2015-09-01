@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeV24R8G8B8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRPPixelTypeV24R8G8B8
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 
@@ -32,19 +32,14 @@ MapHRPPixelTypeToConverter;
 
 
 static ConverterV24R8G8B8_V24R8G8B8<RGB_RED,RGB_BLUE,RGB_RED,RGB_BLUE> s_V24R8G8B8_V24R8G8B8;
-static ConverterV24R8G8B8_V24R8G8B8<BGR_RED,BGR_BLUE,RGB_RED,RGB_BLUE> s_V24R8G8B8_V24B8G8R8;
-static ConverterV24R8G8B8_V24R8G8B8<RGB_RED,RGB_BLUE,BGR_RED,BGR_BLUE> s_V24B8G8R8_V24R8G8B8;
 static ConverterV24R8G8B8_V8Gray8<RGB_RED,RGB_BLUE>                    s_V24R8G8B8_V8Gray8;
 static ConverterV24R8G8B8_V1Gray1<RGB_RED,RGB_BLUE>                    s_V24R8G8B8_V1Gray1;
 static ConverterV24R8G8B8_V8GrayWhite8<RGB_RED,RGB_BLUE>               s_V24R8G8B8_V8GrayWhite8;
 static ConverterV24R8G8B8_V1GrayWhite1<RGB_RED,RGB_BLUE>               s_V24R8G8B8_V1GrayWhite1;
-// The following converters are exporter for the raptc24i.cpp module only
-// The publication has extern is done only in v24rgb.h
-struct ConverterV8Gray8_V24R8G8B8                   g_V8Gray8_V24R8G8B8;
-struct ConverterV1Gray1_V24R8G8B8                   g_V1Gray1_V24R8G8B8;
-struct ConverterV8GrayWhite8_V24R8G8B8              g_V8GrayWhite8_V24R8G8B8;
-struct ConverterV1GrayWhite1_V24R8G8B8              g_V1GrayWhite1_V24R8G8B8;
-
+struct ConverterV8Gray8_V24R8G8B8                                      s_V8Gray8_V24R8G8B8;
+struct ConverterV1Gray1_V24R8G8B8                                      s_V1Gray1_V24R8G8B8;
+struct ConverterV8GrayWhite8_V24R8G8B8                                 s_V8GrayWhite8_V24R8G8B8;
+struct ConverterV1GrayWhite1_V24R8G8B8                                 s_V1GrayWhite1_V24R8G8B8;
 static ConverterV24R8G8B8_I8R8G8B8<RGB_RED,RGB_BLUE>                   s_V24R8G8B8_I8R8G8B8;
 static ConverterI8R8G8B8_V24R8G8B8<RGB_RED,RGB_BLUE>                   s_I8R8G8B8_V24R8G8B8;
 
@@ -56,11 +51,10 @@ struct V24R8G8B8ConvertersFrom : public MapHRPPixelTypeToConverter
     V24R8G8B8ConvertersFrom() : MapHRPPixelTypeToConverter ()
         {
         insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV24R8G8B8::CLASS_ID, &s_V24R8G8B8_V24R8G8B8));
-        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV24B8G8R8::CLASS_ID, &s_V24B8G8R8_V24R8G8B8));
-        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV8Gray8::CLASS_ID,   &g_V8Gray8_V24R8G8B8));
-        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV1Gray1::CLASS_ID,   &g_V1Gray1_V24R8G8B8));
-        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV8GrayWhite8::CLASS_ID,   &g_V8GrayWhite8_V24R8G8B8));
-        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV1GrayWhite1::CLASS_ID,   &g_V1GrayWhite1_V24R8G8B8));
+        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV8Gray8::CLASS_ID,   &s_V8Gray8_V24R8G8B8));
+        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV1Gray1::CLASS_ID,   &s_V1Gray1_V24R8G8B8));
+        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV8GrayWhite8::CLASS_ID,   &s_V8GrayWhite8_V24R8G8B8));
+        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV1GrayWhite1::CLASS_ID,   &s_V1GrayWhite1_V24R8G8B8));
         insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeI8R8G8B8::CLASS_ID,  &s_I8R8G8B8_V24R8G8B8));
         };
     };
@@ -75,7 +69,6 @@ struct V24R8G8B8ConvertersTo : public MapHRPPixelTypeToConverter
     V24R8G8B8ConvertersTo() : MapHRPPixelTypeToConverter ()
         {
         insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV24R8G8B8::CLASS_ID, &s_V24R8G8B8_V24R8G8B8));
-        insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV24B8G8R8::CLASS_ID, &s_V24R8G8B8_V24B8G8R8));
         insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV8Gray8::CLASS_ID,   &s_V24R8G8B8_V8Gray8));
         insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV1Gray1::CLASS_ID,   &s_V24R8G8B8_V1Gray1));
         insert (MapHRPPixelTypeToConverter::value_type(HRPPixelTypeV8GrayWhite8::CLASS_ID,   &s_V24R8G8B8_V8GrayWhite8));

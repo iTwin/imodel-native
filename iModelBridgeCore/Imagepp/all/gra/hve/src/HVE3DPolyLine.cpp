@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE3DPolyLine.cpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <ImagePP/all/h/HGF2DLocation.h>
 #include <ImagePP/all/h/HVE2DPolySegment.h>
@@ -335,9 +335,9 @@ void HVE3DPolyLine::ResetTolerance()
             // There are some points
             for (size_t i = 0 ; i < m_Points.size() ; ++i)
                 {
-                m_Tolerance = max(m_Tolerance, m_Points[i].GetX() * HNumeric<double>::EPSILON_MULTIPLICATOR());
-                m_Tolerance = max(m_Tolerance, m_Points[i].GetY() * HNumeric<double>::EPSILON_MULTIPLICATOR());
-                m_Tolerance = max(m_Tolerance, m_Points[i].GetZ() * HNumeric<double>::EPSILON_MULTIPLICATOR());
+                m_Tolerance = MAX(m_Tolerance, m_Points[i].GetX() * HNumeric<double>::EPSILON_MULTIPLICATOR());
+                m_Tolerance = MAX(m_Tolerance, m_Points[i].GetY() * HNumeric<double>::EPSILON_MULTIPLICATOR());
+                m_Tolerance = MAX(m_Tolerance, m_Points[i].GetZ() * HNumeric<double>::EPSILON_MULTIPLICATOR());
                 }
             }
         }

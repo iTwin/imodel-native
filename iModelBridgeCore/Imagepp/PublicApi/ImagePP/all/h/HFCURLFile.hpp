@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLFile.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HFCURLFile
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 /**----------------------------------------------------------------------------
  Returns a constant reference to a string that contains the host
  specification included in this URL, which is the network name of the
@@ -42,3 +42,4 @@ inline const WString& HFCURLFile::GetPath() const
     {
     return m_Path;
     }
+END_IMAGEPP_NAMESPACE

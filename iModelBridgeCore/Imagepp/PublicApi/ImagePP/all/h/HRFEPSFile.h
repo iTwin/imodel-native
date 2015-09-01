@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFEPSFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -15,6 +15,7 @@
 #include "HRFRasterFileCapabilities.h"
 #include "HRFRasterFile.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFEpsLineEditor;
 
 
@@ -37,7 +38,7 @@ class HRFEpsFile : public HRFRasterFile
 
 public:
 
-    HDECLARE_CLASS_ID(1447, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Eps, HRFRasterFile)
 
     // allow to Open or to create an empty file
 
@@ -124,9 +125,10 @@ struct HRFEpsCreator : public HRFRasterFileCreator
 
 private:
 
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFEpsCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFEpsCreator)
 
     // Disabled methods
     HRFEpsCreator();
     };
+END_IMAGEPP_NAMESPACE
 

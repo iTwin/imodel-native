@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DDisplacement.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Default Constructor
     This constructor create displacement object with no offsets, thus representing
@@ -20,7 +20,7 @@
 */
 inline HGF2DDisplacement::HGF2DDisplacement()
     :m_DeltaXDist(0),
-    m_DeltaYDist(0)
+     m_DeltaYDist(0)
     {
     }
 
@@ -476,9 +476,6 @@ inline HGF2DDisplacement& HGF2DDisplacement::operator/=(double pi_Divisor)
     return (*this);
     }
 
-
-
-
 //-----------------------------------------------------------------------------
 // ::operator*
 // Friend function : Scales the displacement
@@ -487,3 +484,4 @@ inline HGF2DDisplacement operator*(double pi_Multiplicator, const HGF2DDisplacem
     {
     return (HGF2DDisplacement(pi_rDisp.m_DeltaXDist * pi_Multiplicator, pi_rDisp.m_DeltaYDist * pi_Multiplicator));
     }
+END_IMAGEPP_NAMESPACE

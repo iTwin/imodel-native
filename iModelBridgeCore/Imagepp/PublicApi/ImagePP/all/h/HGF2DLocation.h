@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLocation.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DLocation
@@ -15,6 +15,8 @@
 #include "HGF2DDisplacement.h"
 #include "HGF2DPosition.h"
 
+
+BEGIN_IMAGEPP_NAMESPACE
 class HGF2DCoordSys;
 
 
@@ -112,22 +114,22 @@ public:
 
     // Primary methods
 
-    _HDLLg                     HGF2DLocation();
-    _HDLLg                     HGF2DLocation  (const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
-    _HDLLg                    HGF2DLocation  (double pi_X,
+    IMAGEPP_EXPORT                     HGF2DLocation();
+    IMAGEPP_EXPORT                     HGF2DLocation  (const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
+    IMAGEPP_EXPORT                    HGF2DLocation  (double pi_X,
                                               double pi_Y,
                                               const HFCPtr<HGF2DCoordSys>& pi_rpSystem);
-    _HDLLg                    HGF2DLocation  (const HGF2DPosition& pi_rPoint,
+    IMAGEPP_EXPORT                    HGF2DLocation  (const HGF2DPosition& pi_rPoint,
                                               const HFCPtr<HGF2DCoordSys>& pi_rpSystem);
-    _HDLLg                    HGF2DLocation  (const HGF2DLocation& pi_rObj,
+    IMAGEPP_EXPORT                    HGF2DLocation  (const HGF2DLocation& pi_rObj,
                                               const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
-    _HDLLg                    HGF2DLocation  (const HGF2DLocation& pi_rObj);
-    _HDLLg                    ~HGF2DLocation ();
+    IMAGEPP_EXPORT                    HGF2DLocation  (const HGF2DLocation& pi_rObj);
+    IMAGEPP_EXPORT                    ~HGF2DLocation ();
 
     HGF2DLocation&     operator=(const HGF2DLocation& pi_rObj);
 
     // Compare operations
-    _HDLLg bool       operator==(const HGF2DLocation& pi_rObj) const;
+    IMAGEPP_EXPORT bool       operator==(const HGF2DLocation& pi_rObj) const;
     bool              operator!=(const HGF2DLocation& pi_rObj) const;
     bool              operator<(const HGF2DLocation& pi_rObj) const;
 
@@ -148,17 +150,17 @@ public:
 
     HGF2DPosition      GetPosition() const;
 
-    _HDLLg HGF2DLocation   operator+(const HGF2DDisplacement& pi_rOffset) const;
+    IMAGEPP_EXPORT HGF2DLocation   operator+(const HGF2DDisplacement& pi_rOffset) const;
     friend HGF2DLocation   operator+(const HGF2DDisplacement& pi_rOffset,
               const HGF2DLocation& pi_rLocation);
-    _HDLLg HGF2DDisplacement    operator-(const HGF2DLocation& pi_rLocation) const;
+    IMAGEPP_EXPORT HGF2DDisplacement    operator-(const HGF2DLocation& pi_rLocation) const;
     HGF2DLocation      operator-(const HGF2DDisplacement& pi_rOffset) const;
 
-    _HDLLg HGF2DLocation&        operator+=(const HGF2DDisplacement& pi_rOffset);
+    IMAGEPP_EXPORT HGF2DLocation&        operator+=(const HGF2DDisplacement& pi_rOffset);
     HGF2DLocation&     operator-=(const HGF2DDisplacement& pi_rOffset);
 
     // Coord system management
-    _HDLLg void               ChangeCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpSystem);
+    IMAGEPP_EXPORT void               ChangeCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpSystem);
     const HFCPtr<HGF2DCoordSys>&     GetCoordSys() const;
     void               SetCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpSystem);
     HGF2DLocation      ExpressedIn(const HFCPtr<HGF2DCoordSys>& pi_rpSystem) const;
@@ -179,6 +181,6 @@ private:
 
 
 typedef vector<HGF2DLocation, allocator<HGF2DLocation> > HGF2DLocationCollection;
-
+END_IMAGEPP_NAMESPACE
 #include "HGF2DCoordSys.h"
 #include "HGF2DLocation.hpp"

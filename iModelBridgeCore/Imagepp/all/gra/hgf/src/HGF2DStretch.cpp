@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DStretch.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DStretch
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HGF2DComplexTransfoModel.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
@@ -115,10 +115,26 @@ HGF2DStretch& HGF2DStretch::operator=(const HGF2DStretch& pi_rObj)
     return (*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alexandre.Gariepy               06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HGF2DStretch::IsConvertDirectThreadSafe() const
+    {
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alexandre.Gariepy               06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HGF2DStretch::IsConvertInverseThreadSafe() const
+    {
+    return true;
+    }
+
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DStretch::ConvertDirect(double* pio_pXInOut,
+StatusInt HGF2DStretch::ConvertDirect(double* pio_pXInOut,
                                  double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
@@ -132,17 +148,19 @@ void HGF2DStretch::ConvertDirect(double* pio_pXInOut,
     // Transform coordinates
     *pio_pXInOut = (X * m_PreparedDirectA1) + m_XTranslationPrime;
     *pio_pYInOut = (Y * m_PreparedDirectA2) + m_YTranslationPrime;
+
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DStretch::ConvertDirect (double    pi_YIn,
-                                  double    pi_XInStart,
-                                  size_t    pi_NumLoc,
-                                  double    pi_XInStep,
-                                  double*   po_aXOut,
-                                  double*   po_aYOut) const
+StatusInt HGF2DStretch::ConvertDirect (double    pi_YIn,
+                                       double    pi_XInStart,
+                                       size_t    pi_NumLoc,
+                                       double    pi_XInStep,
+                                       double*   po_aXOut,
+                                       double*   po_aYOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(po_aXOut != 0);
@@ -161,16 +179,49 @@ void HGF2DStretch::ConvertDirect (double    pi_YIn,
         *pCurrentX = (X * m_PreparedDirectA1) + m_XTranslationPrime;
         *pCurrentY = ByProdY;
         }
+
+    return SUCCESS;
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HGF2DStretch::ConvertDirect(double   pi_XIn,
-                                 double   pi_YIn,
-                                 double*  po_pXOut,
-                                 double*  po_pYOut) const
+StatusInt HGF2DStretch::ConvertDirect (size_t    pi_NumLoc,
+                                       double*   pio_aXInOut,
+                                       double*   pio_aYInOut) const
+    {
+    // Make sure that recipient variables are provided
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+
+    double X;
+    double Y;
+
+    double  ByProdY;
+
+    for(uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        X = pio_aXInOut[i];
+        Y = pio_aYInOut[i];
+
+        ByProdY = (Y * m_PreparedDirectA2) + m_YTranslationPrime;
+
+        pio_aXInOut[i] = (X * m_PreparedDirectA1) + m_XTranslationPrime;
+        pio_aYInOut[i] = ByProdY;
+        }
+
+    return SUCCESS;
+    }
+
+
+//-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DStretch::ConvertDirect(double   pi_XIn,
+                                      double   pi_YIn,
+                                      double*  po_pXOut,
+                                      double*  po_pYOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(po_pXOut != 0);
@@ -180,14 +231,15 @@ void HGF2DStretch::ConvertDirect(double   pi_XIn,
     *po_pXOut = (pi_XIn * m_PreparedDirectA1) + m_XTranslationPrime;
     *po_pYOut = (pi_YIn * m_PreparedDirectA2) + m_YTranslationPrime;
 
+    return SUCCESS;
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DStretch::ConvertInverse(double* pio_pXInOut,
-                                  double* pio_pYInOut) const
+StatusInt HGF2DStretch::ConvertInverse(double* pio_pXInOut,
+                                       double* pio_pYInOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(pio_pXInOut != 0);
@@ -199,18 +251,20 @@ void HGF2DStretch::ConvertInverse(double* pio_pXInOut,
     // Transform coordinates
     *pio_pXInOut = (X * m_PreparedInverseA1) + m_XTranslationInversePrime;
     *pio_pYInOut = (Y * m_PreparedInverseA2) + m_YTranslationInversePrime;
+
+    return SUCCESS;
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DStretch::ConvertInverse (double    pi_YIn,
-                                   double    pi_XInStart,
-                                   size_t    pi_NumLoc,
-                                   double    pi_XInStep,
-                                   double*   po_aXOut,
-                                   double*   po_aYOut) const
+StatusInt HGF2DStretch::ConvertInverse (double    pi_YIn,
+                                        double    pi_XInStart,
+                                        size_t    pi_NumLoc,
+                                        double    pi_XInStep,
+                                        double*   po_aXOut,
+                                        double*   po_aYOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(po_aXOut != 0);
@@ -229,16 +283,49 @@ void HGF2DStretch::ConvertInverse (double    pi_YIn,
         *pCurrentX = (X * m_PreparedInverseA1) + m_XTranslationInversePrime;
         *pCurrentY = ByProdY;
         }
+
+    return SUCCESS;
     }
 
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HGF2DStretch::ConvertInverse(double  pi_XIn,
-                                  double  pi_YIn,
-                                  double* po_pXOut,
-                                  double* po_pYOut) const
+StatusInt HGF2DStretch::ConvertInverse (size_t    pi_NumLoc,
+                                        double*   pio_aXInOut,
+                                        double*   pio_aYInOut) const
+    {
+    // Make sure that recipient variables are provided
+    HPRECONDITION(pio_aXInOut != 0);
+    HPRECONDITION(pio_aYInOut != 0);
+
+    double X;
+    double Y;
+
+    double  ByProdY;
+
+    for(uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        X = pio_aXInOut[i];
+        Y = pio_aYInOut[i];
+
+        ByProdY = (Y * m_PreparedInverseA2) + m_YTranslationInversePrime;
+
+        pio_aXInOut[i] = (X * m_PreparedInverseA1) + m_XTranslationInversePrime;
+        pio_aYInOut[i] = ByProdY;
+        }
+
+    return SUCCESS;
+    }
+
+
+//-----------------------------------------------------------------------------
+// Converter (inverse)
+//-----------------------------------------------------------------------------
+StatusInt HGF2DStretch::ConvertInverse(double  pi_XIn,
+                                       double  pi_YIn,
+                                       double* po_pXOut,
+                                       double* po_pYOut) const
     {
     // Make sure that recipient variables are provided
     HPRECONDITION(po_pXOut != 0);
@@ -247,6 +334,8 @@ void HGF2DStretch::ConvertInverse(double  pi_XIn,
     // Transform coordinates
     *po_pXOut = (pi_XIn * m_PreparedInverseA1) + m_XTranslationInversePrime;
     *po_pYOut = (pi_YIn * m_PreparedInverseA2) + m_YTranslationInversePrime;
+
+    return SUCCESS;
     }
 
 

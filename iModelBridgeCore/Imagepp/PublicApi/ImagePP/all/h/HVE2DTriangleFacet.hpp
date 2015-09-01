@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicApi/ImagePP/all/h/HVE2DTriangleFacet.hpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
@@ -11,6 +18,7 @@
 
  @param pi_rObj Facet to duplicate.
 -----------------------------------------------------------------------------*/
+BEGIN_IMAGEPP_NAMESPACE
 template<class ATTRIBUTE> HVE2DTriangleFacet<ATTRIBUTE>::HVE2DTriangleFacet(const HVE2DTriangleFacet<ATTRIBUTE>& pi_rObj)
     : HVE2DFacet<ATTRIBUTE>(pi_rObj),
       m_FirstPoint(pi_rObj.m_FirstPoint),
@@ -305,6 +313,7 @@ template<class ATTRIBUTE> HVE2DFacet<ATTRIBUTE>* HVE2DTriangleFacet<ATTRIBUTE>::
 
     return(pResultFacet);
     }
+END_IMAGEPP_NAMESPACE
 
 
 

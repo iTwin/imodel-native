@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecVector.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HCDCodecVector
 //-----------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 
 //-----------------------------------------------------------------------------
 // public inline method
@@ -38,3 +40,5 @@ inline size_t HCDCodecVector::GetSubsetPos() const
     // return the subset position
     return m_SubsetPos;
     }
+
+END_IMAGEPP_NAMESPACE

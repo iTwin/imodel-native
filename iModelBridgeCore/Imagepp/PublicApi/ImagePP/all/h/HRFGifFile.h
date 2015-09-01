@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGifFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -17,6 +17,7 @@
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFGifCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -148,7 +149,7 @@ class HRFGifFile : public HRFRasterFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1434, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Gif, HRFRasterFile)
 
     // allow to Open an image file
     HRFGifFile (const  HFCPtr<HFCURL>&  pi_rpURL,
@@ -333,10 +334,11 @@ struct HRFGifCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFGifCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFGifCreator)
 
     // Disabled methodes
     HRFGifCreator();
     };
+END_IMAGEPP_NAMESPACE
 
 

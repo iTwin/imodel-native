@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSharingControl.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSharingControl
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRFSharingControl.h>
 #include <Imagepp/all/h/HFCException.h>
@@ -59,7 +59,7 @@ uint32_t HRFSharingControl::GetCurrentModifCount()
         {
         HFCLockMonitor SisterFileLock (GetLockManager());
         GetSisterFilePtr()->SeekToPos(m_Offset);
-        GetSisterFilePtr()->Read((void*)&Count, sizeof (uint32_t));
+        GetSisterFilePtr()->Read(&Count, sizeof (uint32_t));
         SisterFileLock.ReleaseKey();
         }
 
@@ -86,6 +86,6 @@ void HRFSharingControl::IncrementCurrentModifCount()
         ++m_ModifCount;
 
         GetSisterFilePtr()->SeekToPos(m_Offset);
-        GetSisterFilePtr()->Write((void*)&m_ModifCount, sizeof(uint32_t));
+        GetSisterFilePtr()->Write(&m_ModifCount, sizeof(uint32_t));
         }
     }

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPPixelTypeV32CMYK.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HRPPixelTypeV32CMYK
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPPixelTypeV32CMYK.h>
 #include <Imagepp/all/h/HRPChannelOrgCMYK.h>
@@ -24,7 +24,7 @@ HPM_REGISTER_CLASS(HRPPixelTypeV32CMYK, HRPPixelType)
 typedef map<HCLASS_ID, HRPPixelConverter*, less<HCLASS_ID>, allocator<HRPPixelConverter*> >
 MapHRPPixelTypeToConverter;
 
-
+#if oldCMYK
 // This is really not accurate, to get correct color conversion, we must use a
 // non linear mathematical function.  Maybe pass trough the the XYZ color space..
 static const double s_AdjustmentMatrixFromCMYK[3][3] = {0.85, 0.10, 0.05,
@@ -41,11 +41,13 @@ static const double s_AdjustmentMatrixToCMYK[3][3] = {1.0, 0.0, 0.0,
                                                       0.0, 1.0, 0.0,
                                                       0.0, 0.0, 1.0
                                                      };
+#endif
 
 // Functional but the not appropriate for imaging application
 // should be use only for "pie chart" color conversion
 inline void s_V32CMYK_to_V24RGB(Byte const* pSrc, Byte* pDest)
     {
+#if oldCMYK
     Byte Black = (255 - pSrc[3]);
     Byte Red   = (Black * (255 - pSrc[0])) / 255;
     Byte Green = (Black * (255 - pSrc[1])) / 255;
@@ -54,20 +56,55 @@ inline void s_V32CMYK_to_V24RGB(Byte const* pSrc, Byte* pDest)
     pDest[0] = (Byte)((s_AdjustmentMatrixFromCMYK[0][0] * Red) + (s_AdjustmentMatrixFromCMYK[0][1] * Green) + (s_AdjustmentMatrixFromCMYK[0][2] * Blue));
     pDest[1] = (Byte)((s_AdjustmentMatrixFromCMYK[1][0] * Red) + (s_AdjustmentMatrixFromCMYK[1][1] * Green) + (s_AdjustmentMatrixFromCMYK[1][2] * Blue));
     pDest[2] = (Byte)((s_AdjustmentMatrixFromCMYK[2][0] * Red) + (s_AdjustmentMatrixFromCMYK[2][1] * Green) + (s_AdjustmentMatrixFromCMYK[2][2] * Blue));
+#else
+
+	pDest[0] = (Byte)(((255 - pSrc[0]) * (255 - pSrc[3])) / 255);
+	pDest[1] = (Byte)(((255 - pSrc[1]) * (255 - pSrc[3])) / 255);
+	pDest[2] = (Byte)(((255 - pSrc[2]) * (255 - pSrc[3])) / 255);
+#endif
     }
 
 inline void s_V24RGB_to_V32CMYK(Byte const* pSrc, Byte* pDest)
     {
-    Byte Red   = 255 - ((Byte)((s_AdjustmentMatrixToCMYK[0][0] * pSrc[0]) + (s_AdjustmentMatrixToCMYK[0][1] * pSrc[1]) + (s_AdjustmentMatrixToCMYK[0][2] * pSrc[2])));
+#if oldCMYK
+	Byte Red   = 255 - ((Byte)((s_AdjustmentMatrixToCMYK[0][0] * pSrc[0]) + (s_AdjustmentMatrixToCMYK[0][1] * pSrc[1]) + (s_AdjustmentMatrixToCMYK[0][2] * pSrc[2])));
     Byte Green = 255 - ((Byte)((s_AdjustmentMatrixToCMYK[1][0] * pSrc[0]) + (s_AdjustmentMatrixToCMYK[1][1] * pSrc[1]) + (s_AdjustmentMatrixToCMYK[1][2] * pSrc[2])));
     Byte Blue  = 255 - ((Byte)((s_AdjustmentMatrixToCMYK[2][0] * pSrc[0]) + (s_AdjustmentMatrixToCMYK[2][1] * pSrc[1]) + (s_AdjustmentMatrixToCMYK[2][2] * pSrc[2])));
 
     // Convert CMY to CMYK
     // Extract the black value
-    pDest[3] = min(min(Red, Green), Blue);
+    pDest[3] = MIN(MIN(Red, Green), Blue);
     pDest[0] = Red - pDest[3];
     pDest[1] = Green - pDest[3]; // (Magenta  * Divider) * 255;
-    pDest[2] = Blue - pDest[3]; // (Yellow   * Divider) * 255;
+    pDest[2] = Blue - pDest[3];  // (Yellow   * Divider) * 255;
+#else
+
+	int C = 255 - pSrc[0];
+	int M = 255 - pSrc[1];
+	int Y = 255 - pSrc[2];
+	
+    //int K = 255;
+    //K = C < K ? C : K;
+    int K = C < 255 ? C : 255;
+
+	K = M < K ? M : K;
+	K = Y < K ? Y : K;
+
+	if (K == 255)
+		{
+		pDest[0] = 0;
+		pDest[1] = 0;
+		pDest[2] = 0;
+		pDest[3] = (Byte)K;
+		}
+	else
+		{
+		pDest[0] = (Byte)((C - K) / (255 - K));
+		pDest[1] = (Byte)((M - K) / (255 - K));
+		pDest[2] = (Byte)((Y - K) / (255 - K));
+		pDest[3] = (Byte)K;
+		}
+#endif	
     }
 
 //-----------------------------------------------------------------------------
@@ -78,24 +115,12 @@ struct ConverterV32CMYK_V32CMYK : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        memcpy(pio_pDestRawData, pi_pSourceRawData, 4);
-        }
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         memcpy(pio_pDestRawData, pi_pSourceRawData, pi_PixelsCount * 4);
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override{
         return(new ConverterV32CMYK_V32CMYK(*this));
         }
     };
@@ -112,12 +137,7 @@ public:
     // Functional but the not appropriate for imaging application
     // should be use only for "pie chart" color conversion
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        s_V32CMYK_to_V24RGB((const Byte*)pi_pSourceRawData, (Byte*)pio_pDestRawData);
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte const* pSourceComposite =  (Byte const*)pi_pSourceRawData;
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
@@ -132,15 +152,8 @@ public:
             pSourceComposite += 4;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32CMYK_V24R8G8B8(*this));
         }
     };
@@ -154,12 +167,7 @@ struct ConverterV24R8G8B8_V32CMYK : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        s_V24RGB_to_V32CMYK((const Byte*)pi_pSourceRawData, (Byte*)pio_pDestRawData);
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte const* pSourceComposite = (Byte const*)pi_pSourceRawData;
         Byte*       pDestComposite   = (Byte*)pio_pDestRawData;
@@ -174,15 +182,8 @@ public:
             pSourceComposite += 3;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const override {
         return(new ConverterV24R8G8B8_V32CMYK(*this));
         }
     };
@@ -199,14 +200,7 @@ public:
 
     // Functionnal but the not appropriate for imaging application
     // should be use only for "pie chart" color conversion
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        s_V32CMYK_to_V24RGB((const Byte*)pi_pSourceRawData, (Byte*)pio_pDestRawData);
-        ((Byte*)pio_pDestRawData)[3] = 0xff;  // opaque
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte const* pSourceComposite =  (Byte const*)pi_pSourceRawData;
         Byte* pDestComposite = (Byte*)pio_pDestRawData;
@@ -222,15 +216,8 @@ public:
             pSourceComposite += 4;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32CMYK_V32R8G8B8A8(*this));
         }
     };
@@ -245,13 +232,7 @@ class ConverterV32R8G8B8A8_V32CMYK : public HRPPixelConverter
 public:
     DEFINE_T_SUPER(HRPPixelConverter)
 
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        // Don't care about alpha
-        s_V24RGB_to_V32CMYK((const Byte*)pi_pSourceRawData, (Byte*)pio_pDestRawData);
-        };
-
-    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Convert(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte const* pSourceComposite = (Byte const*)pi_pSourceRawData;
         Byte* pDestComposite   = (Byte*)pio_pDestRawData;
@@ -266,47 +247,8 @@ public:
             pSourceComposite += 4;
             }
         };
-    virtual void    Convert(const void* pi_pSourceRawData,
-                            void* pio_pDestRawData,
-                            size_t pi_PixelsCount,
-                            const bool* pi_pChannelsMask) const
-        {
-        return T_Super::Convert(pi_pSourceRawData,pio_pDestRawData,pi_PixelsCount,pi_pChannelsMask);
-        }
 
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData) const
-        {
-        Byte* pSourceComposite = (Byte*)pi_pSourceRawData;
-        Byte* pDestComposite = (Byte*)pio_pDestRawData;
-
-        // If source pixel is fully transparent, destination is unaltered
-        if (pSourceComposite[3] != 0)
-            {
-            if (pSourceComposite[3] == 255)
-                {
-                // Destination pixel is fully transparent, or source pixel is fully opaque. Copy source pixel.
-                s_V24RGB_to_V32CMYK(pSourceComposite, pDestComposite);
-                }
-            else
-                {
-                HFCMath (*pQuotients) (HFCMath::GetInstance());
-
-                // Convert to RGB for compose.
-                Byte RGB[3];
-                s_V32CMYK_to_V24RGB(pDestComposite, RGB);
-
-                // alpha * (S - D) + D
-                RGB[0] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[0] - RGB[0])) + RGB[0];
-                RGB[1] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[1] - RGB[1])) + RGB[1];
-                RGB[2] = pQuotients->DivideBy255ToByte(pSourceComposite[3] * (pSourceComposite[2] - RGB[2])) + RGB[2];
-
-                // Convert back to CMYK
-                s_V24RGB_to_V32CMYK(RGB, pDestComposite);
-                }
-            }
-        };
-
-    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const
+    virtual void Compose(const void* pi_pSourceRawData, void* pio_pDestRawData, size_t pi_PixelsCount) const override
         {
         Byte* pSourceComposite = (Byte*)pi_pSourceRawData;
         Byte* pDestComposite   = (Byte*)pio_pDestRawData;
@@ -346,12 +288,12 @@ public:
             }
         };
 
-    virtual const short* GetLostChannels() const
+    virtual const short* GetLostChannels() const override
         {
         return m_LostChannels;
         }
 
-    HRPPixelConverter* AllocateCopy() const {
+    HRPPixelConverter* AllocateCopy() const  override{
         return(new ConverterV32R8G8B8A8_V32CMYK(*this));
         }
 

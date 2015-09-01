@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPARule.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Inline methods for class HPARule
 //---------------------------------------------------------------------------
 
-
+BEGIN_IMAGEPP_NAMESPACE
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 inline HPARule& HPARule::operator()(HPANodeCreator* pi_pCreator)
@@ -31,3 +31,4 @@ inline void HPARule::SetLeftRecursive()
     {
     m_IsLeftRecursive = true;
     }
+END_IMAGEPP_NAMESPACE

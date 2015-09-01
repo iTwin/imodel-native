@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeometrycollection.cpp 21310 2010-12-23 12:40:27Z rouault $
+ * $Id: ogrgeometrycollection.cpp 27610 2014-08-27 15:47:43Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRGeometryCollection class.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrgeometrycollection.cpp 21310 2010-12-23 12:40:27Z rouault $");
+CPL_CVSID("$Id: ogrgeometrycollection.cpp 27610 2014-08-27 15:47:43Z rouault $");
 
 /************************************************************************/
 /*                       OGRGeometryCollection()                        */
@@ -119,7 +120,20 @@ OGRwkbGeometryType OGRGeometryCollection::getGeometryType() const
 int OGRGeometryCollection::getDimension() const
 
 {
-    return 2; // This isn't strictly correct.  It should be based on members.
+    int nDimension = 0;
+    /* FIXME? Not sure if it is really appropriate to take the max in case */
+    /* of geometries of different dimension... */
+    for( int i = 0; i < nGeomCount; i++ )
+    {
+        int nSubGeomDimension = papoGeoms[i]->getDimension();
+        if( nSubGeomDimension > nDimension )
+        {
+            nDimension = nSubGeomDimension;
+            if( nDimension == 2 )
+                break;
+        }
+    }
+    return nDimension;
 }
 
 /************************************************************************/
@@ -352,18 +366,24 @@ int OGRGeometryCollection::WkbSize() const
 }
 
 /************************************************************************/
-/*                           importFromWkb()                            */
-/*                                                                      */
-/*      Initialize from serialized stream in well known binary          */
-/*      format.                                                         */
+/*                       importFromWkbInternal()                        */
 /************************************************************************/
 
-OGRErr OGRGeometryCollection::importFromWkb( unsigned char * pabyData,
-                                             int nSize )
+OGRErr OGRGeometryCollection::importFromWkbInternal( unsigned char * pabyData,
+                                                     int nSize, int nRecLevel )
 
 {
     OGRwkbByteOrder     eByteOrder;
     int                 nDataOffset;
+
+    /* Arbitrary value, but certainly large enough for reasonable usages ! */
+    if( nRecLevel == 32 )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined,
+                    "Too many recursiong level (%d) while parsing WKB geometry.",
+                    nRecLevel );
+        return OGRERR_CORRUPT_DATA;
+    }
     
     if( nSize < 9 && nSize != -1 )
         return OGRERR_NOT_ENOUGH_DATA;
@@ -380,18 +400,12 @@ OGRErr OGRGeometryCollection::importFromWkb( unsigned char * pabyData,
 /*      geometry type is between 0 and 255 so we only have to fetch     */
 /*      one byte.                                                       */
 /* -------------------------------------------------------------------- */
+
+    OGRBoolean b3D;
     OGRwkbGeometryType eGeometryType;
+    OGRErr err = OGRReadWKBGeometryType( pabyData, &eGeometryType, &b3D );
 
-    if( eByteOrder == wkbNDR )
-    {
-        eGeometryType = (OGRwkbGeometryType) pabyData[1];
-    }
-    else
-    {
-        eGeometryType = (OGRwkbGeometryType) pabyData[4];
-    }
-
-    if ( eGeometryType != wkbFlatten(getGeometryType()) )
+    if ( err != OGRERR_NONE || eGeometryType != wkbFlatten(getGeometryType()) )
         return OGRERR_CORRUPT_DATA;
 
 /* -------------------------------------------------------------------- */
@@ -441,17 +455,48 @@ OGRErr OGRGeometryCollection::importFromWkb( unsigned char * pabyData,
         OGRErr  eErr;
         OGRGeometry* poSubGeom = NULL;
 
-        eErr = OGRGeometryFactory::
-            createFromWkb( pabyData + nDataOffset, NULL,
-                           &poSubGeom, nSize );
+        /* Parses sub-geometry */
+        unsigned char* pabySubData = pabyData + nDataOffset;
+        if( nSize < 9 && nSize != -1 )
+            return OGRERR_NOT_ENOUGH_DATA;
+        OGRwkbByteOrder eSubGeomByteOrder =
+            DB2_V72_FIX_BYTE_ORDER((OGRwkbByteOrder) *pabySubData);
+
+        if( eSubGeomByteOrder != wkbXDR && eSubGeomByteOrder != wkbNDR )
+            return OGRERR_CORRUPT_DATA;
+
+        OGRwkbGeometryType eSubGeomType;
+        OGRBoolean bIs3D;
+        if ( OGRReadWKBGeometryType( pabySubData, &eSubGeomType, &bIs3D ) != OGRERR_NONE )
+            return OGRERR_FAILURE;
+
+        if( eSubGeomType == wkbPoint ||
+            eSubGeomType == wkbLineString ||
+            eSubGeomType == wkbPolygon)
+        {
+            eErr = OGRGeometryFactory::
+                createFromWkb( pabySubData, NULL,
+                               &poSubGeom, nSize );
+        }
+        else if (eSubGeomType == wkbGeometryCollection ||
+                 eSubGeomType == wkbMultiPolygon ||
+                 eSubGeomType == wkbMultiPoint ||
+                 eSubGeomType == wkbMultiLineString)
+        {
+            poSubGeom = OGRGeometryFactory::createGeometry( eSubGeomType );
+            eErr = ((OGRGeometryCollection*)poSubGeom)->
+                        importFromWkbInternal( pabySubData, nSize, nRecLevel + 1 );
+        }
+        else
+            return OGRERR_UNSUPPORTED_GEOMETRY_TYPE;
 
         if( eErr != OGRERR_NONE )
         {
             nGeomCount = iGeom;
+            delete poSubGeom;
             return eErr;
         }
 
-        OGRwkbGeometryType eSubGeomType = wkbFlatten(poSubGeom->getGeometryType());
         if( (eGeometryType == wkbMultiPoint && eSubGeomType != wkbPoint) ||
             (eGeometryType == wkbMultiLineString && eSubGeomType != wkbLineString) ||
             (eGeometryType == wkbMultiPolygon && eSubGeomType != wkbPolygon) )
@@ -479,13 +524,28 @@ OGRErr OGRGeometryCollection::importFromWkb( unsigned char * pabyData,
 }
 
 /************************************************************************/
+/*                           importFromWkb()                            */
+/*                                                                      */
+/*      Initialize from serialized stream in well known binary          */
+/*      format.                                                         */
+/************************************************************************/
+
+OGRErr OGRGeometryCollection::importFromWkb( unsigned char * pabyData,
+                                             int nSize )
+
+{
+    return importFromWkbInternal(pabyData, nSize, 0);
+}
+
+/************************************************************************/
 /*                            exportToWkb()                             */
 /*                                                                      */
 /*      Build a well known binary representation of this object.        */
 /************************************************************************/
 
 OGRErr  OGRGeometryCollection::exportToWkb( OGRwkbByteOrder eByteOrder,
-                                            unsigned char * pabyData ) const
+                                            unsigned char * pabyData,
+                                            OGRwkbVariant eWkbVariant ) const
 
 {
     int         nOffset;
@@ -500,6 +560,9 @@ OGRErr  OGRGeometryCollection::exportToWkb( OGRwkbByteOrder eByteOrder,
 /*      preserved.                                                      */
 /* -------------------------------------------------------------------- */
     GUInt32 nGType = getGeometryType();
+    
+    if ( eWkbVariant == wkbVariantIso )
+        nGType = getIsoGeometryType();
     
     if( eByteOrder == wkbNDR )
         nGType = CPL_LSBWORD32( nGType );
@@ -530,7 +593,7 @@ OGRErr  OGRGeometryCollection::exportToWkb( OGRwkbByteOrder eByteOrder,
 /* ==================================================================== */
     for( int iGeom = 0; iGeom < nGeomCount; iGeom++ )
     {
-        papoGeoms[iGeom]->exportToWkb( eByteOrder, pabyData + nOffset );
+        papoGeoms[iGeom]->exportToWkb( eByteOrder, pabyData + nOffset, eWkbVariant );
 
         nOffset += papoGeoms[iGeom]->WkbSize();
     }
@@ -539,15 +602,25 @@ OGRErr  OGRGeometryCollection::exportToWkb( OGRwkbByteOrder eByteOrder,
 }
 
 /************************************************************************/
-/*                           importFromWkt()                            */
+/*                       importFromWktInternal()                        */
 /************************************************************************/
 
-OGRErr OGRGeometryCollection::importFromWkt( char ** ppszInput )
+OGRErr OGRGeometryCollection::importFromWktInternal( char ** ppszInput, int nRecLevel )
 
 {
 
     char        szToken[OGR_WKT_TOKEN_MAX];
     const char  *pszInput = *ppszInput;
+
+
+    /* Arbitrary value, but certainly large enough for reasonable usages ! */
+    if( nRecLevel == 32 )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined,
+                    "Too many recursiong level (%d) while parsing WKT geometry.",
+                    nRecLevel );
+        return OGRERR_CORRUPT_DATA;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Clear existing Geoms.                                           */
@@ -641,8 +714,25 @@ OGRErr OGRGeometryCollection::importFromWkt( char ** ppszInput )
         OGRGeometry *poGeom = NULL;
         OGRErr      eErr;
 
-        eErr = OGRGeometryFactory::createFromWkt( (char **) &pszInput,
-                                                  NULL, &poGeom );
+    /* -------------------------------------------------------------------- */
+    /*      Get the first token, which should be the geometry type.         */
+    /* -------------------------------------------------------------------- */
+        if( OGRWktReadToken( pszInput, szToken ) == NULL )
+            return OGRERR_CORRUPT_DATA;
+
+    /* -------------------------------------------------------------------- */
+    /*      Do the import.                                                  */
+    /* -------------------------------------------------------------------- */
+        if (EQUAL(szToken,"GEOMETRYCOLLECTION"))
+        {
+            poGeom = new OGRGeometryCollection();
+            eErr = ((OGRGeometryCollection*)poGeom)->
+                        importFromWktInternal( (char **) &pszInput, nRecLevel + 1 );
+        }
+        else
+            eErr = OGRGeometryFactory::createFromWkt( (char **) &pszInput,
+                                                       NULL, &poGeom );
+
         if( eErr != OGRERR_NONE )
             return eErr;
 
@@ -665,6 +755,16 @@ OGRErr OGRGeometryCollection::importFromWkt( char ** ppszInput )
     *ppszInput = (char *) pszInput;
     
     return OGRERR_NONE;
+}
+
+/************************************************************************/
+/*                           importFromWkt()                            */
+/************************************************************************/
+
+OGRErr OGRGeometryCollection::importFromWkt( char ** ppszInput )
+
+{
+    return importFromWktInternal(ppszInput, 0);
 }
 
 /************************************************************************/
@@ -787,6 +887,53 @@ void OGRGeometryCollection::getEnvelope( OGREnvelope * psEnvelope ) const
 }
 
 /************************************************************************/
+/*                            getEnvelope()                             */
+/************************************************************************/
+
+void OGRGeometryCollection::getEnvelope( OGREnvelope3D * psEnvelope ) const
+
+{
+    OGREnvelope3D       oGeomEnv;
+    int                 bExtentSet = FALSE;
+
+    for( int iGeom = 0; iGeom < nGeomCount; iGeom++ )
+    {
+        if (!papoGeoms[iGeom]->IsEmpty())
+        {
+            if (!bExtentSet)
+            {
+                papoGeoms[iGeom]->getEnvelope( psEnvelope );
+                bExtentSet = TRUE;
+            }
+            else
+            {
+                papoGeoms[iGeom]->getEnvelope( &oGeomEnv );
+
+                if( psEnvelope->MinX > oGeomEnv.MinX )
+                    psEnvelope->MinX = oGeomEnv.MinX;
+                if( psEnvelope->MinY > oGeomEnv.MinY )
+                    psEnvelope->MinY = oGeomEnv.MinY;
+                if( psEnvelope->MaxX < oGeomEnv.MaxX )
+                    psEnvelope->MaxX = oGeomEnv.MaxX;
+                if( psEnvelope->MaxY < oGeomEnv.MaxY )
+                    psEnvelope->MaxY = oGeomEnv.MaxY;
+
+                if( psEnvelope->MinZ > oGeomEnv.MinZ )
+                    psEnvelope->MinZ = oGeomEnv.MinZ;
+                if( psEnvelope->MaxZ < oGeomEnv.MaxZ )
+                    psEnvelope->MaxZ = oGeomEnv.MaxZ;
+            }
+        }
+    }
+
+    if (!bExtentSet)
+    {
+        psEnvelope->MinX = psEnvelope->MinY = psEnvelope->MinZ = 0;
+        psEnvelope->MaxX = psEnvelope->MaxY = psEnvelope->MaxZ = 0;
+    }
+}
+
+/************************************************************************/
 /*                               Equals()                               */
 /************************************************************************/
 
@@ -800,6 +947,9 @@ OGRBoolean OGRGeometryCollection::Equals( OGRGeometry * poOther ) const
     
     if( poOther->getGeometryType() != getGeometryType() )
         return FALSE;
+
+    if ( IsEmpty() && poOther->IsEmpty() )
+        return TRUE;
 
     if( getNumGeometries() != poOGC->getNumGeometries() )
         return FALSE;

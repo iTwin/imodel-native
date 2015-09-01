@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMTranslucentImageCreator.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,10 +10,11 @@
 #include "HRPAlphaRange.h"
 #include "HRARaster.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HIMTranslucentImageCreator
     {
-    HDECLARE_SEALEDCLASS_ID(1211)
+    HDECLARE_SEALEDCLASS_ID(HIMTranslucentImageCreatorId_Base)
 
 public:
 
@@ -27,9 +28,9 @@ public:
 
     // Primary methods
 
-    _HDLLg                 HIMTranslucentImageCreator(const HFCPtr<HRARaster>& pi_pSource,
+    IMAGEPP_EXPORT                 HIMTranslucentImageCreator(const HFCPtr<HRARaster>& pi_pSource,
                                                       Byte pi_DefaultAlpha = 255);
-    _HDLLg                ~HIMTranslucentImageCreator();
+    IMAGEPP_EXPORT                ~HIMTranslucentImageCreator();
 
 
 
@@ -41,10 +42,10 @@ public:
     GetAlphaRanges() const;
     void            RemoveAllRanges();
 
-    _HDLLg void                 SetTranslucencyMethod(TranslucencyMethod pi_Method);
-    _HDLLg TranslucencyMethod   GetTranslucencyMethod() const;
+    IMAGEPP_EXPORT void                 SetTranslucencyMethod(TranslucencyMethod pi_Method);
+    IMAGEPP_EXPORT TranslucencyMethod   GetTranslucencyMethod() const;
 
-    _HDLLg HRARaster*      CreateTranslucentRaster(Byte const* pi_pAlphaValues = 0) const;
+    IMAGEPP_EXPORT HRARaster*      CreateTranslucentRaster(Byte const* pi_pAlphaValues = 0) const;
 
 
 private:
@@ -66,3 +67,5 @@ private:
     operator=(const HIMTranslucentImageCreator& pi_rObj);
     };
 
+
+END_IMAGEPP_NAMESPACE

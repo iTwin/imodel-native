@@ -2,20 +2,20 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFGeoKey.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HTIFFGeoKey
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HTIFFGeoKey.h>
 #include <Imagepp/all/h/HTIFFUtils.h>
 #include <Imagepp/all/h/HTIFFTagDefinition.h>
 
-USING_NAMESPACE_IMAGEPP
+
 
 static const int KEYVALUE       = 0;
 static const int TAGVALUE       = 1;
@@ -155,7 +155,7 @@ HTIFFGeoKey::HTIFFGeoKey (const unsigned short* pi_pGeoKeyDirectory, uint32_t pi
                 }
             }
 
-        else if (pi_pGeoKeyDirectory[TAGVALUE] == TIFFTAG_GEODOUBLEPARAMS)
+        else if (pi_pGeoKeyDirectory[TAGVALUE] == HTIFFTAG_GEODOUBLEPARAMS)
             {
             // Validate position and Count
             if (((uint32_t)pi_pGeoKeyDirectory[COUNTVALUE]+(uint32_t)pi_pGeoKeyDirectory[OFFSETVALUE]) > pi_GeoDoubleCount)
@@ -171,7 +171,7 @@ HTIFFGeoKey::HTIFFGeoKey (const unsigned short* pi_pGeoKeyDirectory, uint32_t pi
                 }
             }
 
-        else if (pi_pGeoKeyDirectory[TAGVALUE] == TIFFTAG_GEOASCIIPARAMS)
+        else if (pi_pGeoKeyDirectory[TAGVALUE] == HTIFFTAG_GEOASCIIPARAMS)
             {
             // Validate position and Count
             if (((uint32_t)pi_pGeoKeyDirectory[COUNTVALUE]+(uint32_t)pi_pGeoKeyDirectory[OFFSETVALUE]) > ASCIIParamsLen)
@@ -318,7 +318,7 @@ void HTIFFGeoKey::GetGeoParams(unsigned short** po_ppGeoKeyDirectory, uint32_t* 
         switch(((*Itr).second).Type)
             {
             case HTagInfo::ASCII:
-                pShort[TAGVALUE]    = TIFFTAG_GEOASCIIPARAMS;
+                pShort[TAGVALUE]    = HTIFFTAG_GEOASCIIPARAMS;
                 pShort[OFFSETVALUE] = (unsigned short)ASCIICount;
                 ASCIICount += ((*Itr).second).Count;
 
@@ -331,7 +331,7 @@ void HTIFFGeoKey::GetGeoParams(unsigned short** po_ppGeoKeyDirectory, uint32_t* 
                 break;
 
             case HTagInfo::DOUBLE:
-                pShort[TAGVALUE]    = TIFFTAG_GEODOUBLEPARAMS;
+                pShort[TAGVALUE]    = HTIFFTAG_GEODOUBLEPARAMS;
                 pShort[OFFSETVALUE] = (unsigned short)(DoubleCount);
 
                 if (((*Itr).second).Count > 1)

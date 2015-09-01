@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: all/utl/hpm/src/HPMPool.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HPMPool.h>
 
 //Debug Trace
@@ -18,14 +18,47 @@
 #endif
 
 // Global variable initialization
-HPMPool g_DefaultPool;
 
 //-----------------------------------------------------------------------------
 // class HPMPoolItem
 //-----------------------------------------------------------------------------
 HPMPoolItem::~HPMPoolItem()
     {
+    // In theory, this should have been performed before as the
+    // Discard method is virtual, calling it in the destructor prevents the
+    // call of the proper override
+
+//    if (!IsDiscarded())
+//        {
+//        HASSERT(!Pinned() || !"Pool item cannot be pinned upon destruction");
+//        HASSERT(!"Discard should have been called prior to reaching this point.");
+//        Discard();
+//        }
     }
+
+//-----------------------------------------------------------------------------
+// SetDirty
+//-----------------------------------------------------------------------------
+// void HPMPoolItem::SetDirty(bool dirty) const 
+//    {
+//    m_Dirty = dirty;
+//    }
+    
+
+//-----------------------------------------------------------------------------
+// Discard
+// Normally this method is overriden by descendant.
+//-----------------------------------------------------------------------------
+//bool HPMPoolItem::Discard()
+//    {
+//    HPRECONDITION(m_pPool != 0 && !m_Discarded);
+//    m_pPool->RemoveItem(this);
+//    return true;
+//    } 
+
+
+
+
 
 
 
@@ -41,27 +74,41 @@ HPMPoolItem::~HPMPoolItem()
                      pool.
 -----------------------------------------------------------------------------*/
 HPMPool::HPMPool(size_t pi_PoolLimit, MemoryMgrType pi_MemoryMgrType)
+: HFCExclusiveKey()
+{
+    HPRECONDITION(pi_PoolLimit < (SIZE_MAX / 1024));  
+    m_SizeLimit = pi_PoolLimit * 1024;
+    m_SizeCount = 0;
+    
+    switch (pi_MemoryMgrType)
+    {
+        case ExportRaster: // Export
+            m_MemoryManager = new HPMMemoryMgrExport(m_SizeLimit, this);
+            break;
+
+        case KeepLastBlock: // Normal pool            
+            m_MemoryManager = new HPMMemoryMgrKeepLastEntry(m_SizeLimit, this);
+            break;
+        
+        case None:
+        default:
+            m_MemoryManager = 0;
+            break;
+    }
+}
+
+
+HPMPool::HPMPool(size_t pi_PoolLimit, IHPMMemoryManager* memoryManager)
     : HFCExclusiveKey()
     {
     HPRECONDITION(pi_PoolLimit < (SIZE_MAX / 1024));
     m_SizeLimit = pi_PoolLimit * 1024;
     m_SizeCount = 0;
 
-    switch (pi_MemoryMgrType)
-        {
-        case ExportRaster: // Export
-            m_MemMgr = new HPMMemoryMgrExport(m_SizeLimit, this);
-            break;
+    m_MemoryManager = memoryManager;
 
-        case KeepLastBlock: // Normal pool
-            m_MemMgr = new HPMMemoryMgrKeepLastEntry(m_SizeLimit, this);
-            break;
 
-        case None:
-        default:
-            m_MemMgr = 0;
-            break;
-        }
+    HINVARIANTS;
     }
 
 /**----------------------------------------------------------------------------
@@ -70,7 +117,35 @@ HPMPool::HPMPool(size_t pi_PoolLimit, MemoryMgrType pi_MemoryMgrType)
 HPMPool::~HPMPool()
     {
     HASSERT(m_Pool.size() == 0);
+//    HASSERT(m_SizeCount == 0);
+
+//    while (m_Pool.size() > 0)
+//        {
+//        m_Pool.front()->Discard(); 
+//        }
+    
     }
+
+
+/**----------------------------------------------------------------------------
+ Called by loader when it has created a smart pointer.
+-----------------------------------------------------------------------------*/
+void HPMPool::ValidateInvariants() const
+    {
+    // Validation of invariants is mainly validating the invariants of the
+    // managed pool items.
+//    size_t totalSize = 0L;
+//    PoolList::const_iterator itr = m_Pool.begin();
+//    for ( ; itr != m_Pool.end() ; itr++)
+//        {
+//        HASSERT(!(*itr)->IsDiscarded());
+//        (*itr)->ValidateInvariants();
+//        totalSize += (*itr)->GetMemorySize();
+//        }
+//    HASSERT(m_SizeCount == totalSize);
+
+    }
+
 
 
 /**----------------------------------------------------------------------------
@@ -80,40 +155,48 @@ void HPMPool::NotifyAccess(const HFCPtr<HPMPoolItem>& pi_rpItem)
     {
     HPRECONDITION(pi_rpItem != 0);
     HFCMonitor Monitor(this);
+
+    // If there is no size limitations to the pool then MRU list is not maintained.
     if (!m_SizeLimit)
         return;
 
     // When entry is not already in list, size count is incremented;
     // otherwise it is refreshed in case size has changed.
-    if (pi_rpItem->m_ObjectSize > 1)  // value is 0 or 1 when not in list
+    if (pi_rpItem->GetPoolManaged()) 
         {
-        m_SizeCount -= pi_rpItem->m_ObjectSize;
-        m_Pool.erase(pi_rpItem->m_Itr);  // removing to replace to front of the list
+        m_SizeCount -= pi_rpItem->GetMemorySize();
+        m_Pool.erase(pi_rpItem->GetPoolIterator());  // removing to replace to front of the list
         }
 
     pi_rpItem->UpdateCachedSize();
-    m_SizeCount += pi_rpItem->m_ObjectSize;
+    m_SizeCount += pi_rpItem->GetMemorySize();
 
     // Updating the list
     m_Pool.push_front(pi_rpItem);
-    pi_rpItem->m_Itr = m_Pool.begin();
-    pi_rpItem->m_Discarded = false;
+    pi_rpItem->SetPoolIterator(m_Pool.begin());
+    pi_rpItem->SetDiscarded(false);
 
 
+    // Because we just updated the size we may be busting the limit.
     // Removing entries from the end of the list while the size counts exceeds
     // the limit.  Discard notifications are sent.  List is kept to a minimum
     // of one entry to avoid infinite looping when limit is too low.
+
 
     HFCPtr<HPMPoolItem> pItem;
     while ((m_SizeCount > m_SizeLimit) && (m_Pool.size() > 1))
         {
         pItem = m_Pool.back();
         m_Pool.pop_back();  // remove object from pool
-        m_SizeCount -= pItem->m_ObjectSize;
-        pItem->m_Discarded = true;
+        m_SizeCount -= pItem->GetMemorySize();
+
+        pItem->SetDiscarded(true);
         pItem->m_ObjectSize = 0;
         pItem = 0;  // release the object
         }
+        
+    HINVARIANTS;
+
     }
 
 /**----------------------------------------------------------------------------
@@ -125,7 +208,7 @@ void HPMPool::NotifyAccess(const HFCPtr<HPMPoolItem>& pi_rpItem)
                      consumed by objects managed by loaders associated to this
                      pool.
 -----------------------------------------------------------------------------*/
-void HPMPool::ChangeLimit(size_t pi_NewPoolLimit)
+bool HPMPool::ChangeLimit(size_t pi_NewPoolLimit)
     {
     HPRECONDITION(pi_NewPoolLimit < (SIZE_MAX / 1024));
     HFCMonitor Monitor(this);
@@ -139,27 +222,66 @@ void HPMPool::ChangeLimit(size_t pi_NewPoolLimit)
         {
         pItem = m_Pool.back();
         m_Pool.pop_back();  // remove object from pool
-        m_SizeCount -= pItem->m_ObjectSize;
-        pItem->m_Discarded = true;
+        m_SizeCount -= pItem->GetMemorySize();
+        pItem->SetDiscarded(true);
         pItem->m_ObjectSize = 0;
         pItem = 0;
         }
+
+    HINVARIANTS;
+
+    return true;
     }
 
 
-void HPMPool::NeedMemory(size_t pi_DataSize, size_t pi_ObjectSize)
+
+bool HPMPool::NeedMemory(size_t pi_DataSize, size_t pi_ObjectSize)
     {
-    if (m_MemMgr != 0)
-        m_MemMgr->NeedMemory(pi_DataSize, pi_ObjectSize);
+    HINVARIANTS;
 
+#if (1)
+    if (m_MemoryManager != 0)
+        m_MemoryManager->NeedMemory(pi_DataSize, pi_ObjectSize);
+
+    return true;
+#else
+    HFCMonitor Monitor(this);
+
+    if (m_SizeLimit != 0 && m_SizeCount > 0)
+        {
+        // Check if memory limit attained
+        while (m_SizeCount + pi_DataSize > m_SizeLimit)
+            {
+
+            HFCPtr<HPMPoolItem> pItem = m_Pool.back();
+            m_Pool.erase(pItem->GetPoolIterator());
+
+            m_SizeCount -= pItem->GetMemorySize();
+            Monitor.ReleaseKey();
+            pItem->SetDiscarded(true);
+            pItem->m_ObjectSize = 0;
+            pItem = 0;  // release the object
+            }
+
+        return true;
+        }
+    else
+        {
+        return false;
+        }    
+#endif
     }
 
+/**----------------------------------------------------------------------------
+ Default pool MRU based pool allocation
+-----------------------------------------------------------------------------*/
+// TBD RENAME ALLOCATE
 Byte* HPMPool::AllocMemory(size_t pi_MemorySize)
     {
     HFCMonitor Monitor(this);
 
-    if (m_MemMgr != 0)
-        return m_MemMgr->AllocMemory(pi_MemorySize);
+    if (m_MemoryManager != 0)
+        return m_MemoryManager->AllocMemory(pi_MemorySize);
     else
         {
         HASSERT(false);
@@ -171,8 +293,8 @@ void HPMPool::FreeMemory(Byte* pi_MemPtr, size_t pi_MemorySize)
     {
     HFCMonitor Monitor(this);
 
-    if (m_MemMgr != 0)
-        m_MemMgr->FreeMemory(pi_MemPtr, pi_MemorySize);
+    if (m_MemoryManager != 0)
+        m_MemoryManager->FreeMemory(pi_MemPtr, pi_MemorySize);
     else
         {
         HASSERT(false);
@@ -182,9 +304,195 @@ void HPMPool::FreeMemory(Byte* pi_MemPtr, size_t pi_MemorySize)
 
 
 /**----------------------------------------------------------------------------
+ Unpins the item ... The memory will be immediately deleted if the object has been
+ discarded while pinned.
+-----------------------------------------------------------------------------*/
+//void HPMPoolItem::UnPin() const
+//    {
+//    if (Pinned())
+//        {
+//        m_Pinned = false;
+        // Delayed discard
+//        if (IsDiscarded())
+//            {
+//            if (m_Memory != NULL)
+//                m_pPool->FreeRemovedItemMemory(*this);
+//            }
+//        }
+//    }
+
+/**----------------------------------------------------------------------------
+Try to free memory if possible...
+If return false: the default implementation will be called
+if return true: the default implementation is not called.
+-----------------------------------------------------------------------------*/
+bool IHPMMemoryManager::NeedMemory(size_t pi_DataSize, size_t pi_ObjectSize)
+    {
+    return false;
+    }
+
+
+
+/**----------------------------------------------------------------------------
+ Constructor for this class.  Require limit parameters for memory management.
+ Default: unlimited objects (value is zero).
+
+ @param pi_PoolLimit Specifies the limit, in kilobytes, of the memory to be
+                     consumed by objects managed by loaders associated to this
+                     pool.
+-----------------------------------------------------------------------------*/
+HPMKeepLastBlockPool::HPMKeepLastBlockPool(size_t pi_PoolLimit)
+    : HPMPool(pi_PoolLimit, NULL)
+    {
+    // Although the ancester constructor specified a NULL for memory manager we
+    // instead want one that unfortunately required this which implies construction
+    // had to be started to obtain.
+    m_MemoryManager = new HPMMemoryMgrReuseAlreadyAllocatedBlocks(20);
+
+    }
+
+/**----------------------------------------------------------------------------
+ Destructor for this class.
+-----------------------------------------------------------------------------*/
+HPMKeepLastBlockPool::~HPMKeepLastBlockPool()
+    {
+    }
+
+
+
+/**----------------------------------------------------------------------------
+ Constructor for this class.  Require limit parameters for memory management.
+ Default: unlimited objects (value is zero).
+
+ @param pi_PoolLimit Specifies the limit, in kilobytes, of the memory to be
+                     consumed by objects managed by loaders associated to this
+                     pool.
+-----------------------------------------------------------------------------*/
+HPMExportPool::HPMExportPool(size_t pi_PoolLimit)
+    : HPMPool(pi_PoolLimit, NULL)
+    {
+    // Although the ancester constructor specified a NULL for memory manager we
+    // instead want one that unfortunately required this which implies construction
+    // had to be started to obtain.
+    m_MemoryManager = new HPMMemoryMgrExport(pi_PoolLimit, this);
+    }
+
+/**----------------------------------------------------------------------------
+ Destructor for this class.
+-----------------------------------------------------------------------------*/
+HPMExportPool::~HPMExportPool()
+    {
+    }
+
+bool HPMExportPool::NeedMemory(size_t pi_DataSize, size_t pi_ObjectSize)
+    {
+    HINVARIANTS;
+
+    if (m_MemoryManager != 0)
+        m_MemoryManager->NeedMemory(pi_DataSize, pi_ObjectSize);
+
+    return true;
+    }
+
+#if (0)
+/**----------------------------------------------------------------------------
+ Allocator for this export oriented pool
+-----------------------------------------------------------------------------*/
+bool HPMExportPool::AllocMemory(size_t pi_MemorySize, const HPMPoolItem& poolItem)
+    {
+    // The pool item may not be currently pool managed
+    HPRECONDITION (!poolItem.GetPoolManaged());
+
+    HFCMonitor Monitor(this);
+
+    // The main characteristic of this pool is that it expects to have a single
+    // object of any given size managed and allocated at the same time. From this
+    // principle, allocation requires, if the memory limit is attained that
+    // the memory block of the same size which is requested be freed upon allocation of
+    // the memory required by the item
+    
+    // First check if it is possible to allocate this new block (is the limit already attained)
+    // Check if memory limit attained
+    if (m_SizeCount + pi_MemorySize > m_SizeLimit)
+        {
+        // Some meory must be freed ... first try to find an item which uses the same memory size
+        PoolList::reverse_iterator foundItem = m_Pool.rend();
+        PoolList::reverse_iterator itrItem;
+        for (itrItem = m_Pool.rbegin() ; itrItem != m_Pool.rend() ; itrItem--)
+            {
+            if ((*itrItem)->GetMemorySize() == pi_MemorySize)
+                foundItem = itrItem;
+            }
+
+        if (foundItem == m_Pool.rend())
+            {
+            // No block of same size found ... we instead try to locate the block that is the closest in size
+            // but is still greater than requested memory
+            for (itrItem = m_Pool.rbegin() ; itrItem != m_Pool.rend() ; itrItem--)
+                {
+                if ((*itrItem)->GetMemorySize() >= pi_MemorySize)
+                    {
+                    // It is greater than required ... 
+                    if (foundItem == m_Pool.rend())
+                        {
+                        // No current item ... 
+                        }
+                    else if ((*itrItem)->GetMemorySize() < (*foundItem)->GetMemorySize())
+                        {
+                        // Both are greater but new is smaller than current .. it becomes out new candidate
+                        foundItem = itrItem;
+                        }
+                    }
+                }
+            }
+
+        if (foundItem == m_Pool.rend())
+            {
+            // No item found ... we will use brute force and used the default strategy of the ancester which
+            // is deallocate according to MRU
+            return HPMPool::AllocMemory (pi_MemorySize, poolItem);
+            }
+
+        
+        // At this point ... we have an adequate item ready to be discarded which we do
+        if (!(*foundItem)->Discard())
+            {
+            HASSERT("A problem occured trying to discard an item from pool");
+            return false;
+            }
+        }
+
+    // We allocated memory
+    Byte* pMemory;
+    size_t actualAllocatedSize = pi_MemorySize;
+    size_t actualAllocatedMemory = 0;
+    if (m_MemoryManager != NULL)
+        {
+        pMemory = m_MemoryManager->AllocMemoryExt (pi_MemorySize, actualAllocatedMemory);
+        actualAllocatedSize = actualAllocatedMemory; // Trunction of remainder is intended
+        HASSERT (actualAllocatedSize >= pi_MemorySize);
+        }
+    else
+        pMemory = new Byte[pi_MemorySize];
+
+    HASSERT(pMemory != NULL);
+
+    poolItem.SetMemory(pMemory, actualAllocatedSize);
+    m_SizeCount += actualAllocatedSize;
+
+    m_Pool.push_front(const_cast<HPMPoolItem*>(&poolItem));
+    poolItem.SetPoolIterator (m_Pool.begin());
+    poolItem.SetPoolManaged(true);
+    return true;
+    }
+
+#endif
+
+
+/**----------------------------------------------------------------------------
  Allocates memory ... indicates the actual size allocated if greater.
 -----------------------------------------------------------------------------*/
-Byte* HPMMemoryMgr::AllocMemoryExt(size_t pi_MemorySize, size_t& po_ActualMemory)
+Byte* IHPMMemoryManager::AllocMemoryExt(size_t pi_MemorySize, size_t& po_ActualMemory)
     {
     Byte* temp = AllocMemory(pi_MemorySize);
     po_ActualMemory = pi_MemorySize;
@@ -200,7 +508,7 @@ static FILE* sFileTraceExport=0;
 #endif
 
 HPMMemoryMgrExport::HPMMemoryMgrExport(size_t pi_MemorySize, HPMPool* pi_pPool)
-    : HPMMemoryMgr()
+    : IHPMMemoryManager()
     {
     HPRECONDITION(pi_pPool != 0);
 
@@ -454,7 +762,7 @@ int HPMMemoryMgrExport::FindEntry(size_t pi_MemorySize, bool& po_MemAlreadyAlloc
 static FILE* sFileTraceKeepLast=0;
 #endif
 HPMMemoryMgrKeepLastEntry::HPMMemoryMgrKeepLastEntry(size_t pi_MemorySize, HPMPool* pi_pPool)
-    : HPMMemoryMgr()
+    : IHPMMemoryManager()
     {
     HPRECONDITION(pi_pPool != 0);
 
@@ -473,7 +781,7 @@ HPMMemoryMgrKeepLastEntry::~HPMMemoryMgrKeepLastEntry()
     fprintf(sFileTraceKeepLast, "Destructor\n");
 #endif
 
-    // cleanup the memory cached by the MemoryMgr
+    // cleanup the memory cached by the MemoryManager
     for (int i=0; i<MgrKeepLastEntryMaxEntry; ++i)
         {
         if (m_MemMgrList[i].Offset != 0)
@@ -562,7 +870,7 @@ void HPMMemoryMgrKeepLastEntry::FreeMemory(Byte* pi_MemPtr, size_t pi_MemorySize
 
 
 HPMMemoryMgrReuseAlreadyAllocatedBlocks::HPMMemoryMgrReuseAlreadyAllocatedBlocks(size_t maxFreeBlocks)
-    : HPMMemoryMgr()
+    : IHPMMemoryManager()
     {
     m_maxFreeBlocks = maxFreeBlocks;
 
@@ -618,6 +926,9 @@ Byte* HPMMemoryMgrReuseAlreadyAllocatedBlocks::AllocMemoryExt(size_t pi_MemorySi
 
 #ifdef __HMR_DEBUG
     m_allocCount++;
+
+    // For the purpose of debugging we increase the requested size by 4 bytes
+    pi_MemorySize += 2;
 #endif
 
     Byte* pMemory = 0;
@@ -641,6 +952,8 @@ Byte* HPMMemoryMgrReuseAlreadyAllocatedBlocks::AllocMemoryExt(size_t pi_MemorySi
         // A valid free block was found ... reactivate it
         itrFound->State = SysAllocated;
         pMemory = itrFound->Offset;
+
+        // Note that in debug mode, the node size contains the 4 additional bytes.
         po_ActualSize = itrFound->Size;
         m_UsedMemMgrList.push_back(*itrFound);
         m_FreeMemMgrList.erase(itrFound);
@@ -664,10 +977,16 @@ Byte* HPMMemoryMgrReuseAlreadyAllocatedBlocks::AllocMemoryExt(size_t pi_MemorySi
 
         }
 
+
+    HASSERT(po_ActualSize >= pi_MemorySize);
 #ifdef __HMR_DEBUG
     m_reuseRatio = (m_allocCount - m_realAllocCount) / (double)m_allocCount;
+
+    // Since in debug we actually allocated 4 additional bytes we diminish the reported size
+    po_ActualSize -= 2;
+    pMemory += 2;
 #endif
-    HASSERT(po_ActualSize >= pi_MemorySize);
+
     return pMemory;
     }
 
@@ -676,21 +995,36 @@ void HPMMemoryMgrReuseAlreadyAllocatedBlocks::FreeMemory(Byte* pi_MemPtr, size_t
     // For this implementation the second parameter is ignored
     if (pi_MemPtr != 0)
         {
+        Byte* pDeallocMemory = pi_MemPtr;
 #ifdef __HMR_DEBUG
         m_deallocCount++;
+
+        
+        // We adjust the location of the memory to be freed in debug
+        pDeallocMemory = pDeallocMemory - 2;
+        bool locatedBlock = false;;
 #endif
         vector<MemEntry>::iterator itr;
         for(itr = m_UsedMemMgrList.begin() ; itr != m_UsedMemMgrList.end(); ++itr)
             {
-            if (itr->Offset == pi_MemPtr)
+            if (itr->Offset == pDeallocMemory)
                 {
                 itr->State = SysFree;
                 m_FreeMemMgrList.push_back(*itr);
                 m_UsedMemMgrList.erase(itr);
+
+#ifdef __HMR_DEBUG
+                locatedBlock = true;
+#endif
                 break;
                 }
             }
+#ifdef __HMR_DEBUG
+        HASSERT(locatedBlock);
+#endif
         }
+
+    
 
     // Check if the maximum number of free blocks attained
     if (m_FreeMemMgrList.size() > m_maxFreeBlocks)
@@ -743,6 +1077,7 @@ HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment::HPMMemoryMgrReuseAlreadyAl
 
 HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment::~HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment()
     {
+    FreeAll();
     }
 
 
@@ -753,13 +1088,16 @@ Byte* HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment::AllocMemoryExt(size_
     if (pi_MemorySize == 0)
         return NULL;
 
+#ifdef __HMR_DEBUG
+    m_allocCount++;
+    pi_MemorySize += 2;
+#endif
+
+
     // Compute alignment size
     if (m_alignment != 0)
         pi_MemorySize = (((pi_MemorySize - 1) / m_alignment) + 1) * m_alignment;
 
-#ifdef __HMR_DEBUG
-    m_allocCount++;
-#endif
 
     Byte* pMemory = 0;
     // Search through free blocks
@@ -804,12 +1142,15 @@ Byte* HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment::AllocMemoryExt(size_
         m_UsedMemMgrList.push_back(newEntry);
 
         }
-
+    HASSERT(po_ActualSize >= pi_MemorySize);
 #ifdef __HMR_DEBUG
     m_reuseRatio = (m_allocCount - m_realAllocCount) / (double)m_allocCount;
+    po_ActualSize -= 2;
+    pMemory += 2;
+
 #endif
 
-    HASSERT(po_ActualSize >= pi_MemorySize);
+
     return pMemory;
     }
 
@@ -818,20 +1159,33 @@ void HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment::FreeMemory(Byte* pi_M
     // For this implementation the second parameter is ignored
     if (pi_MemPtr != 0)
         {
+        Byte* pDeallocMemory = pi_MemPtr;
 #ifdef __HMR_DEBUG
         m_deallocCount++;
+
+        // We adjust the location of the memory to be freed in debug
+        pDeallocMemory = pDeallocMemory - 2;
+        bool locatedBlock = false;;
+
 #endif
         vector<MemEntry>::iterator itr;
         for(itr = m_UsedMemMgrList.begin() ; itr != m_UsedMemMgrList.end(); ++itr)
             {
-            if (itr->Offset == pi_MemPtr)
+            if (itr->Offset == pDeallocMemory)
                 {
                 itr->State = SysFree;
                 m_FreeMemMgrList.push_back(*itr);
                 m_UsedMemMgrList.erase(itr);
+#ifdef __HMR_DEBUG
+                locatedBlock = true;
+#endif
                 break;
                 }
             }
+#ifdef __HMR_DEBUG
+        HASSERT(locatedBlock);
+#endif
+
         }
 
     // Check if the maximum number of free blocks attained

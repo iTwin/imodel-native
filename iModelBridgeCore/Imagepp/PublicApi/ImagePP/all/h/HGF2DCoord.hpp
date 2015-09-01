@@ -2,12 +2,16 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DCoord.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HGF2DCoord
 //-----------------------------------------------------------------------------
+
+#include "HGF2DDisplacement.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 //-----------------------------------------------------------------------------
 // Default Constructor
@@ -341,6 +345,8 @@ template<class DataType> inline DataType& HGF2DCoord<DataType>::operator[](int p
     return ((pi_CoordinateRef == 0) ? m_XValue : m_YValue);
     }
 
+
+
 /** -----------------------------------------------------------------------------
     Dereference operator. It returns a reference to the specified coordinate.
     This value cannot be modified since the object is const.
@@ -370,6 +376,17 @@ template<class DataType> inline const DataType& HGF2DCoord<DataType>::operator[]
     return ((pi_CoordinateRef == 0) ? m_XValue : m_YValue);
     }
 
+
+
+//-----------------------------------------------------------------------------
+// Calculates length to other point
+//-----------------------------------------------------------------------------
+template<class DataType> DataType HGF2DCoord<DataType>::CalculateLengthTo(const HGF2DCoord<DataType>& pi_rPoint) const
+    {
+    // Compute in meters squared the intermediate value
+    HGF2DDisplacement newDisp(m_XValue - pi_rPoint.m_XValue, m_YValue - pi_rPoint.m_YValue);
+    return newDisp.CalculateLength();
+    }
 
 //-----------------------------------------------------------------------------
 // PrintState
@@ -540,9 +557,7 @@ template<> inline void HGF2DCoord<float>::PrintState(ostream& po_rOutput) const
     }
 
 
-
-
-
+END_IMAGEPP_NAMESPACE
 
 
 

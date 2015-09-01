@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTImportFromFileExportToFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class: HUTImportFromFileExportToFile
 // ----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 
 
@@ -121,7 +121,7 @@ void HUTImportFromFileExportToFile::InitImportRasterFile()
     // Resample Size
     //
     // Load Raster, to extract logical dimension for Resampling option
-    HPMPool                 Log;
+    HPMPool                 Log(0, NULL);
     HFCPtr<HRSObjectStore>  pStore  = new HRSObjectStore (&Log,
                                                           m_pSelectedImportFile,
                                                           0,
@@ -154,7 +154,7 @@ void HUTImportFromFileExportToFile::InitImportRasterFile()
     HGF2DExtent PixelSize(TmpExtentMin.CalculateApproxExtentIn(m_pWorldCluster->GetCoordSysReference(HGF2DWorld_UNKNOWNWORLD)));
 
     // PixelSize Area.
-    m_DefaultResampleScaleFactorX = min(PixelSize.GetWidth(), PixelSize.GetHeight());
+    m_DefaultResampleScaleFactorX = MIN(PixelSize.GetWidth(), PixelSize.GetHeight());
 
     // The pixel size may not be 0.0 (exact compare)
     HASSERT(m_DefaultResampleScaleFactorX != 0.0);
@@ -248,7 +248,7 @@ HFCPtr<HRFRasterFile> HUTImportFromFileExportToFile::StartExport()
         if (m_pSelectedImportFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType() == HRFBlockType::IMAGE)
             Src_BlockHeight = HRFImportExport_ADAPT_HEIGHT;
 
-        uint32_t AdaptHeight = max(HRFImportExport_ADAPT_HEIGHT, Src_BlockHeight);
+        uint32_t AdaptHeight = MAX(HRFImportExport_ADAPT_HEIGHT, Src_BlockHeight);
 
         // Adapt the destination raster file to strip.
         // The strip adapter is the fastest access that we can use when we export a file.
@@ -601,41 +601,7 @@ void HUTImportFromFileExportToFile::BestMatchSelectedValues()
                 }
             }
 
-        IRasterBaseGcsPtr baseGCS = m_pSelectedImportFile->GetPageDescriptor(Page)->GetGeocoding();
-        if (baseGCS != 0 && baseGCS->IsValid())
-            SetGeocoding(baseGCS);
-
-        // Even though the geocoding is stored elsewhere than in the metadata now we may want to
-        // use the geokeys from GeoTiff files to store meta information in the destination if it contains 
-        // and supports such fields
-        const HFCPtr<HMDMetaDataContainerList> pMDContainers(m_pSelectedImportFile->
-                                                             GetPageDescriptor(Page)->
-                                                             GetListOfMetaDataContainer());
-
-        if (pMDContainers != 0)
-            {
-            HFCPtr<HMDMetaDataContainer>           pMDContainer;
-
-            for (unsigned short ContainerInd = 0; ContainerInd < pMDContainers->GetNbContainers(); ContainerInd++)
-                {
-                pMDContainers->GetMetaDataContainer(ContainerInd, pMDContainer);
-
-                if (pMDContainer->IsCompatibleWith(HCPGeoTiffKeys::CLASS_ID))
-                    {
-                    // Set the GeoTiffKeys metadata container only if the
-                    // ouput file format supports the saving of geocoding.
-                    if (m_pSelectedFileFormatCapabilities->HasCapabilityOfType(HRFGeocodingCapability::CLASS_ID,
-                                                                               HFC_CREATE_ONLY))
-                        {
-                        SetMetaDataContainer(pMDContainer);
-                        }
-                    }
-                else
-                    {
-                    SetMetaDataContainer(pMDContainer);
-                    }
-                }
-            }
+        SetRasterFileGeocoding(*(m_pSelectedImportFile->GetPageDescriptor(Page)->GetRasterFileGeocoding().Clone()));
         }
     }
 

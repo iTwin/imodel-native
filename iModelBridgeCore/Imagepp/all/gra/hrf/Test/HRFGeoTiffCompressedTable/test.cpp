@@ -1,5 +1,12 @@
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: all/gra/hrf/Test/HRFGeoTiffCompressedTable/test.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFGeoTiffCoordSysTable.h>
 
 

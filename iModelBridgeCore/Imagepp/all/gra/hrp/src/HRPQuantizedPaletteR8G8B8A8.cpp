@@ -2,18 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPQuantizedPaletteR8G8B8A8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRPQuantizedPaletteR8G8B8A8.h>
 #include <Imagepp/all/h/HRPHistogram.h>
-
-HRPQuantizedPaletteR8G8B8A8 g_QuantizedPaletteR8G8B8A8;
-
 
 /**----------------------------------------------------------------------------
    Constructor for HRPQuantizedPaletteR8G8B8A8
@@ -84,13 +81,13 @@ bool HRPQuantizedPaletteR8G8B8A8::AddCompositeValue(const void* pi_pValue,
         if (NbIgnoreValues == 1)
             {
             // 0 --> values are equal and false
-            DontSkipTheValue = memcmp((void*)&(m_IgnoreValues[0]), pi_pValue, 4);
+            DontSkipTheValue = memcmp(&(m_IgnoreValues[0]), pi_pValue, 4);
             }
         else
             {
             for (size_t i=0; i<NbIgnoreValues; i++)
                 {
-                if (memcmp((void*)&(m_IgnoreValues[0]), pi_pValue, 4) == 0)
+                if (memcmp(&(m_IgnoreValues[0]), pi_pValue, 4) == 0)
                     {
                     NbIgnoreValues     = 0;     // Stop the iteration and skip the color
                     DontSkipTheValue   = false;
@@ -160,7 +157,7 @@ bool HRPQuantizedPaletteR8G8B8A8::AddCompositeValue(const void* pi_pValue,
 void HRPQuantizedPaletteR8G8B8A8::AddIgnoreValue (const void* pi_pValue)
     {
     uint32_t Value;
-    memcpy((void*)&Value, pi_pValue, 4);
+    memcpy(&Value, pi_pValue, 4);
     m_IgnoreValues.push_back(Value);
     }
 
@@ -410,7 +407,7 @@ uint32_t HRPQuantizedPaletteR8G8B8A8::GetColors(
             }
 
         // we set the color in the pixel palette
-        po_pPixelPalette->SetCompositeValue(Entry,(const void*)Color);
+        po_pPixelPalette->SetCompositeValue(Entry,Color);
 
         // set the appropriate histogram entry if there is one
         if(po_pHistogram != 0)

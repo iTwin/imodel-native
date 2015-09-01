@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFSInternetLister.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -23,12 +23,12 @@
 // HFS
 #include "HFSDirectoryLister.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 class HFSInternetLister : public HFSDirectoryLister
     {
 public:
 
-    HDECLARE_CLASS_ID(5001, HFSDirectoryLister);
+    HDECLARE_CLASS_ID(HFSListerId_Internet, HFSDirectoryLister);
 
     // Construction - Destruction
     HFSInternetLister(HFCPtr<HFCConnection>& pi_pConnection,
@@ -66,5 +66,6 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HFSInternetLister.hpp"
 

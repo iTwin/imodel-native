@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLHTTPS.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLHTTPS
@@ -11,6 +11,7 @@
 
 #include "HFCURLHTTPBase.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 //:Ignore
 // URL specification at this level is:
 // http:[//][user[:password]@]host[:port][/[Path[?SearchPart]]]
@@ -48,7 +49,7 @@ class HFCURLHTTPS : public HFCURLHTTPBase
     {
 public:
 
-    HDECLARE_CLASS_ID(1296, HFCURLHTTPBase);
+    HDECLARE_CLASS_ID(HFCURLId_HTTPS, HFCURLHTTPBase);
 
     // Define the Scheme label
     static const WString& s_SchemeName()
@@ -58,15 +59,15 @@ public:
         }
 
     //:> constructor
-    _HDLLu                         HFCURLHTTPS() { } //:> required for persistence
-    _HDLLu                         HFCURLHTTPS(const WString& pi_URL);
-    _HDLLu                         HFCURLHTTPS(const WString& pi_User,
+    IMAGEPP_EXPORT                         HFCURLHTTPS() { } //:> required for persistence
+    IMAGEPP_EXPORT                         HFCURLHTTPS(const WString& pi_URL);
+    IMAGEPP_EXPORT                         HFCURLHTTPS(const WString& pi_User,
                                                const WString& pi_Password,
                                                const WString& pi_Host,
                                                const WString& pi_Port,
                                                const WString& pi_Path,
                                                const WString& pi_SearchPart);
-    _HDLLu virtual                 ~HFCURLHTTPS();
+    IMAGEPP_EXPORT virtual                 ~HFCURLHTTPS();
 
 private:
 
@@ -76,3 +77,4 @@ private:
     HFCURLHTTPS(const HFCURLHTTPS&);
     HFCURLHTTPS& operator=(const HFCURLHTTPS&);
     };
+END_IMAGEPP_NAMESPACE

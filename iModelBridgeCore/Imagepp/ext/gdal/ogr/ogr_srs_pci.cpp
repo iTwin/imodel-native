@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_pci.cpp 21468 2011-01-12 20:35:14Z warmerdam $
+ * $Id: ogr_srs_pci.cpp 27741 2014-09-26 19:20:02Z goatbar $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference translation to/from PCI georeferencing
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2003, Andrey Kiselev <dron@ak4719.spb.edu>
+ * Copyright (c) 2009-2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogr_srs_pci.cpp 21468 2011-01-12 20:35:14Z warmerdam $");
+CPL_CVSID("$Id: ogr_srs_pci.cpp 27741 2014-09-26 19:20:02Z goatbar $");
 
 typedef struct 
 {
@@ -630,6 +631,7 @@ OGRErr OGRSpatialReference::importFromPCI( const char *pszProj,
                         }
                         CSLDestroy( papszLineItems );
                     }
+                    CSLDestroy( papszLineItems );
                     
                     VSIFClose( fp );
                 }
@@ -718,6 +720,8 @@ OGRErr OGRSpatialReference::importFromPCI( const char *pszProj,
                             CPLAtof(papszDatumDefn[5]) );
             }
         }
+
+        CSLDestroy(papszDatumDefn);
     }
 
 /* -------------------------------------------------------------------- */
@@ -808,18 +812,20 @@ OGRErr OGRSpatialReference::exportToPCI( char **ppszProj, char **ppszUnits,
     *ppadfPrjParams = (double *)CPLMalloc( 17 * sizeof(double) );
     for ( i = 0; i < 17; i++ )
         (*ppadfPrjParams)[i] = 0.0;
-   
+
 /* -------------------------------------------------------------------- */
 /*      Get the prime meridian info.                                    */
 /* -------------------------------------------------------------------- */
+#if 0
     const OGR_SRSNode *poPRIMEM = GetAttrNode( "PRIMEM" );
     double dfFromGreenwich = 0.0;
 
-    if( poPRIMEM != NULL && poPRIMEM->GetChildCount() >= 2 
+    if( poPRIMEM != NULL && poPRIMEM->GetChildCount() >= 2
         && atof(poPRIMEM->GetChild(1)->GetValue()) != 0.0 )
     {
         dfFromGreenwich = atof(poPRIMEM->GetChild(1)->GetValue());
     }
+#endif
 
 /* ==================================================================== */
 /*      Handle the projection definition.                               */
@@ -1208,6 +1214,8 @@ OGRErr OGRSpatialReference::exportToPCI( char **ppszProj, char **ppszUnits,
                         strncpy( szEarthModel, papszLineItems[0], 5 );
                         break;
                     }
+
+                    CSLDestroy( papszLineItems );
                 }
 
                 CSLDestroy( papszLineItems );
@@ -1341,4 +1349,3 @@ OGRErr OGRSpatialReference::exportToPCI( char **ppszProj, char **ppszUnits,
 
     return OGRERR_NONE;
 }
-

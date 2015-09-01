@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCSocketConnection.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCSocketConnection
@@ -14,6 +14,7 @@
 #include <Imagepp/all/h/HFCBuffer.h>
 #include <Imagepp/all/h/HFCEvent.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class SocketThread;
 
 class HFCSocketConnection : public HFCInternetConnection
@@ -21,17 +22,17 @@ class HFCSocketConnection : public HFCInternetConnection
     friend class SocketThread;
 
 public:
-    HDECLARE_CLASS_ID(1802, HFCInternetConnection)
+    HDECLARE_CLASS_ID(HFCConnectionId_Socket, HFCInternetConnection)
 
 
     //--------------------------------------
     // Construction/Desctruction
     //--------------------------------------
 
-    _HDLLu                 HFCSocketConnection(const WString& pi_rServer,
+    IMAGEPP_EXPORT                 HFCSocketConnection(const WString& pi_rServer,
                                                const WString& pi_rUserName = WString(L""),
                                                const WString& pi_rPassword = WString(L""));
-    _HDLLu virtual         ~HFCSocketConnection();
+    IMAGEPP_EXPORT virtual         ~HFCSocketConnection();
 
 
     //--------------------------------------
@@ -39,23 +40,23 @@ public:
     //--------------------------------------
 
     // I/O methods
-    _HDLLu virtual void    Send   (const Byte* pi_pData, size_t pi_DataSize) override;
-    _HDLLu virtual void    Receive(Byte* po_pData, size_t po_DataSize);
-    _HDLLu virtual void    Receive(Byte* po_pData, size_t* pio_pDataSize);
+    IMAGEPP_EXPORT virtual void    Send   (const Byte* pi_pData, size_t pi_DataSize) override;
+    IMAGEPP_EXPORT virtual void    Receive(Byte* po_pData, size_t po_DataSize);
+    IMAGEPP_EXPORT virtual void    Receive(Byte* po_pData, size_t* pio_pDataSize);
 
     // Connection/disconnection
-    _HDLLu virtual bool   Connect        (const WString&  pi_rUserName,
+    IMAGEPP_EXPORT virtual bool   Connect        (const WString&  pi_rUserName,
                                            const WString&  pi_rPassword,
                                            time_t          pi_TimeOut = 30000);
-    _HDLLu virtual bool   ValidateConnect(uint32_t pi_TimeOut = 30000);
-    _HDLLu virtual void    Disconnect     ();
+    IMAGEPP_EXPORT virtual bool   ValidateConnect(uint32_t pi_TimeOut = 30000);
+    IMAGEPP_EXPORT virtual void    Disconnect     ();
 
     // Data Query
-    _HDLLu virtual size_t  WaitDataAvailable();
-    _HDLLu virtual size_t  WaitDataAvailable(uint32_t pi_TimeOut);
+    IMAGEPP_EXPORT virtual size_t  WaitDataAvailable();
+    IMAGEPP_EXPORT virtual size_t  WaitDataAvailable(uint32_t pi_TimeOut);
 
     // Utility
-    _HDLLu static uint32_t ntohl2 (uint32_t);
+    IMAGEPP_EXPORT static uint32_t ntohl2 (uint32_t);
 
 protected:
 
@@ -77,3 +78,4 @@ private:
     mutable HFCEvent                m_SocketEvent;
     };
 
+END_IMAGEPP_NAMESPACE

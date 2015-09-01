@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: llrasterize.cpp 18340 2009-12-19 04:41:45Z chaitanya $
+ * $Id: llrasterize.cpp 27739 2014-09-25 18:49:52Z goatbar $
  *
  * Project:  GDAL
  * Purpose:  Vector polygon rasterization code.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2011, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -104,15 +105,12 @@ No known bug
     double dx2, dy2;
     double dy;
     double intersect;
-    
 
     int ind1, ind2;
     int ints, n, part;
-    int *polyInts, polyAllocated;
+    int *polyInts;
 
-  
     int horizontal_x1, horizontal_x2;
-
 
     if (!nPartCount) {
         return;
@@ -121,10 +119,9 @@ No known bug
     n = 0;
     for( part = 0; part < nPartCount; part++ )
         n += panPartSize[part];
-    
+
     polyInts = (int *) malloc(sizeof(int) * n);
-    polyAllocated = n;
-    
+
     dminy = padfY[0];
     dmaxy = padfY[0];
     for (i=1; (i < n); i++) {
@@ -195,43 +192,43 @@ No known bug
                 dx2 = padfX[ind1];
                 dx1 = padfX[ind2];
             } else /* if (fabs(dy1-dy2)< 1.e-6) */
-	    {
+            {
                 
                 /*AE: DO NOT skip bottom horizontal segments 
-		  -Fill them separately- 
-		  They are not taken into account twice.*/
-		if (padfX[ind1] > padfX[ind2])
-		{
-		    horizontal_x1 = (int) floor(padfX[ind2]+0.5);
-		    horizontal_x2 = (int) floor(padfX[ind1]+0.5);
+                  -Fill them separately- 
+                  They are not taken into account twice.*/
+                if (padfX[ind1] > padfX[ind2])
+                {
+                    horizontal_x1 = (int) floor(padfX[ind2]+0.5);
+                    horizontal_x2 = (int) floor(padfX[ind1]+0.5);
 		
                     if  ( (horizontal_x1 >  maxx) ||  (horizontal_x2 <= minx) )
                         continue;
 
-		    /*fill the horizontal segment (separately from the rest)*/
-		    pfnScanlineFunc( pCBData, y, horizontal_x1, horizontal_x2 - 1, (dfVariant == NULL)?0:dfVariant[0] );
-		    continue;
-		}
-		else /*skip top horizontal segments (they are already filled in the regular loop)*/
-		    continue;
+                    /*fill the horizontal segment (separately from the rest)*/
+                    pfnScanlineFunc( pCBData, y, horizontal_x1, horizontal_x2 - 1, (dfVariant == NULL)?0:dfVariant[0] );
+                    continue;
+                }
+                else /*skip top horizontal segments (they are already filled in the regular loop)*/
+                    continue;
 
-	    }
+            }
 
             if(( dy < dy2 ) && (dy >= dy1))
             {
                 
                 intersect = (dy-dy1) * (dx2-dx1) / (dy2-dy1) + dx1;
 
-		polyInts[ints++] = (int) floor(intersect+0.5);
-	    }
-	}
+                polyInts[ints++] = (int) floor(intersect+0.5);
+            }
+        }
 
         /* 
          * It would be more efficient to do this inline, to avoid 
          * a function call for each comparison.
-	 * NOTE - mloskot: make llCompareInt a functor and use std
-	 * algorithm and it will be optimized and expanded
-	 * automatically in compile-time, with modularity preserved.
+         * NOTE - mloskot: make llCompareInt a functor and use std
+         * algorithm and it will be optimized and expanded
+         * automatically in compile-time, with modularity preserved.
          */
         qsort(polyInts, ints, sizeof(int), llCompareInt);
 
@@ -253,16 +250,14 @@ No known bug
 /************************************************************************/
 
 void GDALdllImagePoint( int nRasterXSize, int nRasterYSize, 
-                        int nPartCount, int *panPartSize,
+                        int nPartCount, CPL_UNUSED int *panPartSize,
                         double *padfX, double *padfY, double *padfVariant,
                         llPointFunc pfnPointFunc, void *pCBData )
 {
-    int     i;
- 
-    for ( i = 0; i < nPartCount; i++ )
+    for ( int i = 0; i < nPartCount; i++ )
     {
-        int nX = (int)floor( padfX[i] + 0.5 );
-        int nY = (int)floor( padfY[i] + 0.5 );
+        int nX = (int)floor( padfX[i] );
+        int nY = (int)floor( padfY[i] );
         double dfVariant = 0;
         if( padfVariant != NULL )
             dfVariant = padfVariant[i];
@@ -292,11 +287,11 @@ void GDALdllImageLine( int nRasterXSize, int nRasterYSize,
 
         for ( j = 1; j < panPartSize[i]; j++ )
         {
-            int iX = (int)floor( padfX[n + j - 1] + 0.5 );
-            int iY = (int)floor( padfY[n + j - 1] + 0.5 );
+            int iX = (int)floor( padfX[n + j - 1] );
+            int iY = (int)floor( padfY[n + j - 1] );
 
-            const int iX1 = (int)floor( padfX[n + j] + 0.5 );
-            const int iY1 = (int)floor( padfY[n + j] + 0.5 );
+            const int iX1 = (int)floor( padfX[n + j] );
+            const int iY1 = (int)floor( padfY[n + j] );
 
             double dfVariant = 0, dfVariant1 = 0;
             if( padfVariant != NULL && 
@@ -320,7 +315,9 @@ void GDALdllImageLine( int nRasterXSize, int nRasterYSize,
                 const int nXError = nDeltaY << 1;
                 const int nYError = nXError - (nDeltaX << 1);
                 int nError = nXError - nDeltaX;
-                double dfDeltaVariant = (dfVariant1 - dfVariant) /
+                /* == 0 makes clang -fcatch-undefined-behavior -ftrapv happy, but if */
+                /* it is == 0, dfDeltaVariant is not really used, so any value is OK */
+                double dfDeltaVariant = (nDeltaX == 0) ? 0 : (dfVariant1 - dfVariant) /
                                                            (double)nDeltaX;
 
                 while ( nDeltaX-- >= 0 )
@@ -345,7 +342,9 @@ void GDALdllImageLine( int nRasterXSize, int nRasterYSize,
                 const int nXError = nDeltaX << 1;
                 const int nYError = nXError - (nDeltaY << 1);
                 int nError = nXError - nDeltaY;
-                double dfDeltaVariant = (dfVariant1 - dfVariant) /
+                /* == 0 makes clang -fcatch-undefined-behavior -ftrapv happy, but if */
+                /* it is == 0, dfDeltaVariant is not really used, so any value is OK */
+                double dfDeltaVariant = (nDeltaY == 0) ? 0 : (dfVariant1 - dfVariant) /
                                                            (double)nDeltaY;
 
                 while ( nDeltaY-- >= 0 )
@@ -602,4 +601,3 @@ GDALdllImageLineAllTouched(int nRasterXSize, int nRasterYSize,
         } // next segment
     } // next part
 }
-

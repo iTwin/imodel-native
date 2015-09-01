@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DLinear.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DLinear
@@ -52,10 +52,11 @@
 
     -----------------------------------------------------------------------------
 */
+BEGIN_IMAGEPP_NAMESPACE
 class HNOVTABLEINIT HVE2DLinear : public HVE2DVector
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1106)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DLinearId_Base)
 
 public:
 
@@ -479,7 +480,7 @@ public:
 
 protected:
 
-    _HDLLg virtual void
+    IMAGEPP_EXPORT virtual void
     SetCoordSysImplementation(const HFCPtr<HGF2DCoordSys>& pi_rpNewCoordSys);
 
     // Those are protected for performance reason only
@@ -487,6 +488,7 @@ protected:
     HGF2DLocation           m_EndPoint;
 
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DLinear.hpp"

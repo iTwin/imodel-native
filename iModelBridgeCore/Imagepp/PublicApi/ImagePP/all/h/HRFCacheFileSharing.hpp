@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFCacheFileSharing.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFCacheFileSharing
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 /** ---------------------------------------------------------------------------
     GetSisterFilePtr
     Protected
@@ -45,3 +46,4 @@ inline HFCBinStreamLockManager* HRFCacheFileSharing::GetLockManager()
     {
     return m_pLockManager;
     }
+END_IMAGEPP_NAMESPACE

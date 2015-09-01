@@ -2,18 +2,17 @@
 //:>
 //:>     $Source: all/gra/hrp/src/HRPCustomConvFilter.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // User defined convolution filter.
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRPCustomConvFilter.h>
 #include <Imagepp/all/h/HRPPixelNeighbourhood.h>
-#include <Imagepp/all/h/HFCResourceLoader.h>
 
 //-----------------------------------------------------------------------------
 //

@@ -6,7 +6,7 @@
  * Author:   Even Rouault, even.rouault at mines-paris.org
  *
  ******************************************************************************
- * Copyright (c) 2007, Even Rouault
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -42,7 +42,7 @@
 #define GEOTRSFRM_ROTATION_PARAM2      4
 #define GEOTRSFRM_NS_RES               5
 
-CPL_CVSID("$Id: rpftocdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: rpftocdataset.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 
 /** Overview of used classes :
@@ -588,7 +588,8 @@ RPFTOCProxyRasterDataSet::RPFTOCProxyRasterDataSet
 /*                    SanityCheckOK()                                   */
 /************************************************************************/
 
-#define WARN_CHECK_DS(x) do { if (!(x)) { CPLError(CE_Warning, CPLE_AppDefined, "For %s, assert '" #x "' failed", GetDescription()); checkOK = FALSE; } } while(0)
+#define WARN_ON_FAIL(x) do { if (!(x)) { CPLError(CE_Warning, CPLE_AppDefined, "For %s, assert '" #x "' failed", GetDescription()); } } while(0)
+#define ERROR_ON_FAIL(x) do { if (!(x)) { CPLError(CE_Warning, CPLE_AppDefined, "For %s, assert '" #x "' failed", GetDescription()); checkOK = FALSE; } } while(0)
 
 int RPFTOCProxyRasterDataSet::SanityCheckOK(GDALDataset* sourceDS)
 {
@@ -602,20 +603,20 @@ int RPFTOCProxyRasterDataSet::SanityCheckOK(GDALDataset* sourceDS)
     checkDone = TRUE;
     
     sourceDS->GetGeoTransform(adfGeoTransform);
-    WARN_CHECK_DS(fabs(adfGeoTransform[GEOTRSFRM_TOPLEFT_X] - nwLong) < 1e-10);
-    WARN_CHECK_DS(fabs(adfGeoTransform[GEOTRSFRM_TOPLEFT_Y] - nwLat) < 1e-10);
-    WARN_CHECK_DS(adfGeoTransform[GEOTRSFRM_ROTATION_PARAM1] == 0 &&
+    WARN_ON_FAIL(fabs(adfGeoTransform[GEOTRSFRM_TOPLEFT_X] - nwLong) < adfGeoTransform[1] );
+    WARN_ON_FAIL(fabs(adfGeoTransform[GEOTRSFRM_TOPLEFT_Y] - nwLat) < fabs(adfGeoTransform[5]) );
+    WARN_ON_FAIL(adfGeoTransform[GEOTRSFRM_ROTATION_PARAM1] == 0 &&
                   adfGeoTransform[GEOTRSFRM_ROTATION_PARAM2] == 0); /* No rotation */
-    WARN_CHECK_DS(sourceDS->GetRasterCount() == 1); /* Just 1 band */
-    WARN_CHECK_DS(sourceDS->GetRasterXSize() == nRasterXSize);
-    WARN_CHECK_DS(sourceDS->GetRasterYSize() == nRasterYSize);
-    WARN_CHECK_DS(EQUAL(sourceDS->GetProjectionRef(), GetProjectionRef()));
+    ERROR_ON_FAIL(sourceDS->GetRasterCount() == 1); /* Just 1 band */
+    ERROR_ON_FAIL(sourceDS->GetRasterXSize() == nRasterXSize);
+    ERROR_ON_FAIL(sourceDS->GetRasterYSize() == nRasterYSize);
+    WARN_ON_FAIL(EQUAL(sourceDS->GetProjectionRef(), GetProjectionRef()));
     sourceDS->GetRasterBand(1)->GetBlockSize(&src_nBlockXSize, &src_nBlockYSize);
     GetRasterBand(1)->GetBlockSize(&nBlockXSize, &nBlockYSize);
-    WARN_CHECK_DS(src_nBlockXSize == nBlockXSize);
-    WARN_CHECK_DS(src_nBlockYSize == nBlockYSize);
-    WARN_CHECK_DS(sourceDS->GetRasterBand(1)->GetColorInterpretation() == GCI_PaletteIndex);
-    WARN_CHECK_DS(sourceDS->GetRasterBand(1)->GetRasterDataType() == GDT_Byte);
+    ERROR_ON_FAIL(src_nBlockXSize == nBlockXSize);
+    ERROR_ON_FAIL(src_nBlockYSize == nBlockYSize);
+    WARN_ON_FAIL(sourceDS->GetRasterBand(1)->GetColorInterpretation() == GCI_PaletteIndex);
+    WARN_ON_FAIL(sourceDS->GetRasterBand(1)->GetRasterDataType() == GDT_Byte);
 
     return checkOK;
 }
@@ -800,15 +801,50 @@ GDALDataset* RPFTOCSubDataset::CreateDataSetFromTocEntry(const char* openInforma
             if (!entry->frameEntries[i].fileExists)
                 continue;
             
+            int bAllBlack = TRUE;
             GDALDataset *poSrcDS = (GDALDataset *) GDALOpenShared( entry->frameEntries[i].fullFilePath, GA_ReadOnly );
-            poBand->SetColorTable(poSrcDS->GetRasterBand(1)->GetColorTable());
-            
-            int bHasNoDataValue;
-            double noDataValue = poSrcDS->GetRasterBand(1)->GetNoDataValue(&bHasNoDataValue);
-            if (bHasNoDataValue)
-                poBand->SetNoDataValue(noDataValue);
-            GDALClose(poSrcDS);
-            break;
+            if( poSrcDS != NULL )
+            {
+                if( poSrcDS->GetRasterCount() == 1 )
+                {
+                    int bHasNoDataValue;
+                    double noDataValue = poSrcDS->GetRasterBand(1)->GetNoDataValue(&bHasNoDataValue);
+                    if (bHasNoDataValue)
+                        poBand->SetNoDataValue(noDataValue);
+
+                    /* Avoid setting a color table that is all black (which might be */
+                    /* the case of the edge tiles of a RPF subdataset) */
+                    GDALColorTable* poCT = poSrcDS->GetRasterBand(1)->GetColorTable();
+                    if( poCT != NULL )
+                    {
+                        for(int iC = 0; iC < poCT->GetColorEntryCount(); iC++)
+                        {
+                            if( bHasNoDataValue && iC == (int)noDataValue )
+                                continue;
+
+                            const GDALColorEntry* entry = poCT->GetColorEntry(iC);
+                            if( entry->c1 != 0 || entry->c2 != 0 || entry->c3 != 0)
+                            {
+                                bAllBlack = FALSE;
+                                break;
+                            }
+                        }
+
+                        /* Assign it temporarily, in the hope of a better match */
+                        /* afterwards */
+                        poBand->SetColorTable(poCT);
+                        if( bAllBlack )
+                        {
+                            CPLDebug("RPFTOC",
+                                     "Skipping %s. Its palette is all black.",
+                                     poSrcDS->GetDescription());
+                        }
+                    }
+                }
+                GDALClose(poSrcDS);
+            }
+            if( !bAllBlack )
+                break;
         }
     }
     else
@@ -1244,6 +1280,7 @@ void GDALRegister_RPFTOC()
                                    "frmt_various.html#RPFTOC" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "toc" );
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

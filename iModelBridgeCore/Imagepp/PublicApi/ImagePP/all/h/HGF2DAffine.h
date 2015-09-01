@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DAffine.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DAffine
@@ -17,6 +17,7 @@
 
 #define AFFINE_MIN_NB_TIE_PTS 3
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert
@@ -50,130 +51,142 @@
 */
 class HGF2DAffine : public HGF2DTransfoModel
     {
-    HDECLARE_CLASS_ID(1100, HGF2DTransfoModel)
+    HDECLARE_CLASS_ID(HGF2DAffineId, HGF2DTransfoModel)
 
 public:
 
     // Primary methods
 
-    _HDLLg                 HGF2DAffine();
-    _HDLLg                 HGF2DAffine(const HGF2DDisplacement& pi_rTranslation,
-                                       double                   pi_rRotation,
-                                       double                   pi_ScalingX,
-                                       double                   pi_ScalingY,
-                                       double                   pi_rAnorthogonality);
-    _HDLLg                 HGF2DAffine(const HGF2DAffine& pi_rObj);
-    _HDLLg                 HGF2DAffine(unsigned short pi_NumberOfPoints,
-                                       const double*  pi_pTiePoints);
-    _HDLLg virtual         ~HGF2DAffine ();
-    HGF2DAffine&    operator=(const HGF2DAffine& pi_rObj);
+    IMAGEPP_EXPORT                   HGF2DAffine();
+    IMAGEPP_EXPORT                   HGF2DAffine(const HGF2DDisplacement& pi_rTranslation,
+                                                double                   pi_rRotation,
+                                                double                   pi_ScalingX,
+                                                double                   pi_ScalingY,
+                                                double                   pi_rAnorthogonality);
+    IMAGEPP_EXPORT                   HGF2DAffine(const HGF2DAffine& pi_rObj);
+    IMAGEPP_EXPORT                   HGF2DAffine(unsigned short pi_NumberOfPoints,
+                                                const double*  pi_pTiePoints);
+    IMAGEPP_EXPORT virtual           ~HGF2DAffine ();
+    HGF2DAffine&                    operator=(const HGF2DAffine& pi_rObj);
 
 
     // Conversion interface
-    virtual void    ConvertDirect(double*   pio_pXInOut,
-                                  double*   pio_pYInOut) const;
+    virtual bool                    IsConvertDirectThreadSafe()  const override;
+    virtual bool                    IsConvertInverseThreadSafe() const override;
 
-    virtual void    ConvertDirect(double    pi_YIn,
-                                  double    pi_XInStart,
-                                  size_t     pi_NumLoc,
-                                  double    pi_XInStep,
-                                  double*   po_pXOut,
-                                  double*   po_pYOut) const;
+    virtual StatusInt               ConvertDirect(double*   pio_pXInOut,
+                                                  double*   pio_pYInOut) const override;
 
-    virtual void    ConvertDirect(double    pi_XIn,
-                                  double    pi_YIn,
-                                  double*   po_pXOut,
-                                  double*   po_pYOut) const;
+    virtual StatusInt               ConvertDirect(double    pi_YIn,
+                                                  double    pi_XInStart,
+                                                  size_t    pi_NumLoc,
+                                                  double    pi_XInStep,
+                                                  double*   po_pXOut,
+                                                  double*   po_pYOut) const override;
 
-    virtual void    ConvertInverse(double*   pio_pXInOut,
-                                   double*   pio_pYInOut) const;
+    virtual StatusInt               ConvertDirect(double    pi_XIn,
+                                                  double    pi_YIn,
+                                                  double*   po_pXOut,
+                                                  double*   po_pYOut) const override;
 
-    virtual void    ConvertInverse(double    pi_YIn,
-                                   double    pi_XInStart,
-                                   size_t     pi_NumLoc,
-                                   double    pi_XInStep,
-                                   double*   po_pXOut,
-                                   double*   po_pYOut) const;
+    virtual StatusInt               ConvertDirect(size_t    pi_NumLoc,
+                                                  double*   pio_aXInOut,
+                                                  double*   pio_aYInOut) const override;
 
-    virtual void    ConvertInverse(double    pi_XIn,
-                                   double    pi_YIn,
-                                   double*   po_pXOut,
-                                   double*   po_pYOut) const;
+    virtual StatusInt               ConvertInverse(double*   pio_pXInOut,
+                                                   double*   pio_pYInOut) const override;
+
+    virtual StatusInt               ConvertInverse(double    pi_YIn,
+                                                   double    pi_XInStart,
+                                                   size_t    pi_NumLoc,
+                                                   double    pi_XInStep,
+                                                   double*   po_pXOut,
+                                                   double*   po_pYOut) const override;
+
+    virtual StatusInt               ConvertInverse(double    pi_XIn,
+                                                   double    pi_YIn,
+                                                   double*   po_pXOut,
+                                                   double*   po_pYOut) const override;
 
 
+    virtual StatusInt               ConvertInverse(size_t    pi_NumLoc,
+                                                   double*   pio_aXInOut,
+                                                   double*   pio_aYInOut) const override;
 
     // Miscellaneous
-    virtual bool    IsIdentity      () const;
-    virtual bool    IsStretchable   (double pi_AngleTolerance = 0) const;
-    virtual void    GetStretchParams(double*           po_pScaleFactorX,
-                                     double*           po_pScaleFactorY,
-                                     HGF2DDisplacement* po_pDisplacement) const;
-    static uint32_t GetMinimumNumberOfTiePoints();
+    virtual bool                    IsIdentity      () const;
+    virtual bool                    IsStretchable   (double pi_AngleTolerance = 0) const;
+    virtual void                    GetStretchParams(double*           po_pScaleFactorX,
+                                                     double*           po_pScaleFactorY,
+                                                     HGF2DDisplacement* po_pDisplacement) const;
+    static uint32_t                 GetMinimumNumberOfTiePoints();
 
-    virtual HGF2DTransfoModel* Clone () const override;
+    virtual HGF2DTransfoModel*      Clone () const override;
 
-    _HDLLg virtual HFCPtr<HGF2DTransfoModel>    ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const;
+    IMAGEPP_EXPORT virtual HFCPtr<HGF2DTransfoModel>    
+                                    ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const;
 
 
     // Model definition
-    _HDLLg void                 SetTranslation(const HGF2DDisplacement& pi_rTranslation);
-    _HDLLg HGF2DDisplacement    GetTranslation() const;
-    _HDLLg void                 SetRotation(double pi_Angle);
-    double                      GetRotation() const;
-    _HDLLg void                 SetXScaling(double pi_Scale);
-    _HDLLg void                 SetYScaling(double pi_Scale);
-    double                      GetXScaling() const;
-    double                      GetYScaling() const;
-    _HDLLg void                 SetAnorthogonality(double pi_Angle);
-    double                      GetAnorthogonality() const;
-    virtual bool                CanBeRepresentedByAMatrix() const;
-    virtual HFCMatrix<3, 3>     GetMatrix() const;
-    virtual HFCMatrix<3, 3>&    GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const;
+    IMAGEPP_EXPORT void              SetTranslation(const HGF2DDisplacement& pi_rTranslation);
+    IMAGEPP_EXPORT HGF2DDisplacement GetTranslation() const;
+    IMAGEPP_EXPORT void              SetRotation(double pi_Angle);
+    double                          GetRotation() const;
+    IMAGEPP_EXPORT void              SetXScaling(double pi_Scale);
+    IMAGEPP_EXPORT void              SetYScaling(double pi_Scale);
+    double                          GetXScaling() const;
+    double                          GetYScaling() const;
+    IMAGEPP_EXPORT void              SetAnorthogonality(double pi_Angle);
+    double                          GetAnorthogonality() const;
+    virtual bool                    CanBeRepresentedByAMatrix() const;
+    virtual HFCMatrix<3, 3>         GetMatrix() const;
+    virtual HFCMatrix<3, 3>&        GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const;
 
-    virtual HFCPtr<HGF2DTransfoModel>    CreateSimplifiedModel() const;
+    virtual HFCPtr<HGF2DTransfoModel>    
+                                    CreateSimplifiedModel() const;
 
     // TEMPORARY for HPS etc...
-    _HDLLg void                 SetByMatrixParameters(double pi_A0,
-                                                      double pi_A1,
-                                                      double pi_A2,
-                                                      double pi_B0,
-                                                      double pi_B1,
-                                                      double pi_B2);
+    IMAGEPP_EXPORT void              SetByMatrixParameters(double pi_A0,
+                                                          double pi_A1,
+                                                          double pi_A2,
+                                                          double pi_B0,
+                                                          double pi_B1,
+                                                          double pi_B2);
 
     // Geometric properties
-    virtual bool                PreservesLinearity() const;
-    virtual bool                PreservesParallelism() const;
-    virtual bool                PreservesShape() const;
-    virtual bool                PreservesDirection() const;
+    virtual bool                    PreservesLinearity() const;
+    virtual bool                    PreservesParallelism() const;
+    virtual bool                    PreservesShape() const;
+    virtual bool                    PreservesDirection() const;
 
 
     // High level model definition
-    _HDLLg void                 AddTranslation(const HGF2DDisplacement& pi_rTranslation);
-    _HDLLg void                 AddRotation(double         pi_Angle,
-                                            double         pi_RawXCenter=0.0,
-                                            double         pi_RawYCenter=0.0);
-    void                        AddIsotropicScaling(double pi_ScalingFactor,
-                                                    double pi_XCenter=0.0,
-                                                    double pi_YCenter=0.0);
-    void                        AddAnisotropicScaling(double pi_ScalingFactorX,
-                                                      double pi_ScalingFactorY,
-                                                      double pi_XCenter=0.0,
-                                                      double pi_YCenter=0.0);
+    IMAGEPP_EXPORT void              AddTranslation(const HGF2DDisplacement& pi_rTranslation);
+    IMAGEPP_EXPORT void              AddRotation(double         pi_Angle,
+                                                double         pi_RawXCenter=0.0,
+                                                double         pi_RawYCenter=0.0);
+    void                            AddIsotropicScaling(double pi_ScalingFactor,
+                                                        double pi_XCenter=0.0,
+                                                        double pi_YCenter=0.0);
+    void                            AddAnisotropicScaling(double pi_ScalingFactorX,
+                                                          double pi_ScalingFactorY,
+                                                          double pi_XCenter=0.0,
+                                                          double pi_YCenter=0.0);
 
 
-    _HDLLg void                 AddHorizontalFlip(double pi_RawXMirrorPos=0.0);
-    _HDLLg void                 AddVerticalFlip (double pi_RawYMirrorPos=0.0);
+    IMAGEPP_EXPORT void              AddHorizontalFlip(double pi_RawXMirrorPos=0.0);
+    IMAGEPP_EXPORT void              AddVerticalFlip (double pi_RawYMirrorPos=0.0);
 
 
     // Operations
-    virtual void                Reverse ();
+    virtual void                    Reverse ();
 
 
 protected:
 
-    virtual void                Prepare ();
+    virtual void                    Prepare ();
     virtual HFCPtr<HGF2DTransfoModel>    
-                                ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
+                                    ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
 private:
 
     // Primary attributes
@@ -206,4 +219,5 @@ private:
     void            Copy (const HGF2DAffine& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGF2DAffine.hpp"

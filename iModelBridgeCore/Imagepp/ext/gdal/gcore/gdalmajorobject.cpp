@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalmajorobject.cpp 18719 2010-02-04 16:42:38Z mloskot $
+ * $Id: gdalmajorobject.cpp 27110 2014-03-28 21:29:20Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Base class for objects with metadata, etc.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam
+ * Copyright (c) 2009-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "gdal_priv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdalmajorobject.cpp 18719 2010-02-04 16:42:38Z mloskot $");
+CPL_CVSID("$Id: gdalmajorobject.cpp 27110 2014-03-28 21:29:20Z rouault $");
 
 /************************************************************************/
 /*                          GDALMajorObject()                           */
@@ -137,6 +138,87 @@ void CPL_STDCALL GDALSetDescription( GDALMajorObjectH hObject, const char *pszNe
 }
 
 /************************************************************************/
+/*                      GetMetadataDomainList()                         */
+/************************************************************************/
+
+/**
+ * \brief Fetch list of metadata domains.
+ *
+ * The returned string list is the list of (non-empty) metadata domains.
+ *
+ * This method does the same thing as the C function GDALGetMetadataDomainList().
+ * 
+ * @return NULL or a string list. Must be freed with CSLDestroy()
+ *
+ * @since GDAL 1.11
+ */
+
+char **GDALMajorObject::GetMetadataDomainList()
+{
+    return CSLDuplicate(oMDMD.GetDomainList());
+}
+
+/************************************************************************/
+/*                      BuildMetadataDomainList()                       */
+/************************************************************************/
+
+/**
+ * \brief Helper function for custom implementations of GetMetadataDomainList()
+ *
+ *
+ * @param papszList initial list of domains. May be NULL. Will become invalid
+ *                  after function call (use return value)
+ * @param bCheckNonEmpty if TRUE, each candidate domain will be tested to be non
+ *                       empty
+ * @param ... NULL terminated variadic list of candidate domains.
+ *
+ * @return NULL or a string list. Must be freed with CSLDestroy()
+ *
+ * @since GDAL 1.11
+ */
+
+char **GDALMajorObject::BuildMetadataDomainList(char** papszList, int bCheckNonEmpty, ...)
+{
+    va_list args;
+    const char* pszDomain;
+    va_start(args, bCheckNonEmpty);
+
+    while( (pszDomain = va_arg(args, const char*)) != NULL )
+    {
+        if( CSLFindString(papszList, pszDomain) < 0 &&
+            (!bCheckNonEmpty || GetMetadata(pszDomain) != NULL) )
+        {
+            papszList = CSLAddString(papszList, pszDomain);
+        }
+    }
+
+    va_end(args);
+
+    return papszList;
+}
+
+/************************************************************************/
+/*                    GDALGetMetadataDomainList()                       */
+/************************************************************************/
+
+/**
+ * \brief Fetch list of metadata domains.
+ *
+ * @see GDALMajorObject::GetMetadataDomainList()
+ *
+ * @since GDAL 1.11
+ */ 
+
+char ** CPL_STDCALL 
+GDALGetMetadataDomainList( GDALMajorObjectH hObject)
+
+{
+    VALIDATE_POINTER1( hObject, "GetMetadataDomainList", NULL );
+
+    return ((GDALMajorObject *) hObject)->GetMetadataDomainList();
+}
+
+/************************************************************************/
 /*                            GetMetadata()                             */
 /************************************************************************/
 
@@ -192,7 +274,7 @@ GDALGetMetadata( GDALMajorObjectH hObject, const char * pszDomain )
  *
  * The C function GDALSetMetadata() does the same thing as this method.
  *
- * @param papszMetadata the metadata in name=value string list format to 
+ * @param papszMetadataIn the metadata in name=value string list format to
  * apply.  
  * @param pszDomain the domain of interest.  Use "" or NULL for the default
  * domain. 

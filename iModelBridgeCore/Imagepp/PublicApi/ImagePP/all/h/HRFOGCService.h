@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFOGCService.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Support all type of OGC files. (WMS and WCS)
@@ -17,6 +17,7 @@
 
 #include <Imagepp/all/h/HFCHTTPConnection.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HFCURL;
 
 //-----------------------------------------------------------------------------
@@ -87,7 +88,7 @@ class HRFOGCService : public HRFRasterFile
     {
 public:
     // Class ID for this class.
-    HDECLARE_CLASS_ID(1964, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFOGCServiceId, HRFRasterFile)
 
     friend class HRFOGCServiceEditor;
     friend class BlockReaderThread;
@@ -187,7 +188,7 @@ protected:
 
     HRFTilePool                 m_TilePool;
 
-    HFCPtr<HGF2DTransfoModel>   CreateTransfoModel(IRasterBaseGcsPtr                          pi_pGeocoding,
+    HFCPtr<HGF2DTransfoModel>   CreateTransfoModel(IRasterBaseGcsCP                           pi_pGeocoding,
                                                    uint64_t                                   pi_Width,
                                                    uint64_t                                   pi_Height);
 
@@ -208,3 +209,4 @@ protected:
     HRFOGCService                        (const HRFOGCService& pi_rObj);
     HRFOGCService&             operator= (const HRFOGCService& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFGeoKey.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,6 +14,7 @@
 #include "HTagDefinition.h"
 
 
+BEGIN_IMAGEPP_NAMESPACE
 class HTIFFGeoKey
     {
 public:
@@ -109,3 +110,4 @@ private:
     HTIFFGeoKey&          operator=(const HTIFFGeoKey& pi_rObj);
 
     };
+END_IMAGEPP_NAMESPACE

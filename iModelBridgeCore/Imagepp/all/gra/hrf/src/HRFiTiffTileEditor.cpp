@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFiTiffTileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFiTiffTileEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFiTiffTileEditor.h>
 #include <Imagepp/all/h/HRFTiffFile.h>
 #include <Imagepp/all/h/HCDCodecHMRRLE1.h>
@@ -53,14 +53,16 @@ HRFiTiffTileEditor::~HRFiTiffTileEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFiTiffTileEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                      uint32_t pi_PosBlockY,
-                                      Byte* po_pData,
+HSTATUS HRFiTiffTileEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                      uint64_t pi_PosBlockY,
+                                      Byte*  po_pData,
                                       HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     // Lock the sister file if needed
@@ -77,8 +79,8 @@ HSTATUS HRFiTiffTileEditor::ReadBlock(uint32_t pi_PosBlockX,
 
     // read the tile
     Status = RASTER_FILE->GetFilePtr()->TileRead(po_pData,
-                                                                             pi_PosBlockX,
-                                                                             pi_PosBlockY);
+                                                 (uint32_t)pi_PosBlockX,
+                                                 (uint32_t)pi_PosBlockY);
     // Unlock the sister file.
     SisterFileLock.ReleaseKey();
 
@@ -99,8 +101,8 @@ HSTATUS HRFiTiffTileEditor::ReadBlock(uint32_t pi_PosBlockX,
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFiTiffTileEditor::ReadBlock(uint32_t           pi_PosBlockX,
-                                      uint32_t           pi_PosBlockY,
+HSTATUS HRFiTiffTileEditor::ReadBlock(uint64_t           pi_PosBlockX,
+                                      uint64_t           pi_PosBlockY,
                                       HFCPtr<HCDPacket>& po_rpPacket,
                                       HFCLockMonitor const* pi_pSisterFileLock)
 
@@ -108,6 +110,8 @@ HSTATUS HRFiTiffTileEditor::ReadBlock(uint32_t           pi_PosBlockX,
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_rpPacket != 0);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     // Lock the sister file if needed
@@ -129,7 +133,7 @@ HSTATUS HRFiTiffTileEditor::ReadBlock(uint32_t           pi_PosBlockX,
         }
 
     // read the data
-    Status = RASTER_FILE->GetFilePtr()->TileRead (po_rpPacket, pi_PosBlockX, pi_PosBlockY);
+    Status = RASTER_FILE->GetFilePtr()->TileRead (po_rpPacket, (uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
 
     // Unlock the sister file
     SisterFileLock.ReleaseKey();
@@ -162,14 +166,16 @@ HSTATUS HRFiTiffTileEditor::ReadBlock(uint32_t           pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFiTiffTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                       uint32_t     pi_PosBlockY,
-                                       const Byte* pi_pData,
+HSTATUS HRFiTiffTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                       uint64_t     pi_PosBlockY,
+                                       const Byte*  pi_pData,
                                        HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION (pi_pData != 0);
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     // Lock the sister file if needed
@@ -199,15 +205,15 @@ HSTATUS HRFiTiffTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
     //   
     if (!(m_IscTiff && static_cast<HRFcTiffFile*>(GetRasterFile().GetPtr())->m_OriginalFileAccessMode != HFC_NO_ACCESS &&
         (!(static_cast<HRFcTiffFile*>(GetRasterFile().GetPtr())->m_OriginalFileAccessMode.m_HasWriteAccess) &&
-           !(static_cast<HRFcTiffFile*>(GetRasterFile().GetPtr())->m_OriginalFileAccessMode.m_HasCreateAccess) )  &&
-          ((GetResolutionDescriptor()->GetBlockDataFlag(GetResolutionDescriptor()->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY))) &
-           (HRFDATAFLAG_LOADED | HRFDATAFLAG_OVERWRITTEN))))
+        !(static_cast<HRFcTiffFile*>(GetRasterFile().GetPtr())->m_OriginalFileAccessMode.m_HasCreateAccess) )  &&
+        ((GetResolutionDescriptor()->GetBlockDataFlag(GetResolutionDescriptor()->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY))) &
+        (HRFDATAFLAG_LOADED | HRFDATAFLAG_OVERWRITTEN))))
         {
         // Select the page and the resolution
         RASTER_FILE->SetImageInSubImage (m_IndexOfPage+m_Resolution);
 
         // write the tile
-        if ((Status = RASTER_FILE->GetFilePtr()->TileWrite(pi_pData, pi_PosBlockX, pi_PosBlockY)) == H_SUCCESS)
+        if ((Status = RASTER_FILE->GetFilePtr()->TileWrite(pi_pData, (uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY)) == H_SUCCESS)
             {
             if (GetResolutionDescriptor()->GetBlockDataFlag(GetResolutionDescriptor()->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY)) & HRFDATAFLAG_EMPTY || !m_IscTiff)
                 GetResolutionDescriptor()->SetBlockDataFlag(GetResolutionDescriptor()->ComputeBlockIndex(pi_PosBlockX, pi_PosBlockY), HRFDATAFLAG_LOADED);
@@ -223,7 +229,8 @@ HSTATUS HRFiTiffTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
         }
     else
         {
-        HASSERT(0);
+        // Try to rewrite a block already written, that should not happen.
+        HASSERT_DATA(0);
         }
 
     // Unlock the sister file
@@ -237,14 +244,16 @@ HSTATUS HRFiTiffTileEditor::WriteBlock(uint32_t     pi_PosBlockX,
 // WriteBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFiTiffTileEditor::WriteBlock (uint32_t                 pi_PosBlockX,
-                                        uint32_t                 pi_PosBlockY,
-                                        const HFCPtr<HCDPacket>& pi_rpPacket,
-                                        HFCLockMonitor const*    pi_pSisterFileLock)
+HSTATUS HRFiTiffTileEditor::WriteBlock(uint64_t                 pi_PosBlockX,
+                                       uint64_t                 pi_PosBlockY,
+                                       const HFCPtr<HCDPacket>& pi_rpPacket,
+                                       HFCLockMonitor const*    pi_pSisterFileLock)
     {
     HPRECONDITION (pi_rpPacket != 0);
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
+    HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
+
     HSTATUS Status = H_SUCCESS;
 
     // Lock the sister file if needed
@@ -304,13 +313,13 @@ HSTATUS HRFiTiffTileEditor::WriteBlock (uint32_t                 pi_PosBlockX,
             memcpy(pTmpBuffer + LineIndexesTableSize, pi_rpPacket->GetBufferAddress(), pi_rpPacket->GetDataSize());
 
             Status = RASTER_FILE->GetFilePtr()->TileWriteCompress(pTmpBuffer,
-                     BufferSize, pi_PosBlockX, pi_PosBlockY);
+                     BufferSize, (uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
             }
         else
             {
             HASSERT_X64(pi_rpPacket->GetDataSize() < ULONG_MAX);
             Status = RASTER_FILE->GetFilePtr()->TileWriteCompress(pi_rpPacket->GetBufferAddress(),
-                     (uint32_t)pi_rpPacket->GetDataSize(), pi_PosBlockX, pi_PosBlockY);
+                     (uint32_t)pi_rpPacket->GetDataSize(), (uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
             }
 
         // Update the data flag

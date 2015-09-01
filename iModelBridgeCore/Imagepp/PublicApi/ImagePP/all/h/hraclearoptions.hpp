@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/hraclearoptions.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HRAClearOptions
 //-----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 
 //-----------------------------------------------------------------------------
 // public
@@ -206,3 +206,4 @@ inline void HRAClearOptions::SetLoadingData(bool pi_ForceLoadingData)
     {
     m_ForceLoadingData = pi_ForceLoadingData;
     }
+END_IMAGEPP_NAMESPACE

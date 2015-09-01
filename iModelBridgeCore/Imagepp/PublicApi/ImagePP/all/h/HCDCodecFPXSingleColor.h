@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecFPXSingleColor.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecFPXSingleColor
@@ -13,22 +13,22 @@
 
 #include "HCDCodecSingleColor.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 class HCDCodecFPXSingleColor : public HCDCodecSingleColor
     {
-    HDECLARE_CLASS_ID(1164, HCDCodecSingleColor)
+    HDECLARE_CLASS_ID(HCDCodecId_FlashpixSingleColor, HCDCodecSingleColor)
 
 public:
 
-    _HDLLu                     HCDCodecFPXSingleColor();
+    IMAGEPP_EXPORT                     HCDCodecFPXSingleColor();
 
-    _HDLLu                     HCDCodecFPXSingleColor(   size_t pi_Width,
+    IMAGEPP_EXPORT                     HCDCodecFPXSingleColor(   size_t pi_Width,
                                                          size_t pi_Height,
                                                          size_t pi_BitsPerPixel);
 
-    _HDLLu                     HCDCodecFPXSingleColor(const HCDCodecFPXSingleColor& pi_rObj);
+    IMAGEPP_EXPORT                     HCDCodecFPXSingleColor(const HCDCodecFPXSingleColor& pi_rObj);
 
-    _HDLLu                     ~HCDCodecFPXSingleColor();
+    IMAGEPP_EXPORT                     ~HCDCodecFPXSingleColor();
 
     
     virtual size_t          CompressSubset(const void* pi_pInData,
@@ -52,3 +52,4 @@ protected:
 private:
     };
 
+END_IMAGEPP_NAMESPACE

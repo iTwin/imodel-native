@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRARaster.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRARaster.h>
 #include <Imagepp/all/h/HRARasterIterator.h>
@@ -22,6 +22,8 @@
 #include <Imagepp/all/h/HRAMessages.h>
 #include <Imagepp/all/h/HRPQuantizedPalette.h>
 #include <Imagepp/all/h/HMDContext.h>
+
+
 
 
 HPM_REGISTER_ABSTRACT_CLASS(HRARaster, HGFRaster)
@@ -246,11 +248,9 @@ void HRARaster::PrintState(ostream& po_rOutput) const
 // public
 // Draw
 //-----------------------------------------------------------------------------
-void HRARaster::Draw(const HFCPtr<HGFMappedSurface>& pio_pSurface, const HGFDrawOptions* pi_pOptions) const
+void HRARaster::Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const& pi_Options) const
     {
-    // HChk MR: Operation must be redefined on all rasters?
-
-    HASSERT(false);
+    _Draw(pio_destSurface, pi_Options);
     }
 
 //-----------------------------------------------------------------------------
@@ -544,24 +544,6 @@ bool HRARaster::IsStoredRaster () const
 
 //-----------------------------------------------------------------------------
 // public
-// PreDraw   - Default implementation.
-//-----------------------------------------------------------------------------
-void HRARaster::PreDraw(HRADrawOptions* pi_pOptions)
-    {
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// PreCopyFrom - Default implementation.
-void HRARaster::PreCopyFrom(HRACopyFromOptions* pio_pOptions)
-    {
-    HRADrawOptions* pDrawOptions = new HRADrawOptions(*pio_pOptions);
-    this->PreDraw(pDrawOptions);
-    delete pDrawOptions;
-    }
-
-//-----------------------------------------------------------------------------
-// public
 // SetContext : Set the list of volatile layers
 //-----------------------------------------------------------------------------
 void HRARaster::SetContext(const HFCPtr<HMDContext>& pi_rpContext)
@@ -587,23 +569,6 @@ HFCPtr<HMDContext> HRARaster::GetContext()
 HGFGraphicObject::Location HRARaster::Locate(const HGF2DLocation& pi_rPoint) const
     {
     return (GetEffectiveShape()->GetShapePtr()->Locate(pi_rPoint));
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-//-----------------------------------------------------------------------------
-IRasterBaseGcsPtr HRARaster::GetGeocoding() const
-    {
-    return m_pGeocoding;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-//-----------------------------------------------------------------------------
-void HRARaster::SetGeocoding(IRasterBaseGcsPtr pi_pGeocoding)
-    {
-    m_pGeocoding = pi_pGeocoding;
     }
 
 
@@ -685,3 +650,52 @@ void HRARaster::InvalidateRaster()
     {
     //By default, do nothing
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRARaster::BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options)
+    {
+    return _BuildCopyToContext(imageNode, options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRARaster::CopyFrom(HRARaster& srcRaster)
+    {
+    return CopyFrom(srcRaster, HRACopyFromOptions());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Mathieu.Marchand  04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ImagePPStatus HRARaster::CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options)
+    {
+    if(options.GetEffectiveCopyRegion() != NULL)
+        return _CopyFrom(srcRaster, options);
+
+    // Need to build the effectiveCopyRegion.
+    HRACopyFromOptions newOpts(options);
+
+    // Take the destination effective shape
+    HFCPtr<HVEShape> pCopyRegion(new HVEShape(*GetEffectiveShape()));
+
+    // Intersect with source's effective shape
+    pCopyRegion->Intersect(*srcRaster.GetEffectiveShape());
+
+    // Intersect with specified "copy from" shape if necessary
+    if (options.GetDestShape() != 0)
+        pCopyRegion->Intersect(*(options.GetDestShape()));
+
+    if(pCopyRegion->IsEmpty())
+        return COPYFROM_STATUS_VoidRegion;
+    
+    newOpts.SetDestShape(NULL);
+    newOpts.SetEffectiveCopyRegion(pCopyRegion.GetPtr());
+
+    return _CopyFrom(srcRaster, newOpts);    
+    }
+
+
+

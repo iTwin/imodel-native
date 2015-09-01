@@ -2,12 +2,12 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMSeamlessMosaic.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HIMSeamlessMosaic.h>
 #include <Imagepp/all/h/HIMColorBalancedImage.h>
@@ -18,7 +18,7 @@
 #include <Imagepp/all/h/HRAHistogramOptions.h>
 #include <Imagepp/all/h/HRABitmap.h>
 #include <Imagepp/all/h/HRARasterIterator.h>
-#include <ImagePP/all/h/HRACopyFromOptions.h>
+#include <ImagePP/all/h/HRACopyFromLegacyOptions.h>
 #include <ImagePP/all/h/HRAMessages.h>
 
 #include <Imagepp/all/h/HGF2DTranslation.h>
@@ -198,11 +198,10 @@ HIMSeamlessMosaic& HIMSeamlessMosaic::operator=(const HIMSeamlessMosaic& pi_rObj
 
 
 /** ---------------------------------------------------------------------------
-    CopyFrom. This method is currently not supported.
+    CopyFromLegacy. This method is currently not supported.
     ---------------------------------------------------------------------------
 */
-void HIMSeamlessMosaic::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
-                                 const HRACopyFromOptions& pi_rOptions)
+void HIMSeamlessMosaic::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions)
     {
     HASSERT(false);
 
@@ -210,12 +209,12 @@ void HIMSeamlessMosaic::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster,
 
 
 /** ---------------------------------------------------------------------------
-    CopyFrom. This method is currently not supported.
+    CopyFromLegacy. This method is currently not supported.
     ---------------------------------------------------------------------------
 */
-void HIMSeamlessMosaic::CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster)
+void HIMSeamlessMosaic::CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster)
     {
-    CopyFrom(pi_pSrcRaster, HRACopyFromOptions());
+    CopyFromLegacy(pi_pSrcRaster, HRACopyFromLegacyOptions());
     }
 
 
@@ -770,7 +769,7 @@ void HIMSeamlessMosaic::SetupFilterFor(const HFCPtr<HIMColorBalancedImage>& pi_r
                 HGF2DExtent BoundaryExtent(pNewBoundary->GetExtent());
 
                 // All the boundary region will be at 100%
-                XMin = max(XMin, BoundaryExtent.GetXMax());
+                XMin = MAX(XMin, BoundaryExtent.GetXMax());
                 }
             }
 
@@ -788,7 +787,7 @@ void HIMSeamlessMosaic::SetupFilterFor(const HFCPtr<HIMColorBalancedImage>& pi_r
                 HGF2DExtent BoundaryExtent(pNewBoundary->GetExtent());
 
                 // All the boundary region will be at 100%
-                XMax = min(XMax, BoundaryExtent.GetXMin());
+                XMax = MIN(XMax, BoundaryExtent.GetXMin());
                 }
             }
 
@@ -805,7 +804,7 @@ void HIMSeamlessMosaic::SetupFilterFor(const HFCPtr<HIMColorBalancedImage>& pi_r
                 HGF2DExtent BoundaryExtent(pNewBoundary->GetExtent());
 
                 // All the boundary region will be at 100%
-                YMin = max(YMin, BoundaryExtent.GetYMax());
+                YMin = MAX(YMin, BoundaryExtent.GetYMax());
                 }
             }
 
@@ -822,7 +821,7 @@ void HIMSeamlessMosaic::SetupFilterFor(const HFCPtr<HIMColorBalancedImage>& pi_r
                 HGF2DExtent BoundaryExtent(pNewBoundary->GetExtent());
 
                 // All the boundary region will be at 100%
-                YMax = min(YMax, BoundaryExtent.GetYMin());
+                YMax = MIN(YMax, BoundaryExtent.GetYMin());
                 }
             }
 

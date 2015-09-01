@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ext/MatrixFromTiePts/src/simitran.c $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 /*mh================================================================ HMR
 **  Octimage/MicroStation - Transformation Models
 **
@@ -5,11 +12,6 @@
 **      transformation of coordinates using the similitude transform
 **
 **===========================================================================*/
-/*----------------------------------------------------------------------+
-|                                                                       |
-|       $Source: ext/MatrixFromTiePts/src/simitran.c $
-|                                                                       |
-+----------------------------------------------------------------------*/
 
 #include "trfmodel.h"
 

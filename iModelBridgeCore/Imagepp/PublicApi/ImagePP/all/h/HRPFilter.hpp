@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPFilter.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -11,6 +11,7 @@
 // Inline methods for HRPFilter class.
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // public
 // GetInputPixelType
@@ -65,3 +66,4 @@ inline void HRPFilter::SetOutputPixelType(const HFCPtr<HRPPixelType>& pi_pOutput
     m_pOutputPixelType = pi_pOutputPixelType;
     }
 
+END_IMAGEPP_NAMESPACE

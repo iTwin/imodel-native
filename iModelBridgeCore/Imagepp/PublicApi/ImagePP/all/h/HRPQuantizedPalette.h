@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPQuantizedPalette.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,6 +15,7 @@
 
 #include "HRPPixelPalette.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPHistogram;
 
 class HNOVTABLEINIT HRPQuantizedPalette
@@ -48,6 +49,7 @@ private:
 
     unsigned short  m_MaxEntries;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HRPQuantizedPalette.hpp"

@@ -2,11 +2,11 @@
 //:>
 //:>     $Source: all/gra/hcp/src/HCPGCoordModel.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-#include <ImagePP/h/hstdcpp.h>                // must be first for PreCompiledHeader Option
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>                // must be first for PreCompiledHeader Option
+
 
 #include <Imagepp/all/h/HCPGCoordModel.h>
 #include <Imagepp/all/h/HCPGCoordUtility.h>
@@ -14,24 +14,29 @@
 #include <Imagepp/all/h/HGF2DDisplacement.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <ImagePP/all/h/HFCException.h>
+#include <ImagePP/all/h/HCPGCoordLatLongModel.h>
+#include <ImagePP/all/h/HVE2DShape.h>
+#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HCPGCoordUtility.h>
 
+#include <GeoCoord\BaseGeoCoord.h>
+#include <ImagePP/all/h/HFCRasterGeoCoordinateServices.h>
 
-#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
 
 //-----------------------------------------------------------------------------
 // Default Constructor
 //-----------------------------------------------------------------------------
-HCPGCoordModel::HCPGCoordModel ()
-    :HGF2DTransfoModel ()
-    {
-    // The DLLs must be loaded to use this class.
-    if (!GCSServices->_IsAvailable())
-        throw HFCFileException(HFC_DLL_NOT_FOUND_EXCEPTION, GCSServices->_GetServiceName());
-
-    Prepare ();
-
-    HINVARIANTS;
-    }
+//HCPGCoordModel::HCPGCoordModel ()
+//    :HGF2DTransfoModel ()
+//    {
+//    // The DLLs must be loaded to use this class.
+//    if (!GCSServices->_IsAvailable())
+//        throw HFCDllNotFoundException(GCSServices->_GetServiceName());
+//
+//    Prepare ();
+//
+//    HINVARIANTS;
+//    }
 
 /** -----------------------------------------------------------------------------
     Creates a GCoord reprojection model based on two provided
@@ -49,16 +54,19 @@ HCPGCoordModel::HCPGCoordModel ()
 */
 HCPGCoordModel::HCPGCoordModel
 (
-    IRasterBaseGcsPtr  pi_SourceGEOCS,
-    IRasterBaseGcsPtr  pi_DestinationGEOCS
+    IRasterBaseGcsR  pi_SourceGEOCS,
+    IRasterBaseGcsR  pi_DestinationGEOCS
 )
     :HGF2DTransfoModel (),
-     m_SourceGEOCS (pi_SourceGEOCS),
-     m_DestinationGEOCS (pi_DestinationGEOCS)
+     m_SourceGEOCS (&pi_SourceGEOCS),
+     m_DestinationGEOCS (&pi_DestinationGEOCS),
+     m_domainComputed(false),
+     m_domainDirect(NULL),
+     m_domainInverse(NULL)
     {
     // The DLLs must be loaded to use this class.
     if (!GCSServices->_IsAvailable ())
-        throw HFCFileException(HFC_DLL_NOT_FOUND_EXCEPTION, GCSServices->_GetServiceName());
+        throw HFCDllNotFoundException(GCSServices->_GetServiceName());
 
     // The two projections must be valid
     HPRECONDITION (m_SourceGEOCS->IsValid ());
@@ -69,11 +77,16 @@ HCPGCoordModel::HCPGCoordModel
 // Copy constructor.  It duplicates another object.
 //-----------------------------------------------------------------------------
 HCPGCoordModel::HCPGCoordModel (const HCPGCoordModel& pi_rObj)
-    :HGF2DTransfoModel (pi_rObj)
+    :HGF2DTransfoModel (pi_rObj),
+     m_SourceGEOCS(pi_rObj.m_SourceGEOCS),
+     m_DestinationGEOCS(pi_rObj.m_DestinationGEOCS),
+     m_domainComputed(false),
+     m_domainDirect(NULL),
+     m_domainInverse(NULL)
     {
     // The DLLs must be loaded to use this class.
     if (!GCSServices->_IsAvailable())
-        throw HFCFileException(HFC_DLL_NOT_FOUND_EXCEPTION, GCSServices->_GetServiceName());
+        throw HFCDllNotFoundException(GCSServices->_GetServiceName());
 
     Copy (pi_rObj);
 
@@ -145,12 +158,12 @@ HCPGCoordModel& HCPGCoordModel::operator=(const HCPGCoordModel& pi_rObj)
 void HCPGCoordModel::StudyReversibilityPrecisionOver
 (
     const HGF2DLiteExtent& pi_PrecisionArea,
-    double                pi_Step,
-    double*               po_pMeanError,
-    double*               po_pMaxError,
-    double*               po_pScaleChangeMean,
-    double*               po_pScaleChangeMax,
-    double                pi_ScaleTreshold
+    double                 pi_Step,
+    double*                po_pMeanError,
+    double*                po_pMaxError,
+    double*                po_pScaleChangeMean,
+    double*                po_pScaleChangeMax,
+    double                 pi_ScaleTreshold
 ) const
     {
     // The extent of area must not be empty
@@ -168,12 +181,12 @@ void HCPGCoordModel::StudyReversibilityPrecisionOver
     double TempX;
     double TempY;
 
-    double MaxError = 0.0;
-    double MaxScaleChange = 1.0;
+    double   MaxError = 0.0;
+    double   MaxScaleChange = 1.0;
     uint32_t ScaleNumSamples = 0;
-    double ScaleChangeSum = 0.0;
-    double StatSumX = 0.0;
-    double StatSumY = 0.0;
+    double   ScaleChangeSum = 0.0;
+    double   StatSumX = 0.0;
+    double   StatSumY = 0.0;
     uint32_t StatNumSamples = 0;
 
     double TempX1;
@@ -236,7 +249,7 @@ void HCPGCoordModel::StudyReversibilityPrecisionOver
             StatSumY += DeltaY;
             StatNumSamples++;
 
-            MaxError = max (MaxError, max (DeltaX, DeltaY));
+            MaxError = MAX (MaxError, MAX (DeltaX, DeltaY));
             }
         }
 
@@ -250,7 +263,7 @@ void HCPGCoordModel::StudyReversibilityPrecisionOver
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HCPGCoordModel::ConvertDirect
+StatusInt HCPGCoordModel::ConvertDirect
 (
     double* pio_pXInOut,
     double* pio_pYInOut
@@ -277,8 +290,7 @@ void HCPGCoordModel::ConvertDirect
     stat1 = m_SourceGEOCS->GetBaseGCS()->LatLongFromCartesian (inLatLong, inCartesian);
 
     GeoPoint outLatLong;
-    stat2 = m_SourceGEOCS->GetBaseGCS()->LatLongFromLatLong(outLatLong, inLatLong, *m_DestinationGEOCS->GetBaseGCS());
-
+    stat2 = m_SourceGEOCS->GetBaseGCS()->LatLongFromLatLong(outLatLong, inLatLong, *m_DestinationGEOCS.GetBaseGCS());
 
     DPoint3d outCartesian;
     stat3 = m_DestinationGEOCS->GetBaseGCS()->CartesianFromLatLong(outCartesian, outLatLong);
@@ -313,17 +325,18 @@ void HCPGCoordModel::ConvertDirect
     double XOut;
     double YOut;
 
-    m_SourceGEOCS->Reproject(&XOut, &YOut, *pio_pXInOut, *pio_pYInOut, *m_DestinationGEOCS);
+    StatusInt status = m_SourceGEOCS->Reproject(&XOut, &YOut, *pio_pXInOut, *pio_pYInOut, *m_DestinationGEOCS);
     *pio_pXInOut = XOut;
     *pio_pYInOut = YOut;
 
+    return status;
 #endif
     }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HCPGCoordModel::ConvertDirect
+StatusInt HCPGCoordModel::ConvertDirect
 (
     double  pi_XIn,
     double  pi_YIn,
@@ -338,13 +351,13 @@ void HCPGCoordModel::ConvertDirect
     *po_pXOut = pi_XIn;
     *po_pYOut = pi_YIn;
 
-    ConvertDirect (po_pXOut, po_pYOut);
+    return ConvertDirect (po_pXOut, po_pYOut);
     }
 
 //-----------------------------------------------------------------------------
 // Converter (direct)
 //-----------------------------------------------------------------------------
-void HCPGCoordModel::ConvertDirect
+StatusInt HCPGCoordModel::ConvertDirect
 (
     double    pi_YIn,
     double    pi_XInStart,
@@ -358,23 +371,58 @@ void HCPGCoordModel::ConvertDirect
     HPRECONDITION (po_pXOut != NULL);
     HPRECONDITION (po_pYOut != NULL);
 
-    double  X;
-    uint32_t Index;
+    StatusInt status = SUCCESS;
+
+    double    X;
+    uint32_t  Index;
     double* pCurrentX = po_pXOut;
     double* pCurrentY = po_pYOut;
 
     for (Index = 0, X = pi_XInStart;
          Index < pi_NumLoc ; ++Index, X+=pi_XInStep, ++pCurrentX, ++pCurrentY)
         {
-        ConvertDirect (X, pi_YIn, pCurrentX, pCurrentY);
+        StatusInt tempStatus = ConvertDirect (X, pi_YIn, pCurrentX, pCurrentY);
+
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
         }
+
+    return status;
     }
 
 
 //-----------------------------------------------------------------------------
+// Converter (direct)
+//-----------------------------------------------------------------------------
+StatusInt HCPGCoordModel::ConvertDirect
+(
+ size_t pi_NumLoc, 
+ double* pio_aXInOut,
+ double* pio_aYInOut
+) const
+    {
+    // Make sure recipient arrays are provided
+    HPRECONDITION (pio_aXInOut!=NULL);
+    HPRECONDITION (pio_aYInOut!=NULL);
+
+    StatusInt status = SUCCESS;
+
+    for(uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        StatusInt tempStatus = ConvertDirect (pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
+
+        // Return the first non-SUCCESS error yet continue the process as possible.
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
+        }
+
+    return status;
+    }
+
+//-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HCPGCoordModel::ConvertInverse
+StatusInt HCPGCoordModel::ConvertInverse
 (
     double* pio_pXInOut,
     double* pio_pYInOut
@@ -437,11 +485,12 @@ void HCPGCoordModel::ConvertInverse
     double XOut;
     double YOut;
 
-    m_DestinationGEOCS->Reproject(&XOut, &YOut, *pio_pXInOut, *pio_pYInOut, *m_SourceGEOCS);
+    StatusInt status = m_DestinationGEOCS->Reproject(&XOut, &YOut, *pio_pXInOut, *pio_pYInOut, *m_SourceGEOCS);
 
     *pio_pXInOut = XOut;
     *pio_pYInOut = YOut;
-
+                        
+    return status;
 #endif
 
     }
@@ -449,7 +498,7 @@ void HCPGCoordModel::ConvertInverse
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HCPGCoordModel::ConvertInverse
+StatusInt HCPGCoordModel::ConvertInverse
 (
     double pi_XIn,
     double pi_YIn,
@@ -464,17 +513,17 @@ void HCPGCoordModel::ConvertInverse
     *po_pXOut = pi_XIn;
     *po_pYOut = pi_YIn;
 
-    ConvertInverse (po_pXOut, po_pYOut);
+    return ConvertInverse (po_pXOut, po_pYOut);
     }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
-void HCPGCoordModel::ConvertInverse
+StatusInt HCPGCoordModel::ConvertInverse
 (
     double    pi_YIn,
     double    pi_XInStart,
-    size_t     pi_NumLoc,
+    size_t    pi_NumLoc,
     double    pi_XInStep,
     double*   po_pXOut,
     double*   po_pYOut
@@ -484,7 +533,8 @@ void HCPGCoordModel::ConvertInverse
     HPRECONDITION (po_pXOut != NULL);
     HPRECONDITION (po_pYOut != NULL);
 
-    double  X;
+    StatusInt status = SUCCESS;
+    double   X;
     uint32_t Index;
     double* pCurrentX = po_pXOut;
     double* pCurrentY = po_pYOut;
@@ -492,11 +542,43 @@ void HCPGCoordModel::ConvertInverse
     for (Index = 0, X = pi_XInStart;
          Index < pi_NumLoc ; ++Index, X+=pi_XInStep, ++pCurrentX, ++pCurrentY)
         {
-        ConvertInverse (X, pi_YIn, pCurrentX, pCurrentY);
+        StatusInt tempStatus = ConvertInverse (X, pi_YIn, pCurrentX, pCurrentY);
+
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
         }
+
+    return status;
     }
 
+//-----------------------------------------------------------------------------
+// Converter (inverse)
+//-----------------------------------------------------------------------------
+StatusInt HCPGCoordModel::ConvertInverse
+(
+ size_t pi_NumLoc, 
+ double* pio_aXInOut,
+ double* pio_aYInOut
+) const
+    {
+    // Make sure recipient arrays are provided
+    HPRECONDITION (pio_aXInOut!=NULL);
+    HPRECONDITION (pio_aYInOut!=NULL);
 
+    StatusInt status = SUCCESS;
+
+
+    for(uint32_t i = 0; i < pi_NumLoc; i++)
+        {
+        StatusInt tempStatus = ConvertInverse (pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
+
+        // Return the first non-SUCCESS error yet continue the process as possible.
+        if ((SUCCESS != tempStatus) && (SUCCESS == status))
+            status = tempStatus;
+        }
+
+    return status;
+    }
 
 //-----------------------------------------------------------------------------
 // PreservesLinearity
@@ -625,10 +707,9 @@ void    HCPGCoordModel::Reverse ()
     HINVARIANTS;
 
     // Swap GEOCSs
-    IRasterBaseGcsPtr  TempGEOCS;
-    TempGEOCS = m_DestinationGEOCS;
-    m_DestinationGEOCS = m_SourceGEOCS;
-    m_SourceGEOCS = TempGEOCS;
+    IRasterBaseGcsPtr temp = m_SourceGEOCS;
+    m_SourceGEOCS = m_DestinationGEOCS;
+    m_DestinationGEOCS = temp;
 
     // Invoque reversing of ancester
     // This call will in turn invoque Prepare()
@@ -713,6 +794,10 @@ void HCPGCoordModel::Copy (const HCPGCoordModel& pi_rObj)
     // Copy master data
     m_SourceGEOCS      = pi_rObj.m_SourceGEOCS;
     m_DestinationGEOCS = pi_rObj.m_DestinationGEOCS;
+    m_domainComputed   = false;
+    m_domainDirect     = NULL;
+    m_domainInverse    = NULL;
+
     }
 
 //-----------------------------------------------------------------------------
@@ -722,7 +807,7 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordModel::CreateSimplifiedModel () const
     {
     HINVARIANTS;
 
-    if (m_SourceGEOCS == m_DestinationGEOCS)
+    if (m_SourceGEOCS->IsEquivalent(*m_DestinationGEOCS))
         return new HGF2DIdentity();
 
     // If we get here, no simplification is possible.
@@ -733,18 +818,18 @@ HFCPtr<HGF2DTransfoModel> HCPGCoordModel::CreateSimplifiedModel () const
 // GetSourceGEOCS
 // Returns the source projection
 //-----------------------------------------------------------------------------
-IRasterBaseGcsPtr HCPGCoordModel::GetSourceGEOCS() const
+IRasterBaseGcsCR HCPGCoordModel::GetSourceGEOCS() const
     {
-    return m_SourceGEOCS;
+    return *m_SourceGEOCS;
     }
 
 //-----------------------------------------------------------------------------
 // GetDestinationGEOCS
 // Returns the destination projection
 //-----------------------------------------------------------------------------
-IRasterBaseGcsPtr HCPGCoordModel::GetDestinationGEOCS() const
+IRasterBaseGcsCR HCPGCoordModel::GetDestinationGEOCS() const
     {
-    return m_DestinationGEOCS;
+    return *m_DestinationGEOCS;
     }
 
 #ifdef HVERIFYCONTRACT
@@ -754,3 +839,81 @@ void               HCPGCoordModel::ValidateInvariants() const
     HASSERT(m_DestinationGEOCS->IsValid());
     }
 #endif
+
+
+
+
+//-----------------------------------------------------------------------------
+// PRIVATE
+// ComputeDomain - Copmputes the domains applicable to the transformation model
+//-----------------------------------------------------------------------------
+StatusInt HCPGCoordModel::ComputeDomain () const
+    {
+    StatusInt status = SUCCESS;
+
+    if (!m_domainComputed)
+        {
+        // Domain not computed ... we first obtain the geographic domain from both GCS
+        HGF2DCoordCollection<double> sourceGeoDomain;
+        HGF2DCoordCollection<double> destinationGeoDomain;
+
+        HCPGCoordUtility::GetGeoDomain(*m_SourceGEOCS, sourceGeoDomain);
+        HCPGCoordUtility::GetGeoDomain(*m_DestinationGEOCS, destinationGeoDomain);
+
+        // Create the three coordinate systems required for transformation
+        HFCPtr<HGF2DCoordSys> latLongCoordinateSystem = new HGF2DCoordSys();
+        HFCPtr<HGF2DTransfoModel> directLatLongTransfoModel = new HCPGCoordLatLongModel (*m_SourceGEOCS);
+        HFCPtr<HGF2DTransfoModel> inverseLatLongTransfoModel = new HCPGCoordLatLongModel (*m_DestinationGEOCS);
+        HFCPtr<HGF2DCoordSys> directCoordinateSystem = new HGF2DCoordSys(*directLatLongTransfoModel, latLongCoordinateSystem);
+        HFCPtr<HGF2DCoordSys> inverseCoordinateSystem = new HGF2DCoordSys(*inverseLatLongTransfoModel, latLongCoordinateSystem);
+
+        // Create shapes from these
+
+        HFCPtr<HVE2DShape> sourceDomainShape = new HVE2DPolygonOfSegments(HGF2DPolygonOfSegments(sourceGeoDomain), latLongCoordinateSystem);
+        HFCPtr<HVE2DShape> destinationDomainShape = new HVE2DPolygonOfSegments(HGF2DPolygonOfSegments(destinationGeoDomain), latLongCoordinateSystem);
+
+        HFCPtr<HVE2DShape> resultDomainShape = sourceDomainShape->IntersectShape (*destinationDomainShape);
+
+        // Obtain shapes in direct of inverse coordinate systems, drop and copy points
+        HFCPtr<HVE2DShape> tempShapeDirect = static_cast<HVE2DShape*>(resultDomainShape->AllocateCopyInCoordSys (directCoordinateSystem));
+        m_domainDirect = tempShapeDirect->GetLightShape();
+        HFCPtr<HVE2DShape> tempShapeInverse = static_cast<HVE2DShape*>(resultDomainShape->AllocateCopyInCoordSys (inverseCoordinateSystem));
+        m_domainInverse = tempShapeInverse->GetLightShape();
+
+        m_domainComputed = true;
+        }
+
+    return status;
+    }
+
+
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+bool HCPGCoordModel::HasDomain() const
+    {
+    return true;
+    }
+
+
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+HFCPtr<HGF2DShape> HCPGCoordModel::GetDirectDomain() const
+    {
+    ComputeDomain();
+
+    return m_domainDirect;
+    }
+
+//-----------------------------------------------------------------------------
+// CreateSimplifiedModel
+//-----------------------------------------------------------------------------
+HFCPtr<HGF2DShape> HCPGCoordModel::GetInverseDomain () const
+    {
+    StatusInt status = SUCCESS;
+
+    status = ComputeDomain();
+
+    return m_domainInverse;
+    }

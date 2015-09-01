@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTiffFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTiffFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HRFTiffTileEditor.h>
@@ -43,7 +43,6 @@
 #include <Imagepp/all/h/HRPPixelTypeI8R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeI8VA8R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeI8Gray8.h>
-#include <Imagepp/all/h/HRPPixelTypeI2R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeI4R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeI4R8G8B8A8.h>
 #include <Imagepp/all/h/HRPPixelTypeV1Gray1.h>
@@ -87,17 +86,12 @@
 
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #define DEFAULT_STRIPSIZE                       (16384)     // 16k, represent 16k for an 8bits image
 //      32k for an 16 bits image, .....
 
-static const float DEFAULT_NO_DATA_VALUE =     (-FLT_MAX); // Currently used for PixelTypeV32Float32
-// that do not have a No Data Value tag.
 
-
-USING_NAMESPACE_IMAGEPP
 
 bool HRFTiffFile::s_BypassFileSharing = false;
 
@@ -204,6 +198,32 @@ public:
                                    HCDCodecLZW::CLASS_ID,
                                    new HRFTiffBlockCapabilities()));
         }
+    };
+
+
+//-----------------------------------------------------------------------------
+// HRFTiffCodecTrueColorCapabilities
+//-----------------------------------------------------------------------------
+
+class HRFTiffCodecYCCColorCapabilities : public  HRFRasterFileCapabilities
+    {
+    public:
+        // Constructor
+        HRFTiffCodecYCCColorCapabilities()
+            : HRFRasterFileCapabilities()
+            {
+            // YCC Jpeg is supported via v24R8G8B8 since jpeg decoder is doing the conversion internally.
+
+            // Codec Identity
+            Add(new HRFCodecCapability(HFC_READ_WRITE_CREATE,
+                HCDCodecIdentity::CLASS_ID,
+                new HRFTiffBlockCapabilities()));
+
+            // Codec LZW
+            Add(new HRFCodecCapability(HFC_READ_WRITE_CREATE,
+                HCDCodecLZW::CLASS_ID,
+                new HRFTiffBlockCapabilities()));
+            }
     };
 
 
@@ -497,6 +517,12 @@ HRFTiffCapabilities::HRFTiffCapabilities()
                                    HRPPixelTypeV32Float32::CLASS_ID,
                                    new HRFTiffLosslessCodecCapabilities()));
 
+    // PixelTypeV24PhotoYCC
+    // Read/Write/Create capability
+    Add(new HRFPixelTypeCapability(HFC_READ_WRITE_CREATE,
+                                   HRPPixelTypeV24PhotoYCC::CLASS_ID,
+                                   new HRFTiffCodecYCCColorCapabilities()));
+
     // Scanline orientation capability
     Add(new HRFScanlineOrientationCapability(HFC_READ_WRITE_CREATE, HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL));
 
@@ -656,8 +682,7 @@ HRFTiffCreator::HRFTiffCreator()
 
 WString HRFTiffCreator::GetLabel() const
     {
-    HFCResourceLoader* stringLoader = HFCResourceLoader::GetInstance();
-    return stringLoader->GetString(IDS_FILEFORMAT_Tiff);  // Tagged Image File Format (TIFF)
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_Tiff());  // Tagged Image File Format (TIFF)
     }
 
 //-----------------------------------------------------------------------------
@@ -715,7 +740,7 @@ bool HRFTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     (const_cast<HRFTiffCreator*>(this))->SharingControlCreate(pi_rpURL);
     HFCLockMonitor SisterFileLock (GetLockManager());
 
-    pTiff = new HTIFFFile (CreateCombinedURLAndOffset(pi_rpURL, pi_Offset), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
+    pTiff = new HTIFFFile (pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
     if (pTiff->IsValid(&pErr) || ((pErr != 0) && !pErr->IsFatal()))
         {
         // the tiff was opened successfully, verify if it is
@@ -1051,7 +1076,7 @@ void HRFTiffFile::SetImageInSubImage  (uint32_t pi_IndexImage)
     // Check if outside of page.
     // Should be a precondition, cause the caller can check before calling
     if (pi_IndexImage > m_NumberDir)
-        throw HRFException(HRF_BAD_PAGE_NUMBER_EXCEPTION, GetURL()->GetURL());
+        throw HRFBadPageNumberException(GetURL()->GetURL());
 
     // Change the sub-image only if we are not already in the wanted image
     HTIFFFile::DirectoryID NewDirID = HTIFFFile::MakeDirectoryID(HTIFFFile::STANDARD, pi_IndexImage);
@@ -1199,7 +1224,7 @@ void HRFTiffFile::AddResolutionToFile(uint32_t pi_Page,
             m_pTiff->SetField (IMAGELENGTH, (uint32_t)0);
 
             GetSystemDateTime (aDateTime);
-            m_pTiff->SetField (DATETIME, aDateTime);
+            m_pTiff->SetFieldA (DATETIME, aDateTime);
             }
         }
     else
@@ -1210,7 +1235,7 @@ void HRFTiffFile::AddResolutionToFile(uint32_t pi_Page,
         if ((ResolutionType == 0) || ((ResolutionType & FILETYPE_PAGE) != 0))
             {
             GetSystemDateTime (aDateTime);
-            m_pTiff->SetField (DATETIME, aDateTime);
+            m_pTiff->SetFieldA (DATETIME, aDateTime);
             }
 
         // Set the image size
@@ -1506,7 +1531,7 @@ void HRFTiffFile::WritePixelTypeAndCodecToFile(uint32_t                    pi_Pa
                 // Save Table in file.
                 HAutoPtr<Byte> pTable(new Byte[1024]);
                 uint32_t        CodecTableSize;
-                CodecTableSize = pCodec->CreateTables((void*)pTable, 1024);
+                CodecTableSize = pCodec->CreateTables(pTable, 1024);
 
                 if (CodecTableSize > 0)
                     m_pTiff->SetField (JPEGTABLES, CodecTableSize, pTable);
@@ -1803,7 +1828,7 @@ void HRFTiffFile::WritePixelTypeAndCodecToFile(uint32_t                    pi_Pa
             }
         else
             {
-            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
             }
         }
     else
@@ -1822,7 +1847,7 @@ void HRFTiffFile::WritePixelTypeAndCodecToFile(uint32_t                    pi_Pa
             m_pTiff->SetField (BITSPERSAMPLE, (unsigned short)4);
             m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
             }
-        else if (pi_rpPixelType->GetClassID() == HRPPixelTypeI2R8G8B8::CLASS_ID)
+        else if (pi_rpPixelType->GetClassID() == HRPPixelTypeId_I2R8G8B8)
             {
             m_pTiff->SetField (BITSPERSAMPLE, (unsigned short)2);
             m_pTiff->SetField (SAMPLESPERPIXEL, (unsigned short)1);
@@ -1854,7 +1879,7 @@ void HRFTiffFile::WritePixelTypeAndCodecToFile(uint32_t                    pi_Pa
             }
         else
             {
-            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+            throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
             }
 
         WritePaletteToFile(pi_Page, pi_rpPixelType->GetPalette());
@@ -1871,13 +1896,13 @@ void HRFTiffFile::WritePaletteToFile(uint32_t pi_Page, const HRPPixelPalette&  p
     HASSERT(pi_Page < CountPages());
 
     size_t          MaxPaletteEntries  = pi_rPalette.GetMaxEntries();
-    bool           HasAlpha           = pi_rPalette.GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE;
+    bool            HasAlpha           = pi_rPalette.GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE;
 
-    Byte*         pPaletteEntry;
-    unsigned short*        rm = NULL;         // Store the Red Channel
-    unsigned short*        gm = NULL;         // Store the Green Channel
-    unsigned short*        bm = NULL;         // Store the Blue Channel
-    Byte*         am = NULL;         // Store the Alpha Channel
+    Byte*           pPaletteEntry;
+    unsigned short*         rm = NULL;         // Store the Red Channel
+    unsigned short*         gm = NULL;         // Store the Green Channel
+    unsigned short*         bm = NULL;         // Store the Blue Channel
+    Byte*           am = NULL;         // Store the Alpha Channel
 
     // Validate the file access
     HPRECONDITION(GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess );
@@ -1900,7 +1925,7 @@ void HRFTiffFile::WritePaletteToFile(uint32_t pi_Page, const HRPPixelPalette&  p
                 memset(gm, 0, MaxPaletteEntries * sizeof(unsigned short));
                 memset(bm, 0, MaxPaletteEntries * sizeof(unsigned short));
                 if (HasAlpha)
-                    memset(am, 0, MaxPaletteEntries * sizeof(unsigned short));
+                    memset(am, 0, MaxPaletteEntries * sizeof(Byte));
                 }
             // Convert the palette entry to the RGB buffer
             for (uint32_t i=0; i<pi_rPalette.CountUsedEntries(); i++)
@@ -1962,49 +1987,23 @@ bool HRFTiffFile::Open(bool pi_CreateBigTifFormat)
         {
         HFCAccessMode AccessMode = GetAccessMode() | HFC_READ_ONLY;
 
-        //  Open the file
-        if (m_Offset == 0)
-            {
-            // This method creates the sharing control sister file
-            SharingControlCreate();
+        // This method creates the sharing control sister file
+        SharingControlCreate();
 
-            // Lock the sister file for the GetField operation
-            HFCLockMonitor SisterFileLock (GetLockManager());
+        // Lock the sister file for the GetField operation
+        HFCLockMonitor SisterFileLock (GetLockManager());
 
-            m_pTiff = new HTIFFFile (GetURL(), AccessMode);
+        m_pTiff = new HTIFFFile (GetURL(), m_Offset, AccessMode);
 
-            ThrowFileExceptionIfError (m_pTiff->GetFilePtr(), GetURL()->GetURL());
+        m_pTiff->GetFilePtr()->ThrowOnError(); 
 
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
+        // Unlock the sister file.
+        SisterFileLock.ReleaseKey();
 
-            HTIFFError* pErr;
-            m_pTiff->IsValid(&pErr);
-            if ((pErr != 0) && pErr->IsFatal())
-                throw HRFTiffErrorException(GetURL()->GetURL(), *pErr);
-
-            } // not an embedded image
-        else
-            {
-            // This method creates the sharing control sister file
-            SharingControlCreate();
-
-            // Lock the sister file for the GetField operation
-            HFCLockMonitor SisterFileLock (GetLockManager());
-
-            m_pTiff = new HTIFFFile (CreateCombinedURLAndOffset(GetURL(), m_Offset), AccessMode);
-
-            ThrowFileExceptionIfError (m_pTiff->GetFilePtr(), GetURL()->GetURL());
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
-
-            HTIFFError* pErr;
-            m_pTiff->IsValid(&pErr);
-            if ((pErr != 0) && pErr->IsFatal())
-                throw HRFTiffErrorException(GetURL()->GetURL(), *pErr);
-
-            } // embedded image
+        HTIFFError* pErr;
+        m_pTiff->IsValid(&pErr);
+        if ((pErr != 0) && pErr->IsFatal())
+            throw HRFTiffErrorException(GetURL()->GetURL(), *pErr);
 
         // Build the directory list
         m_pDirectories = 0;
@@ -2030,47 +2029,25 @@ bool HRFTiffFile::Open(const HFCPtr<HFCURL>&  pi_rpURL)
         HFCAccessMode AccessMode = GetAccessMode() | HFC_READ_ONLY;
 
         //  Open the file
-        if (m_Offset == 0)
-            {
-            // This method creates the sharing control sister file
-            SharingControlCreate();
+        // This method creates the sharing control sister file
+        SharingControlCreate();
 
-            // Lock the sister file for the GetField operation
-            HFCLockMonitor SisterFileLock (GetLockManager());
+        // Lock the sister file for the GetField operation
+        HFCLockMonitor SisterFileLock (GetLockManager());
 
-            m_pTiff = new HTIFFFile (pi_rpURL, AccessMode);
+        m_pTiff = new HTIFFFile (pi_rpURL, m_Offset, AccessMode);
 
-            ThrowFileExceptionIfError(m_pTiff->GetFilePtr(), pi_rpURL->GetURL());
+        if (m_pTiff->GetFilePtr() == 0)
+            throw HFCCannotOpenFileException(pi_rpURL->GetURL());
+        m_pTiff->GetFilePtr()->ThrowOnError(); 
 
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
+        // Unlock the sister file.
+        SisterFileLock.ReleaseKey();
 
-            HTIFFError* pErr;
-            m_pTiff->IsValid(&pErr);
-            if ((pErr != 0) && pErr->IsFatal())
-                throw HRFTiffErrorException(GetURL()->GetURL(), *pErr);
-
-            } // not an embedded image
-        else
-            {
-            // This method creates the sharing control sister file
-            SharingControlCreate();
-
-            // Lock the sister file for the GetField operation
-            HFCLockMonitor SisterFileLock (GetLockManager());
-
-            m_pTiff = new HTIFFFile (CreateCombinedURLAndOffset(pi_rpURL, m_Offset), AccessMode);
-
-            ThrowFileExceptionIfError(m_pTiff->GetFilePtr(), pi_rpURL->GetURL());
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
-
-            HTIFFError* pErr;
-            m_pTiff->IsValid(&pErr);
-            if ((pErr != 0) && pErr->IsFatal())
-                throw HRFTiffErrorException(GetURL()->GetURL(), *pErr);
-            } // embedded image
+        HTIFFError* pErr;
+        m_pTiff->IsValid(&pErr);
+        if ((pErr != 0) && pErr->IsFatal())
+            throw HRFTiffErrorException(GetURL()->GetURL(), *pErr);
 
         // Build the directory list
         m_pDirectories = 0;
@@ -2193,7 +2170,7 @@ void HRFTiffFile::GetBaselineTags(HPMAttributeSet* po_pTagList, const HRPPixelTy
 
         if (GetFilePtr()->GetConvertedField(SMINSAMPLEVALUE, MinSampleValues))
             {
-            HASSERT(pi_rPixelType.GetChannelOrg().CountChannels() == MinSampleValues.size());
+            HASSERT_DATA(pi_rPixelType.CountIndexBits() != 0 ? MinSampleValues.size() == 1 : pi_rPixelType.GetChannelOrg().CountChannels() == MinSampleValues.size());
 
             pTag = new HRFAttributeMinSampleValue(MinSampleValues);
             po_pTagList->Set(pTag);
@@ -2209,7 +2186,7 @@ void HRFTiffFile::GetBaselineTags(HPMAttributeSet* po_pTagList, const HRPPixelTy
 
         if (GetFilePtr()->GetConvertedField(SMAXSAMPLEVALUE, MaxSampleValues))
             {
-            HASSERT(pi_rPixelType.GetChannelOrg().CountChannels() == MaxSampleValues.size());
+            HASSERT_DATA(pi_rPixelType.CountIndexBits() != 0 ? MaxSampleValues.size() == 1 : pi_rPixelType.GetChannelOrg().CountChannels() == MaxSampleValues.size());
 
             pTag = new HRFAttributeMaxSampleValue(MaxSampleValues);
             po_pTagList->Set(pTag);
@@ -2224,7 +2201,7 @@ void HRFTiffFile::GetBaselineTags(HPMAttributeSet* po_pTagList, const HRPPixelTy
 
     if (!IsSMinSampleValueFound && GetFilePtr()->GetField(MINSAMPLEVALUE, &NbLimitValues, &pSampleLimitValue))
         {
-        HASSERT(pi_rPixelType.GetChannelOrg().CountChannels() == NbLimitValues);
+        HASSERT_DATA(pi_rPixelType.CountIndexBits() != 0 ? NbLimitValues == 1 : pi_rPixelType.GetChannelOrg().CountChannels() == NbLimitValues);
         vector<double> MinSampleValue;
 
         FILL_VECTOR_WITH_PTR_VALS(MinSampleValue, NbLimitValues, pSampleLimitValue);
@@ -2236,7 +2213,7 @@ void HRFTiffFile::GetBaselineTags(HPMAttributeSet* po_pTagList, const HRPPixelTy
     // Sample Maximum Value Tag
     if (!IsSMaxSampleValueFound && GetFilePtr()->GetField(MAXSAMPLEVALUE, &NbLimitValues, &pSampleLimitValue))
         {
-        HASSERT(pi_rPixelType.GetChannelOrg().CountChannels() == NbLimitValues);
+        HASSERT_DATA(pi_rPixelType.CountIndexBits() != 0 ? NbLimitValues == 1 : pi_rPixelType.GetChannelOrg().CountChannels() == NbLimitValues);
         vector<double> MaxSampleValue;
 
         FILL_VECTOR_WITH_PTR_VALS(MaxSampleValue, NbLimitValues, pSampleLimitValue);
@@ -2274,7 +2251,7 @@ void HRFTiffFile::CreateDescriptors()
             {
             if (AccessMode.m_HasCreateAccess || AccessMode.m_HasWriteAccess)
                 {
-                throw HRFException(HRF_ACCESS_MODE_FOR_CODEC_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+                throw HRFAccessModeForCodeNotSupportedException(GetURL()->GetURL());
                 }
             }
         }
@@ -2284,7 +2261,7 @@ void HRFTiffFile::CreateDescriptors()
     //
     if (GetFilePtr()->IsSimulateLine_OneStripPackBitRGBAFile() && (AccessMode.m_HasCreateAccess || AccessMode.m_HasWriteAccess))
         {
-        throw HRFException(HRF_ACCESS_MODE_FOR_CODEC_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFAccessModeForCodeNotSupportedException(GetURL()->GetURL());
         }
 
     uint32_t PageDirectoryIndex;
@@ -2501,9 +2478,9 @@ bool HRFTiffFile::Create(bool pi_CreateBigTifFormat)
     HFCLockMonitor SisterFileLock (GetLockManager());
 
     // Create the tiff
-    m_pTiff = new HTIFFFile (GetURL(), HFC_READ_WRITE_CREATE, pi_CreateBigTifFormat);
+    m_pTiff = new HTIFFFile (GetURL(), 0/*offset*/, HFC_READ_WRITE_CREATE, pi_CreateBigTifFormat);
 
-    ThrowFileExceptionIfError (m_pTiff->GetFilePtr(), GetURL()->GetURL());
+    m_pTiff->GetFilePtr()->ThrowOnError(); 
 
     // Unlock the sister file
     SisterFileLock.ReleaseKey();
@@ -2610,9 +2587,9 @@ bool HRFTiffFile::WriteTransfoModelToTiffMatrix(const HFCPtr<HGF2DTransfoModel>&
 // CreatePixelTypeFromFile for the current resolution
 //-----------------------------------------------------------------------------
 HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*                        pi_pTIFFFile,
-                                                          uint32_t                          pi_Page,
-                                                          Byte*                           pi_pAlphaPalette,
-                                                          unsigned short                   pi_HMRPixelTypeSpec,
+                                                          uint32_t                         pi_Page,
+                                                          Byte*                             pi_pAlphaPalette,
+                                                          unsigned short                    pi_HMRPixelTypeSpec,
                                                           const ListOfChannelIndex*         pi_pChannelsWithNoDataValue,
                                                           const ListOfChannelNoDataValue*   pi_pChannelsNoDataValue)
     {
@@ -2623,9 +2600,9 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
     unsigned short*                pExtraSample;
     HFCPtr<HRPPixelType>    pPixelType;
 
-    const bool             HasNoDataValues  = (0 != pi_pChannelsWithNoDataValue &&
-                                                0 != pi_pChannelsNoDataValue &&
-                                                0 < pi_pChannelsWithNoDataValue->size());
+    bool             HasNoDataValues  = (0 != pi_pChannelsWithNoDataValue &&
+                                         0 != pi_pChannelsNoDataValue &&
+                                         0 < pi_pChannelsWithNoDataValue->size());
     HPRECONDITION(pi_pTIFFFile != 0);
     HPRECONDITION((HasNoDataValues) ? pi_pChannelsWithNoDataValue->size() == pi_pChannelsNoDataValue->size() : true);
 
@@ -2716,25 +2693,25 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                                 // Extra sample contain alpha value.
                             case EXTRASAMPLE_UNASSALPHA:
                                 // TO DO
-                                throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                                throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                                 break;
                                 // Extra sample contain pre-multiplied alpha value.
                             case EXTRASAMPLE_ASSOCALPHA:
                                 // TO DO
-                                throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                                throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                                 break;
                                 // Extra sample does not contain alpha value .
                             case EXTRASAMPLE_UNSPECIFIED:
                                 // TO DO
-                                throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                                throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                                 break;
                             default:
-                                throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                                throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                                 break;
                             }
                         }
                     else
-                        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                        throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                     }
                 break;
 
@@ -2782,6 +2759,22 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                         HASSERT ((HasNoDataValues) ? 1 == pi_pChannelsWithNoDataValue->size() : true);
                         HASSERT ((HasNoDataValues) ? CHANNEL_INDEX_ALL_CHANNELS == pi_pChannelsWithNoDataValue->at(0) : true);
 
+                        double noDataValue = DBL_MIN;
+
+                        if (HasNoDataValues)
+                            {
+                            noDataValue = pi_pChannelsNoDataValue->at(0);
+                            }
+                        else if (pi_pTIFFFile->TagIsPresent (GDALNODATA))
+                            {
+                            char* noDataValueTag;   
+                            bool  hasTag = pi_pTIFFFile->GetField (GDALNODATA, &noDataValueTag);
+                            assert(hasTag == true);
+
+                            noDataValue = atof(noDataValueTag);                                                            
+                            HasNoDataValues = true;
+                            }
+
                         // Get the nb of bit per pixel (FOR EACH SAMPLE)
                         unsigned short SampleFormat;
                         bool   IsSampleFormatTag = false;
@@ -2791,28 +2784,28 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                         if ((IsSampleFormatTag == true) && (SampleFormat == SAMPLEFORMAT_IEEEFP))
                             {
                             if (32 != BitPerSample)
-                                throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                                throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
 
                             if (HasNoDataValues)
                                 {
-                                HASSERT((-FLT_MAX) <= pi_pChannelsNoDataValue->at(0) && FLT_MAX >= pi_pChannelsNoDataValue->at(0));
-                                float NoDataValue = static_cast<float>(pi_pChannelsNoDataValue->at(0));
+                                HASSERT((-FLT_MAX) <= noDataValue && FLT_MAX >= noDataValue);
+                                float NoDataValue = static_cast<float>(noDataValue);
                                 pPixelType = new HRPPixelTypeV32Float32(HRPChannelType::USER, &NoDataValue);
                                 }
                             else
                                 {
-                                pPixelType = new HRPPixelTypeV32Float32(HRPChannelType::USER, &DEFAULT_NO_DATA_VALUE);
+                                pPixelType = new HRPPixelTypeV32Float32(HRPChannelType::USER);                                
                                 }
                             }
                         else if ((IsSampleFormatTag == true) && (SampleFormat == SAMPLEFORMAT_INT))
                             {
                             if (16 != BitPerSample)
-                                throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                                throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
 
                             if (HasNoDataValues)
                                 {
-                                HASSERT(_I16_MIN <= pi_pChannelsNoDataValue->at(0) && _I16_MAX >= pi_pChannelsNoDataValue->at(0));
-                                int16_t NoDataValue = static_cast<int16_t>(pi_pChannelsNoDataValue->at(0));
+                                HASSERT((numeric_limits<int16_t>::min()) <= noDataValue && (numeric_limits<int16_t>::max()) >= noDataValue);
+                                int16_t NoDataValue = static_cast<int16_t>(noDataValue);
                                 pPixelType = new HRPPixelTypeV16Int16(HRPChannelType::USER, &NoDataValue);
                                 }
                             else
@@ -2827,18 +2820,42 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                                                                                                         HRPChannelType::VOID_CH,
                                                                                                         0),
                                                                                     0);
+                                                                                    
+                            if (HasNoDataValues && 0 != pPixelType)
+                                {
+                                HRPChannelType* channelTypeP = const_cast<HRPChannelType*>(pPixelType->GetChannelOrg().GetChannelPtr(0));
+                                HASSERT(0 != channelTypeP);
+
+                                if (8 == BitPerSample)
+                                    {
+                                    HASSERT((numeric_limits<uint8_t>::max)() >= noDataValue);
+                                    channelTypeP->SetNoDataValue(noDataValue);
+                                    }
+
+                                else if (16 == BitPerSample)
+                                    {
+                                    HASSERT((numeric_limits<uint16_t>::max)() >= noDataValue);
+                                    channelTypeP->SetNoDataValue(noDataValue);
+                                    }
+                                else if (32 == BitPerSample)
+                                    {
+                                    HASSERT((numeric_limits<uint32_t>::max)() >= noDataValue);
+                                    channelTypeP->SetNoDataValue(noDataValue);
+                                    }
+                                }
                             }
                         }
                     else if (SamplePerPixel == 2)
                         {
                         uint32_t NbSample = 1;
+
                         pi_pTIFFFile->GetField(EXTRASAMPLES, &NbSample, &pExtraSample);
 
                         switch (*pExtraSample)
                             {
                                 // Extra sample contain alpha value.
                             case EXTRASAMPLE_UNASSALPHA:
-                                throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                                throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                                 break;
                                 // Extra sample contain pre-multiplied alpha value.
                             case EXTRASAMPLE_ASSOCALPHA:
@@ -2846,20 +2863,46 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                                 break;
                                 // Extra sample does not contain alpha value .
                             case EXTRASAMPLE_UNSPECIFIED:
-                                throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                                throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                                 break;
                             default:
-                                throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                                throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                                 break;
                             }
                         }
                     else
-                        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                        throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                     }
-                break;
+                    break;
 
-            case PHOTOMETRIC_RGB:
             case PHOTOMETRIC_YCBCR:
+                {
+                // According to TIFF6 documentation: "Minimum Requirements for YCbCr Images" section 21.
+                // SamplePerPixel = 3
+                // BitPerSample = 8,8,8
+                // Compression : none, LZW, JPEG.
+                // *** iTiff variance: Added Compression=FlashPix and SamplePerPixel=4 and ??
+                // Note that JPEG/flashpix decoder will automatically convert YCbCr to RGB so they are handled like PHOTOMETRIC_RGB. 
+                // Others compression mode do not so me must handle them as true YCC.
+                uint32_t Compression;
+                if (SamplePerPixel == 3 && NbSample == 3 && pBitPerSample[0] == 8 && pBitPerSample[1] == 8 && pBitPerSample[2] == 8 &&
+                    pi_pTIFFFile->GetField(COMPRESSION, &Compression) && (COMPRESSION_NONE == Compression || COMPRESSION_LZW == Compression))
+                    {
+                    // TFS#8838 for now, disable YCbCr with none and LZW compression if subsampling tag != 1:1.
+                    // If an YCBCR raster have the YCBCRsubsampling tag other than 1:1, it will create stripe in the resulting image.
+                    // the problem is coming from the two levels of decompression, for example if the subsampling tag is 4:2:0 there will be four Y for one Cb and one Cr.
+                    // the data packing in the stream is Y_0_0, Y_0_1, Y_1_0, Y_1_1, Cb, Cr... So those pixels are shape like a small window.
+                    // To fix this, we first need decompress the data (lzw, jpeg..) to half the final size of a strip. And then, we place each Y, Cb, Cb to their respective place so the final count of a strip is correct.
+                    unsigned short val1, val2;
+                    if (pi_pTIFFFile->GetField(YCBCRSUBSAMPLING, &val1, &val2) && (val1 != 1 || val2 != 1))
+                        throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
+
+                    pPixelType = new HRPPixelTypeV24PhotoYCC();
+                    break;
+                    }
+                }
+// ************* FALL THROUGH **** PHOTOMETRIC_RGB since jpeg and flashpix are handled as RGB since the decoder is doing the conversion to RGB.
+            case PHOTOMETRIC_RGB:
                 if (SamplePerPixel == 3)
                     {
                     if (NbSample == 3)
@@ -2871,25 +2914,25 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                         else if (pBitPerSample[0] == 32 && pBitPerSample[1] == 32 && pBitPerSample[2] == 32)
                             pPixelType = new HRPPixelTypeV96R32G32B32();
                         else if (pBitPerSample[0] != pBitPerSample[1] || pBitPerSample[0] != pBitPerSample[2] &&
-                                 (pBitPerSample[0] != 8 || pBitPerSample[0] != 16))
-                            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                            (pBitPerSample[0] != 8 || pBitPerSample[0] != 16))
+                            throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                         else
                             {
                             HRPChannelOrgRGB ChannelOrg(pBitPerSample[0],
-                                                        pBitPerSample[1],
-                                                        pBitPerSample[2],
-                                                        0,
-                                                        HRPChannelType::UNUSED,
-                                                        HRPChannelType::VOID_CH,
-                                                        0);
+                                pBitPerSample[1],
+                                pBitPerSample[2],
+                                0,
+                                HRPChannelType::UNUSED,
+                                HRPChannelType::VOID_CH,
+                                0);
 
-                            pPixelType = HRPPixelTypeFactory::GetInstance()->Create (ChannelOrg, 0);
+                            pPixelType = HRPPixelTypeFactory::GetInstance()->Create(ChannelOrg, 0);
                             }
                         }
                     else if(NbSample == 1)
                         {
                         if(BitPerSample != 8)
-                            throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                            throw HRFPixelTypeNotSupportedException( pi_pTIFFFile->GetURL()->GetURL());
                         else
                             {
                             HRPChannelOrgRGB ChannelOrg(BitPerSample,
@@ -2905,7 +2948,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                             }
                         }
                     else
-                        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                        throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                     }
                 else if (SamplePerPixel == 4)
                     {
@@ -2940,7 +2983,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                                         }
                                     break;
                                 default:
-                                    throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                                    throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                                     break;
                                 }
                             }
@@ -2967,7 +3010,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                                     break;
                                 case EXTRASAMPLE_ASSOCALPHA:       // Extra sample contain pre-multiplied alpha value.
                                 default:
-                                    throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                                    throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                                     break;
                                 }
                             }
@@ -2980,11 +3023,11 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                         }
                     else
                         {
-                        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                        throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                         }
                     }
                 else
-                    throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                    throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                 break;
 
             case PHOTOMETRIC_SEPARATED:
@@ -3004,10 +3047,10 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                         pPixelType = new HRPPixelTypeV32CMYK();
                         }
                     else
-                        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                        throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                     }
                 else
-                    throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                    throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
 
                 break;
 
@@ -3139,7 +3182,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
                 break;
 
             default:
-                throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                 break;
             }
         }
@@ -3147,7 +3190,7 @@ HFCPtr<HRPPixelType> HRFTiffFile::CreatePixelTypeFromFile(HTIFFFile*            
     pi_pTIFFFile->SetDirectory(CurDir);
 
     if(pPixelType == 0)
-        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+        throw HRFPixelTypeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
 
     return (pPixelType);
     }
@@ -3195,7 +3238,9 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                         // Display each tag.
                         HPMAttributeSet::HPMASiterator TagIterator; 
-
+                        bool isMinSampleTagPresent = false;
+                        bool isMaxSampleTagPresent = false;
+   
                         for (TagIterator  = GetPageDescriptor(Page)->GetTags().begin();
                              TagIterator != GetPageDescriptor(Page)->GetTags().end(); TagIterator++)
                             {
@@ -3205,43 +3250,43 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                                 {
                                 // DOCUMENTNAME Tag
                                 if (pTag->GetID() == HRFAttributeDocumentName::ATTRIBUTE_ID)
-                                    GetFilePtr()->SetField(DOCUMENTNAME, ((HFCPtr<HRFAttributeDocumentName>&)pTag)->GetData().c_str());
+                                    GetFilePtr()->SetFieldA(DOCUMENTNAME, AString(((HFCPtr<HRFAttributeDocumentName>&)pTag)->GetData().c_str()).c_str());
 
                                 // IMAGEDESCRIPTION Tag
                                 else if (pTag->GetID() == HRFAttributeImageDescription::ATTRIBUTE_ID)
-                                    GetFilePtr()->SetField(IMAGEDESCRIPTION, ((HFCPtr<HRFAttributeImageDescription>&)pTag)->GetData().c_str());
+                                    GetFilePtr()->SetFieldA(IMAGEDESCRIPTION, AString(((HFCPtr<HRFAttributeImageDescription>&)pTag)->GetData().c_str()).c_str());
 
                                 // MAKE Tag
                                 else if (pTag->GetID() == HRFAttributeMake::ATTRIBUTE_ID)
-                                    GetFilePtr()->SetField(MAKE, ((HFCPtr<HRFAttributeMake>&)pTag)->GetData().c_str());
+                                    GetFilePtr()->SetFieldA(MAKE, AString(((HFCPtr<HRFAttributeMake>&)pTag)->GetData().c_str()).c_str());
 
                                 // MODEL Tag
                                 else if (pTag->GetID() == HRFAttributeModel::ATTRIBUTE_ID)
-                                    GetFilePtr()->SetField(MODEL, ((HFCPtr<HRFAttributeModel>&)pTag)->GetData().c_str());
+                                    GetFilePtr()->SetFieldA(MODEL, AString(((HFCPtr<HRFAttributeModel>&)pTag)->GetData().c_str()).c_str());
 
                                 // PAGENAME Tag
                                 else if (pTag->GetID() == HRFAttributePageName::ATTRIBUTE_ID)
-                                    GetFilePtr()->SetField(PAGENAME, ((HFCPtr<HRFAttributePageName>&)pTag)->GetData().c_str());
+                                    GetFilePtr()->SetFieldA(PAGENAME, AString(((HFCPtr<HRFAttributePageName>&)pTag)->GetData().c_str()).c_str());
 
                                 // SOFTWARE Tag
                                 else if (pTag->GetID() == HRFAttributeSoftware::ATTRIBUTE_ID)
-                                    GetFilePtr()->SetField(SOFTWARE, ((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str());
+                                    GetFilePtr()->SetFieldA(SOFTWARE, AString(((HFCPtr<HRFAttributeSoftware>&)pTag)->GetData().c_str()).c_str());
 
                                 // DATETIME Tag
                                 else if (pTag->GetID() == HRFAttributeDateTime::ATTRIBUTE_ID)
-                                    GetFilePtr()->SetField(DATETIME, ((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str());
+                                    GetFilePtr()->SetFieldA(DATETIME, AString(((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str()).c_str());
 
                                 // ARTIST Tag
                                 else if (pTag->GetID() == HRFAttributeArtist::ATTRIBUTE_ID)
-                                    GetFilePtr()->SetField(ARTIST, ((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str());
+                                    GetFilePtr()->SetFieldA(ARTIST, AString(((HFCPtr<HRFAttributeArtist>&)pTag)->GetData().c_str()).c_str());
 
                                 // HOSTCOMPUTER Tag
                                 else if (pTag->GetID() == HRFAttributeHostComputer::ATTRIBUTE_ID)
-                                    GetFilePtr()->SetField(HOSTCOMPUTER, ((HFCPtr<HRFAttributeHostComputer>&)pTag)->GetData().c_str());
+                                    GetFilePtr()->SetFieldA(HOSTCOMPUTER, AString(((HFCPtr<HRFAttributeHostComputer>&)pTag)->GetData().c_str()).c_str());
 
                                 // INKNAMES Tag
                                 else if (pTag->GetID() == HRFAttributeInkNames::ATTRIBUTE_ID)
-                                    GetFilePtr()->SetField(INKNAMES, ((HFCPtr<HRFAttributeInkNames>&)pTag)->GetData().c_str());
+                                    GetFilePtr()->SetFieldA(INKNAMES, AString(((HFCPtr<HRFAttributeInkNames>&)pTag)->GetData().c_str()).c_str());
 
                                 // RESOLUTIONUNIT Tag
                                 else if (pTag->GetID() == HRFAttributeResolutionUnit::ATTRIBUTE_ID)
@@ -3264,14 +3309,13 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
                                 // COPYRIGHT Tag
                                 else if (pTag->GetID() == HRFAttributeCopyright::ATTRIBUTE_ID)
-                                    GetFilePtr()->SetField(COPYRIGHT,
-                                                           ((HFCPtr<HRFAttributeCopyright>&)pTag)->GetData().c_str());
-
-
+                                    GetFilePtr()->SetFieldA(COPYRIGHT,
+                                                           AString(((HFCPtr<HRFAttributeCopyright>&)pTag)->GetData().c_str()).c_str());
 
                                 // Sample Minimum Value Tag
                                 else if (pTag->GetID() == HRFAttributeMinSampleValue::ATTRIBUTE_ID)
                                     {
+                                    isMinSampleTagPresent = true;
                                     WriteSampleLimitValueToDir(static_cast<HRFAttributeMinSampleValue*>(pTag.GetPtr())->GetData(),
                                                                true,
                                                                GetFilePtr());
@@ -3280,6 +3324,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                                 // Sample Minimum Value Tag
                                 else if (pTag->GetID() == HRFAttributeMaxSampleValue::ATTRIBUTE_ID)
                                     {
+                                    isMaxSampleTagPresent = true;
                                     WriteSampleLimitValueToDir(static_cast<HRFAttributeMaxSampleValue*>(pTag.GetPtr())->GetData(),
                                                                false,
                                                                GetFilePtr());
@@ -3287,17 +3332,28 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                                 }
                             }
 
-                        HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys;
+                        // Clean-up min/max sample in file if they were removed from the page descriptor
+                        if (GetFilePtr()->TagIsPresent(MINSAMPLEVALUE) && !isMinSampleTagPresent)
+                            GetFilePtr()->RemoveTag(MINSAMPLEVALUE);
 
-                        pGeoTiffKeys = static_cast<HCPGeoTiffKeys*>(pPageDescriptor->
-                                       GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO).GetPtr());
+                        if (GetFilePtr()->TagIsPresent(MAXSAMPLEVALUE) && !isMaxSampleTagPresent)
+                            GetFilePtr()->RemoveTag(MAXSAMPLEVALUE);
+        
+                        if (GetFilePtr()->TagIsPresent(SMINSAMPLEVALUE) && !isMinSampleTagPresent)
+                            GetFilePtr()->RemoveTag(SMINSAMPLEVALUE);
+
+                        if (GetFilePtr()->TagIsPresent(SMAXSAMPLEVALUE) && !isMaxSampleTagPresent)
+                            GetFilePtr()->RemoveTag(SMAXSAMPLEVALUE);
+
+                        RasterFileGeocoding const& fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
+                        HCPGeoTiffKeys const& geoTiffKeys = fileGeocoding.GetGeoTiffKeys();
 
                         IGeoTiffKeysList::GeoKeyItem GeoTiffKey;
 
-                        if ((pGeoTiffKeys != 0) &&
-                            (pPageDescriptor->GeocodingHasChanged() == true))
+                        if (pPageDescriptor->GeocodingHasChanged())
                             {
-                            if (!pGeoTiffKeys->HasValidGeoTIFFKeysList ())
+                            GetFilePtr()->GetGeoKeyInterpretation().Reset();
+                            if (!geoTiffKeys.HasValidGeoTIFFKeysList ())
                                 {
                                 // the list of geotiffkeys is not valid, write minimum values
                                 GetFilePtr()->GetGeoKeyInterpretation().SetValue(GTModelType, (unsigned short)TIFFGeo_ModelTypeProjected);
@@ -3308,10 +3364,10 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                                 GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjCoordTrans, (unsigned short)TIFFGeo_UserDefined);
 
                                 uint32_t UnitsKey = 0;
-                                pGeoTiffKeys->GetValue (ProjLinearUnits, &UnitsKey);
+                                geoTiffKeys.GetValue (ProjLinearUnits, &UnitsKey);
                                 GetFilePtr()->GetGeoKeyInterpretation().SetValue(ProjLinearUnits, (unsigned short)UnitsKey);
                                 }
-                            else if (pGeoTiffKeys->GetFirstKey(&GeoTiffKey) == true)
+                            else if (geoTiffKeys.GetFirstKey(&GeoTiffKey) == true)
                                 {
                                 do
                                     {
@@ -3500,7 +3556,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                                         GetFilePtr()->GetGeoKeyInterpretation().SetValue(VerticalUnits, (unsigned short)GeoTiffKey.KeyValue.LongVal);
 
                                     }
-                                while(pGeoTiffKeys->GetNextKey(&GeoTiffKey));
+                                while(geoTiffKeys.GetNextKey(&GeoTiffKey));
                                 }
                             }
 
@@ -3604,7 +3660,7 @@ HFCPtr<HCDCodec> HRFTiffFile::CreateCodecFromFile(HTIFFFile* pi_pTIFFFile,
                     {
                     // disable the JPEG 12 bits in write/create access
                     if (pi_pTIFFFile->GetFilePtr()->GetAccessMode().m_HasWriteAccess || pi_pTIFFFile->GetFilePtr()->GetAccessMode().m_HasCreateAccess )
-                        throw HRFException(HRF_ACCESS_MODE_FOR_CODEC_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                        throw HRFAccessModeForCodeNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                     }
 
                 pCodec = new HCDCodecIJG();
@@ -3642,10 +3698,11 @@ HFCPtr<HCDCodec> HRFTiffFile::CreateCodecFromFile(HTIFFFile* pi_pTIFFFile,
                 break;
 
             case COMPRESSION_DEFLATE:
+            case COMPRESSION_ADOBE_DEFLATE:
                 pCodec = new HCDCodecZlib();
                 break;
 
-            case COMPRESSION_LZW:
+        case COMPRESSION_LZW:         
                 // Create codec for LZW (compress) compression.
                 pCodec = new HCDCodecLZW();
                 break;
@@ -3655,14 +3712,14 @@ HFCPtr<HCDCodec> HRFTiffFile::CreateCodecFromFile(HTIFFFile* pi_pTIFFFile,
                 break;
             default:
                 pi_pTIFFFile->SetDirectory(CurDir);
-                throw HRFException(HRF_CODEC_NOT_SUPPORTED_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+                throw HRFCodecNotSupportedException(pi_pTIFFFile->GetURL()->GetURL());
                 break;
             }
         }
     else
         {
         pi_pTIFFFile->SetDirectory(CurDir);
-        throw HRFException(HRF_BAD_PAGE_NUMBER_EXCEPTION, pi_pTIFFFile->GetURL()->GetURL());
+        throw HRFBadPageNumberException(pi_pTIFFFile->GetURL()->GetURL());
         }
 
     pi_pTIFFFile->SetDirectory(CurDir);
@@ -3864,7 +3921,7 @@ HRFTiffFile::HRFTiffFile(const HFCPtr<HFCURL>& pi_rURL,
 void HRFTiffFile::SetDirectory(HTIFFFile::DirectoryID pi_DirID)
     {
     if (!m_pTiff->SetDirectory(pi_DirID))
-        throw HRFException(HRF_BAD_PAGE_NUMBER_EXCEPTION, GetURL()->GetURL());
+        throw HRFBadPageNumberException(GetURL()->GetURL());
     }
 
 //-----------------------------------------------------------------------------

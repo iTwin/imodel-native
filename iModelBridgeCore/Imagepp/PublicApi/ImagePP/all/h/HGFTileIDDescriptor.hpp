@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFTileIDDescriptor.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -12,6 +12,7 @@
 #define MAX_LEVEL          (256)
 #define FIELD_TILEINDEX    ((sizeof(uint64_t)*8)-FIELD_LEVEL)
 
+BEGIN_IMAGEPP_NAMESPACE
 
 /** -----------------------------------------------------------------------------
     Changes the size of the image to which applies the Tile ID descriptor.
@@ -305,3 +306,5 @@ inline uint64_t HGFTileIDDescriptor::GetTileCount() const
     {
     return (m_NumberOfTileX * (uint64_t)((m_ImageHeight + (m_TileSizeY-1L)) / m_TileSizeY));
     }
+
+END_IMAGEPP_NAMESPACE

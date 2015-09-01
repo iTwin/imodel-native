@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAReferenceToRasterIterator.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16,6 +16,7 @@
 #include "HRARasterIterator.h"
 #include "HRAReferenceToRaster.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRARaster;
 class HRAReferenceToRaster;
 
@@ -70,4 +71,5 @@ private:
 
     HFCPtr<HGF2DCoordSys> m_pResolutionPhysicalCoordSys;
     };
+END_IMAGEPP_NAMESPACE
 

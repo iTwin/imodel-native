@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDLZWEncoder.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -33,6 +33,8 @@
 #define LZW_CHECK_GAP    10000        // enc_ratio check interval
 #define    LZW_HASH_SIZE    9001L        // 91% occupancy
 
+BEGIN_IMAGEPP_NAMESPACE
+
 typedef uint16_t hcode_t;            // codes fit in 16 bits
 
 class HCDLZWEncoder
@@ -59,3 +61,4 @@ private:
     hash_t m_hashTable[LZW_HASH_SIZE];
     };
 
+END_IMAGEPP_NAMESPACE

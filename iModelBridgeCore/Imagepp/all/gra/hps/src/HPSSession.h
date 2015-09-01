@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hps/src/HPSSession.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -18,6 +18,8 @@
 #include <Imagepp/all/h/HPANode.h>
 #include <Imagepp/all/h/HPASession.h>
 #include <Imagepp/all/h/HPSWorldCluster.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HPMPool;
 
@@ -87,4 +89,5 @@ private:
     HPANodeList               m_PageNodes;
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HPSSession.hpp"

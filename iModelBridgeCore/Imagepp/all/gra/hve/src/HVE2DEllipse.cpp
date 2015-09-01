@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DEllipse.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Methods for class HVE2DEllipse
 //----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HVE2DEllipse.h>
 #include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
@@ -49,7 +49,7 @@ HVE2DComplexLinear HVE2DEllipse::GetLinear() const
 
         PosY += Delta;
 
-        while (PosY < LastPosY)
+        while (PosY <= LastPosY)
             {
             Pos2.SetX(ComputeX(PosY));
             Pos2.SetY(PosY);
@@ -61,10 +61,22 @@ HVE2DComplexLinear HVE2DEllipse::GetLinear() const
             PosY += Delta;
             }
 
-        MyComplexLinear.AppendLinear(HVE2DSegment(Pos1, Pos2));
+        //This is to fix the case where PosX would be slightly greater than LastPosX
+        //and thus creating an ellipse with a missing segment at the opposite of the starting point
+        if(PosY < (LastPosY + Delta/2))
+            {
+            PosY = LastPosY;
 
-        //Ensure that the last segment at the right of the vertical axis is
-        //connected to the first segment at the left of the vertical axis.
+            Pos2.SetX(ComputeX(PosY));
+            Pos2.SetY(PosY);
+
+            MyComplexLinear.AppendLinear(HVE2DSegment(Pos1, Pos2));
+
+            Pos1 = Pos2;
+
+            PosY += Delta;
+            }
+
         PosY = LastPosY - Delta;
 
         Pos1.SetX(ComputeX(PosY, -1));
@@ -103,7 +115,7 @@ HVE2DComplexLinear HVE2DEllipse::GetLinear() const
 
         PosX += Delta;
 
-        while (PosX < LastPosX)
+        while (PosX <= LastPosX)
             {
             Pos2.SetX(PosX);
             Pos2.SetY(ComputeY(PosX));
@@ -115,10 +127,22 @@ HVE2DComplexLinear HVE2DEllipse::GetLinear() const
             PosX += Delta;
             }
 
-        MyComplexLinear.AppendLinear(HVE2DSegment(Pos1, Pos2));
+        //This is to fix the case where PosX would be slightly greater than LastPosX
+        //and thus creating an ellipse with a missing segment at the opposite of the starting point
+        if(PosX < (LastPosX + Delta/2))
+            {
+            PosX = LastPosX;
 
-        //Ensure that the last segment at the right of the vertical axis is
-        //connected to the first segment at the left of the vertical axis.
+            Pos2.SetX(PosX);
+            Pos2.SetY(ComputeY(PosX));
+
+            MyComplexLinear.AppendLinear(HVE2DSegment(Pos1, Pos2));
+
+            Pos1 = Pos2;
+
+            PosX += Delta;
+            }
+
         PosX = LastPosX - Delta;
 
         Pos1.SetX(PosX);
@@ -268,13 +292,13 @@ void HVE2DEllipse::ResetTolerance()
         // Check if a greater tolerance may be applicable
         if (m_IsVertical == true)
             {
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Center.GetX() - m_SemiMinorAxis));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Center.GetX() + m_SemiMinorAxis));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Center.GetX() - m_SemiMinorAxis));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Center.GetX() + m_SemiMinorAxis));
             }
         else
             {
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Center.GetY() - m_SemiMinorAxis));
-            Tolerance = max(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Center.GetY() + m_SemiMinorAxis));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Center.GetY() - m_SemiMinorAxis));
+            Tolerance = MAX(Tolerance, HEPSILON_MULTIPLICATOR * fabs(m_Center.GetY() + m_SemiMinorAxis));
             }
 
         // Set tolerance

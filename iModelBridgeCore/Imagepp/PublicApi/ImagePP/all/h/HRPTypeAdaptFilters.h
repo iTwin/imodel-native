@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPTypeAdaptFilters.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -18,17 +18,18 @@
 // Blur filter
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPBlurAdaptFilter : public HRPTypeAdaptFilter
     {
-    HDECLARE_CLASS_ID(1168, HRPTypeAdaptFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_BlurAdapt, HRPTypeAdaptFilter)
 
 public:
 
-    _HDLLg             HRPBlurAdaptFilter();
-    _HDLLg             HRPBlurAdaptFilter(Byte pi_Intensity);
-    _HDLLg             ~HRPBlurAdaptFilter();
+    IMAGEPP_EXPORT             HRPBlurAdaptFilter();
+    IMAGEPP_EXPORT             HRPBlurAdaptFilter(Byte pi_Intensity);
+    IMAGEPP_EXPORT             ~HRPBlurAdaptFilter();
 
-    _HDLLg Byte      GetIntensity() const;
+    IMAGEPP_EXPORT Byte      GetIntensity() const;
 
 private:
 
@@ -41,18 +42,19 @@ private:
 
 class HRPSharpenAdaptFilter : public HRPTypeAdaptFilter
     {
-    HDECLARE_CLASS_ID(1168, HRPTypeAdaptFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_SharpenAdapt, HRPTypeAdaptFilter)
 
 public:
 
-    _HDLLg             HRPSharpenAdaptFilter();
-    _HDLLg             HRPSharpenAdaptFilter(Byte pi_Intensity);
-    _HDLLg             ~HRPSharpenAdaptFilter();
+    IMAGEPP_EXPORT             HRPSharpenAdaptFilter();
+    IMAGEPP_EXPORT             HRPSharpenAdaptFilter(Byte pi_Intensity);
+    IMAGEPP_EXPORT             ~HRPSharpenAdaptFilter();
 
-    _HDLLg Byte      GetIntensity() const;
+    IMAGEPP_EXPORT Byte      GetIntensity() const;
 
 private:
 
     Byte      m_Intensity;
     };
+END_IMAGEPP_NAMESPACE
 

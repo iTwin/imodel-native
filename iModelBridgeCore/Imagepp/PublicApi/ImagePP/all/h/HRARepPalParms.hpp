@@ -2,13 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRARepPalParms.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Inline methods for class HRARepPalParms
 //-----------------------------------------------------------------------------
 
+BEGIN_IMAGEPP_NAMESPACE
 //-----------------------------------------------------------------------------
 // GetPixelType - Return the pixel type attribute
 //-----------------------------------------------------------------------------
@@ -85,3 +86,4 @@ inline void HRARepPalParms::SetCacheUse(bool pi_State)
     {
     m_UseCache = pi_State;
     }
+END_IMAGEPP_NAMESPACE

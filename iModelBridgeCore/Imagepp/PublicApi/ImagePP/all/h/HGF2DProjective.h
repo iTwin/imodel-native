@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DProjective.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DProjective
@@ -17,6 +17,7 @@
 
 #define PROJECTIVE_MIN_NB_TIE_PTS 4
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert
@@ -70,120 +71,129 @@
 */
 class HGF2DProjective : public HGF2DTransfoModel
     {
-    HDECLARE_CLASS_ID(1122, HGF2DTransfoModel)
+    HDECLARE_CLASS_ID(HGF2DProjectiveId_Base, HGF2DTransfoModel)
 
 public:
 
     // Primary methods
-    HGF2DProjective();
-    _HDLLg                 HGF2DProjective(const HGF2DDisplacement& pi_rTranslation,
-                                           double                   pi_rRotation,
-                                           double                   pi_ScalingX,
-                                           double                   pi_ScalingY,
-                                           double                   pi_rAnorthogonality);
-    HGF2DProjective(const HGF2DProjective& pi_rObj);
-    _HDLLg                 HGF2DProjective(const HFCMatrix<3, 3>& pi_rMatrix);
-    HGF2DProjective(unsigned short pi_NumberOfPoints,
-                    const double*  pi_pTiePoints);
-    _HDLLg          HGF2DProjective(double const           pi_pMatrix[3][3]);
+                                    HGF2DProjective();
+    IMAGEPP_EXPORT                   HGF2DProjective(const HGF2DDisplacement& pi_rTranslation,
+                                                    double                   pi_rRotation,
+                                                    double                   pi_ScalingX,
+                                                    double                   pi_ScalingY,
+                                                    double                   pi_rAnorthogonality);
+                                    HGF2DProjective(const HGF2DProjective& pi_rObj);
+    IMAGEPP_EXPORT                   HGF2DProjective(const HFCMatrix<3, 3>& pi_rMatrix);
+                                    HGF2DProjective(unsigned short pi_NumberOfPoints,
+                                                    const double*  pi_pTiePoints);
+    IMAGEPP_EXPORT                   HGF2DProjective(double const           pi_pMatrix[3][3]);
 
-    _HDLLg virtual  ~HGF2DProjective();
-    HGF2DProjective&    operator=(const HGF2DProjective& pi_rObj);
+    IMAGEPP_EXPORT virtual           ~HGF2DProjective();
+    HGF2DProjective&                operator=(const HGF2DProjective& pi_rObj);
 
 
     // Conversion interface
-    virtual void            ConvertDirect(double*   pio_pXInOut,
-                                          double*   pio_pYInOut) const;
+    virtual bool                    IsConvertDirectThreadSafe()  const override;
+    virtual bool                    IsConvertInverseThreadSafe() const override;
 
-    virtual void            ConvertDirect(double    pi_YIn,
-                                          double    pi_XInStart,
-                                          size_t     pi_NumLoc,
-                                          double    pi_XInStep,
-                                          double*   po_pXOut,
-                                          double*   po_pYOut) const;
+    virtual StatusInt               ConvertDirect(double*   pio_pXInOut,
+                                                  double*   pio_pYInOut) const override;
 
-    virtual void            ConvertDirect(double    pi_XIn,
-                                          double    pi_YIn,
-                                          double*   po_pXOut,
-                                          double*   po_pYOut) const;
+    virtual StatusInt               ConvertDirect(double    pi_YIn,
+                                                  double    pi_XInStart,
+                                                  size_t    pi_NumLoc,
+                                                  double    pi_XInStep,
+                                                  double*   po_pXOut,
+                                                  double*   po_pYOut) const override;
 
-    virtual void            ConvertInverse(double*   pio_pXInOut,
-                                           double*   pio_pYInOut) const;
+    virtual StatusInt               ConvertDirect(double    pi_XIn,
+                                                  double    pi_YIn,
+                                                  double*   po_pXOut,
+                                                  double*   po_pYOut) const override;
 
-    virtual void            ConvertInverse(double    pi_YIn,
-                                           double    pi_XInStart,
-                                           size_t     pi_NumLoc,
-                                           double    pi_XInStep,
-                                           double*   po_pXOut,
-                                           double*   po_pYOut) const;
+    virtual StatusInt               ConvertDirect(size_t    pi_NumLoc,
+                                                  double*   pio_aXInOut,
+                                                  double*   pio_aYInOut) const override;
 
-    virtual void            ConvertInverse(double    pi_XIn,
-                                           double    pi_YIn,
-                                           double*   po_pXOut,
-                                           double*   po_pYOut) const;
+    virtual StatusInt               ConvertInverse(double*   pio_pXInOut,
+                                                   double*   pio_pYInOut) const override;
 
+    virtual StatusInt               ConvertInverse(double    pi_YIn,
+                                                   double    pi_XInStart,
+                                                   size_t    pi_NumLoc,
+                                                   double    pi_XInStep,
+                                                   double*   po_pXOut,
+                                                   double*   po_pYOut) const override;
+
+    virtual StatusInt               ConvertInverse(double    pi_XIn,
+                                                   double    pi_YIn,
+                                                   double*   po_pXOut,
+                                                   double*   po_pYOut) const override;
+
+    virtual StatusInt               ConvertInverse(size_t    pi_NumLoc,
+                                                   double*   pio_aXInOut,
+                                                   double*   pio_aYInOut) const override;
 
     // Miscellaneous
-    virtual bool            IsIdentity      () const;
-    virtual bool            IsStretchable   (double pi_AngleTolerance = 0) const;
-    virtual void            GetStretchParams(double*            po_pScaleFactorX,
-                                             double*            po_pScaleFactorY,
-                                             HGF2DDisplacement* po_pDisplacement) const;
-    static uint32_t        GetMinimumNumberOfTiePoints();
+    virtual bool                    IsIdentity      () const;
+    virtual bool                    IsStretchable   (double pi_AngleTolerance = 0) const;
+    virtual void                    GetStretchParams(double*            po_pScaleFactorX,
+                                                     double*            po_pScaleFactorY,
+                                                     HGF2DDisplacement* po_pDisplacement) const;
+    static uint32_t                 GetMinimumNumberOfTiePoints();
 
-    virtual HGF2DTransfoModel* 
-                            Clone () const override;
+    virtual HGF2DTransfoModel*      Clone () const override;
 
     virtual HFCPtr<HGF2DTransfoModel>    
-                            ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const;
+                                    ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const;
 
 
     // Model definition
     // Model definition
-    HGF2DDisplacement       GetTranslation() const;
-    double                  GetRotation() const;
-    double                  GetXScaling() const;
-    double                  GetYScaling() const;
-    double                  GetAnorthogonality() const;
-    virtual bool            CanBeRepresentedByAMatrix() const;
-    virtual HFCMatrix<3, 3>     GetMatrix() const;
-    virtual HFCMatrix<3, 3>&    GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const;
-    void                        SetByMatrix(const HFCMatrix<3, 3>& pi_rMatrix);
+    HGF2DDisplacement               GetTranslation() const;
+    double                          GetRotation() const;
+    double                          GetXScaling() const;
+    double                          GetYScaling() const;
+    double                          GetAnorthogonality() const;
+    virtual bool                    CanBeRepresentedByAMatrix() const;
+    virtual HFCMatrix<3, 3>         GetMatrix() const;
+    virtual HFCMatrix<3, 3>&        GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const;
+    void                            SetByMatrix(const HFCMatrix<3, 3>& pi_rMatrix);
 
     virtual HFCPtr<HGF2DTransfoModel>    
-                            CreateSimplifiedModel() const;
+                                    CreateSimplifiedModel() const;
 
     // Geometric properties
-    virtual bool            PreservesLinearity() const;
-    virtual bool            PreservesParallelism() const;
-    virtual bool            PreservesShape() const;
-    virtual bool            PreservesDirection() const;
+    virtual bool                    PreservesLinearity() const;
+    virtual bool                    PreservesParallelism() const;
+    virtual bool                    PreservesShape() const;
+    virtual bool                    PreservesDirection() const;
 
 
     // High level model definition
-    void                    AddTranslation(const HGF2DDisplacement& pi_rTranslation);
-    void                    AddRotation   (double pi_Angle,
-                                           double pi_XCenter=0.0,
-                                           double pi_YCenter=0.0);
-    void                    AddIsotropicScaling(double pi_ScalingFactor,
-                                                double pi_XCenter=0.0,
-                                                double pi_YCenter=0.0);
-    void                    AddAnisotropicScaling(double pi_ScalingFactorX,
-                                                  double pi_ScalingFactorY,
-                                                  double pi_XCenter=0.0,
-                                                  double pi_YCenter=0.0);
+    void                            AddTranslation(const HGF2DDisplacement& pi_rTranslation);
+    void                            AddRotation   (double pi_Angle,
+                                                   double pi_XCenter=0.0,
+                                                   double pi_YCenter=0.0);
+    void                            AddIsotropicScaling(double pi_ScalingFactor,
+                                                        double pi_XCenter=0.0,
+                                                        double pi_YCenter=0.0);
+    void                            AddAnisotropicScaling(double pi_ScalingFactorX,
+                                                          double pi_ScalingFactorY,
+                                                          double pi_XCenter=0.0,
+                                                          double pi_YCenter=0.0);
 
-    void                    AddHorizontalFlip(double pi_XMirrorPos=0.0);
-    void                    AddVerticalFlip (double pi_YMirrorPos=0.0);
+    void                            AddHorizontalFlip(double pi_XMirrorPos=0.0);
+    void                            AddVerticalFlip (double pi_YMirrorPos=0.0);
 
     // Operations
-    virtual void            Reverse ();
+    virtual void                    Reverse ();
 
 protected:
 
-    virtual void            Prepare ();
+    virtual void                    Prepare ();
     virtual HFCPtr<HGF2DTransfoModel>    
-                            ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
+                                    ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
 private:
 
 #ifdef HVERIFYCONTRACT
@@ -276,4 +286,5 @@ private:
     void            Copy (const HGF2DProjective& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGF2DProjective.hpp"

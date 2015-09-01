@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecJPEG2000.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecJPEG2000
@@ -11,15 +11,17 @@
 
 #include "HCDCodecErMapperSupported.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecJPEG2000 : public HCDCodecErMapperSupported
     {
-    HDECLARE_CLASS_ID(1671, HCDCodecErMapperSupported)
+    HDECLARE_CLASS_ID(HCDCodecId_JPEG2000, HCDCodecErMapperSupported)
 
 public:
     // primary methods
-    _HDLLu                 HCDCodecJPEG2000();
-    _HDLLu                 HCDCodecJPEG2000(const HCDCodecJPEG2000& pi_rObj);
-    _HDLLu virtual         ~HCDCodecJPEG2000();
+    IMAGEPP_EXPORT                 HCDCodecJPEG2000();
+    IMAGEPP_EXPORT                 HCDCodecJPEG2000(const HCDCodecJPEG2000& pi_rObj);
+    IMAGEPP_EXPORT virtual         ~HCDCodecJPEG2000();
 
     virtual HCDCodec* Clone() const override;
     };
@@ -37,7 +39,7 @@ class HFCBinStream;
 
 class HCDCodecJPEG2000 : public HCDCodecErMapperSupported
     {
-    HDECLARE_CLASS_ID(1671, HCDCodecErMapperSupported)
+    HDECLARE_CLASS_ID(HCDCodecId_JPEG2000, HCDCodecErMapperSupported)
 public:
 
     enum ColorModes
@@ -52,12 +54,12 @@ public:
         };
 
     // primary methods
-    _HDLLu                 HCDCodecJPEG2000();
-    _HDLLu                 HCDCodecJPEG2000(uint32_t pi_Width,
+    IMAGEPP_EXPORT                 HCDCodecJPEG2000();
+    IMAGEPP_EXPORT                 HCDCodecJPEG2000(uint32_t pi_Width,
                                             uint32_t pi_Height,
                                             uint32_t pi_BitsPerPixel);
-    _HDLLu                 HCDCodecJPEG2000(const HCDCodecJPEG2000& pi_rObj);
-    _HDLLu virtual         ~HCDCodecJPEG2000();
+    IMAGEPP_EXPORT                 HCDCodecJPEG2000(const HCDCodecJPEG2000& pi_rObj);
+    IMAGEPP_EXPORT virtual         ~HCDCodecJPEG2000();
 
     // overriden methods
     virtual HCDCodec* Clone() const override;
@@ -78,8 +80,8 @@ public:
 
     // added method
 
-    _HDLLu void            SetColorMode(ColorModes pi_Mode);
-    _HDLLu ColorModes      GetColorMode() const;
+    IMAGEPP_EXPORT void            SetColorMode(ColorModes pi_Mode);
+    IMAGEPP_EXPORT ColorModes      GetColorMode() const;
 
     void SetJP2Stream(HFCBinStream* pi_pTiffFile,
                       uint32_t      pi_JP2StreamOffset,
@@ -118,3 +120,5 @@ private:
 
     };
 #endif
+
+END_IMAGEPP_NAMESPACE

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF3DExtent.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : Extent3D
@@ -15,6 +15,7 @@
 #include "HGF3DCoord.h"
 #include "HGF2DExtent.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert
@@ -147,5 +148,5 @@ private:
     DataType         m_ZMax;
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HGF3DExtent.hpp"

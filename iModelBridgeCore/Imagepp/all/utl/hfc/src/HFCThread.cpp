@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCThread.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCThread
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCThread.h>
 
 uint32_t         HFCThread::s_NbActiveThread = 0;
@@ -121,7 +121,7 @@ bool HFCThread::StartThread(size_t pi_StackSize)
                             (LPTHREAD_START_ROUTINE)StartThreadProc,    // The thread function
                             this,                                       // for the proc param
                             0,                                          // Creation Flags
-                            (DWORD*)&m_ThreadID);                               // Thread Desc.
+                            &m_ThreadID);                               // Thread Desc.
 
 
     // Set the priority (in case it has changed before the execution
@@ -196,6 +196,7 @@ void HFCThread::SetPriority(HFCThreadPriority pi_Priority)
 
                 case HFCTHREAD_PRIORITY_LOWEST:
                 default:
+                    HASSERT(HFCTHREAD_PRIORITY_LOWEST == pi_Priority);
                     Priority = THREAD_PRIORITY_LOWEST;
                     break;
                 }
@@ -448,6 +449,44 @@ void* HFCThread::DequeueWait(uint32_t pi_TimeOut)
     return pResult;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Ghislain.Tardif 05/2007
++---------------+---------------+---------------+---------------+---------------+------*/
+static void s_SetThreadName(const char* name)
+    {
+#if defined(_WIN32) && defined(__HMR_DEBUG)
+
+    // From MSDN: "How to: Set a Thread Name in Native Code"
+    // http://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx
+
+    const DWORD MS_VC_EXCEPTION=0x406D1388;
+
+    #pragma pack(push,8)
+    typedef struct tagTHREADNAME_INFO
+        {
+        DWORD dwType;        // Must be 0x1000.
+        LPCSTR szName;       // Pointer to name (in user addr space).
+        DWORD dwThreadID;    // Thread ID (-1=caller thread).
+        DWORD dwFlags;       // Reserved for future use, must be zero.
+        } THREADNAME_INFO;
+    #pragma pack(pop)
+
+    THREADNAME_INFO ThreadInfo;
+    ThreadInfo.dwType = 0x1000;
+    ThreadInfo.szName = name;
+    ThreadInfo.dwThreadID = -1;
+    ThreadInfo.dwFlags = 0;
+
+    __try // Do NOT change for try/catch(..) it crashes when the program is started outside of the debugger.
+        {
+        RaiseException(MS_VC_EXCEPTION, 0, sizeof(ThreadInfo)/sizeof(ULONG_PTR), (const ULONG_PTR*)&ThreadInfo);
+        }
+    // Do NOT change for try/catch(..) it crashes when the program is started outside of the debugger.
+    __except(EXCEPTION_CONTINUE_EXECUTION)
+        {
+        }
+#endif
+    }
 
 /**----------------------------------------------------------------------------
  Static function that is used by Win32::StartThread
@@ -462,34 +501,8 @@ uint32_t HFCThread::StartThreadProc(HFCThread* pi_pThread)
         pi_pThread->m_Suspended = false;
         }
 
-#ifdef __HMR_DEBUG
-    // this code was found on msdn.microsoft.com by searching
-    // for : "setting a thread name (unmanaged)"
-    if (pi_pThread->m_pThreadName != 0)
-        {
-        typedef struct
-            {
-            DWORD   Type;       // Must be 0x1000.
-            LPCSTR  Name;       // Pointer to name (in user addr space).
-            DWORD   ThreadID;   // Thread ID (-1=caller thread).
-            DWORD   Flags;      // Reserved for future use, must be zero.
-            } ThreadNameInfo;
-
-        ThreadNameInfo ThreadInfo;
-        ThreadInfo.Type = 0x1000;
-        ThreadInfo.Name = pi_pThread->m_pThreadName;
-        ThreadInfo.ThreadID = -1;
-        ThreadInfo.Flags = 0;
-
-        try
-            {
-            RaiseException(0x406D1388, 0, sizeof(ThreadInfo)/sizeof(DWORD), (const ULONG_PTR*)&ThreadInfo);
-            }
-        catch(...)
-            {
-            }
-        }
-#endif
+    if(pi_pThread->m_pThreadName != NULL)
+        s_SetThreadName(pi_pThread->m_pThreadName);
 
     // Execute the thread
     pi_pThread->Go();

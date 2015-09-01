@@ -2,21 +2,21 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUSgsDEMEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFDtedEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFUSgsDEMEditor.h>
 
 
 //GDAL
-#include <ImagePPInternal/ext/gdal/gdal_priv.h>
-#include <ImagePPInternal/ext/gdal/cpl_string.h>
+#include <ImagePP-GdalLib/gdal_priv.h>
+#include <ImagePP-GdalLib/cpl_string.h>
 
 /*
 
@@ -78,31 +78,5 @@ HRFUSgsDEMEditor::~HRFUSgsDEMEditor()
     {
     }
 
-//-----------------------------------------------------------------------------
-// public
-// Read uncompressed Block
-// Edition by Block
-//-----------------------------------------------------------------------------
-HSTATUS HRFUSgsDEMEditor::ReadBlock(uint32_t              pi_PosBlockX,
-                                    uint32_t              pi_PosBlockY,
-                                    Byte*                po_pData,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
-    {
-    //Inverse the image by returning columns instead of lines of the underlying image
-    //(e.g. : inverse pi_PosBlockX and pi_PosBlockY in the parameter list).
-    m_pRasterBands[0]->RasterIO(GF_Read,
-                                pi_PosBlockY,
-                                pi_PosBlockX,
-                                m_pResolutionDescriptor->GetBlockHeight(),
-                                m_pResolutionDescriptor->GetBlockWidth(),
-                                po_pData,
-                                m_pResolutionDescriptor->GetBlockHeight(),
-                                m_pResolutionDescriptor->GetBlockWidth(),
-                                (GDALDataType)m_GdalDataType,
-                                0,
-                                0);
-
-    return H_SUCCESS;
-    }
 
 

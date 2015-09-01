@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DSimpleShape.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DSimpleShape
@@ -14,6 +14,7 @@
 #include "HGF2DShape.h"
 #include "HGF2DLinear.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert 
@@ -38,7 +39,7 @@
 class HNOVTABLEINIT HGF2DSimpleShape : public HGF2DShape
     {
 
-    HDECLARE_CLASS_ID(8307, HGF2DShape)
+    HDECLARE_CLASS_ID(HGF2DShapeId_Simple, HGF2DShape)
 
 public:
 
@@ -64,11 +65,11 @@ public:
 
         -----------------------------------------------------------------------------
     */
-    HGF2DSimpleShape ();
-    HGF2DSimpleShape (const HGF2DSimpleShape&   pi_rObject);
-    virtual            ~HGF2DSimpleShape();
+                                    HGF2DSimpleShape ();
+                                    HGF2DSimpleShape (const HGF2DSimpleShape&   pi_rObject);
+    virtual                         ~HGF2DSimpleShape();
 
-    HGF2DSimpleShape&  operator=(const HGF2DSimpleShape& pi_rObj);
+    HGF2DSimpleShape&               operator=(const HGF2DSimpleShape& pi_rObj);
 
     // Component linear extraction
     /** -----------------------------------------------------------------------------
@@ -123,31 +124,27 @@ public:
 
 
     // From HGF2DShape
-    virtual bool      IsSimple() const;
-    virtual bool      IsComplex() const;
+    virtual bool                    IsSimple() const;
+    virtual bool                    IsComplex() const;
 
     virtual const HGF2DShape::ShapeList&
-    GetShapeList() const;
+                                    GetShapeList() const;
 
     // Iteration on component holes
-    virtual bool      HasHoles() const;
+    virtual bool                    HasHoles() const;
     virtual const HGF2DShape::HoleList&
-    GetHoleList() const;
+                                    GetHoleList() const;
 
-    virtual HGF2DShape*
-    DifferentiateFromShape(const HGF2DShape& pi_rShape) const;
-    virtual HGF2DShape*
-    DifferentiateShape(const HGF2DShape& pi_rShape) const;
-    virtual HGF2DShape*
-    IntersectShape(const HGF2DShape& pi_rShape) const;
-    virtual HGF2DShape*
-    UnifyShape(const HGF2DShape& pi_rShape) const;
+    virtual HGF2DShape*             DifferentiateFromShape(const HGF2DShape& pi_rShape) const;
+    virtual HGF2DShape*             DifferentiateShape(const HGF2DShape& pi_rShape) const;
+    virtual HGF2DShape*             IntersectShape(const HGF2DShape& pi_rShape) const;
+    virtual HGF2DShape*             UnifyShape(const HGF2DShape& pi_rShape) const;
 
-    virtual void       Drop(HGF2DPositionCollection* po_pPoint,
-                            double                   pi_rTolerance) const;
+    virtual void                    Drop(HGF2DPositionCollection* po_pPoint,
+                                         double                   pi_rTolerance) const;
 
     // Debugging
-    virtual void       PrintState(ostream& po_rOutput) const;
+    virtual void                    PrintState(ostream& po_rOutput) const;
 
 protected:
 
@@ -175,19 +172,20 @@ private:
 #if (0)
 
     void                    Decompose(const HGF2DSimpleShape& pi_rSimpleShape,
-                                         HGF2DSimpleShape::DecomposeOperation pi_Operation,
-                                         HoleList& pi_rListOfShapes,
-                                         const HGF2DPositionCollection& pi_rPoints) const;
+                                      HGF2DSimpleShape::DecomposeOperation pi_Operation,
+                                      HoleList& pi_rListOfShapes,
+                                      const HGF2DPositionCollection& pi_rPoints) const;
 
     void                    SuperScan(const HGF2DSimpleShape& pi_rSimpleShape,
-                                         bool                   pi_WantInPtsOfPoly1,
-                                         bool                   pi_ScanPoly1CW,
-                                         bool                   pi_WantInPtsOfPoly2,
-                                         bool                   pi_ScanPoly2CW,
-                                         HoleList&               pi_rListOfShapes,
-                                         const HGF2DPositionCollection& pi_rPoints) const;
+                                      bool                   pi_WantInPtsOfPoly1,
+                                      bool                   pi_ScanPoly1CW,
+                                      bool                   pi_WantInPtsOfPoly2,
+                                      bool                   pi_ScanPoly2CW,
+                                      HoleList&               pi_rListOfShapes,
+                                      const HGF2DPositionCollection& pi_rPoints) const;
 
 #endif
     };
 
+END_IMAGEPP_NAMESPACE
 #include "HGF2DSimpleShape.hpp"

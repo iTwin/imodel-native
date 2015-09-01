@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPSWorldCluster.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -17,14 +17,16 @@
 #include <Imagepp/all/h/HGF2DWorld.h>
 #include <Imagepp/all/h/HGF2DWorldCluster.h>
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HPSWorldCluster : public HGF2DWorldCluster
     {
 public:
 
     // Class ID for this class.
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1535)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HPSWorldClusterId)
 
-    _HDLLg              HPSWorldCluster();
+    IMAGEPP_EXPORT              HPSWorldCluster();
     virtual             ~HPSWorldCluster();
 
     // Added method
@@ -41,3 +43,4 @@ private:
     HPSWorldCluster& operator=(const HPSWorldCluster& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

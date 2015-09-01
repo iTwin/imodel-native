@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsil_subfile.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: cpl_vsil_subfile.cpp 27722 2014-09-22 15:37:31Z goatbar $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation of subfile virtual IO functions.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2005, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2009-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -36,7 +37,7 @@
 #  include <wce_errno.h>
 #endif
 
-CPL_CVSID("$Id: cpl_vsil_subfile.cpp 20996 2010-10-28 18:38:15Z rouault $");
+CPL_CVSID("$Id: cpl_vsil_subfile.cpp 27722 2014-09-22 15:37:31Z goatbar $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -50,7 +51,9 @@ class VSISubFileHandle : public VSIVirtualHandle
     VSILFILE     *fp;
     vsi_l_offset  nSubregionOffset;
     vsi_l_offset  nSubregionSize;
-    int           bUpdate;
+    int           bAtEOF;
+
+                      VSISubFileHandle() : fp(NULL), nSubregionOffset(0), nSubregionSize(0), bAtEOF(FALSE) {}
 
     virtual int       Seek( vsi_l_offset nOffset, int nWhence );
     virtual vsi_l_offset Tell();
@@ -112,6 +115,8 @@ int VSISubFileHandle::Close()
 int VSISubFileHandle::Seek( vsi_l_offset nOffset, int nWhence )
 
 {
+    bAtEOF = FALSE;
+
     if( nWhence == SEEK_SET )
         nOffset += nSubregionOffset;
     else if( nWhence == SEEK_CUR )
@@ -152,24 +157,33 @@ vsi_l_offset VSISubFileHandle::Tell()
 size_t VSISubFileHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
 
 {
+    size_t nRet;
     if (nSubregionSize == 0)
-        return VSIFReadL( pBuffer, nSize, nCount, fp );
-
-    if (nSize == 0)
-        return 0;
-
-    vsi_l_offset nCurOffset = VSIFTellL(fp);
-    if (nCurOffset >= nSubregionOffset + nSubregionSize)
-        return 0;
-
-    size_t nByteToRead = nSize * nCount;
-    if (nCurOffset + nByteToRead > nSubregionOffset + nSubregionSize)
-    {
-        int nRead = (int)VSIFReadL( pBuffer, 1, (size_t)(nSubregionOffset + nSubregionSize - nCurOffset), fp);
-        return nRead / nSize;
-    }
+        nRet = VSIFReadL( pBuffer, nSize, nCount, fp );
     else
-        return VSIFReadL( pBuffer, nSize, nCount, fp );
+    {
+        if (nSize == 0)
+            return 0;
+
+        vsi_l_offset nCurOffset = VSIFTellL(fp);
+        if (nCurOffset >= nSubregionOffset + nSubregionSize)
+        {
+            bAtEOF = TRUE;
+            return 0;
+        }
+
+        size_t nByteToRead = nSize * nCount;
+        if (nCurOffset + nByteToRead > nSubregionOffset + nSubregionSize)
+        {
+            int nRead = (int)VSIFReadL( pBuffer, 1, (size_t)(nSubregionOffset + nSubregionSize - nCurOffset), fp);
+            nRet = nRead / nSize;
+        }
+        else
+            nRet = VSIFReadL( pBuffer, nSize, nCount, fp );
+    }
+    if( nRet < nCount )
+        bAtEOF = TRUE;
+    return nRet;
 }
 
 /************************************************************************/
@@ -179,6 +193,8 @@ size_t VSISubFileHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
 size_t VSISubFileHandle::Write( const void * pBuffer, size_t nSize, size_t nCount )
 
 {
+    bAtEOF = FALSE;
+
     if (nSubregionSize == 0)
         return VSIFWriteL( pBuffer, nSize, nCount, fp );
 
@@ -206,10 +222,7 @@ size_t VSISubFileHandle::Write( const void * pBuffer, size_t nSize, size_t nCoun
 int VSISubFileHandle::Eof()
 
 {
-    if (nSubregionSize != 0)
-        return VSIFTellL( fp ) >= nSubregionOffset + nSubregionSize;
-    else
-        return VSIFEofL( fp );
+    return bAtEOF;
 }
 
 /************************************************************************/
@@ -307,6 +320,13 @@ VSISubFileFilesystemHandler::Open( const char *pszFilename,
     }
 
 /* -------------------------------------------------------------------- */
+/*      We can't open the containing file with "w" access, so if tht    */
+/*      is requested use "r+" instead to update in place.               */
+/* -------------------------------------------------------------------- */
+    if( pszAccess[0] == 'w' )
+        pszAccess = "r+";
+
+/* -------------------------------------------------------------------- */
 /*      Open the underlying file.                                       */
 /* -------------------------------------------------------------------- */
     VSILFILE *fp = VSIFOpenL( osSubFilePath, pszAccess );
@@ -353,9 +373,9 @@ int VSISubFileFilesystemHandler::Stat( const char * pszFilename,
     if( nResult == 0 )
     {
         if( nSize != 0 )
-            psStatBuf->st_size = (long)nSize;
+            psStatBuf->st_size = nSize;
         else
-            psStatBuf->st_size -= (long)nOff;
+            psStatBuf->st_size -= nOff;
     }
 
     return nResult;
@@ -365,8 +385,7 @@ int VSISubFileFilesystemHandler::Stat( const char * pszFilename,
 /*                               Unlink()                               */
 /************************************************************************/
 
-int VSISubFileFilesystemHandler::Unlink( const char * pszFilename )
-
+int VSISubFileFilesystemHandler::Unlink( CPL_UNUSED const char * pszFilename )
 {
     errno = EACCES;
     return -1;
@@ -376,9 +395,8 @@ int VSISubFileFilesystemHandler::Unlink( const char * pszFilename )
 /*                               Mkdir()                                */
 /************************************************************************/
 
-int VSISubFileFilesystemHandler::Mkdir( const char * pszPathname,
-                                    long nMode )
-
+int VSISubFileFilesystemHandler::Mkdir( CPL_UNUSED const char * pszPathname,
+                                        CPL_UNUSED long nMode )
 {
     errno = EACCES;
     return -1;
@@ -388,8 +406,7 @@ int VSISubFileFilesystemHandler::Mkdir( const char * pszPathname,
 /*                               Rmdir()                                */
 /************************************************************************/
 
-int VSISubFileFilesystemHandler::Rmdir( const char * pszPathname )
-
+int VSISubFileFilesystemHandler::Rmdir( CPL_UNUSED const char * pszPathname )
 {
     errno = EACCES;
     return -1;
@@ -399,8 +416,7 @@ int VSISubFileFilesystemHandler::Rmdir( const char * pszPathname )
 /*                              ReadDir()                               */
 /************************************************************************/
 
-char **VSISubFileFilesystemHandler::ReadDir( const char *pszPath )
-
+char **VSISubFileFilesystemHandler::ReadDir( CPL_UNUSED const char *pszPath )
 {
     errno = EACCES;
     return NULL;

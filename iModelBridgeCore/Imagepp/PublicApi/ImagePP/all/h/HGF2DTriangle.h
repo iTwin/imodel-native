@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DTriangle.h $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,6 +10,8 @@
 
 #include <Imagepp/all/h/HGF2DLiteExtent.h>
 #include <Imagepp/all/h/HGF2DPosition.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HGF2DTriangle
     {
@@ -31,18 +33,18 @@ public:
     GetExtent() const;
 
 private:
-    double         CalcAngle  (double x0, double y0, double x1, double y1,
+    double          CalcAngle  (double x0, double y0, double x1, double y1,
                                 double x2, double y2, double x3, double y3) const;
 
     HGF2DPosition   CalcCentroid(double x0, double y0,
                                  double x1, double y1,
                                  double x2, double y2) const;
 
-    double         CalcDeterminant (double x0, double y0, double x1, double y1, double x2, double y2) const;
+    double          CalcDeterminant (double x0, double y0, double x1, double y1, double x2, double y2) const;
 
-    double         CalcEpsilon() const;
+    double          CalcEpsilon() const;
 
-    double         CalcLength (double x0, double y0, double x1, double y1) const;
+    double          CalcLength (double x0, double y0, double x1, double y1) const;
 
     HGF2DPosition   CalcOuterPoint (double x0, double y0,
                                     double x1, double y1,
@@ -51,9 +53,9 @@ private:
 
     void            ComputeOuterTriangle() const;
 
-    double         DotProduct  (double x0, double y0, double x1, double y1) const;
+    double          DotProduct  (double x0, double y0, double x1, double y1) const;
 
-    double         Square     (double x) const;
+    double          Square     (double x) const;
 
     double m_x0;
     double m_y0;
@@ -80,5 +82,6 @@ private:
 
     };
 
+END_IMAGEPP_NAMESPACE
 #include <Imagepp/all/h/HGF2DTriangle.hpp>
 

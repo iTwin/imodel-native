@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtwarped.cpp 22647 2011-07-05 17:18:18Z rouault $
+ * $Id: vrtwarped.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTWarpedRasterBand *and VRTWarpedDataset.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2004, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,7 +35,7 @@
 #include "gdal_alg_priv.h"
 #include <cassert>
 
-CPL_CVSID("$Id: vrtwarped.cpp 22647 2011-07-05 17:18:18Z rouault $");
+CPL_CVSID("$Id: vrtwarped.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 /************************************************************************/
 /*                      GDALAutoCreateWarpedVRT()                       */
@@ -70,13 +71,14 @@ CPL_CVSID("$Id: vrtwarped.cpp 22647 2011-07-05 17:18:18Z rouault $");
  * @param pszDstWKT The coordinate system to convert to.  If NULL no change 
  * of coordinate system will take place.  
  *
- * @param eResampleAlg One of GRA_NearestNeighbour, GRA_Bilinear, GRA_Cubic or 
- * GRA_CubicSpline.  Controls the sampling method used. 
+ * @param eResampleAlg One of GRA_NearestNeighbour, GRA_Bilinear, GRA_Cubic,  
+ * GRA_CubicSpline, GRA_Lanczos, GRA_Average or GRA_Mode.  
+ * Controls the sampling method used.
  *
  * @param dfMaxError Maximum error measured in input pixels that is allowed in 
  * approximating the transformation (0.0 for exact calculations).
  *
- * @param psOptions Additional warp options, normally NULL.
+ * @param psOptionsIn Additional warp options, normally NULL.
  *
  * @return NULL on failure, or a new virtual dataset handle on success.
  */
@@ -145,6 +147,12 @@ GDALAutoCreateWarpedVRT( GDALDatasetH hSrcDS,
         GDALSuggestedWarpOutput( hSrcDS, psWO->pfnTransformer, 
                                  psWO->pTransformerArg, 
                                  adfDstGeoTransform, &nDstPixels, &nDstLines );
+    if( eErr != CE_None )
+    {
+        GDALDestroyTransformer( psWO->pTransformerArg );
+        GDALDestroyWarpOptions( psWO );
+        return NULL;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Update the transformer to include an output geotransform        */
@@ -164,6 +172,7 @@ GDALAutoCreateWarpedVRT( GDALDatasetH hSrcDS,
                                          psWO->pTransformerArg, 
                                          dfMaxError );
         psWO->pfnTransformer = GDALApproxTransform;
+        GDALApproxTransformerOwnsSubtransformer(psWO->pTransformerArg, TRUE);
     }
 
 /* -------------------------------------------------------------------- */
@@ -285,7 +294,18 @@ VRTWarpedDataset::VRTWarpedDataset( int nXSize, int nYSize )
 VRTWarpedDataset::~VRTWarpedDataset()
 
 {
+    CloseDependentDatasets();
+}
+
+/************************************************************************/
+/*                        CloseDependentDatasets()                      */
+/************************************************************************/
+
+int VRTWarpedDataset::CloseDependentDatasets()
+{
     FlushCache();
+
+    int bHasDroppedRef = VRTDataset::CloseDependentDatasets();
 
 /* -------------------------------------------------------------------- */
 /*      Cleanup overviews.                                              */
@@ -300,10 +320,13 @@ VRTWarpedDataset::~VRTWarpedDataset()
         {
             GDALReferenceDataset( hDS );
             GDALClose( hDS );
+            bHasDroppedRef = TRUE;
         }
     }
 
     CPLFree( papoOverviews );
+    nOverviewCount = 0;
+    papoOverviews = NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Cleanup warper if one is in effect.                             */
@@ -326,6 +349,7 @@ VRTWarpedDataset::~VRTWarpedDataset()
             {
                 GDALReferenceDataset( psWO->hSrcDS );
                 GDALClose( psWO->hSrcDS );
+                bHasDroppedRef = TRUE;
             }
         }
 
@@ -336,7 +360,19 @@ VRTWarpedDataset::~VRTWarpedDataset()
             GDALDestroyTransformer( psWO->pTransformerArg );
 
         delete poWarper;
+        poWarper = NULL;
     }
+
+/* -------------------------------------------------------------------- */
+/*      Destroy the raster bands if they exist.                         */
+/* -------------------------------------------------------------------- */
+    for( int iBand = 0; iBand < nBands; iBand++ )
+    {
+       delete papoBands[iBand];
+    }
+    nBands = 0;
+
+    return bHasDroppedRef;
 }
 
 /************************************************************************/
@@ -353,14 +389,25 @@ CPLErr VRTWarpedDataset::Initialize( void *psWO )
 
     poWarper = new GDALWarpOperation();
 
+    GDALWarpOptions* psWO_Dup = GDALCloneWarpOptions((GDALWarpOptions *) psWO);
+
+    /* Avoid errors when adding an alpha band, but source dataset has */
+    /* no alpha band (#4571) */
+    if (CSLFetchNameValue( psWO_Dup->papszWarpOptions, "INIT_DEST" ) == NULL)
+        psWO_Dup->papszWarpOptions = CSLSetNameValue(psWO_Dup->papszWarpOptions, "INIT_DEST", "0");
+
     // The act of initializing this warped dataset with this warp options
     // will result in our assuming ownership of a reference to the
     // hSrcDS.
 
     if( ((GDALWarpOptions *) psWO)->hSrcDS != NULL )
-        GDALReferenceDataset( ((GDALWarpOptions *) psWO)->hSrcDS );
+        GDALReferenceDataset( psWO_Dup->hSrcDS );
 
-    return poWarper->Initialize( (GDALWarpOptions *) psWO );
+    CPLErr eErr = poWarper->Initialize( psWO_Dup );
+
+    GDALDestroyWarpOptions(psWO_Dup);
+
+    return eErr;
 }
 
 /************************************************************************/
@@ -606,9 +653,9 @@ int VRTWarpedOverviewTransform( void *pTransformArg, int bDstToSrc,
 /************************************************************************/
 
 CPLErr 
-VRTWarpedDataset::IBuildOverviews( const char *pszResampling, 
+VRTWarpedDataset::IBuildOverviews( CPL_UNUSED const char *pszResampling, 
                                    int nOverviews, int *panOverviewList, 
-                                   int nListBands, int *panBandList,
+                                   CPL_UNUSED int nListBands, CPL_UNUSED int *panBandList,
                                    GDALProgressFunc pfnProgress, 
                                    void * pProgressData )
     
@@ -830,6 +877,11 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPath )
     if( psWO == NULL )
         return CE_Failure;
 
+    /* Avoid errors when adding an alpha band, but source dataset has */
+    /* no alpha band (#4571) */
+    if (CSLFetchNameValue( psWO->papszWarpOptions, "INIT_DEST" ) == NULL)
+        psWO->papszWarpOptions = CSLSetNameValue(psWO->papszWarpOptions, "INIT_DEST", "0");
+
     this->eAccess = GA_Update;
 
     if( psWO->hDstDS != NULL )
@@ -977,16 +1029,21 @@ CPLXMLNode *VRTWarpedDataset::SerializeToXML( const char *pszVRTPath )
 /*      the VRT file if possible.  Adjust accordingly.                  */
 /* -------------------------------------------------------------------- */
         CPLXMLNode *psSDS = CPLGetXMLNode( psWOTree, "SourceDataset" );
-        int bRelativeToVRT;
-        char *pszRelativePath;
+        int bRelativeToVRT = FALSE;
+        VSIStatBufL  sStat;
 
-        pszRelativePath = 
-            CPLStrdup(
+        if( VSIStatExL( psSDS->psChild->pszValue, &sStat, 
+                        VSI_STAT_EXISTS_FLAG) == 0 ) 
+        {
+            char *pszRelativePath;
+        
+            pszRelativePath = CPLStrdup(
                 CPLExtractRelativePath( pszVRTPath, psSDS->psChild->pszValue, 
                                         &bRelativeToVRT ) );
 
-        CPLFree( psSDS->psChild->pszValue );
-        psSDS->psChild->pszValue = pszRelativePath;
+            CPLFree( psSDS->psChild->pszValue );
+            psSDS->psChild->pszValue = pszRelativePath;
+        }
 
         CPLCreateXMLNode( 
             CPLCreateXMLNode( psSDS, CXT_Attribute, "relativeToVRT" ), 
@@ -1042,7 +1099,7 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
     if( pabyDstBuffer == NULL )
     {
         CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "Out of memory allocating %d Byte buffer in VRTWarpedDataset::ProcessBlock()",
+                  "Out of memory allocating %d byte buffer in VRTWarpedDataset::ProcessBlock()",
                   nDstBufferSize );
         return CE_Failure;
     }				
@@ -1089,11 +1146,12 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
                 memset( pBandData, 
                         MAX(0,MIN(255,(int)adfInitRealImag[0])), 
                         nBandSize);
-            else if( adfInitRealImag[0] == 0.0 && adfInitRealImag[1] == 0 )
+            else if( !CPLIsNan(adfInitRealImag[0]) && adfInitRealImag[0] == 0.0 &&
+                     !CPLIsNan(adfInitRealImag[1]) && adfInitRealImag[1] == 0.0 )
             {
                 memset( pBandData, 0, nBandSize );
             }
-            else if( adfInitRealImag[1] == 0.0 )
+            else if( !CPLIsNan(adfInitRealImag[1]) && adfInitRealImag[1] == 0.0 )
             {
                 GDALCopyWords( &adfInitRealImag, GDT_Float64, 0, 
                                pBandData,psWO->eWorkingDataType,nWordSize,
@@ -1224,6 +1282,8 @@ CPLErr VRTWarpedRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     GDALRasterBlock *poBlock;
 
     poBlock = GetLockedBlockRef( nBlockXOff, nBlockYOff, TRUE );
+    if( poBlock == NULL )
+        return CE_Failure;
 
     eErr = poWDS->ProcessBlock( nBlockXOff, nBlockYOff );
 

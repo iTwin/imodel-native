@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPAGrammarObject.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Inline methods for class HPAGrammarObject
 //---------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 inline HPAGrammarObject::HPAGrammarObject(HPANodeCreator* pi_pCreator)
@@ -50,3 +50,4 @@ inline void HPAGrammarObject::SetNodeCreator(HPANodeCreator* pi_pCreator)
 
 
 
+END_IMAGEPP_NAMESPACE

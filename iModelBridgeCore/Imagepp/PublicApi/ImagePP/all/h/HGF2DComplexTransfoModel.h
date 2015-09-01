@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DComplexTransfoModel.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DComplexTransfoModel
@@ -14,6 +14,7 @@
 
 #include "HGF2DTransfoModel.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HGF2DDisplacement;
 // Id used by different transformation models
 
@@ -71,111 +72,121 @@ class HGF2DDisplacement;
 */
 class HGF2DComplexTransfoModel : public HGF2DTransfoModel
     {
-    HDECLARE_CLASS_ID(1028, HGF2DTransfoModel)
+    HDECLARE_CLASS_ID(HGF2DTransfoModelId_Complex, HGF2DTransfoModel)
 
 public:
 
     // Primary methods
-        _HDLLg          HGF2DComplexTransfoModel();
-    HGF2DComplexTransfoModel(const HGF2DComplexTransfoModel& pi_rObj);
-    virtual         ~HGF2DComplexTransfoModel();
-    HGF2DComplexTransfoModel& operator=(const HGF2DComplexTransfoModel& pi_rObj);
+    IMAGEPP_EXPORT                       HGF2DComplexTransfoModel();
+                                        HGF2DComplexTransfoModel(const HGF2DComplexTransfoModel& pi_rObj);
+    virtual                             ~HGF2DComplexTransfoModel();
+    HGF2DComplexTransfoModel&           operator=(const HGF2DComplexTransfoModel& pi_rObj);
 
     // Methods specific to complex model
-        _HDLLg void            AddModel          (const HGF2DTransfoModel& pi_rModelToAdd);
-        _HDLLg size_t          GetNumberOfModels() const;
-        _HDLLg HGF2DTransfoModel*
-                        GetModel(size_t modelNumber);  // Intentionaly non-const ... breaks the integrity of the complex model
+    IMAGEPP_EXPORT void                  AddModel          (const HGF2DTransfoModel& pi_rModelToAdd);
+    IMAGEPP_EXPORT size_t                GetNumberOfModels() const;
+    IMAGEPP_EXPORT HGF2DTransfoModel*
+                                        GetModel(size_t modelNumber);  // Intentionaly non-const ... breaks the integrity of the complex model
+
+    virtual bool IsConvertDirectThreadSafe()  const override;
+    virtual bool IsConvertInverseThreadSafe() const override;
 
     // Conversion interface
-    virtual void    ConvertDirect     (double*   pio_pXInOut,
-                                       double*   pio_pYInOut) const;
+    virtual StatusInt                   ConvertDirect(double*   pio_pXInOut,
+                                                      double*   pio_pYInOut) const override;
 
-    virtual void      ConvertDirect( double    pi_XIn,
-                                     double    pi_YIn,
-                                     double*   po_pXOut,
-                                     double*   po_pYOut) const
-        {
-        return T_Super::ConvertDirect(pi_XIn,pi_YIn,po_pXOut,po_pYOut);
-        }
+    virtual StatusInt                   ConvertDirect(double    pi_XIn,
+                                                      double    pi_YIn,
+                                                      double*   po_pXOut,
+                                                      double*   po_pYOut) const override;
 
-    virtual void      ConvertDirect (double    pi_YIn,
-                                     double    pi_XInStart,
-                                     size_t     pi_NumLoc,
-                                     double    pi_XInStep,
-                                     double*   po_aXOut,
-                                     double*   po_aYOut) const
-        {
-        return T_Super::ConvertDirect(pi_YIn,pi_XInStart,pi_NumLoc,pi_XInStep,po_aXOut,po_aYOut);
-        }
+    virtual StatusInt                   ConvertDirect (double    pi_YIn,
+                                                       double    pi_XInStart,
+                                                       size_t    pi_NumLoc,
+                                                       double    pi_XInStep,
+                                                       double*   po_aXOut,
+                                                       double*   po_aYOut) const override;
+
+    virtual StatusInt                   ConvertDirect(size_t    pi_NumLoc,
+                                                      double*   pio_aXInOut,
+                                                      double*   pio_aYInOut) const override;
 
 
-    virtual void      ConvertInverse(double    pi_YIn,
-                                     double    pi_XInStart,
-                                     size_t     pi_NumLoc,
-                                     double    pi_XInStep,
-                                     double*   po_aXOut,
-                                     double*   po_aYOut) const
-        {
-        return T_Super::ConvertInverse(pi_YIn,pi_XInStart,pi_NumLoc,pi_XInStep,po_aXOut,po_aYOut);
-        }
+    virtual StatusInt                   ConvertInverse(double    pi_YIn,
+                                                       double    pi_XInStart,
+                                                       size_t    pi_NumLoc,
+                                                       double    pi_XInStep,
+                                                       double*   po_aXOut,
+                                                       double*   po_aYOut) const override;
 
+    virtual StatusInt                   ConvertInverse(double*   pio_pXInOut,
+                                                       double*   pio_pYInOut) const override;
 
-    virtual void    ConvertInverse    (double*   pio_pXInOut,
-                                       double*   pio_pYInOut) const;
+    virtual StatusInt                   ConvertInverse(double    pi_XIn,
+                                                       double    pi_YIn,
+                                                       double*   po_pXOut,
+                                                       double*   po_pYOut) const override;
 
-    virtual void    ConvertInverse(double    pi_XIn,
-                                   double    pi_YIn,
-                                   double*   po_pXOut,
-                                   double*   po_pYOut) const
-        {
-        return T_Super::ConvertInverse(pi_XIn,pi_YIn,po_pXOut,po_pYOut);
-        }
+    virtual StatusInt                   ConvertInverse(size_t    pi_NumLoc,
+                                                       double*   pio_aXInOut,
+                                                       double*   pio_aYInOut) const override;
 
     // Miscalenious
-    virtual bool   IsIdentity        () const;
-    virtual bool   IsStretchable     (double pi_AngleTolerance = 0) const;
-    virtual void    GetStretchParams  (double*  po_pScaleFactorX,
-                                       double*  po_pScaleFactorY,
-                                       HGF2DDisplacement* po_pDisplacement) const;
+    virtual bool                        IsIdentity() const;
+    virtual bool                        IsStretchable(double pi_AngleTolerance = 0) const;
+    virtual void                        GetStretchParams(double*  po_pScaleFactorX,
+                                                         double*  po_pScaleFactorY,
+                                                         HGF2DDisplacement* po_pDisplacement) const;
 
-    virtual HFCPtr<HGF2DTransfoModel>
-    ComposeInverseWithDirectOf (const HGF2DTransfoModel& pi_rModel) const;
+    virtual HFCPtr<HGF2DTransfoModel>   ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const;
 
-    virtual bool   CanBeRepresentedByAMatrix() const;
-    virtual HFCMatrix<3, 3>
-    GetMatrix() const;
-    virtual HFCMatrix<3, 3>&
-    GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const;
+    virtual bool                        CanBeRepresentedByAMatrix() const;
+    virtual HFCMatrix<3, 3>             GetMatrix() const;
+    virtual HFCMatrix<3, 3>&            GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const;
 
-    virtual HFCPtr<HGF2DTransfoModel>
-    CreateSimplifiedModel() const;
+    virtual HFCPtr<HGF2DTransfoModel>   CreateSimplifiedModel() const;
 
     // Geometric properties
-    virtual bool   PreservesLinearity() const;
-    virtual bool   PreservesParallelism() const;
-    virtual bool   PreservesShape() const;
-    virtual bool   PreservesDirection() const;
+    virtual bool                        PreservesLinearity() const;
+    virtual bool                        PreservesParallelism() const;
+    virtual bool                        PreservesShape() const;
+    virtual bool                        PreservesDirection() const;
+
+    // Domain related overrides: A complex model will have a domain
+    // if any of the constituent transformation model has a domain.
+    virtual bool                        HasDomain() const override;
+    virtual HFCPtr<HGF2DShape>          GetDirectDomain() const override;
+    virtual HFCPtr<HGF2DShape>          GetInverseDomain() const override;
+
 
 protected:
 
-    void            Prepare ();
+    void                                Prepare ();
 
-    virtual HGF2DTransfoModel* Clone () const override;
+    virtual HGF2DTransfoModel*          Clone () const override;
 
-    virtual void    Reverse ();
+    virtual void                        Reverse ();
 
-    virtual HFCPtr<HGF2DTransfoModel>
-    ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
+    void                                AddFrontModel (const HGF2DTransfoModel& pi_rModelToAdd);
+
+
+    virtual HFCPtr<HGF2DTransfoModel>   ComposeYourself (const HGF2DTransfoModel& pi_rModel) const;
 
 private:
 
-    void            Copy (const HGF2DComplexTransfoModel& pi_rObj);
+    void                                Copy (const HGF2DComplexTransfoModel& pi_rObj);
 
 
     // Attributes
-    typedef list<HGF2DTransfoModel*, allocator<HGF2DTransfoModel*> >
-    List_TransfoModel;
-
+    typedef list<HGF2DTransfoModel*, allocator<HGF2DTransfoModel*> >    List_TransfoModel;
     List_TransfoModel  m_ListOfModels;
+
+    // Domain related variables. If the transformation model does not have
+    // a domain then the direct and inverse domains will be null yet
+    // by definition the GetDirectDomain and GetInverseDomain MUST return
+    // a valid domain if called (Usually an HGF2DUniverse)
+    HFCPtr<HGF2DShape>      m_directDomain;
+    HFCPtr<HGF2DShape>      m_inverseDomain;
+    bool                    m_hasDomain;
     };
+END_IMAGEPP_NAMESPACE

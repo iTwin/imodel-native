@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPPixelTypeV64R16G16B16X16.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -14,16 +14,17 @@
 //#include "HRPPixelPalette.h"
 #include "HRPPixelConverter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPPixelTypeV64R16G16B16X16 : public HRPPixelTypeRGB
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1285)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HRPPixelTypeId_V64R16G16B16X16)
 
 public:
     // Primary methods
-    _HDLLg                 HRPPixelTypeV64R16G16B16X16();
-    _HDLLg                 HRPPixelTypeV64R16G16B16X16(const HRPPixelTypeV64R16G16B16X16& pi_rObj);
+    IMAGEPP_EXPORT                 HRPPixelTypeV64R16G16B16X16();
+    IMAGEPP_EXPORT                 HRPPixelTypeV64R16G16B16X16(const HRPPixelTypeV64R16G16B16X16& pi_rObj);
 
-    _HDLLg virtual         ~HRPPixelTypeV64R16G16B16X16();
+    IMAGEPP_EXPORT virtual         ~HRPPixelTypeV64R16G16B16X16();
 
     virtual HPMPersistentObject*
     Clone() const;
@@ -40,3 +41,4 @@ protected:
 
 private:
     };
+END_IMAGEPP_NAMESPACE

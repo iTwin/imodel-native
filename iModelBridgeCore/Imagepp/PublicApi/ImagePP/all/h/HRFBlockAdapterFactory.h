@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFBlockAdapterFactory.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFBlockAdapterFactory
@@ -19,9 +19,10 @@
 // This is a helper class to instantiate an implementation object
 // without knowing the different implementations.
 //-----------------------------------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
 class HRFBlockAdapterFactory
     {
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFBlockAdapterFactory)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFBlockAdapterFactory)
 
 public:
     // This methods allow to find the best adapter type for the specified raster file.
@@ -98,5 +99,6 @@ static struct pi_ClassName##CreatorRegister \
         HRFBlockAdapterFactory::GetInstance()->Register(pi_ClassName::GetInstance()); \
     } \
 } g_##pi_ClassName##CreatorRegister;
+END_IMAGEPP_NAMESPACE
 
 

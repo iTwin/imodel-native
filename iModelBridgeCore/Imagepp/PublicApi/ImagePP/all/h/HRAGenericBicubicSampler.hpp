@@ -2,9 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAGenericBicubicSampler.hpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 /** ---------------------------------------------------------------------------
     Constructor
     ---------------------------------------------------------------------------
@@ -77,7 +79,7 @@ inline void HRAGenericBicubicSampler<T>::Sample::TranslateX(double pi_DeltaX)
 template <class T>
 inline uint32_t HRAGenericBicubicSampler<T>::Sample::GetLine0() const
     {
-    return (uint32_t)max(m_PositionY - 2.0, 0.0);
+    return (uint32_t)MAX(m_PositionY - 2.0, 0.0);
     }
 
 
@@ -88,7 +90,7 @@ inline uint32_t HRAGenericBicubicSampler<T>::Sample::GetLine0() const
 template <class T>
 inline uint32_t HRAGenericBicubicSampler<T>::Sample::GetLine1() const
     {
-    return (uint32_t)max(m_PositionY - 1.0, 0.0);
+    return (uint32_t)MAX(m_PositionY - 1.0, 0.0);
     }
 
 template <class T>
@@ -110,7 +112,7 @@ inline uint32_t HRAGenericBicubicSampler<T>::Sample::GetLine3() const
 template <class T>
 inline uint32_t HRAGenericBicubicSampler<T>::Sample::GetColumn0() const
     {
-    return (uint32_t)max(m_PositionX - 2.0, 0.0);
+    return (uint32_t)MAX(m_PositionX - 2.0, 0.0);
     }
 
 
@@ -121,7 +123,7 @@ inline uint32_t HRAGenericBicubicSampler<T>::Sample::GetColumn0() const
 template <class T>
 inline uint32_t HRAGenericBicubicSampler<T>::Sample::GetColumn1() const
     {
-    return (uint32_t)max(m_PositionX - 1.0, 0.0);
+    return (uint32_t)MAX(m_PositionX - 1.0, 0.0);
     }
 
 template <class T>
@@ -156,3 +158,4 @@ inline double HRAGenericBicubicSampler<T>::Sample::GetYDelta() const
     {
     return m_PositionY - (double)((int32_t)m_PositionY);
     }
+END_IMAGEPP_NAMESPACE

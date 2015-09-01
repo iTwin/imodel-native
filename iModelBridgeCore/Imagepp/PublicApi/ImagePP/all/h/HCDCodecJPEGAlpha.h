@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCDCodecJPEGAlpha.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCDCodecJPEGAlpha
@@ -14,11 +14,13 @@
 #include "HCDCodecJPEG.h"
 #include "HCDCodecIJG.h"
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HCDCodecRLE8;
 
 class HCDCodecJPEGAlpha : public HCDCodecJPEG
     {
-    HDECLARE_CLASS_ID(1260, HCDCodecJPEG);
+    HDECLARE_CLASS_ID(HCDCodecId_JPEGAlpha, HCDCodecJPEG);
 
 public:
     //--------------------------------------
@@ -37,12 +39,12 @@ public:
     // Contruction/Destruction
     //--------------------------------------
 
-    _HDLLu                 HCDCodecJPEGAlpha();
-    _HDLLu                 HCDCodecJPEGAlpha(uint32_t pi_Width,
+    IMAGEPP_EXPORT                 HCDCodecJPEGAlpha();
+    IMAGEPP_EXPORT                 HCDCodecJPEGAlpha(uint32_t pi_Width,
                                              uint32_t pi_Height,
                                              uint32_t pi_BitsPerPixel);
-    _HDLLu                 HCDCodecJPEGAlpha(const HCDCodecJPEGAlpha& pi_rObj);
-    _HDLLu virtual         ~HCDCodecJPEGAlpha();
+    IMAGEPP_EXPORT                 HCDCodecJPEGAlpha(const HCDCodecJPEGAlpha& pi_rObj);
+    IMAGEPP_EXPORT virtual         ~HCDCodecJPEGAlpha();
 
 
     //--------------------------------------
@@ -78,10 +80,10 @@ public:
     uint32_t        CreateTables(void* po_pOutBuffer, uint32_t pi_OutBufferSize);
     void            SetProgressiveMode(bool pi_Enable);
     bool           IsProgressive() const;
-    _HDLLu void    ReadHeader(const void* pi_pInData, size_t pi_InDataSize);
-    _HDLLu void    SetAbbreviateMode(bool pi_Enable);
-    _HDLLu bool    GetAbbreviateMode() const;
-    _HDLLu void    CopyTablesFromDecoderToEncoder();
+    IMAGEPP_EXPORT void    ReadHeader(const void* pi_pInData, size_t pi_InDataSize);
+    IMAGEPP_EXPORT void    SetAbbreviateMode(bool pi_Enable);
+    IMAGEPP_EXPORT bool    GetAbbreviateMode() const;
+    IMAGEPP_EXPORT void    CopyTablesFromDecoderToEncoder();
     void            SetQuantizationTable(int pi_Slot, const unsigned int* pi_pTable);
     HCDCodecIJG::SubsamplingModes
     GetSubsamplingMode() const;
@@ -105,3 +107,4 @@ private:
     };
 
 
+END_IMAGEPP_NAMESPACE

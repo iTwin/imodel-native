@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileBlockAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFRasterFileBlockAdapter
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 
 #include <Imagepp/all/h/HRFRasterFileBlockAdapter.h>
@@ -19,6 +19,7 @@
 #include <Imagepp/all/h/HRFCapability.h>
 #include <Imagepp/all/h/HRFCacheFileCreator.h>
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
+#include <Imagepp/all/h/HFCURLFile.h>
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 
@@ -152,20 +153,34 @@ HFCPtr<HRFRasterFile> HRFRasterFileBlockAdapter::CreateBestAdapterBasedOnCacheFo
         pCacheFile   = pi_pCreator->GetCacheFileFor(pi_rpForRasterFile);
         HASSERT(pCacheFile != 0);
 
-        // Try to adapt based on the cache setting. [Page=0 and resolution = 0]
-        BlockDescriptor BlockDesc;
-        BlockDesc.m_BlockType = pCacheFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType();
-        BlockDesc.m_BlockWidth = pCacheFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockWidth();
-        BlockDesc.m_BlockHeight = pCacheFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight();
-        for (uint32_t Page = 0; Page < pCacheFile->CountPages(); Page++)
-            BlockDescMap.insert(BlockDescriptorMap::value_type(Page, BlockDesc));
+        // Is the cache valid?
+        if (pCacheFile->CountPages() > 0)
+            {
+            // Try to adapt based on the cache setting. [Page=0 and resolution = 0]
+            BlockDescriptor BlockDesc;
+            BlockDesc.m_BlockType = pCacheFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType();
+            BlockDesc.m_BlockWidth = pCacheFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockWidth();
+            BlockDesc.m_BlockHeight = pCacheFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight();
+            for (uint32_t Page = 0; Page < pCacheFile->CountPages(); Page++)
+                BlockDescMap.insert(BlockDescriptorMap::value_type(Page, BlockDesc));
 
-        pCacheFile = 0;
+            pCacheFile = 0;
 
-        if (CanAdapt(pRasterFile, BlockDescMap))
-            pRasterFile = new HRFRasterFileBlockAdapter(pi_rpForRasterFile, BlockDescMap);
+            if (CanAdapt(pRasterFile, BlockDescMap))
+                pRasterFile = new HRFRasterFileBlockAdapter(pi_rpForRasterFile, BlockDescMap);
 
-        return pRasterFile;
+            return pRasterFile;
+            }
+        else
+            {
+            HFCPtr<HFCURL> fileName(pCacheFile->GetURL());
+            pCacheFile = 0;
+
+            HASSERT(fileName->IsCompatibleWith(HFCURLFile::CLASS_ID) == true);
+            BeFileName::BeDeleteFile((static_cast<HFCURLFile*>(fileName.GetPtr()))->GetAbsoluteFileName().c_str());
+
+            return CreateBestAdapterFor(pi_rpForRasterFile);    // Invalid cache, create a new one
+            }
         }
     else
         return CreateBestAdapterFor(pi_rpForRasterFile);
@@ -658,13 +673,17 @@ void HRFRasterFileBlockAdapter::CreateDescriptors(const BlockDescriptorMap& pi_r
                                                            pAdaptedPageDescriptor->GetDuration(),
                                                            pAdaptedPageDescriptor->IsResizable());
 
+            // MetaData                                                            
             HFCPtr<HMDMetaDataContainerList> pMDContainers(pAdaptedPageDescriptor->GetListOfMetaDataContainer());
-
             if (pMDContainers != 0)
                 {
                 pMDContainers = new HMDMetaDataContainerList(*pMDContainers);
                 pAdapterPageDescriptor->SetListOfMetaDataContainer(pMDContainers);
                 }
+
+            // Geocoding
+            IRasterBaseGcsCP baseGCS = pAdaptedPageDescriptor->GetGeocodingCP();
+            pAdapterPageDescriptor->SetGeocoding(const_cast<IRasterBaseGcsP>(baseGCS));
             }
         else
             pAdapterPageDescriptor = m_pOriginalFile->GetPageDescriptor(Page);

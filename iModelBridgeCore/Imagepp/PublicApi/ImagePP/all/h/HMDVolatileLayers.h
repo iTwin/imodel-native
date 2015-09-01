@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDVolatileLayers.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,31 +10,33 @@
 #include "HMDMetaDataContainer.h"
 #include <Imagepp/all/h/HMDVolatileLayerInfo.h>
 
+BEGIN_IMAGEPP_NAMESPACE
+
 class HMDLayerInfo;
 class HMDLayers;
 class HMDVolatileLayerInfo;
 
 class HMDVolatileLayers : public HMDMetaDataContainer
     {
-    HDECLARE_CLASS_ID(7007, HMDMetaDataContainer);
+    HDECLARE_CLASS_ID(HMDVolatileLayersId_Base, HMDMetaDataContainer);
 
 public :
-    _HDLLu HMDVolatileLayers(const HFCPtr<HMDLayers>& pi_rpLayers);
-    _HDLLu virtual ~HMDVolatileLayers();
+    IMAGEPP_EXPORT HMDVolatileLayers(const HFCPtr<HMDLayers>& pi_rpLayers);
+    IMAGEPP_EXPORT virtual ~HMDVolatileLayers();
 
-    _HDLLu HMDVolatileLayers(const HMDVolatileLayers& pi_rObj);
+    IMAGEPP_EXPORT HMDVolatileLayers(const HMDVolatileLayers& pi_rObj);
 
-    _HDLLu virtual HFCPtr<HMDMetaDataContainer> Clone() const;
+    IMAGEPP_EXPORT virtual HFCPtr<HMDMetaDataContainer> Clone() const;
 
-    _HDLLu bool                                SameLayersOn        (const HMDVolatileLayers& pi_rObj) const;
+    IMAGEPP_EXPORT bool                                SameLayersOn        (const HMDVolatileLayers& pi_rObj) const;
 
-    _HDLLu unsigned short                      GetNbVolatileLayers () const;
-    _HDLLu HMDVolatileLayerInfo*                GetVolatileLayerInfo(unsigned short pi_Index);
-    _HDLLu const HMDLayerInfo*                  GetLayerInfo        (unsigned short pi_Index) const;
-    _HDLLu bool                                GetIndexFromKey     (const WString& pi_rKey,
+    IMAGEPP_EXPORT unsigned short                      GetNbVolatileLayers () const;
+    IMAGEPP_EXPORT HMDVolatileLayerInfo*                GetVolatileLayerInfo(unsigned short pi_Index);
+    IMAGEPP_EXPORT const HMDLayerInfo*                  GetLayerInfo        (unsigned short pi_Index) const;
+    IMAGEPP_EXPORT bool                                GetIndexFromKey     (const WString& pi_rKey,
                                                               unsigned short&       po_rIndex) const;
 
-    _HDLLu void                                 ResetInitialVisibleState();
+    IMAGEPP_EXPORT void                                 ResetInitialVisibleState();
 
 protected:
 
@@ -46,3 +48,4 @@ private:
     void CopyMemberData(const HMDVolatileLayers& pi_rObj);
     };
 
+END_IMAGEPP_NAMESPACE

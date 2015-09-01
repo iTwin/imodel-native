@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\bsicommon\build\PartFile.xsd">
+
+    <!-- I needed another part file so the staticLibs could be binded into the non static BuildContext of the test executable.
+         There is probably a better way of doing this...-->
+    <Part Name="ImagePPUnitTests" BentleyBuildMakeFile="${SrcBsiCommon}/sharedmki/BuildUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)Imagepp/Tests/ -dBEGTEST_NAME=ImagePP -dBEGTEST_DEPENDENCIES=$(SrcRoot)Imagepp/Tests/dependencies.mki">
+        <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
+        <SubPart PartName="ImagePP"             PartFile="ImagePP"      Repository="ImagePP" LibType="Static"/>
+    </Part>
+    
+    
+</BuildContext>

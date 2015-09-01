@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_vsil_win32.cpp 21167 2010-11-24 15:19:51Z warmerdam $
+ * $Id: cpl_vsil_win32.cpp 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for Win32.
@@ -7,6 +7,7 @@
  *
  **********************************************************************
  * Copyright (c) 2000, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2008-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,7 +30,7 @@
 
 #include "cpl_vsi_virtual.h"
 
-CPL_CVSID("$Id: cpl_vsil_win32.cpp 21167 2010-11-24 15:19:51Z warmerdam $");
+CPL_CVSID("$Id: cpl_vsil_win32.cpp 27044 2014-03-16 23:41:27Z rouault $");
 
 #if defined(WIN32)
 
@@ -83,6 +84,7 @@ class VSIWin32Handle : public VSIVirtualHandle
 {
   public:
     HANDLE       hFile;
+    int          bEOF;
 
     virtual int       Seek( vsi_l_offset nOffset, int nWhence );
     virtual vsi_l_offset Tell();
@@ -91,6 +93,8 @@ class VSIWin32Handle : public VSIVirtualHandle
     virtual int       Eof();
     virtual int       Flush();
     virtual int       Close();
+    virtual int       Truncate( vsi_l_offset nNewSize );
+    virtual void     *GetNativeFileDescriptor() { return (void*) hFile; }
 };
 
 /************************************************************************/
@@ -199,6 +203,8 @@ int VSIWin32Handle::Seek( vsi_l_offset nOffset, int nWhence )
     GUInt32       nMoveLow;
     LARGE_INTEGER li;
 
+    bEOF = FALSE;
+
     switch(nWhence)
     {
         case SEEK_CUR:
@@ -291,6 +297,9 @@ size_t VSIWin32Handle::Read( void * pBuffer, size_t nSize, size_t nCount )
     else
         nResult = dwSizeRead / nSize;
 
+    if( nResult != nCount )
+        bEOF = TRUE;
+
     return nResult;
 }
 
@@ -325,14 +334,24 @@ size_t VSIWin32Handle::Write( const void *pBuffer, size_t nSize, size_t nCount)
 int VSIWin32Handle::Eof()
 
 {
-    vsi_l_offset       nCur, nEnd;
+    return bEOF;
+}
 
-    nCur = Tell();
-    Seek( 0, SEEK_END );
-    nEnd = Tell();
+/************************************************************************/
+/*                             Truncate()                               */
+/************************************************************************/
+
+int VSIWin32Handle::Truncate( vsi_l_offset nNewSize )
+{
+    vsi_l_offset nCur = Tell();
+    Seek( nNewSize, SEEK_SET );
+    BOOL bRes = SetEndOfFile( hFile );
     Seek( nCur, SEEK_SET );
 
-    return (nCur == nEnd);
+    if (bRes)
+        return 0;
+    else
+        return -1;
 }
 
 /************************************************************************/
@@ -352,13 +371,17 @@ VSIVirtualHandle *VSIWin32FilesystemHandler::Open( const char *pszFilename,
     DWORD dwDesiredAccess, dwCreationDisposition, dwFlagsAndAttributes;
     HANDLE hFile;
 
-    if( strchr(pszAccess, '+') != NULL || strchr(pszAccess, 'w') != 0 )
+    if( strchr(pszAccess, '+') != NULL ||
+        strchr(pszAccess, 'w') != 0 ||
+        strchr(pszAccess, 'a') != 0 )
         dwDesiredAccess = GENERIC_READ | GENERIC_WRITE;
     else
         dwDesiredAccess = GENERIC_READ;
 
     if( strstr(pszAccess, "w") != NULL )
         dwCreationDisposition = CREATE_ALWAYS;
+    else if( strstr(pszAccess, "a") != NULL )
+        dwCreationDisposition = OPEN_ALWAYS;
     else
         dwCreationDisposition = OPEN_EXISTING;
 
@@ -404,12 +427,29 @@ VSIVirtualHandle *VSIWin32FilesystemHandler::Open( const char *pszFilename,
         errno = ErrnoFromGetLastError();
         return NULL;
     }
+
+/* -------------------------------------------------------------------- */
+/*      Create a VSI file handle.                                       */
+/* -------------------------------------------------------------------- */
+    VSIWin32Handle *poHandle = new VSIWin32Handle;
+    
+    poHandle->hFile = hFile;
+    poHandle->bEOF = FALSE;
+    
+    if (strchr(pszAccess, 'a') != 0)
+        poHandle->Seek(0, SEEK_END);
+    
+/* -------------------------------------------------------------------- */
+/*      If VSI_CACHE is set we want to use a cached reader instead      */
+/*      of more direct io on the underlying file.                       */
+/* -------------------------------------------------------------------- */
+    if( (EQUAL(pszAccess,"r") || EQUAL(pszAccess,"rb"))
+        && CSLTestBoolean( CPLGetConfigOption( "VSI_CACHE", "FALSE" ) ) )
+    {
+        return VSICreateCachedFile( poHandle );
+    }
     else
     {
-        VSIWin32Handle *poHandle = new VSIWin32Handle;
-        
-        poHandle->hFile = hFile;
-        
         return poHandle;
     }
 }
@@ -569,7 +609,8 @@ char **VSIWin32FilesystemHandler::ReadDir( const char *pszPath )
     {
         struct _wfinddata_t c_file;
         intptr_t hFile;
-        char    *pszFileSpec, **papszDir = NULL;
+        char    *pszFileSpec;
+        CPLStringList oDir;
         
         if (strlen(pszPath) == 0)
             pszPath = ".";
@@ -580,29 +621,10 @@ char **VSIWin32FilesystemHandler::ReadDir( const char *pszPath )
         
         if ( (hFile = _wfindfirst( pwszFileSpec, &c_file )) != -1L )
         {
-            /* In case of really big number of files in the directory, CSLAddString */
-            /* can be slow (see #2158). We then directly build the list. */
-            int nItems=0;
-            int nAllocatedItems=0;
             do
             {
-                if (nItems == 0)
-                {
-                    papszDir = (char**) CPLCalloc(2,sizeof(char*));
-                    nAllocatedItems = 1;
-                }
-                else if (nItems >= nAllocatedItems)
-                {
-                    nAllocatedItems = nAllocatedItems * 2;
-                    papszDir = (char**)CPLRealloc(papszDir, 
-                                                  (nAllocatedItems+2)*sizeof(char*));
-                }
-                
-                papszDir[nItems] =
-                    CPLRecodeFromWChar(c_file.name,CPL_ENC_UCS2,CPL_ENC_UTF8);
-                papszDir[nItems+1] = NULL;
-                
-                nItems++;
+                oDir.AddStringDirectly(
+                    CPLRecodeFromWChar(c_file.name,CPL_ENC_UCS2,CPL_ENC_UTF8));
             } while( _wfindnext( hFile, &c_file ) == 0 );
             
             _findclose( hFile );
@@ -617,14 +639,15 @@ char **VSIWin32FilesystemHandler::ReadDir( const char *pszPath )
         CPLFree(pszFileSpec);
         CPLFree(pwszFileSpec);
 
-        return papszDir;
+        return oDir.StealList();
     }
     else
 #endif
     {
         struct _finddata_t c_file;
         intptr_t hFile;
-        char    *pszFileSpec, **papszDir = NULL;
+        char    *pszFileSpec;
+        CPLStringList oDir;
         
         if (strlen(pszPath) == 0)
             pszPath = ".";
@@ -633,28 +656,9 @@ char **VSIWin32FilesystemHandler::ReadDir( const char *pszPath )
         
         if ( (hFile = _findfirst( pszFileSpec, &c_file )) != -1L )
         {
-            /* In case of really big number of files in the directory, CSLAddString */
-            /* can be slow (see #2158). We then directly build the list. */
-            int nItems=0;
-            int nAllocatedItems=0;
             do
             {
-                if (nItems == 0)
-                {
-                    papszDir = (char**) CPLCalloc(2,sizeof(char*));
-                    nAllocatedItems = 1;
-                }
-                else if (nItems >= nAllocatedItems)
-                {
-                    nAllocatedItems = nAllocatedItems * 2;
-                    papszDir = (char**)CPLRealloc(papszDir, 
-                                                  (nAllocatedItems+2)*sizeof(char*));
-                }
-                
-                papszDir[nItems] = CPLStrdup(c_file.name);
-                papszDir[nItems+1] = NULL;
-                
-                nItems++;
+                oDir.AddString(c_file.name);
             } while( _findnext( hFile, &c_file ) == 0 );
             
             _findclose( hFile );
@@ -667,8 +671,8 @@ char **VSIWin32FilesystemHandler::ReadDir( const char *pszPath )
         }
 
         CPLFree(pszFileSpec);
-
-        return papszDir;
+        
+        return oDir.StealList();
     }
 }
 

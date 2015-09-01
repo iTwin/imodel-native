@@ -2,13 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCProgressEvaluator.hpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Inline methods for HFCProgressEvaluator
 //----------------------------------------------------------------------------
-
+BEGIN_IMAGEPP_NAMESPACE
 //----------------------------------------------------------------------------
 // GetID
 // Return the evaluator's identification number.
@@ -35,3 +35,5 @@ inline double HFCProgressEvaluator::GetValue() const
     {
     return m_LastEvaluation;
     }
+
+END_IMAGEPP_NAMESPACE

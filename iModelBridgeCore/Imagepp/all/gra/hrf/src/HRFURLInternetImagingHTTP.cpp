@@ -1,10 +1,17 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: all/gra/hrf/src/HRFURLInternetImagingHTTP.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Methods for class HRFURLInternetImagingHTTP
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HFCURLHttp.h>
 #include <Imagepp/all/h/HFCURLHttps.h>
 #include <Imagepp/all/h/HRFURLInternetImagingHTTP.h>

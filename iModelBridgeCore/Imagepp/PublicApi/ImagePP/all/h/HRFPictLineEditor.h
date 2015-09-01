@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPictLineEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes the resolution editor interface
@@ -11,6 +11,7 @@
 
 #include "HRFResolutionEditor.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 static const Byte s_FilePadding[4] = {0x00, 0x00, 0x00, 0xFF};
 
 class HRFPictFile;
@@ -30,26 +31,28 @@ public:
 
 
     // Edition by Block
-    virtual HSTATUS                 ReadBlock     (uint32_t                 pi_PosBlockX,
-                                                   uint32_t                 pi_PosBlockY,
-                                                   Byte*                   po_pData,
-                                                   HFCLockMonitor const*    pi_pSisterFileLock = 0);
-    virtual HSTATUS          ReadBlock     (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            HFCPtr<HCDPacket>&       po_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0)
+    virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
+                              uint64_t                 pi_PosBlockY,
+                              Byte*                    po_pData,
+                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+
+    virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
+                              uint64_t                 pi_PosBlockY,
+                              HFCPtr<HCDPacket>&       po_rpPacket,
+                              HFCLockMonitor const*    pi_pSisterFileLock = 0)
         {
         return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
         }
 
-    virtual HSTATUS                 WriteBlock    (uint32_t     pi_PosBlockX,
-                                                   uint32_t     pi_PosBlockY,
-                                                   const Byte* pi_pData,
-                                                   HFCLockMonitor const* pi_pSisterFileLock = 0);
-    virtual HSTATUS          WriteBlock    (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            const HFCPtr<HCDPacket>& pi_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0)
+    virtual HSTATUS WriteBlock(uint64_t     pi_PosBlockX,
+                               uint64_t     pi_PosBlockY,
+                               const Byte*  pi_pData,
+                               HFCLockMonitor const* pi_pSisterFileLock = 0) override;
+
+    virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
+                               uint64_t                 pi_PosBlockY,
+                               const HFCPtr<HCDPacket>& pi_rpPacket,
+                               HFCLockMonitor const*    pi_pSisterFileLock = 0)
         {
         return T_Super::WriteBlock(pi_PosBlockX,pi_PosBlockY,pi_rpPacket,pi_pSisterFileLock);
         }
@@ -62,8 +65,8 @@ protected:
 
     // Constructor
     HRFPictLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
-                      uint32_t              pi_Page,
-                      unsigned short       pi_Resolution,
+                      uint32_t             pi_Page,
+                      unsigned short        pi_Resolution,
                       HFCAccessMode         pi_AccessMode);
 
 private:
@@ -71,30 +74,30 @@ private:
     HFCPtr<HRFPictFile>     m_pRasterFile;
 
     // Position of the file ptr for that editor
-    uint64_t               m_ReadPosInFile;
-    uint64_t               m_WritePosInFile;
+    uint64_t                m_ReadPosInFile;
+    uint64_t                m_WritePosInFile;
 
-    uint32_t                m_CurrentWriteLine;
-    uint32_t                m_CurrentReadLine;
+    uint32_t               m_CurrentWriteLine;
+    uint32_t               m_CurrentReadLine;
 
     // Codec
     HFCPtr<HCDCodecImage>   m_pCodec;
 
     size_t                  m_LineBufferSize;
-    HArrayAutoPtr<Byte>   m_pReadLineBuffer;
-    HArrayAutoPtr<Byte>   m_pWriteLineBuffer;
-    HArrayAutoPtr<Byte>   m_pWriteLineBuffer2;
+    HArrayAutoPtr<Byte>     m_pReadLineBuffer;
+    HArrayAutoPtr<Byte>     m_pWriteLineBuffer;
+    HArrayAutoPtr<Byte>     m_pWriteLineBuffer2;
 
-    uint32_t                 m_RowBytes;
+    uint32_t                m_RowBytes;
 
-    const   uint32_t                m_BytesPerBlockWidth;
-    uint32_t                m_SubsetWidth;
-    uint32_t                m_SubsetHeight;
+    const   uint32_t       m_BytesPerBlockWidth;
+    uint32_t               m_SubsetWidth;
+    uint32_t               m_SubsetHeight;
 
-    const   uint32_t                m_ImageWidth;
-    const   uint32_t                m_ImageHeigth;
+    const   uint32_t       m_ImageWidth;
+    const   uint32_t       m_ImageHeigth;
 
-    const   bool                   m_ReorganizeLineColorRepresentation;
+    const   bool            m_ReorganizeLineColorRepresentation;
 
 
     void    ReorganizeColorsToRGB      (Byte*         pio_InOutBuffer,
@@ -120,3 +123,4 @@ private:
     HRFPictLineEditor(const HRFPictLineEditor& pi_rObj);
     HRFPictLineEditor& operator=(const HRFPictLineEditor& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE

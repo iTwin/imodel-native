@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIntergraphLineEditor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes the resolution editor interface
@@ -17,6 +17,7 @@
 #include "HCDPacket.h"
 // #define HRF_DEBUG_DUMPSTATONDISK
 
+BEGIN_IMAGEPP_NAMESPACE
 class HGFTileIDDescriptor;
 class HCDPacketRLE;
 
@@ -28,52 +29,51 @@ public:
     friend class HRFIntergraphFile;
 
     HRFIntergraphLineEditor
-    (HFCPtr<HRFRasterFile> pi_rpRasterFile,
+    (HFCPtr<HRFRasterFile>  pi_rpRasterFile,
      uint32_t              pi_Page,
-     unsigned short       pi_Resolution,
-     HFCAccessMode         pi_AccessMode,
-     HRFIntergraphFile::IntergraphResolutionDescriptor&
-     pi_rIntergraphResolutionDescriptor);
+     unsigned short         pi_Resolution,
+     HFCAccessMode          pi_AccessMode,
+     HRFIntergraphFile::IntergraphResolutionDescriptor& pi_rIntergraphResolutionDescriptor);
 
     virtual         ~HRFIntergraphLineEditor  ();
 
-
     // Edition by Block
-    virtual HSTATUS ReadBlock (uint32_t                 pi_PosBlockX,
-                               uint32_t                 pi_PosBlockY,
-                               Byte*                   po_pData,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+    virtual HSTATUS ReadBlock(uint64_t                pi_PosBlockX,
+                              uint64_t                pi_PosBlockY,
+                              Byte*                   po_pData,
+                              HFCLockMonitor const*   pi_pSisterFileLock = 0) override;
 
-    virtual HSTATUS          ReadBlock     (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            HFCPtr<HCDPacket>&       po_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0)
+    virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
+                              uint64_t                 pi_PosBlockY,
+                              HFCPtr<HCDPacket>&       po_rpPacket,
+                              HFCLockMonitor const*    pi_pSisterFileLock = 0)
         {
         return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
         }
 
 
-    virtual HSTATUS ReadBlockRLE  (uint32_t              pi_PosBlockX,
-                                   uint32_t              pi_PosBlockY,
-                                   HFCPtr<HCDPacketRLE>& pio_rpPacketRLE,
-                                   HFCLockMonitor const* pi_pSisterFileLock = 0) override;
-    virtual HSTATUS WriteBlock(uint32_t                 pi_PosBlockX,
-                               uint32_t                 pi_PosBlockY,
-                               const Byte*             pi_pData,
+    virtual HSTATUS ReadBlockRLE(uint64_t              pi_PosBlockX,
+                                 uint64_t              pi_PosBlockY,
+                                 HFCPtr<HCDPacketRLE>& pio_rpPacketRLE,
+                                 HFCLockMonitor const* pi_pSisterFileLock = 0) override;
+
+    virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
+                               uint64_t                 pi_PosBlockY,
+                               const Byte*              pi_pData,
                                HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
-    virtual HSTATUS          WriteBlock    (uint32_t                 pi_PosBlockX,
-                                            uint32_t                 pi_PosBlockY,
-                                            const HFCPtr<HCDPacket>& pi_rpPacket,
-                                            HFCLockMonitor const*    pi_pSisterFileLock = 0)
+
+    virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
+                               uint64_t                 pi_PosBlockY,
+                               const HFCPtr<HCDPacket>& pi_rpPacket,
+                               HFCLockMonitor const*    pi_pSisterFileLock = 0)
         {
         return T_Super::WriteBlock(pi_PosBlockX,pi_PosBlockY,pi_rpPacket,pi_pSisterFileLock);
         }
 
-
-    virtual HSTATUS WriteBlockRLE (uint32_t              pi_PosBlockX,
-                                   uint32_t              pi_PosBlockY,
-                                   HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                   HFCLockMonitor const* pi_pSisterFileLock = 0) override;
+    virtual HSTATUS WriteBlockRLE(uint64_t              pi_PosBlockX,
+                                  uint64_t              pi_PosBlockY,
+                                  HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
+                                  HFCLockMonitor const* pi_pSisterFileLock = 0) override;
 
 protected:
 
@@ -91,7 +91,7 @@ private:
     // Members
     unsigned short m_BitPerPixel;
 
-    uint32_t         m_CurrentReadLine;
+    uint64_t         m_CurrentReadLine;
     uint32_t         m_RasterOffset;
     uint32_t         m_ResSizeInBytes;
     uint32_t         m_WidthInByteToRead;
@@ -116,4 +116,5 @@ private:
     HRFIntergraphLineEditor (const HRFIntergraphLineEditor& pi_rObj);
     HRFIntergraphLineEditor& operator= (const HRFIntergraphLineEditor& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 

@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAEditorN8.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRAEditorN8
 //---------------------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRAEditorN8.h>
 
@@ -155,7 +155,7 @@ void* HRAEditorN8::GetRun(HUINTX    pi_StartPosX,
         {
         ((HRATransaction*)pi_pTransaction)->PushEntry(m_XPosInRaster + pi_StartPosX,
                                                       m_YPosInRaster + pi_StartPosY,
-                                                      pi_PixelCount,
+                                                      (uint32_t)(pi_PixelCount),
                                                       1,
                                                       pi_PixelCount * m_BytesPerPixel,
                                                       pRawData);
@@ -184,7 +184,7 @@ void HRAEditorN8::SetRun(HUINTX       pi_StartPosX,
         {
         ((HRATransaction*)pi_pTransaction)->PushEntry(m_XPosInRaster + pi_StartPosX,
                                                       m_YPosInRaster + pi_StartPosY,
-                                                      pi_PixelCount,
+                                                      (uint32_t)pi_PixelCount,
                                                       1,
                                                       pi_PixelCount * m_BytesPerPixel,
                                                       pRawData);
@@ -337,7 +337,7 @@ void HRAEditorN8::ClearRun(HUINTX       pi_PosX,
         {
         ((HRATransaction*)pi_pTransaction)->PushEntry(m_XPosInRaster + pi_PosX,
                                                       m_YPosInRaster + pi_PosY,
-                                                      pi_PixelCount,
+                                                      (uint32_t)pi_PixelCount,
                                                       1,
                                                       pi_PixelCount * m_BytesPerPixel,
                                                       pData);
@@ -414,8 +414,8 @@ void HRAEditorN8::MergeRuns(HUINTX       pi_StartPosX,
         {
         // compute how many lines we need to merge
 
-        HUINTX FirstLine = max(pi_StartPosY, m_YPosInRaster) - m_YPosInRaster;
-        size_t Height = min(pi_Height, m_Height - (size_t)FirstLine);
+        HUINTX FirstLine = MAX(pi_StartPosY, m_YPosInRaster) - m_YPosInRaster;
+        uint32_t Height = (uint32_t)MIN(pi_Height, m_Height - FirstLine);
 
         Byte* pRun = ComputeAddress(0, FirstLine);
         if (pi_pTransaction != 0)
@@ -435,12 +435,12 @@ void HRAEditorN8::MergeRuns(HUINTX       pi_StartPosX,
         HUINTX PosX = pi_StartPosX - m_XPosInRaster;
         HUINTX PosY = pi_StartPosY - m_YPosInRaster;
         size_t PixelCount = m_Width - PosX;
-        PixelCount = min(pi_Width, PixelCount);
+        PixelCount = MIN(pi_Width, PixelCount);
         while (pi_Height != 0)
             {
             SetRun(PosX,
                    PosY++,
-                   min(PixelCount, pi_Width),
+                   MIN(PixelCount, pi_Width),
                    pi_pRun,
                    pi_pTransaction);
             --pi_Height;
@@ -456,7 +456,7 @@ void HRAEditorN8::MergeRuns(HUINTX       pi_StartPosX,
             {
             SetRun(0,
                    PosY++,
-                   min(PixelCount, m_Width),
+                   MIN(PixelCount, m_Width),
                    pRun,
                    pi_pTransaction);
             --pi_Height;

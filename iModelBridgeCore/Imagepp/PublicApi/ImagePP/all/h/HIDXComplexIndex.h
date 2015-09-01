@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIDXComplexIndex.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HIDXComplexIndex
@@ -16,7 +16,7 @@
 #include "HIDXIndex.h"
 #include "HIDXSearchCriteria.h"
 
-
+BEGIN_IMAGEPP_NAMESPACE
 ///////////////////////////
 // HIDXComplexParameters
 ///////////////////////////
@@ -139,7 +139,7 @@ private:
     I2*             m_pIndex2;
     };
 
-
+END_IMAGEPP_NAMESPACE
 
 #include "HIDXComplexIndex.hpp"
 

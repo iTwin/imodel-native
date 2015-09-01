@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFResolutionDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFResolutionDescriptor
@@ -15,17 +15,18 @@
 //#include "HFCAccessMode.h"
 #include "HRFRasterFileCapabilities.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class  HCDCodec;
 class  HRFResolutionEditor;
 class  HRPPixelType;
 
 class HRFResolutionDescriptor : public HFCShareableObject<HRFResolutionDescriptor>
     {
-    HDECLARE_SEALEDCLASS_ID(1462)
+    HDECLARE_SEALEDCLASS_ID(HRFResolutionDescriptorId_Base)
 
 public:
     // Resolution Creation and Destruction
-    _HDLLg HRFResolutionDescriptor(HFCAccessMode                               pi_AccessMode,
+    IMAGEPP_EXPORT HRFResolutionDescriptor(HFCAccessMode                               pi_AccessMode,
                                    const HFCPtr<HRFRasterFileCapabilities>&    pi_rpResolutionCapabilities,
                                    double                                     pi_ResolutionXRatio,
                                    double                                     pi_ResolutionYRatio,
@@ -47,11 +48,11 @@ public:
                                    HRFDownSamplingMethod                       pi_DownSamplingMethod = HRFDownSamplingMethod::NEAREST_NEIGHBOUR);
 
 
-    _HDLLg HRFResolutionDescriptor(const HRFResolutionDescriptor& pi_rObj);
-    _HDLLg HRFResolutionDescriptor& operator=(const HRFResolutionDescriptor& pi_rObj);
-    _HDLLg ~HRFResolutionDescriptor();
+    IMAGEPP_EXPORT HRFResolutionDescriptor(const HRFResolutionDescriptor& pi_rObj);
+    IMAGEPP_EXPORT HRFResolutionDescriptor& operator=(const HRFResolutionDescriptor& pi_rObj);
+    IMAGEPP_EXPORT ~HRFResolutionDescriptor();
 
-    _HDLLg bool CanCreateWith(HFCAccessMode                              pi_AccessMode,
+    IMAGEPP_EXPORT bool CanCreateWith(HFCAccessMode                              pi_AccessMode,
                                const HFCPtr<HRFRasterFileCapabilities>&   pi_rpResolutionCapabilities) const;
 
 
@@ -104,8 +105,7 @@ public:
     uint32_t                              GetBitsPerBlockWidth    () const;
     uint32_t                              GetBytesPerBlockWidth   () const;
 
-    uint32_t                              GetPaddingBitsPerBlockWidth
-    () const;
+    uint32_t                              GetPaddingBitsPerBlockWidth () const;
     uint32_t                              GetBlockSizeInBytes     () const;
 
     uint64_t                               GetBlocksPerWidth       () const;
@@ -117,12 +117,12 @@ public:
                                                                      uint64_t*   po_pTilePosX,
                                                                      uint64_t*   po_pTilePosY) const;
 
-    _HDLLg /*IppImaging_Needs*/ bool                HasBlocksDataFlag () const;
-    _HDLLg /*IppImaging_Needs*/ const HRFDataFlag*  GetBlocksDataFlag () const;
-    _HDLLg /*IppImaging_Needs*/ bool                SetBlocksDataFlag (const HRFDataFlag* pi_pBlocksDataFlag);
+    IMAGEPP_EXPORT /*IppImaging_Needs*/ bool                HasBlocksDataFlag () const;
+    IMAGEPP_EXPORT /*IppImaging_Needs*/ const HRFDataFlag*  GetBlocksDataFlag () const;
+    IMAGEPP_EXPORT /*IppImaging_Needs*/ bool                SetBlocksDataFlag (const HRFDataFlag* pi_pBlocksDataFlag);
 
-    _HDLLg HRFDataFlag                      GetBlockDataFlag       (uint64_t   pi_Index) const;
-    _HDLLg void                             SetBlockDataFlag       (uint64_t   pi_Index,
+    IMAGEPP_EXPORT HRFDataFlag                      GetBlockDataFlag       (uint64_t   pi_Index) const;
+    IMAGEPP_EXPORT void                             SetBlockDataFlag       (uint64_t   pi_Index,
                                                                     HRFDataFlag pi_DataFlag);
     void                                    ClearBlockDataFlag     (uint64_t   pi_Index,
                                                                     HRFDataFlag pi_DataFlag);
@@ -132,7 +132,7 @@ public:
     bool                                   BlockDataFlagHasChanged() const;
 
 
-    _HDLLg static double                   RoundResolutionRatio(uint32_t pi_MainSize, uint32_t pi_SubResSize);
+    IMAGEPP_EXPORT static double                   RoundResolutionRatio(uint32_t pi_MainSize, uint32_t pi_SubResSize);
 
     void                                    Saved();
     void                                    BlockDataFlagSaved();
@@ -200,6 +200,7 @@ private:
     bool                               m_BlockDataFlagHasChanged;
     bool                               m_DownSamplingMethodHasChanged;
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRFResolutionDescriptor.hpp"
 

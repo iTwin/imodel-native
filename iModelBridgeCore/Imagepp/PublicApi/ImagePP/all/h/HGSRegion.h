@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGSRegion.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:> Class : HGSRegion
@@ -11,13 +11,20 @@
 //:>-----------------------------------------------------------------------------
 #pragma once
 
-#include "HGSSurfaceOption.h"
-#include "HVEShape.h"
+#include "HFCPtr.h"
+#include <ImagePP/all/h/HGF2DExtent.h>
+
+BEGIN_IMAGEPP_NAMESPACE
+
+class HVEShape;
+class HGF2DCoordSys;
+class HGF2DTransfoModel;
+class HGFScanLines;
 
 
-class HGSRegion : public HGSSurfaceOption
+class HGSRegion  : public HFCShareableObject<HGSRegion>
     {
-    HDECLARE_CLASS_ID(1714, HGSSurfaceOption)
+    HDECLARE_SEALEDCLASS_ID(HGSRegionId)
 
 public:
 
@@ -28,23 +35,22 @@ public:
         INTERSECT
         };
 
-
     // Primary methods
-    _HDLLg              HGSRegion(const HFCPtr<HVEShape>&       pi_rpBaseShape,
-                                  const HFCPtr<HGF2DCoordSys>&  pi_rpCoordSys);
-    _HDLLg              HGSRegion(const HFCPtr<HGSRegion>&      pi_rpRegion,
-                                  const HGF2DTransfoModel&      pi_rTransfoModel);
-    _HDLLg              HGSRegion(const double*                pi_pPoints,
-                                  size_t                        pi_BufferSize);
-    _HDLLg              HGSRegion(const HGFScanLines*           pi_pScanlines);
-    _HDLLg              HGSRegion(const HGSRegion&              pi_rObj);
-    _HDLLg virtual      ~HGSRegion();
+    HGSRegion(const HFCPtr<HVEShape>& pi_rpBaseShape, const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
 
-    virtual HGSSurfaceOption*
-    Clone() const;
+    HGSRegion(const HFCPtr<HGSRegion>& pi_rpRegion, const HGF2DTransfoModel& pi_rTransfoModel);
 
-    const HFCPtr<HVEShape>&
-    GetBaseShape() const;
+    HGSRegion(const double* pi_pPoints, size_t  pi_BufferSize);
+
+    HGSRegion(const HGFScanLines* pi_pScanlines);
+
+    HGSRegion(const HGSRegion& pi_rObj);
+
+    virtual ~HGSRegion();
+
+    HGSRegion* Clone() const;
+
+    const HFCPtr<HVEShape>& GetBaseShape() const;
 
     void            SetBaseShape(const HFCPtr<HVEShape>&    pi_rpBaseShape);
 
@@ -68,8 +74,7 @@ public:
                               double*  po_pXMax,
                               double*  po_pYMax) const;
 
-    HFCPtr<HVEShape>
-    GetShape() const;
+    HFCPtr<HVEShape> GetShape() const;
 
     bool           IsScanlinesShape() const;
     const HGFScanLines*   GetScanlines() const;
@@ -101,5 +106,4 @@ private:
     HGSRegion&      operator=(const HGSRegion& pi_rObj);
     };
 
-
-#include "HGSRegion.hpp"
+END_IMAGEPP_NAMESPACE

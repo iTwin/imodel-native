@@ -2,12 +2,14 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCCallbackRegistry.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HFCMacros.h"
+
+BEGIN_IMAGEPP_NAMESPACE
 
 class HFCCallback;
 
@@ -17,13 +19,13 @@ public:
     HFCCallbackRegistry();
     virtual            ~HFCCallbackRegistry();
 
-    _HDLLu bool             AddCallback(const HFCCallback* pi_pCallback);
+    IMAGEPP_EXPORT bool             AddCallback(const HFCCallback* pi_pCallback);
 
-    _HDLLu void             RemoveCallback(const HFCCallback* pi_pCallback);
+    IMAGEPP_EXPORT void             RemoveCallback(const HFCCallback* pi_pCallback);
 
-    _HDLLu HFCCallback*     GetCallback(HCLASS_ID pi_CallbackID, unsigned short pi_CallbackInd = 0) const;
+    IMAGEPP_EXPORT HFCCallback*     GetCallback(HCLASS_ID pi_CallbackID, unsigned short pi_CallbackInd = 0) const;
 
-    _HDLLu unsigned short   GetNbCallbacks(HCLASS_ID pi_CallbackID) const;
+    IMAGEPP_EXPORT unsigned short   GetNbCallbacks(HCLASS_ID pi_CallbackID) const;
 
 private:
 
@@ -31,5 +33,7 @@ private:
     CallbacksMultiMap m_Callbacks;
 
     // Singleton
-    HFC_DECLARE_SINGLETON_DLL(_HDLLu, HFCCallbackRegistry)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HFCCallbackRegistry)
     };
+
+END_IMAGEPP_NAMESPACE

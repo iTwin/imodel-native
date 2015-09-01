@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFIntergraphLineEditor.h>
 #include <Imagepp/all/h/HRFIntergraphFile.h>
 
@@ -110,10 +110,10 @@ HRFIntergraphLineEditor::~HRFIntergraphLineEditor()
 // ReadBlock
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFIntergraphLineEditor::ReadBlock( uint32_t pi_PosBlockX,
-                                            uint32_t pi_PosBlockY,
-                                            Byte*  po_pData,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFIntergraphLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
+                                           uint64_t  pi_PosBlockY,
+                                           Byte*      po_pData,
+                                           HFCLockMonitor const* pi_pSisterFileLock)
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -149,7 +149,7 @@ HSTATUS HRFIntergraphLineEditor::ReadBlock( uint32_t pi_PosBlockX,
             }
 
         // Move to the needed line
-        for (uint32_t Line = m_CurrentReadLine; Line <= pi_PosBlockY; Line++)
+        for (uint64_t Line = m_CurrentReadLine; Line <= pi_PosBlockY; Line++)
             {
             if (Line == 0)
                 {
@@ -210,7 +210,7 @@ HSTATUS HRFIntergraphLineEditor::ReadBlock( uint32_t pi_PosBlockX,
                     InitializeJpegDecompTable(QualityFactor, pCompressedData, m_ResSizeInBytes);
 
                     // Read the entire compressed pixels in memory
-                    if (m_pIntergraphFile->Read((void*)(pCompressedData + JPegTableSize + JPegTileHeaderSize), m_ResSizeInBytes) != m_ResSizeInBytes)
+                    if (m_pIntergraphFile->Read((pCompressedData + JPegTableSize + JPegTileHeaderSize), m_ResSizeInBytes) != m_ResSizeInBytes)
                         goto WRAPUP; // H_ERROR
 
                     m_CompressPacket.SetBuffer(pCompressedData, m_ResSizeInBytes + JPegTableSize + JPegTileHeaderSize);
@@ -226,7 +226,7 @@ HSTATUS HRFIntergraphLineEditor::ReadBlock( uint32_t pi_PosBlockX,
                     // Read the entire compressed pixels in memory
                     Byte* pCompressedData = new Byte[m_ResSizeInBytes];
 
-                    if (m_pIntergraphFile->Read((void*)pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
+                    if (m_pIntergraphFile->Read(pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
                         goto WRAPUP;    // H_ERROR
 
                     m_CompressPacket.SetBuffer(pCompressedData, m_ResSizeInBytes);
@@ -267,7 +267,7 @@ HSTATUS HRFIntergraphLineEditor::ReadBlock( uint32_t pi_PosBlockX,
         // We have random access because the data is uncompressed
         m_pIntergraphFile->SeekToPos(m_RasterOffset + (pi_PosBlockY * m_WidthInByteToRead));
 
-        if (m_pIntergraphFile->Read((void*)po_pData, sizeof(Byte) * m_WidthInByteToRead) != sizeof(Byte) * m_WidthInByteToRead)
+        if (m_pIntergraphFile->Read(po_pData, sizeof(Byte) * m_WidthInByteToRead) != sizeof(Byte) * m_WidthInByteToRead)
             goto WRAPUP;    // H_ERROR
 
 #ifdef  HRF_DEBUG_DUMPSTATONDISK
@@ -293,9 +293,10 @@ WRAPUP:
 // public
 // WriteBlock
 //-----------------------------------------------------------------------------
-HSTATUS HRFIntergraphLineEditor::ReadBlockRLE  (uint32_t pi_PosBlockX, uint32_t pi_PosBlockY,
-                                                HFCPtr<HCDPacketRLE>& pio_rpPacketRLE,
-                                                HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFIntergraphLineEditor::ReadBlockRLE(uint64_t pi_PosBlockX,
+                                              uint64_t pi_PosBlockY,
+                                              HFCPtr<HCDPacketRLE>& pio_rpPacketRLE,
+                                              HFCLockMonitor const* pi_pSisterFileLock)
     {
 
     // We assume that we have check the header file integrity in the
@@ -368,7 +369,7 @@ HSTATUS HRFIntergraphLineEditor::ReadBlockRLE  (uint32_t pi_PosBlockX, uint32_t 
             // Read the entire compressed pixels in memory
             Byte* pCompressedData = new Byte[m_ResSizeInBytes];
 
-            if (m_pIntergraphFile->Read((void*)pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
+            if (m_pIntergraphFile->Read(pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
                 goto WRAPUP;    // H_ERROR
 
             m_CompressPacket.SetBuffer(pCompressedData, m_ResSizeInBytes);
@@ -381,7 +382,7 @@ HSTATUS HRFIntergraphLineEditor::ReadBlockRLE  (uint32_t pi_PosBlockX, uint32_t 
             }
 
         // Move to the needed line
-        for (uint32_t Line = m_CurrentReadLine; Line <= pi_PosBlockY; Line++)
+        for (uint64_t Line = m_CurrentReadLine; Line <= pi_PosBlockY; Line++)
             {
             // Decompress directly in RLE.
             pRLECodecInterface->DecompressSubsetToRLE(m_CompressPacket.GetBufferAddress() + m_IntergraphResolutionDescriptor.pCodec->GetCompressedImageIndex(),
@@ -417,9 +418,9 @@ WRAPUP:
 // WriteBlock
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFIntergraphLineEditor::WriteBlock(uint32_t      pi_PosBlockX,
-                                            uint32_t      pi_PosBlockY,
-                                            const Byte*  pi_pData,
+HSTATUS HRFIntergraphLineEditor::WriteBlock(uint64_t       pi_PosBlockX,
+                                            uint64_t       pi_PosBlockY,
+                                            const Byte*    pi_pData,
                                             HFCLockMonitor const* pi_pSisterFileLock)
     {
     HPRECONDITION((pi_PosBlockY == m_CurrentReadLine + 1) || (pi_PosBlockY == 0));
@@ -535,7 +536,7 @@ HSTATUS HRFIntergraphLineEditor::WriteBlock(uint32_t      pi_PosBlockX,
             // Write the line need into the file...
             if (CompressedSize)
                 {
-                if (m_pIntergraphFile->Write((void*)Compress.GetBufferAddress(), CompressedSize) != (CompressedSize))
+                if (m_pIntergraphFile->Write(Compress.GetBufferAddress(), CompressedSize) != (CompressedSize))
                     goto WRAPUP;    // H_ERROR
 
                 if (m_IntergraphResolutionDescriptor.pOverviewEntry != 0)
@@ -596,10 +597,10 @@ WRAPUP:
 // public
 // WriteBlockRLE
 //-----------------------------------------------------------------------------
-HSTATUS HRFIntergraphLineEditor::WriteBlockRLE (uint32_t              pi_PosBlockX,
-                                                uint32_t              pi_PosBlockY,
-                                                HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                                HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFIntergraphLineEditor::WriteBlockRLE(uint64_t               pi_PosBlockX,
+                                               uint64_t               pi_PosBlockY,
+                                               HFCPtr<HCDPacketRLE>&  pi_rpPacketRLE,
+                                               HFCLockMonitor const*  pi_pSisterFileLock)
     {
     HPRECONDITION((pi_PosBlockY == m_CurrentReadLine + 1) || (pi_PosBlockY == 0));
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -694,7 +695,7 @@ HSTATUS HRFIntergraphLineEditor::WriteBlockRLE (uint32_t              pi_PosBloc
         // Write the line need into the file...
         if (CompressedSize)
             {
-            if (m_pIntergraphFile->Write((void*)pRasterData, CompressedSize) != (CompressedSize))
+            if (m_pIntergraphFile->Write(pRasterData, CompressedSize) != (CompressedSize))
                 goto WRAPUP;    // H_ERROR
 
             if (m_IntergraphResolutionDescriptor.pOverviewEntry != 0)

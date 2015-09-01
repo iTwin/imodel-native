@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAOnDemandRaster.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,15 +25,18 @@ BEGIN_BENTLEY_NAMESPACE
 
 END_BENTLEY_NAMESPACE
 
-//MST Need to check
-#define ODMO_XML_SERIALIZATION_SIGNIFICANT_DIGITS 10
+#define DOUBLE_VALUE_BUFFER_LENGTH 1024
+#define DOUBLE_FORMATTING_BUFFER_LENGTH 24
+
+BEGIN_IMAGEPP_NAMESPACE
+void GetDoubleFormatting(WChar* format, size_t maxNbChars);
 
 class HRAOnDemandRaster : public HFCShareableObject<HRAOnDemandRaster>
     {
 public:
 
     // Primary methods
-    _HDLLg              HRAOnDemandRaster(HPMPool*                          pi_pMemPool,
+    IMAGEPP_EXPORT              HRAOnDemandRaster(HPMPool*                          pi_pMemPool,
                                           bool                              pi_IsOpaque,
                                           const HFCPtr<HVEShape>&           pi_rpEffectiveShape,
                                           const WString&                    pi_rRepresentativePSS,
@@ -64,7 +67,7 @@ public:
         void                GetSerializationXMLNode(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSysForSerialization,                                            
                                                     BeXmlNode*                   pio_pOnDemandRasterXMLParentNode) const;        
 
-        _HDLLg bool         GetSourceFileURLs(ListOfRelatedURLs& po_rRelatedURLs);
+        IMAGEPP_EXPORT bool         GetSourceFileURLs(ListOfRelatedURLs& po_rRelatedURLs);
 
     //Miscellaneous Methods
         WString             GetRepresentativePSS() const;
@@ -106,5 +109,6 @@ private:
     mutable HFCPtr<HPSWorldCluster> m_pHPSWorldCluster;
     HGF2DWorldIdentificator         m_CurrentWorldId;                      
     };
+END_IMAGEPP_NAMESPACE
 
 #include "HRAOnDemandRaster.hpp"

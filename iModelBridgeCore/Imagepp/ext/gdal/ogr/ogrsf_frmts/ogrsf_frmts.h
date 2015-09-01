@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsf_frmts.h 21372 2011-01-01 23:53:54Z rouault $
+ * $Id: ogrsf_frmts.h 27044 2014-03-16 23:41:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes related to format registration, and file opening.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999,  Les Technologies SoftMap Inc.
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,6 +31,7 @@
 #ifndef _OGRSF_FRMTS_H_INCLUDED
 #define _OGRSF_FRMTS_H_INCLUDED
 
+#include "cpl_progress.h"
 #include "ogr_feature.h"
 #include "ogr_featurestyle.h"
 
@@ -51,15 +53,24 @@ class OGRSFDriver;
  *
  */
 
+/* Note: any virtual method added to this class must also be added in the */
+/* OGRLayerDecorator and OGRMutexedLayer classes. */
+
 class CPL_DLL OGRLayer
 {
   protected:
     int          m_bFilterIsEnvelope;
     OGRGeometry *m_poFilterGeom;
+    OGRPreparedGeometry *m_pPreparedFilterGeom; /* m_poFilterGeom compiled as a prepared geometry */
     OGREnvelope  m_sFilterEnvelope;
+    int          m_iGeomFieldFilter; // specify the index on which the spatial
+                                     // filter is active.
     
     int          FilterGeometry( OGRGeometry * );
+    //int          FilterGeometry( OGRGeometry *, OGREnvelope* psGeometryEnvelope);
     int          InstallFilter( OGRGeometry * );
+    
+    OGRErr       GetExtentInternal(int iGeomField, OGREnvelope *psExtent, int bForce );
 
   public:
     OGRLayer();
@@ -69,6 +80,11 @@ class CPL_DLL OGRLayer
     virtual void        SetSpatialFilter( OGRGeometry * );
     virtual void        SetSpatialFilterRect( double dfMinX, double dfMinY,
                                               double dfMaxX, double dfMaxY );
+
+    virtual void        SetSpatialFilter( int iGeomField, OGRGeometry * );
+    virtual void        SetSpatialFilterRect( int iGeomField,
+                                            double dfMinX, double dfMinY,
+                                            double dfMaxX, double dfMaxY );
 
     virtual OGRErr      SetAttributeFilter( const char * );
 
@@ -83,17 +99,26 @@ class CPL_DLL OGRLayer
     virtual const char *GetName();
     virtual OGRwkbGeometryType GetGeomType();
     virtual OGRFeatureDefn *GetLayerDefn() = 0;
+    virtual int         FindFieldIndex( const char *pszFieldName, int bExactMatch );
 
-    virtual OGRSpatialReference *GetSpatialRef() { return NULL; }
+    virtual OGRSpatialReference *GetSpatialRef();
 
     virtual int         GetFeatureCount( int bForce = TRUE );
     virtual OGRErr      GetExtent(OGREnvelope *psExtent, int bForce = TRUE);
+    virtual OGRErr      GetExtent(int iGeomField, OGREnvelope *psExtent,
+                                  int bForce = TRUE);
 
     virtual int         TestCapability( const char * ) = 0;
 
     virtual const char *GetInfo( const char * );
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
+                                     int bApproxOK = TRUE );
+    virtual OGRErr      DeleteField( int iField );
+    virtual OGRErr      ReorderFields( int* panMap );
+    virtual OGRErr      AlterFieldDefn( int iField, OGRFieldDefn* poNewFieldDefn, int nFlags );
+
+    virtual OGRErr      CreateGeomField( OGRGeomFieldDefn *poField,
                                      int bApproxOK = TRUE );
 
     virtual OGRErr      SyncToDisk();
@@ -112,12 +137,53 @@ class CPL_DLL OGRLayer
 
     virtual OGRErr      SetIgnoredFields( const char **papszFields );
 
+    OGRErr              Intersection( OGRLayer *pLayerMethod, 
+                                      OGRLayer *pLayerResult, 
+                                      char** papszOptions = NULL, 
+                                      GDALProgressFunc pfnProgress = NULL, 
+                                      void * pProgressArg = NULL );
+    OGRErr              Union( OGRLayer *pLayerMethod, 
+                               OGRLayer *pLayerResult, 
+                               char** papszOptions = NULL, 
+                               GDALProgressFunc pfnProgress = NULL, 
+                               void * pProgressArg = NULL );
+    OGRErr              SymDifference( OGRLayer *pLayerMethod, 
+                                       OGRLayer *pLayerResult, 
+                                       char** papszOptions, 
+                                       GDALProgressFunc pfnProgress, 
+                                       void * pProgressArg );
+    OGRErr              Identity( OGRLayer *pLayerMethod, 
+                                  OGRLayer *pLayerResult, 
+                                  char** papszOptions = NULL, 
+                                  GDALProgressFunc pfnProgress = NULL, 
+                                  void * pProgressArg = NULL );
+    OGRErr              Update( OGRLayer *pLayerMethod, 
+                                OGRLayer *pLayerResult, 
+                                char** papszOptions = NULL, 
+                                GDALProgressFunc pfnProgress = NULL, 
+                                void * pProgressArg = NULL );
+    OGRErr              Clip( OGRLayer *pLayerMethod, 
+                              OGRLayer *pLayerResult, 
+                              char** papszOptions = NULL, 
+                              GDALProgressFunc pfnProgress = NULL, 
+                              void * pProgressArg = NULL );
+    OGRErr              Erase( OGRLayer *pLayerMethod, 
+                               OGRLayer *pLayerResult, 
+                               char** papszOptions = NULL, 
+                               GDALProgressFunc pfnProgress = NULL, 
+                               void * pProgressArg = NULL );
+    
     int                 Reference();
     int                 Dereference();
     int                 GetRefCount() const;
 
     GIntBig             GetFeaturesRead();
-    
+
+    /* non virtual : conveniency wrapper for ReorderFields() */
+    OGRErr              ReorderField( int iOldFieldPos, int iNewFieldPos );
+
+    int                 AttributeFilterEvaluationNeedsGeometry();
+
     /* consider these private */
     OGRErr               InitializeIndexSupport( const char * );
     OGRLayerAttrIndex   *GetIndex() { return m_poAttrIndex; }
@@ -125,6 +191,7 @@ class CPL_DLL OGRLayer
  protected:
     OGRStyleTable       *m_poStyleTable;
     OGRFeatureQuery     *m_poAttrQuery;
+    char                *m_pszAttrQueryString;
     OGRLayerAttrIndex   *m_poAttrIndex;
 
     int                  m_nRefCount;
@@ -152,6 +219,10 @@ class CPL_DLL OGRDataSource
     friend class OGRSFDriverRegistrar;
 
     void        *m_hMutex;
+
+    OGRLayer*       BuildLayerFromSelectInfo(void* psSelectInfo,
+                                             OGRGeometry *poSpatialFilter,
+                                             const char *pszDialect);
 
   public:
 
@@ -196,11 +267,18 @@ class CPL_DLL OGRDataSource
 
     OGRSFDriver        *GetDriver() const;
     void                SetDriver( OGRSFDriver *poDriver );
+    
+    static int          IsGenericSQLDialect(const char* pszDialect);
 
   protected:
 
     OGRErr              ProcessSQLCreateIndex( const char * );
     OGRErr              ProcessSQLDropIndex( const char * );
+    OGRErr              ProcessSQLDropTable( const char * );
+    OGRErr              ProcessSQLAlterTableAddColumn( const char * );
+    OGRErr              ProcessSQLAlterTableDropColumn( const char * );
+    OGRErr              ProcessSQLAlterTableAlterColumn( const char * );
+    OGRErr              ProcessSQLAlterTableRenameColumn( const char * );
 
     OGRStyleTable      *m_poStyleTable;
     int                 m_nRefCount;
@@ -297,6 +375,7 @@ class CPL_DLL OGRSFDriverRegistrar
 CPL_C_START
 void CPL_DLL OGRRegisterAll();
 
+void CPL_DLL RegisterOGRFileGDB();
 void CPL_DLL RegisterOGRShape();
 void CPL_DLL RegisterOGRNTF();
 void CPL_DLL RegisterOGRFME();
@@ -307,6 +386,7 @@ void CPL_DLL RegisterOGRTAB();
 void CPL_DLL RegisterOGRMIF();
 void CPL_DLL RegisterOGROGDI();
 void CPL_DLL RegisterOGRODBC();
+void CPL_DLL RegisterOGRWAsP();
 void CPL_DLL RegisterOGRPG();
 void CPL_DLL RegisterOGRMSSQLSpatial();
 void CPL_DLL RegisterOGRMySQL();
@@ -330,6 +410,7 @@ void CPL_DLL RegisterOGRGRASS();
 void CPL_DLL RegisterOGRPGeo();
 void CPL_DLL RegisterOGRDXFDWG();
 void CPL_DLL RegisterOGRDXF();
+void CPL_DLL RegisterOGRDWG();
 void CPL_DLL RegisterOGRSDE();
 void CPL_DLL RegisterOGRIDB();
 void CPL_DLL RegisterOGRGMT();
@@ -344,6 +425,7 @@ void CPL_DLL RegisterOGRGeoRSS();
 void CPL_DLL RegisterOGRGTM();
 void CPL_DLL RegisterOGRVFK();
 void CPL_DLL RegisterOGRPGDump();
+void CPL_DLL RegisterOGROSM();
 void CPL_DLL RegisterOGRGPSBabel();
 void CPL_DLL RegisterOGRSUA();
 void CPL_DLL RegisterOGROpenAir();
@@ -352,6 +434,27 @@ void CPL_DLL RegisterOGRWFS();
 void CPL_DLL RegisterOGRSOSI();
 void CPL_DLL RegisterOGRHTF();
 void CPL_DLL RegisterOGRAeronavFAA();
+void CPL_DLL RegisterOGRGeomedia();
+void CPL_DLL RegisterOGRMDB();
+void CPL_DLL RegisterOGREDIGEO();
+void CPL_DLL RegisterOGRGFT();
+void CPL_DLL RegisterOGRGME();
+void CPL_DLL RegisterOGRSVG();
+void CPL_DLL RegisterOGRCouchDB();
+void CPL_DLL RegisterOGRIdrisi();
+void CPL_DLL RegisterOGRARCGEN();
+void CPL_DLL RegisterOGRSEGUKOOA();
+void CPL_DLL RegisterOGRSEGY();
+void CPL_DLL RegisterOGRXLS();
+void CPL_DLL RegisterOGRODS();
+void CPL_DLL RegisterOGRXLSX();
+void CPL_DLL RegisterOGRElastic();
+void CPL_DLL RegisterOGRGeoPackage();
+void CPL_DLL RegisterOGRPDF();
+void CPL_DLL RegisterOGRWalk();
+void CPL_DLL RegisterOGRCartoDB();
+void CPL_DLL RegisterOGRSXF();
+void CPL_DLL RegisterOGROpenFileGDB();
 CPL_C_END
 
 

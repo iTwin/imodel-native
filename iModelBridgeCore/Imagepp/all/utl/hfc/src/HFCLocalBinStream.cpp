@@ -8,58 +8,43 @@
 // Methods for class HFCLocalBinStream
 //---------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCLocalBinStream.h>
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HFCUtility.h>
 
 #define SLEEP_TIME 50
 
 // This is the creator that registers itself in the stream-type list.
-
 static struct LocalBinStreamCreator : public HFCBinStream::Creator
     {
     LocalBinStreamCreator()
         {
         HFCLocalBinStream::GetStreamTypeList().insert(HFCLocalBinStream::StreamTypeList::value_type(HFCURLFile::s_SchemeName(), this));
         }
-    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, HFCAccessMode pi_AccessMode, short pi_NbRetry=0) const
+    virtual HFCBinStream* Create(HFCPtr<HFCURL> pi_pURL, uint64_t pi_offSet, HFCAccessMode pi_AccessMode, short pi_NbRetry=0) const override
         {
         HPRECONDITION(pi_pURL != 0);
         HPRECONDITION(pi_pURL->GetSchemeType() == HFCURLFile::s_SchemeName());
-        uint64_t OriginOffset = 0;
-        HFCURLFile* pURL = (HFCURLFile*)pi_pURL.GetPtr();
-        WString Filename = pURL->GetPath();
+        HPRECONDITION(pi_pURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
 
-        if (!pURL->GetHost().empty())
-            {
-            WString::size_type ColonPos = Filename.find(L':');
-            if (ColonPos != WString::npos)
-                {
-                WString OffsetString = Filename.substr(ColonPos+1, Filename.length() - ColonPos - 1);
-                Filename.erase(ColonPos, Filename.length()-ColonPos);
-                swscanf(OffsetString.c_str(), L"%lld", &OriginOffset);
-                }
-            Filename = pURL->GetHost() + L"\\" + Filename;   
-            }
-
+        HFCURLFile* pFileURL = (HFCURLFile*)pi_pURL.GetPtr();
+            
         // No read no write and no create access means that access mode is automatically choosen
 
         HFCBinStream* pLocalBinStream = 0;
-        if ((!pi_AccessMode.m_HasWriteAccess) && (!pi_AccessMode.m_HasReadAccess) && (!pi_AccessMode.m_HasCreateAccess) )
-            pLocalBinStream =  new HFCLocalBinStream(Filename, pi_AccessMode.m_HasWriteShare,
+        if ((!pi_AccessMode.m_HasWriteAccess) && (!pi_AccessMode.m_HasReadAccess) && (!pi_AccessMode.m_HasReadShare) && (!pi_AccessMode.m_HasCreateAccess) )
+            pLocalBinStream =  new HFCLocalBinStream(pFileURL->GetAbsoluteFileName(), pi_AccessMode.m_HasWriteShare,
                                                      pi_AccessMode.m_HasReadShare,
-                                                     false, false, OriginOffset, pi_NbRetry);
+                                                     false, false, pi_offSet, pi_NbRetry);
         else
-            pLocalBinStream = new HFCLocalBinStream(Filename, pi_AccessMode, false, OriginOffset);
+            pLocalBinStream = new HFCLocalBinStream(pFileURL->GetAbsoluteFileName(), pi_AccessMode, false, pi_offSet);
 
         return pLocalBinStream;
         }
     } s_LocalBinStreamCreator;
-
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -163,7 +148,7 @@ void HFCLocalBinStream::Open(const WString& pi_Filename,
     m_AutoRemove        = pi_AutoRemove;
     m_AccessMode        = HFC_NO_ACCESS;
     m_OriginOffset      = pi_OriginOffset;
-    m_LastException     = NO_EXCEPTION;
+    m_pLastException.reset(NULL);
     m_LastSeekStatus    = true;
     m_HasToBeFlushed    = false;
     m_CurrentFileSize       = 0;
@@ -176,11 +161,11 @@ void HFCLocalBinStream::Open(const WString& pi_Filename,
 #if defined (WIP_BEFILE_SHARING)
     DWORD dwShareMode = 0;
     if (pi_ShareRead && pi_ShareWrite)
-        dwShareMode = FILE_SHARE_READ|FILE_SHARE_WRITE;
+        dwShareMode = BeFileSharing::ReadWrite;
     else if (pi_ShareRead)
-        dwShareMode = FILE_SHARE_READ;
+        dwShareMode = BeFileSharing::Read;
     else if (pi_ShareWrite)
-        dwShareMode = FILE_SHARE_WRITE;
+        dwShareMode = BeFileSharing::Write;
 #endif
     WString FilenameWithLongNameTagW = CookFilenameWithLongNameTagW();
 
@@ -229,17 +214,23 @@ void HFCLocalBinStream::Open(const WString& pi_Filename,
                 {
                 OpenStatus = m_BeFile.Create (FilenameWithLongNameTagW.c_str(), true);
 
-                //DM-Android
                 // Try to Create the file if the open failed, try to open it because BeFile set no-sharing on create 
                 if (pi_CreateFile && OpenStatus != BeFileStatus::Success)
-                    OpenStatus = m_BeFile.Open (FilenameWithLongNameTagW.c_str(), access /*WIP_BEFILE_SHARING ,dwShareMode*/);
+                    OpenStatus = m_BeFile.Open (FilenameWithLongNameTagW.c_str(), access/*, WIP_BEFILE_SHARING dwShareMode*/);
+                else
+                    {   // Reopen the file after creation to set the required access mode.
+                    if (OpenStatus == BeFileStatus::Success && (pi_Mode.m_HasReadAccess || m_AccessMode.m_HasWriteShare || m_AccessMode.m_HasWriteShare))
+                        {
+                        m_BeFile.Close();
+                        OpenStatus = m_BeFile.Open(FilenameWithLongNameTagW.c_str(), access/*, WIP_BEFILE_SHARING dwShareMode*/);
+                        }
+                    }
                 }
             else
                 {
                 OpenStatus = m_BeFile.Open (FilenameWithLongNameTagW.c_str(), access /*WIP_BEFILE_SHARING , dwShareMode*/);
 
-                //DM-Android
-                // Try to Create the file if the open failed. (simulate Open_ALWAYS of Windows CreateFile) BeFile doesn't support it //DM-Android
+                // Try to Create the file if the open failed. (simulate Open_ALWAYS of Windows CreateFile) BeFile doesn't support it
                 if (pi_CreateFile && OpenStatus != BeFileStatus::Success)
                     OpenStatus = m_BeFile.Create (FilenameWithLongNameTagW.c_str(), true);
                 }
@@ -247,7 +238,7 @@ void HFCLocalBinStream::Open(const WString& pi_Filename,
         --NbTry;
         if ((NbTry > 0) && !m_BeFile.IsOpen())
             {
-            BeThreadUtilities::BeSleep(SLEEP_TIME*20);
+            BeThreadUtilities::BeSleep(SLEEP_TIME * 20);
 
             // Trace for debugging...
             HDEBUGCODE(WChar pTxt[512]);
@@ -272,38 +263,6 @@ void HFCLocalBinStream::Open(const WString& pi_Filename,
         m_CurrentFileSize = GetSize();
         if (m_AccessMode.m_HasCreateAccess)
             m_WeAreWritingAtTheEnd  = true;
-
-
-#define BUFFERSIZE  256
-        m_StackChar = new WChar[BUFFERSIZE+1];    // +1 for a temporary '\0'
-        m_StackSize=0;
-        m_StackCharIndex=0;
-        m_BufferChar = new char[BUFFERSIZE+1];     // +1 for a temporary '\0'
-        m_BufferCharIndex=0;
-
-        // Check if the file has the UTF-8 header bytes, we verify it only if the file is open
-        // in read mode at least.
-        m_FileIsUTF8Encoded = false;
-        if (pi_IgnoreMode || m_AccessMode.m_HasReadAccess)
-            {
-            unsigned char UTF8Heabder[3];
-            UTF8Heabder[0] = 0;
-            UTF8Heabder[1] = 0;
-            UTF8Heabder[2] = 0;
-
-            // If we found UTF-8 heabder skip it, else reset to the start position.
-            if (Read(UTF8Heabder, 3) == 3)
-                {
-                if (UTF8Heabder[0] == 0xef &&
-                    UTF8Heabder[1] == 0xbb &&
-                    UTF8Heabder[2] == 0xbf)
-                    m_FileIsUTF8Encoded = true;
-                else
-                    SeekToBegin();
-                }
-            else
-                SeekToBegin();
-            }
         }
     }
 
@@ -344,105 +303,6 @@ void HFCLocalBinStream::SetMaxFileSizeSupported(MaxOffsetBitsSupported pi_Offset
     }
 
 //---------------------------------------------------------------------------
-// We are considered that we read all the file in one shot...
-// Return the number of wideChar read.
-//---------------------------------------------------------------------------
-size_t HFCLocalBinStream::Read(WChar* po_pData, size_t pi_DataSize)
-    {
-    HPRECONDITION(pi_DataSize <= UINT32_MAX);
-
-    size_t BytesRead = 0;
-    bool Success = false;
-
-    if (m_LastSeekStatus)
-        {
-        Success = true;
-        while (pi_DataSize > 0)
-            {
-            size_t NbChar = min (pi_DataSize, (m_StackSize-m_StackCharIndex));
-            if (NbChar > 0)
-                {
-                wmemcpy(po_pData, &(m_StackChar[m_StackCharIndex]), NbChar);
-                m_StackCharIndex += NbChar;
-                pi_DataSize -= NbChar;
-                BytesRead += NbChar;
-                }
-
-            // Need more char
-            if (pi_DataSize > 0)
-                {
-                size_t NbByteInBuffer;
-
-                m_StackCharIndex = 0;
-                m_StackSize = 0;
-
-                // We read at the minimun one line of text.
-                uint32_t ReadSize;
-                Success = m_BeFile.Read(&(m_BufferChar[m_BufferCharIndex]),
-                                        &ReadSize,
-                                        (uint32_t)(BUFFERSIZE-m_BufferCharIndex)) == BeFileStatus::Success;
-
-                NbByteInBuffer = ReadSize + m_BufferCharIndex;
-
-                if (NbByteInBuffer > 0)
-                    {
-                    // Search the first Ansi char (<128, that inclue '\n')
-                    // to be able to convert all previous char
-                    size_t AnsiCharPos;
-                    for(AnsiCharPos=NbByteInBuffer-1;
-                        (m_BufferChar[AnsiCharPos] == 0x00 || m_BufferChar[AnsiCharPos] >= 0x80) && AnsiCharPos>=0;
-                        --AnsiCharPos);
-
-                    // Convert it
-                    if (AnsiCharPos >= 0)
-                        {
-                        WString tempoStr;
-                        if (m_FileIsUTF8Encoded)
-                            {
-                            BeStringUtilities::Utf8ToWChar(tempoStr, m_BufferChar, AnsiCharPos+1);
-                            }
-                        else
-                            {
-                            uint32_t codePage;
-                            BeStringUtilities::GetCurrentCodePage(codePage);
-                            BeStringUtilities::LocaleCharToWChar(tempoStr, m_BufferChar, codePage, AnsiCharPos+1);
-                            }
-
-                        // ***** Do not use the "Be" version since it happens a NULL and thus override the last entry.
-                        // BeStringUtilities::Wcsncpy(m_StackChar.get(), BUFFERSIZE, tempoStr.c_str());
-                        wcsncpy(m_StackChar.get(), tempoStr.c_str(), BUFFERSIZE);
-                        m_StackSize =  tempoStr.length();
-                        }
-                    else
-                        HASSERT(false);     // problem no char(<128) found ???
-
-                    // move the chars not used, at the beginning of the buffer.
-                    if (AnsiCharPos < NbByteInBuffer-1)
-                        {
-                        m_BufferCharIndex = NbByteInBuffer-(AnsiCharPos+1);
-                        memcpy(m_BufferChar, &(m_BufferChar[AnsiCharPos+1]), m_BufferCharIndex);
-                        }
-                    else
-                        m_BufferCharIndex = 0;          // The buffer was converted completely
-                    }
-
-                // No enough char...
-                if (m_StackSize == 0)
-                    pi_DataSize = 0;
-                }
-            }
-        }
-    if (!Success)
-        {
-        //Set last error
-        SetLastExceptionClassID();
-        }
-    else
-        m_LastException = NO_EXCEPTION;
-    return BytesRead;
-    }
-
-//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 size_t HFCLocalBinStream::Write(const void* pi_pData, size_t pi_DataSize)
     {
@@ -459,7 +319,7 @@ size_t HFCLocalBinStream::Write(const void* pi_pData, size_t pi_DataSize)
         }
     else
         {
-        m_LastException = NO_EXCEPTION;
+          m_pLastException.reset(NULL);
 
         // Validate if we exceed the maximum file size.
         if (m_WeAreWritingAtTheEnd)
@@ -469,49 +329,7 @@ size_t HFCLocalBinStream::Write(const void* pi_pData, size_t pi_DataSize)
                 {
                 // Indicate an error
                 BytesWritten = 0;
-                m_LastException = HFC_FILE_OUT_OF_RANGE_EXCEPTION;
-                }
-            }
-        }
-
-    m_HasToBeFlushed = (BytesWritten != 0);
-
-    return BytesWritten;
-    }
-
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-size_t HFCLocalBinStream::Write(const WChar* pi_pData, size_t pi_DataSize)
-    {
-    HPRECONDITION(pi_DataSize <= UINT32_MAX);
-
-    uint32_t BytesWritten = 0;
-    bool Success = false;
-
-    if (m_LastSeekStatus)
-        {
-        Utf8String utf8Str;
-        BeStringUtilities::WCharToUtf8(utf8Str,pi_pData,pi_DataSize);
-
-        Success = m_BeFile.Write(&BytesWritten,utf8Str.c_str(), (uint32_t)utf8Str.length()) == BeFileStatus::Success;
-        }
-    if (!Success)
-        {
-        BytesWritten = 0;
-        }
-    else
-        {
-        m_LastException = NO_EXCEPTION;
-
-        // Validate if we exceed the maximum file size.
-        if (m_WeAreWritingAtTheEnd)
-            {
-            m_CurrentFileSize += pi_DataSize;
-            if (m_CurrentFileSize > m_MaxOffsetAcceptable)
-                {
-                // Indicate an error
-                BytesWritten = 0;
-                m_LastException = HFC_FILE_OUT_OF_RANGE_EXCEPTION;
+                m_pLastException.reset(new HFCFileOutOfRangeException(m_Filename));
                 }
             }
         }
@@ -586,12 +404,49 @@ void HFCLocalBinStream::SetLastExceptionClassID()
 
     if (LastError != BeFileStatus::NotLockedError) // Don't throw.. error is normal
         {
-        MapHFCFileExceptionFromBeFileStatus(LastError,
-                                            L"",
-                                            HFC_FILE_NOT_CREATED_EXCEPTION,
-                                            &m_LastException);
+        FileExceptionFromBeFileStatus(LastError);
         }
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Julien.Rossignol 07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void HFCLocalBinStream::FileExceptionFromBeFileStatus(BeFileStatus pi_Status)
+{
+    switch(pi_Status)
+        {
+        case BeFileStatus::SharingViolationError:
+            m_pLastException.reset(new HFCSharingViolationException(m_Filename));
+            m_pLastException->ThrowMyself();
+            break;
+        case BeFileStatus::ReadError:
+            m_pLastException.reset(new HFCReadFaultException(m_Filename));
+            m_pLastException->ThrowMyself();
+            break;
+            case BeFileStatus::NotLockedError:
+            m_pLastException.reset(new HFCFileLockViolationException(m_Filename));
+            m_pLastException->ThrowMyself();
+            break;
+        case BeFileStatus::AccessViolationError:
+            m_pLastException.reset(new HFCFilePermissionDeniedException(m_Filename));
+            m_pLastException->ThrowMyself();
+            break;
+
+        case BeFileStatus::DiskFull:
+            m_pLastException.reset(new HFCNoDiskSpaceLeftException(m_Filename));
+            m_pLastException->ThrowMyself();
+            break;
+
+        case BeFileStatus::TooManyOpenFilesError:
+        case BeFileStatus::FileNotOpenError:
+        default:
+            m_pLastException.reset(new HFCFileNotCreatedException(m_Filename));
+            m_pLastException->ThrowMyself();
+            break;
+        }
+}
+
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -628,7 +483,7 @@ size_t HFCLocalBinStream::Read(void* po_pData, size_t pi_DataSize)
         BytesRead = 0;
     }
     else
-        m_LastException = NO_EXCEPTION;
+    	m_pLastException.reset(NULL);
 
     return BytesRead;
 }

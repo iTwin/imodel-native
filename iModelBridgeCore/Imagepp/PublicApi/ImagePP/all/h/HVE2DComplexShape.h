@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DComplexShape.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DComplexShape
@@ -13,6 +13,9 @@
 
 #include "HVE2DShape.h"
 
+
+BEGIN_IMAGEPP_NAMESPACE
+class HGF2DComplexShape;
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert 
@@ -35,7 +38,7 @@
 class HVE2DComplexShape : public HVE2DShape
     {
 
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1112)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HVE2DShapeId_Complex)
 
 public:
 
@@ -43,6 +46,7 @@ public:
     HVE2DComplexShape();
     HVE2DComplexShape(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     HVE2DComplexShape(const HVE2DShape::SimpleShapeList& pi_rList);
+    HVE2DComplexShape(const HGF2DComplexShape& pi_rShape, const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys);
     HVE2DComplexShape(const HVE2DShape& pi_rShape);
     HVE2DComplexShape(const HVE2DComplexShape&    pi_rObject);
     virtual            ~HVE2DComplexShape();
@@ -143,6 +147,7 @@ private:
     // List of shapes
     ShapeList      m_ShapeList;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DComplexShape.hpp"

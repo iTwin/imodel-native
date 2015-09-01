@@ -2,15 +2,15 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSpotCAPFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Class HRFSpotCAPFile
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRFException.h>
@@ -34,7 +34,6 @@
 
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 
-#include <Imagepp/all/h/HFCResourceLoader.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #include <ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h>
@@ -168,7 +167,7 @@ HRFSpotCAPCreator::HRFSpotCAPCreator()
 //-----------------------------------------------------------------------------
 WString HRFSpotCAPCreator::GetLabel() const
     {
-    return HFCResourceLoader::GetInstance()->GetString(IDS_FILEFORMAT_SpotCap); // Spot CAP File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_SpotCap()); // Spot CAP File Format
     }
 
 //-----------------------------------------------------------------------------
@@ -210,9 +209,7 @@ HFCPtr<HRFRasterFile> HRFSpotCAPCreator::Create(
 bool HRFSpotCAPFile::Create()
     {
     // Open the file
-    m_pFilFile = HFCBinStream::Instanciate(this->GetURL(), GetAccessMode());
-
-    ThrowFileExceptionIfError(m_pFilFile, GetURL()->GetURL());
+    m_pFilFile = HFCBinStream::Instanciate(this->GetURL(), GetAccessMode(), 0, true);
 
     SharingControlCreate();
 
@@ -228,7 +225,9 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                       uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
-    HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID));
+    
+    if(!pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
+        return false;
 
     bool                       Result = false;
     HAutoPtr<HFCBinStream>      pFile;
@@ -242,15 +241,15 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCLockMonitor SisterFileLock (GetLockManager());
 
     // Open the Spot Scenes Records File : CD_DIR.FIL
-    pFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pi_rpURL, 0), HFC_SHARE_READ_ONLY);
-    if (pFile == 0 || pFile->GetLastExceptionID() != NO_EXCEPTION)
+    pFile = HFCBinStream::Instanciate(pi_rpURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
+    if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
     //we allocate just enough to read the SCENEXX parameter
     Header = new char[15 + 1];
     Header[15] = '\0';
     pFile->SeekToBegin();
-    if (pFile->Read((void*)Header, 15) != 15)
+    if (pFile->Read(Header, 15) != 15)
         goto WRAPUP;
 
     BeStringUtilities::Strupr(Header);
@@ -302,9 +301,9 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             (const_cast<HRFSpotCAPCreator*>(this))->ImagSharingControlCreate(ImagFileUrl);
             HFCLockMonitor SisterFileLock(GetImagLockManager());
 
-            pImagDirectoryFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(ImagFileUrl, 0), HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
+            pImagDirectoryFile = HFCBinStream::Instanciate(ImagFileUrl, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
 
-            if (pImagDirectoryFile != 0 && pImagDirectoryFile->GetLastExceptionID() == NO_EXCEPTION)
+            if (pImagDirectoryFile != 0 && pImagDirectoryFile->GetLastException() == 0)
                 {
                 char   CurrentField[5];
                 CurrentField[4] = 0X0;
@@ -432,7 +431,7 @@ HRFSpotCAPFile::HRFSpotCAPFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
     else
         {
@@ -461,7 +460,7 @@ HRFSpotCAPFile::HRFSpotCAPFile(const HFCPtr<HFCURL>& pi_rURL,
     if (GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess)
         {
         //this is a read-only format
-        throw HFCFileException(HFC_FILE_READ_ONLY_EXCEPTION, pi_rURL->GetURL());
+        throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
 
     Initialize();
@@ -493,9 +492,7 @@ bool HRFSpotCAPFile::Open()
 
     if (!m_IsOpen)
         {
-        m_pFilFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(GetURL(), m_Offset),HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
-
-        ThrowFileExceptionIfError(m_pFilFile, GetURL()->GetURL());
+        m_pFilFile = HFCBinStream::Instanciate(GetURL(), m_Offset, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         SharingControlCreate();
@@ -557,7 +554,7 @@ bool HRFSpotCAPFile::ReadFilHeader()
     Header = new char[HeaderLength + 1];
     Header[HeaderLength] = '\0';
     m_pFilFile->SeekToBegin();
-    m_pFilFile->Read((void*)Header, HeaderLength);
+    m_pFilFile->Read(Header, HeaderLength);
 
     BeStringUtilities::Strupr(Header);
     ValueStartPos = strstr((char*)Header, "SCENE");
@@ -622,9 +619,7 @@ bool HRFSpotCAPFile::ReadImagHeader()
         pImagFileURL = new HFCURLFile(FileName + WString(L"IMAG_") + m_SceneNumbers.at(0) + WString(L".DAT"));
 
         //open the IMAG_XX.DAT file
-        m_pImagFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pImagFileURL, 0),HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
-
-        ThrowFileExceptionIfError(m_pImagFile, pImagFileURL->GetURL());
+        m_pImagFile = HFCBinStream::Instanciate(pImagFileURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, 0, true);
 
         // This creates the sister file for file sharing control if necessary.
         ImagSharingControlCreate(pImagFileURL);
@@ -788,7 +783,7 @@ bool HRFSpotCAPFile::ReadLeadHeader()
     pLeadFileURL = new HFCURLFile(FileName + WString(L"LEAD_") + WString(L"01") + WString(L".DAT"));
 
     //open the LEAD_XX.DAT file
-    m_pLeadFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pLeadFileURL, 0), HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
+    m_pLeadFile = HFCBinStream::Instanciate(pLeadFileURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
 
     // This creates the sister file for file sharing control if necessary.
     LeadSharingControlCreate(pLeadFileURL);
@@ -796,7 +791,7 @@ bool HRFSpotCAPFile::ReadLeadHeader()
     // Initialisation of file struct.
     HFCLockMonitor SisterFileLock(GetLeadLockManager());
 
-    if(m_pLeadFile != 0 && m_pLeadFile->GetLastExceptionID() == NO_EXCEPTION)
+    if(m_pLeadFile != 0 && m_pLeadFile->GetLastException() == 0)
         {
         Result = true;
 
@@ -962,7 +957,7 @@ bool HRFSpotCAPFile::ReadVoldHeader()
 
 
     //open the VOLD_XX.DAT file
-    m_pVoldFile = HFCBinStream::Instanciate(CreateCombinedURLAndOffset(pVoldFileURL, 0), HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
+    m_pVoldFile = HFCBinStream::Instanciate(pVoldFileURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
 
     // This creates the sister file for file sharing control if necessary.
     VoldSharingControlCreate(pVoldFileURL);
@@ -970,7 +965,7 @@ bool HRFSpotCAPFile::ReadVoldHeader()
     // Initialisation of file struct.
     HFCLockMonitor SisterFileLock(GetVoldLockManager());
 
-    if(m_pVoldFile != 0 && m_pVoldFile->GetLastExceptionID() == NO_EXCEPTION)
+    if(m_pVoldFile != 0 && m_pVoldFile->GetLastException() == 0)
         {
         Result = true;
 
@@ -1165,7 +1160,7 @@ HFCPtr<HRPPixelType> HRFSpotCAPFile::CreatePixelTypeFromFile() const
 
 
     if (pPixelType == 0)
-        throw HRFException(HRF_PIXEL_TYPE_NOT_SUPPORTED_EXCEPTION, GetURL()->GetURL());
+        throw HRFPixelTypeNotSupportedException(GetURL()->GetURL());
 
     return (pPixelType);
     }
@@ -1528,7 +1523,7 @@ uint32_t HRFSpotCAPFile::GetImageHeight() const
 // Get size of the IMAG_XX.DAT file header
 //-----------------------------------------------------------------------------
 
-INT HRFSpotCAPFile::GetHeaderSize() const
+int32_t HRFSpotCAPFile::GetHeaderSize() const
     {
     return m_ImgHeader.HeaderSize;
     }

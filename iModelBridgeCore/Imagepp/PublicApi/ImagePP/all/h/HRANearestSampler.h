@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRANearestSampler.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -14,12 +14,10 @@
 #include "HRAGenericSampler.h"
 #include "HGF2DRectangle.h"
 
-class HGSGraphicToolAttributes;
-class HGSSurfaceImplementation;
-
+BEGIN_IMAGEPP_NAMESPACE
 class HNOVTABLEINIT HRANearestSampler : public HRAGenericSampler
     {
-    HDECLARE_CLASS_ID(1752, HRAGenericSampler)
+    HDECLARE_CLASS_ID(HRANearestSamplerId_Base, HRAGenericSampler)
 
 public:
 
@@ -40,4 +38,5 @@ private:
     HRANearestSampler(const HRANearestSampler& pi_rObj);
     HRANearestSampler&      operator=(const HRANearestSampler& pi_rObj);
     };
+END_IMAGEPP_NAMESPACE
 

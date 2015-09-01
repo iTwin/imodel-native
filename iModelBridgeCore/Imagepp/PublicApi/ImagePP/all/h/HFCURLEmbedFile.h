@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLEmbedFile.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -19,13 +19,13 @@
 
 // URL specification at this level is:
 // embed:{//Path}
-
+BEGIN_IMAGEPP_NAMESPACE
 
 class HFCURLEmbedFile : public HFCURL
     {
 public:
 
-    HDECLARE_CLASS_ID(1312, HFCURL);
+    HDECLARE_CLASS_ID(HFCURLId_EmbedFile, HFCURL);
     // Define the Scheme label
     static const WString& s_SchemeName()
         {   static const WString Val(L"embed");
@@ -35,15 +35,15 @@ public:
 
     // Primary methods
 
-    _HDLLu                  HFCURLEmbedFile(const WString& pi_rURL, IFileReaderHandler* pi_pHandler);
+    IMAGEPP_EXPORT                  HFCURLEmbedFile(const WString& pi_rURL, IFileReaderHandler* pi_pHandler);
 
     HFCURLEmbedFile() { } // required for persistence
-    _HDLLu virtual         ~HFCURLEmbedFile();
+    IMAGEPP_EXPORT virtual         ~HFCURLEmbedFile();
 
     // Content access methods
 
-    _HDLLu virtual WString  GetURL() const;
-    _HDLLu const WString&   GetPath() const;
+    IMAGEPP_EXPORT virtual WString  GetURL() const;
+    IMAGEPP_EXPORT const WString&   GetPath() const;
 
     // Overriden methods, used in relative path management
 
@@ -52,8 +52,8 @@ public:
     virtual HFCURL*          MakeURLTo(const WString& pi_Path);
 
 
-    _HDLLu  void             RegisterFileReaderHandler(HFCPtr<IFileReaderHandler> pi_pHandler);
-    _HDLLu  HFCPtr<IFileReaderHandler> GetFileReaderHandler() const;
+    IMAGEPP_EXPORT  void             RegisterFileReaderHandler(HFCPtr<IFileReaderHandler> pi_pHandler);
+    IMAGEPP_EXPORT  HFCPtr<IFileReaderHandler> GetFileReaderHandler() const;
 
     //:> HFCStat utilities methods
     void                        SetCreationTime(time_t   pi_NewTime);
@@ -87,6 +87,6 @@ private:
 
     };
 
-
+END_IMAGEPP_NAMESPACE
 #include "HFCURLEmbedFile.hpp"
 

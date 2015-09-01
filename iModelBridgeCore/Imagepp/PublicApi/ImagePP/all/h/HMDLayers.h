@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HMDLayers.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -10,25 +10,26 @@
 #include "HMDMetaDataContainer.h"
 #include "HMDLayerInfo.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HMDLayers : public HMDMetaDataContainer
     {
-    HDECLARE_CLASS_ID(7003, HMDMetaDataContainer);
+    HDECLARE_CLASS_ID(HMDLayersId_Base, HMDMetaDataContainer);
 
 public :
-    _HDLLu HMDLayers();
-    _HDLLu virtual ~HMDLayers();
+    IMAGEPP_EXPORT HMDLayers();
+    IMAGEPP_EXPORT virtual ~HMDLayers();
 
-    _HDLLu HMDLayers(const HMDLayers& pi_rObj);
+    IMAGEPP_EXPORT HMDLayers(const HMDLayers& pi_rObj);
 
-    _HDLLu virtual HFCPtr<HMDMetaDataContainer> Clone() const;
+    IMAGEPP_EXPORT virtual HFCPtr<HMDMetaDataContainer> Clone() const;
 
-    _HDLLu void                          AddLayer       (const HMDLayerInfo*      pi_pLayer);
+    IMAGEPP_EXPORT void                          AddLayer       (const HMDLayerInfo*      pi_pLayer);
 
-    _HDLLu const HMDLayerInfo*           GetLayer       (unsigned short          pi_Index) const;
-    _HDLLu unsigned short                GetNbLayers    () const;
-    _HDLLu bool                          GetIndexFromKey(const WString&           pi_rKey,
+    IMAGEPP_EXPORT const HMDLayerInfo*           GetLayer       (unsigned short          pi_Index) const;
+    IMAGEPP_EXPORT unsigned short                GetNbLayers    () const;
+    IMAGEPP_EXPORT bool                          GetIndexFromKey(const WString&           pi_rKey,
                                                          unsigned short&                 po_rIndex) const;
-    _HDLLu void                          Merge          (const HFCPtr<HMDLayers>& pi_rLayers);
+    IMAGEPP_EXPORT void                          Merge          (const HFCPtr<HMDLayers>& pi_rLayers);
 
 protected:
 
@@ -45,3 +46,4 @@ private :
 
     };
 
+END_IMAGEPP_NAMESPACE

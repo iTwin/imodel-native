@@ -2,9 +2,11 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HIterators.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
+
+BEGIN_IMAGEPP_NAMESPACE
 
 template <typename ContainerType, typename ElementIteratorType, typename IndexIteratorType, typename ElementType>
 void IndexedElementRandomIterator<ContainerType, ElementIteratorType, IndexIteratorType, ElementType>::Increment ()
@@ -22,3 +24,4 @@ void IndexedElementRandomIterator<ContainerType, ElementIteratorType, IndexItera
     --m_IndexIter;
     }
 
+END_IMAGEPP_NAMESPACE

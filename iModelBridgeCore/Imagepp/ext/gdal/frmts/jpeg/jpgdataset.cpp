@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jpgdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
+ * $Id: jpgdataset.cpp 27743 2014-09-26 21:56:05Z rouault $
  *
  * Project:  JPEG JFIF Driver
  * Purpose:  Implement GDAL JPEG Support based on IJG libjpeg.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Portions Copyright (c) Her majesty the Queen in right of Canada as
  * represented by the Minister of National Defence, 2006.
@@ -32,13 +33,27 @@
 
 #include "gdal_pam.h"
 #include "cpl_string.h"
-#include "gdalexif.h"
-#include <zlib/zlib.h>
+
+#include "gdalexif.h"  //IPP 
+#include <zlib/zlib.h>  //IPP 
 
 #include <setjmp.h>
 
+#define TIFF_VERSION            42
 
-CPL_CVSID("$Id: jpgdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
+#define TIFF_BIGENDIAN          0x4d4d
+#define TIFF_LITTLEENDIAN       0x4949
+
+/*
+ * TIFF header.
+ */
+typedef struct {
+        GUInt16  tiff_magic;     /* magic number (defines byte order) */
+        GUInt16  tiff_version;   /* TIFF version number */
+        GUInt32  tiff_diroff;    /* byte offset to first directory */
+} TIFFHeader;
+
+CPL_CVSID("$Id: jpgdataset.cpp 27743 2014-09-26 21:56:05Z rouault $");
 
 CPL_C_START
 #ifdef LIBJPEG_12_PATH 
@@ -48,20 +63,27 @@ CPL_C_START
 #endif
 CPL_C_END
 
+// we believe it is ok to use setjmp() in this situation.
+#ifdef _MSC_VER
+#  pragma warning(disable:4611)
+#endif
+
 #if defined(JPEG_DUAL_MODE_8_12) && !defined(JPGDataset)
-GDALDataset* JPEGDataset12Open(GDALOpenInfo* poOpenInfo);
-GDALDataset*
-        JPEGCreateCopy12( const char * pszFilename, GDALDataset *poSrcDS, 
-                          int bStrict, char ** papszOptions, 
-                          GDALProgressFunc pfnProgress, void * pProgressData );
+GDALDataset* JPEGDataset12Open(const char* pszFilename,
+                               char** papszSiblingFiles,
+                               int nScaleFactor);
+GDALDataset* JPEGDataset12CreateCopy( const char * pszFilename,
+                                    GDALDataset *poSrcDS,
+                                    int bStrict, char ** papszOptions,
+                                    GDALProgressFunc pfnProgress,
+                                    void * pProgressData );
 #endif
 
 CPL_C_START
 void	GDALRegister_JPEG(void);
 CPL_C_END
 
-void jpeg_vsiio_src (j_decompress_ptr cinfo, VSILFILE * infile);
-void jpeg_vsiio_dest (j_compress_ptr cinfo, VSILFILE * outfile);
+#include "vsidataio.h"
 
 /*  
 * Do we want to do special processing suitable for when JSAMPLE is a 
@@ -73,23 +95,63 @@ void jpeg_vsiio_dest (j_compress_ptr cinfo, VSILFILE * outfile);
 #  define JPEG_LIB_MK1_OR_12BIT 1
 #endif
 
+#define Q1table GDALJPEG_Q1table
+#define Q2table GDALJPEG_Q2table
+#define Q3table GDALJPEG_Q3table
+#define Q4table GDALJPEG_Q4table
+#define Q5table GDALJPEG_Q5table
+#define AC_BITS GDALJPEG_AC_BITS
+#define AC_HUFFVAL GDALJPEG_AC_HUFFVAL
+#define DC_BITS GDALJPEG_DC_BITS
+#define DC_HUFFVAL GDALJPEG_DC_HUFFVAL
+
+extern const GByte Q1table[64];
+extern const GByte Q2table[64];
+extern const GByte Q3table[64];
+extern const GByte Q4table[64];
+extern const GByte Q5table[64];
+extern const GByte AC_BITS[16];
+extern const GByte AC_HUFFVAL[256];
+extern const GByte DC_BITS[16];
+extern const GByte DC_HUFFVAL[256];
+
+class JPGDatasetCommon;
+GDALRasterBand* JPGCreateBand(JPGDatasetCommon* poDS, int nBand);
+
+CPLErr JPGAppendMask( const char *pszJPGFilename, GDALRasterBand *poMask,
+                      GDALProgressFunc pfnProgress, void * pProgressData );
+
+typedef struct
+{
+    jmp_buf     setjmp_buffer;
+    int         bNonFatalErrorEncountered;
+    void      (*p_previous_emit_message)(j_common_ptr cinfo, int msg_level);
+} GDALJPEGErrorStruct;
+
 /************************************************************************/
 /* ==================================================================== */
-/*				JPGDataset				*/
+/*                         JPGDatasetCommon                             */
 /* ==================================================================== */
 /************************************************************************/
 
 class JPGRasterBand;
 class JPGMaskBand;
 
-class JPGDataset : public GDALPamDataset
+class JPGDatasetCommon : public GDALPamDataset
 {
+protected:
     friend class JPGRasterBand;
     friend class JPGMaskBand;
 
-    struct jpeg_decompress_struct sDInfo;
-    struct jpeg_error_mgr sJErr;
-    jmp_buf setjmp_buffer;
+    GDALJPEGErrorStruct sErrorStruct;
+    int           ErrorOutOnNonFatalError();
+
+    int           nScaleFactor;
+    int           bHasInitInternalOverviews;
+    int           nInternalOverviewsCurrent;
+    int           nInternalOverviewsToFree;
+    GDALDataset** papoInternalOverviews;
+    void          InitInternalOverviews();
 
     char   *pszProjection;
     int	   bGeoTransformValid;
@@ -104,6 +166,8 @@ class JPGDataset : public GDALPamDataset
     GByte  *pabyScanline;
 
     int    bHasReadEXIFMetadata;
+    int    bHasReadXMPMetadata;
+    int    bHasReadICCMetadata;
     char   **papszMetadata;
     char   **papszSubDatasets;
     int	   bigendian;
@@ -113,26 +177,30 @@ class JPGDataset : public GDALPamDataset
     int	   bSwabflag;
     int    nTiffDirStart;
     int    nTIFFHEADER;
+    int    bHasDoneJpegCreateDecompress;
     int    bHasDoneJpegStartDecompress;
 
-    CPLErr LoadScanline(int);
-    void   Restart();
-    
-    CPLErr EXIFExtractMetadata(VSILFILE *, int);
+    virtual CPLErr LoadScanline(int) = 0;
+    virtual void   Restart() = 0;
+
+    virtual int GetDataPrecision() = 0;
+    virtual int GetOutColorSpace() = 0;
+
     int    EXIFInit(VSILFILE *);
-    void   EXIFPrintData(char *, GUInt16, GUInt32, unsigned char* );
+    void   ReadICCProfile();
 
     int    nQLevel;
-    void   LoadDefaultTables(int);
 
     void   CheckForMask();
     void   DecompressMask();
 
     void   ReadEXIFMetadata();
+    void   ReadXMPMetadata();
 
     int    bHasCheckedForMask;
     JPGMaskBand *poMaskBand;
     GByte  *pabyBitMask;
+    int     bMaskLSBOrder;
 
     GByte  *pabyCMask;
     int    nCMaskSize;
@@ -140,9 +208,19 @@ class JPGDataset : public GDALPamDataset
     J_COLOR_SPACE eGDALColorSpace;   /* color space exposed by GDAL. Not necessarily the in_color_space nor */
                                      /* the out_color_space of JPEG library */
 
+    int    bIsSubfile;
+    int    bHasTriedLoadWorldFileOrTab;
+    void   LoadWorldFileOrTab();
+    CPLString osWldFilename;
+
+    virtual int         CloseDependentDatasets();
+    
+    virtual CPLErr IBuildOverviews( const char *, int, int *,
+                                    int, int *, GDALProgressFunc, void * );
+
   public:
-                 JPGDataset();
-                 ~JPGDataset();
+                 JPGDatasetCommon();
+                 ~JPGDatasetCommon();
 
     virtual CPLErr      IRasterIO( GDALRWFlag, int, int, int, int,
                                    void *, int, int, GDALDataType,
@@ -154,15 +232,51 @@ class JPGDataset : public GDALPamDataset
     virtual const char *GetGCPProjection();
     virtual const GDAL_GCP *GetGCPs();
 
+    virtual char      **GetMetadataDomainList();
     virtual char  **GetMetadata( const char * pszDomain = "" );
     virtual const char *GetMetadataItem( const char * pszName,
                                          const char * pszDomain = "" );
 
+    virtual char **GetFileList(void);
 
-    static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
+    static GDALDataset *Open( GDALOpenInfo * );
+};
+
+/************************************************************************/
+/* ==================================================================== */
+/*                              JPGDataset                              */
+/* ==================================================================== */
+/************************************************************************/
+
+class JPGDataset : public JPGDatasetCommon
+{
+    struct jpeg_decompress_struct sDInfo;
+    struct jpeg_error_mgr sJErr;
+
+    virtual CPLErr LoadScanline(int);
+    virtual void   Restart();
+    virtual int GetDataPrecision() { return sDInfo.data_precision; }
+    virtual int GetOutColorSpace() { return sDInfo.out_color_space; }
+
+    void   LoadDefaultTables(int);
+    void   SetScaleNumAndDenom();
+
+  public:
+                 JPGDataset();
+                 ~JPGDataset();
+
+    static GDALDataset *Open( const char* pszFilename,
+                              char** papszSiblingFiles = NULL,
+                              int nScaleFactor = 1 );
+    static GDALDataset* CreateCopy( const char * pszFilename,
+                                    GDALDataset *poSrcDS,
+                                    int bStrict, char ** papszOptions,
+                                    GDALProgressFunc pfnProgress,
+                                    void * pProgressData );
 
     static void ErrorExit(j_common_ptr cinfo);
+    static void EmitMessage(j_common_ptr cinfo, int msg_level);
 };
 
 /************************************************************************/
@@ -173,7 +287,7 @@ class JPGDataset : public GDALPamDataset
 
 class JPGRasterBand : public GDALPamRasterBand
 {
-    friend class JPGDataset;
+    friend class JPGDatasetCommon;
 
     /* We have to keep a pointer to the JPGDataset that this JPGRasterBand
        belongs to. In some case, we may have this->poGDS != this->poDS
@@ -181,18 +295,23 @@ class JPGRasterBand : public GDALPamRasterBand
        In other words, this->poDS doesn't necessary point to a JPGDataset
        See ticket #1807.
     */
-    JPGDataset	   *poGDS;
+    JPGDatasetCommon   *poGDS;
 
   public:
 
-                   JPGRasterBand( JPGDataset *, int );
+                   JPGRasterBand( JPGDatasetCommon *, int );
 
     virtual CPLErr IReadBlock( int, int, void * );
     virtual GDALColorInterp GetColorInterpretation();
 
     virtual GDALRasterBand *GetMaskBand();
     virtual int             GetMaskFlags();
+    
+    virtual GDALRasterBand *GetOverview(int i);
+    virtual int             GetOverviewCount();
 };
+
+#if !defined(JPGDataset)
 
 /************************************************************************/
 /* ==================================================================== */
@@ -212,7 +331,7 @@ class JPGMaskBand : public GDALRasterBand
 /************************************************************************/
 /*                       ReadEXIFMetadata()                             */
 /************************************************************************/
-void JPGDataset::ReadEXIFMetadata()
+void JPGDatasetCommon::ReadEXIFMetadata()
 {
     if (bHasReadEXIFMetadata)
         return;
@@ -224,16 +343,28 @@ void JPGDataset::ReadEXIFMetadata()
 
     if( EXIFInit(fpImage) )
     {
-        EXIFExtractMetadata(fpImage,nTiffDirStart);
+        EXIFExtractMetadata(papszMetadata,
+                            fpImage, nTiffDirStart,
+                            bSwabflag, nTIFFHEADER,
+                            nExifOffset, nInterOffset, nGPSOffset);
 
-        if(nExifOffset  > 0){ 
-            EXIFExtractMetadata(fpImage,nExifOffset);
+        if(nExifOffset  > 0){
+            EXIFExtractMetadata(papszMetadata,
+                                fpImage, nExifOffset,
+                                bSwabflag, nTIFFHEADER,
+                                nExifOffset, nInterOffset, nGPSOffset);
         }
         if(nInterOffset > 0) {
-            EXIFExtractMetadata(fpImage,nInterOffset);
+            EXIFExtractMetadata(papszMetadata,
+                                fpImage, nInterOffset,
+                                bSwabflag, nTIFFHEADER,
+                                nExifOffset, nInterOffset, nGPSOffset);
         }
         if(nGPSOffset > 0) {
-            EXIFExtractMetadata(fpImage,nGPSOffset);
+            EXIFExtractMetadata(papszMetadata,
+                                fpImage, nGPSOffset,
+                                bSwabflag, nTIFFHEADER,
+                                nExifOffset, nInterOffset, nGPSOffset);
         }
 
         /* Avoid setting the PAM dirty bit just for that */
@@ -252,174 +383,281 @@ void JPGDataset::ReadEXIFMetadata()
 }
 
 /************************************************************************/
+/*                        ReadXMPMetadata()                             */
+/************************************************************************/
+
+/* See §2.1.3 of http://wwwimages.adobe.com/www.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/XMPSpecificationPart3.pdf */
+
+void JPGDatasetCommon::ReadXMPMetadata()
+{
+    if (bHasReadXMPMetadata)
+        return;
+
+    /* Save current position to avoid disturbing JPEG stream decoding */
+    vsi_l_offset nCurOffset = VSIFTellL(fpImage);
+
+/* -------------------------------------------------------------------- */
+/*      Search for APP1 chunk.                                          */
+/* -------------------------------------------------------------------- */
+    GByte abyChunkHeader[2+2+29];
+    int nChunkLoc = 2;
+    int bFoundXMP = FALSE;
+
+    for( ; TRUE; )
+    {
+        if( VSIFSeekL( fpImage, nChunkLoc, SEEK_SET ) != 0 )
+            break;
+
+        if( VSIFReadL( abyChunkHeader, sizeof(abyChunkHeader), 1, fpImage ) != 1 )
+            break;
+
+        if( abyChunkHeader[0] != 0xFF
+            || (abyChunkHeader[1] & 0xf0) != 0xe0 )
+            break; // Not an APP chunk.
+
+        if( abyChunkHeader[1] == 0xe1
+            && strncmp((const char *) abyChunkHeader + 4,"http://ns.adobe.com/xap/1.0/",28) == 0 )
+        {
+            bFoundXMP = TRUE;
+            break; // APP1 - XMP
+        }
+
+        nChunkLoc += 2 + abyChunkHeader[2] * 256 + abyChunkHeader[3];
+    }
+
+    if (bFoundXMP)
+    {
+        int nXMPLength = abyChunkHeader[2] * 256 + abyChunkHeader[3];
+        if (nXMPLength > 2 + 29)
+        {
+            char* pszXMP = (char*)VSIMalloc(nXMPLength - 2 - 29 + 1);
+            if (pszXMP)
+            {
+                if (VSIFReadL( pszXMP, nXMPLength - 2 - 29, 1, fpImage ) == 1)
+                {
+                    pszXMP[nXMPLength - 2 - 29] = '\0';
+
+                    /* Avoid setting the PAM dirty bit just for that */
+                    int nOldPamFlags = nPamFlags;
+
+                    char *apszMDList[2];
+                    apszMDList[0] = pszXMP;
+                    apszMDList[1] = NULL;
+                    SetMetadata(apszMDList, "xml:XMP");
+
+                    nPamFlags = nOldPamFlags;
+                }
+                VSIFree(pszXMP);
+            }
+        }
+    }
+
+    VSIFSeekL( fpImage, nCurOffset, SEEK_SET );
+
+    bHasReadXMPMetadata = TRUE;
+}
+
+/************************************************************************/
+/*                      GetMetadataDomainList()                         */
+/************************************************************************/
+
+char **JPGDatasetCommon::GetMetadataDomainList()
+{
+    return BuildMetadataDomainList(GDALPamDataset::GetMetadataDomainList(),
+                                   TRUE,
+                                   "xml:XMP", "COLOR_PROFILE", NULL);
+}
+
+/************************************************************************/
 /*                           GetMetadata()                              */
 /************************************************************************/
-char  **JPGDataset::GetMetadata( const char * pszDomain )
+char  **JPGDatasetCommon::GetMetadata( const char * pszDomain )
 {
+    if (fpImage == NULL)
+        return NULL;
     if (eAccess == GA_ReadOnly && !bHasReadEXIFMetadata &&
         (pszDomain == NULL || EQUAL(pszDomain, "")))
         ReadEXIFMetadata();
+    if (eAccess == GA_ReadOnly && !bHasReadXMPMetadata &&
+        pszDomain != NULL && EQUAL(pszDomain, "xml:XMP"))
+        ReadXMPMetadata();
+    if (eAccess == GA_ReadOnly && !bHasReadICCMetadata &&
+        pszDomain != NULL && EQUAL(pszDomain, "COLOR_PROFILE"))
+        ReadICCProfile();
     return GDALPamDataset::GetMetadata(pszDomain);
 }
 
 /************************************************************************/
 /*                       GetMetadataItem()                              */
 /************************************************************************/
-const char *JPGDataset::GetMetadataItem( const char * pszName,
+const char *JPGDatasetCommon::GetMetadataItem( const char * pszName,
                                          const char * pszDomain )
 {
+    if (fpImage == NULL)
+        return NULL;
     if (eAccess == GA_ReadOnly && !bHasReadEXIFMetadata &&
         (pszDomain == NULL || EQUAL(pszDomain, "")) &&
         pszName != NULL && EQUALN(pszName, "EXIF_", 5))
         ReadEXIFMetadata();
+    if (eAccess == GA_ReadOnly && !bHasReadICCMetadata &&
+        pszDomain != NULL && EQUAL(pszDomain, "COLOR_PROFILE"))
+        ReadICCProfile();
     return GDALPamDataset::GetMetadataItem(pszName, pszDomain);
 }
 
 /************************************************************************/
-/*                         EXIFPrintData()                              */
+/*                        ReadICCProfile()                              */
+/*                                                                      */
+/*                 Read ICC Profile from APP2 data                      */
 /************************************************************************/
-void JPGDataset::EXIFPrintData(char* pszData, GUInt16 type, 
-			    GUInt32 count, unsigned char* data)
+void JPGDatasetCommon::ReadICCProfile()
 {
-  const char* sep = "";
-  char  pszTemp[128];
-  char* pszDataEnd = pszData;
+    if (bHasReadICCMetadata)
+        return;
+    bHasReadICCMetadata = TRUE;
 
-  pszData[0]='\0';
+    vsi_l_offset nCurOffset = VSIFTellL(fpImage);
 
-  switch (type) {
+    int nTotalSize = 0;
+    int nChunkCount = -1;
+    int anChunkSize[256];
+    char *apChunk[256];
 
-  case TIFF_UNDEFINED:
-  case TIFF_BYTE:
-    for(;count>0;count--) {
-      sprintf(pszTemp, "%s%#02x", sep, *data++), sep = " ";
-      if (strlen(pszTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
-          break;
-      strcat(pszDataEnd,pszTemp);
-      pszDataEnd += strlen(pszDataEnd);
-    }
-    break;
+    memset(anChunkSize, 0, 256 * sizeof(int));
+    memset(apChunk, 0, 256 * sizeof(char*));
 
-  case TIFF_SBYTE:
-    for(;count>0;count--) {
-      sprintf(pszTemp, "%s%d", sep, *(char *)data++), sep = " ";
-      if (strlen(pszTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
-          break;
-      strcat(pszDataEnd,pszTemp);
-      pszDataEnd += strlen(pszDataEnd);
-    }
-    break;
-	  
-  case TIFF_ASCII:
-    memcpy( pszData, data, count );
-    pszData[count] = '\0';
-    break;
+/* -------------------------------------------------------------------- */
+/*      Search for APP2 chunk.                                          */
+/* -------------------------------------------------------------------- */
+    GByte abyChunkHeader[18];
+    int nChunkLoc = 2;
+    bool bOk = true;
 
-  case TIFF_SHORT: {
-    register GUInt16 *wp = (GUInt16*)data;
-    for(;count>0;count--) {
-      sprintf(pszTemp, "%s%u", sep, *wp++), sep = " ";
-      if (strlen(pszTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
-          break;
-      strcat(pszDataEnd,pszTemp);
-      pszDataEnd += strlen(pszDataEnd);
-    }
-    break;
-  }
-  case TIFF_SSHORT: {
-    register GInt16 *wp = (GInt16*)data;
-    for(;count>0;count--) {
-      sprintf(pszTemp, "%s%d", sep, *wp++), sep = " ";
-      strcat(pszData,pszTemp);
-    }
-    break;
-  }
-  case TIFF_LONG: {
-    register GUInt32 *lp = (GUInt32*)data;
-    for(;count>0;count--) {
-      sprintf(pszTemp, "%s%lu", sep, (unsigned long) *lp++);
-      sep = " ";
-      if (strlen(pszTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
-          break;
-      strcat(pszDataEnd,pszTemp);
-      pszDataEnd += strlen(pszDataEnd);
-    }
-    break;
-  }
-  case TIFF_SLONG: {
-    register GInt32 *lp = (GInt32*)data;
-    for(;count>0;count--) {
-      sprintf(pszTemp, "%s%ld", sep, (long) *lp++), sep = " ";
-      if (strlen(pszTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
-          break;
-      strcat(pszDataEnd,pszTemp);
-      pszDataEnd += strlen(pszDataEnd);
-    }
-    break;
-  }
-  case TIFF_RATIONAL: {
-      register GUInt32 *lp = (GUInt32*)data;
-      //      if(bSwabflag)
-      //	  TIFFSwabArrayOfLong((GUInt32*) data, 2*count);
-      for(;count>0;count--) {
-	  if( (lp[0]==0) && (lp[1] == 0) ) {
-	      sprintf(pszTemp,"%s(0)",sep);
-	  }
-	  else{
-	      sprintf(pszTemp, "%s(%g)", sep,
-		      (double) lp[0]/ (double)lp[1]);
-	  }
-	  sep = " ";
-	  lp += 2;
-	  strcat(pszData,pszTemp);
-      }
-      break;
-  }
-  case TIFF_SRATIONAL: {
-    register GInt32 *lp = (GInt32*)data;
-    for(;count>0;count--) {
-      sprintf(pszTemp, "%s(%g)", sep,
-	      (float) lp[0]/ (float) lp[1]);
-      sep = " ";
-      lp += 2;
-      if (strlen(pszTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
-          break;
-      strcat(pszDataEnd,pszTemp);
-      pszDataEnd += strlen(pszDataEnd);
-    }
-    break;
-  }
-  case TIFF_FLOAT: {
-    register float *fp = (float *)data;
-    for(;count>0;count--) {
-      sprintf(pszTemp, "%s%g", sep, *fp++), sep = " ";
-      if (strlen(pszTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
-          break;
-      strcat(pszDataEnd,pszTemp);
-      pszDataEnd += strlen(pszDataEnd);
-    }
-    break;
-  }
-  case TIFF_DOUBLE: {
-    register double *dp = (double *)data;
-    for(;count>0;count--) {
-      sprintf(pszTemp, "%s%g", sep, *dp++), sep = " ";
-      if (strlen(pszTemp) + pszDataEnd - pszData >= MAXSTRINGLENGTH)
-          break;
-      strcat(pszDataEnd,pszTemp);
-      pszDataEnd += strlen(pszDataEnd);
-    }
-    break;
-  }
+    for( ; TRUE; ) 
+    {
+        if( VSIFSeekL( fpImage, nChunkLoc, SEEK_SET ) != 0 )
+            break;
 
-  default:
-    return;
-  }
+        if( VSIFReadL( abyChunkHeader, sizeof(abyChunkHeader), 1, fpImage ) != 1 )
+            break;
 
-  if (type != TIFF_ASCII && count != 0)
-  {
-      CPLError(CE_Warning, CPLE_AppDefined, "EXIF metadata truncated");
-  }
+        if( abyChunkHeader[0] != 0xFF )
+            break; // Not a valid tag
+
+        if (abyChunkHeader[1] == 0xD9)
+            break; // End of image
+
+        if ((abyChunkHeader[1] >= 0xD0) && (abyChunkHeader[1] <= 0xD8))
+        {
+            // Restart tags have no length
+            nChunkLoc += 2;
+            continue;
+        }
+
+        int nChunkLength = abyChunkHeader[2] * 256 + abyChunkHeader[3];
+
+        if( abyChunkHeader[1] == 0xe2
+            && memcmp((const char *) abyChunkHeader + 4,"ICC_PROFILE\0",12) == 0 )
+        {
+            /* Get length and segment ID */
+            /* Header: */
+            /* APP2 tag: 2 bytes */
+            /* App Length: 2 bytes */
+            /* ICC_PROFILE\0 tag: 12 bytes */
+            /* Segment index: 1 bytes */
+            /* Total segments: 1 bytes */
+            int nICCChunkLength = nChunkLength - 16;
+            int nICCChunkID = abyChunkHeader[16];
+            int nICCMaxChunkID = abyChunkHeader[17];
+
+            if (nChunkCount == -1)
+                nChunkCount = nICCMaxChunkID;
+
+            /* Check that all max segment counts are the same */
+            if (nICCMaxChunkID != nChunkCount)
+            {
+                bOk = false;
+                break;
+            }
+
+            /* Check that no segment ID is larger than the total segment count */
+            if ((nICCChunkID > nChunkCount) || (nICCChunkID == 0) || (nChunkCount == 0)) 
+            {
+                bOk = false;
+                break;
+            }
+
+            /* Check if ICC segment already loaded */
+            if (apChunk[nICCChunkID-1] != NULL)
+            {
+                bOk = false;
+                break;
+            }
+
+            /* Load it */
+            apChunk[nICCChunkID-1] = (char*)VSIMalloc(nICCChunkLength);
+            anChunkSize[nICCChunkID-1] = nICCChunkLength;
+
+            if( VSIFReadL( apChunk[nICCChunkID-1], nICCChunkLength, 1, fpImage ) != 1 )
+            {
+                bOk = false;
+                break;
+            }
+        }
+
+        nChunkLoc += 2 + abyChunkHeader[2] * 256 + abyChunkHeader[3];
+    }
+
+    /* Get total size and verify that there are no missing segments */
+    if (bOk)
+    {
+        for(int i = 0; i < nChunkCount; i++)
+        {
+            if (apChunk[i] == NULL)
+            {
+                /* Missing segment... abort */
+                bOk = false;
+                break;
+                
+            }
+            nTotalSize += anChunkSize[i];
+        }
+    }
+
+    /* Merge all segments together and set metadata */
+    if (bOk && nChunkCount > 0)
+    {
+        char *pBuffer = (char*)VSIMalloc(nTotalSize);
+        char *pBufferPtr = pBuffer;
+        for(int i = 0; i < nChunkCount; i++)
+        {
+            memcpy(pBufferPtr, apChunk[i], anChunkSize[i]);
+            pBufferPtr += anChunkSize[i];
+        }
+
+        /* Escape the profile */
+        char *pszBase64Profile = CPLBase64Encode(nTotalSize, (const GByte*)pBuffer);
+
+        /* Avoid setting the PAM dirty bit just for that */
+        int nOldPamFlags = nPamFlags;
+
+        /* Set ICC profile metadata */
+        SetMetadataItem( "SOURCE_ICC_PROFILE", pszBase64Profile, "COLOR_PROFILE" );
+
+        nPamFlags = nOldPamFlags;
+
+        VSIFree(pBuffer);
+        CPLFree(pszBase64Profile);
+    }
+
+    /* Cleanup */
+    for(int i = 0; i < nChunkCount; i++)
+    {
+        if (apChunk[i] != NULL)
+            VSIFree(apChunk[i]);
+    }
+
+    VSIFSeekL( fpImage, nCurOffset, SEEK_SET );
 }
 
 /************************************************************************/
@@ -427,7 +665,7 @@ void JPGDataset::EXIFPrintData(char* pszData, GUInt16 type,
 /*                                                                      */
 /*           Create Metadata from Information file directory APP1       */
 /************************************************************************/
-int JPGDataset::EXIFInit(VSILFILE *fp)
+int JPGDatasetCommon::EXIFInit(VSILFILE *fp)
 {
     int           one = 1;
     TIFFHeader    hdr;
@@ -452,7 +690,7 @@ int JPGDataset::EXIFInit(VSILFILE *fp)
             || (abyChunkHeader[1] & 0xf0) != 0xe0 )
             return FALSE; // Not an APP chunk.
 
-        if( abyChunkHeader[1] == 0xe1 
+        if( abyChunkHeader[1] == 0xe1
             && strncmp((const char *) abyChunkHeader + 4,"Exif",4) == 0 )
         {
             nTIFFHEADER = nChunkLoc + 10;
@@ -468,7 +706,7 @@ int JPGDataset::EXIFInit(VSILFILE *fp)
     VSIFSeekL(fp, nTIFFHEADER, SEEK_SET);
     if(VSIFReadL(&hdr,1,sizeof(hdr),fp) != sizeof(hdr)) 
         CPLError( CE_Failure, CPLE_FileIO,
-                  "Failed to read %d Byte from image header.",
+                  "Failed to read %d byte from image header.",
                   (int) sizeof(hdr));
 
     if (hdr.tiff_magic != TIFF_BIGENDIAN && hdr.tiff_magic != TIFF_LITTLEENDIAN)
@@ -481,8 +719,8 @@ int JPGDataset::EXIFInit(VSILFILE *fp)
 
 
     if (bSwabflag) {
-        TIFFSwabShort(&hdr.tiff_version);
-        TIFFSwabLong(&hdr.tiff_diroff);
+        CPL_SWAP16PTR(&hdr.tiff_version);
+        CPL_SWAP32PTR(&hdr.tiff_diroff);
     }
 
 
@@ -498,267 +736,6 @@ int JPGDataset::EXIFInit(VSILFILE *fp)
               hdr.tiff_version );
 
     return TRUE;
-}
-
-/************************************************************************/
-/*                        EXIFExtractMetadata()                         */
-/*                                                                      */
-/*      Extract all entry from a IFD                                    */
-/************************************************************************/
-CPLErr JPGDataset::EXIFExtractMetadata(VSILFILE *fp, int nOffset)
-{
-    GUInt16        nEntryCount;
-    int space;
-    unsigned int           n,i;
-    char          pszTemp[MAXSTRINGLENGTH];
-    char          pszName[128];
-
-    TIFFDirEntry *poTIFFDirEntry;
-    TIFFDirEntry *poTIFFDir;
-    const struct tagname *poExifTags ;
-    const struct intr_tag *poInterTags = intr_tags;
-    const struct gpsname *poGPSTags;
-
-/* -------------------------------------------------------------------- */
-/*      Read number of entry in directory                               */
-/* -------------------------------------------------------------------- */
-    if( VSIFSeekL(fp, nOffset+nTIFFHEADER, SEEK_SET) != 0 
-        || VSIFReadL(&nEntryCount,1,sizeof(GUInt16),fp) != sizeof(GUInt16) )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Error reading EXIF Directory count at %d.",
-                  nOffset + nTIFFHEADER );
-        return CE_Failure;
-    }
-
-    if (bSwabflag)
-        TIFFSwabShort(&nEntryCount);
-
-    // Some apps write empty directories - see bug 1523.
-    if( nEntryCount == 0 )  
-        return CE_None;
-
-    // Some files are corrupt, a large entry count is a sign of this.
-    if( nEntryCount > 125 )
-    {
-        CPLError( CE_Warning, CPLE_AppDefined,
-                  "Ignoring EXIF directory with unlikely entry count (%d).",
-                  nEntryCount );
-        return CE_Warning;
-    }
-
-    poTIFFDir = (TIFFDirEntry *)CPLMalloc(nEntryCount * sizeof(TIFFDirEntry));
-  
-/* -------------------------------------------------------------------- */
-/*      Read all directory entries                                      */
-/* -------------------------------------------------------------------- */
-    n = VSIFReadL(poTIFFDir, 1,nEntryCount*sizeof(TIFFDirEntry),fp);
-    if (n != nEntryCount*sizeof(TIFFDirEntry)) 
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Could not read all directories");
-        return CE_Failure;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Parse all entry information in this directory                   */
-/* -------------------------------------------------------------------- */
-    for(poTIFFDirEntry = poTIFFDir,i=nEntryCount; i > 0; i--,poTIFFDirEntry++) {
-        if (bSwabflag) {
-            TIFFSwabShort(&poTIFFDirEntry->tdir_tag);
-            TIFFSwabShort(&poTIFFDirEntry->tdir_type);
-            TIFFSwabLong (&poTIFFDirEntry->tdir_count);
-            TIFFSwabLong (&poTIFFDirEntry->tdir_offset);
-        }
-
-/* -------------------------------------------------------------------- */
-/*      Find Tag name in table                                          */
-/* -------------------------------------------------------------------- */
-        pszName[0] = '\0';
-        pszTemp[0] = '\0';
-
-        for (poExifTags = tagnames; poExifTags->tag; poExifTags++)
-            if(poExifTags->tag == poTIFFDirEntry->tdir_tag) {
-                CPLAssert( NULL != poExifTags && NULL != poExifTags->name );
-
-                strcpy(pszName, poExifTags->name);
-                break;
-            }
-
-    
-        if( nOffset == nGPSOffset) {
-            for( poGPSTags = gpstags; poGPSTags->tag != 0xffff; poGPSTags++ ) 
-                if( poGPSTags->tag == poTIFFDirEntry->tdir_tag ) {
-                    CPLAssert( NULL != poGPSTags && NULL != poGPSTags->name );
-                    strcpy(pszName, poGPSTags->name);
-                    break;
-                }
-        }
-/* -------------------------------------------------------------------- */
-/*      If the tag was not found, look into the interoperability table  */
-/* -------------------------------------------------------------------- */
-        if( nOffset == nInterOffset ) {
-            for(poInterTags = intr_tags; poInterTags->tag; poInterTags++)
-                if(poInterTags->tag == poTIFFDirEntry->tdir_tag) {
-                    CPLAssert( NULL != poInterTags && NULL != poInterTags->name );
-                    strcpy(pszName, poInterTags->name);
-                    break;
-                }
-        }
-
-/* -------------------------------------------------------------------- */
-/*      Save important directory tag offset                             */
-/* -------------------------------------------------------------------- */
-        if( poTIFFDirEntry->tdir_tag == EXIFOFFSETTAG )
-            nExifOffset=poTIFFDirEntry->tdir_offset;
-        if( poTIFFDirEntry->tdir_tag == INTEROPERABILITYOFFSET )
-            nInterOffset=poTIFFDirEntry->tdir_offset;
-        if( poTIFFDirEntry->tdir_tag == GPSOFFSETTAG ) {
-            nGPSOffset=poTIFFDirEntry->tdir_offset;
-        }
-
-/* -------------------------------------------------------------------- */
-/*      If we didn't recognise the tag just ignore it.  To see all      */
-/*      tags comment out the continue.                                  */
-/* -------------------------------------------------------------------- */
-        if( pszName[0] == '\0' )
-        {
-            sprintf( pszName, "EXIF_%d", poTIFFDirEntry->tdir_tag );
-            continue;
-        }
-
-/* -------------------------------------------------------------------- */
-/*      For UserComment we need to ignore the language binding and      */
-/*      just return the actual contents.                                */
-/* -------------------------------------------------------------------- */
-        if( EQUAL(pszName,"EXIF_UserComment")  )
-        {
-            poTIFFDirEntry->tdir_type = TIFF_ASCII;
-            
-            if( poTIFFDirEntry->tdir_count >= 8 )
-            {
-                poTIFFDirEntry->tdir_count -= 8;
-                poTIFFDirEntry->tdir_offset += 8;
-            }
-        }
-
-/* -------------------------------------------------------------------- */
-/*      Make some UNDEFINED or BYTE fields ASCII for readability.       */
-/* -------------------------------------------------------------------- */
-        if( EQUAL(pszName,"EXIF_ExifVersion")
-            || EQUAL(pszName,"EXIF_FlashPixVersion")
-            || EQUAL(pszName,"EXIF_MakerNote")
-            || EQUAL(pszName,"GPSProcessingMethod") )
-            poTIFFDirEntry->tdir_type = TIFF_ASCII;
-
-/* -------------------------------------------------------------------- */
-/*      Print tags                                                      */
-/* -------------------------------------------------------------------- */
-        int nDataWidth = TIFFDataWidth((TIFFDataType) poTIFFDirEntry->tdir_type);
-        space = poTIFFDirEntry->tdir_count * nDataWidth;
-
-        /* Previous multiplication could overflow, hence this additional check */
-        if (poTIFFDirEntry->tdir_count > MAXSTRINGLENGTH)
-        {
-            CPLError( CE_Warning, CPLE_AppDefined,
-                      "Too many bytes in tag: %u, ignoring tag.", 
-                      poTIFFDirEntry->tdir_count );
-        }
-        else if (nDataWidth == 0 || poTIFFDirEntry->tdir_type >= TIFF_IFD )
-        {
-            CPLError( CE_Warning, CPLE_AppDefined,
-                      "Invalid or unhandled EXIF data type: %d, ignoring tag.", 
-                      poTIFFDirEntry->tdir_type );
-        }
-/* -------------------------------------------------------------------- */
-/*      This is at most 4 byte data so we can read it from tdir_offset  */
-/* -------------------------------------------------------------------- */
-        else if (space >= 0 && space <= 4) {
-
-            unsigned char data[4];
-            memcpy(data, &poTIFFDirEntry->tdir_offset, 4);
-            if (bSwabflag)
-            {
-                // Unswab 32bit value, and reswab per data type.
-                TIFFSwabLong((GUInt32*) data);
-
-                switch (poTIFFDirEntry->tdir_type) {
-                  case TIFF_LONG:
-                  case TIFF_SLONG:
-                  case TIFF_FLOAT: 
-                    TIFFSwabLong((GUInt32*) data);
-                    break;
-
-                  case TIFF_SSHORT:
-                  case TIFF_SHORT:
-                    TIFFSwabArrayOfShort((GUInt16*) data, 
-                                         poTIFFDirEntry->tdir_count);
-                  break;
-
-                  default:
-                    break;
-                }
-            }
-
-            EXIFPrintData(pszTemp,
-                          poTIFFDirEntry->tdir_type, 
-                          poTIFFDirEntry->tdir_count, data);
-        }
-/* -------------------------------------------------------------------- */
-/*      The data is being read where tdir_offset point to in the file   */
-/* -------------------------------------------------------------------- */
-        else if (space > 0 && space < MAXSTRINGLENGTH) 
-        {
-            unsigned char *data = (unsigned char *)VSIMalloc(space);
-
-            if (data) {
-                VSIFSeekL(fp,poTIFFDirEntry->tdir_offset+nTIFFHEADER,SEEK_SET);
-                VSIFReadL(data, 1, space, fp);
-
-                if (bSwabflag) {
-                    switch (poTIFFDirEntry->tdir_type) {
-                      case TIFF_SHORT:
-                      case TIFF_SSHORT:
-                        TIFFSwabArrayOfShort((GUInt16*) data, 
-                                             poTIFFDirEntry->tdir_count);
-                        break;
-                      case TIFF_LONG:
-                      case TIFF_SLONG:
-                      case TIFF_FLOAT:
-                        TIFFSwabArrayOfLong((GUInt32*) data, 
-                                            poTIFFDirEntry->tdir_count);
-                        break;
-                      case TIFF_RATIONAL:
-                      case TIFF_SRATIONAL:
-                        TIFFSwabArrayOfLong((GUInt32*) data, 
-                                            2*poTIFFDirEntry->tdir_count);
-                        break;
-                      case TIFF_DOUBLE:
-                        TIFFSwabArrayOfDouble((double*) data, 
-                                              poTIFFDirEntry->tdir_count);
-                        break;
-                      default:
-                        break;
-                    }
-                }
-
-                EXIFPrintData(pszTemp, poTIFFDirEntry->tdir_type,
-                              poTIFFDirEntry->tdir_count, data);
-                CPLFree(data);
-            }
-        }
-        else
-        {
-            CPLError( CE_Warning, CPLE_AppDefined,
-                      "Invalid EXIF header size: %ld, ignoring tag.", 
-                      (long) space );
-        }
-
-        papszMetadata = CSLSetNameValue(papszMetadata, pszName, pszTemp);
-    }
-    CPLFree(poTIFFDir);
-
-    return CE_None;
 }
 
 /************************************************************************/
@@ -783,8 +760,7 @@ JPGMaskBand::JPGMaskBand( JPGDataset *poDS )
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr JPGMaskBand::IReadBlock( int nBlockX, int nBlockY, void *pImage )
-
+CPLErr JPGMaskBand::IReadBlock( CPL_UNUSED int nBlockX, int nBlockY, void *pImage )
 {
     JPGDataset *poJDS = (JPGDataset *) poDS;
 
@@ -799,15 +775,29 @@ CPLErr JPGMaskBand::IReadBlock( int nBlockX, int nBlockY, void *pImage )
 /*      Set mask based on bitmask for this scanline.                    */
 /* -------------------------------------------------------------------- */
     int iX;
-    int iBit = nBlockY * nBlockXSize;
+    GUInt32 iBit = (GUInt32)nBlockY * (GUInt32)nBlockXSize;
 
-    for( iX = 0; iX < nBlockXSize; iX++ )
+    if( poJDS->bMaskLSBOrder )
     {
-        if( poJDS->pabyBitMask[iBit>>3] & (0x1 << (iBit&7)) )
-            ((GByte *) pImage)[iX] = 255;
-        else
-            ((GByte *) pImage)[iX] = 0;
-        iBit++;
+        for( iX = 0; iX < nBlockXSize; iX++ )
+        {
+            if( poJDS->pabyBitMask[iBit>>3] & (0x1 << (iBit&7)) )
+                ((GByte *) pImage)[iX] = 255;
+            else
+                ((GByte *) pImage)[iX] = 0;
+            iBit++;
+        }
+    }
+    else
+    {
+        for( iX = 0; iX < nBlockXSize; iX++ )
+        {
+            if( poJDS->pabyBitMask[iBit>>3] & (0x1 << (7 - (iBit&7))) )
+                ((GByte *) pImage)[iX] = 255;
+            else
+                ((GByte *) pImage)[iX] = 0;
+            iBit++;
+        }
     }
 
     return CE_None;
@@ -817,13 +807,13 @@ CPLErr JPGMaskBand::IReadBlock( int nBlockX, int nBlockY, void *pImage )
 /*                           JPGRasterBand()                            */
 /************************************************************************/
 
-JPGRasterBand::JPGRasterBand( JPGDataset *poDS, int nBand )
+JPGRasterBand::JPGRasterBand( JPGDatasetCommon *poDS, int nBand )
 
 {
     this->poDS = poGDS = poDS;
 
     this->nBand = nBand;
-    if( poDS->sDInfo.data_precision == 12 )
+    if( poDS->GetDataPrecision() == 12 )
         eDataType = GDT_UInt16;
     else
         eDataType = GDT_Byte;
@@ -832,6 +822,15 @@ JPGRasterBand::JPGRasterBand( JPGDataset *poDS, int nBand )
     nBlockYSize = 1;
 
     GDALMajorObject::SetMetadataItem("COMPRESSION","JPEG","IMAGE_STRUCTURE");
+}
+
+/************************************************************************/
+/*                           JPGCreateBand()                            */
+/************************************************************************/
+
+GDALRasterBand* JPGCreateBand(JPGDatasetCommon* poDS, int nBand)
+{
+    return new JPGRasterBand(poDS, nBand);
 }
 
 /************************************************************************/
@@ -847,6 +846,12 @@ CPLErr JPGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     int         nWordSize = GDALGetDataTypeSize(eDataType) / 8;
     
     CPLAssert( nBlockXOff == 0 );
+
+    if (poGDS->fpImage == NULL)
+    {
+        memset( pImage, 0, nXSize * nWordSize );
+        return CE_None;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Load the desired scanline into the working buffer.              */
@@ -877,7 +882,7 @@ CPLErr JPGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                        nXSize );
 #else
         if (poGDS->eGDALColorSpace == JCS_RGB &&
-            poGDS->sDInfo.out_color_space == JCS_CMYK)
+            poGDS->GetOutColorSpace() == JCS_CMYK)
         {
             CPLAssert(eDataType == GDT_Byte);
             int i;
@@ -887,7 +892,7 @@ CPLErr JPGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                 {
                     int C = poGDS->pabyScanline[i * 4 + 0];
                     int K = poGDS->pabyScanline[i * 4 + 3];
-                    ((GByte*)pImage)[i] = (C * K) / 255;
+                    ((GByte*)pImage)[i] = (GByte) ((C * K) / 255);
                 }
             }
             else  if (nBand == 2)
@@ -896,7 +901,7 @@ CPLErr JPGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                 {
                     int M = poGDS->pabyScanline[i * 4 + 1];
                     int K = poGDS->pabyScanline[i * 4 + 3];
-                    ((GByte*)pImage)[i] = (M * K) / 255;
+                    ((GByte*)pImage)[i] = (GByte) ((M * K) / 255);
                 }
             }
             else if (nBand == 3)
@@ -905,7 +910,7 @@ CPLErr JPGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
                 {
                     int Y = poGDS->pabyScanline[i * 4 + 2];
                     int K = poGDS->pabyScanline[i * 4 + 3];
-                    ((GByte*)pImage)[i] = (Y * K) / 255;
+                    ((GByte*)pImage)[i] = (GByte) ((Y * K) / 255);
                 }
             }
         }
@@ -931,7 +936,8 @@ CPLErr JPGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         {
             poBlock = 
                 poGDS->GetRasterBand(iBand)->GetLockedBlockRef(nBlockXOff,nBlockYOff);
-            poBlock->DropLock();
+            if( poBlock != NULL )
+                poBlock->DropLock();
         }
     }
 
@@ -1003,9 +1009,16 @@ GDALColorInterp JPGRasterBand::GetColorInterpretation()
 GDALRasterBand *JPGRasterBand::GetMaskBand()
 
 {
+    if (poGDS->nScaleFactor > 1 )
+        return GDALPamRasterBand::GetMaskBand();
+
+    if (poGDS->fpImage == NULL)
+        return NULL;
+
     if( !poGDS->bHasCheckedForMask)
     {
-        poGDS->CheckForMask();
+        if( CSLTestBoolean(CPLGetConfigOption("JPEG_READ_MASK", "YES")))
+            poGDS->CheckForMask();
         poGDS->bHasCheckedForMask = TRUE;
     }
     if( poGDS->pabyCMask )
@@ -1026,6 +1039,12 @@ GDALRasterBand *JPGRasterBand::GetMaskBand()
 int JPGRasterBand::GetMaskFlags()
 
 {
+    if (poGDS->nScaleFactor > 1 )
+        return GDALPamRasterBand::GetMaskFlags();
+
+    if (poGDS->fpImage == NULL)
+        return 0;
+
     GetMaskBand();
     if( poGDS->poMaskBand != NULL )
         return GMF_PER_DATASET;
@@ -1034,23 +1053,59 @@ int JPGRasterBand::GetMaskFlags()
 }
 
 /************************************************************************/
+/*                            GetOverview()                             */
+/************************************************************************/
+
+GDALRasterBand* JPGRasterBand::GetOverview(int i)
+{
+    poGDS->InitInternalOverviews();
+
+    if( poGDS->nInternalOverviewsCurrent == 0 )
+        return GDALPamRasterBand::GetOverview(i);
+
+    if( i < 0 || i >= poGDS->nInternalOverviewsCurrent )
+        return NULL;
+    else
+        return poGDS->papoInternalOverviews[i]->GetRasterBand(nBand);
+}
+
+/************************************************************************/
+/*                         GetOverviewCount()                           */
+/************************************************************************/
+
+int JPGRasterBand::GetOverviewCount()
+{
+    poGDS->InitInternalOverviews();
+
+    if( poGDS->nInternalOverviewsCurrent == 0 )
+        return GDALPamRasterBand::GetOverviewCount();
+
+    return poGDS->nInternalOverviewsCurrent;
+}
+
+/************************************************************************/
 /* ==================================================================== */
 /*                             JPGDataset                               */
 /* ==================================================================== */
 /************************************************************************/
 
-
-/************************************************************************/
-/*                            JPGDataset()                              */
-/************************************************************************/
-
-JPGDataset::JPGDataset()
+JPGDatasetCommon::JPGDatasetCommon()
 
 {
+    fpImage = NULL;
+
+    nScaleFactor = 1;
+    bHasInitInternalOverviews = FALSE;
+    nInternalOverviewsCurrent = 0;
+    nInternalOverviewsToFree = 0;
+    papoInternalOverviews = NULL;
+
     pabyScanline = NULL;
     nLoadedScanline = -1;
 
     bHasReadEXIFMetadata = FALSE;
+    bHasReadXMPMetadata = FALSE;
+    bHasReadICCMetadata = FALSE;
     papszMetadata   = NULL;
     papszSubDatasets= NULL;
     nExifOffset     = -1;
@@ -1068,29 +1123,32 @@ JPGDataset::JPGDataset()
     nGCPCount = 0;
     pasGCPList = NULL;
 
+    bHasDoneJpegCreateDecompress = FALSE;
     bHasDoneJpegStartDecompress = FALSE;
 
     bHasCheckedForMask = FALSE;
     poMaskBand = NULL;
     pabyBitMask = NULL;
+    bMaskLSBOrder = TRUE;
     pabyCMask = NULL;
     nCMaskSize = 0;
 
     eGDALColorSpace = JCS_UNKNOWN;
+
+    bIsSubfile = FALSE;
+    bHasTriedLoadWorldFileOrTab = FALSE;
+
+    sErrorStruct.bNonFatalErrorEncountered = FALSE;
+    sErrorStruct.p_previous_emit_message = NULL;
 }
 
 /************************************************************************/
-/*                           ~JPGDataset()                            */
+/*                           ~JPGDataset()                              */
 /************************************************************************/
 
-JPGDataset::~JPGDataset()
+JPGDatasetCommon::~JPGDatasetCommon()
 
 {
-    FlushCache();
-
-    jpeg_abort_decompress( &sDInfo );
-    jpeg_destroy_decompress( &sDInfo );
-
     if( fpImage != NULL )
         VSIFCloseL( fpImage );
 
@@ -1111,6 +1169,149 @@ JPGDataset::~JPGDataset()
     CPLFree( pabyBitMask );
     CPLFree( pabyCMask );
     delete poMaskBand;
+
+    CloseDependentDatasets();
+}
+
+/************************************************************************/
+/*                       CloseDependentDatasets()                       */
+/************************************************************************/
+
+int JPGDatasetCommon::CloseDependentDatasets()
+{
+    int bRet = GDALPamDataset::CloseDependentDatasets();
+    if( nInternalOverviewsToFree )
+    {
+        bRet = TRUE;
+        for(int i = 0; i < nInternalOverviewsToFree; i++)
+            delete papoInternalOverviews[i];
+        nInternalOverviewsToFree = 0;
+    }
+    CPLFree(papoInternalOverviews);
+    papoInternalOverviews = NULL;
+
+    return bRet;
+}
+
+/************************************************************************/
+/*                       InitInternalOverviews()                        */
+/************************************************************************/
+
+void JPGDatasetCommon::InitInternalOverviews()
+{
+    if( bHasInitInternalOverviews )
+        return;
+    bHasInitInternalOverviews = TRUE;
+
+/* -------------------------------------------------------------------- */
+/*      Instanciate on-the-fly overviews (if no external ones).         */
+/* -------------------------------------------------------------------- */
+    if( nScaleFactor == 1 && GetRasterBand(1)->GetOverviewCount() == 0 )
+    {
+        /* libjpeg-6b only suppports 2, 4 and 8 scale denominators */
+        /* TODO: Later versions support more */
+
+        int i;
+        int nInternalOverviews = 0;
+
+        for(i = 2; i >= 0; i--)
+        {
+            if( nRasterXSize >= (256 << i) || nRasterYSize >= (256 << i) )
+            {
+                nInternalOverviews = i + 1;
+                break;
+            }
+        }
+
+        if( nInternalOverviews > 0 )
+        {
+            papoInternalOverviews = (GDALDataset**)
+                    CPLMalloc(nInternalOverviews * sizeof(GDALDataset*));
+            for(i = 0; i < nInternalOverviews; i++ )
+            {
+                papoInternalOverviews[i] =
+                    JPGDataset::Open(GetDescription(), NULL, 1 << (i + 1));
+                if( papoInternalOverviews[i] == NULL )
+                {
+                    nInternalOverviews = i;
+                    break;
+                }
+            }
+
+            nInternalOverviewsCurrent = nInternalOverviewsToFree = nInternalOverviews;
+        }
+    }
+}
+
+/************************************************************************/
+/*                          IBuildOverviews()                           */
+/************************************************************************/
+
+CPLErr JPGDatasetCommon::IBuildOverviews( const char *pszResampling, 
+                                          int nOverviewsListCount,
+                                          int *panOverviewList, 
+                                          int nListBands, int *panBandList,
+                                          GDALProgressFunc pfnProgress, 
+                                          void * pProgressData )
+{
+    CPLErr eErr;
+
+    bHasInitInternalOverviews = TRUE;
+    nInternalOverviewsCurrent = 0;
+
+    eErr = GDALPamDataset::IBuildOverviews(pszResampling,
+                                           nOverviewsListCount,
+                                           panOverviewList,
+                                           nListBands, panBandList,
+                                           pfnProgress, pProgressData);
+
+    return eErr;
+}
+
+/************************************************************************/
+/*                      ErrorOutOnNonFatalError()                       */
+/************************************************************************/
+
+int JPGDatasetCommon::ErrorOutOnNonFatalError()
+{
+    if( sErrorStruct.bNonFatalErrorEncountered )
+    {
+        sErrorStruct.bNonFatalErrorEncountered = FALSE;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+
+#endif // !defined(JPGDataset)
+
+/************************************************************************/
+/*                            JPGDataset()                              */
+/************************************************************************/
+
+JPGDataset::JPGDataset()
+
+{
+    sDInfo.data_precision = 8;
+}
+
+/************************************************************************/
+/*                           ~JPGDataset()                            */
+/************************************************************************/
+
+JPGDataset::~JPGDataset()
+
+{
+    FlushCache();
+
+    if (bHasDoneJpegStartDecompress)
+    {
+        jpeg_abort_decompress( &sDInfo );
+    }
+    if (bHasDoneJpegCreateDecompress)
+    {
+        jpeg_destroy_decompress( &sDInfo );
+    }
 }
 
 /************************************************************************/
@@ -1124,7 +1325,7 @@ CPLErr JPGDataset::LoadScanline( int iLine )
         return CE_None;
 
     // setup to trap a fatal error.
-    if (setjmp(setjmp_buffer)) 
+    if (setjmp(sErrorStruct.setjmp_buffer)) 
         return CE_Failure;
 
     if (!bHasDoneJpegStartDecompress)
@@ -1167,6 +1368,8 @@ CPLErr JPGDataset::LoadScanline( int iLine )
             
         ppSamples = (JSAMPLE *) pabyScanline;
         jpeg_read_scanlines( &sDInfo, &ppSamples, 1 );
+        if( ErrorOutOnNonFatalError() )
+            return CE_Failure;
         nLoadedScanline++;
     }
 
@@ -1177,7 +1380,9 @@ CPLErr JPGDataset::LoadScanline( int iLine )
 /*                         LoadDefaultTables()                          */
 /************************************************************************/
 
-const static GByte Q1table[64] = 
+#if !defined(JPGDataset)
+
+const GByte Q1table[64] =
 {
    8,    72,  72,  72,  72,  72,  72,  72, // 0 - 7
     72,   72,  78,  74,  76,  74,  78,  89, // 8 - 15
@@ -1189,8 +1394,8 @@ const static GByte Q1table[64] =
     255, 255, 255, 255, 255, 255, 255, 255  // 56 - 63
 };
 
-const static GByte Q2table[64] = 
-{ 
+const GByte Q2table[64] =
+{
     8, 36, 36, 36,
     36, 36, 36, 36, 36, 36, 39, 37, 38, 37, 39, 45, 41, 42, 42, 41, 45, 53,
     47, 47, 50, 47, 47, 53, 65, 56, 54, 59, 59, 54, 56, 65, 68, 64, 69, 73,
@@ -1198,8 +1403,8 @@ const static GByte Q2table[64] =
     178,190,178,243,243,255
 };
 
-const static GByte Q3table[64] = 
-{ 
+const GByte Q3table[64] =
+{
      8, 10, 10, 10,
     10, 10, 10, 10, 10, 10, 11, 10, 11, 10, 11, 13, 11, 12, 12, 11, 13, 15, 
     13, 13, 14, 13, 13, 15, 18, 16, 15, 16, 16, 15, 16, 18, 19, 18, 19, 21, 
@@ -1207,7 +1412,7 @@ const static GByte Q3table[64] =
     50, 53, 50, 68, 68, 91 
 }; 
 
-const static GByte Q4table[64] = 
+const GByte Q4table[64] =
 {
     8, 7, 7, 7,
     7, 7, 7, 7, 7, 7, 8, 7, 8, 7, 8, 9, 8, 8, 8, 8, 9, 11, 
@@ -1216,7 +1421,7 @@ const static GByte Q4table[64] =
     36, 38, 36, 49, 49, 65
 };
 
-const static GByte Q5table[64] = 
+const GByte Q5table[64] =
 {
     4, 4, 4, 4, 
     4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6,
@@ -1225,10 +1430,10 @@ const static GByte Q5table[64] =
     20, 21, 20, 27, 27, 36
 };
 
-static const GByte AC_BITS[16] = 
+const GByte AC_BITS[16] =
 { 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 125 };
 
-static const GByte AC_HUFFVAL[256] = {
+const GByte AC_HUFFVAL[256] = {
     0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,          
     0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
     0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xA1, 0x08,
@@ -1260,16 +1465,16 @@ static const GByte AC_HUFFVAL[256] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-static const GByte DC_BITS[16] = 
+const GByte DC_BITS[16] =
 { 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
 
-static const GByte DC_HUFFVAL[256] = {
+const GByte DC_HUFFVAL[256] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
     0x08, 0x09, 0x0A, 0x0B };
 
+#endif // !defined(JPGDataset)
 
 void JPGDataset::LoadDefaultTables( int n )
-
 {
     if( nQLevel < 1 )
         return;
@@ -1347,6 +1552,21 @@ void JPGDataset::LoadDefaultTables( int n )
 }
 
 /************************************************************************/
+/*                       SetScaleNumAndDenom()                          */
+/************************************************************************/
+
+void JPGDataset::SetScaleNumAndDenom()
+{
+#if JPEG_LIB_VERSION > 62
+    sDInfo.scale_num = 8 / nScaleFactor;
+    sDInfo.scale_denom = 8;
+#else
+    sDInfo.scale_num = 1;
+    sDInfo.scale_denom = nScaleFactor;
+#endif
+}
+
+/************************************************************************/
 /*                              Restart()                               */
 /*                                                                      */
 /*      Restart compressor at the beginning of the file.                */
@@ -1373,20 +1593,29 @@ void JPGDataset::Restart()
 
     jpeg_vsiio_src( &sDInfo, fpImage );
     jpeg_read_header( &sDInfo, TRUE );
-    
+
     sDInfo.out_color_space = colorSpace;
     nLoadedScanline = -1;
+    SetScaleNumAndDenom();
     jpeg_start_decompress( &sDInfo );
     bHasDoneJpegStartDecompress = TRUE;
 }
+
+#if !defined(JPGDataset)
 
 /************************************************************************/
 /*                          GetGeoTransform()                           */
 /************************************************************************/
 
-CPLErr JPGDataset::GetGeoTransform( double * padfTransform )
+CPLErr JPGDatasetCommon::GetGeoTransform( double * padfTransform )
 
 {
+    CPLErr eErr = GDALPamDataset::GetGeoTransform( padfTransform );
+    if( eErr != CE_Failure )
+        return eErr;
+
+    LoadWorldFileOrTab();
+
     if( bGeoTransformValid )
     {
         memcpy( padfTransform, adfGeoTransform, sizeof(double)*6 );
@@ -1394,16 +1623,22 @@ CPLErr JPGDataset::GetGeoTransform( double * padfTransform )
         return CE_None;
     }
     else 
-        return GDALPamDataset::GetGeoTransform( padfTransform );
+        return eErr;
 }
 
 /************************************************************************/
 /*                            GetGCPCount()                             */
 /************************************************************************/
 
-int JPGDataset::GetGCPCount()
+int JPGDatasetCommon::GetGCPCount()
 
 {
+    int nPAMGCPCount = GDALPamDataset::GetGCPCount();
+    if( nPAMGCPCount != 0 )
+        return nPAMGCPCount;
+
+    LoadWorldFileOrTab();
+
     return nGCPCount;
 }
 
@@ -1411,9 +1646,15 @@ int JPGDataset::GetGCPCount()
 /*                          GetGCPProjection()                          */
 /************************************************************************/
 
-const char *JPGDataset::GetGCPProjection()
+const char *JPGDatasetCommon::GetGCPProjection()
 
 {
+    int nPAMGCPCount = GDALPamDataset::GetGCPCount();
+    if( nPAMGCPCount != 0 )
+        return GDALPamDataset::GetGCPProjection();
+
+    LoadWorldFileOrTab();
+
     if( pszProjection && nGCPCount > 0 )
         return pszProjection;
     else
@@ -1424,9 +1665,15 @@ const char *JPGDataset::GetGCPProjection()
 /*                               GetGCPs()                              */
 /************************************************************************/
 
-const GDAL_GCP *JPGDataset::GetGCPs()
+const GDAL_GCP *JPGDatasetCommon::GetGCPs()
 
 {
+    int nPAMGCPCount = GDALPamDataset::GetGCPCount();
+    if( nPAMGCPCount != 0 )
+        return GDALPamDataset::GetGCPs();
+
+    LoadWorldFileOrTab();
+
     return pasGCPList;
 }
 
@@ -1438,7 +1685,7 @@ const GDAL_GCP *JPGDataset::GetGCPs()
 /*      optimizes for that case                                         */
 /************************************************************************/
 
-CPLErr JPGDataset::IRasterIO( GDALRWFlag eRWFlag, 
+CPLErr JPGDatasetCommon::IRasterIO( GDALRWFlag eRWFlag,
                               int nXOff, int nYOff, int nXSize, int nYSize,
                               void *pData, int nBufXSize, int nBufYSize, 
                               GDALDataType eBufType,
@@ -1452,7 +1699,7 @@ CPLErr JPGDataset::IRasterIO( GDALRWFlag eRWFlag,
        (nXOff == 0) && (nXOff == 0) &&
        (nXSize == nBufXSize) && (nXSize == nRasterXSize) &&
        (nYSize == nBufYSize) && (nYSize == nRasterYSize) &&
-       (eBufType == GDT_Byte) && (sDInfo.data_precision != 12) &&
+       (eBufType == GDT_Byte) && (GetDataPrecision() != 12) &&
        /*(nPixelSpace >= 3)*/(nPixelSpace > 3) &&
        (nLineSpace == (nPixelSpace*nXSize)) &&
        (nBandSpace == 1) &&
@@ -1489,6 +1736,7 @@ CPLErr JPGDataset::IRasterIO( GDALRWFlag eRWFlag,
                                      nPixelSpace, nLineSpace, nBandSpace);
 }
 
+#if JPEG_LIB_VERSION_MAJOR < 9
 /************************************************************************/
 /*                    JPEGDatasetIsJPEGLS()                             */
 /************************************************************************/
@@ -1531,12 +1779,13 @@ static int JPEGDatasetIsJPEGLS( GDALOpenInfo * poOpenInfo )
 
     return FALSE;
 }
+#endif
 
 /************************************************************************/
 /*                              Identify()                              */
 /************************************************************************/
 
-int JPGDataset::Identify( GDALOpenInfo * poOpenInfo )
+int JPGDatasetCommon::Identify( GDALOpenInfo * poOpenInfo )
 
 {
     GByte  *pabyHeader = NULL;
@@ -1562,10 +1811,12 @@ int JPGDataset::Identify( GDALOpenInfo * poOpenInfo )
         || pabyHeader[2] != 0xff )
         return FALSE;
 
+#if JPEG_LIB_VERSION_MAJOR < 9
     if (JPEGDatasetIsJPEGLS(poOpenInfo))
     {
         return FALSE;
     }
+#endif
 
     return TRUE;
 }
@@ -1574,7 +1825,7 @@ int JPGDataset::Identify( GDALOpenInfo * poOpenInfo )
 /*                                Open()                                */
 /************************************************************************/
 
-GDALDataset *JPGDataset::Open( GDALOpenInfo * poOpenInfo )
+GDALDataset *JPGDatasetCommon::Open( GDALOpenInfo * poOpenInfo )
 
 {
     if( !Identify( poOpenInfo ) )
@@ -1588,24 +1839,36 @@ GDALDataset *JPGDataset::Open( GDALOpenInfo * poOpenInfo )
         return NULL;
     }
 
+    return JPGDataset::Open(poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles);
+}
+
+#endif // !defined(JPGDataset)
+
+/************************************************************************/
+/*                                Open()                                */
+/************************************************************************/
+
+GDALDataset *JPGDataset::Open( const char* pszFilename, char** papszSiblingFiles,
+                               int nScaleFactor )
+
+{
 /* -------------------------------------------------------------------- */
 /*      If it is a subfile, read the JPEG header.                       */
 /* -------------------------------------------------------------------- */
     int bIsSubfile = FALSE;
     GUIntBig subfile_offset = 0;
     GUIntBig subfile_size = 0;
-    const char *real_filename = poOpenInfo->pszFilename;
+    const char *real_filename = pszFilename;
     int nQLevel = -1;
 
-    if( ( poOpenInfo->fp == NULL ) &&
-        ( EQUALN(poOpenInfo->pszFilename,"JPEG_SUBFILE:",13) ) )
+    if( EQUALN(pszFilename,"JPEG_SUBFILE:",13) )
     {
         char** papszTokens;
         int bScan = FALSE;
 
-        if( EQUALN(poOpenInfo->pszFilename,"JPEG_SUBFILE:Q",14) )
+        if( EQUALN(pszFilename,"JPEG_SUBFILE:Q",14) )
         {
-            papszTokens = CSLTokenizeString2(poOpenInfo->pszFilename + 14, ",", 0);
+            papszTokens = CSLTokenizeString2(pszFilename + 14, ",", 0);
             if (CSLCount(papszTokens) >= 3)
             {
                 nQLevel = atoi(papszTokens[0]);
@@ -1617,7 +1880,7 @@ GDALDataset *JPGDataset::Open( GDALOpenInfo * poOpenInfo )
         }
         else
         {
-            papszTokens = CSLTokenizeString2(poOpenInfo->pszFilename + 13, ",", 0);
+            papszTokens = CSLTokenizeString2(pszFilename + 13, ",", 0);
             if (CSLCount(papszTokens) >= 2)
             {
                 subfile_offset = CPLScanUIntBig(papszTokens[0], strlen(papszTokens[0]));
@@ -1631,11 +1894,11 @@ GDALDataset *JPGDataset::Open( GDALOpenInfo * poOpenInfo )
         {
             CPLError( CE_Failure, CPLE_OpenFailed, 
                       "Corrupt subfile definition: %s", 
-                      poOpenInfo->pszFilename );
+                      pszFilename );
             return NULL;
         }
 
-        real_filename = strstr(poOpenInfo->pszFilename,",");
+        real_filename = strstr(pszFilename,",");
         if( real_filename != NULL )
             real_filename = strstr(real_filename+1,",");
         if( real_filename != NULL && nQLevel != -1 )
@@ -1657,26 +1920,28 @@ GDALDataset *JPGDataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
 /* -------------------------------------------------------------------- */
+/*      Open the file using the large file api.                         */
+/* -------------------------------------------------------------------- */
+    VSILFILE* fpImage;
+
+    fpImage = VSIFOpenL( real_filename, "rb" );
+
+    if( fpImage == NULL )
+    {
+        CPLError( CE_Failure, CPLE_OpenFailed,
+                "VSIFOpenL(%s) failed unexpectedly in jpgdataset.cpp",
+                real_filename );
+        return NULL;
+    }
+
+/* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
     JPGDataset	*poDS;
 
     poDS = new JPGDataset();
     poDS->nQLevel = nQLevel;
-
-/* -------------------------------------------------------------------- */
-/*      Open the file using the large file api.                         */
-/* -------------------------------------------------------------------- */
-    poDS->fpImage = VSIFOpenL( real_filename, "rb" );
-    
-    if( poDS->fpImage == NULL )
-    {
-        CPLError( CE_Failure, CPLE_OpenFailed, 
-                  "VSIFOpenL(%s) failed unexpectedly in jpgdataset.cpp", 
-                  real_filename );
-        delete poDS;
-        return NULL;
-    }
+    poDS->fpImage = fpImage;
 
 /* -------------------------------------------------------------------- */
 /*      Move to the start of jpeg data.                                 */
@@ -1686,11 +1951,21 @@ GDALDataset *JPGDataset::Open( GDALOpenInfo * poOpenInfo )
 
     poDS->eAccess = GA_ReadOnly;
 
+    /* Will detect mismatch between compile-time and run-time libjpeg versions */
+    if (setjmp(poDS->sErrorStruct.setjmp_buffer)) 
+    {
+        delete poDS;
+        return NULL;
+    }
+
     poDS->sDInfo.err = jpeg_std_error( &(poDS->sJErr) );
     poDS->sJErr.error_exit = JPGDataset::ErrorExit;
-    poDS->sDInfo.client_data = (void *) &(poDS->setjmp_buffer);
+    poDS->sErrorStruct.p_previous_emit_message = poDS->sJErr.emit_message;
+    poDS->sJErr.emit_message = JPGDataset::EmitMessage;
+    poDS->sDInfo.client_data = (void *) &(poDS->sErrorStruct);
 
     jpeg_create_decompress( &(poDS->sDInfo) );
+    poDS->bHasDoneJpegCreateDecompress = TRUE;
 
     /* This is to address bug related in ticket #1795 */
     if (CPLGetConfigOption("JPEGMEM", NULL) == NULL)
@@ -1712,13 +1987,14 @@ GDALDataset *JPGDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      If a fatal error occurs after this, we will return NULL         */
 /* -------------------------------------------------------------------- */
-    if (setjmp(poDS->setjmp_buffer)) 
+    if (setjmp(poDS->sErrorStruct.setjmp_buffer)) 
     {
 #if defined(JPEG_DUAL_MODE_8_12) && !defined(JPGDataset)
         if (poDS->sDInfo.data_precision == 12)
         {
             delete poDS;
-            return JPEGDataset12Open(poOpenInfo);
+            return JPEGDataset12Open(pszFilename, papszSiblingFiles,
+                                     nScaleFactor);
         }
 #endif
         delete poDS;
@@ -1746,8 +2022,11 @@ GDALDataset *JPGDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Capture some information from the file that is of interest.     */
 /* -------------------------------------------------------------------- */
-    poDS->nRasterXSize = poDS->sDInfo.image_width;
-    poDS->nRasterYSize = poDS->sDInfo.image_height;
+
+    poDS->nScaleFactor = nScaleFactor;
+    poDS->SetScaleNumAndDenom();
+    poDS->nRasterXSize = (poDS->sDInfo.image_width + nScaleFactor - 1) / nScaleFactor;
+    poDS->nRasterYSize = (poDS->sDInfo.image_height + nScaleFactor - 1) / nScaleFactor;
 
     poDS->sDInfo.out_color_space = poDS->sDInfo.jpeg_color_space;
     poDS->eGDALColorSpace = poDS->sDInfo.jpeg_color_space;
@@ -1790,14 +2069,15 @@ GDALDataset *JPGDataset::Open( GDALOpenInfo * poOpenInfo )
             poDS->eGDALColorSpace = JCS_RGB;
             poDS->nBands = 3;
             poDS->SetMetadataItem( "SOURCE_COLOR_SPACE", "YCbCrK", "IMAGE_STRUCTURE" );
+
+            /* libjpeg does the translation from YCrCbK -> CMYK internally */
+            /* and we'll do the translation to RGB in IReadBlock() */
+            poDS->sDInfo.out_color_space = JCS_CMYK;
         }
         else
         {
             poDS->nBands = 4;
         }
-        /* libjpeg does the translation from YCrCbK -> CMYK internally */
-        /* and we'll do the translation to RGB in IReadBlock() */
-        poDS->sDInfo.out_color_space = JCS_CMYK;
     }
     else
     {
@@ -1812,7 +2092,7 @@ GDALDataset *JPGDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
     for( int iBand = 0; iBand < poDS->nBands; iBand++ )
-        poDS->SetBand( iBand+1, new JPGRasterBand( poDS, iBand+1 ) );
+        poDS->SetBand( iBand+1, JPGCreateBand( poDS, iBand+1 ) );
 
 /* -------------------------------------------------------------------- */
 /*      More metadata.                                                  */
@@ -1826,53 +2106,112 @@ GDALDataset *JPGDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
-    poDS->SetDescription( poOpenInfo->pszFilename );
-    
-    if( !bIsSubfile )
-        poDS->TryLoadXML();
+    poDS->SetDescription( pszFilename );
+
+    if( nScaleFactor == 1 )
+    {
+        if( !bIsSubfile )
+            poDS->TryLoadXML( papszSiblingFiles );
+        else
+            poDS->nPamFlags |= GPF_NOSAVE;
+
+/* -------------------------------------------------------------------- */
+/*      Open (external) overviews.                                      */
+/* -------------------------------------------------------------------- */
+        poDS->oOvManager.Initialize( poDS, real_filename, papszSiblingFiles );
+
+        /* In the case of a file downloaded through the HTTP driver, this one */
+        /* will unlink the temporary /vsimem file just after GDALOpen(), so */
+        /* later VSIFOpenL() when reading internal overviews would fail. */
+        /* Initialize them now */
+        if( strncmp(real_filename, "/vsimem/http_", strlen("/vsimem/http_")) == 0 )
+        {
+            poDS->InitInternalOverviews();
+        }
+    }
     else
         poDS->nPamFlags |= GPF_NOSAVE;
 
-/* -------------------------------------------------------------------- */
-/*      Open overviews.                                                 */
-/* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, real_filename );
-
-/* -------------------------------------------------------------------- */
-/*      Check for world file.                                           */
-/* -------------------------------------------------------------------- */
-    if( !bIsSubfile )
-    {
-        int bEndsWithWld = strlen(poOpenInfo->pszFilename) > 4 &&
-                           EQUAL( poOpenInfo->pszFilename + strlen(poOpenInfo->pszFilename) - 4, ".wld");
-        poDS->bGeoTransformValid = 
-            GDALReadWorldFile( poOpenInfo->pszFilename, NULL, 
-                               poDS->adfGeoTransform )
-            || GDALReadWorldFile( poOpenInfo->pszFilename, ".jpw", 
-                                  poDS->adfGeoTransform )
-            || ( !bEndsWithWld && GDALReadWorldFile( poOpenInfo->pszFilename, ".wld",
-                                  poDS->adfGeoTransform ));
-
-        if( !poDS->bGeoTransformValid )
-        {
-            int bTabFileOK =
-                GDALReadTabFile( poOpenInfo->pszFilename, poDS->adfGeoTransform,
-                                 &poDS->pszProjection,
-                                 &poDS->nGCPCount, &poDS->pasGCPList );
-            
-            if( bTabFileOK && poDS->nGCPCount == 0 )
-                poDS->bGeoTransformValid = TRUE;
-        }
-    }
+    poDS->bIsSubfile = bIsSubfile;
 
     return poDS;
+}
+
+#if !defined(JPGDataset)
+
+/************************************************************************/
+/*                       LoadWorldFileOrTab()                           */
+/************************************************************************/
+
+void JPGDatasetCommon::LoadWorldFileOrTab()
+{
+    if (bIsSubfile)
+        return;
+    if (bHasTriedLoadWorldFileOrTab)
+        return;
+    bHasTriedLoadWorldFileOrTab = TRUE;
+
+    char* pszWldFilename = NULL;
+
+    /* TIROS3 JPEG files have a .wld extension, so don't look for .wld as */
+    /* as worldfile ! */
+    int bEndsWithWld = strlen(GetDescription()) > 4 &&
+                        EQUAL( GetDescription() + strlen(GetDescription()) - 4, ".wld");
+    bGeoTransformValid =
+        GDALReadWorldFile2( GetDescription(), NULL,
+                            adfGeoTransform,
+                            oOvManager.GetSiblingFiles(), &pszWldFilename )
+        || GDALReadWorldFile2( GetDescription(), ".jpw",
+                                adfGeoTransform,
+                               oOvManager.GetSiblingFiles(), &pszWldFilename )
+        || ( !bEndsWithWld && GDALReadWorldFile2( GetDescription(), ".wld",
+                                adfGeoTransform,
+                                oOvManager.GetSiblingFiles(), &pszWldFilename ));
+
+    if( !bGeoTransformValid )
+    {
+        int bTabFileOK =
+            GDALReadTabFile2( GetDescription(), adfGeoTransform,
+                              &pszProjection,
+                              &nGCPCount, &pasGCPList,
+                              oOvManager.GetSiblingFiles(), &pszWldFilename );
+
+        if( bTabFileOK && nGCPCount == 0 )
+            bGeoTransformValid = TRUE;
+    }
+
+    if (pszWldFilename)
+    {
+        osWldFilename = pszWldFilename;
+        CPLFree(pszWldFilename);
+    }
+}
+
+/************************************************************************/
+/*                            GetFileList()                             */
+/************************************************************************/
+
+char **JPGDatasetCommon::GetFileList()
+
+{
+    char **papszFileList = GDALPamDataset::GetFileList();
+
+    LoadWorldFileOrTab();
+
+    if (osWldFilename.size() != 0 &&
+        CSLFindString(papszFileList, osWldFilename) == -1)
+    {
+        papszFileList = CSLAddString( papszFileList, osWldFilename );
+    }
+
+    return papszFileList;
 }
 
 /************************************************************************/
 /*                            CheckForMask()                            */
 /************************************************************************/
 
-void JPGDataset::CheckForMask()
+void JPGDatasetCommon::CheckForMask()
 
 {
     GIntBig nFileSize;
@@ -1920,7 +2259,7 @@ void JPGDataset::CheckForMask()
     }
     VSIFReadL( pabyCMask, nCMaskSize, 1, fpImage );
 
-    CPLDebug( "JPEG", "Got %d Byte compressed bitmask.",
+    CPLDebug( "JPEG", "Got %d byte compressed bitmask.",
               nCMaskSize );
 
 end:
@@ -1931,7 +2270,7 @@ end:
 /*                           DecompressMask()                           */
 /************************************************************************/
 
-void JPGDataset::DecompressMask()
+void JPGDatasetCommon::DecompressMask()
 
 {
     if( pabyCMask == NULL || pabyBitMask != NULL )
@@ -1955,28 +2294,13 @@ void JPGDataset::DecompressMask()
 /* -------------------------------------------------------------------- */
 /*      Decompress                                                      */
 /* -------------------------------------------------------------------- */
-    z_stream sStream;
-
-    memset( &sStream, 0, sizeof(z_stream) );
-    
-    inflateInit( &sStream );
-    
-    sStream.next_in = pabyCMask;
-    sStream.avail_in = nCMaskSize;
-
-    sStream.next_out = pabyBitMask;
-    sStream.avail_out = nBufSize;
-
-    int nResult = inflate( &sStream, Z_FINISH );
-
-    inflateEnd( &sStream );
-
+    void* pOut = CPLZLibInflate( pabyCMask, nCMaskSize,
+                                 pabyBitMask, nBufSize, NULL );
 /* -------------------------------------------------------------------- */
 /*      Cleanup if an error occurs.                                     */
 /* -------------------------------------------------------------------- */
-    if( nResult != Z_STREAM_END )
+    if( pOut == NULL )
     {
-        
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Failure decoding JPEG validity bitmask." );
         CPLFree( pabyCMask );
@@ -1985,7 +2309,66 @@ void JPGDataset::DecompressMask()
         CPLFree( pabyBitMask );
         pabyBitMask = NULL;
     }
+    else
+    {
+        const char* pszJPEGMaskBitOrder = CPLGetConfigOption("JPEG_MASK_BIT_ORDER", "AUTO");
+        if( EQUAL(pszJPEGMaskBitOrder, "LSB") )
+            bMaskLSBOrder = TRUE;
+        else if( EQUAL(pszJPEGMaskBitOrder, "MSB") )
+            bMaskLSBOrder = FALSE;
+        else if( nRasterXSize > 8 && nRasterYSize > 1 )
+        {
+            /* Test MSB ordering hypothesis in a very restrictive case where it is */
+            /* *obviously* ordered as MSB ! (unless someone coded something */
+            /* specifically to defeat the below logic) */
+            /* The case considered here is dop_465_6100.jpg from #5102 */
+            /* The mask is identical for each line, starting with 1's and ending with 0's */
+            /* (or starting with 0's and ending with 1's), and no other intermediate change. */
+            /* We can detect the MSB ordering since the lsb bits at the end of the first */
+            /* line will be set with the 1's of the beginning of the second line. */
+            /* We can only be sure of this heuristics if the change of value occurs in the */
+            /* middle of a byte, or if the raster width is not a multiple of 8. */
+            int iX;
+            int nPrevValBit = 0;
+            int nChangedValBit = 0;
+            for( iX = 0; iX < nRasterXSize; iX++ )
+            {
+                int nValBit = (pabyBitMask[iX>>3] & (0x1 << (7 - (iX&7)))) != 0;
+                if( iX == 0 )
+                    nPrevValBit = nValBit;
+                else if( nValBit != nPrevValBit )
+                {
+                    nPrevValBit = nValBit;
+                    nChangedValBit ++;
+                    if( nChangedValBit == 1 )
+                    {
+                        int bValChangedOnByteBoundary = ((iX % 8) == 0);
+                        if( bValChangedOnByteBoundary && ((nRasterXSize % 8) == 0 ) )
+                            break;
+                    }
+                    else
+                        break;
+                }
+                int iNextLineX = iX + nRasterXSize;
+                int nNextLineValBit = (pabyBitMask[iNextLineX>>3] & (0x1 << (7 - (iNextLineX&7)))) != 0;
+                if( nValBit != nNextLineValBit )
+                    break;
+            }
+
+            if( iX == nRasterXSize )
+            {
+                CPLDebug("JPEG", "Bit ordering in mask is guessed to be msb (unusual)");
+                bMaskLSBOrder = FALSE;
+            }
+            else
+                bMaskLSBOrder = TRUE;
+        }
+        else
+            bMaskLSBOrder = TRUE;
+    }
 }
+
+#endif // !defined(JPGDataset)
 
 /************************************************************************/
 /*                             ErrorExit()                              */
@@ -1993,7 +2376,7 @@ void JPGDataset::DecompressMask()
 
 void JPGDataset::ErrorExit(j_common_ptr cinfo)
 {
-    jmp_buf *setjmp_buffer = (jmp_buf *) cinfo->client_data;
+    GDALJPEGErrorStruct* psErrorStruct = (GDALJPEGErrorStruct* ) cinfo->client_data;
     char buffer[JMSG_LENGTH_MAX];
 
     /* Create the message */
@@ -2009,8 +2392,101 @@ void JPGDataset::ErrorExit(j_common_ptr cinfo)
               "libjpeg: %s", buffer );
 
     /* Return control to the setjmp point */
-    longjmp(*setjmp_buffer, 1);
+    longjmp(psErrorStruct->setjmp_buffer, 1);
 }
+
+/************************************************************************/
+/*                             EmitMessage()                            */
+/************************************************************************/
+
+void JPGDataset::EmitMessage(j_common_ptr cinfo, int msg_level)
+{
+    GDALJPEGErrorStruct* psErrorStruct = (GDALJPEGErrorStruct* ) cinfo->client_data;
+    if( msg_level >= 0 ) /* Trace message */
+    {
+        if( psErrorStruct->p_previous_emit_message != NULL )
+            psErrorStruct->p_previous_emit_message(cinfo, msg_level);
+    }
+    else /* Warning : libjpeg will try to recover but the image will be likely corrupted */
+    {
+        struct jpeg_error_mgr * err = cinfo->err;
+        /* It's a warning message.  Since corrupt files may generate many warnings,
+        * the policy implemented here is to show only the first warning,
+        * unless trace_level >= 3.
+        */
+        if (err->num_warnings == 0 || err->trace_level >= 3)
+        {
+            char buffer[JMSG_LENGTH_MAX];
+
+            /* Create the message */
+            (*cinfo->err->format_message) (cinfo, buffer);
+
+            if( CSLTestBoolean(CPLGetConfigOption("GDAL_ERROR_ON_LIBJPEG_WARNING", "NO")) )
+            {
+                psErrorStruct->bNonFatalErrorEncountered = TRUE;
+                CPLError( CE_Failure, CPLE_AppDefined, "libjpeg: %s", buffer );
+            }
+            else
+            {
+                CPLError( CE_Warning, CPLE_AppDefined, "libjpeg: %s (this warning can be turned as an error by setting GDAL_ERROR_ON_LIBJPEG_WARNING to TRUE)", buffer );
+            }
+        }
+
+        /* Always count warnings in num_warnings. */
+        err->num_warnings++;
+    }
+}
+
+/************************************************************************/
+/*                           JPGAddICCProfile()                         */
+/*                                                                      */
+/*      This function adds an ICC profile to a JPEG file.               */
+/************************************************************************/
+
+static void JPGAddICCProfile( struct jpeg_compress_struct *pInfo, const char *pszICCProfile )
+{
+    if( pszICCProfile == NULL )
+        return;
+
+    /* Write out each segment of the ICC profile */
+    char *pEmbedBuffer = CPLStrdup(pszICCProfile);
+    GInt32 nEmbedLen = CPLBase64DecodeInPlace((GByte*)pEmbedBuffer);
+    char *pEmbedPtr = pEmbedBuffer;
+    char const * const paHeader = "ICC_PROFILE";
+    int nSegments = (nEmbedLen + 65518) / 65519;
+    int nSegmentID = 1;
+
+    while( nEmbedLen != 0)
+    {
+        /* 65535 - 16 bytes for header = 65519 */
+        int nChunkLen = (nEmbedLen > 65519)?65519:nEmbedLen;
+        nEmbedLen -= nChunkLen;
+
+        /* write marker and length. */
+        jpeg_write_m_header(pInfo, JPEG_APP0 + 2,
+			        (unsigned int) (nChunkLen + 14));
+
+        /* Write identifier */
+        for(int i = 0; i < 12; i++)
+            jpeg_write_m_byte(pInfo, paHeader[i]);
+
+        /* Write ID and max ID */
+        jpeg_write_m_byte(pInfo, nSegmentID);
+        jpeg_write_m_byte(pInfo, nSegments);
+
+        /* Write ICC Profile */
+        for(int i = 0; i < nChunkLen; i++)
+            jpeg_write_m_byte(pInfo, pEmbedPtr[i]);
+
+        nSegmentID++;
+
+        pEmbedPtr += nChunkLen;
+    }
+
+    CPLFree(pEmbedBuffer);        
+}
+
+#if !defined(JPGDataset)
 
 /************************************************************************/
 /*                           JPGAppendMask()                            */
@@ -2019,7 +2495,13 @@ void JPGDataset::ErrorExit(j_common_ptr cinfo)
 /*      file (or really any file) pulled from an existing mask band.    */
 /************************************************************************/
 
-static void JPGAppendMask( const char *pszJPGFilename, GDALRasterBand *poMask )
+// MSVC does not know that memset() has initialized sStream.
+#ifdef _MSC_VER
+#  pragma warning(disable:4701)
+#endif
+
+CPLErr JPGAppendMask( const char *pszJPGFilename, GDALRasterBand *poMask,
+                      GDALProgressFunc pfnProgress, void * pProgressData )
 
 {
     int nXSize = poMask->GetXSize();
@@ -2041,10 +2523,15 @@ static void JPGAppendMask( const char *pszJPGFilename, GDALRasterBand *poMask )
         eErr = CE_Failure;
     }
 
+    /* No reason to set it to MSB, unless for debugging purposes */
+    /* to be able to generate a unusual LSB ordered mask (#5102) */
+    const char* pszJPEGMaskBitOrder = CPLGetConfigOption("JPEG_WRITE_MASK_BIT_ORDER", "LSB");
+    int bMaskLSBOrder = EQUAL(pszJPEGMaskBitOrder, "LSB");
+
 /* -------------------------------------------------------------------- */
 /*      Set bit buffer from mask band, scanline by scanline.            */
 /* -------------------------------------------------------------------- */
-    int iBit = 0;
+    GUInt32 iBit = 0;
     for( iY = 0; eErr == CE_None && iY < nYSize; iY++ )
     {
         eErr = poMask->RasterIO( GF_Read, 0, iY, nXSize, 1,
@@ -2052,12 +2539,33 @@ static void JPGAppendMask( const char *pszJPGFilename, GDALRasterBand *poMask )
         if( eErr != CE_None )
             break;
 
-        for( iX = 0; iX < nXSize; iX++ )
+        if( bMaskLSBOrder )
         {
-            if( pabyMaskLine[iX] != 0 )
-                pabyBitBuf[iBit>>3] |= (0x1 << (iBit&7));
+            for( iX = 0; iX < nXSize; iX++ )
+            {
+                if( pabyMaskLine[iX] != 0 )
+                    pabyBitBuf[iBit>>3] |= (0x1 << (iBit&7));
 
-            iBit++;
+                iBit++;
+            }
+        }
+        else
+        {
+            for( iX = 0; iX < nXSize; iX++ )
+            {
+                if( pabyMaskLine[iX] != 0 )
+                    pabyBitBuf[iBit>>3] |= (0x1 << (7 - (iBit&7)));
+
+                iBit++;
+            }
+        }
+
+        if( eErr == CE_None
+            && !pfnProgress( (iY + 1) / (double) nYSize, NULL, pProgressData ) )
+        {
+            eErr = CE_Failure;
+            CPLError( CE_Failure, CPLE_UserInterrupt,
+                      "User terminated JPGAppendMask()" );
         }
     }
     
@@ -2067,7 +2575,6 @@ static void JPGAppendMask( const char *pszJPGFilename, GDALRasterBand *poMask )
 /*      Compress                                                        */
 /* -------------------------------------------------------------------- */
     GByte *pabyCMask = NULL;
-    z_stream sStream;
 
     if( eErr == CE_None )
     {
@@ -2079,23 +2586,12 @@ static void JPGAppendMask( const char *pszJPGFilename, GDALRasterBand *poMask )
         }
     }
 
+    size_t nTotalOut = 0;
     if ( eErr == CE_None )
     {
-        memset( &sStream, 0, sizeof(z_stream) );
-        
-        deflateInit( &sStream, 9 );
-        
-        sStream.next_in = pabyBitBuf;
-        sStream.avail_in = nBitBufSize;
-        
-        sStream.next_out = pabyCMask;
-        sStream.avail_out = nBitBufSize + 30;
-        
-        int nResult = deflate( &sStream, Z_FINISH );
-        
-        deflateEnd( &sStream );
-
-        if( nResult != Z_STREAM_END )
+        if( CPLZLibDeflate( pabyBitBuf, nBitBufSize, 9,
+                            pabyCMask, nBitBufSize + 30,
+                            &nTotalOut ) == NULL )
         {
             CPLError( CE_Failure, CPLE_AppDefined, 
                       "Deflate compression of jpeg bit mask failed." );
@@ -2122,11 +2618,11 @@ static void JPGAppendMask( const char *pszJPGFilename, GDALRasterBand *poMask )
         {
             VSIFSeekL( fpOut, 0, SEEK_END );
 
-            nImageSize = VSIFTellL( fpOut );
+            nImageSize = (GUInt32) VSIFTellL( fpOut );
             CPL_LSBPTR32( &nImageSize );
 
-            if( VSIFWriteL( pabyCMask, 1, sStream.total_out, fpOut ) 
-                != sStream.total_out )
+            if( VSIFWriteL( pabyCMask, 1, nTotalOut, fpOut ) 
+                != nTotalOut )
             {
                 CPLError( CE_Failure, CPLE_FileIO,
                           "Failure writing compressed bitmask.\n%s",
@@ -2142,16 +2638,20 @@ static void JPGAppendMask( const char *pszJPGFilename, GDALRasterBand *poMask )
 
     CPLFree( pabyBitBuf );
     CPLFree( pabyCMask );
+
+    return eErr;
 }
 
+#endif // !defined(JPGDataset)
+
 /************************************************************************/
-/*                           JPEGCreateCopy()                           */
+/*                              CreateCopy()                            */
 /************************************************************************/
 
 GDALDataset *
-JPEGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS, 
-                int bStrict, char ** papszOptions, 
-                GDALProgressFunc pfnProgress, void * pProgressData )
+JPGDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
+                        int bStrict, char ** papszOptions,
+                        GDALProgressFunc pfnProgress, void * pProgressData )
 
 {
     int  nBands = poSrcDS->GetRasterCount();
@@ -2160,6 +2660,7 @@ JPEGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     int  nQuality = 75;
     int  bProgressive = FALSE;
     int  nCloneFlags = GCIF_PAM_DEFAULT;
+    const char* pszVal;
 
     if( !pfnProgress( 0.0, NULL, pProgressData ) )
         return NULL;
@@ -2205,7 +2706,7 @@ JPEGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     if( eDT == GDT_UInt16 || eDT == GDT_Int16 )
     {
 #if defined(JPEG_DUAL_MODE_8_12) && !defined(JPGDataset)
-        return JPEGCreateCopy12(pszFilename, poSrcDS,
+        return JPEGDataset12CreateCopy(pszFilename, poSrcDS,
                                 bStrict, papszOptions, 
                                 pfnProgress, pProgressData );
 #else
@@ -2220,7 +2721,7 @@ JPEGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     {
         CPLError( (bStrict) ? CE_Failure : CE_Warning, CPLE_NotSupported, 
                   "JPEG driver doesn't support data type %s. "
-                  "Only eight bit Byte bands supported.\n", 
+                  "Only eight bit byte bands supported.\n", 
                   GDALGetDataTypeName( 
                       poSrcDS->GetRasterBand(1)->GetRasterDataType()) );
 
@@ -2267,14 +2768,20 @@ JPEGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
     struct jpeg_compress_struct sCInfo;
     struct jpeg_error_mgr sJErr;
-    jmp_buf setjmp_buffer;
+    GDALJPEGErrorStruct sErrorStruct;
+    sErrorStruct.bNonFatalErrorEncountered = FALSE;
     
-    if (setjmp(setjmp_buffer)) 
+    if (setjmp(sErrorStruct.setjmp_buffer)) 
+    {
+        VSIFCloseL( fpImage );
         return NULL;
+    }
 
     sCInfo.err = jpeg_std_error( &sJErr );
     sJErr.error_exit = JPGDataset::ErrorExit;
-    sCInfo.client_data = (void *) &(setjmp_buffer);
+    sErrorStruct.p_previous_emit_message = sJErr.emit_message;
+    sJErr.emit_message = JPGDataset::EmitMessage;
+    sCInfo.client_data = (void *) &(sErrorStruct);
 
     jpeg_create_compress( &sCInfo );
     
@@ -2302,6 +2809,33 @@ JPEGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         sCInfo.data_precision = 8;
     }
 
+    pszVal = CSLFetchNameValue(papszOptions, "ARITHMETIC");
+    if( pszVal )
+        sCInfo.arith_code = CSLTestBoolean(pszVal);
+
+#if JPEG_LIB_VERSION_MAJOR >= 8 && \
+      (JPEG_LIB_VERSION_MAJOR > 8 || JPEG_LIB_VERSION_MINOR >= 3)
+    pszVal = CSLFetchNameValue(papszOptions, "BLOCK");
+    if( pszVal )
+        sCInfo.block_size = atoi(pszVal);
+#endif
+
+#if JPEG_LIB_VERSION_MAJOR >= 9
+    pszVal = CSLFetchNameValue(papszOptions, "COLOR_TRANSFORM");
+    if( pszVal )
+    {
+        sCInfo.color_transform = EQUAL(pszVal, "RGB1") ? JCT_SUBTRACT_GREEN : JCT_NONE;
+        jpeg_set_colorspace(&sCInfo, JCS_RGB);
+    }
+    else
+#endif
+
+    /* Mostly for debugging purposes */
+    if( nBands == 3 && CSLTestBoolean(CPLGetConfigOption("JPEG_WRITE_RGB", "NO")) )
+    {
+        jpeg_set_colorspace(&sCInfo, JCS_RGB);
+    }
+
     GDALDataType eWorkDT;
 #ifdef JPEG_LIB_MK1
     sCInfo.bits_in_jsample = sCInfo.data_precision;
@@ -2316,6 +2850,26 @@ JPEGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         jpeg_simple_progression( &sCInfo );
 
     jpeg_start_compress( &sCInfo, TRUE );
+
+/* -------------------------------------------------------------------- */
+/*      Save ICC profile if available                                   */
+/* -------------------------------------------------------------------- */
+    const char *pszICCProfile = CSLFetchNameValue(papszOptions, "SOURCE_ICC_PROFILE");
+    if (pszICCProfile == NULL)
+        pszICCProfile = poSrcDS->GetMetadataItem( "SOURCE_ICC_PROFILE", "COLOR_PROFILE" );
+
+    if (pszICCProfile != NULL)
+        JPGAddICCProfile( &sCInfo, pszICCProfile );
+
+/* -------------------------------------------------------------------- */
+/*      Does the source have a mask?  If so, we will append it to the   */
+/*      jpeg file after the imagery.                                    */
+/* -------------------------------------------------------------------- */
+    int nMaskFlags = poSrcDS->GetRasterBand(1)->GetMaskFlags();
+    int bAppendMask =( !(nMaskFlags & GMF_ALL_VALID)
+        && (nBands == 1 || (nMaskFlags & GMF_PER_DATASET)) );
+
+    bAppendMask &= CSLFetchBoolean( papszOptions, "INTERNAL_MASK", TRUE );
 
 /* -------------------------------------------------------------------- */
 /*      Loop over image, copying image data.                            */
@@ -2364,7 +2918,7 @@ JPEGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
             jpeg_write_scanlines( &sCInfo, &ppSamples, 1 );
 
         if( eErr == CE_None 
-            && !pfnProgress( (iLine+1) / (double) nYSize,
+            && !pfnProgress( (iLine+1) / ((bAppendMask ? 2 : 1) * (double) nYSize),
                              NULL, pProgressData ) )
         {
             eErr = CE_Failure;
@@ -2391,15 +2945,23 @@ JPEGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     }
 
 /* -------------------------------------------------------------------- */
-/*      Does the source have a mask?  If so, append it to the jpeg file.*/
+/*      Append masks to the jpeg file if necessary.                     */
 /* -------------------------------------------------------------------- */
-    int nMaskFlags = poSrcDS->GetRasterBand(1)->GetMaskFlags();
-    if( !(nMaskFlags & GMF_ALL_VALID) 
-        && (nBands == 1 || (nMaskFlags & GMF_PER_DATASET)) )
+    if( bAppendMask )
     {
-        CPLDebug( "JPEG", "Appending Mask Bitmap" ); 
-        JPGAppendMask( pszFilename, poSrcDS->GetRasterBand(1)->GetMaskBand() );
+        CPLDebug( "JPEG", "Appending Mask Bitmap" );
+
+        void* pScaledData = GDALCreateScaledProgress( 0.5, 1, pfnProgress, pProgressData );
+        eErr = JPGAppendMask( pszFilename, poSrcDS->GetRasterBand(1)->GetMaskBand(),
+                              GDALScaledProgress, pScaledData );
+        GDALDestroyScaledProgress( pScaledData );
         nCloneFlags &= (~GCIF_MASK);
+
+        if( eErr != CE_None )
+        {
+            VSIUnlink( pszFilename );
+            return NULL;
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -2416,12 +2978,29 @@ JPEGCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Re-open dataset, and copy any auxilary pam information.         */
 /* -------------------------------------------------------------------- */
-    JPGDataset *poDS = (JPGDataset *) GDALOpen( pszFilename, GA_ReadOnly );
 
-    if( poDS )
-        poDS->CloneInfo( poSrcDS, nCloneFlags );
+    /* If outputing to stdout, we can't reopen it, so we'll return */
+    /* a fake dataset to make the caller happy */
+    if( CSLTestBoolean(CPLGetConfigOption("GDAL_OPEN_AFTER_COPY", "YES")) )
+    {
+        CPLPushErrorHandler(CPLQuietErrorHandler);
+        JPGDataset *poDS = (JPGDataset*) Open( pszFilename );
+        CPLPopErrorHandler();
+        if( poDS )
+        {
+            poDS->CloneInfo( poSrcDS, nCloneFlags );
+            return poDS;
+        }
 
-    return poDS;
+        CPLErrorReset();
+    }
+
+    JPGDataset* poJPG_DS = new JPGDataset();
+    poJPG_DS->nRasterXSize = nXSize;
+    poJPG_DS->nRasterYSize = nYSize;
+    for(int i=0;i<nBands;i++)
+        poJPG_DS->SetBand( i+1, JPGCreateBand( poJPG_DS, i+1) );
+    return poJPG_DS;
 }
 
 /************************************************************************/
@@ -2448,23 +3027,36 @@ void GDALRegister_JPEG()
 
 #if defined(JPEG_LIB_MK1_OR_12BIT) || defined(JPEG_DUAL_MODE_8_12)
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Byte uint16_t" );
+                                   "Byte UInt16" );
 #else
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
                                    "Byte" );
 #endif
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST, 
 "<CreationOptionList>\n"
-"   <Option name='PROGRESSIVE' type='boolean'/>\n"
+"   <Option name='PROGRESSIVE' type='boolean' default='NO'/>\n"
 "   <Option name='QUALITY' type='int' description='good=100, bad=0, default=75'/>\n"
-"   <Option name='WORLDFILE' type='boolean'/>\n"
+"   <Option name='WORLDFILE' type='boolean' default='NO'/>\n"
+"   <Option name='INTERNAL_MASK' type='boolean' default='YES'/>\n"
+"   <Option name='ARITHMETIC' type='boolean' default='NO'/>\n"
+#if JPEG_LIB_VERSION_MAJOR >= 8 && \
+      (JPEG_LIB_VERSION_MAJOR > 8 || JPEG_LIB_VERSION_MINOR >= 3)
+"   <Option name='BLOCK' type='int' description='between 1 and 16'/>\n"
+#endif
+#if JPEG_LIB_VERSION_MAJOR >= 9
+"   <Option name='COLOR_TRANSFORM' type='string-select'>\n"
+"       <Value>RGB</Value>"
+"       <Value>RGB1</Value>"
+"   </Option>"
+#endif
+"   <Option name='SOURCE_ICC_PROFILE' type='string'/>\n"
 "</CreationOptionList>\n" );
 
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
-        poDriver->pfnIdentify = JPGDataset::Identify;
-        poDriver->pfnOpen = JPGDataset::Open;
-        poDriver->pfnCreateCopy = JPEGCreateCopy;
+        poDriver->pfnIdentify = JPGDatasetCommon::Identify;
+        poDriver->pfnOpen = JPGDatasetCommon::Open;
+        poDriver->pfnCreateCopy = JPGDataset::CreateCopy;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

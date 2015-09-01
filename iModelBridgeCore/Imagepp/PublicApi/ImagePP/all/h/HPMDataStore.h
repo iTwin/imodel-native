@@ -2,14 +2,18 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMDataStore.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 
 #pragma once
 
-#if (0)
+
+#ifdef NOT_NOW_ZLIB
+#error zlib should not be included or redefined in a header file.  How about HCDCodecZlib?
+
+#if 0
 #include "ZLib.h"
 #else
 
@@ -56,8 +60,10 @@ extern "C" {
 #endif // _HDLL_SUPPORT
 
 #endif
+#endif
 
 
+BEGIN_IMAGEPP_NAMESPACE
 /** --------------------------------------------------------------------------------------------------------
  The present class is the ancester from which must inherit any generic block Identifier that cannot
  be represented as an integer. The class must implement all of the 5 methods below.
@@ -117,7 +123,7 @@ public:
      Constructor.
      It creates an initialised integer based block ID.
     -----------------------------------------------------------------------------*/
-    HPMBlockID(__int64 ID)
+    HPMBlockID(int64_t ID)
         {
         m_integerID = ID;
         m_integerInitialized = true;
@@ -167,7 +173,7 @@ public:
      Integer based assignement operator
      For integer based block IDs
     -----------------------------------------------------------------------------*/
-    HPMBlockID& operator=(__int64 integerID)
+    HPMBlockID& operator=(int64_t integerID)
         {
         if (m_alternateID != NULL)
             delete m_alternateID;
@@ -224,7 +230,7 @@ public:
     // The members are public and users may set them at will given they
     // understand how the block ID behaves.
     bool              m_integerInitialized;
-    __int64           m_integerID;
+    int64_t           m_integerID;
     HPMGenericBlockID*   m_alternateID;
     };
 
@@ -445,7 +451,7 @@ public:
             return false;
 
         // Go to start of file
-        _fseeki64 (m_File, (__int64)8, SEEK_SET);
+        _fseeki64 (m_File, (int64_t)8, SEEK_SET);
 
         // Store header size
         if (1 != fwrite (&headerSize, sizeof (headerSize), 1, m_File))
@@ -499,7 +505,7 @@ public:
             return HPMBlockID();
 
         // Go to end of file
-        _fseeki64 (m_File, (__int64)0, SEEK_END);
+        _fseeki64 (m_File, (int64_t)0, SEEK_END);
 
         return StoreBlockAtCurrentLocation (DataTypeArray, countData);
 
@@ -723,7 +729,7 @@ protected:
             }
 
         // Store data count
-        if (1 != fwrite ((void*)&countData, sizeof (countData), 1, m_File))
+        if (1 != fwrite (&countData, sizeof (countData), 1, m_File))
             return HPMBlockID();
 
         // Store new tile
@@ -949,7 +955,7 @@ public:
                     }
 
                 // Store data count
-                if (1 != fwrite ((void*)&countData, sizeof (size_t), 1, m_File))
+                if (1 != fwrite (&countData, sizeof (size_t), 1, m_File))
                     return HPMBlockID();
 
                 // Store compressed data size
@@ -1024,3 +1030,4 @@ public:
     int m_compressionFactor;
     };
 
+END_IMAGEPP_NAMESPACE

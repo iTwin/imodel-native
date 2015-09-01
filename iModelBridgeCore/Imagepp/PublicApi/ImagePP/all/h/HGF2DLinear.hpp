@@ -2,12 +2,13 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DLinear.hpp $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include "HGF2DDisplacement.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     Default constructor for linear.
     The interpretation coordinate system is dynamically allocated.
@@ -244,7 +245,7 @@ inline bool HGF2DLinear::ConnectsTo(const HGF2DVector& pi_rVector) const
     bool   Answer;
 
     // Obtain tolerance
-    double Tolerance = min(GetTolerance(), pi_rVector.GetTolerance());
+    double Tolerance = MIN(GetTolerance(), pi_rVector.GetTolerance());
 
     Answer = (pi_rVector.IsPointOn(m_StartPoint, HGF2DVector::INCLUDE_EXTREMITIES, Tolerance) ||
               pi_rVector.IsPointOn(m_EndPoint, HGF2DVector::INCLUDE_EXTREMITIES, Tolerance));
@@ -307,14 +308,4 @@ inline HGF2DVectorTypeId HGF2DLinear::GetMainVectorType() const
     return (HGF2DLinear::CLASS_ID);
     }
 
-
-
-
-
-
-
-
-
-
-
-
+END_IMAGEPP_NAMESPACE

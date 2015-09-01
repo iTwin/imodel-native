@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRPConvFilterV24PhotoYCC.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16,9 +16,10 @@
 
 #include "HRPConvFilter.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRPConvFilterV24PhotoYCC : public HRPConvFilter
     {
-    HDECLARE_CLASS_ID(1170, HRPConvFilter)
+    HDECLARE_CLASS_ID(HRPFilterId_ConvV24PhotoYCC, HRPConvFilter)
 
 public:
 
@@ -69,4 +70,5 @@ private:
     double*       m_pResultLine;
     bool*         m_pAllocation;
     };
+END_IMAGEPP_NAMESPACE
 

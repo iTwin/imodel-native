@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRABitmapIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRABitmapIterator
 // ----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 
 #include <Imagepp/all/h/HRABitmapIterator.h>
 #include <Imagepp/all/h/HRABitmapBase.h>
@@ -55,6 +55,36 @@ HRABitmapIterator& HRABitmapIterator::operator=(const HRABitmapIterator& pi_rBit
     return(*this);
     }
 
+//-----------------------------------------------------------------------------
+// operator++
+//-----------------------------------------------------------------------------
+const HFCPtr<HRARaster>& HRABitmapIterator::Next()
+    {
+    m_Index++;
+
+    // Return a null raster
+    return m_pNullRaster;
+    }
+
+//-----------------------------------------------------------------------------
+// operator()
+//-----------------------------------------------------------------------------
+const HFCPtr<HRARaster>& HRABitmapIterator::operator()()
+    {
+    if (m_Index == 0L)
+        return (GetRaster());
+    else
+        return m_pNullRaster;
+    }
+
+
+//-----------------------------------------------------------------------------
+// Reset
+//-----------------------------------------------------------------------------
+void HRABitmapIterator::Reset()
+    {
+    m_Index = 0L;
+    }
 
 
 //-----------------------------------------------------------------------------

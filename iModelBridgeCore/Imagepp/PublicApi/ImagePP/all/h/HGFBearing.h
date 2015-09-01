@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFBearing.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,7 +13,7 @@
 
 #pragma once
 
-
+BEGIN_IMAGEPP_NAMESPACE
 /** -----------------------------------------------------------------------------
     @version 1.0
     @author Alain Robert
@@ -143,5 +143,6 @@ inline bool fIsBearingWithinSweep(HGFBearing sourceBearing, double sweep, HGFBea
     return bearing1.IsBearingWithinSweep(sweep, HGFBearing(compareBearing));
     }
 
+END_IMAGEPP_NAMESPACE
 #include "HGFBearing.hpp"
 

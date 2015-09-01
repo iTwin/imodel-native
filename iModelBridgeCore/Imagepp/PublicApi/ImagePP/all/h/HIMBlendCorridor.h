@@ -2,18 +2,20 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMBlendCorridor.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "HRAImageView.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 
 class HVE2DPolySegment;
 class HRAClearOptions;
 class HIMBlendCorridorTile;
 class HGFTileIDDescriptor;
+class HRABitmap;
 
 /** -----------------------------------------------------------------------------
     This is a placeholder in an HPMPool object. It gives us the possibility to
@@ -28,7 +30,7 @@ class HGFTileIDDescriptor;
 */
 class HIMBlendCorridorTileToken : public HPMPersistentObject, public HPMShareableObject<HIMBlendCorridorTileToken>
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1275)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HIMBlendCorridorId_TileToken)
 
 public:
 
@@ -145,7 +147,7 @@ private:
 */
 class HIMBlendCorridor : public HRARaster
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg,  1274)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT,  HIMBlendCorridorId_Base)
 
     friend class HIMBlendCorridorIterator;
 
@@ -171,10 +173,9 @@ public:
     virtual bool   ContainsPixelsWithChannel(HRPChannelType::ChannelRole pi_Role,
                                               Byte                      pi_Id = 0) const;
 
-    virtual void    CopyFrom(const HFCPtr<HRARaster>& pi_pSrcRaster);
+    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster);
 
-    virtual void    CopyFrom(   const HFCPtr<HRARaster>& pi_pSrcRaster,
-                                const HRACopyFromOptions& pi_rOptions);
+    virtual void    CopyFromLegacy(const HFCPtr<HRARaster>& pi_pSrcRaster, const HRACopyFromLegacyOptions& pi_rOptions);
 
     virtual void    Clear() override;
     virtual void    Clear(const HRAClearOptions& pi_rOptions) override;
@@ -194,7 +195,7 @@ public:
     CreateIterator  (const HRAIteratorOptions& pi_rOptions = HRAIteratorOptions()) const;
 
     virtual HPMPersistentObject* Clone () const;
-    virtual HRARaster* Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const;
+    virtual HFCPtr<HRARaster> Clone (HPMObjectStore* pi_pStore, HPMPool* pi_pLog=0) const override;
 
 
     virtual HGF2DExtent
@@ -251,8 +252,6 @@ public:
                                  uint32_t        pi_ConsumerID,
                                  bool           pi_Async = false);
 
-    virtual void    PreDraw(HRADrawOptions* pio_pOptions);
-
     void            Invalidate();
     void            Invalidate(HFCPtr<HVEShape>& pi_rpShape);
 
@@ -295,7 +294,7 @@ private:
     HPMPool*        m_pPool;
 
     // The example tile.
-    HFCPtr<HRARaster>     m_pBaseTile;
+    HFCPtr<HRABitmap>     m_pBaseTile;
 
     // The physical CoordSys of the tiles.
     HFCPtr<HGF2DCoordSys>    m_pPhysicalCS;
@@ -324,3 +323,4 @@ private:
     mutable HFCExclusiveKey    m_TilesKey;
     };
 
+END_IMAGEPP_NAMESPACE

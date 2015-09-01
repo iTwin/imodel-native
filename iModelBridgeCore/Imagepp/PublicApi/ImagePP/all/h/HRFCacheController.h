@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFCacheController.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFCacheController
@@ -20,11 +20,12 @@
 
 */
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRFCacheController: public HFCShareableObject<HRFCacheController>
     {
 public:
 
-    typedef list<HFCPtr<HFCURL> > MoveFolderList;
+    typedef bvector<HFCPtr<HFCURL> > MoveFolderList;
 
     enum CacheControlFlags
         {
@@ -34,23 +35,23 @@ public:
         CACHE_CONTROL_MOVE          = 0x04
         };
 
-    HDECLARE_BASECLASS_ID(1555);
+    HDECLARE_BASECLASS_ID(HRFCacheControllerId_Base);
 
     //:> Primary methods.
-    _HDLLg                     HRFCacheController(const HFCPtr<HFCURL> & pi_CachePath, bool pi_ScanSubDir = false);
+    IMAGEPP_EXPORT                     HRFCacheController(const HFCPtr<HFCURL> & pi_CachePath, bool pi_ScanSubDir = false);
 
-    _HDLLg virtual             ~HRFCacheController();
+    IMAGEPP_EXPORT virtual             ~HRFCacheController();
 
-    _HDLLg uint64_t            GetCacheSize() const;
-    _HDLLg void                SetCacheSize(uint64_t pi_CacheSizeBytes);
+    IMAGEPP_EXPORT uint64_t           GetCacheSize() const;
+    IMAGEPP_EXPORT void                SetCacheSize(uint64_t pi_CacheSizeBytes);
 
-    _HDLLg time_t              GetDeleteCacheFilesOlderThan() const;
-    _HDLLg void                SetDeleteCacheFilesOlderThan(time_t pi_OlderThan);
+    IMAGEPP_EXPORT time_t              GetDeleteCacheFilesOlderThan() const;
+    IMAGEPP_EXPORT void                SetDeleteCacheFilesOlderThan(time_t pi_OlderThan);
 
-    _HDLLg const MoveFolderList& GetMoveFolderList() const;
-    _HDLLg void                  SetMoveFolderList(const MoveFolderList& pi_MoveFolderList);
+    IMAGEPP_EXPORT const MoveFolderList& GetMoveFolderList() const;
+    IMAGEPP_EXPORT void                  SetMoveFolderList(const MoveFolderList& pi_MoveFolderList);
 
-    _HDLLg void                Control(int pi_CacheControlFlags);
+    IMAGEPP_EXPORT void                Control(int pi_CacheControlFlags);
 
 private:
 
@@ -85,4 +86,5 @@ private:
     HRFCacheController(const HRFCacheController&);
     HRFCacheController& operator=(const HRFCacheController&);
     };
+END_IMAGEPP_NAMESPACE
 

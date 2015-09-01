@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRABitmapIterator.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRABitmapIterator
@@ -12,6 +12,7 @@
 
 #include "HRARasterIterator.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HRABitmapBase;
 
 // ----------------------------------------------------------------------------
@@ -56,5 +57,5 @@ private:
     HFCPtr<HRARaster>   m_pNullRaster;
     };
 
-#include "HRABitmapIterator.hpp"
 
+END_IMAGEPP_NAMESPACE

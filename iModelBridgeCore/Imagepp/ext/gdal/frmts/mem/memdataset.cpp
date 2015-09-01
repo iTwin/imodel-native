@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: memdataset.cpp 21451 2011-01-09 22:07:21Z rouault $
+ * $Id: memdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $
  *
  * Project:  Memory Array Translator
  * Purpose:  Complete implementation.
@@ -7,6 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2000, Frank Warmerdam
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,7 +31,7 @@
 #include "memdataset.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: memdataset.cpp 21451 2011-01-09 22:07:21Z rouault $");
+CPL_CVSID("$Id: memdataset.cpp 27729 2014-09-24 00:40:16Z goatbar $");
 
 /************************************************************************/
 /*                        MEMCreateRasterBand()                         */
@@ -54,7 +55,7 @@ GDALRasterBandH MEMCreateRasterBand( GDALDataset *poDS, int nBand,
 MEMRasterBand::MEMRasterBand( GDALDataset *poDS, int nBand,
                               GByte *pabyDataIn, GDALDataType eTypeIn, 
                               int nPixelOffsetIn, int nLineOffsetIn,
-                              int bAssumeOwnership )
+                              int bAssumeOwnership, const char * pszPixelType)
 
 {
     //CPLDebug( "MEM", "MEMRasterBand(%p)", this );
@@ -91,6 +92,10 @@ MEMRasterBand::MEMRasterBand( GDALDataset *poDS, int nBand,
     dfOffset = 0.0;
     dfScale = 1.0;
     pszUnitType = NULL;
+    psSavedHistograms = NULL;
+
+    if( pszPixelType && EQUAL(pszPixelType,"SIGNEDBYTE") )
+        this->SetMetadataItem( "PIXELTYPE", "SIGNEDBYTE", "IMAGE_STRUCTURE" );
 }
 
 /************************************************************************/
@@ -112,6 +117,9 @@ MEMRasterBand::~MEMRasterBand()
 
     CPLFree( pszUnitType );
     CSLDestroy( papszCategoryNames );
+
+    if (psSavedHistograms != NULL)
+        CPLDestroyXMLNode(psSavedHistograms);
 }
 
 
@@ -119,7 +127,7 @@ MEMRasterBand::~MEMRasterBand()
 /*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr MEMRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
+CPLErr MEMRasterBand::IReadBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                    void * pImage )
 
 {
@@ -151,7 +159,7 @@ CPLErr MEMRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /*                            IWriteBlock()                             */
 /************************************************************************/
 
-CPLErr MEMRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
+CPLErr MEMRasterBand::IWriteBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
                                      void * pImage )
 
 {
@@ -357,6 +365,92 @@ CPLErr MEMRasterBand::SetCategoryNames( char ** papszNewNames )
     papszCategoryNames = CSLDuplicate( papszNewNames );
 
     return CE_None;
+}
+
+/************************************************************************/
+/*                        SetDefaultHistogram()                         */
+/************************************************************************/
+
+CPLErr MEMRasterBand::SetDefaultHistogram( double dfMin, double dfMax, 
+                                           int nBuckets, int *panHistogram)
+
+{
+    CPLXMLNode *psNode;
+
+/* -------------------------------------------------------------------- */
+/*      Do we have a matching histogram we should replace?              */
+/* -------------------------------------------------------------------- */
+    psNode = PamFindMatchingHistogram( psSavedHistograms, 
+                                       dfMin, dfMax, nBuckets,
+                                       TRUE, TRUE );
+    if( psNode != NULL )
+    {
+        /* blow this one away */
+        CPLRemoveXMLChild( psSavedHistograms, psNode );
+        CPLDestroyXMLNode( psNode );
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Translate into a histogram XML tree.                            */
+/* -------------------------------------------------------------------- */
+    CPLXMLNode *psHistItem;
+
+    psHistItem = PamHistogramToXMLTree( dfMin, dfMax, nBuckets, 
+                                        panHistogram, TRUE, FALSE );
+    if( psHistItem == NULL )
+        return CE_Failure;
+
+/* -------------------------------------------------------------------- */
+/*      Insert our new default histogram at the front of the            */
+/*      histogram list so that it will be the default histogram.        */
+/* -------------------------------------------------------------------- */
+
+    if( psSavedHistograms == NULL )
+        psSavedHistograms = CPLCreateXMLNode( NULL, CXT_Element,
+                                              "Histograms" );
+            
+    psHistItem->psNext = psSavedHistograms->psChild;
+    psSavedHistograms->psChild = psHistItem;
+    
+    return CE_None;
+}
+/************************************************************************/
+/*                        GetDefaultHistogram()                         */
+/************************************************************************/
+
+CPLErr 
+MEMRasterBand::GetDefaultHistogram( double *pdfMin, double *pdfMax, 
+                                    int *pnBuckets, int **ppanHistogram, 
+                                    int bForce,
+                                    GDALProgressFunc pfnProgress, 
+                                    void *pProgressData )
+    
+{
+    if( psSavedHistograms != NULL )
+    {
+        CPLXMLNode *psXMLHist;
+
+        for( psXMLHist = psSavedHistograms->psChild;
+             psXMLHist != NULL; psXMLHist = psXMLHist->psNext )
+        {
+            int bApprox, bIncludeOutOfRange;
+
+            if( psXMLHist->eType != CXT_Element
+                || !EQUAL(psXMLHist->pszValue,"HistItem") )
+                continue;
+
+            if( PamParseHistogram( psXMLHist, pdfMin, pdfMax, pnBuckets, 
+                                   ppanHistogram, &bIncludeOutOfRange,
+                                   &bApprox ) )
+                return CE_None;
+            else
+                return CE_Failure;
+        }
+    }
+
+    return GDALRasterBand::GetDefaultHistogram( pdfMin, pdfMax, pnBuckets, 
+                                                ppanHistogram, bForce, 
+                                                pfnProgress,pProgressData);
 }
 
 /************************************************************************/
@@ -754,7 +848,7 @@ GDALDataset *MEMDataset::Open( GDALOpenInfo * poOpenInfo )
 /*                               Create()                               */
 /************************************************************************/
 
-GDALDataset *MEMDataset::Create( const char * pszFilename,
+GDALDataset *MEMDataset::Create( CPL_UNUSED const char * pszFilename,
                                  int nXSize, int nYSize, int nBands,
                                  GDALDataType eType,
                                  char **papszOptions )
@@ -781,16 +875,27 @@ GDALDataset *MEMDataset::Create( const char * pszFilename,
     int         nWordSize = GDALGetDataTypeSize(eType) / 8;
     int         bAllocOK = TRUE;
 
+    GUIntBig nGlobalBigSize = (GUIntBig)nWordSize * nBands * nXSize * nYSize;
+    size_t nGlobalSize = (size_t)nGlobalBigSize;
+#if SIZEOF_VOIDP == 4
+    if( (GUIntBig)nGlobalSize != nGlobalBigSize )
+    {
+        CPLError( CE_Failure, CPLE_OutOfMemory,
+                  "Cannot allocate " CPL_FRMT_GUIB " bytes on this platform.",
+                  nGlobalBigSize );
+        return NULL;
+    }
+#endif
+
     if( bPixelInterleaved )
     {
         apbyBandData.push_back( 
-            (GByte *) VSIMalloc3( nWordSize * nBands, nXSize, nYSize ) );
+            (GByte *) VSICalloc( 1, nGlobalSize ) );
 
         if( apbyBandData[0] == NULL )
             bAllocOK = FALSE;
         else
         {
-            memset(apbyBandData[0], 0, ((size_t)nWordSize) * nBands * nXSize * nYSize);
             for( iBand = 1; iBand < nBands; iBand++ )
                 apbyBandData.push_back( apbyBandData[0] + iBand * nWordSize );
         }
@@ -800,13 +905,12 @@ GDALDataset *MEMDataset::Create( const char * pszFilename,
         for( iBand = 0; iBand < nBands; iBand++ )
         {
             apbyBandData.push_back( 
-                (GByte *) VSIMalloc3( nWordSize, nXSize, nYSize ) );
+                (GByte *) VSICalloc( 1, ((size_t)nWordSize) * nXSize * nYSize ) );
             if( apbyBandData[iBand] == NULL )
             {
                 bAllocOK = FALSE;
                 break;
             }
-            memset(apbyBandData[iBand], 0, ((size_t)nWordSize) * nXSize * nYSize);
         }
     }
 
@@ -818,7 +922,7 @@ GDALDataset *MEMDataset::Create( const char * pszFilename,
                 VSIFree( apbyBandData[iBand] );
         }
         CPLError( CE_Failure, CPLE_OutOfMemory,
-                  "Unable to create band arrays ... out of memory." );
+                    "Unable to create band arrays ... out of memory." );
         return NULL;
     }
 
@@ -832,6 +936,10 @@ GDALDataset *MEMDataset::Create( const char * pszFilename,
     poDS->nRasterXSize = nXSize;
     poDS->nRasterYSize = nYSize;
     poDS->eAccess = GA_Update;
+
+    const char *pszPixelType = CSLFetchNameValue( papszOptions, "PIXELTYPE" );
+    if( pszPixelType && EQUAL(pszPixelType,"SIGNEDBYTE") )
+        poDS->SetMetadataItem( "PIXELTYPE", "SIGNEDBYTE", "IMAGE_STRUCTURE" );
 
     if( bPixelInterleaved )
         poDS->SetMetadataItem( "INTERLEAVE", "PIXEL", "IMAGE_STRUCTURE" );
@@ -874,7 +982,7 @@ static int MEMDatasetIdentify( GDALOpenInfo * poOpenInfo )
 /*                       MEMDatasetDelete()                             */
 /************************************************************************/
 
-static CPLErr MEMDatasetDelete(const char* fileName)
+static CPLErr MEMDatasetDelete(CPL_UNUSED const char* fileName)
 {
     /* Null implementation, so that people can Delete("MEM:::") */
     return CE_None;
@@ -897,7 +1005,7 @@ void GDALRegister_MEM()
         poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, 
                                    "In Memory Raster" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
-                                   "Byte int16_t uint16_t int32_t uint32_t Float32 Float64 CInt16 CInt32 CFloat32 CFloat64" );
+                                   "Byte Int16 UInt16 Int32 UInt32 Float32 Float64 CInt16 CInt32 CFloat32 CFloat64" );
 
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST, 
 "<CreationOptionList>"

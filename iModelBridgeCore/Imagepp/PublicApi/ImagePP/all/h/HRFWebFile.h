@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFWebFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -12,7 +12,9 @@
 
 #include <ImagePP/all/h/HRFRasterFile.h>
 #include <ImagePP/all/h/HRFRasterFileCapabilities.h>
+#include <ImagePP/all/h/HFCMacros.h>
 
+BEGIN_IMAGEPP_NAMESPACE
 class HFCExclusiveKey;
 
 //------------------------------------------------------------------------------
@@ -33,7 +35,7 @@ class HRFWebFile : public HRFRasterFile
     //--------------------------------------
     // Macros & Friends
     //--------------------------------------
-    HDECLARE_CLASS_ID(1467, HRFRasterFile)
+    HDECLARE_CLASS_ID(HRFFileId_Web, HRFRasterFile)
 
 public:
     //--------------------------------------
@@ -81,7 +83,7 @@ public:
     // Utility methods
     //--------------------------------------
 
-    _HDLLg const HFCPtr<HRFRasterFile> & GetLocalRasterFile() const;
+    IMAGEPP_EXPORT const HFCPtr<HRFRasterFile> & GetLocalRasterFile() const;
     const HFCPtr<HFCURL>&         GetLocalURL () const;
 
 private:
@@ -130,7 +132,7 @@ struct HRFWebFileCreator : public HRFRasterFileCreator
                                          uint64_t             pi_Offset = 0) const;
 
 private:
-    HFC_DECLARE_SINGLETON_DLL(_HDLLg, HRFWebFileCreator)
+    HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFWebFileCreator)
 
     // Disabled methodes
     HRFWebFileCreator();
@@ -140,4 +142,4 @@ private:
     WString         m_Schemes;
     WString         m_Extensions;
     };
-
+END_IMAGEPP_NAMESPACE

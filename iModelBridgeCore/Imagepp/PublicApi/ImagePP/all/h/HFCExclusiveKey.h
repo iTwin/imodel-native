@@ -2,13 +2,17 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCExclusiveKey.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCExclusiveKey
 //-----------------------------------------------------------------------------
 #pragma once
 
+// Define the default HFCMonitor that works on HFCExclusiveKeys
+#include <ImagePP/all/h/HFCMonitor.h>
+
+BEGIN_IMAGEPP_NAMESPACE
 /**
 
     This class is used to create exclusive keys, which are objects that can
@@ -69,11 +73,11 @@ private:
     HFCExclusiveKey& operator=(const HFCExclusiveKey&);
 
 
-    BeCriticalSection* m_pKey;
+    BeMutex m_Key;
     };
 
-// Define the default HFCMonitor that works on HFCExclusiveKeys
-#include <ImagePP/all/h/HFCMonitor.h>
 typedef HFCGenericMonitor<HFCExclusiveKey> HFCMonitor;
+
+END_IMAGEPP_NAMESPACE
 
 #include "HFCExclusiveKey.hpp"

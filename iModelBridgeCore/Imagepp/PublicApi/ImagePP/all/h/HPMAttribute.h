@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMAttribute.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // HPMAttribute
@@ -12,6 +12,7 @@
 #include "HPMPersistentObject.h"
 #include "HFCMatrix.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 // To add a new HPMAttribute, you must add an unique HPMAttributesID in the enum below and create a new HPM_DEFINE_ATTRIBUTE entry with an unique name.
 // The name is not translated and it is used by internal apps to display attribute info.
 enum HPMAttributesID 
@@ -201,10 +202,10 @@ enum HPMAttributesID
  
 class HPMGenericAttribute : public HFCShareableObject<HPMGenericAttribute>
     {
-    HDECLARE_BASECLASS_ID(1600)
+    HDECLARE_BASECLASS_ID(HPMGenericAttributeId_Base)
 
 public:
-    _HDLLu explicit HPMGenericAttribute();
+    IMAGEPP_EXPORT explicit HPMGenericAttribute();
     virtual ~HPMGenericAttribute() {}
 
     //! Same kind of attribute
@@ -220,7 +221,7 @@ public:
     virtual WString GetName () const = 0; 
 
 protected:
-    _HDLLu HPMGenericAttribute(const HPMGenericAttribute& pi_rObj);
+    IMAGEPP_EXPORT HPMGenericAttribute(const HPMGenericAttribute& pi_rObj);
     
 private:
     //Disabled   
@@ -451,5 +452,6 @@ HPM_DEFINE_ATTRIBUTE(HRFAttributeOriginalFileModificationDate, uint64_t,        
 // HPSParser
 HPM_DEFINE_ATTRIBUTE(HPSAttributeImageDescription,             WString,              HPS_ATTRIBUTEID_ImageDescription,             L"HPS_IMAGE_DESCRIPTION");
 
+END_IMAGEPP_NAMESPACE
 
 #include "HPMAttribute.hpp"

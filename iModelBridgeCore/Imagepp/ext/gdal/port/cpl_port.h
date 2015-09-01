@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_port.h 21167 2010-11-24 15:19:51Z warmerdam $
+ * $Id: cpl_port.h 27701 2014-09-20 15:07:02Z goatbar $
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -8,6 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1998, 2005, Frank Warmerdam <warmerdam@pobox.com>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +32,7 @@
 #ifndef CPL_BASE_H_INCLUDED
 #define CPL_BASE_H_INCLUDED
 
-/* Remove annoying warnings Microsoft Visual C++ */
+//IPP Remove annoying warnings Microsoft Visual C++ 
 #if defined(_MSC_VER)
 #  pragma warning(disable:4251 4275 4786 4127 4100)
 #endif
@@ -80,12 +81,27 @@
 #  ifndef _CRT_NONSTDC_NO_DEPRECATE
 #    define _CRT_NONSTDC_NO_DEPRECATE
 #  endif
-#  ifdef MSVC_USE_VLD
-#    include <vld.h>
-#  endif
 #endif
 
 #include "cpl_config.h"
+
+/* ==================================================================== */
+/*      A few sanity checks, mainly to detect problems that sometimes   */
+/*      arise with bad configured cross-compilation.                    */
+/* ==================================================================== */
+
+#if !defined(SIZEOF_INT) || SIZEOF_INT != 4
+#error "Unexpected value for SIZEOF_INT"
+#endif
+
+#if !defined(SIZEOF_UNSIGNED_LONG) || (SIZEOF_UNSIGNED_LONG != 4 && SIZEOF_UNSIGNED_LONG != 8)
+#error "Unexpected value for SIZEOF_UNSIGNED_LONG"
+#endif
+
+#if !defined(SIZEOF_VOIDP) || (SIZEOF_VOIDP != 4 && SIZEOF_VOIDP != 8)
+#error "Unexpected value for SIZEOF_VOIDP"
+#endif
+
 
 /* ==================================================================== */
 /*      This will disable most WIN32 stuff in a Cygnus build which      */
@@ -99,6 +115,31 @@
 
 #if defined(VSI_NEED_LARGEFILE64_SOURCE) && !defined(_LARGEFILE64_SOURCE)
 #  define _LARGEFILE64_SOURCE 1
+#endif
+
+/* ==================================================================== */
+/*      If iconv() is available use extended recoding module.           */
+/*      Stub implementation is always compiled in, because it works     */
+/*      faster than iconv() for encodings it supports.                  */
+/* ==================================================================== */
+
+#if defined(HAVE_ICONV)
+#  define CPL_RECODE_ICONV
+#endif
+
+#define CPL_RECODE_STUB
+
+/* ==================================================================== */
+/*      MinGW stuff                                                     */
+/* ==================================================================== */
+
+/* We need __MSVCRT_VERSION__ >= 0x0601 to have "struct __stat64" */
+/* Latest versions of mingw32 define it, but with older ones, */
+/* we need to define it manually */
+#if defined(__MINGW32__)
+#ifndef __MSVCRT_VERSION__
+#define __MSVCRT_VERSION__ 0x0601
+#endif
 #endif
 
 /* ==================================================================== */
@@ -133,7 +174,7 @@
 #  include <direct.h>
 #endif
 
-#ifdef _AIX
+#if !(defined(WIN32) || defined(WIN32CE))
 #  include <strings.h>
 #endif
 
@@ -289,6 +330,10 @@ typedef unsigned long    GUIntBig;
 #  define ABS(x)        ((x<0) ? (-1*(x)) : x)
 #endif
 
+#ifndef M_PI
+# define M_PI		3.14159265358979323846	/* pi */
+#endif
+
 /* -------------------------------------------------------------------- */
 /*      Macro to test equality of two floating point values.            */
 /*      We use fabs() function instead of ABS() macro to avoid side     */
@@ -298,14 +343,19 @@ typedef unsigned long    GUIntBig;
 #  define CPLIsEqual(x,y) (fabs((x) - (y)) < 0.0000000000001)
 #endif
 
+/* -------------------------------------------------------------------- */
+/*      Provide macros for case insensitive string comparisons.         */
+/* -------------------------------------------------------------------- */
 #ifndef EQUAL
-#if defined(WIN32) || defined(WIN32CE)
-#  define EQUALN(a,b,n)           (strnicmp(a,b,n)==0)
-#  define EQUAL(a,b)              (stricmp(a,b)==0)
-#else
-#  define EQUALN(a,b,n)           (strncasecmp(a,b,n)==0)
-#  define EQUAL(a,b)              (strcasecmp(a,b)==0)
-#endif
+#  if defined(WIN32) || defined(WIN32CE)
+#    define STRCASECMP(a,b)         (stricmp(a,b))
+#    define STRNCASECMP(a,b,n)      (strnicmp(a,b,n))
+#  else
+#    define STRCASECMP(a,b)         (strcasecmp(a,b))
+#    define STRNCASECMP(a,b,n)      (strncasecmp(a,b,n))
+#  endif
+#  define EQUALN(a,b,n)           (STRNCASECMP(a,b,n)==0)
+#  define EQUAL(a,b)              (STRCASECMP(a,b)==0)
 #endif
 
 #ifdef macos_pre10
@@ -314,8 +364,8 @@ int strncasecmp(char * str1, char * str2, int len);
 char * strdup (char *instr);
 #endif
 
-#ifndef CPL_THREADLOCAL 
-#  define CPL_THREADLOCAL 
+#ifndef CPL_THREADLOCAL
+#  define CPL_THREADLOCAL
 #endif
 
 /* -------------------------------------------------------------------- */
@@ -469,6 +519,18 @@ char * strdup (char *instr);
 #define CPL_LSBINT32PTR(x)    ((*(GByte*)(x)) | ((*(GByte*)((x)+1)) << 8) | \
                               ((*(GByte*)((x)+2)) << 16) | ((*(GByte*)((x)+3)) << 24))
 
+/** Return a signed Int16 from the 2 bytes ordered in LSB order at address x */
+#define CPL_LSBSINT16PTR(x) ((GInt16) CPL_LSBINT16PTR(x))
+
+/** Return a unsigned Int16 from the 2 bytes ordered in LSB order at address x */
+#define CPL_LSBUINT16PTR(x) ((GUInt16)CPL_LSBINT16PTR(x))
+
+/** Return a signed Int32 from the 4 bytes ordered in LSB order at address x */
+#define CPL_LSBSINT32PTR(x) ((GInt32) CPL_LSBINT32PTR(x))
+
+/** Return a unsigned Int32 from the 4 bytes ordered in LSB order at address x */
+#define CPL_LSBUINT32PTR(x) ((GUInt32)CPL_LSBINT32PTR(x))
+
 
 /* Utility macro to explicitly mark intentionally unreferenced parameters. */
 #ifndef UNREFERENCED_PARAM 
@@ -498,10 +560,51 @@ static char *cvsid_aw() { return( cvsid_aw() ? ((char *) NULL) : cpl_cvsid ); }
 #  define CPL_CVSID(string)
 #endif
 
+/* Null terminated variadic */
+#if defined(__GNUC__) && __GNUC__ >= 4 && !defined(DOXYGEN_SKIP)
+#   define CPL_NULL_TERMINATED     __attribute__((__sentinel__))
+#else
+#   define CPL_NULL_TERMINATED
+#endif
+
 #if defined(__GNUC__) && __GNUC__ >= 3 && !defined(DOXYGEN_SKIP)
 #define CPL_PRINT_FUNC_FORMAT( format_idx, arg_idx )  __attribute__((__format__ (__printf__, format_idx, arg_idx)))
 #else
 #define CPL_PRINT_FUNC_FORMAT( format_idx, arg_idx )
+#endif
+
+#if defined(__GNUC__) && __GNUC__ >= 4 && !defined(DOXYGEN_SKIP)
+#define CPL_WARN_UNUSED_RESULT                        __attribute__((warn_unused_result))
+#else
+#define CPL_WARN_UNUSED_RESULT
+#endif
+
+#if defined(__GNUC__) && __GNUC__ >= 4
+#  define CPL_UNUSED __attribute((__unused__))
+#else
+/* TODO: add cases for other compilers */
+#  define CPL_UNUSED
+#endif
+
+#if defined(__GNUC__) && __GNUC__ >= 3 && !defined(DOXYGEN_SKIP)
+#define CPL_NO_RETURN                                __attribute__((noreturn))
+#else
+#define CPL_NO_RETURN
+#endif
+
+#if !defined(DOXYGEN_SKIP)
+#if defined(__has_extension)
+  #if __has_extension(attribute_deprecated_with_message)
+    /* Clang extension */
+    #define CPL_WARN_DEPRECATED(x)                       __attribute__ ((deprecated(x)))
+  #else
+    #define CPL_WARN_DEPRECATED(x)
+  #endif
+#elif defined(__GNUC__)
+    #define CPL_WARN_DEPRECATED(x)                       __attribute__ ((deprecated))
+#else
+  #define CPL_WARN_DEPRECATED(x)
+#endif
 #endif
 
 #endif /* ndef CPL_BASE_H_INCLUDED */

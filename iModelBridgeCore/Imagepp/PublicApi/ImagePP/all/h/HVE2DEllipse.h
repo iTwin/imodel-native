@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DEllipse.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DEllipse
@@ -15,12 +15,13 @@
 #include "HVE2DRectangle.h"
 #include "HVE2DSimpleShape.h"
 
+BEGIN_IMAGEPP_NAMESPACE
 class HGF2DLine;
 class HVE2DSegment;
 
 class HVE2DEllipse : public HVE2DSimpleShape
     {
-    HPM_DECLARE_CLASS_DLL(_HDLLg, 1372)
+    HPM_DECLARE_CLASS_DLL(IMAGEPP_EXPORT, HVE2DEllipseId)
 
 public:
 
@@ -28,16 +29,16 @@ public:
                                  HVE2DEllipse();
                                  HVE2DEllipse(const HVE2DEllipse& pi_rObj);
 
-                                 HVE2DEllipse(const HVE2DRectangle& pi_rRect);
+    IMAGEPP_EXPORT                       HVE2DEllipse(const HVE2DRectangle& pi_rRect);
 
     virtual                      ~HVE2DEllipse();
 
     HVE2DEllipse&                operator=(const HVE2DEllipse& pi_rObj);
 
     // From HVE2DSimpleShape
-    virtual HVE2DComplexLinear   GetLinear() const;
-    virtual HVE2DComplexLinear   GetLinear(HVE2DSimpleShape::RotationDirection pi_DirectionDesired) const;
-    virtual HVE2DComplexLinear*  AllocateLinear(HVE2DSimpleShape::RotationDirection pi_DirectionDesired) const;
+    IMAGEPP_EXPORT virtual HVE2DComplexLinear   GetLinear() const;
+    IMAGEPP_EXPORT virtual HVE2DComplexLinear   GetLinear(HVE2DSimpleShape::RotationDirection pi_DirectionDesired) const;
+    IMAGEPP_EXPORT virtual HVE2DComplexLinear*  AllocateLinear(HVE2DSimpleShape::RotationDirection pi_DirectionDesired) const;
 
     // From HVE2DShape
     virtual bool                 IsEmpty     () const;
@@ -47,7 +48,7 @@ public:
     virtual bool                 IsPointIn(const HGF2DLocation& pi_rPoint, double Tolerance = HVE_USE_INTERNAL_EPSILON) const;
     virtual void                 MakeEmpty();
 
-    virtual HGF2DShape*          GetLightShape() const;
+    IMAGEPP_EXPORT virtual HGF2DShape*   GetLightShape() const;
 
     // From HVE2DVector
     virtual HGF2DLocation        CalculateClosestPoint(const HGF2DLocation& pi_rPoint) const;
@@ -59,7 +60,7 @@ public:
                                                               const HGF2DLocation& pi_rPoint,
                                                               HGF2DLocation* pi_pFirstContiguousnessPoint,
                                                               HGF2DLocation* pi_pSecondContiguousnessPoint) const;
-    virtual HVE2DVector*         AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) const;
+    IMAGEPP_EXPORT virtual HVE2DVector*  AllocateCopyInCoordSys(const HFCPtr<HGF2DCoordSys>& pi_rpCoordSys) const;
     virtual bool                 Crosses(const HVE2DVector& pi_rVector) const;
     virtual bool                 AreContiguous(const HVE2DVector& pi_rVector) const;
     virtual bool                 AreAdjacent(const HVE2DVector& pi_rVector) const;
@@ -98,7 +99,7 @@ private:
 
     double       ComputeY(double pi_X,
                            short pi_SignFactor = 1) const;
-    void          ResetTolerance();
+    IMAGEPP_EXPORT void  ResetTolerance();
 
     bool          m_IsVertical;
     double        m_SemiMajorAxis;
@@ -107,6 +108,7 @@ private:
     HGF2DLocation m_F1;
     HGF2DLocation m_F2;
     };
+END_IMAGEPP_NAMESPACE
 
 
 #include "HVE2DEllipse.hpp"

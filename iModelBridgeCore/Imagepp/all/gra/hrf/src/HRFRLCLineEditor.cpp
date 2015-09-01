@@ -2,14 +2,14 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRLCLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRLCLineEditor
 //-----------------------------------------------------------------------------
 
-#include <ImagePP/h/hstdcpp.h>
-#include <ImagePP/h/HDllSupport.h>
+#include <ImagePPInternal/hstdcpp.h>
+
 #include <Imagepp/all/h/HRFRLCLineEditor.h>
 #include <Imagepp/all/h/HRFRLCFile.h>
 
@@ -53,9 +53,9 @@ HRFRLCLineEditor::~HRFRLCLineEditor()
 // NbRun (FirstRunBegin,FirstRunEnd), (SecondRunBegin,SecondRunEnd)...
 // each run give the with color
 //-----------------------------------------------------------------------------
-HSTATUS HRFRLCLineEditor::ReadBlock(uint32_t pi_PosBlockX,
-                                    uint32_t pi_PosBlockY,
-                                    Byte*  po_pData,
+HSTATUS HRFRLCLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
+                                    uint64_t  pi_PosBlockY,
+                                    Byte*     po_pData,
                                     HFCLockMonitor const* pi_pSisterFileLock)
     {
     // We assume that we have check the header file integrity in the
@@ -79,7 +79,7 @@ HSTATUS HRFRLCLineEditor::ReadBlock(uint32_t pi_PosBlockX,
         }
 
     unsigned short NbRuns;
-    if (pi_PosBlockY < m_CurrentLine)
+    if (pi_PosBlockY < m_CurrentLine || m_CurrentLine == 0)
         {
         m_pRLCFile->SeekToPos(2 * sizeof(unsigned short)); // skip the image size
         m_CurrentLine = 0;
@@ -88,7 +88,7 @@ HSTATUS HRFRLCLineEditor::ReadBlock(uint32_t pi_PosBlockX,
     // skip the pi_PosBlockY - 1 lines
     while (Status == H_SUCCESS && m_CurrentLine < pi_PosBlockY)
         {
-        if (m_pRLCFile->Read((void*)&NbRuns, sizeof(unsigned short)) != sizeof(unsigned short)) // read the nb run for this line
+        if (m_pRLCFile->Read(&NbRuns, sizeof(unsigned short)) != sizeof(unsigned short)) // read the nb run for this line
             Status = H_ERROR;
         else
             {
@@ -102,14 +102,14 @@ HSTATUS HRFRLCLineEditor::ReadBlock(uint32_t pi_PosBlockX,
 
     if (Status == H_SUCCESS)
         {
-        if (m_pRLCFile->Read((void*)&NbRuns, sizeof(unsigned short)) != sizeof(unsigned short)) // the the nb runs into this line
+        if (m_pRLCFile->Read(&NbRuns, sizeof(unsigned short)) != sizeof(unsigned short)) // the the nb runs into this line
             Status = H_ERROR;
         else
             {
             SwabArrayOfShort(&NbRuns, 1);
 
             uint32_t ReadSize = NbRuns * 2 * sizeof(unsigned short);
-            if (m_pRLCFile->Read((void*)m_pBuffer, ReadSize) != ReadSize)
+            if (m_pRLCFile->Read(m_pBuffer, ReadSize) != ReadSize)
                 Status = H_ERROR;
             }
 
@@ -173,9 +173,9 @@ HSTATUS HRFRLCLineEditor::ReadBlock(uint32_t pi_PosBlockX,
 // WriteBlock
 // Edition by block
 //-----------------------------------------------------------------------------
-HSTATUS HRFRLCLineEditor::WriteBlock(uint32_t     pi_PosBlockX,
-                                     uint32_t     pi_PosBlocY,
-                                     const Byte* pi_pData,
+HSTATUS HRFRLCLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
+                                     uint64_t     pi_PosBlocY,
+                                     const Byte*  pi_pData,
                                      HFCLockMonitor const* pi_pSisterFileLock)
     {
     // not support write access
