@@ -87,6 +87,18 @@ static DgnTextures::Format extractFormat (int value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/10
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnTextures::Delete(DgnTextureId textureId)
+    {
+    Statement stmt;
+    stmt.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Texture) " WHERE Id=?");
+    stmt.BindId(1, textureId);
+    const auto status = stmt.Step();
+    return (BE_SQLITE_DONE == status) ? BE_SQLITE_OK : status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextures::Texture DgnTextures::Query (DgnTextureId id) const
@@ -191,3 +203,54 @@ uintptr_t   DgnTextures::GetQvTextureId (DgnTextureId TextureId) const
     return (found == m_qvTextureIds.end()) ? 0 : found->second; 
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DgnTextures::Texture::GetImage (bvector<Byte>& image) const
+    {
+    TextureData const&              textureData = GetData();
+    ImageUtilities::RgbImageInfo    imageInfo;
+    BentleyStatus                   status = ERROR;
+
+    memset (&imageInfo, 0, sizeof (imageInfo));
+    switch (textureData.GetFormat())
+        {
+        case DgnTextures::Format::RAW:
+            image = textureData.GetData();
+            return SUCCESS;
+
+        case DgnTextures::Format::PNG:  
+            status = ImageUtilities::ReadImageFromPngBuffer (image, imageInfo, &textureData.GetData().front(), textureData.GetData().size());
+            break;
+
+        case DgnTextures::Format::JPEG:
+            {
+            ImageUtilities::RgbImageInfo    jpegInfo;
+
+            jpegInfo.width = textureData.GetWidth();
+            jpegInfo.height = textureData.GetHeight();
+            jpegInfo.hasAlpha = true;
+            jpegInfo.isBGR = false;
+            jpegInfo.isTopDown = true;
+            
+            status = ImageUtilities::ReadImageFromJpgBuffer (image, imageInfo, &textureData.GetData().front(), textureData.GetData().size(), jpegInfo);
+            break;
+            }
+
+    
+        default:
+            BeAssert (false);
+            return ERROR;
+        }
+
+    if (SUCCESS != status ||
+        imageInfo.width != textureData.GetWidth() ||
+        imageInfo.height != textureData.GetHeight() ||
+        !imageInfo.hasAlpha)
+        {
+        BeAssert (false);
+        return ERROR;
+        }
+    return SUCCESS;
+    }

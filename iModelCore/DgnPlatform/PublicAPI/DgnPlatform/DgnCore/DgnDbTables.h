@@ -1197,12 +1197,13 @@ public:
         //! @param[in]      descr The optional texture description
         explicit Texture(TextureData const& data, Utf8CP name = nullptr, Utf8CP descr = nullptr) : m_data(data), m_name(name), m_descr(descr) { }
 
-        bool                    IsValid() const         { return m_id.IsValid(); }  //!< Test whether this is a valid texture
+        bool                                IsValid() const         { return m_id.IsValid(); }  //!< Test whether this is a valid texture
 
-        DgnTextureId            GetId() const           { return m_id; }    //!< The ID of the texture
-        Utf8StringCR            GetName() const         { return m_name; }  //!< The optional texture name
-        Utf8StringCR            GetDescription() const  { return m_descr; } //!< The optional texture description
-        TextureData const&      GetData() const         { return m_data; }  //!< The encoded texture data
+        DgnTextureId                        GetId() const           { return m_id; }    //!< The ID of the texture
+        Utf8StringCR                        GetName() const         { return m_name; }  //!< The optional texture name
+        Utf8StringCR                        GetDescription() const  { return m_descr; } //!< The optional texture description
+        TextureData const&                  GetData() const         { return m_data; }  //!< The encoded texture data
+        DGNPLATFORM_EXPORT BentleyStatus    GetImage (bvector<Byte>& image) const;      //!< The image data (RGBA).
 
         void    SetName(Utf8CP name)               { m_name = name; }      //!< Set the texture name
         void    SetDescription(Utf8CP descr)       { m_descr = descr; }    //!< Set the texture description
@@ -1261,6 +1262,14 @@ public:
     //! @param[in]      id The ID of the desired texture
     //! @return The texture with the specified ID, or an invalid texture if no such texture exists.
     DGNPLATFORM_EXPORT Texture      Query(DgnTextureId id) const;
+
+    //! Remove a texture from the DgnDb.
+    //! @param[in] id the id of the texture to remove.
+    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the textureId did not exist prior to this call.
+    //! @note Deleting a texture can result in an inconsistent database. There is no checking that the texture to be removed is not in use somehow, and
+    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
+    //! know for sure that the texture is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnTextureId id);
 
     //! Look up the ID of the texture with the specified name
     //! @param[in]      name The name of the desired texture
@@ -1377,6 +1386,14 @@ public:
     //! @param[out]     result      If supplied, holds the result of the insert operation
     //! @return The DgnMaterialId of the newly created material, or an invalid ID if the material was not created.
     DGNPLATFORM_EXPORT DgnMaterialId Insert(Material& material, DgnDbStatus* result=nullptr);
+
+    //! Remove a material from the DgnDb.
+    //! @param[in] id the id of the material to remove.
+    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the materialId did not exist prior to this call.
+    //! @note Deleting a material can result in an inconsistent database. There is no checking that the material to be removed is not in use somehow, and
+    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
+    //! know for sure that the material is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnMaterialId id);
 
     //! Change the properties of the specified material. This method cannot be used to change the material or palette name.
     //! @param[in]      material The modified material.
