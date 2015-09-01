@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include <Bentley/BeTimeUtilities.h>
+#include <TerrainModel/Core/DTMIterators.h>
 #include "time.h"
 
 #define FILETIME_1_1_1970  116444736000000000LL           // Win32 file time of midnight 1/1/70
@@ -373,31 +374,9 @@ struct DTMQvCacheTileDetails : public DTMQvCacheDetailsRange
 struct DTMQvCacheDetailsRangeTiling : public DTMQvCacheDetailsRange, public DTMQvCacheTilingDetails
     {
 private:
-    static const int s_tilePointSize = 25000;
-    int m_numTilesX;
-    int m_numTilesY;
     DRange3d m_fullRange;
     bvector<RefCountedPtr<DTMQvCacheTileDetails>> m_tiles;
 
-    public: DTMQvCacheDetailsRangeTiling (DRange3d range, DRange3d fullRange, Int64 numberOfPoints) : DTMQvCacheDetailsRange (range)
-        {
-        m_fullRange = fullRange;
-        if (numberOfPoints > s_tilePointSize)
-            {
-            BeAssert(numberOfPoints <= INT_MAX);
-            double numOfTiles = (int)numberOfPoints / s_tilePointSize;
-            int iNumOfTiles = (int)(sqrt(numOfTiles) + 0.5);
-
-            m_numTilesX = iNumOfTiles;
-            m_numTilesY = iNumOfTiles;
-            }
-        else
-            {
-            m_numTilesX = 1;
-            m_numTilesY = 1;
-            range = fullRange;
-            }
-        }
     public: DTMQvCacheDetailsRangeTiling (DRange3d range, DRange3d fullRange, bvector<RefCountedPtr<DTMQvCacheTileDetails>> const & tiles) : DTMQvCacheDetailsRange (range)
         {
         m_fullRange = fullRange;
@@ -419,49 +398,16 @@ private:
 
     public: virtual size_t GetNumberOfTiles()
         {
-        if (m_tiles.size() == 0) CalcTiles();
         return m_tiles.size();
         }
     public: virtual DTMQvCacheDetails* GetTileDetail(unsigned int index)
         {
-        if (m_tiles.size() == 0) CalcTiles();
         return m_tiles[index].get();
         }
     public: virtual void GetTileFence(unsigned index, DPoint3d& lowPt, DPoint3d& highPt)
         {
-        if (m_tiles.size() == 0) CalcTiles();
         lowPt = m_tiles[index]->range.low;
         highPt = m_tiles[index]->range.high;
-        }
-    private: void CalcTiles()
-        {
-        double gapX = m_fullRange.high.x - m_fullRange.low.x;
-        double gapY = m_fullRange.high.y - m_fullRange.low.y;
-
-        gapX /= m_numTilesX;
-        gapY /= m_numTilesY;
-        double x = m_fullRange.low.x;
-        DRange3d tileRange;
-        tileRange.low.z = 0;
-        tileRange.high.z = 0;
-        for (int dx = 0; dx < m_numTilesX; dx++)
-            {
-            tileRange.low.x = x;
-            tileRange.high.x = x + gapX;
-            if (!(tileRange.low.x > range.high.x || tileRange.high.x < range.low.x))
-                {
-                double y = m_fullRange.low.y;
-                for (int dy = 0; dy < m_numTilesY; dy++)
-                    {
-                    tileRange.low.y = y;
-                    tileRange.high.y = y + gapY;
-                    if (!(tileRange.low.y > range.high.y || tileRange.high.y < range.low.y))
-                        m_tiles.push_back(new DTMQvCacheTileDetails((dx * 0x1000) + dy, tileRange, tileRange));
-                    y += gapY;
-                    }
-                }
-            x += gapX;
-            }
         }
     private: void CalcTiles (bvector<RefCountedPtr<DTMQvCacheTileDetails>> const & tiles)
         {
@@ -623,8 +569,13 @@ bvector<RefCountedPtr<DTMQvCacheTileDetails>> const& DTMDataRefXAttribute::GetTi
                     fencePts[3].x = tileRange.low.x; fencePts[3].y = tileRange.high.y;
                     fencePts[4] = fencePts[0];
 
-                    if (bcdtmRange_triangleShadeMeshForQVCacheFromDtmObject ((BC_DTM_OBJ*)dtm->GetTinHandle(), true, DTMFenceType::Block, DTMFenceOption::Overlap, fencePts, 5, expandedTileRange) == DTM_SUCCESS)
-                        m_tiles.push_back (new DTMQvCacheTileDetails ((dx * 0x10000) + dy, tileRange, expandedTileRange));
+                    DTMFenceParams fence (DTMFenceType::Block, DTMFenceOption::Overlap, (DPoint3d*)fencePts, 5);
+                    DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create (*dtm);
+                    en->SetFence (fence);
+                    en->SetMaxTriangles (126000 / 3);
+                    en->SetTilingMode (true);
+                    expandedTileRange = en->GetRange ();
+                    m_tiles.push_back (new DTMQvCacheTileDetails ((dx * 0x10000) + dy, tileRange, expandedTileRange));
                     y += gapY;
                     }
                 x += gapX;

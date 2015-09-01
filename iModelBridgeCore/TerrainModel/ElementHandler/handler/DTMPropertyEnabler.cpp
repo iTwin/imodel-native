@@ -338,6 +338,9 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
                         case DTMElementSpotsHandler::SubHandlerId:
                             paramType = DPID_SPOTS;
                             break;
+                        case DTMElementRegionsHandler::SubHandlerId:
+                            paramType = DPID_REGIONS;
+                            break;
                         case DTMElementFeaturesHandler::SubHandlerId:
                             switch (((DTMElementFeaturesHandler::DisplayParams*)param)->GetTag ())
                                 {

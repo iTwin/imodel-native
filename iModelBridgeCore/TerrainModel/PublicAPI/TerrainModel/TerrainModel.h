@@ -71,6 +71,7 @@ TERRAINMODEL_TYPEDEFS (BcDTMDrapedLine)
 TERRAINMODEL_TYPEDEFS (BcDTMDrapedLinePoint)
 TERRAINMODEL_TYPEDEFS (BcDTMFeatureEnumerator)
 TERRAINMODEL_TYPEDEFS (DTMFeatureEnumerator)
+TERRAINMODEL_TYPEDEFS (DTMMeshEnumerator)
 
 TERRAINMODEL_TYPEDEFS (BcDTMFeature)
 TERRAINMODEL_TYPEDEFS (BcDTMLinearFeature)
@@ -97,6 +98,7 @@ typedef RefCountedPtr<BcDTMDrapedLine> BcDTMDrapedLinePtr;
 typedef RefCountedPtr<BcDTMDrapedLinePoint> BcDTMDrapedLinePointPtr;
 typedef RefCountedPtr<BcDTMFeatureEnumerator> BcDTMFeatureEnumeratorPtr;
 typedef RefCountedPtr<DTMFeatureEnumerator> DTMFeatureEnumeratorPtr;
+typedef RefCountedPtr<DTMMeshEnumerator> DTMMeshEnumeratorPtr;
 
 typedef RefCountedPtr<BcDTMFeature> BcDTMFeaturePtr;
 typedef RefCountedPtr<BcDTMLinearFeature> BcDTMLinearFeaturePtr;

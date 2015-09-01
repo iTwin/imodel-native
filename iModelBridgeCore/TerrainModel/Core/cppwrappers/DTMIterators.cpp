@@ -14,6 +14,9 @@
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
+
+int bcdtmMark_checkForPointOnRegionHullDtmObject (BC_DTM_OBJ* dtmP, long pnt);
+
 DTMFeatureInfo::DTMFeatureInfo (BcDTMP dtm, long feature) : m_dtm (dtm), m_feature (feature)
     {
     }
@@ -64,6 +67,11 @@ DTMUserTag DTMFeatureInfo::UserTag () const
     return dtmFeatureP->dtmUserTag;
     }
 
+long DTMFeatureInfo::FeatureIndex () const
+    {
+    return m_feature;
+    }
+
 static int featureIdCompareFunction (const DTMFeatureId& id1P, const DTMFeatureId& id2P)
     {
     if (id1P < id2P) return -1;
@@ -88,9 +96,9 @@ const DTMFeatureEnumerator::iterator& DTMFeatureEnumerator::iterator::operator++
     return *this;
     }
 
-DTMFeatureEnumerator::DTMFeatureEnumerator (BcDTMR dtm)
+DTMFeatureEnumerator::DTMFeatureEnumerator (BcDTMCR dtm)
     {
-    m_dtm = &dtm;
+    m_dtm = const_cast<BcDTMP>(&dtm);
     m_dtmP = m_dtm->GetTinHandle ();
     m_isInitialized = false;
     m_sort = false;
@@ -99,6 +107,12 @@ DTMFeatureEnumerator::DTMFeatureEnumerator (BcDTMR dtm)
     ClearFilterByFeatureId ();
     IncludeAllFeatures ();
     }
+
+DTMFeatureEnumeratorPtr DTMFeatureEnumerator::Create (BcDTMCR dtm)
+    {
+    return new DTMFeatureEnumerator (dtm);
+    }
+
 
 void DTMFeatureEnumerator::InitializeForSorting () const
     {
@@ -530,9 +544,14 @@ DTMMeshEnumerator::DTMMeshEnumerator (BcDTMR dtm) : m_dtm (&dtm)
     clipDtmP = nullptr;
     m_initialized = false;
     maxTriangles = 50000;
-    m_noDuplicates = true;
+    m_tilingMode = false;
     zAxisFactor = 1;
 //D    m_polyface = PolyfaceHeader::CreateFixedBlockIndexed (3);
+    }
+
+DTMMeshEnumeratorPtr DTMMeshEnumerator::Create (BcDTMR dtm)
+    {
+    return new DTMMeshEnumerator (dtm);
     }
 DTMMeshEnumerator::~DTMMeshEnumerator ()
     {
@@ -565,7 +584,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
     DTMFenceOption fenceOption = m_fence.fenceOption;
     DPoint3dCP fencePtsP = m_fence.points;
     DPoint3dCP pntP;
-    long  pointMark, pointMarkOffset = 0, numMarked = 0;
+    long  pointMarkOffset = 0, numMarked = 0;
     long c1 = 0, c2 = 0;
     BeAssert (!m_initialized);
     if (m_initialized)
@@ -632,14 +651,21 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
     */
     if (useFence == true)
         {
-        if (!m_noDuplicates)
+        if (bcdtmClip_buildClippingTinFromFencePointsDtmObject (&clipDtmP, fencePtsP, numFencePts)) goto errexit;
+        clipDtm = BcDTM::CreateFromDtmHandle (clipDtmP);
+        if (fabs (m_dtmP->xMin - clipDtmP->xMin) < m_dtmP->ppTol) clipDtmP->xMin = m_dtmP->xMin;
+        if (fabs (m_dtmP->xMax - clipDtmP->xMax) < m_dtmP->ppTol) clipDtmP->xMax = m_dtmP->xMax;
+        if (fabs (m_dtmP->yMin - clipDtmP->yMin) < m_dtmP->ppTol) clipDtmP->yMin = m_dtmP->yMin;
+        if (fabs (m_dtmP->yMax - clipDtmP->yMax) < m_dtmP->ppTol) clipDtmP->yMax = m_dtmP->yMax;
+        if (fenceType == DTMFenceType::Block && m_dtmP->xMin >= clipDtmP->xMin && m_dtmP->xMax <= clipDtmP->xMax &&  m_dtmP->yMin >= clipDtmP->yMin && m_dtmP->yMax <= clipDtmP->yMax) useFence = false;
+        if (dbg) bcdtmWrite_message (0, 0, 0, "useFence = %2ld ** fenceType = %2ld", useFence, fenceType);
+        if (!m_tilingMode)
             {
             //  Mark Points Immediately External To Fence
-
-            pointMark = m_dtmP->numPoints * 2 + pointMarkOffset;
+            m_pointMark = 1;// m_dtmP->numPoints * 2 + pointMarkOffset;
             startTime = bcdtmClock ();
             if (dbg) bcdtmWrite_message (0, 0, 0, "Marking Points External To Fence");
-            if (bcdtmLoad_markTinPointsExternalToFenceDtmObject (m_dtmP, clipDtmP, pointMark, &leftMostPnt, &numMarked)) goto errexit;
+            if (bcdtmLoad_markTinPointsExternalToFenceDtmObject (m_dtmP, clipDtmP, m_pointMark, &leftMostPnt, &numMarked)) goto errexit;
             if (tdbg)
                 {
                 bcdtmWrite_message (0, 0, 0, "leftMostPnt = %8ld leftMostPnt->x = %12.5lf", leftMostPnt, pointAddrP (m_dtmP, leftMostPnt)->x);
@@ -649,15 +675,8 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
 
             //  Mark Points Internal To Fence
             }
-
-        if (bcdtmClip_buildClippingTinFromFencePointsDtmObject (&clipDtmP, fencePtsP, numFencePts)) goto errexit;
-        clipDtm = BcDTM::CreateFromDtmHandle (clipDtmP);
-        if (fabs (m_dtmP->xMin - clipDtmP->xMin) < m_dtmP->ppTol) clipDtmP->xMin = m_dtmP->xMin;
-        if (fabs (m_dtmP->xMax - clipDtmP->xMax) < m_dtmP->ppTol) clipDtmP->xMax = m_dtmP->xMax;
-        if (fabs (m_dtmP->yMin - clipDtmP->yMin) < m_dtmP->ppTol) clipDtmP->yMin = m_dtmP->yMin;
-        if (fabs (m_dtmP->yMax - clipDtmP->yMax) < m_dtmP->ppTol) clipDtmP->yMax = m_dtmP->yMax;
-        if (fenceType == DTMFenceType::Block && m_dtmP->xMin >= clipDtmP->xMin && m_dtmP->xMax <= clipDtmP->xMax &&  m_dtmP->yMin >= clipDtmP->yMin && m_dtmP->yMax <= clipDtmP->yMax) useFence = false;
-        if (dbg) bcdtmWrite_message (0, 0, 0, "useFence = %2ld ** fenceType = %2ld", useFence, fenceType);
+        else
+            m_pointMark = 1;
         /*
         **  Find Points Immediately Before And After Fence
         */
@@ -685,7 +704,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
                 {
                 pntP = pointAddrP (m_dtmP, pnt1);
 
-                if (m_noDuplicates)
+                if (m_tilingMode)
                     {
                     if (pntP->x > clipDtmP->xMax || pntP->y > clipDtmP->yMax)
                         {
@@ -700,7 +719,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
                     }
                 else
                     if (pntP->x >= clipDtmP->xMin && pntP->x <= clipDtmP->xMax &&
-                        pntP->y >= clipDtmP->yMin && pntP->y <= clipDtmP->yMax) nodeAddrP (m_dtmP, pnt1)->sPtr = pointMark;
+                        pntP->y >= clipDtmP->yMin && pntP->y <= clipDtmP->yMax) nodeAddrP (m_dtmP, pnt1)->sPtr = m_pointMark;
                 }
             }
         /*
@@ -717,7 +736,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
                     {
                     long fndType, tinPnt1, tinPnt2, tinPnt3;
                     if (bcdtmFind_triangleDtmObject (m_dtmP, pntP->x, pntP->y, &fndType, &tinPnt1, &tinPnt2, &tinPnt3)) goto errexit;
-                    if (fndType) nodeAddrP (m_dtmP, pnt1)->sPtr = pointMark;
+                    if (fndType) nodeAddrP (m_dtmP, pnt1)->sPtr = m_pointMark;
                     }
                 }
             }
@@ -726,8 +745,12 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
         */
         if (dbg) bcdtmWrite_message (0, 0, 0, "startPnt = %8ld lastPnt = %8ld", startPnt, lastPnt);
 
-        if (m_noDuplicates)
+        if (m_tilingMode)
             leftMostPnt = startPnt;
+        }
+    if (m_regionMode != RegionMode::Normal)
+        {
+        ScanAndMarkRegions ();
         }
     /*
     ** Allocate Memory For Mesh Faces
@@ -743,7 +766,185 @@ errexit:
     return DTM_ERROR;
     }
 
-    void DTMMeshEnumerator::Reset ()
+void DTMMeshEnumerator::ScanAndMarkRegions () const
+    {
+    m_regionPointMask.resize (m_dtmP->numPoints);
+    DTMFeatureEnumeratorPtr regionEnumerator = DTMFeatureEnumerator::Create (*m_dtm.get ());
+    regionEnumerator->ExcludeAllFeatures ();
+    regionEnumerator->IncludeFeature (DTMFeatureType::Region);
+    regionEnumerator->SetReadSourceFeatures (false);
+
+    if (m_regionMode == RegionMode::RegionFeatureId)
+        regionEnumerator->SetFeatureIdFilter (m_regionFeatureId);
+    else if (m_regionMode == RegionMode::RegionUserTag)
+        regionEnumerator->SetUserTagFilter (m_regionUserTag);
+
+    for (DTMFeatureInfo info : *regionEnumerator)
+        ScanAndMarkRegion (info.FeatureIndex ());
+    bcdtmList_nullTptrValuesDtmObject (m_dtmP);
+    }
+
+void DTMMeshEnumerator::ScanAndMarkRegion (long featureIndex) const
+    {
+    bool markValue = true;
+    long startPnt;
+
+    if (bcdtmList_copyDtmFeatureToTptrListDtmObject (m_dtmP, featureIndex, &startPnt) == DTM_SUCCESS)
+        {
+        BC_DTM_OBJ* dtmP = m_dtmP;
+        long numMarked;
+        long  minPnt, maxPnt;
+        long* minPntP = &minPnt;
+        long* maxPntP = &maxPnt;
+        long* numMarkedP = &numMarked;
+        int regionOption = 2; // Needs to be added, Add areas inside internal Regions.
+        long ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0);
+        long priorPnt, scanPnt, nextPnt, antPnt, clPnt, clPtr, firstPnt, lastPnt;
+        /*
+        ** Initialise
+        */
+        firstPnt = lastPnt = dtmP->nullPnt;
+        *minPntP = dtmP->numPoints - 1;
+        *maxPntP = 0;
+        *numMarkedP = 0;
+        long mark = -10;
+        /*
+        ** Check Start Point tPtr List Is Not Null
+        */
+        if (nodeAddrP (dtmP, startPnt)->tPtr == dtmP->nullPnt)
+            {
+            bcdtmWrite_message (2, 0, 0, "Tptr List Start Point Is Null");
+            return;
+            }
+        /*
+        ** Scan Around Tptr Polygon And Mark Internal Points And Create Internal Tptr List
+        */
+        if (dbg) bcdtmWrite_message (0, 0, 0, "Marking Internal To Tptr Polygon");
+        priorPnt = startPnt;
+        scanPnt = nodeAddrP (dtmP, startPnt)->tPtr;
+        do
+            {
+            antPnt = nextPnt = nodeAddrP (dtmP, scanPnt)->tPtr;
+            if ((antPnt = bcdtmList_nextAntDtmObject (dtmP, scanPnt, antPnt)) < 0)
+                return;// ToDo....
+            while (antPnt != priorPnt)
+                {
+                /*
+                **     Check For Point On Internal Region Hull
+                */
+                if (nodeAddrP (dtmP, antPnt)->tPtr == dtmP->nullPnt && regionOption == 2)
+                    {
+                    if (bcdtmMark_checkForPointOnRegionHullDtmObject (dtmP, antPnt))
+                        {
+                        nodeAddrP (dtmP, antPnt)->tPtr = dtmP->numPoints;
+                        if (antPnt < *minPntP) *minPntP = antPnt;
+                        if (antPnt > *maxPntP) *maxPntP = antPnt;
+                        }
+                    }
+                if (nodeAddrP (dtmP, antPnt)->tPtr == dtmP->nullPnt)
+                    {
+                    nodeAddrP (dtmP, antPnt)->tPtr = mark;
+                    m_regionPointMask[antPnt] = markValue;
+                    ++(*numMarkedP);
+                    if (antPnt < *minPntP) *minPntP = antPnt;
+                    if (antPnt > *maxPntP) *maxPntP = antPnt;
+                    clPtr = nodeAddrP (dtmP, antPnt)->cPtr;
+                    while (clPtr != dtmP->nullPtr)
+                        {
+                        clPnt = clistAddrP (dtmP, clPtr)->pntNum;
+                        clPtr = clistAddrP (dtmP, clPtr)->nextPtr;
+                        /*
+                        **           Check For Point On Internal Region Hull
+                        */
+                        if (nodeAddrP (dtmP, clPnt)->tPtr == dtmP->nullPnt && regionOption == 2)
+                            {
+                            if (bcdtmMark_checkForPointOnRegionHullDtmObject (dtmP, clPnt))
+                                {
+                                nodeAddrP (dtmP, clPnt)->tPtr = dtmP->numPoints;
+                                if (clPnt < *minPntP) *minPntP = clPnt;
+                                if (clPnt > *maxPntP) *maxPntP = clPnt;
+                                }
+                            }
+                        /*
+                        **           Mark Point
+                        */
+                        if (nodeAddrP (dtmP, clPnt)->tPtr == dtmP->nullPnt)
+                            {
+                            if (lastPnt == dtmP->nullPnt)
+                                {
+                                firstPnt = lastPnt = clPnt;
+                                }
+                            else
+                                {
+                                nodeAddrP (dtmP, lastPnt)->tPtr = clPnt; lastPnt = clPnt;
+                                }
+                            nodeAddrP (dtmP, clPnt)->tPtr = clPnt;
+                            }
+                        }
+                    }
+                if ((antPnt = bcdtmList_nextAntDtmObject (dtmP, scanPnt, antPnt)) < 0)
+                    return; // ToDo check exit goto errexit;
+                }
+            priorPnt = scanPnt;
+            scanPnt = nextPnt;
+            } while (priorPnt != startPnt);
+        /*
+        ** Scan Tptr List And Mark Connected Points
+        */
+        if (dbg) bcdtmWrite_message (0, 0, 0, "Marking Tptr List Points");
+        while (firstPnt != lastPnt)
+            {
+            nextPnt = nodeAddrP (dtmP, firstPnt)->tPtr;
+            nodeAddrP (dtmP, firstPnt)->tPtr = mark;
+            m_regionPointMask[firstPnt] = markValue;
+            ++(*numMarkedP);
+            if (firstPnt < *minPntP) *minPntP = firstPnt;
+            if (firstPnt > *maxPntP) *maxPntP = firstPnt;
+            clPtr = nodeAddrP (dtmP, firstPnt)->cPtr;
+            while (clPtr != dtmP->nullPtr)
+                {
+                clPnt = clistAddrP (dtmP, clPtr)->pntNum;
+                clPtr = clistAddrP (dtmP, clPtr)->nextPtr;
+                /*
+                **     Check For Point On Internal Region Hull
+                */
+                if (nodeAddrP (dtmP, clPnt)->tPtr == dtmP->nullPnt && regionOption == 2)
+                    {
+                    if (bcdtmMark_checkForPointOnRegionHullDtmObject (dtmP, clPnt))
+                        {
+                        nodeAddrP (dtmP, clPnt)->tPtr = dtmP->numPoints;
+                        if (clPnt < *minPntP) *minPntP = clPnt;
+                        if (clPnt > *maxPntP) *maxPntP = clPnt;
+                        }
+                    }
+                /*
+                **     Mark Point
+                */
+                if (nodeAddrP (dtmP, clPnt)->tPtr == dtmP->nullPnt)
+                    {
+                    nodeAddrP (dtmP, lastPnt)->tPtr = clPnt;
+                    lastPnt = clPnt;
+                    nodeAddrP (dtmP, clPnt)->tPtr = clPnt;
+                    }
+                }
+            firstPnt = nextPnt;
+            }
+        /*
+        ** Mark Last Point
+        */
+        if (dbg) bcdtmWrite_message (0, 0, 0, "Marking Last Point");
+        if (lastPnt != dtmP->nullPnt)
+            {
+            nodeAddrP (dtmP, lastPnt)->tPtr = mark;
+            m_regionPointMask[lastPnt] = markValue;
+            ++(*numMarkedP);
+            if (lastPnt < *minPntP) *minPntP = lastPnt;
+            if (lastPnt > *maxPntP) *maxPntP = lastPnt;
+            }
+        }
+    }
+
+void DTMMeshEnumerator::Reset ()
         {
         if (m_initialized)
             {
@@ -756,6 +957,50 @@ errexit:
             if (useFence && m_dtmP->dtmState == DTMState::Tin) for (long node = leftMostPnt; node <= lastPnt; ++node) nodeAddrP (m_dtmP, node)->sPtr = m_dtmP->nullPnt;
             }
         }
+
+
+int bcdtmList_testForRegionLineDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2)
+/*
+** This Function Tests If The Line P1-P2 is A Void Or Hole Hull Line
+*/
+    {
+    long clPtr;
+    /*
+    ** Test For Void Hull Line
+    */
+    clPtr = nodeAddrP (dtmP, P1)->fPtr;
+    while (clPtr != dtmP->nullPtr)
+        {
+        if (flistAddrP (dtmP, clPtr)->nextPnt == P2)
+            {
+            if (ftableAddrP (dtmP, flistAddrP (dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)  return(1);
+            }
+        clPtr = flistAddrP (dtmP, clPtr)->nextPtr;
+        }
+    /*
+    ** Job Completed
+    */
+    return(0);
+    }
+
+bool bcdtmList_testForRegionTriangleDtmObject (BC_DTM_OBJ *dtmP, std::vector<bool>& pointMask, long P1, long P2, long P3)
+/*
+** This Function Tests For A Void Triangle
+*/
+    {
+    /*
+    ** If Any Points are Void Points Then Triangle Is A Void triangle
+    */
+    if (pointMask[P1] || pointMask[P2] || pointMask[P3])
+        return true;
+    /*
+    ** If any Lines are Void Lines Then Triangle Is A Void triangle
+    */
+    if (bcdtmList_testForRegionLineDtmObject (dtmP, P2, P1)) return true;
+    if (bcdtmList_testForRegionLineDtmObject (dtmP, P3, P2)) return true;
+    if (bcdtmList_testForRegionLineDtmObject (dtmP, P1, P3)) return true;
+    return false;
+    }
 
     bool DTMMeshEnumerator::MoveNext (long& pnt1, long& pnt2) const
         {
@@ -784,7 +1029,7 @@ errexit:
         for (; pnt1 <= lastPnt; ++pnt1)
             {
             node1P = nodeAddrP (m_dtmP, pnt1);
-            if (useFence == false || (useFence == true && node1P->sPtr == 1))
+            if (useFence == false || (useFence == true && node1P->sPtr == m_pointMark))
                 {
                 if ((clPtr = node1P->cPtr) != m_dtmP->nullPtr)
                     {
@@ -836,6 +1081,12 @@ errexit:
                                     long voidTriangleLong;
                                     if (bcdtmList_testForVoidTriangleDtmObject (m_dtmP, pnt1, pnt2, pnt3, (long*)&voidTriangleLong)) goto errexit;
                                     voidTriangle = voidTriangleLong != 0;
+                                    }
+                                if (!voidTriangle && m_regionMode != RegionMode::Normal)
+                                    {
+                                    voidTriangle = bcdtmList_testForRegionTriangleDtmObject (m_dtmP, m_regionPointMask, pnt1, pnt2, pnt3);
+                                    if (m_regionMode != RegionMode::NonRegion)
+                                        voidTriangle = !voidTriangle;
                                     }
                                 /*
                                 **                 Process If None Void Triangle
@@ -975,4 +1226,46 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     else
         *m_polyface = PolyfaceQueryCarrier (3, false, (size_t)m_p_vec->meshFaces.size (), (size_t)points.size (), points.GetCP (), m_p_vec->meshFaces.GetCP (), normals.size (), normals.GetCP (), m_p_vec->meshFaces.GetCP ());
     return m_polyface;
+    }
+
+DRange3d DTMMeshEnumerator::iterator::GetRange () const
+    {
+    DRange3d range;
+    range.Init ();
+
+    if (!m_p_vec->meshFaces.empty ())
+        {
+        BC_DTM_OBJ* m_dtmP = m_p_vec->m_dtm->GetTinHandle ();
+        long nullPnt = m_dtmP->nullPnt;
+        /*
+        ** Mark Mesh Points
+        */
+        for (long face : m_p_vec->meshFaces)
+            {
+            range.Extend (*pointAddrP (m_dtmP, face));
+            }
+
+        if (m_p_vec->zAxisFactor != 1)
+            {
+            double dz = (range.low.z - m_dtmP->zMin) * m_p_vec->zAxisFactor;
+            range.low.z = m_dtmP->zMin + dz;
+            dz = (range.high.z - m_dtmP->zMin) * m_p_vec->zAxisFactor;
+            range.high.z = m_dtmP->zMin + dz;
+            }
+        }
+    return range;
+    }
+
+DRange3d DTMMeshEnumerator::GetRange () const
+    {
+    DRange3d range;
+    range.Init ();
+
+    for (iterator i = begin (); i != end (); ++i)
+        {
+        range.Extend (i.GetRange ());
+        }
+    
+    return range;
+    
     }

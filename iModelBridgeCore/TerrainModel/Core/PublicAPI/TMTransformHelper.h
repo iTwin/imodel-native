@@ -634,7 +634,7 @@ struct TMTransformHelper : RefCountedBase
             {
             Transform trsf;
             if (dtm.GetTransformHelper ())
-                dtm.GetTransformHelper ()->GetTransformation (trsf);
+                dtm.GetTransformHelper ()->GetTransformationFromDTM (trsf);
             else
                 trsf.initIdentity ();
             if (m_transform.isEqual (&trsf))
@@ -660,7 +660,7 @@ struct TMTransformHelper : RefCountedBase
 
             Transform trsf;
             if (dtm.GetTransformHelper())
-                dtm.GetTransformHelper()->GetTransformation(trsf);
+                dtm.GetTransformHelper ()->GetTransformationFromDTM (trsf);
             else
                 trsf.initIdentity();
             if (trsf.isIdentity())
@@ -856,9 +856,14 @@ struct TMTransformHelper : RefCountedBase
             return new TMTransformHelper (transform);
             }
 
-        bool GetTransformation (TransformR transformation) 
+        bool GetTransformationFromDTM (TransformR transformation) const
             {
             transformation = m_transform;
+            return m_isIdentity;
+            }
+        bool GetTransformationToDTM (TransformR transformation) const
+            {
+            transformation = m_transformInv;
             return m_isIdentity;
             }
         bool IsIdentity ()
