@@ -39,6 +39,11 @@ public:
         return !operator==(pi_rObj);
         };
 
+    explicit operator int() const
+    {
+        return (int)m_BlockType;
+    };
+
     IMAGEPP_EXPORT HRFBlockType();
     IMAGEPP_EXPORT HRFBlockType(Block pi_BlockType);
     IMAGEPP_EXPORT HRFBlockType(const HRFBlockType& pi_rObj);
@@ -218,6 +223,11 @@ public:
     bool operator!=(const HRFScanlineOrientation& pi_rObj) const
         {
         return !operator==(pi_rObj);
+        };
+
+    explicit operator int() const
+        {
+        return (int)m_ScanlineOrientation;
         };
 
     IMAGEPP_EXPORT bool IsScanlineVertical() const;
