@@ -596,9 +596,9 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
     //! Called to insert a new DgnElement into the DgnDb. Override to save subclass properties.
-    //! @note If you override this method, you will need to bind your specific subclass properties
+    //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
-    //! Then you @em must call T_Super::_InsertInDb, returning its status.
+    //! Then you @em must call T_Super::_InsertInDb, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement);
 
     //! Called after a DgnElement was successfully inserted into the database.
