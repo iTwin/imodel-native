@@ -14,6 +14,9 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct NonPublishedScenarioSchemaTest : ECTestFixture {};
 
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(NonPublishedScenarioSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     {
     ECSchemaPtr schema;
@@ -48,6 +51,9 @@ TEST_F(NonPublishedScenarioSchemaTest, ShouldBeAbleToIterateOverECClassContainer
     ASSERT_EQ(4, count);
     }
 
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(NonPublishedScenarioSchemaTest, TestGetClassCount)
     {
    
@@ -84,8 +90,10 @@ TEST_F(NonPublishedScenarioSchemaTest, TestGetClassCount)
 
     ASSERT_EQ(2,schema->GetClassCount());
     }
-
-TEST_F (NonPublishedScenarioSchemaTest, DISABLED_TestCircularReference)
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
+TEST_F (NonPublishedScenarioSchemaTest, TestCircularReference)
 {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr   schemaContext;
@@ -100,6 +108,9 @@ TEST_F (NonPublishedScenarioSchemaTest, DISABLED_TestCircularReference)
     EXPECT_FALSE(testSchema.IsValid());
 }
 
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
 TEST_F (NonPublishedScenarioSchemaTest, TestsLatestCompatible)
 {
     ECSchemaPtr testSchema;
@@ -117,6 +128,9 @@ TEST_F (NonPublishedScenarioSchemaTest, TestsLatestCompatible)
     EXPECT_TRUE(testSchema->GetVersionMinor()==6);
 }
 
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
 TEST_F (NonPublishedScenarioSchemaTest, TestsLatest)
 {
     ECSchemaPtr testSchema;
@@ -134,6 +148,9 @@ TEST_F (NonPublishedScenarioSchemaTest, TestsLatest)
     EXPECT_TRUE(testSchema->GetVersionMinor()==6);
 }
 
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
 TEST_F (NonPublishedScenarioSchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
 {
     ECSchemaPtr testSchema;
@@ -156,6 +173,9 @@ TEST_F (NonPublishedScenarioSchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplic
     CircleClassInstance->SetValue ("Name", v);
 }
 
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
 TEST_F (NonPublishedScenarioSchemaTest, GetBaseClassProperty)
 {
     ECSchemaPtr testSchema;

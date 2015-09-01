@@ -26,5 +26,4 @@ CGBinarySerializationTests.WriterTest # notified Earlin and Carole
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-NonPublishedScenarioSchemaTest.DISABLED_TestCircularReference
-ValueTests.DISABLED_StringToIGeometry
+ValueTests.StringToIGeometry

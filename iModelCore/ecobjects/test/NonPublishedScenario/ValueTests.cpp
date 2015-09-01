@@ -107,7 +107,7 @@ TEST_F(ValueTests, StringToECValue)
 * @bsimethod                                                 Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 //IGeometry is not handled in ConvertToPrimitiveType
-TEST_F(ValueTests, DISABLED_StringToIGeometry)
+TEST_F(ValueTests, StringToIGeometry)
     {
     ECValue value;
     const Byte binary[] = {0x00, 0x01, 0x02, 0x03};
