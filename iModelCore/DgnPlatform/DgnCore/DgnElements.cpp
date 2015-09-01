@@ -1193,7 +1193,35 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
     if (parent.IsValid() && DgnDbStatus::Success != (stat=parent->_OnChildInsert(element)))
         return nullptr;
 
-    if (DgnDbStatus::Success != (stat=element._InsertInDb()))
+    ECClassCP elementClass = element.GetElementClass();
+    if (nullptr == elementClass)
+        return nullptr;
+
+    Utf8PrintfString ecSql("INSERT INTO %s.%s (ECInstanceId, ", elementClass->GetSchema().GetName().c_str(), elementClass->GetName().c_str());
+    Utf8String values(":ECInstanceId, ");
+    //ECPropertyCP currentTimeStampProp = nullptr;
+    //bool hasCurrentTimeStampProp = Bentley::BeSQLite::EC::ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, m_ecClass);
+    int propCount = 0;
+    for (ECPropertyCP ecProperty : elementClass->GetProperties (true))
+        {
+        //Current time stamp props are populated by SQLite, so ignore them here.
+        //if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+        //    continue;
+        if (propCount != 0)
+            {
+            ecSql.append(", ");
+            values.append(", ");
+            }
+        ecSql.append("[").append(ecProperty->GetName()).append("]");
+        values.append(":").append(ecProperty->GetName());
+        propCount++;
+        }
+    ecSql.append(") VALUES (").append(values).append(")");
+    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql);
+    if (!statement.IsValid())
+        return nullptr;
+
+    if (DgnDbStatus::Success != (stat=element._InsertInDb(*statement)))
         return nullptr;
 
     DgnElementPtr newElement = element.CopyForEdit();

@@ -78,6 +78,8 @@ void ChangeSummaryTestFixture::CreateDgnDb()
     DbResult createStatus;
     m_testDb = DgnDb::CreateDgnDb(&createStatus, DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.dgndb"), createProjectParams);
     ASSERT_TRUE(m_testDb.IsValid()) << "Could not create test project";
+
+    m_testDb->Txns().EnableTracking(true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -92,6 +94,8 @@ void ChangeSummaryTestFixture::OpenDgnDb()
 
     DgnModelId modelId = m_testDb->Models().QueryFirstModelId();
     m_testModel = m_testDb->Models().GetModel(modelId).get();
+
+    m_testDb->Txns().EnableTracking(true);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
@@ -325,7 +329,6 @@ void ChangeSummaryTestFixture::GetChangeSummaryFromSavedTransactions(ChangeSumma
 TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     {
     CreateDgnDb();
-    m_testDb->Txns().EnableTracking(true);
 
     ChangeSummary changeSummary(*m_testDb);
 
@@ -474,8 +477,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
 TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     {
     CreateDgnDb();
-    m_testDb->Txns().EnableTracking(true);
-    
+
     ChangeSummary changeSummary(*m_testDb);
 
     InsertModel();
@@ -654,7 +656,6 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
     {
     CreateDgnDb();
-    m_testDb->Txns().EnableTracking(true);
 
     InsertModel();
     InsertCategory();
@@ -697,8 +698,6 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
 
     IECInstancePtr instance = CreateStartupCompanyInstance(*startupSchema);
     ASSERT_TRUE(instance.IsValid());
-
-    m_testDb->Txns().EnableTracking(true);
 
     ChangeSummary changeSummary(*m_testDb);
 
@@ -839,8 +838,6 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     IECInstancePtr instance = CreateStartupCompanyInstance(*startupSchema);
     ASSERT_TRUE(instance.IsValid());
-
-    m_testDb->Txns().EnableTracking(true);
 
     ChangeSummary changeSummary(*m_testDb);
 
@@ -984,8 +981,6 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     ASSERT_TRUE(startupSchema.IsValid());
 
     ImportECSchema(*startupSchema, *m_testDb);
-
-    m_testDb->Txns().EnableTracking(true);
 
     // Insert Employee - FirstName, LastName
     // Insert Company - Name
@@ -1187,8 +1182,6 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     ASSERT_TRUE(startupSchema.IsValid());
 
     ImportECSchema(*startupSchema, *m_testDb);
-
-    m_testDb->Txns().EnableTracking(true);
 
     // Insert Employee - FirstName, LastName
     // Insert Company - Name
@@ -1413,7 +1406,6 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     {
     CreateDgnDb();
-    m_testDb->Txns().EnableTracking(true);
 
     InsertModel();
     InsertCategory();
@@ -1501,7 +1493,6 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
 TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     {
     CreateDgnDb();
-    m_testDb->Txns().EnableTracking(true);
 
     ChangeSummary changeSummary(*m_testDb);
 
@@ -1577,7 +1568,6 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     for (int ii = 0; ii < nSessions; ii++)
         {
         OpenDgnDb();
-        m_testDb->Txns().EnableTracking(true);
 
         for (int jj = 0; jj < nTransactionsPerSession; jj++)
             {

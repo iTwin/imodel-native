@@ -648,9 +648,9 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReverseTo(TxnId pos)
+DgnDbStatus TxnManager::ReverseTo(TxnId pos, AllowCrossSessions allowPrevious)
     {
-    if (!PrepareForUndo() || !pos.IsValid())
+    if (!pos.IsValid() || (allowPrevious == AllowCrossSessions::No && !PrepareForUndo()))
         return DgnDbStatus::NothingToUndo;
 
     TxnId last = GetCurrentTxnId();
@@ -664,9 +664,9 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::CancelTo(TxnId pos)
+DgnDbStatus TxnManager::CancelTo(TxnId pos, AllowCrossSessions allowPrevious)
     {
-    DgnDbStatus status = ReverseTo(pos);
+    DgnDbStatus status = ReverseTo(pos, allowPrevious);
     if (DgnDbStatus::Success == status)
         DeleteReversedTxns();
 
@@ -712,7 +712,7 @@ bool TxnManager::PrepareForUndo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowPrevious)
     {
-    if (!PrepareForUndo())
+    if (allowPrevious == AllowCrossSessions::No && !PrepareForUndo())
         return DgnDbStatus::NothingToUndo;
 
     TxnId last = GetCurrentTxnId();
@@ -862,7 +862,7 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
     BeAssert(&changeSummary.GetDb() == &m_dgndb);
 
     TxnId endTxnId = GetCurrentTxnId();
-    if (!startTxnId.IsValid() || startTxnId >= endTxnId)
+    if (!startTxnId.IsValid() || startTxnId > endTxnId)
         {
         BeAssert(false && "Invalid starting transaction");
         return DgnDbStatus::BadArg;
@@ -878,7 +878,7 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
     
     TxnId nextTxnId;
     ChangeGroup changeGroup;
-    for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId))
+    for (TxnId currTxnId = startTxnId; currTxnId <= endTxnId; currTxnId = QueryNextTxnId(currTxnId))
         {
         BeAssert(currTxnId.IsValid());
 

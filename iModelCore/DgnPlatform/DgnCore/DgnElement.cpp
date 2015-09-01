@@ -189,7 +189,7 @@ DgnElement::Code DgnElement::_GenerateDefaultCode()
     if (!m_elementId.IsValid())
         return Code();
 
-    Utf8PrintfString val("%s%u-%u", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & m_elementId.GetValue()));
+    Utf8PrintfString val("%s [%u:%u]", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & m_elementId.GetValue()));
     return Code(val.c_str());
     }
 
@@ -361,37 +361,37 @@ void DgnElement::_OnReversedAdd() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_InsertInDb()
+DgnDbStatus DgnElement::_InsertInDb(ECSqlStatement& statement)
     {
-    enum Column : int { ElementId = 1, ECClassId = 2, ModelId = 3, CategoryId = 4, Label = 5, Code = 6, ParentId = 7, LastMod = 8, CodeAuthorityId = 9 };
-    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) "(Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod,CodeAuthorityId) VALUES(?,?,?,?,?,?,?,?,?)");
-
-    stmt->BindId(Column::ElementId, m_elementId);
-    stmt->BindId(Column::ECClassId, m_classId);
-    stmt->BindId(Column::ModelId, m_modelId);
-    stmt->BindId(Column::CategoryId, m_categoryId);
+    statement.BindId(statement.GetParameterIndex("ECInstanceId"), m_elementId);
+    statement.BindId(statement.GetParameterIndex("ModelId"), m_modelId);
+    statement.BindId(statement.GetParameterIndex("CategoryId"), m_categoryId);
 
     if (!m_label.empty())
-        stmt->BindText(Column::Label, m_label.c_str(), Statement::MakeCopy::No);
-
+        statement.BindText(statement.GetParameterIndex("Label"), m_label.c_str(), IECSqlBinder::MakeCopy::No);
     BeAssert (m_code.IsValid());
 
-    stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
-    stmt->BindId(Column::CodeAuthorityId, m_code.GetAuthority());
+    statement.BindText(statement.GetParameterIndex("Code"), m_code.GetValueCP(), IECSqlBinder::MakeCopy::No);
+    statement.BindId(statement.GetParameterIndex("CodeAuthorityId"), m_code.GetAuthority());
+    statement.BindId(statement.GetParameterIndex("ParentId"), m_parentId);
+    
+    DateTimeInfo info;
+    ECPropertyCP lastModProp = GetDgnDb().Schemas().GetECSchema(DGN_ECSCHEMA_NAME)->GetClassCP(DGN_CLASSNAME_Element)->GetPropertyP("LastMod");
+    ECN::StandardCustomAttributeHelper::GetDateTimeInfo(info, *lastModProp);
+    DateTime dt;
+    DateTime::FromJulianDay (dt, m_lastModTime, info.GetInfo(true));
+    statement.BindDateTime(statement.GetParameterIndex("LastMod"), dt);
 
-    stmt->BindId(Column::ParentId, m_parentId);
-    stmt->BindDouble(Column::LastMod, m_lastModTime);
-
-    auto stmtStatus = stmt->Step();
-    if (BE_SQLITE_CONSTRAINT_UNIQUE == stmtStatus)
+    auto stmtStatus = statement.Step();
+    if (ECSqlStepStatus::Error == stmtStatus)
         {
         // SQLite doesn't tell us which constraint failed - check if it's the Code.
         auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
         if (existingElemWithCode.IsValid())
-            return DgnDbStatus::InvalidName;
+            return DgnDbStatus::DuplicateCode;
         }
 
-    return stmtStatus != BE_SQLITE_DONE ? DgnDbStatus::WriteError : DgnDbStatus::Success;
+    return stmtStatus != ECSqlStepStatus::Done ? DgnDbStatus::WriteError : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -463,9 +463,9 @@ DgnDbStatus GeometricElement::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::_InsertInDb()
+DgnDbStatus GeometricElement::_InsertInDb(ECSqlStatement& statement)
     {
-    DgnDbStatus stat = T_Super::_InsertInDb();
+    DgnDbStatus stat = T_Super::_InsertInDb(statement);
     if (DgnDbStatus::Success != stat)
         return stat;
 
