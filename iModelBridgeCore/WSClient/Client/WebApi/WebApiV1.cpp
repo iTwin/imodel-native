@@ -160,6 +160,15 @@ Utf8String WebApiV1::CreateWebApiVersionPart(Utf8StringCR webApiVersion) const
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String WebApiV1::GetMaxWebApi() const
+    {
+    BeVersion version = m_info.GetWebApiVersion();
+    return Utf8PrintfString("v%d.%d", version.GetMajor(), version.GetMinor());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus WebApiV1::ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut)
@@ -882,7 +891,7 @@ ICancellationTokenPtr cancellationToken
     Utf8String schemaName = query.GetSchemaName();
     Utf8String classes = StringUtils::Join(query.GetClasses().begin(), query.GetClasses().end(), ',');
 
-    Utf8String url = GetUrl(SERVICE_Objects, classes, query.ToQueryString());
+    Utf8String url = GetUrl(SERVICE_Objects, classes, query.ToQueryString(), GetMaxWebApi());
     HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
 
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
