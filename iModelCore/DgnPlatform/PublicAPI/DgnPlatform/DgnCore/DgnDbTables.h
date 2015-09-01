@@ -1262,6 +1262,14 @@ public:
     //! @return The texture with the specified ID, or an invalid texture if no such texture exists.
     DGNPLATFORM_EXPORT Texture      Query(DgnTextureId id) const;
 
+    //! Remove a texture from the DgnDb.
+    //! @param[in] id the id of the texture to remove.
+    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the textureId did not exist prior to this call.
+    //! @note Deleting a texture can result in an inconsistent database. There is no checking that the texture to be removed is not in use somehow, and
+    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
+    //! know for sure that the texture is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnTextureId id);
+
     //! Look up the ID of the texture with the specified name
     //! @param[in]      name The name of the desired texture
     //! @return The ID of the texture with the specified name, or an invalid ID if no such texture exists.
@@ -1377,6 +1385,14 @@ public:
     //! @param[out]     result      If supplied, holds the result of the insert operation
     //! @return The DgnMaterialId of the newly created material, or an invalid ID if the material was not created.
     DGNPLATFORM_EXPORT DgnMaterialId Insert(Material& material, DgnDbStatus* result=nullptr);
+
+    //! Remove a material from the DgnDb.
+    //! @param[in] id the id of the material to remove.
+    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the materialId did not exist prior to this call.
+    //! @note Deleting a material can result in an inconsistent database. There is no checking that the material to be removed is not in use somehow, and
+    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
+    //! know for sure that the material is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnMaterialId id);
 
     //! Change the properties of the specified material. This method cannot be used to change the material or palette name.
     //! @param[in]      material The modified material.

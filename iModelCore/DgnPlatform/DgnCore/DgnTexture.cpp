@@ -87,6 +87,18 @@ static DgnTextures::Format extractFormat (int value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/10
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnTextures::Delete(DgnTextureId textureId)
+    {
+    Statement stmt;
+    stmt.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Texture) " WHERE Id=?");
+    stmt.BindId(1, textureId);
+    const auto status = stmt.Step();
+    return (BE_SQLITE_DONE == status) ? BE_SQLITE_OK : status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextures::Texture DgnTextures::Query (DgnTextureId id) const
