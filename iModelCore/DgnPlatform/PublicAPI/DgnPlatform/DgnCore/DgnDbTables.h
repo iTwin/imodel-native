@@ -1197,12 +1197,13 @@ public:
         //! @param[in]      descr The optional texture description
         explicit Texture(TextureData const& data, Utf8CP name = nullptr, Utf8CP descr = nullptr) : m_data(data), m_name(name), m_descr(descr) { }
 
-        bool                    IsValid() const         { return m_id.IsValid(); }  //!< Test whether this is a valid texture
+        bool                                IsValid() const         { return m_id.IsValid(); }  //!< Test whether this is a valid texture
 
-        DgnTextureId            GetId() const           { return m_id; }    //!< The ID of the texture
-        Utf8StringCR            GetName() const         { return m_name; }  //!< The optional texture name
-        Utf8StringCR            GetDescription() const  { return m_descr; } //!< The optional texture description
-        TextureData const&      GetData() const         { return m_data; }  //!< The encoded texture data
+        DgnTextureId                        GetId() const           { return m_id; }    //!< The ID of the texture
+        Utf8StringCR                        GetName() const         { return m_name; }  //!< The optional texture name
+        Utf8StringCR                        GetDescription() const  { return m_descr; } //!< The optional texture description
+        TextureData const&                  GetData() const         { return m_data; }  //!< The encoded texture data
+        DGNPLATFORM_EXPORT BentleyStatus    GetImage (bvector<Byte>& image) const;      //!< The image data (RGBA).
 
         void    SetName(Utf8CP name)               { m_name = name; }      //!< Set the texture name
         void    SetDescription(Utf8CP descr)       { m_descr = descr; }    //!< Set the texture description
