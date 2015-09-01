@@ -225,7 +225,15 @@ struct csGeoid99GridFile_* CSnewGeoid99GridFile (Const char *path,long32_t buffe
 	__This->recordSize = geoid99Hdr.lngCount * (int)sizeof (float);
 
 	/* Verify the integrity of the file. */
+#ifdef GEOCOORD_ENHANCEMENT
+    // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+    // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+    // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+    // thus 44 bytes regardless of the compiled program.
+	lngTmp = __This->recordCount * __This->recordSize + 44L;
+#else
 	lngTmp = __This->recordCount * __This->recordSize + sizeof (geoid99Hdr);
+#endif
 	if (lngTmp != __This->fileSize)
 	{
 		CS_stncp (csErrnam,__This->filePath,MAXPATH);
@@ -438,7 +446,15 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 	}
 
 	/* Compute the minimal region of the file which we need to read. */
+#ifdef GEOCOORD_ENHANCEMENT
+    // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+    // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+    // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+    // thus 44 bytes regardless of the compiled program.
+	fposBegin = 44L + (recNbr - 1) * __This->recordSize;
+#else
 	fposBegin = sizeof (struct csGeoid99Hdr_) + (recNbr - 1) * __This->recordSize;
+#endif
 	fposEnd = fposBegin + (__This->recordSize * 3);
 	if (fposEnd > __This->fileSize) fposEnd = __This->fileSize;
 	
@@ -504,10 +520,21 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 				   beginning of record number 1. */
 				lngTmp = lngTmp / 2;
 				__This->bufferBeginPosition -= __This->recordSize * lngTmp;
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+				if (__This->bufferBeginPosition < 44L)	/*lint !e574 */
+				{
+					__This->bufferBeginPosition = 44L;
+				}
+#else
 				if (__This->bufferBeginPosition < sizeof (struct csGeoid99Hdr_))	/*lint !e574 */
 				{
 					__This->bufferBeginPosition = sizeof (struct csGeoid99Hdr_);
 				}
+#endif
 				readCount = __This->bufferEndPosition - __This->bufferBeginPosition;
 			}
 
@@ -532,10 +559,21 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 				   However, never more than the beginning of the first
 				   data record. */
 				__This->bufferBeginPosition -= __This->recordSize * lngTmp;
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+				if (__This->bufferBeginPosition < 44L)	/*lint !e574 */
+				{
+					__This->bufferBeginPosition = 44L;
+				}
+#else
 				if (__This->bufferBeginPosition < sizeof (struct csGeoid99Hdr_))	/*lint !e574 */
 				{
 					__This->bufferBeginPosition = sizeof (struct csGeoid99Hdr_);
 				}
+#endif
 				readCount = __This->bufferEndPosition - __This->bufferBeginPosition;
 			}
 
@@ -588,8 +626,15 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 			   
 			   In the code below, we use lngTmp as the number of bytes on the
 			   front of the buffer which we must omit from the swapping process. */
-
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+			lngTmp = (long)44L - __This->bufferBeginPosition;
+#else
 			lngTmp = (long)sizeof (struct csGeoid99Hdr_) - __This->bufferBeginPosition;
+#endif
 			if (lngTmp < 0) lngTmp = 0L;
 			
 			swapCount = (__This->bufferEndPosition - (__This->bufferBeginPosition + lngTmp)) / sizeof (float);
@@ -619,7 +664,15 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 	   effects come out correct using a standard algorithm below. */
 	switch (edge) {
 	case edgeNone:
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+		fpos = 44L + (recNbr * __This->recordSize) + (eleNbr * sizeof (float));
+#else
 		fpos = sizeof (struct csGeoid99Hdr_) + (recNbr * __This->recordSize) + (eleNbr * sizeof (float));
+#endif
 
 		chrPtr = (char *)(__This->dataBuffer) + (fpos - __This->bufferBeginPosition);
 		chrPtr += __This->recordSize;
@@ -643,7 +696,15 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 		break;
 
 	case edgeSouthwest:
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+		fpos = 44L;
+#else
 		fpos = sizeof (struct csGeoid99Hdr_);
+#endif
 		chrPtr = (char *)(__This->dataBuffer) + (fpos - __This->bufferBeginPosition);
 		fltPtr = (float *)(chrPtr);
 
@@ -655,7 +716,15 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 		break;
 
 	case edgeSouth:
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+		fpos = 44L + eleNbr * sizeof (float);
+#else
 		fpos = sizeof (struct csGeoid99Hdr_) + eleNbr * sizeof (float);
+#endif
 		chrPtr = (char *)(__This->dataBuffer) + (fpos - __This->bufferBeginPosition);
 		fltPtr = (float *)(chrPtr);
 
@@ -667,7 +736,15 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 		break;
 
 	case edgeSoutheast:
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+		fpos = 44L + (__This->elementCount - 1) * sizeof (float);
+#else
 		fpos = sizeof (struct csGeoid99Hdr_) + (__This->elementCount - 1) * sizeof (float);
+#endif
 		chrPtr = (char *)(__This->dataBuffer) + (fpos - __This->bufferBeginPosition);
 		fltPtr = (float *)(chrPtr);
 
@@ -679,7 +756,15 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 		break;
 
 	case edgeEast:
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+		fpos = 44L + recNbr * __This->recordSize + (__This->elementCount - 1) * sizeof (float);
+#else
 		fpos = sizeof (struct csGeoid99Hdr_) + recNbr * __This->recordSize + (__This->elementCount - 1) * sizeof (float);
+#endif
 		chrPtr = (char *)(__This->dataBuffer) + (fpos - __This->bufferBeginPosition);
 		chrPtr += __This->recordSize;
 		fltPtr = (float *)(chrPtr);
@@ -699,7 +784,15 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 		break;
 
 	case edgeNortheast:
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+		fpos = 44L + (__This->recordCount - 1) * __This->recordSize + (__This->elementCount - 1) * sizeof (float);
+#else
 		fpos = sizeof (struct csGeoid99Hdr_) + (__This->recordCount - 1) * __This->recordSize + (__This->elementCount - 1) * sizeof (float);
+#endif
 		chrPtr = (char *)(__This->dataBuffer) + (fpos - __This->bufferBeginPosition);
 		fltPtr = (float *)(chrPtr);
 
@@ -711,7 +804,15 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 		break;
 
 	case edgeNorth:
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+		fpos = 44L + (__This->recordCount - 1) * __This->recordSize + eleNbr * sizeof (float);
+#else
 		fpos = sizeof (struct csGeoid99Hdr_) + (__This->recordCount - 1) * __This->recordSize + eleNbr * sizeof (float);
+#endif
 		chrPtr = (char *)(__This->dataBuffer) + (fpos - __This->bufferBeginPosition);
 		fltPtr = (float *)(chrPtr);
 
@@ -723,7 +824,15 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 		break;
 
 	case edgeNorthwest:
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+		fpos = 44L + (__This->recordCount - 1) * __This->recordSize;
+#else
 		fpos = sizeof (struct csGeoid99Hdr_) + (__This->recordCount - 1) * __This->recordSize;
+#endif
 		chrPtr = (char *)(__This->dataBuffer) + (fpos - __This->bufferBeginPosition);
 		fltPtr = (float *)(chrPtr);
 
@@ -735,7 +844,15 @@ int CScalcGeoid99GridFile (struct csGeoid99GridFile_* __This,double* result,Cons
 		break;
 
 	case edgeWest:
+#ifdef GEOCOORD_ENHANCEMENT
+                // IMPORTANT: The official CSMAP code makes use of the size of the storing structure yet due to
+                // alignment issues on some compilers, the structure holds 44 significant bytes yet is padded to 48 bytes,
+                // resulting into a greater size than the file header. The file header is composed of 4 doubles followed by 3 long integers
+                // thus 44 bytes regardless of the compiled program.
+		fpos = 44L + recNbr * __This->recordSize;
+#else
 		fpos = sizeof (struct csGeoid99Hdr_) + recNbr * __This->recordSize;
+#endif
 		chrPtr = (char *)(__This->dataBuffer) + (fpos - __This->bufferBeginPosition);
 		chrPtr += __This->recordSize;
 		fltPtr = (float *)(chrPtr);
