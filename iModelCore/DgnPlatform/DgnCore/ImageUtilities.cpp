@@ -338,7 +338,7 @@ BentleyStatus ImageUtilities::WriteImageToPngFile (BeFile& pngFile, bvector<uint
 static BeJpegPixelType computePixelFormat (ImageUtilities::RgbImageInfo const& infoIn)
     {
     if (infoIn.hasAlpha)
-        return infoIn.isBGR? BE_JPEG_PIXELTYPE_BgrX: BE_JPEG_PIXELTYPE_RgbX;
+        return infoIn.isBGR? BE_JPEG_PIXELTYPE_BgrA: BE_JPEG_PIXELTYPE_RgbA;
         
     return infoIn.isBGR? BE_JPEG_PIXELTYPE_Bgr: BE_JPEG_PIXELTYPE_Rgb;
     }
