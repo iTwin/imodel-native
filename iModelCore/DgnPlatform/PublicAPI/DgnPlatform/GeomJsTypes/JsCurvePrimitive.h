@@ -40,8 +40,16 @@ public:
 
     static JsCurvePrimitiveP CreateLineString (JsDPoint3dArrayP data)
         {
-        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLineString (data->Get ());
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLineString (data->GetRef ());
         return new JsCurvePrimitive (cp);
+        }
+
+    static JsCurvePrimitiveP CreateBsplineCurve (JsBsplineCurveP data)
+        {
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateBsplineCurve (*data->Get ());
+        if (cp.IsValid ())
+            return new JsCurvePrimitive (cp);
+        return nullptr;
         }
 
     JsCurvePrimitiveP Clone () {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 

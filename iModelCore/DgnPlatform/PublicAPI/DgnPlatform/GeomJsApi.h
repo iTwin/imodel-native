@@ -31,8 +31,6 @@ NativeType Get () const {return m_data;}
 };
 
 
-
-
 JSSTRUCT(JsDPoint3d);
 JSSTRUCT(JsDPoint2d);
 JSSTRUCT(JsDVector3d);
@@ -45,11 +43,9 @@ JSSTRUCT(JsDPoint3dDVector3dDVector3d);
 JSSTRUCT(JsCurvePrimitive);
 JSSTRUCT(JsCurveVector);
 JSSTRUCT(JsSolidPrimitive);
-JSSTRUCT(JsPolyface);
 JSSTRUCT(JsBsplineCurve);
 JSSTRUCT(JsBsplineSurface);
 JSSTRUCT(JsAngle);
-JSSTRUCT(JsBsplineSurface);
 JSSTRUCT(JsYawPitchRollAngles);
 JSSTRUCT(JsRotMatrix);
 JSSTRUCT(JsTransform);
@@ -118,7 +114,12 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #include <DgnPlatform/GeomJsTypes/JsDEllipse3d.h>
 #include <DgnPlatform/GeomJsTypes/JSRotMatrix.h>
 #include <DgnPlatform/GeomJsTypes/JSTransform.h>
+
+
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>
+
+#include <DgnPlatform/GeomJsTypes/JSBsplineCurve.h>
+
 #include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceMesh.h>
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceVisitor.h>

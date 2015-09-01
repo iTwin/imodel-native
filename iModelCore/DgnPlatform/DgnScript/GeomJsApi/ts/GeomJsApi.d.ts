@@ -322,6 +322,27 @@ declare module BentleyApi.Dgn {
         Dispose(): void;
     }
 
+    type JsDoubleArrayP = cxx_pointer<JsDoubleArray>;
+
+    //! A wrapper for BentleyApi::DoubleArray
+    class JsDoubleArray implements IDisposable
+    {
+        Clone(): JsDoubleArrayP;
+        constructor();
+
+        Add(value: cxx_double): void;
+
+        Size(): cxx_double;
+        Clear(): void;
+        Append(other: JsDoubleArrayP): void;
+
+        At(index: cxx_double): cxx_double;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+
     type JsRotMatrixP = cxx_pointer<JsRotMatrix>;
 
     //! A wrapper for BentleyApi::JsRotMatrix
@@ -484,6 +505,22 @@ declare module BentleyApi.Dgn {
 
 
 
+    //! A wrapper for a polyface visitor
+    class JsBsplineCurve implements IDisposable, BeJsProjection_SuppressConstructor
+    {
+
+        OnDispose(): void;
+        Dispose(): void;
+        IsPeriodic () : cxx_bool;
+        static CreateFromPoles(xyz: JsDPoint3dArrayP,
+            weights: JsDoubleArrayP,
+            knots : JsDoubleArrayP,
+            order: cxx_double, closed: cxx_bool, preWeighted: cxx_bool): JsBsplineCurveP;
+    }
+
+    type JsBsplineCurveP = cxx_pointer<JsBsplineCurve>;
+
+
 
 
 //! A wrapper for BentleyApi::JsCurvePrimitive
@@ -494,6 +531,7 @@ class JsCurvePrimitive implements IDisposable
     static CreateLineSegment(segment: JsDSegment3dP): JsCurvePrimitiveP;
     static CreateEllipticArc(arc: JsDEllipse3dP): JsCurvePrimitiveP;
     static CreateLineString(points: JsDPoint3dArrayP): JsCurvePrimitiveP;
+    static CreateBsplineCurve (curve: JsBsplineCurveP) : JsCurvePrimitiveP;
     CurvePrimitiveType(): cxx_double;
     PointAtFraction(f: cxx_double): JsDPoint3dP; 
 
@@ -572,5 +610,9 @@ class JsPolyfaceVisitor implements IDisposable
 }
 
 type JsPolyfaceVisitorP = cxx_pointer<JsPolyfaceVisitor>;
+
+
+
+
 
 }
