@@ -172,9 +172,6 @@
     <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbMapPersistence_Tests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\ECDb\ECDbSql_Test.cpp">
       <Filter>NonPublished\ECDb</Filter>
     </ClCompile>

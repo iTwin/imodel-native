@@ -40,7 +40,6 @@
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
     <ClCompile Include="Published\ECDbFileInfoTests.cpp" />
     <ClCompile Include="Published\ECDbMapCA_Tests.cpp" />
-    <ClCompile Include="Published\ECDbMapPersistence_Tests.cpp" />
     <ClCompile Include="Published\ECDbReadTests.cpp" />
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp" />
     <ClCompile Include="Published\ECDbRelationshipTests.cpp" />
