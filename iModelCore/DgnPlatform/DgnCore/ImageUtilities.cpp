@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ImageUtilities.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -338,7 +338,7 @@ BentleyStatus ImageUtilities::WriteImageToPngFile (BeFile& pngFile, bvector<uint
 static BeJpegPixelType computePixelFormat (ImageUtilities::RgbImageInfo const& infoIn)
     {
     if (infoIn.hasAlpha)
-        return infoIn.isBGR? BE_JPEG_PIXELTYPE_BgrX: BE_JPEG_PIXELTYPE_RgbX;
+        return infoIn.isBGR? BE_JPEG_PIXELTYPE_BgrA: BE_JPEG_PIXELTYPE_RgbA;
         
     return infoIn.isBGR? BE_JPEG_PIXELTYPE_Bgr: BE_JPEG_PIXELTYPE_Rgb;
     }
@@ -366,8 +366,11 @@ BentleyStatus ImageUtilities::WriteImageToJpgBuffer (bvector<uint8_t>& jpegData,
 BentleyStatus ImageUtilities::ReadImageFromJpgBuffer (bvector<Byte>& rgbaBuffer, RgbImageInfo& info, Byte const*inputBuffer, size_t inputBufferSize, RgbImageInfo const& infoIn)
     {
     info = infoIn;
+
     BeJpegDecompressor reader;
-    reader.ReadHeader (info.width, info.height, inputBuffer, inputBufferSize);
+    if (SUCCESS != reader.ReadHeader (info.width, info.height, inputBuffer, inputBufferSize))
+        return ERROR;
+
     rgbaBuffer.resize (info.width*info.height*computeBytesPerPixel(info));
     return reader.Decompress (&rgbaBuffer[0], rgbaBuffer.size(), inputBuffer, inputBufferSize, computePixelFormat(info));
     }

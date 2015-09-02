@@ -43,6 +43,18 @@ DgnMaterialId DgnMaterials::Insert(Material& material, DgnDbStatus* outResult)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/10
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnMaterials::Delete(DgnMaterialId materialId)
+    {
+    Statement stmt;
+    stmt.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Material) " WHERE Id=?");
+    stmt.BindId(1, materialId);
+    const auto status = stmt.Step();
+    return (BE_SQLITE_DONE == status) ? BE_SQLITE_OK : status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnMaterials::Update(Material const& material) const

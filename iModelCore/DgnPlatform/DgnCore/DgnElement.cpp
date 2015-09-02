@@ -189,7 +189,7 @@ DgnElement::Code DgnElement::_GenerateDefaultCode()
     if (!m_elementId.IsValid())
         return Code();
 
-    Utf8PrintfString val("%s%u-%u", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & m_elementId.GetValue()));
+    Utf8PrintfString val("%s [%u:%u]", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & m_elementId.GetValue()));
     return Code(val.c_str());
     }
 
@@ -361,7 +361,7 @@ void DgnElement::_OnReversedAdd() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus DgnElement::_InsertInDb(ECSqlStatement& statement)
     {
     statement.BindId(statement.GetParameterIndex("ECInstanceId"), m_elementId);
     statement.BindId(statement.GetParameterIndex("ModelId"), m_modelId);
@@ -373,7 +373,6 @@ DgnDbStatus DgnElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
 
     statement.BindText(statement.GetParameterIndex("Code"), m_code.GetValueCP(), IECSqlBinder::MakeCopy::No);
     statement.BindId(statement.GetParameterIndex("CodeAuthorityId"), m_code.GetAuthority());
-
     statement.BindId(statement.GetParameterIndex("ParentId"), m_parentId);
     
     DateTimeInfo info;
@@ -382,13 +381,14 @@ DgnDbStatus DgnElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
     DateTime dt;
     DateTime::FromJulianDay (dt, m_lastModTime, info.GetInfo(true));
     statement.BindDateTime(statement.GetParameterIndex("LastMod"), dt);
+
     auto stmtStatus = statement.Step();
     if (ECSqlStepStatus::Error == stmtStatus)
         {
         // SQLite doesn't tell us which constraint failed - check if it's the Code.
         auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
         if (existingElemWithCode.IsValid())
-            return DgnDbStatus::InvalidName;
+            return DgnDbStatus::DuplicateCode;
         }
 
     return stmtStatus != ECSqlStepStatus::Done ? DgnDbStatus::WriteError : DgnDbStatus::Success;
@@ -463,7 +463,7 @@ DgnDbStatus GeometricElement::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus GeometricElement::_InsertInDb(ECSqlStatement& statement)
     {
     DgnDbStatus stat = T_Super::_InsertInDb(statement);
     if (DgnDbStatus::Success != stat)
