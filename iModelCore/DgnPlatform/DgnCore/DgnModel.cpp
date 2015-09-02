@@ -130,7 +130,7 @@ size_t DgnModels::Iterator::QueryCount() const
         hasWhere = true;
         }
 
-    sqlString = MakeSqlString(sqlString.c_str(), true);
+    sqlString = MakeSqlString(sqlString.c_str(), hasWhere);
 
     Statement sql(*m_db, sqlString.c_str());
 
