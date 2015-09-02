@@ -136,7 +136,7 @@ TEST_F (DgnElementTests, UpdateElement)
     EXPECT_TRUE(InsertElement(DgnElement::Code("MyCode"), m1id).IsValid());
     DgnDbStatus insertStatus;
     EXPECT_FALSE(InsertElement(DgnElement::Code("MyCode"), m1id, DgnCategoryId(), &insertStatus).IsValid());
-    EXPECT_EQ(insertStatus, DgnDbStatus::InvalidName);
+    EXPECT_EQ(insertStatus, DgnDbStatus::DuplicateCode);
     }
 
 
