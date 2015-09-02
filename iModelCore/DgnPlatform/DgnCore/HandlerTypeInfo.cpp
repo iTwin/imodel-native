@@ -8,10 +8,6 @@
 #include    <DgnPlatformInternal.h>
 
 #define DGN_TABLE_LEVEL_FOR_MODEL(m)  (m)->GetDgnDb().Categories()
-enum
-    {
-    MAX_INFO_STRING_LEN = 4096,
-    };
 
 /**
  * Category Display Name Format Defines
@@ -122,7 +118,7 @@ static void getCategoryString(Utf8StringR categoryStr, DgnElementCR element)
     if (SUCCESS != getCategoryDisplayName(displayName, category, displayFormat.c_str()))
         return;
 
-    categoryStr.assign("");//DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category).c_str());
+    categoryStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()).c_str());
     categoryStr.append(displayName);
     }
 
