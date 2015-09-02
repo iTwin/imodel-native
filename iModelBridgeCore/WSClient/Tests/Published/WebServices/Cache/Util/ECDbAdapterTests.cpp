@@ -187,10 +187,10 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasTwoMatchingRel
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
 
-    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
-    auto targetClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"B");
+    auto sourceClass = db.GetClassLocater().LocateClass("TestSchema", "A");
+    auto targetClass = db.GetClassLocater().LocateClass("TestSchema", "B");
 
     ECDbAdapter adapter(db);
     ECRelationshipClassCP relationshipClass = adapter.FindRelationshipClassWithTarget(sourceClass->GetId(), targetClass->GetId());
@@ -224,16 +224,16 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingRel
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
 
-    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
-    auto targetClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"B");
+    auto sourceClass = db.GetClassLocater().LocateClass("TestSchema", "A");
+    auto targetClass = db.GetClassLocater().LocateClass("TestSchema", "B");
 
     ECDbAdapter adapter(db);
     ECRelationshipClassCP relationshipClass = adapter.FindRelationshipClassWithTarget(sourceClass->GetId(), targetClass->GetId());
 
     EXPECT_NE(nullptr, relationshipClass);
-    EXPECT_EQ(db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB1")->GetRelationshipClassCP(), relationshipClass);
+    EXPECT_EQ(db.GetClassLocater().LocateClass("TestSchema", "AB1")->GetRelationshipClassCP(), relationshipClass);
     }
 
 TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasTwoMatchingRelationsipClasses_BothReturned)
@@ -257,16 +257,16 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasTwoMatchingR
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
 
-    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
+    auto sourceClass = db.GetClassLocater().LocateClass("TestSchema", "A");
 
     ECDbAdapter adapter(db);
     bvector<ECRelationshipClassCP> relationshipClasses = adapter.FindRelationshipClassesWithSource(sourceClass->GetId(), "TestSchema");
 
     EXPECT_EQ(2, relationshipClasses.size());
-    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB1")->GetRelationshipClassCP());
-    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB2")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetClassLocater().LocateClass("TestSchema", "AB1")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetClassLocater().LocateClass("TestSchema", "AB2")->GetRelationshipClassCP());
     }
 
 TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
@@ -295,16 +295,16 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasOneMatchingR
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
 
-    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
+    auto sourceClass = db.GetClassLocater().LocateClass("TestSchema", "A");
 
     ECDbAdapter adapter(db);
     bvector<ECRelationshipClassCP> relationshipClasses = adapter.FindRelationshipClassesWithSource(sourceClass->GetId(), "TestSchema");
 
     EXPECT_EQ(2, relationshipClasses.size());
-    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB1")->GetRelationshipClassCP());
-    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB2")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetClassLocater().LocateClass("TestSchema", "AB1")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetClassLocater().LocateClass("TestSchema", "AB2")->GetRelationshipClassCP());
     }
 
 TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
@@ -340,17 +340,17 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasOneMatchingRel
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
 
-    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
-    auto targetClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"B");
+    auto sourceClass = db.GetClassLocater().LocateClass("TestSchema", "A");
+    auto targetClass = db.GetClassLocater().LocateClass("TestSchema", "B");
 
     ECDbAdapter adapter(db);
     bvector<ECRelationshipClassCP> relationshipClasses = adapter.FindRelationshipClassesInSchema(sourceClass->GetId(), targetClass->GetId(), "TestSchema");
 
     EXPECT_EQ(2, relationshipClasses.size());
-    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB1")->GetRelationshipClassCP());
-    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB2")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetClassLocater().LocateClass("TestSchema", "AB1")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetClassLocater().LocateClass("TestSchema", "AB2")->GetRelationshipClassCP());
     }
 
 TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
@@ -386,17 +386,17 @@ TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelationsip
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
 
-    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
-    auto targetClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"B");
+    auto sourceClass = db.GetClassLocater().LocateClass("TestSchema", "A");
+    auto targetClass = db.GetClassLocater().LocateClass("TestSchema", "B");
 
     ECDbAdapter adapter(db);
     bvector<ECRelationshipClassCP> relationshipClasses = adapter.FindRelationshipClasses(sourceClass->GetId(), targetClass->GetId());
 
     EXPECT_EQ(2, relationshipClasses.size());
-    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB1")->GetRelationshipClassCP());
-    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB2")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetClassLocater().LocateClass("TestSchema", "AB1")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetClassLocater().LocateClass("TestSchema", "AB2")->GetRelationshipClassCP());
     }
 
 TEST_F(ECDbAdapterTests, RelateInstances_InstancesExist_RelationshipIsCreated)
