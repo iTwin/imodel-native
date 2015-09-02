@@ -19,7 +19,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct JsDPoint3dDVector3dDVector3d: RefCountedBase
 {
 private:
-    DPlane3dByVectors m_data;
+    DPoint3dDVec3dDVec3d m_data;
 public:
     JsDPoint3dDVector3dDVector3d (DPoint3dCR origin, DVec3dCR vectorU, DVec3dCR vectorV)
         : m_data (origin, vectorU, vectorV)
