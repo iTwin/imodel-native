@@ -1349,6 +1349,13 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayUpdate)
     ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
     }
 
+void setProductsValues (StandaloneECInstancePtr instance, int ProductId, Utf8CP ProductName, double price)
+    {
+    instance->SetValue ("ProductId", ECValue (ProductId));
+    instance->SetValue ("ProductName", ECValue (ProductName));
+    instance->SetValue ("Price", ECValue (price));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Maha Nasir                         08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1371,13 +1378,12 @@ TEST_F (ECSqlTestFixture, DeleteWithNestedSelectStatments)
     ECSchemaCachePtr schemaCache = ECDbTestUtility::ReadECSchemaFromString (testSchemaXml);
     ASSERT_TRUE (schemaCache != nullptr);
 
-    ASSERT_EQ (SUCCESS, ecdb.GetEC ().GetSchemaManager ().ImportECSchemas (*schemaCache));
+    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache));
 
-    ECSchemaP Schema = nullptr;
-    auto status = ecdb.GetEC ().GetSchemaManager ().GetECSchema (Schema, "TestSchema", true);
-    ASSERT_EQ (SUCCESS, status);
+    ECSchemaCP Schema = ecdb.Schemas ().GetECSchema ("TestSchema", true);
+    ASSERT_TRUE (nullptr != Schema);
 
-    ECClassP Products = Schema->GetClassP (L"Products");
+    ECClassCP Products = Schema->GetClassCP ("Products");
     ASSERT_TRUE (Products!=nullptr);
 
     //Create and Insert Instances of Products
