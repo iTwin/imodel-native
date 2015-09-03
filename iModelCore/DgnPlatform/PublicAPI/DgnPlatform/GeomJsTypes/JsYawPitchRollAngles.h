@@ -22,11 +22,12 @@ struct JsYawPitchRollAngles : RefCountedBase
 private:
     YawPitchRollAngles m_angles;
 public:    
-
     JsYawPitchRollAngles() {m_angles.FromDegrees(0,0,0);}
     JsYawPitchRollAngles(YawPitchRollAnglesCR angles) : m_angles(angles) {;}
     JsYawPitchRollAngles(double yaw, double pitch, double roll) : m_angles(YawPitchRollAngles::FromDegrees(yaw,pitch,roll)) {;}
 
+    JsYawPitchRollAnglesP Clone () {return new JsYawPitchRollAngles (m_angles);}
+    
     YawPitchRollAngles GetYawPitchRollAngles () { return m_angles;}
     double GetYawDegrees  () {return m_angles.GetYaw().Degrees();}
     double GetPitchDegrees() {return m_angles.GetPitch().Degrees();}
