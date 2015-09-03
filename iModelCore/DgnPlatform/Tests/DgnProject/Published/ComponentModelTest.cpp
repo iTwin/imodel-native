@@ -126,7 +126,7 @@ static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const&
     while (BE_SQLITE_ROW == statement.Step())
         {
         DgnClassId foundClassId = statement.GetValueId<DgnClassId>(0);
-        ASSERT_TRUE( allowedClasses.find(foundClassId) != allowedClasses.end() ) << Utf8String("Did not expect to find an instance of class %s", model.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(foundClassId.GetValue()))->GetName().c_str());
+        ASSERT_TRUE( allowedClasses.find(foundClassId) != allowedClasses.end() ) << Utf8PrintfString("Did not expect to find an instance of class %s", model.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(foundClassId.GetValue()))->GetName().c_str()).c_str();
         }
     }
 
@@ -564,9 +564,9 @@ void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8C
     {
     PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, modelName);
     ASSERT_TRUE( targetModel.IsValid() );
-    DgnClassId classid = DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
+    DgnClassId classid = DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
     DgnCategoryId catid = m_clientDb->Categories().QueryHighestId();
-    auto el = DgnElement::Create(DgnElement::CreateParams(*m_clientDb, targetModel->GetModelId(), classid, catid, code));
+    auto el = PhysicalElement::Create(PhysicalElement::CreateParams(*m_clientDb, targetModel->GetModelId(), classid, catid));
     ASSERT_TRUE( el.IsValid() );
     ASSERT_TRUE( el->Insert().IsValid() );
     }

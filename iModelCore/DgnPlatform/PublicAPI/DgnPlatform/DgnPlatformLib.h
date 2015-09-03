@@ -101,8 +101,8 @@ public:
             struct ScriptErrorHandler : IHostObject
                 {
                 //! Handle a script error
-                enum class Category {ReportedByScript, Other, Info};
-                DGNPLATFORM_EXPORT virtual void _HandleScriptError(BeJsContextR, Category category, Utf8CP description);
+                enum class Category {ReportedByScript, ParseError, Exception, Other};
+                DGNPLATFORM_EXPORT virtual void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details);
                 };
 
             BeJsEnvironmentP m_jsenv;
@@ -138,7 +138,7 @@ public:
             ScriptErrorHandler* RegisterScriptErrorHandler(ScriptErrorHandler& h) {auto was  = m_errorHandler; m_errorHandler = &h; return was;}
 
             //! Handle a reported script error. Invokes the registered error handler.
-            DGNPLATFORM_EXPORT void HandleScriptError (ScriptErrorHandler::Category category, Utf8CP description);
+            DGNPLATFORM_EXPORT void HandleScriptError (ScriptErrorHandler::Category category, Utf8CP description, Utf8CP details);
 
             //! Register to import a set of projections or other script classes into the DgnScript JsContext
             //! @param libName  the library's unique ID that will be requested by script client programs

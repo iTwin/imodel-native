@@ -189,7 +189,7 @@ DgnElement::Code DgnElement::_GenerateDefaultCode()
     if (!m_elementId.IsValid())
         return Code();
 
-    Utf8PrintfString val("%s%u-%u", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & m_elementId.GetValue()));
+    Utf8PrintfString val("%s [%u:%u]", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & m_elementId.GetValue()));
     return Code(val.c_str());
     }
 
@@ -361,26 +361,37 @@ void DgnElement::_OnReversedAdd() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_InsertInDb()
+DgnDbStatus DgnElement::_InsertInDb(ECSqlStatement& statement)
     {
-    enum Column : int { ElementId = 1, ECClassId = 2, ModelId = 3, CategoryId = 4, Label = 5, Code = 6, ParentId = 7, LastMod = 8 };
-    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) "(Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod) VALUES(?,?,?,?,?,?,?,?)");
-
-    stmt->BindId(Column::ElementId, m_elementId);
-    stmt->BindId(Column::ECClassId, m_classId);
-    stmt->BindId(Column::ModelId, m_modelId);
-    stmt->BindId(Column::CategoryId, m_categoryId);
+    statement.BindId(statement.GetParameterIndex("ECInstanceId"), m_elementId);
+    statement.BindId(statement.GetParameterIndex("ModelId"), m_modelId);
+    statement.BindId(statement.GetParameterIndex("CategoryId"), m_categoryId);
 
     if (!m_label.empty())
-        stmt->BindText(Column::Label, m_label.c_str(), Statement::MakeCopy::No);
+        statement.BindText(statement.GetParameterIndex("Label"), m_label.c_str(), IECSqlBinder::MakeCopy::No);
+    BeAssert (m_code.IsValid());
 
-    if (m_code.IsValid()) // needs work - should not allow null
-        stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
+    statement.BindText(statement.GetParameterIndex("Code"), m_code.GetValueCP(), IECSqlBinder::MakeCopy::No);
+    statement.BindId(statement.GetParameterIndex("CodeAuthorityId"), m_code.GetAuthority());
+    statement.BindId(statement.GetParameterIndex("ParentId"), m_parentId);
+    
+    DateTimeInfo info;
+    ECPropertyCP lastModProp = GetDgnDb().Schemas().GetECSchema(DGN_ECSCHEMA_NAME)->GetClassCP(DGN_CLASSNAME_Element)->GetPropertyP("LastMod");
+    ECN::StandardCustomAttributeHelper::GetDateTimeInfo(info, *lastModProp);
+    DateTime dt;
+    DateTime::FromJulianDay (dt, m_lastModTime, info.GetInfo(true));
+    statement.BindDateTime(statement.GetParameterIndex("LastMod"), dt);
 
-    stmt->BindId(Column::ParentId, m_parentId);
-    stmt->BindDouble(Column::LastMod, m_lastModTime);
+    auto stmtStatus = statement.Step();
+    if (ECSqlStepStatus::Error == stmtStatus)
+        {
+        // SQLite doesn't tell us which constraint failed - check if it's the Code.
+        auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+        if (existingElemWithCode.IsValid())
+            return DgnDbStatus::DuplicateCode;
+        }
 
-    return stmt->Step() != BE_SQLITE_DONE ? DgnDbStatus::WriteError : DgnDbStatus::Success;
+    return stmtStatus != ECSqlStepStatus::Done ? DgnDbStatus::WriteError : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -388,8 +399,8 @@ DgnDbStatus DgnElement::_InsertInDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_UpdateInDb()
     {
-    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,LastMod=5,ElementId=6};
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,LastMod=? WHERE Id=?");
+    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,LastMod=5,CodeAuthorityId=6,ElementId=7};
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,LastMod=?,CodeAuthorityId=? WHERE Id=?");
 
     // note: ECClassId and ModelId cannot be modified.
     stmt->BindId(Column::CategoryId, m_categoryId);
@@ -397,8 +408,9 @@ DgnDbStatus DgnElement::_UpdateInDb()
     if (!m_label.empty())
         stmt->BindText(Column::Label, m_label.c_str(), Statement::MakeCopy::No);
     
-    if (m_code.IsValid())
-        stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
+    BeAssert (m_code.IsValid());
+    stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
+    stmt->BindId(Column::CodeAuthorityId, m_code.GetAuthority());
     
     stmt->BindId(Column::ParentId, m_parentId);
     stmt->BindDouble(Column::LastMod, m_lastModTime);
@@ -451,9 +463,9 @@ DgnDbStatus GeometricElement::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::_InsertInDb()
+DgnDbStatus GeometricElement::_InsertInDb(ECSqlStatement& statement)
     {
-    DgnDbStatus stat = T_Super::_InsertInDb();
+    DgnDbStatus stat = T_Super::_InsertInDb(statement);
     if (DgnDbStatus::Success != stat)
         return stat;
 
@@ -747,6 +759,22 @@ void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importe
     }
 
 /*---------------------------------------------------------------------------------**//**
+* NEEDSWORK: Not clear in what contexts an element's code should be copied, or not.
+* GetCreateParamsForImport() only copies the code if we're copying between DBs.
+* But _CopyFrom() always copies it. Which is what we want when called from CopyForEdit(),
+* but not what we want from _CloneForImport() or Clone(), which both use their own CreateParams
+* to specify the desired code.
+* So - Clone-like methods use this to ensure the code is copied or not copied appropriately.
+* @bsistruct                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::CopyForCloneFrom(DgnElementCR src)
+    {
+    DgnElement::Code code = GetCode();
+    _CopyFrom(src);
+    SetCode(code);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params) const
@@ -780,7 +808,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
         return nullptr;
         }
 
-    cloneElem->_CopyFrom(*this);
+    cloneElem->CopyForCloneFrom(*this);
 
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
@@ -806,7 +834,7 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* stat, DgnModelR destModel
         return nullptr;
         }
 
-    cloneElem->_CopyFrom(*this);
+    cloneElem->CopyForCloneFrom(*this);
 
     if (importer.IsBetweenDbs())
         {
@@ -840,9 +868,18 @@ void DgnElement::_CopyFrom(DgnElementCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::Code::RelocateToDestinationDb(DgnImportContext& importer)
+    {
+    m_authority = importer.RemapAuthorityId(m_authority);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_RemapIds(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
+    m_code.RelocateToDestinationDb(importer);
     m_categoryId = importer.RemapCategory(m_categoryId);
     m_parentId   = importer.FindElementId(m_parentId);
     }

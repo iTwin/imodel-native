@@ -62,11 +62,11 @@ private:
     double   m_lensAngle;
     double   m_focusDistance;
     DPoint3d m_eyePoint;
-    static bool IsValidLensAngle(double val) {return val>0.0 && val<Angle::Pi();}
+    static bool IsValidLensAngle(double val) {return val>(Angle::Pi()/8.0) && val<Angle::Pi();}
 
 public:
     void     InvalidateFocus() {m_focusDistance=-1.0;}
-    bool     IsFocusValid() const {return m_focusDistance > 0.0;}
+    bool     IsFocusValid() const {return m_focusDistance > 0.0 && m_focusDistance<1.0e14;}
     double   GetFocusDistance() const {return m_focusDistance;}
     void     SetFocusDistance(double dist) {m_focusDistance = dist;}
     bool     IsLensValid() const {return IsValidLensAngle(m_lensAngle);}
