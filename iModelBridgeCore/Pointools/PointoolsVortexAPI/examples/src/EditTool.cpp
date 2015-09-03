@@ -1268,7 +1268,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 				static RGBc button_cols[PT_EDIT_MAX_LAYERS];
 				button_cols[lyr] = RGBc(col[0]*255, col[1]*255, col[2]*255);
 
-				m_lyrSel[lyr]->set_back_col( &button_cols[lyr] );
+//				m_lyrSel[lyr]->set_back_col( &button_cols[lyr] );
 			}
 			m_lyrSel[lyr]->set_w(8);
 		}
@@ -1282,7 +1282,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 //		btn->set_back_col( &layerButtonCol );
 
 		btn = new GLUI_Button( selectCopy, "Report", CmdCheckPointLayers, &Tool::dispatchCmd );
-		btn->set_back_col( &layerButtonCol );
+//		btn->set_back_col( &layerButtonCol );
 
 		/* Scope */ 
 		GLUI_Panel *selectScope = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
