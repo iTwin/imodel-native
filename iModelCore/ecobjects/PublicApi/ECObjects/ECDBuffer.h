@@ -331,8 +331,14 @@ public:
     //! Adds the ClassLayout at the given index
     //! @param[in]  classLayout The ClassLayout to add
     //! @param[in]  classIndex  The index where to add the ClassLayout
-    //! @returns SUCCESS
+    //! @returns ERROR if a class layout already exists with the given index
     ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutR classLayout, ClassIndex classIndex);
+
+    //! Replaces the ClassLayout at the given index
+    //! @param[in]  classLayout The ClassLayout to replace
+    //! @param[in]  classIndex  The index of the ClassLayout
+    //! @returns ERROR if the class index is out of range.
+    ECOBJECTS_EXPORT BentleyStatus          ReplaceClassLayout (ClassLayoutR classLayout, ClassIndex classIndex);
 
     //! Returns the ClassLayout at the given index
     //! @param[in]  classIndex  The index of the desired ClassLayout
@@ -799,6 +805,8 @@ public:
         }
     bool            IsValid() const { return NULL != m_buffer; }
     Byte const*     GetData() const { return NULL != m_buffer ? m_buffer->_GetData() : NULL; }
+
+    ECOBJECTS_EXPORT WString    DumpData (uint8_t numBytesPerLine = -1) const;
     };
 
 /*__PUBLISH_SECTION_START__*/
