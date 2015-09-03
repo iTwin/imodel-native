@@ -473,14 +473,6 @@ void HitDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose dra
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/2007
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_GetInfoString(Utf8StringR pathDescr, Utf8CP delimiter) const
-    {
-    T_HOST.GetGraphicsAdmin()._GetInfoString(this, pathDescr, delimiter);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 IElemTopologyCP HitDetail::GetElemTopology() const {return (m_elemTopo.IsValid() ? m_elemTopo.get() : nullptr);}

@@ -1138,6 +1138,7 @@ public:
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
     DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
+    DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const; //!< Default snap using CurvePrimitive in HitDetail.
     bool HasGeometry() const {return m_geom.HasGeometry();} //!< return false if this GeometricElement currently has no geometry (is empty).
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}

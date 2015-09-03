@@ -546,8 +546,6 @@ public:
 
             virtual void _DrawInVp(HitDetailCP, DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
 
-            DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCP, Utf8StringR pathDescr, Utf8CP delimiter) const;
-
             //! Gets the directory that holds the sprite definition files.
             virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace, Utf8CP spriteName) { return BSIERROR; }
 
