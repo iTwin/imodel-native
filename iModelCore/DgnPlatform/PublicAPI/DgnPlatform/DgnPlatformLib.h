@@ -216,6 +216,9 @@ public:
             //! Return the directory containing the required DgnPlatform assets that must be deployed with any DgnPlatform-based app.
             //! Examples of required assets include fonts, ECSchemas, and localization resources.
             DGNPLATFORM_EXPORT BeFileNameCR GetDgnPlatformAssetsDirectory();
+
+            //! Gets the directory that holds the sprite definition files.
+            virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace, Utf8CP spriteName) { return BSIERROR; }
             };
 
         //=======================================================================================
@@ -431,131 +434,6 @@ public:
         public:
             DGNPLATFORM_EXPORT RealityDataCache& GetCache();
         };
-
-        //! Supervise various graphics operations.
-        struct GraphicsAdmin : IHostObject
-        {
-            //! Display control for edges marked as invisible in Mesh Elements and
-            //! for B-spline Curve/Surface control polygons ("splframe" global).
-            enum class ControlPolyDisplay
-            {
-                ByElement = 0, //! display according to element property.
-                Always    = 1, //! display on for all elements
-                Never     = 2, //! display off for all elements
-            };
-
-            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-            //! Return a pointer to a temporary QVCache used to create a temporary QVElem (short-lived).
-            virtual QvCache* _GetTempElementCache() {return nullptr;}
-
-            //! Create and maintain a cache to hold cached representations of drawn geometry for persistent elements (QVElem).
-            virtual QvCache* _CreateQvCache() {return nullptr;}
-
-            //! Delete specified qvCache.
-            virtual void _DeleteQvCache(QvCacheP qvCache) {}
-
-            //! Reset specified qvCache.
-            virtual void _ResetQvCache(QvCacheP qvCache) {}
-
-            //! Delete a specific cached representation from the persistent QVCache.
-            virtual void _DeleteQvElem(QvElem*) {}
-
-            //! Return whether a QVElem should be created, host must balance expense against memory use.
-            virtual bool _WantSaveQvElem(int expense) {return true;}
-
-            //! Return cache to use for symbols (if host has chosen to have a symbol cache).
-            //! @note Symbol cache will be required for an interactive host.
-            virtual QvCache* _GetSymbolCache() {return nullptr;}
-
-            //! Remove all entries in the symbol cache (if host has chosen to have a symbol cache).
-            virtual void _EmptySymbolCache() {}
-
-            //! Save cache entry for symbol (if host has chosen to have a symbol cache).
-            virtual void _SaveQvElemForSymbol(IDisplaySymbol* symbol, QvElem* qvElem) {}
-
-            //! Return cache entry for symbol (if host has chosen to have a symbol cache).
-            virtual QvElem* _LookupQvElemForSymbol(IDisplaySymbol* symbol) {return nullptr;}
-
-            //! Delete a specific entry from the symbol cache.
-            virtual void _DeleteSymbol(IDisplaySymbol* symbol) {}
-
-            //! Define a texture
-            virtual void _DefineTextureId(uintptr_t textureId, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, Byte const* imageData) {}
-
-            //! Check if a texture is defined
-            virtual bool _IsTextureIdDefined(uintptr_t textureId) {return false;}
-
-            //! Delete a specific texture, tile, or icon.
-            virtual void _DeleteTexture(uintptr_t textureId) {}
-
-            //! Define a tile texture
-            virtual void _DefineTile(uintptr_t textureId, char const* tileName, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, uint32_t pitch, Byte const* imageData) {}
-
-            //! Draw a tile texture
-            virtual void _DrawTile(IViewDrawR, uintptr_t textureId, DPoint3d const* verts) {}
-
-            //! Create a 3D multi-resolution image.
-            virtual QvMRImage* _CreateQvMRImage(DPoint3dCP fourCorners, Point2dCR imageSize, Point2dCR tileSize, bool enableAlpha, int format, int tileFlags, int numLayers) {return nullptr;}
-
-            //! Delete specified qvMRImage.
-            virtual void _DeleteQvMRImage(QvMRImage* qvMRI) {}
-
-            //! Add an image tile to a qvMRImage.
-            virtual QvElem* _CreateQvTile(bool is3d, QvCacheP hCache, QvMRImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return nullptr;}
-
-            //! Define a custom raster format(QV_*_FORMAT) for color index data. Return 0 if error.
-            virtual int _DefineCIFormat(int dataType, int numColors, QvUInt32 const* pTBGRColors){return 0;}
-
-            //! An InteractiveHost may choose to allow applications to display non-persistent geometry during an update.
-            virtual void _CallViewTransients(ViewContextR, bool isPreupdate) {}
-
-            //! @return Value to use for display control setting of mesh edges marked as invisible and for bspline curve/surface control polygons.
-            virtual ControlPolyDisplay _GetControlPolyDisplay() {return ControlPolyDisplay::ByElement;}
-
-            virtual bool _WantInvertBlackBackground() {return false;}
-
-            virtual bool _GetModelBackgroundOverride(ColorDef& rgbColor, DgnModelType modelType) {return false;}
-
-            //! If true, the UI icons that this library loads will be processed to darken their edges to attempt to increase visibility.
-            virtual bool _ShouldEnhanceIconEdges() {return false;}
-
-            virtual bool _WantDebugElementRangeDisplay() {return false;}
-
-            virtual void _CacheQvGeometryMap(ViewContextR viewContext, uintptr_t rendMatID) {}
-
-            // Send material to QuickVision.
-            virtual BentleyStatus _SendMaterialToQV(MaterialCR material, ColorDef elementColor, DgnViewportP viewport) {return ERROR;}
-
-            //! Supported color depths for this library's UI icons.
-            enum class IconColorDepth
-                {
-                Bpp32,    //!< 32 BPP icons will be used (transparency)
-                Bpp24     //!< 24 BPP icons will be used (no transparency)
-                };
-
-            //! Gets the desired color depth of the UI icons that this library loads. At this time, 32 is preferred, but 24 can be used if required.
-            virtual IconColorDepth _GetIconColorDepth() {return IconColorDepth::Bpp32;}
-
-            //! Get the longest amount of time allowed between clicks to be interpreted as a double click. Units are milliseconds.
-            virtual uint32_t _GetDoubleClickTimeout() {return 500;} // default to 1/2 second
-
-            //! Return minimum ratio between near and far clip planes for cameras - for z-Buffered output this is dictated by the depth of the z-Buffer
-            //! for pre DX11 this was .0003 - For DX11 it is approximately 1.0E-6.
-            virtual double _GetCameraFrustumNearScaleLimit() { return 1.0E-6; }
-
-            virtual void _DrawInVp(HitDetailCP, DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
-
-            DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCP, Utf8StringR pathDescr, Utf8CP delimiter) const;
-
-            //! Gets the directory that holds the sprite definition files.
-            virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace, Utf8CP spriteName) { return BSIERROR; }
-
-            //! Return false to inhibit creating rule lines for surface/solid geometry for wireframe display.
-            //! Can be used to improve display performance in applications that only work in shaded views (or those that will clear all QvElems before switching to wireframe)
-            virtual bool _WantWireframeRuleDisplay() {return true;}
-
-        }; // GraphicsAdmin
 
         //! Support for elements that store their data as Parasolid or Acis breps. Also required
         //! to output element graphics as solid kernel entities and facet sets.
@@ -915,6 +793,8 @@ public:
             //! Return true if you want SQLite to log errors. Should be used only for limited debugging purposes.
             virtual bool _GetLogSQLiteErrors() {return false;}
 
+            DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCP, Utf8StringR pathDescr, Utf8CP delimiter) const;
+
             //! MicroStation internal only.
             DGNPLATFORM_EXPORT static void ChangeAdmin(NotificationAdmin&);
             };
@@ -950,7 +830,6 @@ public:
         RasterAttachmentAdmin*  m_rasterAttachmentAdmin;
         PointCloudAdmin*        m_pointCloudAdmin;
         NotificationAdmin*      m_notificationAdmin;
-        GraphicsAdmin*          m_graphicsAdmin;
         MaterialAdmin*          m_materialAdmin;
         SolidsKernelAdmin*      m_solidsKernelAdmin;
         GeoCoordinationAdmin*   m_geoCoordAdmin;
@@ -958,7 +837,7 @@ public:
         IACSManagerP            m_acsManager;
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
-        ScriptAdmin*         m_scriptingAdmin;
+        ScriptAdmin*            m_scriptingAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
         
@@ -988,9 +867,6 @@ public:
 
         //! Supply the NotificationAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual NotificationAdmin& _SupplyNotificationAdmin();
-
-        //! Supply the GraphicsAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
-        DGNPLATFORM_EXPORT virtual GraphicsAdmin& _SupplyGraphicsAdmin();
 
         //! Supply the MaterialAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual MaterialAdmin& _SupplyMaterialAdmin();
@@ -1025,13 +901,11 @@ public:
             m_rasterAttachmentAdmin = nullptr;
             m_pointCloudAdmin = nullptr;
             m_notificationAdmin = nullptr;
-            m_graphicsAdmin = nullptr;
             m_materialAdmin = nullptr;
             m_solidsKernelAdmin = nullptr;
             m_geoCoordAdmin = nullptr;
             m_txnAdmin = nullptr;
             m_acsManager = nullptr;
-            //  m_lineStyleManager = nullptr;
             m_formatterAdmin = nullptr;
             m_realityDataAdmin = nullptr;
             m_scriptingAdmin = nullptr;
@@ -1048,7 +922,6 @@ public:
         RasterAttachmentAdmin&  GetRasterAttachmentAdmin() {return *m_rasterAttachmentAdmin;}
         PointCloudAdmin&        GetPointCloudAdmin()       {return *m_pointCloudAdmin;}
         NotificationAdmin&      GetNotificationAdmin()     {return *m_notificationAdmin;}
-        GraphicsAdmin&          GetGraphicsAdmin()         {return *m_graphicsAdmin;}
         MaterialAdmin&          GetMaterialAdmin()         {return *m_materialAdmin;}
         SolidsKernelAdmin&      GetSolidsKernelAdmin()     {return *m_solidsKernelAdmin;}
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}

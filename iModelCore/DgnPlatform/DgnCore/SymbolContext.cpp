@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -49,7 +50,7 @@ void            SymbolContext::_Detach()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElemP         SymbolContext::DrawSymbolForCache(IDisplaySymbol* symbol, QvCacheR symbolCache)
+Render::Graphic* SymbolContext::DrawSymbolForCache(IDisplaySymbol* symbol, Render::GraphicCache& symbolCache)
     {
     m_ICachedDraw->BeginCacheElement(&symbolCache);
 
@@ -66,3 +67,4 @@ QvElemP         SymbolContext::DrawSymbolForCache(IDisplaySymbol* symbol, QvCach
     
     return qvElem;
     }
+#endif

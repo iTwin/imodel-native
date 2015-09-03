@@ -35,7 +35,7 @@ geomJsApiDir = $(dgnScriptDir)GeomJsApi/
 
 contextDepends  =   $(DgnCoreAPISrc)ViewContext.h \
                     $(DgnCoreAPISrc)IViewOutput.h \
-                    $(DgnCoreAPISrc)IViewDraw.h   \
+                    $(DgnCoreAPISrc)Render.h   \
                     $(DgnCoreAPISrc)DgnViewport.h
 
 VewControllerDepends = $(DgnCoreAPISrc)ViewController.h $(DgnCoreAPISrc)ViewContext.h

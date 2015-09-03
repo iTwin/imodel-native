@@ -389,24 +389,21 @@ static CurveVectorPtr Process(IStrokeForCache& stroker)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 ViewContext::ClipStencil::ClipStencil(IStrokeForCache& stroker) : m_stroker(stroker) {m_tmpQvElem = nullptr;}
 ViewContext::ClipStencil::~ClipStencil() {if (m_tmpQvElem) T_HOST.GetGraphicsAdmin()._DeleteQvElem(m_tmpQvElem);}
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* ViewContext::ClipStencil::GetQvElem(ViewContextR context)
+GraphicPtr ViewContext::ClipStencil::GetQvElem(ViewContextR context)
     {
-    if (nullptr != m_tmpQvElem)
+    if (m_tmpQvElem.IsValid())
         return m_tmpQvElem;
 
-    bool    deleteQvElem;
-    QvElem* qvElem = context.GetCachedGeometry(m_stroker, deleteQvElem);
-
-    if (deleteQvElem)
-        m_tmpQvElem = qvElem;
-
-    return qvElem;
+    m_tmpQvElem = context.GetGraphic(m_stroker);
+    return m_tmpQvElem;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -432,9 +429,6 @@ mutable DRange3d    m_range;
 
 public:
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
-+---------------+---------------+---------------+---------------+---------------+------*/
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -568,12 +562,13 @@ static void CookPatternSymbology(PatternParamsCR params, ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool PushBoundaryClipStencil(ViewContextR context, VCClipStencil& boundary, QvElem*& qvElem)
+static bool PushBoundaryClipStencil(ViewContextR context, VCClipStencil& boundary, GraphicPtr& qvElem)
     {
-    if (NULL == (qvElem = boundary.GetQvElem(context)))
+    qvElem = boundary.GetQvElem(context);
+    if (!qvElem.IsValid())
         return false;
 
-    context.GetIViewDraw().PushClipStencil(qvElem);
+    context.GetIViewDraw().PushClipStencil(qvElem.get());
 
     return true;
     }
@@ -581,7 +576,7 @@ static bool PushBoundaryClipStencil(ViewContextR context, VCClipStencil& boundar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void PopBoundaryClipStencil(ViewContextR context, QvElem* qvElem)
+static void PopBoundaryClipStencil(ViewContextR context, Graphic* qvElem)
     {
     if (NULL == qvElem)
         return;
@@ -1322,7 +1317,7 @@ DPoint3dR       origin
     if (NULL == boundGpa || 0 == boundGpa->GetCount())
         return;
 
-    QvElem*         qvElem = NULL;
+    GraphicPtr qvElem;
 
     if (useStencil && !PatternHelper::PushBoundaryClipStencil(context, boundary, qvElem))
         return;
@@ -1330,8 +1325,8 @@ DPoint3dR       origin
     // NOTE: Setup symbology AFTER visit to compute stencil/clip since that may change current display params!
     PatternHelper::CookPatternSymbology(*params, context);
 
-    Transform       baseTransform, invBaseTransform;
-    Transform       hatchTransform;
+    Transform baseTransform, invBaseTransform;
+    Transform hatchTransform;
 
     hatchTransform.InitFromRowValues(1,0,0, 0, 0,0,0, 0, 0,-1,0, 0);
     baseTransform.InitFrom(params->rMatrix, origin);
@@ -1344,7 +1339,7 @@ DPoint3dR       origin
     if (PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Space2))
         PatternHelper::ProcessHatchBoundary(boundGpa, context, baseTransform, hatchTransform, params->angle2, params->space2);
 
-    PatternHelper::PopBoundaryClipStencil(context, qvElem);
+    PatternHelper::PopBoundaryClipStencil(context, qvElem.get());
     }
 
 /*---------------------------------------------------------------------------------**//**

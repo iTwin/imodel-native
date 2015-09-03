@@ -18,8 +18,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 #include <Bentley/BeAssert.h>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
-struct Graphic : RefCountedBase {};
-
+struct Graphic;
 DEFINE_REF_COUNTED_PTR(Graphic)
 
 END_BENTLEY_RENDER_NAMESPACE
@@ -416,7 +415,7 @@ public:
     };
 
     //! Represents a dgn.ElementItem.
-    //! dgn.ElementItem is-a dgn.ElementUniqueAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the ID as the host dgn.Element.
+    //! dgn.ElementItem is-a dgn.ElementUniqueAspect. A DgnElement can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the ID as the host dgn.Element.
     //! Note that the item's actual class can vary, as long as it is a subclass of dgn.ElementItem.
     //! ElementItems instances are always stored in the dgn.ElementItem table (TablePerHierarchy).
     //! <p>
@@ -858,13 +857,13 @@ public:
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
     //! @}
 
+    //! Get the DgnModelId of this DgnElement.
     DgnModelId GetModelId() const {return m_modelId;}
 
     //! Get the DgnModel of this DgnElement.
     DGNPLATFORM_EXPORT DgnModelPtr GetModel() const;
 
     //! Get the DgnDb of this element.
-    //! @note This is merely a shortcut for GetDgnModel().GetDgnDb().
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
     //! Get the DgnElementId of this DgnElement

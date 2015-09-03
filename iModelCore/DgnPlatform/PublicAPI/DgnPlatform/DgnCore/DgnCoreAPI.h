@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__PUBLISH_SECTION_START__
 #pragma once
+//__PUBLISH_SECTION_START__
 
 #if !defined (DOCUMENTATION_GENERATOR)
 
@@ -17,6 +17,7 @@
 #include "ClipVector.h"
 #include "ColorUtil.h"
 #include "ElementHandler.h"
+#include "SolidKernel.h"
 #include "ElementGeometry.h"
 #include "ElementGraphics.h"
 #include "FenceParams.h"
@@ -25,7 +26,6 @@
 #include "IAuxCoordSys.h"
 #include "IPickGeom.h"
 #include "TxnManager.h"
-#include "IViewDraw.h"
 #include "IViewOutput.h"
 #include "IViewTransients.h"
 #include "LineStyle.h"
@@ -33,7 +33,6 @@
 #include "DgnDb.h"
 #include "NotificationManager.h"
 #include "ScanCriteria.h"
-#include "SolidKernel.h"
 #include "TextString.h"
 #include "ValueFormat.h"
 #include "ValueParse.h"

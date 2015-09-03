@@ -62,11 +62,11 @@ private:
     double   m_lensAngle;
     double   m_focusDistance;
     DPoint3d m_eyePoint;
-    static bool IsValidLensAngle(double val) {return val>0.0 && val<Angle::Pi();}
+    static bool IsValidLensAngle(double val) {return val>(Angle::Pi()/8.0) && val<Angle::Pi();}
 
 public:
     void     InvalidateFocus() {m_focusDistance=-1.0;}
-    bool     IsFocusValid() const {return m_focusDistance > 0.0;}
+    bool     IsFocusValid() const {return m_focusDistance > 0.0 && m_focusDistance<1.0e6 * DgnUnits::OneMeter();}
     double   GetFocusDistance() const {return m_focusDistance;}
     void     SetFocusDistance(double dist) {m_focusDistance = dist;}
     bool     IsLensValid() const {return IsValidLensAngle(m_lensAngle);}
@@ -484,7 +484,6 @@ public:
     double GetAspectRatioSkew() const {return _GetAspectRatioSkew();}
 
 //__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT ColorDef ResolveBGColor() const;
     DGNPLATFORM_EXPORT bool IsViewChanged(Utf8StringCR base) const;
     DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point);
     DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui);
@@ -589,9 +588,7 @@ protected:
     DVec3d          m_delta;            //!< The extent of the view frustum.
     RotMatrix       m_rotation;         //!< Rotation of the view frustum.
     DgnStyleId      m_displayStyleId;   //!< The display style id of the view
-
-    //  Non-persistent data
-    IAuxCoordSysPtr     m_auxCoordSys;      //!< The auxiliary coordinate system in use.
+    IAuxCoordSysPtr m_auxCoordSys;      //!< The auxiliary coordinate system in use.
 
     virtual PhysicalViewControllerCP _ToPhysicalView() const override {return this;}
     virtual ClipVectorPtr _GetClipVector() const {return nullptr;}
@@ -604,7 +601,6 @@ protected:
     virtual void _SetDelta(DVec3dCR delta) override {m_delta = delta;}
     virtual void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
     virtual bool _Allow3dManipulations() const override {return true;}
-    DGNPLATFORM_EXPORT virtual IAuxCoordSysP _GetAuxCoordinateSystem() const;
     DGNPLATFORM_EXPORT virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT virtual bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR);
@@ -624,20 +620,14 @@ public:
 
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT static double CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec);
-
 //__PUBLISH_SECTION_START__
 
-    //! Sets the display style by-index. This display style must thus be in the file.
-    //! @note You can override this display style with a display style object at the DgnViewport level if desired.
-    //! @see SpecialDisplayStyleIndex for special indices (e.g. to remove a display style).
-    DGNPLATFORM_EXPORT void SetDisplayStyle(DgnStyleId);
-
     //! Gets the Auxiliary Coordinate System for this view.
-    DGNPLATFORM_EXPORT IAuxCoordSysP GetAuxCoordinateSystem() const;
+    IAuxCoordSysP GetAuxCoordinateSystem() const {return m_auxCoordSys.get();}
 
     //! Sets the Auxiliary Coordinate System to use for this view.
     //! @param[in] acs The new Auxiliary Coordinate System.
-    DGNPLATFORM_EXPORT void SetAuxCoordinateSystem(IAuxCoordSysP acs);
+    void SetAuxCoordinateSystem(IAuxCoordSysP acs) {m_auxCoordSys = acs;}
 
     //! Sets the Target DgnModel for this PhysicalViewController.
     //! @param[in] target The model to which new elements are added by modification tools.
@@ -1058,8 +1048,9 @@ private:
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
     virtual AxisAlignedBox3d _GetViewedExtents() const override;
-    virtual IAuxCoordSysP _GetAuxCoordinateSystem() const override;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     virtual ColorDef _GetBackgroundColor() const override;
+#endif
     virtual ClipVectorPtr _GetClipVector() const override;
 
     void PushClipsForPhysicalView(ViewContextR) const;

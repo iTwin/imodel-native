@@ -20,7 +20,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct SnapContext : ViewContext
 {
 protected:
-    NullOutput      m_output;
+    Render::NullOutput      m_output;
     SnapDetailP     m_snapPath; // result of the snap
     double          m_snapAperture;
     SnapMode        m_snapMode;
@@ -54,7 +54,7 @@ public:
     //! Get the default sprite used for the supplied SnapMode.
     //! @param[in]    mode                  Snap mode to get sprite for.
     //! @return ISpriteP default sprite.
-    DGNPLATFORM_EXPORT static ISpriteP GetSnapSprite (SnapMode mode);
+    DGNPLATFORM_EXPORT static Render::ISpriteP GetSnapSprite (SnapMode mode);
 
     DGNPLATFORM_EXPORT void GetSegmentKeypoint (DPoint3dR hitPoint, double& keyParam, int divisor, DSegment3dCR segment);
 
@@ -78,7 +78,7 @@ public:
     //! @param[in]    isAdjusted            true if snap is not suitable for creating assoc points (pass false if customKeypointData is supplied or snap not overriden).
     //! @param[in]    nBytes                Size in bytes of customKeypointData, or 0 if none.
     //! @param[in]    customKeypointData    Pointer to customKeypointData to save for this snap or NULL.
-    DGNPLATFORM_EXPORT void SetSnapInfo (SnapMode mode, ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = nullptr);
+    DGNPLATFORM_EXPORT void SetSnapInfo (SnapMode mode, Render::ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = nullptr);
 };
 
 END_BENTLEY_DGN_NAMESPACE

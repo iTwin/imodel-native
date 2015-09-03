@@ -1526,7 +1526,6 @@ DPoint3d CameraViewController::_GetTargetPoint() const
     return  target;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
@@ -1541,23 +1540,6 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     DPoint3d eyePt;
     JsonUtils::DPoint3dFromJson(eyePt, jsonObj[VIEW_SETTING_CameraPosition]);
     m_camera.SetEyePoint(eyePt);
-
-#ifdef WIP_PERSISTENT_CLIP_VECTOR // need to change the clip tool to recognize and use saved clip vector
-    if (jsonObj.isMember(VIEW_SETTING_ClipVector))
-        {
-        m_clipVector = ClipVector::Create();
-        JsonUtils::ClipVectorFromJson(*m_clipVector, jsonObj[VIEW_SETTING_ClipVector]);
-        }
-    else
-        {
-        m_clipVector = nullptr;
-        }
-#endif
-
-    //  Anything is better than garbage
-    if (m_delta.x <= DBL_EPSILON) m_delta.x = (m_delta.y + m_delta.z)/2;
-    if (m_delta.y <= DBL_EPSILON) m_delta.y = (m_delta.x + m_delta.z)/2;
-    if (m_delta.z <= DBL_EPSILON) m_delta.z = (m_delta.x + m_delta.y)/2;
 
     VerifyFocusPlane();
     }
@@ -1577,6 +1559,11 @@ void PhysicalViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     JsonUtils::DPoint3dFromJson(m_origin, jsonObj[VIEW_SETTING_Origin]);
     JsonUtils::DPoint3dFromJson(m_delta, jsonObj[VIEW_SETTING_Delta]);
     JsonUtils::RotMatrixFromJson(m_rotation, jsonObj[VIEW_SETTING_Rotation]);
+
+    //  Anything is better than garbage
+    if (m_delta.x <= DBL_EPSILON) m_delta.x = (m_delta.y + m_delta.z)/2;
+    if (m_delta.y <= DBL_EPSILON) m_delta.y = (m_delta.x + m_delta.z)/2;
+    if (m_delta.z <= DBL_EPSILON) m_delta.z = (m_delta.x + m_delta.y)/2;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1590,11 +1577,6 @@ void CameraViewController::_SaveToSettings(JsonValueR jsonObj) const
     jsonObj[VIEW_SETTING_CameraAngle] = m_camera.GetLensAngle();
     JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_CameraPosition], m_camera.GetEyePoint());
     jsonObj[VIEW_SETTING_CameraFocalLength] = m_camera.GetFocusDistance();
-
-#ifdef WIP_PERSISTENT_CLIP_VECTOR // need to change the clip tool to recognize and use saved clip vector
-    if (m_clipVector.IsValid())
-        JsonUtils::ClipVectorToJson(jsonObj[VIEW_SETTING_ClipVector], *m_clipVector);
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -1612,12 +1594,12 @@ void PhysicalViewController::_SaveToSettings(JsonValueR jsonObj) const
     JsonUtils::RotMatrixToJson(jsonObj[VIEW_SETTING_Rotation], m_rotation);
     }
 
+#ifdef DGNV10FORMAT_CHANGES_WIP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 IAuxCoordSysP PhysicalViewController::_GetAuxCoordinateSystem() const
     {
-#ifdef DGNV10FORMAT_CHANGES_WIP
     // if we don't have an ACS when this is called, try to get one.
     if (!m_auxCoordSys.IsValid())
         IACSManager::GetManager().ReadSettings(const_cast <ViewControllerP>(this), GetDgnElement(), GetRootModelP(false));
@@ -1626,20 +1608,10 @@ IAuxCoordSysP PhysicalViewController::_GetAuxCoordinateSystem() const
 
      if (nullptr != acs && SUCCESS == acs->CompleteSetupFromViewController(this))
         return acs;
-#endif
 
     return m_auxCoordSys.get();
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  11/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::SetAuxCoordinateSystem(IAuxCoordSysP acs)
-    {
-    // if no change, return.
-    if (m_auxCoordSys.get() != acs)
-        m_auxCoordSys = acs;
-    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Josh.Schifter   08/00
@@ -1655,7 +1627,6 @@ void ViewFlags::InitDefaults()
     styles = true;
     transparency = true;
     fill = true;
-
     textures = true;
     materials = true;
     sceneLights = true;
@@ -1833,7 +1804,7 @@ static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hi
     if (!vp.Is3dView())
         return; // Currently not worth drawing just the edge tangent in 2d...
 
-    IViewDrawP  output = vp.GetIViewDraw();
+    ViewDrawP  output = vp.GetIViewDraw();
     ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue());// Invert hilite color for good contrast...
 
     if (!hit.GetGeomDetail().IsValidSurfaceHit())
@@ -1899,7 +1870,7 @@ static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hi
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawLocateCircle(DgnViewportR vp, double aperture, DPoint3dCR pt)
     {
-    IViewDrawP  output = vp.GetIViewDraw();
+    ViewDrawP  output = vp.GetIViewDraw();
 
     output->SetToViewCoords(true);
 

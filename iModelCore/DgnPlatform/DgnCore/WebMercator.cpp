@@ -528,8 +528,10 @@ struct TextureCache
         {
         auto& entry = m_map[url];
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         if (entry.m_textureId != 0)
             T_HOST.GetGraphicsAdmin()._DeleteTexture (entry.m_textureId);
+#endif
 
         entry.m_textureId = tid;
         entry.m_imageInfo = info;
@@ -558,7 +560,9 @@ struct TextureCache
                 {
                 if (!IsCacheTooLarge ())
                     return;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                 T_HOST.GetGraphicsAdmin()._DeleteTexture (m_map[url].m_textureId);
+#endif
                 m_map.erase (url);
                 }
             }
@@ -586,6 +590,7 @@ BentleyStatus WebMercatorTileDisplayHelper::GetCachedTexture (uintptr_t& cachedT
 +---------------+---------------+---------------+---------------+---------------+------*/
 uintptr_t WebMercatorTileDisplayHelper::DefineTexture (bvector<Byte> const& rgbData, ImageUtilities::RgbImageInfo const& imageInfo)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     BeAssert (!imageInfo.isBGR);
     int format      = imageInfo.hasAlpha? QV_BGRA_FORMAT: QV_BGR_FORMAT;
     int sizeofPixel = imageInfo.hasAlpha? 4: 3;
@@ -599,6 +604,8 @@ uintptr_t WebMercatorTileDisplayHelper::DefineTexture (bvector<Byte> const& rgbD
     T_HOST.GetGraphicsAdmin()._DefineTile (textureId, "", sizeInPixels, false, format, pitch, &rgbData[0]);
 
     return textureId;
+#endif
+    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**

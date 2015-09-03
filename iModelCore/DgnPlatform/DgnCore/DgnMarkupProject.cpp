@@ -152,6 +152,7 @@ void PhysicalRedlineViewController::SynchWithSubjectViewController()
     m_viewFlags.grid = true;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -160,6 +161,7 @@ IAuxCoordSysP PhysicalRedlineViewController::_GetAuxCoordinateSystem() const
     // Redline views have their own ACS
     return T_Super::_GetAuxCoordinateSystem();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
@@ -167,7 +169,7 @@ IAuxCoordSysP PhysicalRedlineViewController::_GetAuxCoordinateSystem() const
 ColorDef PhysicalRedlineViewController::_GetBackgroundColor() const
     {
     // There can only be one background color
-    return m_subjectView.ResolveBGColor();
+    return m_subjectView._GetBackgroundColor();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1184,7 +1186,7 @@ void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP model
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageData(bvector<uint8_t> const& imageData, IViewOutput::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
+void RedlineModel::StoreImageData(bvector<uint8_t> const& imageData, Output::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
     {
     //  Grab possibly updated image definition data
     if (imageInfo.hasAlpha)
@@ -1254,9 +1256,9 @@ BeAssert(def1x1.GetSizeofPixelInBytes() == 3);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegDataSize, IViewOutput::CapturedImageInfo const& imageInfoIn, bool fitToX)
+void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegDataSize, Output::CapturedImageInfo const& imageInfoIn, bool fitToX)
     {
-    IViewOutput::CapturedImageInfo imageInfo;
+    Output::CapturedImageInfo imageInfo;
     bvector<uint8_t> rgbData;
     if (ImageUtilities::ReadImageFromJpgBuffer(rgbData, imageInfo, jpegData, jpegDataSize, imageInfoIn) != BSISUCCESS)
         return;
@@ -1450,6 +1452,7 @@ void RedlineModel::DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t
     for (auto const& corner : uvPts)
         m_tileOrigins.push_back(corner);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     auto pitch = (uint32_t)imageDef.GetPitch();
     auto tileid = GetBackDropTextureId();
     Point2d tileDims;
@@ -1459,6 +1462,7 @@ void RedlineModel::DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t
     T_HOST.GetGraphicsAdmin()._DefineTile(tileid, nullptr, tileDims, false, imageDef.m_format, pitch, imageData.data());
     m_tileIds.push_back(tileid);
     m_tilesX = 1;
+#endif
 
 #endif
     }
@@ -1468,8 +1472,11 @@ void RedlineModel::DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RedlineModel::LoadImageDataAndDefineTexture()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (T_HOST.GetGraphicsAdmin()._IsTextureIdDefined(GetBackDropTextureId()))
         return;
+#endif
+
     bvector<uint8_t> imageData;
     LoadImageData(m_imageDef, imageData);
     DefineImageTextures(m_imageDef, imageData);
@@ -1488,7 +1495,9 @@ void RedlineViewController::OnOpen(RedlineModel& targetModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RedlineViewController::OnClose(RedlineModel& targetModel)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     T_HOST.GetGraphicsAdmin()._DeleteTexture(targetModel.GetBackDropTextureId());
+#endif
     }
 
 void RedlineViewController::SetDrawBorder(bool allow) {m_drawBorder=allow;}

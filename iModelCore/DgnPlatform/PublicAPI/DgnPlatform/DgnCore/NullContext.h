@@ -10,13 +10,13 @@
 
 #include "ViewContext.h"
 
-BEGIN_BENTLEY_DGN_NAMESPACE
+BEGIN_BENTLEY_RENDER_NAMESPACE
 
 /*=================================================================================**//**
   Output that doesn't do anything.
   @bsiclass                                                     Brien.Bastings  09/12
 +===============+===============+===============+===============+===============+======*/
-struct NullOutput : IViewDraw
+struct NullOutput : ViewDraw
 {
     // IDrawGeom methods
     virtual ViewFlags   _GetDrawViewFlags() override {return ViewFlags();}
@@ -51,8 +51,7 @@ struct NullOutput : IViewDraw
 
     virtual void        _PushTransClip(TransformCP trans, ClipPlaneSetCP clip = NULL) override {}
     virtual void        _PopTransClip() override {}
-
-    virtual void        _PushClipStencil(QvElem* qvElem) override {}
+    virtual void        _PushClipStencil(Render::Graphic* qvElem) override {}
     virtual void        _PopClipStencil() override {}
 
     virtual RangeResult _PushBoundingRange3d(DPoint3dCP range) override {return RangeResult::Outside;}
@@ -64,13 +63,15 @@ struct NullOutput : IViewDraw
     virtual void        _DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) override {}
     virtual bool        _DrawSprite(ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override {return false;}
     virtual void        _DrawTiledRaster(ITiledRaster* tiledRaster) override {}
-    virtual void        _DrawQvElem(QvElem* qvElem, int subElemIndex) override {}
+    virtual void        _DrawGraphic(Render::Graphic* qvElem, int subElemIndex) override {}
     virtual void        _ClearZ () override {}
     virtual bool        _IsOutputQuickVision() const override {return false;}
     virtual bool        _ApplyMonochromeOverrides(ViewFlagsCR) const override {return false;}
     virtual StatusInt   _TestOcclusion(int numVolumes, DPoint3dP verts, int* results) override {return ERROR;}
 };
+END_BENTLEY_RENDER_NAMESPACE
 
+BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
   Context that doesn't draw anything. NOTE: Every context must setup an output!
   @bsiclass                                                     KeithBentley    01/02
@@ -83,17 +84,16 @@ protected:
     bool    m_setupScan;
 
     DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria() override;
-    DGNPLATFORM_EXPORT virtual QvElem* _DrawCached(IStrokeForCache&) override;
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _DrawCached(Render::IStrokeForCache&) override;
 
-    virtual void _DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
-    virtual void _DeleteSymbol(IDisplaySymbol*) override {}
+    virtual void _DrawSymbol(Render::IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight) override {}
     virtual bool _FilterRangeIntersection(GeometricElementCR element) override {if (m_setupScan) return T_Super::_FilterRangeIntersection(element); return false;}
-    virtual void _CookDisplayParams(ElemDisplayParamsR, ElemMatSymbR) override {}
-    virtual void _CookDisplayParamsOverrides(ElemDisplayParamsR, OvrMatSymbR) override {}
+    virtual void _CookDisplayParams(Render::ElemDisplayParamsR, Render::ElemMatSymbR) override {}
+    virtual void _CookDisplayParamsOverrides(Render::ElemDisplayParamsR, Render::OvrMatSymbR) override {}
     virtual void _SetupOutputs() override {BeAssert(NULL != m_IViewDraw); SetIViewDraw(*m_IViewDraw);} // Output CAN NOT be NULL!
 
 public:
-    NullContext(IViewDrawP viewDraw = NULL, bool setupScan = false) {m_IViewDraw = viewDraw; m_setupScan = setupScan; m_IDrawGeom = viewDraw; m_ignoreViewRange = true;}
+    NullContext(Render::ViewDrawP viewDraw = NULL, bool setupScan = false) {m_IViewDraw = viewDraw; m_setupScan = setupScan; m_IDrawGeom = viewDraw; m_ignoreViewRange = true;}
 };
 
 END_BENTLEY_DGN_NAMESPACE

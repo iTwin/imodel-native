@@ -386,6 +386,7 @@ BentleyStatus HypermodelingViewController::RemoveDrawing (DgnViewId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalViewControllerR HypermodelingViewController::GetPhysicalView() const {return *m_physical;}
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -393,6 +394,7 @@ IAuxCoordSysP HypermodelingViewController::_GetAuxCoordinateSystem () const
     {
     return m_physical->GetAuxCoordinateSystem();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
@@ -403,6 +405,7 @@ ClipVectorPtr HypermodelingViewController::_GetClipVector() const
     }
 
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -410,6 +413,7 @@ ColorDef HypermodelingViewController::_GetBackgroundColor () const
     {
     return m_currentViewController->ResolveBGColor(); // TRICKY Must call ResolveBGColor, not GetBackgroundColor. 
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13

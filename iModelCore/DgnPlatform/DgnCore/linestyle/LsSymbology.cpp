@@ -20,7 +20,7 @@ double          LsPointComponent::_GetLength () const
 * to 1, widths are set to zero, plane is set to identity etc.
 * @bsimethod                                                    JimBartlett     11/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LineStyleSymb::Init (ILineStyleCP lStyle)
+void LineStyleSymb::Init (ILineStyleCP lStyle)
     {
     m_lStyle    = lStyle;
 

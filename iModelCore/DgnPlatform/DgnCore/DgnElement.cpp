@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/QvElemSet.h>
 #include <DgnPlatform/DgnCore/DgnScript.h>
 
 DgnElement::Item::Key  DgnElement::Item::s_key;

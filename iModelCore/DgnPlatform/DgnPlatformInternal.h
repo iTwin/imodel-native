@@ -35,7 +35,6 @@
 #include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnCore/DgnCoreAPI.h>
 #include <DgnPlatform/DgnCore/rtypes.r.h>
-#include <DgnPlatform/DgnCore/QvElemSet.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
 #include <DgnPlatform/DgnCore/NullContext.h>
@@ -113,6 +112,7 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_EC
 using namespace std;

@@ -76,6 +76,7 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+namespace Render {struct GraphicCache;};
 namespace dgn_ElementHandler {struct Physical;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
@@ -670,7 +671,7 @@ private:
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
 
     T_DgnModelMap   m_models;
-    QvCache*        m_qvCache;
+    Render::GraphicCache* m_qvCache;
     bmap<DgnModelId,bpair<uint64_t,DgnModelType>> m_modelDependencyIndexAndType;
 
     void ClearLoaded();
@@ -777,8 +778,8 @@ public:
     };
 
 public:
-    DGNPLATFORM_EXPORT QvCache* GetQvCache(bool createIfNecessary=true);
-    void SetQvCache(QvCache* qvCache) {m_qvCache = qvCache;}
+    DGNPLATFORM_EXPORT Render::GraphicCache* GetRenderCache(bool createIfNecessary=true);
+    void SetRenderCache(Render::GraphicCache* qvCache) {m_qvCache = qvCache;}
 
     //! Determine the Id of the first model in this DgnDb.
     DGNPLATFORM_EXPORT DgnModelId QueryFirstModelId() const;

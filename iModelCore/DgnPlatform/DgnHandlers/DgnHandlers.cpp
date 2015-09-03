@@ -26,7 +26,6 @@ void DgnPlatformLib::Host::InitializeDgnHandlers()
     BeAssert (NULL == m_lineStyleAdmin);        m_lineStyleAdmin        = &_SupplyLineStyleAdmin();
     BeAssert (NULL == m_rasterAttachmentAdmin); m_rasterAttachmentAdmin = &_SupplyRasterAttachmentAdmin();
     BeAssert (NULL == m_pointCloudAdmin);       m_pointCloudAdmin       = &_SupplyPointCloudAdmin();
-    BeAssert (NULL == m_graphicsAdmin);         m_graphicsAdmin         = &_SupplyGraphicsAdmin();
     BeAssert (NULL == m_materialAdmin);         m_materialAdmin         = &_SupplyMaterialAdmin();
     BeAssert (NULL == m_solidsKernelAdmin);     m_solidsKernelAdmin     = &_SupplySolidsKernelAdmin();
     BeAssert (NULL == m_formatterAdmin);        m_formatterAdmin        = &_SupplyFormatterAdmin ();
@@ -51,7 +50,6 @@ void DgnPlatformLib::Host::Terminate (bool onProgramExit)
     TERMINATE_HOST_OBJECT(m_lineStyleAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_rasterAttachmentAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_pointCloudAdmin, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_graphicsAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_materialAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_solidsKernelAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_geoCoordAdmin, onProgramExit);

@@ -13,7 +13,7 @@
 #include    <Bentley/BeIconUtilities.h>
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGN_NAMESPACE
+BEGIN_BENTLEY_RENDER_NAMESPACE
 
 struct ISprite;
 typedef RefCountedPtr<ISprite> ISpritePtr;
@@ -35,11 +35,6 @@ typedef RefCountedPtr<ISprite> ISpritePtr;
 
  Sprites can be of varying sizes and color depths and can have both opaque and transparent pixels. 
  
- At a given time there can be many Sprites Locations shown in a DgnViewport. However, since the entire scene is
- refreshed from the backingStore for every frame (see discussion of Scene Creation in the detailed description of \ref DgnViewport), and
- since Sprites are NOT stored in the backingStore, every IViewDecoration must (re)draw all of its SpriteLocations for every frame
- or they will disappear.
-
  Element Manipulator handles and the Accusnap indicators are examples of  use of Sprites.
  @note It is also possible to draw an ISprite onto a DgnViewport directly (via calls to IViewDraw::DrawSprite)
  without ever using a SpritLocation. SpriteLocations are merely provided as a convenience.
@@ -50,30 +45,28 @@ typedef RefCountedPtr<ISprite> ISpritePtr;
 /*=================================================================================**//**
  @bsiinterface
 +===============+===============+===============+===============+===============+======*/
-struct    ISprite : IRefCounted
+struct ISprite : IRefCounted
 {
-//__PUBLISH_SECTION_END__
+    //__PUBLISH_SECTION_END__
+    //! Create a sprite that accesses the specified ICO resource in the specified DLL.
+    //! @returns Pointer to new sprite object.
+    //! @param[in] rscId  The ID of the icon resource in the DLL
+    //! @param[in] hInstance Identifies the DLL from which the named BMP should be loaded or NULL for ustation.dll
+    DGNPLATFORM_EXPORT static ISpriteP CreateFromIconResource(int rscId, BeIconUtilities::IconSourceP hInstance);
 
-//! Create a sprite that accesses the specified ICO resource in the specified DLL.
-//! @returns Pointer to new sprite object.
-//! @param[in] rscId  The ID of the icon resource in the DLL
-//! @param[in] hInstance Identifies the DLL from which the named BMP should be loaded or NULL for ustation.dll
-DGNPLATFORM_EXPORT static ISpriteP CreateFromIconResource (int rscId, BeIconUtilities::IconSourceP hInstance);
+    //__PUBLISH_SECTION_START__
 
-//__PUBLISH_SECTION_START__
+    //! Create an RGBA sprite from a buffer that contains a PNG image with alpha channel.
+    //! @return the sprite definition or NULL if the PNG definition is not valid.
+    DGNPLATFORM_EXPORT static ISpritePtr CreateFromPngBuffer(Byte const*inputBuffer, size_t numberBytes);
 
-//! Create an RGBA sprite from a buffer that contains a PNG image with alpha channel.
-//! @return the sprite definition or NULL if the PNG definition is not valid.
-DGNPLATFORM_EXPORT static ISpritePtr CreateFromPngBuffer(Byte const*inputBuffer, size_t numberBytes);
+    //! Get the RGBA definition from this Sprite Definition.
+    //! @return the RGBA definition or NULL
+    virtual Byte const* GetRgbaDefinition() { return NULL; }
 
-//! Get the RGBA definition from this Sprite Definition.
-//! @return the RGBA definition or NULL
-virtual Byte const* GetRgbaDefinition() { return NULL; }
-
-//! Get the size (in pixels) of this Sprite Definition.
-//! @param        size        OUT the size in pixels of this sprite definition.
-virtual void GetSize (Point2d* size) = 0;
-
+    //! Get the size (in pixels) of this Sprite Definition.
+    //! @param        size        OUT the size in pixels of this sprite definition.
+    virtual void GetSize(Point2d* size) = 0;
 };
 
 
@@ -94,38 +87,37 @@ private:
     ISpriteP        m_sprite;
 
 public:
+    DGNPLATFORM_EXPORT SpriteLocation();
 
-DGNPLATFORM_EXPORT SpriteLocation();
+    //! Activate this Sprite to show a specific Sprite Definition at a specific location in a DgnViewport.
+    //! This call does \em not display the Sprite Definition in the DgnViewport. Rather, subsequent calls to
+    //! #DecorateViewport from within an IViewDecoration \em will show the Sprite.
+    //! This Sprite Location remains active until #Deactivate is called.
+    //! @param[in]      sprite          The Sprite Definition to draw at this SpriteLocation
+    //! @param[in]      viewport        The DgnViewport onto which the Sprite Definition is drawn
+    //! @param[in]      location        The x,y posistion in DgnCoordSystem::View
+    //! @param[in]      transparency    The transparency to draw the Sprite (0=opaque, 255=invisible)
+    DGNPLATFORM_EXPORT void Activate(ISpriteP sprite, DgnViewportP viewport, DPoint3dCR location, int transparency);
 
-//! Activate this Sprite to show a specific Sprite Definition at a specific location in a DgnViewport.
-//! This call does \em not display the Sprite Definition in the DgnViewport. Rather, subsequent calls to
-//! #DecorateViewport from within an IViewDecoration \em will show the Sprite.
-//! This Sprite Location remains active until #Deactivate is called.
-//! @param[in]      sprite          The Sprite Definition to draw at this SpriteLocation
-//! @param[in]      viewport        The DgnViewport onto which the Sprite Definition is drawn
-//! @param[in]      location        The x,y posistion in DgnCoordSystem::View
-//! @param[in]      transparency    The transparency to draw the Sprite (0=opaque, 255=invisible)
-DGNPLATFORM_EXPORT void Activate (ISpriteP sprite, DgnViewportP viewport, DPoint3dCR location, int transparency);
+    //! Deactivate an active Sprite Location. After this call, calls to #DecorateViewport for this
+    //! Sprite Location will do nothing until it is re-Activated.
+    DGNPLATFORM_EXPORT void Deactivate();
 
-//! Deactivate an active Sprite Location. After this call, calls to #DecorateViewport for this
-//! Sprite Location will do nothing until it is re-Activated.
-DGNPLATFORM_EXPORT void Deactivate();
+    //! If this Sprite Location is active for the specified DgnViewport, draw its Sprite Definition at the current location.
+    //! Otherwise, this method does nothing.
+    //! @note This method is <b>ONLY</b> valid from within an IViewDecoration::DoDecoration event callback.
+    DGNPLATFORM_EXPORT void DecorateViewport(DgnViewportP);
 
-//! If this Sprite Location is active for the specified DgnViewport, draw its Sprite Definition at the current location.
-//! Otherwise, this method does nothing.
-//! @note This method is <b>ONLY</b> valid from within an IViewDecoration::DoDecoration event callback.
-DGNPLATFORM_EXPORT void DecorateViewport (DgnViewportP);
+    //! Determine whether this Sprite Location is currently active.
+    //! @return true if this Sprite Location is currently active.
+    bool IsActive() const {return NULL != m_viewport;}
 
-//! Determine whether this Sprite Location is currently active.
-//! @return true if this Sprite Location is currently active.
-bool IsActive() const {return NULL != m_viewport;}
+    //! Get the sprite's location, if this SpriteLocation is active.
+    DPoint3dR GetLocation() {return m_location;}
 
-//! Get the sprite's location, if this SpriteLocation is active.
-DPoint3dR  GetLocation() {return m_location;}
-
-//! Get the ISprite value, if this SpriteLocation is active.
-ISpriteP GetSprite()  {return m_sprite;}
+    //! Get the ISprite value, if this SpriteLocation is active.
+    ISpriteP GetSprite()  {return m_sprite;}
 };
 
 /** @endGroup */
-END_BENTLEY_DGN_NAMESPACE
+END_BENTLEY_RENDER_NAMESPACE

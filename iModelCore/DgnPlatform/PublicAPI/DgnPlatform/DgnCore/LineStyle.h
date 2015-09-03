@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 
-#include "IViewDraw.h"  // For LineStyleParams
+#include "Render.h"  // For LineStyleParams
 #include "../DgnHost.h"
 //__PUBLISH_SECTION_END__
 #include "ViewContext.h"  // For ILineStyleComponent
@@ -340,10 +340,6 @@ public:
     BentleyStatus GetLineCodeLocation (struct LsComponentReader*);
     BentleyStatus GetPointSymbolLocation (struct LsComponentReader*, int symbolNumber);
     BentleyStatus GetCompoundComponentLocation (struct LsComponentReader*, int componentNumber);
-
-#if defined(NOTNOW)
-    DGNPLATFORM_EXPORT void* GetResource () const;
-#endif
 };
 
 //=======================================================================================
@@ -410,7 +406,7 @@ private:
     LsLocation              m_location;    // Where to find components of resource
     Utf8String              m_descr;
 
-    BentleyStatus       StrokeContinuousArc (ViewContextP, LineStyleSymbCP, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
+    BentleyStatus       StrokeContinuousArc (ViewContextP, Render::LineStyleSymbCP, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
                                              double const* start, double const* sweep, DPoint3dCP range) const;
 protected:
     bool                m_isDirty;
@@ -429,8 +425,8 @@ public:
 
     DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, BeSQLite::PropertySpec spec, V10ComponentBase const*data, uint32_t dataSize);
 
-    bool                IsWidthDiscernible (ViewContextP, LineStyleSymbCP, DPoint3dCR) const;
-    bool                IsSingleRepDiscernible (ViewContextP, LineStyleSymbCP, DPoint3dCR) const;
+    bool                IsWidthDiscernible (ViewContextP, Render::LineStyleSymbCP, DPoint3dCR) const;
+    bool                IsSingleRepDiscernible (ViewContextP, Render::LineStyleSymbCP, DPoint3dCR) const;
     LsLocationCP        GetLocation() const   {return &m_location;}
 
     virtual             ~LsComponent() {};
@@ -442,19 +438,19 @@ public:
     virtual bool        _ContainsComponent (LsComponentP other) const {return other == this;}
     virtual bool        _HasUniformFullWidth (double *pWidth) const  {if (pWidth) *pWidth=0.0; return false;}
     virtual bool        _SupportsConvertToRaster() const { return true; }
-    virtual double      _CalcRepetitions (LineStyleSymbCP) const;
+    virtual double      _CalcRepetitions (Render::LineStyleSymbCP) const;
 
     virtual bool        _IsContinuous           () const override  {return false;}
     virtual bool        _HasWidth               () const override  {return true;}
     virtual double      _GetLength              () const override  {return 0.0;}
     virtual void        _PostProcessLoad        (DgnModelP modelRef) { return; }
     virtual void        _ClearPostProcess       () { return; }
-    virtual StatusInt   _StrokeLineString       (ViewContextP, LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const override;
-    virtual StatusInt   _StrokeLineString2d     (ViewContextP, LineStyleSymbP, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
-    virtual StatusInt   _StrokeArc              (ViewContextP, LineStyleSymbP, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
+    virtual StatusInt   _StrokeLineString       (ViewContextP, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const override;
+    virtual StatusInt   _StrokeLineString2d     (ViewContextP, Render::LineStyleSymbP, DPoint2d const*, int nPts, double zDepth, bool isClosed) const override;
+    virtual StatusInt   _StrokeArc              (ViewContextP, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrix const*, double r0, double r1,
                                                     double const* start, double const* sweep, DPoint3dCP range) const override;
-    virtual StatusInt   _StrokeBSplineCurve     (ViewContextP context, LineStyleSymbP lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
-    virtual StatusInt   _DoStroke               (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const {return SUCCESS;}
+    virtual StatusInt   _StrokeBSplineCurve     (ViewContextP context, Render::LineStyleSymbP lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
+    virtual StatusInt   _DoStroke               (ViewContextP, DPoint3dCP, int, Render::LineStyleSymbCP) const {return SUCCESS;}
     virtual void        _LoadFinished           () { m_isDirty = false; }
     virtual BentleyStatus _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const   { return BSIERROR; }
     virtual BentleyStatus _GetRasterTextureWidth (double& width) const                                      { return BSIERROR; }
@@ -536,10 +532,7 @@ public:
 //!  @ingroup LineStyleManagerModule
 // @bsiclass
 //=======================================================================================
-struct          LsSymbolComponent : public LsComponent
-//__PUBLISH_SECTION_END__
-    , public IDisplaySymbol
-//__PUBLISH_SECTION_START__
+struct          LsSymbolComponent : LsComponent, Render::IDisplaySymbol
     {
 //__PUBLISH_SECTION_END__
 private:
@@ -582,7 +575,7 @@ public:
     void                SetFlags            (uint32_t flags) {m_symFlags = flags;}
     //  Should never be called; symbol components should never be drawn this way.  Therefore, a line style
     //  resource must not directly refer to a symbol component.
-    StatusInt           _DoStroke           (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
+    StatusInt           _DoStroke           (ViewContextP, DPoint3dCP, int, Render::LineStyleSymbCP) const override;
     BentleyStatus       CreateFromComponent (LsPointSymbolComponentCP lpsComp);
 
     static BentleyStatus CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId id);
@@ -637,7 +630,7 @@ public:
     uint32_t            GetMod1             () const {return m_mod1;}
     double              _GetMaxWidth         (DgnModelP modelRef) const;
 
-    StatusInt           Output              (ViewContextP, LineStyleSymbCP, DPoint3dCP org, DPoint3dCP dir, double const* xScale=0,
+    StatusInt           Output              (ViewContextP, Render::LineStyleSymbCP, DPoint3dCP org, DPoint3dCP dir, double const* xScale=0,
                                                 DPoint3dCP clipOrg=0, DPoint3dCP clipEnd=0) const;
                         LsSymbolReference   (LsSymbolComponentP symbol, LsPointComponentP parent,
                                                 uint32_t mod1, double xOffset, double yOffset, double radians, int strokeNumber);
@@ -761,7 +754,7 @@ public:
     virtual bool    _SupportsConvertToRaster    () const override;
     virtual bool    _ContainsComponent           (LsComponentP other) const override;
     void            Free                        (bool    sub);
-    virtual StatusInt _DoStroke                 (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
+    virtual StatusInt _DoStroke                 (ViewContextP, DPoint3dCP, int, Render::LineStyleSymbCP) const override;
     bool            _HasUniformFullWidth         (double *pWidth)   const;
 
 //__PUBLISH_SECTION_START__
@@ -916,7 +909,7 @@ public:
 //=======================================================================================
 struct     ISymbolProcess
     {
-    virtual bool _ProcessSymbol (ViewContextP, Centerline const*, LineStyleSymbCP,LsStrokeCP, int strokeIndex, int endCondition) const = 0;
+    virtual bool _ProcessSymbol (ViewContextP, Centerline const*, Render::LineStyleSymbCP,LsStrokeCP, int strokeIndex, int endCondition) const = 0;
     };
 
 //__PUBLISH_SECTION_START__
@@ -955,7 +948,7 @@ protected:
     size_t          m_nStrokes;
     LsStroke        m_strokes[33];
 
-    bool            ApplyModifiers          (double* pOrgWidth, double* pEndWidth, LineStyleSymbCP);
+    bool            ApplyModifiers          (double* pOrgWidth, double* pEndWidth, Render::LineStyleSymbCP);
     void            ApplyScale              (double scale);
     void            ApplyStretch            (double dashScale, double gapScale);
     void            ApplyWidth              (double width);
@@ -964,9 +957,9 @@ protected:
     void            ApplyCenterPhase        (double length, bool isClosed);
     void            CalcPatternLength       ();
 
-    double          GenerateStrokes         (ViewContextP, ISymbolProcess const*, LineStyleSymbCP, DPoint3dCP, int,
+    double          GenerateStrokes         (ViewContextP, ISymbolProcess const*, Render::LineStyleSymbCP, DPoint3dCP, int,
                                                 double length, double width, double taper, int segFlag);
-    void            StrokeLocal             (ViewContextP, ISymbolProcess const*, DPoint3dCP, int, double, LineStyleSymbCP, DPoint3dCP, DPoint3dCP, int segFlag) const;
+    void            StrokeLocal             (ViewContextP, ISymbolProcess const*, DPoint3dCP, int, double, Render::LineStyleSymbCP, DPoint3dCP, DPoint3dCP, int segFlag) const;
     explicit LsStrokePatternComponent       (LsLocationCP pLocation);
     void            FixDashWidths           (double& orgWidth, double& endWidth, bool taper, ViewContextCP context, DPoint3dCP pt);
     void            Init                    (V10LineCode const* lcRsc);
@@ -980,16 +973,16 @@ public:
 
     BentleyStatus   PostCreate              ();
 
-    virtual StatusInt _DoStroke             (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
-    StatusInt       ProcessStroke           (ViewContextP, ISymbolProcess const*, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP) const;
+    virtual StatusInt _DoStroke             (ViewContextP, DPoint3dCP, int, Render::LineStyleSymbCP) const override;
+    StatusInt       ProcessStroke           (ViewContextP, ISymbolProcess const*, DPoint3dCP inPoints, int nPoints, Render::LineStyleSymbCP) const;
 
 
-    bool            CheckSegmentMode        (LineStyleSymbCP) const;
+    bool            CheckSegmentMode        (Render::LineStyleSymbCP) const;
 
 
     size_t          GetStrokeCount          () const {return  m_nStrokes;}
     virtual bool    _SupportsConvertToRaster () const override;
-    double          _CalcRepetitions         (LineStyleSymbCP) const;
+    double          _CalcRepetitions         (Render::LineStyleSymbCP) const;
     LsStrokeP       InsertStroke            (LsStrokeCR stroke);
     void            InsertStroke            (double length, bool isDash);
     void            DeleteStroke            (size_t index);
@@ -1079,7 +1072,7 @@ struct          LsPointComponent : public LsComponent
     bool                    m_postProcessed;
 
 private:
-    virtual bool                    _ProcessSymbol           (ViewContextP, Centerline const*, LineStyleSymbCP, LsStrokeCP, int strokeIndex, int endCondition) const override;
+    virtual bool                    _ProcessSymbol           (ViewContextP, Centerline const*, Render::LineStyleSymbCP, LsStrokeCP, int strokeIndex, int endCondition) const override;
 
     LsSymbolReferenceP              GetSymbolReferenceP     (T_SymbolsCollectionConstIter iter) const;
     LsPointComponent    (LsLocationCP pLocation);
@@ -1092,7 +1085,7 @@ public:
     virtual void                    _ClearPostProcess       () override;
     virtual bool                    _IsContinuous           () const override {return NULL==m_strokeComponent.get () ? false : m_strokeComponent->_IsContinuous();}
     virtual double                  _GetLength              () const override;
-    virtual StatusInt               _DoStroke               (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
+    virtual StatusInt               _DoStroke               (ViewContextP, DPoint3dCP, int, Render::LineStyleSymbCP) const override;
     static LsPointComponent*        LoadLinePoint           (LsComponentReader*reader);
     static LsPointComponentPtr      Create                  (LsLocation&location) { LsPointComponentP retval = new LsPointComponent (&location); retval->m_isDirty = true; return retval; }
     virtual double                  _GetMaxWidth             (DgnModelP modelRef)  const override;
@@ -1155,7 +1148,7 @@ public:
     virtual bool        _IsContinuous                   () const override {return 0==m_hardwareLineCode ? true : false;}
     virtual bool        _IsContinuousOrSingleDash        () const override {return _IsContinuous();}
     virtual bool        _HasLineCodes                    () const override {return IsHardwareStyle();}
-    virtual StatusInt   _DoStroke                       (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
+    virtual StatusInt   _DoStroke                       (ViewContextP, DPoint3dCP, int, Render::LineStyleSymbCP) const override;
     static LsInternalComponentPtr CreateInternalComponent   (LsLocation&location);
 
 //__PUBLISH_SECTION_START__
@@ -1218,7 +1211,7 @@ private:
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle (LsComponentType componentType, LsComponentId componentID);
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
-    intptr_t            GenerateRasterTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb);
+    intptr_t            GenerateRasterTexture(ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb);
 
 public:
     DGNPLATFORM_EXPORT static double GetUnitDef (Json::Value& lsDefinition);
@@ -1250,7 +1243,7 @@ public:
     DgnStyleId GetStyleId () { return m_styleId; }
 
     // Raster Images...
-    uintptr_t                           GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale);
+    uintptr_t                           GetRasterTexture (ViewContextR viewContext, Render::LineStyleSymbR lineStyleSymb, bool forceRaster, double scale);
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;

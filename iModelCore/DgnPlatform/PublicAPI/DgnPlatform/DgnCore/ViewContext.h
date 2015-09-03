@@ -11,7 +11,7 @@
 #include "../DgnPlatform.h"
 #include "ClipVector.h"
 #include "TransformClipStack.h"
-#include "IViewDraw.h"
+#include "Render.h"
 #include "ScanCriteria.h"
 
 #define FOCAL_LENGTH_RATIO 0.023584905
@@ -99,11 +99,11 @@ struct     ILineStyleComponent
     virtual bool          _IsContinuous() const = 0;
     virtual bool          _HasWidth() const = 0;
     virtual double        _GetLength() const = 0;
-    virtual StatusInt     _StrokeLineString(ViewContextP, LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const = 0;
-    virtual StatusInt     _StrokeLineString2d(ViewContextP, LineStyleSymbP, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
-    virtual StatusInt     _StrokeArc(ViewContextP, LineStyleSymbP, DPoint3dCP origin, RotMatrixCP rMatrix,
+    virtual StatusInt     _StrokeLineString(ViewContextP, Render::LineStyleSymbP, DPoint3dCP, int nPts, bool isClosed) const = 0;
+    virtual StatusInt     _StrokeLineString2d(ViewContextP, Render::LineStyleSymbP, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
+    virtual StatusInt     _StrokeArc(ViewContextP, Render::LineStyleSymbP, DPoint3dCP origin, RotMatrixCP rMatrix,
                                     double r0, double r1, double const* start, double const* sweep, DPoint3dCP range) const = 0;
-    virtual StatusInt     _StrokeBSplineCurve(ViewContextP context, LineStyleSymbP lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
+    virtual StatusInt     _StrokeBSplineCurve(ViewContextP context, Render::LineStyleSymbP lsSymb, MSBsplineCurveCP, double const* tolerance) const = 0;
 };
 
 //=======================================================================================
@@ -116,18 +116,6 @@ struct  ILineStyle
     virtual bool _IsSnappable() const = 0;
 };
 
-//=======================================================================================
-//! This interface defines methods required for a \e DisplaySymbol Definition.
-//! A DisplaySymbol is a set of graphics that is cached once and can then be redrawn 
-//! many times at different locations/sizes/clipping/symbology.
-//! @note DisplaySymbol are drawn via IDrawGeom::DrawSymbol.
-//=======================================================================================
-struct     IDisplaySymbol
-{
-    virtual ~IDisplaySymbol() {}
-    virtual void        _Draw(ViewContextR context) = 0;
-    virtual StatusInt   _GetRange(DRange3dR range) const = 0;
-};
 
 //=======================================================================================
 // @bsiclass
@@ -146,22 +134,6 @@ enum EdgeMaskState
     EdgeMaskState_GenerateMask,
     EdgeMaskState_UseMask
 };
-
-/*=================================================================================**//**
-* @bsiclass  
-+===============+===============+===============+===============+===============+======*/
-struct QvUnsizedKey
-{
-private:
-    uint32_t m_transformKey;
-    int32_t  m_qvIndex;
-
-public:
-    bool IsNull() const;
-    bool Matches(QvUnsizedKey const& other) const;
-    QvUnsizedKey(uint32_t transformKey, uint32_t qvIndex) : m_transformKey(transformKey), m_qvIndex(qvIndex) {}
-    bool OwnsQvElem() { return m_qvIndex >= 0; }
-}; 
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/12
@@ -270,7 +242,7 @@ public:
         bool         m_ignoreScaleForDimensions;
         bool         m_ignoreScaleForMultilines;
         bool         m_applyRotationToDimView;
-        RangeResult  m_parentRangeResult;
+        Render::RangeResult  m_parentRangeResult;
         double       m_reservedDouble;
 
     public:
@@ -279,7 +251,7 @@ public:
 
         DGNPLATFORM_EXPORT void Pop();
         DGNPLATFORM_EXPORT void SetNow();
-        void Init(ViewContextP context) { m_hdrOvrMark = m_transClipMark = 0; m_context = context; m_parentRangeResult = RangeResult::Overlap; m_pushedRange = m_ignoreScaleForDimensions = m_ignoreScaleForMultilines = m_applyRotationToDimView = false; m_reservedDouble = 0.0;}
+        void Init(ViewContextP context) { m_hdrOvrMark = m_transClipMark = 0; m_context = context; m_parentRangeResult = Render::RangeResult::Overlap; m_pushedRange = m_ignoreScaleForDimensions = m_ignoreScaleForMultilines = m_applyRotationToDimView = false; m_reservedDouble = 0.0;}
         };
 
     friend struct ContextMark;
@@ -290,16 +262,16 @@ public:
     struct  ClipStencil
         {
     private:
-        IStrokeForCache&    m_stroker;
-        QvElem*             m_tmpQvElem;
+        Render::IStrokeForCache&    m_stroker;
+        Render::GraphicPtr         m_tmpQvElem;
         CurveVectorPtr      m_curveVector;
 
     public:
-        DGNPLATFORM_EXPORT QvElem* GetQvElem(ViewContextR);
+        DGNPLATFORM_EXPORT Render::GraphicPtr GetQvElem(ViewContextR);
         DGNPLATFORM_EXPORT CurveVectorPtr GetCurveVector();
-        IStrokeForCache& GetStroker() {return m_stroker;}
+        Render::IStrokeForCache& GetStroker() {return m_stroker;}
 
-        DGNPLATFORM_EXPORT explicit ClipStencil(IStrokeForCache& stroker);
+        DGNPLATFORM_EXPORT explicit ClipStencil(Render::IStrokeForCache& stroker);
         DGNPLATFORM_EXPORT ~ClipStencil();
         };
 
@@ -342,17 +314,17 @@ protected:
     double                  m_cameraFraction;       // ratio of front plane to back plane.
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
-    IViewDrawP              m_IViewDraw;
-    IDrawGeomP              m_IDrawGeom;
-    ICachedDrawP            m_ICachedDraw;
+    Render::ViewDrawP       m_IViewDraw;
+    Render::GeomDrawP       m_IDrawGeom;
+    Render::CachedDrawP     m_ICachedDraw;
     DgnDbP                  m_dgnDb;
     DgnElementPtr           m_currentElement;
     ScanCriteriaP           m_scanCriteria;
     int32_t                 m_displayPriorityRange[2];
-    ElemDisplayParams       m_currDisplayParams;
-    ElemMatSymb             m_elemMatSymb;
-    OvrMatSymb              m_ovrMatSymb;
-    RangeResult             m_parentRangeResult;
+    Render::ElemDisplayParams m_currDisplayParams;
+    Render::ElemMatSymb     m_elemMatSymb;
+    Render::OvrMatSymb      m_ovrMatSymb;
+    Render::RangeResult     m_parentRangeResult;
     double                  m_minLOD;             // minimum size of default level-of-detail test.
     double                  m_arcTolerance;
     double                  m_patternScale;
@@ -379,9 +351,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OutputElement(GeometricElementCR);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
-    DGNPLATFORM_EXPORT virtual void _DrawSymbol(IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
-    DGNPLATFORM_EXPORT virtual void _DeleteSymbol(IDisplaySymbol*);
-    DGNPLATFORM_EXPORT virtual ILineStyleCP _GetCurrLineStyle(LineStyleSymbP*);
+    DGNPLATFORM_EXPORT virtual void _DrawSymbol(Render::IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
+    DGNPLATFORM_EXPORT virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false);
     DGNPLATFORM_EXPORT virtual void _DrawStyledArc2d(DEllipse3dCR, bool isEllipse, double zDepth, DPoint2dCP range);
@@ -389,7 +360,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR);
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
     DGNPLATFORM_EXPORT virtual void _DrawTextString(TextStringCR);
-    DGNPLATFORM_EXPORT virtual QvElem* _DrawCached(IStrokeForCache&);
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _DrawCached(Render::IStrokeForCache&);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(GeometricElementCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
@@ -409,13 +380,12 @@ protected:
     virtual bool _WantUndisplayed() {return false;}
     virtual bool _WantUndisplayedClips() {return false;}
     virtual bool _UseCachedDisplay() {return m_useCachedGraphics;}
-    DGNPLATFORM_EXPORT virtual bool _WantSaveQvElem(DrawExpense expense);
 
-    DGNPLATFORM_EXPORT virtual void _AddViewOverrides(OvrMatSymbR);
-    DGNPLATFORM_EXPORT virtual void _AddContextOverrides(OvrMatSymbR);
-    DGNPLATFORM_EXPORT virtual void _ModifyPreCook(ElemDisplayParamsR); 
-    DGNPLATFORM_EXPORT virtual void _CookDisplayParams(ElemDisplayParamsR, ElemMatSymbR);
-    DGNPLATFORM_EXPORT virtual void _CookDisplayParamsOverrides(ElemDisplayParamsR, OvrMatSymbR);
+    DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrMatSymbR);
+    DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrMatSymbR);
+    DGNPLATFORM_EXPORT virtual void _ModifyPreCook(Render::ElemDisplayParamsR); 
+    DGNPLATFORM_EXPORT virtual void _CookDisplayParams(Render::ElemDisplayParamsR, Render::ElemMatSymbR);
+    DGNPLATFORM_EXPORT virtual void _CookDisplayParamsOverrides(Render::ElemDisplayParamsR, Render::OvrMatSymbR);
     DGNPLATFORM_EXPORT virtual void _SetScanReturn();
     DGNPLATFORM_EXPORT virtual void _PushFrustumClip();
     DGNPLATFORM_EXPORT virtual void _InitScanCriteria();
@@ -433,15 +403,13 @@ protected:
 public:
     DGNPLATFORM_EXPORT static uint32_t GetCountQvInitCalls();
     DGNPLATFORM_EXPORT static void IncrementCountQvInitCalls();
-                       static StampQvElemMapP CreateSymbolStampMap(DgnDbCR dgnProject);
-                       static void DeleteSymbolStampMap(StampQvElemMapP symbolStampMap);
     DGNPLATFORM_EXPORT static void MergeViewFlagsFromRef(ViewFlagsR flags, ViewFlagsCR refFlags, bool retainRenderMode, bool useRefFlags);
 
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
-    void SetIViewDraw(IViewDrawR output) { m_IViewDraw = &output; m_IDrawGeom = &output;}
-    void SetIDrawGeom(IDrawGeomR drawGeom) { m_IDrawGeom = &drawGeom; }
+    void SetIViewDraw(Render::ViewDrawR output) { m_IViewDraw = &output; m_IDrawGeom = &output;}
+    void SetIDrawGeom(Render::GeomDrawR drawGeom) { m_IDrawGeom = &drawGeom; }
     bool IsAttached() {return m_isAttached;}
     void SetBlockAsynchs(bool blockAsyncs) {m_blockAsyncs = blockAsyncs;}
     bool WantAsynchs() {return !m_blockAsyncs;}
@@ -484,15 +452,15 @@ public:
     DGNPLATFORM_EXPORT void SetArcTolerance(double tol);
     DGNPLATFORM_EXPORT void SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end);
 
-    DGNPLATFORM_EXPORT QvElem* CreateCacheElem(IStrokeForCache&, QvCache* qvCache = nullptr, double pixelSize = 0.0, ICachedDrawP cachedDrawP = nullptr);
-    DGNPLATFORM_EXPORT QvElem* GetCachedGeometry(IStrokeForCache& stroker, bool& deleteQvElem);
+    DGNPLATFORM_EXPORT Render::GraphicPtr CreateGraphic(Render::IStrokeForCache&, Render::GraphicCache* qvCache = nullptr, double pixelSize = 0.0, Render::CachedDrawP cachedDrawP = nullptr);
+    DGNPLATFORM_EXPORT Render::GraphicPtr GetGraphic(Render::IStrokeForCache& stroker);
 
-    DGNPLATFORM_EXPORT void DeleteSymbol(IDisplaySymbol*);
+    DGNPLATFORM_EXPORT void DeleteSymbol(Render::IDisplaySymbol*);
 
-    DGNPLATFORM_EXPORT RangeResult     GetCurrParentRangeResult();
-    DGNPLATFORM_EXPORT void            SetCurrParentRangeResult(RangeResult);
-    DGNPLATFORM_EXPORT double          GetMinLOD () const;
-    DGNPLATFORM_EXPORT void            SetMinLOD (double);
+    DGNPLATFORM_EXPORT Render::RangeResult GetCurrParentRangeResult();
+    DGNPLATFORM_EXPORT void SetCurrParentRangeResult(Render::RangeResult);
+    DGNPLATFORM_EXPORT double GetMinLOD () const;
+    DGNPLATFORM_EXPORT void SetMinLOD (double);
     DGNPLATFORM_EXPORT Byte&           GetFilterLODFlag();
     DGNPLATFORM_EXPORT void            SetFilterLODFlag(FilterLODFlags);
     DGNPLATFORM_EXPORT ScanCriteriaCP  GetScanCriteria() const;
@@ -510,8 +478,8 @@ public:
     DGNPLATFORM_EXPORT RasterDisplayParams const& GetRasterDisplayParams() const { return m_rasterDisplayParams; }
 
     //! !!!FOR INTERNAL USE ONLY!!!
-    DGNPLATFORM_EXPORT static void DirectPushTransClipOutput(IDrawGeomR, TransformCP trans, ClipPlaneSetCP clip = NULL); //<! @private
-    DGNPLATFORM_EXPORT static void DirectPopTransClipOutput(IDrawGeomR); //<! @private
+    DGNPLATFORM_EXPORT static void DirectPushTransClipOutput(Render::GeomDrawR, TransformCP trans, ClipPlaneSetCP clip = NULL); //<! @private
+    DGNPLATFORM_EXPORT static void DirectPopTransClipOutput(Render::GeomDrawR); //<! @private
 
 public:
     DGNPLATFORM_EXPORT StatusInt VisitElement(GeometricElementCR);
@@ -717,8 +685,6 @@ public:
     /// @name Get/Set Current Display Parameters
     //@{
 
-    //__PUBLISH_SECTION_END__
-
     //! Get the current LineStyleSymb.
     //! @return the current LineStyleSymb.
     //DGNPLATFORM_EXPORT ILineStyleCP GetCurrLineStyle (LineStyleSymbP* symb);
@@ -734,17 +700,11 @@ public:
 
     //! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied ElemMatSymb.
     //! @note Does NOT call ActivateMatSymb on the output or change the current ElemDisplayParams/ElemMatSymb of the context.
-    DGNPLATFORM_EXPORT void CookDisplayParams(ElemDisplayParamsR, ElemMatSymbR);
+    DGNPLATFORM_EXPORT void CookDisplayParams(Render::ElemDisplayParamsR, Render::ElemMatSymbR);
 
     //! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied OvrMatSymb.
     //! @note Does NOT call ActivateOverrideMatSymb on the output or change the current ElemDisplayParams/OvrMatSymb of the context.
-    DGNPLATFORM_EXPORT void CookDisplayParamsOverrides(ElemDisplayParamsR, OvrMatSymbR);
-
-    //__PUBLISH_SECTION_START__
-
-    //DGNPLATFORM_EXPORT ColorDef GetCurrLineColor ();
-    //DGNPLATFORM_EXPORT ColorDef GetCurrFillColor ();
-    //DGNPLATFORM_EXPORT uint32_t GetCurrWidth ();
+    DGNPLATFORM_EXPORT void CookDisplayParamsOverrides(Render::ElemDisplayParamsR, Render::OvrMatSymbR);
 
     //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
     //! @return the net display priority. For 3D views, display priority is always 0.
@@ -752,15 +712,15 @@ public:
 
     //! Get the current ElemMatSymb.
     //! @return   the current ElemMatSymb.
-    DGNPLATFORM_EXPORT ElemMatSymbP GetElemMatSymb();
+    DGNPLATFORM_EXPORT Render::ElemMatSymbP GetElemMatSymb();
 
     //! Get the current OvrMatSymb.
     //! @return the current OvrMatSymb.
-    DGNPLATFORM_EXPORT OvrMatSymbP GetOverrideMatSymb();
+    DGNPLATFORM_EXPORT Render::OvrMatSymbP GetOverrideMatSymb();
 
     //! Get the current ElemDisplayParams.
     //! @return the current ElemDisplayParams.
-	ElemDisplayParams& GetCurrentDisplayParams() {return m_currDisplayParams;}
+    Render::ElemDisplayParams& GetCurrentDisplayParams() {return m_currDisplayParams;}
 
     //! Change the current "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the current ElemMatSymb.
     //! @note Calls ActivateMatSymb on the output.
@@ -774,8 +734,6 @@ public:
     //! @note Calls ActivateOverrideMatSymb on the output.
     DGNPLATFORM_EXPORT void ResetContextOverrides();
 
-    //__PUBLISH_SECTION_END__
-
     //! Gets the current level of detail.
     //! @return       the current level of detail.
     DGNPLATFORM_EXPORT double GetCurrentLevelOfDetail() const;
@@ -786,12 +744,10 @@ public:
 
     //! Check the current display style for a monochrome color override.
     //! @return       whether monochrome style is currently active.
-    DGNPLATFORM_EXPORT bool IsMonochromeDisplayStyleActive();
     DGNPLATFORM_EXPORT bool ElementIsUndisplayed(GeometricElementCR);
 
     DGNPLATFORM_EXPORT void CacheQvGeometryTexture(uint32_t rendMatID);
 
-    //__PUBLISH_SECTION_START__
     //@}
 
     /// @name Methods to Retrieve Related Interfaces from a ViewContext
@@ -800,16 +756,16 @@ public:
     //! Get the IViewDraw interface for this ViewContext. Usually, but not always, this will be the IViewDraw from the viewport to which this
     //! context is attached.
     //! @return   the IViewDraw for this context
-    DGNPLATFORM_EXPORT IViewDrawR GetIViewDraw();
+    Render::ViewDrawR GetIViewDraw() {BeAssert(NULL != m_IViewDraw); return *m_IViewDraw;}
 
     //! Get the IDrawGeom interface for this ViewContext. Applications should use this method to draw geometry in Draw methods.
     //! @return   the IDrawGeom for this context
-    DGNPLATFORM_EXPORT IDrawGeomR GetIDrawGeom();
+    Render::GeomDrawR GetIDrawGeom() {BeAssert(NULL != m_IDrawGeom); return *m_IDrawGeom;}
 
     /** @cond BENTLEY_SDK_Scope1 */
     //! Get the ICachedDraw interface for this ViewContext.
     //! @return   the ICachedDraw for this context.
-    DGNPLATFORM_EXPORT ICachedDrawP GetICachedDraw();
+    Render::CachedDrawP GetICachedDraw() {return m_ICachedDraw;}
 
     //! Check whether we are creating a cached presentation.
     //! @return   true if we're in the process of creating a cache presentation.
@@ -840,10 +796,8 @@ public:
 
     //@}
 
-    //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT bool WantAreaPatterns();
     DGNPLATFORM_EXPORT void DrawAreaPattern(ClipStencil& boundary);
-    //__PUBLISH_SECTION_START__
 
     /** @name Draw Geometry Using Current Linestyle */
     /** @{ */
@@ -906,7 +860,7 @@ public:
     //! @param[in]      clip             ClipPlaneSet to be applied to symbol. May be NULL.
     //! @param[in]      ignoreColor      If true, ignore the colors in the symbol definition and use the current color from \c context.
     //! @param[in]      ignoreWeight     If true, ignore line weights in the symbol definition, and use the current line weight from \c context.
-    DGNPLATFORM_EXPORT void DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight);
+    DGNPLATFORM_EXPORT void DrawSymbol(Render::IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight);
 
     //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current ElemDisplayParams for TextString symbology.
     DGNPLATFORM_EXPORT void DrawTextString(TextStringCR);
@@ -920,40 +874,12 @@ public:
     //! @param[in] stroker An object to use to create cache representation (if necessary).
     //! @note A single displayable may have many saved cached representations. Draw methods can decide which cached representation is appropriate.
     //! in the current context, and can even draw more than one of the cached representations by having the stroker return different cache indices.
-    QvElem* DrawCached(IStrokeForCache& stroker) {return _DrawCached(stroker);}
+    Render::GraphicPtr DrawCached(Render::IStrokeForCache& stroker) {return _DrawCached(stroker);}
 
     DGNPLATFORM_EXPORT bool CheckStop();
 }; // ViewContext
 
 /** @endGroup */
 
-//__PUBLISH_SECTION_END__
-/*=================================================================================**//**
-* @bsiclass                                                     KeithBentley    04/01
-+===============+===============+===============+===============+===============+======*/
-struct SymbolContext : ViewContext
-{
-    DEFINE_T_SUPER(ViewContext)
-
-private:
-    ViewContextR    m_seedContext;
-
-protected:
-    DGNPLATFORM_EXPORT ViewContextR GetSeedContext() { return m_seedContext; }
-
-    DGNPLATFORM_EXPORT virtual void _SetupOutputs() override;
-    DGNPLATFORM_EXPORT virtual void _Detach() override;
-
-    virtual void    _AllocateScanCriteria() override {}
-
-public:
-    DGNPLATFORM_EXPORT SymbolContext(ViewContextR seedContext);
-
-    DGNPLATFORM_EXPORT virtual ~SymbolContext() { _Detach(); }
-    DGNPLATFORM_EXPORT virtual QvElemP DrawSymbolForCache(IDisplaySymbol* symbol, QvCacheR symbolCache);
-
-}; // SymbolContext
-
-/*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_DGN_NAMESPACE

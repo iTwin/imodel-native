@@ -217,7 +217,7 @@ void NamedVolume::DrawFace (DPoint3dCP points, size_t numPoints, uint32_t color,
     {
     DgnViewportP viewport = context.GetViewport ();
     BeAssert (viewport != nullptr);
-    IViewDrawR vDraw = context.GetIViewDraw();
+    ViewDrawR vDraw = context.GetIViewDraw();
 
     viewport->SetSymbologyRgb (ColorDef(color), ColorDef(color), WEIGHT_Thin, STYLE_Solid);
     vDraw.DrawShape3d ((int) numPoints, points, true, nullptr);

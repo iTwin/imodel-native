@@ -276,7 +276,7 @@ void ViewContext::_PopTransformClip()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::DirectPushTransClipOutput(IDrawGeomR drawGeom, TransformCP trans, ClipPlaneSetCP clip)
+void ViewContext::DirectPushTransClipOutput(GeomDrawR drawGeom, TransformCP trans, ClipPlaneSetCP clip)
     {
     drawGeom._PushTransClip(trans, clip);
     }
@@ -284,7 +284,7 @@ void ViewContext::DirectPushTransClipOutput(IDrawGeomR drawGeom, TransformCP tra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::DirectPopTransClipOutput(IDrawGeomR drawGeom)
+void ViewContext::DirectPopTransClipOutput(GeomDrawR drawGeom)
     {
     drawGeom._PopTransClip();
     }
@@ -567,172 +567,21 @@ void ViewContext::GetViewIndependentTransform(TransformP trans, DPoint3dCP origi
 bool ViewContext::SetWantMaterials(bool wantMaterials)
     {
     bool    prevWantMaterials = m_wantMaterials;
-
     m_wantMaterials = wantMaterials;
-
     return prevWantMaterials;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrandonBohrer   06/2011
+* @bsimethod                                                    Brien.Bastings  04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QvUnsizedKey::Matches(QvUnsizedKeyCR other) const
+TransientCachedGraphics::~TransientCachedGraphics() 
     {
-    if (m_transformKey != other.m_transformKey || m_qvIndex != other.m_qvIndex)
-        return false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrandonBohrer   06/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool QvUnsizedKey::IsNull() const {return m_transformKey == 0;}
-
-/*=================================================================================**//**
-* @bsiclass                                                     Keith.Bentley   12/06
-+===============+===============+===============+===============+===============+======*/
-struct QvSizedKey
-{
-    QvUnsizedKey    m_unsizedKey;
-    double          m_low;
-    double          m_high;
-
-public:
-    QvSizedKey(double size, double dependentRatio, QvUnsizedKeyCR unsizedKey) : m_unsizedKey(unsizedKey)
-        {
-        if (0.0 == dependentRatio)
-            {
-            m_low = -1.0;
-            m_high = 1.0E8;
-            }
-        else
-            {
-            m_low  = size / dependentRatio;
-            m_high = size * dependentRatio;
-            }
-
-        }
-
-    inline bool LessThan(QvSizedKey const& other) const { return m_low < other.m_low; }
-    void DeleteQvElem(QvElem* qvElem) { if (m_unsizedKey.OwnsQvElem()) T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrandonBohrer   07/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline bool Equal(QvSizedKey const& other) const
-    {
-    return other.m_low > m_low && other.m_high < m_high && m_unsizedKey.Matches(other.m_unsizedKey);
-    }
-};
-
-static DgnElement::AppData::Key s_cacheSetKey;
-/*=================================================================================**//**
-* @bsiclass                                                     Keith.Bentley   12/06
-+===============+===============+===============+===============+===============+======*/
-struct QvElemCacheSet : QvElemSet<QvSizedKey>
-{
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-public: QvElemCacheSet(HeapZone& zone) : QvElemSet<QvSizedKey> (zone) {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* Find(QvUnsizedKeyP* foundKey, double size, QvUnsizedKeyCR unsizedKey)
-    {
-    for (Entry* thisEntry = m_entry; nullptr != thisEntry; thisEntry = thisEntry->m_next)
-        {
-        if (thisEntry->m_key.m_unsizedKey.Matches(unsizedKey) &&
-            size >= thisEntry->m_key.m_low && size <= thisEntry->m_key.m_high)
-            {
-            if (nullptr != foundKey)
-                *foundKey = &thisEntry->m_key.m_unsizedKey;
-
-            return thisEntry->m_qvElem;
-            }
-        }
-
-    return nullptr;
-    }
-
-}; // QvElemCacheSet
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2010
-*
-*  Returns a key that is produced by transforming a (constant) random point and summing the
-*   coordinates.  This should return the same key for identical localTransforms - it is
-*   essentially a hash of the transform.  This is appropriate for use as part of a cache
-*   key when we want to distinguish between two representations with different display
-*   path transforms (as in more than one representation of a cell).  It is currently
-*   used to distinguish XGraphics cache keys and also thematic keys.
-*
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ViewContext::GetLocalTransformKey() const
-    {
-    Transform   localToWorld;
-
-    if (SUCCESS != m_transformClipStack.GetTransform(localToWorld))
-        return 0;
-
-    static      DPoint3d  s_randomLocalToWorldTransformRefPoint = { 1234567.0, 7654321.0, 233425.0};
-    DPoint3d    transformedPoint;
-
-    localToWorld.Multiply(&transformedPoint, &s_randomLocalToWorldTransformRefPoint, 1);
-
-    return (uint32_t) transformedPoint.x + (uint32_t) transformedPoint.y + (uint32_t) transformedPoint.z;
-    }
-
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* StrokeElementForCache::_GetQvElem(double pixelSize) const
-    {
-    QvElemP         qvElem;
-    QvUnsizedKey    unsizedKey = QvUnsizedKey(0, _GetQvIndex());
-    QvElemCacheSet* cacheSet;
-
-    // Search CacheSet first to find any conditional drawn elements.
-    if (nullptr != (cacheSet = (QvElemCacheSet*) m_element.FindAppData(s_cacheSetKey)) &&
-        nullptr != (qvElem = cacheSet->Find(nullptr, pixelSize, unsizedKey)))
-        return qvElem;
-
-    return unsizedKey.IsNull() ? m_element.GetQvElem(_GetQvIndex()) : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void StrokeElementForCache::_SaveQvElem(QvElemP qvElem, double pixelSize, double sizeDependentRatio) const
-    {
-    QvUnsizedKey    unsizedKey = QvUnsizedKey(0, _GetQvIndex());
-
-    if (0.0 == sizeDependentRatio && unsizedKey.IsNull())
-        {
-        (const_cast <GeometricElementR> (m_element)).SetQvElem(qvElem, _GetQvIndex());
-        return;
-        }
-
-    QvElemCacheSet* cacheSet = (QvElemCacheSet*) m_element.FindAppData(s_cacheSetKey);
-
-    if (nullptr == cacheSet)
-        {
-        HeapZone& zone = m_element.GetHeapZone();
-        cacheSet = new QvElemCacheSet(zone);
-        m_element.AddAppData(s_cacheSetKey, cacheSet);
-        }
-
-    cacheSet->Add(QvSizedKey(pixelSize, sizeDependentRatio, unsizedKey), qvElem);
-    }
+    if (nullptr != m_qvElem) 
+        T_HOST.GetGraphicsAdmin()._DeleteQvElem(m_qvElem);
 #endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransientCachedGraphics::~TransientCachedGraphics() {if (nullptr != m_qvElem) T_HOST.GetGraphicsAdmin()._DeleteQvElem(m_qvElem);}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
@@ -959,7 +808,7 @@ bool ViewContext::ElementIsUndisplayed(GeometricElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::DrawBox(DPoint3dP box, bool is3d)
     {
-    IDrawGeomR  drawGeom = GetIDrawGeom();
+    GeomDrawR  drawGeom = GetIDrawGeom();
     DPoint3d    tmpPts[9];
 
     if (is3d)
@@ -1020,7 +869,7 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
         default:
             {
             static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
-            if (m_creatingCacheElem || nullptr == m_viewport || (!s_drawRange && !T_HOST.GetGraphicsAdmin()._WantDebugElementRangeDisplay()))
+            if (m_creatingCacheElem || nullptr == m_viewport || (!s_drawRange && !GetViewport()->GetRenderer()._WantDebugElementRangeDisplay()))
                 break;
 
             DPoint3d  p[8];
@@ -1058,15 +907,17 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewContext::_VisitTransientGraphics(bool isPreUpdate)
+void ViewContext::_VisitTransientGraphics(bool isPreUpdate)
     {
-    IViewOutput*    output = (IsAttached() ? GetViewport()->GetIViewOutput() : nullptr);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    Render::Output*    output = (IsAttached() ? GetViewport()->GetIViewOutput() : nullptr);
     bool            restoreZWrite = (output && isPreUpdate ? output->EnableZWriting(false) : false);
 
     T_HOST.GetGraphicsAdmin()._CallViewTransients(*this, isPreUpdate);
 
     if (restoreZWrite)
         output->EnableZWriting(true);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1293,7 +1144,7 @@ StatusInt ViewContext::VisitHit(HitDetailCR hit)
 * create a QvElem using an IStrokeForCache stroker.
 * @bsimethod                                                    Keith.Bentley   06/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* ViewContext::CreateCacheElem(IStrokeForCache& stroker, QvCache* qvCache, double pixelSize, ICachedDrawP cachedDraw)
+GraphicPtr ViewContext::CreateGraphic(IStrokeForCache& stroker, GraphicCache* qvCache, double pixelSize, CachedDrawP cachedDraw)
     {
     BeAssert(!m_creatingCacheElem || nullptr != cachedDraw);
 
@@ -1304,12 +1155,12 @@ QvElem* ViewContext::CreateCacheElem(IStrokeForCache& stroker, QvCache* qvCache,
         return nullptr;
 
     if (nullptr == qvCache)
-        qvCache = T_HOST.GetGraphicsAdmin()._GetTempElementCache();
+        qvCache = GetViewport()->GetRenderer()._GetTempGraphicCache();
 
     BeAssert(qvCache);
-    cachedDraw->BeginCacheElement(qvCache);
+    cachedDraw->BeginGraphic(qvCache);
 
-    AutoRestore<IDrawGeomP> saveDrawGeom(&m_IDrawGeom, cachedDraw);
+    AutoRestore<GeomDrawP> saveDrawGeom(&m_IDrawGeom, cachedDraw);
     AutoRestore<Byte> savefilter(&m_filterLOD, FILTER_LOD_Off);
     AutoRestore<bool> saveCreatingCache(&m_creatingCacheElem, true);
 
@@ -1321,12 +1172,10 @@ QvElem* ViewContext::CreateCacheElem(IStrokeForCache& stroker, QvCache* qvCache,
         {
         }
 
-    QvElem* result = cachedDraw->EndCacheElement();
+    GraphicPtr result = cachedDraw->EndGraphic();
 
-    if (!WasAborted() || nullptr == result)
+    if (!WasAborted() ||  !result.IsValid())
         return result;
-
-    T_HOST.GetGraphicsAdmin()._DeleteQvElem(result);
 
     return nullptr;
     }
@@ -1334,11 +1183,9 @@ QvElem* ViewContext::CreateCacheElem(IStrokeForCache& stroker, QvCache* qvCache,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* ViewContext::GetCachedGeometry(IStrokeForCache& stroker, bool& deleteQvElem)
+GraphicPtr ViewContext::GetGraphic(IStrokeForCache& stroker)
     {
-
-    deleteQvElem = false;
-    QvElem*  qvElem = nullptr;
+    GraphicPtr  qvElem;
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     static double   s_sizeDependentCacheRatio = 3.0;
@@ -1355,13 +1202,11 @@ QvElem* ViewContext::GetCachedGeometry(IStrokeForCache& stroker, bool& deleteQvE
     if (m_creatingCacheElem)
         {
         stroker._StrokeForCache(*this, pixelSize);
-
         return nullptr;
         }
 
-
-    bool     useCachedDisplay = _UseCachedDisplay();
-    double          sizeDependentRatio = s_sizeDependentCacheRatio;
+    bool useCachedDisplay = _UseCachedDisplay();
+    double sizeDependentRatio = s_sizeDependentCacheRatio;
     // if there is already a qvElem, use that instead of stroking.
     if (useCachedDisplay)
         qvElem = stroker._GetQvElem(pixelSize);
@@ -1397,22 +1242,14 @@ QvElem* ViewContext::GetCachedGeometry(IStrokeForCache& stroker, bool& deleteQvE
 * method on the displayable and draws (and potentially saves) the resultant QvElem.
 * @bsimethod                                                    KeithBentley    07/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* ViewContext::_DrawCached(IStrokeForCache& stroker)
+GraphicPtr ViewContext::_DrawCached(IStrokeForCache& stroker)
     {
-    bool    deleteQvElem;
-    QvElem* qvElem = GetCachedGeometry(stroker, deleteQvElem);
+    GraphicPtr qvElem = GetGraphic(stroker);
 
-    if (nullptr == qvElem)
-        return nullptr;
+    if (qvElem.IsValid())
+        m_IViewDraw->DrawGraphic(qvElem.get());
 
-    m_IViewDraw->DrawQvElem(qvElem);
-
-    if (!deleteQvElem)
-        return qvElem;
-
-    T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
-
-    return nullptr;
+    return qvElem;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1779,19 +1616,6 @@ ViewContext::ContextMark::ContextMark(ViewContextP context)
         Init(context);
     else
         SetNow();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  01/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::IsMonochromeDisplayStyleActive()
-    {
-#if defined (NEEDS_WORK_DGNITEM)
-    CookedDisplayStyleCP currDispStyle = _GetCurrentCookedDisplayStyle();
-
-    return (currDispStyle && currDispStyle->StylePresent() && currDispStyle->m_flags.m_elementColor);
-#endif
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2320,7 +2144,6 @@ void ViewContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPla
     // We need to revisit "ignoreColor" and "ignoreWeight" and remove these args. The DgnGeomPart for the symbol doesn't 
     // store any symbology, so there should never be a reason to "ignore" anything, the correct symbology, either from the
     // symbol definition or element, should be setup prior to calling this method.
-#endif
     QvCache* symbolCache = T_HOST.GetGraphicsAdmin()._GetSymbolCache();
 
     if (!symbolCache || CheckICachedDraw())
@@ -2355,15 +2178,7 @@ void ViewContext::_DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPla
     output._PushTransClip(trans, clip);
     output.DrawQvElem(qvElem); // Display priority for symbols in 2d is incorporated into the transform.
     output._PopTransClip();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* delete the cached representation of a symbol
-* @bsimethod                                                    Keith.Bentley   06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DeleteSymbol(IDisplaySymbol* symbol)
-    {
-    T_HOST.GetGraphicsAdmin()._DeleteSymbol(symbol);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -856,7 +856,8 @@ StatusInt       IAuxCoordSys::GetGridSpacing (DPoint2dR spacing, Point2dR gridRe
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            IAuxCoordSys::Locate (DPoint3dR hitPt, DgnViewportR vp, DPoint3dCR borePt, double radius)
     {
-    IViewOutputP  output = vp.GetIViewOutput ();
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    OutputP  output = vp.GetIViewOutput ();
 
     if (NULL == output)
         return false;
@@ -882,6 +883,8 @@ bool            IAuxCoordSys::Locate (DPoint3dR hitPt, DgnViewportR vp, DPoint3d
     T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
 
     return hitFound;
+#endif
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -910,7 +913,7 @@ ColorDef IAuxCoordSys::_GetColor (DgnViewportP viewport, ColorDef menuColor, uin
 void            IAuxCoordSys::_DrawAxisText
 (
 DgnViewportP           viewport,
-ICachedDrawP        cached,
+CachedDrawP        cached,
 WCharCP             labelStr,
 bool                isAxisLabel,
 double              userOrgX,
@@ -964,7 +967,7 @@ ACSDisplayOptions   options
 void            IAuxCoordSys::_DrawZAxis
 (
 DgnViewportP           viewport,
-ICachedDrawP        cached,
+CachedDrawP        cached,
 Transform*          transformP,
 ACSDisplayOptions   options
 ) const
@@ -1021,7 +1024,7 @@ ACSDisplayOptions   options
 void            IAuxCoordSys::_DrawAxisArrow
 (
 DgnViewportP           viewport,
-ICachedDrawP        cached,
+CachedDrawP        cached,
 Transform*          transformP,
 ColorDef            menuColor,
 WCharCP             labelStrP,
@@ -1081,10 +1084,11 @@ ACSFlags            flags
     cached->DrawShape3d (8, shapePts, true, NULL);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem*         IAuxCoordSys::_CreateQvElems
+GraphicsPtr     IAuxCoordSys::_CreateQvElems
 (
 DgnViewportP        viewport,
 DPoint3dCP          drawOrigin,
@@ -1139,6 +1143,7 @@ bool                drawName
 
     return cached->EndCacheElement ();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
@@ -1186,6 +1191,7 @@ bool            IAuxCoordSys::_IsOriginInView (DPoint3dR drawOrigin, DgnViewport
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            IAuxCoordSys::_DisplayInView (DgnViewportP viewport, ACSDisplayOptions options, bool drawName) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d    drawOrigin;
     bool        checkOutOfView = (ACSDisplayOptions::None != (options & ACSDisplayOptions::CheckVisible));
 
@@ -1212,6 +1218,7 @@ void            IAuxCoordSys::_DisplayInView (DgnViewportP viewport, ACSDisplayO
 
     output->DrawQvElem (qvElem, 0);
     T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

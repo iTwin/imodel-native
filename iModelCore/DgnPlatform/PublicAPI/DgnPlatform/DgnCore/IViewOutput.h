@@ -10,9 +10,9 @@
 
 #include "../DgnPlatform.h"
 #include "ImageUtilities.h"
-#include "IViewDraw.h"
+#include "Render.h"
 
-BEGIN_BENTLEY_DGN_NAMESPACE
+BEGIN_BENTLEY_RENDER_NAMESPACE
 
 //=======================================================================================
 //! Selects the output buffer for IViewDraw methods.
@@ -119,7 +119,7 @@ enum class DrawExportFlags
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct IViewOutput : IRefCounted, IViewDraw
+struct Output : IRefCounted, ViewDraw
 {
     friend struct HealContext;
     friend struct IndexedViewport;
@@ -143,7 +143,7 @@ protected:
     virtual void      _SynchScreenFromDrawingAsynch() = 0;
     virtual bool      _IsScreenDirty(BSIRect*) = 0;
     virtual void      _ShowProgress() = 0;
-    virtual bool      _IsBackingStoreValid() const =0;
+    virtual bool      _IsBackingStoreValid() const = 0;
     virtual void      _SetBackingStoreValid(bool) = 0;
     virtual bool      _IsAccelerated() const = 0;
     virtual void      _ScreenDirtied(BSIRect const* rect) = 0;
@@ -152,11 +152,6 @@ protected:
     virtual void      _SetProjectDepth(double depth) = 0;
     virtual StatusInt _BeginDraw(bool eraseBefore) = 0;
     virtual void      _EndDraw(QvPaintOptions const&) = 0;
-    virtual StatusInt _BeginDrawCapture() = 0;
-    virtual StatusInt _EndDrawCapture() = 0;
-    virtual bool      _HaveCapture() const = 0;
-    virtual void      _ResetCapture() = 0;
-    virtual StatusInt _DisplayCaptured(ViewFlags flags, DPoint2dCP origin, DPoint2dCP extent, int (*stopProc)()) = 0;
     virtual bool      _IsDrawActive() = 0;
     virtual void      _ShowTransparent() = 0;
     virtual void      _AccumulateDirtyRegion(bool val) = 0;
@@ -166,75 +161,68 @@ protected:
     virtual bool      _CheckNeedsHeal(BSIRect* rect) = 0;
     virtual void      _BeginDecorating(BSIRect const* rect) = 0;
     virtual void      _BeginOverlayMode() = 0;
-    virtual bool      _LocateQvElem(QvElem*, DPoint2dCR borePt, double radius, DPoint3dR hitPt, DVec3dP hitNormal, int (*stopProc)(CallbackArgP), CallbackArgP arg) = 0;
     virtual void      _AbortOutstandingOperations() = 0; // Used in multithreaded case.
     virtual void      _SetIdleCallback(bool (*)(CallbackArgP userData), CallbackArgP userData) = 0; // Used in multithreaded case.
-    virtual QvView*   _GetQvView() const = 0; // May return NULL
+    virtual Scene*    _GetScene() = 0; // May return NULL
     virtual void      _SetFlashMode(bool newMode) = 0;
     virtual BentleyStatus _FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
-    virtual int       _GetVisibleTiles(QvMRImageP mri, size_t bufSize, int* lrc) = 0;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    virtual int       _GetVisibleTiles(MRImage* mri, size_t bufSize, int* lrc) = 0;
+#endif
 
 public:
-    DGNPLATFORM_EXPORT void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText);
-    DGNPLATFORM_EXPORT DgnDisplayCoreTypes::DeviceContextP GetScreenDC () const;
-    DGNPLATFORM_EXPORT StatusInt AssignDC (DgnDisplayCoreTypes::DeviceContextP);
-    DGNPLATFORM_EXPORT void AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = NULL);
-    DGNPLATFORM_EXPORT void AdjustBrightness(bool useFixedAdaptation, double brightness);
-    DGNPLATFORM_EXPORT uint64_t GetLightStamp();
-    DGNPLATFORM_EXPORT void DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d);
-    DGNPLATFORM_EXPORT void SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRect const* subRect);
-    DGNPLATFORM_EXPORT DgnDrawBuffer GetDrawBuffer() const;
-    DGNPLATFORM_EXPORT void SetEraseMode(bool newMode);
-    DGNPLATFORM_EXPORT StatusInt SynchDrawingFromBackingStore();
-    DGNPLATFORM_EXPORT void SynchDrawingFromBackingStoreAsynch();
-    DGNPLATFORM_EXPORT StatusInt SynchScreenFromDrawing();
-    DGNPLATFORM_EXPORT void SynchScreenFromDrawingAsynch();
-    DGNPLATFORM_EXPORT bool IsScreenDirty(BSIRect*);
-    DGNPLATFORM_EXPORT void ShowProgress();
-    DGNPLATFORM_EXPORT bool IsBackingStoreValid() const;
-    DGNPLATFORM_EXPORT bool IsAccelerated() const;
-    DGNPLATFORM_EXPORT void ScreenDirtied(BSIRect const* rect);
-    DGNPLATFORM_EXPORT void SetProjectDepth(double depth);
-    DGNPLATFORM_EXPORT StatusInt BeginDraw(bool eraseBefore);
-    DGNPLATFORM_EXPORT void EndDraw(QvPaintOptions const&);
-    DGNPLATFORM_EXPORT StatusInt BeginDrawCapture();
-    DGNPLATFORM_EXPORT StatusInt EndDrawCapture();
-    DGNPLATFORM_EXPORT bool HaveCapture() const;
-    DGNPLATFORM_EXPORT void ResetCapture();
-    DGNPLATFORM_EXPORT StatusInt DisplayCaptured(ViewFlags flags, DPoint2dCP origin, DPoint2dCP extent, int (*stopProc)());
-    DGNPLATFORM_EXPORT bool IsDrawActive();
-    DGNPLATFORM_EXPORT void ShowTransparent();
-    DGNPLATFORM_EXPORT void AccumulateDirtyRegion(bool val);
-    DGNPLATFORM_EXPORT void ClearHealRegion();
-    DGNPLATFORM_EXPORT void SetNeedsHeal(BSIRectCP dirty);
-    DGNPLATFORM_EXPORT void HealComplete(bool aborted);
-    DGNPLATFORM_EXPORT void BeginDecorating(BSIRectCP rect);
-    DGNPLATFORM_EXPORT void BeginOverlayMode();
-    DGNPLATFORM_EXPORT bool LocateQvElem(QvElem*, DPoint2dCR borePt, double radius, DPoint3dR hitPt, DVec3dP hitNormal, int(*stopProc)(CallbackArgP), CallbackArgP arg);
-    DGNPLATFORM_EXPORT void AbortOutstandingOperations(); // Used in multithreaded case.
-    DGNPLATFORM_EXPORT void SetIdleCallback(bool (*)(CallbackArgP userData), CallbackArgP userData); // Used in multithreaded case.
-    DGNPLATFORM_EXPORT QvView* GetQvView() const; // May return NULL
-    DGNPLATFORM_EXPORT void SetFlashMode(bool newMode);
-    DGNPLATFORM_EXPORT BentleyStatus FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown);
-    DGNPLATFORM_EXPORT int GetVisibleTiles(QvMRImageP mri, size_t bufSize, int* lrc);
+    void SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) {_SetViewAttributes(viewFlags, bgColor, usebgTexture, aaLines, aaText);}
+    DgnDisplayCoreTypes::DeviceContextP GetScreenDC() const {return _GetScreenDC();}
+    StatusInt AssignDC (DgnDisplayCoreTypes::DeviceContextP ctx) {return _AssignDC (ctx);}
+    void AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model = NULL) {_AddLights(threeDview, rotMatrixP, model);}
+    void AdjustBrightness(bool useFixedAdaptation, double brightness){_AdjustBrightness(useFixedAdaptation, brightness);}
+    uint64_t GetLightStamp() {return _GetLightStamp();}
+    void DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) {_DefineFrustum(frustPts, fraction, is2d);}
+    void SetDrawBuffer(DgnDrawBuffer drawBuffer, BSIRect const* subRect) {_SetDrawBuffer(drawBuffer, subRect);}
+    DgnDrawBuffer GetDrawBuffer() const {return _GetDrawBuffer();}
+    void HealComplete(bool aborted) {_HealComplete(aborted);}
 
-public:
+    void SetEraseMode(bool newMode) {_SetEraseMode(newMode);}
+    StatusInt SynchDrawingFromBackingStore() {return _SynchDrawingFromBackingStore();}
+    void SynchDrawingFromBackingStoreAsynch() {_SynchDrawingFromBackingStoreAsynch();}
+    StatusInt SynchScreenFromDrawing() {return _SynchScreenFromDrawing();}
+    void SynchScreenFromDrawingAsynch() {_SynchScreenFromDrawingAsynch();}
+    bool IsScreenDirty(BSIRect* rect) {return _IsScreenDirty(rect);}
+    void ShowProgress() {_ShowProgress();}
+    bool IsBackingStoreValid() const {return _IsBackingStoreValid();}
+    bool IsAccelerated() const {return _IsAccelerated();}
+    void ScreenDirtied(BSIRect const* rect) {_ScreenDirtied(rect);}
+    void SetProjectDepth(double depth) {_SetProjectDepth(depth);}
+    StatusInt BeginDraw(bool eraseBefore) {return _BeginDraw(eraseBefore);}
+    void EndDraw(QvPaintOptions const& op){_EndDraw(op);}
+    bool IsDrawActive() {return _IsDrawActive();}
+    void ShowTransparent() {_ShowTransparent();}
+    void AccumulateDirtyRegion(bool val) {_AccumulateDirtyRegion(val);}
+    void ClearHealRegion() {_ClearHealRegion();}
+    void SetNeedsHeal(BSIRectCP dirty) {_SetNeedsHeal(dirty);}
+    void BeginDecorating(BSIRectCP rect) {_BeginDecorating(rect);}
+    void BeginOverlayMode() {_BeginOverlayMode();}
+    void AbortOutstandingOperations() {_AbortOutstandingOperations();}
+    void SetIdleCallback(bool (*callback)(CallbackArgP userData), CallbackArgP userData) {_SetIdleCallback(callback, userData);}
+    void SetFlashMode(bool newMode) {_SetFlashMode(newMode);}
+    BentleyStatus FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(buffer, info, screenBufferRange, outputImageSize, topDown);}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    DGNPLATFORM_EXPORT int GetVisibleTiles(MRImage* mri, size_t bufSize, int* lrc);
+#endif
 
     //! Push a transform and/or a clip plane set
     //! @param[in]          trans           Transform to push. May be NULL.
     //! @param[in]          clipPlaneSet    Clip planes to push. May be NULL.
     //! @see #PopTransClip
-    DGNPLATFORM_EXPORT void PushTransClip(TransformCP trans, ClipPlaneSetCP clipPlaneSet = NULL);
+    void PushTransClip(TransformCP trans, ClipPlaneSetCP clipPlaneSet = NULL) {_PushTransClip(trans, clipPlaneSet);}
 
     //! Pop the most recently pushed transform and clipping.
     //! @see #PushTransClip
-    DGNPLATFORM_EXPORT void PopTransClip();
+    void PopTransClip() {_PopTransClip();}
 
-    DGNPLATFORM_EXPORT bool EnableZTesting(bool yesNo);
-    DGNPLATFORM_EXPORT bool EnableZWriting(bool yesNo);
-    DGNPLATFORM_EXPORT bool CheckNeedsHeal(BSIRectP rect);
+    bool EnableZTesting(bool yesNo) {return _EnableZTesting(yesNo);}
+    bool EnableZWriting(bool yesNo) {return _EnableZWriting(yesNo);}
+    bool CheckNeedsHeal(BSIRectP rect){return _CheckNeedsHeal(rect);}
+};
 
-}; // IViewOutput
-
-END_BENTLEY_DGN_NAMESPACE
-
+END_BENTLEY_RENDER_NAMESPACE

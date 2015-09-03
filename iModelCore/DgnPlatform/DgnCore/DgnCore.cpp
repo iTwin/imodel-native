@@ -365,7 +365,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_rasterAttachmentAdmin);
     BeAssert(NULL == m_pointCloudAdmin);
     BeAssert(NULL == m_notificationAdmin);
-    BeAssert(NULL == m_graphicsAdmin);
     BeAssert(NULL == m_materialAdmin);
     BeAssert(NULL == m_solidsKernelAdmin);
     BeAssert(NULL == m_geoCoordAdmin);
@@ -413,7 +412,6 @@ bool DgnPlatformLib::Host::LineStyleAdmin::_GetLocalLineStylePaths(WStringR path
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatformLib::Host::GraphicsAdmin&         DgnPlatformLib::Host::_SupplyGraphicsAdmin()         {return *new GraphicsAdmin();}
 DgnPlatformLib::Host::SolidsKernelAdmin&     DgnPlatformLib::Host::_SupplySolidsKernelAdmin()     {return *new SolidsKernelAdmin();}
 DgnPlatformLib::Host::MaterialAdmin&         DgnPlatformLib::Host::_SupplyMaterialAdmin()         {return *new MaterialAdmin();}
 DgnPlatformLib::Host::FontAdmin&             DgnPlatformLib::Host::_SupplyFontAdmin()             {return *new FontAdmin();}
@@ -451,3 +449,4 @@ DgnProgressMeter::Abort DgnProgressMeter::ShowProgress() {return _ShowProgress()
 void DgnProgressMeter::Hide() {_Hide();}
 
 DEFINE_KEY_METHOD(DgnMarkupProject)
+

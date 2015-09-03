@@ -10,7 +10,8 @@
 
 #include <Bentley/bvector.h>
 #include "ISprite.h"
-#include "IViewDraw.h"
+#include "ElementGeometry.h"
+#include "Render.h"
 #include "IViewOutput.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -91,7 +92,6 @@ ENUM_IS_FLAGS(HitDetailSource)
 struct  GeomDetail
 {
 private:
-
     ICurvePrimitivePtr      m_primitive;                // curve primitve for hit (world coordinates).
     DPoint3d                m_closePoint;               // the closest point on geometry (world coordinates).
     DVec3d                  m_normal;                   // surface hit normal (world coordinates).
@@ -104,7 +104,6 @@ private:
     GeomStreamEntryId       m_geomId;                   // id of geometric primitive that generated this hit.
 
 public:
-
     DGNPLATFORM_EXPORT void Init();
 
     DPoint3dCR              GetClosestPoint() const     {return m_closePoint;}
@@ -177,7 +176,7 @@ protected:
     virtual void _SetHitPoint(DPoint3dCR pt) {m_geomDetail.SetClosestPoint(pt);}
     virtual void _SetTestPoint(DPoint3dCR pt) {m_testPoint = pt;}
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
-    virtual void _DrawInVp(DgnViewportR, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const;
+    virtual void _DrawInVp(DgnViewportR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const;
     virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
@@ -192,12 +191,12 @@ public:
     void SetHilited(DgnElement::Hilited state) const {_SetHilited(state);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
-    void DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
+    void DrawInVp(DgnViewportR vp, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
     DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(ViewContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
     DGNPLATFORM_EXPORT void FlashCurveSegment(ViewContextR) const; //! Setup context.GetCurrentDisplayParams() before calling!
     
-    DGNVIEW_EXPORT void DrawInView(IndexedViewportR, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
-    DGNVIEW_EXPORT void DrawInAllViews(IndexedViewSetR, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
+    DGNVIEW_EXPORT void DrawInView(IndexedViewportR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
+    DGNVIEW_EXPORT void DrawInAllViews(IndexedViewSetR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
     DGNVIEW_EXPORT void Hilite(IndexedViewSetR, bool onOff) const;
 
     DGNPLATFORM_EXPORT void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const;
@@ -311,7 +310,7 @@ protected:
     SnapHeat            m_heat;
     Point2d             m_screenPt;
     int                 m_divisor;
-    ISpriteP            m_sprite;
+    Render::ISpriteP    m_sprite;
     SnapMode            m_snapMode;         // snap mode currently associated with this snap
     SnapMode            m_originalSnapMode; // snap mode used when snap was created, before constraint override was applied
     double              m_minScreenDist;    // minimum distance to element in screen coordinates.
@@ -336,8 +335,8 @@ public:
     bool GetAllowAssociations() const {return m_allowAssociations;}
     void SetAllowAssociations(bool allowAssociations) {m_allowAssociations = allowAssociations;}
 
-    ISpriteP GetSprite() const {return m_sprite;}
-    void SetSprite(ISpriteP sprite) {if (m_sprite) m_sprite->Release(); m_sprite = sprite; if (m_sprite) m_sprite->AddRef();}
+    Render::ISpriteP GetSprite() const {return m_sprite;}
+    void SetSprite(Render::ISpriteP sprite) {if (m_sprite) m_sprite->Release(); m_sprite = sprite; if (m_sprite) m_sprite->AddRef();}
 
     DGNPLATFORM_EXPORT bool GetCustomKeypoint(int* nBytesP, Byte** dataPP) const {if (nBytesP) *nBytesP = m_customKeypointSize; if (dataPP) *dataPP = m_customKeypointData; return (NULL != m_customKeypointData ? true : false);}
     DGNPLATFORM_EXPORT void SetCustomKeypoint(int nBytes, Byte* dataP);
@@ -372,7 +371,7 @@ struct IntersectDetail : SnapDetail
 private:
     HitDetail*    m_secondHit;
 
-    virtual void _DrawInVp(DgnViewportR, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const override;
+    virtual void _DrawInVp(DgnViewportR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const override;
     virtual HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
     DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited) const override;
     DGNPLATFORM_EXPORT virtual bool _IsSameHit(HitDetailCP otherHit) const override;

@@ -12,7 +12,7 @@
 #include    "ClipVector.h"
 #include    <stack>
 #include    <Bentley/bvector.h>
-#include    "IViewDraw.h"
+#include    "Render.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**

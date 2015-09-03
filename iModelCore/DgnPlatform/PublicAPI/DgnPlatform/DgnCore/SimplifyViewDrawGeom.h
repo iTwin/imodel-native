@@ -19,21 +19,21 @@ struct  SimplifyDrawUnClippedProcessor;
 //! Re-interpret complex geometry types as simple types
 // @bsiclass                                                      Brien.Bastings  06/05
 //=======================================================================================
-struct SimplifyViewDrawGeom : IViewDraw
+struct SimplifyViewDrawGeom : Render::ViewDraw
 {
 protected:
-    ViewContextP                        m_context;
-    ViewFlags                           m_viewFlags;
-    ElemMatSymb                         m_currentMatSymb;
-    OvrMatSymb                          m_overrideMatSymb;
-    IFacetOptionsPtr                    m_defaultFacetOptions;
-    DVec3d                              m_textAxes[2];
-    bool                                m_inPatternDraw;
-    bool                                m_inSymbolDraw;
-    bool                                m_inTextDraw;
-    bool                                m_inThicknessDraw;
-    bool                                m_processingMaterialGeometryMap;
-    size_t                              m_elementTransformStackIndex;
+    ViewContextP        m_context;
+    ViewFlags           m_viewFlags;
+    Render::ElemMatSymb         m_currentMatSymb;
+    Render::OvrMatSymb          m_overrideMatSymb;
+    IFacetOptionsPtr    m_defaultFacetOptions;
+    DVec3d              m_textAxes[2];
+    bool                m_inPatternDraw;
+    bool                m_inSymbolDraw;
+    bool                m_inTextDraw;
+    bool                m_inThicknessDraw;
+    bool                m_processingMaterialGeometryMap;
+    size_t              m_elementTransformStackIndex;
 
 private:
     void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset);
@@ -74,8 +74,8 @@ protected:
     virtual ViewFlags _GetDrawViewFlags() override {return m_viewFlags;}
     virtual void _SetDrawViewFlags(ViewFlags flags) override {m_viewFlags = flags;}
 
-    DGNPLATFORM_EXPORT virtual void _ActivateMatSymb(ElemMatSymbCP matSymb) override;
-    DGNPLATFORM_EXPORT virtual void _ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb) override;
+    DGNPLATFORM_EXPORT virtual void _ActivateMatSymb(Render::ElemMatSymbCP matSymb) override;
+    DGNPLATFORM_EXPORT virtual void _ActivateOverrideMatSymb(Render::OvrMatSymbCP ovrMatSymb) override;
 
     DGNPLATFORM_EXPORT virtual void _DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) override;
     DGNPLATFORM_EXPORT virtual void _DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
@@ -98,26 +98,25 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawTextString(TextStringCR text, double* zDepth) override;
     DGNPLATFORM_EXPORT virtual void _DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override;
     DGNPLATFORM_EXPORT virtual void _DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override;
-    DGNPLATFORM_EXPORT virtual void _DrawDgnOle(IDgnOleDraw*) override;
-    DGNPLATFORM_EXPORT virtual void _DrawPointCloud(IPointCloudDrawParams* drawParams) override;
+    DGNPLATFORM_EXPORT virtual void _DrawDgnOle(Render::IDgnOleDraw*) override;
+    DGNPLATFORM_EXPORT virtual void _DrawPointCloud(Render::IPointCloudDrawParams* drawParams) override;
     DGNPLATFORM_EXPORT virtual void _DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override;
 
     virtual void _PushTransClip(TransformCP trans, ClipPlaneSetCP clip = NULL) override {}
     virtual void _PopTransClip() override {}
-
-    virtual void _PushClipStencil(QvElem*) override {BeAssert(false && "Stencil only supported for QvOutput...");}
+    virtual void _PushClipStencil(Render::Graphic*) override {BeAssert(false && "Stencil only supported for QvOutput...");}
     virtual void _PopClipStencil() override {}
 
-    virtual RangeResult _PushBoundingRange3d(DPoint3dCP) override {return RangeResult::Overlap;}
-    virtual RangeResult _PushBoundingRange2d(DPoint2dCP, double zDepth) override {return RangeResult::Overlap;}
+    virtual Render::RangeResult _PushBoundingRange3d(DPoint3dCP) override {return Render::RangeResult::Overlap;}
+    virtual Render::RangeResult _PushBoundingRange2d(DPoint2dCP, double zDepth) override {return Render::RangeResult::Overlap;}
     virtual void _PopBoundingRange() override {}
 
     virtual void _SetToViewCoords(bool yesNo) override {}
     virtual void _SetSymbology(ColorDef lineColorTBGR, ColorDef fillColorTBGR, int lineWidth, uint32_t linePattern) override {}
     virtual void _DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) override {}
-    virtual bool _DrawSprite(ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override {return false;}
-    virtual void _DrawTiledRaster(ITiledRasterP tiledRaster) override {}
-    virtual void _DrawQvElem(QvElemP qvElem, int subElemIndex) override {}
+    virtual bool _DrawSprite(Render::ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override {return false;}
+    virtual void _DrawTiledRaster(Render::ITiledRasterP tiledRaster) override {}
+    virtual void _DrawGraphic(Render::Graphic*, int subElemIndex) override {}
     virtual bool _IsOutputQuickVision() const override {return false;}
     virtual bool _ApplyMonochromeOverrides(ViewFlagsCR) const override{return true;}
     virtual StatusInt _TestOcclusion(int numVolumes, DPoint3dP verts, int* results) override { return ERROR; }
@@ -141,7 +140,7 @@ public:
     DGNPLATFORM_EXPORT void             ClipAndProcessFacetSet(PolyfaceQueryCR, bool filled);
     DGNPLATFORM_EXPORT void             ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR);
     DGNPLATFORM_EXPORT void             ClipAndProcessText(TextStringCR, double* zDepth);
-    DGNPLATFORM_EXPORT void             ClipAndProcessSymbol(IDisplaySymbolP, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
+    DGNPLATFORM_EXPORT void             ClipAndProcessSymbol(Render::IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
 
     DGNPLATFORM_EXPORT BentleyStatus    CurveVectorOutputProcessor(CurveVectorCR curves, bool filled);
 
@@ -153,8 +152,8 @@ public:
     StatusInt                       ProcessFacetSet(PolyfaceQueryCR facets, bool filled) {return _ProcessFacetSet(facets, filled);}
     StatusInt                       ProcessGeometryMapOrFacetSet(PolyfaceQueryCR facets, bool filled);
 
-    void                            SetCurrentMatSymb(ElemMatSymbCR matSymb) {m_currentMatSymb = matSymb;}
-    DGNPLATFORM_EXPORT ElemMatSymbR GetCurrentMatSymb(ElemMatSymbR matSymb);
+    void                            SetCurrentMatSymb(Render::ElemMatSymbCR matSymb) {m_currentMatSymb = matSymb;}
+    DGNPLATFORM_EXPORT Render::ElemMatSymbR GetCurrentMatSymb(Render::ElemMatSymbR matSymb);
 
     uint32_t                        GetCurrentOverrideFlags() {return m_overrideMatSymb.GetFlags();}
 

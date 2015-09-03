@@ -28,6 +28,7 @@
 
 #define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn; // for backwards compatibility, do not use
 #define USING_NAMESPACE_BENTLEY_DGN         using namespace BentleyApi::Dgn;
+#define USING_NAMESPACE_BENTLEY_RENDER      using namespace BentleyApi::Dgn::Render;
 #define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
 #define USING_NAMESPACE_BENTLEY_EC          using namespace BentleyApi::ECN;
 
@@ -48,11 +49,6 @@
 
 #define GEOCOORD_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_NAMESPACE namespace GeoCoordinates { DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) } END_BENTLEY_NAMESPACE
-
-GLOBAL_TYPEDEF (QvElem,QvElem)
-GLOBAL_TYPEDEF (QvCache,QvCache)
-GLOBAL_TYPEDEF (QvView,QvView)
-GLOBAL_TYPEDEF (QvMRImage,QvMRImage)
 
 BENTLEY_NAMESPACE_TYPEDEFS (BitMask)
 BENTLEY_NAMESPACE_TYPEDEFS (DataExternalizer)
@@ -90,20 +86,13 @@ DGNPLATFORM_TYPEDEFS (DrawingElement)
 DGNPLATFORM_TYPEDEFS (ElementGroup)
 DGNPLATFORM_TYPEDEFS (GeomStream)
 DGNPLATFORM_TYPEDEFS (GeometricElement)
-DGNPLATFORM_TYPEDEFS (GradientSymb)
 DGNPLATFORM_TYPEDEFS (IDgnFontData)
-DGNPLATFORM_TYPEDEFS (IDrawGeom)
 DGNPLATFORM_TYPEDEFS (IElemTopology)
 DGNPLATFORM_TYPEDEFS (IRedrawOperation)
 DGNPLATFORM_TYPEDEFS (IRedrawAbort)
 DGNPLATFORM_TYPEDEFS (ITransientGeometryHandler)
-DGNPLATFORM_TYPEDEFS (IViewDraw)
-DGNPLATFORM_TYPEDEFS (IViewOutput)
-DGNPLATFORM_TYPEDEFS (LineStyleInfo)
-DGNPLATFORM_TYPEDEFS (LineStyleSymb)
 DGNPLATFORM_TYPEDEFS (PhysicalElement)
 DGNPLATFORM_TYPEDEFS (PhysicalRedlineModel)
-DGNPLATFORM_TYPEDEFS (PlotInfo)
 DGNPLATFORM_TYPEDEFS (RedlineModel)
 DGNPLATFORM_TYPEDEFS (ViewContext)
 DGNPLATFORM_TYPEDEFS (ViewController)
@@ -140,8 +129,6 @@ DGNPLATFORM_TYPEDEFS (DropGeometry)
 DGNPLATFORM_TYPEDEFS (DropGraphics)
 DGNPLATFORM_TYPEDEFS (DwgHatchDef)
 DGNPLATFORM_TYPEDEFS (DwgHatchDefLine)
-DGNPLATFORM_TYPEDEFS (ElemDisplayParams)
-DGNPLATFORM_TYPEDEFS (ElemMatSymb)
 DGNPLATFORM_TYPEDEFS (ElementAlignedBox2d)
 DGNPLATFORM_TYPEDEFS (ElementAlignedBox3d)
 DGNPLATFORM_TYPEDEFS (ElementGeometry)
@@ -157,8 +144,6 @@ DGNPLATFORM_TYPEDEFS (HitList)
 DGNPLATFORM_TYPEDEFS (HitDetail)
 DGNPLATFORM_TYPEDEFS (IACSManager)
 DGNPLATFORM_TYPEDEFS (IAuxCoordSys)
-DGNPLATFORM_TYPEDEFS (ICachedDraw)
-DGNPLATFORM_TYPEDEFS (IDisplaySymbol)
 DGNPLATFORM_TYPEDEFS (IEditAction)
 DGNPLATFORM_TYPEDEFS (IEditActionArray)
 DGNPLATFORM_TYPEDEFS (IEditActionSource)
@@ -168,24 +153,18 @@ DGNPLATFORM_TYPEDEFS (IElementState)
 DGNPLATFORM_TYPEDEFS (IFaceMaterialAttachments)
 DGNPLATFORM_TYPEDEFS (ILineStyle)
 DGNPLATFORM_TYPEDEFS (ILineStyleComponent)
-DGNPLATFORM_TYPEDEFS (IMRImageTileEventHandler)
 DGNPLATFORM_TYPEDEFS (IPickGeom)
 DGNPLATFORM_TYPEDEFS (ISolidKernelEntity)
-DGNPLATFORM_TYPEDEFS (ISprite)
 DGNPLATFORM_TYPEDEFS (ISubEntity)
-DGNPLATFORM_TYPEDEFS (ITiledRaster)
 DGNPLATFORM_TYPEDEFS (ITransactionHandler)
 DGNPLATFORM_TYPEDEFS (TxnManager)
 DGNPLATFORM_TYPEDEFS (IViewHandlerHitInfo)
 DGNPLATFORM_TYPEDEFS (IViewTransients)
 DGNPLATFORM_TYPEDEFS (IndexedViewSet)
 DGNPLATFORM_TYPEDEFS (IndexedViewport)
-DGNPLATFORM_TYPEDEFS (LineStyleInfo)
-DGNPLATFORM_TYPEDEFS (LineStyleParams)
 DGNPLATFORM_TYPEDEFS (Material)
 DGNPLATFORM_TYPEDEFS (MaterialAssignment)
 DGNPLATFORM_TYPEDEFS (NotificationManager)
-DGNPLATFORM_TYPEDEFS (OvrMatSymb)
 DGNPLATFORM_TYPEDEFS (ParagraphProperties)
 DGNPLATFORM_TYPEDEFS (PatternParams)
 DGNPLATFORM_TYPEDEFS (PermanentTopologicalId)
@@ -198,7 +177,6 @@ DGNPLATFORM_TYPEDEFS (Placement2d)
 DGNPLATFORM_TYPEDEFS (Placement3d)
 DGNPLATFORM_TYPEDEFS (PropertyContext)
 DGNPLATFORM_TYPEDEFS (QVAliasMaterialId)
-DGNPLATFORM_TYPEDEFS (QvOutput)
 DGNPLATFORM_TYPEDEFS (QueryModel)
 DGNPLATFORM_TYPEDEFS (QueryViewController)
 DGNPLATFORM_TYPEDEFS (QvUnsizedKey)
@@ -210,7 +188,6 @@ DGNPLATFORM_TYPEDEFS (SelectionSetManager)
 DGNPLATFORM_TYPEDEFS (SheetViewController)
 DGNPLATFORM_TYPEDEFS (SnapContext)
 DGNPLATFORM_TYPEDEFS (SnapDetail)
-DGNPLATFORM_TYPEDEFS (StampQvElemMap)
 DGNPLATFORM_TYPEDEFS (TextString)
 DGNPLATFORM_TYPEDEFS (TextStringStyle)
 DGNPLATFORM_TYPEDEFS (TransformClipStack)
@@ -364,6 +341,43 @@ struct DgnClassId : BeInt64Id
     DgnClassId(DgnClassId&& rhs) : BeInt64Id(std::move(rhs)) {}
     DgnClassId(DgnClassId const& rhs) : BeInt64Id(rhs) {}
     DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
+};
+
+//=======================================================================================
+//! The GeomStreamEntryId class identifies a geometric primitive in a GeomStream.
+//=======================================================================================
+struct GeomStreamEntryId
+{
+    enum class Type
+        {
+        Invalid = 0,
+        Indexed = 1,
+        };
+
+private:
+    Type            m_type;
+    DgnGeomPartId   m_partId;
+    uint32_t        m_index;
+    uint32_t        m_partIndex;
+
+public:
+    GeomStreamEntryId() {Init();}
+    GeomStreamEntryId(GeomStreamEntryIdCR rhs) {m_type = rhs.m_type; m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex;}
+
+    DGNPLATFORM_EXPORT bool operator==(GeomStreamEntryIdCR rhs) const;
+    DGNPLATFORM_EXPORT bool operator!=(GeomStreamEntryIdCR rhs) const;
+    DGNPLATFORM_EXPORT GeomStreamEntryIdR operator=(GeomStreamEntryIdCR rhs);
+
+    void Init() {m_type = Type::Invalid; m_index = 0; m_partIndex = 0; m_partId = DgnGeomPartId();}
+    void SetType(Type type) {m_type = type;}
+    void SetGeomPartId(DgnGeomPartId partId) {m_partId = partId; m_partIndex = 0;}
+    void SetIndex(uint32_t index) {m_index = index;}
+    void SetPartIndex(uint32_t partIndex) {m_partIndex = partIndex;}
+
+    Type GetType() const {return m_type;}
+    DgnGeomPartId GetGeomPartId() const {return m_partId;}
+    uint32_t GetIndex() const {return m_index;}
+    uint32_t GetPartIndex() const {return m_partIndex;}
 };
 
 //=======================================================================================

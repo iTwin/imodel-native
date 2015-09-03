@@ -574,7 +574,9 @@ bool DgnModels::FreeQvCache()
         return  false;
 
     // if there is a QvCache associated with this DgnFile, delete it too.
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     T_HOST.GetGraphicsAdmin()._DeleteQvCache(m_qvCache);
+#endif
     m_qvCache = nullptr;
     return  true;
     }
@@ -823,6 +825,7 @@ DgnModelId DgnModels::QueryFirstModelId() const
     return MakeIterator().begin().GetModelId();
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -833,6 +836,7 @@ QvCache* DgnModels::GetQvCache(bool createIfNecessary)
 
     return (m_qvCache = T_HOST.GetGraphicsAdmin()._CreateQvCache());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14

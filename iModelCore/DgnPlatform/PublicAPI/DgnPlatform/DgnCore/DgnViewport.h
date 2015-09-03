@@ -8,8 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <Bentley/WString.h>
-#include <Geom/IntegerTypes/BSIRect.h>
+#include "DgnDb.h"
 #include "IViewOutput.h"
 #include "ColorUtil.h"
 #include "ViewController.h"
@@ -413,8 +412,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : NonCopyableClass
 public:
     friend struct ViewManager;
     friend struct UpdateContext;
-    friend struct QvOutput;
-    friend struct QvOutputMT;
 
 protected:
     bool            m_needsRefresh;           // screen needs to be redrawn from backing store at next opportunity
@@ -434,7 +431,7 @@ protected:
     CameraInfo      m_camera;
     ViewFlags       m_rootViewFlags;            // view flags for root model
     ColorDef        m_backgroundColor;
-    IViewOutputP    m_output;
+    Render::OutputP    m_output;
     DMap4d          m_rootToView;
     DMap4d          m_rootToNpc;
     double          m_minLOD;                   // default level of detail filter size
@@ -454,11 +451,11 @@ protected:
     virtual void _CallDecorators(bool& stopFlag) {}
     virtual void _SetNeedsHeal() {m_needsRefresh = true;}
     virtual void _SetNeedsRefresh() {m_needsRefresh = true;}
-    virtual ICachedDrawP _GetICachedDraw() = 0;
-    virtual IViewDrawP _GetIViewDraw() {return m_output;}
-    virtual IViewOutputP _GetIViewOutput() {return m_output;}
-    virtual AntiAliasPref _WantAntiAliasLines() const {return AntiAliasPref::Detect;}
-    virtual AntiAliasPref _WantAntiAliasText() const {return AntiAliasPref::Detect;}
+    virtual Render::CachedDrawP _GetICachedDraw() = 0;
+    virtual Render::ViewDrawP _GetIViewDraw() {return m_output;}
+    virtual Render::OutputP _GetIViewOutput() {return m_output;}
+    virtual Render::AntiAliasPref _WantAntiAliasLines() const {return Render::AntiAliasPref::Detect;}
+    virtual Render::AntiAliasPref _WantAntiAliasText() const {return Render::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
     virtual ColorDef _GetHiliteColor() const {return ColorDef::Magenta();}
     virtual void _SynchViewTitle() {}
@@ -473,15 +470,16 @@ protected:
     DGNPLATFORM_EXPORT virtual uint32_t _GetIndexedLinePattern(int index) const;
     DGNPLATFORM_EXPORT virtual void _GetViewCorners(DPoint3dR low, DPoint3dR high) const;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromViewController();
-    DGNPLATFORM_EXPORT virtual ViewportStatus _Activate(QvPaintOptions const&);
+    DGNPLATFORM_EXPORT virtual ViewportStatus _Activate(Render::QvPaintOptions const&);
     DGNPLATFORM_EXPORT virtual void _SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
     DGNPLATFORM_EXPORT virtual void _SynchWithViewController(bool saveInUndo);
     virtual DgnDisplayCoreTypes::DeviceContextP _GetDcForView() const = 0;
     virtual uintptr_t _GetBackDropTextureId() {return 0;}
     DGNPLATFORM_EXPORT virtual ColorDef _GetWindowBgColor() const;
     virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
-    virtual void _SetICachedDraw(ICachedDrawP cachedOutput) = 0;
+    virtual void _SetICachedDraw(Render::CachedDrawP cachedOutput) = 0;
     virtual double _GetMinimumLOD() const {return m_minLOD;}
+    DGNPLATFORM_EXPORT virtual Render::Renderer& _GetRenderer() const;
 
 public:
     DGNPLATFORM_EXPORT DgnViewport();
@@ -493,6 +491,7 @@ public:
     bool ShadowCastingLightsExist() const;
     ViewFlagsP GetViewFlagsP () {return &m_rootViewFlags;}
     bool GetGridRange(DRange3d* range);
+    uintptr_t GetBackDropTextureId() {return _GetBackDropTextureId();}
     DGNPLATFORM_EXPORT double GetGridScaleFactor();
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix);
     DGNPLATFORM_EXPORT void GetGridRoundingDistance(DPoint2dR roundingDistance);
@@ -502,7 +501,7 @@ public:
     DGNPLATFORM_EXPORT Point2d GetScreenOrigin() const;
     DGNPLATFORM_EXPORT void CalcNpcToView(DMap4dR npcToView);
     void ClearNeedsRefresh() {m_needsRefresh = false;}
-    void SetIViewOutput(IViewOutputP output) {m_output = output;}
+    void SetIViewOutput(Render::OutputP output) {m_output = output;}
     void SetBackgroundColor(ColorDef color) {m_backgroundColor = color; m_backgroundColor.SetAlpha(0);}
     void AlignWithRootZ();
     DGNPLATFORM_EXPORT ColorDef GetWindowBgColor() const;
@@ -511,9 +510,9 @@ public:
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
     DGNPLATFORM_EXPORT void ScheduleProgressiveDisplay(IProgressiveDisplay& pd);
     void SynchShadowList();
-    void UpdateShadowList(DgnDrawMode, DrawPurpose);
+    void UpdateShadowList(Render::DgnDrawMode, DrawPurpose);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
-    DGNPLATFORM_EXPORT static StatusInt RootToNpcFromViewDef(DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR);
+    DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
     DGNPLATFORM_EXPORT static int32_t GetDisplayPriorityFrontPlane();
     DGNPLATFORM_EXPORT static ViewportStatus ValidateWindowSize(DPoint3dR delta, bool displayMessage);
@@ -538,7 +537,8 @@ public:
     DGNVIEW_EXPORT BentleyStatus PixelsFromInches(double& pixels, double inches) const;
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
 
-public:
+    Render::Renderer& GetRenderer() const {return _GetRenderer();}
+
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
     DGNPLATFORM_EXPORT CameraInfo const& GetCamera() const;
@@ -789,11 +789,11 @@ public:
     //! Determine whether the root model of this viewport is a Sheet model.
     DGNPLATFORM_EXPORT bool IsSheetView() const;
     //__PUBLISH_SECTION_START__
-    IViewDrawP GetIViewDraw() {return _GetIViewDraw();}
-    DGNPLATFORM_EXPORT IViewOutputP GetIViewOutput();
+    Render::ViewDrawP GetIViewDraw() {return _GetIViewDraw();}
+    Render::OutputP GetIViewOutput() {return _GetIViewOutput();}
 
     /** @cond BENTLEY_SDK_Scope1 */
-    DGNPLATFORM_EXPORT ICachedDrawP GetICachedDraw();
+    Render::CachedDrawP GetICachedDraw() {return _GetICachedDraw();}
     /** @endcond */
 
     //! Get a pointer to the ViewController associated with this DgnViewport.
@@ -896,8 +896,8 @@ struct NonVisibleViewport : DgnViewport
 protected:
     virtual DgnDisplayCoreTypes::DeviceContextP _GetDcForView() const override { return NULL; }
     virtual void _AllocateOutput() override {}
-    virtual ICachedDrawP _GetICachedDraw() override { return NULL; }
-    virtual void _SetICachedDraw(ICachedDrawP cachedOutput) override {}
+    virtual Render::CachedDrawP _GetICachedDraw() override { return NULL; }
+    virtual void _SetICachedDraw(Render::CachedDrawP cachedOutput) override {}
     virtual ColorDef _GetWindowBgColor() const override {return ColorDef::Black();}
     virtual StatusInt _ConnectToOutput() override { return SUCCESS; }
     virtual void _AdjustZPlanesToModel(DPoint3dR, DVec3dR, ViewControllerCR) const override {}

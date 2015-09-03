@@ -223,7 +223,7 @@ virtual DgnModelP       _GetViewTarget () override {return (GetViewport () ? T_S
 
 virtual void            _DrawAreaPattern (ClipStencil& boundary) override {}
 virtual void            _DrawTextString (TextStringCR text) override;
-virtual ILineStyleCP    _GetCurrLineStyle (LineStyleSymbP* symb) override {return nullptr;}
+virtual ILineStyleCP    _GetCurrLineStyle (Render::LineStyleSymbP* symb) override {return nullptr;}
 
 BentleyStatus           PushBooleanCandidate (GeometricElementCR element, TransformCP trans);
 BentleyStatus           SetTargetModel (DgnModelR targetModel);

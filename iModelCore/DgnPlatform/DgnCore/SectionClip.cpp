@@ -505,7 +505,7 @@ ViewContextR        context
     double  cornerEdgeLen = MIN (pixelBasedLength, maxLength);
 
     // Draw linestring
-    IViewDrawR      output   = context.GetIViewDraw ();
+    ViewDrawR      output   = context.GetIViewDraw ();
 
     DVec3d   segVec;
     DPoint3d cornerPts[2];

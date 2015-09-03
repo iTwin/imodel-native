@@ -34,7 +34,7 @@ private:
     bool              m_doLocateSilhouettes;
     bool              m_doLocateInteriors;
     TestLStylePhase   m_testingLStyle;
-    IViewOutputP      m_viewOutput;
+    Render::OutputP      m_viewOutput;
     GeomDetail        m_currGeomDetail;
     HitListP          m_hitList;
     HitPriority       m_hitPriorityOverride;
@@ -50,8 +50,10 @@ private:
     bool TestCurveVector(CurveVectorCR, HitPriority);
     bool TestCurveVectorInterior(CurveVectorCR, HitPriority priority);
     bool TestIndexedPolyEdge(DPoint3dCP verts, DPoint4dCP hVertsP, int closeVertexId, int segmentVertexId, DPoint3dR pickPt, HitPriority);
-    bool TestQvElem(QvElem* qvElem, HitPriority);
+    bool TestGraphics(Render::Graphic* qvElem, HitPriority);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     static int LocateQvElemCheckStop(CallbackArgP);
+#endif
     void AddSurfaceHit(DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, HitPriority);
 
 protected:
@@ -67,9 +69,9 @@ protected:
     virtual void _PopTransClip() override;
     virtual void _SetDrawViewFlags(ViewFlags) override;
     virtual void _DrawTextString(TextStringCR, double* zDepth) override;
-    virtual bool _DrawSprite(ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override;
-    virtual void _DrawPointCloud(IPointCloudDrawParams* drawParams) override;
-    virtual void _DrawQvElem(QvElem* qvElem, int subElemIndex) override;
+    virtual bool _DrawSprite(Render::ISpriteP sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) override;
+    virtual void _DrawPointCloud(Render::IPointCloudDrawParams* drawParams) override;
+    virtual void _DrawGraphic(Render::Graphic* qvElem, int subElemIndex) override;
 
 public:
     PickOutput();
@@ -81,7 +83,7 @@ public:
     bool GetDoneSearching() {return m_doneSearching;}
     void SetTestLStylePhase(TestLStylePhase phase) {m_testingLStyle = phase; if (TEST_LSTYLE_None == phase) m_unusableLStyleHit = false;}
     DPoint3dP GetProjectedPickPointView(DPoint3dR pPoint);
-    void SetupViewOutput(IViewOutputP output) {m_viewOutput = output;}
+    void SetupViewOutput(Render::OutputP output) {m_viewOutput = output;}
     void InitStrokeForCache() {m_doLocateSilhouettes = false;}
     bool GetLocateSilhouettes() {return m_doLocateSilhouettes;}
     bool* GetLocateInteriors() {return &m_doLocateInteriors;}
@@ -113,16 +115,15 @@ private:
     virtual StatusInt _VisitDgnModel(DgnModelP inDgnModel) override;
     virtual void _OutputElement(GeometricElementCR) override;
     virtual void _DrawAreaPattern(ViewContext::ClipStencil& boundary) override;
-    virtual void _DrawSymbol(IDisplaySymbolP, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight) override;
-    virtual void _DeleteSymbol(IDisplaySymbolP) override {}
-    virtual ILineStyleCP _GetCurrLineStyle(LineStyleSymbP*) override;
+    virtual void _DrawSymbol(Render::IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight) override;
+    virtual ILineStyleCP _GetCurrLineStyle(Render::LineStyleSymbP*) override;
     virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false) override;
     virtual void _DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false) override;
     virtual void _DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range) override;
     virtual void _DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) override;
     virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR) override;
     virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth) override;
-    virtual QvElemP _DrawCached(IStrokeForCache&) override;
+    virtual Render::GraphicPtr _DrawCached(Render::IStrokeForCache&) override;
     virtual IPickGeomP _GetIPickGeom() override {return &m_output;}
 
     void InitNpcSubRect(DPoint3dCR pickPointWorld, double pickAperture, DgnViewportR viewport);

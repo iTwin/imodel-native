@@ -129,7 +129,7 @@ static void getCategoryString(Utf8StringR categoryStr, DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString(HitDetailCP hit, Utf8StringR pathDescr, Utf8CP delimiter) const
+void DgnPlatformLib::Host::NotificationAdmin::_GetInfoString(HitDetailCP hit, Utf8StringR pathDescr, Utf8CP delimiter) const
     {
     if (nullptr == hit)
         return;

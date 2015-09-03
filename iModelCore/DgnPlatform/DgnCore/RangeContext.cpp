@@ -801,7 +801,7 @@ private:
     FitViewParams&      m_params;
 
 protected:
-    virtual QvElem* _DrawCached(IStrokeForCache& stroker) override { stroker._StrokeForCache(*this); return nullptr;}
+    virtual GraphicPtr _DrawCached(IStrokeForCache& stroker) override { stroker._StrokeForCache(*this); return nullptr;}
     virtual void _SetupOutputs() override {SetIViewDraw(m_output);}
 
 public:

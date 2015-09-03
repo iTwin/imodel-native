@@ -9,7 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 #include <DgnPlatform/DgnPlatform.h>
-#include <DgnPlatform/DgnCore/ElementGeometry.h>
+#include <DgnPlatform/DgnCore/DgnElement.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

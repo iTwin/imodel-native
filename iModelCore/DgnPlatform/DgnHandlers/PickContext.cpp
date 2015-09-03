@@ -218,8 +218,8 @@ void PickOutput::_AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrior
 
     m_currGeomDetail.SetClosestPoint(hitPtWorld);
     m_currGeomDetail.SetLocatePriority(priority);
-    m_currGeomDetail.SetScreenDist(sqrt(distSquaredXY (hitPtScreen, m_pickPointView)));
-    m_currGeomDetail.SetZValue(getAdjustedViewZ (*m_context, hitPtScreen) + m_context->GetCurrentDisplayParams()->GetNetDisplayPriority());
+    m_currGeomDetail.SetScreenDist(sqrt(distSquaredXY(hitPtScreen, m_pickPointView)));
+    m_currGeomDetail.SetZValue(getAdjustedViewZ(*m_context, hitPtScreen) + m_context->GetCurrentDisplayParams().GetNetDisplayPriority());
     m_currGeomDetail.SetGeomStreamEntryId(m_context->GetGeomStreamEntryId());
 
     RefCountedPtr<HitDetail> thisHit = new HitDetail(*m_context->GetViewport(), element, m_pickPointWorld, m_options.GetHitSource(), m_context->GetViewFlags(), m_currGeomDetail);
@@ -288,6 +288,7 @@ DRay3d PickOutput::_GetBoresite() const
     return boresite;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -297,6 +298,7 @@ int PickOutput::LocateQvElemCheckStop(CallbackArgP arg)
 
     return (context->CheckStop() ? 1 : 0);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
@@ -350,8 +352,9 @@ void PickOutput::AddSurfaceHit(DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, H
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PickOutput::TestQvElem(QvElem* qvElem, HitPriority priority)
+bool PickOutput::TestGraphics(Graphic* qvElem, HitPriority priority)
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d    hitPt, pickPtView;
     DVec3d      hitNormal;
 
@@ -381,6 +384,7 @@ bool PickOutput::TestQvElem(QvElem* qvElem, HitPriority priority)
 
     AddSurfaceHit(localPt, localNormal, priority);
 
+#endif
     return true;
     }
 
@@ -983,9 +987,9 @@ void PickOutput::_DrawPointCloud(IPointCloudDrawParams* drawParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PickOutput::_DrawQvElem(QvElem* qvElem, int subElemIndex)
+void PickOutput::_DrawGraphic(Graphic* qvElem, int subElemIndex)
     {
-    TestQvElem(qvElem, HitPriority::Interior);
+    TestGraphics(qvElem, HitPriority::Interior);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1249,7 +1253,7 @@ void            PickContext::_OutputElement(GeometricElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* PickContext::_DrawCached(IStrokeForCache& stroker)
+GraphicPtr PickContext::_DrawCached(IStrokeForCache& stroker)
     {
     bool    testStroke = stroker._WantLocateByStroker();
 

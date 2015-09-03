@@ -26,7 +26,7 @@ bool            m_abort;
 bool            m_currentAccept;
 bool            m_accept;
 bool            m_firstAccept;
-IViewOutputP    m_viewOutput;
+OutputP    m_viewOutput;
 
 public:
 
@@ -602,7 +602,7 @@ static int      DrawQvElemCheckStop (void* arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _DrawQvElem (QvElem* qvElem, int subElemIndex) override
+virtual void    _DrawGraphic(Graphic* qvElem, int subElemIndex) override
     {
     if (!m_viewOutput || !m_context->GetViewport ())
         return;
@@ -645,7 +645,9 @@ virtual void    _DrawQvElem (QvElem* qvElem, int subElemIndex) override
         bool        gotHit = false;
         DPoint3d    hitPt;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
         gotHit = m_viewOutput->LocateQvElem (qvElem, *((DPoint2dCP) &pickPt), 1.0, hitPt, NULL, DrawQvElemCheckStop, this);
+#endif
 
         if (!alignedToView)
             m_context->PopTransformClip ();
@@ -800,6 +802,7 @@ virtual void    _DrawAreaPattern (ClipStencil& boundary) override
     fp->SetHasOverlaps (true); // set overlap again...cleared by ClearSplitParams...
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -810,16 +813,15 @@ virtual QvElem* _DrawCached (IStrokeForCache& stroker) override
     if (testStroke)
         stroker._StrokeForCache (*this);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (CheckStop ())
         return nullptr;
 
     if (testCached && nullptr != GetViewport ())
         return T_Super::_DrawCached (stroker);
-#endif
 
     return nullptr;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10

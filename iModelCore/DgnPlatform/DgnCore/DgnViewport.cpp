@@ -287,7 +287,7 @@ void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expand
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressionFraction, CameraInfo const* camera,
-                                            DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot)
+                                            DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot) const
     {
     DVec3d    xVector, yVector, zVector;
     viewRot.GetRows(xVector, yVector, zVector);
@@ -311,7 +311,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         double zDelta = (delta.z > zDeltaLimit) ? zDeltaLimit : delta.z;                 // Limited zDelta.
         double zBack  = eyeToOrigin.z;                                                   // Distance from eye to back clip plane.
         double zFront = zBack + zDelta;                                                  // Distance from eye to front clip plane.
-        double minimumFrontToBackClipRatio = T_HOST.GetGraphicsAdmin()._GetCameraFrustumNearScaleLimit();
+        double minimumFrontToBackClipRatio = GetRenderer()._GetCameraFrustumNearScaleLimit();
 
         if (zFront / zBack < minimumFrontToBackClipRatio)
             {
@@ -1344,23 +1344,18 @@ void DgnViewport::PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, Rot
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef ViewController::ResolveBGColor() const
+ColorDef DgnViewport::_GetWindowBgColor() const
     {
-    ColorDef bgColor = GetBackgroundColor();
+    if (!m_viewController.IsValid())
+        return ColorDef::Black();
+
+    ColorDef bgColor = m_viewController->GetBackgroundColor();
 
     // If background color resolved to be black, and user wants inverted, we set background color to white
-    if (ColorDef::Black() == bgColor && T_HOST.GetGraphicsAdmin()._WantInvertBlackBackground())
+    if (ColorDef::Black() == bgColor && GetRenderer()._WantInvertBlackBackground())
         bgColor = ColorDef::White();
 
     return bgColor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef DgnViewport::_GetWindowBgColor() const
-    {
-    return (m_viewController.IsValid()) ? m_viewController->ResolveBGColor() : ColorDef::Black();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1380,4 +1375,24 @@ void DgnViewport::ScheduleProgressiveDisplay(IProgressiveDisplay& pd)
         m_progressiveDisplay.push_back(pdptr);
         }
     // *** TBD: Sort in priority order
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Renderer& DgnViewport::_GetRenderer() const 
+    {
+    static Renderer s_defaultRender;
+    return s_defaultRender;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Renderer::AddTask(Task& task)
+    {
+    BeMutexHolder lock(m_cv.GetMutex());
+    m_tasks.push_back(&task);
+
+    m_cv.notify_all();
     }

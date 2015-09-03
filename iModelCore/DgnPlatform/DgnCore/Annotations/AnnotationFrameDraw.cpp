@@ -76,7 +76,7 @@ BentleyStatus AnnotationFrameDraw::Draw(ViewContextR context) const
     if (!frameStyle->IsStrokeEnabled() && !frameStyle->IsFillEnabled())
         return SUCCESS;
     
-    IDrawGeomR output = context.GetIDrawGeom();
+    GeomDrawR output = context.GetIDrawGeom();
 
     // We have to copy so that we can call SetBoundaryType to ensure we get a line string for stroke vs. a surface for fill.
     CurveVectorPtr frameGeometry = m_frameLayout->GetFrameGeometry().Clone();

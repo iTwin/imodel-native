@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnPlatform/DgnCore/IViewDraw.h $
+|     $Source: PublicAPI/DgnPlatform/DgnCore/Render.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,55 +8,195 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "ColorUtil.h"
 #include "LineStyleResource.r.h"
 #include "AreaPattern.h"
-#include <Bentley/RefCounted.h>
-#include "../DgnPlatform.h"
-#include "DgnDb.h"
 #include "DgnModel.h"
 
-//__PUBLISH_SECTION_END__
-DGNPLATFORM_TYPEDEFS (QvBaseMatSym)
-//__PUBLISH_SECTION_START__
+BEGIN_BENTLEY_RENDER_NAMESPACE
 
-BEGIN_BENTLEY_DGN_NAMESPACE
+DEFINE_POINTER_SUFFIX_TYPEDEFS(CachedDraw)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemDisplayParams)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemMatSymb)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomDraw)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicCache)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(IDisplaySymbol)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MRImage)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Output)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrMatSymb)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(PlotInfo)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewDraw)
+
+DEFINE_REF_COUNTED_PTR(Target)
+DEFINE_REF_COUNTED_PTR(Scene)
+DEFINE_REF_COUNTED_PTR(Task)
+DEFINE_REF_COUNTED_PTR(Graphic)
+DEFINE_REF_COUNTED_PTR(GraphicCache)
+DEFINE_REF_COUNTED_PTR(MRImage)
+DEFINE_REF_COUNTED_PTR(LineStyleInfo)
 
 //=======================================================================================
-//! The GeomStreamEntryId class identifies a geometric primitive in a GeomStream.
+//! Supplies implementation of rendering operations for a DgnViewport.
+// @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
-struct GeomStreamEntryId
+struct Renderer
 {
-enum class Type
+    BeConditionVariable m_cv;
+    std::deque<TaskPtr> m_tasks;
+
+    //! Display control for edges marked as invisible in Mesh Elements and
+    //! for B-spline Curve/Surface control polygons ("splframe" global).
+    enum class ControlPolyDisplay
     {
-    Invalid = 0,
-    Indexed = 1,
+        ByElement = 0, //! display according to element property.
+        Always    = 1, //! display on for all elements
+        Never     = 2, //! display off for all elements
     };
 
-private:
-    Type            m_type;
-    DgnGeomPartId   m_partId;
-    uint32_t        m_index;
-    uint32_t        m_partIndex;
+    //! Return a pointer to a temporary QVCache used to create a temporary QVElem (short-lived).
+    virtual GraphicCache* _GetTempGraphicCache() {return nullptr;}
 
-public:
-    GeomStreamEntryId() {Init();}
-    GeomStreamEntryId(GeomStreamEntryIdCR rhs) {m_type = rhs.m_type; m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex;}
+    //! Create and maintain a cache to hold cached representations of drawn geometry for persistent elements (QVElem).
+    virtual GraphicCachePtr _CreateGraphicCache() {return nullptr;}
 
-    DGNPLATFORM_EXPORT bool operator==(GeomStreamEntryIdCR rhs) const;
-    DGNPLATFORM_EXPORT bool operator!=(GeomStreamEntryIdCR rhs) const;
-    DGNPLATFORM_EXPORT GeomStreamEntryIdR operator=(GeomStreamEntryIdCR rhs);
+    //! Reset specified GraphicCache.
+    virtual void _ResetGraphicCache(GraphicCacheP GraphicCache) {}
 
-    void Init() {m_type = Type::Invalid; m_index = 0; m_partIndex = 0; m_partId = DgnGeomPartId();}
-    void SetType(Type type) {m_type = type;}
-    void SetGeomPartId(DgnGeomPartId partId) {m_partId = partId; m_partIndex = 0;}
-    void SetIndex(uint32_t index) {m_index = index;}
-    void SetPartIndex(uint32_t partIndex) {m_partIndex = partIndex;}
+    //! Return cache to use for symbols (if host has chosen to have a symbol cache).
+    //! @note Symbol cache will be required for an interactive host.
+    virtual GraphicCache* _GetSymbolCache() {return nullptr;}
 
-    Type GetType() const {return m_type;}
-    DgnGeomPartId GetGeomPartId() const {return m_partId;}
-    uint32_t GetIndex() const {return m_index;}
-    uint32_t GetPartIndex() const {return m_partIndex;}
+    //! Save cache entry for symbol (if host has chosen to have a symbol cache).
+    virtual void _SaveGraphicForSymbol(IDisplaySymbol* symbol, Graphic* graphic) {}
+
+    //! Return cache entry for symbol (if host has chosen to have a symbol cache).
+    virtual Graphic* _LookupGraphicForSymbol(IDisplaySymbol* symbol) {return nullptr;}
+
+    //! Delete a specific entry from the symbol cache.
+    virtual void _DeleteSymbol(IDisplaySymbol* symbol) {}
+
+    //! Define a texture
+    virtual void _DefineTextureId(uintptr_t textureId, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, Byte const* imageData) {}
+
+    //! Check if a texture is defined
+    virtual bool _IsTextureIdDefined(uintptr_t textureId) {return false;}
+
+    //! Delete a specific texture, tile, or icon.
+    virtual void _DeleteTexture(uintptr_t textureId) {}
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    //! Define a tile texture
+    virtual void _DefineTile(uintptr_t textureId, char const* tileName, Point2dCR imageSize, bool enableAlpha, uint32_t imageFormat, uint32_t pitch, Byte const* imageData) {}
+
+    //! Draw a tile texture
+    virtual void _DrawTile(ViewDrawR, uintptr_t textureId, DPoint3d const* verts) {}
+
+    //! Create a 3D multi-resolution image.
+    virtual MRImagePtr _CreateMRImage(DPoint3dCP fourCorners, Point2dCR imageSize, Point2dCR tileSize, bool enableAlpha, int format, int tileFlags, int numLayers) {return nullptr;}
+
+    //! Add an image tile to a qvMRImage.
+    virtual Graphic* _CreateTile(bool is3d, GraphicCacheP hCache, MRImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return nullptr;}
+
+    //! Define a custom raster format(QV_*_FORMAT) for color index data. Return 0 if error.
+    virtual int _DefineCIFormat(int dataType, int numColors, QvUInt32 const* pTBGRColors){return 0;}
+
+    virtual void _CacheGeometryMap(ViewContextR viewContext, uintptr_t rendMatID) {}
+#endif
+
+    //! An InteractiveHost may choose to allow applications to display non-persistent geometry during an update.
+    virtual void _CallViewTransients(ViewContextR, bool isPreupdate) {}
+
+    //! @return Value to use for display control setting of mesh edges marked as invisible and for bspline curve/surface control polygons.
+    virtual ControlPolyDisplay _GetControlPolyDisplay() {return ControlPolyDisplay::ByElement;}
+
+    virtual bool _WantInvertBlackBackground() {return false;}
+
+    virtual bool _GetModelBackgroundOverride(ColorDef& rgbColor, DgnModelType modelType) {return false;}
+
+    //! If true, the UI icons that this library loads will be processed to darken their edges to attempt to increase visibility.
+    virtual bool _ShouldEnhanceIconEdges() {return false;}
+
+    virtual bool _WantDebugElementRangeDisplay() {return false;}
+
+    //! Supported color depths for this library's UI icons.
+    enum class IconColorDepth
+        {
+        Bpp32,    //!< 32 BPP icons will be used (transparency)
+        Bpp24     //!< 24 BPP icons will be used (no transparency)
+        };
+
+    //! Gets the desired color depth of the UI icons that this library loads. At this time, 32 is preferred, but 24 can be used if required.
+    virtual IconColorDepth _GetIconColorDepth() {return IconColorDepth::Bpp32;}
+
+    //! Return minimum ratio between near and far clip planes for cameras - for z-Buffered output this is dictated by the depth of the z-Buffer
+    //! for pre DX11 this was .0003 - For DX11 it is approximately 1.0E-6.
+    virtual double _GetCameraFrustumNearScaleLimit() { return 1.0E-6; }
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    virtual void _DrawInVp(HitDetailCP, DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
+#endif
+
+    //! Return false to inhibit creating rule lines for surface/solid geometry for wireframe display.
+    //! Can be used to improve display performance in applications that only work in shaded views (or those that will clear all Graphicss before switching to wireframe)
+    virtual bool _WantWireframeRuleDisplay() {return true;}
+
+    DGNPLATFORM_EXPORT void AddTask(Task&);
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   07/15
+//=======================================================================================
+struct Task : IRefCounted
+{
+    virtual Target& _GetTarget() = 0;
+    virtual void _Render() = 0;
+    virtual int _GetPriority() = 0;
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   08/15
+//=======================================================================================
+struct Graphic : IRefCounted
+{
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   08/15
+//=======================================================================================
+struct MRImage : IRefCounted
+{
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   07/15
+//=======================================================================================
+struct GraphicCache : IRefCounted
+{
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   07/15
+//=======================================================================================
+struct Target : IRefCounted
+{
+
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   07/15
+//=======================================================================================
+struct Scene : IRefCounted
+{
+
 };
 
 //=======================================================================================
@@ -65,7 +205,6 @@ public:
 //=======================================================================================
 struct LineStyleParams : LineStyleParamsResource
 {
-//__PUBLISH_SECTION_END__
     void Init()
         {
         memset(this, 0, sizeof(LineStyleParams));
@@ -75,55 +214,54 @@ struct LineStyleParams : LineStyleParamsResource
 
     //! Compare two LineStyleParams.
     DGNPLATFORM_EXPORT bool operator==(LineStyleParamsCR rhs) const;
-
     DGNPLATFORM_EXPORT void SetScale(double scale);
-//__PUBLISH_SECTION_START__
 };
 
-typedef RefCountedPtr<LineStyleInfo> LineStyleInfoPtr;
 
 //=======================================================================================
 //! Line style id and parameters
 //=======================================================================================
 struct LineStyleInfo : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 protected:
-
-DgnStyleId          m_styleId;
-LineStyleParams     m_styleParams; //!< modifiers for user defined linestyle (if applicable)
-
-DGNPLATFORM_EXPORT LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params);
+    DgnStyleId          m_styleId;
+    LineStyleParams     m_styleParams; //!< modifiers for user defined linestyle (if applicable)
+    DGNPLATFORM_EXPORT LineStyleInfo(DgnStyleId styleId, LineStyleParamsCP params);
 
 public:
+    DGNPLATFORM_EXPORT void CopyFrom(LineStyleInfoCR);
 
-DGNPLATFORM_EXPORT void CopyFrom(LineStyleInfoCR);
+    //! Create an instance of a LineStyleInfo.
+    DGNPLATFORM_EXPORT static LineStyleInfoPtr Create(DgnStyleId styleId, LineStyleParamsCP params);
 
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-public:
+    //! Compare two LineStyleInfo.
+    DGNPLATFORM_EXPORT bool operator==(LineStyleInfoCR rhs) const;
 
-//! Create an instance of a LineStyleInfo.
-DGNPLATFORM_EXPORT static LineStyleInfoPtr Create(DgnStyleId styleId, LineStyleParamsCP params);
+    DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
+    DGNPLATFORM_EXPORT LineStyleParamsCP GetStyleParams() const;
+};
 
-//! Compare two LineStyleInfo.
-DGNPLATFORM_EXPORT bool operator==(LineStyleInfoCR rhs) const;
+struct ISprite;
+struct IDgnOleDraw;
 
-DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
-DGNPLATFORM_EXPORT LineStyleParamsCP GetStyleParams() const;
-
-}; // LineStyleInfo
-
-struct  ISprite;
-struct  IDisplaySymbol;
-struct  IDgnOleDraw;
+//=======================================================================================
+//! This interface defines methods required for a \e DisplaySymbol Definition.
+//! A DisplaySymbol is a set of graphics that is cached once and can then be redrawn
+//! many times at different locations/sizes/clipping/symbology.
+//! @note DisplaySymbol are drawn via GeomDraw::DrawSymbol.
+//=======================================================================================
+struct IDisplaySymbol
+{
+    virtual ~IDisplaySymbol() {}
+    virtual void _Draw(ViewContextR context) = 0;
+    virtual StatusInt _GetRange(DRange3dR range) const = 0;
+};
 
 enum class DrawExpense
 {
     Medium   = 1, //!<  Average for a element type that may be cached
     High     = 2, //!<  Cache it unless at risk of exhausting virtual address
 };
-
 
 enum class FillDisplay //!< Whether a closed region should be drawn for wireframe display with its internal area filled or not.
 {
@@ -140,9 +278,6 @@ enum class DgnGeometryClass
     Dimension    = 2,
     Pattern      = 3,
 };
-
-#define SCREENING_Full  0.0
-#define SCREENING_None  100.0
 
 enum class LineJoin
 {
@@ -308,14 +443,14 @@ DGNPLATFORM_EXPORT void SetSize(DPoint3dCR size);
 //! Get the QV Material Id for the UV mapping to use.
 DGNPLATFORM_EXPORT QVAliasMaterialIdCP GetQVAliasMaterialId() const;
 //! Set the QV Material Id for the UV mapping to use.
-DGNPLATFORM_EXPORT void SetQVAliasMaterialId(QVAliasMaterialIdP qvId); 
+DGNPLATFORM_EXPORT void SetQVAliasMaterialId(QVAliasMaterialIdP qvId);
 
 //! Create an instance of this class
 DGNPLATFORM_EXPORT static MaterialUVDetailPtr Create();
 };
 #endif
 
-typedef RefCountedPtr<PlotInfo> PlotInfoPtr;
+typedef RefCountedPtr<struct PlotInfo> PlotInfoPtr;
 
 //=======================================================================================
 //! Plot specific resymbolization
@@ -391,7 +526,7 @@ DGNPLATFORM_EXPORT void     SetLineWeightMM (double weight, bool set = true);
 //=======================================================================================
 //! This structure holds all of the information about an element specifying the "displayable parameters" of the element.
 //! It is typically extracted from the "dhdr" section of the element header and from user data.
-// @bsiclass 
+// @bsiclass
 //=======================================================================================
 struct ElemDisplayParams
 {
@@ -446,7 +581,7 @@ public:
     void SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
     void SetGeometryClass(DgnGeometryClass geomClass) {m_geometryClass = geomClass;}
     void SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency;} // NOTE: Sets BOTH element and fill transparency...
-    void SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency;} 
+    void SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency;}
     void SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority;} // Set display priority (2d only).
     void SetMaterial(DgnMaterialId material) {m_appearanceOverrides.m_material = true; m_material = material;}
     void SetPatternParams(PatternParamsP patternParams) {m_pattern = patternParams;}
@@ -521,11 +656,9 @@ public:
 //! definition. Most of the options pertain to the operation of the StrokePatternComponent
 //! component but the plane definition and scale factors can be used by all components.
 //=======================================================================================
-struct          LineStyleSymb
+struct LineStyleSymb
 {
 private:
-    friend struct QvBaseMatSym;
-
     // NOTE: For performance, the constructor initializes members using:
     //         memset (&m_lStyle, 0, offsetof (LineStyleSymb, m_planeByRows)- offsetof (LineStyleSymb, m_lStyle));
     //         So it will be necessary to update it if first/last member are changed. */
@@ -801,7 +934,7 @@ enum OvrMatSymbFlags //! flags to indicate the parts of a MatSymb that are to be
     MATSYMB_OVERRIDE_ExtSymb                = (1<<7),   //!< override extended symbology
     MATSYMB_OVERRIDE_RenderMaterial         = (1<<8),   //!< override render material
     // The proxy flags are informational but do not effect the display.
-    MATSYMB_OVERRIDE_IsProxy                = (1<<16),   //!< is proxy              
+    MATSYMB_OVERRIDE_IsProxy                = (1<<16),   //!< is proxy
     MATSYMB_OVERRIDE_IsProxyHidden          = (1<<17),   //!< is proxy edge
     MATSYMB_OVERRIDE_IsProxyEdge            = (1<<18),   //!< is proxy hidden
     MATSYMB_OVERRIDE_IsProxyUnderlay        = (1<<19),  //!< proxy underlay.
@@ -818,11 +951,9 @@ private:
     ElemMatSymb     m_matSymb;
 
 public:
-    DGNPLATFORM_EXPORT OvrMatSymb() : m_flags(MATSYMB_OVERRIDE_None) {}
-
+    OvrMatSymb() : m_flags(MATSYMB_OVERRIDE_None) {}
     ElemMatSymbCR GetMatSymb() const {return m_matSymb;}
     ElemMatSymbR GetMatSymbR () {return m_matSymb;}
-
     uintptr_t GetExtSymbId() const {return m_matSymb.GetExtSymbId();}
     void SetExtSymbId(uintptr_t extSymbID) {m_matSymb.SetExtSymbId(extSymbID); m_flags |= MATSYMB_OVERRIDE_ExtSymb;}
 
@@ -886,7 +1017,7 @@ struct IPointCloudDrawParams
 
 //=======================================================================================
 //! This interface defines the method used by ViewContext::DrawCached.
-// @bsiclass 
+// @bsiclass
 //=======================================================================================
 struct IStrokeForCache
 {
@@ -903,21 +1034,21 @@ struct IStrokeForCache
 
     //! Return true if _StrokeForCache should be called for locate. The geometry output by the stroker will be used to generate the curve/edge hits
     //! required for snapping as well as for locating the interiors of filled/rendered geometry.
-    //! @note A stroker that has a very expensive to create cached representation (ex. breps) should NEVER return true, see _WantLocateByQvElem.
+    //! @note A stroker that has a very expensive to create cached representation (ex. breps) should NEVER return true, see _WantLocateByGraphics.
     virtual bool _WantLocateByStroker() const {return true;}
 
     //! Return geometry range for the purpose of calculating pixelSize for creating a size dependent cache representation.
     //! @note A valid range is required only if _GetSizeDependentGeometryPossible returns true.
     virtual DRange3d _GetRange() const {return DRange3d::NullRange();}
 
-    //! Return dgnDb for default QvCache.
+    //! Return dgnDb for default GraphicCache.
     virtual DgnDbR _GetDgnDb() const = 0;
 
 }; // IStrokeForCache
 
 //=======================================================================================
 //! IStrokeForCache sub-class specific to GeometricElement.
-// @bsiclass 
+// @bsiclass
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE StrokeElementForCache : IStrokeForCache
 {
@@ -939,10 +1070,10 @@ struct EXPORT_VTABLE_ATTRIBUTE TransientCachedGraphics : IStrokeForCache
 {
 protected:
     DgnDbR          m_dgnDb;
-    mutable QvElemP m_qvElem;
+    mutable Render::GraphicP m_graphic;
 
 public:
-    explicit TransientCachedGraphics(DgnDbR dgnDb) : m_dgnDb(dgnDb) {m_qvElem = nullptr;}
+    explicit TransientCachedGraphics(DgnDbR dgnDb) : m_dgnDb(dgnDb) {m_graphic = nullptr;}
     DGNPLATFORM_EXPORT virtual ~TransientCachedGraphics();
 
     virtual DgnDbR _GetDgnDb() const override {return m_dgnDb;}
@@ -952,21 +1083,21 @@ public:
 //! DgnCore implements this interface to provide methods that draw geometry in either cached or non-cached contexts. However,
 //! not all implementations of this interface actually "draw" the geometry. For example, one implementation of this interface
 //! is used for locating (aka "picking") visible geometry previously drawn.
-//! 
+//!
 //! Any object that implements IDrawGeom will have an "active" ElemMatSymb that determines the appearance of
 //! geometry drawn via calls to methods in this interface.
-//! 
+//!
 //! <h3>Coordinates and Dimensionality</h3>
 //! All coordinate information are specified in the current "local" coordinate system (see ILocalCoordSys for a discussion of pushing and
 //! popping coordinate transforms.)
-//! 
+//!
 //! There are typically both 2D and 3D versions of the geometry methods. The choice of whether to use the 2D or 3D version
 //! depends only on whether you have 2D or 3D coordinate information, not on any inherent property of the IDrawGeom. In other words,
 //! there is no such thing as a "2D" or "3D" DgnViewport, all viewports are always 3D - if you use the 2D methods, they are intrinsically
 //! planar and oriented on the X,Y plane at the specified Z depth.
-// @bsiclass 
+// @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE IDrawGeom
+struct EXPORT_VTABLE_ATTRIBUTE GeomDraw
 {
     friend struct ViewContext;
 
@@ -1003,10 +1134,10 @@ protected:
     virtual size_t _GetMethodIndex() {return 0;}
     virtual void _PushMethodState() {}
     virtual void _PopMethodState() {}
-    virtual ~IDrawGeom() {}
+    virtual ~GeomDraw() {}
 
 public:
-    IDrawGeom() {}
+    GeomDraw() {}
 
     //! Get the current View Flags for this object. The view flags are initialized from the view flags
     //! of its controlling DgnViewport at the beginning of every display operation. However, during display operations,
@@ -1022,19 +1153,19 @@ public:
     //! @param[in]          matSymb     The new active ElemMatSymb. All geometry drawn via calls to this IDrawGeom will
     //!                                     be displayed using the values in this ElemMatSymb.
     //! @note     See discussion of the symbology "overrides" in #ActivateOverrideMatSymb
-    DGNPLATFORM_EXPORT void ActivateMatSymb(ElemMatSymbCP matSymb);
+    void ActivateMatSymb(ElemMatSymbCP matSymb) {_ActivateMatSymb(matSymb);}
 
     //! Set an ElemMatSymb to be the "active override" ElemMatSymb for this IDrawGeom.
     //! @param[in]          ovrMatSymb  The new active override ElemMatSymb.
     //!                                     value in ovrMatSymb will be used instead of the value set by #ActivateMatSymb.
-    DGNPLATFORM_EXPORT void ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb);
+    void ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb) {_ActivateOverrideMatSymb(ovrMatSymb);}
 
     //! Draw a 3D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the line string.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-    DGNPLATFORM_EXPORT void DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range);
+    void DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) {_DrawLineString3d(numPoints, points, range);}
 
     //! Draw a 2D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
@@ -1042,14 +1173,14 @@ public:
     //! @param[in]          zDepth      Z depth value in local coordinates.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-    DGNPLATFORM_EXPORT void DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range);
+    void DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_DrawLineString2d(numPoints, points, zDepth, range);}
 
     //! Draw a 3D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the point string.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-    DGNPLATFORM_EXPORT void DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range);
+    void DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) {_DrawPointString3d(numPoints, points, range);}
 
     //! Draw a 2D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in]          numPoints   Number of vertices in points array.
@@ -1057,7 +1188,7 @@ public:
     //! @param[in]          zDepth      Z depth value.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-    DGNPLATFORM_EXPORT void DrawPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range);
+    void DrawPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) {_DrawPointString2d(numPoints, points, zDepth, range);}
 
     //! Draw a closed 3D shape.
     //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
@@ -1066,7 +1197,7 @@ public:
     //! @param[in]          filled      If true, the shape will be drawn filled.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-    DGNPLATFORM_EXPORT void DrawShape3d(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range);
+    void DrawShape3d(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range) {_DrawShape3d(numPoints, points, filled, range);}
 
     //! Draw a 2D shape.
     //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
@@ -1076,7 +1207,7 @@ public:
     //! @param[in]          filled      If true, the shape will be drawn filled.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-    DGNPLATFORM_EXPORT void DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range);
+    void DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) {_DrawShape2d(numPoints, points, filled, zDepth, range);}
 
     //! Draw a 3D elliptical arc or ellipse.
     //! @param[in]          ellipse     arc data.
@@ -1084,7 +1215,7 @@ public:
     //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
     //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass NULL.
-    DGNPLATFORM_EXPORT void DrawArc3d(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range);
+    void DrawArc3d(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range) {_DrawArc3d(ellipse, isEllipse, filled, range);}
 
     //! Draw a 2D elliptical arc or ellipse.
     //! @param[in]          ellipse     arc data.
@@ -1093,41 +1224,41 @@ public:
     //! @param[in]          zDepth      Z depth value
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the arc.
     //!                                     This argument is optional and is only used to speed processing. If you do not already have the range, pass NULL.
-    DGNPLATFORM_EXPORT void DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range);
+    void DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range) {_DrawArc2d(ellipse, isEllipse, filled, zDepth, range);}
 
     //! Draw a BSpline curve.
-    DGNPLATFORM_EXPORT void DrawBSplineCurve(MSBsplineCurveCR curve, bool filled);
+    void DrawBSplineCurve(MSBsplineCurveCR curve, bool filled) {_DrawBSplineCurve(curve, filled);}
 
     //! Draw a BSpline curve as 2d geometry with display priority.
     //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-    DGNPLATFORM_EXPORT void DrawBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth);
+    void DrawBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) {_DrawBSplineCurve2d(curve, filled, zDepth);}
 
     //! Draw a curve vector.
-    DGNPLATFORM_EXPORT void DrawCurveVector(CurveVectorCR curves, bool isFilled);
+    void DrawCurveVector(CurveVectorCR curves, bool isFilled) {_DrawCurveVector(curves, isFilled);}
 
     //! Draw a curve vector as 2d geometry with display priority.
     //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-    DGNPLATFORM_EXPORT void DrawCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth);
+    void DrawCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {_DrawCurveVector2d(curves, isFilled, zDepth);}
 
     //! Draw a light-weight surface or solid primitive.
     //! @remarks Solid primitives can be capped or uncapped, they include cones, torus, box, spheres, and sweeps.
-    DGNPLATFORM_EXPORT void DrawSolidPrimitive(ISolidPrimitiveCR primitive);
+    void DrawSolidPrimitive(ISolidPrimitiveCR primitive) {_DrawSolidPrimitive(primitive);}
 
     //! Draw a BSpline surface.
-    DGNPLATFORM_EXPORT void DrawBSplineSurface(MSBsplineSurfaceCR);
+    void DrawBSplineSurface(MSBsplineSurfaceCR surface) {_DrawBSplineSurface(surface);}
 
     //! @note Caller is expected to define texture id for illuminated meshed, SetTextureId.
     //! @remarks Wireframe fill display supported for non-illuminated meshes.
-    DGNPLATFORM_EXPORT void DrawPolyface(PolyfaceQueryCR meshData, bool filled = false);
+    void DrawPolyface(PolyfaceQueryCR meshData, bool filled = false) {_DrawPolyface(meshData, filled);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
     //! @note Only implemented for ICachedDraw due to potentially expensive/time consuming solids kernel calls.
-    DGNPLATFORM_EXPORT StatusInt DrawBody(ISolidKernelEntityCR, double pixelSize = 0.0);
+    StatusInt DrawBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) {return _DrawBody(entity, pixelSize);}
 
     //! Draw a series of Glyphs
     //! @param[in]          text        Text drawing parameters
     //! @param[in]          zDepth      Priority value in 2d or NULL
-    DGNPLATFORM_EXPORT void DrawTextString(TextStringCR text, double* zDepth = NULL);
+    void DrawTextString(TextStringCR text, double* zDepth = NULL) {_DrawTextString(text, zDepth);}
 
     //! Draw a filled triangle strip from 3D points.
     //! @param[in]          numPoints   Number of vertices in \c points array.
@@ -1135,7 +1266,7 @@ public:
     //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-    DGNPLATFORM_EXPORT void DrawTriStrip3d(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range);
+    void DrawTriStrip3d(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range) {_DrawTriStrip3d(numPoints, points, usageFlags, range);}
 
     //! Draw a filled triangle strip from 2D points.
     //! @param[in]          numPoints   Number of vertices in \c points array.
@@ -1144,32 +1275,30 @@ public:
     //! @param[in]          usageFlags  0 or 1 if tri-strip represents a thickened line.
     //! @param[in]          range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
     //!                                     optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-    DGNPLATFORM_EXPORT void DrawTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range);
+    void DrawTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range) {_DrawTriStrip2d(numPoints, points, usageFlags, zDepth, range);}
 
 
-    DGNPLATFORM_EXPORT RangeResult  PushBoundingRange3d(DPoint3dCP range);
-    DGNPLATFORM_EXPORT RangeResult  PushBoundingRange2d(DPoint2dCP range, double zDepth);
-    DGNPLATFORM_EXPORT void         PopBoundingRange();
-    size_t GetMethodIndex();
-    void PushMethodState();
-    void PopMethodState();
+    RangeResult PushBoundingRange3d(DPoint3dCP range) {return _PushBoundingRange3d(range);}
+    RangeResult PushBoundingRange2d(DPoint2dCP range, double zDepth) {return _PushBoundingRange2d(range, zDepth);}
+    void PopBoundingRange() {_PopBoundingRange();}
+    size_t GetMethodIndex() {return _GetMethodIndex();}
+    void PushMethodState() {_PushMethodState();}
+    void PopMethodState() {_PopMethodState();}
 
     //! @private
     // Published to expose access for performance reasons for Bryan Oswalt's augmented reality prototyping.
-    DGNPLATFORM_EXPORT void DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts);
+    void DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) {_DrawMosaic(numX, numY, tileIds, verts);}
 
     // Helper Methods to draw simple SolidPrimitives.
-    DGNPLATFORM_EXPORT void DrawTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped);
-    DGNPLATFORM_EXPORT void DrawCone(DPoint3dCR centerA, DPoint3dCR centerB, double radiusA, double radiusB, bool capped);
-    DGNPLATFORM_EXPORT void DrawSphere(DPoint3dCR center, RotMatrixCR axes, double radius);
-    DGNPLATFORM_EXPORT void DrawBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped);
-}; // IDrawGeom
+    void DrawTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { DrawSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
+    void DrawBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {DrawSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
+}; // GeomDraw
 
 //=======================================================================================
-//! DgnCore implements this interface to provide the display system for Viewports. 
-// @bsiclass 
+//! DgnCore implements this interface to provide the display system for Viewports.
+// @bsiclass
 //=======================================================================================
-struct IViewDraw : IDrawGeom
+struct ViewDraw : GeomDraw
 {
 protected:
     virtual void _SetToViewCoords(bool yesNo) = 0;
@@ -1181,7 +1310,7 @@ protected:
     virtual void _DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
     virtual void _DrawDgnOle(IDgnOleDraw*) = 0;
     virtual void _DrawPointCloud(IPointCloudDrawParams* drawParams) = 0;
-    virtual void _DrawQvElem(QvElem* qvElem, int subElemIndex) = 0;
+    virtual void _DrawGraphic(Graphic* graphic, int subElemIndex) = 0;
     virtual void _ClearZ () = 0;
 
     virtual uintptr_t _DefineQVTexture(WCharCP textureName, DgnDbP) {return 0;}
@@ -1190,23 +1319,23 @@ protected:
     virtual bool _IsOutputQuickVision() const = 0;
     virtual bool _ApplyMonochromeOverrides(ViewFlagsCR) const = 0;
     virtual StatusInt _TestOcclusion(int numVolumes, DPoint3dP verts, int* results) = 0;
-    virtual void _PushClipStencil(QvElem* qvElem) = 0;
+    virtual void _PushClipStencil(Graphic* graphic) = 0;
     virtual void _PopClipStencil() = 0;
-    virtual ~IViewDraw() {}
+    virtual ~ViewDraw() {}
 
 public:
     //! Set the coordinate system temporarily to DgnCoordSystem::View. This removes the root coordinate system,
     //! including all camera definitions. It is ONLY valid or useful for drawing "overlay" graphics while drawing View Decorations.
     //! @param[in]      yesNo       If true, set to DgnCoordSystem::View. If false, restore to COORDSYS_Root.
     //! @note           calls to this method should be paired with true then false values for \c yesNo.
-    DGNPLATFORM_EXPORT void SetToViewCoords(bool yesNo);
+    void SetToViewCoords(bool yesNo) {_SetToViewCoords(yesNo);}
 
     //! Set the active symbology for this IViewDraw. All subsequent draw methods will use the new active symbology.
     //! @param[in]      lineColorTBGR   TBGR line color.
     //! @param[in]      fillColorTBGR   TBGR color for filled regions.
     //! @param[in]      lineWidth       The line width in pixels.
     //! @param[in]      linePattern     The 32 bit on/off pattern for lines.
-    DGNPLATFORM_EXPORT void SetSymbology(ColorDef lineColorTBGR, ColorDef fillColorTBGR, int lineWidth, uint32_t linePattern);
+    void SetSymbology(ColorDef lineColorTBGR, ColorDef fillColorTBGR, int lineWidth, uint32_t linePattern) {_SetSymbology(lineColorTBGR, fillColorTBGR, lineWidth, linePattern);}
 
     //! Draw the grid matrix.
     //! @param[in]      doIsoGrid       Draw the isometric grid points (if applicable).
@@ -1216,7 +1345,7 @@ public:
     //! @param[in]      yVector         Direction of grid y.
     //! @param[in]      gridsPerRef     Draw reference lines.
     //! @param[in]      repetitions     X,y values for number or repetitions.
-    DGNPLATFORM_EXPORT void DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions);
+    void DrawGrid(bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVector, DVec3dCR yVector, uint32_t gridsPerRef, Point2dCR repetitions) {_DrawGrid(doIsoGrid, drawDots, gridOrigin, xVector, yVector, gridsPerRef, repetitions);}
 
     //! Draw a sprite at a specific location.
     //! @param[in]      sprite          The sprite definition.
@@ -1226,75 +1355,71 @@ public:
     //!                                     unrotated.
     //! @param[in]      transparency    Sprite is drawn with this transparency  (0=opaque, 255=invisible).
     //! @note this method is only valid from View Decorators.
-    DGNPLATFORM_EXPORT bool DrawSprite(ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency);
+    bool DrawSprite(ISprite* sprite, DPoint3dCP location, DPoint3dCP xVec, int transparency) {return _DrawSprite(sprite, location, xVec, transparency);}
 
     //! Draw a Tiled Raster.
     //! @param[in]      tiledRaster     The Tiled Raster to draw.
-    DGNPLATFORM_EXPORT void DrawTiledRaster(ITiledRaster* tiledRaster);
+    void DrawTiledRaster(ITiledRaster* tiledRaster) {_DrawTiledRaster(tiledRaster);}
 
-    DGNPLATFORM_EXPORT void DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range);
-    DGNPLATFORM_EXPORT void DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range);
+    void DrawRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) {_DrawRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth, range);}
+    void DrawRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_DrawRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
 
     //! Draw a 3D point cloud.
     //! @param[in]      drawParams      Object containing draw parameters.
-    DGNPLATFORM_EXPORT void DrawPointCloud(IPointCloudDrawParams* drawParams);
+    void DrawPointCloud(IPointCloudDrawParams* drawParams) {_DrawPointCloud(drawParams);}
 
-    //! Draw a QvElem
-    DGNPLATFORM_EXPORT void DrawQvElem(QvElem* qvElem, int subElemIndex = 0);
+    //! Draw a Graphic
+    void DrawGraphic(Graphic* graphic, int subElemIndex = 0) {_DrawGraphic(graphic, subElemIndex);}
 
     //! Draw OLE object.
-    DGNPLATFORM_EXPORT void DrawDgnOle(IDgnOleDraw*);
+    void DrawDgnOle(IDgnOleDraw* ole) {_DrawDgnOle(ole);}
 
     DGNPLATFORM_EXPORT void DrawTile(uintptr_t tileId, DPoint3d const* verts);
 
-    //! Push the supplied QvElem as a clip stencil boundary.
-    DGNPLATFORM_EXPORT void PushClipStencil(QvElem* qvElem);
+    //! Push the supplied Graphic as a clip stencil boundary.
+    void PushClipStencil(Graphic* graphic) {_PushClipStencil(graphic);}
 
     //! Pop the most recently pushed clip stencil boundary.
-    DGNPLATFORM_EXPORT void PopClipStencil();
+    void PopClipStencil() {_PopClipStencil();}
 
-    DGNPLATFORM_EXPORT StatusInt TestOcclusion(int numVolumes, DPoint3dP verts, int* results);
+    StatusInt TestOcclusion(int numVolumes, DPoint3dP verts, int* results) {return _TestOcclusion(numVolumes, verts, results);}
 
-    DGNPLATFORM_EXPORT void ClearZ ();
-    DGNPLATFORM_EXPORT uintptr_t DefineQVTexture(WCharCP textureName, DgnDbP dgnFile);
-    DGNPLATFORM_EXPORT void DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false);
-    DGNPLATFORM_EXPORT bool IsOutputQuickVision() const;
+    void ClearZ() {_ClearZ();}
+    uintptr_t DefineQVTexture(WCharCP textureName, DgnDbP dgnFile) {return _DefineQVTexture(textureName, dgnFile);}
+    void DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false){_DefineQVGeometryMap(textureId, stroker, spacing, useCellColors, seedContext, forAreaPattern);}
+    bool IsOutputQuickVision() const {return _IsOutputQuickVision();}
     bool ApplyMonochromeOverrides(ViewFlagsCR) const;
-}; // IViewDraw
+};
 
 //=======================================================================================
 //! Begin/End announcements around cached drawing sequences.
-// @bsiclass 
+// @bsiclass
 //=======================================================================================
-struct ICachedDraw : IRefCounted, IDrawGeom
+struct CachedDraw : IRefCounted, GeomDraw
 {
-private:
-    virtual QvElem* _GetCacheElement() = 0;
-    virtual void    _SetCacheElement(QvElem*) = 0;
+    GraphicPtr m_graphic;
 
 protected:
-    virtual void    _BeginCacheElement(QvCache*) = 0;
-    virtual QvElem* _EndCacheElement() = 0;
-    virtual void    _AssignElementToView(QvView*, QvElem*, int viewMode) = 0;
+    virtual void _BeginGraphic(GraphicCache*) = 0;
+    virtual GraphicPtr _EndGraphic() = 0;
+    virtual void _AddGraphicToScene(Scene*, Graphic*, int viewMode) = 0;
 
 public:
-    DGNPLATFORM_EXPORT void    BeginCacheElement(QvCache*);
-    DGNPLATFORM_EXPORT QvElem* EndCacheElement();
-    DGNPLATFORM_EXPORT void    AssignElementToView(QvView*, QvElem*, int viewMode = 0);
+    void BeginGraphic(GraphicCache* cache) {_BeginGraphic(cache);}
+    GraphicPtr EndGraphic() {return _EndGraphic();}
+    void AddGraphicToScene(Scene* scene, Graphic* graphic, int viewMode = 0) {_AddGraphicToScene(scene, graphic, viewMode);}
 
     //! Push a transform.
     //! @param[in]  trans Transform to push.
     //! @see #PopTransform
-    DGNPLATFORM_EXPORT void PushTransform(TransformCR trans);
+    void PushTransform(TransformCR trans){_PushTransClip(&trans);}
 
     //! Pop the most recently pushed transform.
     //! @see #PushTransform
-    DGNPLATFORM_EXPORT void PopTransform();
+    void PopTransform(){_PopTransClip();}
 
-    //__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT QvElem* GetCacheElement();
-    DGNPLATFORM_EXPORT void    SetCacheElement(QvElem*);
-    //__PUBLISH_SECTION_START__
+    GraphicPtr GetGraphic() {return m_graphic;}
+    void SetGraphic(Graphic* graphic) {m_graphic=graphic;}
 };
 
-END_BENTLEY_DGN_NAMESPACE
+END_BENTLEY_RENDER_NAMESPACE

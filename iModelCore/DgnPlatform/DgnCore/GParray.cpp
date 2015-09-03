@@ -161,6 +161,7 @@ DRange3dP      GPArray::GetRange (DRange3dR range) const
     return &range;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -201,6 +202,7 @@ void            GPArray::Draw (IDrawGeomR drawGeom, bool closed, bool filled) co
     BeAssert (closed == curves->IsAnyRegionType () && L"Malformed GPA - Open/Closed is determined by presence of major breaks.");
     drawGeom.DrawCurveVector (*curves, filled);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2007

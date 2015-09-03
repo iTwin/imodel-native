@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* NullContext::_DrawCached (IStrokeForCache& stroker) 
+GraphicPtr NullContext::_DrawCached (IStrokeForCache& stroker) 
     {
     stroker._StrokeForCache (*this);
 

@@ -10,6 +10,7 @@
 
 #include "../DgnPlatform.h"
 #include "SolidKernel.h"
+#include "GeomPart.h"
 #include "ViewContext.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -172,7 +173,7 @@ struct ElementGeomIO
         void Append(ElementGeometryCR);
         void Append(DgnSubCategoryId, TransformCR geomToElem);
         void Append(DgnGeomPartId);
-        void Append(ElemDisplayParamsCR); // Adds multiple op-codes...
+        void Append(Render::ElemDisplayParamsCR); // Adds multiple op-codes...
         void Append(TextStringCR);
     };
 
@@ -200,7 +201,7 @@ struct ElementGeomIO
         bool Get(Operation const&, ElementGeometryPtr&) const;
         bool Get(Operation const&, DgnSubCategoryId&, TransformR) const;
         bool Get(Operation const&, DgnGeomPartId&) const;
-        bool Get(Operation const&, ElemDisplayParamsR) const; // Updated by multiple op-codes, true if changed
+        bool Get(Operation const&, Render::ElemDisplayParamsR) const; // Updated by multiple op-codes, true if changed
         bool Get(Operation const&, TextStringR) const;
     }; // Reader
 
@@ -332,7 +333,7 @@ const_iterator end   () const {return const_iterator ();}
 
 void SetBRepOutput(BRepOutput bRep) {m_bRepOutput = bRep;}
 
-DGNPLATFORM_EXPORT ElemDisplayParamsCR GetElemDisplayParams();
+DGNPLATFORM_EXPORT Render::ElemDisplayParamsCR GetElemDisplayParams();
 DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId(); //!< Returns primitive id for current geometry
 DGNPLATFORM_EXPORT TransformCR GetElementToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToWorld();
@@ -385,7 +386,7 @@ Placement2d             m_placement2d;
 DgnDbR                  m_dgnDb;
 DgnSubCategoryId        m_prevSubCategory;
 Transform               m_prevGeomToElem;
-ElemDisplayParams       m_elParams;
+Render::ElemDisplayParams       m_elParams;
 ElementGeomIO::Writer   m_writer;
 
 ElementGeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);
@@ -406,7 +407,7 @@ DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (DgnGeomPartR);
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometricElementR);
 
 DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
-DGNPLATFORM_EXPORT bool Append (ElemDisplayParamsCR);
+DGNPLATFORM_EXPORT bool Append (Render::ElemDisplayParamsCR);
 DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCR geomToElement); //! Placement must already be specified, not valid for CreateWorld.
 DGNPLATFORM_EXPORT bool Append (ElementGeometryCR);
 DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR);

@@ -470,8 +470,10 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (vp.IsActive())
         T_HOST.GetGraphicsAdmin()._DrawInVp(this, vp, drawMode, drawPurpose, stopFlag);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -479,7 +481,7 @@ void HitDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose dra
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitDetail::_GetInfoString(Utf8StringR pathDescr, Utf8CP delimiter) const
     {
-    T_HOST.GetGraphicsAdmin()._GetInfoString(this, pathDescr, delimiter);
+    T_HOST.GetNotificationAdmin()._GetInfoString(this, pathDescr, delimiter);
     }
 
 /*---------------------------------------------------------------------------------**//**

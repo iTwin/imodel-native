@@ -32,9 +32,9 @@ public:
 DGNPLATFORM_EXPORT static int           CreateSymbolDscr (DgnElementPtrVec&,Byte *symBufP, int bufSize, int threeD, uint32_t rscType, DgnModelP model);
 DGNPLATFORM_EXPORT static bool          ElementHasLineStyle (GeometricElementCR);
 DGNPLATFORM_EXPORT static int32_t       AddStyle (Utf8CP name, DgnDbR dgnFile, long seedID);
-                   static void          AdjustParamUorScale (LineStyleParamsP paramsP, int32_t styleNo, DgnModelP modelRef, DgnCategoryId level);
-                   static void          MergeParams (LineStyleParamsP outParams, LineStyleParamsP masterParams, LineStyleParamsP paramsToAdd);
-DGNPLATFORM_EXPORT static void          InitializeParams (LineStyleParams*params);
+                   static void          AdjustParamUorScale (Render::LineStyleParamsP paramsP, int32_t styleNo, DgnModelP modelRef, DgnCategoryId level);
+                   static void          MergeParams (Render::LineStyleParamsP outParams, Render::LineStyleParamsP masterParams, Render::LineStyleParamsP paramsToAdd);
+DGNPLATFORM_EXPORT static void          InitializeParams (Render::LineStyleParams* params);
                    static StatusInt     GetLinNameList (NameDefinitionList_T&nameDefList, WCharCP linFileName);
 DGNPLATFORM_EXPORT static int           LoadLinDefinition (WCharCP linFileName, bvector<WString>&definitionsToLoad, DgnModelP modelRef, double linUnitsToMuFactor);
 DGNPLATFORM_EXPORT static int           LoadLinDefinition (WCharCP linFileName, WCharCP oneDefinitionToLoad, DgnModelP modelRef, double linUnitsToMuFactor);

@@ -222,7 +222,7 @@ virtual void _DrawTextString(TextStringCR text) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _DrawSymbol(IDisplaySymbolP symbolDef, TransformCP trans, ClipPlaneSetP clipPlanes, bool ignoreColor, bool ignoreWeight) override
+virtual void _DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clipPlanes, bool ignoreColor, bool ignoreWeight) override
     {
     // Pass along any symbol that is drawn from _ExpandPatterns/_ExpandLineStyles, etc.
     m_output.ClipAndProcessSymbol(symbolDef, trans, clipPlanes, ignoreColor, ignoreWeight);
@@ -1484,7 +1484,7 @@ void WireframeGeomUtil::CollectPolyfaces(ISolidKernelEntityCR entity, DgnDbR dgn
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::DrawOutline(CurveVectorCR curves, IDrawGeomR drawGeom)
+void WireframeGeomUtil::DrawOutline(CurveVectorCR curves, GeomDrawR drawGeom)
     {
     if (1 > curves.size())
         return;
@@ -1517,7 +1517,7 @@ void WireframeGeomUtil::DrawOutline(CurveVectorCR curves, IDrawGeomR drawGeom)
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::DrawOutline2d(CurveVectorCR curves, IDrawGeomR drawGeom, double zDepth)
+void WireframeGeomUtil::DrawOutline2d(CurveVectorCR curves, GeomDrawR drawGeom, double zDepth)
     {
     if (1 > curves.size())
         return;

@@ -7,8 +7,8 @@
 +----------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
+USING_NAMESPACE_BENTLEY_RENDER
 
-//////////////////Methods that were originally in lsproc.c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -40,7 +40,7 @@ static double  getLinearLength (DPoint3dCP pts, int nPts, int& disconnectPt)
 * this context. If not, we just draw a solid line.
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            LsComponent::IsWidthDiscernible (ViewContextP context, LineStyleSymbCP lsSymb, DPoint3dCR pt) const
+bool LsComponent::IsWidthDiscernible (ViewContextP context, Render::LineStyleSymbCP lsSymb, DPoint3dCR pt) const
     {
     // Not attached...is discernable...
     if (NULL == context->GetViewport() || context->CheckICachedDraw())

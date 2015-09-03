@@ -8,10 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform/DgnPlatform.h>
-#include <Bentley/RefCounted.h>
-#include "IViewDraw.h"
-#include "IPickGeom.h"
+#include "Render.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -24,26 +21,25 @@ typedef RefCountedPtr<IFaceMaterialAttachments> IFaceMaterialAttachmentsPtr; //!
 struct FaceAttachment
 {
 private:
-
-bool                m_useColor:1;       //!< true - color does not follow sub-category appearance.
-bool                m_useMaterial:1;    //!< true - material does not follow sub-category appearance.
-DgnCategoryId       m_categoryId;
-DgnSubCategoryId    m_subCategoryId;
-ColorDef            m_color;
-double              m_transparency;
-DgnMaterialId       m_material;
-DPoint2d            m_uv;
+    bool                m_useColor:1;       //!< true - color does not follow sub-category appearance.
+    bool                m_useMaterial:1;    //!< true - material does not follow sub-category appearance.
+    DgnCategoryId       m_categoryId;
+    DgnSubCategoryId    m_subCategoryId;
+    ColorDef            m_color;
+    double              m_transparency;
+    DgnMaterialId       m_material;
+    DPoint2d            m_uv;
 
 public:
 
 DGNPLATFORM_EXPORT FaceAttachment ();
-DGNPLATFORM_EXPORT FaceAttachment (ElemDisplayParamsCR);
+DGNPLATFORM_EXPORT FaceAttachment (Render::ElemDisplayParamsCR);
 
 //! Input ElemDisplayParams should be initialized from ViewContext::GetCurrentDisplayParams for anything other than sub-category, color, transparency, material.
-DGNPLATFORM_EXPORT void ToElemDisplayParams (ElemDisplayParamsR) const; 
+DGNPLATFORM_EXPORT void ToElemDisplayParams (Render::ElemDisplayParamsR) const; 
 
 //! @private For QvOutput use only, other callers should use ToElemDisplayParams.
-DGNPLATFORM_EXPORT void ToElemMatSymb (ElemMatSymbR, DgnViewportR) const;
+DGNPLATFORM_EXPORT void ToElemMatSymb (Render::ElemMatSymbR, DgnViewportR) const;
 
 DGNPLATFORM_EXPORT bool operator== (struct FaceAttachment const&) const;
 DGNPLATFORM_EXPORT bool operator< (struct FaceAttachment const&) const;
@@ -106,7 +102,7 @@ virtual void _SetEntityTransform (TransformCR) = 0;
 //! @private
 virtual IFaceMaterialAttachmentsCP _GetFaceMaterialAttachments() const = 0;
 //! @private
-virtual bool _InitFaceMaterialAttachments(ElemDisplayParamsCP) = 0;
+virtual bool _InitFaceMaterialAttachments(Render::ElemDisplayParamsCP) = 0;
 //! @private
 virtual ISolidKernelEntityPtr _Clone() const = 0;
 
@@ -149,7 +145,7 @@ void PostMultiplyEntityTransformInPlace (TransformCR solidTransform) {_SetEntity
 IFaceMaterialAttachmentsCP GetFaceMaterialAttachments() const {return _GetFaceMaterialAttachments();}
 
 //! Initialize per-face color/material using the supplied ElemDisplayParams or clear if nullptr.
-bool InitFaceMaterialAttachments(ElemDisplayParamsCP baseParams) {return _InitFaceMaterialAttachments(baseParams);}
+bool InitFaceMaterialAttachments(Render::ElemDisplayParamsCP baseParams) {return _InitFaceMaterialAttachments(baseParams);}
 
 //! Create deep copy of this ISolidKernelEntity.
 ISolidKernelEntityPtr Clone() const {return _Clone();}

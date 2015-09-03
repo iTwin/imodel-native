@@ -1680,7 +1680,7 @@ static void    createTristrip (DPoint3dP tristrip, int nPts, DPoint3dCP centerLi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     outputCapArc (IDrawGeom* output, DPoint3dCP pt1, DPoint3dCP pt2, DPoint3dCP pt3, bool doFill)
+static void outputCapArc (GeomDraw* output, DPoint3dCP pt1, DPoint3dCP pt2, DPoint3dCP pt3, bool doFill)
     {
     DVec3d      xDir, yDir, zDir;
 
@@ -1707,19 +1707,7 @@ static void     outputCapArc (IDrawGeom* output, DPoint3dCP pt1, DPoint3dCP pt2,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void    outputPolygon
-(
-IDrawGeom*     output,
-int            nPts,
-DPoint3dCP     pts,
-double const*  widths,
-int            widthMode,
-int            capMode,
-DPoint3dCP     normal,
-DPoint3dCP     startTangent,
-DPoint3dCP     endTangent,
-bool           polyLengthNotDiscernible
-)
+static void outputPolygon (GeomDraw* output, int nPts, DPoint3dCP pts, double const* widths, int widthMode, int capMode, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent, bool polyLengthNotDiscernible)
     {
     ScopedArray<LineJoint, 50>  scopedJoints(nPts);
     LineJoint*  joints = scopedJoints.GetData();
@@ -1834,7 +1822,7 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
     if (nPts <= 0)
         return;
 
-    IDrawGeomR    output = context->GetIDrawGeom();
+    GeomDrawR output = context->GetIDrawGeom();
 
     int     widthMode = pStroke->GetWidthMode() & 0x3;
 

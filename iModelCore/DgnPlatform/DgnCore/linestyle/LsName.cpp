@@ -144,7 +144,7 @@ Utf8String         LsDefinition::GetStyleName () const
 //! Used to generate a texture based on a line style.
 // @bsiclass                                                    John.Gooding    08/2015
 //=======================================================================================
-struct          ComponentToTextureStroker : Dgn::IStrokeForCache
+struct ComponentToTextureStroker : IStrokeForCache
 {
 private:
     ViewContextR        m_viewContext;
@@ -198,7 +198,7 @@ intptr_t  LsDefinition::GenerateRasterTexture(ViewContextR viewContext, LineStyl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale) 
+uintptr_t LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale) 
     {
     if (!m_lsComp.IsValid())
         {
@@ -230,11 +230,15 @@ uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyl
                     for (size_t outIndex=0; outIndex < imageBytes; inIndex +=4, outIndex++)
                         alpha[outIndex] = invert ? (255 - image[inIndex]) : image[inIndex];
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                     DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_rasterTexture = reinterpret_cast <uintptr_t> (this), imageSize, true, 5, &alpha.front());
+#endif
                     }
                 else
                     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                     DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_rasterTexture = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
+#endif
                     }
                 }
             }

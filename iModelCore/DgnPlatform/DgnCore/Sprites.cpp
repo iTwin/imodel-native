@@ -213,8 +213,10 @@ void NamedSprite::LoadSprite()
 
     BeFileName pngPath;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
      if (T_HOST.GetGraphicsAdmin()._GetSpriteContainer(pngPath, m_namespace.c_str(), m_spriteName.c_str()) != BSISUCCESS)
         return;
+#endif
 
     if (BeFileName::IsDirectory(pngPath.c_str()))
         {
@@ -262,11 +264,13 @@ void NamedSprite::LoadSprite()
 //---------------------------------------------------------------------------------------
 RgbaSprite::~RgbaSprite ()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  Destructor for statics called in the main thread. If the main thread is shutting down
     //  there is no need to do anything.
     if (DgnPlatformLib::QueryHost() != nullptr)
         // inform QVision that memory address being used as cached texture id no longer valid...
         T_HOST.GetGraphicsAdmin()._DeleteTexture ((uintptr_t) this);
+#endif
     }
 
 //---------------------------------------------------------------------------------------
