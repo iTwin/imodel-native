@@ -2,6 +2,13 @@
 #define POINTOOLS_API_BUILD_DLL
 #include <gl/glew.h>
 
+#ifdef _DEBUG
+#define FILE_TRACE	1
+#endif
+
+#include <pt/trace.h>
+
+
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 #include <ptapi/PointoolsAPI_handle.h>
@@ -61,6 +68,8 @@ UserChannel *_ptGetUserChannel( PThandle h ) { return findChannel(h); }
 //-----------------------------------------------------------------------------
 PThandle	PTAPI ptCreatePointChannel( PTstr name, PTenum typesize, PTuint multiple, void* default_value, PTuint flags )
 {
+	PTTRACE_FUNC_P3( name, typesize, multiple )
+
 	UserChannel *channel = UserChannelManager::instance()->createChannel( pt::String(name), typesize * 8, multiple, default_value, (UserChannelFlags)flags);
 
 	if (!channel)
@@ -78,6 +87,8 @@ PThandle	PTAPI ptCreatePointChannel( PTstr name, PTenum typesize, PTuint multipl
 //-----------------------------------------------------------------------------
 PThandle PTAPI ptCopyPointChannel(PThandle channel, PTstr destName, PTuint destFlags)
 {
+	PTTRACE_FUNC_P3( channel, destName, destFlags )
+
 	ChannelMap::iterator i = g_channels.find(channel);
 	if (i != g_channels.end())
 	{
@@ -104,6 +115,8 @@ PThandle PTAPI ptCopyPointChannel(PThandle channel, PTstr destName, PTuint destF
 //-----------------------------------------------------------------------------
 PThandle PTAPI ptGetChannelByName( PTstr name )
 {
+	PTTRACE_FUNC_P1( name )
+
 	UserChannel *uc = UserChannelManager::instance()->channelByName( pt::String( name ) );
 
 	if (uc)
@@ -123,6 +136,8 @@ PThandle PTAPI ptGetChannelByName( PTstr name )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptGetChannelInfo(PThandle handle, PTstr name, PTenum& typesize, PTuint& multiple, void *defaultValue, PTuint& flags)
 {
+	PTTRACE_FUNC
+
 	ChannelMap::iterator i = g_channels.find( handle );
 	if (i != g_channels.end())
 	{
@@ -150,6 +165,8 @@ PTres	PTAPI ptGetChannelInfo(PThandle handle, PTstr name, PTenum& typesize, PTui
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptDeletePointChannel( PThandle channel )
 {
+	PTTRACE_FUNC_P1( channel )
+
 	ChannelMap::iterator i = g_channels.find( channel );
 	if (i != g_channels.end())
 	{
@@ -164,6 +181,8 @@ PTres	PTAPI ptDeletePointChannel( PThandle channel )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptDrawPointChannelAs( PThandle channel, PTenum option, PTfloat param1, PTfloat param2 )
 {
+	PTTRACE_FUNC_P4( channel, option, param1, param2 )
+
 	ChannelMap::iterator i = g_channels.find( channel );
 	if (i == g_channels.end()) return PTV_INVALID_HANDLE;
 
@@ -193,6 +212,8 @@ PTres	PTAPI ptDrawPointChannelAs( PThandle channel, PTenum option, PTfloat param
 //-----------------------------------------------------------------------------
 PTres		PTAPI ptReadChannelsFile( const PTstr filename, PTint &numChannels, PThandle **channelHandles )
 {
+	PTTRACE_FUNC_P1( filename )
+
 	static PThandle s_channelHandles[256];
 
 	std::vector<UserChannel*> channels;
@@ -218,6 +239,8 @@ PTres		PTAPI ptReadChannelsFile( const PTstr filename, PTint &numChannels, PThan
 //-----------------------------------------------------------------------------
 PTres PTAPI ptReadChannelsFileFromBuffer(void *buffer, PTuint64 bufferSize, PTint &numChannels, PThandle **channelHandles)
 {
+	PTTRACE_FUNC 
+
 	static PThandle s_channelHandles[256];
 
 	if(buffer == NULL || bufferSize == 0)
@@ -241,6 +264,7 @@ PTres PTAPI ptReadChannelsFileFromBuffer(void *buffer, PTuint64 bufferSize, PTin
 		g_channels.insert( ChannelMap::value_type( s_channelHandles[i], channels[i] ) );		
 	}
 	*channelHandles = s_channelHandles;
+
 	return res;
 }
 
@@ -249,6 +273,8 @@ PTres PTAPI ptReadChannelsFileFromBuffer(void *buffer, PTuint64 bufferSize, PTin
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptWriteChannelsFile( const PTstr filename, PTint numChannels, const PThandle *channels )
 {
+	PTTRACE_FUNC_P2( filename, numChannels )
+
 	std::vector <UserChannel *> uchannels;
 
 	for (int i=0; i<numChannels; i++)
@@ -269,6 +295,8 @@ PTres	PTAPI ptWriteChannelsFile( const PTstr filename, PTint numChannels, const 
 //-----------------------------------------------------------------------------
 PTuint64 PTAPI ptWriteChannelsFileToBuffer(PTint numChannels, const PThandle *channels, PTubyte *&buffer, PTuint64 &bufferSize)
 {
+	PTTRACE_FUNC_P1( numChannels )
+
 	PTuint64 bufferHandle;
 
 	std::vector <UserChannel *> uchannels;
@@ -320,9 +348,10 @@ PTuint64 PTAPI ptWriteChannelsFileToBuffer(PTint numChannels, const PThandle *ch
 //-----------------------------------------------------------------------------
 // Write a file for persisting Channel use
 //-----------------------------------------------------------------------------
-
 PTvoid PTAPI ptReleaseChannelsFileBuffer(PTuint64 bufferHandle)
 {
+	PTTRACE_FUNC
+
 	ptds::DataSourcePtr dataSource = reinterpret_cast<ptds::DataSourcePtr>(bufferHandle);
 
 	if(dataSource)
@@ -336,6 +365,8 @@ PTvoid PTAPI ptReleaseChannelsFileBuffer(PTuint64 bufferHandle)
 //-----------------------------------------------------------------------------
 PTres PTAPI ptSetChannelOOCFolder( const PTstr foldername )
 {
+	PTTRACE_FUNC
+
 	wchar_t filename[MAX_PATH];
 
 	bool res = false;
@@ -364,6 +395,8 @@ PTres PTAPI ptSetChannelOOCFolder( const PTstr foldername )
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptDeleteAllChannels()
 {
+	PTTRACE_FUNC
+
 	UserChannelManager::instance()->eraseAllChannels();
 
 	g_channels.clear();
@@ -374,6 +407,8 @@ PTvoid	PTAPI ptDeleteAllChannels()
 //-----------------------------------------------------------------------------
 PThandle	PTAPI ptCreatePointChannelFromLayers( PTstr name, PThandle sceneHandle )
 {
+	PTTRACE_FUNC_P2( name, sceneHandle )
+
 	pauseEngine();
 
 	pcloud::Scene * scene = sceneFromHandle(sceneHandle);
@@ -401,6 +436,8 @@ PThandle	PTAPI ptCreatePointChannelFromLayers( PTstr name, PThandle sceneHandle 
 //-----------------------------------------------------------------------------
 bool	PTAPI ptLayersFromPointChannel( PThandle userChannel, PThandle sceneHandle )
 {
+	PTTRACE_FUNC_P2( userChannel, sceneHandle )
+
 	bool result = false;
 
 	pauseEngine();
@@ -425,6 +462,11 @@ bool	PTAPI ptLayersFromPointChannel( PThandle userChannel, PThandle sceneHandle 
 
 		result = true;
 	}
+	// save the user channel to a file for testing
+	/* <-- TEST BEGIN
+	UserChannel *channels[] = { channel };
+	UserChannelManager::instance()->saveChannelsToFile(pt::String("C:\\temp\\ptvortex_diag.layers"),1, channels, 0);
+	TEST END --> */
 
 	unpauseEngine();
 

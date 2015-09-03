@@ -460,6 +460,14 @@
 			<File
 				RelativePath="..\res\general.rc"
 				>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\res\resource.h"

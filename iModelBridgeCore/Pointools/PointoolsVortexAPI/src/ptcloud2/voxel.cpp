@@ -1005,7 +1005,7 @@ void Voxel::computeExtents()
 	_worldExtents.clear();
 
 	/* not enough points for point extents - use node extents*/ 
-	if (lodPointCount() < 1e3 && getCurrentLOD() < 0.1)
+	if (getCurrentLOD() < 0.1)
 	{
 		CoordinateSpaceTransform cst( const_cast<PointCloud*>(pointCloud()), pt::WorldSpace );
 		cst.prepare();
@@ -1021,6 +1021,7 @@ void Voxel::computeExtents()
 
 			_worldExtents.expand(vt);
 		}
+		// but don't set flag to dirty 
 	}
 	else
 	{

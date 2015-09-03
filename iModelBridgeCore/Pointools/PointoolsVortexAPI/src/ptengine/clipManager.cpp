@@ -338,7 +338,7 @@ bool ClipManager::readState(const pt::datatree::Branch* b)
 {	
 	if (pt::datatree::Branch* clipManagerBranch = b->getBranch(CLIPMANAGER))
 	{				
-		PTuint clipStyle;
+		PTuint clipStyle;      
 		if (clipManagerBranch->getNode(CLIP_STYLE, clipStyle))		
 			setClipStyle(clipStyle);
 		
@@ -398,7 +398,7 @@ bool ClipManager::writeState( pt::datatree::Branch* b)
 		if (pt::datatree::Branch* clipManagerBranch = b->addBranch(CLIPMANAGER))
 		{
 			clipManagerBranch->addNode(CLIP_STYLE, m_clipStyle);
-			clipManagerBranch->addNode(NUM_CLIP_PLANES, m_clipPlanes.size());
+			clipManagerBranch->addNode(NUM_CLIP_PLANES, (PTuint)m_clipPlanes.size());
 			ClipPlanes::iterator it;
 			int id = 0;
 			for (it = m_clipPlanes.begin(); it != m_clipPlanes.end(); it++)

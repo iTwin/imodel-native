@@ -2,6 +2,11 @@
 #define POINTOOLS_API_BUILD_DLL
 #include <gl/glew.h>
 
+#ifdef _DEBUG
+#define FILE_TRACE	1
+#endif
+#include <pt/trace.h>
+
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 #include <ptapi/PointoolsAPI_handle.h>
@@ -50,6 +55,8 @@ extern double g_unitScale;
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSetSelectPointsMode( PTenum select_mode )
 {
+	PTTRACE_FUNC_P1( select_mode )
+
 	switch(select_mode)
 	{
 	case PT_EDIT_MODE_SELECT:
@@ -67,11 +74,14 @@ PTres	PTAPI ptSetSelectPointsMode( PTenum select_mode )
 	default:
 		return setLastErrorCode( PTV_INVALID_OPTION );
 	}
+
 	return setLastErrorCode( PTV_SUCCESS );
 }
 //-----------------------------------------------------------------------------
 PTenum	PTAPI ptGetSelectPointsMode( void )
 {
+	PTTRACE_FUNC
+
 	switch(PointEditManager::instance()->editMode())
 	{
 	case SelectPoint:	return PT_EDIT_MODE_SELECT;
@@ -83,18 +93,27 @@ PTenum	PTAPI ptGetSelectPointsMode( void )
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSetEditWorkingMode( PTenum mode )
 {
+	PTTRACE_FUNC_P1( mode )
+
 	switch ( mode )
 	{
 	case PT_EDIT_WORK_ON_ALL:	
 		PointEditManager::instance()->workingMode( EditWorkOnAll );
+		PTTRACEOUT << "PT_EDIT_WORK_ON_ALL";
 		break;
+
 	case PT_EDIT_WORK_ON_VIEW:
 		PointEditManager::instance()->workingMode( EditWorkOnView );
+		PTTRACEOUT << "PT_EDIT_WORK_ON_VIEW";
 		break;
+
 	case PT_EDIT_WORK_ON_PROPORTION:
 		PointEditManager::instance()->workingMode( EditWorkOnProportion );
+		PTTRACEOUT << "PT_EDIT_WORK_ON_PROPORTION";
 		break;
 	}
+
+
 	return;
 }
 //-----------------------------------------------------------------------------
@@ -111,6 +130,8 @@ PTenum	PTAPI ptGetEditWorkingMode( void )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptSetSelectionDrawColor( const PTubyte *col3 )
 {
+	PTTRACE_FUNC_P3( col3[0], col3[1], col3[2] )
+
 	RenderSettings::selectionColour( col3 );
 }
 //-----------------------------------------------------------------------------
@@ -124,6 +145,8 @@ PTvoid	PTAPI ptGetSelectionDrawColor( PTubyte *col3 )
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSelectPointsByRect( PTint x_edge, PTint y_edge, PTint width, PTint height )
 {
+	PTTRACE_FUNC_P4( x_edge, y_edge, width, height )
+	
 	_ptMakeVPContextCurrent();
 
 	if (g_currentViewParams)
@@ -134,10 +157,14 @@ PTvoid	PTAPI ptSelectPointsByRect( PTint x_edge, PTint y_edge, PTint width, PTin
 	PointEditManager::instance()->setUnits( g_unitScale );
 	PointEditManager::instance()->rectangleSelect( x_edge, x_edge+width, y_edge, y_edge - height ); 
 	_ptRestoreContext();
+
+	//PointEditManager::instance()->regenOOCComplete();
 }
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectPointsByFence( PTint num_vertices, const PTint *vertices )
 {
+	PTTRACE_FUNC_P2( num_vertices, vertices )
+
 	PointEditManager::instance()->setUnits( g_unitScale );
 
 	if (!vertices || num_vertices < 3)
@@ -166,6 +193,8 @@ PTres	PTAPI ptSelectPointsByFence( PTint num_vertices, const PTint *vertices )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectPointsByBox( const PTdouble *lower, const PTdouble *upper )
 {
+	PTTRACE_FUNC_P6( lower[0], lower[1], lower[2], upper[0], upper[1], upper[2] )
+
 	if (!lower || !upper)
 		return setLastErrorCode( PTV_VOID_POINTER );
 
@@ -179,6 +208,8 @@ PTres	PTAPI ptSelectPointsByBox( const PTdouble *lower, const PTdouble *upper )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectPointsByOrientedBox( const PTdouble *lower, const PTdouble *upper, const PTdouble *pos, PTdouble *uAxis, PTdouble *vAxis)
 {
+	PTTRACE_FUNC
+
 	if (!lower || !upper || !pos || !uAxis || !vAxis)
 		return setLastErrorCode( PTV_VOID_POINTER );
 
@@ -192,6 +223,8 @@ PTres	PTAPI ptSelectPointsByOrientedBox( const PTdouble *lower, const PTdouble *
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectPointsByCube( const PTdouble *centre, PTdouble radius )
 {
+	PTTRACE_FUNC
+
 	if (!centre)
 		return setLastErrorCode( PTV_VOID_POINTER );
 	
@@ -209,6 +242,8 @@ PTres	PTAPI ptSelectPointsByCube( const PTdouble *centre, PTdouble radius )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectPointsByPlane( const PTdouble *origin, const PTdouble *normal, PTdouble thickness )
 {
+	PTTRACE_FUNC
+
 	if (!origin || !normal)
 	{
 		return setLastErrorCode( PTV_VOID_POINTER );
@@ -224,6 +259,8 @@ PTres	PTAPI ptSelectPointsByPlane( const PTdouble *origin, const PTdouble *norma
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectPointsBySphere( const PTdouble *centre, PTdouble radius )
 {
+	PTTRACE_FUNC_P4( centre[0], centre[1], centre[2], radius )
+
 	if (!centre)
 		return setLastErrorCode( PTV_VOID_POINTER );
 	
@@ -242,6 +279,8 @@ PTres	PTAPI ptSelectPointsBySphere( const PTdouble *centre, PTdouble radius )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptSetSelectionScope( PThandle sceneOrCloudHandle )
 {
+	PTTRACE_FUNC_P1( sceneOrCloudHandle )
+
 	if (!sceneOrCloudHandle)
 	{
 		PointEditManager::instance()->clearEditingScope();
@@ -265,72 +304,107 @@ PTvoid PTAPI ptSetSelectionScope( PThandle sceneOrCloudHandle )
 //-----------------------------------------------------------------------------
 PTuint64 PTAPI _ptCountVisiblePoints( void )
 {
+	PTTRACE_FUNC
+
 	PTuint64 count = PointEditManager::instance()->countVisiblePoints();
 	return count;
 }
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptInvertVisibility()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->invertVisibility();
 }
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptIsolateSelected()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->isolateSelPoints();
 }
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptInvertSelection()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->invertSelection();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptHideSelected()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->hideSelPoints();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptUnhideAll()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->clearAll();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptUnselectAll()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->deselectAll();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptResetSelection()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->resetSelection();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSelectAll()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->selectAll();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptRefreshEdit()
 {
-	PointEditManager::instance()->regenEditQuick();
+	PTTRACE_FUNC
+
+	if (PointEditManager::instance()->workingMode() == EditWorkOnAll)
+	{
+		PointEditManager::instance()->regenOOCComplete();	
+	}
+	else
+	{
+		PointEditManager::instance()->regenEditQuick();
+	}
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptClearEdit()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->clearEdit();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptStoreEdit( const PTstr name )
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->storeEdit( pt::String(name) );
 }
 //-----------------------------------------------------------------------------
 PTbool	PTAPI ptRestoreEdit( const PTstr name )
 {
+	PTTRACE_FUNC
+
 	return PointEditManager::instance()->restoreEdit( pt::String(name) );
 }
 //-----------------------------------------------------------------------------
 PTbool	PTAPI ptRestoreEditByIndex( PTint index )
 {
+	PTTRACE_FUNC
+
 	return ptRestoreEdit(PointEditManager::instance()->editName( index ));
 }
 //-----------------------------------------------------------------------------
@@ -346,11 +420,15 @@ const	PTstr PTAPI ptEditName( PTint index )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptDeleteAllEdits()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->removeAllEdits(); 
 }
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptDeleteEdit( const PTstr name )
 {
+	PTTRACE_FUNC
+
 	int num_edits = PointEditManager::instance()->numEdits();
 	PointEditManager::instance()->removeEdit( pt::String(name) );
 	return num_edits == PointEditManager::instance()->numEdits() ? false : true;
@@ -358,6 +436,8 @@ PTbool PTAPI ptDeleteEdit( const PTstr name )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptDeleteEditByIndex( PTint index )
 {
+	PTTRACE_FUNC_P1( index )
+
 	return ptDeleteEdit(PointEditManager::instance()->editName( index ));
 }
 //-----------------------------------------------------------------------------
@@ -370,12 +450,16 @@ PTvoid *PTAPI _ptGetEditDatatree( PTint index )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI _ptCreateEditFromDatatree( PTvoid* dt )
 {
+	PTTRACE_FUNC
+
 	Branch *dtree = (Branch*)dt;
 	PointEditManager::instance()->_createEditFromDatatree( dtree );
 }
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptLayerBounds( PTuint layer, PTfloat *lower3, PTfloat *upper3, bool approx_fast )
 {
+	PTTRACE_FUNC
+
 	pt::BoundingBoxD box;
 	if (PointEditManager::instance()->getLayerBoundingBox( layer, box, approx_fast ))
 	{
@@ -387,6 +471,8 @@ PTres	PTAPI ptLayerBounds( PTuint layer, PTfloat *lower3, PTfloat *upper3, bool 
 		upper3[1] = box.uy();
 		upper3[2] = box.uz();
 
+		PTTRACEOUT << " = " << lower3[0] << ", " << lower3[1] << ", " << lower3[2] << " to " << upper3[0] << ", " << upper3[1] << ", " << upper3[2] ;
+
 		return 	setLastErrorCode( PTV_SUCCESS );
 	}
 	return 	setLastErrorCode( PTV_INVALID_HANDLE );
@@ -397,17 +483,19 @@ PTres	PTAPI ptLayerBoundsd( PTuint layer, PTdouble *lower3, PTdouble *upper3, bo
 	pt::BoundingBoxD box;
 	if (PointEditManager::instance()->getLayerBoundingBox( layer, box, approx_fast ))
 	{
-		vector3d basepoint(Project3D::project().registration().matrix()(3,0), 
-			Project3D::project().registration().matrix()(3,1), 
-			Project3D::project().registration().matrix()(3,2));
+		//vector3d basepoint(Project3D::project().registration().matrix()(3,0), 
+		//	Project3D::project().registration().matrix()(3,1), 
+		//	Project3D::project().registration().matrix()(3,2));
 
-		lower3[0] = box.lx() - basepoint.x;
-		lower3[1] = box.ly() - basepoint.y;
-		lower3[2] = box.lz() - basepoint.z;
+		lower3[0] = box.lx();// - basepoint.x;
+		lower3[1] = box.ly();// - basepoint.y;
+		lower3[2] = box.lz();// - basepoint.z;
 
-		upper3[0] = box.ux() - basepoint.x;
-		upper3[1] = box.uy() - basepoint.y;
-		upper3[2] = box.uz() - basepoint.z;
+		upper3[0] = box.ux();// - basepoint.x;
+		upper3[1] = box.uy();// - basepoint.y;
+		upper3[2] = box.uz();// - basepoint.z;
+
+		PTTRACEOUT << " = " << lower3[0] << ", " << lower3[1] << ", " << lower3[2] << " to " << upper3[0] << ", " << upper3[1] << ", " << upper3[2] ;
 
 		return 	setLastErrorCode( PTV_SUCCESS );
 	}
@@ -418,6 +506,8 @@ PTres	PTAPI ptLayerBoundsd( PTuint layer, PTdouble *lower3, PTdouble *upper3, bo
 //-----------------------------------------------------------------------------
 PTint PTAPI ptGetEditData( PTint index, PTubyte *data )
 {
+	PTTRACE_FUNC
+
 	Branch * dtree = PointEditManager::instance()->_getEditDatatree( index );
 	
 	if (dtree)
@@ -440,6 +530,8 @@ PTint PTAPI ptGetEditData( PTint index, PTubyte *data )
 //-----------------------------------------------------------------------------
 PTint PTAPI ptGetEditDataSize( PTint index )
 {
+	PTTRACE_FUNC
+
 	Branch * dtree = PointEditManager::instance()->_getEditDatatree( index );
 
 	if (dtree)
@@ -457,6 +549,8 @@ PTint PTAPI ptGetEditDataSize( PTint index )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptCreateEditFromData( const PTubyte *data )
 {
+	PTTRACE_FUNC
+
 	ptds::DataSourcePtr memBlock = ptds::DataSourceMemBlock::createNew(data);
 
 	Branch *edit = new Branch( "root" );
@@ -471,6 +565,8 @@ PTvoid PTAPI ptCreateEditFromData( const PTubyte *data )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptSetCurrentLayer( PTuint layer )
 {
+	PTTRACE_FUNC_P1( layer )
+
 	return PointEditManager::instance()->setCurrentLayer( layer );
 }
 //-----------------------------------------------------------------------------
@@ -481,6 +577,8 @@ PTuint PTAPI ptGetCurrentLayer()
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptLockLayer( PTuint layer, PTbool lock )
 {
+	PTTRACE_FUNC_P2( layer, (lock ? "true" : "false") )
+
 	return PointEditManager::instance()->lockLayer( layer, lock );
 }
 //-----------------------------------------------------------------------------
@@ -491,6 +589,8 @@ PTbool PTAPI ptIsLayerLocked( PTuint layer )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptShowLayer( PTuint layer, PTbool show )
 {
+	PTTRACE_FUNC_P2( layer, (show ? "true" : "false") )
+
 	return PointEditManager::instance()->showLayer( layer, show );
 }
 //-----------------------------------------------------------------------------
@@ -506,16 +606,22 @@ PTbool PTAPI ptDoesLayerHavePoints( PTuint layer )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptClearPointsFromLayer( PTuint layer )
 {
+	PTTRACE_FUNC_P1( layer )
+
 	setLastErrorCode( PTV_NOT_IMPLEMENTED_IN_VERSION );
 }
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptResetLayers()
 {
+	PTTRACE_FUNC
+
 	setLastErrorCode( PTV_NOT_IMPLEMENTED_IN_VERSION );
 }
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptResetSceneEditing( PThandle scene )
 {
+	PTTRACE_FUNC_P1( scene )
+
 	ptSetSelectionScope( scene );
 	ptUnhideAll();
 	ptSetSelectionScope( 0 );
@@ -525,26 +631,36 @@ PTres	PTAPI ptResetSceneEditing( PThandle scene )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptCopySelToCurrentLayer( PTbool deselect )
 {
+	PTTRACE_FUNC_P1( deselect )
+
 	return PointEditManager::instance()->copySelToLayer( deselect );
 }
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptMoveSelToCurrentLayer( PTbool deselect )
 {
+	PTTRACE_FUNC_P1( deselect )
+
 	return PointEditManager::instance()->moveSelToLayer( deselect );
 }
 //-----------------------------------------------------------------------------
 PTvoid  PTAPI ptSelectPointsInLayer( PTuint layer )
 {
+	PTTRACE_FUNC_P1( layer )
+
 	PointEditManager::instance()->selectPointsInLayer( layer );
 }
 //-----------------------------------------------------------------------------
 PTvoid  PTAPI ptDeselectPointsInLayer( PTuint layer )
 { 
+	PTTRACE_FUNC_P1( layer )
+
 	PointEditManager::instance()->deselectPointsInLayer( layer );
 }
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectCloud( PThandle cloud )
 {
+	PTTRACE_FUNC_P1( cloud )
+
 	pcloud::PointCloud *c = cloudFromHandle( cloud );
 
 	// this will not select on hidden layers
@@ -562,6 +678,8 @@ PTres	PTAPI ptSelectCloud( PThandle cloud )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptDeselectCloud( PThandle cloud )
 {
+	PTTRACE_FUNC_P1( cloud )
+
 	pcloud::PointCloud *c = cloudFromHandle( cloud );
 
 	if (c)
@@ -577,6 +695,8 @@ PTres	PTAPI ptDeselectCloud( PThandle cloud )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectScene( PThandle scene )
 {
+	PTTRACE_FUNC_P1( scene )
+
 	pcloud::Scene *c = sceneFromHandle( scene );
 
 	if (c)
@@ -592,6 +712,8 @@ PTres	PTAPI ptSelectScene( PThandle scene )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptDeselectScene( PThandle scene )
 {
+	PTTRACE_FUNC_P1( scene )
+
 	pcloud::Scene *c = sceneFromHandle( scene );
 
 	if (c)
@@ -609,9 +731,14 @@ PTbool   PTAPI ptSetLayerColor( PTuint layer, PTfloat *rgb3, PTfloat blend )
 {
 	if (!rgb3)
 	{
+		PTTRACE_FUNC
+
 		setLastErrorCode(PTV_VOID_POINTER);
 		return false;
 	}
+
+	PTTRACE_FUNC_P5( layer, rgb3[0], rgb3[1], rgb3[2], blend )
+
 	ptgl::Color c(rgb3[0], rgb3[1], rgb3[2], blend);
 
 	if ( layer < thePointLayersState().numLayers() )
@@ -628,7 +755,8 @@ PTfloat *PTAPI ptGetLayerColor( PTuint layer )
 {
 	if ( layer < thePointLayersState().numLayers() )
 	{
-		static ptgl::Color c = thePointLayersState().getLayerColor( layer );
+		static ptgl::Color c;
+		c = thePointLayersState().getLayerColor( 1 << layer );
 		return (PTfloat*)&c.r;
 	}
 	return 0;
@@ -638,7 +766,7 @@ PTfloat  PTAPI ptGetLayerColorBlend( PTuint layer )
 {
 	if ( layer < thePointLayersState().numLayers() )
 	{
-		static ptgl::Color c = thePointLayersState().getLayerColor( layer );
+		static ptgl::Color c = thePointLayersState().getLayerColor( 1 << layer );
 		return c.a;
 	}
 	return 0;
@@ -646,5 +774,19 @@ PTfloat  PTAPI ptGetLayerColorBlend( PTuint layer )
 //-----------------------------------------------------------------------------
 PTvoid   PTAPI ptResetLayerColors( void )
 {
+	PTTRACE_FUNC
+
 	thePointLayersState().resetLayerColors();
+}
+//-----------------------------------------------------------------------------
+// provides a count of the number of points represented, ie. ignores LOD and approximates the full count
+PTuint64 PTAPI ptCountApproxPointsInLayer( PTuint layer )
+{
+	PTTRACE_FUNC_P1( layer )
+	
+	PTuint64 count = PointEditManager::instance()->countPointsInLayer( layer );
+	
+	PTTRACEOUT << "=" << count;
+
+	return count;
 }

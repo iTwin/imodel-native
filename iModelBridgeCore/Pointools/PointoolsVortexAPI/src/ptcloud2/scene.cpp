@@ -50,6 +50,7 @@ Scene::Scene(const ptds::FilePath &path)
 	m_filepath.setAbsolute();
 	_instance = 0;
 	_loaded = true;
+	_editStateID = 0;
 }
 /***
 POD Scene destructor
@@ -215,4 +216,12 @@ const char* Scene::creationErrorText( int errorCode )
 			return "Unknown Error";
 	}
 	return 0;
+}
+int		Scene::editStateID() const				
+{ 
+	return  _editStateID; 
+}
+void	Scene::setEditStateID( int id )			
+{ 
+	_editStateID=id; 
 }

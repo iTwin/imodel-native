@@ -39,6 +39,8 @@
 
 #include <ptengine/StreamManager.h>
 
+#include <pt/trace.h>
+
 using namespace pt;
 using namespace pcloud;
 using namespace pointsengine;
@@ -79,6 +81,7 @@ struct NullCondition
 	static bool validPoint		(const Node *N)					{return true;}
 
 	static bool validPoint		(const vector3d &pnt, ubyte &f)	{return true;}
+	static const char* name()  { return "NULL"; }
 };
 
 
@@ -100,6 +103,7 @@ namespace querydetail
 			scope = 0;
 			pcloudOnly = 0;
 			sceneOnly = 0;
+			layerMask = 255;
 		}
 		//---------------------------------------------------------------------
 		virtual ~Query()
@@ -153,14 +157,19 @@ namespace querydetail
 				densityCoeff = 1.0f;
 			}
 		}
+		//
+		void setLayers( PTuint layer_mask )
+		{
+			layerMask = layer_mask;
+		}
 		//---------------------------------------------------------------------
 		PTenum			getDensityType() const		{ return density; }
 		float			getDensityCoeff() const		{ return densityCoeff; }
 		//---------------------------------------------------------------------
 		void			setRGBMode( PTenum mode )	{ rgbMode = mode;	}
 		//---------------------------------------------------------------------
-		virtual int		runQuery(int buffersize, PTdouble *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification )=0;
-		virtual int		runQuery(int buffersize, PTfloat *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification )=0;
+		virtual int		runQuery(int buffersize, PTdouble *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification, PTubyte *layers )=0;
+		virtual int		runQuery(int buffersize, PTfloat *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification, PTubyte *layers )=0;
 
 		/** \brief Run a query that can write into an array of packed struct points. */
 		virtual int		runQueryStrided(const size_t buffersize, PTfloat * const geomBuffer, const size_t geomStride, ubyte *const rgbBuffer, const size_t rgbStride) 
@@ -205,6 +214,7 @@ namespace querydetail
 		PTenum			rgbMode;		
 		__int64			pointCount;			// point count of points returned
 		PThandle		scope;				// point cloud or scene (pod) scope
+		uint			layerMask;
 
 		static pcloud::Voxel *	lastPartiallyIteratedVoxel;
 		static float			lastPartiallyIteratedVoxelUnloadLOD;
@@ -332,8 +342,8 @@ namespace querydetail
 		SelectPoints (	NodeCondition	*condition,
 						bool			select=true, // or deselect (false)
 						PTenum			queryDensity = PT_QUERY_DENSITY_FULL, 
-						float			denCoeff			= 1.0f, 
-						pt::BitVoxelGrid *grid				= 0)
+						float			denCoeff	 = 1.0f, 
+						pt::BitVoxelGrid *grid		 = 0)
 		{
 			counter = 0;
 			density = queryDensity;
@@ -444,7 +454,7 @@ namespace querydetail
 			}
 
 			///!ToDo: Work out the right version of the point count to send to the condition (we should be passing the same number that we will eventually send into the in/out per point test).
-			vox->iterateTransformedPoints(*this, cs, true, lod_amount);
+			vox->iterateTransformedPoints(*this, cs, 255, lod_amount);
 
 			if (spatialGridFailure)
 			{
@@ -518,7 +528,8 @@ namespace querydetail
 					const PThandle  *_pointChannelsReq	= 0, 
 					PTvoid			**_pointChannels	= 0,
 					pcloud::Voxel	*lastPartiallyIteratedVoxel = NULL,
-					float			 lastPartiallyIteratedVoxelUnloadLOD = 0
+					float			 lastPartiallyIteratedVoxelUnloadLOD = 0,
+					PTubyte			layer_mask			= 255
 					)
 			: C(condition)
 		{
@@ -545,9 +556,10 @@ namespace querydetail
 			ugrid = grid;
 			pointLimit = 0;
 			spatialGridFailure = false;
-
+			layerMask = layer_mask;
 			pntsFailed = 0;
-			pntsTotal = 0;	
+			pntsTotal = 0;
+			layerMask = layer_mask;
 
 			extern RenderContext	*g_currentRenderContext;
 
@@ -598,14 +610,18 @@ namespace querydetail
 		//---------------------------------------------------------------------
 		bool visitNode(const pcloud::Node *n)
 		{
-			getNodeBounds(n, objCsBounds);
+			if (layerMask & (n->layers(0)|n->layers(1)) )
+			{
+				getNodeBounds(n, objCsBounds);
 
-			bool res = C->boundsCheck(objCsBounds) && C->nodeCheck(n);
+				bool res = C->boundsCheck(objCsBounds) && C->nodeCheck(n);
+ 
+				if (res && n->isLeaf())
+					return voxel(static_cast<Voxel*>(const_cast<pcloud::Node*>(n)));
 
-			if (res && n->isLeaf())
-				return voxel(static_cast<Voxel*>(const_cast<pcloud::Node*>(n)));
-
-			return res;
+				return res;
+			}
+			return false;
 		}
 		//---------------------------------------------------------------------
 		bool getNodeBounds(const pcloud::Node *n, pt::BoundingBoxD &bounds)
@@ -756,6 +772,9 @@ namespace querydetail
 			if(C->escapeWhole(vox))
 				return true;
 
+			if ( !((vox->layers(0)|vox->layers(1)) & layerMask))
+				return true;
+
 			setVoxel(vox);
 	
 			if(!begin)
@@ -881,7 +900,7 @@ namespace querydetail
 															// If not all of the requested range of the voxel was iterated
 			if(rwPos.lastPoint < vox->getNumPointsAtLOD(amount))
 			{
-				assert(rwPos.counter == bufferSize);
+			//	assert(rwPos.counter == bufferSize);
 															// Remember that this voxel is not unloaded so it can be unloaded if query is reset or destroyed
 				rwPos.setLastPartiallyIteratedVoxel(vox);
 				rwPos.setLastPartiallyIteratedVoxelUnloadLOD(vox->getPreviousLOD());
@@ -1074,8 +1093,10 @@ namespace querydetail
 				amount = 1.0f;
 			}
 
-			vox->iterateTransformedPoints(*this, cs, true, amount);
-
+			if ( layerMask == 0 || ((vox->layers(0) | vox->layers(1)) & layerMask) )
+			{
+				vox->iterateTransformedPoints(*this, cs, layerMask, amount);
+			}
 			return amount;
 		}
 
@@ -1110,7 +1131,7 @@ namespace querydetail
 			/* detail */
 			if (filterBuffer && !cfilter)
 			{
-				pntFilterVal = 1; /* to do */
+				pntFilterVal = vox->layers(0);
 			}
 			else if (cfilter) 
 				fchannel = cfilter->data();
@@ -1197,12 +1218,12 @@ namespace querydetail
 		{
 			if (rwPos.counter >= bufferSize) return false;
 
-			if (rwPos.counter < bufferSize &&
-				(filter == 255 || C->validPoint(pnt, f)) &&
-				rwPos.lastPoint >= rwPos.continuePnt)
+			if (rwPos.counter < bufferSize					&&
+				(filter == 255 || C->validPoint(pnt, f))	&&
+				rwPos.lastPoint >= rwPos.continuePnt )
 			{
 				bool b;
-
+				
 				if (density == PT_QUERY_DENSITY_SPATIAL && ugrid)
 				{
 					if (ugrid->get(pnt, b) && !b)
@@ -1385,6 +1406,8 @@ namespace querydetail
 		PTubyte				*fchannel;
 		PTubyte				*clschannel;
 		PTubyte				*filterBuffer;		// the layer channel		
+		
+		PTubyte				layerMask;
 
 		PTenum				rgbMode;
 		
@@ -1568,7 +1591,8 @@ namespace querydetail
 			{
 				pcloud::Voxel *v = gather.voxels[i];
 
-				if (C.processWhole( v ))	// high level dismiss already done by gather voxels
+				// need to handle layer masks here and condition dismissal
+				if ( C.processWhole( v ) && v->layers(0) & layerMask )
 				{
 					switch (density)
 					{
@@ -1588,21 +1612,24 @@ namespace querydetail
 				}
 				else 	// per point, expensive
 				{
-					CountPoints<Condition> counter( &C );
-				
-					boost::mutex::scoped_lock lock(v->mutex());
+					if ( (v->layers(1) | v->layers(0)) & layerMask)
+					{
+						CountPoints<Condition> counter( &C );
+					
+						boost::mutex::scoped_lock lock(v->mutex());
 
-					// need to load to make this evaluation
-					pointsengine::VoxelLoader load( v, densityCoeff, false, false);
-					v->iterateTransformedPoints( counter, pt::ProjectSpace );
-					count += counter.count;
+						// need to load to make this evaluation
+						pointsengine::VoxelLoader load( v, densityCoeff, false, false);
+						v->iterateTransformedPoints( counter, pt::ProjectSpace, layerMask );
+						count += counter.count;
+					}
 				}
 			}
 			return count;
 		}
 		//---------------------------------------------------------------------
 		template <class T>
-		int runQueryT( int buffersize, T *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification )
+		int runQueryT( int buffersize, T *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification, PTubyte *layers )
 		{
 			if (!lastVoxel)					//first iteration
 			{
@@ -1621,7 +1648,9 @@ namespace querydetail
 
 			ReadPoints<Condition, T>
 					reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false, lastVoxel, lastPnt,
-					density, densityCoeff, ugrid, rgbMode,0,classification, 0, 0, 0, getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD());
+					density, densityCoeff, ugrid, rgbMode, layers, classification, 0, 0, 0, 
+					getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(),
+					layerMask );
 
 			reader.cs = cs;
 			reader.pcloudOnly = pcloudOnly;
@@ -1674,14 +1703,14 @@ namespace querydetail
 			return selPoints.spatialGridFailure ? -1 : selPoints.counter;
 		}
 		//---------------------------------------------------------------------
-		int runQuery( int buffersize, PTdouble *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification  )
+		int runQuery( int buffersize, PTdouble *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification, PTubyte *layers  )
 		{
-			return runQueryT( buffersize, geomBuffer, rgbBuffer, inten, classification );
+			return runQueryT( buffersize, geomBuffer, rgbBuffer, inten, classification, layers );
 		}
 		//---------------------------------------------------------------------
-		int runQuery( int buffersize, PTfloat *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification   )
+		int runQuery( int buffersize, PTfloat *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification, PTubyte *layers   )
 		{
-			return runQueryT( buffersize, geomBuffer, rgbBuffer, inten, classification );
+			return runQueryT( buffersize, geomBuffer, rgbBuffer, inten, classification, layers );
 		}
 		//---------------------------------------------------------------------
 		virtual int runQueryStrided(const size_t buffersize, PTfloat * const geomBuffer, const size_t geomStride, ubyte *const rgbBuffer, const size_t rgbStride)
@@ -1710,7 +1739,7 @@ namespace querydetail
 			
 			ReadPoints<Condition, float>
 					reader( &C, buffersize, geomBuffer, rgbBuffer, 0 /* intensity */, false, lastVoxel, lastPnt,
-					density, densityCoeff, ugrid, rgbMode,0, 0 /*classification*/ );
+					density, densityCoeff, ugrid, rgbMode,0, 0 /*classification*/, 0, 0, 0, 0, 0, layerMask );
 
 			reader.cs = cs;
 			reader.pcloudOnly = pcloudOnly;
@@ -1755,7 +1784,8 @@ namespace querydetail
 
 			ReadPoints<Condition, T>
 					reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false, lastVoxel, lastPnt, density, densityCoeff, ugrid,
-					rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD());
+					rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, 
+					getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(), layerMask);
 
 			reader.pcloudOnly = pcloudOnly;
 			reader.sceneOnly = sceneOnly;
@@ -1766,7 +1796,7 @@ namespace querydetail
 			if (_writer) delete _writer;
 
 			ReadPoints<Condition, T> *writer = new ReadPoints<Condition, T>( &C, buffersize, geomBuffer, rgbBuffer, inten, true, lastVoxel, lastPnt,
-				density, densityCoeff, ugrid, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels);
+				density, densityCoeff, ugrid, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, 0, 0, layerMask);
 
 			writer->pcloudOnly = pcloudOnly;
 			writer->sceneOnly = sceneOnly;
@@ -1825,15 +1855,15 @@ namespace querydetail
 		}
 		//---------------------------------------------------------------------
 		int runDetailedQuery( int buffersize, PTdouble *geomBuffer, ubyte *rgbBuffer, PTshort *inten,
-			PTubyte *filter, PTubyte *cf, PTuint numPointChannels, const PThandle *pointChannelsReq, PTvoid **pointChannels )
+			PTubyte *layers, PTubyte *cf, PTuint numPointChannels, const PThandle *pointChannelsReq, PTvoid **pointChannels )
 		{
-			return runDetailedQueryT( buffersize, geomBuffer, rgbBuffer, inten, filter, cf, numPointChannels, pointChannelsReq, pointChannels );
+			return runDetailedQueryT( buffersize, geomBuffer, rgbBuffer, inten, layers, cf, numPointChannels, pointChannelsReq, pointChannels );
 		}
 		//---------------------------------------------------------------------
 		int runDetailedQuery( int buffersize, PTfloat *geomBuffer, ubyte *rgbBuffer, PTshort *inten,
-			PTubyte *filter, PTubyte *cf, PTuint numPointChannels, const PThandle *pointChannelsReq, PTvoid **pointChannels )
+			PTubyte *layers, PTubyte *cf, PTuint numPointChannels, const PThandle *pointChannelsReq, PTvoid **pointChannels )
 		{
-			return runDetailedQueryT( buffersize, geomBuffer, rgbBuffer, inten, filter, cf, numPointChannels, pointChannelsReq, pointChannels );
+			return runDetailedQueryT( buffersize, geomBuffer, rgbBuffer, inten, layers, cf, numPointChannels, pointChannelsReq, pointChannels );
 		}
 		//---------------------------------------------------------------------
 		void resetQuery()
@@ -2641,7 +2671,7 @@ public:
 	{
 	}
 
-	template <class T> int runQueryT( int buffersize, T *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification )
+	template <class T> int runQueryT( int buffersize, T *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification, PTubyte *layers )
 	{
 		return 0;
 	}
@@ -3303,14 +3333,14 @@ h->getNode()->flag(WholeSelected, true);
 	}
 
 
-	int runQuery(int buffersize, PTdouble *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification)
+	int runQuery(int buffersize, PTdouble *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification, PTubyte *layers)
 	{
-		return runQueryT(buffersize, geomBuffer, rgbBuffer, inten, classification);
+		return runQueryT(buffersize, geomBuffer, rgbBuffer, inten, classification, layers);
 	}
 
-	int runQuery(int buffersize, PTfloat *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification)
+	int runQuery(int buffersize, PTfloat *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification, PTubyte *layers)
 	{
-		return runQueryT(buffersize, geomBuffer, rgbBuffer, inten, classification);
+		return runQueryT(buffersize, geomBuffer, rgbBuffer, inten, classification, layers);
 	}
 
 	int runDetailedQuery(int buffersize, PTdouble *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *filter, PTubyte *classification,
@@ -3435,6 +3465,8 @@ PTbool	PTAPI ptGetPointAttribute( PThandle cloud,
 //-----------------------------------------------------------------------------
 PTfloat PTAPI ptFindNearestPoint( PThandle scene, const PTdouble *pnt, PTdouble *nearest )
 {
+	PTTRACE_FUNC_P4( scene, pnt[0], pnt[1], pnt[2] )
+
 	pt::vector3d vnearest;
 	pt::vector3d npnt (pnt);
 	npnt.x /= g_unitScale;
@@ -3446,7 +3478,7 @@ PTfloat PTAPI ptFindNearestPoint( PThandle scene, const PTdouble *pnt, PTdouble 
 		const pcloud::Scene *sc = thePointsScene().sceneBySceneOrCloudKey(scene);
 		if (sc)
 		{
-			PTdouble dist = sc->findNearestPoint(pnt, vnearest, pt::ProjectSpace );
+			PTdouble dist = sc->findNearestPoint(npnt, vnearest, pt::ProjectSpace );
 			vnearest.get(nearest);
 			nearest[0] *= g_unitScale;
 			nearest[1] *= g_unitScale;
@@ -3465,7 +3497,7 @@ PTfloat PTAPI ptFindNearestPoint( PThandle scene, const PTdouble *pnt, PTdouble 
 		for (int i=0; i<thePointsScene().size();i++)
 		{
 			pcloud::Scene *sc = thePointsScene()[i];
-			PTdouble dist = sc->findNearestPoint( pnt, vnearest, pt::ProjectSpace );
+			PTdouble dist = sc->findNearestPoint( npnt, vnearest, pt::ProjectSpace );
 			if (dist >= 0 && fabs(ndist) > dist)
 			{
 				vnearest.get(nearest);
@@ -3637,7 +3669,7 @@ public:
 				// NOTE: SHOULD A LOAD EVER BE NECESSARY ???
 //				pointsengine::VoxelLoader load( doload ? vox : 0, amount, false, false);
 
-				vox->iterateTransformedPoints(*this, pt::ProjectSpace, 0, amount); 
+				vox->iterateTransformedPoints(*this, pt::ProjectSpace, 255, amount); 
 			}
 		}
 
@@ -3705,6 +3737,8 @@ public:
 //-----------------------------------------------------------------------------
 PTres PTAPI ptSetIntersectionRadius(PTfloat radius)
 {
+	PTTRACE_FUNC_P1( radius )
+
 	if (fabs(radius) < 1e-6) 
 		return setLastErrorCode( PTV_VALUE_OUT_OF_RANGE );
 
@@ -3724,6 +3758,14 @@ PTfloat PTAPI ptGetIntersectionRadius(void)
 PTbool PTAPI ptIntersectRay(PThandle scene, const PTdouble *origin,
 							const PTdouble *direction, PTdouble *pnt, PTenum densityType, PTfloat densityValue)
 {
+	if (!direction || !origin || !pnt)
+	{
+		PTTRACE_FUNC
+
+		return false;
+	}
+	PTTRACE_FUNC_P7(scene, origin[0], origin[1], origin[2], direction[0], direction[1], direction[2] )
+
 	pt::BoundingBoxD bb;
 	int numScenes = thePointsScene().size();
 	double mindist = RAY_LARGE_DISTANCE;
@@ -3813,6 +3855,8 @@ PTbool PTAPI ptIntersectRayInterpolated(PThandle scene, const PTdouble *origin, 
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptResetQuery( PThandle query )
 {
+	PTTRACE_FUNC_P1(query)
+
 	using namespace querydetail;
 
 	QueryMap::iterator i = s_queries.find( query );
@@ -3872,6 +3916,8 @@ struct VisibleCondition
 //-----------------------------------------------------------------------------
 PThandle PTAPI ptCreateVisPointsQuery()
 {
+	PTTRACE_FUNC
+
 	using namespace querydetail;
 	PThandle h = ++querydetail::s_lastQueryHandle;
 
@@ -3893,12 +3939,14 @@ PThandle PTAPI ptCreateVisPointsQuery()
 //-----------------------------------------------------------------------------
 PThandle PTAPI ptCreateAllPointsQuery()
 {
+	PTTRACE_FUNC
+
 	using namespace querydetail;
 	PThandle h = ++querydetail::s_lastQueryHandle;
 
 	try
 	{
-		querydetail::Query *q = new ConditionQuery<VisibleCondition>; ///!ToDo: Exception safety: avoid leaks [Trac #315]
+		querydetail::Query *q = new ConditionQuery<NullCondition>; ///!ToDo: Exception safety: avoid leaks [Trac #315]
 		q->setDensity( PT_QUERY_DENSITY_FULL, 1.0f );				//all points
 		s_queries.insert( QueryMap::value_type( h, q ));
 	}
@@ -4219,6 +4267,8 @@ struct SelectedCondition
 //-----------------------------------------------------------------------------
 PThandle PTAPI ptCreateSelPointsQuery()
 {
+	PTTRACE_FUNC
+
 	using namespace querydetail;
 	PThandle h = ++querydetail::s_lastQueryHandle;
 
@@ -4348,7 +4398,7 @@ struct FrustumQuery : public Query
 	//-------------------------------------------------------------------------
 	template <class T>
 	int runQueryT( int buffersize, T *geomBuffer, ubyte *rgbBuffer, PTshort *inten,
-		PTubyte *filter=0, PTubyte *cf=0, PTuint numPointChannels=0, 
+		PTubyte *layers=0, PTubyte *cf=0, PTuint numPointChannels=0, 
 		const PThandle *pointChannelsReq=0, PTvoid **pointChannels=0)
 	{
 		if (!lastVoxel)
@@ -4388,14 +4438,16 @@ struct FrustumQuery : public Query
 		stats.m_bufferSize = buffersize;
 
 		ReadPoints<FrustumCondition, T> reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false,
-			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD());
+			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, layers, cf, numPointChannels, pointChannelsReq, pointChannels, 
+			getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(), layerMask);
 
 		reader.cs = cs;
 
 		if (numPointChannels && pointChannels)
 		{
 			_writer = new ReadPoints<FrustumCondition, T>( &C, buffersize, geomBuffer, rgbBuffer, inten, true,
-			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels );
+			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, layers, cf, numPointChannels, pointChannelsReq, pointChannels ,
+			0, 0, layerMask );
 		}
 		/* run query on voxel list */ 
 		for (int i=0; i<voxels.size(); i++)
@@ -4428,14 +4480,14 @@ struct FrustumQuery : public Query
 		return reader.spatialGridFailure ? -1 : reader.rwPos.counter;
 	}
 	//-------------------------------------------------------------------------
-	int runQuery( int buffersize, PTdouble *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification )
+	int runQuery( int buffersize, PTdouble *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification, PTubyte *layers )
 	{		
-		return runQueryT( buffersize, geomBuffer, rgbBuffer, inten, NULL, classification  );
+		return runQueryT( buffersize, geomBuffer, rgbBuffer, inten, layers, classification  );
 	}
 	//-------------------------------------------------------------------------
-	int runQuery( int buffersize, PTfloat *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification )
+	int runQuery( int buffersize, PTfloat *geomBuffer, ubyte *rgbBuffer, PTshort *inten, PTubyte *classification, PTubyte *layers )
 	{
-		return runQueryT( buffersize, geomBuffer, rgbBuffer, inten, NULL, classification  );
+		return runQueryT( buffersize, geomBuffer, rgbBuffer, inten, layers, classification  );
 	}
 	//-------------------------------------------------------------------------
 	int runDetailedQuery( int buffersize, PTdouble *geomBuffer, ubyte *rgbBuffer, PTshort *inten,
@@ -4828,9 +4880,13 @@ PThandle PTAPI ptCreateBoundingSphereQuery( PTdouble *cen, PTdouble radius )
 
 	if (!cen || radius < 1e-6) 
 	{
+		PTTRACE_FUNC
+
 		setLastErrorCode( PTV_INVALID_PARAMETER );
 		return 0;
 	}
+	PTTRACE_FUNC_P4( cen[0], cen[1], cen[2], radius ) 
+
 	try
 	{
 		s_queries.insert( QueryMap::value_type(h, new ConditionQuery< SphereCondition > 
@@ -4848,6 +4904,8 @@ PThandle PTAPI ptCreateBoundingSphereQuery( PTdouble *cen, PTdouble radius )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptDeleteQuery( PThandle query )
 {
+	PTTRACE_FUNC_P1( query )
+
 	using namespace querydetail;
 
 	QueryMap::iterator i = s_queries.find( query );
@@ -4902,6 +4960,8 @@ PThandle PTAPI ptCreateOrientedBoundingBoxQuery( PTdouble minx, PTdouble miny, P
 //-----------------------------------------------------------------------------
 PTres PTAPI ptSetQueryDensity( PThandle query, PTenum densityType, PTfloat densityValue )
 {
+	PTTRACE_FUNC_P3( query, densityType, densityValue )
+
 	using namespace querydetail;
 
 	/* TEST ONLY */ 
@@ -4928,6 +4988,8 @@ PTres PTAPI ptSetQueryDensity( PThandle query, PTenum densityType, PTfloat densi
 //-----------------------------------------------------------------------------
 PTres PTAPI ptSetQueryScope( PThandle query, PThandle cloudOrSceneHandle )
 {
+	PTTRACE_FUNC_P2( query, cloudOrSceneHandle )
+
 	using namespace querydetail;
 
 	QueryMap::iterator i = s_queries.find( query );
@@ -4941,11 +5003,33 @@ PTres PTAPI ptSetQueryScope( PThandle query, PThandle cloudOrSceneHandle )
 		return setLastErrorCode( PTV_INVALID_HANDLE );
 	}
 }
+//
+//
+//
+PTres PTAPI ptSetQueryLayerMask( PThandle query, PTubyte layerMask )
+{
+	PTTRACE_FUNC_P2( query, layerMask )
+
+	using namespace querydetail;
+
+	QueryMap::iterator i = s_queries.find( query );
+	if (i != s_queries.end())
+	{
+		i->second->setLayers( layerMask );
+		return setLastErrorCode( PTV_SUCCESS );
+	}
+	else
+	{
+		return setLastErrorCode( PTV_INVALID_HANDLE );
+	}
+}
 //-----------------------------------------------------------------------------
 // The RGB mode
 //-----------------------------------------------------------------------------
 PTres PTAPI ptSetQueryRGBMode( PThandle query, PTenum mode )
 {
+	PTTRACE_FUNC_P2( query, mode )
+
 	using namespace querydetail;
 
 	QueryMap::iterator i = s_queries.find( query );
@@ -4999,7 +5083,12 @@ bool computePntLimitDensity( querydetail::Query *query )
 
 	float densityCoeff = (numPointsInQuery > 0) ? (float)numPointsRequired / numPointsInQuery : 0;
 
-	if (!numPointsInQuery) return false;
+	if (!numPointsInQuery) 
+		return false;
+
+	// cap
+	if (densityCoeff > 1.0f) 
+		densityCoeff = 1.0f;
 
 	query->setDensity( PT_QUERY_DENSITY_LIMIT, densityCoeff );
 	query->resetQuery();
@@ -5045,6 +5134,8 @@ static querydetail::Query *prepareQueryRun( PThandle query )
 //-----------------------------------------------------------------------------
 PTuint PTAPI ptSelectQueryPoints( PThandle query )
 {
+	PTTRACE_FUNC_P1( query )
+
 	using namespace querydetail;
 
 	setLastErrorCode( PTV_SUCCESS ); ///!FixMe: What if there is already an outstanding error from a previous operation?
@@ -5065,6 +5156,8 @@ PTuint PTAPI ptSelectQueryPoints( PThandle query )
 //-----------------------------------------------------------------------------
 PTuint PTAPI ptDeselectQueryPoints( PThandle query )
 {
+	PTTRACE_FUNC_P1( query )
+
 	using namespace querydetail;
 
 	setLastErrorCode( PTV_SUCCESS ); ///!FixMe: What if there is already an outstanding error from a previous operation?
@@ -5085,11 +5178,17 @@ PTuint PTAPI ptDeselectQueryPoints( PThandle query )
 PTuint PTAPI ptGetQueryPointsd( PThandle query, PTuint buffersize, PTdouble *geomBuffer, PTubyte *rgbBuffer, 
 							   PTshort *intensityBuffer, PTubyte *selectionBuffer, PTubyte *classificationBuffer )
 { 
+	PTTRACE_FUNC_P3( query, buffersize, geomBuffer )
+
 	querydetail::Query *q = prepareQueryRun( query );
 
 	if (!q) return 0;
 
-	return q->runQuery( buffersize, geomBuffer, rgbBuffer, intensityBuffer, classificationBuffer );
+	int number_points = q->runQuery( buffersize, geomBuffer, rgbBuffer, intensityBuffer, classificationBuffer, selectionBuffer );
+
+	PTTRACEOUT << "= " << number_points;
+
+	return (PTuint)number_points;
 }
 //-----------------------------------------------------------------------------
 // Float version
@@ -5097,11 +5196,17 @@ PTuint PTAPI ptGetQueryPointsd( PThandle query, PTuint buffersize, PTdouble *geo
 PTuint PTAPI ptGetQueryPointsf( PThandle query, PTuint buffersize, PTfloat *geomBuffer, PTubyte *rgbBuffer, 
 							   PTshort *intensityBuffer, PTubyte *selectionBuffer, PTubyte *classificationBuffer )
 {
+	PTTRACE_FUNC_P3( query, buffersize, geomBuffer )
+
 	querydetail::Query *q = prepareQueryRun( query );
 
 	if (!q) return 0;
 
-	return q->runQuery( buffersize, geomBuffer, rgbBuffer, intensityBuffer, classificationBuffer );
+	int number_points = q->runQuery( buffersize, geomBuffer, rgbBuffer, intensityBuffer, classificationBuffer, selectionBuffer );
+
+	PTTRACEOUT << "= " << number_points;
+
+	return (PTuint)number_points;
 }
 
 //-----------------------------------------------------------------------------
@@ -5109,6 +5214,8 @@ PTuint PTAPI ptGetQueryPointsf( PThandle query, PTuint buffersize, PTfloat *geom
 //-----------------------------------------------------------------------------
 PTuint PTAPI ptGetQueryPointsMultif( PThandle query, PTuint numResultSets, PTuint bufferSize, PTuint *resultSetSize, PTfloat **geomBufferArray, PTubyte **rgbBufferArray, PTshort **intensityBufferArray, PTubyte **selectionBufferArray)
 {
+	PTTRACE_FUNC_P3( query, bufferSize, geomBufferArray )
+
 	if(bufferSize == 0 || geomBufferArray == NULL)
 		return setLastErrorCode(PTV_INVALID_PARAMETER);		
 
@@ -5124,6 +5231,8 @@ PTuint PTAPI ptGetQueryPointsMultif( PThandle query, PTuint numResultSets, PTuin
 //-----------------------------------------------------------------------------
 PTuint PTAPI ptGetQueryPointsMultid( PThandle query, PTuint numResultSets, PTuint bufferSize, PTuint *resultSetSize, PTdouble **geomBufferArray, PTubyte **rgbBufferArray, PTshort **intensityBufferArray, PTubyte **selectionBufferArray)
 {
+	PTTRACE_FUNC_P3( query, bufferSize, geomBufferArray )
+
 	if(bufferSize == 0 || geomBufferArray == NULL)
 		return setLastErrorCode(PTV_INVALID_PARAMETER);		
 
@@ -5142,6 +5251,8 @@ PTuint PTAPI ptGetDetailedQueryPointsf( PThandle query, PTuint bufferSize, PTflo
 							   PTshort *intensityBuffer, PTfloat *normalBuffer, PTubyte *filter, PTubyte *classificationBuffer,
 							   PTuint numPointChannels, const PThandle *pointChannelsReq, PTvoid **pointChannels )
 {
+	PTTRACE_FUNC_P3( query, bufferSize, geomBuffer )
+
 	if(bufferSize == 0 || geomBuffer == NULL)
 		return setLastErrorCode(PTV_INVALID_PARAMETER);		
 
@@ -5161,6 +5272,7 @@ PTuint PTAPI ptGetDetailedQueryPointsd( PThandle query, PTuint bufferSize, PTdou
 							   PTshort *intensityBuffer, PTfloat *normalBuffer, PTubyte *filter, PTubyte *classificationBuffer,
 							   PTuint numPointChannels, const PThandle *pointChannelsReq, PTvoid **pointChannels )
 {
+	PTTRACE_FUNC_P3( query, bufferSize, geomBuffer )
 
 	if(bufferSize == 0 || geomBuffer == NULL)
 		return setLastErrorCode(PTV_INVALID_PARAMETER);		
@@ -5182,6 +5294,8 @@ PTvoid	PTAPI ptDontFlipMouseYCoords( void );
 //-----------------------------------------------------------------------------
 PTres		PTAPI ptSubmitPointChannelUpdate( PThandle query, PThandle channel )
 {
+	PTTRACE_FUNC_P2( query, channel )
+
 	using namespace querydetail;
 
 	/* find the query and run an update */

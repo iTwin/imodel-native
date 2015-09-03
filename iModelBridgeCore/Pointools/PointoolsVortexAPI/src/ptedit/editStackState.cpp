@@ -38,6 +38,15 @@ Voxel * LeafID::voxelFromID( LeafID lid )
 		const vector3d	&scale()		const				{ return m_scale; }
 		const vector3d  &origin()		const				{ return m_origin; }
 */
+struct SceneID
+{
+	static const char* gen_id( pcloud::Scene *sc)
+	{
+		static char buff[64];
+		sprintf(buff, "sc%lld", (long long)sc->objectGuid().getPart1());
+		return buff;
+	}
+};
 struct TransformReader : public PointsVisitor
 {
 	TransformReader(pt::datatree::Branch *b)
@@ -48,13 +57,18 @@ struct TransformReader : public PointsVisitor
 	}
 	bool scene(pcloud::Scene *sc)			
 	{ 
-		char buff[64];
-		sprintf(buff, "sc%lld", (long long)sc->objectGuid().getPart1());
-		scene_branch = write_branch->addBranch(buff);
+		const char* id = SceneID::gen_id( sc );
 
-		scene_branch->addNode( "visible", sc->displayInfo().visible() );
+		if (!write_branch->getBranch(id))
+		{
+			scene_branch = write_branch->addBranch(id);
+		
+			scene_branch->addNode( "visible", sc->displayInfo().visible() );
 
-		cloud_count = 0;
+			cloud_count = 0;
+		}
+		else scene_branch = 0;
+
 		return true; 
 	}
 	bool cloud(pcloud::PointCloud *cloud)	
@@ -89,9 +103,9 @@ struct TransformWriter : public PointsVisitor
 	}
 	bool scene(pcloud::Scene *sc)			
 	{ 
-		char buff[64];
-		sprintf(buff, "sc%lld", sc->objectGuid().getPart1());
-		scene_branch = read_branch->getBranch(buff);
+		const char* id = SceneID::gen_id( sc );
+
+		scene_branch = read_branch->getBranch(id);
 
 		if (scene_branch)
 		{
@@ -131,11 +145,19 @@ struct TransformWriter : public PointsVisitor
 			{
 				memcpy(&m, b->_data, sizeof(m));
 
-				cloud->transform().useMatrix(m);
-				changed = true;	// could optimise
+				if (cloud->transform().matrix() != m)
+				{
+					cloud->transform().useMatrix(m);
+					changed = true;	
+				}
 			}
 			if (changed)
 			{
+				// really want to avoid this
+				// if there is not enough data in a voxel the bounds
+				// will be taken from the node, this bad because the 
+				// extents will be larger and so LOD effected - results
+				// if bad performance
 				cloud->projectBounds().dirtyBounds();
 				cloud->computeBounds();
 

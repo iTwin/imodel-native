@@ -1,3 +1,5 @@
+#pragma once
+
 #include <pt/timer.h>
 #include <pt/typedefs.h>
 #include <queue>

@@ -108,7 +108,7 @@ void RenderPipeline_GLShader::setUpShaderForBuffer( const PointsBufferI *buffer,
 			ptgl::Color c = thePointLayersState().getLayerColor( voxel->layers(0) );
 
 			shader->setUniform4fv( UNIFORM_LAYER_COL, 1, &c.r );
-			shader->setUniform1f( UNIFORM_LAYER_ALPHA, c.a );
+			//shader->setUniform1f( UNIFORM_LAYER_ALPHA, c.a );
 		}
 	}
 }

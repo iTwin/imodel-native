@@ -2,7 +2,10 @@
 #include <gl/glew.h>
 #include <ptgl/glstate.h>
 #include <ptengine/renderMethodGLVertexArray.h>
+#include <ptengine/renderDiagnostics.h>
 #include <assert.h>
+
+#include <ptengine/renderVoxelBuffer.h>
 
 using namespace pointsengine;
 

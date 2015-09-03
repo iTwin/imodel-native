@@ -86,6 +86,14 @@ public:
 		CmdDeselLayer6		= 386,
 		CmdDeselLayer7		= 387,
 		CmdDeselLayer8		= 388,
+		
+		CmdLayerCol1		= 312,
+		CmdLayerCol2		= 313,
+		CmdLayerCol3		= 314,
+		CmdLayerCol4		= 315,
+		CmdLayerCol5		= 316,
+		CmdLayerCol6		= 317,
+		CmdLayerCol7		= 318,
 
 		CmdSelAll			= 390,
 		CmdSelCloud			= 391,
@@ -150,6 +158,7 @@ private:
 	void	setCloudScope();
 	void	selectCloudTest();
 	void	selectSceneTest();
+	void	chooseColor( int layer );
 
 	void	saveLayerChannels();
 	void	loadLayerChannels();

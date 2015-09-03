@@ -19,24 +19,33 @@ namespace ptedit
 	/* ------------------------------------------------------------------------ */ 
 	struct TraverseScene
 	{
-		static void withVisitor(pcloud::Node::Visitor *v, bool useScope=true)
+		static void withVisitor(pcloud::Node::Visitor *v, pcloud::Scene *scene, bool use_scope=true)
+		{
+			if (scene)
+			{
+				int numClouds = scene->size();
+				for (int cl=0; cl<numClouds; cl++)
+				{
+					if ( use_scope && !g_state.inScope( scene->cloud(cl) )) continue;
+
+					const_cast<pcloud::Node*>(scene->cloud(cl)->root())->traverseTopDown(v);
+				}
+			}
+		}
+
+		static void withVisitor(pcloud::Node::Visitor *v, bool use_scope=true)
 		{
 			int numScenes = pointsengine::thePointsScene().size();
 			for (int sc=0; sc<numScenes; sc++)
 			{
 				pcloud::Scene* scene = pointsengine::thePointsScene()[sc];
 
-				if (useScope && !g_state.inScope(scene)) continue;
-
-				int numClouds = scene->size();
-				for (int cl=0; cl<numClouds; cl++)
-				{
-					if ( useScope && !g_state.inScope( scene->cloud(cl) )) continue;
-
-					const_cast<pcloud::Node*>(scene->cloud(cl)->root())->traverseTopDown(v);
-				}
+				if ( use_scope && !g_state.inScope(scene) ) continue;
+				
+				withVisitor( v, scene, use_scope );
 			}
 		}
+
 		static void withFlag(uint flag, bool value)
 		{
 			int numScenes = pointsengine::thePointsScene().size();
@@ -339,6 +348,92 @@ namespace ptedit
 			return c;
 		}
 		__int64 _count[EDT_MAX_THREADS];
+	};
+
+	
+	/* ------------------------------------------------------------------------ */ 
+	/*  Count Points in Layer					                                */ 
+	/* ------------------------------------------------------------------------ */ 
+	struct CountPointsInLayerVisitor : public pcloud::Node::Visitor
+	{
+		CountPointsInLayerVisitor( ubyte layers ) 
+		{ 
+			_count[0] = _count[1] = _count[2] = _count[3] = 0; 
+			_layers = layers;
+		}
+
+		bool visitNode(const pcloud::Node *n)
+		{			
+			if ( ! 
+				((n->layers(0) | n->layers(1)) & _layers)) 
+			{
+				return false;
+			}
+
+			if (!(n->layers(1) & _layers))
+			{
+				_count[0] += n->fullPointCount();	// changed from pointCount
+				return false;						// no need to continue, fullpointcount is recursive
+			}
+			else 
+			{
+				if (n->isLeaf())
+				{
+					pcloud::Voxel *v = const_cast<pcloud::Voxel*>(static_cast<const pcloud::Voxel*>(n));
+					const pcloud::DataChannel *layers = v->channel( pcloud::PCloud_Filter );
+
+					if (layers)
+					{
+						uint voxel_count = 0;
+
+						// explicitly code the iteration here, because the filter channel maybe more complete than the lod
+						// in the case that a channel was loaded
+						if (v->numPointsEdited()==0 && layers->size())
+						{
+							for (int i=0; i<layers->size();i++)
+							{
+								if (layers->data()[i] & _layers) 
+								{
+									++voxel_count;
+								}
+							}
+						}
+						else
+						{
+							CountPointsInLayerVisitor cp(_layers); // need this to have a separate count to scale up
+
+							pcloud::Voxel::LocalSpaceTransform lst;
+							VoxFiltering::iteratePoints( v, cp, lst );
+						
+							// scale up
+							voxel_count = cp.totalCount();
+
+							if (v->numPointsEdited())
+								voxel_count *= (float)v->fullPointCount()/v->numPointsEdited();
+						}
+						_count[0] += voxel_count;
+					}
+					else _count[0] += n->fullPointCount();	// should not happen, but hey
+				}
+				else  return true;
+			}
+			return true;
+		}
+		inline void point( const pt::vector3d &p, uint index, ubyte &f) { mt_point(0, p, index, f);}
+		inline void mt_point(int t, const pt::vector3d &p, uint index, ubyte &f) 
+		{ 
+			if (f & _layers) ++_count[t];
+		}
+
+		__int64 totalCount() const 
+		{ 
+			__int64 c=0;		
+			for (int i=0;i<EDT_MAX_THREADS;i++) c += _count[i];
+			return c;
+		}
+
+		__int64 _count[EDT_MAX_THREADS];
+		ubyte	_layers;
 	};
 
 	/* ------------------------------------------------------------------------ */ 

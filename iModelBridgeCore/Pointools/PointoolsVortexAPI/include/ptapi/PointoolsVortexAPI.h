@@ -445,6 +445,8 @@ PTvoid PTAPI ptClearPointsFromLayer( PTuint layer );
 PTvoid PTAPI ptSelectPointsInLayer( PTuint layer );
 PTvoid PTAPI ptDeselectPointsInLayer( PTuint layer );
 
+PTuint64 PTAPI ptCountApproxPointsInLayer( PTuint layer );
+
 PTbool   PTAPI ptSetLayerColor( PTuint layer, PTfloat *rgb3, PTfloat blend );
 PTfloat *PTAPI ptGetLayerColor( PTuint layer );
 PTfloat  PTAPI ptGetLayerColorBlend( PTuint layer );
@@ -495,6 +497,7 @@ PTbool	PTAPI ptGetPointAttribute( PThandle cloud, PThandle pntPartA, PThandle pn
 /* query : Warning Partial implementation only may assert */ 
 PThandle PTAPI ptCreateSelPointsQuery();
 PThandle PTAPI ptCreateVisPointsQuery();
+PThandle PTAPI ptCreateAllPointsQuery();
 PThandle PTAPI ptCreateFrustumPointsQuery();
 PThandle PTAPI ptCreatePlaneQuery( PTdouble planeX, PTdouble planeY, PTdouble planeZ, PTdouble planeK, PTdouble thickness );
 PThandle PTAPI ptCreatePolygonQuery( PTint numVertices, PTdouble *vertices, PTdouble thickness );
@@ -510,6 +513,7 @@ PTbool PTAPI ptResetQuery( PThandle query );
 PTres PTAPI ptSetQueryRGBMode( PThandle query, PTenum mode );
 PTres PTAPI ptSetQueryDensity( PThandle query, PTenum densityType, PTfloat densityValue );
 PTres PTAPI ptSetQueryScope( PThandle query, PThandle sceneOrCloudHandle );
+PTres PTAPI ptSetQueryLayerMask( PThandle query, PTubyte layerMask );
 
 PTuint PTAPI ptGetQueryPointsd( PThandle query, PTuint bufferSize, PTdouble *geomBuffer, PTubyte *rgbBuffer, 
 							   PTshort *intensityBuffer, PTubyte *selectionBuffer, PTubyte *classificationBuffer );
@@ -583,4 +587,5 @@ PTres		PTAPI ptSetClippingPlaneParameters( PTuint id, PTdouble a, PTdouble b, PT
 
 /* unit tests */ 
 PTbool	PTAPI _ptUnitTests( PTenum test );
+PTres	PTAPI _ptDiagnostic( PTvoid *data );
 #endif

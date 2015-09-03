@@ -155,7 +155,7 @@ PTvoid PTAPI ptDrawSceneGL(PThandle scene, PTbool dynamic)
 		compatibility = g_drawmodeOverride & PT_DRAW_MODE_COMPATIBILITY ?
 			true : false;
 	}
-	
+
 	//theRenderEngine().setDiagnosticDisplay( 1 );
 
 	if (ptIsCurrentViewportEnabled())

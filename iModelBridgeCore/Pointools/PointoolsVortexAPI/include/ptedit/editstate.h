@@ -44,9 +44,14 @@ struct GlobalState
 
 	inline bool						inScope( const pcloud::PointCloud *cloud ) const
 	{
-		if (!cloud || !cloud->displayInfo().visible()) return false;		
+		if (!cloud || !cloud->displayInfo().visible()) 
+			return false;		
 
-		if (!scope) return true;
+		if (execSceneScope && cloud->scene() != execSceneScope) 
+			return false;
+		
+		if (!scope) 
+			return true;
 
 		return	scopeIsScene ? inScope( cloud->scene() ) : 
 				((scope && 
@@ -54,21 +59,39 @@ struct GlobalState
 				cloud->scene()->getInstanceIndex() == scopeInstance 
 				) ? true : false);
 	}
+	// in scope check
 	inline bool						inScope( const pcloud::Scene *scene ) const
 	{
-		if (!scene || !scene->displayInfo().visible()) return false;		
+		if (!scene || !scene->displayInfo().visible()) 
+			return false;		
 
-		if (!scope) return true;
+		if (execSceneScope && execSceneScope != scene) 
+			return false;
 
-		if (!scopeIsScene) return true;	/* will get dismissed later on cloud check */ 
+		if (!scope) 
+			return true;
+
+		if (!scopeIsScene) 
+			return true;	/* will get dismissed later on cloud check */ 
 
 		return	(scope && scopeIsScene && 
 			scene->cloud(0)->guid() == scope &&
 			scene->getInstanceIndex() == scopeInstance 
 			) ? true : false;
 	}
-	pcloud::PointCloudGUID		scope;
-	bool						scopeIsScene;
+	// exclusion is stronger than scope, ie. operations that do not respect scope still must respect exclusion
+	inline bool						isSceneExcluded( const pcloud::Scene *scene ) const
+	{
+		return (execSceneScope && execSceneScope != scene) ? true : false;
+	}
+
+	void setExecutionScope( pcloud::Scene *scene )
+	{
+		execSceneScope = scene;
+	}
+
+	pcloud::PointCloudGUID		scope;				// scope that limits following edit operations 
+	bool						scopeIsScene;	
 	int							scopeInstance;
 
 	/* application state */ 
@@ -79,8 +102,8 @@ struct GlobalState
 	EditConstraint					*constraint;
 
 private:
-	LayerState		layer;
-
+	LayerState					layer;
+	pcloud::Scene*				execSceneScope;	// this scope is used to limit the entire execution - IT IS NOT WRITTEN IN THE STATE NODE
 };
 struct PreserveState
 {

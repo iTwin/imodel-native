@@ -135,6 +135,33 @@ const wchar_t *UI::getLoadFilePath( const wchar_t * desc, const wchar_t *ext )
 	return 0;
 }
 //-----------------------------------------------------------------------------
+bool	UI::getColor( COLORREF initial, COLORREF &chosen )
+//-----------------------------------------------------------------------------
+{
+	CHOOSECOLOR cc;
+	memset(&cc, 0, sizeof(cc));
+	cc.lStructSize = sizeof(cc);
+
+	COLORREF col_array[16];
+
+	for (int i=0;i<16; i++)	col_array[ i ] = RGB(255,255,255);
+
+	cc.lpCustColors = col_array;
+
+	if (initial)
+	{
+		cc.Flags = CC_RGBINIT;
+		cc.rgbResult = initial;
+	}
+
+	if (::ChooseColor( &cc ))
+	{
+		chosen = cc.rgbResult;
+		return true;
+	}
+	return false;
+}
+//-----------------------------------------------------------------------------
 Mouse::Mouse()
 //-----------------------------------------------------------------------------
 {
@@ -669,10 +696,11 @@ void View::drawBox( float *lower, float *upper, float *position, float *rotation
 	glLineWidth( 1.0f );
 
 	glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
 
 	if(position != NULL && rotation != NULL)
 	{
-		glPushMatrix();
+		
 		glTranslatef(position[0], position[1], position[2]);
 		glRotatef(rotation[1], 0, 1, 0);
 		glRotatef(rotation[0], 1, 0, 0);

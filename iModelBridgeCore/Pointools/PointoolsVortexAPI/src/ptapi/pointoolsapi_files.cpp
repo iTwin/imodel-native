@@ -37,6 +37,8 @@
 
 #include <PTRMI/ClientInterfaceExtDataBentley.h>
 
+#include <pt/trace.h>
+
 PTbool				initializeScenesProject					(void);
 PTbool				initializeSceneGraphProject				(void);
 
@@ -271,6 +273,11 @@ void clearLastError()
 int setLastErrorCode( int code )
 {
 	g_lastErrorCode = code;
+
+	if (code < 0)
+	{
+		PTTRACEOUT << "ERROR SET CODE " << code;
+	}
 	return code;
 }
 //-------------------------------------------------------------------------------
@@ -558,6 +565,8 @@ bool useSELECTLicense(std::string& company, std::string& module, std::string& ty
 //-------------------------------------------------------------------------------
 PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 {
+	PTTRACE_FUNC
+
 	::GetSystemTime(&systime);
 	SystemTimeToFileTime(&systime, &ftime);
 	ftime_cmp.LowPart = ftime.dwLowDateTime;
@@ -737,6 +746,7 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 //-------------------------------------------------------------------------------
 PTvoid PTAPI ptRelease()
 {
+	PTTRACE_FUNC
 
 //	if (_initialized && !_hasPSTimeOut)
 	if (_initialized)
@@ -813,6 +823,7 @@ PThandle PTAPI ptOpenPTL(const PTstr filepath)
 //-------------------------------------------------------------------------------
 PThandle PTAPI ptBrowseAndOpenPOD()
 {
+	PTTRACE_FUNC
 
 	if (!checkPreSessionTimeOut())
 		return 0;
@@ -961,6 +972,8 @@ if(firstCall)
 
 PThandle ptOpenPODFromDataSource(ptds::DataSourcePtr dataSource, const PTstr filepath) 
 {
+	PTTRACE_FUNC
+
 	if(dataSource == NULL || dataSource->validHandle() == false)
 		return PT_NULL;
 
@@ -1159,6 +1172,7 @@ namespace ptds
 
 PThandle PTAPI ptOpenPOD(const PTstr filepath)
 {
+	PTTRACE_FUNC_P1( filepath )
 															// Initialize DataSourceAnalyzer test graphs if required
 	ptds::DataSourceAnalyzer::initializeGraphs();
 
@@ -1187,6 +1201,7 @@ PThandle PTAPI ptOpenPOD(const PTstr filepath)
 															// Try to open POD local file
 	if(h = ptOpenPODFile(filepath))
 	{
+		PTTRACEOUT << " Handle = " << h; 
 		return h;
 	}
 															// Return failed to open
@@ -1196,6 +1211,8 @@ PThandle PTAPI ptOpenPOD(const PTstr filepath)
 
 PThandle ptOpenPODFile(const PTstr filepath)
 {
+	PTTRACE_FUNC_P1( filepath )
+
 	ptds::DataSourcePtr dataSource;
 																// Open POD normally
 	ptds::FilePath fp(filepath);
@@ -1731,6 +1748,8 @@ PTvoid PTAPI ptSetCoordinateBase(PTdouble *coordinateBase)
 {
 	if (coordinateBase)
 	{
+		PTTRACE_FUNC_P3( coordinateBase[0], coordinateBase[1], coordinateBase[2] )
+
 		pt::vector3d base(coordinateBase[0], coordinateBase[1], coordinateBase[2] );
 		pt::Project3D::project().setProjectSpaceOrigin( base );
 	}
@@ -1741,6 +1760,8 @@ PTvoid PTAPI ptSetCoordinateBase(PTdouble *coordinateBase)
 //-------------------------------------------------------------------------------
 PTvoid PTAPI ptRemoveAll()
 {
+	PTTRACE_FUNC
+
 	pauseEngine(); 
 
 	pt::Project3D::project().removeAllScenes();

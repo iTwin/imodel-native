@@ -449,10 +449,6 @@
 		<Filter
 			Name="Resources"
 			>
-			<File
-				RelativePath="..\res\general.rc"
-				>
-			</File>
 		</Filter>
 	</Files>
 	<Globals>

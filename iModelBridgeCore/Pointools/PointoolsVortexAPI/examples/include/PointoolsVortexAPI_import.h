@@ -528,6 +528,8 @@ typedef PTbool (__stdcall *PTDOESLAYERHAVEPOINTS)( PTuint layer );
 typedef PTvoid (__stdcall *PTCLEARPOINTSFROMLAYER)( PTuint layer );
 typedef PTvoid (__stdcall *PTRESETLAYERS)( void );
 
+typedef PTuint64 (__stdcall *PTCOUNTAPPROXPOINTSINLAYER)( PTuint layer );
+
 typedef PTbool		(__stdcall *PTSETLAYERCOLOR)( PTuint layer, PTfloat *rgb, PTfloat blend );
 typedef PTfloat *	(__stdcall *PTGETLAYERCOLOR)( PTuint layer );
 typedef PTfloat		(__stdcall *PTGETLAYERCOLORBLEND)( PTuint layer );
@@ -551,6 +553,9 @@ typedef PThandle (__stdcall * PTCREATEFRUSTUMPOINTSQUERY)( void );
 typedef PThandle (__stdcall * PTCREATEKNNQUERY)(PTfloat *vertices, PTint numQueryVertices, PTint k, PTfloat queryLOD);
 typedef PTbool (__stdcall * PTRESETQUERY)( PThandle query );
 typedef PTres (__stdcall *PTSETQUERYRGBMODE)( PThandle query, PTenum mode );
+
+typedef PTres (__stdcall *PTSETQUERYLAYERMASK)( PThandle query, PTubyte layerMask );
+
 typedef PTbool (__stdcall *PTDELETEQUERY)( PThandle query );
 typedef PTres  (__stdcall *PTSETQUERYSCOPE)( PThandle query, PThandle sceneOrCloudHandle );
 
@@ -614,6 +619,8 @@ typedef PTbool	(__stdcall * PTISCLIPPINGPLANEENABLED)( PTuint plane );
 typedef PTres	(__stdcall * PTENABLECLIPPINGPLANE)( PTuint plane );
 typedef PTres	(__stdcall * PTDISABLECLIPPINGPLANE)( PTuint plane );
 typedef PTres	(__stdcall * PTSETCLIPPINGPLANEPARAMETERS)( PTuint plane, PTdouble a, PTdouble b, PTdouble c, PTdouble d );
+
+typedef PTres	(__stdcall * _PTDIAGNOSTIC)( PTvoid *data );
 
 
 /* Interface Function Pointers Section ----------------------------------------------------------------------------------------------------*/ 
@@ -750,6 +757,7 @@ extern PTENDDRAWFRAMEMETRICS ptEndDrawFrameMetrics;
 extern PTSTARTDRAWFRAMEMETRICS ptStartDrawFrameMetrics;
 
 extern PTSETQUERYSCOPE ptSetQueryScope;
+extern PTSETQUERYLAYERMASK ptSetQueryLayerMask;
 
 extern PTRESETQUERY ptResetQuery;
 
@@ -964,6 +972,8 @@ extern PTRESETLAYERCOLORS ptResetLayerColors;
 extern PTCOPYSELTOCURRENTLAYER ptCopySelToCurrentLayer;
 extern PTMOVESELTOCURRENTLAYER ptMoveSelToCurrentLayer;
 
+extern PTCOUNTAPPROXPOINTSINLAYER ptCountApproxPointsInLayer;
+
 /* tuning */ 
 extern PTSETCACHESIZEMB ptSetCacheSizeMb;
 extern PTGETCACHESIZEMB ptGetCacheSizeMb;
@@ -1001,6 +1011,8 @@ extern PTISCLIPPINGPLANEENABLED ptIsClippingPlaneEnabled;
 extern PTENABLECLIPPINGPLANE ptEnableClippingPlane;
 extern PTDISABLECLIPPINGPLANE ptDisableClippingPlane;
 extern PTSETCLIPPINGPLANEPARAMETERS ptSetClippingPlaneParameters;
+
+extern _PTDIAGNOSTIC _ptDiagnostic;
 
 
 #endif // End Static Lib

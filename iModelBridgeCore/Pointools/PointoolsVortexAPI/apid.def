@@ -215,6 +215,7 @@ EXPORTS
 	
 	ptCreateSelPointsQuery
 	ptCreateVisPointsQuery
+	ptCreateAllPointsQuery
 	ptCreateBoundingBoxQuery
 	ptCreateOrientedBoundingBoxQuery
 	ptCreateBoundingSphereQuery
@@ -224,6 +225,7 @@ EXPORTS
 	ptResetQuery
 	ptDeleteQuery
 	ptSetQueryScope
+	ptSetQueryLayerMask
 
 	ptSetQueryRGBMode
 
@@ -270,6 +272,7 @@ EXPORTS
 	ptGetEditWorkingMode
 
 	_ptCountVisiblePoints
+	ptCountApproxPointsInLayer
 
 	ptSetCacheSizeMb
 	ptGetCacheSizeMb
@@ -354,3 +357,5 @@ EXPORTS
 	ptEnableClippingPlane
 	ptDisableClippingPlane
 	ptSetClippingPlaneParameters
+
+	_ptDiagnostic

@@ -56,18 +56,14 @@ float AABB_Approximator::pixArea( const pcloud::Node *v, const pt::ViewParams &v
 
 	float area_bias = 1.0f;
 
-	/* thin box check */ 
-	int m = d.major_axis();
-	if (d[m] > d[m+1%3] * 0.1)
+	/* thin box check and boost */ 
+	for (int i=0; i<3; i++)
 	{
-		if (d[m] < d[m+2%3] * 1.4)
-			area_bias = 3.0;
-		
-	}
-	else if (d[m] > d[m+2%3] * 0.1)
-	{
-		if (d[m] < d[m+1%3] * 1.4)
-			area_bias = 3.0;
+		if (d[i] < 0.1 * d[(i+1)%3] && d[i] < 0.1 * d[(i+2)%3])
+		{
+			area_bias = 2.0f;
+			break;
+		}
 	}
 
 	vector4d _lx_ly_lz, _lx_uy_lz, _lx_uy_uz, _ux_uy_uz, _ux_uy_lz, _ux_ly_uz, _ux_ly_lz, _lx_ly_uz;

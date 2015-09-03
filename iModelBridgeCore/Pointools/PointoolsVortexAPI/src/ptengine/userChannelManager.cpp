@@ -2,6 +2,7 @@
 #include <ptengine/pointsScene.h>
 #include <ptengine/engine.h>
 #include <ptedit/pointVisitors.h>
+#include <ptedit/editState.h>
 #include <pt/datatreeIO.h>
 
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>
@@ -466,6 +467,7 @@ UserChannel *UserChannelManager::createChannelFromLayers( const pt::String &name
 							for (int p=0;p<dc->size(); p++)
 							{
 								dc->getval(layerval, p);		// get value from channel
+								layerval = layerval &~ SELECTED_PNT_BIT;
 								vdata->setVal(p, &layerval);		// write to user channel
 							}
 						}
@@ -481,12 +483,19 @@ UserChannel *UserChannelManager::createChannelFromLayers( const pt::String &name
 	}
 	catch (...) { return 0; }
 }
+extern uint ptedit::g_editApplyMode;
+
 //-------------------------------------------------------------------------------------------------
 bool		UserChannelManager::applyChannelToLayers( const UserChannel *channel, pcloud::Scene *scene )		// reverse opp, applies the channel data to layers
 {
 	//read the data from the channel, then propogate flags upwards
 	bool retval = false;
 	bool allscenes = scene ? false : true;
+
+	bool flagged_only = false;
+	
+	if (ptedit::g_editApplyMode & ptedit::EditIntentFlagged) 
+			flagged_only = true;
 
 	for (int s=0; s<thePointsScene().size();s++)
 	{
@@ -495,6 +504,12 @@ bool		UserChannelManager::applyChannelToLayers( const UserChannel *channel, pclo
 			scene = thePointsScene()[s];
 		}
 		else if (s) break;
+		
+		// must check for exclusion
+		if ( ptedit::g_state.isSceneExcluded( scene ) )
+		{
+			continue;
+		}
 		
 		// populate channel with scene  
 		for (int i=0; i<scene->size(); i++)
@@ -506,6 +521,13 @@ bool		UserChannelManager::applyChannelToLayers( const UserChannel *channel, pclo
 			{
 				pcloud::Voxel *vx = cloud->voxels()[v];
 				const VoxelChannelData *vdata = channel->voxelChannel( vx );
+
+				if (flagged_only && !vx->flag( pcloud::Flagged ))
+					continue;
+
+				// selection state is not stored and should be cleared from the cloud
+				vx->flag( pcloud::PartSelected, false );
+				vx->flag( pcloud::WholeSelected, false );
 
 				if (vdata)
 				{

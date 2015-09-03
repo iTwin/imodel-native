@@ -1,6 +1,12 @@
 #include <pt/os.h>
 #define POINTOOLS_API_BUILD_DLL
 
+#ifdef _DEBUG
+#define FILE_TRACE	1
+#endif
+
+#include <pt/trace.h>
+
 #include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>
@@ -9,6 +15,7 @@
 #include <ptengine/renderContext.h>
 #include <ptengine/PointsPager.h>
 #include <ptengine/engine.h>
+#include <ptedit/editManager.h>
 
 #include <ptgl/glcamera.h>
 #include <ptgl/gllight.h>
@@ -89,6 +96,8 @@ const PTstr PTAPI ptRampInfo( PTint ramp, PTenum *type )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptSetHostUnits(PTenum units)
 {
+	PTTRACE_FUNC
+
 	g_units = units;
 	g_unitScale = g_conv[units - PT_METERS];
 }
@@ -152,6 +161,19 @@ extern pcloud::Scene* sceneFromHandle(PThandle);
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptDrawSceneGL(PThandle scene, PTbool dynamic)
 {
+	PTTRACE_FUNC
+
+	static bool first = true;
+
+	// this is a hack because data has not loaded before the first draw
+	if (first)
+	{
+		thePointsPager().completeRequests();
+		first = false;
+	}
+	//// will only process scenes that have not been processed at all, ie. loaded when stack is not empty
+	ptedit::PointEditManager::instance()->regenEditUnprocessed();
+
 	bool compatibility = false;
 
 	if (g_drawmodeOverride != PT_DRAW_MODE_DEFAULT)

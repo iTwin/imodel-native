@@ -19,6 +19,7 @@
 #include <ptengine/renderDiagnostics.h>
 #include <ptengine/pointspager.h>
 #include <ptengine/userChannels.h>
+#include <ptengine/clipManager.h>
 
 #include <ptengine/engine.h>
 
@@ -51,8 +52,8 @@ PointsRenderer::PointsRenderer( RenderPipelineI *pipeline )
 	m_colGeomGrad = 0;
 	m_activeBuffer = 0;
 
-//	if (getenv("POINTOOLSDEBUG") 
-//		&& strcmp(getenv("POINTOOLSDEBUG"), "1")==0)
+	if (getenv("POINTOOLSDEBUG") 
+		&& strcmp(getenv("POINTOOLSDEBUG"), "41111")==0)
 	{
 		g_showDebugInfo = false;	// not for release
 	}
@@ -113,7 +114,10 @@ void PointsRenderer::renderPoints( RenderContext *context, const pcloud::Scene *
 
 		m_pipeline->endFrame( context, pass );			
 	}
-	
+
+	// debug output
+	//renderDiagnostics();
+
 	if (dynamic) computeDynamicFPS( t0, context->settings()->framesPerSec() );
 }
 
@@ -320,6 +324,7 @@ int PointsRenderer::numVoxelPointsToRender( const pcloud::Voxel * vox, float min
 	if (vox->pointCloud()->displayInfo().visible())
 	{
 		if ( vox->flag( pcloud::WholeHidden ) ) return 0;
+		if ( !vox->layers(0) && !vox->channel( pcloud::PCloud_Filter ) ) return 0;	// part layer without a channel to support
 
 		int reqSize = vox->getRequestLOD() * vox->fullPointCount();
 		int editedSize = vox->numPointsEdited();
@@ -690,8 +695,6 @@ void PointsRenderer::computeActualColour(ubyte *col, const double *pnt, const sh
 /*****************************************************************************/
 void PointsRenderer::renderDiagnostics()
 {
-	//return;
-
 	/* voxel edit / layers state */ 
 	/*----------------------------------------------------------*/ 
 	
@@ -719,8 +722,17 @@ void PointsRenderer::renderDiagnostics()
 			{
 				vox->flag( pcloud::DebugShowGreen, false, false );		
 			}
+			if (vox->flag( pcloud::DebugShowPurple))
+			{
+				RenderVoxelDiagnosticInfo::renderVoxelOutline( vox );
+			}
 		}
 		++i;
 	}	
 	RenderVoxelDiagnosticInfo::endVoxelEditStateRender();
+}
+void	PointsRenderer::renderEditStackDebug()
+{
+	// to do :)
+
 }

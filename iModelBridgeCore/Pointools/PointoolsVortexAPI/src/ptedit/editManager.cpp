@@ -5,6 +5,10 @@
 //-----------------------------------------------------------------------------------------------
 #pragma warning (disable : 4786 )
 
+#ifdef _DEBUG
+#define FILE_TRACE 1
+#endif
+
 #include <WildMagic4/Wm4matrix3.h>
 #include <WildMagic4/Wm4ApprPlaneFit3.h>
 
@@ -29,6 +33,7 @@
 #include <stack>
 #include <map>
 #include <string>
+
 
 using namespace pt;
 using namespace ptl;
@@ -313,6 +318,8 @@ void PointEditManager::selectMode()
 /*****************************************************************************/
 void PointEditManager::deselectMode()	
 { 
+	PTTRACE_FUNC
+
 	g_state.selmode = DeselectPoint; 
 }
 
@@ -491,6 +498,8 @@ bool PointEditManager::isLayerLocked( int layer ) const
 /*****************************************************************************/
 bool PointEditManager::showLayer( int layer, bool show )
 {
+	PTTRACE_FUNC
+
 	ubyte layerMask = (1 << layer);
 
 	if ( layerMask == g_currentLayer )
@@ -513,6 +522,8 @@ bool PointEditManager::showLayer( int layer, bool show )
 /*****************************************************************************/
 bool PointEditManager::setCurrentLayer( int layer, bool maskValue )
 {
+	PTTRACE_FUNC
+
 	ubyte blyr = maskValue ? layer : (1 << layer);
 
 	if (g_lockedLayers & blyr) return false;
@@ -563,6 +574,8 @@ int PointEditManager::getCurrentLayer() const
 /*****************************************************************************/
 bool PointEditManager::moveSelToLayer( bool deselect )
 {
+	PTTRACE_FUNC
+
 	if (g_activeLayers & HIDDEN_LAYER_MASK)
 	{
 		/* move to hidden layer */ 
@@ -585,6 +598,8 @@ bool PointEditManager::moveSelToLayer( bool deselect )
 /*****************************************************************************/
 bool PointEditManager::copySelToLayer( bool deselect )
 {
+	PTTRACE_FUNC
+
 	if (g_activeLayers & HIDDEN_LAYER_MASK) return false;
 
 	m_currentEdit.addOperation( "CopyToLayer" );
@@ -595,6 +610,8 @@ bool PointEditManager::copySelToLayer( bool deselect )
 //
 bool	PointEditManager::selectPointsInLayer( int layer )
 {
+	PTTRACE_FUNC
+
 	s_filters->selectLayer.targetLayer(layer);
 	m_currentEdit.addOperation( &s_filters->selectLayer );
 
@@ -603,6 +620,8 @@ bool	PointEditManager::selectPointsInLayer( int layer )
 //
 bool	PointEditManager::deselectPointsInLayer( int layer )
 {
+	PTTRACE_FUNC
+
 	s_filters->deselectLayer.targetLayer(layer);
 	m_currentEdit.addOperation( &s_filters->deselectLayer );
 
@@ -614,6 +633,8 @@ bool	PointEditManager::deselectPointsInLayer( int layer )
 //
 bool	PointEditManager::selectPointcloud( pcloud::PointCloud *cloud )
 {
+	PTTRACE_FUNC
+
 	s_filters->cloudselect.setCloud( cloud );
 	m_currentEdit.addOperation( &s_filters->cloudselect );
 
@@ -718,8 +739,28 @@ class SetEditPointToLODVisitor : public pcloud::Node::Visitor
 		inline void point(const pt::vector3d &pnt, uint index, ubyte &f) {}
 		inline void mt_point(int t, const pt::vector3d &pnt, uint index, ubyte &f) {}
 };
+
+void	PointEditManager::updateSceneEditStateID( pcloud::Scene *scene )
+{
+	if (scene)
+	{
+		scene->setEditStateID( m_currentEdit.stateId() );
+	}
+	else
+	{
+		for (int i=0; i<thePointsScene().size();i++)
+		{
+			pcloud::Scene* scene = pointsengine::thePointsScene()[i];
+			scene->setEditStateID( m_currentEdit.stateId() );
+		}	
+	}
+}
+
+
 void PointEditManager::regenEditQuick_run()
 {
+	PTTRACE_FUNC
+
 	g_editApplyMode = EditNormal;
 
 	// scope should not effect this, will be restored by PreserveState
@@ -757,6 +798,8 @@ void PointEditManager::regenEditQuick_run()
 /*****************************************************************************/
 void PointEditManager::regenEditQuick()
 {
+	PTTRACE_FUNC
+
 	{
 		PreserveState save;
 
@@ -780,6 +823,8 @@ void PointEditManager::regenEditQuick()
 /*****************************************************************************/
 void PointEditManager::regenEditComplete() // NOT TESTED
 {
+	PTTRACE_FUNC
+
 	PreserveState save;
 
 	pointsengine::pauseEngine();
@@ -812,10 +857,28 @@ void PointEditManager::regenEditComplete() // NOT TESTED
 	pointsengine::unpauseEngine();
 }
 //-----------------------------------------------------------------------------
+//  Only regen those scenes that have not been processed at all yet
+//-----------------------------------------------------------------------------
+void	PointEditManager::regenEditUnprocessed()
+{
+	// check the state of every scene and process if needed
+	for (int i=0;i<thePointsScene().size();i++)
+	{
+		pcloud::Scene *scene = thePointsScene()[i];
+
+		if (scene->editStateID() <=0 )
+		{
+			regenOOCComplete( scene );
+		}
+	}
+}
+//-----------------------------------------------------------------------------
 // complete regen from scratch - not optimised
 //-----------------------------------------------------------------------------
-void PointEditManager::regenOOCComplete()
+void PointEditManager::regenOOCComplete( pcloud::Scene *scene )
 {
+	PTTRACE_FUNC
+
 	PreserveState save;
 
 	pointsengine::pauseEngine();
@@ -824,11 +887,19 @@ void PointEditManager::regenOOCComplete()
 
 	// scope should not effect this, will be restored by PreserveState
 	g_state.scope = 0;
+	g_state.setExecutionScope( scene );
 
 	// flag nodes first - note this cannot be done any other way since node state will be changing
 	StoreNodeStateAndPrepForRefresh statev;
-	TraverseScene::withVisitor(&statev);
-
+	
+	if ( scene )
+	{
+		TraverseScene::withVisitor(&statev, scene, false);
+	}
+	else
+	{
+		TraverseScene::withVisitor(&statev, false);
+	}
 	g_editApplyMode =  EditIntentRefresh | EditIntentFlagged | EditIncludeOOC;
 	m_currentEdit.execute(false);
 
@@ -836,12 +907,28 @@ void PointEditManager::regenOOCComplete()
 
 	// this is ok here, has a hack to set to full if EditIncludeOOC
 	SetEditPointToLODVisitor sep;
-	TraverseScene::withVisitor(&sep);
 
+	if (scene)
+	{
+		TraverseScene::withVisitor(&sep, scene, false);
+	}
+	else 
+	{
+		TraverseScene::withVisitor(&sep, false);
+	}
+	
 	g_editApplyMode = EditNormal;
 
 	statev.writeMode();
-	TraverseScene::withVisitor(&statev);
+
+	if (scene)
+	{
+		TraverseScene::withVisitor(&statev, scene, false);
+	}
+	else
+	{
+		TraverseScene::withVisitor(&statev, false);
+	}
 
 	//ClearFilterVisitor v;
 	//TraverseScene::withVisitor(&v);
@@ -849,6 +936,10 @@ void PointEditManager::regenOOCComplete()
 	EditNodeDef::applyByName( "ConsolidateAllLayers" );	
 	
 	setCurrentLayer( g_currentLayer, true );
+
+	updateSceneEditStateID( scene );
+
+	g_state.setExecutionScope( 0 );
 
 	pointsengine::unpauseEngine();
 }
@@ -861,6 +952,8 @@ void PointEditManager::regenOOCComplete()
 /*****************************************************************************/
 void PointEditManager::clearEdit()
 {
+	PTTRACE_FUNC
+
 	{
 		PreserveState save;
 		uint saveApplyMode = g_editApplyMode;
@@ -913,6 +1006,8 @@ void PointEditManager::paintSelCube()
 /*****************************************************************************/
 void PointEditManager::selectAll()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "SelectAll" );
 }
 /*****************************************************************************/
@@ -923,6 +1018,8 @@ void PointEditManager::selectAll()
 /*****************************************************************************/
 void PointEditManager::deselectAll()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "DeselectAll" );
 }
 /*****************************************************************************/
@@ -933,6 +1030,8 @@ void PointEditManager::deselectAll()
 /*****************************************************************************/
 void PointEditManager::resetSelection()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "ResetSelection" );
 }
 /*****************************************************************************/
@@ -943,6 +1042,8 @@ void PointEditManager::resetSelection()
 /*****************************************************************************/
 void PointEditManager::clearAll()
 {
+	PTTRACE_FUNC
+
 	/* old implementation (bugged) left for testing
 	ClearFilterVisitor c;
 	TraverseScene::withVisitor( &c );
@@ -958,6 +1059,8 @@ void PointEditManager::clearAll()
 /*****************************************************************************/
 void PointEditManager::showAll()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "ShowAll" );
 }
 
@@ -969,22 +1072,43 @@ void PointEditManager::showAll()
 /*****************************************************************************/
 void PointEditManager::invertSelection()
 {	
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "InvertSel" );
 }
 /*****************************************************************************/
 /**
 * @brief
-* @return int
+* @return __int64
 */
 /*****************************************************************************/
 __int64 PointEditManager::countVisiblePoints()
 {
+	PTTRACE_FUNC
+
 	CountVisibleVisitor v;
 	TraverseScene::withVisitor( &v, true );
 
 	return v.totalCount();
 }
+/*****************************************************************************/
+/**
+* @brief
+* @return __int64
+*/
+/*****************************************************************************/
+__int64 PointEditManager::countPointsInLayer( int layerIndex )
+{
+	PTTRACE_FUNC
 
+	if (layerIndex < 0) return 0;
+	ubyte layerMask = 1 << layerIndex;
+
+	CountPointsInLayerVisitor v(layerMask);
+	TraverseScene::withVisitor( &v, true );
+
+	return v.totalCount();
+}
 /*****************************************************************************/
 /**
 * @brief
@@ -993,6 +1117,8 @@ __int64 PointEditManager::countVisiblePoints()
 /*****************************************************************************/
 void PointEditManager::invertVisibility()
 {	
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "InvertVis" );
 }
 
@@ -1004,6 +1130,8 @@ void PointEditManager::invertVisibility()
 /*****************************************************************************/
 void PointEditManager::isolateSelPoints()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "IsolateSelected" );
 }
 /*****************************************************************************/
@@ -1014,6 +1142,8 @@ void PointEditManager::isolateSelPoints()
 /*****************************************************************************/
 void PointEditManager::hideSelPoints()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "HideSelected" );
 }
 
@@ -1092,6 +1222,8 @@ void PointEditManager::paintSelectAtPoint( const pt::vector3d &pnt, bool limit_r
 /*****************************************************************************/
 void PointEditManager::rectangleSelect( int l, int r, int b, int t)
 {
+	PTTRACE_FUNC
+
 	Recti rect(l, t, r, b);
 	rect.makeValid();
 
@@ -1109,6 +1241,8 @@ void PointEditManager::rectangleSelect( int l, int r, int b, int t)
 /*****************************************************************************/
 void PointEditManager::boxSelect( const pt::vector3d &lower, const pt::vector3d &upper )
 {
+	PTTRACE_FUNC
+
 	m_boxSelect.set(lower, upper);
 
 	m_currentEdit.addOperation(&m_boxSelect);
@@ -1126,6 +1260,8 @@ void PointEditManager::boxSelect( const pt::vector3d &lower, const pt::vector3d 
 /*****************************************************************************/
 void PointEditManager::orientedBoxSelect( const pt::vector3d &lower, const pt::vector3d &upper, const pt::vector3d &pos, const pt::vector3d &uAxis, const pt::vector3d &vAxis)
 {
+	PTTRACE_FUNC
+
 	m_orientedBoxSelect.set(lower, upper);
 	m_orientedBoxSelect.setTransform(pos, uAxis, vAxis);
 
@@ -1148,6 +1284,8 @@ void PointEditManager::orientedBoxSelect( const pt::vector3d &lower, const pt::v
 /*****************************************************************************/
 void PointEditManager::planeSelect( const pt::vector3d &origin, const pt::vector3d &normal, double thickness )
 {
+	PTTRACE_FUNC
+
 	vector3d od( origin );
 	vector3d nd( normal );
 
@@ -1168,6 +1306,8 @@ void PointEditManager::planeSelect( const pt::vector3d &origin, const pt::vector
 /*****************************************************************************/
 void PointEditManager::fenceSelect( const pt::Fence<int> &fence )
 {
+	PTTRACE_FUNC
+
 	m_fenceSelect.buildFromScreenFence(fence, m_view, m_units);
 	m_currentEdit.addOperation(&m_fenceSelect);
 }
@@ -1179,10 +1319,14 @@ void PointEditManager::fenceSelect( const pt::Fence<int> &fence )
 /*****************************************************************************/
 void PointEditManager::layersFromUserChannel( pointsengine::UserChannel* userChannel )
 {
+	PTTRACE_FUNC
+
 	if (userChannel)
 	{
 		m_layersFromUserChannel.setUserChannel(userChannel);
 		m_currentEdit.addOperation("LayersFromUserChannel");
+
+		updateSceneEditStateID( 0 );
 	}
 }
 /*****************************************************************************/

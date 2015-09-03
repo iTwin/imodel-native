@@ -80,6 +80,8 @@ public:
 	void			addTimeStat( pt::PerformanceTimer &t, const char* desc );
 	const wchar_t	*getSaveFilePath( const wchar_t * desc, const wchar_t *ext );
 	const wchar_t	*getLoadFilePath( const wchar_t * desc, const wchar_t *ext );
+	
+	bool			getColor( COLORREF initial, COLORREF &chosen );
 
 	bool			loadResources();
 
