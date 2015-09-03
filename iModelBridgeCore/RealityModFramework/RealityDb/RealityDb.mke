@@ -1,0 +1,33 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: RealityDb/RealityDb.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------
+#   Define standard macros.
+#----------------------------------------------------------------------
+PolicyFile=${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+
+#----------------------------------------------------------------------
+#   We link the CSMap data subdirectories to our output directory
+#----------------------------------------------------------------------
+csDeliverDir    = $(baseDir)Schema/
+
+#----------------------------------------------------------------------
+#   Create output directories.
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    ~@mkdir $(Schema)
+
+#---------------------------------------------------------------------
+#   This is the minimal set of data for products that don't allow selection
+#   of Geographic Coordinate Systems. It allows datum conversion only for
+#   simple cases because it does not ship the large datum shift data files.
+#---------------------------------------------------------------------
+always:
+    CreateSymLinks.py   -f"$(BuildContext)Delivery/ECSchemaNewDB.xml=$(csDeliverDir)ECSchemaNewDB.xml"
+
