@@ -1,0 +1,1170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="RealityModeling" nameSpacePrefix="RM" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECClass typeName="SQLEntity" isCustomAttributeClass="true" isDomainClass ="false">
+        <ECProperty propertyName="FromTableName" typeName="string" description="Name of the table to select FROM" /> <!-- Must be non null -->
+        <ECProperty propertyName="InstanceIDProperty" typeName="string" description="Name of the property to be used as instance ID" /> <!-- Must be non null. Also, the column of the ID property must be in the table designated by FromTableName-->
+    </ECClass>
+    
+    <ECClass typeName="QueryType" isCustomAttributeClass="true" isDomainClass="false">
+        <ECProperty propertyName="QueryType" typeName="string" />
+    </ECClass>
+    
+    <ECClass typeName="DBColumn" isCustomAttributeClass="true" isDomainClass ="false">
+        <ECProperty propertyName="JoinTableName" typeName="string"/> <!-- Table where to find column. To fill if different from FromTableName, or if  -->
+        <ECProperty propertyName="ColumnName" typeName="string"/> <!-- Must be non null -->
+        <!--<ECProperty propertyName="IsNullable" typeName="boolean"/> --> <!--To determine whether to do an inner join (false) or a left outer join (true). Could be erased and we could always do left outer join?-->
+        <ECProperty propertyName="FirstTableKey" typeName="string" description="Name of the key in the From Table to compare with the new table key" /> <!-- If FromTableName is non null, must be non null -->
+        <ECProperty propertyName="NewTableKey" typeName="string" description="Name of the key in the new table to compare with the From Table key" /> <!-- If FromTableName is non null, must be non null -->
+        <ECProperty propertyName="IsSpatial" typeName="boolean" description="If the property is for holding a series of points representing a polygon, switch this to true" />
+    </ECClass>
+    
+    <ECClass typeName="DerivedClassLinker" isCustomAttributeClass="true" isDomainClass="false">
+    <!-- This class was made to enable the use of "Table per Class hierarchy" -->
+        <ECProperty propertyName="DerivedClassKeyProperty" typeName="string" />
+        <ECProperty propertyName="BaseClassKeyProperty" typeName="string" />
+    </ECClass>
+    
+    <ECClass typeName="RelationshipKeys" isCustomAttributeClass="true" isDomainClass ="false">
+        <!--These keys must be on the primary table (FromTableName) of the respective ECClasses containing them! -->
+        <!--Also, the keys are the names of the columns in the database, not the ECProperties in the ECSchema -->
+        <!--Please note that ContainerKey and ContainedKey relate respectively to the Source and Target for forward direction relationship.
+            They must be reversed when the relationship is backward!-->
+        <!--The class names are only repetitions of the corresponding classes names. They are used because I didn't find any way to fetch the base class of the relation (for polymorphic requests)-->
+        <ECProperty propertyName="ContainerClassName" typeName="string"/>
+        <ECProperty propertyName="ContainerKey" typeName="string"/>
+        <ECProperty propertyName="ContainedClassName" typeName="string"/>
+        <ECProperty propertyName="ContainedKey" typeName="string"/>
+    </ECClass>
+    
+    <ECClass typeName="ManyToManyRelationshipKeys" isCustomAttributeClass="true" isDomainClass="false">
+        <!--This class functions the same way as the RelationshipKeys class, but is used when there is an intermediate table
+            between the two related entities, which is typically used for many to many relationships in SQL-->
+        <!--Please note that IntermediateContainerKey and IntermediateContainedKey refer to the columns of the intermediate table in the database-->    
+        <ECProperty propertyName="IntermediateTableName" typeName="string" />
+        <ECProperty propertyName="ContainerClassName" typeName="string"/>
+        <ECProperty propertyName="ContainerKey" typeName="string"/>
+        <ECProperty propertyName="IntermediateContainerKey" typeName="string" />
+        <ECProperty propertyName="IntermediateContainedKey" typeName="string" />
+        <ECProperty propertyName="ContainedClassName" typeName="string"/>        
+        <ECProperty propertyName="ContainedKey" typeName="string"/>    
+    </ECClass>
+    
+    <ECClass typeName="FileHolder" isCustomAttributeClass="true" isDomainClass="false">
+        <!-- Attribute describing a file holding class. Each type will launch a specific procedure in the plugin file retrieval operation-->
+        <!--Type can be : PreparedPackage : LocationHoldingPropertyName can be empty, since the instanceID is the only thing we can give to the query, and the prepared package class is not in the database (it is not a SQLEntity).
+                                            Thus, we cannot fetch the location anywhere, and this forces us to give the location as the instanceID. -->
+        <ECProperty propertyName="Type" typeName="string" />
+        <ECProperty propertyName="LocationHoldingColumn" typeName="string" />
+    </ECClass>
+    
+    <!--TODO : See if we can generate int IDs to string IDs. An example here : http://stackoverflow.com/questions/20674282/how-to-automatically-generate-unique-id-in-sql-like-uid12345678 
+               but see if we can make it simpler if we only have digits in the ID.-->
+    <!--UPDATE: It is possible to create a nvarchar column from an int column in sql server by using a command similar to the following : 
+                ALTER TABLE dbo.WMSSources
+                ADD IdStr as CAST(ID AS nvarchar(50)) PERSISTED              -->
+    
+    <ECClass typeName="SpatialEntityBase" isDomainClass="true">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>all</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.SpatialEntityBases</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Footprint" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Footprint</ColumnName>
+                    <IsSpatial>true</IsSpatial>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Name" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Name</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Keywords" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Keywords</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="AssociateFile" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>AssociateFile</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="ProcessingDescription" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ProcessingDescription</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="DataSourceTypesAvailable" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>DataSourceTypesAvailable</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="AccuracyResolutionDensity" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>AccuracyResolutionDensity</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="DataProvider" typeName="string" />
+        <ECProperty propertyName="DataProviderName" typeName="string" />
+        
+        <ECProperty propertyName="ThumbnailId" typeName="int">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Thumbnail_Id</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>        
+        
+        <ECProperty propertyName="MetadataId" typeName="int">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Metadata_Id</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>  
+        
+        <ECProperty propertyName="ParentDatasetId" typeName="int">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ParentDataset_Id</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="ParentDatasetIdStr" typeName="string" />
+    </ECClass>
+    
+    <ECClass typeName="SpatialEntity" isDomainClass="true" baseClass="SpatialEntityBase">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>all</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.SpatialEntities</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    
+    <ECClass typeName="SpatialEntityDataset" isDomainClass="true" baseClass="SpatialEntityBase">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>index</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.SpatialEntityDatasets</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Processable" typeName="boolean">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Processable</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>    
+
+        <!--<ECProperty propertyName="AlternateDatasetId" typeName="int">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>AlternateDataset_Id</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>            -->
+        
+    </ECClass>
+    
+    <ECClass typeName="Thumbnail" isDomainClass="true">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>all</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.Thumbnails</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+            <FileHolder>
+                <Type>SQLThumbnail</Type>
+                <LocationHoldingColumn>ThumbnailData</LocationHoldingColumn>
+            </FileHolder>
+        </ECCustomAttributes>
+        
+        
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>    
+        
+        <ECProperty propertyName="ThumbnailProvenance" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ThumbnailProvenance</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="ThumbnailFormat" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ThumbnailFormat</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="ThumbnailWidth" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ThumbnailWidth</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="ThumbnailHeight" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ThumbnailHeight</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="ThumbnailStamp" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ThumbnailStamp</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <!--ECProperty propertyName="ThumbnailData" typeName="binary">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ThumbnailData</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty-->
+        
+        <ECProperty propertyName="ThumbnailGenerationDetails" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ThumbnailGenerationDetails</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    
+     <ECClass typeName="Metadata" isDomainClass="true">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>all</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.Metadatas</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>   
+        
+        <ECProperty propertyName="RawMetadata" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>RawMetadata</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="RawMetadataFormat" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>RawMetadataFormat</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="DisplayStyle" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>DisplayStyle</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Description" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Description</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="ContactInformation" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ContactInformation</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Keywords" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Keywords</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Legal" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Legal</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Lineage" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Lineage</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Provenance" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Provenance</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+    </ECClass>        
+    
+    <ECClass typeName="SpatialDataSource" isDomainClass="true">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>all</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.SpatialDataSources</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>    
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>   
+
+        <ECProperty propertyName="MainURL" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>MainURL</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="CompoundType" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>CompoundType</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="LocationInCompound" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>LocationInCompound</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="DataSourceType" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>DataSourceType</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="SisterFiles" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>SisterFiles</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <!--<ECProperty propertyName="ServerId" typeName="int">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Server_Id</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>        
+        </ECProperty>-->
+        
+    </ECClass>
+    
+    <ECClass typeName="WMSSource" isDomainClass="true" baseClass="SpatialDataSource">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>index</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.WMSSources</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>    
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>   
+
+        <ECProperty propertyName="Layers" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Layers</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Styles" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Styles</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Formats" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Formats</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+    </ECClass>    
+    
+    <ECClass typeName="OtherSource" isDomainClass="true" baseClass="SpatialDataSource">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>all</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.OtherSources</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>    
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>   
+        
+    </ECClass>   
+    
+    <ECClass typeName="Server" isDomainClass="true">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>all</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.Servers</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>  
+        
+         <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+
+        <ECProperty propertyName="CommunicationProtocol" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>CommunicationProtocol</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Name" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Name</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="URL" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>URL</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="ServerContactInformation" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ServerContactInformation</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Fees" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Fees</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Legal" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Legal</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="AccessConstraints" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>AccessConstraints</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Online" typeName="boolean">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Online</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="LastCheck" typeName="dateTime">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>LastCheck</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="LastTimeOnline" typeName="dateTime">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>LastTimeOnline</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Latency" typeName="double">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Latency</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="MeanReachabilityStats" typeName="int">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>MeanReachabilityStats</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="State" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>State</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Type" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Type</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+    </ECClass>        
+    
+    <ECClass typeName="WMSServer" isDomainClass="true" baseClass="Server">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>index</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.WMSServers</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>  
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>    
+        </ECProperty>
+        
+        <ECProperty propertyName="Title" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Title</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Description" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Description</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="NumLayers" typeName="int">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>NumLayers</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>    
+        </ECProperty>
+        
+        <ECProperty propertyName="Version" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Version</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="GetCapabilitiesURL" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>GetCapabilitiesURL</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="SupportedFormats" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>SupportedFormats</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="GetMapURL" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>GetMapURL</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="GetMapURLQuery" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>GetMapURLQuery</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    
+    <ECClass typeName="WMSLayer" isDomainClass="true">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>index</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.WMSLayers</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>
+        
+         <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Name" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Name</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Title" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Title</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Description" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Description</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="BoundingBox" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>BoundingBox</ColumnName>
+                    <IsSpatial>true</IsSpatial>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="CoordinateSystems" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>CoordinateSystems</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="WMSServerId" typeName="int">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>WMSServer_Id</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="ParentLayerId" typeName="int">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ParentLayer_Id</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    
+    <ECClass typeName="SpatialEntityWithDetailsView" isDomainClass="true">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>all</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.SpatialEntityWithDetailsView</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+            </SQLEntity>
+        </ECCustomAttributes>  
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Footprint" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Footprint</ColumnName>
+                    <IsSpatial>true</IsSpatial>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Name" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Name</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Description" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Description</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="ContactInformation" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ContactInformation</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Keywords" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Keywords</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="Legal" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>Legal</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>        
+        
+        <ECProperty propertyName="ProcessingDescription" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ProcessingDescription</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="DataSourceTypesAvailable" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>DataSourceTypesAvailable</ColumnName>
+                </DBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <!--ECProperty propertyName="ParentDatasetIdStr" typeName="string" /-->
+        <ECProperty propertyName="DataProvider" typeName="string" />
+        <ECProperty propertyName="DataProviderName" typeName="string" />
+        <ECProperty propertyName="ThumbnailURL" typeName="string" />
+        <ECProperty propertyName="MetadataURL" typeName="string" />
+        <ECProperty propertyName="RawMetadataURL" typeName="string" />
+        <ECProperty propertyName="RawMetadataFormat" typeName="string" />
+        <ECProperty propertyName="SubAPI" typeName="string" />
+    </ECClass>
+    
+    <ECClass typeName="USGSEntity" isDomainClass="true">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>usgsapi</QueryType>
+            </QueryType>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Title" typeName="string" />
+        <ECProperty propertyName="PreviewLink" typeName="string" />
+        <ECProperty propertyName="DownloadLink" typeName="string" />
+        <ECProperty propertyName="BoundingBox" typeName="string" />
+        <!--ECProperty propertyName="Payload" typeName="string" /-->
+    </ECClass>
+    
+    <!--ECClass typeName="USGSThumbnail" isDomainClass="true">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>USGSAPI</QueryType>
+            </QueryType>
+            <FileHolder>
+                <Type>USGSThumbnail</Type>
+                <LocationHoldingPropertyName></LocationHoldingPropertyName>
+            </FileHolder>
+        </ECCustomAttributes>
+
+        <ECProperty propertyName="ThumbnailURL" typeName="string" />
+    </ECClass-->
+    
+    <ECRelationshipClass 
+      typeName="SpatialEntityDatasetToSpatialEntityBase" 
+      description="Link between SpatialEntityDataset and the SpatialEntityBases it contains." 
+      strength="embedding" 
+      strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipKeys>
+                <ContainerClassName>SpatialEntityDataset</ContainerClassName>
+                <ContainerKey>Id</ContainerKey>
+                <ContainedClassName>SpatialEntityBase</ContainedClassName>
+                <ContainedKey>ParentDataset_Id</ContainedKey>
+            </RelationshipKeys>
+        </ECCustomAttributes>
+        <Source cardinality="(0,1)" roleLabel="contains" polymorphic="False">
+            <Class class="SpatialEntityDataset" />
+        </Source>
+        <Target cardinality="(0,n)" roleLabel="contained in" polymorphic="True">
+            <Class class="SpatialEntityBase" />
+        </Target>
+    </ECRelationshipClass>
+    
+    <ECRelationshipClass 
+      typeName="DetailsViewToChildren" 
+      description="Link between SpatialEntityDataset (view version) and the SpatialEntityBases (view version) it contains." 
+      strength="embedding" 
+      strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipKeys>
+                <ContainerClassName>SpatialEntityWithDetailsView</ContainerClassName>
+                <ContainerKey>Id</ContainerKey>
+                <ContainedClassName>SpatialEntityWithDetailsView</ContainedClassName>
+                <ContainedKey>ParentDataset_Id</ContainedKey>
+            </RelationshipKeys>
+        </ECCustomAttributes>
+        <Source cardinality="(0,1)" roleLabel="contains" polymorphic="False">
+            <Class class="SpatialEntityWithDetailsView" />
+        </Source>
+        <Target cardinality="(0,n)" roleLabel="contained in" polymorphic="False">
+            <Class class="SpatialEntityWithDetailsView" />
+        </Target>
+    </ECRelationshipClass>
+    
+    <ECRelationshipClass 
+      typeName="SpatialEntityDatasetToAlternateDataset" 
+      description="Link between SpatialEntityDataset and an alternate dataset." 
+      strength="Referencing" 
+      strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipKeys>
+                <ContainerClassName>SpatialEntityDataset</ContainerClassName>
+                <ContainerKey>AlternateDataset_Id</ContainerKey>
+                <ContainedClassName>SpatialEntityDataset</ContainedClassName>
+                <ContainedKey>Id</ContainedKey>
+            </RelationshipKeys>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="References" polymorphic="False">
+            <Class class="SpatialEntityDataset" />
+        </Source>
+        <Target cardinality="(0,1)" roleLabel="Referenced by" polymorphic="False">
+            <Class class="SpatialEntityDataset" />
+        </Target>
+    </ECRelationshipClass>
+    
+    <ECRelationshipClass
+      typeName="SpatialEntityBaseToThumbnail"
+      description="Link between SpatialEntityBase and the thumbnail assigned to it"
+      strength="holding"
+      strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipKeys>
+                <ContainerClassName>SpatialEntityBase</ContainerClassName>
+                <ContainerKey>Thumbnail_Id</ContainerKey>
+                <ContainedClassName>Thumbnail</ContainedClassName>
+                <ContainedKey>Id</ContainedKey>
+            </RelationshipKeys>
+        </ECCustomAttributes>
+        <Source cardinality="(0,n)" roleLabel="holding" polymorphic="True">
+            <Class class="SpatialEntityBase" />
+        </Source>
+        <Target cardinality="(0,1)" roleLabel="held by" polymorphic="False">
+            <Class class="Thumbnail" />
+        </Target>
+    </ECRelationshipClass>
+    
+    <ECRelationshipClass
+      typeName="SpatialEntityBaseToMetadata"
+      description="Link between SpatialEntityBase and the metadata describing it"
+      strength="holding"
+      strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipKeys>
+                <ContainerClassName>SpatialEntityBase</ContainerClassName>
+                <ContainerKey>Metadata_Id</ContainerKey>
+                <ContainedClassName>Metadata</ContainedClassName>
+                <ContainedKey>Id</ContainedKey>
+            </RelationshipKeys>
+        </ECCustomAttributes>
+        <Source cardinality="(0,n)" roleLabel="holding" polymorphic="True">
+            <Class class="SpatialEntityBase" />
+        </Source>
+        <Target cardinality="(0,1)" roleLabel="held by" polymorphic="False">
+            <Class class="Metadata" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass
+      typeName="SpatialEntityToSpatialDataSource"
+      description="Link between SpatialEntity and its Sources"
+      strength="holding"
+      strengthDirection="forward">
+        <ECCustomAttributes>
+            <ManyToManyRelationshipKeys>
+                <IntermediateTableName>dbo.SpatialEntitySpatialDataSources</IntermediateTableName>
+                <ContainerClassName>SpatialEntity</ContainerClassName>
+                <ContainerKey>Id</ContainerKey>
+                <IntermediateContainerKey>SpatialEntity_Id</IntermediateContainerKey>
+                <IntermediateContainedKey>SpatialDataSource_Id</IntermediateContainedKey>
+                <ContainedClassName>SpatialDataSource</ContainedClassName>
+                <ContainedKey>Id</ContainedKey>
+            </ManyToManyRelationshipKeys>
+        </ECCustomAttributes>
+        <Source cardinality="(1,n)" roleLabel="referencing" polymorphic="False">
+            <Class class="SpatialEntity" />
+        </Source>
+        <Target cardinality="(1,n)" roleLabel="referenced" polymorphic="True">
+            <Class class="SpatialDataSource" />
+        </Target>
+    </ECRelationshipClass>        
+        
+    <ECRelationshipClass
+      typeName="ServerToSpatialDataSource"
+      description="Link between a server and the sources it holds"
+      strength="holding"
+      strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipKeys>
+                <ContainerClassName>Server</ContainerClassName>
+                <ContainerKey>Id</ContainerKey>
+                <ContainedClassName>SpatialDataSource</ContainedClassName>
+                <ContainedKey>Server_Id</ContainedKey>
+            </RelationshipKeys>
+        </ECCustomAttributes>
+        <Source cardinality="(0,1)" roleLabel="Holding" polymorphic="True">
+            <Class class="Server" />
+        </Source>
+        <Target cardinality="(0,n)" roleLabel="Held by" polymorphic="True">
+            <Class class="SpatialDataSource" />
+        </Target>
+    </ECRelationshipClass>
+        
+    <ECRelationshipClass 
+      typeName="WMSServerToWMSLayer" 
+      description="Link between WMSServer and the WMSLayers it holds." 
+      strength="Holding" 
+      strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipKeys>
+                <ContainerClassName>WMSServer</ContainerClassName>
+                <ContainerKey>Id</ContainerKey>
+                <ContainedClassName>WMSLayer</ContainedClassName>
+                <ContainedKey>WMSServer_Id</ContainedKey>
+            </RelationshipKeys>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="Holding" polymorphic="False">
+            <Class class="WMSServer" />
+        </Source>
+        <Target cardinality="(0,n)" roleLabel="Held by" polymorphic="False">
+            <Class class="WMSLayer" />
+        </Target>
+    </ECRelationshipClass>
+        
+    <ECRelationshipClass 
+      typeName="WMSLayerToSubLayer" 
+      description="Link between WMSLayer and its sub layers." 
+      strength="Holding" 
+      strengthDirection="forward">
+        <ECCustomAttributes>
+            <RelationshipKeys>
+                <ContainerClassName>WMSLayer</ContainerClassName>
+                <ContainerKey>Id</ContainerKey>
+                <ContainedClassName>WMSLayer</ContainedClassName>
+                <ContainedKey>ParentLayer_Id</ContainedKey>
+            </RelationshipKeys>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="Holding" polymorphic="False">
+            <Class class="WMSLayer" />
+        </Source>
+        <Target cardinality="(0,n)" roleLabel="Held by" polymorphic="False">
+            <Class class="WMSLayer" />
+        </Target>
+    </ECRelationshipClass>
+        
+    <ECClass typeName="RequestedEntity" isStruct="true" isDomainClass="true">
+        <ECProperty propertyName="ID" typeName="string" />
+        <ECProperty propertyName="SelectedFormat" typeName="string" />
+        <ECProperty propertyName="SelectedStyle" typeName="string" />
+        <ECProperty propertyName="Legal" typeName="string" />
+    </ECClass>
+   
+    
+    <ECClass typeName="PackageRequest" isDomainClass="true">
+        <ECArrayProperty propertyName="RequestedEntities" typeName="RequestedEntity" minOccurs="1" maxOccurs="unbounded" />
+        <ECProperty propertyName="CoordinateSystem" typeName="string" />
+        <ECProperty propertyName="Polygon" typeName="string" />
+    </ECClass>
+    
+    <ECClass typeName="PreparedPackage" isDomainClass="true">
+        <ECCustomAttributes>
+            <FileHolder>
+                <Type>PreparedPackage</Type>
+                <LocationHoldingProperty></LocationHoldingProperty> <!-- For prepared packages, can be empty. The instanceID is used as the location. -->
+            </FileHolder>
+        </ECCustomAttributes>
+        
+    </ECClass>
+    
+</ECSchema>
