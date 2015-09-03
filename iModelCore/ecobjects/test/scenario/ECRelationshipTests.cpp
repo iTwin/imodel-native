@@ -301,7 +301,7 @@ TEST_F(ECRelationshipTests, DISABLED_DumpToString)
     EXPECT_EQ (sizeof(strMatches)/sizeof(strMatches[0]), strSplit.size());
     size_t check_size = sizeof(strMatches)/sizeof(strMatches[0]) < strSplit.size() ? sizeof(strMatches)/sizeof(strMatches[0]) : strSplit.size();
                                    
-    for (size_t i=0; i<check_size; i++)
+    for (int i=0; i<(int) check_size; i++)
         {
         bool match = std::regex_match (strSplit[i].c_str(), std::regex(strMatches[i].c_str()));
         EXPECT_TRUE (match);

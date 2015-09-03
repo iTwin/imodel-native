@@ -124,7 +124,7 @@ class BeGTestListener : public ::testing::EmptyTestEventListener
     virtual void OnTestProgramEnd(const ::testing::UnitTest& unit_test)
         {
         if (unit_test.failed_test_count() == 0)
-            fprintf (stdout, "\n\nAll test(s) passed\n", unit_test.failed_test_count());
+            fprintf (stdout, "\n\nAll test(s) passed\n");
         else
             fprintf (stderr, "\n\n *** %d test(s) failed ***\n", unit_test.failed_test_count());
         }

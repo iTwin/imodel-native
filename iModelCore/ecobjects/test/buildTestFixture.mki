@@ -47,7 +47,7 @@ GUNITTEST_PATH      = $(o)
 GUNITTEST_SYMB      = $(o)
 GTEST_MAIN_IS_SUPPLIED = 1
 
-%include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
+# %include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
 
 LOCAL_GUNITTEST_OBJS + $(o)gtestmain.obj 
 LOCAL_GUNITTEST_OBJS + $(o)TestFixture.obj

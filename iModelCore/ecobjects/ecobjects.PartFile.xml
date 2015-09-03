@@ -99,6 +99,8 @@
     </Part>
 
     <Part Name="ECObjectsNonPublishedTests" BentleyBuildMakeFile="test/NonPublishedTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="google_gtest_lib"                PartFile="gtest"            Repository="util-gtest" />
+        <SubPart PartName="google_gmock_lib"                PartFile="gmock"            Repository="util-gmock" />
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery/ECObjectsTest_NonPublished.exe</Files>
