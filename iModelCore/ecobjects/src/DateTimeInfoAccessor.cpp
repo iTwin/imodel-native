@@ -2,7 +2,7 @@
 |
 |     $Source: src/DateTimeInfoAccessor.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -12,12 +12,12 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-WCharCP const DateTimeInfoAccessor::DATETIMEINFO_CLASSNAME = L"DateTimeInfo";
+Utf8CP const DateTimeInfoAccessor::DATETIMEINFO_CLASSNAME = "DateTimeInfo";
 
 //static
-WCharCP const DateTimeInfoAccessor::DATETIMEINFO_KIND_PROPERTYNAME = L"DateTimeKind";
+Utf8CP const DateTimeInfoAccessor::DATETIMEINFO_KIND_PROPERTYNAME = "DateTimeKind";
 //static
-WCharCP const DateTimeInfoAccessor::DATETIMEINFO_COMPONENT_PROPERTYNAME = L"DateTimeComponent";
+Utf8CP const DateTimeInfoAccessor::DATETIMEINFO_COMPONENT_PROPERTYNAME = "DateTimeComponent";
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
@@ -47,15 +47,19 @@ WCharCP const DateTimeInfoAccessor::DATETIMECOMPONENT_DATE_WSTR = L"Date";
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
+ECObjectsStatus DateTimeInfoAccessor::GetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
     ArrayECPropertyCP arrayDateTimeProp = NULL;
     PRECONDITION ((dateTimeProperty.GetIsPrimitive () && dateTimeProperty.GetAsPrimitiveProperty ()->GetType () == PRIMITIVETYPE_DateTime) || 
-                  ((arrayDateTimeProp = dateTimeProperty.GetAsArrayProperty ()) != NULL && arrayDateTimeProp->GetKind () == ARRAYKIND_Primitive && arrayDateTimeProp->GetPrimitiveElementType () == PRIMITIVETYPE_DateTime), false);
+                  ((arrayDateTimeProp = dateTimeProperty.GetAsArrayProperty ()) != NULL && arrayDateTimeProp->GetKind () == ARRAYKIND_Primitive && arrayDateTimeProp->GetPrimitiveElementType () == PRIMITIVETYPE_DateTime), ECOBJECTS_STATUS_DataTypeNotSupported);
 
     IECInstancePtr caInstance = dateTimeProperty.GetCustomAttribute (DATETIMEINFO_CLASSNAME);
     if (caInstance.IsNull())
-        return false;
+        {
+        //no CA found -> return a DateTimeInfo for which both Kind and Component are set to unset
+        dateTimeInfo = DateTimeInfo ();
+        return ECOBJECTS_STATUS_Success;
+        }
 
     //Retrieve DateTimeKind
     ECValue caVal;
@@ -63,7 +67,7 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR 
     if (stat != ECOBJECTS_STATUS_Success)
         {
         LogPropertyNotFoundError (DATETIMEINFO_KIND_PROPERTYNAME);
-        return false;
+        return ECOBJECTS_STATUS_PropertyNotFound;
         }
 
     bool isKindNull = true;
@@ -71,7 +75,7 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR 
     //parsing returns false in error case
     if (!TryParseKind (isKindNull, kind, caVal))
         {
-        return false;
+        return ECOBJECTS_STATUS_ParseError;
         }
 
     //Retrieve DateTimeComponent
@@ -80,7 +84,7 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR 
     if (stat != ECOBJECTS_STATUS_Success)
         {
         LogPropertyNotFoundError (DATETIMEINFO_COMPONENT_PROPERTYNAME);
-        return false;
+        return ECOBJECTS_STATUS_PropertyNotFound;
         }
 
     bool isComponentNull = true;
@@ -88,17 +92,11 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR 
     //parsing returns false in error case
     if (!TryParseComponent (isComponentNull, component, caVal))
         {
-        return false;
+        return ECOBJECTS_STATUS_ParseError;
         }
         
-    //if both meta data items are unset, consider this as if the CA wasn't specified
-    if (isKindNull && isComponentNull)
-        {
-        return false;
-        }
-
     dateTimeInfo = DateTimeInfo (isKindNull, kind, isComponentNull, component);
-    return true;
+    return ECOBJECTS_STATUS_Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -117,7 +115,7 @@ bool DateTimeInfoAccessor::TryParseKind (bool& isKindNull, DateTime::Kind& kind,
 
     if (ecValue.IsUtf8 ())
         {
-        Utf8CP kindStr = ecValue.GetUtf8CP ();
+        Utf8CP kindStr = ecValue.GetUtf8CP();
         return TryParseKind (isKindNull, kind, kindStr);
         }
     else
@@ -213,7 +211,7 @@ bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::C
 
     if (ecValue.IsUtf8 ())
         {
-        return TryParseComponent (isComponentNull, component, ecValue.GetUtf8CP ());
+        return TryParseComponent (isComponentNull, component, ecValue.GetUtf8CP());
         }
     else
         {
@@ -285,9 +283,9 @@ bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::C
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-void DateTimeInfoAccessor::LogPropertyNotFoundError (WCharCP propertyName)
+void DateTimeInfoAccessor::LogPropertyNotFoundError (Utf8CP propertyName)
     {
-    LOG.errorv (L"Property '%ls' not found in custom attribute class '%ls'.", propertyName, DATETIMEINFO_CLASSNAME);
+    LOG.errorv ("Property '%ls' not found in custom attribute class '%s'.", propertyName, DATETIMEINFO_CLASSNAME);
     BeAssert (false);
     }
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="BadRelationship" nameSpacePrefix="br" Description="Schema With Missing Relationship Endpoint Class" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECClass typeName="SourceClass" isDomainClass="True">
+        <ECProperty propertyName="Property1" typeName="string" />
+        <ECProperty propertyName="Property2" typeName="int" />
+    </ECClass>
+    <ECRelationshipClass typeName="RelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,1)" roleLabel="source constraint" polymorphic="True">
+            <Class class="SourceClass" />
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="target constraint" polymorphic="True">
+            <Class class="TargetClass" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

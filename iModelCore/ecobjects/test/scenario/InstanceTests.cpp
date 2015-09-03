@@ -2,13 +2,15 @@
 |
 |     $Source: test/scenario/InstanceTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+using namespace ECN;
+
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct  Struct1
     {
@@ -19,7 +21,7 @@ struct  Struct1
 struct  Struct2
     {
     bool            struct2StringMemberNull;
-    WCharCP         struct2StringMember;
+    Utf8CP          struct2StringMember;
     bool            struct2DoubleMemberNull;
     double          struct2DoubleMember;
     Struct1*        nestedArray;
@@ -33,79 +35,79 @@ void VerifyTestInstance (IECInstanceCP testInstance)
     {
     ECValue ecValue;
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"BaseClassMember"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "BaseClassMember"));
     EXPECT_EQ (987, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntegerMember"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "IntegerMember"));
     EXPECT_EQ (12, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"CustomFormatInt"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "CustomFormatInt"));
     EXPECT_EQ (13, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"BooleanMember"));
-    EXPECT_EQ (false, ecValue.GetBoolean());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "BooleanMember"));
+    EXPECT_FALSE (ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DoubleMember"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "DoubleMember"));
     EXPECT_EQ (456.789, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringMember"));
-    EXPECT_STREQ (ecValue.GetString(), L"Test string");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "StringMember"));
+    EXPECT_STREQ (ecValue.GetUtf8CP(), "Test string");
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FileNameMember"));
-    EXPECT_STREQ (ecValue.GetString(), L"c:\\usr\\barry\\test.txt");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FileNameMember"));
+    EXPECT_STREQ (ecValue.GetUtf8CP(), "c:\\usr\\barry\\test.txt");
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"NegativeMember"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "NegativeMember"));
     EXPECT_EQ (-42, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateTimeMember"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "DateTimeMember"));
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StartPoint"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "StartPoint"));
     EXPECT_EQ (1.1, ecValue.GetPoint3D().x);
     EXPECT_EQ (2.2, ecValue.GetPoint3D().y);
     EXPECT_EQ (3.3, ecValue.GetPoint3D().z);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"EndPoint"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "EndPoint"));
     EXPECT_EQ (4.4, ecValue.GetPoint3D().x);
     EXPECT_EQ (7.7, ecValue.GetPoint3D().y);
     EXPECT_EQ (6.6, ecValue.GetPoint3D().z);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SecondEmbeddedStruct.Struct1BoolMember"));
-    EXPECT_EQ (false, ecValue.GetBoolean());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "SecondEmbeddedStruct.Struct1BoolMember"));
+    EXPECT_FALSE (ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SecondEmbeddedStruct.Struct1IntMember"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "SecondEmbeddedStruct.Struct1IntMember"));
     EXPECT_EQ (4, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3DoubleMember"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStruct.Struct3DoubleMember"));
     EXPECT_EQ (17.443, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3IntMember"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStruct.Struct3IntMember"));
     EXPECT_EQ (531992, ecValue.GetInteger());
     
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3BoolMember"));
-    EXPECT_EQ (true, ecValue.GetBoolean());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStruct.Struct3BoolMember"));
+    EXPECT_TRUE (ecValue.GetBoolean());
 
     int         expectedInts[] = {0, 101, 202, 303, 404, 505, 606, 707, 808, 909};
     for (uint32_t index=0; index < _countof (expectedInts); index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedArray", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedArray", index));
         EXPECT_EQ (expectedInts[index], ecValue.GetInteger());
         }
 
     int         moreInts[] = {41556, 32757, 56789, 32757, 21482 };
     for (uint32_t index=0; index < _countof (moreInts); index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntArray", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "IntArray", index));
         EXPECT_EQ (moreInts[index], ecValue.GetInteger());
         }
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"OneMemberIntArray", 0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "OneMemberIntArray", 0));
     EXPECT_EQ (3, ecValue.GetInteger());
 
     DPoint3d    expectedPoints[] = { {4.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, {2.0, 2.0, 2.0}, {3.0, 3.0, 3.0}, {4.0, 4.0, 4.0}, {5.0, 5.0, 5.0} };
     for (uint32_t index=0; index < _countof (expectedPoints); index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PointArray", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "PointArray", index));
         EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3D().x);
         EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3D().y);
         EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3D().z);
@@ -113,20 +115,20 @@ void VerifyTestInstance (IECInstanceCP testInstance)
 
     for (uint32_t index=0; index < 300; index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateArray", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "DateArray", index));
         }
 
     for (uint32_t index=0; index < 300; index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringArray", index));
-        wchar_t     expectedString[128];
-        swprintf (expectedString, L"String %d", index%30);
-        EXPECT_STREQ (expectedString, ecValue.GetString());
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "StringArray", index));
+        Utf8Char     expectedString[128];
+        sprintf (expectedString, "String %d", index%30);
+        EXPECT_STREQ (expectedString, ecValue.GetUtf8CP());
         }
 
     for (uint32_t index=0; index < 100; index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SmallIntArray", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "SmallIntArray", index));
         EXPECT_EQ (index, ecValue.GetInteger());
         }
 
@@ -141,7 +143,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
         {
             {
             false,
-            L"testInstance.StructArray[0].Struct2StringMember",
+            "testInstance.StructArray[0].Struct2StringMember",
             false,
             123456.789,
             firstArray,
@@ -149,7 +151,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
             },
             {
             false,
-            L"testInstance.StructArray[1].Struct2StringMember",
+            "testInstance.StructArray[1].Struct2StringMember",
             false,
             23456.789,
             secondArray,          
@@ -157,7 +159,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
             },
             {
             false,
-            L"Added.Struct2StringMember",
+            "Added.Struct2StringMember",
             true,
             0.0,
             NULL,
@@ -168,29 +170,29 @@ void VerifyTestInstance (IECInstanceCP testInstance)
     for (uint32_t index=0; index < _countof (struct2ExpectedValues); index++)
         {
         ECValue         structArrayMember;
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (structArrayMember, L"StructArray", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (structArrayMember, "StructArray", index));
         IECInstancePtr  structArrayInstance = structArrayMember.GetStruct();
-        EXPECT_EQ (true, structArrayInstance.IsValid());
+        EXPECT_TRUE (structArrayInstance.IsValid());
         
         if (struct2ExpectedValues[index].struct2StringMemberNull)
             {
             // This throws an assert rather than returning ERROR.
-            // EXPECT_EQ (ERROR, structArrayInstance->GetString (stringValue, L"Struct2StringMember"));
+            // EXPECT_EQ (ERROR, structArrayInstance->GetString (stringValue, "Struct2StringMember"));
             }
         else
             {
-            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, L"Struct2StringMember"));
-            EXPECT_STREQ (struct2ExpectedValues[index].struct2StringMember, ecValue.GetString());
+            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, "Struct2StringMember"));
+            EXPECT_STREQ (struct2ExpectedValues[index].struct2StringMember, ecValue.GetUtf8CP());
             }
 
         if (struct2ExpectedValues[index].struct2DoubleMemberNull)
             {
             // This throws an assert rather than returning ERROR.
-            // EXPECT_EQ (ERROR, structArrayInstance->GetDouble (doubleValue, L"Struct2DoubleMember"));
+            // EXPECT_EQ (ERROR, structArrayInstance->GetDouble (doubleValue, "Struct2DoubleMember"));
             }
         else
             {
-            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, L"Struct2DoubleMember"));
+            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, "Struct2DoubleMember"));
             EXPECT_EQ (struct2ExpectedValues[index].struct2DoubleMember, ecValue.GetDouble());
             }
 
@@ -201,14 +203,14 @@ void VerifyTestInstance (IECInstanceCP testInstance)
         for (uint32_t nestedIndex=0; nestedIndex < struct2ExpectedValues[index].arraySize; nestedIndex++)
             {
             ECValue     nestedArrayMember;
-            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (nestedArrayMember, L"NestedArray", nestedIndex));
+            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (nestedArrayMember, "NestedArray", nestedIndex));
             IECInstancePtr  nestedInstance = nestedArrayMember.GetStruct();
-            EXPECT_EQ (true, nestedInstance.IsValid());
+            EXPECT_TRUE (nestedInstance.IsValid());
             
-            EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, L"Struct1BoolMember"));
+            EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, "Struct1BoolMember"));
             EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1BoolMember, ecValue.GetBoolean());
 
-            EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, L"Struct1IntMember"));
+            EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, "Struct1IntMember"));
             EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1IntMember, ecValue.GetInteger());
             }
         }
@@ -224,7 +226,7 @@ struct InstanceTests : ECTestFixture
     IECInstancePtr       m_instance;
     uint32_t             propIndex;
 
-    void CreateSchema(WString schemaName = L"TestSchema", WString className = L"TestClass")
+    void CreateSchema(Utf8String schemaName = "TestSchema", Utf8String className = "TestClass")
         {
         ECSchema::CreateSchema (m_schema, schemaName, 1, 0);
         m_schema->CreateClass (m_ecClass, className);
@@ -235,7 +237,7 @@ struct InstanceTests : ECTestFixture
         m_instance = m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
         }
         
-    PrimitiveECPropertyP CreateProperty(WCharCP name, PrimitiveType primitiveType)
+    PrimitiveECPropertyP CreateProperty(Utf8CP name, PrimitiveType primitiveType)
         {
         PrimitiveECPropertyP prop;
         m_ecClass->CreatePrimitiveProperty (prop, name, primitiveType);
@@ -243,7 +245,7 @@ struct InstanceTests : ECTestFixture
         return prop;
         }
         
-    PrimitiveECPropertyP CreateProperty(WCharCP name)
+    PrimitiveECPropertyP CreateProperty(Utf8CP name)
         {
         PrimitiveECPropertyP prop;
         m_ecClass->CreatePrimitiveProperty (prop, name);
@@ -251,7 +253,7 @@ struct InstanceTests : ECTestFixture
         return prop;
         }
         
-    ArrayECPropertyP CreateArrayProperty(WCharCP name)
+    ArrayECPropertyP CreateArrayProperty(Utf8CP name)
         {
         ArrayECPropertyP prop;
         m_ecClass->CreateArrayProperty (prop, name);
@@ -268,19 +270,19 @@ struct PropertyTests : InstanceTests{};
 TEST_F (InstanceTests, TestIsNullPrimitive)
     {
     CreateSchema();
-    CreateProperty(L"PropertyString", PRIMITIVETYPE_String);
+    CreateProperty("PropertyString", PRIMITIVETYPE_String);
     CreateInstance();
     
     bool isNull = NULL;
     
-    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, "PropertyString"), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
     
-    EXPECT_EQ (m_instance->SetValue (L"PropertyString", ECValue(L"Some value")), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->SetValue ("PropertyString", ECValue("Some value")), ECOBJECTS_STATUS_Success);
     
-    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, "PropertyString"), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
@@ -293,32 +295,32 @@ TEST_F (InstanceTests, TestIsNullPrimitive)
 TEST_F (InstanceTests, TestIsNullArray)
     {
     CreateSchema();
-    CreateArrayProperty(L"PropertyArray");
+    CreateArrayProperty("PropertyArray");
     CreateInstance();
     
-    bool isNull=true;
+    bool isNull = false;
     
-    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, "PropertyArray"), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
     
-    EXPECT_EQ (m_instance->AddArrayElements (L"PropertyArray", 15), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (m_instance->SetValue (L"PropertyArray", ECValue(L"Some value"), 3), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->AddArrayElements ("PropertyArray", 15), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->SetValue ("PropertyArray", ECValue("Some value"), 3), ECOBJECTS_STATUS_Success);
     
     //Strangelly array property doesn't exist as PrimitiveProperty
-    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, "PropertyArray"), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
     //-------------------------------------------------------------
     
-    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray", 3), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, "PropertyArray", 3), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex, 3), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
     
-    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray", 13), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, "PropertyArray", 13), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex, 13), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
@@ -330,24 +332,24 @@ TEST_F (InstanceTests, TestIsNullArray)
 TEST_F (InstanceTests, TestArraySize)
     {
     CreateSchema();
-    CreateArrayProperty(L"PropertyArray");
+    CreateArrayProperty("PropertyArray");
     CreateInstance();
     
     ECValue arrayVal;
     
-    EXPECT_EQ (m_instance->GetValue (arrayVal, L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetValue (arrayVal, "PropertyArray"), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (arrayVal.IsArray());
     EXPECT_EQ (arrayVal.GetArrayInfo().GetCount(), 0);
     
-    EXPECT_EQ (m_instance->AddArrayElements (L"PropertyArray", 13), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->AddArrayElements ("PropertyArray", 13), ECOBJECTS_STATUS_Success);
     
-    EXPECT_EQ (m_instance->GetValue (arrayVal, L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetValue (arrayVal, "PropertyArray"), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (arrayVal.IsArray());
     EXPECT_EQ (arrayVal.GetArrayInfo().GetCount(), 13);
     
-    EXPECT_EQ (m_instance->ClearArray (L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->ClearArray ("PropertyArray"), ECOBJECTS_STATUS_Success);
     
-    EXPECT_EQ (m_instance->GetValue (arrayVal, L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetValue (arrayVal, "PropertyArray"), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (arrayVal.IsArray());
     EXPECT_EQ (arrayVal.GetArrayInfo().GetCount(), 0);
     
@@ -370,18 +372,18 @@ TEST_F (InstanceTests, TestArraySize)
 TEST_F (InstanceTests, TestSetValueString)
     {
     CreateSchema();
-    CreateProperty(L"Property_1");
+    CreateProperty("Property_1");
     CreateInstance();
     
     ECValue value;
     
-    EXPECT_EQ (m_instance->SetValue (L"Property_1", ECValue(L"Some value 1")), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (m_instance->GetValue (value, L"Property_1"), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (value.GetString(), L"Some value 1");
+    EXPECT_EQ (m_instance->SetValue ("Property_1", ECValue("Some value 1")), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetValue (value, "Property_1"), ECOBJECTS_STATUS_Success);
+    EXPECT_STREQ (value.GetUtf8CP(), "Some value 1");
     
-    EXPECT_EQ (m_instance->SetValue (propIndex, ECValue(L"Some value 2")), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->SetValue (propIndex, ECValue("Some value 2")), ECOBJECTS_STATUS_Success);
     EXPECT_EQ (m_instance->GetValue (value, propIndex), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (value.GetString(), L"Some value 2");
+    EXPECT_STREQ (value.GetUtf8CP(), "Some value 2");
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -390,30 +392,30 @@ TEST_F (InstanceTests, TestSetValueString)
 TEST_F (InstanceTests, TestSetDisplayLabel)
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    SchemaKey schemaKey (L"Bentley_Standard_CustomAttributes", 1, 5);
+    SchemaKey schemaKey ("Bentley_Standard_CustomAttributes", 1, 5);
     ECSchemaPtr customAttributesSchema = context->LocateSchema (schemaKey, SCHEMAMATCHTYPE_Latest);
         
-    StandaloneECEnablerP m_customAttributeEnabler = customAttributesSchema->GetClassP (L"InstanceLabelSpecification")->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerP m_customAttributeEnabler = customAttributesSchema->GetClassP ("InstanceLabelSpecification")->GetDefaultStandaloneEnabler();
     CreateSchema();
     m_schema->AddReferencedSchema (*customAttributesSchema);
 
     PrimitiveECPropertyP prop;
-    m_ecClass->CreatePrimitiveProperty (prop, L"InstanceLabel", PRIMITIVETYPE_String);
+    m_ecClass->CreatePrimitiveProperty (prop, "InstanceLabel", PRIMITIVETYPE_String);
 
     IECInstancePtr labelAttr = m_customAttributeEnabler->CreateInstance();
-    labelAttr->SetValue (L"PropertyName", ECValue(L"InstanceLabel"));
+    labelAttr->SetValue ("PropertyName", ECValue("InstanceLabel"));
     m_ecClass->SetCustomAttribute (*labelAttr);
         
     IECInstancePtr m_instance = m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
     
-    WString displayLabel;
+    Utf8String displayLabel;
     EXPECT_EQ (m_instance->GetDisplayLabel (displayLabel), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (displayLabel.Equals (m_ecClass->GetDisplayLabel()));
-    
-    EXPECT_EQ (m_instance->SetDisplayLabel(L"Some fancy instance label"), ECOBJECTS_STATUS_Success);
+
+    EXPECT_EQ (m_instance->SetDisplayLabel("Some fancy instance label"), ECOBJECTS_STATUS_Success);
 
     EXPECT_EQ (m_instance->GetDisplayLabel (displayLabel), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (displayLabel.c_str(), L"Some fancy instance label");
+    EXPECT_STREQ (displayLabel.c_str(), "Some fancy instance label");
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -450,17 +452,17 @@ TEST_F(InstanceTests, InstanceWriteReadFile)
 TEST_F(PropertyTests, DISABLED_SetReadOnlyAndSetValue)
     {
     CreateSchema();
-    CreateProperty(L"PropertyString", PRIMITIVETYPE_String);
-    m_ecClass->GetPropertyP (L"PropertyString")->SetIsReadOnly(true);
+    CreateProperty("PropertyString", PRIMITIVETYPE_String);
+    m_ecClass->GetPropertyP ("PropertyString")->SetIsReadOnly(true);
     CreateInstance();
     
     ECValue getValue;
     EXPECT_TRUE (getValue.IsReadOnly());
     
-    EXPECT_EQ (m_instance->SetValue (L"PropertyString", ECValue(L"Some value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
-    EXPECT_EQ (m_instance->GetValue (getValue, L"PropertyString"), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (getValue.GetString(), L"Some value");
-    EXPECT_TRUE (m_ecClass->GetPropertyP (L"PropertyString")->GetIsReadOnly());
+    EXPECT_EQ (m_instance->SetValue ("PropertyString", ECValue("Some value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
+    EXPECT_EQ (m_instance->GetValue (getValue, "PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_STREQ (getValue.GetUtf8CP(), "Some value");
+    EXPECT_TRUE (m_ecClass->GetPropertyP ("PropertyString")->GetIsReadOnly());
     };
     
 /*---------------------------------------------------------------------------------**//**
@@ -469,17 +471,17 @@ TEST_F(PropertyTests, DISABLED_SetReadOnlyAndSetValue)
 TEST_F(PropertyTests, DISABLED_SetReadOnlyAndChangeValue)
     {
     CreateSchema();
-    CreateProperty(L"PropertyString", PRIMITIVETYPE_String);
-    m_ecClass->GetPropertyP (L"PropertyString")->SetIsReadOnly(true);
+    CreateProperty("PropertyString", PRIMITIVETYPE_String);
+    m_ecClass->GetPropertyP ("PropertyString")->SetIsReadOnly(true);
     CreateInstance();
     
     ECValue getValue;
     EXPECT_TRUE (getValue.IsReadOnly());
    
-    EXPECT_EQ (m_instance->ChangeValue (L"PropertyString", ECValue(L"Other value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
-    EXPECT_EQ (m_instance->GetValue (getValue, L"PropertyString"), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (getValue.GetString(), L"Other value");
-    EXPECT_TRUE (m_ecClass->GetPropertyP (L"PropertyString")->GetIsReadOnly());
+    EXPECT_EQ (m_instance->ChangeValue ("PropertyString", ECValue("Other value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
+    EXPECT_EQ (m_instance->GetValue (getValue, "PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_STREQ (getValue.GetUtf8CP(), "Other value");
+    EXPECT_TRUE (m_ecClass->GetPropertyP ("PropertyString")->GetIsReadOnly());
     };
     
 /*---------------------------------------------------------------------------------**//**
@@ -488,21 +490,21 @@ TEST_F(PropertyTests, DISABLED_SetReadOnlyAndChangeValue)
 TEST_F(PropertyTests, GetValueFromInstance)
     {
     CreateSchema();
-    CreateProperty(L"Property_1");
+    CreateProperty("Property_1");
     CreateInstance();
     
-    m_instance->SetValue (L"Property_1", ECValue(L"Some value"));
-    ECPropertyValuePtr propValue = ECPropertyValue::GetPropertyValue (*m_instance, L"Property_1");
+    m_instance->SetValue ("Property_1", ECValue("Some value"));
+    ECPropertyValuePtr propValue = ECPropertyValue::GetPropertyValue (*m_instance, "Property_1");
     
     IECInstanceCR instance = propValue->GetInstance();
     EXPECT_STREQ (m_instance->GetInstanceId().c_str(), instance.GetInstanceId().c_str());
     ECValueCR value = propValue->GetValue();
-    EXPECT_STREQ (value.ToString().c_str(), L"Some value");
+    EXPECT_STREQ (value.ToString().c_str(), "Some value");
     ECValueAccessorCR accessor = propValue->GetValueAccessor();
-    EXPECT_STREQ (accessor.GetAccessString(), L"Property_1");
+    EXPECT_STREQ (accessor.GetAccessString(), "Property_1");
     EXPECT_FALSE (propValue->HasChildValues());
     }
     
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE
 
 

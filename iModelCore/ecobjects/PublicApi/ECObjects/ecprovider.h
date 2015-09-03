@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 #include "ECObjects.h"
 
@@ -14,11 +15,10 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //! @addtogroup ECObjectsGroup
 //! @beginGroup 
-//! @bsiclass
 struct IECProvider
     {
     protected:
-        //!Get the provider id 
+        //!Get the provider id
         virtual uint16_t    _GetProviderId () const = 0;
 
         //!Get the provider name
@@ -37,3 +37,5 @@ struct IECProvider
     };
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

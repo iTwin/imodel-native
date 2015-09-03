@@ -6,30 +6,52 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <ECObjects\ECContext.h>
+#include <ECObjects/ECContext.h>
 
 USING_NAMESPACE_EC
+
+static BeFileName s_rootDirectory;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    ShaunSewall     06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+void            ECSchemaReadContext::Initialize (BeFileNameCR rootDirectory)
+    {
+    s_rootDirectory = rootDirectory;
+    s_rootDirectory.AppendSeparator();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle     10/14
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BeFileNameCR ECSchemaReadContext::GetHostAssetsDirectory ()
+    {
+    return s_rootDirectory;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchPaths)
     {
-    BeFileName dllPath (ECFileUtilities::GetDllPath().c_str());
-    if (0 == *dllPath.GetName())
+    BeFileName rootDir (s_rootDirectory);
+    if (0 == *rootDir.GetName())
         return false;
-    
-    dllPath.AppendSeparator();
-    searchPaths.push_back (dllPath.GetName());
-    
-    dllPath.AppendToPath (L"ECSchemas");
 
-    BeFileName standardPath = dllPath;
+    rootDir.AppendSeparator();
+    searchPaths.push_back (rootDir.GetName());
+
+    rootDir.AppendToPath (L"ECSchemas");
+
+    BeFileName standardPath = rootDir;
     standardPath.AppendToPath (L"Standard");
     standardPath.AppendSeparator();
     searchPaths.push_back (standardPath.GetName());
 
 #if defined (LEGACY_ECSCHEMAS_FOLDER_STRUCTURE)
+    // For Graphite, there are no subfolders under "Standard"
     BeFileName generalPath = standardPath;
     generalPath.AppendToPath (L"General");
     generalPath.AppendSeparator();
@@ -54,18 +76,20 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
     m_remapper (nullptr)
     {
     m_knownSchemas = ECSchemaCache::Create();
-    m_locators.insert(SchemaLocatorKey (m_knownSchemas.get(), ReaderContext));
-    
+    m_locaters.push_back(m_knownSchemas.get());
+
+    m_userAddedLocatersCount = 0;
+    m_searchPathLocatersCount = 0;
+
     bvector<WString> searchPaths;
     if (GetStandardPaths (searchPaths))
         {
-        SchemaLocatorSet::iterator insertionPoint = m_locators.begin();
-        int priority = StandardPaths;
         for (bvector<WString>::const_iterator iter = searchPaths.begin(); iter != searchPaths.end(); ++iter)
             m_searchPaths.insert(*iter);
-        
+
         SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-        m_locators.insert(insertionPoint, SchemaLocatorKey (locator.get(), ++priority));
+        m_locaters.push_back(locator.get());
+        m_searchPathLocatersCount++;
         m_ownedLocators.push_back(locator);
         }
     }
@@ -73,7 +97,7 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaReadContext::ResolveClassName (WStringR className, ECSchemaCR schema) const
+void ECSchemaReadContext::ResolveClassName (Utf8StringR className, ECSchemaCR schema) const
     {
     if (nullptr != m_remapper)
         m_remapper->ResolveClassName (className, schema);
@@ -82,44 +106,22 @@ void ECSchemaReadContext::ResolveClassName (WStringR className, ECSchemaCR schem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)   
-                                                                                        { return new ECSchemaReadContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch); }
-ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch) 
-    { 
-    return CreateContext (NULL, acceptLegacyImperfectLatestCompatibleMatch); 
+ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
+    {
+    return new ECSchemaReadContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch);
+    }
+ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch)
+    {
+    return CreateContext (NULL, acceptLegacyImperfectLatestCompatibleMatch);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContext::SchemaLocatorSet::iterator  ECSchemaReadContext::GetHighestLocatorInRange (uint32_t& priority)
+void  ECSchemaReadContext::AddSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& locators)
     {
-    uint32_t category = (priority - priority % CATEGORY_PARTITION_SIZE);
-    SchemaLocatorKey dummy(NULL, category + CATEGORY_PARTITION_SIZE);
-    
-    //Find the last insertion point of external schema
-    SchemaLocatorSet::iterator iter = std::upper_bound (m_locators.begin(), m_locators.end(), dummy);
-    if (iter != m_locators.end() && iter->m_priority < dummy.m_priority)
-        priority = iter->m_priority + 1;
-    else
-        {
-        iter = m_locators.begin();
-        priority = category + 1;
-        }
-    
-    return iter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void  ECSchemaReadContext::AddExternalSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& locators) 
-    {
-    uint32_t priority = External;
-    SchemaLocatorSet::iterator iter =  GetHighestLocatorInRange (priority);
-    
     for (bvector<ECN::IECSchemaLocaterP>::const_iterator locatorIter = locators.begin(); locatorIter != locators.end(); ++locatorIter)
-        iter = m_locators.insert(iter, SchemaLocatorKey(*locatorIter, ++priority));
+        m_locaters.insert(m_locaters.begin() + ++m_userAddedLocatersCount, *locatorIter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -127,9 +129,7 @@ void  ECSchemaReadContext::AddExternalSchemaLocaters (bvector<ECN::IECSchemaLoca
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  ECSchemaReadContext::AddSchemaLocater (IECSchemaLocaterR locater)
     {
-    uint32_t priority = UserSpace;
-    SchemaLocatorSet::iterator iter = GetHighestLocatorInRange (priority);
-    m_locators.insert (iter, SchemaLocatorKey(&locater, priority));
+    m_locaters.insert (m_locaters.begin() + ++m_userAddedLocatersCount, &locater);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -137,10 +137,13 @@ void  ECSchemaReadContext::AddSchemaLocater (IECSchemaLocaterR locater)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    ECSchemaReadContext::RemoveSchemaLocater (IECSchemaLocaterR locator)
     {
-    for (SchemaLocatorSet::iterator iter = m_locators.begin(); iter != m_locators.end();)
+    for (bvector<IECSchemaLocaterP>::iterator iter = m_locaters.begin(); iter != m_locaters.end();)
         {
-        if (iter->m_locator == &locator)
-            iter = m_locators.erase(iter);
+        if (*iter == &locator)
+            {
+            iter = m_locaters.erase(iter);
+            m_userAddedLocatersCount--;
+            }
         else
             ++iter;
         }
@@ -149,23 +152,20 @@ void    ECSchemaReadContext::RemoveSchemaLocater (IECSchemaLocaterR locator)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  ECSchemaReadContext::AddSchemaPath (WCharCP path) 
+void  ECSchemaReadContext::AddSchemaPath (WCharCP path)
     {
     BeFileName pathStr(path);
     pathStr.AppendSeparator();
-    
+
     if (m_searchPaths.end() != m_searchPaths.find (pathStr.GetName()))
         return;
-
-    uint32_t priority = UserSpace;
-    SchemaLocatorSet::iterator iter = GetHighestLocatorInRange (priority);
 
     bvector<WString> pathVector;
     pathVector.push_back(pathStr.GetName());
     SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (pathVector);
 
     m_searchPaths.insert(pathStr.GetName());
-    m_locators.insert (iter, SchemaLocatorKey (locator.get(), priority));
+    m_locaters.insert (m_locaters.begin() + m_userAddedLocatersCount + ++m_searchPathLocatersCount, locator.get());
     m_ownedLocators.push_back(locator);
     }
 
@@ -188,11 +188,9 @@ bvector<WString>* ECSchemaReadContext::GetCultures()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                        ECSchemaReadContext::SetFinalSchemaLocater (IECSchemaLocaterR locater) 
+void                        ECSchemaReadContext::SetFinalSchemaLocater (IECSchemaLocaterR locater)
     {
-    uint32_t priority = Final;
-    SchemaLocatorSet::iterator iter = GetHighestLocatorInRange (priority);
-    m_locators.insert (iter, SchemaLocatorKey(&locater, priority));
+    m_locaters.push_back (&locater);
     }
 
 IStandaloneEnablerLocaterP  ECSchemaReadContext::GetStandaloneEnablerLocater()       { return m_standaloneEnablerLocater;  }
@@ -203,14 +201,14 @@ IStandaloneEnablerLocaterP  ECSchemaReadContext::GetStandaloneEnablerLocater()  
 ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchType matchType)
     {
     m_knownSchemaDirtyStack.push_back(false);
-    
+
     ECSchemaPtr schema;
-    for (SchemaLocatorSet::const_iterator iter = m_locators.begin(); iter != m_locators.end(); ++iter)
+    for (bvector<IECSchemaLocaterP>::const_iterator iter = m_locaters.begin(); iter != m_locaters.end(); ++iter)
         {
-        if ( ! EXPECTED_CONDITION (NULL != iter->m_locator))
+        if ( ! EXPECTED_CONDITION (NULL != *iter))
             continue;
 
-        schema = iter->m_locator->LocateSchema(key, matchType, *this);
+        schema = (*iter)->LocateSchema(key, matchType, *this);
         if (schema.IsValid())
             break;
 
@@ -219,7 +217,7 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchTy
             schema = m_knownSchemas->LocateSchema (key, matchType, *this);
             m_knownSchemaDirtyStack.back() = false;
             }
-        
+
         if (schema.IsValid())
             break;
         }
@@ -234,16 +232,16 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchTy
 ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches)
     {
     m_knownSchemaDirtyStack.push_back(false);
-    
+
     ECSchemaPtr schema;
-    for (SchemaLocatorSet::const_iterator iter = m_locators.begin(); iter != m_locators.end(); ++iter)
+    for (bvector<IECSchemaLocaterP>::const_iterator iter = m_locaters.begin(); iter != m_locaters.end(); ++iter)
         {
-        if ( ! EXPECTED_CONDITION (NULL != iter->m_locator))
+        if ( ! EXPECTED_CONDITION (NULL != *iter))
             continue;
 
         for (bset<SchemaMatchType>::const_iterator matchIter = matches.begin(); matchIter != matches.end(); ++matchIter)
             {
-            schema = iter->m_locator->LocateSchema(key, *matchIter, *this); //Doing this will change m_knownSchemas
+            schema = (*iter)->LocateSchema(key, *matchIter, *this); //Doing this will change m_knownSchemas
             if (schema.IsValid())
                 break;
 
@@ -257,7 +255,7 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMa
                     }
                 m_knownSchemaDirtyStack.back() = false;
                 }
-            
+
             if (schema.IsValid())
                 break;
             }
@@ -265,7 +263,7 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMa
         if (schema.IsValid())
             break;
         }
-    
+
     m_knownSchemaDirtyStack.pop_back();
     return schema;
     }
@@ -292,7 +290,7 @@ struct ECSchemaBackedInstanceReadContext: public ECInstanceReadContext
         :m_schema(schema), ECInstanceReadContext(standaloneEnablerLocater, schema, typeResolver), m_key(schema.GetSchemaKey())
         {
         }
-    
+
     virtual ECSchemaCP               _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const override
         {
         return key.Matches(m_key, matchType) ? &m_schema : NULL;
@@ -320,7 +318,7 @@ struct ECSchemaReadContextBackedInstanceReadContext: public ECInstanceReadContex
         :m_schemaReadContext(schemaReadContext), m_foundSchema (foundSchema), ECInstanceReadContext(schemaReadContext.GetStandaloneEnablerLocater(), fallBackSchema, NULL)
         {
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    10/10
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -351,13 +349,13 @@ ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaReadConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr ECInstanceReadContext::_CreateStandaloneInstance (ECClassCR ecClass)
     {
+
     if (nullptr != ecClass.GetRelationshipClassCP())
         {
         StandaloneECRelationshipEnablerPtr enabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*(ecClass.GetRelationshipClassCP()));
         return enabler->CreateRelationshipInstance();
         }
     StandaloneECEnablerPtr standaloneEnabler = ecClass.GetDefaultStandaloneEnabler();
-        
     return standaloneEnabler->CreateInstance();
     }
 
@@ -380,7 +378,7 @@ ECSchemaCR      ECInstanceReadContext::GetFallBackSchema ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType)
+ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyCR key, SchemaMatchType matchType)
     {
     return m_knownSchemas->GetSchema(key, matchType);
     }
@@ -388,7 +386,7 @@ ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus   ECSchemaReadContext::AddSchema(ECSchemaR schema) 
+ECObjectsStatus   ECSchemaReadContext::AddSchema(ECSchemaR schema)
     {
     if (NULL != m_knownSchemas->GetSchema(schema.GetSchemaKey()))
         return ECOBJECTS_STATUS_DuplicateSchema;
@@ -415,12 +413,4 @@ void            ECSchemaReadContext::_AddSchema(ECSchemaR schema)
 void            ECSchemaReadContext::RemoveSchema(ECSchemaR schema)
     {
     m_knownSchemas->DropAllReferencesOfSchema(schema);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCacheR  ECSchemaReadContext::GetFoundSchemas ()
-    {
-    return *m_knownSchemas;
     }

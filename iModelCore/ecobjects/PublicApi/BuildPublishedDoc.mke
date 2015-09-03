@@ -24,7 +24,7 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
     > $(DOXYGEN_OUTPUT)doxygen.cfg
     @INCLUDE      = bentley-doxygen.cfg
     @INCLUDE      = bentley-doxygen-html-aliases.cfg
-    ENABLED_SECTIONS += ECOBJECTS_MAINPAGE
+    ENABLED_SECTIONS += ECOBJECTS_MAINPAGE BENTLEY_SDK_All BENTLEY_SDK_Desktop
     <
     ~@putenv PROJECT_NAME="ECObjects SDK Documentation"
     ~@putenv DOXYGEN_INPUT=$(DOXYGEN_INPUT)

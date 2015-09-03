@@ -2,7 +2,7 @@
 #
 #     $Source: mki/ECObjectsPolicy.mki $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__ECObjectsPolicy_mki__)
@@ -49,7 +49,7 @@ ecobjectsPublicAPISrc = $(ecPublicAPISrc)ECObjects/
 ecobjectsSrc        = $(SrcRoot)ecobjects/
 
 ecpresentationPublicAPISrc = $(ecPublicAPISrc)EcPresentation/
-ecpresentationRulesPublicAPISrc = $(ecPublicAPISrc)ECPresentationRules/
+ecpresentationRulesPublicAPISrc = $(ecPublicAPISrc)EcPresentationRules/
 ecunitsPublicAPISrc = $(ecPublicAPISrc)ECUnits/
 
 #-----------------------------------------------------------------------
@@ -62,6 +62,6 @@ GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
 # Configure includes
 #-----------------------------------------------------------------------
 %include $(SharedMki)DefinePublicApiIncludes.mki
-PublicApiIncludes + -I$(ecPublicAPISrc)
+PublicApiIncludes + -I$(ecPublicAPISrc) -I$(BuildContext)SubParts/BoostAPI
 
 certDir = $(bsiCerts)

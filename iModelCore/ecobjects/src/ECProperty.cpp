@@ -11,7 +11,7 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
-// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+// Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                10/2011
@@ -69,7 +69,7 @@ ECClassCR ECProperty::GetClass () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ECProperty::GetName () const
+Utf8StringCR ECProperty::GetName () const
     {
     return m_validatedName.GetName();
     }
@@ -86,7 +86,7 @@ ECPropertyId ECProperty::GetId () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECProperty::SetName (WStringCR name)
+ECObjectsStatus ECProperty::SetName (Utf8StringCR name)
     {        
     m_validatedName.SetName (name.c_str());
     return ECOBJECTS_STATUS_Success;
@@ -95,7 +95,7 @@ ECObjectsStatus ECProperty::SetName (WStringCR name)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ECProperty::GetDescription () const
+Utf8StringCR ECProperty::GetDescription () const
     {
     return GetClass().GetSchema().GetLocalizedStrings().GetPropertyDescription(this, m_description);
     }
@@ -103,7 +103,7 @@ WStringCR ECProperty::GetDescription () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ECProperty::GetInvariantDescription () const
+Utf8StringCR ECProperty::GetInvariantDescription () const
     {
     return m_description;
     }
@@ -111,7 +111,7 @@ WStringCR ECProperty::GetInvariantDescription () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECProperty::SetDescription (WStringCR description)
+ECObjectsStatus ECProperty::SetDescription (Utf8StringCR description)
     {        
     m_description = description;
     return ECOBJECTS_STATUS_Success;
@@ -120,7 +120,7 @@ ECObjectsStatus ECProperty::SetDescription (WStringCR description)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ECProperty::GetDisplayLabel () const
+Utf8StringCR ECProperty::GetDisplayLabel () const
     {
     return GetClass().GetSchema().GetLocalizedStrings().GetPropertyDisplayLabel(this, GetInvariantDisplayLabel());
     }
@@ -128,7 +128,7 @@ WStringCR ECProperty::GetDisplayLabel () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ECProperty::GetInvariantDisplayLabel () const
+Utf8StringCR ECProperty::GetInvariantDisplayLabel () const
     {
     return m_validatedName.GetDisplayLabel();
     }
@@ -136,7 +136,7 @@ WStringCR ECProperty::GetInvariantDisplayLabel () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECProperty::SetDisplayLabel (WStringCR displayLabel)
+ECObjectsStatus ECProperty::SetDisplayLabel (Utf8StringCR displayLabel)
     {        
     m_validatedName.SetDisplayLabel (displayLabel.c_str());
     return ECOBJECTS_STATUS_Success;
@@ -168,7 +168,7 @@ ECObjectsStatus ECProperty::SetIsReadOnly (bool readOnly)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECProperty::SetIsReadOnly (WCharCP isReadOnly)
+ECObjectsStatus ECProperty::SetIsReadOnly (Utf8CP isReadOnly)
     {        
     PRECONDITION (NULL != isReadOnly, ECOBJECTS_STATUS_PreconditionViolated);
 
@@ -193,7 +193,7 @@ bool ECProperty::GetIsDisplayLabelDefined () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString ECProperty::GetTypeName () const
+Utf8String ECProperty::GetTypeName () const
     {
     return this->_GetTypeName();
     }
@@ -201,7 +201,7 @@ WString ECProperty::GetTypeName () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECProperty::SetTypeName (WString typeName)
+ECObjectsStatus ECProperty::SetTypeName (Utf8String typeName)
     {
     return this->_SetTypeName (typeName);
     }
@@ -273,7 +273,7 @@ ECSchemaCP ECProperty::_GetContainerSchema () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context)
     {  
-    WString value;
+    Utf8String value;
     READ_REQUIRED_XML_ATTRIBUTE (propertyNode, PROPERTY_NAME_ATTRIBUTE, this, Name, propertyNode.GetName())        
     
     // OPTIONAL attributes - If these attributes exist they MUST be valid    
@@ -292,15 +292,15 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode)
+SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter)
     {
-    return _WriteXml (propertyNode, parentNode, EC_PROPERTY_ELEMENT);
+    return _WriteXml (xmlWriter, EC_PROPERTY_ELEMENT);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode, Utf8CP elementName)
+SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, CharCP>* additionalAttributes)
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
@@ -308,21 +308,28 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
     if (m_forSupplementation)
         return status;
 
-    propertyNode = parentNode.AddEmptyElement (elementName);
+    xmlWriter.WriteElementStart(elementName);
 
-    propertyNode->AddAttributeStringValue (PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str());
+    xmlWriter.WriteAttribute(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str());
 
-    if (m_originalTypeName.size() > 0 && !m_originalTypeName.Contains(L"GeometryNET"))
-        propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
+    if (m_originalTypeName.size() > 0 && !m_originalTypeName.Contains("GeometryNET"))
+        xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
     else
-    	propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
+        xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
         
-    propertyNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        propertyNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
-    propertyNode->AddAttributeBooleanValue (READONLY_ATTRIBUTE, this->IsReadOnlyFlagSet());
+        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
+    xmlWriter.WriteAttribute(READONLY_ATTRIBUTE, this->IsReadOnlyFlagSet());
     
-    WriteCustomAttributes (*propertyNode);
+    if (nullptr != additionalAttributes)
+        {
+        for (bmap<Utf8CP, CharCP>::iterator iter = additionalAttributes->begin(); iter != additionalAttributes->end(); ++iter)
+            xmlWriter.WriteAttribute(iter->first, iter->second);
+        }
+
+    WriteCustomAttributes (xmlWriter);
+    xmlWriter.WriteElementEnd();
 
     return status;    
     }
@@ -338,24 +345,24 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
 
     // typeName is a required attribute.  If it is missing, an error will be returned.
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
-    WString value;  // needed for macro.
+    Utf8String value;  // needed for macro.
     if (BEXML_Success != propertyNode.GetAttributeStringValue (value, TYPE_NAME_ATTRIBUTE))
         {
         BeAssert (s_noAssert);
-        LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  propertyNode.GetName(), TYPE_NAME_ATTRIBUTE);
+        LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", propertyNode.GetName(), TYPE_NAME_ATTRIBUTE);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
     else if (ECOBJECTS_STATUS_ParseError == this->SetTypeName (value.c_str()))
-        LOG.warningv (L"Defaulting the type of ECProperty '%ls' to '%ls' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
+        LOG.warningv ("Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
     return SCHEMA_READ_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus PrimitiveECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode)
+SchemaWriteStatus PrimitiveECProperty::_WriteXml (BeXmlWriterR xmlWriter)
     {
-    return T_Super::_WriteXml (propertyNode, parentNode, EC_PROPERTY_ELEMENT);
+    return T_Super::_WriteXml (xmlWriter, EC_PROPERTY_ELEMENT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -388,7 +395,7 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString PrimitiveECProperty::_GetTypeName () const
+Utf8String PrimitiveECProperty::_GetTypeName () const
     {
     return ECXml::GetPrimitiveTypeName (m_primitiveType);
     }
@@ -396,14 +403,14 @@ WString PrimitiveECProperty::_GetTypeName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus PrimitiveECProperty::_SetTypeName (WStringCR typeName)
+ECObjectsStatus PrimitiveECProperty::_SetTypeName (Utf8StringCR typeName)
     {
     PrimitiveType primitiveType;
     ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {            
         m_originalTypeName = typeName; // Remember this for when we serialize the ECSchema again, later.
-        LOG.warningv (L"Unrecognized primitive typeName '%ls' found in '%ls:%ls.%ls'. A type of 'string' will be used.",
+        LOG.warningv ("Unrecognized primitive typeName '%s' found in '%s:%s.%s'. A type of 'string' will be used.",
                                 typeName.c_str(),
                                 this->GetClass().GetSchema().GetName().c_str(),
                                 this->GetClass().GetName().c_str(),
@@ -438,7 +445,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PrimitiveECProperty::_IsCalculated() const
     {
-    return m_calculatedSpec.IsValid() || GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
+    return m_calculatedSpec.IsValid() || GetCustomAttribute ("CalculatedECPropertySpecification").IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -460,7 +467,7 @@ CalculatedPropertySpecificationCP PrimitiveECProperty::_GetCalculatedPropertySpe
 bool ArrayECProperty::_IsCalculated() const
     {
     if (ARRAYKIND_Primitive == GetKind())
-        return m_calculatedSpec.IsValid() || GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
+        return m_calculatedSpec.IsValid() || GetCustomAttribute ("CalculatedECPropertySpecification").IsValid();
     else
         return false;
     }
@@ -477,7 +484,7 @@ static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationP
         }
     else
         {
-        IECInstancePtr oldAttr = ecprop.GetCustomAttribute (L"CalculatedECPropertySpecification");
+        IECInstancePtr oldAttr = ecprop.GetCustomAttribute ("CalculatedECPropertySpecification");
         ecprop.SetCustomAttribute (*attr);
         CalculatedPropertySpecificationPtr newSpec = CalculatedPropertySpecification::Create (ecprop, primitiveType);
         if (newSpec.IsValid())
@@ -491,7 +498,7 @@ static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationP
             if (oldAttr.IsValid())
                 ecprop.SetCustomAttribute (*oldAttr);
             else
-                ecprop.RemoveCustomAttribute (L"CalculatedECPropertySpecification");
+                ecprop.RemoveCustomAttribute ("CalculatedECPropertySpecification");
 
             return false;
             }
@@ -538,7 +545,7 @@ SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRe
         return status;
 
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
-    WString value;  // needed for macro.
+    Utf8String value;  // needed for macro.
     READ_REQUIRED_XML_ATTRIBUTE (propertyNode, TYPE_NAME_ATTRIBUTE, this, TypeName, propertyNode.GetName())        
 
     return SCHEMA_READ_STATUS_Success;
@@ -546,9 +553,9 @@ SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus StructECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode)
+SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter)
     {
-    return T_Super::_WriteXml (propertyNode, parentNode, EC_STRUCTPROPERTY_ELEMENT);
+    return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -576,7 +583,7 @@ bool StructECProperty::_CanOverride (ECPropertyCR baseProperty) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString StructECProperty::_GetTypeName () const
+Utf8String StructECProperty::_GetTypeName () const
     {
     if (!EXPECTED_CONDITION (NULL != m_structType))
         return EMPTY_STRING;
@@ -586,22 +593,22 @@ WString StructECProperty::_GetTypeName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ResolveStructType (ECClassCP& structClass, WStringCR typeName, ECPropertyCR ecProperty)
+ECObjectsStatus ResolveStructType (ECClassCP& structClass, Utf8StringCR typeName, ECPropertyCR ecProperty)
     {
     // typeName may potentially be qualified so we must parse into a namespace prefix and short class name
-    WString namespacePrefix;
-    WString className;
+    Utf8String namespacePrefix;
+    Utf8String className;
     ECObjectsStatus status = ECClass::ParseClassName (namespacePrefix, className, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        LOG.warningv (L"Cannot resolve the type name '%ls' as a struct type because the typeName could not be parsed.", typeName.c_str());
+        LOG.warningv ("Cannot resolve the type name '%s' as a struct type because the typeName could not be parsed.", typeName.c_str());
         return status;
         }
     
     ECSchemaCP resolvedSchema = ecProperty.GetClass().GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
-        LOG.warningv (L"Cannot resolve the type name '%ls' as a struct type because the namespacePrefix '%ls' can not be resolved to the primary or a referenced schema.", 
+        LOG.warningv ("Cannot resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.", 
             typeName.c_str(), namespacePrefix.c_str());
         return ECOBJECTS_STATUS_SchemaNotFound;
         }
@@ -609,7 +616,7 @@ ECObjectsStatus ResolveStructType (ECClassCP& structClass, WStringCR typeName, E
     structClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == structClass)
         {
-        LOG.warningv (L"Cannot resolve the type name '%ls' as a struct type because ECClass '%ls' does not exist in the schema '%ls'.", 
+        LOG.warningv ("Cannot resolve the type name '%s' as a struct type because ECClass '%s' does not exist in the schema '%ls'.", 
             typeName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
@@ -620,13 +627,13 @@ ECObjectsStatus ResolveStructType (ECClassCP& structClass, WStringCR typeName, E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StructECProperty::_SetTypeName (WStringCR typeName)
+ECObjectsStatus StructECProperty::_SetTypeName (Utf8StringCR typeName)
     {
     ECClassCP structClass;
     ECObjectsStatus status = ResolveStructType (structClass, typeName, *this);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        LOG.errorv (L"Failed to set the type name of ECStructProperty '%ls' to '%ls' because the typeName could not be parsed into a resolvable ECClass.", this->GetName().c_str(), typeName.c_str());        
+        LOG.errorv ("Failed to set the type name of ECStructProperty '%s' to '%s' because the typeName could not be parsed into a resolvable ECClass.", this->GetName().c_str(), typeName.c_str());        
         return status;
         }
     else
@@ -672,16 +679,16 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
     ECObjectsStatus setterStatus;   // needed for macro.
-    WString         value;          // needed for macro.
+    Utf8String         value;          // needed for macro.
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, MIN_OCCURS_ATTRIBUTE, this, MinOccurs)    
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, MAX_OCCURS_ATTRIBUTE, this, MaxOccurs)
 
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, TYPE_NAME_ATTRIBUTE, this, TypeName, propertyNode.GetName())  
 
-    if (SCHEMA_READ_STATUS_FailedToParseXml == setterStatus)
+    if (ECOBJECTS_STATUS_Success != setterStatus)
         {
-        LOG.warningv (L"Defaulting the type of ECProperty '%ls' to '%ls' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
+        LOG.warningv ("Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
         return SCHEMA_READ_STATUS_Success;
         }
 
@@ -691,40 +698,38 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode)
+SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter)
     {
-    SchemaWriteStatus status = T_Super::_WriteXml (propertyNode, parentNode, EC_ARRAYPROPERTY_ELEMENT);
-    if (status != SCHEMA_WRITE_STATUS_Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
-        return status;
-        
-    if (NULL == propertyNode)
-        {
-        BeAssert (false);
-        return SCHEMA_WRITE_STATUS_FailedToCreateXml;
-        }
-        
-    // verify that this really is the current array property element
-    if (0 != strcmp (propertyNode->GetName(), EC_ARRAYPROPERTY_ELEMENT))
-        {
-        BeAssert (false);
-        return SCHEMA_WRITE_STATUS_FailedToCreateXml;
-        }
+    bmap<Utf8CP, CharCP> additionalAttributes;
+    char    valueString[128];
+    BeStringUtilities::Snprintf (valueString, _countof (valueString), "%u", m_minOccurs);
 
-    propertyNode->AddAttributeUInt32Value (MIN_OCCURS_ATTRIBUTE, m_minOccurs);
-
+    additionalAttributes[MIN_OCCURS_ATTRIBUTE] = valueString;
     if (m_maxOccurs != UINT_MAX)
         {
-        propertyNode->AddAttributeUInt32Value (MAX_OCCURS_ATTRIBUTE, m_maxOccurs);
+        BeStringUtilities::Snprintf (valueString, _countof (valueString), "%u", m_maxOccurs);
+        additionalAttributes[MAX_OCCURS_ATTRIBUTE] = valueString;
         }
     else
         {
-        propertyNode->AddAttributeStringValue (MAX_OCCURS_ATTRIBUTE, ECXML_UNBOUNDED);
+        additionalAttributes[MAX_OCCURS_ATTRIBUTE] = "unbounded";
         }
 
     if (m_arrayKind == ARRAYKIND_Struct)
-        {
-        propertyNode->AddAttributeBooleanValue (IS_STRUCT_ATTRIBUTE, true);
-        }
+        additionalAttributes[IS_STRUCT_ATTRIBUTE] = "true";
+
+    SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, EC_ARRAYPROPERTY_ELEMENT, &additionalAttributes);
+    if (status != SCHEMA_WRITE_STATUS_Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
+        return status;
+        
+        
+    // verify that this really is the current array property element // CGM 07/15 - Can't do this with an XmlWriter
+    //if (0 != strcmp (propertyNode->GetName(), EC_ARRAYPROPERTY_ELEMENT))
+    //    {
+    //    BeAssert (false);
+    //    return SCHEMA_WRITE_STATUS_FailedToCreateXml;
+    //    }
+
         
     return status;
     }
@@ -757,11 +762,11 @@ bool ArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
             case ARRAYKIND_Struct:
                 {
                 auto myType = GetStructElementType(), baseType = baseArray->GetStructElementType();
-                return nullptr != myType && nullptr != baseType && 0 == wcscmp (myType->GetFullName(), baseType->GetFullName());
+                return nullptr != myType && nullptr != baseType && 0 == strcmp (myType->GetFullName(), baseType->GetFullName());
                 }
             default:
                 {
-                WString typeName = GetTypeName();
+                Utf8String typeName = GetTypeName();
                 return typeName == EMPTY_STRING || typeName == baseProperty.GetTypeName();
                 }
             }
@@ -771,7 +776,7 @@ bool ArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString ArrayECProperty::_GetTypeName () const
+Utf8String ArrayECProperty::_GetTypeName () const
     {    
     switch (GetKind())
         {
@@ -787,7 +792,7 @@ WString ArrayECProperty::_GetTypeName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayECProperty::_SetTypeName (WStringCR typeName)
+ECObjectsStatus ArrayECProperty::_SetTypeName (Utf8StringCR typeName)
     {
     PrimitiveType primitiveType;
     ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
@@ -800,7 +805,7 @@ ECObjectsStatus ArrayECProperty::_SetTypeName (WStringCR typeName)
         return SetStructElementType (structClass);
 
     m_originalTypeName = typeName;
-    LOG.warningv (L"TypeName '%ls' of '%ls.%ls.%ls' was not recognized. We will use 'string' intead.",
+    LOG.warningv ("TypeName '%s' of '%s.%s.%s' was not recognized. We will use 'string' instead.",
                                     typeName.c_str(),
                                     this->GetClass().GetSchema().GetName().c_str(),
                                     this->GetClass().GetName().c_str(),
@@ -857,7 +862,7 @@ ECObjectsStatus ArrayECProperty::SetStructElementType (ECClassCP structType)
     PRECONDITION (NULL != structType, ECOBJECTS_STATUS_PreconditionViolated);
     if (!structType->GetIsStruct())
         {
-        LOG.errorv (L"ECArrayProperty '%ls' uses ECClass '%ls', but isStructClass='false' on '%ls'", GetName().c_str(), structType->GetName().c_str(), structType->GetName().c_str());
+        LOG.errorv ("ECArrayProperty '%s' uses ECClass '%s', but isStructClass='false' on '%s'", GetName().c_str(), structType->GetName().c_str(), structType->GetName().c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
@@ -897,13 +902,13 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (uint32_t minOccurs)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayECProperty::SetMinOccurs (WStringCR minOccurs)
+ECObjectsStatus ArrayECProperty::SetMinOccurs (Utf8StringCR minOccurs)
     {    
     uint32_t iMinOccurs;
-    int count = swscanf (minOccurs.c_str(), L"%u", &iMinOccurs);
+    int count = BE_STRING_UTILITIES_UTF8_SSCANF (minOccurs.c_str(), "%u", &iMinOccurs);
     if (count != 1)
         {
-        LOG.errorv (L"Failed to set MinOccurs of ECProperty '%ls' to '%ls' because the value could not be parsed.  It must be a valid unsigned integer.",
+        LOG.errorv ("Failed to set MinOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer.",
                  this->GetName().c_str(), minOccurs.c_str());        
         return ECOBJECTS_STATUS_ParseError;
         }    
@@ -937,17 +942,17 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (uint32_t maxOccurs)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
+ECObjectsStatus ArrayECProperty::SetMaxOccurs (Utf8StringCR maxOccurs)
     {    
     uint32_t iMaxOccurs;
-    int count = swscanf (maxOccurs.c_str(), L"%u", &iMaxOccurs);
+    int count = BE_STRING_UTILITIES_UTF8_SSCANF (maxOccurs.c_str(), "%u", &iMaxOccurs);
     if (count != 1)
         {
-        if (0 == wcscmp (maxOccurs.c_str(), ECXML_UNBOUNDED))
+        if (0 == strcmp (maxOccurs.c_str(), ECXML_UNBOUNDED))
             iMaxOccurs = UINT_MAX;
         else
             {
-            LOG.errorv (L"Failed to set MaxOccurs of ECProperty '%ls' to '%ls' because the value could not be parsed.  It must be a valid unsigned integer or the string 'unbounded'.",
+            LOG.errorv ("Failed to set MaxOccurs of ECProperty '%s' to '%s' because the value could not be parsed.  It must be a valid unsigned integer or the string 'unbounded'.",
                      this->GetName().c_str(), maxOccurs.c_str());        
             return ECOBJECTS_STATUS_ParseError;
             }
@@ -972,12 +977,12 @@ bool IECTypeAdapter::IsTreatedAsString() const                                  
 IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const        { return _CreateDefaultFormatter (includeAllValues, forDwg); }
 IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const        { return _CondenseFormatterForSerialization (formatter); }
 IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const       { return _PopulateDefaultFormatterProperties (formatter); }
-bool IECTypeAdapter::ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const { return _ConvertFromString (v, str, context); }
+bool IECTypeAdapter::ConvertFromString (ECValueR v, Utf8CP str, IECTypeAdapterContextCR context) const  { return _ConvertFromString (v, str, context); }
 bool IECTypeAdapter::ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) const        { return _ConvertToExpressionType (v, context); }
 bool IECTypeAdapter::ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) const      { return _ConvertFromExpressionType (v, context); }
 bool IECTypeAdapter::RequiresExpressionTypeConversion (EvaluationOptions evalOptions) const             { return _RequiresExpressionTypeConversion (evalOptions); }
 bool IECTypeAdapter::GetDisplayType (PrimitiveType& type) const                                         { return _GetDisplayType (type); }
-bool IECTypeAdapter::ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP opts) const { return _ConvertToString (str, v, context, opts); }
+bool IECTypeAdapter::ConvertToString (Utf8StringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP opts) const { return _ConvertToString (str, v, context, opts); }
 bool IECTypeAdapter::ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP opts) const           { return _ConvertToDisplayType (v, context, opts); }
 bool IECTypeAdapter::GetPropertyNotSetValue (ECValueR v) const                                          { return _GetPropertyNotSetValue (v); }
 bool IECTypeAdapter::SupportsUnits() const                                                              { return _SupportsUnits(); }
@@ -990,13 +995,26 @@ bool IECTypeAdapter::GetPlaceholderValue (ECValueR v, IECTypeAdapterContextCR co
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyCP            IECTypeAdapterContext::GetProperty() const                                      { return _GetProperty(); }
 uint32_t                IECTypeAdapterContext::GetComponentIndex() const                                { return _GetComponentIndex(); }
-WCharCP                 IECTypeAdapterContext::GetAccessString() const                                  { return _GetAccessString(); }
 bool                    IECTypeAdapterContext::Is3d() const                                             { return _Is3d(); }
-IECInstanceInterfaceCR  IECTypeAdapterContext::GetInstanceInterface() const                             { return _GetInstanceInterface(); }
+IECInstanceCP           IECTypeAdapterContext::GetECInstance() const                                    { return _GetECInstance(); }
+ECObjectsStatus         IECTypeAdapterContext::GetInstanceValue (ECValueR v, Utf8CP accessor, uint32_t arrayIndex) const { return _GetInstanceValue (v, accessor, arrayIndex); }
 EvaluationOptions       IECTypeAdapterContext::GetEvaluationOptions () const                            { return _GetEvaluationOptions (); };
 EvaluationOptions       IECTypeAdapterContext::_GetEvaluationOptions () const                           { return m_evalOptions; };
 void                    IECTypeAdapterContext::SetEvaluationOptions (EvaluationOptions evalOptions)     { return _SetEvaluationOptions (evalOptions); };
 void                    IECTypeAdapterContext::_SetEvaluationOptions (EvaluationOptions evalOptions)    { m_evalOptions = evalOptions; };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECTypeAdapterContext::_GetInstanceValue (ECValueR v, Utf8CP accessor, uint32_t arrayIndex) const
+    {
+    IECInstanceCP instance = GetECInstance();
+    if (NULL != instance)
+        return -1 != arrayIndex ? instance->GetValue (v, accessor, arrayIndex) : instance->GetValue (v, accessor);
+    else
+        return ECOBJECTS_STATUS_OperationNotSupported;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13

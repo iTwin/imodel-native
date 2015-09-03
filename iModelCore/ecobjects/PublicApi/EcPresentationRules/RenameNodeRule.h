@@ -2,11 +2,13 @@
 |
 |     $Source: PublicApi/EcPresentationRules/RenameNodeRule.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -16,6 +18,7 @@ Presentation rule for configuring node rename functionality.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RenameNodeRule : public PresentationRule
     {
+    /*__PUBLISH_SECTION_END__*/
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP      _GetXmlElementName ();
@@ -26,12 +29,15 @@ struct RenameNodeRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) override;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT RenameNodeRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT RenameNodeRule (WStringCR condition, int priority);
+        ECOBJECTS_EXPORT RenameNodeRule (Utf8StringCR condition, int priority);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

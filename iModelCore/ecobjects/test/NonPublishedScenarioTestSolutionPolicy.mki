@@ -2,7 +2,7 @@
 #
 #  $Source: test/NonPublishedScenarioTestSolutionPolicy.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -12,7 +12,7 @@ nameToDefine = COMPILING_NONPUBLISHED_TESTS
 #-----------------------------------------------------------------------
 #   Set flags for a proper gtest compile
 #-----------------------------------------------------------------------
-%if defined(BUILD_USING_VS2010)
+%if $(BUILD_TOOLSET) == "VC10"
     nameToDefine = GTEST_USE_OWN_TR1_TUPLE=0
     %include cdefapnd.mki
 %else

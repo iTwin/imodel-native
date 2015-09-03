@@ -5,23 +5,25 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include <objbase.h>
-#include <comdef.h>
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
+using namespace BentleyApi::ECN;
 
 struct SchemaHolderTestFixture : ECTestFixture
     {
+    DEFINE_T_SUPER (ECTestFixture)
+
     protected:
         ECSchemaPtr m_bscaSchema;
 
         void CreateSupplementalSchema
         (
         ECSchemaPtr& supplementalSchema,
-        WString primarySchemaName,
-        WString purpose,
+        Utf8String primarySchemaName,
+        Utf8String purpose,
         uint32_t precedence,
         uint32_t primaryMajorVersion,
         uint32_t primaryMinorVersion,
@@ -29,7 +31,7 @@ struct SchemaHolderTestFixture : ECTestFixture
         uint32_t supplementalMinorVersion
         )
             {
-            WString supplementalName = primarySchemaName + L"_Supplemental_" + purpose;
+            Utf8String supplementalName = primarySchemaName + "_Supplemental_" + purpose;
 
             ECSchema::CreateSchema(supplementalSchema, supplementalName, supplementalMajorVersion, supplementalMinorVersion);
             SupplementalSchemaMetaData metaData(primarySchemaName, primaryMajorVersion, primaryMinorVersion, precedence, purpose, false);
@@ -40,19 +42,21 @@ struct SchemaHolderTestFixture : ECTestFixture
     public:
         virtual void            SetUp () override 
             { 
-            EXPECT_EQ (S_OK, CoInitialize(NULL)); 
+            // EXPECT_EQ (S_OK, CoInitialize(NULL)); 
 
             ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-            SchemaKey key (L"Bentley_Standard_CustomAttributes", 1, 6);
+            SchemaKey key ("Bentley_Standard_CustomAttributes", 1, 6);
 
             m_bscaSchema = ECSchema::LocateSchema(key, *schemaContext);
-            __super::SetUp();
+            ASSERT_TRUE( m_bscaSchema.IsValid() );
+                
+            T_Super::SetUp();
             }
 
         virtual void TearDown() override
             {
-            CoUninitialize();
-            __super::TearDown();
+            // CoUninitialize();
+            T_Super::TearDown();
             }
 
     };
@@ -63,6 +67,8 @@ struct SupplementalSchemaInfoTests     : SchemaHolderTestFixture   {};
 
 struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture 
     {
+    DEFINE_T_SUPER (SchemaHolderTestFixture)
+
     protected:
         ECSchemaPtr m_customAttributeSchema;
         StandaloneECEnablerPtr m_systemInfoCAEnabler;
@@ -83,37 +89,37 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateCustomAttributeSchema()
             {
-            ECSchema::CreateSchema(m_customAttributeSchema, L"Test_Custom_Attributes", 1, 0);
+            ECSchema::CreateSchema(m_customAttributeSchema, "Test_Custom_Attributes", 1, 0);
             ECClassP customAttributeClass;
             ECClassP customAttributeClass2;
             ECClassP customAttributeClass3;
 
             PrimitiveECPropertyP property1;
             PrimitiveECPropertyP property2;
-            m_customAttributeSchema->CreateClass(customAttributeClass, L"SystemInfo");
+            m_customAttributeSchema->CreateClass(customAttributeClass, "SystemInfo");
             customAttributeClass->SetIsCustomAttributeClass(true);
-            customAttributeClass->CreatePrimitiveProperty(property1, L"Data1");
-            customAttributeClass->CreatePrimitiveProperty(property2, L"Data2");
+            customAttributeClass->CreatePrimitiveProperty(property1, "Data1");
+            customAttributeClass->CreatePrimitiveProperty(property2, "Data2");
             m_systemInfoCAEnabler = customAttributeClass->GetDefaultStandaloneEnabler();
 
             PrimitiveECPropertyP property3;
             PrimitiveECPropertyP property4;
-            m_customAttributeSchema->CreateClass(customAttributeClass2, L"UselessInfo");
+            m_customAttributeSchema->CreateClass(customAttributeClass2, "UselessInfo");
             customAttributeClass2->SetIsCustomAttributeClass(true);
-            customAttributeClass2->CreatePrimitiveProperty(property3, L"NothingImportant");
-            customAttributeClass2->CreatePrimitiveProperty(property4, L"NotImportant");
+            customAttributeClass2->CreatePrimitiveProperty(property3, "NothingImportant");
+            customAttributeClass2->CreatePrimitiveProperty(property4, "NotImportant");
             m_uselessInfoCAEnabler = customAttributeClass2->GetDefaultStandaloneEnabler();
 
             PrimitiveECPropertyP property5;
             PrimitiveECPropertyP property6;
-            m_customAttributeSchema->CreateClass(customAttributeClass3, L"OtherInformation");
+            m_customAttributeSchema->CreateClass(customAttributeClass3, "OtherInformation");
             customAttributeClass3->SetIsCustomAttributeClass(true);
-            customAttributeClass3->CreatePrimitiveProperty(property5, L"SomeOtherInformation");
-            customAttributeClass3->CreatePrimitiveProperty(property6, L"SomeInformation");
+            customAttributeClass3->CreatePrimitiveProperty(property5, "SomeOtherInformation");
+            customAttributeClass3->CreatePrimitiveProperty(property6, "SomeInformation");
             m_otherInfoCAEnabler = customAttributeClass3->GetDefaultStandaloneEnabler();
             }
 
-        void SetCustomAttribute(IECCustomAttributeContainerP container, StandaloneECEnablerPtr enabler, WCharCP propertyName1, WCharCP propertyValue1, WCharCP propertyName2, WCharCP propertyValue2)
+        void SetCustomAttribute(IECCustomAttributeContainerP container, StandaloneECEnablerPtr enabler, Utf8CP propertyName1, Utf8CP propertyValue1, Utf8CP propertyName2, Utf8CP propertyValue2)
             {
             IECInstancePtr customAttribute = enabler->CreateInstance().get();
             customAttribute->SetValue(propertyName1, ECValue(propertyValue1));
@@ -128,82 +134,82 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             PrimitiveECPropertyP fileSizeProperty;
             PrimitiveECPropertyP creationDateProperty;
             PrimitiveECPropertyP hiddenProperty;
-            ECSchema::CreateSchema(primarySchema, L"TestSchema", 1, 0);
-            primarySchema->CreateClass(fileClass, L"File");
+            ECSchema::CreateSchema(primarySchema, "TestSchema", 1, 0);
+            primarySchema->CreateClass(fileClass, "File");
             primarySchema->AddReferencedSchema(*m_customAttributeSchema);
             primarySchema->AddReferencedSchema(*m_bscaSchema);
-            fileClass->CreatePrimitiveProperty(hiddenProperty, L"Hidden", PRIMITIVETYPE_Boolean);
-            fileClass->CreatePrimitiveProperty(creationDateProperty, L"CreationDate", PRIMITIVETYPE_DateTime);
-            fileClass->CreatePrimitiveProperty(fileSizeProperty, L"FileSize", PRIMITIVETYPE_Long);
+            fileClass->CreatePrimitiveProperty(hiddenProperty, "Hidden", PRIMITIVETYPE_Boolean);
+            fileClass->CreatePrimitiveProperty(creationDateProperty, "CreationDate", PRIMITIVETYPE_DateTime);
+            fileClass->CreatePrimitiveProperty(fileSizeProperty, "FileSize", PRIMITIVETYPE_Long);
 
-            SetCustomAttribute(fileClass, m_systemInfoCAEnabler, L"Data1", L"Data1 on File Class", L"Data2", L"Data2 on File Class");
+            SetCustomAttribute(fileClass, m_systemInfoCAEnabler, "Data1", "Data1 on File Class", "Data2", "Data2 on File Class");
 
-            SetCustomAttribute(hiddenProperty, m_systemInfoCAEnabler, L"Data1", L"Data1 on Hidden Property on File Class", L"Data2", L"Data2 on Hidden Property on File Class");
+            SetCustomAttribute(hiddenProperty, m_systemInfoCAEnabler, "Data1", "Data1 on Hidden Property on File Class", "Data2", "Data2 on Hidden Property on File Class");
 
-            SetCustomAttribute(hiddenProperty, m_uselessInfoCAEnabler, L"NothingImportant", L"Nothing important on Hidden Property on File Class", L"NotImportant", L"Not important on Hidden Property on File Class");
+            SetCustomAttribute(hiddenProperty, m_uselessInfoCAEnabler, "NothingImportant", "Nothing important on Hidden Property on File Class", "NotImportant", "Not important on Hidden Property on File Class");
 
             ECClassP folderClass;
             PrimitiveECPropertyP hiddenProperty2;
             PrimitiveECPropertyP creationDateProperty2;
             PrimitiveECPropertyP readOnlyProperty;
-            primarySchema->CreateClass(folderClass, L"Folder");
-            folderClass->CreatePrimitiveProperty(hiddenProperty2, L"Hidden", PRIMITIVETYPE_Boolean);
-            folderClass->CreatePrimitiveProperty(creationDateProperty2, L"CreationDate", PRIMITIVETYPE_DateTime);
-            folderClass->CreatePrimitiveProperty(readOnlyProperty, L"ReadOnly", PRIMITIVETYPE_Boolean);
-            SetCustomAttribute(folderClass, m_systemInfoCAEnabler, L"Data1", L"Data1 on Folder Class", L"Data2", L"Data2 on Folder Class");
-            SetCustomAttribute(hiddenProperty2, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on Hidden Property on Folder Class", L"NotImportant", L"Not important on Hidden Property on Folder Class");
+            primarySchema->CreateClass(folderClass, "Folder");
+            folderClass->CreatePrimitiveProperty(hiddenProperty2, "Hidden", PRIMITIVETYPE_Boolean);
+            folderClass->CreatePrimitiveProperty(creationDateProperty2, "CreationDate", PRIMITIVETYPE_DateTime);
+            folderClass->CreatePrimitiveProperty(readOnlyProperty, "ReadOnly", PRIMITIVETYPE_Boolean);
+            SetCustomAttribute(folderClass, m_systemInfoCAEnabler, "Data1", "Data1 on Folder Class", "Data2", "Data2 on Folder Class");
+            SetCustomAttribute(hiddenProperty2, m_uselessInfoCAEnabler,  "NothingImportant", "Nothing important on Hidden Property on Folder Class", "NotImportant", "Not important on Hidden Property on Folder Class");
 
             ECClassP imageClass;
-            primarySchema->CreateClass(imageClass, L"Image");
+            primarySchema->CreateClass(imageClass, "Image");
             imageClass->AddBaseClass(*fileClass);
             PrimitiveECPropertyP bitDepthProperty;
             PrimitiveECPropertyP widthProperty;
             PrimitiveECPropertyP heightProperty;
-            imageClass->CreatePrimitiveProperty(bitDepthProperty, L"BitDepth", PRIMITIVETYPE_Integer);
-            imageClass->CreatePrimitiveProperty(widthProperty, L"Width", PRIMITIVETYPE_Integer);
-            imageClass->CreatePrimitiveProperty(heightProperty, L"Height", PRIMITIVETYPE_Integer);
-            SetCustomAttribute(imageClass, m_systemInfoCAEnabler, L"Data1", L"Data1 on Image Class", L"Data2", L"Data2 on Image Class");
-            SetCustomAttribute(widthProperty, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on Width Property on Image Class", L"NotImportant", L"Not important on Width Property on Image Class");
+            imageClass->CreatePrimitiveProperty(bitDepthProperty, "BitDepth", PRIMITIVETYPE_Integer);
+            imageClass->CreatePrimitiveProperty(widthProperty, "Width", PRIMITIVETYPE_Integer);
+            imageClass->CreatePrimitiveProperty(heightProperty, "Height", PRIMITIVETYPE_Integer);
+            SetCustomAttribute(imageClass, m_systemInfoCAEnabler, "Data1", "Data1 on Image Class", "Data2", "Data2 on Image Class");
+            SetCustomAttribute(widthProperty, m_uselessInfoCAEnabler,  "NothingImportant", "Nothing important on Width Property on Image Class", "NotImportant", "Not important on Width Property on Image Class");
             }
 
         void CreateSupplementalSchema1(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, L"TestSchema_Supplemental_OverrideFiles", 1, 0);
-            SupplementalSchemaMetaData metaData(L"TestSchema", 1, 0, 200, L"OverrideFiles", false);
+            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_OverrideFiles", 1, 0);
+            SupplementalSchemaMetaData metaData("TestSchema", 1, 0, 200, "OverrideFiles", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
             supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
 
             ECClassP fileClass;
             PrimitiveECPropertyP hiddenProperty;
-            supplementalSchema->CreateClass(fileClass, L"File");
-            fileClass->CreatePrimitiveProperty(hiddenProperty, L"Hidden", PRIMITIVETYPE_Boolean);
+            supplementalSchema->CreateClass(fileClass, "File");
+            fileClass->CreatePrimitiveProperty(hiddenProperty, "Hidden", PRIMITIVETYPE_Boolean);
 
-            SetCustomAttribute(fileClass, m_systemInfoCAEnabler, L"Data1", L"Data1 on File Class from SupplementalSchema1", L"Data2", L"Data2 on File Class from SupplementalSchema1");
-            SetCustomAttribute(hiddenProperty, m_uselessInfoCAEnabler, L"NothingImportant", L"Nothing important on Hidden Property on File Class from SupplementalSchema1", L"NotImportant", L"Not important on Hidden Property on File Class from SupplementalSchema1");
+            SetCustomAttribute(fileClass, m_systemInfoCAEnabler, "Data1", "Data1 on File Class from SupplementalSchema1", "Data2", "Data2 on File Class from SupplementalSchema1");
+            SetCustomAttribute(hiddenProperty, m_uselessInfoCAEnabler, "NothingImportant", "Nothing important on Hidden Property on File Class from SupplementalSchema1", "NotImportant", "Not important on Hidden Property on File Class from SupplementalSchema1");
             }
 
         void CreateSupplementalSchema2(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, L"TestSchema_Supplemental_UnderrideFiles_ExtraText", 1, 0);
-            SupplementalSchemaMetaData metaData(L"TestSchema", 1, 0, 199, L"UnderrideFiles", false);
+            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_UnderrideFiles_ExtraText", 1, 0);
+            SupplementalSchemaMetaData metaData("TestSchema", 1, 0, 199, "UnderrideFiles", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
             supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
 
             ECClassP folderClass;
             PrimitiveECPropertyP creationDateProperty;
-            supplementalSchema->CreateClass(folderClass, L"Folder");
-            folderClass->CreatePrimitiveProperty(creationDateProperty, L"CreationDate", PRIMITIVETYPE_DateTime);
+            supplementalSchema->CreateClass(folderClass, "Folder");
+            folderClass->CreatePrimitiveProperty(creationDateProperty, "CreationDate", PRIMITIVETYPE_DateTime);
 
-            SetCustomAttribute(folderClass, m_uselessInfoCAEnabler, L"NothingImportant", L"Nothing important on Folder Class from SupplementalSchema2", L"NotImportant", L"Not important on Folder Class from SupplementalSchema2");
-            SetCustomAttribute(creationDateProperty, m_systemInfoCAEnabler, L"Data1", L"Data1 on CreationDate Property on Folder Class from SupplementalSchema2", L"Data2", L"Data2 on CreationDate Property on Folder Class from SupplementalSchema2");
+            SetCustomAttribute(folderClass, m_uselessInfoCAEnabler, "NothingImportant", "Nothing important on Folder Class from SupplementalSchema2", "NotImportant", "Not important on Folder Class from SupplementalSchema2");
+            SetCustomAttribute(creationDateProperty, m_systemInfoCAEnabler, "Data1", "Data1 on CreationDate Property on Folder Class from SupplementalSchema2", "Data2", "Data2 on CreationDate Property on Folder Class from SupplementalSchema2");
             }
 
         void CreateSupplementalSchema3(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, L"TestSchema_Supplemental_FileAndImageInfo", 3, 33);
-            SupplementalSchemaMetaData metaData(L"TestSchema", 1, 0, 200, L"FileAndImageInfo", false);
+            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_FileAndImageInfo", 3, 33);
+            SupplementalSchemaMetaData metaData("TestSchema", 1, 0, 200, "FileAndImageInfo", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
             supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
@@ -212,66 +218,66 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             PrimitiveECPropertyP hiddenProperty;
             PrimitiveECPropertyP creationDateProperty;
             PrimitiveECPropertyP fileSizeProperty;
-            supplementalSchema->CreateClass(fileClass, L"File");
-            fileClass->CreatePrimitiveProperty(hiddenProperty, L"Hidden", PRIMITIVETYPE_Boolean);
-            fileClass->CreatePrimitiveProperty(creationDateProperty, L"CreationDate", PRIMITIVETYPE_DateTime);
-            fileClass->CreatePrimitiveProperty(fileSizeProperty, L"FileSize", PRIMITIVETYPE_Long);
+            supplementalSchema->CreateClass(fileClass, "File");
+            fileClass->CreatePrimitiveProperty(hiddenProperty, "Hidden", PRIMITIVETYPE_Boolean);
+            fileClass->CreatePrimitiveProperty(creationDateProperty, "CreationDate", PRIMITIVETYPE_DateTime);
+            fileClass->CreatePrimitiveProperty(fileSizeProperty, "FileSize", PRIMITIVETYPE_Long);
 
-            SetCustomAttribute(fileClass, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on File Class from Supplemental3", L"NotImportant", L"Not important on File Class from Supplemental3");
+            SetCustomAttribute(fileClass, m_uselessInfoCAEnabler,  "NothingImportant", "Nothing important on File Class from Supplemental3", "NotImportant", "Not important on File Class from Supplemental3");
 
-            SetCustomAttribute(hiddenProperty, m_systemInfoCAEnabler, L"Data1", L"Data1 on Hidden Property on File Class from Supplemental3", L"Data2", L"Data2 on Hidden Property on File Class from Supplemental3");
+            SetCustomAttribute(hiddenProperty, m_systemInfoCAEnabler, "Data1", "Data1 on Hidden Property on File Class from Supplemental3", "Data2", "Data2 on Hidden Property on File Class from Supplemental3");
 
-            SetCustomAttribute(creationDateProperty, m_uselessInfoCAEnabler, L"NothingImportant", L"Nothing important on CreationDate Property on File Class from Supplemental3", L"NotImportant", L"Not important on CreationDate Property on File Class from Supplemental3");
+            SetCustomAttribute(creationDateProperty, m_uselessInfoCAEnabler, "NothingImportant", "Nothing important on CreationDate Property on File Class from Supplemental3", "NotImportant", "Not important on CreationDate Property on File Class from Supplemental3");
 
-            SetCustomAttribute(fileSizeProperty, m_systemInfoCAEnabler, L"Data1", L"Data1 on FileSize Property on File Class from Supplemental3", L"Data2", L"Data2 on FileSize Property on File Class from Supplemental3");
+            SetCustomAttribute(fileSizeProperty, m_systemInfoCAEnabler, "Data1", "Data1 on FileSize Property on File Class from Supplemental3", "Data2", "Data2 on FileSize Property on File Class from Supplemental3");
 
             ECClassP imageClass;
-            supplementalSchema->CreateClass(imageClass, L"Image");
+            supplementalSchema->CreateClass(imageClass, "Image");
             PrimitiveECPropertyP heightProperty;
             PrimitiveECPropertyP hiddenProperty2;
-            imageClass->CreatePrimitiveProperty(heightProperty, L"Height", PRIMITIVETYPE_Integer);
-            imageClass->CreatePrimitiveProperty(hiddenProperty2, L"Hidden", PRIMITIVETYPE_Boolean);
-            SetCustomAttribute(imageClass, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on Image Class from Supplemental3", L"NotImportant", L"Not important on Image Class from Supplemental3");
-            SetCustomAttribute(heightProperty, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on Height Property on Image Class from Supplemental3", L"NotImportant", L"Not important on Height Property on Image Class from Supplemental3");
-            SetCustomAttribute(hiddenProperty2, m_uselessInfoCAEnabler,  L"NothingImportant", L"Nothing important on Hidden Property on Image Class from Supplemental3",  L"NotImportant", L"Not important on Hidden Property on Image Class from Supplemental3");
+            imageClass->CreatePrimitiveProperty(heightProperty, "Height", PRIMITIVETYPE_Integer);
+            imageClass->CreatePrimitiveProperty(hiddenProperty2, "Hidden", PRIMITIVETYPE_Boolean);
+            SetCustomAttribute(imageClass, m_uselessInfoCAEnabler,  "NothingImportant", "Nothing important on Image Class from Supplemental3", "NotImportant", "Not important on Image Class from Supplemental3");
+            SetCustomAttribute(heightProperty, m_uselessInfoCAEnabler,  "NothingImportant", "Nothing important on Height Property on Image Class from Supplemental3", "NotImportant", "Not important on Height Property on Image Class from Supplemental3");
+            SetCustomAttribute(hiddenProperty2, m_uselessInfoCAEnabler,  "NothingImportant", "Nothing important on Hidden Property on Image Class from Supplemental3",  "NotImportant", "Not important on Hidden Property on Image Class from Supplemental3");
             }
 
         void CreateSupplementalSchema4(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, L"TestSchema_Supplemental_Conflict", 6, 66);
-            SupplementalSchemaMetaData metaData(L"TestSchema", 1, 0, 199, L"Conflict", false);
+            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_Conflict", 6, 66);
+            SupplementalSchemaMetaData metaData("TestSchema", 1, 0, 199, "Conflict", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
             supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
 
             ECClassP folderClass;
             PrimitiveECPropertyP creationDateProperty;
-            supplementalSchema->CreateClass(folderClass, L"Folder");
-            folderClass->CreatePrimitiveProperty(creationDateProperty, L"CreationDate", PRIMITIVETYPE_DateTime);
+            supplementalSchema->CreateClass(folderClass, "Folder");
+            folderClass->CreatePrimitiveProperty(creationDateProperty, "CreationDate", PRIMITIVETYPE_DateTime);
 
-            SetCustomAttribute(folderClass, m_uselessInfoCAEnabler, L"NothingImportant", L"Nothing important on Folder Class from SupplementalSchema4", L"NotImportant", L"Not important on Folder Class from SupplementalSchema4");
-            SetCustomAttribute(creationDateProperty, m_systemInfoCAEnabler, L"Data1", L"Data1 on CreationDate Property on Folder Class from SupplementalSchema4", L"Data2", L"Data2 on CreationDate Property on Folder Class from SupplementalSchema4");
+            SetCustomAttribute(folderClass, m_uselessInfoCAEnabler, "NothingImportant", "Nothing important on Folder Class from SupplementalSchema4", "NotImportant", "Not important on Folder Class from SupplementalSchema4");
+            SetCustomAttribute(creationDateProperty, m_systemInfoCAEnabler, "Data1", "Data1 on CreationDate Property on Folder Class from SupplementalSchema4", "Data2", "Data2 on CreationDate Property on Folder Class from SupplementalSchema4");
             }
 
         void BuildSupplementedSchemaForCustomAttributeTests(ECClassP& classA, ECClassP& classB, ECSchemaPtr& schema)
             {
             ECSchemaPtr customAttributeSchema;
-            ECSchema::CreateSchema(customAttributeSchema, L"CustomAttributes", (uint32_t) 1, (uint32_t) 0);
+            ECSchema::CreateSchema(customAttributeSchema, "CustomAttributes", (uint32_t) 1, (uint32_t) 0);
             ECClassP customAttributeA = NULL;
-            customAttributeSchema->CreateClass(customAttributeA, L"CustomAttributeA");
+            customAttributeSchema->CreateClass(customAttributeA, "CustomAttributeA");
             customAttributeA->SetIsCustomAttributeClass(true);
             ECClassP customAttributeB = NULL;
-            customAttributeSchema->CreateClass(customAttributeB, L"CustomAttributeB");
+            customAttributeSchema->CreateClass(customAttributeB, "CustomAttributeB");
             customAttributeB->SetIsCustomAttributeClass(true);
             ECClassP customAttributeC = NULL;
-            customAttributeSchema->CreateClass(customAttributeC, L"CustomAttributeC");
+            customAttributeSchema->CreateClass(customAttributeC, "CustomAttributeC");
             customAttributeC->SetIsCustomAttributeClass(true);
             ECClassP customAttributeD = NULL;
-            customAttributeSchema->CreateClass(customAttributeD, L"CustomAttributeD");
+            customAttributeSchema->CreateClass(customAttributeD, "CustomAttributeD");
             customAttributeD->SetIsCustomAttributeClass(true);
 
-            ECSchema::CreateSchema(schema, L"testPrimary", (uint32_t) 1, (uint32_t) 0);
-            schema->AddReferencedSchema(*customAttributeSchema, L"cas");
+            ECSchema::CreateSchema(schema, "testPrimary", (uint32_t) 1, (uint32_t) 0);
+            schema->AddReferencedSchema(*customAttributeSchema, "cas");
 
             StandaloneECEnablerPtr customAttributeEnablerA = customAttributeA->GetDefaultStandaloneEnabler();
             StandaloneECEnablerPtr customAttributeEnablerB = customAttributeB->GetDefaultStandaloneEnabler();
@@ -279,68 +285,68 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             StandaloneECEnablerPtr customAttributeEnablerD = customAttributeD->GetDefaultStandaloneEnabler();
 
             ECClassP primaryClassA = NULL;
-            schema->CreateClass(primaryClassA, L"A");
+            schema->CreateClass(primaryClassA, "A");
             primaryClassA->SetCustomAttribute(*customAttributeEnablerA->CreateInstance());
             ECClassP primaryClassB = NULL;
-            schema->CreateClass(primaryClassB, L"B");
+            schema->CreateClass(primaryClassB, "B");
             primaryClassB->SetCustomAttribute(*customAttributeEnablerB->CreateInstance());
             primaryClassB->AddBaseClass(*primaryClassA);
 
             ECSchemaPtr supplementalSchema;
-            ECSchema::CreateSchema(supplementalSchema, L"testSupplemental", (uint32_t) 1, (uint32_t) 0);
-            SupplementalSchemaMetaData metaData(L"testPrimary", 1, 0, 354, L"None", false);
+            ECSchema::CreateSchema(supplementalSchema, "testSupplemental", (uint32_t) 1, (uint32_t) 0);
+            SupplementalSchemaMetaData metaData("testPrimary", 1, 0, 354, "None", false);
             supplementalSchema->AddReferencedSchema(*customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
             supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
             ECClassP supplementalClassA = NULL;
-            supplementalSchema->CreateClass(supplementalClassA, L"A");
+            supplementalSchema->CreateClass(supplementalClassA, "A");
             supplementalClassA->SetCustomAttribute(*customAttributeEnablerC->CreateInstance());
             ECClassP supplementalClassB = NULL;
-            supplementalSchema->CreateClass(supplementalClassB, L"B");
+            supplementalSchema->CreateClass(supplementalClassB, "B");
             supplementalClassB->SetCustomAttribute(*customAttributeEnablerD->CreateInstance());
 
             bvector<ECSchemaP> supplementalSchemas;
             supplementalSchemas.push_back(supplementalSchema.get());
             SupplementedSchemaBuilder builder;
             builder.UpdateSchema(*schema, supplementalSchemas);
-            classA = schema->GetClassP(L"A");
-            classB = schema->GetClassP(L"B");
+            classA = schema->GetClassP("A");
+            classB = schema->GetClassP("B");
             }
 
         void CreatePrimarySchemaForRelationshipTests(ECSchemaPtr& schema)
             {
-            ECSchema::CreateSchema(schema, L"RelationshipTestSchema", (uint32_t) 1, (uint32_t) 2);
+            ECSchema::CreateSchema(schema, "RelationshipTestSchema", (uint32_t) 1, (uint32_t) 2);
             ECClassP targetClass = NULL;
-            schema->CreateClass(targetClass, L"TargetClass");
+            schema->CreateClass(targetClass, "TargetClass");
             ECClassP sourceClass = NULL;
-            schema->CreateClass(sourceClass, L"SourceClass");
+            schema->CreateClass(sourceClass, "SourceClass");
 
             ECRelationshipClassP relClass = NULL;
-            schema->CreateRelationshipClass(relClass, L"RelationshipWithCustomAttributes");
+            schema->CreateRelationshipClass(relClass, "RelationshipWithCustomAttributes");
             relClass->GetSource().AddClass(*sourceClass);
             relClass->GetTarget().AddClass(*targetClass);
 
             ECRelationshipClassP relClass2 = NULL;
-            schema->CreateRelationshipClass(relClass2, L"RelClass2");
+            schema->CreateRelationshipClass(relClass2, "RelClass2");
             relClass2->GetSource().AddClass(*sourceClass);
             relClass2->GetTarget().AddClass(*targetClass);
             }
 
         void CreateSupplementalSchema0ForRelationshipTests(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, L"RTS_Supplemental", (uint32_t) 3, (uint32_t) 4);
-            SupplementalSchemaMetaData metaData(L"RelationshipTestSchema", 1, 2, 200, L"Test", false);
+            ECSchema::CreateSchema(supplementalSchema, "RTS_Supplemental", (uint32_t) 3, (uint32_t) 4);
+            SupplementalSchemaMetaData metaData("RelationshipTestSchema", 1, 2, 200, "Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
             supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
 
             ECClassP targetClass_Sup = NULL;
-            supplementalSchema->CreateClass(targetClass_Sup, L"TargetClass");
+            supplementalSchema->CreateClass(targetClass_Sup, "TargetClass");
             ECClassP sourceClass_Sup = NULL;
-            supplementalSchema->CreateClass(sourceClass_Sup, L"SourceClass");
+            supplementalSchema->CreateClass(sourceClass_Sup, "SourceClass");
 
             ECRelationshipClassP relClass_Sup = NULL;
-            supplementalSchema->CreateRelationshipClass(relClass_Sup, L"RelationshipWithCustomAttributes");
+            supplementalSchema->CreateRelationshipClass(relClass_Sup, "RelationshipWithCustomAttributes");
             relClass_Sup->GetSource().AddClass(*sourceClass_Sup);
             relClass_Sup->GetTarget().AddClass(*targetClass_Sup);
 
@@ -350,19 +356,19 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateSupplementalSchema1ForRelationshipTests(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, L"RTS_Supplemental2", (uint32_t) 5, (uint32_t) 6);
-            SupplementalSchemaMetaData metaData(L"RelationshipTestSchema", 1, 2, 200, L"Test", false);
+            ECSchema::CreateSchema(supplementalSchema, "RTS_Supplemental2", (uint32_t) 5, (uint32_t) 6);
+            SupplementalSchemaMetaData metaData("RelationshipTestSchema", 1, 2, 200, "Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
             supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
 
             ECClassP targetClass_Sup = NULL;
-            supplementalSchema->CreateClass(targetClass_Sup, L"TargetClass");
+            supplementalSchema->CreateClass(targetClass_Sup, "TargetClass");
             ECClassP sourceClass_Sup = NULL;
-            supplementalSchema->CreateClass(sourceClass_Sup, L"SourceClass");
+            supplementalSchema->CreateClass(sourceClass_Sup, "SourceClass");
 
             ECRelationshipClassP relClass_Sup = NULL;
-            supplementalSchema->CreateRelationshipClass(relClass_Sup, L"RelationshipWithCustomAttributes");
+            supplementalSchema->CreateRelationshipClass(relClass_Sup, "RelationshipWithCustomAttributes");
             relClass_Sup->GetSource().AddClass(*sourceClass_Sup);
             relClass_Sup->GetTarget().AddClass(*targetClass_Sup);
 
@@ -370,7 +376,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             relClass_Sup->GetTarget().SetCustomAttribute(*m_uselessInfoCAEnabler->CreateInstance());
 
             ECRelationshipClassP relClass2_Sup = NULL;
-            supplementalSchema->CreateRelationshipClass(relClass2_Sup, L"RelClass2");
+            supplementalSchema->CreateRelationshipClass(relClass2_Sup, "RelClass2");
             relClass2_Sup->GetSource().AddClass(*sourceClass_Sup);
             relClass2_Sup->GetTarget().AddClass(*targetClass_Sup);
 
@@ -380,7 +386,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreatePrimarySchemaForInheritTests(ECSchemaPtr& primarySchema)
             {
-            ECSchema::CreateSchema(primarySchema, L"InheritTestSchema", 2, 34);
+            ECSchema::CreateSchema(primarySchema, "InheritTestSchema", 2, 34);
             primarySchema->AddReferencedSchema(*m_customAttributeSchema);
             // BaseClass1
                 // BC1Prop1
@@ -389,29 +395,29 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                 // BC1Prop3
 
             ECClassP baseClass1;
-            primarySchema->CreateClass(baseClass1, L"BaseClass1");
+            primarySchema->CreateClass(baseClass1, "BaseClass1");
             PrimitiveECPropertyP bc1Prop1;
-            baseClass1->CreatePrimitiveProperty(bc1Prop1, L"BC1Prop1", PRIMITIVETYPE_String);
-            SetCustomAttribute(bc1Prop1, m_systemInfoCAEnabler, L"Data1", L"InheritTestSchema.BaseClass1.BC1Prop1", L"Data2", L"InheritTestSchema.BaseClass1.BC1Prop1");
+            baseClass1->CreatePrimitiveProperty(bc1Prop1, "BC1Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop1, m_systemInfoCAEnabler, "Data1", "InheritTestSchema.BaseClass1.BC1Prop1", "Data2", "InheritTestSchema.BaseClass1.BC1Prop1");
             PrimitiveECPropertyP bc1Prop2;
-            baseClass1->CreatePrimitiveProperty(bc1Prop2, L"BC1Prop2", PRIMITIVETYPE_String);
+            baseClass1->CreatePrimitiveProperty(bc1Prop2, "BC1Prop2", PRIMITIVETYPE_String);
             PrimitiveECPropertyP bc1Prop3;
-            baseClass1->CreatePrimitiveProperty(bc1Prop3, L"BC1Prop3", PRIMITIVETYPE_String);
+            baseClass1->CreatePrimitiveProperty(bc1Prop3, "BC1Prop3", PRIMITIVETYPE_String);
 
             // BaseClass2
                 // BC2Prop1
                 // BC2Prop2
             ECClassP baseClass2;
-            primarySchema->CreateClass(baseClass2, L"BaseClass2");
+            primarySchema->CreateClass(baseClass2, "BaseClass2");
             PrimitiveECPropertyP bc2Prop1;
-            baseClass2->CreatePrimitiveProperty(bc2Prop1, L"BC2Prop1", PRIMITIVETYPE_String);
+            baseClass2->CreatePrimitiveProperty(bc2Prop1, "BC2Prop1", PRIMITIVETYPE_String);
             PrimitiveECPropertyP bc2Prop2;
-            baseClass2->CreatePrimitiveProperty(bc2Prop2, L"BC2Prop2", PRIMITIVETYPE_String);
+            baseClass2->CreatePrimitiveProperty(bc2Prop2, "BC2Prop2", PRIMITIVETYPE_String);
 
             // DerivedClass1
                 // BaseClass1
             ECClassP derivedClass1;
-            primarySchema->CreateClass(derivedClass1, L"DerivedClass1");
+            primarySchema->CreateClass(derivedClass1, "DerivedClass1");
             derivedClass1->AddBaseClass(*baseClass1);
 
             // DerivedClass2
@@ -419,34 +425,34 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                 // BC1Prop2
                     // UselessInfo
             ECClassP derivedClass2;
-            primarySchema->CreateClass(derivedClass2, L"DerivedClass2");
+            primarySchema->CreateClass(derivedClass2, "DerivedClass2");
             derivedClass2->AddBaseClass(*baseClass1);
             PrimitiveECPropertyP bc1Prop2DerivedClass2;
-            derivedClass2->CreatePrimitiveProperty(bc1Prop2DerivedClass2, L"BC1Prop2", PRIMITIVETYPE_String);
-            SetCustomAttribute(bc1Prop2DerivedClass2, m_uselessInfoCAEnabler, L"NothingImportant", L"InheritTestSchema.DerivedClass2.BC1Prop2", L"NotImportant", L"InheritTestSchema.DerivedClass2.BC1Prop2");
+            derivedClass2->CreatePrimitiveProperty(bc1Prop2DerivedClass2, "BC1Prop2", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop2DerivedClass2, m_uselessInfoCAEnabler, "NothingImportant", "InheritTestSchema.DerivedClass2.BC1Prop2", "NotImportant", "InheritTestSchema.DerivedClass2.BC1Prop2");
 
             // DerivedClass3
                 // DerivedClass2
                 // BCProp1
                     // SystemInfo
             ECClassP derivedClass3;
-            primarySchema->CreateClass(derivedClass3, L"DerivedClass3");
+            primarySchema->CreateClass(derivedClass3, "DerivedClass3");
             derivedClass3->AddBaseClass(*derivedClass2);
             //PrimitiveECPropertyP bc1Prop1DerivedClass3;
-            //derivedClass3->CreatePrimitiveProperty(bc1Prop1DerivedClass3, L"BC1Prop1", PRIMITIVETYPE_String);
-            //SetCustomAttribute(bc1Prop1DerivedClass3, m_systemInfoCAEnabler, L"Data1", L"InheritTestSchema.DerivedClass3.BC1Prop1 - Data1", L"Data2", L"InheritTestSchema.DerivedClass3.BC1Prop1 - Data2");
+            //derivedClass3->CreatePrimitiveProperty(bc1Prop1DerivedClass3, "BC1Prop1", PRIMITIVETYPE_String);
+            //SetCustomAttribute(bc1Prop1DerivedClass3, m_systemInfoCAEnabler, "Data1", "InheritTestSchema.DerivedClass3.BC1Prop1 - Data1", "Data2", "InheritTestSchema.DerivedClass3.BC1Prop1 - Data2");
 
             // DerivedClass4
                 // BaseClass2
             ECClassP derivedClass4;
-            primarySchema->CreateClass(derivedClass4, L"DerivedClass4");
+            primarySchema->CreateClass(derivedClass4, "DerivedClass4");
             derivedClass4->AddBaseClass(*baseClass2);
             }
 
         void CreateLowPrioritySchema1(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, L"LowPrioritySchema1", 4, 3);
-            SupplementalSchemaMetaData metaData(L"InheritTest", 2, 34, 1, L"Test", false);
+            ECSchema::CreateSchema(supplementalSchema, "LowPrioritySchema1", 4, 3);
+            SupplementalSchemaMetaData metaData("InheritTest", 2, 34, 1, "Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
             supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
@@ -455,34 +461,34 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                 // BC1Prop1
                     // SystemInfo
             ECClassP derivedClass1;
-            supplementalSchema->CreateClass(derivedClass1, L"DerivedClass1");
+            supplementalSchema->CreateClass(derivedClass1, "DerivedClass1");
             PrimitiveECPropertyP bc1Prop1;
-            derivedClass1->CreatePrimitiveProperty(bc1Prop1, L"BC1Prop1", PRIMITIVETYPE_String);
-            SetCustomAttribute(bc1Prop1, m_systemInfoCAEnabler, L"Data1", L"LowPrioritySchema1.DerivedClass1.BC1Prop1", L"Data2", L"LowPrioritySchema1.DerivedClass1.BC1Prop1");
+            derivedClass1->CreatePrimitiveProperty(bc1Prop1, "BC1Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop1, m_systemInfoCAEnabler, "Data1", "LowPrioritySchema1.DerivedClass1.BC1Prop1", "Data2", "LowPrioritySchema1.DerivedClass1.BC1Prop1");
 
             // DerivedClass2
                 // BC1Prop2
                     // UselessInfo
             ECClassP derivedClass2;
-            supplementalSchema->CreateClass(derivedClass2, L"DerivedClass2");
+            supplementalSchema->CreateClass(derivedClass2, "DerivedClass2");
             PrimitiveECPropertyP bc1Prop2;
-            derivedClass2->CreatePrimitiveProperty(bc1Prop2, L"BC1Prop2", PRIMITIVETYPE_String);
-            SetCustomAttribute(bc1Prop2, m_uselessInfoCAEnabler, L"Data1", L"LowPrioritySchema1.DerivedClass2.BC1Prop2", L"Data2", L"LowPrioritySchema1.DerivedClass2.BC1Prop2");
+            derivedClass2->CreatePrimitiveProperty(bc1Prop2, "BC1Prop2", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop2, m_uselessInfoCAEnabler, "Data1", "LowPrioritySchema1.DerivedClass2.BC1Prop2", "Data2", "LowPrioritySchema1.DerivedClass2.BC1Prop2");
 
             // DerivedClass4
                 // BC2Prop1
                     // SystemInfo
             ECClassP derivedClass4;
-            supplementalSchema->CreateClass(derivedClass4, L"DerivedClass4");
+            supplementalSchema->CreateClass(derivedClass4, "DerivedClass4");
             PrimitiveECPropertyP bc2Prop1DerivedClass4;
-            derivedClass4->CreatePrimitiveProperty(bc2Prop1DerivedClass4, L"BC2Prop1", PRIMITIVETYPE_String);
-            SetCustomAttribute(bc2Prop1DerivedClass4, m_systemInfoCAEnabler, L"Data1", L"LowPrioritySchema1.DerivedClass4.BC2Prop1", L"Data2", L"LowPrioritySchema1.DerivedClass4.BC2Prop1");
+            derivedClass4->CreatePrimitiveProperty(bc2Prop1DerivedClass4, "BC2Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc2Prop1DerivedClass4, m_systemInfoCAEnabler, "Data1", "LowPrioritySchema1.DerivedClass4.BC2Prop1", "Data2", "LowPrioritySchema1.DerivedClass4.BC2Prop1");
             }
 
         void CreateLowPrioritySchema199(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, L"LowPrioritySchema199", 4, 3);
-            SupplementalSchemaMetaData metaData(L"InheritTest", 2, 34, 199, L"Test", false);
+            ECSchema::CreateSchema(supplementalSchema, "LowPrioritySchema199", 4, 3);
+            SupplementalSchemaMetaData metaData("InheritTest", 2, 34, 199, "Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
             supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
@@ -491,34 +497,34 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                 // BC1Prop1
                     // SystemInfo
             ECClassP derivedClass1;
-            supplementalSchema->CreateClass(derivedClass1, L"DerivedClass1");
+            supplementalSchema->CreateClass(derivedClass1, "DerivedClass1");
             PrimitiveECPropertyP bc1Prop1;
-            derivedClass1->CreatePrimitiveProperty(bc1Prop1, L"BC1Prop1", PRIMITIVETYPE_String);
-            SetCustomAttribute(bc1Prop1, m_systemInfoCAEnabler, L"Data1", L"LowPrioritySchema199.DerivedClass1.BC1Prop1", L"Data2", L"LowPrioritySchema199.DerivedClass1.BC1Prop1");
+            derivedClass1->CreatePrimitiveProperty(bc1Prop1, "BC1Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop1, m_systemInfoCAEnabler, "Data1", "LowPrioritySchema199.DerivedClass1.BC1Prop1", "Data2", "LowPrioritySchema199.DerivedClass1.BC1Prop1");
 
             // DerivedClass2
                 // BC1Prop2
                     // UselessInfo
             ECClassP derivedClass2;
-            supplementalSchema->CreateClass(derivedClass2, L"DerivedClass2");
+            supplementalSchema->CreateClass(derivedClass2, "DerivedClass2");
             PrimitiveECPropertyP bc1Prop2;
-            derivedClass2->CreatePrimitiveProperty(bc1Prop2, L"BC1Prop2", PRIMITIVETYPE_String);
-            SetCustomAttribute(bc1Prop2, m_uselessInfoCAEnabler, L"Data1", L"LowPrioritySchema199.DerivedClass2.BC1Prop2", L"Data2", L"LowPrioritySchema199.DerivedClass2.BC1Prop2");
+            derivedClass2->CreatePrimitiveProperty(bc1Prop2, "BC1Prop2", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop2, m_uselessInfoCAEnabler, "Data1", "LowPrioritySchema199.DerivedClass2.BC1Prop2", "Data2", "LowPrioritySchema199.DerivedClass2.BC1Prop2");
 
             // DerivedClass3
                 // BC1Prop1
                     // SystemInfo
             ECClassP derivedClass3;
-            supplementalSchema->CreateClass(derivedClass3, L"DerivedClass3");
+            supplementalSchema->CreateClass(derivedClass3, "DerivedClass3");
             PrimitiveECPropertyP bc1Prop1DerivedClass3;
-            derivedClass3->CreatePrimitiveProperty(bc1Prop1DerivedClass3, L"BC1Prop1", PRIMITIVETYPE_String);
-            SetCustomAttribute(bc1Prop1DerivedClass3, m_systemInfoCAEnabler, L"Data1", L"LowPrioritySchema199.DerivedClass3.BC1Prop1", L"Data2", L"LowPrioritySchema199.DerivedClass3.BC1Prop1");
+            derivedClass3->CreatePrimitiveProperty(bc1Prop1DerivedClass3, "BC1Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc1Prop1DerivedClass3, m_systemInfoCAEnabler, "Data1", "LowPrioritySchema199.DerivedClass3.BC1Prop1", "Data2", "LowPrioritySchema199.DerivedClass3.BC1Prop1");
             }
 
         void CreateHighPrioritySchema200(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, L"HighPrioritySchema200", 4, 3);
-            SupplementalSchemaMetaData metaData(L"InheritTest", 2, 34, 200, L"Test", false);
+            ECSchema::CreateSchema(supplementalSchema, "HighPrioritySchema200", 4, 3);
+            SupplementalSchemaMetaData metaData("InheritTest", 2, 34, 200, "Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
             supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
@@ -526,16 +532,16 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             // BaseClass2
                 // BC2Prop1
             ECClassP baseClass2;
-            supplementalSchema->CreateClass(baseClass2, L"BaseClass2");
+            supplementalSchema->CreateClass(baseClass2, "BaseClass2");
             PrimitiveECPropertyP bc2Prop1;
-            baseClass2->CreatePrimitiveProperty(bc2Prop1, L"BC2Prop1", PRIMITIVETYPE_String);
-            SetCustomAttribute(bc2Prop1, m_systemInfoCAEnabler, L"Data1", L"HighPrioritySchema200.BaseClass2,BC2Prop1", L"Data2", L"HighPrioritySchema200.BaseClass2.BC2Prop1");
+            baseClass2->CreatePrimitiveProperty(bc2Prop1, "BC2Prop1", PRIMITIVETYPE_String);
+            SetCustomAttribute(bc2Prop1, m_systemInfoCAEnabler, "Data1", "HighPrioritySchema200.BaseClass2,BC2Prop1", "Data2", "HighPrioritySchema200.BaseClass2.BC2Prop1");
             }
 
         void ValidatePropertyValuesAreEqual(IECInstancePtr instanceA, IECInstancePtr instanceB)
             {
             ECPropertyIterableCR    collection  = instanceA->GetClass().GetProperties(true);
-            for(ECPropertyP propertyA: collection)
+            for (ECPropertyP propertyA: collection)
                 {
                 ECValue valueA;
                 instanceA->GetValue(valueA, propertyA->GetName().c_str());
@@ -544,17 +550,17 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                 if (valueA.IsPrimitive())
                     {
                     if (!valueB.IsPrimitive())
-                        FAIL() << L"valueA is a primitive but valueB is not";
+                        FAIL() << "valueA is a primitive but valueB is not";
                     else
                         {
                         if (valueA.IsString())
                             {
                             if (valueB.IsString())
                                 {
-                                EXPECT_STREQ(valueA.GetString(), valueB.GetString());
+                                EXPECT_STREQ(valueA.GetUtf8CP(), valueB.GetUtf8CP());
                                 }
                             else
-                                FAIL() << L"Values of different primitive types";
+                                FAIL() << "Values of different primitive types";
                             }
                         else if (valueA.IsInteger())
                             {
@@ -563,7 +569,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                                 EXPECT_EQ(valueA.GetInteger(), valueB.GetInteger());
                                 }
                             else
-                                FAIL() << L"Values of different primitive types";
+                                FAIL() << "Values of different primitive types";
                             }
                         else if (valueA.IsBoolean())
                             {
@@ -572,7 +578,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                                 EXPECT_EQ(valueA.GetBoolean(), valueB.GetBoolean());
                                 }
                             else
-                                FAIL() << L"Values of different primitive types";
+                                FAIL() << "Values of different primitive types";
                             }
                         else if (valueA.IsLong())
                             {
@@ -581,26 +587,26 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                                 EXPECT_EQ(valueA.GetLong(), valueB.GetLong());
                                 }
                             else
-                                FAIL() << L"Values of different primitive types";
+                                FAIL() << "Values of different primitive types";
                             }
                         }
                     }
                 else if (valueA.IsArray() && !valueB.IsArray())
-                    FAIL() << L"valueA is an array but valueB is not";
+                    FAIL() << "valueA is an array but valueB is not";
                 else if (valueA.IsStruct() && !valueB.IsStruct())
-                    FAIL() << L"valueA is a struct but valueB is not";
+                    FAIL() << "valueA is a struct but valueB is not";
                 }
             }
 
         bool CustomAttributesAreEqual(ECCustomAttributeInstanceIterable customAttributesA, ECCustomAttributeInstanceIterable customAttributesB)
             {
             uint32_t countA = 0;
-            for(IECInstancePtr attributeA: customAttributesA)
+            for (IECInstancePtr attributeA: customAttributesA)
                 {
                 countA++;
-                WStringCR className = attributeA->GetClass().GetName();
+                Utf8StringCR className = attributeA->GetClass().GetName();
                 bool customAttributeFound = false;
-                for(IECInstancePtr attributeB: customAttributesB)
+                for (IECInstancePtr attributeB: customAttributesB)
                     {
                     ECClassCR classB = attributeB->GetClass();
                     if (0 == className.compare(classB.GetName()))
@@ -615,7 +621,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                 }
 
             uint32_t countB = 0;
-            for(IECInstancePtr attributeB: customAttributesB)
+            for (IECInstancePtr attributeB: customAttributesB)
                 {
                 countB++;
                 }
@@ -642,28 +648,28 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
             }
 
-        void ValidateSystemInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, WCharCP expectedValue1, WCharCP expectedValue2)
+        void ValidateSystemInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, Utf8CP expectedValue1, Utf8CP expectedValue2)
             {
-            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute(L"SystemInfo");
+            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute("SystemInfo");
             EXPECT_TRUE(customAttribute.IsValid());
             ECValue ecValue;
-            customAttribute->GetValue(ecValue, L"Data1");
-            EXPECT_STREQ(expectedValue1, ecValue.GetString());
+            customAttribute->GetValue(ecValue, "Data1");
+            EXPECT_STREQ(expectedValue1, ecValue.GetUtf8CP());
 
-            customAttribute->GetValue(ecValue, L"Data2");
-            EXPECT_STREQ(expectedValue2, ecValue.GetString());
+            customAttribute->GetValue(ecValue, "Data2");
+            EXPECT_STREQ(expectedValue2, ecValue.GetUtf8CP());
             }
 
-        void ValidateUselessInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, WCharCP expectedValue1, WCharCP expectedValue2)
+        void ValidateUselessInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, Utf8CP expectedValue1, Utf8CP expectedValue2)
             {
-            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute(L"UselessInfo");
+            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute("UselessInfo");
             EXPECT_TRUE(customAttribute.IsValid());
             ECValue ecValue;
-            customAttribute->GetValue(ecValue, L"NothingImportant");
-            EXPECT_STREQ(expectedValue1, ecValue.GetString());
+            customAttribute->GetValue(ecValue, "NothingImportant");
+            EXPECT_STREQ(expectedValue1, ecValue.GetUtf8CP());
 
-            customAttribute->GetValue(ecValue, L"NotImportant");
-            EXPECT_STREQ(expectedValue2, ecValue.GetString());
+            customAttribute->GetValue(ecValue, "NotImportant");
+            EXPECT_STREQ(expectedValue2, ecValue.GetUtf8CP());
             }
 
         void ValidateFolderClass(ECClassP consolidatedClass, ECClassP originalClass)
@@ -672,22 +678,22 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             ValidateAreClassesIdentical(consolidatedClass, originalClass, false);
             
             // Validate class level CAs
-            ValidateSystemInfoCustomAttribute (consolidatedClass, L"Data1 on Folder Class", L"Data2 on Folder Class");
-            ValidateUselessInfoCustomAttribute (consolidatedClass, L"Nothing important on Folder Class from SupplementalSchema2", L"Not important on Folder Class from SupplementalSchema2");
+            ValidateSystemInfoCustomAttribute (consolidatedClass, "Data1 on Folder Class", "Data2 on Folder Class");
+            ValidateUselessInfoCustomAttribute (consolidatedClass, "Nothing important on Folder Class from SupplementalSchema2", "Not important on Folder Class from SupplementalSchema2");
 
-            ECPropertyP propertyP = consolidatedClass->GetPropertyP(L"Hidden");
+            ECPropertyP propertyP = consolidatedClass->GetPropertyP("Hidden");
             // Validate custom attributes on Hidden property
-            ValidateUselessInfoCustomAttribute(propertyP, L"Nothing important on Hidden Property on Folder Class", L"Not important on Hidden Property on Folder Class");
+            ValidateUselessInfoCustomAttribute(propertyP, "Nothing important on Hidden Property on Folder Class", "Not important on Hidden Property on Folder Class");
 
             //Validate custom attributes on CreationDate property
-            propertyP = consolidatedClass->GetPropertyP(L"CreationDate");
-            ValidateSystemInfoCustomAttribute(propertyP, L"Data1 on CreationDate Property on Folder Class from SupplementalSchema2", L"Data2 on CreationDate Property on Folder Class from SupplementalSchema2");
+            propertyP = consolidatedClass->GetPropertyP("CreationDate");
+            ValidateSystemInfoCustomAttribute(propertyP, "Data1 on CreationDate Property on Folder Class from SupplementalSchema2", "Data2 on CreationDate Property on Folder Class from SupplementalSchema2");
 
             // validate custom attributes on ReadOnly property
-            propertyP = consolidatedClass->GetPropertyP(L"ReadOnly");
+            propertyP = consolidatedClass->GetPropertyP("ReadOnly");
             ECCustomAttributeInstanceIterable attributes = propertyP->GetCustomAttributes(false);
             uint32_t count = 0;
-            for(IECInstancePtr attribute: attributes)
+            for (IECInstancePtr attribute: attributes)
                 {
                 count++;
                 }
@@ -701,21 +707,21 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             ValidateAreClassesIdentical(consolidatedClass, originalClass, false);
 
             // validate class level CAs
-            ValidateSystemInfoCustomAttribute(consolidatedClass, L"Data1 on File Class from SupplementalSchema1", L"Data2 on File Class from SupplementalSchema1");
-            ValidateUselessInfoCustomAttribute(consolidatedClass, L"Nothing important on File Class from Supplemental3", L"Not important on File Class from Supplemental3");
+            ValidateSystemInfoCustomAttribute(consolidatedClass, "Data1 on File Class from SupplementalSchema1", "Data2 on File Class from SupplementalSchema1");
+            ValidateUselessInfoCustomAttribute(consolidatedClass, "Nothing important on File Class from Supplemental3", "Not important on File Class from Supplemental3");
             
             //validate custom attributes on Hidden property
-            ECPropertyP propertyP = consolidatedClass->GetPropertyP(L"Hidden");
-            ValidateUselessInfoCustomAttribute(propertyP, L"Nothing important on Hidden Property on File Class from SupplementalSchema1", L"Not important on Hidden Property on File Class from SupplementalSchema1");
-            ValidateSystemInfoCustomAttribute(propertyP, L"Data1 on Hidden Property on File Class from Supplemental3", L"Data2 on Hidden Property on File Class from Supplemental3");
+            ECPropertyP propertyP = consolidatedClass->GetPropertyP("Hidden");
+            ValidateUselessInfoCustomAttribute(propertyP, "Nothing important on Hidden Property on File Class from SupplementalSchema1", "Not important on Hidden Property on File Class from SupplementalSchema1");
+            ValidateSystemInfoCustomAttribute(propertyP, "Data1 on Hidden Property on File Class from Supplemental3", "Data2 on Hidden Property on File Class from Supplemental3");
 
             // validate custom attributes on CreationDate property
-            propertyP = consolidatedClass->GetPropertyP(L"CreationDate");
-            ValidateUselessInfoCustomAttribute(propertyP, L"Nothing important on CreationDate Property on File Class from Supplemental3", L"Not important on CreationDate Property on File Class from Supplemental3");
+            propertyP = consolidatedClass->GetPropertyP("CreationDate");
+            ValidateUselessInfoCustomAttribute(propertyP, "Nothing important on CreationDate Property on File Class from Supplemental3", "Not important on CreationDate Property on File Class from Supplemental3");
 
             // validate custom attributes on FileSize property
-            propertyP = consolidatedClass->GetPropertyP(L"FileSize");
-            ValidateSystemInfoCustomAttribute(propertyP, L"Data1 on FileSize Property on File Class from Supplemental3", L"Data2 on FileSize Property on File Class from Supplemental3");
+            propertyP = consolidatedClass->GetPropertyP("FileSize");
+            ValidateSystemInfoCustomAttribute(propertyP, "Data1 on FileSize Property on File Class from Supplemental3", "Data2 on FileSize Property on File Class from Supplemental3");
 
             }
 
@@ -725,26 +731,26 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             ValidateAreClassesIdentical(consolidatedClass, originalClass, false);
 
             // validate class level custom attributes
-            ValidateSystemInfoCustomAttribute(consolidatedClass, L"Data1 on Image Class", L"Data2 on Image Class");
-            ValidateUselessInfoCustomAttribute(consolidatedClass, L"Nothing important on Image Class from Supplemental3", L"Not important on Image Class from Supplemental3");
+            ValidateSystemInfoCustomAttribute(consolidatedClass, "Data1 on Image Class", "Data2 on Image Class");
+            ValidateUselessInfoCustomAttribute(consolidatedClass, "Nothing important on Image Class from Supplemental3", "Not important on Image Class from Supplemental3");
 
             // validate custom attributes on BitDepth property
-            ECPropertyP propertyP = consolidatedClass->GetPropertyP(L"BitDepth");
+            ECPropertyP propertyP = consolidatedClass->GetPropertyP("BitDepth");
             ECCustomAttributeInstanceIterable attributes = propertyP->GetCustomAttributes(false);
             uint32_t count = 0;
-            for(IECInstancePtr attribute: attributes)
+            for (IECInstancePtr attribute: attributes)
                 {
                 count++;
                 }
             EXPECT_EQ(0, count);
 
             // validate custom attributes on Width property
-            propertyP = consolidatedClass->GetPropertyP(L"Width");
-            ValidateUselessInfoCustomAttribute(propertyP, L"Nothing important on Width Property on Image Class", L"Not important on Width Property on Image Class");
+            propertyP = consolidatedClass->GetPropertyP("Width");
+            ValidateUselessInfoCustomAttribute(propertyP, "Nothing important on Width Property on Image Class", "Not important on Width Property on Image Class");
 
             //validate custom attributes on height property
-            propertyP = consolidatedClass->GetPropertyP(L"Height");
-            ValidateUselessInfoCustomAttribute(propertyP, L"Nothing important on Height Property on Image Class from Supplemental3", L"Not important on Height Property on Image Class from Supplemental3");
+            propertyP = consolidatedClass->GetPropertyP("Height");
+            ValidateUselessInfoCustomAttribute(propertyP, "Nothing important on Height Property on Image Class from Supplemental3", "Not important on Height Property on Image Class from Supplemental3");
             }
 
         void CompareSchemasPostSupplement(ECSchemaPtr schemaPostSupplement, ECSchemaPtr schemaPreSupplement)
@@ -759,7 +765,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             EXPECT_TRUE(CustomAttributesAreEqual(preCustomAttributes, postCustomAttributes));
 
             uint32_t preClassCount = 0;
-            for(ECClassP preSupplementClass: schemaPreSupplement->GetClasses())
+            for (ECClassP preSupplementClass: schemaPreSupplement->GetClasses())
                 {
                 EXPECT_TRUE(NULL != preSupplementClass);
                 preClassCount++;
@@ -771,7 +777,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             EXPECT_TRUE(0 < preClassCount);
 
             uint32_t postClassCount = 0;
-            for(ECClassP postSupplementClass: schemaPostSupplement->GetClasses())
+            for (ECClassP postSupplementClass: schemaPostSupplement->GetClasses())
                 {
                 EXPECT_TRUE(NULL != postSupplementClass);
                 postClassCount++;
@@ -790,16 +796,16 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             }
         void CompareSupplementedSchemaAndPrimary(ECSchemaPtr consolidatedSchema)
             {
-            for(ECClassP consolidatedClass: consolidatedSchema->GetClasses())
+            for (ECClassP consolidatedClass: consolidatedSchema->GetClasses())
                 {
-                if (0 == wcscmp(consolidatedClass->GetName().c_str(), L"Folder"))
-                    ValidateFolderClass(consolidatedClass, m_primaryTestSchema->GetClassP(L"Folder"));
-                else if (0 == wcscmp(consolidatedClass->GetName().c_str(), L"File"))
-                    ValidateFileClass(consolidatedClass, m_primaryTestSchema->GetClassP(L"File"));
-                else if (0 == wcscmp(consolidatedClass->GetName().c_str(), L"Image"))
-                    ValidateImageClass(consolidatedClass, m_primaryTestSchema->GetClassP(L"Image"));
+                if (0 == strcmp(consolidatedClass->GetName().c_str(), "Folder"))
+                    ValidateFolderClass(consolidatedClass, m_primaryTestSchema->GetClassP("Folder"));
+                else if (0 == strcmp(consolidatedClass->GetName().c_str(), "File"))
+                    ValidateFileClass(consolidatedClass, m_primaryTestSchema->GetClassP("File"));
+                else if (0 == strcmp(consolidatedClass->GetName().c_str(), "Image"))
+                    ValidateImageClass(consolidatedClass, m_primaryTestSchema->GetClassP("Image"));
                 else
-                    FAIL() << L"Unexpected class found in consolidated schema";
+                    FAIL() << "Unexpected class found in consolidated schema";
                 }
 
             EXPECT_TRUE(m_primaryTestSchema->IsSamePrimarySchema(*consolidatedSchema));
@@ -813,7 +819,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
     public:
         virtual void            SetUp () override 
             { 
-            __super::SetUp();
+            T_Super::SetUp();
             CreateCustomAttributeSchema();
             CreatePrimarySchema(m_primaryTestSchema);
             CreateSupplementalSchema1 (m_supplementalTestSchema1);
@@ -821,7 +827,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             CreateSupplementalSchema3 (m_supplementalTestSchema3);
             CreateSupplementalSchema4 (m_supplementalTestSchema4);
 
-            //m_customAttributeSchema->WriteToXmlFile(L"d:\\temp\\customAttribute.xml");
+            //m_customAttributeSchema->WriteToXmlFile("d:\\temp\\customAttribute.xml");
 
             //m_primaryTestSchema->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\primarySchema.xml");
             //m_supplementalTestSchema1->WriteToXmlFile(L"d:\\temp\\supplementalSchemas\\supplementalSchema1.xml");
@@ -846,21 +852,21 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
     {
     ECSchemaPtr supplemental;
-    CreateSupplementalSchema(supplemental, L"TestSchema", L"OverrideWidgets", (uint32_t) 200, (uint32_t) 1, (uint32_t) 0, 4, 2);
+    CreateSupplementalSchema(supplemental, "TestSchema", "OverrideWidgets", (uint32_t) 200, (uint32_t) 1, (uint32_t) 0, 4, 2);
 
     EXPECT_TRUE(supplemental.IsValid());
                 ECSchemaP tempSchema = supplemental.get();
             tempSchema->GetFullSchemaName();
             ECCustomAttributeInstanceIterable iter = tempSchema->GetCustomAttributeContainer().GetCustomAttributes(true);
 
-    Bentley::ECN::SupplementalSchemaMetaDataPtr metaData;
+    ECN::SupplementalSchemaMetaDataPtr metaData;
     EXPECT_TRUE(SupplementalSchemaMetaData::TryGetFromSchema(metaData, *supplemental));
     EXPECT_TRUE(metaData.IsValid());
-    EXPECT_STREQ(L"TestSchema", metaData->GetPrimarySchemaName().c_str());
+    EXPECT_STREQ("TestSchema", metaData->GetPrimarySchemaName().c_str());
     EXPECT_EQ(1, metaData->GetPrimarySchemaMajorVersion());
     EXPECT_EQ(0, metaData->GetPrimarySchemaMinorVersion());
     EXPECT_EQ(200, metaData->GetSupplementalSchemaPrecedence());
-    EXPECT_STREQ(L"OverrideWidgets", metaData->GetSupplementalSchemaPurpose().c_str());
+    EXPECT_STREQ("OverrideWidgets", metaData->GetSupplementalSchemaPurpose().c_str());
     EXPECT_FALSE(metaData->IsUserSpecific());
     }
 
@@ -869,25 +875,25 @@ TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SupplementalSchemaInfoTests, CanSetAndRetrieveInfo)
     {
-    bmap<WString, WString> schemaNamesAndPurposes1;
-    schemaNamesAndPurposes1[L"Schema1.01.00"] = L"Units";
-    schemaNamesAndPurposes1[L"Schema2.02.00"] = L"Units";
-    schemaNamesAndPurposes1[L"Schema2.01.01"] = L"Alpha";
-    schemaNamesAndPurposes1[L"Schema3.01.00"] = L"Beta";
+    bmap<Utf8String, Utf8String> schemaNamesAndPurposes1;
+    schemaNamesAndPurposes1["Schema1.01.00"] = "Units";
+    schemaNamesAndPurposes1["Schema2.02.00"] = "Units";
+    schemaNamesAndPurposes1["Schema2.01.01"] = "Alpha";
+    schemaNamesAndPurposes1["Schema3.01.00"] = "Beta";
 
-    WString primarySchemaFullName(L"PrimarySchema.08.02");
+    Utf8String primarySchemaFullName("PrimarySchema.08.02");
 
     ECSchemaPtr primarySchema;
-    ECSchema::CreateSchema(primarySchema, L"PrimarySchema", 8, 2);
+    ECSchema::CreateSchema(primarySchema, "PrimarySchema", 8, 2);
 
     ECSchemaPtr supplementalSchema1;
     ECSchemaPtr supplementalSchema2;
     ECSchemaPtr supplementalSchema3;
     ECSchemaPtr supplementalSchema4;
-    CreateSupplementalSchema(supplementalSchema1, L"PrimarySchema", L"Units", 200, 8, 2, 1, 0);
-    CreateSupplementalSchema(supplementalSchema2, L"PrimarySchema", L"Units", 201, 8, 2, 2, 0);
-    CreateSupplementalSchema(supplementalSchema3, L"PrimarySchema", L"Alpha", 202, 8, 2, 1, 1);
-    CreateSupplementalSchema(supplementalSchema4, L"PrimarySchema", L"Beta", 203, 8, 2, 1, 0);
+    CreateSupplementalSchema(supplementalSchema1, "PrimarySchema", "Units", 200, 8, 2, 1, 0);
+    CreateSupplementalSchema(supplementalSchema2, "PrimarySchema", "Units", 201, 8, 2, 2, 0);
+    CreateSupplementalSchema(supplementalSchema3, "PrimarySchema", "Alpha", 202, 8, 2, 1, 1);
+    CreateSupplementalSchema(supplementalSchema4, "PrimarySchema", "Beta", 203, 8, 2, 1, 0);
 
     bvector<ECSchemaP> supplementalSchemas;
     supplementalSchemas.push_back(supplementalSchema1.get());
@@ -898,13 +904,13 @@ TEST_F(SupplementalSchemaInfoTests, CanSetAndRetrieveInfo)
     builder.UpdateSchema(*primarySchema, supplementalSchemas);
 
     ECSchemaPtr schema2;
-    ECSchema::CreateSchema(schema2, L"PrimarySchema", 8, 2);
+    ECSchema::CreateSchema(schema2, "PrimarySchema", 8, 2);
     SupplementedSchemaBuilder builder2;
     builder2.UpdateSchema(*schema2, supplementalSchemas);
 
     SupplementalSchemaInfoPtr schemaInfo1 = primarySchema->GetSupplementalInfo();
 
-    EXPECT_TRUE(schemaInfo1->HasSameSupplementalSchemasForPurpose(*schema2, L"Units"));
+    EXPECT_TRUE(schemaInfo1->HasSameSupplementalSchemasForPurpose(*schema2, "Units"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -956,7 +962,7 @@ void ValidateCustomAttributesOnDerivedClass(ECClassP supplementedClass)
     {
     ECCustomAttributeInstanceIterable localCustomAttributes = supplementedClass->GetCustomAttributes(false);
     uint32_t localCustomAttributesCount = 0;
-    for(IECInstancePtr attribute: localCustomAttributes)
+    for (IECInstancePtr attribute: localCustomAttributes)
         {
         localCustomAttributesCount++;
         }
@@ -964,7 +970,7 @@ void ValidateCustomAttributesOnDerivedClass(ECClassP supplementedClass)
 
     ECCustomAttributeInstanceIterable allCustomAttributes = supplementedClass->GetCustomAttributes(true);
     uint32_t allCustomAttributesCount = 0;
-    for(IECInstancePtr attribute: allCustomAttributes)
+    for (IECInstancePtr attribute: allCustomAttributes)
         {
         allCustomAttributesCount++;
         }
@@ -972,7 +978,7 @@ void ValidateCustomAttributesOnDerivedClass(ECClassP supplementedClass)
 
     ECCustomAttributeInstanceIterable localCustomAttributes2 = supplementedClass->GetCustomAttributes(false);
     localCustomAttributesCount = 0;
-    for(IECInstancePtr attribute: localCustomAttributes2)
+    for (IECInstancePtr attribute: localCustomAttributes2)
         {
         localCustomAttributesCount++;
         }
@@ -983,7 +989,7 @@ void ValidatePrimaryCustomAttributesOnDerivedClass(ECClassP supplementedClass)
     {
     ECCustomAttributeInstanceIterable localCustomAttributes = supplementedClass->GetPrimaryCustomAttributes(false);
     uint32_t localCustomAttributesCount = 0;
-    for(IECInstancePtr attribute: localCustomAttributes)
+    for (IECInstancePtr attribute: localCustomAttributes)
         {
         localCustomAttributesCount++;
         }
@@ -991,7 +997,7 @@ void ValidatePrimaryCustomAttributesOnDerivedClass(ECClassP supplementedClass)
 
     ECCustomAttributeInstanceIterable allCustomAttributes = supplementedClass->GetPrimaryCustomAttributes(true);
     uint32_t allCustomAttributesCount = 0;
-    for(IECInstancePtr attribute: allCustomAttributes)
+    for (IECInstancePtr attribute: allCustomAttributes)
         {
         allCustomAttributesCount++;
         }
@@ -999,7 +1005,7 @@ void ValidatePrimaryCustomAttributesOnDerivedClass(ECClassP supplementedClass)
 
     ECCustomAttributeInstanceIterable localCustomAttributes2 = supplementedClass->GetPrimaryCustomAttributes(false);
     localCustomAttributesCount = 0;
-    for(IECInstancePtr attribute: localCustomAttributes2)
+    for (IECInstancePtr attribute: localCustomAttributes2)
         {
         localCustomAttributesCount++;
         }
@@ -1057,7 +1063,7 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementCustomAttributesOnRelationshipC
     SupplementedSchemaBuilder builder;
     EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_Success, builder.UpdateSchema(*schema, supplementalSchemas));
 
-    ECClassP supplementedClass = schema->GetClassP(L"RelationshipWithCustomAttributes");
+    ECClassP supplementedClass = schema->GetClassP("RelationshipWithCustomAttributes");
     EXPECT_TRUE(NULL != supplementedClass);
     ECRelationshipClassP supplementedRelClass = dynamic_cast<ECRelationshipClassP>(supplementedClass);
     EXPECT_TRUE(NULL != supplementedRelClass);
@@ -1076,7 +1082,7 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementCustomAttributesOnRelationshipC
     SupplementedSchemaBuilder builder2;
     EXPECT_EQ(SUPPLEMENTED_SCHEMA_STATUS_Success, builder2.UpdateSchema(*schema2, supplementalSchemas));
 
-    supplementedClass = schema2->GetClassP(L"RelationshipWithCustomAttributes");
+    supplementedClass = schema2->GetClassP("RelationshipWithCustomAttributes");
     EXPECT_TRUE(NULL != supplementedClass);
     supplementedRelClass = dynamic_cast<ECRelationshipClassP>(supplementedClass);
     EXPECT_TRUE(NULL != supplementedRelClass);
@@ -1090,7 +1096,7 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementCustomAttributesOnRelationshipC
     sourceCA = supplementedRelClass->GetSource().GetCustomAttribute(m_uselessInfoCAEnabler->GetClass());
     EXPECT_TRUE(sourceCA.IsValid());
 
-    supplementedClass = schema2->GetClassP(L"RelClass2");
+    supplementedClass = schema2->GetClassP("RelClass2");
     EXPECT_TRUE(NULL != supplementedClass);
     supplementedRelClass = dynamic_cast<ECRelationshipClassP>(supplementedClass);
     EXPECT_TRUE(NULL != supplementedRelClass);
@@ -1103,6 +1109,7 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementCustomAttributesOnRelationshipC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if 0
 TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     {
     ECSchemaPtr inheritPrimarySchema;
@@ -1126,44 +1133,44 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     EXPECT_TRUE(inheritPrimarySchema->IsSupplemented());
 
     // DerivedClass1.BC1Prop1 should have its custom attribute applied by a low precedence supplemental schema
-    ECClassP derivedClass1 = inheritPrimarySchema->GetClassP(L"DerivedClass1");
+    ECClassP derivedClass1 = inheritPrimarySchema->GetClassP("DerivedClass1");
     EXPECT_TRUE(NULL != derivedClass1);
-    ECPropertyP bc1Prop1DerivedClass1 = derivedClass1->GetPropertyP(L"BC1Prop1");
+    ECPropertyP bc1Prop1DerivedClass1 = derivedClass1->GetPropertyP("BC1Prop1");
     EXPECT_TRUE(NULL != bc1Prop1DerivedClass1);
-    ValidateSystemInfoCustomAttribute(bc1Prop1DerivedClass1, L"LowPrioritySchema199.DerivedClass1.BC1Prop1", L"LowPrioritySchema199.DerivedClass1.BC1Prop1");
+    ValidateSystemInfoCustomAttribute(bc1Prop1DerivedClass1, "LowPrioritySchema199.DerivedClass1.BC1Prop1", "LowPrioritySchema199.DerivedClass1.BC1Prop1");
 
     // DerivedClass2.BC1Prop2 should have its custom attribute applied by the primary schema
-    ECClassP derivedClass2 = inheritPrimarySchema->GetClassP(L"DerivedClass2");
+    ECClassP derivedClass2 = inheritPrimarySchema->GetClassP("DerivedClass2");
     EXPECT_TRUE(NULL != derivedClass2);
-    ECPropertyP bc1Prop2DerivedClass2 = derivedClass2->GetPropertyP(L"BC1Prop2");
+    ECPropertyP bc1Prop2DerivedClass2 = derivedClass2->GetPropertyP("BC1Prop2");
     EXPECT_TRUE(NULL != bc1Prop2DerivedClass2);
-    ValidateUselessInfoCustomAttribute(bc1Prop2DerivedClass2,  L"InheritTestSchema.DerivedClass2.BC1Prop2", L"InheritTestSchema.DerivedClass2.BC1Prop2");
+    ValidateUselessInfoCustomAttribute(bc1Prop2DerivedClass2,  "InheritTestSchema.DerivedClass2.BC1Prop2", "InheritTestSchema.DerivedClass2.BC1Prop2");
 
     // DerivedClass3.BC1Prop1 should have its custom attribute applied by a low precedence supplemental schema
-    ECClassP derivedClass3 = inheritPrimarySchema->GetClassP(L"DerivedClass3");
+    ECClassP derivedClass3 = inheritPrimarySchema->GetClassP("DerivedClass3");
     EXPECT_TRUE (NULL != derivedClass3);
-    ECPropertyP bc1Prop1DerivedClass3 = derivedClass3->GetPropertyP(L"BC1Prop1");
+    ECPropertyP bc1Prop1DerivedClass3 = derivedClass3->GetPropertyP("BC1Prop1");
     EXPECT_TRUE (NULL != bc1Prop1DerivedClass3);
-    ValidateSystemInfoCustomAttribute(bc1Prop1DerivedClass3, L"LowPrioritySchema199.DerivedClass3.BC1Prop1", L"LowPrioritySchema199.DerivedClass3.BC1Prop1");
+    ValidateSystemInfoCustomAttribute(bc1Prop1DerivedClass3, "LowPrioritySchema199.DerivedClass3.BC1Prop1", "LowPrioritySchema199.DerivedClass3.BC1Prop1");
 
     // DerivedClass4.BC2Prop1 should have its custom attribute applied by a low precedence supplemental schema
-    ECClassP derivedClass4 = inheritPrimarySchema->GetClassP(L"DerivedClass4");
+    ECClassP derivedClass4 = inheritPrimarySchema->GetClassP("DerivedClass4");
     EXPECT_TRUE(NULL != derivedClass4);
-    ECPropertyP bc2Prop1DerivedClass4 = derivedClass4->GetPropertyP(L"BC2Prop1");
+    ECPropertyP bc2Prop1DerivedClass4 = derivedClass4->GetPropertyP("BC2Prop1");
     EXPECT_TRUE(NULL != bc2Prop1DerivedClass4);
-    ValidateSystemInfoCustomAttribute(bc2Prop1DerivedClass4, L"LowPrioritySchema1.DerivedClass4.BC2Prop1", L"LowPrioritySchema1.DerivedClass4.BC2Prop1");
+    ValidateSystemInfoCustomAttribute(bc2Prop1DerivedClass4, "LowPrioritySchema1.DerivedClass4.BC2Prop1", "LowPrioritySchema1.DerivedClass4.BC2Prop1");
     }
+#endif
 
-TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented)
+TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented2)
     {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr   schemaContext;
     schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
-    SchemaKey key(L"MasterSchema", 1, 0);
+    SchemaKey key("MasterSchema", 1, 0);
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
 
     }
-
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

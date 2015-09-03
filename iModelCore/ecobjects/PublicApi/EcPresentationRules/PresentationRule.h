@@ -5,8 +5,10 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -27,6 +29,7 @@ Base class for all custom PresentationKeys. It represents any presentation confi
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PresentationKey
     {
+//__PUBLISH_SECTION_END__
 private:
     int m_priority;
 
@@ -46,7 +49,12 @@ protected:
     //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) = 0;
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
+    //! Virtual destructor.
+    virtual ~PresentationKey(){}
+    
     //! Reads PresentationRule from xml node.
     ECOBJECTS_EXPORT bool                   ReadXml (BeXmlNodeP xmlNode);
 
@@ -58,15 +66,15 @@ public:
 
     };
 
-
 /*---------------------------------------------------------------------------------**//**
 Base class for all PresentationRules.
 * @bsiclass                                     Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PresentationRule : public PresentationKey
     {
+//__PUBLISH_SECTION_END__
 private:
-    WString   m_condition;
+    Utf8String   m_condition;
     bool      m_onlyIfNotHandled;
 
 protected:
@@ -74,7 +82,7 @@ protected:
     ECOBJECTS_EXPORT PresentationRule ();
 
     //! Constructor.
-    ECOBJECTS_EXPORT PresentationRule (WStringCR condition, int priority, bool onlyIfNotHandled);
+    ECOBJECTS_EXPORT PresentationRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled);
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
     ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode);
@@ -82,15 +90,19 @@ protected:
     //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode);
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
-    ECOBJECTS_EXPORT WStringCR              GetCondition (void) const;
+    ECOBJECTS_EXPORT Utf8StringCR              GetCondition (void) const;
 
     //! Set condition ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
-    ECOBJECTS_EXPORT void                   SetCondition (WString value);
+    ECOBJECTS_EXPORT void                   SetCondition (Utf8String value);
 
     //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
     ECOBJECTS_EXPORT bool                   GetOnlyIfNotHandled (void) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

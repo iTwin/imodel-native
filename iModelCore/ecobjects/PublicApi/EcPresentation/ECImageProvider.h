@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
-#include <Bentley\BeIconUtilities.h>
+#include <Bentley/BeIconUtilities.h>
 #include "ecpresentationtypedefs.h"
 #include "ecimagekey.h"
 #include "auiprovider.h"
@@ -64,7 +64,10 @@ struct  ECNativeImage :public IECNativeImage
         return new ECNativeImage(key, image, imageSize);
         }
     
-#pragma warning(disable:4189) // status unused if NDEBUG set.
+#if defined (_MSC_VER)
+    #pragma warning(disable:4189) // status unused if NDEBUG set.
+#endif // defined (_MSC_VER)
+
     ~ECNativeImage ()
         {
         BentleyStatus status = BeIconUtilities::DestroyIcon(GetImage());
@@ -72,7 +75,10 @@ struct  ECNativeImage :public IECNativeImage
             BeAssert(SUCCESS == status);
         }
     };
-#pragma warning(default:4189)
+
+#if defined (_MSC_VER)
+    #pragma warning(default:4189)
+#endif // defined (_MSC_VER)
 
 /*=================================================================================**//**
 * @bsiclass                                     Abeesh.Basheer                  04/2012

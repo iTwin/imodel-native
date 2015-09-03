@@ -19,5 +19,5 @@ cleanopt =
 %endif
 
 always:
-    PublishAPI.py -o$(genDir) -d$(BuildContext)PublicApi -s$(stampFileName) $(cleanopt)
+    PublishAPI.py -o$(genDir) -d$(BuildContext)PublicAPI -s$(stampFileName) $(cleanopt) -x$(TARGET_PLATFORM)
     @CreateSymLinks.py -d"$(BuildContextPublishedApiDir)=$(genDir)"

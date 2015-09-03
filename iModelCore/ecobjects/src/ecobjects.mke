@@ -7,10 +7,10 @@
 #--------------------------------------------------------------------------------------
 PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 baseDir         = $(_MakeFilePath)
+
 SolutionPolicyMki=$(baseDir)ecobjects.mki
 
-appName = ECObjects
-
+programName = ECObjects
 %include    mdl.mki
 
 #----------------------------------------------------------------------
@@ -26,6 +26,10 @@ always:
 #----------------------------------------------------------------------
 PchCompiland = $(baseDir)ECObjectsPch.cpp
 PchOutputDir = $(o)
+%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+    # Compiling using gch causes internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
 %include $(SharedMki)PreCompileHeader.mki
 
 CCPchOpts  = $(UsePrecompiledHeaderOptions)
@@ -52,11 +56,13 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)ECDBuffer.h \
                     $(ecobjectsPublicAPISrc)SupplementalSchema.h \
                     $(ecobjectsPublicAPISrc)ECEvent.h \
+                    $(ecobjectsPublicAPISrc)ECObjectsAPIOverview.h \
                     $(baseDir)ecxml.h \
                     $(baseDir)FileUtilities.h \
                     $(ecobjectsPublicAPISrc)CalculatedProperty.h \
                     $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
                     $(baseDir)DateTimeInfoAccessor.h \
+                    $(ecobjectsPublicAPISrc)ECDiff.h \
                     $(ecobjectsPublicAPISrc)SchemaLocalizedStrings.h \
 
 
@@ -98,7 +104,8 @@ ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules
                              $(ECPresentationHeaders)
 
 
-ECUnitsHeaders =    $(ecunitsPublicAPISrc)Units.h
+ECUnitsHeaders = $(ecunitsPublicAPISrc)Units.h \
+                 $(ecunitsPublicAPISrc)ECUnitsClassLocater.h
 
 # ECObjects
 
@@ -128,6 +135,8 @@ $(o)ExpressionContext$(oext)                               : $(baseDir)Expressio
 
 $(o)ExpressionHandler$(oext)                               : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)ECExpressionNode.h ${MultiCompileDepends} 
 
+$(o)SystemSymbolProvider$(oext)                            : $(baseDir)SystemSymbolProvider.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)SystemSymbolProvider.h ${MultiCompileDepends} 
+
 $(o)ECDBuffer$(oext)                                       : $(baseDir)ECDBuffer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)StandaloneECInstance$(oext)                            : $(baseDir)StandaloneECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  $(ecobjectsPublicAPISrc)StandaloneECInstance.h
@@ -150,7 +159,7 @@ $(o)StandardCustomAttributeHelper$(oext)                   : $(baseDir)StandardC
 
 $(o)PresentationMetadataHelper$(oext)                      : $(baseDir)PresentationMetadataHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)SchemaDiff$(oext)                                      : $(baseDir)SchemaDiff.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)SchemaDiff.h ${MultiCompileDepends}
+$(o)ECDiff$(oext)                                          : $(baseDir)ECDiff.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)SchemaLocalizedStrings$(oext)                          : $(baseDir)SchemaLocalizedStrings.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
@@ -234,7 +243,9 @@ $(o)CommonTools$(oext)                                     : $(baseDir)presentat
 
 # ECUnits
 
-$(o)units$(oext)                                           : $(baseDir)units/units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
+$(o)Units$(oext)                                           : $(baseDir)Units/Units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
+
+$(o)ECUnitsClassLocater$(oext)                                           : $(baseDir)Units/ECUnitsClassLocater.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki
@@ -265,11 +276,11 @@ DLM_NOINITFUNC              = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NOENTRY                 = 1
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-LINKER_LIBRARIES            = xmllite$(libext)
+LINKER_LIBRARIES           = xmllite$(libext)
 %endif
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
 %ifdef BuildCGJsonValueBuilder
 LINKER_LIBRARIES            + d:/topaz1/out/Winx64/BuildContexts/DgnPlatform/SdkSources/MobileDgnSdk-Winx64/lib/Winx64/BeJsonCpp.lib
@@ -282,4 +293,3 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #   NEEDSWORK : Temporary settings
 #----------------------------------------------------------------------
 %include $(sharedMki)linkLibrary.mki
-

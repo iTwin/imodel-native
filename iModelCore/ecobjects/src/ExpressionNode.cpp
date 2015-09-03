@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionNode.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -16,13 +16,13 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //--------------+------------------------------------------------------------------------
 static void performConcatenation(ECValueR evalResult, ECValueCR left, ECValueCR right)
     {
-    WString     resultString;
-    wchar_t const* leftString   = left.GetString();
-    wchar_t const* rightString  = right.GetString();
-    resultString.reserve(wcslen(leftString) + wcslen(rightString) + 1);
+    Utf8String     resultString;
+    Utf8CP leftString   = left.GetUtf8CP();
+    Utf8CP rightString  = right.GetUtf8CP();
+    resultString.reserve(strlen(leftString) + strlen(rightString) + 1);
     resultString.append(leftString);
     resultString.append(rightString);
-    evalResult.SetString(resultString.c_str(), true);
+    evalResult.SetUtf8CP(resultString.c_str(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -74,28 +74,28 @@ ExpressionStatus Operations::ConvertToString(ECN::ECValueR ecValue)
         return ExprStatus_Success;
 
     // --  TODO -- should this involve extended types
-    wchar_t     buffer [80];
+    Utf8Char     buffer [80];
     switch(ecValue.GetPrimitiveType())
         {
         case PRIMITIVETYPE_Integer:
-            BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%d", ecValue.GetInteger());
+            BeStringUtilities::Snprintf(buffer, "%d", ecValue.GetInteger());
             break;
         case PRIMITIVETYPE_Boolean:
             //  TODO -- should this be locale specific?
-            wcscpy (buffer, ecValue.GetBoolean() ?  L"true"  : L"false");
+            strcpy (buffer, ecValue.GetBoolean() ?  "true"  : "false");
             break;
         case PRIMITIVETYPE_Long:
-            BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%ld", ecValue.GetLong());
+            BeStringUtilities::Snprintf(buffer, "%lld", ecValue.GetLong());
             break;
         case PRIMITIVETYPE_Double:
             //  TODO -- needs locale, extended type.
-            BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%f", ecValue.GetDouble());
+            BeStringUtilities::Snprintf(buffer, "%f", ecValue.GetDouble());
             break;
         default:
             return ExprStatus_NotImpl;
         }
 
-    ecValue.SetString(buffer);
+    ecValue.SetUtf8CP(buffer);
     return ExprStatus_Success;
     }
 
@@ -285,10 +285,10 @@ ExpressionStatus Operations::ConvertToBooleanOperand (EvaluationResultR evalResu
 
         case PRIMITIVETYPE_String:
             {
-            wchar_t const* strValue = ecValue.GetString();
-            if (!wcscmp(L"0", strValue) || !wcscmp(L"false", strValue))
+            Utf8CP strValue = ecValue.GetUtf8CP();
+            if (!strcmp("0", strValue) || !strcmp("false", strValue))
                 boolValue = false;
-            else if (!wcscmp(L"1", strValue) || !wcscmp(L"true", strValue))
+            else if (!strcmp("1", strValue) || !strcmp("true", strValue))
                 boolValue = true;
             else
                 return ExprStatus_WrongType;
@@ -1346,14 +1346,14 @@ ExpressionStatus EvaluationResult::GetBoolean(bool& result, bool requireBoolean)
 
         case PRIMITIVETYPE_String:
             {
-            wchar_t const* value = m_ecValue.GetString();
-            if (!wcscmp(L"1", value) || !BeStringUtilities::Wcsicmp(L"true", value))
+            Utf8CP value = m_ecValue.GetUtf8CP();
+            if (!strcmp("1", value) || !BeStringUtilities::Stricmp("true", value))
                 {
                 result = true;
                 return ExprStatus_Success;
                 }
 
-            if (!wcscmp(L"0", value) || !BeStringUtilities::Wcsicmp(L"false", value))
+            if (!strcmp("0", value) || !BeStringUtilities::Stricmp("false", value))
                 {
                 result = false;
                 return ExprStatus_Success;
@@ -1493,7 +1493,7 @@ void            NodeHelpers::GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         Node::ToString() const
+Utf8String         Node::ToString() const
     {
     return _ToString();
     }
@@ -1546,16 +1546,16 @@ ResolvedTypeNodePtr Node::CreateFloatLiteral(double value)          { return Lit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedTypeNodePtr Node::CreateStringLiteral (wchar_t const* value, bool quoted)
+ResolvedTypeNodePtr Node::CreateStringLiteral (Utf8CP value, bool quoted)
     {
     if (!quoted)
         return LiteralNode::CreateString (value);
 
-    size_t      origLen = wcslen(value);
+    size_t      origLen = strlen(value);
     BeAssert(origLen > 1);
-    wchar_t*    buffer = (wchar_t*)_alloca(sizeof(*buffer) *(origLen+1));
+    Utf8Char*    buffer = (Utf8Char*)_alloca(sizeof(*buffer) *(origLen+1));
 
-    BeStringUtilities::Wcsncpy(buffer, origLen, value+1);
+    BeStringUtilities::Strncpy(buffer, origLen, value+1);
     buffer[origLen-2] = 0;
 
     return LiteralNode::CreateString (buffer);
@@ -1597,7 +1597,7 @@ NodePtr         Node::CreateArithmetic(ExpressionToken  tokenId, NodeR left, Nod
 
     BeAssert (false && L"invalid arithmetic token");
 
-    return ErrorNode::Create(L"internal error: unexpected arithmetic token", NULL, NULL).get();
+    return ErrorNode::Create("internal error: unexpected arithmetic token", NULL, NULL).get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1690,7 +1690,7 @@ ExpressionStatus PrimaryListNode::_GetValue(EvaluationResult& evalResult, Expres
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t const*  PrimaryListNode::GetName(size_t index) const
+Utf8CP  PrimaryListNode::GetName(size_t index) const
     {
     if (m_operators.size() <= index)
         return NULL;
@@ -1789,10 +1789,10 @@ void            PrimaryListNode::AppendArrayNode(LBracketNodeR lbracketNode)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-void IdentNode::PushQualifier(WCharCP rightName)
+void IdentNode::PushQualifier(Utf8CP rightName)
     {
-    m_qualifiers.push_back(WString(m_value));
-    m_value = WString(rightName);
+    m_qualifiers.push_back(Utf8String(m_value));
+    m_value = Utf8String(rightName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1957,7 +1957,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
         ECN::IECInstancePtr  instance = getInstanceFromResult (instanceResult);
         ECN::ECEnablerCR     enabler = instance->GetEnabler();
 
-        ::UInt32     propertyIndex;
+        ::uint32_t   propertyIndex;
         if (enabler.GetPropertyIndex(propertyIndex, refResult.m_accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
             {
             evalResult.Clear();
@@ -1991,13 +1991,13 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ArgumentTreeNode::EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context)
+ExpressionStatus ArgumentTreeNode::EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context) const
     {
     ExpressionStatus    status = ExprStatus_Success;
     BeAssert (results.size() == 0);
     results.reserve(m_arguments.size());
 
-    for (NodePtrVectorIterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
+    for (NodePtrVector::const_iterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
         {
         results.push_back(EvaluationResult());
         EvaluationResultR currValue = results.back();
@@ -2437,7 +2437,7 @@ static bool     PerformCompare (T l, ExpressionToken op, T r)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<> static bool     PerformCompare<double> (double l, ExpressionToken op, double r)
+template<> /*static*/ bool     PerformCompare<double> (double l, ExpressionToken op, double r) // Android compiler gives error "explicit template specialization cannot have a storage class" with the static keyword
     {
     bool equal = DoubleOps::AlmostEqual (l, r);
     switch (op)
@@ -2494,9 +2494,9 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
     //   Promoted, so one string => both strings
     if (ecLeft.IsString())
         {
-        wchar_t const*  leftString   = ecLeft.GetString();
-        wchar_t const*  rightString  = ecRight.GetString();
-        int             intResult = wcscmp(leftString, rightString);
+        Utf8CP          leftString   = ecLeft.GetUtf8CP();
+        Utf8CP          rightString  = ecRight.GetUtf8CP();
+        int             intResult = strcmp(leftString, rightString);
         bool            boolResult = false;
         
         switch (m_operatorCode)
@@ -2604,69 +2604,69 @@ ExpressionStatus ValueResult::GetECValue (ECN::ECValueR ecValue)
 struct          ParseTreeTraverser : NodeVisitor
     {
 private:
-    WString     m_expression;
+    Utf8String  m_expression;
     bool        m_lastRequiredSpace;
 
 protected:
     virtual bool OpenParens() override
         {
         m_lastRequiredSpace = false;
-        m_expression += L"(";
+        m_expression += "(";
         return true;
         }
 
     virtual bool CloseParens() override
         {
         m_lastRequiredSpace = false;
-        m_expression += L")";
+        m_expression += ")";
         return true;
         }
 
     virtual bool StartArrayIndex(NodeCR node) override
         {
         m_lastRequiredSpace = false;
-        m_expression += L"[";
+        m_expression += "[";
         return true;
         }
 
     virtual bool EndArrayIndex(NodeCR node) override
         {
         m_lastRequiredSpace = false;
-        m_expression += L"]";
+        m_expression += "]";
         return true;
         }
 
     virtual bool StartArguments(NodeCR node) override
         {
         m_lastRequiredSpace = false;
-        m_expression += L"(";
+        m_expression += "(";
         return true;
         }
 
     virtual bool EndArguments(NodeCR node) override
         {
         m_lastRequiredSpace = false;
-        m_expression += L")";
+        m_expression += ")";
         return true;
         }
 
     virtual bool Comma() override
         {
         m_lastRequiredSpace = false;
-        m_expression += L",";
+        m_expression += ",";
         return true;
         }
 
     virtual bool ProcessNode(NodeCR node) override
         {
-        WString     curr = node.ToString();
+        Utf8String     curr = node.ToString();
         if (m_lastRequiredSpace && 
-                (iswalnum(curr[0]) || curr[0] == '_'))
-            m_expression += L" ";
+                (isalnum(curr[0]) || curr[0] == '_'))
+            m_expression += " ";
 
         size_t  stringLen = curr.size();
         if (stringLen > 0)
-            m_lastRequiredSpace = (iswalnum(curr[stringLen - 1]) || curr[stringLen - 1] == '_');
+            m_lastRequiredSpace = (isalnum(curr[stringLen - 1]) || curr[stringLen - 1] == '_');
 
         m_expression += curr;
         return true;
@@ -2680,10 +2680,10 @@ protected:
 
 public:
     ParseTreeTraverser () : m_lastRequiredSpace(false) {}
-    WString Traverse (NodeCR node)
+    Utf8String Traverse (NodeCR node)
         {
         m_lastRequiredSpace = false;
-        m_expression = L"";
+        m_expression = "";
         node.Traverse(*this);
         return m_expression;
         }
@@ -2692,7 +2692,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString Node::ToExpressionString() const
+Utf8String Node::ToExpressionString() const
     {
     ParseTreeTraverser traverser;
     return traverser.Traverse (*this);
@@ -2726,10 +2726,10 @@ ExpressionStatus ResolvedTypeNode::_GetValue(EvaluationResult& evalResult, Expre
             {
             ECValue  result;
             status = _GetStringValue(result, context);
-            if (result.IsUtf8())
-                evalResult.InitECValue().SetUtf8CP(result.GetUtf8CP(), true);
+            if (!result.IsUtf8())
+                evalResult.InitECValue().SetWCharCP(result.GetWCharCP(), true);
             else
-                evalResult.InitECValue().SetString(result.GetString(), true);
+                evalResult.InitECValue().SetUtf8CP(result.GetUtf8CP(), true);
             }
             return status;
         }
@@ -2746,7 +2746,7 @@ ExpressionStatus ResolvedConcatenateNode::_GetStringValue(ECValueR result, Expre
     ExpressionStatus status = m_left->_GetStringValue(left, context);
     if (ExprStatus_Success != status)
         {
-        result.SetString(L"", true);
+        result.SetUtf8CP("", true);
         return status;
         }
 
@@ -2754,7 +2754,7 @@ ExpressionStatus ResolvedConcatenateNode::_GetStringValue(ECValueR result, Expre
     status = m_right->_GetStringValue(right, context);
     if (ExprStatus_Success != status)
         {
-        result.SetString(L"", true);
+        result.SetUtf8CP("", true);
         return status;
         }
 
@@ -2767,11 +2767,11 @@ ExpressionStatus ResolvedConcatenateNode::_GetStringValue(ECValueR result, Expre
 //---------------------------------------------------------------------------------------
 bool ResolvedCompareIntegerNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int32 leftValue = m_left->_GetIntegerValue(status, context);
+    ::int32_t leftValue = m_left->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
-    ::Int32 rightValue = m_right->_GetIntegerValue(status, context);
+    ::int32_t rightValue = m_right->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
@@ -2783,11 +2783,11 @@ bool ResolvedCompareIntegerNode::_GetBooleanValue(ExpressionStatus& status, Expr
 //---------------------------------------------------------------------------------------
 bool ResolvedCompareLongNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int64 leftValue = m_left->_GetLongValue(status, context);
+    ::int64_t leftValue = m_left->_GetLongValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
-    ::Int64 rightValue = m_right->_GetLongValue(status, context);
+    ::int64_t rightValue = m_right->_GetLongValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
@@ -2831,7 +2831,7 @@ bool ResolvedCompareBooleanNode::_GetBooleanValue(ExpressionStatus& status, Expr
 //---------------------------------------------------------------------------------------
 bool ResolvedCompareIntegerToConstantNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int32 leftValue = m_left->_GetIntegerValue(status, context);
+    ::int32_t leftValue = m_left->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
@@ -2843,7 +2843,7 @@ bool ResolvedCompareIntegerToConstantNode::_GetBooleanValue(ExpressionStatus& st
 //---------------------------------------------------------------------------------------
 bool ResolvedCompareLongToConstantNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int64 leftValue = m_left->_GetLongValue(status, context);
+    ::int64_t leftValue = m_left->_GetLongValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
@@ -2890,7 +2890,7 @@ bool ResolvedCompareStringNode::_GetBooleanValue(ExpressionStatus& status, Expre
     if (ExprStatus_Success != status)
         return false;
 
-    int             intResult = wcscmp(ecLeft.GetString(), ecRight.GetString());
+    int             intResult = strcmp(ecLeft.GetUtf8CP(), ecRight.GetUtf8CP());
     bool            boolResult = false;
         
     switch (m_operatorCode)
@@ -2984,7 +2984,7 @@ ExpressionStatus ExpressionResolver::PromoteToString(ResolvedTypeNodePtr& node)
 
     if (node->IsConstant())
         {
-        WString     stringValue = node->ToString();
+        Utf8String     stringValue = node->ToString();
         node = Node::CreateStringLiteral(stringValue.c_str(), false);
         return ExprStatus_Success;
         }
@@ -3571,7 +3571,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
             if (0.0 == divisor)
                 return NULL;
             double result = leftValue/divisor;
-            if (result == ::Int32(result))
+            if (result == ::int32_t(result))
                 return Node::CreateIntegerLiteral(int32_t(result));
             return Node::CreateFloatLiteral(result);
             }
@@ -3599,10 +3599,10 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-::Int32 ResolvedShiftInteger::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
+::int32_t ResolvedShiftInteger::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int32 left = m_left->_GetIntegerValue(status, context);
-    ::Int32 right = m_right->_GetIntegerValue(status, context);
+    ::int32_t left = m_left->_GetIntegerValue(status, context);
+    ::int32_t right = m_right->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return 0;
 
@@ -3613,7 +3613,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
         case TOKEN_ShiftRight:
             return left >> right;
         case TOKEN_UnsignedShiftRight:
-            return (::Int32)((uint32_t)left >> right);
+            return (int32_t)((uint32_t)left >> right);
         }
 
     BeAssert(false && L"bad shift operator");
@@ -3623,10 +3623,10 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-::Int64 ResolvedShiftLong::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
+::int64_t ResolvedShiftLong::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int64 left = m_left->_GetLongValue(status, context);
-    ::Int32 right = m_right->_GetIntegerValue(status, context);
+    ::int64_t left = m_left->_GetLongValue(status, context);
+    ::int32_t right = m_right->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return 0;
 
@@ -3637,7 +3637,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
         case TOKEN_ShiftRight:
             return left >> right;
         case TOKEN_UnsignedShiftRight:
-            return (::Int64)((uint64_t)left >> right);
+            return (int64_t)((uint64_t)left >> right);
         }
 
     BeAssert(false && L"bad shift operator");
@@ -3647,12 +3647,12 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-::Int32 ResolvedLogicalBitNode::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
+::int32_t ResolvedLogicalBitNode::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
     {
     //  Assume that on success status is not set but on error it is so it there is no need to check
     //  status between calls to _GetIntegerValue.
-    ::Int32 left = m_left->_GetIntegerValue(status, context);
-    ::Int32 right = m_right->_GetIntegerValue(status, context);
+    ::int32_t left = m_left->_GetIntegerValue(status, context);
+    ::int32_t right = m_right->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return 0;
 
@@ -3676,12 +3676,12 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-::Int64 ResolvedLogicalBitNode::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
+::int64_t ResolvedLogicalBitNode::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
     {
     //  Assume that on success status is not set but on error it is so it there is no need to check
     //  status between calls to _GetIntegerValue.
-    ::Int64 left = m_left->_GetIntegerValue(status, context);
-    ::Int64 right = m_right->_GetIntegerValue(status, context);
+    ::int64_t left = m_left->_GetIntegerValue(status, context);
+    ::int64_t right = m_right->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return 0;
 
@@ -3748,10 +3748,10 @@ bool ResolvedLogicalBitNode::_GetBooleanValue(ExpressionStatus& status, Expressi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-::Int32 ResolvedIIfNode::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
+::int32_t ResolvedIIfNode::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
     { return m_condition->_GetBooleanValue(status, context) ? m_true->_GetIntegerValue(status, context) : m_false->_GetIntegerValue(status, context); }
 
-::Int64 ResolvedIIfNode::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
+::int64_t ResolvedIIfNode::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
     { return m_condition->_GetBooleanValue(status, context) ? m_true->_GetLongValue(status, context) : m_false->_GetLongValue(status, context); }
 
 double ResolvedIIfNode::_GetDoubleValue(ExpressionStatus& status, ExpressionContextR context)
@@ -3766,7 +3766,7 @@ ExpressionStatus ResolvedIIfNode::_GetStringValue(ECValueR result, ExpressionCon
     bool condition = m_condition->_GetBooleanValue(status, context);
     if (ExprStatus_Success != status)
         {
-        result.SetString(L"");
+        result.SetUtf8CP("");
         return status;
         }
 
@@ -3807,7 +3807,7 @@ ExpressionStatus ResolvedConvertToString::_GetStringValue(ECValueR result, Expre
         {
         case PRIMITIVETYPE_Integer:
             {
-            ::Int32 value = m_left->_GetIntegerValue(status, context);
+            ::int32_t value = m_left->_GetIntegerValue(status, context);
             result.SetInteger(value);
             if (ExprStatus_Success == status)
                 status = Operations::ConvertToString(result);
@@ -3816,7 +3816,7 @@ ExpressionStatus ResolvedConvertToString::_GetStringValue(ECValueR result, Expre
 
         case PRIMITIVETYPE_Long:
             {
-            ::Int64 value = m_left->_GetLongValue(status, context);
+            ::int64_t value = m_left->_GetLongValue(status, context);
             result.SetLong(value);
             if (ExprStatus_Success == status)
                 status = Operations::ConvertToString(result);
@@ -3833,7 +3833,7 @@ ExpressionStatus ResolvedConvertToString::_GetStringValue(ECValueR result, Expre
             }
         }
 
-    result.SetString(L"");
+    result.SetUtf8CP("");
     return ExprStatus_IncompatibleTypes;
     }
 
@@ -3951,7 +3951,7 @@ private:
     EvaluationResult                m_primitive;
     InstanceExpressionContextPtr    m_struct;
 
-    ArrayMemberSymbol (WCharCP name) : Symbol (name)
+    ArrayMemberSymbol (Utf8CP name) : Symbol (name)
         {
         m_primitive = ECValue (/*null*/);
         }
@@ -3968,7 +3968,7 @@ private:
         else
             return ExprStatus_UnknownError;
         }
-    virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override
+    virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
         {
         // not applicable
         return ExprStatus_UnknownError;
@@ -3994,7 +3994,7 @@ private:
             return false;
         }
 public:
-    static RefCountedPtr<ArrayMemberSymbol> Create (WCharCP name) { return new ArrayMemberSymbol (name); }
+    static RefCountedPtr<ArrayMemberSymbol> Create (Utf8CP name) { return new ArrayMemberSymbol (name); }
 
     void        Set (EvaluationResultR ev)
         {
@@ -4064,7 +4064,7 @@ void UnitSpecNode::SetFactorAndOffset (double factor, double offset)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-UnitSpecNodePtr UnitSpecNode::Create (NodeR left, WCharCP baseUnitName)
+UnitSpecNodePtr UnitSpecNode::Create (NodeR left, Utf8CP baseUnitName)
     {
     return new UnitSpecNode (left, baseUnitName);
     }

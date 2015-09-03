@@ -2,16 +2,13 @@
 #
 #  $Source: test/NonPublishedTests.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
+PolicyFile = $(SrcRoot)/ecobjects/test/ECObjectsTestPolicy.mki
 baseDir =   $(_MakeFilePath)
 
 programName = ECObjectsTest_NonPublished
-
-# Using this solution policy file ensures that nonpublished headers will be in the include path for
-# compiles within this mke file and within PreCompileHeader.mke which is used by this mke file.
-SolutionPolicyMki=$(baseDir)nonpublishedTestSolutionPolicy.mki
+BEGTEST_INPUT=$(baseDir)NonPublished\/
 
 %include buildTestFixture.mki

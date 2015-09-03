@@ -3,14 +3,14 @@
 |
 |     $Source: test/Published/MacroTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include <objbase.h>
-#include <comdef.h>
+#include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
+using namespace BentleyApi::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 void ExplicitlyDisableAssertsWithoutReenabling(bool assertsEnabledWhenInvoked)
     {
@@ -185,4 +185,4 @@ TEST(AssertTest, ExpectTrueForExpectedConditionCheck)
     }
 
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

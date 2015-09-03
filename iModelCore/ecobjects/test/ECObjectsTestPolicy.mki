@@ -1,0 +1,19 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: test/ECObjectsTestPolicy.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#
+#   This is included at the begining of mdl.mki to change things for internal
+#   use.  It is not to be shipped to customers.
+#
+#----------------------------------------------------------------------------
+%include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
+%include $(SharedMki)DefinePublicApiIncludes.mki
+%include $(SharedMki)CommonCompileLinkPolicy.mki
+
+GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
+
+ContextDeliveryDir  = $(BuildContext)ECObjectsTestDelivery/

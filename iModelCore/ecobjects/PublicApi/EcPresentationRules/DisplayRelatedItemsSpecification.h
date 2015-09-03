@@ -2,11 +2,13 @@
 |
 |     $Source: PublicApi/EcPresentationRules/DisplayRelatedItemsSpecification.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -16,11 +18,13 @@ Specification for including related items into display commands.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DisplayRelatedItemsSpecification
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         bool                    m_logicalChildren;
         int                     m_nestingDepth;
         WString                 m_relationshipClasses;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT bool        ReadXml (BeXmlNodeP xmlNode);
@@ -45,3 +49,5 @@ struct DisplayRelatedItemsSpecification
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

@@ -2,11 +2,12 @@
 |
 |     $Source: PublicApi/ECObjects/ECEnabler.h $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/ECInstance.h>
@@ -16,13 +17,13 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-typedef RefCountedPtr<StandaloneECEnabler>              StandaloneECEnablerPtr;
-typedef RefCountedPtr<ECEnabler>                        ECEnablerPtr;
-typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationshipInstancePtr;
+typedef RefCountedPtr<StandaloneECEnabler>        StandaloneECEnablerPtr;
+typedef RefCountedPtr<ECEnabler>                  ECEnablerPtr;
+typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 #define INVALID_PROPERTY_INDEX  0;
 
-//=======================================================================================    
+//=======================================================================================
 //! An ECEnabler is the interface between an ECClass and an ECInstance. Every ECInstance
 //! has an associated ECEnabler, typically shared among all ECInstances of that ECClass.
 //!
@@ -38,18 +39,18 @@ typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationship
 //! access strings and should be preferred where possible.
 //! @addtogroup ECObjectsGroup
 //! @beginGroup
-//=======================================================================================    
+//=======================================================================================
 struct ECEnabler : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
     , IStandaloneEnablerLocater
 /*__PUBLISH_SECTION_START__*/
     {
     //! Interface of functor that wants to process text-valued properties
-    struct IPropertyProcessor 
+    struct IPropertyProcessor
         {
         //! Callback for primitive property on instance.
         //! @return true if the desired property was found and processing should stop; else return false if processing should continue.
-        virtual bool _ProcessPrimitiveProperty (IECInstance const& instance, WCharCP propName, ECValue const& propValue) const = 0;
+        virtual bool _ProcessPrimitiveProperty (IECInstance const& instance, Utf8CP propName, ECValue const& propValue) const = 0;
         };
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
@@ -66,7 +67,7 @@ private:
 
 protected:
     //! Protected as part of the RefCounted pattern
-    ECOBJECTS_EXPORT ~ECEnabler(); 
+    ECOBJECTS_EXPORT ~ECEnabler();
 
     //! Subclasses of ECEnabler should implement a FactoryMethod to construct the enabler, as
     //! part of the RefCounted pattern.
@@ -74,7 +75,7 @@ protected:
     //! /code
     //!   static ____EnablerPtr CreateEnabler (ECClassCR ecClass)
     //!       {
-    //!       return new ____Enabler (ecClass);    
+    //!       return new ____Enabler (ecClass);
     //!       };
     //! /endcode
     //! where the ____ is a name specific to your subclass, and the parameters may vary per enabler.
@@ -82,19 +83,19 @@ protected:
     //! @param structStandaloneEnablerLocater If NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
     ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
 
-    virtual WCharCP                 _GetName() const = 0;
-    virtual ECObjectsStatus         _GetPropertyIndex (uint32_t& propertyIndex, WCharCP propertyAccessString) const = 0;
-    virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, uint32_t propertyIndex) const = 0;
+    virtual Utf8CP                  _GetName() const = 0;
+    virtual ECObjectsStatus         _GetPropertyIndex (uint32_t& propertyIndex, Utf8CP propertyAccessString) const = 0;
+    virtual ECObjectsStatus         _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const = 0;
     virtual uint32_t                _GetFirstPropertyIndex (uint32_t parentIndex) const = 0;
     virtual uint32_t                _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const = 0;
     virtual ECObjectsStatus         _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const = 0;
 
     ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (uint32_t propertyIndex) const;
-    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (WCharCP accessString) const;
+    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (Utf8CP accessString) const;
     ECOBJECTS_EXPORT virtual bool           _IsPropertyReadOnly (uint32_t propertyIndex) const;
 
     // IStandaloneEnablerLocater
-    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className);
+    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className);
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, ECN::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
@@ -106,14 +107,16 @@ protected:
 
 public:
     ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (uint32_t propertyIndex) const;
-    ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (WCharCP accessString) const;
+    ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (Utf8CP accessString) const;
     ECOBJECTS_EXPORT bool                       IsPropertyReadOnly (uint32_t propertyIndex) const;
 
+// constructors are hidden from published API -> make it abstract in the published API
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
     //! @return An enabler name for debugging/logging purposes.
-    ECOBJECTS_EXPORT WCharCP                    GetName() const;
+    ECOBJECTS_EXPORT Utf8CP                     GetName() const;
 
     //! Get the ECClass that this enabler 'enables'
     //! @return the ECClass associated with this ECEnabler.
@@ -123,13 +126,13 @@ public:
     //! @param[out]     propertyIndex           Will be set to the corresponding property index
     //! @param[in]      propertyAccessString    Access string for which to obtain the property index
     //! @return ECOBJECTS_STATUS_Success if access string successfully converted, or an error code.
-    ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (uint32_t& propertyIndex, WCharCP propertyAccessString) const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (uint32_t& propertyIndex, Utf8CP propertyAccessString) const;
 
     //! Given a propertyIndex, find the corresponding property access string
     //! @param[out]     propertyAccessString    Will be set to the corresponding access string
     //! @param[in]      propertyIndex           Property index for which to obtain an access string
     //! @return ECOBJECTS_STATUS_Success if property index successfully converted, or an error code.
-    ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (WCharCP& propertyAccessString, uint32_t propertyIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (Utf8CP& propertyAccessString, uint32_t propertyIndex) const;
 
     //! Obtain the property index of the first property of this enabler's ECClass (if parentIndex == 0), or the first child property
     //! of the struct property indicated by parentIndex.
@@ -167,10 +170,10 @@ public:
     //! @param[in] schemaKey    The SchemaKey defining the schema (schema name and version info) that the className ECClass comes from
     //! @param[in] className    The name of the ECClass to retrieve the enabler for
     //! @return A StandaloneECEnabler that enables the requested class
-    ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (SchemaKeyCR schemaKey, WCharCP className); 
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (SchemaKeyCR schemaKey, Utf8CP className); 
     
 #if defined (EXPERIMENTAL_TEXT_FILTER)
-    //! Call processor on all primitive-valued properties of specified type(s) on this instance. 
+    //! Call processor on all primitive-valued properties of specified type(s) on this instance.
     //! Processing is terminated if the processor returns a non-zero value.
     //! @remarks This function returns immediately with PROPERTY_PROCESSING_RESULT_Miss if the class of \a instance is in \a failedClasses.
     //! If this function detects that the class has no properties of the specified type, it will return PROPERTY_PROCESSING_RESULT_Miss and
@@ -187,7 +190,7 @@ public:
 
 /*__PUBLISH_SECTION_END__*/
 
-//=======================================================================================    
+//=======================================================================================
 //! Wraps another enabler
 //=======================================================================================    
 struct ECWrappedEnabler : ECEnabler
@@ -197,19 +200,19 @@ private:
 
     ECWrappedEnabler (ECEnablerR enabler) : ECEnabler (enabler.GetClass(), NULL), m_enabler (&enabler) { }
 
-    virtual WCharCP                 _GetName() const { return m_enabler->GetName(); }
-    virtual ECObjectsStatus         _GetPropertyIndex (uint32_t& propertyIndex, WCharCP propertyAccessString) const { return m_enabler->GetPropertyIndex (propertyIndex, propertyAccessString); }
-    virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, uint32_t propertyIndex) const { return m_enabler->GetAccessString (propertyAccessString, propertyIndex); }
+    virtual Utf8CP                  _GetName() const { return m_enabler->GetName(); }
+    virtual ECObjectsStatus         _GetPropertyIndex (uint32_t& propertyIndex, Utf8CP propertyAccessString) const { return m_enabler->GetPropertyIndex (propertyIndex, propertyAccessString); }
+    virtual ECObjectsStatus         _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const { return m_enabler->GetAccessString (propertyAccessString, propertyIndex); }
     virtual uint32_t                _GetFirstPropertyIndex (uint32_t parentIndex) const { return m_enabler->GetFirstPropertyIndex (parentIndex); }
     virtual uint32_t                _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const { return m_enabler->GetNextPropertyIndex (parentIndex, inputIndex); }
     virtual ECObjectsStatus         _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const { return m_enabler->GetPropertyIndices (indices, parentIndex); }
 
     ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (uint32_t propertyIndex) const { return m_enabler->LookupECProperty (propertyIndex); }
-    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (WCharCP accessString) const { return m_enabler->LookupECProperty (accessString); }
+    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (Utf8CP accessString) const { return m_enabler->LookupECProperty (accessString); }
     ECOBJECTS_EXPORT virtual bool           _IsPropertyReadOnly (uint32_t propertyIndex) const { return m_enabler->IsPropertyReadOnly (propertyIndex); }
 
     // IStandaloneEnablerLocater
-    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className) { return m_enabler->LocateStandaloneEnabler (schemaKey, className); }
+    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className) { return m_enabler->LocateStandaloneEnabler (schemaKey, className); }
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR instance, ECN::PrimitiveType primType, IPropertyProcessor const& processor, PropertyProcessingOptions opts) const
@@ -225,19 +228,19 @@ public:
 
 //=======================================================================================    
 //! Base class for all relationship enablers
-//=======================================================================================    
+//=======================================================================================
  struct IECRelationshipEnabler
  {
 protected:
     //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
-    virtual StandaloneECRelationshipInstancePtr _CreateWipRelationshipInstance () const = 0;
+    virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const = 0;
 
     //! Returns the relationship class that this enabler 'enables'
     virtual ECN::ECRelationshipClassCR     _GetRelationshipClass() const = 0;
 
  public:
     //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
-    ECOBJECTS_EXPORT StandaloneECRelationshipInstancePtr  CreateWipRelationshipInstance() const;
+    ECOBJECTS_EXPORT IECWipRelationshipInstancePtr  CreateWipRelationshipInstance() const;
     //! Returns the relationship class that this enabler 'enables'
     ECOBJECTS_EXPORT ECN::ECRelationshipClassCR      GetRelationshipClass() const;
  };
@@ -252,11 +255,11 @@ protected:
  struct          PropertyIndexedEnabler  : BaseEnablerClass
     {
     private:
-        virtual ECObjectsStatus _GetPropertyIndex (uint32_t& propertyIndex, WCharCP propertyAccessString) const override
+        virtual ECObjectsStatus _GetPropertyIndex (uint32_t& propertyIndex, Utf8CP propertyAccessString) const override
             {
             for (uint32_t index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
                 {
-                if (0 == BeStringUtilities::Wcsicmp (propertyAccessString, DerivedClass::PropertyNameList[index]))
+                if (0 == BeStringUtilities::Stricmp(propertyAccessString, DerivedClass::PropertyNameList[index]))
                     {
                     propertyIndex = index + 1;
                     return ECOBJECTS_STATUS_Success;
@@ -265,7 +268,7 @@ protected:
             return ECOBJECTS_STATUS_InvalidPropertyAccessString;
             }
 
-        virtual ECObjectsStatus _GetAccessString  (WCharCP& propertyAccessString, uint32_t propertyIndex) const override
+        virtual ECObjectsStatus _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const override
             {
             if (propertyIndex > DerivedClass::MAX_PROPERTY_COUNT || propertyIndex <= 0)
                 return ECOBJECTS_STATUS_IndexOutOfRange;
@@ -280,6 +283,7 @@ protected:
                 return ++inputIndex;
             return 0;
             }
+
         
         virtual ECObjectsStatus _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override
             {
@@ -332,3 +336,5 @@ public:
  /*__PUBLISH_SECTION_START__*/
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

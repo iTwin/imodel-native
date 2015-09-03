@@ -8,14 +8,24 @@
 PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 %include mdl.mki
 
+buildDir=$(OutputRootDir)build/ECObjects/tests/
+
+seedDataSource=$(SrcRoot)ecobjects/test/SeedData/
+
 # Wire in seed data
 always:
-    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData=$(ecobjectsSrc)test/SeedData/*.xml"
+    !~@mkdir $(buildDir)
+    !~@mkdir $(buildDir)ECObjectsTest_Data
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData=$(seedDataSource)*.xml"
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/ur-PK/=$(ecobjectsSrc)test/SeedData/ur-PK/*.xml"
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/en-GB/=$(ecobjectsSrc)test/SeedData/en-GB/*.xml"
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/it/=$(ecobjectsSrc)test/SeedData/it/*.xml"
-    $(unzipCmd) -n $(ecobjectsSrc)test/SeedData/performance.zip -d $(buildDir)ECObjectsTest_Data/
+
+%ifdef winNT
+always:    
+    $(unzipCmd) -n $(seedDataSource)performance.zip -d $(buildDir)ECObjectsTest_Data/
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/=$(buildDir)ECObjectsTest_Data/performance/*.xml"
+%endif
 
-   
-
+# Expose seed data as assets needed by ECObjects unit tests
+BEGTEST_ASSETS     + $(ContextDeliveryDir)SeedData/

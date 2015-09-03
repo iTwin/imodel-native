@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecxml.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -59,35 +59,34 @@
 #define     ECXML_TRUE                          "True"
 #define     ECXML_FALSE                         "False"
 
-#define     ECXML_TRUE_W                        L"True"
-#define     ECXML_FALSE_W                       L"False"
-#define     ECXML_UNBOUNDED                     L"unbounded"
+#define     ECXML_UNBOUNDED                     "unbounded"
 
 // If you add any additional ECXML typenames you must update 
 //    - enum PrimitiveType
 //    - PrimitiveECProperty::_GetTypeName
-static WCharCP ECXML_TYPENAME_BINARY             = L"binary";
-static WCharCP ECXML_TYPENAME_BOOLEAN            = L"boolean";
-static WCharCP ECXML_TYPENAME_BOOL               = L"bool";
-static WCharCP ECXML_TYPENAME_DATETIME           = L"dateTime";
-static WCharCP ECXML_TYPENAME_DOUBLE             = L"double";
-static WCharCP ECXML_TYPENAME_INTEGER            = L"int";
-static WCharCP ECXML_TYPENAME_LONG               = L"long";
-static WCharCP ECXML_TYPENAME_POINT2D            = L"point2d";
-static WCharCP ECXML_TYPENAME_POINT3D            = L"point3d";
-static WCharCP ECXML_TYPENAME_STRING             = L"string";
-static WCharCP ECXML_TYPENAME_IGEOMETRY          = L"Bentley.GeometryNET.Common.IGeometry";
-static WCharCP ECXML_TYPENAME_IGEOMETRY_GENERIC  = L"Bentley.GeometryNET.Common"; // This is used for matching incoming types to any common geometry type
-static WCharCP ECXML_TYPENAME_IGEOMETRY_LEGACY   = L"Bentley.Geometry.Common";
-static WCharCP ECXML_TYPENAME_IGEOMETRY_LEGACY_GENERIC   = L"Bentley.Geometry.Common.IGeometry";
-static WCharCP EMPTY_STRING = L"";
+#define ECXML_TYPENAME_BINARY             "binary"
+#define ECXML_TYPENAME_BOOLEAN            "boolean"
+#define ECXML_TYPENAME_BOOL               "bool"
+#define ECXML_TYPENAME_DATETIME           "dateTime"
+#define ECXML_TYPENAME_DOUBLE             "double"
+#define ECXML_TYPENAME_INTEGER            "int"
+#define ECXML_TYPENAME_LONG               "long"
+#define ECXML_TYPENAME_POINT2D            "point2d"
+#define ECXML_TYPENAME_POINT3D            "point3d"
+#define ECXML_TYPENAME_STRING             "string"
+#define ECXML_TYPENAME_IGEOMETRY          "Bentley.GeometryNET.Common.IGeometry"
+// This is used for matching incoming types to any common geometry type
+#define ECXML_TYPENAME_IGEOMETRY_GENERIC  "Bentley.GeometryNET.Common"
+#define ECXML_TYPENAME_IGEOMETRY_LEGACY   "Bentley.Geometry.Common"
+#define ECXML_TYPENAME_IGEOMETRY_LEGACY_GENERIC "Bentley.Geometry.Common.IGeometry";
+#define EMPTY_STRING ""
 
-static WCharCP ECXML_STRENGTH_REFERENCING        = L"referencing";
-static WCharCP ECXML_STRENGTH_HOLDING            = L"holding";
-static WCharCP ECXML_STRENGTH_EMBEDDING          = L"embedding";
+#define ECXML_STRENGTH_REFERENCING        "referencing"
+#define ECXML_STRENGTH_HOLDING            "holding"
+#define ECXML_STRENGTH_EMBEDDING          "embedding"
 
-static WCharCP ECXML_DIRECTION_FORWARD           = L"forward";
-static WCharCP ECXML_DIRECTION_BACKWARD          = L"backward";
+#define ECXML_DIRECTION_FORWARD           "forward"
+#define ECXML_DIRECTION_BACKWARD          "backward"
 
 #define READ_OPTIONAL_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((BEXML_Success == _nodeVar.GetAttributeStringValue (value, _xmlAttributeName)) &&   \
@@ -103,7 +102,7 @@ static WCharCP ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_REQUIRED_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (BEXML_Success != _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))   \
         {   \
-        LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs  attribute", _xmlAttributeName, _elementName);     \
+        LOG.errorv ("Invalid ECSchemaXML: %s element must contain a %s attribute", _xmlAttributeName, _elementName);     \
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName (value.c_str())) \
@@ -112,7 +111,7 @@ static WCharCP ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_nodeVar,_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (BEXML_Success != _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))     \
         {   \
-        LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  _xmlAttributeName, _elementName);     \
+        LOG.errorv ("Invalid ECSchemaXML: %s element must contain a %s attribute", _xmlAttributeName, _elementName);     \
         status = SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
     else if (ECOBJECTS_STATUS_ParseError == _setInPointer->Set##_setInPropertyName (value.c_str())) \
@@ -124,14 +123,14 @@ struct ECXml /*abstract*/
 {
     virtual void _Abstract() = 0;
 public:
-    static ECObjectsStatus ParseBooleanString(bool & booleanValue,WCharCP booleanString);
-    static WCharCP GetPrimitiveTypeName (PrimitiveType primitiveType);
-    static ECObjectsStatus ParsePrimitiveType (PrimitiveType& primitiveType,WStringCR typeName);
-    static WCharCP StrengthToString (StrengthType strength);
-    static ECObjectsStatus ParseStrengthType (StrengthType& strength, WStringCR strengthString);
-    static WCharCP DirectionToString (ECRelatedInstanceDirection direction);
-    static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, WStringCR directionString);
-    static ECObjectsStatus ParseCardinalityString (uint32_t& lowerLimit, uint32_t& upperLimit, WStringCR cardinalityString);
+    static ECObjectsStatus ParseBooleanString(bool & booleanValue,Utf8CP booleanString);
+    static Utf8CP GetPrimitiveTypeName (PrimitiveType primitiveType);
+    static ECObjectsStatus ParsePrimitiveType (PrimitiveType& primitiveType, Utf8StringCR typeName);
+    static Utf8CP StrengthToString (StrengthType strength);
+    static ECObjectsStatus ParseStrengthType (StrengthType& strength, Utf8StringCR strengthString);
+    static Utf8CP DirectionToString (ECRelatedInstanceDirection direction);
+    static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, Utf8StringCR directionString);
+    static ECObjectsStatus ParseCardinalityString (uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR cardinalityString);
     static void FormatXml(BeXmlDomR xmlDom);
 };
 

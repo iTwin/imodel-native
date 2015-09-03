@@ -6,48 +6,24 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-
-#define NO_USING_NAMESPACE_BENTLEY 1
-
 /*__PUBLISH_SECTION_START__*/
 
 #include <Bentley/Bentley.h>
-#include <Bentley/RefCounted.h>
-
-// In many of the DgnPlatform libraries we redefine the below macros based on __cplusplus.  This is because there
-// are existing C callers that we can not get rid of.  I've spoken to Sam and he recommends that for any new libraries we
-// ONLY support cpp callers and therefore do not repeat this pattern.
+#include <Bentley/BeAssert.h>
 
 #ifdef __ECOBJECTS_BUILD__
-#define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
+    #define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
 #else
-#define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
+    #define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECN {
-
-#define END_BENTLEY_ECOBJECT_NAMESPACE    }}
-
-#define USING_NAMESPACE_EC  using namespace Bentley::ECN;
+#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace ECN {
+#define END_BENTLEY_ECOBJECT_NAMESPACE      } END_BENTLEY_NAMESPACE
+#define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
 
 #define EC_TYPEDEFS(_name_)  \
-        BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
-            struct _name_;      \
-            typedef _name_ *         _name_##P;  \
-            typedef _name_ &         _name_##R;  \
-            typedef _name_ const*    _name_##CP; \
-            typedef _name_ const&    _name_##CR; \
-        END_BENTLEY_ECOBJECT_NAMESPACE
+    BEGIN_BENTLEY_ECOBJECT_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_ECOBJECT_NAMESPACE
 
-#define EC_REF_COUNTED_PTR(_name_) \
-    BEGIN_BENTLEY_ECOBJECT_NAMESPACE \
-        struct _name_ ; \
-        typedef RefCountedPtr<ECN:: _name_ > _name_ ## Ptr; \
-    END_BENTLEY_ECOBJECT_NAMESPACE \
-
-EC_REF_COUNTED_PTR(StandaloneECInstance);
-EC_REF_COUNTED_PTR(StandaloneECEnabler);
 EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ECValueAccessor);
 EC_TYPEDEFS(ECValueAccessorPair);
@@ -66,6 +42,7 @@ EC_TYPEDEFS(ArrayECProperty);
 EC_TYPEDEFS(ECPropertyIterable);
 EC_TYPEDEFS(ECClassContainer);
 EC_TYPEDEFS(ECClass);
+EC_TYPEDEFS(ECRelationshipConstraintClass);
 EC_TYPEDEFS(ECRelationshipClass);
 EC_TYPEDEFS(ECRelationshipConstraint);
 EC_TYPEDEFS(RelationshipCardinality);
@@ -77,7 +54,7 @@ EC_TYPEDEFS(IECCustomAttributeContainer);
 EC_TYPEDEFS(ECInstanceReadContext);
 EC_TYPEDEFS(ECSchemaCache);
 EC_TYPEDEFS(ECPropertyValue);
-EC_TYPEDEFS(StandaloneECRelationshipInstance);
+EC_TYPEDEFS(IECWipRelationshipInstance);
 EC_TYPEDEFS(ECRelationshipInstanceHolder);
 
 EC_TYPEDEFS(ECEnabler);
@@ -149,7 +126,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_EnablerNotFound                                    = ECOBJECTS_ERROR_BASE + 0x09,
     ECOBJECTS_STATUS_OperationNotSupported                              = ECOBJECTS_ERROR_BASE + 0x0A,
     ECOBJECTS_STATUS_ParseError                                         = ECOBJECTS_ERROR_BASE + 0x0B,
-    ECOBJECTS_STATUS_NamedItemAlreadyExists                             = ECOBJECTS_ERROR_BASE + 0x0C, 
+    ECOBJECTS_STATUS_NamedItemAlreadyExists                             = ECOBJECTS_ERROR_BASE + 0x0C,
     ECOBJECTS_STATUS_PreconditionViolated                               = ECOBJECTS_ERROR_BASE + 0x0D,
     ECOBJECTS_STATUS_SchemaNotFound                                     = ECOBJECTS_ERROR_BASE + 0x0E,
     ECOBJECTS_STATUS_ClassNotFound                                      = ECOBJECTS_ERROR_BASE + 0x0F,
@@ -178,8 +155,9 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_UnableToQueryForNullPropertyFlag                   = ECOBJECTS_ERROR_BASE + 0x26,
     ECOBJECTS_STATUS_UnableToResizeFixedSizedArray                      = ECOBJECTS_ERROR_BASE + 0x27,
     ECOBJECTS_STATUS_SchemaIsImmutable                                  = ECOBJECTS_ERROR_BASE + 0x28,
+    ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound            = ECOBJECTS_ERROR_BASE + 0x29,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
-    }; 
+    };
 
 //! Result status for deserializing an ECSchema from Xml
 enum SchemaReadStatus
@@ -236,7 +214,7 @@ enum InstanceReadStatus
     INSTANCE_READ_STATUS_CommentOnly                         = INSTANCE_READ_STATUS_BASE + 45,
     INSTANCE_READ_STATUS_PropertyNotFound                    = INSTANCE_READ_STATUS_BASE + 46,
     };
-    
+
 //! Result status of writing an IECInstance to Xml
 enum InstanceWriteStatus
     {
@@ -250,7 +228,7 @@ enum InstanceWriteStatus
 
     INSTANCE_WRITE_STATUS_BadPrimitivePropertyType              = INSTANCE_WRITE_STATUS_BASE + 30,
     };
-    
+
 //! Result status of trying to supplement an ECSchema
 enum SupplementedSchemaStatus
     {
@@ -309,16 +287,17 @@ enum EvaluationOptions
 
 /*__PUBLISH_SECTION_END__*/
 
-//=======================================================================================    
-// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+//=======================================================================================
+// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the ValueKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
 // exceed a single byte.
-//=======================================================================================    
-
+//=======================================================================================
 /*__PUBLISH_SECTION_START__*/
-//! Represents the classification of the data type of an ECValue.  The classification is not the data type itself, but a category of type
+//=======================================================================================
+//! Represents the classification of the data type of an ECValue. The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
+//=======================================================================================
 enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
     VALUEKIND_Uninitialized                  = 0x00, //!< The ECValue has not be initialized yet
@@ -328,16 +307,17 @@ enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     };
 
 /*__PUBLISH_SECTION_END__*/
-//=======================================================================================    
-// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+//=======================================================================================
+// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the ArrayKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
 // exceed a single byte.
-//=======================================================================================    
+//=======================================================================================
 /*__PUBLISH_SECTION_START__*/
-
+//=======================================================================================
 //! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
 //! Currently an ECArray can only contain primitive or struct data types.
+//=======================================================================================
 enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
     ARRAYKIND_Primitive       = 0x01,
@@ -345,19 +325,20 @@ enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
     };
 
 /*__PUBLISH_SECTION_END__*/
-//=======================================================================================    
-// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+//=======================================================================================
+// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the PrimitiveType enum please be sure to note that the lower order byte must stay fixed as '1' and the upper order byte can be incremented.
-// If you add any additional types you must update 
+// If you add any additional types you must update
 //    - ECXML_TYPENAME_X constants
 //    - PrimitiveECProperty::_GetTypeName
 // NEEDSWORK types: common geometry, installed primitives
-//=======================================================================================    
+//=======================================================================================
 /*__PUBLISH_SECTION_START__*/
 
-//! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
-//! These should correspond to all of the datatypes supported in .NET ECObjects
+//=======================================================================================
+//! Enumeration of primitive data types for ECProperties
+//=======================================================================================
 enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     {
     PRIMITIVETYPE_Binary                    = 0x101,
@@ -403,8 +384,53 @@ enum ExpressionStatus
     ExprStatus_IndexOutOfRange          = 18, //!< Returned when array index is used which is outside the bounds of the array.
     ExprStatus_IncompatibleUnits        = 19, //!< Returned when units are combined in an unsupported manner within the expression, for example adding angles and lengths.
     };
-	
-/** @endGroup */
-END_BENTLEY_ECOBJECT_NAMESPACE
 
-USING_NAMESPACE_BENTLEY
+//! Used to define how the relationship OrderId is handled.
+enum OrderIdStorageMode : uint8_t
+    {
+    ORDERIDSTORAGEMODE_None = 0,
+    ORDERIDSTORAGEMODE_ProvidedByPersistence = 1,
+    ORDERIDSTORAGEMODE_ProvidedByClient = 2,
+    };
+
+//! Used to define which end of the relationship, source or target
+enum ECRelationshipEnd
+    {
+    ECRelationshipEnd_Source = 0, //!< End is the source
+    ECRelationshipEnd_Target  //!< End is the target
+    };
+
+//! Used to describe the direction of a related instance within the context
+//! of an IECRelationshipInstance
+enum class ECRelatedInstanceDirection
+    {
+    //! Related instance is the target in the relationship instance
+    Forward = 1,
+    //! Related instance is the source in the relationship instance
+    Backward = 2
+    };
+
+//! The various strengths supported on a relationship class.
+enum StrengthType
+    {
+    //!  'Referencing' relationships imply no ownership and no cascading deletes when the
+    //! object on either end of the relationship is deleted.  For example, a document
+    //! object may have a reference to the User that last modified it.
+    //! This is like "Association" in UML.
+    STRENGTHTYPE_Referencing,
+    //! 'Holding' relationships imply shared ownership.  A given object can be "held" by
+    //! many different objects, and the object will not get deleted unless all of the
+    //! objects holding it are first deleted (or the relationships severed.)
+    //! This is like "Aggregation" in UML.
+    STRENGTHTYPE_Holding,
+    //! 'Embedding' relationships imply exclusive ownership and cascading deletes.  An
+    //! object that is the target of an 'embedding' relationship may also be the target
+    //! of other 'referencing' relationships, but cannot be the target of any 'holding'
+    //! relationships.  For examples, a Folder 'embeds' the Documents that it contains.
+    //! This is like "Composition" in UML.
+    STRENGTHTYPE_Embedding
+    };
+
+/** @endGroup */
+
+END_BENTLEY_ECOBJECT_NAMESPACE

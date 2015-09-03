@@ -2,16 +2,16 @@
 |
 |     $Source: test/NonPublished/UnitsTestBase.h $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+//#include "../ECObjectsTestPCH.h"
+
 #include <ECUnits/Units.h>
 
-using namespace Bentley::ECN;
+USING_NAMESPACE_EC
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 /*====================================================================================**/
 /// <summary>Tests for Bentley.Units and Bentley.ECObjects.Units.</summary>
 /// <author>Colin.Kerr</author>                             <date>3/2008</date>
@@ -19,7 +19,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct UnitsTestBase : ECTestFixture
 {
 public: UnitsTestBase(){}
-private: const  WString UNIT_SPECIFICATIONS_PROPERTY;// = L"UnitSpecifications";
+private: const  Utf8String UNIT_SPECIFICATIONS_PROPERTY;// = L"UnitSpecifications";
 /// <summary>The schema to test</summary>
 protected: ECSchemaPtr m_testSchema;
 /// <summary>The supplemented version of the schema to test</summary>
@@ -186,7 +186,7 @@ public: void SetUp
 /*--------------+---------------+---------------+---------------+---------------+------*/
 public: void InitializeUnits
 (
-WString testSchemaName,
+Utf8String testSchemaName,
 bvector< ECSchemaP > & testSupplementalSchemas
 );
 
@@ -388,7 +388,7 @@ public: void InitExpectedResultLists
 ///*--------------+---------------+---------------+---------------+---------------+------*/
 public: void VerifyDefaultUnit
 (
-WString expectedUnitName,
+Utf8String expectedUnitName,
 Unit defaultUnit
 );
 //    {
@@ -527,4 +527,4 @@ Unit defaultUnit
 //
 //#endregion
 //}
-};END_BENTLEY_ECOBJECT_NAMESPACE
+};END_BENTLEY_ECN_TEST_NAMESPACE

@@ -100,7 +100,10 @@ void ChildNodeSpecification::WriteXml (BeXmlNodeP parentXmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ChildNodeSpecification::GetPriority (void) const { return m_priority; }
+int ChildNodeSpecification::GetPriority (void) const
+    {
+    return m_priority;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
@@ -110,12 +113,18 @@ void ChildNodeSpecification::SetPriority (int value) { m_priority = value; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ChildNodeSpecification::GetId (void) const { return m_id; }
+int ChildNodeSpecification::GetId (void) const
+    {
+    return m_id;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeSpecification::GetAlwaysReturnsChildren (void) const { return m_alwaysReturnsChildren; }
+bool ChildNodeSpecification::GetAlwaysReturnsChildren (void) const
+    {
+    return m_alwaysReturnsChildren;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
@@ -125,7 +134,10 @@ void ChildNodeSpecification::SetAlwaysReturnsChildren (bool value) { m_alwaysRet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeSpecification::GetHideNodesInHierarchy (void) const { return m_hideNodesInHierarchy; }
+bool ChildNodeSpecification::GetHideNodesInHierarchy (void) const
+    {
+    return m_hideNodesInHierarchy;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
@@ -135,7 +147,10 @@ void ChildNodeSpecification::SetHideNodesInHierarchy (bool value) { m_hideNodesI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeSpecification::GetHideIfNoChildren (void)  { return m_hideIfNoChildren; }
+bool ChildNodeSpecification::GetHideIfNoChildren (void)
+    {
+    return m_hideIfNoChildren;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
@@ -145,24 +160,39 @@ void ChildNodeSpecification::SetHideIfNoChildren (bool value) { m_hideIfNoChildr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ChildNodeSpecification::GetExtendedData (void) { return m_extendedData; }
+WStringCR ChildNodeSpecification::GetExtendedData (void)
+    {
+    return m_extendedData;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeSpecification::SetExtendedData (WStringCR extendedData) { m_extendedData = extendedData; }
+void ChildNodeSpecification::SetExtendedData (WStringCR extendedData)
+    {
+    m_extendedData = extendedData;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeSpecification::GetDoNotSort (void) { return m_doNotSort; }
+bool ChildNodeSpecification::GetDoNotSort (void)
+    {
+    return m_doNotSort;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeSpecification::SetDoNotSort (bool doNotSort) { m_doNotSort = doNotSort; }
+void ChildNodeSpecification::SetDoNotSort (bool doNotSort)
+    {
+    m_doNotSort = doNotSort;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeRuleList& ChildNodeSpecification::GetNestedRules (void) { return m_nestedRules; }
+ChildNodeRuleList& ChildNodeSpecification::GetNestedRules (void)
+    {
+    return m_nestedRules;
+    }

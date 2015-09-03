@@ -5,8 +5,10 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/PresentationRuleSet.h>
 
@@ -19,12 +21,13 @@ related ECClasses of the selected node.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ContentRelatedInstancesSpecification : public ContentSpecification
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         int                        m_skipRelatedLevel;
-        WString                    m_instanceFilter;
+        Utf8String                 m_instanceFilter;
         RequiredRelationDirection  m_requiredDirection;
-        WString                    m_relationshipClassNames;
-        WString                    m_relatedClassNames;
+        Utf8String                 m_relationshipClassNames;
+        Utf8String                 m_relatedClassNames;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -36,6 +39,7 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ContentRelatedInstancesSpecification ();
@@ -45,10 +49,10 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
                                              (
                                               int                        priority,
                                               int                        skipRelatedLevel,
-                                              WString                    instanceFilter,
+                                              Utf8String                 instanceFilter,
                                               RequiredRelationDirection  requiredDirection,
-                                              WString                    relationshipClassNames,
-                                              WString                    relatedClassNames
+                                              Utf8String                 relationshipClassNames,
+                                              Utf8String                 relatedClassNames
                                              );
 
         //! Returns level of related instances to skip.
@@ -59,10 +63,10 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
 
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results.
-        ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetInstanceFilter (void) const;
 
         //! Sets the instance filter of the specification.
-        ECOBJECTS_EXPORT void                         SetInstanceFilter (WStringCR value); 
+        ECOBJECTS_EXPORT void                         SetInstanceFilter (Utf8StringCR value); 
 
         //! Returns direction of relationship that should be selected in the query.
         ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
@@ -71,16 +75,18 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
         ECOBJECTS_EXPORT void                         SetRequiredRelationDirection (RequiredRelationDirection value);
 
         //! Relationship class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetRelationshipClassNames (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetRelationshipClassNames (void) const;
 
         //! Sets the RelationshipClassNames of the specification.
-        ECOBJECTS_EXPORT void                         SetRelationshipClassNames (WStringCR value);
+        ECOBJECTS_EXPORT void                         SetRelationshipClassNames (Utf8StringCR value);
 
         //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetRelatedClassNames (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetRelatedClassNames (void) const;
 
         //! Sets the RelatedClassNames of the specification.
-        ECOBJECTS_EXPORT void                         SetRelatedClassNames (WStringCR value);
+        ECOBJECTS_EXPORT void                         SetRelatedClassNames (Utf8StringCR value);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

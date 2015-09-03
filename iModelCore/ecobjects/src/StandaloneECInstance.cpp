@@ -1,4 +1,4 @@
-P*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
@@ -48,7 +48,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, uint32_t 
     m_data = (Byte*)malloc (size);
     m_bytesAllocated = size;
 
-    InitializeMemory (classLayout, m_data, m_bytesAllocated, ecClass.IsDefined (L"PersistStringsAsUtf8"));
+    InitializeMemory (classLayout, m_data, m_bytesAllocated, ecClass.IsDefined ("PersistStringsAsUtf8"));
     
     InitializePerPropertyFlags (classLayout, DEFAULT_NUMBITSPERPROPERTY);
     }
@@ -110,9 +110,9 @@ MemoryECInstanceBase::~MemoryECInstanceBase ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MemoryECInstanceBase::SetData (const Byte * data, uint32_t size, bool freeExisitingData) //The MemoryECInstanceBase will take ownership of the memory
+void MemoryECInstanceBase::SetData (const Byte * data, uint32_t size, bool freeExisitingDataAndCreateCopyOfNewData) //The MemoryECInstanceBase will take ownership of the memory
     {
-    if (freeExisitingData)
+    if (freeExisitingDataAndCreateCopyOfNewData)
         {
         if (m_data)
             {
@@ -177,7 +177,7 @@ ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet,
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSet, uint8_t bitIndex) const
     {
-    static const ::UInt32     s_maskFor2Bits[2] = { 0x55555555, 0xAAAAAAAA };
+    static const ::uint32_t   s_maskFor2Bits[2] = { 0x55555555, 0xAAAAAAAA };
     
     if (2 > m_perPropertyFlagsHolder.numBitsPerProperty)
         {
@@ -187,7 +187,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
     else if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
         return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
 
-    ::UInt32 mask = m_perPropertyFlagsHolder.numBitsPerProperty == 2 ? s_maskFor2Bits[(int)bitIndex] : 0xFFFFFFFF;
+    ::uint32_t mask = m_perPropertyFlagsHolder.numBitsPerProperty == 2 ? s_maskFor2Bits[(int)bitIndex] : 0xFFFFFFFF;
 
     uint32_t* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags;
     if (NULL == addressOfPerPropertyFlags)
@@ -340,15 +340,15 @@ ECObjectsStatus                MemoryECInstanceBase::_ShrinkAllocation ()
 
     return ECOBJECTS_STATUS_Success;
     } 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryECInstanceBase::_SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index) const
-    {
-    // If we're using pinned managed memory buffer, we can't resize it...we'll just re-evaluate the calculated property next time its value is requested.
-    return !m_usingSharedMemory ? ECDBuffer::_SetCalculatedValueToMemory (v, propertyLayout, useIndex, index) : ECOBJECTS_STATUS_Success;
-    }
+//
+////*---------------------------------------------------------------------------------**//**
+////* @bsimethod                                                    Paul.Connelly   06/14
+////+---------------+---------------+---------------+---------------+---------------+------*/
+//ECObjectsStatus MemoryECInstanceBase::_SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
+//    {
+//    // If we're using pinned managed memory buffer, we can't resize it...we'll just re-evaluate the calculated property next time its value is requested.
+//    return !m_usingSharedMemory ? ECDBuffer::_SetCalculatedValueToMemory (v, propertyLayout, useIndex, index) : ECOBJECTS_STATUS_Success;
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -1036,7 +1036,7 @@ ECEnablerCR         StandaloneECInstance::_GetEnabler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-WString        StandaloneECInstance::_GetInstanceId() const
+Utf8String        StandaloneECInstance::_GetInstanceId() const
     {
     return m_instanceId;
     }
@@ -1044,7 +1044,7 @@ WString        StandaloneECInstance::_GetInstanceId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/11
 +---------------+---------------+---------------+---------------+---------------+------*/    
-ECObjectsStatus StandaloneECInstance::_SetInstanceId (WCharCP instanceId)
+ECObjectsStatus StandaloneECInstance::_SetInstanceId (Utf8CP instanceId)
     {
     m_instanceId = instanceId;
     return ECOBJECTS_STATUS_Success;
@@ -1156,7 +1156,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (uint32_t propIdx)
     {
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (SUCCESS != status || NULL == pPropertyLayout)
+    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
 
     uint32_t arrayCount = GetReservedArrayCount (*pPropertyLayout);
@@ -1176,7 +1176,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (uint32_t propIdx)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-WString        StandaloneECInstance::_ToString (WCharCP indent) const
+Utf8String        StandaloneECInstance::_ToString (Utf8CP indent) const
     {
     return InstanceDataToString (indent);
     }
@@ -1213,16 +1213,16 @@ StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP           StandaloneECEnabler::_GetName() const
+Utf8CP           StandaloneECEnabler::_GetName() const
     {
-    return L"Bentley::ECN::StandaloneECEnabler";
+    return "Bentley::ECN::StandaloneECEnabler";
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECEnabler::_GetPropertyIndex(uint32_t& propertyIndex, WCharCP propertyAccessString) const { return GetClassLayout().GetPropertyIndex (propertyIndex, propertyAccessString); }
-ECObjectsStatus StandaloneECEnabler::_GetAccessString(WCharCP& accessString, uint32_t propertyIndex) const { return GetClassLayout().GetAccessStringByIndex (accessString, propertyIndex); }
+ECObjectsStatus StandaloneECEnabler::_GetPropertyIndex(uint32_t& propertyIndex, Utf8CP propertyAccessString) const { return GetClassLayout().GetPropertyIndex (propertyIndex, propertyAccessString); }
+ECObjectsStatus StandaloneECEnabler::_GetAccessString(Utf8CP& accessString, uint32_t propertyIndex) const { return GetClassLayout().GetAccessStringByIndex (accessString, propertyIndex); }
 uint32_t        StandaloneECEnabler::_GetFirstPropertyIndex (uint32_t parentIndex) const {  return GetClassLayout().GetFirstChildPropertyIndex (parentIndex); }
 uint32_t        StandaloneECEnabler::_GetNextPropertyIndex (uint32_t parentIndex, uint32_t inputIndex) const { return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);  }
 ECObjectsStatus StandaloneECEnabler::_GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const { return GetClassLayout().GetPropertyIndices (indices, parentIndex);  }

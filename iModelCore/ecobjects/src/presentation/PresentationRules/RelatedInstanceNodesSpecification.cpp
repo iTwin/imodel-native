@@ -37,11 +37,11 @@ bool                       groupByRelationship,
 bool                       groupByLabel,
 bool                       showEmptyGroups,
 int                        skipRelatedLevel,
-WString                    instanceFilter,
+Utf8String                 instanceFilter,
 RequiredRelationDirection  requiredDirection,
-WString                    supportedSchemas,
-WString                    relationshipClassNames,
-WString                    relatedClassNames
+Utf8String                 supportedSchemas,
+Utf8String                 relationshipClassNames,
+Utf8String                 relatedClassNames
 ) : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
     m_groupByClass (groupByClass), m_groupByRelationship (groupByRelationship), m_groupByLabel (groupByLabel), m_showEmptyGroups (showEmptyGroups), 
     m_skipRelatedLevel (skipRelatedLevel), m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
@@ -79,20 +79,20 @@ bool RelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
         m_skipRelatedLevel = 0;
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_instanceFilter, COMMON_XML_ATTRIBUTE_INSTANCEFILTER))
-        m_instanceFilter = L"";
+        m_instanceFilter = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_supportedSchemas, COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS))
-        m_supportedSchemas = L"";
+        m_supportedSchemas = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relationshipClassNames, COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES))
-        m_relationshipClassNames = L"";
+        m_relationshipClassNames = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relatedClassNames, COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES))
-        m_relatedClassNames = L"";
+        m_relatedClassNames = "";
 
-    WString requiredDirectionString = L"";
+    Utf8String requiredDirectionString = "";
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
-        requiredDirectionString = L"";
+        requiredDirectionString = "";
     else
         m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
 
@@ -169,12 +169,12 @@ void RelatedInstanceNodesSpecification::SetSkipRelatedLevel (int value)         
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR RelatedInstanceNodesSpecification::GetInstanceFilter (void) const         { return m_instanceFilter; }
+Utf8StringCR RelatedInstanceNodesSpecification::GetInstanceFilter (void) const         { return m_instanceFilter; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetInstanceFilter (WString value)           { m_instanceFilter = value; }
+void RelatedInstanceNodesSpecification::SetInstanceFilter (Utf8String value)           { m_instanceFilter = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -189,29 +189,29 @@ void RelatedInstanceNodesSpecification::SetRequiredRelationDirection (RequiredRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR RelatedInstanceNodesSpecification::GetSupportedSchemas (void) const       { return m_supportedSchemas; }
+Utf8StringCR RelatedInstanceNodesSpecification::GetSupportedSchemas (void) const       { return m_supportedSchemas; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetSupportedSchemas (WString value)         { m_supportedSchemas = value; }
+void RelatedInstanceNodesSpecification::SetSupportedSchemas (Utf8String value)         { m_supportedSchemas = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR RelatedInstanceNodesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
+Utf8StringCR RelatedInstanceNodesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetRelationshipClassNames (WString value)   { m_relationshipClassNames = value; }
+void RelatedInstanceNodesSpecification::SetRelationshipClassNames (Utf8String value)   { m_relationshipClassNames = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR RelatedInstanceNodesSpecification::GetRelatedClassNames (void) const      { return m_relatedClassNames; }
+Utf8StringCR RelatedInstanceNodesSpecification::GetRelatedClassNames (void) const      { return m_relatedClassNames; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedInstanceNodesSpecification::SetRelatedClassNames (WString value) { m_relatedClassNames = value; }
+void RelatedInstanceNodesSpecification::SetRelatedClassNames (Utf8String value) { m_relatedClassNames = value; }

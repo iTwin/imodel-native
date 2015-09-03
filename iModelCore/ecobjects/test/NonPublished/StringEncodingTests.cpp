@@ -2,39 +2,40 @@
 |
 |     $Source: test/NonPublished/StringEncodingTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
+using namespace BentleyApi::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 using namespace std;
 
-wchar_t s_schemaXml[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                L"    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.06\" prefix=\"besc\" />"
-                L"    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
-                L"        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
-                L"    </ECClass>"
-                L"    <ECClass typeName=\"TestClass\" isDomainClass=\"True\">"
-                L"        <ECArrayProperty propertyName=\"StringArray\" typeName=\"string\" />"
-                L"        <ECProperty propertyName=\"String\" typeName=\"string\" />"
-                L"        <ECStructProperty propertyName=\"Struct\" typeName=\"Manufacturer\" />"
-                L"        <ECArrayProperty propertyName=\"StructArray\" typeName=\"Manufacturer\" isStruct=\"True\" />"
-                L"    </ECClass>"
-                L"    <ECClass typeName=\"TestUtf8Class\" isDomainClass=\"True\">"
-                L"        <ECCustomAttributes>"
-                L"            <PersistStringsAsUtf8 xmlns=\"Bentley_Standard_CustomAttributes.01.00\" />"
-                L"        </ECCustomAttributes>"
-                L"        <ECProperty propertyName=\"String\" typeName=\"string\" />"
-                L"    </ECClass>"
-                L"</ECSchema>";
+Utf8Char s_schemaXml[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.06\" prefix=\"besc\" />"
+                "    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"TestClass\" isDomainClass=\"True\">"
+                "        <ECArrayProperty propertyName=\"StringArray\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"String\" typeName=\"string\" />"
+                "        <ECStructProperty propertyName=\"Struct\" typeName=\"Manufacturer\" />"
+                "        <ECArrayProperty propertyName=\"StructArray\" typeName=\"Manufacturer\" isStruct=\"True\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"TestUtf8Class\" isDomainClass=\"True\">"
+                "        <ECCustomAttributes>"
+                "            <PersistStringsAsUtf8 xmlns=\"Bentley_Standard_CustomAttributes.01.00\" />"
+                "        </ECCustomAttributes>"
+                "        <ECProperty propertyName=\"String\" typeName=\"string\" />"
+                "    </ECClass>"
+                "</ECSchema>";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/12
@@ -79,7 +80,7 @@ struct StringEncodingTests : ECTestFixture
 
     void                            Convert (ECValueCR v, WCharCP str)
         {
-        WCharCP wc = v.GetString();
+        WCharCP wc = v.GetWCharCP();
         EXPECT_EQ (0, wcscmp (wc, str));
         Utf8CP u8 = v.GetUtf8CP();
         EXPECT_TRUE (0 == Utf8String (str).compare (u8));
@@ -87,7 +88,7 @@ struct StringEncodingTests : ECTestFixture
         EXPECT_EQ (0, BeStringUtilities::CompareUtf16WChar (u16, str));
         }
 
-    StandaloneECInstancePtr CreateInstance (WCharCP classname, ECDBuffer::StringEncoding encoding)
+    StandaloneECInstancePtr CreateInstance (Utf8CP classname, ECDBuffer::StringEncoding encoding)
         {
         // Note setting the global default string encoding isn't a typical workflow.
         // We do it here so we can test instances with different encodings.
@@ -96,32 +97,32 @@ struct StringEncodingTests : ECTestFixture
         return ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
         }
     
-    StandaloneECInstancePtr CreatePrimaryInstance (ECDBuffer::StringEncoding encoding, WCharCP strVal)
+    StandaloneECInstancePtr CreatePrimaryInstance (ECDBuffer::StringEncoding encoding, Utf8CP strVal)
         {
-        StandaloneECInstancePtr instance = CreateInstance (L"TestClass", encoding);
+        StandaloneECInstancePtr instance = CreateInstance ("TestClass", encoding);
         ECValue v (strVal);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue (L"String", v));
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue (L"Struct.Name", v));
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->AddArrayElements (L"StringArray", 5));
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("String", v));
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("Struct.Name", v));
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->AddArrayElements ("StringArray", 5));
         for (uint32_t i = 0; i < 3; i++)
-            EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue (L"StringArray", v, i));
+            EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("StringArray", v, i));
 
         EXPECT_EQ (encoding, instance->GetStringEncoding());
         return instance;
         }
 
-    StandaloneECInstancePtr CreateStructInstance (ECDBuffer::StringEncoding encoding, WCharCP name, IECInstanceR parent)
+    StandaloneECInstancePtr CreateStructInstance (ECDBuffer::StringEncoding encoding, Utf8CP name, IECInstanceR parent)
         {
         ECValue v;
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, parent.GetValue (v, L"StructArray"));
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, parent.AddArrayElements (L"StructArray", 1));
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, parent.GetValue (v, "StructArray"));
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, parent.AddArrayElements ("StructArray", 1));
 
-        StandaloneECInstancePtr instance = CreateInstance (L"Manufacturer", encoding);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue (L"Name", ECValue (name)));
+        StandaloneECInstancePtr instance = CreateInstance ("Manufacturer", encoding);
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue ("Name", ECValue (name)));
 
         ECValue structV;
         structV.SetStruct (instance.get());
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, parent.SetValue (L"StructArray", structV, v.GetArrayInfo().GetCount()));
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, parent.SetValue ("StructArray", structV, v.GetArrayInfo().GetCount()));
         EXPECT_EQ (encoding, instance->GetStringEncoding());
         return instance;
         }
@@ -141,7 +142,7 @@ struct StringEncodingTests : ECTestFixture
             else if (!bV.Equals (aV))
                 {
                 if (outputDifferences)
-                    wprintf (L"%ls differs: %ls vs. %ls\n", aVal.GetValueAccessor().GetAccessString(), aV.ToString().c_str(), bV.ToString().c_str());
+                    printf ("%s differs: %s vs. %s\n", aVal.GetValueAccessor().GetAccessString(), aV.ToString().c_str(), bV.ToString().c_str());
 
                 return false;
                 }
@@ -194,28 +195,28 @@ TEST_F (StringEncodingTests, TestConversions)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (StringEncodingTests, CompareBuffersWithDifferentEncodings)
     {
-    StandaloneECInstancePtr a = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf8, L"testing"),
-                            b = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf16, L"no match");
+    StandaloneECInstancePtr a = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf8, "testing"),
+                            b = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf16, "no match");
     CompareInstances<false> (a, b);
 
-    b = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf16, L"testing");
+    b = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf16, "testing");
     CompareInstances<true> (a, b);
 
     // create a struct array instance with a different encoding than it's parent instance. Useful? not really. But nothing prohibits it.
-    StandaloneECInstancePtr structA0 = CreateStructInstance (ECDBuffer::StringEncoding_Utf16, L"child", *a),
-                            structA1 = CreateStructInstance (ECDBuffer::StringEncoding_Utf8, L"child", *a),
-                            structB0 = CreateStructInstance (ECDBuffer::StringEncoding_Utf16, L"child", *b),
-                            structB1 = CreateStructInstance (ECDBuffer::StringEncoding_Utf8, L"child", *b);
+    StandaloneECInstancePtr structA0 = CreateStructInstance (ECDBuffer::StringEncoding_Utf16, "child", *a),
+                            structA1 = CreateStructInstance (ECDBuffer::StringEncoding_Utf8, "child", *a),
+                            structB0 = CreateStructInstance (ECDBuffer::StringEncoding_Utf16, "child", *b),
+                            structB1 = CreateStructInstance (ECDBuffer::StringEncoding_Utf8, "child", *b);
 
     CompareInstances<true> (structA0, structB0);
     CompareInstances<true> (structA0, structA1);
     CompareInstances<true> (structA1, structB0);
     CompareInstances<true> (a, b);
 
-    structB1->SetValue (L"Name", ECValue (L"grandkid"));
+    structB1->SetValue ("Name", ECValue ("grandkid"));
     ECValue structV;
     structV.SetStruct (structB1.get());
-    b->SetValue (L"StructArray", structV, 1);
+    b->SetValue ("StructArray", structV, 1);
     CompareInstances<false> (structB1, structB0);
     CompareInstances<false> (structB1, structA1);
     CompareInstances<false> (a, b);
@@ -227,9 +228,9 @@ TEST_F (StringEncodingTests, CompareBuffersWithDifferentEncodings)
 TEST_F (StringEncodingTests, CopyBuffersWithDifferentEncodings)
     {
     // a and b use different encodings
-    StandaloneECInstancePtr a = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf8, L"slartibartfast");
+    StandaloneECInstancePtr a = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf8, "slartibartfast");
     ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf16);
-    StandaloneECInstancePtr b = m_schema->GetClassP (L"TestClass")->GetDefaultStandaloneEnabler()->CreateInstance();
+    StandaloneECInstancePtr b = m_schema->GetClassP ("TestClass")->GetDefaultStandaloneEnabler()->CreateInstance();
 
     EXPECT_EQ (ECDBuffer::StringEncoding_Utf16, b->GetStringEncoding());
 
@@ -241,7 +242,7 @@ TEST_F (StringEncodingTests, CopyBuffersWithDifferentEncodings)
 
     CompareInstances<true> (a, b);
 
-    b->SetValue (L"Struct.Name", ECValue (L"finnegan"));
+    b->SetValue ("Struct.Name", ECValue ("finnegan"));
     CompareInstances<false> (a, b);
     }
 
@@ -253,15 +254,15 @@ TEST_F (StringEncodingTests, CopyBuffersWithDifferentEncodings)
 TEST_F (StringEncodingTests, ForceUtf8)
     {
     ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf16);
-    StandaloneECInstancePtr a = m_schema->GetClassP (L"TestUtf8Class")->GetDefaultStandaloneEnabler()->CreateInstance();
+    StandaloneECInstancePtr a = m_schema->GetClassP ("TestUtf8Class")->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_EQ (ECDBuffer::StringEncoding_Utf8, a->GetStringEncoding());
 
     ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf8);
-    StandaloneECInstancePtr b = m_schema->GetClassP (L"TestUtf8Class")->GetDefaultStandaloneEnabler()->CreateInstance();
+    StandaloneECInstancePtr b = m_schema->GetClassP ("TestUtf8Class")->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_EQ (ECDBuffer::StringEncoding_Utf8, b->GetStringEncoding());
 
     ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf16);
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE
 

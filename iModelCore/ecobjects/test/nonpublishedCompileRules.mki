@@ -25,14 +25,8 @@ $(o)UnitsTests$(oext)               : $(baseDir)NonPublished/UnitsTests.cpp     
 
 $(o)UnitsTestBase$(oext)               : $(baseDir)NonPublished/UnitsTestBase.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
 
-$(o)ECExpressionTests$(oext)        : $(baseDir)NonPublished/ECExpressionTests.cpp          $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)ECSchemaUnitsManagerTests$(oext)               : $(baseDir)NonPublished/ECSchemaUnitsManagerTests.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
-
-$(o)CGBinarySerializationTests$(oext)  : $(baseDir)NonPublished/CGBinarySerializationTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
-
-$(o)AdhocPropertyTests$(oext)       : $(baseDir)NonPublished/AdhocPropertyTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
-
 $(o)SchemaLocalizationTests$(oext)   : $(baseDir)NonPublished/SchemaLocalizationTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)PropertyOverrideTests$(oext)   : $(baseDir)NonPublished/PropertyOverrideTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}

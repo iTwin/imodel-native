@@ -2,7 +2,7 @@
 #
 #  $Source: test/buildTestFixture.mki $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 baseDir =   $(_MakeFilePath)
@@ -12,65 +12,26 @@ baseDir =   $(_MakeFilePath)
 # We don't want to run the test from the build location because the dependencies are not there.
 GUNITTEST_NOEXEC = 1
 
-# We will supply our own main implementation so we can alter the error mode to cause asserts to always
-# output to a message box.
-GTEST_MAIN_IS_SUPPLIED = 1
-
-#----------------------------------------------------------------------------------------
-# Use gtest version 1.3
-#----------------------------------------------------------------------------------------
-GUNIT_TEST_VERSION = 1.3
-
-%if defined (BUILD_USING_VS2012)
-    # Required for GTest
-    nameToDefine = _VARIADIC_MAX=10
-    %include cdefapnd.mki
-%endif
-
-#----------------------------------------------------------------------------------------
-#   Libs
-#----------------------------------------------------------------------------------------
-libsUsed = \
-        $(BuildContext)SubParts/Libs/ECObjects.lib \
-        $(BuildContext)SubParts/Libs/Bentley.lib \
-        $(BuildContext)SubParts/Libs/BentleyAllocator.lib \
-        $(BuildContext)SubParts/Libs/BentleyGeom.lib \
-        $(BuildContext)SubParts/Libs/BentleyGeomSerialization.lib
+#----------------------------------------------------------------------
+#       Compile the unit tests
+#----------------------------------------------------------------------
+BEGTEST_NAME=$(programName)
+BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
+BEGTEST_DEPENDENCIES=$(baseDir)SeedData.prewire.mke
+%include $(SrcBsiCommon)sharedmki/BuildUnitTests.mke
 
 #----------------------------------------------------------------------
-#       Create output directories
+#       Compile the main and testfixture 
 #----------------------------------------------------------------------
+# Let all stand-alone tests share the same gtestmain and TestFixture objects.
+o = $(OutputRootDir)build/ecobjects/buildTestFixture/
+
 always:
     !~@mkdir $(o)
 
-#----------------------------------------------------------------------------------------
-# Published Tests 
-# Pre-Compiled Header Sections
-#----------------------------------------------------------------------------------------
-PCHCompilandBaseName    = ECObjectsTestPCH
-PchCompiland            = $(baseDir)$(PCHCompilandBaseName).cpp
-PchOutputDir            = $(o)
-PchExtraOptions	        = -D_VARIADIC_MAX=10
-%include $(SharedMki)PreCompileHeader.mki
+$(o)gtestmain.obj : $(SrcRoot)ecobjects/test/gtestmain.cpp
 
-CCPchOpts  = $(UsePrecompiledHeaderOptions)
-PCHHeaderDependency     = $(o)$(PCHCompilandBaseName).pch
-PCHHeaderObject         = $(o)$(PCHCompilandBaseName)$(oext)
-
-#----------------------------------------------------------------------
-# Prepare to multi-compile using a uniform set of dependency blocks.
-# Note that you CANNOT change compiler options for just some of the
-# below compilands. The entire set of compilands must be content with
-# uniform treatment for multi-compilation to work.
-#----------------------------------------------------------------------
-MultiCompileDepends=$(_MakeFileSpec) 
-%include MultiCppCompileRule.mki
-
-
-%include $(compileRulesPath)
-
-
-%include MultiCppCompileGo.mki
+$(o)TestFixture.obj : $(SrcRoot)ecobjects/test/TestFixture/TestFixture.cpp
 
 #----------------------------------------------------------------------------------------
 #   Link the executable
@@ -81,13 +42,18 @@ MultiCompileDepends=$(_MakeFileSpec)
 GUNITTEST_OUT       = $(o)
 GUNITTEST_NAME      = $(programName)
 GUNITTEST_DEST      = $(o)
-GUNITTEST_LIBS      = $(libsUsed)
 GUNITTEST_NTLIBS    = advapi32.lib ole32.lib
-GUNITTEST_OBJS      = $(PCHHeaderObject) $(MultiCompileObjectList)
 GUNITTEST_PATH      = $(o) 
 GUNITTEST_SYMB      = $(o)
+GTEST_MAIN_IS_SUPPLIED = 1
 
 %include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
+
+LOCAL_GUNITTEST_OBJS + $(o)gtestmain.obj 
+LOCAL_GUNITTEST_OBJS + $(o)TestFixture.obj
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/*.obj]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
+
 %include $(SharedMki)gunittest.mki
 
 always:

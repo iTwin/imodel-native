@@ -2,14 +2,13 @@
 |
 |     $Source: PublicApi/ECObjects/PresentationMetadataHelper.h $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include "ECObjects.h"
-#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECObjects.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -43,7 +42,7 @@ enum class CategorySortPriority : int32_t
     };
 
 //=======================================================================================
-//! Helper object used to apply metadata to ECSchemas, ECClasses, and ECProperties used 
+//! Helper object used to apply metadata to ECSchemas, ECClasses, and ECProperties used
 //! to control how they are presented in the UI.
 //! Modifying a schema with this object will add a reference from that schema to the
 //! standard EditorCustomAttributes schema which defines the custom attribute classes.
@@ -57,10 +56,10 @@ private:
 /*__PUBLISH_SECTION_END__*/
     struct CustomAttributeData;
 
-    IECInstancePtr          CreateInstance (WCharCP className) const;
+    IECInstancePtr          CreateInstance (Utf8CP className) const;
     ECObjectsStatus         EnsureSchemaReference (IECCustomAttributeContainerR container) const;
-    ECObjectsStatus         CreateCustomAttribute (IECCustomAttributeContainerR container, WCharCP className, CustomAttributeData const* data = NULL) const;
-    ECObjectsStatus         CreateCustomAttribute (IECCustomAttributeContainerR container, WCharCP className, CustomAttributeData const& data) const;
+    ECObjectsStatus         CreateCustomAttribute (IECCustomAttributeContainerR container, Utf8CP className, CustomAttributeData const* data = NULL) const;
+    ECObjectsStatus         CreateCustomAttribute (IECCustomAttributeContainerR container, Utf8CP className, CustomAttributeData const& data) const;
 
 public:
     ECOBJECTS_EXPORT PresentationMetadataHelper (ECSchemaR editorCustomAttributesSchema);
@@ -69,7 +68,7 @@ public:
     //! Creates an PresentationMetadataHelper object which can be used to apply metadata to ECSchema, ECClass, and ECProperty objects.
     //! @param schemaContext    An ECSchemaReadContext from which the standard EditorCustomAttributes schema can be obtained.
     ECOBJECTS_EXPORT PresentationMetadataHelper (ECSchemaReadContextR schemaContext);
-    
+
     ECOBJECTS_EXPORT ~PresentationMetadataHelper();
 
     //! Applies a standard category to the property
@@ -86,7 +85,7 @@ public:
     //! @param[in]      expand       
     //! @param[in]      description  
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
-    ECOBJECTS_EXPORT ECObjectsStatus    SetCustomCategory (ECPropertyR ecproperty, WCharCP uniqueName, WCharCP displayLabel, int32_t priority, bool expand = false, WCharCP description = NULL) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetCustomCategory (ECPropertyR ecproperty, Utf8CP uniqueName, Utf8CP displayLabel, int32_t priority, bool expand = false, Utf8CP description = NULL) const;
 
     // ###TODO: move standard types enum down from DgnPlatform?
     //! Sets the standard extended type for the property
@@ -99,8 +98,8 @@ public:
     //! @param ecproperty       The property to which to apply the custom attribute
     //! @param extendTypeName   The name of the extended type.
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
-    ECOBJECTS_EXPORT ECObjectsStatus    SetExtendedType (ECPropertyR ecproperty, WCharCP extendTypeName) const;
-    
+    ECOBJECTS_EXPORT ECObjectsStatus    SetExtendedType (ECPropertyR ecproperty, Utf8CP extendTypeName) const;
+
     // ###TODO: move standard types enum down from DgnPlatform?
     //! Sets the standard extended type for members of the array property
     //! @param ecproperty       The property to which to apply the custom attribute
@@ -112,7 +111,7 @@ public:
     //! @param ecproperty       The property to which to apply the custom attribute
     //! @param extendTypeName   The name of the extended type.
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
-    ECOBJECTS_EXPORT ECObjectsStatus    SetMemberExtendedType (ArrayECPropertyR ecproperty, WCharCP extendTypeName) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMemberExtendedType (ArrayECPropertyR ecproperty, Utf8CP extendTypeName) const;
 
     //! Sets the PropertyPriority for the property
     //! @param ecproperty   The property to which to apply the custom attribute
@@ -152,4 +151,3 @@ public:
 
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
-

@@ -8,9 +8,12 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include "ECObjects.h"
+#include <ECObjects/ECObjects.h>
 #include <Geom/GeomApi.h>
+
+//__PUBLISH_SECTION_END__
 #include <ECObjects/StandaloneECInstance.h>
+//__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -25,35 +28,6 @@ struct ECSchemaReadContext : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
 friend struct SearchPathSchemaFileLocater;
-    static const int CATEGORY_PARTITION_SIZE = 5000;
-    enum PriorityPartiion
-        {
-        ReaderContext   = -1* CATEGORY_PARTITION_SIZE, //Whatever we found is off highest priority
-        UserSpace       = 0*  CATEGORY_PARTITION_SIZE,
-        External        = 1*  CATEGORY_PARTITION_SIZE,
-        StandardPaths   = 2*  CATEGORY_PARTITION_SIZE,
-        Final           = 3*  CATEGORY_PARTITION_SIZE,
-        };
-
-    struct SchemaLocatorKey
-        {
-        int                 m_priority;
-        IECSchemaLocaterP   m_locator;
-
-        bool operator < (SchemaLocatorKey const & rhs) const 
-            {
-            if (m_priority != rhs.m_priority)
-                return m_priority < rhs.m_priority;//Order the higher priority ones first
-
-            return m_locator < rhs.m_locator;
-            }
-
-        SchemaLocatorKey(){}
-        SchemaLocatorKey (IECSchemaLocaterP locator, int priority)
-            :m_locator(locator), m_priority(priority)
-            {}
-        };
-
     struct WStringComparer : public std::binary_function<WString, WString, bool>
         {
         bool operator()(WStringCR s1, WStringCR s2) const
@@ -62,21 +36,20 @@ friend struct SearchPathSchemaFileLocater;
             }
         };
 private:
-    typedef bset<SchemaLocatorKey>          SchemaLocatorSet;
-    typedef bset<WString, WStringComparer>  SearchPathList;
 
     IStandaloneEnablerLocaterP              m_standaloneEnablerLocater;
     ECSchemaCachePtr                        m_knownSchemas;
     bvector<bool>                           m_knownSchemaDirtyStack;
-    SchemaLocatorSet                        m_locators;
+    bvector<IECSchemaLocaterP>                              m_locaters;
+    int                                                     m_userAddedLocatersCount;
+    int                                                     m_searchPathLocatersCount;
+    typedef bset<WString, WStringComparer>                  SearchPathList;
     SearchPathList                          m_searchPaths;
     bvector<SearchPathSchemaFileLocaterPtr> m_ownedLocators;
     IECSchemaRemapperCP                     m_remapper;
     bool                                    m_acceptLegacyImperfectLatestCompatibleMatch;
     bvector<WString>                        m_cultureStrings;
 
-    
-    SchemaLocatorSet::iterator  GetHighestLocatorInRange (uint32_t& prioirty);
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
 protected:
@@ -90,27 +63,34 @@ public:
     IStandaloneEnablerLocaterP          GetStandaloneEnablerLocater();
     ECOBJECTS_EXPORT ECObjectsStatus    AddSchema(ECSchemaR schema);
     void                                RemoveSchema(ECSchemaR schema);
-    ECSchemaPtr                         GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType);
-
-    ECOBJECTS_EXPORT ECSchemaCacheR GetFoundSchemas ();
+    ECSchemaPtr         GetFoundSchema (SchemaKeyCR key, SchemaMatchType matchType);
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
-
-    ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
+    ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
 
     IECSchemaRemapperCP GetRemapper() const                         { return m_remapper; }
     void                SetRemapper (IECSchemaRemapperCP remapper)  { m_remapper = remapper; }
-    void                ResolveClassName (WStringR serializedClassName, ECSchemaCR schema) const;
+    void                ResolveClassName (Utf8StringR serializedClassName, ECSchemaCR schema) const;
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
+    //! Host should call to establish search paths for standard ECSchemas.
+    //! @param[in] hostAssetsDirectory Directory to where the application has deployed assets that come with the API,
+    //!            e.g. standard ECSchemas.
+    //!            In the assets directory the standard ECSchemas have to be located in @b ECSchemas/Standard/.
+    ECOBJECTS_EXPORT static void Initialize (BeFileNameCR hostAssetsDirectory);
+
+    //! Gets the host assets directory to where the application deploys assets that come with the API, e.g. standard ECSchemas.
+    //! Must have been set via ECSchemaReadContext::Initialize.
+    //! @return Host assets directory
+    ECOBJECTS_EXPORT static BeFileNameCR GetHostAssetsDirectory ();
 
     //! Creates a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     //! @remarks This more-flexible override is primarily for internal use
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch = false);
-    
+
     //! Creates a context for deserializing ECSchemas
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch = false);
@@ -143,7 +123,7 @@ public:
     //! @param[in] key  The SchemaKey that defines the schema (name and version information) that is being looked for
     //! @param[in] matchType    The match type criteria used to locate the requested schema
     //! @returns An ECSchemaPtr.  This ptr will return false for IsValid() if the schema could not be located.
-    ECOBJECTS_EXPORT ECSchemaPtr         LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
+    ECOBJECTS_EXPORT ECSchemaPtr LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
 
     //! Gets the schemas cached by this context.
     //! @returns Schemas cached by this context
@@ -161,10 +141,8 @@ struct ECInstanceReadContext : RefCountedBase
     // If no IPrimitiveTypeResolver is supplied, the primitive type defined for the ECProperty is used.
     struct IPrimitiveTypeResolver
         {
-/*__PUBLISH_SECTION_END__*/
         virtual PrimitiveType       _ResolvePrimitiveType (PrimitiveECPropertyCR ecproperty) const = 0;
         virtual PrimitiveType       _ResolvePrimitiveArrayType (ArrayECPropertyCR ecproperty) const = 0;
-/*__PUBLISH_SECTION_START__*/
         };
 
 /*__PUBLISH_SECTION_END__*/
@@ -184,7 +162,7 @@ protected:
     //! Will be called by ECInstance deserialization to create the ECInstances that it returns.
     //! The default implementation calls GetDefaultStandaloneEnabler() on the ecClass
     ECOBJECTS_EXPORT virtual IECInstancePtr _CreateStandaloneInstance (ECClassCR ecClass);
-    
+
     virtual ECSchemaCP  _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const = 0;
 
 public:
@@ -193,8 +171,8 @@ public:
 
     void                    SetSchemaRemapper (IECSchemaRemapperCP remapper) { m_schemaRemapper = remapper; }
     void                    SetTypeResolver (IPrimitiveTypeResolver const* resolver) { m_typeResolver = resolver; }
-    void                    ResolveSerializedPropertyName (WStringR name, ECClassCR ecClass) const  { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolvePropertyName (name, ecClass); }
-    void                    ResolveSerializedClassName (WStringR name, ECSchemaCR schema) const     { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolveClassName (name, schema); }
+    void                    ResolveSerializedPropertyName (Utf8StringR name, ECClassCR ecClass) const  { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolvePropertyName (name, ecClass); }
+    void                    ResolveSerializedClassName (Utf8StringR name, ECSchemaCR schema) const     { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolveClassName (name, schema); }
 
     ECSchemaCP  FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const;
 

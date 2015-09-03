@@ -39,22 +39,22 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -f -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecf -p ECObjectsPublishedTests -v4 -n build -c -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) &amp; C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecftest -p ECObjectsPublishedTests -v4 build -f -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecftest -p ECObjectsPublishedTests -v4 -n build -c -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeCleanCommandLine>
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ECObjectsTest_Published.exe</NMakeOutput>
-    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecfTest\VendorAPI\;$(VCInstallDir)INCLUDE\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecfTest\SubParts\PublishedAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -f -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecftest -p ECObjectsPublishedTests -v4 build -f -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\Product\ECObjectsTests\ECObjectsTest_Published.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions);;BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir);$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecobjects\VendorAPI\;$(VCInstallDir)INCLUDE\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecobjects\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
     <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">ECObjectsTest_Published.exe</NMakeOutput>
-    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -f -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -f ecftest -p ECObjectsPublishedTests -v4 build -f -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPublishedTests -v4 -n build -c -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\Product\ECObjectsTests\ECObjectsTest_Published.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">WIN32;NDEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
@@ -63,20 +63,20 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ECObjectsTestPCH.cpp" />
     <ClCompile Include="Published\BuildInstanceAndSerializeToXML.cpp" />
     <ClCompile Include="Published\CustomAttributeTests.cpp" />
     <ClCompile Include="Published\ECRelationshipTests.cpp" />
+    <ClCompile Include="Published\InstanceTests.cpp" />
     <ClCompile Include="Published\InstanceXMLTests.cpp" />
     <ClCompile Include="Published\MacroTests.cpp" />
     <ClCompile Include="Published\MemoryLayoutTests.cpp" />
     <ClCompile Include="Published\SchemaTests.cpp" />
+    <ClCompile Include="Published\DateTimeInfoCustomAttributeTests.cpp" />
     <ClCompile Include="Published\SupplementalSchemaTests.cpp" />
-    <ClCompile Include="Published\TestFixture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
-    <ClInclude Include="Published\TestFixture.h" />
+    <ClInclude Include="TestFixture\TestFixture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="logging.config.xml" />

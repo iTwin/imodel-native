@@ -1,10 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicApi/ECObjects/StronglyConnectedGraph.h $
-|    $RCSfile: file.tpl,v $
-|   $Revision: 1.10 $
-|       $Date: 2005/11/07 15:38:45 $
-|     $Author: EarlinLutz $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -34,19 +30,19 @@ struct SCCGraph
             :m_node (node), m_index(index), m_lowIndex(index)
             {}
         };
-    
+
     typedef bmap<NodeType, SCCGraphNode*>       Vertices;
     typedef bvector<SCCGraphNode*>              NodeVector;
     typedef bvector<NodeVector>                 SccNodes;
-    
+
     private:
     Vertices                    m_vertices;
     int                         m_currentIndex;
     GetChildrenFunctor const &  m_getChildren;
-    
+
     public:
     typedef typename GetChildrenFunctor::ChildCollection ChildNodeCollection;
-    
+
     struct SCCContext
         {
         NodeVector  m_stack;
@@ -72,7 +68,7 @@ struct SCCGraph
             delete node;
             node = insertionPoint.first->second;
             }
-        
+
         context.m_stack.push_back(node);
         m_currentIndex++;
 
@@ -80,7 +76,7 @@ struct SCCGraph
         for (typename ChildNodeCollection::const_iterator iter = childList.begin(); iter != childList.end(); ++iter)
             {
             typename Vertices::iterator childIter = m_vertices.find (*iter);
-            
+
             SCCGraphNode* refNode = NULL;
             if (m_vertices.end() == childIter)
                 {
@@ -94,12 +90,12 @@ struct SCCGraph
                     node->m_lowIndex = std::min (node->m_lowIndex, refNode->m_index);
                 }
             }
-        
+
         if (node->m_lowIndex == node->m_index && !context.m_stack.empty())
             {
             NodeVector scc;
             SCCGraphNode* stackNode = NULL;
-            do 
+            do
                 {
                 stackNode = context.m_stack.back();
                 scc.push_back(stackNode);
@@ -124,6 +120,6 @@ struct SCCGraph
         m_vertices.clear();
         }
     };
-    
+
 #pragma pop_macro("max")
 #pragma pop_macro("min")

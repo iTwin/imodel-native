@@ -2,55 +2,70 @@
 |
 |     $Source: test/Performance/ECXmlPerformanceTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+#include "PerformanceTestFixture.h"
+
 #include <Bentley/BeTimeUtilities.h>
+using namespace BentleyApi::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct ECXmlPerformanceTest   : ECTestFixture {};
+struct ECXmlPerformanceTest   : PerformanceTestFixture {
 
 void TimeSchema
 (
 WCharP schemaName,
-ECSchemaReadContextPtr   schemaContext,
-FILE* logFile
+ECSchemaReadContextPtr   schemaContext
 )
     {
     ECSchemaPtr schema;
-    StopWatch deserializationTimer(L"Deserialization", false);
+    StopWatch deserializationTimer("Deserialization", false);
     deserializationTimer.Start();
+    //printf ("Attach to profiler for reading schema...\r\n"); getchar ();
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(schemaName).c_str(), *schemaContext);
+    //printf ("Detach from profiler...\r\n"); getchar ();
 
     deserializationTimer.Stop();
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);  
 
-    StopWatch serializationTimer(L"Serialization", false);
-    WString ecSchemaXml;
+    StopWatch serializationTimer("Serialization", false);
+    Utf8String ecSchemaXml;
 
     serializationTimer.Start();
+    //printf ("Attach to profiler for writing schema...\r\n"); getchar ();
     SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXml);
+    //printf ("Detach from profiler...\r\n"); getchar ();
     serializationTimer.Stop();
     EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2);  
 
     size_t stringLength = ecSchemaXml.length();
 
-    WString dateTime = ECTestFixture::GetDateTime ();
+    Utf8String dateTime = ECTestFixture::GetDateTime ();
     ECSchemaReferenceList references = schema->GetReferencedSchemas();
-    fwprintf (logFile, L"%s, De-serializing schema: %s (%d references), %.4f\n", dateTime.c_str(), schema->GetFullSchemaName(), references.size(), deserializationTimer.GetElapsedSeconds());
-    fwprintf (logFile, L"%s, Serializing schema: %s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName(), stringLength, serializationTimer.GetElapsedSeconds());
 
+    bmap<Utf8String, double> results;
+    Utf8String deserializingString;
+    deserializingString.Sprintf("De-serializing schema: %s (%d references)", schema->GetFullSchemaName().c_str(), references.size());
+    results[deserializingString] = deserializationTimer.GetElapsedSeconds();
+
+    Utf8String serializingString;
+    serializingString.Sprintf("Serializing schema: %s (%d bytes)", schema->GetFullSchemaName().c_str(), stringLength);
+    results[serializingString] = serializationTimer.GetElapsedSeconds();
+
+    PERFORMANCELOG.infov("%s, De-serializing schema: %s (%d references), %.4f\n", dateTime.c_str(), schema->GetFullSchemaName().c_str(), references.size(), deserializationTimer.GetElapsedSeconds());
+    PERFORMANCELOG.infov("%s, Serializing schema: %s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName().c_str(), stringLength, serializationTimer.GetElapsedSeconds());
+
+    LogResultsToFile(results);
     }
 
 void TimeInstance
 (
 WCharP schemaName,
 WCharP instanceXmlFile,
-ECSchemaReadContextPtr   schemaContext,
-FILE* logFile
+ECSchemaReadContextPtr   schemaContext
 )
     {
     ECSchemaPtr   schema;
@@ -65,7 +80,7 @@ FILE* logFile
     IECInstancePtr  testInstance;
     InstanceReadStatus instanceStatus;
 
-    StopWatch readingTimer(L"Reading", false);
+    StopWatch readingTimer("Reading", false);
     readingTimer.Start();
     instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(instanceXmlFile).c_str(), *instanceContext);
     readingTimer.Stop();
@@ -78,13 +93,24 @@ FILE* logFile
     writingTimer.Stop();
     EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, status2);  
 
-    WString dateTime = ECTestFixture::GetDateTime ();
+    Utf8String dateTime = ECTestFixture::GetDateTime ();
     size_t stringLength = ecInstanceXml.length();
 
-    fwprintf (logFile, L"%s, Reading instance from class: %s:%s, %.4f\n", dateTime.c_str(), schema->GetFullSchemaName(), testInstance->GetClass().GetName(), readingTimer.GetElapsedSeconds());
-    fwprintf (logFile, L"%s, Writing instance from class: %s:%s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName(), testInstance->GetClass().GetName(), stringLength, writingTimer.GetElapsedSeconds());
+    PERFORMANCELOG.infov ("%s, Reading instance from class: %s:%s, %.4f\n", dateTime.c_str(), schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str(), readingTimer.GetElapsedSeconds());
+    PERFORMANCELOG.infov("%s, Writing instance from class: %s:%s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str(), stringLength, writingTimer.GetElapsedSeconds());
 
+    bmap<Utf8String, double> results;
+    Utf8String readingString;
+    readingString.Sprintf("Reading instance from class: %s:%s", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str());
+    results[readingString] = readingTimer.GetElapsedSeconds();
+
+    Utf8String writingString;
+    writingString.Sprintf("Writing instance from class: %s:%s (%d bytes)", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str(), stringLength);
+    results[writingString] = writingTimer.GetElapsedSeconds();
+
+    LogResultsToFile(results);
     }
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
@@ -93,44 +119,18 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
-    FILE* logFile=NULL;
-
-    WString logfilePath = GetTestResultsFilePath (L"ECObjectsPerformanceResults.csv");
-    MakeDirContainingFile (logfilePath.c_str());
-
-    bool existingFile = (0 == _waccess_s(logfilePath.c_str(), 0 ));
-
-    _wfopen_s(&logFile, logfilePath.c_str(), L"a+"); 
-    wprintf (L"CSV Results filename: %s\n", logfilePath.c_str());
-
-    if (!existingFile)
-        fwprintf (logFile, L"Date, Test Description, Time (secs)\n");
-    TimeSchema(L"OpenPlant.01.02.ecschema.xml", schemaContext, logFile);
-    TimeSchema(L"OpenPlant_PID.01.02.ecschema.xml", schemaContext, logFile);
-    TimeSchema(L"OpenPlant_3D.01.02.ecschema.xml", schemaContext, logFile);
-    TimeSchema(L"Bentley_Plant.06.00.ecschema.xml", schemaContext, logFile);
-
-    fclose(logFile);
+    TimeSchema(L"OpenPlant.01.02.ecschema.xml", schemaContext);
+    TimeSchema(L"OpenPlant_PID.01.02.ecschema.xml", schemaContext);
+    TimeSchema(L"OpenPlant_3D.01.02.ecschema.xml", schemaContext);
+    TimeSchema(L"Bentley_Plant.06.00.ecschema.xml", schemaContext);
+    TimeSchema(L"CustomAttributeTest.01.00.ecschema.xml", schemaContext);
     };
 
 TEST_F(ECXmlPerformanceTest, ReadingAndWritingInstance)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
-    FILE* logFile=NULL;
-
-    WString logfilePath = GetTestResultsFilePath (L"ECObjectsPerformanceResults.csv");
-    MakeDirContainingFile (logfilePath.c_str());
-
-    bool existingFile = (0 == _waccess_s(logfilePath.c_str(), 0 ));
-
-    _wfopen_s(&logFile, logfilePath.c_str(), L"a+"); 
-    wprintf (L"CSV Results filename: %s\n", logfilePath.c_str());
-
-    if (!existingFile)
-        fwprintf (logFile, L"Date, Test Description, Time (secs)\n");
-    TimeInstance(L"ECRules.01.00.ecschema.xml", L"RuleSet.xml", schemaContext, logFile);
-    TimeInstance(L"OpenPlant_3D.01.02.ecschema.xml", L"OpenPlant_3D_Instance.xml", schemaContext, logFile);
-    fclose(logFile);
+    TimeInstance(L"ECRules.01.00.ecschema.xml", L"RuleSet.xml", schemaContext);
+    TimeInstance(L"OpenPlant_3D.01.02.ecschema.xml", L"OpenPlant_3D_Instance.xml", schemaContext);
     };
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

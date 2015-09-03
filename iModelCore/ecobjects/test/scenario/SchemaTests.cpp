@@ -2,13 +2,15 @@
 |
 |     $Source: test/scenario/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+using namespace ECN;
+
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaTest                : ECTestFixture {};
 struct SchemaDeserializationTest : ECTestFixture {};
@@ -22,7 +24,7 @@ struct SchemaImmutableTest       : ECTestFixture {};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP GetPropertyByName (ECClassCR ecClass, WCharCP name, bool expectExists = true)
+ECPropertyP GetPropertyByName (ECClassCR ecClass, Utf8CP name, bool expectExists = true)
     {
     ECPropertyP prop = ecClass.GetPropertyP (name);
     EXPECT_EQ (expectExists, NULL != prop);
@@ -40,116 +42,116 @@ void VerifyWidgetsSchema
 ECSchemaPtr const&   schema
 )
     {
-    EXPECT_STREQ (L"Widgets", schema->GetName().c_str());
-    EXPECT_STREQ (L"wid", schema->GetNamespacePrefix().c_str());
-    EXPECT_STREQ (L"Widgets Display Label", schema->GetDisplayLabel().c_str());
+    EXPECT_STREQ ("Widgets", schema->GetName().c_str());
+    EXPECT_STREQ ("wid", schema->GetNamespacePrefix().c_str());
+    EXPECT_STREQ ("Widgets Display Label", schema->GetDisplayLabel().c_str());
     EXPECT_TRUE (schema->GetIsDisplayLabelDefined());
-    EXPECT_STREQ (L"Widgets Description", schema->GetDescription().c_str());
+    EXPECT_STREQ ("Widgets Description", schema->GetDescription().c_str());
     EXPECT_EQ (9, schema->GetVersionMajor());
     EXPECT_EQ (6, schema->GetVersionMinor());        
  
 #ifdef DEBUG_PRINT
     for (ECClassP pClass: schema->GetClasses())
         {
-        wprintf (L"Widgets contains class: '%s' with display label '%s'\n", pClass->GetName().c_str(), pClass->GetDisplayLabel().c_str());
+        printf ("Widgets contains class: '%s' with display label '%s'\n", pClass->GetName().c_str(), pClass->GetDisplayLabel().c_str());
         }
 #endif
 
-    ECClassP pClass = schema->GetClassP(L"ClassDoesNotExistInSchema");
+    ECClassP pClass = schema->GetClassP("ClassDoesNotExistInSchema");
     EXPECT_FALSE (pClass);
 
-    pClass = schema->GetClassP(L"ecProject");
+    pClass = schema->GetClassP("ecProject");
     ASSERT_TRUE (NULL != pClass);
-    EXPECT_STREQ (L"ecProject", pClass->GetName().c_str());    
-    EXPECT_STREQ (L"Project", pClass->GetDisplayLabel().c_str());
+    EXPECT_STREQ ("ecProject", pClass->GetName().c_str());    
+    EXPECT_STREQ ("Project", pClass->GetDisplayLabel().c_str());
     EXPECT_TRUE (pClass->GetIsDisplayLabelDefined());
-    EXPECT_STREQ (L"Project Class", pClass->GetDescription().c_str());
+    EXPECT_STREQ ("Project Class", pClass->GetDescription().c_str());
     EXPECT_FALSE (pClass->GetIsStruct());
     EXPECT_FALSE (pClass->GetIsCustomAttributeClass());
     EXPECT_TRUE (pClass->GetIsDomainClass());
     EXPECT_FALSE (pClass->HasBaseClasses());
-    ECPropertyP pProperty = GetPropertyByName (*pClass, L"Name");
+    ECPropertyP pProperty = GetPropertyByName (*pClass, "Name");
     ASSERT_TRUE (NULL != pProperty);
-    EXPECT_STREQ (L"Name", pProperty->GetName().c_str());
+    EXPECT_STREQ ("Name", pProperty->GetName().c_str());
     EXPECT_TRUE (pProperty->GetIsPrimitive());
     EXPECT_FALSE (pProperty->GetIsStruct());
     EXPECT_FALSE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"string", pProperty->GetTypeName().c_str());
+    EXPECT_STREQ ("string", pProperty->GetTypeName().c_str());
     EXPECT_TRUE (PRIMITIVETYPE_String == pProperty->GetAsPrimitiveProperty()->GetType());
     EXPECT_TRUE (pProperty->GetIsDisplayLabelDefined());
-    EXPECT_STREQ (L"Project Name", pProperty->GetDisplayLabel().c_str());
-    EXPECT_STREQ (L"", pProperty->GetDescription().c_str());
+    EXPECT_STREQ ("Project Name", pProperty->GetDisplayLabel().c_str());
+    EXPECT_STREQ ("", pProperty->GetDescription().c_str());
     EXPECT_EQ (pClass, &pProperty->GetClass());
     EXPECT_FALSE (pProperty->GetIsReadOnly());
 
-    pProperty = GetPropertyByName (*pClass, L"PropertyDoesNotExistInClass", false);
+    pProperty = GetPropertyByName (*pClass, "PropertyDoesNotExistInClass", false);
     EXPECT_FALSE (pProperty);
 
-    ECClassP customAttribClass = schema->GetClassP(L"AccessCustomAttributes");
+    ECClassP customAttribClass = schema->GetClassP("AccessCustomAttributes");
     ASSERT_TRUE (NULL != customAttribClass);
-    EXPECT_STREQ (L"AccessCustomAttributes", customAttribClass->GetName().c_str());    
-    EXPECT_STREQ (L"AccessCustomAttributes", customAttribClass->GetDisplayLabel().c_str());
+    EXPECT_STREQ ("AccessCustomAttributes", customAttribClass->GetName().c_str());    
+    EXPECT_STREQ ("AccessCustomAttributes", customAttribClass->GetDisplayLabel().c_str());
     EXPECT_FALSE (customAttribClass->GetIsDisplayLabelDefined());
-    EXPECT_STREQ (L"", customAttribClass->GetDescription().c_str());
+    EXPECT_STREQ ("", customAttribClass->GetDescription().c_str());
     EXPECT_FALSE (customAttribClass->GetIsStruct());
     EXPECT_TRUE (customAttribClass->GetIsCustomAttributeClass());
     EXPECT_FALSE (customAttribClass->GetIsDomainClass());
     EXPECT_FALSE (customAttribClass->HasBaseClasses());
 
-    pClass = schema->GetClassP(L"Struct1");
+    pClass = schema->GetClassP("Struct1");
     ASSERT_TRUE (NULL != pClass);
-    EXPECT_STREQ (L"Struct1", pClass->GetName().c_str());    
-    EXPECT_STREQ (L"Struct1", pClass->GetDisplayLabel().c_str());
+    EXPECT_STREQ ("Struct1", pClass->GetName().c_str());    
+    EXPECT_STREQ ("Struct1", pClass->GetDisplayLabel().c_str());
     EXPECT_FALSE (pClass->GetIsDisplayLabelDefined());
-    EXPECT_STREQ (L"", pClass->GetDescription().c_str());
+    EXPECT_STREQ ("", pClass->GetDescription().c_str());
     EXPECT_TRUE (pClass->GetIsStruct());
     EXPECT_FALSE (pClass->GetIsCustomAttributeClass());
     EXPECT_FALSE (pClass->GetIsDomainClass());
     EXPECT_FALSE (pClass->HasBaseClasses());
 
-    pClass = schema->GetClassP(L"Struct2");
+    pClass = schema->GetClassP("Struct2");
     ASSERT_TRUE (NULL != pClass);
-    EXPECT_STREQ (L"Struct2", pClass->GetName().c_str());    
-    EXPECT_STREQ (L"Struct2", pClass->GetDisplayLabel().c_str());
+    EXPECT_STREQ ("Struct2", pClass->GetName().c_str());    
+    EXPECT_STREQ ("Struct2", pClass->GetDisplayLabel().c_str());
     EXPECT_FALSE (pClass->GetIsDisplayLabelDefined());
-    EXPECT_STREQ (L"", pClass->GetDescription().c_str());
+    EXPECT_STREQ ("", pClass->GetDescription().c_str());
     EXPECT_TRUE (pClass->GetIsStruct());
     EXPECT_FALSE (pClass->GetIsCustomAttributeClass());
     EXPECT_TRUE (pClass->GetIsDomainClass());
     EXPECT_FALSE (pClass->HasBaseClasses());
-    pProperty = GetPropertyByName (*pClass, L"NestedArray");
+    pProperty = GetPropertyByName (*pClass, "NestedArray");
     EXPECT_TRUE (NULL != pProperty);
-    EXPECT_STREQ (L"NestedArray", pProperty->GetName().c_str());
+    EXPECT_STREQ ("NestedArray", pProperty->GetName().c_str());
     EXPECT_FALSE (pProperty->GetIsPrimitive());
     EXPECT_FALSE (pProperty->GetIsStruct());
     EXPECT_TRUE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"Struct1", pProperty->GetTypeName().c_str());
+    EXPECT_STREQ ("Struct1", pProperty->GetTypeName().c_str());
     ArrayECPropertyP arrayProperty = pProperty->GetAsArrayPropertyP();
     EXPECT_TRUE (ARRAYKIND_Struct == arrayProperty->GetKind());
-    EXPECT_EQ (schema->GetClassP(L"Struct1"), arrayProperty->GetStructElementType());
+    EXPECT_EQ (schema->GetClassP("Struct1"), arrayProperty->GetStructElementType());
     EXPECT_EQ (0, arrayProperty->GetMinOccurs());
     EXPECT_EQ (UINT_MAX, arrayProperty->GetMaxOccurs());    
     EXPECT_FALSE (pProperty->GetIsDisplayLabelDefined());
-    EXPECT_STREQ (L"NestedArray", pProperty->GetDisplayLabel().c_str());
-    EXPECT_STREQ (L"", pProperty->GetDescription().c_str());
+    EXPECT_STREQ ("NestedArray", pProperty->GetDisplayLabel().c_str());
+    EXPECT_STREQ ("", pProperty->GetDescription().c_str());
     EXPECT_EQ (pClass, &pProperty->GetClass());
     EXPECT_FALSE (pProperty->GetIsReadOnly());
 
-    pClass = schema->GetClassP(L"TestClass");
+    pClass = schema->GetClassP("TestClass");
     ASSERT_TRUE (NULL != pClass);
     EXPECT_TRUE (pClass->HasBaseClasses());
-    pProperty = GetPropertyByName (*pClass, L"EmbeddedStruct");
+    pProperty = GetPropertyByName (*pClass, "EmbeddedStruct");
     ASSERT_TRUE (NULL != pProperty);
-    EXPECT_STREQ (L"EmbeddedStruct", pProperty->GetName().c_str());
+    EXPECT_STREQ ("EmbeddedStruct", pProperty->GetName().c_str());
     EXPECT_FALSE (pProperty->GetIsPrimitive());
     EXPECT_TRUE (pProperty->GetIsStruct());
     EXPECT_FALSE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"Struct1", pProperty->GetTypeName().c_str());
+    EXPECT_STREQ ("Struct1", pProperty->GetTypeName().c_str());
     StructECPropertyP structProperty = pProperty->GetAsStructPropertyP();    
-    EXPECT_EQ (schema->GetClassP(L"Struct1"), &(structProperty->GetType()));
+    EXPECT_EQ (schema->GetClassP("Struct1"), &(structProperty->GetType()));
     EXPECT_FALSE (pProperty->GetIsDisplayLabelDefined());
-    EXPECT_STREQ (L"EmbeddedStruct", pProperty->GetDisplayLabel().c_str());
-    EXPECT_STREQ (L"", pProperty->GetDescription().c_str());
+    EXPECT_STREQ ("EmbeddedStruct", pProperty->GetDisplayLabel().c_str());
+    EXPECT_STREQ ("", pProperty->GetDescription().c_str());
     EXPECT_EQ (pClass, &pProperty->GetClass());
     EXPECT_FALSE (pProperty->GetIsReadOnly());
     
@@ -157,16 +159,16 @@ ECSchemaPtr const&   schema
     EXPECT_TRUE(instance.IsValid());
 
     ECValue ecValue;
-    EXPECT_EQ (SUCCESS, instance->GetValue (ecValue, L"AccessLevel"));
+    EXPECT_EQ (SUCCESS, instance->GetValue (ecValue, "AccessLevel"));
     EXPECT_EQ (4, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, instance->GetValue (ecValue, L"Writeable"));
+    EXPECT_EQ (SUCCESS, instance->GetValue (ecValue, "Writeable"));
     EXPECT_FALSE (ecValue.GetBoolean());
    
 #ifdef DEBUG_PRINT
     for (ECPropertyP pProperty: pClass->GetProperties())
         {
-        wprintf (L"TestClass contains property: %s of type %s\n", pProperty->GetName().c_str(), pProperty->GetTypeName().c_str());
+        printf ("TestClass contains property: %s of type %s\n", pProperty->GetName().c_str(), pProperty->GetTypeName().c_str());
         }
 #endif   
     }
@@ -179,36 +181,36 @@ TEST_F(SchemaTest,ExpectReadOnly)
     ECClassP structClass;
     ECClassP customAttributeClass;
  
-    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
     ASSERT_TRUE(schema.IsValid());
  
     //Create Domain Class
-    schema->CreateClass(domainClass,L"DomainClass");
+    schema->CreateClass(domainClass,"DomainClass");
     ASSERT_TRUE(domainClass!=NULL);
     domainClass->SetIsDomainClass(true);
  
     //Create Derived Class
-    schema->CreateClass(derivedClass,L"DerivedClass");
+    schema->CreateClass(derivedClass,"DerivedClass");
     ASSERT_TRUE(derivedClass!=NULL);
  
     //Create Struct
-    schema->CreateClass(structClass,L"StructClass");
+    schema->CreateClass(structClass,"StructClass");
     ASSERT_TRUE(structClass!=NULL);
     structClass->SetIsStruct(true);
  
     //Add Property of Array type to structClass
     ArrayECPropertyP MyArrayProp;
-    structClass->CreateArrayProperty(MyArrayProp,L"ArrayProperty");
+    structClass->CreateArrayProperty(MyArrayProp,"ArrayProperty");
     ASSERT_TRUE(MyArrayProp!=NULL);
  
     //Create customAttributeClass
-    schema->CreateClass(customAttributeClass,L"CustomAttribute");
+    schema->CreateClass(customAttributeClass,"CustomAttribute");
     ASSERT_TRUE(customAttributeClass!=NULL);
     customAttributeClass->SetIsCustomAttributeClass(true);
  
     //Add Property Of Struct type to custom attribute
     StructECPropertyP PropertyOfCustomAttribute;
-    customAttributeClass->CreateStructProperty(PropertyOfCustomAttribute, L"PropertyOfCustomAttribute",*structClass);
+    customAttributeClass->CreateStructProperty(PropertyOfCustomAttribute, "PropertyOfCustomAttribute",*structClass);
     ASSERT_TRUE(PropertyOfCustomAttribute!=NULL);
 }
 
@@ -247,14 +249,14 @@ TEST_F(SchemaSearchTest, FindSchemaByName)
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath( L"SchemaThatReferences.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);    
 
-    EXPECT_TRUE (schema->FindSchema(SchemaKey(L"SchemaThatReferences", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchema(SchemaKey(L"SchemaThatReferencez", 1, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (schema->FindSchema(SchemaKey(L"SchemaThatReferences", 2, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (schema->FindSchema(SchemaKey(L"SchemaThatReferences", 1, 1), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema(SchemaKey("SchemaThatReferences", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
+    EXPECT_TRUE (schema->FindSchema(SchemaKey("SchemaThatReferencez", 1, 0), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema(SchemaKey("SchemaThatReferences", 2, 0), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema(SchemaKey("SchemaThatReferences", 1, 1), SCHEMAMATCHTYPE_Exact) == NULL);
     
-    EXPECT_TRUE (schema->FindSchema(SchemaKey(L"BaseSchema", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchemaP(SchemaKey(L"SchemaThatReferences", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchemaP(SchemaKey(L"a", 123, 456), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (schema->FindSchema(SchemaKey("BaseSchema", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
+    EXPECT_TRUE (schema->FindSchemaP(SchemaKey("SchemaThatReferences", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
+    EXPECT_TRUE (schema->FindSchemaP(SchemaKey("a", 123, 456), SCHEMAMATCHTYPE_Exact) == NULL);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -263,14 +265,14 @@ TEST_F(SchemaSearchTest, FindSchemaByName)
 TEST_F(SchemaReferenceTest, FindClassInReferenceList)
     {
     ECSchemaPtr schema, refSchema;
-    ECSchema::CreateSchema (schema, L"TestSchema", 5, 5);
-    ECSchema::CreateSchema (refSchema, L"RefSchema", 5, 5);
+    ECSchema::CreateSchema (schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema (refSchema, "RefSchema", 5, 5);
     
     ECRelationshipClassP relClass;
     ECClassP targetClass, sourceClass;
-    schema->CreateRelationshipClass (relClass, L"RElationshipClass");
-    schema->CreateClass (targetClass, L"Target");
-    refSchema->CreateClass (sourceClass, L"Source");
+    schema->CreateRelationshipClass (relClass, "RElationshipClass");
+    schema->CreateClass (targetClass, "Target");
+    refSchema->CreateClass (sourceClass, "Source");
     
     EXPECT_EQ (ECOBJECTS_STATUS_Success, schema->AddReferencedSchema (*refSchema));
     EXPECT_EQ (ECOBJECTS_STATUS_Success, relClass->GetTarget().AddClass(*targetClass));
@@ -278,7 +280,7 @@ TEST_F(SchemaReferenceTest, FindClassInReferenceList)
     
     ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
     
-    EXPECT_TRUE (refList.FindClassP(SchemaNameClassNamePair(L"RefSchema", L"Source")) != NULL);
+    EXPECT_TRUE (refList.FindClassP(SchemaNameClassNamePair("RefSchema", "Source")) != NULL);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -286,31 +288,31 @@ TEST_F(SchemaReferenceTest, FindClassInReferenceList)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaComparisonTest, VerifyMatchesOperator)
     {
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0) == SchemaKey(L"SchemaTest", 1, 0));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0) == SchemaKey(L"SchemaNotTest", 1, 0));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0) == SchemaKey(L"SchemaTest", 2, 0));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0) == SchemaKey(L"SchemaTest", 1, 1));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0) == SchemaKey("SchemaTest", 1, 0));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0) == SchemaKey("SchemaNotTest", 1, 0));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0) == SchemaKey("SchemaTest", 2, 0));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0) == SchemaKey("SchemaTest", 1, 1));
     
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 1), SCHEMAMATCHTYPE_Exact));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Exact));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Exact));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 1), SCHEMAMATCHTYPE_Exact));
     
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 1), SCHEMAMATCHTYPE_Identical));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Identical));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Identical));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 1), SCHEMAMATCHTYPE_Identical));
     
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 1).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Latest));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Latest));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 1).Matches(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
     
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 1).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 1), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 2, 0), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 1).Matches(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 1), SCHEMAMATCHTYPE_LatestCompatible));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,30 +320,30 @@ TEST_F(SchemaComparisonTest, VerifyMatchesOperator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaComparisonTest, VerifyLessThanOperator)
     {
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0) < SchemaKey(L"SchemaTest", 1, 0));
-    EXPECT_TRUE (SchemaKey(L"SchemaTesa", 1, 0) < SchemaKey(L"SchemaTest", 1, 0));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0) < SchemaKey(L"SchemaTest", 2, 0));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 1) < SchemaKey(L"SchemaTest", 1, 0));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0) < SchemaKey("SchemaTest", 1, 0));
+    EXPECT_TRUE (SchemaKey("SchemaTesa", 1, 0) < SchemaKey("SchemaTest", 1, 0));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0) < SchemaKey("SchemaTest", 2, 0));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 1) < SchemaKey("SchemaTest", 1, 0));
     
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_TRUE (SchemaKey(L"SchemaTesa", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 1).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
+    EXPECT_TRUE (SchemaKey("SchemaTesa", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Exact));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 1).LessThan(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
     
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_TRUE (SchemaKey(L"SchemaTesa", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 1).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
+    EXPECT_TRUE (SchemaKey("SchemaTesa", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Identical));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 1).LessThan(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
     
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey(L"SchemaTesa", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 9), SCHEMAMATCHTYPE_Latest));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
+    EXPECT_TRUE (SchemaKey("SchemaTesa", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 2, 0), SCHEMAMATCHTYPE_Latest));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 9), SCHEMAMATCHTYPE_Latest));
     
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey(L"SchemaTesa", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 9), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_TRUE (SchemaKey("SchemaTesa", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 2, 0), SCHEMAMATCHTYPE_LatestCompatible));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 9), SCHEMAMATCHTYPE_LatestCompatible));
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -349,10 +351,10 @@ TEST_F(SchemaComparisonTest, VerifyLessThanOperator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaComparisonTest, VerifyNotMatchesOperator)
     {
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0) != SchemaKey(L"SchemaTest", 1, 0));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0) != SchemaKey(L"SchemaNotTest", 1, 0));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0) != SchemaKey(L"SchemaTest", 2, 0));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0) != SchemaKey(L"SchemaTest", 1, 1));
+    EXPECT_FALSE (SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaTest", 1, 0));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaNotTest", 1, 0));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaTest", 2, 0));
+    EXPECT_TRUE (SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaTest", 1, 1));
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -365,18 +367,18 @@ TEST_F(SchemaCacheTest, LoadAndGetSchema)
     ECSchemaPtr schema2;
     ECSchemaPtr schema3;
     
-    ECSchema::CreateSchema(schema1, L"Widget", 5, 1);
-    ECSchema::CreateSchema(schema2, L"BaseSchema1", 2, 0);
-    ECSchema::CreateSchema(schema3, L"BaseSchema2", 5, 5);
+    ECSchema::CreateSchema(schema1, "Widget", 5, 1);
+    ECSchema::CreateSchema(schema2, "BaseSchema1", 2, 0);
+    ECSchema::CreateSchema(schema3, "BaseSchema2", 5, 5);
     
     EXPECT_TRUE (cache->AddSchema(*schema1) == ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (cache->AddSchema(*schema2) == ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (cache->AddSchema(*schema3) == ECOBJECTS_STATUS_Success);
     EXPECT_EQ (cache->GetCount(), 3);
     
-    ECSchemaPtr fetchedSchema = cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 0));
+    ECSchemaPtr fetchedSchema = cache->GetSchema(SchemaKey("BaseSchema1", 2, 0));
     ASSERT_TRUE (fetchedSchema.IsValid());
-    EXPECT_TRUE (fetchedSchema->GetSchemaKey() == SchemaKey(L"BaseSchema1", 2, 0));
+    EXPECT_TRUE (fetchedSchema->GetSchemaKey() == SchemaKey("BaseSchema1", 2, 0));
     
     cache->Clear();
     EXPECT_EQ (cache->GetCount(), 0);
@@ -392,33 +394,33 @@ TEST_F(SchemaCacheTest, FilterSchema)
     ECSchemaPtr schema2;
     ECSchemaPtr schema3;
     
-    ECSchema::CreateSchema (schema1, L"Widget", 5, 1);
-    ECSchema::CreateSchema (schema2, L"BaseSchema1", 2, 0);
-    ECSchema::CreateSchema (schema3, L"BaseSchema2", 5, 5);
+    ECSchema::CreateSchema (schema1, "Widget", 5, 1);
+    ECSchema::CreateSchema (schema2, "BaseSchema1", 2, 0);
+    ECSchema::CreateSchema (schema3, "BaseSchema2", 5, 5);
     
     EXPECT_TRUE (cache->AddSchema(*schema1) == ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (cache->AddSchema(*schema2) == ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (cache->AddSchema(*schema3) == ECOBJECTS_STATUS_Success);
     
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Exact) != NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Exact) == NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Exact) == NULL);
     
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Identical) != NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Identical) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Identical) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Identical) == NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Identical) != NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Identical) == NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Identical) == NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Identical) == NULL);
     
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Latest) != NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Latest) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Latest) != NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Latest) != NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Latest) != NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Latest) == NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Latest) != NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Latest) != NULL);
     
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema2", 5, 5), SCHEMAMATCHTYPE_LatestCompatible) != NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseZchema2", 5, 5), SCHEMAMATCHTYPE_LatestCompatible) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema2", 3, 5), SCHEMAMATCHTYPE_LatestCompatible) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema2", 5, 3), SCHEMAMATCHTYPE_LatestCompatible) != NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema2", 5, 5), SCHEMAMATCHTYPE_LatestCompatible) != NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseZchema2", 5, 5), SCHEMAMATCHTYPE_LatestCompatible) == NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema2", 3, 5), SCHEMAMATCHTYPE_LatestCompatible) == NULL);
+    EXPECT_TRUE (cache->GetSchema(SchemaKey("BaseSchema2", 5, 3), SCHEMAMATCHTYPE_LatestCompatible) != NULL);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -431,25 +433,25 @@ TEST_F(SchemaCacheTest, DropSchema)
     ECSchemaPtr schema2;
     ECSchemaPtr schema3;
     
-    ECSchema::CreateSchema (schema1, L"Widget", 5, 1);
-    ECSchema::CreateSchema (schema2, L"BaseSchema1", 2, 0);
-    ECSchema::CreateSchema (schema3, L"BaseSchema2", 5, 5);
+    ECSchema::CreateSchema (schema1, "Widget", 5, 1);
+    ECSchema::CreateSchema (schema2, "BaseSchema1", 2, 0);
+    ECSchema::CreateSchema (schema3, "BaseSchema2", 5, 5);
     
     EXPECT_TRUE (cache->AddSchema(*schema1) == ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (cache->AddSchema(*schema2) == ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (cache->AddSchema(*schema3) == ECOBJECTS_STATUS_Success);
     EXPECT_EQ (cache->GetCount(), 3);
     
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"Widget", 5, 1)) == ECOBJECTS_STATUS_Success);
+    EXPECT_TRUE (cache->DropSchema(SchemaKey("Widget", 5, 1)) == ECOBJECTS_STATUS_Success);
     EXPECT_EQ (cache->GetCount(), 2);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"Widget", 5, 1)) != ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"BaseSchema2", 5, 3)) != ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"BaseSchema2", 5, 7)) != ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"BaseSchema2", 1, 5)) != ECOBJECTS_STATUS_Success);
+    EXPECT_TRUE (cache->DropSchema(SchemaKey("Widget", 5, 1)) != ECOBJECTS_STATUS_Success);
+    EXPECT_TRUE (cache->DropSchema(SchemaKey("BaseSchema2", 5, 3)) != ECOBJECTS_STATUS_Success);
+    EXPECT_TRUE (cache->DropSchema(SchemaKey("BaseSchema2", 5, 7)) != ECOBJECTS_STATUS_Success);
+    EXPECT_TRUE (cache->DropSchema(SchemaKey("BaseSchema2", 1, 5)) != ECOBJECTS_STATUS_Success);
     EXPECT_EQ (cache->GetCount(), 2);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"BaseSchema2", 5, 5)) == ECOBJECTS_STATUS_Success);
+    EXPECT_TRUE (cache->DropSchema(SchemaKey("BaseSchema2", 5, 5)) == ECOBJECTS_STATUS_Success);
     EXPECT_EQ (cache->GetCount(), 1);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"BaseSchema1", 2, 0)) == ECOBJECTS_STATUS_Success);
+    EXPECT_TRUE (cache->DropSchema(SchemaKey("BaseSchema1", 2, 0)) == ECOBJECTS_STATUS_Success);
     EXPECT_EQ (cache->GetCount(), 0);
     }
     
@@ -458,15 +460,15 @@ TEST_F(SchemaCacheTest, DropSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaChecksumTest, ComputeSchemaXmlStringCheckSum)
     {
-    WChar schemaXml[] =
-        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
-        L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
-        L"       <ECProperty propertyName=\"Name\" typename=\"string\" displayLabel=\"Project Name\" />"
-        L"    </ECClass>"
-        L"</ECSchema>";
+    Utf8Char schemaXml[] =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
+        "    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
+        "       <ECProperty propertyName=\"Name\" typename=\"string\" displayLabel=\"Project Name\" />"
+        "    </ECClass>"
+        "</ECSchema>";
     
-    EXPECT_EQ (ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml, sizeof(schemaXml)), 2661612606);
+    EXPECT_EQ (ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml, sizeof(schemaXml)), 682119251);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -482,18 +484,18 @@ TEST_F(SchemaImmutableTest, SetImmutable)
     schema->SetImmutable();
     
     ECClassP class1 = NULL;
-    ECClassP class2 = schema->GetClassP(L"ecProject");
+    ECClassP class2 = schema->GetClassP("ecProject");
     ECRelationshipClassP relationshipClass;
-    EXPECT_EQ (schema->CreateClass(class1, L"TestClass"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->CreateClass(class1, "TestClass"), ECOBJECTS_STATUS_SchemaIsImmutable);
     EXPECT_TRUE (class1 == NULL);
     EXPECT_EQ (schema->CopyClass(class1, *class2), ECOBJECTS_STATUS_SchemaIsImmutable);
-    EXPECT_EQ (schema->CreateRelationshipClass(relationshipClass, L"RelationshipClass"), ECOBJECTS_STATUS_SchemaIsImmutable);
-    EXPECT_EQ (schema->SetName(L"Some new name"), ECOBJECTS_STATUS_SchemaIsImmutable);
-    EXPECT_EQ (schema->SetNamespacePrefix(L"Some new prefix"), ECOBJECTS_STATUS_SchemaIsImmutable);
-    EXPECT_EQ (schema->SetDescription(L"Some new description"), ECOBJECTS_STATUS_SchemaIsImmutable);
-    EXPECT_EQ (schema->SetDisplayLabel(L"Some new label"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->CreateRelationshipClass(relationshipClass, "RelationshipClass"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->SetName("Some new name"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->SetNamespacePrefix("Some new prefix"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->SetDescription("Some new description"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->SetDisplayLabel("Some new label"), ECOBJECTS_STATUS_SchemaIsImmutable);
     EXPECT_EQ (schema->SetVersionMajor(13), ECOBJECTS_STATUS_SchemaIsImmutable);
     EXPECT_EQ (schema->SetVersionMinor(13), ECOBJECTS_STATUS_SchemaIsImmutable);
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

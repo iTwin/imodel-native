@@ -2,18 +2,15 @@
 #
 #  $Source: test/scenarioTests.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
+PolicyFile = $(SrcRoot)/ecobjects/test/ECObjectsTestPolicy.mki
 baseDir =   $(_MakeFilePath)
 
-programName = ECObjectsTest_Scenario
-
-compileRulesPath=$(baseDir)ScenarioCompileRules.mki
-
-# Using this solution policy file ensures that scenario headers will be in the include path for
-# compiles within this mke file and within PreCompileHeader.mke which is used by this mke file.
-SolutionPolicyMki=$(baseDir)scenarioTestSolutionPolicy.mki
+programName=ECObjectsTest_Scenario
+BEGTEST_INPUT=$(baseDir)Scenario\/
+BEGTEST_API= $(BuildContext)SubParts\/PublishedApi\/ECObjects\/
+COMPILING_PUBLISHED_TESTS = 1
 
 %include buildTestFixture.mki

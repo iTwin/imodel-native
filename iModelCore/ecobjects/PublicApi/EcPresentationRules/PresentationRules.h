@@ -2,54 +2,15 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRules.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 #include <ECObjects/ECObjectsAPI.h>
-
-EC_TYPEDEFS (SubCondition);
-EC_TYPEDEFS (ChildNodeRule);
-EC_TYPEDEFS (ContentRule);
-EC_TYPEDEFS (ImageIdOverride);
-EC_TYPEDEFS (PresentationKey);
-EC_TYPEDEFS (PresentationRule);
-EC_TYPEDEFS (PresentationRulePreprocessor);
-EC_TYPEDEFS (PresentationRuleSet);
-EC_TYPEDEFS (RootNodeRule);
-EC_TYPEDEFS (LabelOverride);
-EC_TYPEDEFS (StyleOverride);
-EC_TYPEDEFS (CheckBoxRule);
-EC_TYPEDEFS (RenameNodeRule);
-EC_TYPEDEFS (SortingRule);
-EC_TYPEDEFS (DisplayRelatedItemsSpecification);
-EC_TYPEDEFS (GroupingRule);
-EC_TYPEDEFS (GroupSpecification);
-EC_TYPEDEFS (SameLabelInstanceGroup);
-EC_TYPEDEFS (ClassGroup);
-EC_TYPEDEFS (PropertyGroup);
-EC_TYPEDEFS (PropertyRangeGroupSpecification);
-EC_TYPEDEFS (LocalizationResourceKeyDefinition);
-EC_TYPEDEFS (UserSettingsGroup);
-EC_TYPEDEFS (UserSettingsItem);
-EC_TYPEDEFS (ChildNodeSpecification);
-EC_TYPEDEFS (AllInstanceNodesSpecification);
-EC_TYPEDEFS (AllRelatedInstanceNodesSpecification);
-EC_TYPEDEFS (CustomNodeSpecification);
-EC_TYPEDEFS (InstanceNodesOfSpecificClassesSpecification);
-EC_TYPEDEFS (RelatedInstanceNodesSpecification);
-EC_TYPEDEFS (SearchResultInstanceNodesSpecification);
-EC_TYPEDEFS (ContentSpecification);
-EC_TYPEDEFS (RelatedPropertiesSpecification);
-EC_TYPEDEFS (ContentInstancesOfSpecificClassesSpecification);
-EC_TYPEDEFS (ContentRelatedInstancesSpecification);
-EC_TYPEDEFS (SelectedNodeInstancesSpecification);
-
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-typedef RefCountedPtr<PresentationRuleSet>    PresentationRuleSetPtr;
-END_BENTLEY_ECOBJECT_NAMESPACE
 
 #include <ECPresentationRules/PresentationRule.h>
 #include <ECPresentationRules/ChildNodeRule.h>
@@ -77,3 +38,5 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 #include <ECPresentationRules/ContentInstancesOfSpecificClassesSpecification.h>
 #include <ECPresentationRules/ContentRelatedInstancesSpecification.h>
 #include <ECPresentationRules/SelectedNodeInstancesSpecification.h>
+
+/** @endcond */

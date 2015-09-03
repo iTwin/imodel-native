@@ -2,14 +2,13 @@
 #
 #  $Source: test/ECObjectsPerformanceTest.run.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 %include mdl.mki
 
 always:
-    ~putenv TESTRESULTS_DIR=$(OutputRootDir)Product/ECObjectsTests/Results/
      $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_Performance.exe
 
 

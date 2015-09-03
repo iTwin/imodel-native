@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/SelectedNodeInstancesSpecification.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -11,6 +11,37 @@
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SelectedNodeInstancesSpecification::SelectedNodeInstancesSpecification () :
+ContentSpecification (),
+m_onlyIfNotHandled (false),
+m_acceptableSchemaName (L""),
+m_acceptableClassNames (L""),
+m_acceptablePolymorphically (false)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SelectedNodeInstancesSpecification::SelectedNodeInstancesSpecification
+(
+int priority,
+bool onlyIfNotHandled,
+WStringCR acceptableSchemaName,
+WStringCR acceptableClassNames,
+bool acceptablePolymorphically
+) :
+ContentSpecification (priority),
+m_onlyIfNotHandled (onlyIfNotHandled),
+m_acceptableSchemaName (acceptableSchemaName),
+m_acceptableClassNames (acceptableClassNames),
+m_acceptablePolymorphically (acceptablePolymorphically)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -50,4 +81,68 @@ void SelectedNodeInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode)
     xmlNode->AddAttributeStringValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLESCHEMANAME, m_acceptableSchemaName.c_str ());
     xmlNode->AddAttributeStringValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLECLASSNAMES, m_acceptableClassNames.c_str ());
     xmlNode->AddAttributeBooleanValue (SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLEPOLYMORPHICALLY, m_acceptablePolymorphically);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SelectedNodeInstancesSpecification::GetOnlyIfNotHandled (void) const
+    {
+    return m_onlyIfNotHandled;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR SelectedNodeInstancesSpecification::GetAcceptableSchemaName (void) const
+    {
+    return m_acceptableSchemaName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR SelectedNodeInstancesSpecification::GetAcceptableClassNames (void) const
+    {
+    return m_acceptableClassNames;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SelectedNodeInstancesSpecification::GetAcceptablePolymorphically (void) const
+    {
+    return m_acceptablePolymorphically;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void SelectedNodeInstancesSpecification::SetOnlyIfNotHandled(bool value)
+    {
+    m_onlyIfNotHandled = value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void SelectedNodeInstancesSpecification::SetAcceptableSchemaName(WStringCR value)
+    {
+    m_acceptableSchemaName = value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void SelectedNodeInstancesSpecification::SetAcceptableClassNames(WStringCR value)
+    {
+    m_acceptableClassNames = value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void SelectedNodeInstancesSpecification::SetAcceptablePolymorphically(bool value)
+    {
+    m_acceptablePolymorphically = value;
     }

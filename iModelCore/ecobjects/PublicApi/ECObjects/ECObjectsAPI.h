@@ -6,12 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-
 //#define EC_TRACE_MEMORY
 // This file describes the public API for writing applications using the ECObjects library.
-
 /*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 /*=================================================================================**//**
 @if ECOBJECTS_MAINPAGE
@@ -20,7 +18,7 @@
 \image html BentleyLOGO_4C_no-tag.gif
 
 @section Namespaces
-All of the ECObjects APIs are contained within the Bentley::ECN namespace. 
+All of the ECObjects APIs are contained within the BentleyApi::ECN namespace. 
 
 @section headerFiles Header Files
 By far the most convenient and efficient way of accessing the classes in the ECObjects API is to use:
@@ -64,10 +62,11 @@ capture this information.
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/StandaloneECRelationshipInstance.h>
 #include <ECObjects/ecprovider.h>
-#include <ECObjects/ECInstanceIterable.h>
 #include <ECObjects/PresentationMetadataHelper.h>
 #include <ECObjects/StandardCustomAttributeHelper.h>
+#include <ECObjects/ECDiff.h>
 #include <Bentley/ScopedArray.h>
+
 
 /*__PUBLISH_SECTION_END__*/
 #include <ECObjects/DesignByContract.h>
@@ -80,3 +79,6 @@ capture this information.
 #else
     #define EC_INLINE
 #endif
+/*__PUBLISH_SECTION_START__*/
+
+/** @endcond */

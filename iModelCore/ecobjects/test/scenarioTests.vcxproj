@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D602B019-D582-4049-8184-82C7ED1041F0}</ProjectGuid>
+    <ProjectGuid>{8DF3DFC7-E31D-4D9E-BE3A-DA479374B827}</ProjectGuid>
     <RootNamespace>ScenatioTests</RootNamespace>
     <Keyword>MakeFileProj</Keyword>
     <ProjectName>ECObjectsScenarioTests</ProjectName>
@@ -39,9 +39,9 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py re ECObjectsScenarioTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -p ecftest:ECFrameWorkNativeTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -f</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py re ECObjectsScenarioTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py re ECObjectsScenarioTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecf -p ecftest:ECFrameWorkNativeTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -f</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py re ECObjectsScenarioTests -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ECObjectsTest_Scenario.exe</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\VendorAPI\;$(VCInstallDir)INCLUDE\;$(OutRoot)Win$(PROCESSOR_ARCHITECTURE)\BuildContexts\ecf\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -63,11 +63,11 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ECObjectsTestPCH.cpp" />
     <ClCompile Include="scenario\ValueTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
+    <ClInclude Include="scenario\TestFixture.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scenario\AccessorTests.cpp" />

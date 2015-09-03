@@ -12,13 +12,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ECObjectsTestPCH.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Performance\TestFixture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\ECXmlPerformanceTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceTestFixture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PropertiesTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -26,7 +26,7 @@
     <ClInclude Include="ECObjectsTestPCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Performance\TestFixture.h">
+    <ClInclude Include="Performance\PerformanceTestFixture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

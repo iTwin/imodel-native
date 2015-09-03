@@ -2,11 +2,13 @@
 |
 |     $Source: PublicApi/EcPresentationRules/SortingRule.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -17,10 +19,11 @@ will be sorted using natural (alphanumeric) sorting by default.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SortingRule : public PresentationRule
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
-        WString m_schemaName;
-        WString m_className;
-        WString m_propertyName;
+        Utf8String m_schemaName;
+        Utf8String m_className;
+        Utf8String m_propertyName;
         bool    m_sortAscending;
         bool    m_doNotSort;
         bool    m_isPolymorphic;
@@ -35,21 +38,22 @@ struct SortingRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) override;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT SortingRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT SortingRule (WStringCR condition, int priority, WStringCR schemaName, WStringCR className, WStringCR propertyName, bool sortAscending, bool doNotSort, bool isPolymorphic);
+        ECOBJECTS_EXPORT SortingRule (Utf8StringCR condition, int priority, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR propertyName, bool sortAscending, bool doNotSort, bool isPolymorphic);
 
         //! SchemaName of ECInstances to which sorting configuration should be applied.
-        ECOBJECTS_EXPORT WStringCR        GetSchemaName (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR     GetSchemaName (void) const;
 
         //! ClassName of ECInstances to which sorting configuration should be applied.
-        ECOBJECTS_EXPORT WStringCR        GetClassName (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR     GetClassName (void) const;
 
         //! PropertyName of ECInstances by which sorting should be executed.
-        ECOBJECTS_EXPORT WStringCR        GetPropertyName (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR     GetPropertyName (void) const;
 
         //! Direction of sorting. If false, then descending order will be used.
         ECOBJECTS_EXPORT bool             GetSortAscending (void) const;
@@ -64,3 +68,5 @@ struct SortingRule : public PresentationRule
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

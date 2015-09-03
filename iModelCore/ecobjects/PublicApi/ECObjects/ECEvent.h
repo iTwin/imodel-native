@@ -30,5 +30,5 @@ struct ECEvent
         void*   GetEventHub () const {return m_eventHub;}
         void    SetEventHub (void* eventHub) {m_eventHub = eventHub;}
     };
-    
+
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -7,12 +7,13 @@
 <!-- / This section contains parts that make the ECF Runtime ///////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="Logging" ExcludeLibType="Static"> <!-- Trim off dynamic-only parts here so we don't have to download the (non-existant) partfiles) -->
-        <SubPart PartName="LoggingNative"          PartFile="LoggingSDK"                           Repository="loggingsdk" /> 
+    <Part Name="Logging" ExcludeLibType="Static" ExcludePlatforms="MacOS*"> <!-- Trim off dynamic-only parts here so we don't have to download the (non-existant) partfiles) -->
+        <SubPart PartName="LoggingNative"   PartFile="LoggingSDK"                           Repository="loggingsdk" /> 
     </Part>
 
-    <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="6">
-        <SubPart PartName="HeaderFiles" />
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="G">
+        <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="Logging" /> 
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
@@ -25,23 +26,23 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedApi" BentleyBuildMakeFile="PublicAPI/PublishApi.mke">
-        <SubPart PartName="HeaderFiles" />
+    <Part Name="PublishedApi" BentleyBuildMakeFile="PublicApi/PublishAPI.mke">
+        <SubPart PartName="PublicAPI" />
         <Bindings>
-            <Directory SubPartDirectory="PublishedAPI" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
+            <Directory SubPartDirectory="PublishedAPI/ECObjects" SourceName="Delivery/PublishedAPI" ProductDirectoryName="PublishedAPI" Required="false"/>
         </Bindings>
     </Part>
 
-    <Part Name="PublishedApi_Doc" BentleyBuildMakeFile="PublicAPI/BuildPublishedDoc.mke">
+    <Part Name="PublishedApi_Doc" BentleyBuildMakeFile="PublicApi/BuildPublishedDoc.mke">
         <RequiredRepository>bsitools-doxygen</RequiredRepository>
         <SubPart PartName="PublishedApi" />
         <Bindings>
             <Files ProductDirectoryName="PublishedApi_Doc" IfNotPresent="Warn" Required="false">Delivery/ECObjectsAPI.chm</Files>
         </Bindings>
-    </Part>   
+    </Part>
 
-    <Part Name="HeaderFiles" BentleyBuildMakeFile="ecobjects.prewire.mke">
-        <SubPart PartName="HeaderFiles"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="ecobjects.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ECObjects" />
             <PublicAPI Domain="ECPresentation" />
@@ -50,7 +51,22 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsTestsSeedData" BentleyBuildMakeFile="test/SeedData.prewire.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <!-- This part enables the ECObjects unit tests to be built into the set of unit tests that run on multiple platforms. -->
+
+    <Part Name="ECObjectsTestsBasicDependencies">
+        <SubPart PartName="google_gtest_lib"     PartFile="gtest"                   Repository="util-gtest" />
+        <SubPart PartName="StandardSchemas"      PartFile="ECStandards"             Repository="ECStandards"/>
+        <SubPart PartName="ECObjectsNative" />
+    </Part>
+
+    <Part Name="ECObjectsUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
+        <SubPart PartName="ECObjectsTestsDependencies"/>
+        <SubPart PartName="PublishedApi"/>
+    </Part>
+
+    <!-- The following parts build the stand-alone ECObjects unit tests (from the same unit test source). -->
+
+    <Part Name="ECObjectsTestsSeedData" BentleyBuildMakeFile="test/SeedData.prewire.mke">
         <Bindings>
             <Files SubPartDirectory="SeedData" ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*xml</Files>
             <Files SubPartDirectory="SeedData/ur-PK" ProductDirectoryName="ECObjectsTestSeedDataPK">Delivery/SeedData/ur-PK/*xml</Files>
@@ -59,23 +75,22 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsTestLoggingConfig" BentleyBuildMakeFile="test/LoggingConfig.prewire.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="ECObjectsTestLoggingConfig" BentleyBuildMakeFile="test/LoggingConfig.prewire.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery/logging.config.xml</Files>
         </Bindings>
     </Part>
 
     <Part Name="ECObjectsTestsDependencies">
-        <SubPart PartName="google_gtest"         PartFile="gtest"                   Repository="util-gtest" />
-        <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
-        <SubPart PartName="Logging" /> 
-        <SubPart PartName="ECObjectsNative" />
+        <SubPart PartName="ECObjectsTestsBasicDependencies"/>
         <SubPart PartName="ECObjectsTestsSeedData"/>
+        <SubPart PartName="Logging" />
         <SubPart PartName="ECObjectsTestLoggingConfig"/>
     </Part>
 
-    <Part Name="ECObjectsPublishedTests" BentleyBuildMakeFile="test/PublishedTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="ECObjectsPublishedTests" BentleyBuildMakeFile="test/PublishedTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNonPublishedTests"/>
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <SubPart PartName="PublishedApi"/>
         <Bindings>
@@ -83,14 +98,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsNonPublishedTests" BentleyBuildMakeFile="test/NonPublishedTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="ECObjectsNonPublishedTests" BentleyBuildMakeFile="test/NonPublishedTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery/ECObjectsTest_NonPublished.exe</Files>
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsScenarioTests" BentleyBuildMakeFile="test\scenarioTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="ECObjectsScenarioTests" BentleyBuildMakeFile="test\scenarioTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <SubPart PartName="PublishedApi"/>
         <Bindings>
@@ -98,7 +113,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="ECObjectsNonPublishedScenarioTests" BentleyBuildMakeFile="test\nonPublishedScenarioTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="ECObjectsNonPublishedScenarioTests" BentleyBuildMakeFile="test\nonPublishedScenarioTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_NonPublishedScenario.exe</Files>
@@ -106,7 +121,7 @@
     </Part>
 
 
-    <Part Name="ECObjectsPerformanceTests" BentleyBuildMakeFile="test\PerformanceTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="ECObjectsPerformanceTests" BentleyBuildMakeFile="test\PerformanceTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
       <SubPart PartName="ECObjectsTestsDependencies"/>
       <SubPart PartName="PublishedApi"/>
       <Bindings>
@@ -122,24 +137,15 @@
         <SubPart PartName="ECObjectsNonPublishedScenarioTests" />
     </Part>
 
-    <Part Name="RunECObjectsTests" BentleyBuildMakeFile="test/ECObjectsNativeTest.run.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="RunECObjectsTests" BentleyBuildMakeFile="test/ECObjectsNativeTest.run.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="Tests" />
     </Part>
 
-    <Part Name="RunECObjectsPerformanceTests" BentleyBuildMakeFile="test\ECObjectsPerformanceTest.run.mke">
+    <Part Name="RunECObjectsPerformanceTests" BentleyBuildMakeFile="test/ECObjectsPerformanceTest.run.mke">
         <SubPart PartName="ECObjectsPerformanceTests" />
     </Part>
 
-    <!-- NuGet automatic packages generation -->
-    <Part Name="ECObjectsPackage" BMakeFile="install\NuGetPacking.mke" >
-        <SubPart PartName="ECObjectsNative" />
-        <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <Bindings>
-            <Files ProductDirectoryName="ECObjectsNuGet">Install\ecobjects.nupkg</Files>
-        </Bindings>
-    </Part>
-
-    <Product Name="ECObjectsStatic"> <!-- Only here to avoid putting directory list on ECObjectsTested -->
+  <Product Name="ECObjectsStatic"> <!-- Only here to avoid putting directory list on ECObjectsTested -->
       <SubPart PartName="ECObjectsNative"  LibType="Static"/>
       <Directories DirectoryListName="ECObjects" />
   </Product>
@@ -175,19 +181,18 @@
         <ProductDirectory Name="PublishedApi"                       Path="Include"/>        
         <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
         <ProductDirectory Name="ecschemas"                          Path="Runtime"/>
-        <ProductDirectory Name="ECObjectsNuGet"                     Path="Install" />
+        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
     </ProductDirectoryList>
 
     <Product Name="ECObjects">
         <SubPart PartName="ECObjectsNative"/>
         <SubPart PartName="PublishedApi_Doc" />
-        <SubPart PartName="ECObjectsPackage" />
         <Directories DirectoryListName="ECObjects"/>
     </Product>
 
     <ProductDirectoryList ListName="ECObjectsTest">
-        <ProductDirectory Name="VendorAPI"                          Deliver="false" />
-        <ProductDirectory Name="VendorNotices"                      Deliver="false" />
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorNotices"                      Deliver="false"/>
         <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
         <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
         <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
@@ -195,10 +200,10 @@
         <ProductDirectory Name="mergemodules"                       Deliver="false"/>
         <ProductDirectory Name="libs"                               Deliver="false"/>
 
-        <ProductDirectory Name="PublicAPI"  LibType="Static"        Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"  LibType="Static"        Deliver="false" />
-        <ProductDirectory Name="VendorNotices"  LibType="Static"    Deliver="false" />
-        <ProductDirectory Name="libs"       LibType="Static"        Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="VendorNotices"  LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="libs"           LibType="Static"    Deliver="false"/>
 
         <ProductDirectory Name="ECObjectsTestSeedData"              Path="SeedData"/>
         <ProductDirectory Name="ECObjectsTestSeedDataPK"            Path="SeedData/ur-PK"/>
@@ -224,10 +229,9 @@
     </ProductDirectoryList>
     <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true" AddIn="true">
         <SubProduct ProductName="ECObjects" />
-        <SubProduct ProductName="ECObjectsStatic" />
+        <!-- SubProduct ProductName="ECObjectsStatic" /-->
         <SubProduct ProductName="ECObjectsTests" />
         <SubPart PartName="RunECObjectsTests" />
-
         <Directories DirectoryListName="ECObjectsTested"/>
     </Product>
 

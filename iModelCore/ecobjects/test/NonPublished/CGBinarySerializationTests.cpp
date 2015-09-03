@@ -5,11 +5,13 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
+#include "../ECObjectsTestPCH.h"
 #include <GeomSerialization/GeomSerializationApi.h>
-#include "TestFixture.h"
+#include "../TestFixture/TestFixture.h"
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+using namespace BentleyApi::ECN;
+
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct CGBinarySerializationTests : ECTestFixture
     {
@@ -58,7 +60,7 @@ TEST_F(CGBinarySerializationTests, WriterTest)
     Roundtrip(Utf8String("<EllipticDisk xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radiusA>1</radiusA><radiusB>1.5</radiusB></EllipticDisk>"));
     Roundtrip(Utf8String("<CircularDisk xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radius>1</radius></CircularDisk>"));
     Roundtrip(Utf8String("<LineString><ListOfPoint><xyz>0,0,0</xyz><xyz>0,0,1</xyz><xyz>1,0,0</xyz></ListOfPoint></LineString>"));
-    Roundtrip(Utf8String("<IndexedMesh><ListOfCoord><Coord>1,2,3</Coord><Coord>1,2,4</Coord><Coord>5,2,1</Coord></ListOfCoord><ListOfCoordIndex><id>1</id><id>2</id><id>3</id><id>0</id></ListOfCoordIndex></IndexedMesh>"), true);
+    Roundtrip(Utf8String("<IndexedMesh><ListOfCoord><Coord>1,2,3</Coord><Coord>1,2,4</Coord><Coord>5,2,1</Coord></ListOfCoord><ListOfCoordIndex><id>1</id><id>2</id><id>3</id><id>0</id></ListOfCoordIndex><ListOfParam /><ListOfParamIndex /><ListOfNormal></ListOfNormal><ListOfNormalIndex /></IndexedMesh>"), true);
     Roundtrip(Utf8String("<BsplineCurve xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><Order>2</Order><Closed>false</Closed><ListOfControlPoint><xyz>1,0,0</xyz><xyz>0.86602540378443871,0.49999999999999994,0</xyz></ListOfControlPoint><ListOfKnot><Knot>0</Knot><Knot>0</Knot><Knot>1</Knot><Knot>1</Knot></ListOfKnot></BsplineCurve>"));
     Roundtrip(Utf8String("<BsplineCurve xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><Order>2</Order><Closed>false</Closed><ListOfControlPoint><xyz>1,0,0</xyz><xyz>0.86602540378443871,0.49999999999999994,0</xyz></ListOfControlPoint></BsplineCurve>"));
     Roundtrip(Utf8String("<CircularCylinder xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><height>1</height><radius>1</radius><capped>true</capped></CircularCylinder>"));
@@ -67,7 +69,7 @@ TEST_F(CGBinarySerializationTests, WriterTest)
     Roundtrip(Utf8String("<SurfacePatch xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><ExteriorLoop><CurveChain><ListOfCurve><LineString><ListOfPoint><xyz>-5,0,0</xyz><xyz>5,0,0</xyz><xyz>5,3,0</xyz><xyz>-5,3,0</xyz><xyz>-5,0,0</xyz></ListOfPoint></LineString></ListOfCurve></CurveChain></ExteriorLoop></SurfacePatch>"));
     }
 
-TEST (CGSerializationTests, DeserializeEllipticDisc)
+TEST_F (CGBinarySerializationTests, DeserializeEllipticDisc)
     {
     Utf8String xml("<EllipticDisk xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radiusA>1</radiusA><radiusB>1.5</radiusB></EllipticDisk>");
     bvector<IGeometryPtr> geoms;
@@ -84,71 +86,71 @@ TEST (CGSerializationTests, DeserializeEllipticDisc)
     ASSERT_FALSE(arc.IsCircular ());
     }
 
-//TEST (CGSerializationTests, DeserializeExtendedData)
-//    {
-//    Utf8String xml("<ExtendedObject xmlns=\"http://www.bentley.com/schemas/Bentley.ECSerializable.1.0\"> \
-//                        <LineSegment xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"> \
-//                            <startPoint>0,0,0</startPoint> \
-//                            <endPoint>1,0,0</endPoint> \
-//                        </LineSegment> \
-//                        <ExtendedData> \
-//                            <TransientLookupCollection> \
-//                                <Entry key=\"length\" typeCode=\"Double\">3.14</Entry> \
-//                                <Entry key=\"name\" typeCode=\"String\">test string</Entry> \
-//                            </TransientLookupCollection> \
-//                        </ExtendedData> \
-//                    ExtendedObject>");
-//
-//    Byte bytes[] = {0x40, 0x0E, 0x45, 0x78, 0x74, 0x65, 0x6E, 0x64, 0x65, 0x64, 0x4F, 0x62, 0x6A, 0x65, 0x63, 0x74, 0x08, 0x39, 0x68, 0x74,
-//                     0x74, 0x70, 0x3A, 0x2F, 0x2F, 0x77, 0x77, 0x77, 0x2E, 0x62, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x63, 0x6F, 0x6D,
-//                     0x2F, 0x73, 0x63, 0x68, 0x65, 0x6D, 0x61, 0x73, 0x2F, 0x42, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x45, 0x43, 0x53,
-//                     0x65, 0x72, 0x69, 0x61, 0x6C, 0x69, 0x7A, 0x61, 0x62, 0x6C, 0x65, 0x2E, 0x31, 0x2E, 0x30, 0x40, 0x0B, 0x4C, 0x69, 0x6E,
-//                     0x65, 0x53, 0x65, 0x67, 0x6D, 0x65, 0x6E, 0x74, 0x08, 0x3A, 0x68, 0x74, 0x74, 0x70, 0x3A, 0x2F, 0x2F, 0x77, 0x77, 0x77,
-//                     0x2E, 0x62, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x63, 0x6F, 0x6D, 0x2F, 0x73, 0x63, 0x68, 0x65, 0x6D, 0x61, 0x73,
-//                     0x2F, 0x42, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x47, 0x65, 0x6F, 0x6D, 0x65, 0x74, 0x72, 0x79, 0x2E, 0x43, 0x6F,
-//                     0x6D, 0x6D, 0x6F, 0x6E, 0x2E, 0x31, 0x2E, 0x30, 0x40, 0x0A, 0x73, 0x74, 0x61, 0x72, 0x74, 0x50, 0x6F, 0x69, 0x6E, 0x74,
-//                     0x99, 0x05, 0x30, 0x2C, 0x30, 0x2C, 0x30, 0x40, 0x08, 0x65, 0x6E, 0x64, 0x50, 0x6F, 0x69, 0x6E, 0x74, 0x99, 0x05, 0x31,
-//                     0x2C, 0x30, 0x2C, 0x30, 0x01, 0x40, 0x0C, 0x45, 0x78, 0x74, 0x65, 0x6E, 0x64, 0x65, 0x64, 0x44, 0x61, 0x74, 0x61, 0x40,
-//                     0x19, 0x54, 0x72, 0x61, 0x6E, 0x73, 0x69, 0x65, 0x6E, 0x74, 0x4C, 0x6F, 0x6F, 0x6B, 0x75, 0x70, 0x43, 0x6F, 0x6C, 0x6C,
-//                     0x65, 0x63, 0x74, 0x69, 0x6F, 0x6E, 0x40, 0x05, 0x45, 0x6E, 0x74, 0x72, 0x79, 0x04, 0x03, 0x6B, 0x65, 0x79, 0x98, 0x06,
-//                     0x6C, 0x65, 0x6E, 0x67, 0x74, 0x68, 0x04, 0x08, 0x74, 0x79, 0x70, 0x65, 0x43, 0x6F, 0x64, 0x65, 0x98, 0x06, 0x44, 0x6F,
-//                     0x75, 0x62, 0x6C, 0x65, 0x93, 0x1F, 0x85, 0xEB, 0x51, 0xB8, 0x1E, 0x09, 0x40, 0x40, 0x05, 0x45, 0x6E, 0x74, 0x72, 0x79,
-//                     0x04, 0x03, 0x6B, 0x65, 0x79, 0x98, 0x04, 0x6E, 0x61, 0x6D, 0x65, 0x04, 0x08, 0x74, 0x79, 0x70, 0x65, 0x43, 0x6F, 0x64,
-//                     0x65, 0x98, 0x06, 0x53, 0x74, 0x72, 0x69, 0x6E, 0x67, 0x99, 0x0B, 0x74, 0x65, 0x73, 0x74, 0x20, 0x73, 0x74, 0x72, 0x69,
-//                     0x6E, 0x67, 0x01, 0x01, 0x01};
-//
-//    bvector<IGeometryPtr> geoms;
-//    bmap<OrderedIGeometryPtr, BeExtendedData> extendedData;
-//    ASSERT_TRUE(BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, extendedData, 0)) << "Failed to deserialize string: " << xml.c_str();
-//    ASSERT_EQ(1, geoms.size()) << "Expected 1 geometry object returned for string deserialization but got " << geoms.size() << " for " << xml.c_str();
-//    bmap<OrderedIGeometryPtr, BeExtendedData>::const_iterator extendedDataIterator;
-//
-//    for (extendedDataIterator = extendedData.begin(); extendedDataIterator != extendedData.end(); extendedDataIterator++)
-//        {
-//        OrderedIGeometryPtr geometryObj = extendedDataIterator->first;
-//        printf("Geometry type: %d\n", geometryObj.m_geometry->GetGeometryType());
-//        BeExtendedData entries = extendedDataIterator->second;
-//        for (auto const& entry: entries)
-//            {
-//            printf("%s: %s of type (%s)\n", entry.Key.c_str(), entry.Value.c_str(), entry.Type.c_str());
-//            }
-//        }
-//
-//    bvector<IGeometryPtr> geoms2;
-//    bmap<OrderedIGeometryPtr, BeExtendedData> extendedData2;
-//    ASSERT_TRUE(BeXmlCGStreamReader::TryParse(bytes, 325, geoms2, extendedData2, 0)) << "Failed binary deserialization of extended data: " << xml.c_str();
-//    ASSERT_EQ(1, geoms2.size()) << "Expected 1 geometry object returned for binary deserialization but got " << geoms2.size() << " for " << xml.c_str();
-//
-//    Utf8String beCgXml;
-//    BeXmlCGWriter::Write(beCgXml, *geoms[0], &extendedData);
-//    printf("%s\n", beCgXml.c_str());
-//
-//    bvector<Byte> outputBytes;
-//    BeXmlCGWriter::WriteBytes(outputBytes, *geoms[0], &extendedData);
-//
-//    }
+TEST_F (CGBinarySerializationTests, DeserializeExtendedData)
+    {
+    Utf8String xml("<ExtendedObject xmlns=\"http://www.bentley.com/schemas/Bentley.ECSerializable.1.0\"> \
+                        <LineSegment xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"> \
+                            <startPoint>0,0,0</startPoint> \
+                            <endPoint>1,0,0</endPoint> \
+                        </LineSegment> \
+                        <ExtendedData> \
+                            <TransientLookupCollection> \
+                                <Entry key=\"length\" typeCode=\"Double\">3.14</Entry> \
+                                <Entry key=\"name\" typeCode=\"String\">test string</Entry> \
+                            </TransientLookupCollection> \
+                        </ExtendedData> \
+                    ExtendedObject>");
 
-TEST (CGSerializationTests, DeserializeNestedExtendedData)
+    Byte bytes[] = {0x40, 0x0E, 0x45, 0x78, 0x74, 0x65, 0x6E, 0x64, 0x65, 0x64, 0x4F, 0x62, 0x6A, 0x65, 0x63, 0x74, 0x08, 0x39, 0x68, 0x74,
+                     0x74, 0x70, 0x3A, 0x2F, 0x2F, 0x77, 0x77, 0x77, 0x2E, 0x62, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x63, 0x6F, 0x6D,
+                     0x2F, 0x73, 0x63, 0x68, 0x65, 0x6D, 0x61, 0x73, 0x2F, 0x42, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x45, 0x43, 0x53,
+                     0x65, 0x72, 0x69, 0x61, 0x6C, 0x69, 0x7A, 0x61, 0x62, 0x6C, 0x65, 0x2E, 0x31, 0x2E, 0x30, 0x40, 0x0B, 0x4C, 0x69, 0x6E,
+                     0x65, 0x53, 0x65, 0x67, 0x6D, 0x65, 0x6E, 0x74, 0x08, 0x3A, 0x68, 0x74, 0x74, 0x70, 0x3A, 0x2F, 0x2F, 0x77, 0x77, 0x77,
+                     0x2E, 0x62, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x63, 0x6F, 0x6D, 0x2F, 0x73, 0x63, 0x68, 0x65, 0x6D, 0x61, 0x73,
+                     0x2F, 0x42, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x47, 0x65, 0x6F, 0x6D, 0x65, 0x74, 0x72, 0x79, 0x2E, 0x43, 0x6F,
+                     0x6D, 0x6D, 0x6F, 0x6E, 0x2E, 0x31, 0x2E, 0x30, 0x40, 0x0A, 0x73, 0x74, 0x61, 0x72, 0x74, 0x50, 0x6F, 0x69, 0x6E, 0x74,
+                     0x99, 0x05, 0x30, 0x2C, 0x30, 0x2C, 0x30, 0x40, 0x08, 0x65, 0x6E, 0x64, 0x50, 0x6F, 0x69, 0x6E, 0x74, 0x99, 0x05, 0x31,
+                     0x2C, 0x30, 0x2C, 0x30, 0x01, 0x40, 0x0C, 0x45, 0x78, 0x74, 0x65, 0x6E, 0x64, 0x65, 0x64, 0x44, 0x61, 0x74, 0x61, 0x40,
+                     0x19, 0x54, 0x72, 0x61, 0x6E, 0x73, 0x69, 0x65, 0x6E, 0x74, 0x4C, 0x6F, 0x6F, 0x6B, 0x75, 0x70, 0x43, 0x6F, 0x6C, 0x6C,
+                     0x65, 0x63, 0x74, 0x69, 0x6F, 0x6E, 0x40, 0x05, 0x45, 0x6E, 0x74, 0x72, 0x79, 0x04, 0x03, 0x6B, 0x65, 0x79, 0x98, 0x06,
+                     0x6C, 0x65, 0x6E, 0x67, 0x74, 0x68, 0x04, 0x08, 0x74, 0x79, 0x70, 0x65, 0x43, 0x6F, 0x64, 0x65, 0x98, 0x06, 0x44, 0x6F,
+                     0x75, 0x62, 0x6C, 0x65, 0x93, 0x1F, 0x85, 0xEB, 0x51, 0xB8, 0x1E, 0x09, 0x40, 0x40, 0x05, 0x45, 0x6E, 0x74, 0x72, 0x79,
+                     0x04, 0x03, 0x6B, 0x65, 0x79, 0x98, 0x04, 0x6E, 0x61, 0x6D, 0x65, 0x04, 0x08, 0x74, 0x79, 0x70, 0x65, 0x43, 0x6F, 0x64,
+                     0x65, 0x98, 0x06, 0x53, 0x74, 0x72, 0x69, 0x6E, 0x67, 0x99, 0x0B, 0x74, 0x65, 0x73, 0x74, 0x20, 0x73, 0x74, 0x72, 0x69,
+                     0x6E, 0x67, 0x01, 0x01, 0x01};
+
+    bvector<IGeometryPtr> geoms;
+    bmap<OrderedIGeometryPtr, BeExtendedData> extendedData;
+    ASSERT_TRUE(BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, extendedData, 0)) << "Failed to deserialize string: " << xml.c_str();
+    ASSERT_EQ(1, geoms.size()) << "Expected 1 geometry object returned for string deserialization but got " << geoms.size() << " for " << xml.c_str();
+    bmap<OrderedIGeometryPtr, BeExtendedData>::const_iterator extendedDataIterator;
+
+    for (extendedDataIterator = extendedData.begin(); extendedDataIterator != extendedData.end(); extendedDataIterator++)
+        {
+        OrderedIGeometryPtr geometryObj = extendedDataIterator->first;
+        printf("Geometry type: %d\n", geometryObj.m_geometry->GetGeometryType());
+        BeExtendedData entries = extendedDataIterator->second;
+        for (auto const& entry: entries)
+            {
+            printf("%s: %s of type (%s)\n", entry.Key.c_str(), entry.Value.c_str(), entry.Type.c_str());
+            }
+        }
+
+    bvector<IGeometryPtr> geoms2;
+    bmap<OrderedIGeometryPtr, BeExtendedData> extendedData2;
+    ASSERT_TRUE(BeXmlCGStreamReader::TryParse(bytes, 325, geoms2, extendedData2, 0)) << "Failed binary deserialization of extended data: " << xml.c_str();
+    ASSERT_EQ(1, geoms2.size()) << "Expected 1 geometry object returned for binary deserialization but got " << geoms2.size() << " for " << xml.c_str();
+
+    Utf8String beCgXml;
+    BeXmlCGWriter::Write(beCgXml, *geoms[0], &extendedData);
+    printf("%s\n", beCgXml.c_str());
+
+    bvector<Byte> outputBytes;
+    BeXmlCGWriter::WriteBytes(outputBytes, *geoms[0], &extendedData);
+
+    }
+
+TEST_F (CGBinarySerializationTests, DeserializeNestedExtendedData)
     {
     Utf8String xml("<CurveChain xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\">\
                         <ListOfCurve>\
@@ -187,4 +189,4 @@ TEST (CGSerializationTests, DeserializeNestedExtendedData)
 
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

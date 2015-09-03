@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ECObjectsTestPCH.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="scenario\schematests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -33,9 +30,15 @@
     <ClCompile Include="scenario\ValueTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="scenario\ValueTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="scenario\TestFixture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -5,8 +5,10 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -16,10 +18,11 @@ Node style override rule implementation. This rule is used to override default n
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct StyleOverride : public PresentationRule
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
-        WString m_foreColor;
-        WString m_backColor;
-        WString m_fontStyle;
+        Utf8String m_foreColor;
+        Utf8String m_backColor;
+        Utf8String m_fontStyle;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -31,25 +34,28 @@ struct StyleOverride : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) override;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT StyleOverride ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT StyleOverride (WStringCR condition, int priority, WStringCR foreColor, WStringCR backColor, WStringCR fontStyle);
+        ECOBJECTS_EXPORT StyleOverride (Utf8StringCR condition, int priority, Utf8StringCR foreColor, Utf8StringCR backColor, Utf8StringCR fontStyle);
 
         //! Foreground color override value. Can be ECExpression string. If value is not set it will not affect original value.
-        ECOBJECTS_EXPORT WStringCR        GetForeColor (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR        GetForeColor (void) const;
 
         //! Set foreground color override value. Can be ECExpression string. If value is not set it will not affect original value.
-        ECOBJECTS_EXPORT void             SetForeColor (WString value);
+        ECOBJECTS_EXPORT void             SetForeColor (Utf8String value);
 
         //! Background color override value. Can be ECExpression string. If value is not set it will not affect original value.
-        ECOBJECTS_EXPORT WStringCR        GetBackColor (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR        GetBackColor (void) const;
 
         //! FontStyle override value. Can be ECExpression string. If value is not set it will not affect original value.
-        ECOBJECTS_EXPORT WStringCR        GetFontStyle (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR        GetFontStyle (void) const;
 
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

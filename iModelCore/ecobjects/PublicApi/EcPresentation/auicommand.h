@@ -134,6 +134,7 @@ struct IUICommand : public RefCountedBase
         virtual void                _GetChildren(bvector<IUICommandPtr>& children) {}
 
 //__PUBLISH_SECTION_START__
+//__PUBLISH_CLASS_VIRTUAL__
     public:
         //! Virtual destructor.
         virtual ~IUICommand () {}
@@ -263,6 +264,7 @@ struct UICommand : public IUICommand
         virtual EditActionPriority  _GetPriority () const override {return m_priority;}
         virtual void                _SetPriority (EditActionPriority priority) override {m_priority = priority;}
 
+//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 
     };

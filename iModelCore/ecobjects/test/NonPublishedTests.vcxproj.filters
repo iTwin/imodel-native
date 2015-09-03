@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ECObjectsTestPCH.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\MemoryLayoutTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -42,7 +39,10 @@
     <ClCompile Include="NonPublished\UnitsTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\TestFixture.cpp">
+    <ClCompile Include="NonPublished\ECExpressionTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\AdhocPropertyTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\CGBinarySerializationTests.cpp">
@@ -57,9 +57,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\TestFixture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NonPublished\UnitsTestBase.h">

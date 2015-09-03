@@ -2,18 +2,15 @@
 #
 #  $Source: test/PerformanceTests.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
+PolicyFile = $(SrcRoot)/ecobjects/test/ECObjectsTestPolicy.mki
 baseDir =   $(_MakeFilePath)
 
-programName = ECObjectsTest_Performance
-
-compileRulesPath=$(baseDir)performanceCompileRules.mki
-
-# Using this solution policy file ensures that published headers will be in the include path for
-# compiles within this mke file and within PreCompileHeader.mke which is used by this mke file.
-SolutionPolicyMki=$(baseDir)publishedTestSolutionPolicy.mki
+programName=ECObjectsTest_Performance
+BEGTEST_INPUT=$(baseDir)Performance\/
+BEGTEST_API= $(BuildContext)SubParts\/PublishedApi\/ECObjects\/
+COMPILING_PUBLISHED_TESTS = 1
 
 %include buildTestFixture.mki

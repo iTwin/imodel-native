@@ -14,16 +14,73 @@ static ECN::IECSymbolProvider::ExternalSymbolPublisher   s_externalSymbolPublish
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+InternalECSymbolProviderManager::InternalECSymbolProviderManager ()
+    {
+    static ECN::SystemSymbolProvider* s_systemSymbolProvider = nullptr;
+
+    if (nullptr == s_systemSymbolProvider)
+        s_systemSymbolProvider = new SystemSymbolProvider ();
+
+    if (nullptr != s_systemSymbolProvider)
+        RegisterSymbolProvider (*s_systemSymbolProvider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+InternalECSymbolProviderManager& InternalECSymbolProviderManager::GetManager ()
+    {
+    static ECN::InternalECSymbolProviderManager* s_manager = nullptr;
+
+    if (nullptr == s_manager)
+        s_manager = new InternalECSymbolProviderManager ();
+
+    return *s_manager;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void InternalECSymbolProviderManager::RegisterSymbolProvider (IECSymbolProviderCR provider)
+    {
+    if (m_symbolProviders.end() == std::find_if (m_symbolProviders.begin(), m_symbolProviders.end(), [&](IECSymbolProviderCP existing) { return existing == &provider; }))
+        m_symbolProviders.push_back (&provider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void InternalECSymbolProviderManager::UnregisterSymbolProvider (IECSymbolProviderCR provider)
+    {
+    auto found = std::find_if (m_symbolProviders.begin(), m_symbolProviders.end(), [&](IECSymbolProviderCP existing) { return existing == &provider; });
+    if (found != m_symbolProviders.end())
+        m_symbolProviders.erase (found);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void InternalECSymbolProviderManager::PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets)
+    {
+    for (IECSymbolProviderCP const& provider: m_symbolProviders)
+        {
+        provider->PublishSymbols (context, requestedSymbolSets);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex, IECInstanceCR rootInstance)
+ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex, IECInstanceCR rootInstance)
     {
     BeAssert(m_initialized);
 
     size_t      numberOfOperators = primaryList.GetNumberOfOperators();
     size_t      index = startIndex;
     bool        appendDot = false;
-    WString     accessString;
+    Utf8String     accessString;
     ECN::IECInstancePtr  instance = const_cast<ECN::IECInstanceP>(&rootInstance);
     ECN::ECEnablerCP     enabler = &instance->GetEnabler();
     ECN::ECClassCP       ecClass = &enabler->GetClass();
@@ -45,7 +102,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
         {
         while (TOKEN_Dot == nextOperation || TOKEN_Ident == nextOperation || TOKEN_LeftBracket == nextOperation)    // Handle instance["AccessString"] and instance.AccessString property access
             {
-            WString memberName;
+            Utf8String memberName;
             if (TOKEN_LeftBracket == nextOperation)
                 {
                 // Property access or array indexer?
@@ -68,7 +125,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                         return ExprStatus_PrimitiveRequired;
                         }
 
-                    memberName = accessorResult.GetECValue()->GetString();
+                    memberName = accessorResult.GetECValue()->GetUtf8CP();
                     }
                 }
             else
@@ -82,7 +139,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
             nextOperation = primaryList.GetOperation(++index);
 
             if (appendDot)
-                accessString.append(L".");
+                accessString.append(".");
 
             appendDot = true;
 
@@ -126,7 +183,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                 return ExprStatus_PrimitiveRequired;
                 }
 
-            ::UInt32     propertyIndex;
+            ::uint32_t   propertyIndex;
             if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                 {
                 evalResult.Clear();
@@ -204,7 +261,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
 
             BeAssert(ECN::ARRAYKIND_Struct == arrayProp->GetKind());
 
-            ::UInt32     propertyIndex;
+            ::uint32_t   propertyIndex;
             if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                 {
                 evalResult.Clear();
@@ -253,7 +310,7 @@ static uint32_t getComponentIndex (NodeCP node, bool is2d)
     {
     uint32_t componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
     IdentNodeCP ident = dynamic_cast<IdentNodeCP>(node);
-    WCharCP componentName = nullptr != ident ? ident->GetName() : nullptr;
+    Utf8CP componentName = nullptr != ident ? ident->GetName() : nullptr;
     if (nullptr != componentName && 0 != *componentName && 0 == *(componentName + 1))
         {
         switch (towlower (*componentName))
@@ -324,7 +381,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         }
     
     bool appendDot = false;
-    WString accessString;
+    Utf8String accessString;
     ECClassCP ecClass = &instance.GetClass();
 
     accessString.reserve (50);
@@ -332,7 +389,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
     ECPropertyCP currentProperty = NULL;
     while (TOKEN_Dot == nextOperation || TOKEN_Ident == nextOperation || TOKEN_LeftBracket == nextOperation)
         {
-        WString memberName;
+        Utf8String memberName;
         if (TOKEN_LeftBracket == nextOperation)
             {
             if (NULL != currentProperty && currentProperty->GetIsArray())
@@ -349,7 +406,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                 { evalResult.Clear(); return ExprStatus_WrongType; }
 
             // ###TODO: NEEDSWORK: this doesn't work for expressions like 'this["Struct.Member"]'
-            memberName = accessorResult.GetECValue()->GetString();
+            memberName = accessorResult.GetECValue()->GetUtf8CP();
             }
         else
             {
@@ -358,7 +415,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             if (TOKEN_Dot == nextOperation)
                 {
                 // Handle fully-qualified property accessor. Expect two qualifiers: schema name and class name
-                bvector<WString> const& qualifiers = identNode->GetQualifiers();
+                bvector<Utf8String> const& qualifiers = identNode->GetQualifiers();
                 if (2 == qualifiers.size() && !instance.GetClass().Is (qualifiers[0].c_str(), qualifiers[1].c_str()))
                     {
                     evalResult.Clear();
@@ -371,7 +428,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         nextOperation = primaryList.GetOperation (++index);
         if (appendDot)
-            accessString.append (L".");
+            accessString.append (".");
         else
             appendDot = true;
 
@@ -439,7 +496,9 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
             if (nullptr != typeAdapter)
                 {
-                IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*primProp, instance, accessString.c_str ());
+                IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*primProp, instance);
+                if (!context.IsValid())
+                    return ExprStatus_UnknownError;
                 context->SetEvaluationOptions (globalContext.GetEvaluationOptions ());
                 if (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation ())
                     {
@@ -509,7 +568,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             IECTypeAdapter* adapter = arrayProp->GetMemberTypeAdapter();
             if (nullptr != adapter)
                 {
-                IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*arrayProp, instance, accessString.c_str ());
+                IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*arrayProp, instance);
                 context->SetEvaluationOptions (globalContext.GetEvaluationOptions ());
                 if (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation ())
                     {
@@ -572,18 +631,18 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             if (TOKEN_Dot == nextOperation)
                 {
                 IdentNodeCP ident = dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode (index));
-                WCharCP arrayPropName = NULL != ident ? ident->GetName() : NULL;
+                Utf8CP arrayPropName = NULL != ident ? ident->GetName() : NULL;
                 uint32_t count = list->GetCount();
                 if (NULL != arrayPropName)
                     {
-                    if (0 == wcscmp (L"Count", arrayPropName))
+                    if (0 == strcmp ("Count", arrayPropName))
                         {
                         evalResult.InitECValue().SetInteger ((int32_t)count);
                         return ExprStatus_Success;
                         }
 
-                    bool wantFirst = 0 == wcscmp (L"First", arrayPropName);
-                    if (wantFirst || 0 == wcscmp (L"Last", arrayPropName))
+                    bool wantFirst = 0 == strcmp ("First", arrayPropName);
+                    if (wantFirst || 0 == strcmp ("Last", arrayPropName))
                         {
                         // if array is empty, we return null successfully. Otherwise get array member.
                         if (0 == count)
@@ -654,7 +713,7 @@ static bool convertResultToInstanceList (EvaluationResultR result, bool requireI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     Initialize();
 
@@ -679,6 +738,13 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
             ExpressionStatus instanceStatus = GetInstanceValue (valueResult, index, primaryList, globalContext, *evalResult.GetInstanceList());
             if (ExprStatus_Success != instanceStatus)
                 {
+                if (0 == startIndex && 0 == index)
+                    {
+                    ExpressionContextP  outer = GetOuterP();
+                    if (NULL != outer)
+                        return outer->GetValue(evalResult, primaryList, globalContext, startIndex);
+                    }
+
                 evalResult.Clear();
                 return instanceStatus;
                 }
@@ -707,12 +773,12 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
             ExpressionStatus exprStatus = ExprStatus_UnknownError;
             switch (evalResult.GetValueType())
                 {
-            case ValType_InstanceList:
-                exprStatus = callNode->InvokeInstanceMethod (methodResult, *evalResult.GetInstanceList(), globalContext);
-                break;
-            case ValType_ValueList:
-                exprStatus = callNode->InvokeValueListMethod (methodResult, *evalResult.GetValueList(), globalContext);
-                break;
+                case ValType_InstanceList:
+                    exprStatus = callNode->InvokeInstanceMethod (methodResult, *evalResult.GetInstanceList(), globalContext);
+                    break;
+                case ValType_ValueList:
+                    exprStatus = callNode->InvokeValueListMethod (methodResult, *evalResult.GetValueList(), globalContext);
+                    break;
                 }
 
             if (ExprStatus_Success != exprStatus)
@@ -774,6 +840,32 @@ ExpressionStatus MethodReferenceStandard::_InvokeValueListMethod (EvaluationResu
     return NULL != m_valueListMethod ? (*m_valueListMethod)(evalResult, valueList, args) : ExprStatus_InstanceMethodRequired;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+MethodReferenceStaticWithContext::MethodReferenceStaticWithContext(ExpressionStaticMethodWithContext_t staticMethod, void*methodData)
+    : m_staticMethod(staticMethod), m_context(methodData) {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+MethodReferencePtr MethodReferenceStaticWithContext::Create(ExpressionStaticMethodWithContext_t staticMethod, void*context)
+    {
+    return new MethodReferenceStaticWithContext(staticMethod, context);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+ExpressionStatus MethodReferenceStaticWithContext::_InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments)
+    {
+    if (NULL == m_staticMethod)
+        return ExprStatus_StaticMethodRequired;
+
+    return (*m_staticMethod)(evalResult, m_context, arguments);
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -804,16 +896,16 @@ MethodReferencePtr MethodReferenceStandard::Create (ExpressionValueListMethod_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MethodSymbol::MethodSymbol(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod)
+MethodSymbol::MethodSymbol(Utf8CP name, MethodReferenceR methodReference)
     : Symbol(name)
     {
-    m_methodReference = MethodReferenceStandard::Create(staticMethod, instanceMethod);
+    m_methodReference = &methodReference;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-MethodSymbol::MethodSymbol (WCharCP name, ExpressionValueListMethod_t method)
+MethodSymbol::MethodSymbol (Utf8CP name, ExpressionValueListMethod_t method)
     : Symbol (name)
     {
     m_methodReference = MethodReferenceStandard::Create (method);
@@ -822,23 +914,33 @@ MethodSymbol::MethodSymbol (WCharCP name, ExpressionValueListMethod_t method)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MethodSymbolPtr MethodSymbol::Create(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod)
+MethodSymbolPtr MethodSymbol::Create(Utf8CP name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod)
     {
-    return new MethodSymbol(name, staticMethod, instanceMethod);
+    MethodReferencePtr  ref = MethodReferenceStandard::Create(staticMethod, instanceMethod);
+    return new MethodSymbol(name, *ref);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-MethodSymbolPtr MethodSymbol::Create (WCharCP name, ExpressionValueListMethod_t method)
+MethodSymbolPtr MethodSymbol::Create (Utf8CP name, ExpressionValueListMethod_t method)
     {
     return new MethodSymbol (name, method);
+    }
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+MethodSymbolPtr MethodSymbol::Create(Utf8CP name, ExpressionStaticMethodWithContext_t staticMethod, void*context)
+    {
+    MethodReferencePtr  ref = MethodReferenceStaticWithContext::Create(staticMethod, context);
+    return new MethodSymbol(name, *ref);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     //  We only get here if the symbol was resolved directly from a context. The context may be a global context, or a namespace context. If the
     //  context is a global context then startIndex is 1 and the callNode should be 0. If the context is a namespace context, then startIndex - 1
@@ -848,7 +950,7 @@ ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLi
     //  method receive a pointer to the context used to invoke it.
 
     BeAssert(1 <= startIndex);
-    ::UInt32        callNodeIndex = startIndex - 1;
+    ::uint32_t      callNodeIndex = startIndex - 1;
 
     if (primaryList.GetOperation(callNodeIndex) != TOKEN_LParen)
         {
@@ -874,9 +976,58 @@ ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLi
 BentleyStatus   SymbolExpressionContext::AddSymbol (SymbolR symbol)
     {
     //  Check for duplicates in context
-    m_symbols.push_back(SymbolPtr(&symbol));
+    if (NULL != FindCP (symbol.GetName ()))
+        return BSIERROR;
 
+    m_symbols.push_back (SymbolPtr (&symbol));
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbolCP        SymbolExpressionContext::FindCP (Utf8CP ident)
+    {
+    for (bvector<SymbolPtr>::iterator curr = m_symbols.begin (); curr != m_symbols.end (); curr++)
+        {
+        SymbolP symbol = (*curr).get ();
+        if (0 == strcmp (ident, symbol->GetName ()))
+            return symbol;
+        }
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SymbolExpressionContext::RemoveSymbol (Utf8CP ident)
+    {
+    for (bvector<SymbolPtr>::iterator curr = m_symbols.begin (); curr != m_symbols.end (); curr++)
+        {
+        SymbolP symbol = (*curr).get ();
+        if (0 == strcmp (ident, symbol->GetName ()))
+            {
+            m_symbols.erase (curr);
+            return BSISUCCESS;
+            }
+        }
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SymbolExpressionContext::RemoveSymbol (SymbolR symbol)
+    {
+    for (bvector<SymbolPtr>::iterator curr = m_symbols.begin (); curr != m_symbols.end (); curr++)
+        {
+        if ((*curr).get () == &symbol)
+            {
+            m_symbols.erase (curr);
+            return BSISUCCESS;
+            }
+        }
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -890,16 +1041,16 @@ SymbolExpressionContextPtr SymbolExpressionContext::Create(ExpressionContextP ou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
-    wchar_t const* ident = primaryList.GetName(startIndex);
+    Utf8CP ident = primaryList.GetName(startIndex);
     if (NULL == ident)
         return ExprStatus_UnknownSymbol;
 
     for (bvector<SymbolPtr>::iterator curr = m_symbols.begin(); curr != m_symbols.end(); curr++)
         {
         SymbolP symbol = (*curr).get();
-        if (0 == wcscmp(ident, symbol->GetName()))
+        if (0 == strcmp(ident, symbol->GetName()))
             return symbol->GetValue(evalResult, primaryList, globalContext, startIndex + 1);
         }
 
@@ -913,16 +1064,16 @@ ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
-    wchar_t const* ident = primaryList.GetName(startIndex);
+    Utf8CP ident = primaryList.GetName(startIndex);
     if (NULL == ident)
         return ExprStatus_UnknownSymbol;
 
     for (bvector<SymbolPtr>::iterator curr = m_symbols.begin(); curr != m_symbols.end(); curr++)
         {
         SymbolP symbol = (*curr).get();
-        if (0 == wcscmp(ident, symbol->GetName()))
+        if (0 == strcmp(ident, symbol->GetName()))
             return symbol->GetReference(evalResult, refResult, primaryList, globalContext, startIndex + 1);
         }
 
@@ -936,12 +1087,12 @@ ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus SymbolExpressionContext::_ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary)
+ExpressionStatus SymbolExpressionContext::_ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary)
     {
     for (bvector<SymbolPtr>::iterator curr = m_symbols.begin(); curr != m_symbols.end(); curr++)
         {
         SymbolP symbol = (*curr).get();
-        if (0 == wcscmp(ident, symbol->GetName()))
+        if (0 == strcmp(ident, symbol->GetName()))
             return symbol->CreateMethodResult(result);
         }
 
@@ -958,7 +1109,7 @@ ExpressionStatus SymbolExpressionContext::_ResolveMethod(MethodReferencePtr& res
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ContextSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus ContextSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     return m_context->GetValue(evalResult, primaryList, globalContext, startIndex);
     }
@@ -966,7 +1117,7 @@ ExpressionStatus ContextSymbol::_GetValue(EvaluationResultR evalResult, PrimaryL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ContextSymbol::_GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus ContextSymbol::_GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     return m_context->GetReference(evalResult, refResult, primaryList, globalContext, startIndex);
     }
@@ -974,7 +1125,7 @@ ExpressionStatus ContextSymbol::_GetReference(EvaluationResultR evalResult, Refe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContextSymbolPtr ContextSymbol::CreateContextSymbol(wchar_t const* name, ExpressionContextR context) 
+ContextSymbolPtr ContextSymbol::CreateContextSymbol(Utf8CP name, ExpressionContextR context) 
     { 
     return new ContextSymbol(name, context); 
     }
@@ -993,7 +1144,7 @@ ValueSymbol::~ValueSymbol()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ValueSymbol::ValueSymbol (wchar_t const* name, EvaluationResultCR value) : Symbol(name)
+ValueSymbol::ValueSymbol (Utf8CP name, EvaluationResultCR value) : Symbol(name)
     {
     m_expressionValue = value;
     }
@@ -1001,7 +1152,7 @@ ValueSymbol::ValueSymbol (wchar_t const* name, EvaluationResultCR value) : Symbo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     if (primaryList.GetNumberOfOperators() > startIndex)
         {
@@ -1025,7 +1176,7 @@ ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLis
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    07/2012
 //--------------+------------------------------------------------------------------------
-ValueSymbolPtr  ValueSymbol::Create(wchar_t const* name, ECN::ECValueCR exprValue)
+ValueSymbolPtr  ValueSymbol::Create(Utf8CP name, ECN::ECValueCR exprValue)
     {
     EvaluationResult evalResult;
     evalResult = exprValue;
@@ -1035,10 +1186,50 @@ ValueSymbolPtr  ValueSymbol::Create(wchar_t const* name, ECN::ECValueCR exprValu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ValueSymbolPtr ValueSymbol::Create (wchar_t const* name, EvaluationResultCR value) { return new ValueSymbol (name, value); }
+ValueSymbolPtr ValueSymbol::Create (Utf8CP name, EvaluationResultCR value) { return new ValueSymbol (name, value); }
 EvaluationResultCR ValueSymbol::GetValue() const { return m_expressionValue; }
 void ValueSymbol::SetValue (EvaluationResultCR value) { m_expressionValue = value; }
 void ValueSymbol::SetValue (ECValueCR value) { m_expressionValue = value; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+PropertySymbol::PropertySymbol (Utf8CP name, RefCountedPtr<PropertySymbol::PropertyEvaluator> evaluator) 
+    : Symbol (name), m_evaluator (evaluator) 
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<PropertySymbol> PropertySymbol::Create (Utf8CP name, RefCountedPtr<PropertySymbol::PropertyEvaluator> evaluator)
+    {
+    return new PropertySymbol (name, evaluator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
+    {
+    if (primaryList.GetNumberOfOperators() > startIndex)
+        {
+        ExpressionToken token = primaryList.GetOperation(startIndex);
+        if (ECN::TOKEN_Dot == token)
+            return ExprStatus_StructRequired;
+
+        if (ECN::TOKEN_LParen == token)
+            return ExprStatus_MethodRequired;
+
+        if (ECN::TOKEN_LeftBracket == token)
+            return ExprStatus_ArrayRequired;
+
+        return ExprStatus_UnknownError;
+        }
+
+    evalResult = m_evaluator->EvaluateProperty ();
+    return ExprStatus_Success;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
@@ -1053,16 +1244,48 @@ void IECSymbolProvider::RegisterExternalSymbolPublisher (ExternalSymbolPublisher
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<WString> const& requestedSymbolSets, ExpressionContextP outer)
+void IECSymbolProvider::UnRegisterExternalSymbolPublisher ()
+    {
+    s_externalSymbolPublisher = NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<Utf8String> const& requestedSymbolSets, ExpressionContextP outer)
     {
     SymbolExpressionContextPtr context = Create (outer);
     if (context.IsValid())
         {
+        InternalECSymbolProviderManager::GetManager ().PublishSymbols (*context, requestedSymbolSets);
+
         if (NULL != s_externalSymbolPublisher)
             s_externalSymbolPublisher (*context, requestedSymbolSets);
         }
     
     return context;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbolExpressionContextPtr  SymbolExpressionContext::CreateWithThis (bvector<Utf8String> const& requestedSymbolSets, IECInstanceP instance)
+    {
+    SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create (requestedSymbolSets, NULL);
+
+    // If we also have an ECInstance add it as "this"
+    if (symbolContext.IsValid() && NULL != instance)
+        {
+        InstanceExpressionContextPtr context = InstanceExpressionContext::Create (NULL);
+        if (context.IsValid ())
+            {
+            context->SetInstance (*instance);
+            ContextSymbolPtr instanceSymbol = ContextSymbol::CreateContextSymbol ("this", *context);
+            symbolContext->AddSymbol (*instanceSymbol);
+            }
+        }
+
+    return symbolContext;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1135,7 +1358,7 @@ ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR
         }
 
     ExpressionStatus status = ExprStatus_UnknownSymbol;
-    WCharCP name = primaryList.GetName (startIndex);
+    Utf8CP name = primaryList.GetName (startIndex);
     if (NULL != name)
         {
         for (IECInstancePtr const& instance: m_instances)

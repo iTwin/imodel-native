@@ -1,17 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{68CC97D2-9BA6-4023-8C6C-BF279858566A}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsNative", "ECObjectsNative.vcxproj", "{01917E3B-2174-4AC9-860E-BAAAA15C606D}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsNonPublishedTests", "..\test\NonPublishedTests.vcxproj", "{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsPublishedTests", "..\test\PublishedTests.vcxproj", "{885B170C-2635-4A7D-9532-8A4AE95B2561}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsPerformanceTests", "..\test\PerformanceTests.vcxproj", "{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsScenarioTests", "..\test\scenarioTests.vcxproj", "{D602B019-D582-4049-8184-82C7ED1041F0}"
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECDbUnitTests", "..\..\ECDb\Tests\ECDbUnitTests.vcxproj", "{739F36F2-2002-4DD7-8C46-97AF109867D3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,31 +11,12 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{01917E3B-2174-4AC9-860E-BAAAA15C606D}.Debug|Win32.ActiveCfg = Debug|Win32
-		{01917E3B-2174-4AC9-860E-BAAAA15C606D}.Debug|Win32.Build.0 = Debug|Win32
-		{01917E3B-2174-4AC9-860E-BAAAA15C606D}.Release|Win32.ActiveCfg = Release|Win32
-		{01917E3B-2174-4AC9-860E-BAAAA15C606D}.Release|Win32.Build.0 = Release|Win32
-		{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}.Debug|Win32.ActiveCfg = Debug|Win32
-		{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}.Debug|Win32.Build.0 = Debug|Win32
-		{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}.Release|Win32.ActiveCfg = Release|Win32
-		{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}.Release|Win32.Build.0 = Release|Win32
-		{885B170C-2635-4A7D-9532-8A4AE95B2561}.Debug|Win32.ActiveCfg = Debug|Win32
-		{885B170C-2635-4A7D-9532-8A4AE95B2561}.Debug|Win32.Build.0 = Debug|Win32
-		{885B170C-2635-4A7D-9532-8A4AE95B2561}.Release|Win32.ActiveCfg = Release|Win32
-		{885B170C-2635-4A7D-9532-8A4AE95B2561}.Release|Win32.Build.0 = Release|Win32
-		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Debug|Win32.ActiveCfg = Debug|Win32
-		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Debug|Win32.Build.0 = Debug|Win32
-		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Release|Win32.ActiveCfg = Release|Win32
-		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Release|Win32.Build.0 = Release|Win32
-		{D602B019-D582-4049-8184-82C7ED1041F0}.Debug|Win32.ActiveCfg = Debug|Win32
-		{D602B019-D582-4049-8184-82C7ED1041F0}.Debug|Win32.Build.0 = Debug|Win32
-		{D602B019-D582-4049-8184-82C7ED1041F0}.Release|Win32.ActiveCfg = Release|Win32
-		{D602B019-D582-4049-8184-82C7ED1041F0}.Release|Win32.Build.0 = Release|Win32
+		{739F36F2-2002-4DD7-8C46-97AF109867D3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{739F36F2-2002-4DD7-8C46-97AF109867D3}.Debug|Win32.Build.0 = Debug|Win32
+		{739F36F2-2002-4DD7-8C46-97AF109867D3}.Release|Win32.ActiveCfg = Release|Win32
+		{739F36F2-2002-4DD7-8C46-97AF109867D3}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(DPCodeReviewSolutionGUID) = preSolution
-		DPCodeReviewSolutionGUID = {00000000-0000-0000-0000-000000000000}
 	EndGlobalSection
 EndGlobal

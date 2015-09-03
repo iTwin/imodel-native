@@ -39,9 +39,9 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -f -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -c -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) &amp; C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecobjects -f ecobjects -p ECObjectsPerformanceTests -v4 build -f -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Python26\python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -c -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -f -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -c -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ecobjects -f ecobjects -p ECObjectsPerformanceTests -v4 build -f -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -r ECObjects -f ECObjects -p ECObjectsPerformanceTests -v4 -n build -c -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ECObjectsTest_Performance.exe</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecfTest\VendorAPI\;$(VCInstallDir)INCLUDE\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ecfTest\SubParts\PublishedAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -63,13 +63,13 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ECObjectsTestPCH.cpp" />
-    <ClCompile Include="Performance\TestFixture.cpp" />
     <ClCompile Include="Performance\ECXmlPerformanceTests.cpp" />
+    <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
+    <ClCompile Include="Performance\PropertiesTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
-    <ClInclude Include="Performance\TestFixture.h" />
+    <ClInclude Include="Performance\PerformanceTestFixture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="logging.config.xml" />
