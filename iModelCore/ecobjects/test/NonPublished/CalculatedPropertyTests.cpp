@@ -564,8 +564,13 @@ TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamed)
     SetValue (*instance, "S2", "b");
     Test (*instance, "S", "a X b");
 
+    SetValue (*instance, "S1", "c");
+    SetValue (*instance, "S2", "d");
+    Test (*instance, "S", "c X d");
+
     // Note that the parser regex doesn't appear to match what the author thinks it should match...he seems to be confused about escape characters.
     SetValue (*instance, "S", "xXy");
+    Test (*instance, "S", "x X y");
     Test (*instance, "S1", "x");
     Test (*instance, "S2", "y");
     }
@@ -585,9 +590,10 @@ TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamedFromFile)
     SetValue (*instance, "RIGHT_TEXT", "right");
     Test (*instance, "DISPLAY_TEXT", "left X right");
 
-    SetValue (*instance, "DISPLAY_TEXT", "leftXright");
-    Test (*instance, "LEFT_TEXT", "left");
-    Test (*instance, "RIGHT_TEXT", "right");
+    SetValue (*instance, "DISPLAY_TEXT", "lXr");
+    Test (*instance, "DISPLAY_TEXT", "l X r");
+    Test (*instance, "LEFT_TEXT", "l");
+    Test (*instance, "RIGHT_TEXT", "r");
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
