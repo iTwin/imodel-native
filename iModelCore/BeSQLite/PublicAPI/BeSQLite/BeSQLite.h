@@ -122,7 +122,7 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 //__PUBLISH_SECTION_END__
 #endif
 
-//  Copied from sqlite3-1.c
+// Copied from sqlite3-1.c
 #define SQLITE_PENDING_BYTE     (0x40000000)
 #define SQLITE_RESERVED_BYTE    (PENDING_BYTE+1)
 #define SQLITE_SHARED_FIRST     (PENDING_BYTE+2)
