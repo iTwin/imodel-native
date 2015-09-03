@@ -65,6 +65,7 @@ class DTMXAttributeHandler : public IDTMElementMemoryAllocator
         int m_writeCount;
         bool m_noSchedule;
         bool m_inCreate;
+        bool m_inScheduleReplace = false;
 
         bool IsOpenedForWrite()
             {

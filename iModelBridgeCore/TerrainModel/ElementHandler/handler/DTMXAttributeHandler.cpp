@@ -570,7 +570,7 @@ void DTMXAttributeHandler::EndModify ()
 
         if (!m_isTemporary)
             {
-            if (m_handle.GetElementRef())
+            if (m_handle.GetElementRef() && !m_inScheduleReplace)
                 m_noSchedule = true;
 
             // Cheat for undo/redo we write the header twice, so that the header XAttribute is modified
@@ -1507,6 +1507,9 @@ StatusInt DTMXAttributeHandler::ScheduleDtmData (EditElementHandleR elemHandle, 
     DTMXAttributeHandler* m_allocator = allocator;
     if (nullptr == allocator)
         m_allocator = Create (elemHandle, bcDTM, true);
+
+    AutoRestore<bool>  const savePoint (&m_allocator->m_inScheduleReplace);
+    m_allocator->m_inScheduleReplace = true;
 
     // If this is a DTMElement then we can't do a copy.
     m_allocator->StartModify (false);

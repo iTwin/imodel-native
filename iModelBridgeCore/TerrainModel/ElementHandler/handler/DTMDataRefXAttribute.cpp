@@ -243,7 +243,8 @@ StatusInt DTMDataRefXAttribute::ReplaceDTM (BcDTMR bcDTM, bool disposeDTM)
         return SUCCESS;
 
     EditElementHandle element (this->GetElement(), false);
-    return DTMXAttributeHandler::ScheduleDtmData (element, bcDTM, disposeDTM, m_allocator);
+    StatusInt status = DTMXAttributeHandler::ScheduleDtmData (element, bcDTM, disposeDTM, m_allocator);
+    return status;
     }
 
 //=======================================================================================
