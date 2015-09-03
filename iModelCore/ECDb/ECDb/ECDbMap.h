@@ -47,6 +47,7 @@ public:
         private:
             mutable RelationshipPerTable m_relationshipPerTable;
             mutable bmap<ECN::ECClassId, ClassRelationshipEnds> m_relationshipEndsByClassId;
+            mutable bmap<ECN::ECClassId, ClassRelationshipEnds> m_relationshipEndsByClassIdRev;
             mutable bmap<ECN::ECClassId, TableClasses> m_tablesByClassId;
             mutable ClassRelationshipEnds m_anyClassRelationships;
             mutable TableClasses m_classIdsByTable;
@@ -81,6 +82,7 @@ public:
 
             bmap<ECN::ECClassId, LightWeightMapCache::TableClasses> const& GetTablesMapToClass () const;
             ClassRelationshipEnds const& GetClassRelationships (ECN::ECClassId classId) const;
+            ClassRelationshipEnds const& GetRelationships (ECN::ECClassId relationshipId) const;
             ClassRelationshipEnds const& GetAnyClassRelationships () const;
             ClassIds const& GetClassesMapToTable (ECDbSqlTable const& table) const;
             TableClasses const& GetTablesMapToClass (ECN::ECClassId classId) const;

@@ -288,6 +288,155 @@ struct NRelationship : NClass
         static Ptr Create (ECN::ECClassId classId, ECDbMap::LightWeightMapCache::RelationshipType type);
     };
 
+
+
+struct ECDbMapAnalyser
+    {
+    struct Class;
+    struct Struct;
+    struct Relationship;
+    struct Storage
+        {
+        typedef std::unique_ptr<Storage> Ptr;
+        private:
+            ECDbSqlTable const& m_table;
+            std::set<Class*> m_classes;
+            std::set<Relationship*> m_relationships;
+            std::map<Storage*, std::set<Relationship*>> m_cascades;
+            std::set<Struct*> m_structCascades;
+            SqlTriggerBuilder::TriggerList m_triggers;
+        public:
+            Storage (ECDbSqlTable const& table);
+            ECDbSqlTable const& GetTable () const;
+            bool IsVirtual () const;
+            std::set<Class*> & GetClassesR ();
+            std::set<Relationship*> & GetRelationshipsR ();
+            std::map<Storage*, std::set<Relationship*>> & CascadesTo ();
+            std::set<Struct* > &StructCascadeTo ()
+                {
+                return m_structCascades;
+                }
+            SqlTriggerBuilder::TriggerList& GetTriggerListR ();
+            void HandleStructArray ();
+            void HandleLinkTable (std::map<Storage*, std::set<Relationship*>> const& relationshipsByStorage);
+            void HandleCascadeLinkTable (std::vector<Relationship*> const& relationships);
+            void Generate ();
+        };
+    struct Class
+        {
+        typedef  std::unique_ptr<Class> Ptr;
+        private:
+            ClassMapCR m_classMap;
+            Storage& m_storage;
+            bool m_inQueue;
+            Class* m_parent;
+            Utf8String m_name;
+            std::map <Storage const*, std::set<Class const*>> m_partitions;
+        public:
+            Class (ClassMapCR classMap, Storage& storage, Class* parent);
+            Utf8CP GetSqlName () const;
+            Storage& GetStorageR ();
+            Storage const& GetStorage () const 
+                {
+                return m_storage;
+                }
+            ClassMapCR GetClassMap () const;
+            Class* GetParent ();
+            std::map <Storage const*, std::set<Class const*>>& GetPartitionsR ();
+            bool InQueue () const;
+            void Done ();
+            std::vector<Storage const*> GetNoneVirtualStorages () const;
+            bool IsAbstract () const;
+            bool RequireView () const;
+        };
+
+    struct Struct : Class
+        {
+        typedef  std::unique_ptr<Struct> Ptr;
+        public:
+            Struct (ClassMapCR classMap, Storage& storage, Class* parent)
+                :Class (classMap, storage, parent)
+                {}
+        };
+    struct Relationship : Class
+        {
+        typedef  std::unique_ptr<Relationship> Ptr;
+        enum class EndType
+            {
+            From, To
+            };
+        enum class PersistanceLocation
+            {
+            From, To, Self
+            };
+        struct EndPoint
+            {
+            private:
+                std::set<Class*> m_classes;
+                PropertyMapCP m_ecid;
+                PropertyMapCP m_classId;
+                EndType m_type;
+            public:
+                EndPoint (RelationshipClassMapCR map, EndType type);
+                std::set<Class*>& GetClassesR ();
+                std::set<Storage const*> GetStorages () const;
+
+                PropertyMapCP GetInstanceId () const;
+                PropertyMapCP GetClassId () const;
+                EndType GetEnd () const;
+            };
+        private:
+            EndPoint m_from;
+            EndPoint m_to;
+        public:
+            Relationship (RelationshipClassMapCR classMap, Storage& storage, Class* parent);
+            RelationshipClassMapCR GetRelationshipClassMap () const;
+            PersistanceLocation GetPersistanceLocation () const;
+            bool RequireCascade () const;
+            bool IsLinkTable () const;
+            EndPoint& From ();
+            EndPoint& To ();
+            EndPoint& ForeignEnd ()
+                {
+                BeAssert (!IsLinkTable ());
+                return GetPersistanceLocation () == PersistanceLocation::From ? From () : To ();
+                }
+            EndPoint& PrimaryEnd ()
+                {
+                BeAssert (!IsLinkTable ());
+                return GetPersistanceLocation () == PersistanceLocation::To ? From () : To ();
+                }   
+            bool IsHolding () const { return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () == ECN::StrengthType::STRENGTHTYPE_Holding; }
+            bool IsReferencing () const { return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () == ECN::StrengthType::STRENGTHTYPE_Referencing; }
+            bool IsEmbedding () const { return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () == ECN::StrengthType::STRENGTHTYPE_Embedding; }
+            
+        };
+    private:
+        mutable std::map<ECN::ECClassId, std::set<ECN::ECClassId>> m_derivedClassLookup;
+        ECDbMapR m_map;
+        std::map<ECN::ECClassId, Class::Ptr> m_classes;
+        std::map<ECN::ECClassId, Relationship::Ptr> m_relationships;
+        std::map<Utf8CP, Storage::Ptr, CompareIUtf8> m_storage;
+    private:
+        ECDbMapR GetMapR () { return m_map; }
+        ECDbMapCR GetMap () const { return m_map; }
+        Storage& GetStorage (Utf8CP tableName);
+        Storage& GetStorage (ClassMapCR classMap);
+        Class& GetClass (ClassMapCR classMap);
+        Relationship&  GetRelationship (RelationshipClassMapCR classMap);
+        BentleyStatus AnalyseClass (ClassMapCR ecClassMap);
+        void AnalyseStruct (Class& classInfo);
+        BentleyStatus AnalyseRelationshipClass (RelationshipClassMapCR ecRelationshipClassMap);
+        const std::vector<ECN::ECClassId> GetRootClassIds () const;
+        const std::vector<ECN::ECClassId> GetRelationshipClassIds () const;
+        std::set<ECN::ECClassId> const& GetDerivedClassIds (ECN::ECClassId baseClassId) const;
+        ClassMapCP GetClassMap (ECN::ECClassId classId) const;
+        void SetupDerivedClassLookup ();
+        void HandleEndTable ();
+    public:
+        ECDbMapAnalyser (ECDbMapR ecdbMap);
+        BentleyStatus Analyser ();
+    };
 struct ECDbViewGenerator
     {
     private:

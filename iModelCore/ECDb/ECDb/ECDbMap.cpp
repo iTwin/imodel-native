@@ -149,9 +149,11 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         if (!key.second->GetMapStrategy ().IsNotMapped ())
             classMaps.insert (key.second.get ());
         }
-    ECDbViewGenerator a(*this);
-    a.BuildGraph ();
-    a.ComputeView ();
+    ECDbMapAnalyser a (*this);
+    a.Analyser ();
+    //ECDbViewGenerator a(*this);
+    //a.BuildGraph ();
+    //a.ComputeView ();
     //SqlGenerator viewGen (*this);
     //if (SUCCESS != viewGen.BuildViewInfrastructure (classMaps))
     //    {
@@ -997,14 +999,14 @@ void ECDbMap::LightWeightMapCache::LoadClassRelationships (bool addAnyClassRelat
         ECClassId id = stmt0->GetValueInt64 (0);
         ECClassId relationshipId = stmt0->GetValueInt64 (1);
         RelationshipEnd filter = stmt0->GetValueInt (2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;;
-        auto itor = m_relationshipEndsByClassId.find (id);
-        if (itor == m_relationshipEndsByClassId.end ())
+        auto itorA = m_relationshipEndsByClassId.find (id);
+        if (itorA == m_relationshipEndsByClassId.end ())
             {
             m_relationshipEndsByClassId[id][relationshipId] = filter;
             }
         else
             {
-            auto& rels = itor->second;
+            auto& rels = itorA->second;
             auto itor1 = rels.find (relationshipId);
             if (itor1 == rels.end ())
                 {
@@ -1012,9 +1014,28 @@ void ECDbMap::LightWeightMapCache::LoadClassRelationships (bool addAnyClassRelat
                 }
             else
                 {
-                rels[relationshipId] = static_cast<RelationshipEnd>((int)(itor1->second) & (int)(filter));
+                rels[relationshipId] = static_cast<RelationshipEnd>((int)(itor1->second) | (int)(filter));
                 }
             }
+
+        auto itorB = m_relationshipEndsByClassIdRev.find (relationshipId);
+        if (itorB == m_relationshipEndsByClassIdRev.end ())
+            {
+            m_relationshipEndsByClassIdRev[relationshipId][id] = filter;
+            }
+        else
+            {
+            auto& classes = itorB->second;
+            auto itor1 = classes.find (id);
+            if (itor1 == classes.end ())
+                {
+                classes[id] = filter;
+                }
+            else
+                {
+                classes[id] = static_cast<RelationshipEnd>((int)(itor1->second) | (int)(filter));
+                }
+            }       
         }
 
     if (addAnyClassRelationships)
@@ -1034,7 +1055,25 @@ void ECDbMap::LightWeightMapCache::LoadClassRelationships (bool addAnyClassRelat
                     }
                 else
                     {
-                    rels[id] = static_cast<RelationshipEnd>((int)(itor1->second) & (int)(pair1.second));
+                    rels[id] = static_cast<RelationshipEnd>((int)(itor1->second) | (int)(pair1.second));
+                    }
+                }
+            }
+
+        for (auto& pair1 : m_anyClassRelationships)
+            {
+            auto& classes = m_relationshipEndsByClassIdRev[pair1.first];
+            for (auto id : m_anyClassReplacements)
+                {
+                //ECClassId id = pair1.first;
+                auto itor1 = classes.find (id);
+                if (itor1 == classes.end ())
+                    {
+                    classes[id] = pair1.second;
+                    }
+                else
+                    {
+                    classes[id] = static_cast<RelationshipEnd>((int)(itor1->second) | (int)(pair1.second));
                     }
                 }
             }
@@ -1159,7 +1198,14 @@ ECDbMap::LightWeightMapCache::ClassRelationshipEnds const& ECDbMap::LightWeightM
     LoadClassRelationships (true);
     return m_relationshipEndsByClassId[classId];
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+ECDbMap::LightWeightMapCache::ClassRelationshipEnds const& ECDbMap::LightWeightMapCache::GetRelationships (ECN::ECClassId relationshipId) const
+    {
+    LoadClassRelationships (true);
+    return m_relationshipEndsByClassIdRev[relationshipId];
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
@@ -1250,6 +1296,7 @@ void ECDbMap::LightWeightMapCache::Reset ()
 
     m_anyClass = ECClass::UNSET_ECCLASSID;
     m_relationshipEndsByClassId.clear ();
+    m_relationshipEndsByClassIdRev.clear ();
     m_tablesByClassId.clear ();
     m_classIdsByTable.clear ();
     m_anyClassRelationships.clear ();
