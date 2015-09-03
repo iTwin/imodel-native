@@ -14,7 +14,6 @@ BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be av
 #----------------------------------------------------------------------------------------
 
 BeFileNameTests.RemoveQuotesWithNoQuotes        # ???
-BeFileNameTests.BeFileBeMoveFile                # Fails on Android
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
