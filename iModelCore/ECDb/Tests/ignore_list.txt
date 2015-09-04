@@ -14,3 +14,4 @@ ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties
 ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A # Affan says this must be ignored until we implement support for ecschema upgrade.
+SchemaImportTestFixture.MismatchDataTypesInExistingTable # notified Maha Nasir and Majd
