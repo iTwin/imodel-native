@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnScript.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
@@ -273,3 +274,35 @@ DgnDbStatus ModelSolverDef::ParameterSet::SetValues(ParameterSet const& parmsIn)
     return DgnDbStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ModelSolverDef::RelocateToDestinationDb(DgnImportContext& context)
+    {
+    // If I refer to a script, make sure the script has been copied over
+    if (Type::Script != GetType())
+        return;
+
+    auto& scriptAdmin = T_HOST.GetScriptAdmin();
+
+    Utf8String scriptName = GetName().c_str();
+    auto idot = scriptName.find(".");
+    if (Utf8String::npos != idot)
+        { // The name of the *program* is before the dot. The specific solver function that we use is after the dot.
+        scriptName = scriptName.substr(0, idot);
+        }
+
+    Utf8String scriptText;
+    DgnScriptType stypeFound;
+    if (DgnDbStatus::Success == scriptAdmin._FetchScript(scriptText, stypeFound, context.GetDestinationDb(), scriptName.c_str(), DgnScriptType::JavaScript))
+        return; // we already have this script
+
+    if (DgnDbStatus::Success != scriptAdmin._FetchScript(scriptText, stypeFound, context.GetSourceDb(), scriptName.c_str(), DgnScriptType::JavaScript))
+        {
+        BeDataAssert(false && "source script is missing");
+        return;
+        }
+
+    DgnScriptLibrary scriptLib(context.GetDestinationDb());
+    scriptLib.RegisterScript(scriptName.c_str(), scriptText.c_str(), stypeFound, false);
+    }

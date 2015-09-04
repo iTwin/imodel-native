@@ -1356,6 +1356,8 @@ DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& impor
 
     model->_InitFrom(*this);
 
+    model->m_solver.RelocateToDestinationDb(importer);
+
     return model;
     }
 
