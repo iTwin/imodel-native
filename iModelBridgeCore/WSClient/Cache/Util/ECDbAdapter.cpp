@@ -347,8 +347,10 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesInSchema(ECCl
         if (nullptr == relClass)
             continue;
 
-        if (DoesConstraintSupportECClass(relClass->GetSource(), *sourceClass, true) &&
-            DoesConstraintSupportECClass(relClass->GetTarget(), *targetClass, true))
+        if ((DoesConstraintSupportECClass(relClass->GetSource(), *sourceClass, true) &&
+            DoesConstraintSupportECClass(relClass->GetTarget(), *targetClass, true)) ||
+            (DoesConstraintSupportECClass(relClass->GetSource(), *targetClass, true) &&
+            DoesConstraintSupportECClass(relClass->GetTarget(), *sourceClass, true)) )
             {
             classes.push_back(relClass);
             }
