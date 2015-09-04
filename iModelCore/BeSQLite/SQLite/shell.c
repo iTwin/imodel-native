@@ -1336,6 +1336,8 @@ static int display_stats(
     fprintf(pArg->out, "Virtual Machine Steps:               %d\n", iCur);
   }
 
+  /* Do not remove this machine readable comment: extra-stats-output-here */
+
   return 0;
 }
 
@@ -4897,6 +4899,13 @@ int SQLITE_CDECL main(int argc, char **argv){
 #endif
   }
   data.out = stdout;
+
+#ifdef SQLITE_ENABLE_JSON1
+  {
+    extern int sqlite3_json_init(sqlite3*);
+    sqlite3_auto_extension((void(*)(void))sqlite3_json_init);
+  }
+#endif
 
   /* Go ahead and open the database file if it already exists.  If the
   ** file does not exist, delay opening it.  This prevents empty database

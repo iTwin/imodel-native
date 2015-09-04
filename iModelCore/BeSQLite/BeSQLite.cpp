@@ -573,7 +573,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
 
     if (rc != BE_SQLITE_OK)
         {
-        BeAssert((BE_SQLITE_OK == checkNoActiveStatements(m_sqlDb)) && "You cannot commit while read statements are active");
+        BeAssert(BE_SQLITE_OK == checkNoActiveStatements(m_sqlDb)); // You cannot commit while statements are active
         return rc;
         }
 
@@ -582,7 +582,6 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
         (*it)->_OnDeactivate(isCommit);
 
     m_txns.erase(thisPos, m_txns.end());
-
     return BE_SQLITE_OK;
     }
 
@@ -1425,7 +1424,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& par
     m_dbFile->m_defaultTxn.Begin();
     m_dbFile->m_dbGuid = dbGuid;
 
-    ExecuteSql (SqlPrintfString ("PRAGMA page_size=%d;PRAGMA encoding=\"%s\";PRAGMA user_version=%d;PRAGMA application_id=%lld;PRAGMA locking_mode=\"%s\";PRAGMA recursive_triggers=true", params.m_pagesize,
+    ExecuteSql(SqlPrintfString("PRAGMA page_size=%d;PRAGMA encoding=\"%s\";PRAGMA user_version=%d;PRAGMA application_id=%lld;PRAGMA locking_mode=\"%s\";PRAGMA recursive_triggers=true", params.m_pagesize,
                               params.m_encoding==Encoding::Utf8 ? "UTF-8" : "UTF-16le", BeSQLite::DbUserVersion, params.m_applicationId,
                               params.m_startDefaultTxn==DefaultTxn::Exclusive ? "EXCLUSIVE" : "NORMAL"));
 
@@ -1772,11 +1771,15 @@ DbFile::~DbFile()
 
     if (0 != m_txns.size())
         {
-        m_txns[0]->Commit(nullptr);        // Commit writes out cached RLVs, etc.  Note: Commit creates new cached statements.
+        DbResult stat = m_txns[0]->Commit(nullptr);  // Commit writes out cached RLVs, etc.  Note: Commit creates new cached statements.
+        UNUSED_VARIABLE(stat);
+        BeAssert(BE_SQLITE_OK==stat);
         m_txns.clear();
         }
 
-    m_statements.Empty();           // No more statements will be prepared and cached.
+    BeAssert(!m_defaultTxn.IsActive()); // should have been committed above
+    m_defaultTxn.m_depth = -1;  // just in case commit failed. Otherwise destructor will attempt to access this DbFile.
+    m_statements.Empty();       // No more statements will be prepared and cached.
     DeleteCachedPropertyMap();
     m_rlvCache.Clear();
 
@@ -2062,7 +2065,7 @@ DbResult Db::SaveExpirationDate(DateTime const& expirationDate)
         return BE_SQLITE_ERROR;
         }
     
-    return SavePropertyString (Properties::ExpirationDate(), xdateString);
+    return SavePropertyString(Properties::ExpirationDate(), xdateString);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3393,6 +3396,12 @@ static DbResult translateZipErrorToSQLiteError(ZipErrors zipError)
     return BE_SQLITE_ERROR;
     }
 
+// Copied from sqlite3-1.c
+#define SQLITE_PENDING_BYTE     (0x40000000)
+#define SQLITE_RESERVED_BYTE    (PENDING_BYTE+1)
+#define SQLITE_SHARED_FIRST     (PENDING_BYTE+2)
+#define SQLITE_SHARED_SIZE      510
+
 //---------------------------------------------------------------------------------------
 // On Windows SQLite locks files by locking bytes starting at SQLITE_PENDING_BYTE (1gig)
 // when there are pending writes.  We test for it here because:
@@ -3991,7 +4000,7 @@ DbResult DbEmbeddedFileTable::CreateTable() const
         return BE_SQLITE_OK;
 
     DbResult rc = m_db.CreateTable(BEDB_TABLE_EmbeddedFile,
-            "Id INTEGER PRIMARY KEY,Name CHAR NOT NULL COLLATE NOCASE UNIQUE,Descr CHAR,Type CHAR,Size INT,Chunk INT,LastModified TIMESTAMP");
+            "Id INTEGER PRIMARY KEY,Name CHAR NOT NULL COLLATE NOCASE,Descr CHAR,Type CHAR,Size INT,Chunk INT,LastModified TIMESTAMP, CONSTRAINT nameAndType UNIQUE(Name,Type)");
 
     if (BE_SQLITE_OK != rc)
         return rc;

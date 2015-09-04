@@ -36,10 +36,11 @@ Notes:
 
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 #define LOGTODB PerformanceResultRecorder::LogToDb
-#if defined (BENTLEY_WIN32) // Using GTest methods on windows
+// Get Test name details
+#if defined (USE_GTEST)
     #define TEST_DETAILS ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name(), ::testing::UnitTest::GetInstance()->current_test_info()->name()
 #else
-    #define TEST_DETAILS __FILE__, __FILE__
+    #define TEST_DETAILS GetTestCaseNameA(), GetTestNameA()
 #endif
 
 USING_NAMESPACE_BENTLEY_SQLITE
