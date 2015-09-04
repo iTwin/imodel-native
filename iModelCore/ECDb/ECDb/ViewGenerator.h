@@ -467,7 +467,7 @@ struct ECDbMapAnalyser
         std::map<Class const*, ViewInfo> m_viewInfos;
     private:
         ECDbMapR GetMapR () { return m_map; }
-        ECDbMapCR GetMap () const { return m_map; }
+        ECDbMapCR GetMap () const { return m_map; } 
         Storage& GetStorage (Utf8CP tableName);
         Storage& GetStorage (ClassMapCR classMap);
         Class& GetClass (ClassMapCR classMap);
