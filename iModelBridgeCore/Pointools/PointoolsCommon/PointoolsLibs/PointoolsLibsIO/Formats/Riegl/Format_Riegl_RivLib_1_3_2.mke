@@ -18,33 +18,37 @@ VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/Riegl
 # Libs required
 #---------------------------------------------------------------------------------------------------------
 
+%if defined(POINTOOLS_BUILD_USING_VS2005)
+    always:
+        @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)\riegl\rivlib-1.32\x86-windows-vc90\include\riegl"
+
+    %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+        always:
+            @CreateSymLinks.py   -f"$(DeliveryDir)scanifc-mt.lib"=${PointoolsLibs}\riegl\rivlib-1.32\x86-windows-vc90\lib\scanifc-mt.lib"
+        
+        always:
+            @CreateSymLinks.py   -f"$(DeliveryDir)scanifc-mt.dll"=${PointoolsLibs}\riegl\rivlib-1.32\x86-windows-vc90\lib\scanifc-mt.dll"
+    
+    %else
+    
+    %endif
 																		# Warning: These VS2012 link against VS2008 !!!
-%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86" && defined(POINTOOLS_BUILD_USING_VS2005)
+%elif defined(POINTOOLS_BUILD_USING_VS2012)
+    always:
+        @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)\riegl\rivlib-1.32\x86_64-windows-vc110\include\Riegl"
 
-always:
-    @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)\riegl\rivlib-1.32\x86-windows-vc90\include\riegl"
+    %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    
+        always:
+            @CreateSymLinks.py   -f"$(DeliveryDir)scanifc-mt.lib"=${PointoolsLibs}\riegl\rivlib-1.32\x86_64-windows-vc110\lib\scanifc-mt.lib"
+        
+        always:
+        @CreateSymLinks.py   -f"$(DeliveryDir)scanifc-mt.dll"=${PointoolsLibs}\riegl\rivlib-1.32\x86_64-windows-vc110\lib\scanifc-mt.dll"
 
-always:
-    @CreateSymLinks.py   -f"$(DeliveryDir)scanifc-mt.lib"=${PointoolsLibs}\riegl\rivlib-1.32\x86-windows-vc90\lib\scanifc-mt.lib"
-
-always:
-    @CreateSymLinks.py   -f"$(DeliveryDir)scanifc-mt.dll"=${PointoolsLibs}\riegl\rivlib-1.32\x86-windows-vc90\lib\scanifc-mt.dll"
-
-%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64" && defined(POINTOOLS_BUILD_USING_VS2005)
-
-%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
-always:
-    @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)\riegl\rivlib-1.32\x86_64-windows-vc110\include\Riegl"
-
-always:
-    @CreateSymLinks.py   -f"$(DeliveryDir)scanifc-mt.lib"=${PointoolsLibs}\riegl\rivlib-1.32\x86_64-windows-vc110\lib\scanifc-mt.lib"
-
-always:
-    @CreateSymLinks.py   -f"$(DeliveryDir)scanifc-mt.dll"=${PointoolsLibs}\riegl\rivlib-1.32\x86_64-windows-vc110\lib\scanifc-mt.dll"
-
+    %else
+    
+    %endif
 %else
-
-%error Target architecture unknown!
-
+    %error Unknown architecture!
 %endif
 

@@ -1,3 +1,10 @@
+rem Usage: InstallAll action destination platform
+rem   action:
+rem      /I  --> Install
+rem      /x  --> Uninstall
+rem   destination: SDK install directory
+rem   platform: x86 or x64
+
 set PointoolsAction=%1
 set PointoolsVortexDest=%2
 set PointoolsPlatform=%3
