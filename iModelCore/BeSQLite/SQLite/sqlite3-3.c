@@ -8701,7 +8701,6 @@ static void checkAppendMsg(
   ...
 ){
   va_list ap;
-  char zBuf[200];
   if( !pCheck->mxErr ) return;
   pCheck->mxErr--;
   pCheck->nErr++;
@@ -8710,8 +8709,7 @@ static void checkAppendMsg(
     sqlite3StrAccumAppend(&pCheck->errMsg, "\n", 1);
   }
   if( pCheck->zPfx ){
-    sqlite3_snprintf(sizeof(zBuf), zBuf, pCheck->zPfx, pCheck->v1, pCheck->v2);
-    sqlite3StrAccumAppendAll(&pCheck->errMsg, zBuf);
+    sqlite3XPrintf(&pCheck->errMsg, 0, pCheck->zPfx, pCheck->v1, pCheck->v2);
   }
   sqlite3VXPrintf(&pCheck->errMsg, 1, zFormat, ap);
   va_end(ap);
@@ -12167,7 +12165,7 @@ SQLITE_PRIVATE void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepa
 */
 SQLITE_API const char *SQLITE_STDCALL sqlite3_sql(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe *)pStmt;
-  return (p && p->isPrepareV2) ? p->zSql : 0;
+  return p ? p->zSql : 0;
 }
 
 /*
@@ -12315,6 +12313,44 @@ SQLITE_PRIVATE int sqlite3VdbeAddOp2(Vdbe *p, int op, int p1, int p2){
   return sqlite3VdbeAddOp3(p, op, p1, p2, 0);
 }
 
+/* Generate code for an unconditional jump to instruction iDest
+*/
+SQLITE_PRIVATE int sqlite3VdbeGoto(Vdbe *p, int iDest){
+  return sqlite3VdbeAddOp3(p, OP_Goto, 0, iDest, 0);
+}
+
+/* Generate code to cause the string zStr to be loaded into
+** register iDest
+*/
+SQLITE_PRIVATE int sqlite3VdbeLoadString(Vdbe *p, int iDest, const char *zStr){
+  return sqlite3VdbeAddOp4(p, OP_String8, 0, iDest, 0, zStr, 0);
+}
+
+/*
+** Generate code that initializes multiple registers to string or integer
+** constants.  The registers begin with iDest and increase consecutively.
+** One register is initialized for each characgter in zTypes[].  For each
+** "s" character in zTypes[], the register is a string if the argument is
+** not NULL, or OP_Null if the value is a null pointer.  For each "i" character
+** in zTypes[], the register is initialized to an integer.
+*/
+SQLITE_PRIVATE void sqlite3VdbeMultiLoad(Vdbe *p, int iDest, const char *zTypes, ...){
+  va_list ap;
+  int i;
+  char c;
+  va_start(ap, zTypes);
+  for(i=0; (c = zTypes[i])!=0; i++){
+    if( c=='s' ){
+      const char *z = va_arg(ap, const char*);
+      int addr = sqlite3VdbeAddOp2(p, z==0 ? OP_Null : OP_String8, 0, iDest++);
+      if( z ) sqlite3VdbeChangeP4(p, addr, z, 0);
+    }else{
+      assert( c=='i' );
+      sqlite3VdbeAddOp2(p, OP_Integer, va_arg(ap, int), iDest++);
+    }
+  }
+  va_end(ap);
+}
 
 /*
 ** Add an opcode that includes the p4 value as a pointer.
@@ -12334,7 +12370,8 @@ SQLITE_PRIVATE int sqlite3VdbeAddOp4(
 }
 
 /*
-** Add an opcode that includes the p4 value with a P4_INT64 type.
+** Add an opcode that includes the p4 value with a P4_INT64 or
+** P4_REAL type.
 */
 SQLITE_PRIVATE int sqlite3VdbeAddOp4Dup8(
   Vdbe *p,            /* Add the opcode to this VM */
@@ -12419,7 +12456,8 @@ SQLITE_PRIVATE void sqlite3VdbeResolveLabel(Vdbe *v, int x){
   int j = -1-x;
   assert( v->magic==VDBE_MAGIC_INIT );
   assert( j<p->nLabel );
-  if( ALWAYS(j>=0) && p->aLabel ){
+  assert( j>=0 );
+  if( p->aLabel ){
     p->aLabel[j] = v->nOp;
   }
   p->iFixedOp = v->nOp - 1;
@@ -12563,17 +12601,21 @@ SQLITE_PRIVATE int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 
 /*
-** Loop through the program looking for P2 values that are negative
-** on jump instructions.  Each such value is a label.  Resolve the
-** label by setting the P2 value to its correct non-zero value.
+** This routine is called after all opcodes have been inserted.  It loops
+** through all the opcodes and fixes up some details.
 **
-** This routine is called once after all opcodes have been inserted.
+** (1) For each jump instruction with a negative P2 value (a label)
+**     resolve the P2 value to an actual address.
 **
-** Variable *pMaxFuncArgs is set to the maximum value of any P2 argument 
-** to an OP_Function, OP_AggStep or OP_VFilter opcode. This is used by 
-** sqlite3VdbeMakeReady() to size the Vdbe.apArg[] array.
+** (2) Compute the maximum number of arguments used by any SQL function
+**     and store that value in *pMaxFuncArgs.
 **
-** The Op.opflags field is set on all opcodes.
+** (3) Update the Vdbe.readOnly and Vdbe.bIsReader flags to accurately
+**     indicate what the prepared statement actually does.
+**
+** (4) Initialize the p4.xAdvance pointer on opcodes that use it.
+**
+** (5) Reclaim the memory allocated for storing labels.
 */
 static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   int i;
@@ -12686,46 +12728,44 @@ SQLITE_PRIVATE VdbeOp *sqlite3VdbeTakeOpArray(Vdbe *p, int *pnOp, int *pnMaxArg)
 ** address of the first operation added.
 */
 SQLITE_PRIVATE int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp, int iLineno){
-  int addr;
+  int addr, i;
+  VdbeOp *pOut;
+  assert( nOp>0 );
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->nOp + nOp > p->pParse->nOpAlloc && growOpArray(p, nOp) ){
     return 0;
   }
   addr = p->nOp;
-  if( ALWAYS(nOp>0) ){
-    int i;
-    VdbeOpList const *pIn = aOp;
-    for(i=0; i<nOp; i++, pIn++){
-      int p2 = pIn->p2;
-      VdbeOp *pOut = &p->aOp[i+addr];
-      pOut->opcode = pIn->opcode;
-      pOut->p1 = pIn->p1;
-      if( p2<0 ){
-        assert( sqlite3OpcodeProperty[pOut->opcode] & OPFLG_JUMP );
-        pOut->p2 = addr + ADDR(p2);
-      }else{
-        pOut->p2 = p2;
-      }
-      pOut->p3 = pIn->p3;
-      pOut->p4type = P4_NOTUSED;
-      pOut->p4.p = 0;
-      pOut->p5 = 0;
+  pOut = &p->aOp[addr];
+  for(i=0; i<nOp; i++, aOp++, pOut++){
+    int p2 = aOp->p2;
+    pOut->opcode = aOp->opcode;
+    pOut->p1 = aOp->p1;
+    if( p2<0 ){
+      assert( sqlite3OpcodeProperty[pOut->opcode] & OPFLG_JUMP );
+      pOut->p2 = addr + ADDR(p2);
+    }else{
+      pOut->p2 = p2;
+    }
+    pOut->p3 = aOp->p3;
+    pOut->p4type = P4_NOTUSED;
+    pOut->p4.p = 0;
+    pOut->p5 = 0;
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
-      pOut->zComment = 0;
+    pOut->zComment = 0;
 #endif
 #ifdef SQLITE_VDBE_COVERAGE
-      pOut->iSrcLine = iLineno+i;
+    pOut->iSrcLine = iLineno+i;
 #else
-      (void)iLineno;
+    (void)iLineno;
 #endif
 #ifdef SQLITE_DEBUG
-      if( p->db->flags & SQLITE_VdbeAddopTrace ){
-        sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
-      }
-#endif
+    if( p->db->flags & SQLITE_VdbeAddopTrace ){
+      sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
     }
-    p->nOp += nOp;
+#endif
   }
+  p->nOp += nOp;
   return addr;
 }
 
@@ -12758,49 +12798,23 @@ SQLITE_PRIVATE void sqlite3VdbeScanStatus(
 
 
 /*
-** Change the value of the P1 operand for a specific instruction.
-** This routine is useful when a large program is loaded from a
-** static array using sqlite3VdbeAddOpList but we want to make a
-** few minor changes to the program.
+** Change the value of the opcode, or P1, P2, P3, or P5 operands
+** for a specific instruction.
 */
+SQLITE_PRIVATE void sqlite3VdbeChangeOpcode(Vdbe *p, u32 addr, u8 iNewOpcode){
+  sqlite3VdbeGetOp(p,addr)->opcode = iNewOpcode;
+}
 SQLITE_PRIVATE void sqlite3VdbeChangeP1(Vdbe *p, u32 addr, int val){
-  assert( p!=0 );
-  if( ((u32)p->nOp)>addr ){
-    p->aOp[addr].p1 = val;
-  }
+  sqlite3VdbeGetOp(p,addr)->p1 = val;
 }
-
-/*
-** Change the value of the P2 operand for a specific instruction.
-** This routine is useful for setting a jump destination.
-*/
 SQLITE_PRIVATE void sqlite3VdbeChangeP2(Vdbe *p, u32 addr, int val){
-  assert( p!=0 );
-  if( ((u32)p->nOp)>addr ){
-    p->aOp[addr].p2 = val;
-  }
+  sqlite3VdbeGetOp(p,addr)->p2 = val;
 }
-
-/*
-** Change the value of the P3 operand for a specific instruction.
-*/
 SQLITE_PRIVATE void sqlite3VdbeChangeP3(Vdbe *p, u32 addr, int val){
-  assert( p!=0 );
-  if( ((u32)p->nOp)>addr ){
-    p->aOp[addr].p3 = val;
-  }
+  sqlite3VdbeGetOp(p,addr)->p3 = val;
 }
-
-/*
-** Change the value of the P5 operand for the most recently
-** added operation.
-*/
-SQLITE_PRIVATE void sqlite3VdbeChangeP5(Vdbe *p, u8 val){
-  assert( p!=0 );
-  if( p->aOp ){
-    assert( p->nOp>0 );
-    p->aOp[p->nOp-1].p5 = val;
-  }
+SQLITE_PRIVATE void sqlite3VdbeChangeP5(Vdbe *p, u8 p5){
+  sqlite3VdbeGetOp(p,-1)->p5 = p5;
 }
 
 /*
@@ -12808,8 +12822,8 @@ SQLITE_PRIVATE void sqlite3VdbeChangeP5(Vdbe *p, u8 val){
 ** the address of the next instruction to be coded.
 */
 SQLITE_PRIVATE void sqlite3VdbeJumpHere(Vdbe *p, int addr){
-  sqlite3VdbeChangeP2(p, addr, p->nOp);
   p->pParse->iFixedOp = p->nOp - 1;
+  sqlite3VdbeChangeP2(p, addr, p->nOp);
 }
 
 
@@ -13194,8 +13208,9 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
           zColl = "B";
           n = 1;
         }
-        if( i+n>nTemp-6 ){
+        if( i+n>nTemp-7 ){
           memcpy(&zTemp[i],",...",4);
+          i += 4;
           break;
         }
         zTemp[i++] = ',';
@@ -17043,7 +17058,7 @@ end_of_step:
   ** were called on statement p.
   */
   assert( rc==SQLITE_ROW  || rc==SQLITE_DONE   || rc==SQLITE_ERROR 
-       || rc==SQLITE_BUSY || rc==SQLITE_MISUSE
+       || (rc&0xff)==SQLITE_BUSY || rc==SQLITE_MISUSE
   );
   assert( (p->rc!=SQLITE_ROW && p->rc!=SQLITE_DONE) || p->rc==p->rcApp );
   if( p->isPrepareV2 && rc!=SQLITE_ROW && rc!=SQLITE_DONE ){
@@ -19137,7 +19152,7 @@ SQLITE_PRIVATE int sqlite3VdbeExec(
     ** sqlite3_column_text16() failed.  */
     goto no_mem;
   }
-  assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
+  assert( p->rc==SQLITE_OK || (p->rc&0xff)==SQLITE_BUSY );
   assert( p->bIsReader || p->readOnly!=0 );
   p->rc = SQLITE_OK;
   p->iCurrentTime = 0;
@@ -21574,12 +21589,12 @@ case OP_AutoCommit: {
       goto vdbe_return;
     }else{
       db->autoCommit = (u8)desiredAutoCommit;
-      if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
-        p->pc = (int)(pOp - aOp);
-        db->autoCommit = (u8)(1-desiredAutoCommit);
-        p->rc = rc = SQLITE_BUSY;
-        goto vdbe_return;
-      }
+    }
+    if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
+      p->pc = (int)(pOp - aOp);
+      db->autoCommit = (u8)(1-desiredAutoCommit);
+      p->rc = rc = SQLITE_BUSY;
+      goto vdbe_return;
     }
     assert( db->nStatement==0 );
     sqlite3CloseSavepoints(db);
@@ -21651,9 +21666,11 @@ case OP_Transaction: {
 
   if( pBt ){
     rc = sqlite3BtreeBeginTrans(pBt, pOp->p2);
-    if( rc==SQLITE_BUSY ){
+    testcase( rc==SQLITE_BUSY_SNAPSHOT );
+    testcase( rc==SQLITE_BUSY_RECOVERY );
+    if( (rc&0xff)==SQLITE_BUSY ){
       p->pc = (int)(pOp - aOp);
-      p->rc = rc = SQLITE_BUSY;
+      p->rc = rc;
       goto vdbe_return;
     }
     if( rc!=SQLITE_OK ){
@@ -29148,6 +29165,11 @@ SQLITE_PRIVATE int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
       if( sqlite3WalkSelect(pWalker, pItem->pSelect) ){
         return WRC_Abort;
       }
+      if( pItem->fg.isTabFunc
+       && sqlite3WalkExprList(pWalker, pItem->u1.pFuncArg)
+      ){
+        return WRC_Abort;
+      }
     }
   }
   return WRC_Continue;
@@ -29506,7 +29528,7 @@ static int lookupName(
             ** USING clause, then skip this match.
             */
             if( cnt==1 ){
-              if( pItem->jointype & JT_NATURAL ) continue;
+              if( pItem->fg.jointype & JT_NATURAL ) continue;
               if( nameInUsingClause(pItem->pUsing, zCol) ) continue;
             }
             cnt++;
@@ -29521,8 +29543,8 @@ static int lookupName(
         pExpr->iTable = pMatch->iCursor;
         pExpr->pTab = pMatch->pTab;
         /* RIGHT JOIN not (yet) supported */
-        assert( (pMatch->jointype & JT_RIGHT)==0 );
-        if( (pMatch->jointype & JT_LEFT)!=0 ){
+        assert( (pMatch->fg.jointype & JT_RIGHT)==0 );
+        if( (pMatch->fg.jointype & JT_LEFT)!=0 ){
           ExprSetProperty(pExpr, EP_CanBeNull);
         }
         pSchema = pExpr->pTab->pSchema;
@@ -29607,9 +29629,9 @@ static int lookupName(
     ** resolved by the time the WHERE clause is resolved.
     **
     ** The ability to use an output result-set column in the WHERE, GROUP BY,
-    ** or HAVING clauses, or as part of a larger expression in the ORDRE BY
+    ** or HAVING clauses, or as part of a larger expression in the ORDER BY
     ** clause is not standard SQL.  This is a (goofy) SQLite extension, that
-    ** is supported for backwards compatibility only.  TO DO: Issue a warning
+    ** is supported for backwards compatibility only. Hence, we issue a warning
     ** on sqlite3_log() whenever the capability is used.
     */
     if( (pEList = pNC->pEList)!=0
@@ -30342,7 +30364,6 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   int isCompound;         /* True if p is a compound select */
   int nCompound;          /* Number of compound terms processed so far */
   Parse *pParse;          /* Parsing context */
-  ExprList *pEList;       /* Result set expression list */
   int i;                  /* Loop counter */
   ExprList *pGroupBy;     /* The GROUP BY clause */
   Select *pLeftmost;      /* Left-most of SELECT of a compound */
@@ -30415,7 +30436,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         ** parent contexts. After resolving references to expressions in
         ** pItem->pSelect, check if this value has changed. If so, then
         ** SELECT statement pItem->pSelect must be correlated. Set the
-        ** pItem->isCorrelated flag if this is the case. */
+        ** pItem->fg.isCorrelated flag if this is the case. */
         for(pNC=pOuterNC; pNC; pNC=pNC->pNext) nRef += pNC->nRef;
 
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
@@ -30424,8 +30445,8 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         if( pParse->nErr || db->mallocFailed ) return WRC_Abort;
 
         for(pNC=pOuterNC; pNC; pNC=pNC->pNext) nRef -= pNC->nRef;
-        assert( pItem->isCorrelated==0 && nRef<=0 );
-        pItem->isCorrelated = (nRef!=0);
+        assert( pItem->fg.isCorrelated==0 && nRef<=0 );
+        pItem->fg.isCorrelated = (nRef!=0);
       }
     }
   
@@ -30437,14 +30458,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     sNC.pNext = pOuterNC;
   
     /* Resolve names in the result set. */
-    pEList = p->pEList;
-    assert( pEList!=0 );
-    for(i=0; i<pEList->nExpr; i++){
-      Expr *pX = pEList->a[i].pExpr;
-      if( sqlite3ResolveExprNames(&sNC, pX) ){
-        return WRC_Abort;
-      }
-    }
+    if( sqlite3ResolveExprListNames(&sNC, p->pEList) ) return WRC_Abort;
   
     /* If there are no aggregate functions in the result-set, and no GROUP BY 
     ** expression, do not allow aggregates in any of the other expressions.
@@ -30476,6 +30490,16 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     sNC.pEList = p->pEList;
     if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
     if( sqlite3ResolveExprNames(&sNC, p->pWhere) ) return WRC_Abort;
+
+    /* Resolve names in table-valued-function arguments */
+    for(i=0; i<p->pSrc->nSrc; i++){
+      struct SrcList_item *pItem = &p->pSrc->a[i];
+      if( pItem->fg.isTabFunc
+       && sqlite3ResolveExprListNames(&sNC, pItem->u1.pFuncArg) 
+      ){
+        return WRC_Abort;
+      }
+    }
 
     /* The ORDER BY and GROUP BY clauses may not refer to terms in
     ** outer queries 
@@ -30640,6 +30664,22 @@ SQLITE_PRIVATE int sqlite3ResolveExprNames(
   return ExprHasProperty(pExpr, EP_Error);
 }
 
+/*
+** Resolve all names for all expression in an expression list.  This is
+** just like sqlite3ResolveExprNames() except that it works for an expression
+** list rather than a single expression.
+*/
+SQLITE_PRIVATE int sqlite3ResolveExprListNames( 
+  NameContext *pNC,       /* Namespace to resolve expressions in. */
+  ExprList *pList         /* The expression list to be analyzed. */
+){
+  int i;
+  assert( pList!=0 );
+  for(i=0; i<pList->nExpr; i++){
+    if( sqlite3ResolveExprNames(pNC, pList->a[i].pExpr) ) return WRC_Abort;
+  }
+  return WRC_Continue;
+}
 
 /*
 ** Resolve all names in all expressions of a SELECT and in all
@@ -30689,7 +30729,6 @@ SQLITE_PRIVATE void sqlite3ResolveSelfReference(
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
-  int i;                          /* Loop counter */
 
   assert( type==NC_IsCheck || type==NC_PartIdx );
   memset(&sNC, 0, sizeof(sNC));
@@ -30702,13 +30741,7 @@ SQLITE_PRIVATE void sqlite3ResolveSelfReference(
   sNC.pSrcList = &sSrc;
   sNC.ncFlags = type;
   if( sqlite3ResolveExprNames(&sNC, pExpr) ) return;
-  if( pList ){
-    for(i=0; i<pList->nExpr; i++){
-      if( sqlite3ResolveExprNames(&sNC, pList->a[i].pExpr) ){
-        return;
-      }
-    }
-  }
+  if( pList ) sqlite3ResolveExprListNames(&sNC, pList);
 }
 
 /************** End of resolve.c *********************************************/

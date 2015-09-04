@@ -3345,7 +3345,6 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   TIMER_START;
   assert( cnt==(cnt&0x1ffff) );
   assert( id->h>2 );
-  cnt &= 0x1ffff;
   do{
 #if defined(USE_PREAD)
     got = osPread(id->h, pBuf, cnt, offset);
@@ -3562,8 +3561,8 @@ static int unixWrite(
     }
   }
 #endif
-
-  while( amt>0 && (wrote = seekAndWrite(pFile, offset, pBuf, amt))>0 ){
+ 
+  while( (wrote = seekAndWrite(pFile, offset, pBuf, amt))<amt && wrote>0 ){
     amt -= wrote;
     offset += wrote;
     pBuf = &((char*)pBuf)[wrote];
@@ -3571,7 +3570,7 @@ static int unixWrite(
   SimulateIOError(( wrote=(-1), amt=1 ));
   SimulateDiskfullError(( wrote=0, amt=1 ));
 
-  if( amt>0 ){
+  if( amt>wrote ){
     if( wrote<0 && pFile->lastErrno!=ENOSPC ){
       /* lastErrno set by seekAndWrite */
       return SQLITE_IOERR_WRITE;
@@ -14759,7 +14758,7 @@ SQLITE_PRIVATE void sqlite3PcacheIterateDirty(PCache *pCache, void (*xIter)(PgHd
 ** that is allocated when the page cache is created.  The size of the local
 ** bulk allocation can be adjusted using 
 **
-**     sqlite3_config(SQLITE_CONFIG_PCACHE, 0, 0, N).
+**     sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, N).
 **
 ** If N is positive, then N pages worth of memory are allocated using a single
 ** sqlite3Malloc() call and that memory is used for the first N pages allocated.
@@ -15086,7 +15085,7 @@ static int pcache1MemSize(void *p){
 /*
 ** Allocate a new page object initially associated with cache pCache.
 */
-static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
+static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
   PgHdr1 *p = 0;
   void *pPg;
 
@@ -15104,6 +15103,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
     assert( pCache->pGroup==&pcache1.grp );
     pcache1LeaveMutex(pCache->pGroup);
 #endif
+    if( benignMalloc ) sqlite3BeginBenignMalloc();
 #ifdef SQLITE_PCACHE_SEPARATE_HEADER
     pPg = pcache1Alloc(pCache->szPage);
     p = sqlite3Malloc(sizeof(PgHdr1) + pCache->szExtra);
@@ -15116,6 +15116,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
     pPg = pcache1Alloc(pCache->szAlloc);
     p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
 #endif
+    if( benignMalloc ) sqlite3EndBenignMalloc();
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
     pcache1EnterMutex(pCache->pGroup);
 #endif
@@ -15561,9 +15562,7 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
   ** attempt to allocate a new one. 
   */
   if( !pPage ){
-    if( createFlag==1 ){ sqlite3BeginBenignMalloc(); }
-    pPage = pcache1AllocPage(pCache);
-    if( createFlag==1 ){ sqlite3EndBenignMalloc(); }
+    pPage = pcache1AllocPage(pCache, createFlag==1);
   }
 
   if( pPage ){
@@ -24280,6 +24279,7 @@ struct Wal {
   u8 syncHeader;             /* Fsync the WAL header if true */
   u8 padToSectorBoundary;    /* Pad transactions out to the next sector */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
+  u32 minFrame;              /* Ignore wal frames before this one */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
 #ifdef SQLITE_DEBUG
@@ -26148,12 +26148,27 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     ** pWal->hdr.mxFrame risks reading a corrupted snapshot. So, retry
     ** instead.
     **
-    ** This does not guarantee that the copy of the wal-index header is up to
-    ** date before proceeding. That would not be possible without somehow
-    ** blocking writers. It only guarantees that a dangerous checkpoint or 
-    ** log-wrap (either of which would require an exclusive lock on
-    ** WAL_READ_LOCK(mxI)) has not occurred since the snapshot was valid.
+    ** Before checking that the live wal-index header has not changed
+    ** since it was read, set Wal.minFrame to the first frame in the wal
+    ** file that has not yet been checkpointed. This client will not need
+    ** to read any frames earlier than minFrame from the wal file - they
+    ** can be safely read directly from the database file.
+    **
+    ** Because a ShmBarrier() call is made between taking the copy of 
+    ** nBackfill and checking that the wal-header in shared-memory still
+    ** matches the one cached in pWal->hdr, it is guaranteed that the 
+    ** checkpointer that set nBackfill was not working with a wal-index
+    ** header newer than that cached in pWal->hdr. If it were, that could
+    ** cause a problem. The checkpointer could omit to checkpoint
+    ** a version of page X that lies before pWal->minFrame (call that version
+    ** A) on the basis that there is a newer version (version B) of the same
+    ** page later in the wal file. But if version B happens to like past
+    ** frame pWal->hdr.mxFrame - then the client would incorrectly assume
+    ** that it can read version A from the database file. However, since
+    ** we can guarantee that the checkpointer that set nBackfill could not
+    ** see any pages past pWal->hdr.mxFrame, this problem does not come up.
     */
+    pWal->minFrame = pInfo->nBackfill+1;
     walShmBarrier(pWal);
     if( pInfo->aReadMark[mxI]!=mxReadMark
      || memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr))
@@ -26224,6 +26239,7 @@ SQLITE_PRIVATE int sqlite3WalFindFrame(
   u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
   u32 iLast = pWal->hdr.mxFrame;  /* Last page in WAL for this reader */
   int iHash;                      /* Used to loop through N hash tables */
+  int iMinHash;
 
   /* This routine is only be called from within a read transaction. */
   assert( pWal->readLock>=0 || pWal->lockError );
@@ -26264,7 +26280,8 @@ SQLITE_PRIVATE int sqlite3WalFindFrame(
   **     This condition filters out entries that were added to the hash
   **     table after the current read-transaction had started.
   */
-  for(iHash=walFramePage(iLast); iHash>=0 && iRead==0; iHash--){
+  iMinHash = walFramePage(pWal->minFrame);
+  for(iHash=walFramePage(iLast); iHash>=iMinHash && iRead==0; iHash--){
     volatile ht_slot *aHash;      /* Pointer to hash table */
     volatile u32 *aPgno;          /* Pointer to array of page numbers */
     u32 iZero;                    /* Frame number corresponding to aPgno[0] */
@@ -26279,7 +26296,7 @@ SQLITE_PRIVATE int sqlite3WalFindFrame(
     nCollide = HASHTABLE_NSLOT;
     for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
-      if( iFrame<=iLast && aPgno[aHash[iKey]]==pgno ){
+      if( iFrame<=iLast && iFrame>=pWal->minFrame && aPgno[aHash[iKey]]==pgno ){
         assert( iFrame>iRead || CORRUPT_DB );
         iRead = iFrame;
       }
@@ -27736,9 +27753,11 @@ struct IntegrityCk {
 */
 #if SQLITE_BYTEORDER==4321
 # define get2byteAligned(x)  (*(u16*)(x))
-#elif SQLITE_BYTEORDER==1234 && GCC_VERSION>=4008000
+#elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
+    && GCC_VERSION>=4008000
 # define get2byteAligned(x)  __builtin_bswap16(*(u16*)(x))
-#elif SQLITE_BYTEORDER==1234 && defined(_MSC_VER) && _MSC_VER>=1300
+#elif SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
+    && defined(_MSC_VER) && _MSC_VER>=1300
 # define get2byteAligned(x)  _byteswap_ushort(*(u16*)(x))
 #else
 # define get2byteAligned(x)  ((x)[0]<<8 | (x)[1])
