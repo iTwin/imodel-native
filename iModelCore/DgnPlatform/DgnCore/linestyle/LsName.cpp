@@ -160,7 +160,7 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
+void _StrokeForCache(ViewContextR context) override
     {
     ElemDisplayParams   savedParams(context.GetCurrentDisplayParams());
 
@@ -176,10 +176,10 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     context.GetCurrentDisplayParams() = savedParams;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-DgnDbR _GetDgnDb() const override { return m_viewContext.GetDgnDb(); }
+    DgnDbR _GetDgnDb() const override {return m_viewContext.GetDgnDb();}
+    Graphic* _GetGraphic(DgnViewportCR vp) const override {return nullptr;}
+    void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const override {}
+
 };
 
 //---------------------------------------------------------------------------------------

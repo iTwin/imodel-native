@@ -452,7 +452,7 @@ public:
     DGNPLATFORM_EXPORT void SetArcTolerance(double tol);
     DGNPLATFORM_EXPORT void SetLinestyleTangents(DPoint3dCP start, DPoint3dCP end);
 
-    DGNPLATFORM_EXPORT Render::GraphicPtr CreateGraphic(Render::IStrokeForCache&, Render::GraphicCache* qvCache = nullptr, double pixelSize = 0.0, Render::CachedDrawP cachedDrawP = nullptr);
+    DGNPLATFORM_EXPORT Render::GraphicPtr CreateGraphic(Render::IStrokeForCache&, Render::CachedDrawP cachedDrawP = nullptr);
     DGNPLATFORM_EXPORT Render::GraphicPtr GetGraphic(Render::IStrokeForCache& stroker);
 
     DGNPLATFORM_EXPORT void DeleteSymbol(Render::IDisplaySymbol*);
@@ -695,7 +695,7 @@ public:
     //! @param[in]      lstyle      The new current linestyle. If NULL, no (solid) linestyle is used.
     //DGNPLATFORM_EXPORT void SetCurrLineStyle (ILineStyleCP lstyle);
 
-    DGNPLATFORM_EXPORT bool& GetUseCachedGraphics();
+    bool& GetUseCachedGraphics() {return m_useCachedGraphics;}
     DGNPLATFORM_EXPORT bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const;
 
     //! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied ElemMatSymb.

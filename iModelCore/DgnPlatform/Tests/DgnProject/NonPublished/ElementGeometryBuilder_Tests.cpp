@@ -46,7 +46,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
     EXPECT_TRUE(builder->Append(*ellipse));
 
-    ElemDisplayParams elemDisplayParams;
+    Render::ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
     elemDisplayParams.SetWeight(2);
     EXPECT_TRUE( builder->Append(elemDisplayParams));

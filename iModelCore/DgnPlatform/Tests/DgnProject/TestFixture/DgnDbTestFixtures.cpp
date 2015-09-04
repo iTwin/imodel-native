@@ -41,7 +41,7 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Majd.Uddin    06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestElementPtr TestElement::Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
+TestElementPtr TestElement::Create(DgnDbR db, Render::ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
 
@@ -141,7 +141,7 @@ DgnElementCPtr DgnDbTestFixture::InsertElement(DgnElement::Code elementCode, Dgn
 * Inserts TestElement with Display Properties
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnDbTestFixture::InsertElement(DgnElement::Code elementCode, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId)
+DgnElementCPtr DgnDbTestFixture::InsertElement(DgnElement::Code elementCode, Render::ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;

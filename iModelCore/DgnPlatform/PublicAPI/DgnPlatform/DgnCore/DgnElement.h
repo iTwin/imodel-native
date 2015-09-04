@@ -21,6 +21,19 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
 struct Graphic;
 DEFINE_REF_COUNTED_PTR(Graphic)
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct GraphicSet
+{
+    mutable bmap<DgnViewportCP, Render::GraphicPtr, std::less<DgnViewportCP>, 8> m_graphics;
+
+    DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR) const;
+    DGNPLATFORM_EXPORT void Save(DgnViewportCR, Render::Graphic&);
+    DGNPLATFORM_EXPORT void Drop(DgnViewportCR);
+    DGNPLATFORM_EXPORT void Clear();
+};
+
 END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -1090,8 +1103,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 
 protected:
     GeomStream m_geom;
-    typedef bmap<DgnViewportCP, Render::Graphic const*, std::less<DgnViewportCP>, 8> T_Graphics;
-    mutable T_Graphics m_graphics;
+    mutable Render::GraphicSet m_graphics;
 
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
@@ -1107,10 +1119,7 @@ protected:
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
 public:
-    DGNPLATFORM_EXPORT Render::GraphicCPtr FindGraphic(DgnViewportCR) const;
-    DGNPLATFORM_EXPORT void CacheGraphic(DgnViewportCR, Render::Graphic const&) const;
-    DGNPLATFORM_EXPORT void DropGraphic(DgnViewportCR) const;
-    DGNPLATFORM_EXPORT void ClearGraphics() const;
+    Render::GraphicSet& Graphics() const {return m_graphics;}
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
     DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;

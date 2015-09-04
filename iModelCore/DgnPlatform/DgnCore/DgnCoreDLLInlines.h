@@ -180,7 +180,6 @@ DG_INLINE size_t ViewContext::GetTransClipDepth() {return m_transformClipStack.G
 DG_INLINE size_t ViewContext::GetRefTransClipDepth() {return m_refTransClipDepth;}
 DG_INLINE RangeResult ViewContext::GetCurrParentRangeResult() {return m_parentRangeResult; }
 DG_INLINE void ViewContext::SetCurrParentRangeResult(RangeResult val) {m_parentRangeResult = val;}
-DG_INLINE bool& ViewContext::GetUseCachedGraphics() {return m_useCachedGraphics;}
 DG_INLINE DgnViewportP ViewContext::GetViewport() const {return m_viewport;}
 DG_INLINE double ViewContext::GetArcTolerance() const {return m_arcTolerance;}
 DG_INLINE double ViewContext::GetMinLOD() const {return m_minLOD;}

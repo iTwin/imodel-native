@@ -37,11 +37,11 @@ TEST_F (ElementDisplayProperties, SetGradient)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId("model3");
 
-    ElemDisplayParams ep;
+    Render::ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
-    ep.SetFillDisplay(FillDisplay::Always);
+    ep.SetFillDisplay(Render::FillDisplay::Always);
 
-    GradientSymbPtr   gradient = GradientSymb::Create();
+    Render::GradientSymbPtr   gradient = Render::GradientSymb::Create();
     double   keyValues[2];
     ColorDef    keyColors[2];
 
@@ -66,8 +66,8 @@ TEST_F (ElementDisplayProperties, SetGradient)
 
     for (ElementGeometryPtr geom : collection)
         {
-        ElemDisplayParamsCR params = collection.GetElemDisplayParams();
-        GradientSymbCP gradient = params.GetGradient();
+        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams();
+        Render::GradientSymbCP gradient = params.GetGradient();
         EXPECT_NE (nullptr, params.GetGradient());
         EXPECT_EQ (GradientMode::Spherical, gradient->GetMode());
         EXPECT_EQ (0, gradient->GetFlags());
@@ -135,7 +135,7 @@ TEST_F (ElementDisplayProperties, SetTransparency)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId("model3");
 
-    ElemDisplayParams ep;
+    Render::ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetTransparency(0.5);
 
@@ -147,7 +147,7 @@ TEST_F (ElementDisplayProperties, SetTransparency)
 
     for (ElementGeometryPtr geom : collection)
         {
-        ElemDisplayParamsCR params = collection.GetElemDisplayParams();
+        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams();
         EXPECT_EQ (0.5, params.GetTransparency());
         EXPECT_EQ (0.5, params.GetNetTransparency());
         }
@@ -168,7 +168,7 @@ TEST_F (ElementDisplayProperties, SetCategory)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId("model3");
 
-    ElemDisplayParams ep;
+    Render::ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
 
     DgnElementCPtr pE1 = InsertElement(DgnElement::Code("E3"), ep, m3id);
@@ -179,7 +179,7 @@ TEST_F (ElementDisplayProperties, SetCategory)
 
     for (ElementGeometryPtr geom : collection)
         {
-        ElemDisplayParamsCR params = collection.GetElemDisplayParams();
+        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams();
         DgnCategoryId CId = params.GetCategoryId();
         ASSERT_TRUE (CId.IsValid());
         //Setting the Category Id also sets the SubCategory to the default.
@@ -203,7 +203,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId("model3");
 
-    ElemDisplayParams ep;
+    Render::ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetWeight(21);
     ep.SetDisplayPriority(2);
@@ -216,7 +216,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
 
     for (ElementGeometryPtr geom : collection)
         {
-        ElemDisplayParamsCR params = collection.GetElemDisplayParams();
+        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams();
         EXPECT_EQ (21, params.GetWeight());
         bool weight = params.IsWeightFromSubCategoryAppearance();
         EXPECT_FALSE (weight);
@@ -239,9 +239,9 @@ TEST_F (ElementDisplayProperties, FillProperties)
     model3->Insert();
     DgnModelId m3id = m_db->Models().QueryModelId("model3");
 
-    ElemDisplayParams ep;
+    Render::ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
-    ep.SetFillDisplay(FillDisplay::Always);
+    ep.SetFillDisplay(Render::FillDisplay::Always);
     ep.SetFillColor(ColorDef::Red());
     ep.SetFillTransparency(0.8);
 
@@ -253,8 +253,8 @@ TEST_F (ElementDisplayProperties, FillProperties)
 
     for (ElementGeometryPtr geom : collection)
         {
-        ElemDisplayParamsCR params = collection.GetElemDisplayParams();
-        EXPECT_EQ (FillDisplay::Always, params.GetFillDisplay());
+        Render::ElemDisplayParamsCR params = collection.GetElemDisplayParams();
+        EXPECT_EQ (Render::FillDisplay::Always, params.GetFillDisplay());
         EXPECT_EQ (ColorDef::Red(), params.GetFillColor());
         bool FillColor = params.IsFillColorFromSubCategoryAppearance();
         EXPECT_FALSE (FillColor);

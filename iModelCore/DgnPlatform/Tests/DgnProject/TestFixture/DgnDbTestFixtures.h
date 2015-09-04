@@ -66,7 +66,7 @@ protected:
 public:
     TestElement(CreateParams const& params) : T_Super(params) {}
     static TestElementPtr Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
-    static TestElementPtr Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
+    static TestElementPtr Create(DgnDbR db, Render::ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
     static ECN::ECClassCP GetTestElementECClass(DgnDbR db) { return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME); }
     void SetTestItemProperty(Utf8CP value) { m_testItemProperty.AssignOrClear(value); }
 };
@@ -140,7 +140,7 @@ public:
     void SetupProject(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnElementCPtr InsertElement(DgnElement::Code elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
-    DgnElementCPtr InsertElement(DgnElement::Code elementCode, ElemDisplayParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
+    DgnElementCPtr InsertElement(DgnElement::Code elementCode, Render::ElemDisplayParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     DgnElementKey InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);
     DgnElementKey InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);
     DgnElementKey InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);

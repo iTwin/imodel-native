@@ -22,7 +22,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="ComponentModelName" typeName="string"/>
-        <ECProperty propertyName="SolutionName" typeName="string"/>
+        <ECProperty propertyaName="SolutionName" typeName="string"/>
         <!-- WIP_COMPONENTS: I want (ComponentModelId,Parameters) to be unique and indexed -->
         <ECProperty propertyName="Geom" typeName="binary"/>
         <ECProperty propertyName="Range" typeName="binary"/>

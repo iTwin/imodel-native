@@ -19,7 +19,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemDisplayParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ElemMatSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomDraw)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicCache)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(IDisplaySymbol)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
@@ -40,7 +39,6 @@ DEFINE_REF_COUNTED_PTR(Target)
 DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(Task)
 DEFINE_REF_COUNTED_PTR(Graphic)
-DEFINE_REF_COUNTED_PTR(GraphicCache)
 DEFINE_REF_COUNTED_PTR(MRImage)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
 
@@ -61,19 +59,6 @@ struct Renderer
         Always    = 1, //! display on for all elements
         Never     = 2, //! display off for all elements
     };
-
-    //! Return a pointer to a temporary QVCache used to create a temporary QVElem (short-lived).
-    virtual GraphicCache* _GetTempGraphicCache() {return nullptr;}
-
-    //! Create and maintain a cache to hold cached representations of drawn geometry for persistent elements (QVElem).
-    virtual GraphicCachePtr _CreateGraphicCache() {return nullptr;}
-
-    //! Reset specified GraphicCache.
-    virtual void _ResetGraphicCache(GraphicCacheP GraphicCache) {}
-
-    //! Return cache to use for symbols (if host has chosen to have a symbol cache).
-    //! @note Symbol cache will be required for an interactive host.
-    virtual GraphicCache* _GetSymbolCache() {return nullptr;}
 
     //! Save cache entry for symbol (if host has chosen to have a symbol cache).
     virtual void _SaveGraphicForSymbol(IDisplaySymbol* symbol, Graphic* graphic) {}
@@ -173,13 +158,6 @@ struct Graphic : IRefCounted
 // @bsiclass                                                    Keith.Bentley   08/15
 //=======================================================================================
 struct MRImage : IRefCounted
-{
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/15
-//=======================================================================================
-struct GraphicCache : IRefCounted
 {
 };
 
@@ -1025,8 +1003,7 @@ struct IStrokeForCache
     //! to create a cached presentation for geometry that is expensive to create. The cached presentation created when this is called
     //! will then be used for subsequent draws.
     //! @param[in] context context to use to create the cached representation.
-    //! @param[in] pixelSize size (in local coordinates) of a screen pixel.
-    virtual void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) = 0;
+    virtual void _StrokeForCache(ViewContextR context) = 0;
 
     //! Return DrawExpense::High only if the representation is very expensive to reproduce, otherwise leave as DrawExpense::Medium.  This will cause
     //! the cached geometry to be preserved in low memory conditions.
@@ -1034,23 +1011,27 @@ struct IStrokeForCache
 
     //! Return true if _StrokeForCache should be called for locate. The geometry output by the stroker will be used to generate the curve/edge hits
     //! required for snapping as well as for locating the interiors of filled/rendered geometry.
-    //! @note A stroker that has a very expensive to create cached representation (ex. breps) should NEVER return true, see _WantLocateByGraphics.
+    //! @note A stroker that has a very expensive to create cached representation (ex. breps) should NEVER return true.
     virtual bool _WantLocateByStroker() const {return true;}
 
     //! Return geometry range for the purpose of calculating pixelSize for creating a size dependent cache representation.
     //! @note A valid range is required only if _GetSizeDependentGeometryPossible returns true.
     virtual DRange3d _GetRange() const {return DRange3d::NullRange();}
 
-    //! Return dgnDb for default GraphicCache.
-    virtual DgnDbR _GetDgnDb() const = 0;
+    //! Return Graphic created by a prior call to _StrokeForCache. When nullptr is returned, _StrokeForCache will be called to create a new Graphic.
+    virtual Graphic* _GetGraphic(DgnViewportCR) const = 0;
 
-}; // IStrokeForCache
+    //! Save the Graphic created by calling _StrokeForCache for use in subsequent draws.
+    virtual void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const = 0;
+
+    virtual DgnDbR _GetDgnDb() const = 0;
+};
 
 //=======================================================================================
 //! IStrokeForCache sub-class specific to GeometricElement.
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE StrokeElementForCache : IStrokeForCache
+struct StrokeElementForCache : IStrokeForCache
 {
 protected:
     GeometricElementCR  m_element;
@@ -1058,24 +1039,26 @@ protected:
 public:
     explicit StrokeElementForCache(GeometricElementCR element) : m_element(element) {}
 
-    virtual DgnDbR _GetDgnDb() const override {return m_element.GetDgnDb();}
+    Graphic* _GetGraphic(DgnViewportCR vp) const override {return m_element.Graphics().Find(vp);}
+    void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const override {m_element.Graphics().Save(vp, graphic);}
     virtual DRange3d _GetRange() const override {return m_element.CalculateRange3d();}
+    virtual DgnDbR _GetDgnDb() const override {return m_element.GetDgnDb();}
 };
 
 //=======================================================================================
 //! IStrokeForCache sub-class specific to tools/transient cached graphics.
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TransientCachedGraphics : IStrokeForCache
+struct TransientCachedGraphics : IStrokeForCache
 {
 protected:
-    DgnDbR          m_dgnDb;
-    mutable Render::GraphicP m_graphic;
+    DgnDbR m_dgnDb;
+    mutable Render::GraphicSet m_graphics;
 
 public:
-    explicit TransientCachedGraphics(DgnDbR dgnDb) : m_dgnDb(dgnDb) {m_graphic = nullptr;}
-    DGNPLATFORM_EXPORT virtual ~TransientCachedGraphics();
-
+    explicit TransientCachedGraphics(DgnDbR dgnDb) : m_dgnDb(dgnDb) {}
+    Graphic* _GetGraphic(DgnViewportCR vp) const override {return m_graphics.Find(vp);}
+    void _SaveGraphic(DgnViewportCR vp, GraphicR graphic) const override {m_graphics.Save(vp, graphic);}
     virtual DgnDbR _GetDgnDb() const override {return m_dgnDb;}
 };
 
@@ -1397,15 +1380,13 @@ public:
 //=======================================================================================
 struct CachedDraw : IRefCounted, GeomDraw
 {
-    GraphicPtr m_graphic;
-
 protected:
-    virtual void _BeginGraphic(GraphicCache*) = 0;
+    virtual void _BeginGraphic() = 0;
     virtual GraphicPtr _EndGraphic() = 0;
     virtual void _AddGraphicToScene(Scene*, Graphic*, int viewMode) = 0;
 
 public:
-    void BeginGraphic(GraphicCache* cache) {_BeginGraphic(cache);}
+    void BeginGraphic() {_BeginGraphic();}
     GraphicPtr EndGraphic() {return _EndGraphic();}
     void AddGraphicToScene(Scene* scene, Graphic* graphic, int viewMode = 0) {_AddGraphicToScene(scene, graphic, viewMode);}
 
@@ -1417,9 +1398,6 @@ public:
     //! Pop the most recently pushed transform.
     //! @see #PushTransform
     void PopTransform(){_PopTransClip();}
-
-    GraphicPtr GetGraphic() {return m_graphic;}
-    void SetGraphic(Graphic* graphic) {m_graphic=graphic;}
 };
 
 END_BENTLEY_RENDER_NAMESPACE

@@ -2704,7 +2704,7 @@ struct DrawGeomStream : StrokeElementForCache
     explicit DrawGeomStream(GeometricElementCR element, DgnViewportCR vp) : StrokeElementForCache(element) {}
 
     // Yuck...dig out display priority, needed up front to create QvElem2d...NEEDSWORK: Allow display priority sub-category?
-    virtual void _StrokeForCache(ViewContextR context, double pixelSize) override
+    virtual void _StrokeForCache(ViewContextR context) override
         {
         ElementGeomIO::Collection(m_element.GetGeomStream().GetData(), m_element.GetGeomStream().GetSize()).Draw(context, m_element.GetCategoryId(), context.GetViewFlags());
         }

@@ -80,7 +80,7 @@ void DgnModels::DropLoadedModel(DgnModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModels::ClearLoaded()
+void DgnModels::Empty()
     {
     for (auto iter : m_models)
         {
@@ -566,22 +566,6 @@ DgnElementCP DgnModel::FindElementById(DgnElementId id)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   05/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnModels::FreeQvCache()
-    {
-    if (nullptr == m_qvCache)
-        return  false;
-
-    // if there is a QvCache associated with this DgnFile, delete it too.
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    T_HOST.GetGraphicsAdmin()._DeleteQvCache(m_qvCache);
-#endif
-    m_qvCache = nullptr;
-    return  true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDelete()
@@ -824,19 +808,6 @@ DgnModelId DgnModels::QueryFirstModelId() const
     {
     return MakeIterator().begin().GetModelId();
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-QvCache* DgnModels::GetQvCache(bool createIfNecessary)
-    {
-    if (nullptr != m_qvCache || !createIfNecessary)
-        return m_qvCache;
-
-    return (m_qvCache = T_HOST.GetGraphicsAdmin()._CreateQvCache());
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14

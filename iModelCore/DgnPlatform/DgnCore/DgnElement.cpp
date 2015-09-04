@@ -453,7 +453,7 @@ DgnDbStatus GeometricElement::_UpdateInDb()
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    ClearGraphics(); // whenever we're changed, we simply drop all the cached graphics 
+    Graphics().Clear(); // whenever we're changed, we simply drop all the cached graphics 
     
     DgnDbR dgnDb = GetDgnDb();
     CachedStatementPtr stmt=dgnDb.Elements().GetStatement("INSERT OR REPLACE INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " (Geom,Placement,ElementId) VALUES(?,?,?)");
@@ -517,7 +517,7 @@ DgnDbStatus GeometricElement::_UpdateInDb()
 void GeometricElement::_OnReversedUpdate(DgnElementCR changed) const 
     {
     T_Super::_OnReversedUpdate(changed); 
-    ClearGraphics();    // we just did an undo of a modification, clear any graphics on this element.
+    Graphics().Clear();    // we just did an undo of a modification, clear any graphics on this element.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -701,50 +701,44 @@ DgnDbStatus DgnElement2d::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicCPtr GeometricElement::FindGraphic(DgnViewportCR vp) const
+Render::Graphic* GraphicSet::Find(DgnViewportCR vp) const
     {
-    T_Graphics::const_iterator graphics = m_graphics.find(&vp);
-    return graphics == m_graphics.end() ? nullptr : graphics->second;
+    auto graphic = m_graphics.find(&vp);
+    return graphic == m_graphics.end() ? nullptr : graphic->second.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::CacheGraphic(DgnViewportCR vp, Render::Graphic const& newGraphic) const
+void GraphicSet::Save(DgnViewportCR vp, Render::Graphic& graphic) 
     {
-    newGraphic.AddRef();
-    T_Graphics::iterator graphic = m_graphics.find(&vp);
-    if (graphic != m_graphics.end())
+    auto it = m_graphics.find(&vp);
+    if (it != m_graphics.end())
         {
-        graphic->second->Release();    // release old value
-        graphic->second = &newGraphic; // save new value
+        it->second = &graphic; // save new value
         return;
         }
 
-    m_graphics.Insert(&vp, &newGraphic);
+    m_graphics.Insert(&vp, &graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::DropGraphic(DgnViewportCR vp) const
+void GraphicSet::Drop(DgnViewportCR vp)
     {
-    T_Graphics::iterator graphic = m_graphics.find(&vp);
+    auto graphic = m_graphics.find(&vp);
     if (graphic == m_graphics.end())
         return;
 
-    graphic->second->Release();
     m_graphics.erase(graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::ClearGraphics() const
+void GraphicSet::Clear() 
     {
-    for (auto& it : m_graphics) // release reference to all members
-        it.second->Release();
-
     m_graphics.clear();
     }
 

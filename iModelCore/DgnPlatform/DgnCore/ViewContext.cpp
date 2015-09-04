@@ -571,18 +571,6 @@ bool ViewContext::SetWantMaterials(bool wantMaterials)
     return prevWantMaterials;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransientCachedGraphics::~TransientCachedGraphics() 
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (nullptr != m_qvElem) 
-        T_HOST.GetGraphicsAdmin()._DeleteQvElem(m_qvElem);
-#endif
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -909,15 +897,15 @@ StatusInt ViewContext::_VisitElement(GeometricElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_VisitTransientGraphics(bool isPreUpdate)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     Render::Output*    output = (IsAttached() ? GetViewport()->GetIViewOutput() : nullptr);
     bool            restoreZWrite = (output && isPreUpdate ? output->EnableZWriting(false) : false);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     T_HOST.GetGraphicsAdmin()._CallViewTransients(*this, isPreUpdate);
+#endif
 
     if (restoreZWrite)
         output->EnableZWriting(true);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1144,7 +1132,7 @@ StatusInt ViewContext::VisitHit(HitDetailCR hit)
 * create a QvElem using an IStrokeForCache stroker.
 * @bsimethod                                                    Keith.Bentley   06/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr ViewContext::CreateGraphic(IStrokeForCache& stroker, GraphicCache* qvCache, double pixelSize, CachedDrawP cachedDraw)
+GraphicPtr ViewContext::CreateGraphic(IStrokeForCache& stroker, CachedDrawP cachedDraw)
     {
     BeAssert(!m_creatingCacheElem || nullptr != cachedDraw);
 
@@ -1154,24 +1142,13 @@ GraphicPtr ViewContext::CreateGraphic(IStrokeForCache& stroker, GraphicCache* qv
     if (nullptr == cachedDraw)
         return nullptr;
 
-    if (nullptr == qvCache)
-        qvCache = GetViewport()->GetRenderer()._GetTempGraphicCache();
-
-    BeAssert(qvCache);
-    cachedDraw->BeginGraphic(qvCache);
+    cachedDraw->BeginGraphic();
 
     AutoRestore<GeomDrawP> saveDrawGeom(&m_IDrawGeom, cachedDraw);
     AutoRestore<Byte> savefilter(&m_filterLOD, FILTER_LOD_Off);
     AutoRestore<bool> saveCreatingCache(&m_creatingCacheElem, true);
 
-    try
-        {
-        stroker._StrokeForCache(*this, pixelSize);
-        }
-    catch (...)
-        {
-        }
-
+    stroker._StrokeForCache(*this);
     GraphicPtr result = cachedDraw->EndGraphic();
 
     if (!WasAborted() ||  !result.IsValid())
@@ -1185,54 +1162,28 @@ GraphicPtr ViewContext::CreateGraphic(IStrokeForCache& stroker, GraphicCache* qv
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicPtr ViewContext::GetGraphic(IStrokeForCache& stroker)
     {
-    GraphicPtr  qvElem;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    static double   s_sizeDependentCacheRatio = 3.0;
-    double          pixelSize = 0.0;
-    if (stroker._GetSizeDependentGeometryPossible())
-        {
-        DRange3d    localRange = stroker._GetRange();
-        DPoint3d    localCenter;
-
-        localCenter.Interpolate(localRange.low, 0.5, localRange.high);
-        pixelSize = GetPixelSizeAtPoint(&localCenter);
-        }
-
     if (m_creatingCacheElem)
         {
-        stroker._StrokeForCache(*this, pixelSize);
+        stroker._StrokeForCache(*this);
         return nullptr;
         }
 
     bool useCachedDisplay = _UseCachedDisplay();
-    double sizeDependentRatio = s_sizeDependentCacheRatio;
-    // if there is already a qvElem, use that instead of stroking.
+
+    GraphicPtr  graphic;
     if (useCachedDisplay)
-        qvElem = stroker._GetQvElem(pixelSize);
+        graphic = stroker._GetGraphic(*GetViewport());
 
-    if (nullptr == qvElem)
+    if (!graphic.IsValid())
         {
-        bool      saveQvElem = _WantSaveQvElem(stroker._GetDrawExpense());
-        QvCache*  qvCache = (saveQvElem ? stroker._GetQVCache() : nullptr);
-
-        if (nullptr == qvCache)
-            saveQvElem = false;
-
-        if (nullptr == (qvElem = CreateCacheElem(stroker, qvCache, pixelSize)))
+        graphic = CreateGraphic(stroker);
+        if (!graphic.IsValid())
             return nullptr;
 
-        if (!stroker._GetSizeDependentGeometryStroked())
-            sizeDependentRatio = 0.0;
-
-        if (saveQvElem)
-            stroker._SaveQvElem(qvElem, pixelSize, sizeDependentRatio); 
-        else
-            deleteQvElem = true;
+        stroker._SaveGraphic(*GetViewport(), *graphic.get());
         }
-#endif
 
-    return qvElem;
+    return graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
