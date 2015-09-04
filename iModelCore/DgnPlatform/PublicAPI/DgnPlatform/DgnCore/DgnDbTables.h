@@ -45,6 +45,7 @@
 #define DGN_CLASSNAME_SubCategory           "SubCategory"
 #define DGN_CLASSNAME_Texture               "Texture"
 #define DGN_CLASSNAME_View                  "View"
+#define DGN_CLASSNAME_CameraView            "CameraView"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
@@ -758,10 +759,9 @@ public:
             DGNPLATFORM_EXPORT DgnModelType GetModelType() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT Model::CoordinateSpace GetCoordinateSpace() const;
-            DGNPLATFORM_EXPORT uint32_t GetVisibility() const;
+            DGNPLATFORM_EXPORT bool InGuiList() const;
 
             bool Is3d() const {return GetModelType()==DgnModelType::Physical;}
-            bool InModelGui() const {return 0 != ((int)ModelIterate::Gui & GetVisibility());}
             Entry const& operator*() const {return *this;}
         };
 
@@ -1113,30 +1113,33 @@ public:
 //! optionally named, but names must be unique within the DgnDb.
 //=======================================================================================
 struct DgnTextures : DgnDbTable
-    {
+{
 private:
     friend struct DgnDb;
     explicit DgnTextures(DgnDbR db) : DgnDbTable(db) { }
 
+    static uintptr_t                            s_nextQvTextureId;
+    mutable bmap <DgnTextureId, uintptr_t>      m_qvTextureIds;
+
 public:
     //! Supported texture formats. A texture's binary data is interpreted according to its specified format.
     enum class Format
-        {
+    {
         JPEG        = 0,    //!< JPEG
         RAW         = 1,    //!< Raw RGBA bitmap
         PNG         = 2,    //!< PNG
         TIFF        = 3,    //!< TIFF
         Unknown     = 0xff  //!< Unrecognized texture format.
-        };
+    };
 
     enum class Flags : uint32_t
-        {
+    {
         None        = 0,    //!< No flags
-        };
+    };
 
     //! Holds the raw texture data
     struct TextureData
-        {
+    {
     private:
         friend struct DgnTextures;
 
@@ -1170,7 +1173,7 @@ public:
     //! Holds a texture's data in memory.
     //=======================================================================================
     struct Texture
-        {
+    {
     private:
         friend struct DgnTextures;
 
@@ -1188,27 +1191,28 @@ public:
         //! @param[in]      descr The optional texture description
         explicit Texture(TextureData const& data, Utf8CP name = nullptr, Utf8CP descr = nullptr) : m_data(data), m_name(name), m_descr(descr) { }
 
-        bool                    IsValid() const         { return m_id.IsValid(); }  //!< Test whether this is a valid texture
+        bool                                IsValid() const         { return m_id.IsValid(); }  //!< Test whether this is a valid texture
 
-        DgnTextureId            GetId() const           { return m_id; }    //!< The ID of the texture
-        Utf8StringCR            GetName() const         { return m_name; }  //!< The optional texture name
-        Utf8StringCR            GetDescription() const  { return m_descr; } //!< The optional texture description
-        TextureData const&      GetData() const         { return m_data; }  //!< The encoded texture data
+        DgnTextureId                        GetId() const           { return m_id; }    //!< The ID of the texture
+        Utf8StringCR                        GetName() const         { return m_name; }  //!< The optional texture name
+        Utf8StringCR                        GetDescription() const  { return m_descr; } //!< The optional texture description
+        TextureData const&                  GetData() const         { return m_data; }  //!< The encoded texture data
+        DGNPLATFORM_EXPORT BentleyStatus    GetImage (bvector<Byte>& image) const;      //!< The image data (RGBA).
 
         void    SetName(Utf8CP name)               { m_name = name; }      //!< Set the texture name
         void    SetDescription(Utf8CP descr)       { m_descr = descr; }    //!< Set the texture description
         void    SetData(TextureData const& data)   { m_data = data; }      //!< Set the texture data
-        };
+    };
 
     //! An iterator over the textures in a DgnDb
     struct Iterator : BeSQLite::DbTableIterator
-        {
+    {
     public:
         explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
 
         //! An entry in the texture table
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-            {
+        {
         private:
             friend struct Iterator;
             Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
@@ -1224,7 +1228,7 @@ public:
             DGNPLATFORM_EXPORT ByteCP       GetDataBytes() const;   //!< The encoded texture data
 
             Entry const&    operator*() const   { return *this; }
-            };
+        };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
@@ -1232,7 +1236,7 @@ public:
         DGNPLATFORM_EXPORT size_t   QueryCount() const;         //!< The number of entries in the texture table
         DGNPLATFORM_EXPORT Entry    begin() const;              //!< An iterator to the first entry in the table
         Entry end() const { return Entry(nullptr, false); }    //!< An iterator one beyond the last entry in the table
-        };
+    };
 
     //! Obtain an iterator over the textures in a DgnDb.
     Iterator MakeIterator() const {return Iterator(m_dgndb);}
@@ -1253,11 +1257,23 @@ public:
     //! @return The texture with the specified ID, or an invalid texture if no such texture exists.
     DGNPLATFORM_EXPORT Texture      Query(DgnTextureId id) const;
 
+    //! Remove a texture from the DgnDb.
+    //! @param[in] id the id of the texture to remove.
+    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the textureId did not exist prior to this call.
+    //! @note Deleting a texture can result in an inconsistent database. There is no checking that the texture to be removed is not in use somehow, and
+    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
+    //! know for sure that the texture is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnTextureId id);
+
     //! Look up the ID of the texture with the specified name
     //! @param[in]      name The name of the desired texture
     //! @return The ID of the texture with the specified name, or an invalid ID if no such texture exists.
     DGNPLATFORM_EXPORT DgnTextureId QueryTextureId(Utf8StringCR name) const;
-    };
+
+    DGNPLATFORM_EXPORT uintptr_t   GetQvTextureId (DgnTextureId TextureId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
+    DGNPLATFORM_EXPORT uintptr_t   AddQvTextureId (DgnTextureId TextureId) const; //!< set QuickVision material ID for supplied material Id.
+
+};
 
 //=======================================================================================
 //! The DgnMaterials holds the materials defined for a DgnDb. Each material has a unique
@@ -1269,9 +1285,9 @@ struct DgnMaterials : DgnDbTable
 {
 private:
     friend struct DgnDb;
-    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db), m_nextQvMaterialId(0) {}
+    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) {}
 
-    mutable uintptr_t                           m_nextQvMaterialId;
+    static uintptr_t                            s_nextQvMaterialId;
     mutable bmap <DgnMaterialId, uintptr_t>     m_qvMaterialIds;
 
 public:
@@ -1308,7 +1324,7 @@ public:
         Utf8StringCR GetName() const {return m_name;}   //!< The name of this material.
         Utf8StringCR GetPalette() const {return m_palette;} //!< The name of this material's palette.
         Utf8StringCR GetValue() const {return m_value;} //!< JSON representation of this material.
-        Utf8StringCR GetDescr() const {return m_descr;} //!< Description of this material.
+        Utf8StringCR GetDescr() const {return m_descr;} //!< Description of this material.                                                                              
         void SetName(Utf8CP val) {m_name = val;} //!< Sets the name of this material.
         void SetPalette(Utf8CP val) {m_palette = val;} //!< Sets the name of this material's palette.
         void SetValue(Utf8CP val) {m_value = val;} //!< Sets the JSON representation of this material.
@@ -1364,6 +1380,14 @@ public:
     //! @param[out]     result      If supplied, holds the result of the insert operation
     //! @return The DgnMaterialId of the newly created material, or an invalid ID if the material was not created.
     DGNPLATFORM_EXPORT DgnMaterialId Insert(Material& material, DgnDbStatus* result=nullptr);
+
+    //! Remove a material from the DgnDb.
+    //! @param[in] id the id of the material to remove.
+    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the materialId did not exist prior to this call.
+    //! @note Deleting a material can result in an inconsistent database. There is no checking that the material to be removed is not in use somehow, and
+    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
+    //! know for sure that the material is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnMaterialId id);
 
     //! Change the properties of the specified material. This method cannot be used to change the material or palette name.
     //! @param[in]      material The modified material.

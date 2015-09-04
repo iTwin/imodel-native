@@ -142,13 +142,20 @@ DgnDbStatus PhysicalTextAnnotationElement::UpdatePropertiesInDb()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus PhysicalTextAnnotationElement::_InsertInDb()
+DgnDbStatus PhysicalTextAnnotationElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
     {
-    DgnDbStatus status = T_Super::_InsertInDb();
-    if (DgnDbStatus::Success != status)
-        return status;
+    bvector<Byte> annotationBlob;
+    if (m_annotation.IsValid())
+        {
+        if (SUCCESS != TextAnnotationPersistence::EncodeAsFlatBuf(annotationBlob, *m_annotation))
+            return DgnDbStatus::WriteError;
+        }
+    if (annotationBlob.empty())
+        statement.BindNull(statement.GetParameterIndex("TextAnnotationBlob"));
+    else
+        statement.BindBinary(statement.GetParameterIndex("TextAnnotationBlob"), &annotationBlob[0], (int)annotationBlob.size(), IECSqlBinder::MakeCopy::No);
 
-    return UpdatePropertiesInDb();
+    return T_Super::_InsertInDb(statement);
     }
 
 //---------------------------------------------------------------------------------------

@@ -468,12 +468,12 @@ TEST_F(DgnModelTests, ImportGroups)
             }
 
         //  Add a member
-        DgnElementCPtr member;
         if (true)
             {
-            DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
+            DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
             DgnCategoryId mcatid = db->Categories().QueryHighestId();
-            member = DgnElement::Create(DgnElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, "member"))->Insert();
+            auto member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d(), "member"))->Insert();
+            //auto member = PhysicalElement::Create(*model1, mcatid)->Insert();
             ASSERT_TRUE( member.IsValid() );
             ASSERT_EQ( DgnDbStatus::Success , group->InsertMember(*member) );
             }
@@ -516,8 +516,87 @@ TEST_F(DgnModelTests, ImportGroups)
         ASSERT_EQ( DgnDbStatus::Success , stat );
 
         checkGroupHasOneMemberInModel(*model3);
+        db2->SaveChanges();
         }
 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+TEST_F(DgnModelTests, ImportElementsWithAuthorities)
+    {
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbP db = tdm.GetDgnProjectP();
+
+    ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*db) );
+
+    // ******************************
+    //  Create some Authorities. 
+    DgnAuthorityId sourceAuthorityId;
+        {
+        DgnAuthorities::Authority authority0("TestAuthority_NotUsed");
+        DgnAuthorities::Authority authority1("TestAuthority");
+        DgnAuthorities::Authority authority2("TestAuthority_AlsoNotUsed");
+        ASSERT_TRUE( db->Authorities().Insert(authority0).IsValid() );
+        ASSERT_TRUE( db->Authorities().Insert(authority1).IsValid() );
+        ASSERT_TRUE( db->Authorities().Insert(authority2).IsValid() );
+        
+        // We'll use the *second one*, so that the source and destination authority IDs will be different.
+        sourceAuthorityId = authority1.GetId();
+        }
+
+    // ******************************
+    //  Create model1
+        
+    DgnClassId mclassId = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
+    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*db, mclassId, "Model1"));
+    ASSERT_EQ( DgnDbStatus::Success , model1->Insert() );
+
+    // Put an element with an Item into moddel1
+        {
+        DgnElement::Code code("TestElement", sourceAuthorityId);
+        DgnCategoryId gcatid = db->Categories().QueryHighestId();
+        TestElementPtr tempEl = TestElement::Create(*db, model1->GetModelId(), gcatid, code);
+        DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
+        ASSERT_TRUE( db->Elements().Insert(*tempEl).IsValid() );
+        db->SaveChanges();
+        }
+
+    if (true)
+        {
+        DgnElementCPtr el = getSingleElementInModel(*model1);
+        ASSERT_TRUE( el.IsValid() );
+        DgnAuthorityId said = el->GetCode().GetAuthority();
+        ASSERT_TRUE( said == sourceAuthorityId );
+        DgnAuthorities::Authority sourceAuthority = db->Authorities().Query(sourceAuthorityId);
+        ASSERT_STREQ( sourceAuthority.GetName().c_str(), "TestAuthority" );
+        }
+
+    //  *******************************
+    //  Import model1 into separate db
+    if (true)
+        {
+        DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.idgndb", L"3dMetricGeneralcc.idgndb", DgnDb::OpenMode::ReadWrite);
+        ASSERT_TRUE( db2.IsValid() );
+
+        DgnImportContext import3(*db, *db2);
+        DgnDbStatus stat;
+        PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
+        ASSERT_TRUE( model3.IsValid() );
+        ASSERT_EQ( DgnDbStatus::Success , stat );
+
+        DgnElementCPtr el = getSingleElementInModel(*model3);
+        ASSERT_TRUE( el.IsValid() );
+
+        // Verify that Authority was copied over
+        DgnAuthorityId daid = el->GetCode().GetAuthority();
+        ASSERT_TRUE( daid.IsValid() );
+        ASSERT_NE( daid , sourceAuthorityId ) << "Authority ID should have been remapped";
+        DgnAuthorities::Authority destAuthority = db2->Authorities().Query(daid);
+        ASSERT_STREQ( destAuthority.GetName().c_str(), "TestAuthority" );
+        db2->SaveChanges();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -578,6 +657,7 @@ TEST_F(DgnModelTests, ImportElementsWithItems)
 
         DgnElementCPtr el = getSingleElementInModel(*model3);
         ASSERT_NE( nullptr , DgnElement::Item::GetItem(*el) );
+        db2->SaveChanges();
         }
     }
 
@@ -591,6 +671,8 @@ TEST_F(DgnModelTests, ImportElementsWithDependencies)
     db->Txns().EnableTracking(true);
 
     ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*db) );
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
 
     // ******************************
     //  Create model1
@@ -699,7 +781,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Test Model 1", entry.GetDescription ());
             EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
             EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
-            EXPECT_EQ (1, entry.GetVisibility ());
+            EXPECT_EQ (true, entry.InGuiList ());
             }
         else if (entry.GetModelId () == m2id)
             {
@@ -708,7 +790,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Test Model 2", entry.GetDescription ());
             EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
             EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
-            EXPECT_EQ (1, entry.GetVisibility ());
+            EXPECT_EQ (true, entry.InGuiList ());
             }
         else if (entry.GetModelId () == m3id)
             {
@@ -717,7 +799,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Test Model 3", entry.GetDescription ());
             EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
             EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
-            EXPECT_EQ (1, entry.GetVisibility ());
+            EXPECT_EQ (true, entry.InGuiList ());
             }
         i++;
         }

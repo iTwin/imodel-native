@@ -1240,7 +1240,6 @@ void ElementGeomIO::Writer::Append(ElemDisplayParamsCR elParams)
         Append(Operation(OpCode::BasicSymbology, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 
-#define LINESTYLES_ENABLED 0
 #if LINESTYLES_ENABLED
     if (elParams.GetLineStyle() != nullptr)
         {
@@ -2414,6 +2413,7 @@ void ElementGeomIO::Collection::Draw(ViewContextR context, DgnCategoryId categor
 
                     case FB::BoundaryType_Open:
                         context.GetIDrawGeom().DrawLineString3d(nPts, pts, nullptr);
+
                         break;
 
                     case FB::BoundaryType_Closed:

@@ -163,7 +163,6 @@ protected:
     DgnElementId        m_elementId;
     HitSource           m_locateSource;         // Operation that generated the hit.
     DPoint3d            m_testPoint;            // the point that was used to search (world coordinates).
-    ViewFlags           m_viewFlags;            // view flags in effect when hit was generated.
     GeomDetail          m_geomDetail;           // element specific hit details.
     IElemTopologyPtr    m_elemTopo;             // details about the topology of the element.
     SubSelectionMode    m_subSelectionMode;     // segment hilite/flash mode.
@@ -181,7 +180,7 @@ protected:
 
 public:
 #if !defined (DOCUMENTATION_GENERATOR)
-    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, GeometricElementCP, DPoint3dCR testPoint, HitSource, ViewFlagsCR, GeomDetailCR);
+    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, GeometricElementCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
     DGNPLATFORM_EXPORT explicit HitDetail(HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail();
 
@@ -199,29 +198,29 @@ public:
     DGNVIEW_EXPORT void DrawInAllViews(IndexedViewSetR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
     DGNVIEW_EXPORT void Hilite(IndexedViewSetR, bool onOff) const;
 
-    DGNPLATFORM_EXPORT void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const;
+    void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
 #endif
 
     DGNPLATFORM_EXPORT GeometricElementCPtr GetElement() const;
-    DGNPLATFORM_EXPORT DgnElementId         GetElementId() const;
-    DGNPLATFORM_EXPORT DgnModelR            GetDgnModel() const;
-    DGNPLATFORM_EXPORT DgnDbR               GetDgnDb() const;
-    DGNPLATFORM_EXPORT DgnViewportR         GetViewport() const;
-    DGNPLATFORM_EXPORT HitSource            GetLocateSource() const;
-    DGNPLATFORM_EXPORT DPoint3dCR           GetTestPoint() const;
+    DgnElementId GetElementId() const {return m_elementId;}
+    DGNPLATFORM_EXPORT DgnModelR GetDgnModel() const;
+    DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;
+    DgnViewportR GetViewport() const {return m_viewport;}
+    HitSource GetLocateSource() const {return m_locateSource;}
+    DPoint3dCR GetTestPoint() const {return m_testPoint;}
 
     DPoint3dCR GetHitPoint() const {return _GetHitPoint();}
     HitDetailType GetHitType() const {return _GetHitType();}
     SubSelectionMode GetSubSelectionMode() const {return _GetSubSelectionMode(); }
     bool IsSameHit(HitDetailCP otherHit) const {return _IsSameHit(otherHit);}
 
-    DGNPLATFORM_EXPORT GeomDetailCR    GetGeomDetail() const;
-    DGNPLATFORM_EXPORT GeomDetailR     GetGeomDetailW();
-    DGNPLATFORM_EXPORT ViewFlagsCR     GetViewFlags() const;
+    GeomDetailCR GetGeomDetail() const {return m_geomDetail;}
+    GeomDetailR GetGeomDetailW() {return m_geomDetail;}
+
     DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology() const;
-    DGNPLATFORM_EXPORT void            SetElemTopology(IElemTopologyP topo);
+    DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyP topo);
 
 }; // HitDetail
 
@@ -307,18 +306,18 @@ struct  SnapDetail : HitDetail
     DEFINE_T_SUPER(HitDetail)
 
 protected:
-    SnapHeat            m_heat;
-    Point2d             m_screenPt;
-    int                 m_divisor;
+    SnapHeat    m_heat;
+    Point2d     m_screenPt;
+    uint32_t    m_divisor;
     Render::ISpriteP    m_sprite;
-    SnapMode            m_snapMode;         // snap mode currently associated with this snap
-    SnapMode            m_originalSnapMode; // snap mode used when snap was created, before constraint override was applied
-    double              m_minScreenDist;    // minimum distance to element in screen coordinates.
-    DPoint3d            m_snapPoint;        // hitpoint adjusted by snap
-    DPoint3d            m_adjustedPt;       // sometimes accusnap adjusts the point after the snap.
-    int                 m_customKeypointSize;
-    Byte*               m_customKeypointData;
-    bool                m_allowAssociations;
+    SnapMode    m_snapMode;         // snap mode currently associated with this snap
+    SnapMode    m_originalSnapMode; // snap mode used when snap was created, before constraint override was applied
+    double      m_minScreenDist;    // minimum distance to element in screen coordinates.
+    DPoint3d    m_snapPoint;        // hitpoint adjusted by snap
+    DPoint3d    m_adjustedPt;       // sometimes accusnap adjusts the point after the snap.
+    int         m_customKeypointSize;
+    Byte*       m_customKeypointData;
+    bool        m_allowAssociations;
 
     DGNPLATFORM_EXPORT virtual DPoint3dCR _GetHitPoint() const override;
     DGNPLATFORM_EXPORT virtual void _SetHitPoint(DPoint3dCR snapPt) override;
@@ -331,7 +330,6 @@ public:
     DGNPLATFORM_EXPORT ~SnapDetail();
 
     void SetScreenPoint(Point2d const& pt) {m_screenPt = pt;} //!< Always set by DgnPlatform snap logic
-    
     bool GetAllowAssociations() const {return m_allowAssociations;}
     void SetAllowAssociations(bool allowAssociations) {m_allowAssociations = allowAssociations;}
 
@@ -342,24 +340,23 @@ public:
     DGNPLATFORM_EXPORT void SetCustomKeypoint(int nBytes, Byte* dataP);
 
 public:
-    DGNPLATFORM_EXPORT bool IsHot() const;
-    DGNPLATFORM_EXPORT bool IsPointOnCurve() const;
-    DGNPLATFORM_EXPORT SnapHeat GetHeat() const;
-    DGNPLATFORM_EXPORT DPoint3dCR GetAdjustedPoint() const;
-    DGNPLATFORM_EXPORT DPoint3dCR GetSnapPoint() const;
-    DGNPLATFORM_EXPORT int GetSnapDivisor() const;
-    DGNPLATFORM_EXPORT double GetMinScreenDist() const;
-    DGNPLATFORM_EXPORT Point2d const& GetScreenPoint() const;
-
-    DGNPLATFORM_EXPORT SnapMode GetSnapMode() const;
-    DGNPLATFORM_EXPORT SnapMode GetOriginalSnapMode() const;
+    bool IsHot() const {return m_heat != SNAP_HEAT_None;}
+    bool IsPointOnCurve() const {return m_heat == SNAP_HEAT_InRange;}
+    SnapHeat GetHeat() const {return m_heat;}
+    DPoint3dCR GetAdjustedPoint() const {return m_adjustedPt;}
+    DPoint3dCR GetSnapPoint() const {return m_snapPoint;}
+    uint32_t GetSnapDivisor() const {return m_divisor;}
+    double GetMinScreenDist() const {return m_minScreenDist;}
+    Point2d const& GetScreenPoint() const {return m_screenPt;}
+    SnapMode GetSnapMode() const {return m_snapMode;}
+    SnapMode GetOriginalSnapMode() const {return m_originalSnapMode;}
 
     DGNPLATFORM_EXPORT bool PointWasAdjusted() const;
 
-    DGNPLATFORM_EXPORT void SetSnapMode(SnapMode s, bool isOriginal=true);
-    DGNPLATFORM_EXPORT void SetSnapDivisor(int divisor);
-    DGNPLATFORM_EXPORT void SetAdjustedPoint(DPoint3dCR adjustedPt);
-    DGNPLATFORM_EXPORT void SetHeat(SnapHeat isHot);
+    void SetSnapMode(SnapMode snapMode, bool isOriginal=true) {m_snapMode=snapMode; if(isOriginal) m_originalSnapMode=snapMode;}
+    void SetSnapDivisor(uint32_t divisor) {m_divisor = divisor ? divisor : 2;}
+    void SetAdjustedPoint(DPoint3dCR adjustedPt) {m_adjustedPt = adjustedPt;}
+    void SetHeat(SnapHeat isHot) {m_heat = isHot;}
 };
 
 //=======================================================================================
@@ -369,19 +366,19 @@ struct IntersectDetail : SnapDetail
 {
     DEFINE_T_SUPER(SnapDetail)
 private:
-    HitDetail*    m_secondHit;
+    HitDetailP  m_secondHit;
 
     virtual void _DrawInVp(DgnViewportR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const override;
     virtual HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
     DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited) const override;
     DGNPLATFORM_EXPORT virtual bool _IsSameHit(HitDetailCP otherHit) const override;
-    virtual SnapDetail* _Clone() const override;
+    virtual SnapDetailP _Clone() const override;
 
 public:
     DGNPLATFORM_EXPORT IntersectDetail(HitDetailCP firstHit, HitDetailCP secondHit, DPoint3dCR intersctionPt);
     DGNPLATFORM_EXPORT IntersectDetail(IntersectDetail const&);
     DGNPLATFORM_EXPORT ~IntersectDetail();
-    HitDetail* GetSecondHit() const {return m_secondHit;}
+    HitDetailP GetSecondHit() const {return m_secondHit;}
 }; 
 
 END_BENTLEY_DGN_NAMESPACE

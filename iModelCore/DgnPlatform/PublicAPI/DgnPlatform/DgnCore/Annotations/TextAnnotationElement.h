@@ -39,7 +39,7 @@ private:
 
 protected:
     PhysicalTextAnnotationElement(CreateParams const& params, TextAnnotationCR seedAnnotation) : T_Super(params) { SetAnnotation(seedAnnotation); }
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;

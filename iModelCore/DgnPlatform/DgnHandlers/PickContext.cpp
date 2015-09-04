@@ -114,7 +114,7 @@ void PickOutput::_PopTransClip()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool edgesVisible(HitDetailCP hit)
     {
-    ViewFlagsCR viewFlags = hit->GetViewFlags();
+    ViewFlagsCR viewFlags = *hit->GetViewport().GetViewFlags();
 
     switch (viewFlags.GetRenderMode())
         {

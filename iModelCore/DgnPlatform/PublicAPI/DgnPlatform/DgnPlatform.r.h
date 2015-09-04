@@ -575,8 +575,6 @@ enum LineCodeWidth
     LCWIDTH_LEFT      = 0x01,
     LCWIDTH_RIGHT     = 0x02,
     LCWIDTH_FULL      = 0x03,
-    LCWIDTH_TAPER     = 0x04,
-    LCWIDTH_TAPEREND  = 0x08,
     };
 
 /*-----------------------------------------------------------------------

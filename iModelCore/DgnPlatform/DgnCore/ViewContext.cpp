@@ -766,6 +766,17 @@ void ViewContext::CookDisplayParams()
     {
     _CookDisplayParams(m_currDisplayParams, m_elemMatSymb);
 
+    //  NEEDSWORK_LINESTYLES
+    //  If this is a 3d view and we have a line style then we want to convert the line style
+    //  to a raster line style.  We don't do it prior to this because the raster image
+    //  may use the current symbology.  This seems like a horrible place to do this,
+    //  so we need to come up with something better.
+    LineStyleSymb & lsSym = m_elemMatSymb.GetLineStyleSymbR();
+    if (lsSym.GetRasterTexture() == 0 && lsSym.GetILineStyle() != nullptr)
+        {
+        lsSym.ConvertToRasterLineStyle(*this, Is3dView());
+        }
+
     // Activate the matsymb in the IDrawGeom
     GetIDrawGeom().ActivateMatSymb(&m_elemMatSymb);
     }

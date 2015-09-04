@@ -185,7 +185,7 @@ $(coreObjs)TextStyleInterop$(oext): $(DgnCoreDir)TextStyleInterop.cpp $(DgnCoreA
 
 $(coreObjs)DgnPropertyJson$(oext): $(DgnCoreDir)DgnPropertyJson.cpp ${MultiCompileDepends}
 
-$(coreObjs)ElementGeometry$(oext): $(DgnCoreDir)ElementGeometry.cpp ${MultiCompileDepends}
+$(coreObjs)ElementGeometry$(oext): $(DgnCoreDir)ElementGeometry.cpp $(DgnCoreAPISrc)LineStyle.h ${MultiCompileDepends}
 
 $(coreObjs)ElementGraphics$(oext): $(DgnCoreDir)ElementGraphics.cpp $(DgnCoreAPISrc)ElementGraphics.h ${MultiCompileDepends}
 
@@ -311,6 +311,8 @@ $(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp
 $(o)ECUtils$(oext) : $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 
 $(o)ModelSolverDef$(oext) : $(DgnCoreDir)ModelSolverDef.cpp $(DgnCoreAPISrc)ModelSolverDef.h ${MultiCompileDepends}
+
+$(o)RenderMaterial$(oext) : $(DgnCoreDir)RenderMaterial.cpp $(DgnCoreAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   DgnGeoCoord

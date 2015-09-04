@@ -391,7 +391,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <!-- WIP: Uncomment when CodeAuthority support has been added
                 <Indexes>
                     <DbIndex>
                         <Name>idx_dgn_Element_Code</Name>
@@ -402,7 +401,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                         </Properties>
                     </DbIndex>
                 </Indexes>
-                -->
             </ClassMap>
             <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <PropertyName>LastMod</PropertyName>
@@ -434,12 +432,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="CodeAuthorityId" typeName="long">
-             <!-- Foreign key relationship to dgn:Authority class --> 
+             <!-- Foreign key relationship: AuthorityIssuesElementCode.CodeAuthorityId --> 
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <!-- WIP: Uncomment when CodeAuthority support has been added
                     <IsNullable>False</IsNullable>
-                    -->
+                    <IsUnique>False</IsUnique>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
@@ -922,5 +919,24 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
+
+    <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" isDomainClass="True" strengthDirection="forward" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <CreateConstraint>True</CreateConstraint>
+                <OnDeleteAction>NoAction</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="False">
+            <Class class="Authority" />
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="True">
+            <Class class="Element" >
+                <Key>
+                    <Property name="CodeAuthorityId" />
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
 </ECSchema>

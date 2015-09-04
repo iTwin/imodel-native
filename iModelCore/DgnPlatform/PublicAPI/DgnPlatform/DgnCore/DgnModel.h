@@ -545,6 +545,9 @@ public:
     //! To indication a validation error, call TxnManager::ReportError. If the error is marked as fatal, then the transaction will be rolled back.
     //! @note This method must make changes of any kind to any other model. Dependent models will be validated later.
     DGNPLATFORM_EXPORT virtual void _OnValidate();
+    
+    virtual void _GetSolverOptions(Json::Value&) {;}
+    
     /** @} */
 
     //! Make a copy of this DgnModel with the same DgnClassId and Properties.
@@ -819,6 +822,7 @@ private:
     DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;//!< @private
     DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;//!< @private
+    DGNPLATFORM_EXPORT void _GetSolverOptions(Json::Value&) override;
 
 public:
     /**
@@ -837,6 +841,9 @@ public:
     //!     * Assigned properties corresponding to the ComponentModel's parameters.
     //! @see GetItemECBaseClassName, AddAllToECSchema
     DGNPLATFORM_EXPORT DgnDbStatus GenerateECClass(ECN::ECSchemaR);
+
+    //! @private
+    void Developer_RedefineSolver(ModelSolverDef const& s) {m_solver=s;}
 
     /**
     * Utility function to generate ECClasses for all ComponentModels in \a db and add them to \a schema.

@@ -34,7 +34,9 @@ private:
         }
 public:   
     JsDPoint3dArray() {}
-    bvector<DPoint3d> & Get () {return m_data;}
+    JsDPoint3dArray(bvector<DPoint3d> const &source) {m_data = source;}
+    JsDPoint3dArrayP Clone (){ return new JsDPoint3dArray (m_data);}
+    bvector<DPoint3d> & GetRef () {return m_data;}
     void Add (JsDPoint3dP in){m_data.push_back (in->Get ());}
     void Clear (){m_data.clear ();}
     JsDPoint3dP At (double number)
@@ -55,6 +57,50 @@ public:
         }
 
 };
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsDoubleArray : RefCountedBase
+{
+private:
+    bvector<double> m_data;
+    bool TryDoubleToIndex (double a, size_t &index)
+        {
+        index = 0;
+        if (a < 0.0)
+            return false;
+        index = (size_t) a;
+        if (index < m_data.size ())
+            return true;
+        index = SIZE_MAX;
+        return false;
+        }
+public:   
+    JsDoubleArray() {}
+    JsDoubleArray(bvector<double> const &source) {m_data = source;}
+    JsDoubleArrayP Clone (){ return new JsDoubleArray (m_data);}
+    bvector<double> & GetRef () {return m_data;}
+    void Add (double in){m_data.push_back (in);}
+    void Clear (){m_data.clear ();}
+    double At (double number)
+        {
+        size_t index;
+        if (TryDoubleToIndex (number, index))
+            {
+            return m_data[index];
+            }
+        return 0.0;
+        }
+    double Size (){ return (double)m_data.size ();}
+
+    void Append (JsDoubleArrayP other)
+        {
+        for (double &a : other->m_data)
+            m_data.push_back (a);
+        }
+};
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #endif//ndef _JSDPOINT3DARRAY_H_

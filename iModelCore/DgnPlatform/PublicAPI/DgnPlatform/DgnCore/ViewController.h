@@ -66,7 +66,7 @@ private:
 
 public:
     void     InvalidateFocus() {m_focusDistance=-1.0;}
-    bool     IsFocusValid() const {return m_focusDistance > 0.0 && m_focusDistance<1.0e6 * DgnUnits::OneMeter();}
+    bool     IsFocusValid() const {return m_focusDistance > 0.0 && m_focusDistance<1.0e14;}
     double   GetFocusDistance() const {return m_focusDistance;}
     void     SetFocusDistance(double dist) {m_focusDistance = dist;}
     bool     IsLensValid() const {return IsValidLensAngle(m_lensAngle);}
@@ -273,6 +273,13 @@ protected:
     //! DgnPlatform calls _DrawElementFiltered instead of _DrawElement when it needs to draw an element but decides that the
     //! representation in the view is small enough that it can be simplified.
     DGNPLATFORM_EXPORT virtual void _DrawElementFiltered(ViewContextR, GeometricElementCR, DPoint3dCP pts, double size);
+
+    //! Invoked just before the locate tooltip is displayed to retrieve the info text. Allows the ViewController to override the default description.
+    //! @param[in]  hit The locate HitDetail whose info is needed.
+    //! @param[out] descr The info string.
+    //! @param[in] delimiter The default delimiter to use when building the info string.
+    //! @return true if the info string was set or false to use the default implementation.
+    virtual bool _GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {return false;}
 
 #if !defined (DOCUMENTATION_GENERATOR)
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const;

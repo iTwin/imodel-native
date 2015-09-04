@@ -136,26 +136,25 @@ void DgnDomains::SyncWithSchemas()
         registeredDomains.erase(thisDomain); // so we know we've already found it.
         }
 
-#if !defined (NDEBUG)
-    for (auto it : m_handlers)
-        it.second->_VerifySchema(*this);
-#endif
-
-    // if we're opening a readonly database, we know we can't add any new dependencies on a registered but unknown domain. Stop now.
-    if (m_dgndb.IsReadonly())
-        return;
-
     // any that are left are new and need to be added to the database
     for (auto iter : registeredDomains)
         {
         if (nullptr == m_dgndb.Schemas().GetECSchema(iter.second->GetDomainName(), false))
             continue; // this domain's schema doesn't exist (yet?) in this db.
 
-        auto rc = InsertDomain(*iter.second); // add to database so it will be required from here on
-        BeAssert(rc==BE_SQLITE_DONE);
-        UNUSED_VARIABLE(rc);
+        if (!m_dgndb.IsReadonly())
+            {
+            auto rc = InsertDomain(*iter.second); // add to database so it will be required from here on
+            BeAssert(rc==BE_SQLITE_DONE);
+            UNUSED_VARIABLE(rc);
+            }
         LoadDomain(*iter.second);
         }
+
+#if !defined (NDEBUG)
+    for (auto it : m_handlers)
+        it.second->_VerifySchema(*this);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -269,6 +268,19 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
         return DgnDbStatus::ReadError;
 
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
+        return DgnDbStatus::BadSchema;
+
+    db.Domains().SyncWithSchemas();
+    _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, ECSchemaCacheR schemaCache) const
+    {
+    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(schemaCache))
         return DgnDbStatus::BadSchema;
 
     db.Domains().SyncWithSchemas();

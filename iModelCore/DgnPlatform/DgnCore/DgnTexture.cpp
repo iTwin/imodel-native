@@ -87,6 +87,18 @@ static DgnTextures::Format extractFormat (int value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/10
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnTextures::Delete(DgnTextureId textureId)
+    {
+    Statement stmt;
+    stmt.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Texture) " WHERE Id=?");
+    stmt.BindId(1, textureId);
+    const auto status = stmt.Step();
+    return (BE_SQLITE_DONE == status) ? BE_SQLITE_OK : status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextures::Texture DgnTextures::Query (DgnTextureId id) const
@@ -167,14 +179,78 @@ size_t DgnTextures::Iterator::QueryCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextureId DgnTextures::Iterator::Entry::GetId() const        { Verify(); return m_sql->GetValueId<DgnTextureId>(0); }
-Utf8CP DgnTextures::Iterator::Entry::GetName() const            { Verify(); return m_sql->GetValueText (1); }
-Utf8CP DgnTextures::Iterator::Entry::GetDescr() const     { Verify(); return m_sql->GetValueText (2); }
-size_t DgnTextures::Iterator::Entry::GetDataSize() const        { Verify(); return static_cast<size_t> (m_sql->GetColumnBytes (3)); }
-ByteCP DgnTextures::Iterator::Entry::GetDataBytes() const       { Verify(); return static_cast<ByteCP> (m_sql->GetValueBlob (3)); }
+DgnTextureId DgnTextures::Iterator::Entry::GetId() const            { Verify(); return m_sql->GetValueId<DgnTextureId>(0); }
+Utf8CP DgnTextures::Iterator::Entry::GetName() const                { Verify(); return m_sql->GetValueText (1); }
+Utf8CP DgnTextures::Iterator::Entry::GetDescr() const               { Verify(); return m_sql->GetValueText (2); }
+size_t DgnTextures::Iterator::Entry::GetDataSize() const            { Verify(); return static_cast<size_t> (m_sql->GetColumnBytes (3)); }
+ByteCP DgnTextures::Iterator::Entry::GetDataBytes() const           { Verify(); return static_cast<ByteCP> (m_sql->GetValueBlob (3)); }
 DgnTextures::Format DgnTextures::Iterator::Entry::GetFormat() const { Verify(); return extractFormat (m_sql->GetValueInt (4)); }
 uint32_t DgnTextures::Iterator::Entry::GetWidth() const             { Verify(); return static_cast<uint32_t> (m_sql->GetValueInt (5)); }
 uint32_t DgnTextures::Iterator::Entry::GetHeight() const            { Verify(); return static_cast<uint32_t> (m_sql->GetValueInt (6)); }
 DgnTextures::Flags DgnTextures::Iterator::Entry::GetFlags() const   { Verify(); return static_cast<DgnTextures::Flags> (m_sql->GetValueInt (7)); }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uintptr_t   DgnTextures::s_nextQvTextureId;
+
+uintptr_t   DgnTextures::AddQvTextureId (DgnTextureId TextureId) const        { return (m_qvTextureIds[TextureId] = ++s_nextQvTextureId); }
+uintptr_t   DgnTextures::GetQvTextureId (DgnTextureId TextureId) const
+    {
+    auto const&   found = m_qvTextureIds.find(TextureId);
+
+    return (found == m_qvTextureIds.end()) ? 0 : found->second; 
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DgnTextures::Texture::GetImage (bvector<Byte>& image) const
+    {
+    TextureData const&              textureData = GetData();
+    ImageUtilities::RgbImageInfo    imageInfo;
+    BentleyStatus                   status = ERROR;
+
+    memset (&imageInfo, 0, sizeof (imageInfo));
+    switch (textureData.GetFormat())
+        {
+        case DgnTextures::Format::RAW:
+            image = textureData.GetData();
+            return SUCCESS;
+
+        case DgnTextures::Format::PNG:  
+            status = ImageUtilities::ReadImageFromPngBuffer (image, imageInfo, &textureData.GetData().front(), textureData.GetData().size());
+            break;
+
+        case DgnTextures::Format::JPEG:
+            {
+            ImageUtilities::RgbImageInfo    jpegInfo;
+
+            jpegInfo.width = textureData.GetWidth();
+            jpegInfo.height = textureData.GetHeight();
+            jpegInfo.hasAlpha = true;
+            jpegInfo.isBGR = false;
+            jpegInfo.isTopDown = true;
+            
+            status = ImageUtilities::ReadImageFromJpgBuffer (image, imageInfo, &textureData.GetData().front(), textureData.GetData().size(), jpegInfo);
+            break;
+            }
+
+    
+        default:
+            BeAssert (false);
+            return ERROR;
+        }
+
+    if (SUCCESS != status ||
+        imageInfo.width != textureData.GetWidth() ||
+        imageInfo.height != textureData.GetHeight() ||
+        !imageInfo.hasAlpha)
+        {
+        BeAssert (false);
+        return ERROR;
+        }
+    return SUCCESS;
+    }

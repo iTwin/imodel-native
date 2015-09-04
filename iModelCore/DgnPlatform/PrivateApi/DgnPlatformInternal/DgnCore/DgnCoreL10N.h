@@ -168,6 +168,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(DgnCoreL10N,dgncore_msg)
     L10N_STRING(VIEWFRUST_Message_MaxZoom  )                    // =="Maximum Zoom"==
 
     L10N_STRING(DISPLAY_INFO_MessageID_Model)                   // =="Model: "==
+    L10N_STRING(DISPLAY_INFO_MessageID_Category)                // =="Category: "==
     L10N_STRING(DATETIME_MONTH_0)                               // =="January"==
     L10N_STRING(DATETIME_MONTH_1)                               // =="February"==
     L10N_STRING(DATETIME_MONTH_2)                               // =="March"==

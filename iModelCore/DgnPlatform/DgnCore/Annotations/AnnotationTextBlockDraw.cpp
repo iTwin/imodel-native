@@ -1,8 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: DgnCore/Annotations/AnnotationTextBlockDraw.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
-
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnCore/Annotations/AnnotationTextBlockDraw.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/DgnCore/Annotations/Annotations.h>
 #include <DgnPlatform/DgnCore/TextStyleInterop.h>

@@ -23,8 +23,8 @@ struct PerformanceDgnECTests : public PerformanceTestFixture
 
     protected:
         PerformanceDgnECTests() : PerformanceTestFixture() {} 
-        void RunInsertTests(ECN::ECSchemaR schema, DgnDbTestDgnManager tdm);
-        void RunQueryTests(ECN::ECSchemaR schema, DgnDbTestDgnManager tdm);
+        void RunInsertTests(ECN::ECSchemaR schema, DgnDbTestDgnManager tdm, Utf8String testcaseName, Utf8String testName);
+        void RunQueryTests(ECN::ECSchemaR schema, DgnDbTestDgnManager tdm, Utf8String testcaseName, Utf8String testName);
     };
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

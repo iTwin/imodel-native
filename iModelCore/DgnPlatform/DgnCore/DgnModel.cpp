@@ -122,10 +122,17 @@ BentleyStatus DgnModels::QueryModelDependencyIndexAndType(uint64_t& didx, DgnMod
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t DgnModels::Iterator::QueryCount() const
     {
-    Utf8String sqlString = MakeSqlString("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE (?1 = (Visibility & ?1))", true);
+    Utf8String sqlString = "SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Model);
+    bool hasWhere = false;
+    if (ModelIterate::Gui == m_itType)
+        {
+        sqlString += " WHERE (0 <> Visibility)";
+        hasWhere = true;
+        }
+
+    sqlString = MakeSqlString(sqlString.c_str(), hasWhere);
 
     Statement sql(*m_db, sqlString.c_str());
-    sql.BindInt(1,(int) m_itType);
 
     return (BE_SQLITE_ROW != sql.Step()) ? 0 : sql.GetValueInt(0);
     }
@@ -137,11 +144,18 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = MakeSqlString("SELECT Id,Name,Descr,Type,Space,Visibility,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE (?1 = (Visibility & ?1))", true);
+        Utf8String sqlString = "SELECT Id,Name,Descr,Type,Space,Visibility,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Model);
+        bool hasWhere = false;
+        if (ModelIterate::Gui == m_itType)
+            {
+            sqlString += " WHERE (0 <> Visibility)";
+            hasWhere = true;
+            }
+
+        sqlString = MakeSqlString(sqlString.c_str(), hasWhere);
 
         m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         m_params.Bind(*m_stmt);
-        m_stmt->BindInt(1,(int) m_itType);
         }
     else
         {
@@ -156,7 +170,7 @@ Utf8CP       DgnModels::Iterator::Entry::GetName() const {Verify(); return m_sql
 Utf8CP       DgnModels::Iterator::Entry::GetDescription() const {Verify(); return m_sql->GetValueText(2);}
 DgnModelType DgnModels::Iterator::Entry::GetModelType() const {Verify(); return (DgnModelType) m_sql->GetValueInt(3);}
 DgnModels::Model::CoordinateSpace DgnModels::Iterator::Entry::GetCoordinateSpace() const {Verify(); return (Model::CoordinateSpace) m_sql->GetValueInt(4);}
-uint32_t     DgnModels::Iterator::Entry::GetVisibility() const {Verify(); return m_sql->GetValueInt(5);}
+bool         DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(5));}
 DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(6));}
 
 /*---------------------------------------------------------------------------------**//**
@@ -686,7 +700,7 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
     stmt.BindInt(4, (int)_GetModelType());
     stmt.BindId(5, GetClassId());
     stmt.BindInt(6,(int) _GetCoordinateSpace());
-    stmt.BindInt(7, inGuiList);
+    stmt.BindInt(7, inGuiList ? 1 : 0);
 
     rc = stmt.Step();
     if (BE_SQLITE_DONE != rc)
@@ -1347,11 +1361,7 @@ DgnDbStatus DgnModel::_ImportElementsFrom(DgnModelCR sourceModel, DgnImportConte
         if (!cc.IsValid() || (DgnDbStatus::Success != status))
             {
             // *** TBD: Record failure somehow
-            continue;
-            }
-        if (DgnDbStatus::Success != status)
-            {
-            // *** TBD: Record failure somehow
+            BeDataAssert(false && "element import failure -- probably a duplicate code");
             continue;
             }
 
@@ -1403,6 +1413,7 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
         if (!ccitem.IsValid())
             {
             // *** TBD: Record failure somehow
+            BeDataAssert(false && "item import failure");
             continue;
             }
 
@@ -1575,6 +1586,18 @@ ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params)
     m_elementECClassName = params.GetElementECClassName();
     m_itemECClassName = params.GetItemECClassName();
     m_itemECBaseClassName = params.GetItemECBaseClassName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::_GetSolverOptions(Json::Value& json)
+    {
+    json["category"] = m_elementCategoryName.c_str();
+    Json::Value& instance = json["instance"];
+    instance["elementClass"] = m_elementECClassName.c_str();
+    instance["itemClass"] = m_itemECClassName.c_str();
+    instance["itemBaseClass"] = m_itemECBaseClassName.c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**

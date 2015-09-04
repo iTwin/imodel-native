@@ -117,8 +117,8 @@ void TextString::ComputeGlyphAxes(DVec3dR xAxis, DVec3dR yAxis) const
     {
     DPoint2d size = m_style.GetSize();
 
-    xAxis.Init (size.x, 0.0, 0.0);
-    yAxis.Init (0.0, size.y, 0.0);
+    xAxis.Init(size.x, 0.0, 0.0);
+    yAxis.Init(0.0, size.y, 0.0);
 
     if (m_style.IsItalic() && (DgnFontType::TrueType != m_style.GetFont().GetType()))
         yAxis.x = (tan(DEFAULT_ITALIC_ANGLE) * size.y);
@@ -283,7 +283,7 @@ void TextString::ComputeAndLayoutGlyphs()
 //---------------------------------------------------------------------------------------
 void TextString::TransformOrientationAndExtractScale(DPoint2dR scaleFactor, RotMatrixR orientation, TransformCR transform)
     {
-    orientation.InitProduct (transform, orientation);
+    orientation.InitProduct(transform, orientation);
 
     DVec3d xcol;
     orientation.GetColumn(xcol, 0);
@@ -316,7 +316,7 @@ void TextString::TransformOrientationAndExtractScale(DPoint2dR scaleFactor, RotM
         double scale = (1.0 / scaleFactor.x);
 
         if (scale > 1.0e-15)
-            xcol.Scale (scale);
+            xcol.Scale(scale);
         else
             xcol.Init(1.0, 0.0, 0.0);
 

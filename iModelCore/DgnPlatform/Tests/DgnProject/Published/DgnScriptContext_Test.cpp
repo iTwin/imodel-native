@@ -180,9 +180,17 @@ TEST(DgnScriptTest, Test1)
 +===============+===============+===============+===============+===============+======*/
 struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler
     {
-    void _HandleScriptError(BeJsContextR, Category category, Utf8CP description) override
+    void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details) override
         {
-        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s", (int)category, description);
+        if (description[0] == ':')// || category == Category::Info)
+            {
+            //GTEST_MESSAGE_ (description, ::testing::TestPartResult::kSuccess);
+            printf ("%s\n", description);
+            BeTest::Log("DgnScriptTest", BeTest::LogPriority::PRIORITY_INFO, description);
+//                    Utf8PrintfString("%d / %lf seconds = %lf/second\n", niters, timeIt.GetElapsedSeconds(), niters/timeIt.GetElapsedSeconds()));
+            }
+        else
+		        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details);
         }
     };
 
@@ -198,11 +206,12 @@ TEST(DgnScriptTest, RunScripts)
     BeFileName jsFileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
     jsFileName.AppendToPath(L"Script/DgnScriptTest.js");
-    printf ("Hello world\n");
+    printf (":Hello world\n");
     Utf8String jsProgram;
     DgnScriptLibrary::ReadText(jsProgram, jsFileName);
     //printf ("The JS program izzz .....\n%s\n", jsProgram.c_str ());
     T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
     }
+
 
 #endif

@@ -40,6 +40,7 @@ enum class DgnDbStatus : int
     BadRequest,
     BadSchema,
     DuplicateName,
+    DuplicateCode,
     ElementBlockedChange,
     FileAlreadyExists,
     FileNotFound,
