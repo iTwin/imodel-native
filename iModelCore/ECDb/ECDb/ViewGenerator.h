@@ -92,6 +92,7 @@ struct SqlTriggerBuilder
         bool IsTemprory () const;
         bool IsValid () const;
         const Utf8String ToString (SqlOption option, bool escape) const;
+        bool IsEmpty () const { return m_body.IsEmpty (); }
     };
 struct SqlViewBuilder
     {
@@ -317,6 +318,7 @@ struct ECDbMapAnalyser
                 return m_structCascades;
                 }
             SqlTriggerBuilder::TriggerList& GetTriggerListR ();
+            SqlTriggerBuilder::TriggerList const& GetTriggerList () const;
             void HandleStructArray ();
             void HandleLinkTable (std::map<Storage*, std::set<Relationship*>> const& relationshipsByStorage);
             void HandleCascadeLinkTable (std::vector<Relationship*> const& relationships);
@@ -412,11 +414,57 @@ struct ECDbMapAnalyser
             
         };
     private:
+        struct ViewInfo
+            {
+            private:
+                SqlTriggerBuilder m_deleteTrigger;
+                SqlTriggerBuilder m_updateTrigger;
+                SqlViewBuilder m_view;
+            public: 
+                ViewInfo (){}
+                ViewInfo (ViewInfo const& rhs)
+                    :m_deleteTrigger (rhs.m_deleteTrigger), m_updateTrigger (rhs.m_updateTrigger), m_view (rhs.m_view)
+                    {
+                    }
+                ViewInfo (ViewInfo const&& rhs)
+                    :m_deleteTrigger (std::move (rhs.m_deleteTrigger)), m_updateTrigger (std::move (rhs.m_updateTrigger)), m_view (std::move (rhs.m_view))
+                    {
+                    }
+                ViewInfo& operator = (ViewInfo const& rhs)
+                        {
+                        if (this != &rhs)
+                            {
+                            m_deleteTrigger = rhs.m_deleteTrigger;
+                            m_updateTrigger = rhs.m_updateTrigger;
+                            m_view = rhs.m_view;
+                            }
+                        return *this;
+                        }
+                ViewInfo& operator = (ViewInfo const&& rhs)
+                    {
+                    if (this != &rhs)
+                        {
+                        m_deleteTrigger = std::move(rhs.m_deleteTrigger);
+                        m_updateTrigger = std::move (rhs.m_updateTrigger);
+                        m_view = std::move (rhs.m_view);
+                        }
+                    return *this;
+                    }
+                SqlViewBuilder& GetViewR () { return m_view; }
+                SqlTriggerBuilder& GetDeleteTriggerR () { return m_deleteTrigger; }
+                SqlTriggerBuilder& GetUpdateTriggerR () { return m_updateTrigger; }
+                SqlViewBuilder const& GetView () const { return m_view; }
+                SqlTriggerBuilder const& GetDeleteTrigger () const{ return m_deleteTrigger; }
+                SqlTriggerBuilder const& GetUpdateTrigger ()const { return m_updateTrigger; }
+
+            };
+
         mutable std::map<ECN::ECClassId, std::set<ECN::ECClassId>> m_derivedClassLookup;
         ECDbMapR m_map;
         std::map<ECN::ECClassId, Class::Ptr> m_classes;
         std::map<ECN::ECClassId, Relationship::Ptr> m_relationships;
         std::map<Utf8CP, Storage::Ptr, CompareIUtf8> m_storage;
+        std::map<Class const*, ViewInfo> m_viewInfos;
     private:
         ECDbMapR GetMapR () { return m_map; }
         ECDbMapCR GetMap () const { return m_map; }
@@ -432,10 +480,17 @@ struct ECDbMapAnalyser
         std::set<ECN::ECClassId> const& GetDerivedClassIds (ECN::ECClassId baseClassId) const;
         ClassMapCP GetClassMap (ECN::ECClassId classId) const;
         void SetupDerivedClassLookup ();
-        void HandleEndTable ();
+        void ProcessEndTableRelationships ();
+        SqlViewBuilder BuildView (Class& nclass);
+        SqlTriggerBuilder BuildPolymorphicDeleteTrigger (Class& nclass);
+        SqlTriggerBuilder BuildPolymorphicUpdateTrigger (Class& nclass);
+        DbResult ApplyChanges ();
+        DbResult ExecuteDDL (Utf8CP sql);
+        DbResult UpdateHoldingView ();
+        ViewInfo* GetViewInfoForClass (Class const& nclass);
     public:
         ECDbMapAnalyser (ECDbMapR ecdbMap);
-        BentleyStatus Analyser ();
+        BentleyStatus Analyser (bool applyChanges);
     };
 struct ECDbViewGenerator
     {

@@ -1564,7 +1564,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
             {
             feedback = TraversalFeedback::NextSibling;
             }
-        else
+        else if (!propMap->IsSystemPropertyMap ())
             {
             propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint (propMap->GetPropertyAccessString (), *propMap->GetFirstColumn (), ECValue ())));
             }

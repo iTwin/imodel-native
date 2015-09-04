@@ -149,18 +149,9 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         if (!key.second->GetMapStrategy ().IsNotMapped ())
             classMaps.insert (key.second.get ());
         }
-    ECDbMapAnalyser a (*this);
-    a.Analyser ();
-    //ECDbViewGenerator a(*this);
-    //a.BuildGraph ();
-    //a.ComputeView ();
-    //SqlGenerator viewGen (*this);
-    //if (SUCCESS != viewGen.BuildViewInfrastructure (classMaps))
-    //    {
-    //    BeAssert ( false && "failed to create view infrastructure");
-    //    m_schemaImportContext = nullptr;
-    //    return MapStatus::Error;
-    //    }
+    ECDbMapAnalyser mapAnalyser (*this);
+    if (mapAnalyser.Analyser (true /*apply changes*/) != BentleyStatus::SUCCESS)
+        return MapStatus::Error;
 
     m_schemaImportContext = nullptr;
     return MapStatus::Success;
