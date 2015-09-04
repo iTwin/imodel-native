@@ -142,29 +142,34 @@
         <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
 
-        <ProductDirectory Name="RealityAssemblies"      Path=""/>
-        <ProductDirectory Name="BentleyNativeAssemblies"    Path=""/>
-        <ProductDirectory Name="ImagePPAssemblies"          Path=""/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies"  Path=""/>
-        <ProductDirectory Name="AdobeAssemblies"            Path="" Deliver="false"/>
-        <ProductDirectory Name="AdobeResource"              Path="System/Data/PDFL" RelativeTo="AdobeAssemblies"  Deliver="false"/>
-        <ProductDirectory Name="PPNativeAssemblies"         Path="" />
-        <ProductDirectory Name="PdfLibInitNativeAssemblies" Path="" />
-        <ProductDirectory Name="GeomNativeAssemblies"       Path="" />
-        <ProductDirectory Name="GeoCoordData"               Path="GeoCoordinateData" />
-        <ProductDirectory Name="GeoCoordNativeAssemblies"   Path="" />
-        <ProductDirectory Name="MrSidAssemblies"            Path="" />
-        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="" />
-        <ProductDirectory Name="ECObjectsNativeAssemblies"  Path="" />
-        <ProductDirectory Name="ECSchemas"                  Path="ECSchemas" />
-        <ProductDirectory Name="BeOpenSSLAssemblies"        Path="" />
-        <ProductDirectory Name="BeCurlAssemblies"           Path="" />
+        <ProductDirectory Name="RealityAssemblies"              Path=""/>
+        <ProductDirectory Name="BentleyNativeAssemblies"        Path=""/>
+        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
+        <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
+        <ProductDirectory Name="ImagePPAssemblies"              Path=""/>
+        <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"      Path=""/>
+        <ProductDirectory Name="AdobeAssemblies"                Path="" Deliver="false"/>
+        <ProductDirectory Name="AdobeResource"                  Path="System/Data/PDFL" RelativeTo="AdobeAssemblies"  Deliver="false"/>
+        <ProductDirectory Name="PPNativeAssemblies"             Path="" />
+        <ProductDirectory Name="PdfLibInitNativeAssemblies"     Path="" />
+        <ProductDirectory Name="GeomNativeAssemblies"           Path="" />
+        <ProductDirectory Name="GeoCoordData"                   Path="GeoCoordinateData" />
+        <ProductDirectory Name="GeoCoordNativeAssemblies"       Path="" />
+        <ProductDirectory Name="MrSidAssemblies"                Path="" />
+        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="" />
+        <ProductDirectory Name="ECObjectsNativeAssemblies"      Path="" />
+        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
+        <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
+        <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
+        <ProductDirectory Name="BeOpenSSLAssemblies"            Path="" />
+        <ProductDirectory Name="BeCurlAssemblies"               Path="" />
 
-        <ProductDirectory Name="GeomNativeAssemblies" Path=""/>
-        <ProductDirectory Name="PointoolsAssemblies" Path=""/>
-        <ProductDirectory Name="PointoolsAssemblies32Ext" Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
+        <ProductDirectory Name="GeomNativeAssemblies"           Path=""/>
+        <ProductDirectory Name="PointoolsAssemblies"            Path=""/>
+        <ProductDirectory Name="PointoolsAssemblies32Ext"       Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
 
-        <ProductDirectory Name="LoggingNativeAssemblies" Path=""/>
+        <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
     </ProductDirectoryList>
 
 	
