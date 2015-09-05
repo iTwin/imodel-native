@@ -126,7 +126,20 @@ struct NativeSqlBuilder
         return *this;
         }
 	NativeSqlBuilder& AppendIf(bool appendIf, Utf8CP stringLiteral){ if (appendIf) Append(stringLiteral); return *this; }
-	NativeSqlBuilder& AppendEscapedIf(bool escapeIf, Utf8CP identifier){ if (escapeIf) AppendEscaped(identifier); else Append(identifier); return *this; };
+    NativeSqlBuilder& AppendIIf (bool appendIIf, Utf8CP trueStr, Utf8CP falseStr)
+        { 
+        if (appendIIf) 
+            {
+            Append (trueStr);
+            }
+        else
+            {
+            Append (falseStr);
+            }
+            return *this;
+        }
+
+    NativeSqlBuilder& AppendEscapedIf(bool escapeIf, Utf8CP identifier){ if (escapeIf) AppendEscaped(identifier); else Append(identifier); return *this; };
     bool IsEmpty () const;
     Utf8CP ToString () const;
 

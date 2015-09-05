@@ -304,6 +304,7 @@ struct ECDbMapAnalyser
             std::set<Class*> m_classes;
             std::set<Relationship*> m_relationships;
             std::map<Storage*, std::set<Relationship*>> m_cascades;
+
             std::set<Struct*> m_structCascades;
             SqlTriggerBuilder::TriggerList m_triggers;
         public:
@@ -320,7 +321,6 @@ struct ECDbMapAnalyser
             SqlTriggerBuilder::TriggerList& GetTriggerListR ();
             SqlTriggerBuilder::TriggerList const& GetTriggerList () const;
             void HandleStructArray ();
-            void HandleLinkTable (std::map<Storage*, std::set<Relationship*>> const& relationshipsByStorage);
             void HandleCascadeLinkTable (std::vector<Relationship*> const& relationships);
             void Generate ();
         };
@@ -481,9 +481,12 @@ struct ECDbMapAnalyser
         ClassMapCP GetClassMap (ECN::ECClassId classId) const;
         void SetupDerivedClassLookup ();
         void ProcessEndTableRelationships ();
+        void ProcessLinkTableRelationships ();
         SqlViewBuilder BuildView (Class& nclass);
         SqlTriggerBuilder BuildPolymorphicDeleteTrigger (Class& nclass);
         SqlTriggerBuilder BuildPolymorphicUpdateTrigger (Class& nclass);
+        void HandleLinkTable (Storage* fromStorage, std::map<Storage*, std::set<ECDbMapAnalyser::Relationship*>> const& relationshipsByStorage, bool isFrom);
+
         DbResult ApplyChanges ();
         DbResult ExecuteDDL (Utf8CP sql);
         DbResult UpdateHoldingView ();
