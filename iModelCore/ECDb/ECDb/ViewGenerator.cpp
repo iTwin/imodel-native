@@ -3489,10 +3489,8 @@ BentleyStatus ECDbMapAnalyser::AnalyseClass (ClassMapCR ecClassMap)
     if (!ptr.InQueue ())
         return BentleyStatus::SUCCESS;
 
+    AnalyseStruct (ptr);
     ptr.Done (); //mark it as done
-
-
-
     for (auto derivedClassId : GetDerivedClassIds (ecClassMap.GetClass ().GetId ()))
         if (AnalyseClass (*GetClassMap (derivedClassId)) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;

@@ -33,50 +33,6 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
     else
         stat = PrepareForClass (ctx, deleteNativeSqlSnippets);
 
-    //Create child delete step task for delete
-    auto noneSelectPreparedStmt = ctx.GetECSqlStatementR ().GetPreparedStatementP <ECSqlNonSelectPreparedStatement> ();
-
-    BeAssert (noneSelectPreparedStmt != nullptr && "Expecting ECSqlNonSelectPreparedStatement");
-
-    auto status = ECSqlStepTaskFactory::CreateClassStepTask (
-        noneSelectPreparedStmt->GetStepTasks (),
-        StepTaskType::Delete,
-        ctx,
-        classMap.GetECDbMap ().GetECDbR (),
-        classMap,
-        classNameExp->IsPolymorphic ());
-    if (status != ECSqlStepTaskCreateStatus::NothingToDo)
-        {
-        if (status != ECSqlStepTaskCreateStatus::Success)
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "Failed to create delete step tasks for struct array properties");
-        }
-
-    //if (noneSelectPreparedStmt->GetStepTasks ().Size () > 0)
-    //    {
-        auto& ecsqlParameterMap = ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetParameterMapR ();
-        auto selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery (ctx, *exp.GetClassNameExp (), exp.GetOptWhereClauseExp ());
-        auto selectorStmt = noneSelectPreparedStmt->GetStepTasks ().GetSelector ( true );
-        selectorStmt->Initialize (ctx, ctx.GetParentArrayProperty (), nullptr);
-        stat = selectorStmt->Prepare (classMap.GetECDbMap ().GetECDbR (), selectorQuery.c_str ());
-        if (stat != ECSqlStatus::Success)
-            {
-            BeAssert (false && "Fail to prepared statement for ECInstanceIdSelect. Possible case of struct array containing struct array");
-            return stat;
-            }
-
-        int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause (exp, exp.GetOptWhereClauseExp ());
-        auto nParamterToBind = static_cast<int>(ecsqlParameterMap.Count ()) - parameterIndex;
-        for (auto j = 1; j <= nParamterToBind; j++)
-            {
-            auto& sink = selectorStmt->GetBinder (j);
-            ECSqlBinder* source = nullptr;
-            auto status = ecsqlParameterMap.TryGetBinder (source, j + parameterIndex);
-            if (status == ECSqlStatus::Success)
-                source->SetOnBindEventHandler (sink);
-            else
-                return status;
-            }
-        //}
     ctx.PopScope ();
     return stat;
     }
