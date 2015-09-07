@@ -103,7 +103,7 @@ TEST (BeStringUtilitiesTests, BeStringUtilWCharToUtf16NotNull)
 // Desc: Testing of Strlwr method.
 // 
 //---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, DISABLED_BeStringUtilStrlwr)// Failing on iOS
+TEST (BeStringUtilitiesTests, BeStringUtilStrlwr)// Failing on iOS
 {
 
    char string[]= "HELLO";
@@ -119,7 +119,7 @@ TEST (BeStringUtilitiesTests, DISABLED_BeStringUtilStrlwr)// Failing on iOS
 // Desc: Testing of Strupr method.
 // 
 //---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, DISABLED_BeStringUtilStrupr)//Failing on iOS
+TEST (BeStringUtilitiesTests, BeStringUtilStrupr)//Failing on iOS
 {
   char string[]= "hello";
   char* status= BeStringUtilities::Strupr(string);
