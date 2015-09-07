@@ -1511,7 +1511,7 @@ public:
     DGNPLATFORM_EXPORT DgnAuthorityId   QueryAuthorityId(Utf8StringCR name) const;
 
     //! The built-in "local" code-generating authority
-    static DgnAuthorityId Local() {return DgnAuthorityId(1LL);}
+    static DgnAuthorityId Local() {return DgnAuthorityId((int64_t)1LL);}
 };
 
 //=======================================================================================
