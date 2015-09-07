@@ -12,15 +12,10 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::ECDb ()
-    : Db (), m_pimpl (nullptr)
-    {
-    m_pimpl = new Impl (*this);
-    }
+ECDb::ECDb () : Db (), m_pimpl (nullptr) { m_pimpl = new Impl (*this); }
 
 
 //--------------------------------------------------------------------------------------
