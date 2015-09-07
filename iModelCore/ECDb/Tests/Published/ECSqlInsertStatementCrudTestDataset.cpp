@@ -1114,7 +1114,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests (ECDbT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-    ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDbTestProject& testProject)
+ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDbTestProject& testProject)
     {
     auto psaClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "PSA");
     auto thBaseClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "THBase");
@@ -1518,7 +1518,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithAnyClassConstraintTests
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-    ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithAdditionalPropsTests (ECDbTestProject& testProject)
+ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithAdditionalPropsTests (ECDbTestProject& testProject)
     {
     auto psaClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "PSA");
     auto pClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "P");
@@ -1531,22 +1531,19 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithAnyClassConstraintTests
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps VALUES (401, %lld, 234, %lld, True, 3.14, 123, 'hello');",
-    psaClassId, pClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, B, D, I, S) VALUES (401, %lld, 235, %lld, True, 3.14, 123, 'hello');", psaClassId, pClassId);
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsqlStr.c_str (), 1);
     }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (402, %lld, 234, %lld);",
-    psaClassId, pClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (402, %lld, 236, %lld);", psaClassId, pClassId);
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsqlStr.c_str (), 1);
     }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, D, B) VALUES (403, %lld, 234, %lld, 3.14, True);",
-        psaClassId, pClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, D, B) VALUES (403, %lld, 237, %lld, 3.14, True);", psaClassId, pClassId);
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsqlStr.c_str (), 1);
     }
 
@@ -1556,7 +1553,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithAnyClassConstraintTests
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
-    ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests (ECDbTestProject& testProject)
+ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests (ECDbTestProject& testProject)
     {
     auto psaClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "PSA");
     auto thBaseClassId = ECSqlStatementCrudTestDatasetHelper::GetClassId (testProject.GetTestSchemaManager (), "ECSqlTest", "THBase");

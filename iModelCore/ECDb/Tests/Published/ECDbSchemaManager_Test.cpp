@@ -98,7 +98,6 @@ TEST (ECDbSchemaManager, IncrementalLoading)
     }
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -242,8 +241,6 @@ ECSchemaPtr CreateTestSchema ()
 
     return testSchema;
     }
-
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  04/14
@@ -506,7 +503,6 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
             AssertSchemaImport(testItem, "schemavalidationerrors.ecdb");
             }
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  04/15
@@ -1463,9 +1459,8 @@ TEST(ECDbMap, ForeignKeyMapWithoutKeyProperty)
 
     }
 
-
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  10/14
+// @bsimethod                                   Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //Importing a schema containing all the possible combinations of class properties and relationship classes having built-in and user defined cardinalities 
 TEST(ECDbSchemaManager, ImportSchema)
@@ -1478,7 +1473,7 @@ TEST(ECDbSchemaManager, ImportSchema)
     ASSERT_TRUE (ecclass != nullptr);
     }
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  09/14
+// @bsimethod                                   Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, AddDuplicateECSchemaInCache)
 {
@@ -1504,7 +1499,7 @@ TEST(ECDbSchemaManager, AddDuplicateECSchemaInCache)
 }
 
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  09/14
+// @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportDuplicateSchema)
 {
@@ -1532,9 +1527,8 @@ TEST(ECDbSchemaManager, ImportDuplicateSchema)
 }
 
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  09/14
+// @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-
 TEST(ECDbSchemaManager, UpdateExistingSchema)
 {
     ECDbTestProject testProject;
@@ -1555,7 +1549,7 @@ TEST(ECDbSchemaManager, UpdateExistingSchema)
 
     ECSchemaCP schemap = ecdbr. Schemas ().GetECSchema ("TestSchema", true);
     ASSERT_TRUE(schemap != nullptr);
-    wprintf(L"%s\n", schemap->GetName().c_str());
+    printf("%s\n", schemap->GetName().c_str());
     ASSERT_EQ(4, schemap->GetClassCount()) << "Class count doesn't match the original number of classes";
 
     ECClassCP ecclass = ecdbr. Schemas ().GetECClass ("TestSchema", "DerivedTestClass");
@@ -1577,7 +1571,7 @@ TEST(ECDbSchemaManager, UpdateExistingSchema)
 }
 
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  09/14
+// @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, UpdateExsitingSchemaDifferntCache)
 {
@@ -1640,7 +1634,7 @@ TEST(ECDbSchemaManager, UpdateExsitingSchemaDifferntCache)
 }
 
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  09/14
+// @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, SchemaCache)
 {
@@ -1675,7 +1669,7 @@ TEST(ECDbSchemaManager, SchemaCache)
 }
 
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  09/14
+// @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportingSchemaInDifferentECDB)
 {
@@ -1700,7 +1694,7 @@ TEST(ECDbSchemaManager, ImportingSchemaInDifferentECDB)
 }
 
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  10/14
+// @bsimethod                                     Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportSupplementedSchemaDoSupplementationFalse)
 {
@@ -1739,7 +1733,7 @@ TEST(ECDbSchemaManager, ImportSupplementedSchemaDoSupplementationFalse)
 }
 
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  10/14
+// @bsimethod                                     Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportMultipalSupplementalSchemas)
 {
@@ -1807,7 +1801,7 @@ TEST(ECDbSchemaManager, ImportMultipalSupplementalSchemas)
 }
 
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  10/14
+// @bsimethod                                     Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportLowPrioritySupplementalSchama)
 {
@@ -1833,7 +1827,7 @@ TEST(ECDbSchemaManager, ImportLowPrioritySupplementalSchama)
     }
 
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  1/15
+// @bsimethod                                      Muhammad Hassan                  1/15
 //+---------------+---------------+---------------+---------------+---------------+------
  TEST(ECDbSchemaManager, ImportReferenceSchemaReferedByMultipleSchemas)
     {
@@ -1856,8 +1850,9 @@ TEST(ECDbSchemaManager, ImportLowPrioritySupplementalSchama)
 
      ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
     }
+
  //---------------------------------------------------------------------------------------
- //                                               Muhammad Hassan                  10/14
+ // @bsimethod                                    Muhammad Hassan                  10/14
  //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemaManager, ImportHighPrioritySupplementalSchama)
 {
@@ -1898,8 +1893,9 @@ TEST(ECDbSchemaManager, TestGetClassResolver)
     ecClass = ecdbr. Schemas ().GetECClass ("TS", "DerivedTestClass", ResolveSchema::AutoDetect);
     EXPECT_TRUE (ecClass != nullptr);
     }
+
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  11/14
+// @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 // A primary schema should be supplemented with the latest available supplemental schema
 TEST(ECDbSchemaManager, supplementSchemaWithLatestSupplementalSchema)
@@ -1946,6 +1942,10 @@ TEST(ECDbSchemaManager, supplementSchemaWithLatestSupplementalSchema)
     }
     EXPECT_EQ(3, i) << "the number of custom attributes on the Class Base do not match the original";
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  11/14
+//+---------------+---------------+---------------+---------------+---------------+------
 //supplement schema with a supplemental schema whose primary schema's major version is greater then the major version of current primary schema.
 TEST(ECDbSchemaManager, supplementSchemaWithGreaterMajorVersionPrimary)
 {
@@ -1983,6 +1983,10 @@ TEST(ECDbSchemaManager, supplementSchemaWithGreaterMajorVersionPrimary)
     }
     EXPECT_EQ(0, i) << "the number of custom attributes on the Class Base do not match the original";
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  11/14
+//+---------------+---------------+---------------+---------------+---------------+------
 // supplement current primary schema with a supplemental schema whose primary schema's minor version is less then the current schema.
 TEST(ECDbSchemaManager, supplementSchemaWithLessMinorVersionPrimarySchema)
 {
@@ -2020,6 +2024,10 @@ TEST(ECDbSchemaManager, supplementSchemaWithLessMinorVersionPrimarySchema)
     }
     EXPECT_EQ(0, i) << "the number of custom attributes on the Class Base do not match the original";
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  11/14
+//+---------------+---------------+---------------+---------------+---------------+------
 // suppelement schema with a supplemental schema whose primary schema's minor version is greater then the current.
 TEST(ECDbSchemaManager, supplementSchemaWithGreaterMinorVersionPrimarySchema)
 {

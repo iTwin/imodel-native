@@ -150,9 +150,9 @@ public:
 };
 
 // *** WIP_STUB_FOR_MISSING_CLASS_PerformanceResultRecorder
-struct PerformanceResultRecorder
-{
-static void LogToDb(Utf8String,Utf8String,double,Utf8String,int optional=0) {;}
-};
+//struct PerformanceResultRecorder
+//{
+//static void LogToDb(Utf8String,Utf8String,double,Utf8String,int optional=0) {;}
+//};
 
 END_ECDBUNITTESTS_NAMESPACE

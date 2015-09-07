@@ -2,25 +2,16 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 Performance*            # Performance tests are always excluded from being run during a build.
+InstanceCRUDTests.* 	# No need to run with the build, used by testing after build for verifying CRUD operations.
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-ECSqlInsertTestFixture.RelationshipWithAdditionalPropsTests
-
-#Test ECDb needs to be recreated as profile is too old
-InstanceCRUDTests.* 	# No need to run with the build, used by testing after build for verifying CRUD operations.
-ECSqlQueryAdapter.VerifyECSqlQueries
-
-# Can be removed from list when DGN schema is stable
-ECDbMapPersistenceTests.DGNSchemaStructureMapPersistence
-ECDbMapPersistenceTests.DGNSchemaTableColumnPropertyMapPersistence
-
 #ECSchema Update not working in 06 yet.
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
 ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties
 ECDbSchemas.UpdatingExistingECSchema
-ECDbSchemas.Verify_TFS_14829_A
-
+ECDbSchemas.Verify_TFS_14829_A # Affan says this must be ignored until we implement support for ecschema upgrade.
+SchemaImportTestFixture.MismatchDataTypesInExistingTable # notified Maha Nasir and Majd
