@@ -90,7 +90,7 @@ ECSqlStatus RegularClassSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContex
     if (!isPolymorphicClassExp || nonVirtualPartitionIndices.empty())
         horizPartition = &classMap.GetStorageDescription().GetRootHorizontalPartition();
     else
-        {
+        {                                                                                                                                                                                           
         BeAssert(nonVirtualPartitionIndices.size() == 1 && "Check that class only maps to a single table should have been done during class name preparation");
         horizPartition = classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]);
         }

@@ -105,18 +105,15 @@ ClassNameExp const& classNameExp
         if (status != ECSqlStatus::Success)
             return status;
         }
-
-    if (ctx.GetParentContext() == nullptr)
+    
+    IClassMap const& classMap = classNameExp.GetInfo().GetMap();
+    if (classMap.GetStorageDescription ().GetNonVirtualHorizontalPartitionIndices ().size() > 1)
         {
-        IClassMap const& classMap = classNameExp.GetInfo().GetMap();
-
-        NativeSqlBuilder systemWhereClause;
-        status = SystemColumnPreparer::GetFor(classMap).GetWhereClause(ctx, systemWhereClause, classMap, ECSqlType::Delete,
-                                                                       classNameExp.IsPolymorphic(), nullptr); //no table aliases allowed in SQLite DELETE statement
-        if (status != ECSqlStatus::Success)
-            return status;
-
-        deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet = std::move(systemWhereClause);
+        //we set a view in this case
+        if (!exp.GetClassNameExp ()->IsPolymorphic ())
+            {
+            deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.Append ("[ECClassId] = ").Append (classMap.GetClass ().GetId ());
+            }
         }
 
     return ECSqlStatus::Success;

@@ -3248,7 +3248,7 @@ ClassMapCR ECDbMapAnalyser::Class::GetClassMap () const { return m_classMap; }
 ECDbMapAnalyser::Class* ECDbMapAnalyser::Class::GetParent () { return m_parent; }
 std::map <ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>>& ECDbMapAnalyser::Class::GetPartitionsR () { return m_partitions; }
 bool ECDbMapAnalyser::Class::InQueue () const { return m_inQueue; }
-void ECDbMapAnalyser::Class::Done () { m_inQueue = true; }
+void ECDbMapAnalyser::Class::Done () { m_inQueue = false; }
 std::vector<ECDbMapAnalyser::Storage const*> ECDbMapAnalyser::Class::GetNoneVirtualStorages () const
     {
     std::vector<Storage const*> tmp;
@@ -3419,10 +3419,6 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
     }
 ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipClassMapCR classMap)
     {
-    if (classMap.GetClass ().GetName () == "ElementOwnsChildElements")
-        {
-        printf ("");
-        }
     auto itor = m_relationships.find (classMap.GetClass ().GetId ());
     if (itor != m_relationships.end ())
         return *(itor->second.get ());
@@ -3483,18 +3479,19 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
     }
 BentleyStatus ECDbMapAnalyser::AnalyseClass (ClassMapCR ecClassMap)
     {
-    //[From] [To] USING [Relationship]
-    //BeAssert (m_classes.find (ecClassMap.GetClass ().GetId ()) == m_classes.end ()
     auto& ptr = GetClass (ecClassMap);
     if (!ptr.InQueue ())
+        {
         return BentleyStatus::SUCCESS;
+        }
 
     AnalyseStruct (ptr);
     ptr.Done (); //mark it as done
     for (auto derivedClassId : GetDerivedClassIds (ecClassMap.GetClass ().GetId ()))
+        {
         if (AnalyseClass (*GetClassMap (derivedClassId)) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;
-
+        }
     return BentleyStatus::SUCCESS;
     }
 
@@ -3539,7 +3536,7 @@ const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
         "	FROM ec_Class C "
         "   	INNER JOIN ec_ClassMap M ON M.ClassId = C.Id "
         "       LEFT JOIN ec_BaseClass B ON B.ClassId = C.Id "
-        "	WHERE B.BaseClassId IS NULL AND M.MapStrategy > 0 And C.IsRelationship = 0";
+        "	WHERE B.BaseClassId IS NULL And C.IsRelationship = 0";
 
     std::vector<ECN::ECClassId> classIds;
     Statement stmt;
@@ -3556,7 +3553,7 @@ const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRelationshipClassIds () co
         "	FROM ec_Class C "
         "   	INNER JOIN ec_ClassMap M ON M.ClassId = C.Id "
         "       LEFT JOIN ec_BaseClass B ON B.ClassId = C.Id "
-        "	WHERE B.BaseClassId IS NULL AND M.MapStrategy > 0 And C.IsRelationship = 1";
+        "	WHERE B.BaseClassId IS NULL And C.IsRelationship = 1";
 
     std::vector<ECN::ECClassId> classIds;
     Statement stmt;
@@ -3578,6 +3575,7 @@ ClassMapCP ECDbMapAnalyser::GetClassMap (ECN::ECClassId classId) const
     }
 void ECDbMapAnalyser::SetupDerivedClassLookup ()
     {
+    m_derivedClassLookup.clear ();
     Utf8CP sql0 =
         "SELECT  BaseClassId, ClassId FROM ec_BaseClass ORDER BY BaseClassId";
 
@@ -3699,11 +3697,16 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
         .Append (classMap->GetClass ().GetName ().c_str ());
 
     NativeSqlBuilder::List selects;
+    HorizontalPartition const* root = &storageDescription.GetRootHorizontalPartition();
+    if (root->GetTable ().GetPersistenceType () == PersistenceType::Virtual)
+        root = nullptr;
+
+    bool bFirst = true;
     for (auto const& hp : storageDescription.GetHorizontalPartitions ())
         {
         if (hp.GetTable ().GetPersistenceType () == PersistenceType::Virtual)
             continue;
-
+        
         NativeSqlBuilder select;
         select.Append ("SELECT ");
         auto firstChildMap = m_map.GetClassMapCP (hp.GetClassIds ().front ());
@@ -3714,14 +3717,19 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
             auto childE = childPMS->GetEndPointByAccessString (rootE->GetAccessString ().c_str ());
             if (childE->GetValue ().IsNull ())
                 {
-                select.Append (childE->GetColumn ()->GetName ().c_str ());
+                select.AppendEscaped (childE->GetColumn ()->GetName ().c_str ());
+                if (bFirst && root == nullptr)
+                    { 
+                    bFirst = false;
+                    select.AppendSpace().AppendEscaped (rootE->GetColumn ()->GetName ().c_str ());
+                    }
                 }
             else
                 {
                 if (rootE->GetColumn () != nullptr)
-                    select.Append (Utf8PrintfString ("%lld %s", childE->GetValue ().GetLong (), rootE->GetColumn ()->GetName ().c_str ()));
+                    select.Append (Utf8PrintfString ("%lld [%s]", childE->GetValue ().GetLong (), rootE->GetColumn ()->GetName ().c_str ()));
                 else
-                    select.Append (Utf8PrintfString ("%lld %s", childE->GetValue ().GetLong (), (rootE->GetAccessString ().c_str ())));
+                    select.Append (Utf8PrintfString ("%lld [%s]", childE->GetValue ().GetLong (), (rootE->GetAccessString ().c_str ())));
                 }
 
             if (rootE != rootEndPoints.back ())
@@ -3738,7 +3746,11 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
                 hp.AppendECClassIdFilterSql (select);
                 }
             }
-        selects.push_back (std::move (select));
+
+        if (&hp == root)
+            selects.insert (selects.begin (), std::move (select));
+        else
+            selects.push_back (std::move (select));
         }
 
     if (!selects.empty ())
@@ -3864,6 +3876,7 @@ DbResult ECDbMapAnalyser::ApplyChanges ()
     }
 BentleyStatus ECDbMapAnalyser::Analyser (bool applyChanges)
     {
+    SetupDerivedClassLookup ();
     for (auto rootClassId : GetRootClassIds ())
         {
         if (AnalyseClass (*GetClassMap (rootClassId)) != BentleyStatus::SUCCESS)

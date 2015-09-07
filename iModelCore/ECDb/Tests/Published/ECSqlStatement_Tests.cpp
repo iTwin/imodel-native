@@ -924,7 +924,7 @@ TEST_F (ECSqlTestFixture, PolymorphicDeleteTest)
     ECDbR ecdb = SetUp ("PolymorphicDeleteTest.ecdb", L"NestedStructArrayTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), 0);
 
     PopulateTestDb (ecdb);
-
+    ecdb.SaveChanges ();
     //Delete all Instances of the base class, all the structArrays and relationships should also be deleted.
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM nsat.ClassA"));
