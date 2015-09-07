@@ -21,3 +21,13 @@ FileUtilTests.TruncateFilePath_MaxPathSmallerThanDirectory_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
+
+CachingDataSourceTests.OpenOrCreate_CalledSecondTimeAfterCacheWasCreated_OpensAndSucceeds # Was DISABLED. Need to investigate
+DataSourceCacheTests.ReadResponseInstanceKeys_CachedInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate  # Was DISABLED. Need to investigate
+DataSourceCacheTests.ReadResponseInstanceKeys_CachedParentInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate  # Was DISABLED. Need to investigate
+BeSQLiteDbTransactionHandlerTests.CommitTransaction_TransactionNotStarted_Error  # Was DISABLED. Need to investigate
+BuddiClientTests.GetRegions_Default_ReturnsSomeRegions                           # Was DISABLED. Need to investigate
+BuddiClientTests.GetUrl_ExistingUrlName_ReturnsUrl                               # Was DISABLED. Need to investigate
+BuddiClientTests.GetUrl_NotExistingUrlName_ReturnsUrlNotConfiguredError          # Was DISABLED. Need to investigate
+
+

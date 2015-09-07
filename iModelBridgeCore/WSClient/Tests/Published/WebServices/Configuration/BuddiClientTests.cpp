@@ -223,7 +223,7 @@ TEST_F(BuddiClientTests, GetUrl_ResponseContainsEmptyUrl_ReturnsUrlNotConfigured
     EXPECT_FALSE(result.GetError().GetMessage().empty());
     }
 
-TEST_F(BuddiClientTests, DISABLED_GetRegions_Default_ReturnsSomeRegions)
+TEST_F(BuddiClientTests, GetRegions_Default_ReturnsSomeRegions)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     BuddiClient client(proxy);
@@ -233,7 +233,7 @@ TEST_F(BuddiClientTests, DISABLED_GetRegions_Default_ReturnsSomeRegions)
     EXPECT_FALSE(result.GetValue().empty());
     }
 
-TEST_F(BuddiClientTests, DISABLED_GetUrl_ExistingUrlName_ReturnsUrl)
+TEST_F(BuddiClientTests, GetUrl_ExistingUrlName_ReturnsUrl)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     BuddiClient client(proxy);
@@ -242,7 +242,7 @@ TEST_F(BuddiClientTests, DISABLED_GetUrl_ExistingUrlName_ReturnsUrl)
     EXPECT_TRUE(result.IsSuccess());
     }
 
-TEST_F(BuddiClientTests, DISABLED_GetUrl_NotExistingUrlName_ReturnsUrlNotConfiguredError)
+TEST_F(BuddiClientTests, GetUrl_NotExistingUrlName_ReturnsUrlNotConfiguredError)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     BuddiClient client(proxy);

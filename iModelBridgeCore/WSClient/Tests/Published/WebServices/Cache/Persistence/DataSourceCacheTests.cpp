@@ -2688,7 +2688,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_ResultsContainParent_Retur
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "A"}), instances));
     }
 
-TEST_F(DataSourceCacheTests, DISABLED_ReadResponseInstanceKeys_CachedInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate)
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate)
     {
     // Does not work due to fact that CachedResponseInfo relateds results instances and does not relate duplicates
     shared_ptr<DataSourceCache> cache = GetTestCache();
@@ -2711,7 +2711,7 @@ TEST_F(DataSourceCacheTests, DISABLED_ReadResponseInstanceKeys_CachedInstanceWit
     EXPECT_THAT(instances, ContainerEq(expectedInstances));
     }
 
-TEST_F(DataSourceCacheTests, DISABLED_ReadResponseInstanceKeys_CachedParentInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate)
+TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedParentInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate)
     {
     // Does not work due to fact that CachedResponseInfo relateds results instances and does not relate duplicates
     shared_ptr<DataSourceCache> cache = GetTestCache();
