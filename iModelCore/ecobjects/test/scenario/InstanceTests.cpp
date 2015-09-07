@@ -449,7 +449,7 @@ TEST_F(InstanceTests, InstanceWriteReadFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyTests, DISABLED_SetReadOnlyAndSetValue)
+TEST_F(PropertyTests, SetReadOnlyAndSetValue)
     {
     CreateSchema();
     CreateProperty("PropertyString", PRIMITIVETYPE_String);
@@ -468,7 +468,7 @@ TEST_F(PropertyTests, DISABLED_SetReadOnlyAndSetValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyTests, DISABLED_SetReadOnlyAndChangeValue)
+TEST_F(PropertyTests, SetReadOnlyAndChangeValue)
     {
     CreateSchema();
     CreateProperty("PropertyString", PRIMITIVETYPE_String);
