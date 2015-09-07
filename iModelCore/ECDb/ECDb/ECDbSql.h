@@ -678,8 +678,8 @@ struct ECDbSqlTable : NonCopyableClass
         std::vector<ECDbSqlColumn const*> const& GetColumns () const;
         EditHandle& GetEditHandleR () { return m_editInfo; }
         EditHandle const& GetEditHandle () const { return m_editInfo; }
-        ECDbSqlIndex* CreateIndex(Utf8CP indexName, bool isUnique, ECN::ECClassId classId = ECN::ECClass::UNSET_ECCLASSID);
-        ECDbSqlIndex* CreateIndex(ECDbIndexId id, Utf8CP indexName, bool isUnique, ECN::ECClassId classId = ECN::ECClass::UNSET_ECCLASSID);
+        ECDbSqlIndex* CreateIndex(Utf8CP indexName, bool isUnique, ECN::ECClassId classId);
+        ECDbSqlIndex* CreateIndex(ECDbIndexId id, Utf8CP indexName, bool isUnique, ECN::ECClassId classId);
         const std::vector<ECDbSqlIndex const*> GetIndexes() const;
         ECDbSqlPrimaryKeyConstraint* GetPrimaryKeyConstraint (bool createIfDonotExist = true);
         ECDbSqlForeignKeyConstraint* CreateForeignKeyConstraint (ECDbSqlTable const& targetTable);

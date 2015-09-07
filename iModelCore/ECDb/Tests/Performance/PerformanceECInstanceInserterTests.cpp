@@ -19,6 +19,13 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//struct Performance_ECSQLVersusECInstanceInserter : public ::testing::Test
+//{
+//public:
+//    double m_eciiTime;
+//    double m_ecsqlTime;
+//
+//    Performance_ECSQLVersusECInstanceInserter::Performance_ECSQLVersusECInstanceInserter() { m_eciiTime = m_ecsqlTime = 0.0; }
 //*************************************************************************************************
 // ECInstanceInserter vs ECSQL performance
 //*************************************************************************************************
@@ -443,7 +450,7 @@ void RunPerformanceComparison (bool& hasRun, double& insertTimingSecs, Utf8CP te
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void RunPerformanceComparisonTest(Utf8CP testClassName, int numberOfInstancesPerClass)
+void RunPerformanceComparisonTest(Utf8CP testClassName, int numberOfInstancesPerClass, Utf8String testcaseName, Utf8String testName)
 {
     Utf8CP testSchemaName = "Test";
 
@@ -475,22 +482,24 @@ void RunPerformanceComparisonTest(Utf8CP testClassName, int numberOfInstancesPer
     { 
         PERFORMANCELOG.infov("ECInstanceInserter Performance: Insertion: %.1f",
             eciiInsertTiming);
-        LOGTODB(TEST_DETAILS, eciiInsertTiming, "ECInstanceInserter Performance: Insertion: for", numberOfInstancesPerClass);
+        LOGTODB(testcaseName, testName, eciiInsertTiming, "ECInstanceInserter Performance: Insertion: for", numberOfInstancesPerClass);
     }
     if (ecsqlHasRun)
     {
         PERFORMANCELOG.infov("ECSQL INSERT Performance: Insertion: %.1f",
             ecsqlinsertInsertTiming);
-        LOGTODB(TEST_DETAILS, ecsqlinsertInsertTiming, "ForECSQLInsert Performance: Insertion: for", numberOfInstancesPerClass);
+        LOGTODB(testcaseName, testName, ecsqlinsertInsertTiming, "ForECSQLInsert Performance: Insertion: for", numberOfInstancesPerClass);
     }
 }
+
+//}; // end of Test Fixture class
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(Performance_ECSQLVersusECInstanceInserter, AllPropertyTypes)
 {
-    RunPerformanceComparisonTest(nullptr, 1000);
+    RunPerformanceComparisonTest(nullptr, 1000, TEST_DETAILS);
 }
 
 //---------------------------------------------------------------------------------------
@@ -498,7 +507,7 @@ TEST(Performance_ECSQLVersusECInstanceInserter, AllPropertyTypes)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, PrimitiveProperties)
 {
-    RunPerformanceComparisonTest("P", 1000);
+    RunPerformanceComparisonTest("P", 1000, TEST_DETAILS);
 }
 
 //---------------------------------------------------------------------------------------
@@ -506,7 +515,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, PrimitiveProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, IntProperty)
 {
-    RunPerformanceComparisonTest("Int", 1000);
+    RunPerformanceComparisonTest("Int", 1000, TEST_DETAILS);
 }
 
 //---------------------------------------------------------------------------------------
@@ -514,7 +523,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, IntProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, DateTimeProperty)
 {
-    RunPerformanceComparisonTest("DateTime", 1000);
+    RunPerformanceComparisonTest("DateTime", 1000, TEST_DETAILS);
 }
 
 //---------------------------------------------------------------------------------------
@@ -522,7 +531,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, DateTimeProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, StringProperty)
 {
-    RunPerformanceComparisonTest("String", 1000);
+    RunPerformanceComparisonTest("String", 1000, TEST_DETAILS);
 }
 
 //---------------------------------------------------------------------------------------
@@ -530,7 +539,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, StringProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, StructProperties)
 {
-    RunPerformanceComparisonTest("S", 1000);
+    RunPerformanceComparisonTest("S", 1000, TEST_DETAILS);
 }
 
 //---------------------------------------------------------------------------------------
@@ -538,7 +547,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, StructProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, IntArrayProperty)
 {
-    RunPerformanceComparisonTest("IntA", 1000);
+    RunPerformanceComparisonTest("IntA", 1000, TEST_DETAILS);
 }
 
 //---------------------------------------------------------------------------------------
@@ -546,7 +555,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, IntArrayProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, DateTimeArrayProperty)
 {
-    RunPerformanceComparisonTest("DateTimeA", 1000);
+    RunPerformanceComparisonTest("DateTimeA", 1000, TEST_DETAILS);
 }
 
 //---------------------------------------------------------------------------------------
@@ -554,7 +563,7 @@ TEST (Performance_ECSQLVersusECInstanceInserter, DateTimeArrayProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, StringArrayProperty)
 {
-    RunPerformanceComparisonTest("StringA", 1000);
+    RunPerformanceComparisonTest("StringA", 1000, TEST_DETAILS);
 }
 
 //---------------------------------------------------------------------------------------
@@ -562,6 +571,6 @@ TEST (Performance_ECSQLVersusECInstanceInserter, StringArrayProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (Performance_ECSQLVersusECInstanceInserter, StructArrayProperty)
 {
-    RunPerformanceComparisonTest("SA", 1000);
+    RunPerformanceComparisonTest("SA", 1000, TEST_DETAILS);
 }
 END_ECDBUNITTESTS_NAMESPACE

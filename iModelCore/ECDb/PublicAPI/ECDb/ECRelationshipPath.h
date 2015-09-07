@@ -9,7 +9,8 @@
 //__PUBLISH_SECTION_START__
 #if !defined (DOCUMENTATION_GENERATOR)
 
-ECDB_TYPEDEFS (ECRelationshipPath);
+ECDB_TYPEDEFS(ECRelationshipPath);
+ECDB_TYPEDEFS(ECRelatedClassSpecifier);
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -49,16 +50,21 @@ public:
     //! @param [in] defaultSchema The schema containing the partly qualified classes in the path. Can be set to nullptr if all the class names 
     //! in relationship path are guaranteed to be fully qualified by the schema name.
     //! @see ToString()
-    StatusInt InitFromString (Utf8StringCR relatedClassString, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema);
+    BentleyStatus InitFromString(Utf8StringCR relatedClassString, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema);
 
     Utf8String ToString () const;
 
-public:
-    ECN::ECClassCP GetRelatedClass() const {return m_relatedClass;}
-    ECN::ECRelationshipClassCP GetRelationshipClass() const {return m_relationshipClass;}
-    ECN::ECRelatedInstanceDirection GetDirection() const {return m_direction;}
+    //__PUBLISH_SECTION_START__
 
-//__PUBLISH_SECTION_START__
+public:
+    //! Get the related class
+    ECN::ECClassCP GetRelatedClass() const {return m_relatedClass;}
+
+    //! Get the relationship class
+    ECN::ECRelationshipClassCP GetRelationshipClass() const {return m_relationshipClass;}
+
+    //! Get the direction the relationship needs to be traversed
+    ECN::ECRelatedInstanceDirection GetDirection() const {return m_direction;}
 };
 
 //!======================================================================================
@@ -107,7 +113,6 @@ private:
 
 private:
     void Clear();
-    size_t GetLength() const;
 
     void CopyFrom (ECRelationshipPath const& other);
     bool ValidateConstraint (ECN::ECRelationshipConstraintCR constraint, ECN::ECClassCP checkClass) const;
@@ -146,7 +151,7 @@ public:
     //!      string needs to include the root class at the beginning of the path. 
     //! </ul>
     //! @see ToString()
-    ECDB_EXPORT StatusInt InitFromString (Utf8StringCR relationshipPathString, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema);
+    ECDB_EXPORT BentleyStatus InitFromString(Utf8StringCR relationshipPathString, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema);
 
     //! Checks if the relationship path is empty
     //! @return true if empty. false otherwise. 
@@ -159,6 +164,15 @@ public:
     //! Determines if there is a "AnyClass" at the specified end
     //! @return true if the end has "AnyClass". false otherwise. 
     ECDB_EXPORT bool IsAnyClassAtEnd (End end) const;
+
+    //! Get the number of related class specifiers in the path
+    size_t GetRelatedClassSpecifierCount() const { return m_relatedClassSpecifiers.size(); }
+
+    //! Gets the related class specifier at the specified index. 
+    ECRelatedClassSpecifierCP GetRelatedClassSpecifier(size_t index) const { return (index >= m_relatedClassSpecifiers.size()) ? nullptr : &m_relatedClassSpecifiers[index]; }
+
+    //! Removes leaf entries in the relationship path starting with the specified index
+    BentleyStatus TrimLeafEnd(size_t relatedClassSpecifierIndex);
 
     //! Generates the ECSql FROM and JOIN clauses to query based on the relationship path
     //! @param fromRootClause [out] Generated FROM clause
@@ -231,7 +245,7 @@ public:
     //! Plant:Pump.dgn:ElementHasPrimaryInstance:1 (no related class)
     //! 
     //! @see Reverse() to flip the direction of traversal.
-    ECDB_EXPORT StatusInt GenerateECSql 
+    ECDB_EXPORT BentleyStatus GenerateECSql 
         (
         Utf8StringR fromClause, 
         Utf8StringR joinClause,
@@ -254,12 +268,12 @@ public:
     //! @param pathToCombine [in] Path to ccmbine
     //! @return ERROR if the leaf end of the current path does not match
     //! the root end of the path to be combined. SUCCESS otherwise. 
-    ECDB_EXPORT StatusInt Combine (ECRelationshipPath const& pathToCombine);
+    ECDB_EXPORT BentleyStatus Combine(ECRelationshipPath const& pathToCombine);
 
     //! Replaces the class at the end if it's originally specified as AnyClass. 
     //! @return ERROR if the existing path does not have AnyClass at the specified end. 
     //! Returns SUCCESS otherwise. 
-    ECDB_EXPORT StatusInt ReplaceAnyClassAtEnd (ECN::ECClassCR replacementClass, End end);
+    ECDB_EXPORT BentleyStatus ReplaceAnyClassAtEnd(ECN::ECClassCR replacementClass, End end);
 };
 
 //__PUBLISH_SECTION_END__

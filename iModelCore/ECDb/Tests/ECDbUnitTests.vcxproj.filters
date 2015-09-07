@@ -31,9 +31,6 @@
     <ClCompile Include="NonPublished\ECDb\ECDbProfile_Test.cpp">
       <Filter>NonPublished\ECDb</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbBrownBag_Demo.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECDb_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -174,9 +171,6 @@
     </ClCompile>
     <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp">
       <Filter>Performance</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECDbMapPersistence_Tests.cpp">
-      <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\ECDb\ECDbSql_Test.cpp">
       <Filter>NonPublished\ECDb</Filter>

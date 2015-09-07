@@ -885,9 +885,9 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //---------------------------------------------------------------------------------------
     // @bsimethod                                 Affan.Khan                         06/2015
     //---------------------------------------------------------------------------------------
-    BentleyStatus SqlGenerator::FindRelationshipReferences (bmap<RelationshipClassMapCP, ECDbMap::LightWeightMapCache::RelationshipEnd>& relationships, ClassMapCR classMap)
+    BentleyStatus SqlGenerator::FindRelationshipReferences (bmap<RelationshipClassMapCP, ECDbMap::LightweightCache::RelationshipEnd>& relationships, ClassMapCR classMap)
         {
-        for (auto& pair : m_map.GetLightWeightMapCache ().GetClassRelationships (classMap.GetClass ().GetId ()))
+        for (auto& pair : m_map.GetLightweightCache ().GetRelationshipsForConstraintClass (classMap.GetClass ().GetId ()))
             {
             auto classMap = m_map.GetRelationshipClassMap (pair.first);
             if (classMap == nullptr)
@@ -993,14 +993,14 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         {
         std::vector<ClassMapCP> classes;
         auto& constraints = end == ECRelationshipEnd::ECRelationshipEnd_Source ? relationship.GetSource () : relationship.GetTarget ();
-        auto anyClassId = m_map.GetLightWeightMapCache ().GetAnyClassId ();
+        auto anyClassId = m_map.GetLightweightCache ().GetAnyClassId ();
         ClassMapCP classMap = nullptr;
         for (auto constraint : constraints.GetConstraintClasses ())
             {
             if (constraint->GetClass().GetId() == anyClassId)
                 {
                 classes.clear();
-                for (auto classId : m_map.GetLightWeightMapCache().GetAnyClassReplacements())
+                for (auto classId : m_map.GetLightweightCache().GetAnyClassReplacements())
                     {
                     classMap = m_map.GetClassMapCP (classId);
                     if (classMap != nullptr)
@@ -1194,7 +1194,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             BeAssert (false && "Failed to prepared statement");
             return BentleyStatus::ERROR;
             }
-        std::map<ECDbSqlTable const*, ECDbMap::LightWeightMapCache::RelationshipEnd> doneSet;
+        std::map<ECDbSqlTable const*, ECDbMap::LightweightCache::RelationshipEnd> doneSet;
         while (stmt->Step () == BE_SQLITE_ROW)
             {
             ECClassId ecClassId = stmt->GetValueInt64 (0);
@@ -1211,16 +1211,16 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
 
 
             Utf8CP column;
-            ECDbMap::LightWeightMapCache::RelationshipEnd filter;
+            ECDbMap::LightweightCache::RelationshipEnd filter;
             if (holdingRelationshipClassMap->GetRelationshipClass ().GetStrengthDirection () == ECRelatedInstanceDirection::Forward)
                 {
                 column = holdingRelationshipClassMap->GetTargetECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ();
-                filter = ECDbMap::LightWeightMapCache::RelationshipEnd::Source;
+                filter = ECDbMap::LightweightCache::RelationshipEnd::Source;
                 }
             else
                 {
                 column = holdingRelationshipClassMap->GetSourceECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ();
-                filter = ECDbMap::LightWeightMapCache::RelationshipEnd::Target;
+                filter = ECDbMap::LightweightCache::RelationshipEnd::Target;
                 }
 
             auto table = &holdingRelationshipClassMap->GetTable ();
@@ -1236,7 +1236,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 if (itor == doneSet.end ())
                     doneSet[table] = filter;
                 else
-                    doneSet[table] = static_cast<ECDbMap::LightWeightMapCache::RelationshipEnd>((int)(itor->second) & (int)(filter));
+                    doneSet[table] = static_cast<ECDbMap::LightweightCache::RelationshipEnd>((int)(itor->second) & (int)(filter));
                 }
             }
 
@@ -1344,7 +1344,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
 
         auto primaryTriggerCondition = primaryTarget == DMLPolicy::Target::View ? SqlTriggerBuilder::Condition::InsteadOf : SqlTriggerBuilder::Condition::After;
         auto primaryTargetId = scpm.GetAffectedTargetId (DMLPolicy::Operation::Delete);
-        bmap<RelationshipClassMapCP, ECDbMap::LightWeightMapCache::RelationshipEnd> relationshipRefs;        
+        bmap<RelationshipClassMapCP, ECDbMap::LightweightCache::RelationshipEnd> relationshipRefs;        
         if (FindRelationshipReferences (relationshipRefs, primaryClassMap) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;
         
@@ -1401,11 +1401,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             deleteTriggerBody.AppendEscaped (refTargetId);
             Utf8CP refSourceKey = refTarget == DMLPolicy::Target::Table ? ref.first->GetSourceECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str() : "SourceECInstanceId";
             Utf8CP refTargetKey =  refTarget == DMLPolicy::Target::Table ? ref.first->GetTargetECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str () : "TargetECInstanceId";
-            if (ref.second == ECDbMap::LightWeightMapCache::RelationshipEnd::Source)
+            if (ref.second == ECDbMap::LightweightCache::RelationshipEnd::Source)
                 {               
                 deleteTriggerBody.AppendFormatted (" WHERE (%s = OLD.%s);", refSourceKey, primaryECInstanceIdKey).AppendEOL ();
                 }
-            else if (ref.second == ECDbMap::LightWeightMapCache::RelationshipEnd::Target)
+            else if (ref.second == ECDbMap::LightweightCache::RelationshipEnd::Target)
                 deleteTriggerBody.AppendFormatted (" WHERE (%s = OLD.%s);", refTargetKey, primaryECInstanceIdKey).AppendEOL ();
             else
                 deleteTriggerBody.AppendFormatted (" WHERE (%s = OLD.%s OR %s = OLD.%s);", refSourceKey, primaryECInstanceIdKey, refTargetKey, primaryECInstanceIdKey).AppendEOL ();

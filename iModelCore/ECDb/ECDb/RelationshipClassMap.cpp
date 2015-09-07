@@ -680,7 +680,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
         return;
         }
 
-    ECDbSqlIndex* index = persistenceEndTable.CreateIndex (name.c_str (), isUniqueIndex);
+    ECDbSqlIndex* index = persistenceEndTable.CreateIndex (name.c_str (), isUniqueIndex, GetClass ().GetId ());
     if (index == nullptr)
         {
         BeAssert (false && "Failed to create index");
@@ -693,9 +693,9 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
     if (!otherEndIdColumn->GetConstraint().IsNotNull())
         {
         NativeSqlBuilder whereClause;
-        whereClause.AppendEscaped(otherEndIdColumn->GetName().c_str()).AppendSpace ();
+        whereClause.AppendEscaped(otherEndIdColumn->GetName().c_str()).AppendSpace();
         whereClause.Append(BooleanSqlOperator::IsNot).Append("NULL");
-        index->SetAdditionalWhereExpression(whereClause.ToString ());
+        index->SetAdditionalWhereExpression(whereClause.ToString());
         }
     }
 

@@ -34,9 +34,10 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
 
     //ECInstanceId are not allowed to be negative, but this is not enforced yet. So test that ECInstanceIdToInstanceId handles that case
     //gracefully
-    ecInstanceId = ECInstanceId (-1LL);
-    success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
-    EXPECT_FALSE (success) << "ECInstanceIds are expected to be non-negative, so ECInstanceIdToInstanceId is expected to return false in this case.";
+    // JM: ecInstanceId.IsValid only fails on 0 now (Keith's changes), so this no longer fails as-is...
+    //ecInstanceId = ECInstanceId (-1LL);
+    //success = ECInstanceIdHelper::ToString (actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
+    //EXPECT_FALSE (success) << "ECInstanceIds are expected to be non-negative, so ECInstanceIdToInstanceId is expected to return false in this case.";
 
 
     ecInstanceId = ECInstanceId (123LL);

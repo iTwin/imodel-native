@@ -44,15 +44,15 @@ public:
 private:
     Strategy m_strategy;
     Option m_option;
-    bool m_isPolymorphic;
+    bool m_appliesToSubclasses;
     UserECDbMapStrategy const* m_root;
 
-    BentleyStatus Assign(Strategy strategy, Option option, bool isPolymorphic);
+    BentleyStatus Assign(Strategy strategy, Option option, bool appliesToSubclasses);
     static BentleyStatus TryParse(Strategy&, Utf8CP str);
     static BentleyStatus TryParse(Option& option, Utf8CP str);
 
 public:
-    UserECDbMapStrategy() : m_strategy(Strategy::None), m_option(Option::None), m_isPolymorphic(false), m_root(nullptr) {}
+    UserECDbMapStrategy() : m_strategy(Strategy::None), m_option(Option::None), m_appliesToSubclasses(false), m_root(nullptr) {}
     ~UserECDbMapStrategy() {}
 
     UserECDbMapStrategy const& AssignRoot(UserECDbMapStrategy const& parent);
@@ -61,10 +61,10 @@ public:
 
     Strategy GetStrategy() const { return m_strategy; }
     Option GetOption() const { return m_option; }
-    bool IsPolymorphic() const { return m_isPolymorphic; }
+    bool AppliesToSubclasses() const { return m_appliesToSubclasses; }
 
     //! Indicates whether this strategy represents the 'unset' strategy
-    bool IsUnset() const { return m_strategy == Strategy::None && m_option == Option::None && !m_isPolymorphic; }
+    bool IsUnset() const { return m_strategy == Strategy::None && m_option == Option::None && !m_appliesToSubclasses; }
 
     Utf8String ToString() const;
 
@@ -104,14 +104,14 @@ public:
 private:
     Strategy m_strategy;
     Option m_option;
-    bool m_isPolymorphic;
+    bool m_appliesToSubclasses;
     bool m_isResolved;
 
 public:
-    ECDbMapStrategy() : m_strategy(Strategy::OwnTable), m_option(Option::None), m_isPolymorphic(false), m_isResolved(false) {}
+    ECDbMapStrategy() : m_strategy(Strategy::OwnTable), m_option(Option::None), m_appliesToSubclasses(false), m_isResolved(false) {}
 
     //operators
-    bool operator== (ECDbMapStrategy const& rhs) const { return m_strategy == rhs.m_strategy && m_option == rhs.m_option && m_isPolymorphic == rhs.m_isPolymorphic && m_isResolved == rhs.m_isResolved; }
+    bool operator== (ECDbMapStrategy const& rhs) const { return m_strategy == rhs.m_strategy && m_option == rhs.m_option && m_appliesToSubclasses == rhs.m_appliesToSubclasses && m_isResolved == rhs.m_isResolved; }
     bool operator!= (ECDbMapStrategy const& rhs) const { return !(*this == rhs); }
 
     BentleyStatus Assign(UserECDbMapStrategy const&);
@@ -123,12 +123,11 @@ public:
     //Getters
     Strategy GetStrategy() const { return m_strategy; }
     Option GetOption() const { return m_option; }
-    bool IsPolymorphic() const { return m_isPolymorphic; }
+    bool AppliesToSubclasses() const { return m_appliesToSubclasses; }
 
     bool IsResolved() const { return m_isResolved; }
     //Helper
     bool IsNotMapped() const { return m_strategy == Strategy::NotMapped; }
-    bool IsPolymorphicSharedTable() const { return m_strategy == Strategy::SharedTable && m_isPolymorphic; }
     bool IsForeignKeyMapping() const { return m_strategy == Strategy::ForeignKeyRelationshipInSourceTable || m_strategy == Strategy::ForeignKeyRelationshipInTargetTable; }
 
     Utf8String ToString() const;
