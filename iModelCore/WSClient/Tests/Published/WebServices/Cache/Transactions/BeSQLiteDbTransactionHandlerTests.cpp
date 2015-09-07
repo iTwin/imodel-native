@@ -47,7 +47,7 @@ struct TestBeSQLiteDbTransactionHandler : BeSQLiteDbTransactionHandler
     };
 
 // DISABLED as asserts log to output
-TEST_F(BeSQLiteDbTransactionHandlerTests, DISABLED_CommitTransaction_TransactionNotStarted_Error)
+TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_TransactionNotStarted_Error)
     {
     BeSQLite::Db::CreateParams createParams;
     createParams.SetStartDefaultTxn(BeSQLite::DefaultTxn::No);
