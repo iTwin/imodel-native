@@ -85,7 +85,7 @@ DerivedPropertyExp::DerivedPropertyExp(unique_ptr<ValueExp> valueExp, Utf8CP col
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String DerivedPropertyExp::GetName () const
     {     
-    auto const & columnAlias = GetColumnAlias ();
+    Utf8StringCR columnAlias = GetColumnAlias ();
     if (!columnAlias.empty ())
         return columnAlias;
 
