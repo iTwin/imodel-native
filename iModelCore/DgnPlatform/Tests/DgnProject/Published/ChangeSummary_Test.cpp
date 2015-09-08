@@ -1483,8 +1483,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     ASSERT_EQ(parentElementId.GetValueUnchecked(), value.GetValueInt64());
     ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("ParentId").GetValueInt64());
 
-    ASSERT_EQ(5, relInstance.MakeValueIterator(*m_testDb).QueryCount());
-    ASSERT_EQ(3, instance.MakeValueIterator(*m_testDb).QueryCount());
+    ASSERT_EQ(5, relInstance.MakeValueIterator(changeSummary).QueryCount());
+    ASSERT_EQ(3, instance.MakeValueIterator(changeSummary).QueryCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1513,9 +1513,11 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 
     // Query changed elements directly using ECSQL
     ECSqlStatement stmt;
-    Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el WHERE IsChangedInstance(el.GetECClassId(), el.ECInstanceId)";
+    Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
     ECSqlStatus status = stmt.Prepare(*m_testDb, ecsql);
     ASSERT_TRUE(status == ECSqlStatus::Success);
+    
+    stmt.BindInt64(1, (int64_t) &changeSummary);
 
     bset<DgnElementId> changedElements;
     ECSqlStepStatus stepStatus;
@@ -1528,9 +1530,11 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 
     // Query elements changed due to changes to related geometry using ECSQL
     stmt.Finalize();
-    ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE IsChangedInstance(elg.GetECClassId(), elg.ECInstanceId)";
+    ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE IsChangedInstance(?, elg.GetECClassId(), elg.ECInstanceId)";
     status = stmt.Prepare(*m_testDb, ecsql);
     ASSERT_TRUE(status == ECSqlStatus::Success);
+
+    stmt.BindInt64(1, (int64_t) &changeSummary);
 
     changedElements.empty();
     while ((stepStatus = stmt.Step()) == ECSqlStepStatus::HasRow)
@@ -1586,9 +1590,11 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     ASSERT_TRUE(status == DgnDbStatus::Success);
 
     ECSqlStatement stmt;
-    Utf8CP ecsql = "SELECT COUNT(*) FROM dgn.Element el WHERE IsChangedInstance(el.GetECClassId(), el.ECInstanceId)";
+    Utf8CP ecsql = "SELECT COUNT(*) FROM dgn.Element el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
     ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecsql);
     ASSERT_TRUE(ecSqlStatus == ECSqlStatus::Success);
+
+    stmt.BindInt64(1, (int64_t) &changeSummary);
 
     ECSqlStepStatus ecSqlStepStatus = stmt.Step();
     ASSERT_TRUE(ecSqlStepStatus == ECSqlStepStatus::HasRow);
