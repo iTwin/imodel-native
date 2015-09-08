@@ -404,7 +404,7 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap con
     if (mapInfo.GetClassHasCurrentTimeStampProperty() != NULL)
         {
         PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStampProperty()->GetName().c_str());
-        if (propertyMap != NULL)
+        if (propertyMap != nullptr)
             {
             ECDbSqlColumn* column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());
             BeAssert(column != nullptr && "TimeStamp column cannot be null");

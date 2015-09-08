@@ -143,14 +143,15 @@ public:
     //! - column data type is not IGeometry
     ECDB_EXPORT IGeometryPtr GetGeometry() const;
    
-    //! Gets the value as a BeRepositoryBasedId
-    //! @remarks As @ref ECInstanceId "ECInstanceIds" are repository-based ids, you can use
+    //! Gets the value as a BeInt64Id
+    //! @remarks As @ref ECInstanceId "ECInstanceIds" are BeInt64Ids, you can use
     //! this method to get ECInstanceId values.
-    //! @return BeRepositoryBasedId value
+    //! @return BeInt64Id value
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
-    //! - column data does not hold a repository-based id
-    BeInt64Id GetId() const {return BeInt64Id(GetInt64());}
+    //! - column data does not hold a BeInt64Id
+    template <class TBeInt64Id>
+    TBeInt64Id GetId() const { return TBeInt64Id(GetInt64()); }
 
     //! Used to access the value if it is a struct value
     //! @return Struct value

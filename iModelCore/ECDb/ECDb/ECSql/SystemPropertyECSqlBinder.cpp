@@ -131,30 +131,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindGeometryBlob(const void* value, int 
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindInt(int value)
     {
-    auto stat = FailIfConstraintClassIdViolation(static_cast<ECClassId> (value));
-    if (stat != ECSqlStatus::Success)
-        return stat;
-
-    if (auto eh = GetOnBindEventHandler())
-        {
-        auto es = eh->BindInt(value);
-        if (es != ECSqlStatus::Success)
-            return GetStatusContext().SetError(es, "OnBindEventHandler Failed");
-        }
-
-    if (!IsNoop())
-        {
-        const auto sqliteStat = GetSqliteStatementR ().BindInt(m_sqliteIndex, value);
-        if (sqliteStat != BE_SQLITE_OK)
-            return SetError(sqliteStat, "ECSqlStatement::BindInt");
-        }
-
-    auto onBindEventHandler = GetOnBindRepositoryBasedIdEventHandler();
-    if (onBindEventHandler != nullptr)
-        onBindEventHandler(ECInstanceId(value));
-
-    m_bindValueIsNull = false;
-    return ResetStatus();
+    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind 32 bit integer value to %s parameter.", SystemPropertyToString());
     }
 
 //---------------------------------------------------------------------------------------
