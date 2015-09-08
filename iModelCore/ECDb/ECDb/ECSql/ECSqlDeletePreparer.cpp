@@ -107,15 +107,29 @@ ClassNameExp const& classNameExp
         }
     
     IClassMap const& classMap = classNameExp.GetInfo().GetMap();
-    if (classMap.GetStorageDescription ().GetNonVirtualHorizontalPartitionIndices ().size() > 1)
+    auto& storageDesc = classMap.GetStorageDescription ();
+    if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().empty() || !exp.GetClassNameExp ()->IsPolymorphic ())
         {
-        //we set a view in this case
-        if (!exp.GetClassNameExp ()->IsPolymorphic ())
+        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
             {
-            deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.Append ("[ECClassId] = ").Append (classMap.GetClass ().GetId ());
+            if (classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
+                {
+                deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped (classIdColumn->GetName().c_str()).Append(" = ").Append (classMap.GetClass ().GetId ());
+                }
             }
         }
-
+    else if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().size() == 1 && exp.GetClassNameExp ()->IsPolymorphic ())
+        {
+        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+            {
+            if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
+                {
+                auto& partition = storageDesc.GetHorizontalPartitions ().at (storageDesc.GetNonVirtualHorizontalPartitionIndices ().at (0));
+                deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped (classIdColumn->GetName ().c_str ());
+                partition.AppendECClassIdFilterSql (deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
+                }
+            }
+        }
     return ECSqlStatus::Success;
     }
 

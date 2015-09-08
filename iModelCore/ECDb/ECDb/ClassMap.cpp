@@ -1483,6 +1483,7 @@ const PropertyMapSet::EndPoints PropertyMapSet::FindEndPoints (ECDbKnownColumns 
 BentleyStatus PropertyMapSet::AddSystemEndPoint (PropertyMapSet& propertySet, IClassMap const& classMap, ECDbKnownColumns knownColumnId, ECValueCR value, ECDbSqlColumn const* column)
     {
     auto const& table = classMap.GetTable ();
+
     if (column == nullptr)
         column = table.GetFilteredColumnFirst (knownColumnId);
 
@@ -1511,6 +1512,7 @@ BentleyStatus PropertyMapSet::AddSystemEndPoint (PropertyMapSet& propertySet, IC
 //------------------------------------------------------------------------------------------
 PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
     {
+    BeAssert (classMap.GetECDbMap ().GetSQLManager ().IsNullTable (classMap.GetTable()) == false);
     Ptr propertySet = Ptr (new PropertyMapSet (classMap));
     ECValue defaultValue;
     AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::ECInstanceId, defaultValue);

@@ -827,7 +827,7 @@ BentleyStatus ECDbMap::Save(SchemaImportContext const& context)
 
 
 //************************************************************************************
-// LightWeightMapCache
+// LightweightCache
 //************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
@@ -934,7 +934,7 @@ void ECDbMap::LightweightCache::LoadAnyClassReplacements () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadRelationshipCache() const
+void ECDbMap::LightweightCache::LoadRelationshipCache () const
     {
     if (m_loadedFlags.m_relationshipCacheIsLoaded)
         return;
@@ -969,79 +969,59 @@ void ECDbMap::LightweightCache::LoadRelationshipCache() const
         {
         ECClassId constraintClassId = stmt0->GetValueInt64 (0);
         ECClassId relationshipId = stmt0->GetValueInt64 (1);
-        BeAssert(!stmt0->IsColumnNull(2));
-        RelationshipEnd end = stmt0->GetValueInt(2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
+        BeAssert (!stmt0->IsColumnNull (2));
+        RelationshipEnd end = stmt0->GetValueInt (2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
 
         RelationshipClassIds& relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
-        auto relIt = relClassIds.find(relationshipId);
-        if (relIt == relClassIds.end())
+        auto relIt = relClassIds.find (relationshipId);
+        if (relIt == relClassIds.end ())
             relClassIds[relationshipId] = end;
         else
-            relClassIds[relationshipId] = static_cast<RelationshipEnd>((int) (relIt->second) | (int) (end));
+            relClassIds[relationshipId] = static_cast<RelationshipEnd>((int)(relIt->second) | (int)(end));
 
 
         ConstraintClassIds& constraintClassIds = m_nonAnyClassConstraintClassIdsPerRelClassIds[relationshipId];
-        auto constraintIt = constraintClassIds.find(constraintClassId);
-        if (constraintIt == constraintClassIds.end())
+        auto constraintIt = constraintClassIds.find (constraintClassId);
+        if (constraintIt == constraintClassIds.end ())
             constraintClassIds[constraintClassId] = end;
         else
-            constraintClassIds[constraintClassId] = static_cast<RelationshipEnd>((int) (constraintIt->second) | (int) (end));
-                }
-            }
-
-        auto itorB = m_relationshipEndsByClassIdRev.find (relationshipId);
-        if (itorB == m_relationshipEndsByClassIdRev.end ())
-            {
-            m_relationshipEndsByClassIdRev[relationshipId][id] = filter;
-            }
-        else
-            {
-            auto& classes = itorB->second;
-            auto itor1 = classes.find (id);
-            if (itor1 == classes.end ())
-                {
-                classes[id] = filter;
-                }
-            else
-                {
-                classes[id] = static_cast<RelationshipEnd>((int)(itor1->second) | (int)(filter));
+            constraintClassIds[constraintClassId] = static_cast<RelationshipEnd>((int)(constraintIt->second) | (int)(end));
         }
 
+    m_relationshipEndsByClassIdRev = m_nonAnyClassConstraintClassIdsPerRelClassIds;
     LoadAnyClassRelationships ();
     LoadAnyClassReplacements ();
     for (ECClassId constraintClassId : m_anyClassReplacements)
         {
         RelationshipClassIds& rels = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
-        for (bpair<ECClassId,RelationshipEnd> const& pair : m_anyClassRelationships)
+        for (bpair<ECClassId, RelationshipEnd> const& pair : m_anyClassRelationships)
             {
             ECClassId relId = pair.first;
             RelationshipEnd end = pair.second;
-            auto relsIt = rels.find(relId);
-            if (relsIt == rels.end())
+            auto relsIt = rels.find (relId);
+            if (relsIt == rels.end ())
                 rels[relId] = end;
             else
-                rels[relId] = static_cast<RelationshipEnd>((int) (relsIt->second) | (int) (end));
-                    }
-                }
-            }
-
-        for (auto& pair1 : m_anyClassRelationships)
-            {
-            auto& classes = m_relationshipEndsByClassIdRev[pair1.first];
-            for (auto id : m_anyClassReplacements)
-                {
-                //ECClassId id = pair1.first;
-                auto itor1 = classes.find (id);
-                if (itor1 == classes.end ())
-                    {
-                    classes[id] = pair1.second;
-                    }
-                else
-                    {
-                    classes[id] = static_cast<RelationshipEnd>((int)(itor1->second) | (int)(pair1.second));
+                rels[relId] = static_cast<RelationshipEnd>((int)(relsIt->second) | (int)(end));
             }
         }
-       
+    for (auto& pair1 : m_anyClassRelationships)
+        {
+        auto& classes = m_relationshipEndsByClassIdRev[pair1.first];
+        for (auto id : m_anyClassReplacements)
+            {
+            //ECClassId id = pair1.first;
+            auto itor1 = classes.find (id);
+            if (itor1 == classes.end ())
+                {
+                classes[id] = pair1.second;
+                }
+            else
+                {
+                classes[id] = static_cast<RelationshipEnd>((int)(itor1->second) | (int)(pair1.second));
+                }
+            }
+        }
 
     m_loadedFlags.m_relationshipCacheIsLoaded = true;
     }
@@ -1106,7 +1086,7 @@ void ECDbMap::LightweightCache::LoadDerivedClasses ()  const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightWeightMapCache::LoadRelationshipByTable ()  const
+void ECDbMap::LightweightCache::LoadRelationshipByTable ()  const
     {
     if (m_loadedFlags.m_relationshipPerTableLoaded)
         return;
@@ -1166,9 +1146,9 @@ ECDbMap::LightweightCache::RelationshipClassIds const& ECDbMap::LightweightCache
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::ClassRelationshipEnds const& ECDbMap::LightWeightMapCache::GetRelationships (ECN::ECClassId relationshipId) const
+ECDbMap::LightweightCache::RelationshipClassIds const& ECDbMap::LightweightCache::GetRelationships (ECN::ECClassId relationshipId) const
     {
-    LoadClassRelationships (true);
+    LoadRelationshipCache ();
     return m_relationshipEndsByClassIdRev[relationshipId];
     }
 //---------------------------------------------------------------------------------------
@@ -1192,7 +1172,7 @@ ECDbMap::LightweightCache::RelationshipClassIds const& ECDbMap::LightweightCache
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::RelationshipTypeByClassId ECDbMap::LightWeightMapCache::GetRelationshipsMapToTable (ECDbSqlTable const& table) const
+ECDbMap::LightweightCache::RelationshipTypeByClassId ECDbMap::LightweightCache::GetRelationshipsMapToTable (ECDbSqlTable const& table) const
     {
     LoadRelationshipByTable ();
     return m_relationshipPerTable[&table];
@@ -1201,7 +1181,7 @@ ECDbMap::LightWeightMapCache::RelationshipTypeByClassId ECDbMap::LightWeightMapC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::RelationshipPerTable ECDbMap::LightWeightMapCache::GetRelationshipsMapToTables () const
+ECDbMap::LightweightCache::RelationshipPerTable ECDbMap::LightweightCache::GetRelationshipsMapToTables () const
     {
     LoadRelationshipByTable ();
     return m_relationshipPerTable;
@@ -1233,14 +1213,7 @@ ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache:
     return m_tablesPerClassId[classId];
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-bmap<ECN::ECClassId, ECDbMap::LightWeightMapCache::TableClasses> const& ECDbMap::LightWeightMapCache::GetTablesMapToClass () const
-    {
-    LoadDerivedClasses ();
-    return m_tablesByClassId;
-    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
@@ -1277,6 +1250,7 @@ void ECDbMap::LightweightCache::Reset ()
     m_anyClassRelationships.clear ();
     m_anyClassReplacements.clear ();
     m_storageDescriptions.clear ();
+    m_relationshipPerTable.clear ();   
     }
 
 //---------------------------------------------------------------------------------------

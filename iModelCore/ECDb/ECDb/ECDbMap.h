@@ -25,36 +25,37 @@ struct ECDbMap :NonCopyableClass
         struct LightweightCache : NonCopyableClass
             {
             public:
-		        enum class RelationshipEnd : int
-		            {
-		            None = 0,
-		            Source = 1,
-		            Target = 2,
-		            Both = Source | Target
-		            };
-		        enum class RelationshipType : int
-		            {
-		            Link = 0,
-		            Source = (int)ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable,
-		            Target = (int)ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable,
-		            };
+                enum class RelationshipEnd : int
+                    {
+                    None = 0,
+                    Source = 1,
+                    Target = 2,
+                    Both = Source | Target
+                    };
+                enum class RelationshipType : int
+                    {
+                    Link = 0,
+                    Source = (int)ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable,
+                    Target = (int)ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable,
+                    };
 
 
                 typedef bmap<ECN::ECClassId, RelationshipEnd> RelationshipClassIds;
                 typedef bmap<ECN::ECClassId, RelationshipEnd> ConstraintClassIds;
-        typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
+                typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
                 typedef bmap<ECDbSqlTable const*, std::vector<ECN::ECClassId>> ClassIdsPerTableMap;
-        typedef bmap<ECDbSqlTable const*, RelationshipTypeByClassId> RelationshipPerTable;
+                typedef bmap<ECDbSqlTable const*, RelationshipTypeByClassId> RelationshipPerTable;
             private:
+                mutable ClassIdsPerTableMap m_classIdsPerTable;
                 mutable bmap<ECN::ECClassId, ClassIdsPerTableMap> m_tablesPerClassId;
-            mutable bmap<ECN::ECClassId, ClassRelationshipEnds> m_relationshipEndsByClassIdRev;
+                mutable bmap<ECN::ECClassId, RelationshipClassIds> m_relationshipEndsByClassIdRev;
                 mutable RelationshipClassIds m_anyClassRelationships;
                 mutable bmap<ECN::ECClassId, RelationshipClassIds> m_relationshipClassIdsPerConstraintClassIds;
                 mutable bmap<ECN::ECClassId, ConstraintClassIds> m_nonAnyClassConstraintClassIdsPerRelClassIds;
                 mutable std::vector<ECN::ECClassId> m_anyClassReplacements;
                 mutable ECN::ECClassId m_anyClassId;
                 mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
-
+                mutable RelationshipPerTable m_relationshipPerTable;
                 mutable struct
                     {
                     bool m_tablesPerClassIdIsLoaded : 1;
@@ -62,39 +63,40 @@ struct ECDbMap :NonCopyableClass
                     bool m_relationshipCacheIsLoaded : 3;
                     bool m_anyClassRelationshipsIsLoaded : 4;
                     bool m_anyClassReplacementsLoaded : 5;
-                bool m_relationshipPerTableLoaded : 6;
+                    bool m_relationshipPerTableLoaded : 6;
                     } m_loadedFlags;
 
                 ECDbMapCR m_map;
-            void LoadRelationshipByTable () const;
-                void LoadDerivedClasses() const;
-                void LoadClassIdsPerTable() const;
-                void LoadAnyClassRelationships() const;
-                void LoadRelationshipCache() const;
-                void LoadAnyClassReplacements() const;
+                void LoadRelationshipByTable () const;
+                void LoadDerivedClasses () const;
+                void LoadClassIdsPerTable () const;
+                void LoadAnyClassRelationships () const;
+                void LoadRelationshipCache () const;
+                void LoadAnyClassReplacements () const;
 
             public:
-                explicit LightweightCache(ECDbMapCR map);
-                ~LightweightCache() {}
-            RelationshipTypeByClassId GetRelationshipsMapToTable (ECDbSqlTable const& table) const;
-            RelationshipPerTable GetRelationshipsMapToTables () const;
+                explicit LightweightCache (ECDbMapCR map);
+                ~LightweightCache () {}
+                std::vector<ECN::ECClassId> const& GetClassesForTable (ECDbSqlTable const&) const;
+                RelationshipTypeByClassId GetRelationshipsMapToTable (ECDbSqlTable const& table) const;
+                RelationshipPerTable GetRelationshipsMapToTables () const;
 
-                ClassIdsPerTableMap const& GetTablesForClass(ECN::ECClassId) const;
-            ClassRelationshipEnds const& GetRelationships (ECN::ECClassId relationshipId) const;
-                RelationshipClassIds const& GetRelationshipsForConstraintClass(ECN::ECClassId constraintClassId) const;
+                ClassIdsPerTableMap const& GetTablesForClass (ECN::ECClassId) const;
+                RelationshipClassIds const& GetRelationships (ECN::ECClassId relationshipId) const;
+                RelationshipClassIds const& GetRelationshipsForConstraintClass (ECN::ECClassId constraintClassId) const;
                 //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
                 //@remarks: AnyClass constraints are ignored.
-                ConstraintClassIds const& GetConstraintClassesForRelationship(ECN::ECClassId relClassId) const;
-                RelationshipClassIds const& GetAnyClassRelationships() const;
-                ECN::ECClassId GetAnyClassId() const;
-                std::vector<ECN::ECClassId> const& GetAnyClassReplacements() const;
+                ConstraintClassIds const& GetConstraintClassesForRelationship (ECN::ECClassId relClassId) const;
+                RelationshipClassIds const& GetAnyClassRelationships () const;
+                ECN::ECClassId GetAnyClassId () const;
+                std::vector<ECN::ECClassId> const& GetAnyClassReplacements () const;
 
                 //For a end table relationship class map, the storage description provides horizontal partitions
                 //For the end table's constraint classes - not for the relationship itself.
-                StorageDescription const& GetStorageDescription(IClassMap const&)  const;
+                StorageDescription const& GetStorageDescription (IClassMap const&)  const;
 
-                void Load(bool forceReload);
-                void Reset();
+                void Load (bool forceReload);
+                void Reset ();
             };
 
 
