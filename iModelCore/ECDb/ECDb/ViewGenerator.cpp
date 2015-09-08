@@ -2426,6 +2426,8 @@ SqlTriggerBuilder::SqlTriggerBuilder (SqlTriggerBuilder && rhs)
     m_when (std::move (rhs.m_when)), m_body (std::move (rhs.m_body)), m_on (rhs.m_on), m_ofColumns (std::move (rhs.m_ofColumns))
     {
     }
+SqlTriggerBuilder::SqlTriggerBuilder(SqlTriggerBuilder const& rhs) {BeAssert(false); /* Unimplemented */}
+
 SqlTriggerBuilder& SqlTriggerBuilder::operator = (SqlTriggerBuilder&& rhs)
     {
     if (this != &rhs)
@@ -3774,7 +3776,7 @@ void ECDbMapAnalyser::Storage::HandleCascadeLinkTable (std::vector<ECDbMapAnalys
             body.AppendFormatted ("(OLD.[%s] = [%s])", relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str (), otherEndPrimaryKey->GetName ().c_str ());
             if (relationship->IsHolding ())
                 {
-                body.AppendFormatted (" AND (SELECT COUNT (*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.[%s]) = 0", relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ());
+                body.AppendFormatted (" AND (SELECT COUNT (*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.[%s]) = 0", relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str());
                 }
             body.Append (";").AppendEOL ();
             }
