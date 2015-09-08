@@ -456,6 +456,17 @@ public:
     struct EXPORT_VTABLE_ATTRIBUTE Item : UniqueAspect
     {
         DEFINE_T_SUPER(UniqueAspect)
+
+        //! The reason why _GenerateElementGeometry is being called
+        enum class GenerateReason 
+            {
+            Insert,         //!< The Element is being inserted into the Db
+            Update,         //!< Some aspect of the Element's content has changed.
+            TempDraw,       //!< A tool wants to draw the Element temporarily (the Element may not be persistent)
+            BulkInsert,     //!< An application is creating a large number of Elements 
+            Other           //!< An unspecified reason
+            };
+
     private:
         static Key s_key;
         static Key& GetKey() {return s_key;}
@@ -465,16 +476,17 @@ public:
 
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final; // *** WIP_ECSQL Polymorphic delete
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
-        DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateElementGeometry(el);}
-        DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateElementGeometry(el);}
+        DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateElementGeometry(el, GenerateReason::Insert);}
+        DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateElementGeometry(el, GenerateReason::Update);}
         static void SetItem0(DgnElementCR el, Item& item);
-        DgnDbStatus CallGenerateElementGeometry(DgnElementR);
+        DgnDbStatus CallGenerateElementGeometry(DgnElementR, GenerateReason);
 
     protected:
         //! The subclass must implement this method to generate geometry and store it on \a el.
         //! The platform invokes _GenerateElementGeometry just \em before an element is inserted and/or updated.
         //! @param el   The element to be updated.
-        virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR el) = 0;
+        //! @param reason An indication of why the caller is requesting the element's geometry to be generated.
+        virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason reason) = 0;
 
         //! Utility method to return the ECSchema name of an ECInstance.
         //! @param instance The instance currently assigned to this Item, or null if the Item has no in-memory instance.
@@ -530,7 +542,8 @@ public:
 
         //! Invoke the _GenerateElementGeometry method on the item
         //! @param el   The host element
-        DGNPLATFORM_EXPORT static DgnDbStatus GenerateElementGeometry(GeometricElementR el);
+        //! @param reason An indication of why the caller is requesting the element's geometry to be generated.
+        DGNPLATFORM_EXPORT static DgnDbStatus GenerateElementGeometry(GeometricElementR el, GenerateReason reason);
 
         //! Execute the EGA that is specified for this Item.
         //! @param el   The element to be updated
@@ -1504,7 +1517,7 @@ struct InstanceBackedItem : DgnElement::Item
     Utf8String _GetECClassName() const override {return m_instance->GetClass().GetName();}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason) override;
 
     InstanceBackedItem() {;}
 
