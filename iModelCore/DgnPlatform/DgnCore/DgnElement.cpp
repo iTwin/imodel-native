@@ -374,13 +374,7 @@ DgnDbStatus DgnElement::_InsertInDb(ECSqlStatement& statement)
     statement.BindText(statement.GetParameterIndex("Code"), m_code.GetValueCP(), IECSqlBinder::MakeCopy::No);
     statement.BindId(statement.GetParameterIndex("CodeAuthorityId"), m_code.GetAuthority());
     statement.BindId(statement.GetParameterIndex("ParentId"), m_parentId);
-    
-    DateTimeInfo info;
-    ECPropertyCP lastModProp = GetDgnDb().Schemas().GetECSchema(DGN_ECSCHEMA_NAME)->GetClassCP(DGN_CLASSNAME_Element)->GetPropertyP("LastMod");
-    ECN::StandardCustomAttributeHelper::GetDateTimeInfo(info, *lastModProp);
-    DateTime dt;
-    DateTime::FromJulianDay (dt, m_lastModTime, info.GetInfo(true));
-    statement.BindDateTime(statement.GetParameterIndex("LastMod"), dt);
+    statement.BindDateTime(statement.GetParameterIndex("LastMod"), m_lastModTime, &DateTime::Info::GetUtc ());
 
     auto stmtStatus = statement.Step();
     if (ECSqlStepStatus::Error == stmtStatus)
