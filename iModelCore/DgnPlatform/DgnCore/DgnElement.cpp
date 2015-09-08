@@ -1810,24 +1810,24 @@ DgnElement::Item* DgnElement::Item::Load(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::Item::CallGenerateElementGeometry(DgnElementR el)
+DgnDbStatus DgnElement::Item::CallGenerateElementGeometry(DgnElementR el, GenerateReason reason)
     {
     GeometricElementP gel = el.ToGeometricElementP();
     if (nullptr == gel)
         return DgnDbStatus::Success;
 
-    return _GenerateElementGeometry(*gel);
+    return _GenerateElementGeometry(*gel, reason);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::Item::GenerateElementGeometry(GeometricElementR el)
+DgnDbStatus DgnElement::Item::GenerateElementGeometry(GeometricElementR el, GenerateReason reason)
     {
     Item* item = GetItemP(el);
     if (nullptr == item)
         return DgnDbStatus::NotFound;
-    return item->_GenerateElementGeometry(el);
+    return item->_GenerateElementGeometry(el, reason);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1876,7 +1876,7 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus InstanceBackedItem::_GenerateElementGeometry(GeometricElementR el)
+DgnDbStatus InstanceBackedItem::_GenerateElementGeometry(GeometricElementR el, GenerateReason)
     {
     Placement3d placement;
     DgnElement3dP e3d = el.ToElement3dP();
