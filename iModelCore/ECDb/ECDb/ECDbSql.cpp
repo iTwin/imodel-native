@@ -1899,6 +1899,21 @@ std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
+std::map<ECDbKnownColumns, Utf8CP> ECDbSqlColumn::m_knownColumnNames =
+    { 
+        { ECDbKnownColumns::ECInstanceId, "ECInstanceId" },
+        { ECDbKnownColumns::ECClassId, "ECClassId" },
+        { ECDbKnownColumns::ECArrayIndex, "ECArrayIndex" },
+        { ECDbKnownColumns::ECPropertyPathId, "ECPropertyPathId" },
+        { ECDbKnownColumns::ParentECInstanceId, "ParentECInstanceId" },
+        { ECDbKnownColumns::SourceECClassId, "SourceECClassId" },
+        { ECDbKnownColumns::SourceECInstanceId, "SourceECInstanceId" },
+        { ECDbKnownColumns::TargetECClassId, "TargetECClassId" },
+        { ECDbKnownColumns::TargetECInstanceId, "TargetECInstanceId" }
+    };
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
 BentleyStatus DependentPropertyCollection::Add (ECClassId ecClassId, Utf8CP accessString)
     {
     //if (GetColumnR ().GetTableR ().GetEditHandleR ().AssertNotInEditMode ())
@@ -2474,7 +2489,7 @@ DbResult ECDbSqlPersistence::ReadColumn (Statement& stmt, ECDbSqlTable& o , std:
     auto constraintDefault = !stmt.IsColumnNull (7) ? stmt.GetValueText (7) : nullptr;
     auto constraintCollate = static_cast<ECDbSqlColumn::Constraint::Collation>(stmt.GetValueInt (8));
     auto primaryKey_Ordianal = stmt.IsColumnNull (9)? -1 : stmt.GetValueInt (9);
-    auto knownColumnId = Enum::ToEnum<ECDbKnownColumns>(stmt.GetValueInt (10));
+    auto knownColumnId = Enum::FromInt<ECDbKnownColumns>(stmt.GetValueInt (10));
 
     ECDbSqlColumn* n = o.CreateColumn (name, type, knownColumnId, persistenceType);
     if (!n)

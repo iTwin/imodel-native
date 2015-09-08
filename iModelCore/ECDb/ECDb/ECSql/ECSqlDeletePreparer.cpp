@@ -33,50 +33,6 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
     else
         stat = PrepareForClass (ctx, deleteNativeSqlSnippets);
 
-    //Create child delete step task for delete
-    auto noneSelectPreparedStmt = ctx.GetECSqlStatementR ().GetPreparedStatementP <ECSqlNonSelectPreparedStatement> ();
-
-    BeAssert (noneSelectPreparedStmt != nullptr && "Expecting ECSqlNonSelectPreparedStatement");
-
-    auto status = ECSqlStepTaskFactory::CreateClassStepTask (
-        noneSelectPreparedStmt->GetStepTasks (),
-        StepTaskType::Delete,
-        ctx,
-        classMap.GetECDbMap ().GetECDbR (),
-        classMap,
-        classNameExp->IsPolymorphic ());
-    if (status != ECSqlStepTaskCreateStatus::NothingToDo)
-        {
-        if (status != ECSqlStepTaskCreateStatus::Success)
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "Failed to create delete step tasks for struct array properties");
-        }
-
-    //if (noneSelectPreparedStmt->GetStepTasks ().Size () > 0)
-    //    {
-        auto& ecsqlParameterMap = ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetParameterMapR ();
-        auto selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery (ctx, *exp.GetClassNameExp (), exp.GetOptWhereClauseExp ());
-        auto selectorStmt = noneSelectPreparedStmt->GetStepTasks ().GetSelector ( true );
-        selectorStmt->Initialize (ctx, ctx.GetParentArrayProperty (), nullptr);
-        stat = selectorStmt->Prepare (classMap.GetECDbMap ().GetECDbR (), selectorQuery.c_str ());
-        if (stat != ECSqlStatus::Success)
-            {
-            BeAssert (false && "Fail to prepared statement for ECInstanceIdSelect. Possible case of struct array containing struct array");
-            return stat;
-            }
-
-        int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause (exp, exp.GetOptWhereClauseExp ());
-        auto nParamterToBind = static_cast<int>(ecsqlParameterMap.Count ()) - parameterIndex;
-        for (auto j = 1; j <= nParamterToBind; j++)
-            {
-            auto& sink = selectorStmt->GetBinder (j);
-            ECSqlBinder* source = nullptr;
-            auto status = ecsqlParameterMap.TryGetBinder (source, j + parameterIndex);
-            if (status == ECSqlStatus::Success)
-                source->SetOnBindEventHandler (sink);
-            else
-                return status;
-            }
-        //}
     ctx.PopScope ();
     return stat;
     }
@@ -149,20 +105,31 @@ ClassNameExp const& classNameExp
         if (status != ECSqlStatus::Success)
             return status;
         }
-
-    if (ctx.GetParentContext() == nullptr)
+    
+    IClassMap const& classMap = classNameExp.GetInfo().GetMap();
+    auto& storageDesc = classMap.GetStorageDescription ();
+    if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().empty() || !exp.GetClassNameExp ()->IsPolymorphic ())
         {
-        IClassMap const& classMap = classNameExp.GetInfo().GetMap();
-
-        NativeSqlBuilder systemWhereClause;
-        status = SystemColumnPreparer::GetFor(classMap).GetWhereClause(ctx, systemWhereClause, classMap, ECSqlType::Delete,
-                                                                       classNameExp.IsPolymorphic(), nullptr); //no table aliases allowed in SQLite DELETE statement
-        if (status != ECSqlStatus::Success)
-            return status;
-
-        deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet = std::move(systemWhereClause);
+        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+            {
+            if (classIdColumn->GetPersistenceType() == PersistenceType::Persisted)
+                {
+                deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped (classIdColumn->GetName().c_str()).Append(" = ").Append (classMap.GetClass ().GetId ());
+                }
+            }
         }
-
+    else if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().size() == 1 && exp.GetClassNameExp ()->IsPolymorphic ())
+        {
+        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+            {
+            if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
+                {
+                auto& partition = storageDesc.GetHorizontalPartitions ().at (storageDesc.GetNonVirtualHorizontalPartitionIndices ().at (0));
+                deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped (classIdColumn->GetName ().c_str ());
+                partition.AppendECClassIdFilterSql (deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
+                }
+            }
+        }
     return ECSqlStatus::Success;
     }
 
