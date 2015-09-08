@@ -42,7 +42,7 @@ public:
     struct Properties
         {
         DRange3d            m_range;        //! Point Cloud range
-        Utf8String          m_URL;          //! URL of point cloud file
+        Utf8String          m_fileId;       //! File id provided by the application. Used to resolve the local file name.
 
         void ToJson(Json::Value&) const;
         void FromJson(Json::Value const&);
@@ -80,7 +80,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PointCloudModelHandler : Dgn::dgn_ModelHandler::P
     MODELHANDLER_DECLARE_MEMBERS ("PointCloudModel", PointCloudModel, PointCloudModelHandler, Dgn::dgn_ModelHandler::PointCloud, POINTCLOUDSCHEMA_EXPORT)
 
 public:
-    POINTCLOUDSCHEMA_EXPORT static Dgn::DgnModelId CreatePointCloudModel(DgnDbR db, BeFileName fileName);
+    POINTCLOUDSCHEMA_EXPORT static Dgn::DgnModelId CreatePointCloudModel(DgnDbR db, Utf8StringCR fileId);
 };
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE

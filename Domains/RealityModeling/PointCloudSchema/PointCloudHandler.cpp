@@ -17,16 +17,21 @@ HANDLER_DEFINE_MEMBERS(PointCloudModelHandler)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-DgnModelId PointCloudModelHandler::CreatePointCloudModel(DgnDbR db, BeFileName fileName)
+DgnModelId PointCloudModelHandler::CreatePointCloudModel(DgnDbR db, Utf8StringCR fileId)
     {
     DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_POINTCLOUD_SCHEMA_NAME, "PointCloudModel"));
     BeAssert(classId.IsValid());
 
-    // Set PointCloud Properties
-    PointCloudModel::Properties props;
-    WString fileNameWithPath;
-    BeFileName::BuildName (fileNameWithPath, fileName.GetDevice().c_str(), fileName.GetDirectoryWithoutDevice().c_str(), fileName.GetFileNameWithoutExtension().c_str(), fileName.GetExtension().c_str());
-    BeStringUtilities::WCharToUtf8 (props.m_URL, fileNameWithPath.c_str());
+    // Find resolved file name for the point cloud
+    BeFileName fileName;
+    BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, fileId, db);
+    if (status != SUCCESS)
+        {
+        // Return an invalid model id.
+        return DgnModelId();
+        }
+    Utf8String resolvedName(fileName);
+    Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
 
     // Try to open point cloud file
     PointCloudScenePtr pointCloudScenePtr = PointCloudScene::Create(fileName.c_str());
@@ -36,19 +41,12 @@ DgnModelId PointCloudModelHandler::CreatePointCloudModel(DgnDbR db, BeFileName f
         return DgnModelId();
         }
 
+    PointCloudModel::Properties props;
+    props.m_fileId = fileId;
     pointCloudScenePtr->GetRange (props.m_range, false);
 
-    // Just keep model name (no path or extension) and convert it to Utf8CP
-    WString dev;
-    WString dir;
-    WString name;
-    WString ext;
-    fileName.ParseName(&dev, &dir, &name, &ext);
-    Utf8String utf8Name;
-    BeStringUtilities::WCharToUtf8 (utf8Name, name.c_str());
-    Utf8CP modelName = utf8Name.c_str();
-
-    PointCloudModelPtr model = new PointCloudModel(DgnModel::CreateParams(db, classId, modelName), props);
+    // Create model in DgnDb
+    PointCloudModelPtr model = new PointCloudModel(DgnModel::CreateParams(db, classId, modelName.c_str()), props);
     model->Insert();
     return model->GetModelId();
     }
@@ -85,9 +83,14 @@ PointCloudScenePtr PointCloudModel::GetPointCloudScenePtr()
     {
     if (m_pointCloudScenePtr == nullptr)
         {
-        // Open point cloud file
-        Utf8CP urlUtf8 = m_properties.m_URL.c_str();
-        WString fileName(WString(urlUtf8,BentleyCharEncoding::Utf8).c_str());
+        // Find resolved file name for the point cloud
+        BeFileName fileName;
+        BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileName(fileName, m_properties.m_fileId, GetDgnDb());
+        if (status != SUCCESS)
+            {
+            return nullptr;
+            }
+
         m_pointCloudScenePtr = PointCloudScene::Create(fileName.c_str());
         }
 
@@ -155,7 +158,7 @@ void PointCloudModel::Properties::ToJson(Json::Value& v) const
     JsonUtils::DPoint3dToJson(v["RangeLow"], m_range.low);
     JsonUtils::DPoint3dToJson(v["RangeHigh"], m_range.high);
 
-    v["PointCloudURL"] = m_URL;
+    v["FileId"] = m_fileId.c_str();
     }
 
 //----------------------------------------------------------------------------------------
@@ -166,7 +169,7 @@ void PointCloudModel::Properties::FromJson(Json::Value const& v)
     JsonUtils::DPoint3dFromJson(m_range.low, v["RangeLow"]);
     JsonUtils::DPoint3dFromJson(m_range.high, v["RangeHigh"]);
 
-    m_URL = v["PointCloudURL"].asString();
+    m_fileId = v["FileId"].asString();
     }
 
 //----------------------------------------------------------------------------------------
