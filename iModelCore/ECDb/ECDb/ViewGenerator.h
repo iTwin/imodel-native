@@ -56,6 +56,17 @@ struct SqlTriggerBuilder
                     return m_list.back ();
                     }
                 List const& GetTriggers () const { return m_list; }
+                void Delete (SqlTriggerBuilder const& trigger)
+                    {
+                    for (auto itor = m_list.begin (); itor != m_list.end (); ++itor)
+                        {
+                        if (&(*itor) == &trigger)
+                            {
+                            m_list.erase (itor);
+                            break;
+                            }
+                        }
+                    }
             };
 
 
@@ -199,6 +210,8 @@ struct ECDbMapAnalyser
             ECDbSqlTable const& GetTable () const;
             bool IsVirtual () const;
             std::set<Class*> & GetClassesR ();
+            std::set<Class*> const& GetClasses () const{ return m_classes; }
+
             std::set<Relationship*> & GetRelationshipsR ();
             std::map<Storage*, std::set<Relationship*>> & CascadesTo ();
             std::set<Struct* > &StructCascadeTo ()
@@ -231,6 +244,7 @@ struct ECDbMapAnalyser
                 }
             ClassMapCR GetClassMap () const;
             Class* GetParent ();
+            void SetParent (Class& cl) { m_parent = &cl; }
             std::map <Storage const*, std::set<Class const*>>& GetPartitionsR ();
             bool InQueue () const;
             void Done ();
@@ -317,25 +331,23 @@ struct ECDbMapAnalyser
         struct ViewInfo
             {
             private:
-                SqlTriggerBuilder m_deleteTrigger;
-                SqlTriggerBuilder m_updateTrigger;
+                SqlTriggerBuilder::TriggerList m_triggers;
                 SqlViewBuilder m_view;
             public: 
                 ViewInfo (){}
                 ViewInfo (ViewInfo const& rhs)
-                    :m_deleteTrigger (rhs.m_deleteTrigger), m_updateTrigger (rhs.m_updateTrigger), m_view (rhs.m_view)
+                    :m_triggers (rhs.m_triggers), m_view (rhs.m_view)
                     {
                     }
                 ViewInfo (ViewInfo const&& rhs)
-                    :m_deleteTrigger (std::move (rhs.m_deleteTrigger)), m_updateTrigger (std::move (rhs.m_updateTrigger)), m_view (std::move (rhs.m_view))
+                    :m_triggers (std::move (rhs.m_triggers)), m_view (std::move (rhs.m_view))
                     {
                     }
                 ViewInfo& operator = (ViewInfo const& rhs)
                         {
                         if (this != &rhs)
                             {
-                            m_deleteTrigger = rhs.m_deleteTrigger;
-                            m_updateTrigger = rhs.m_updateTrigger;
+                            m_triggers = rhs.m_triggers;
                             m_view = rhs.m_view;
                             }
                         return *this;
@@ -344,18 +356,15 @@ struct ECDbMapAnalyser
                     {
                     if (this != &rhs)
                         {
-                        m_deleteTrigger = std::move(rhs.m_deleteTrigger);
-                        m_updateTrigger = std::move (rhs.m_updateTrigger);
+                        m_triggers = std::move (rhs.m_triggers);
                         m_view = std::move (rhs.m_view);
                         }
                     return *this;
                     }
                 SqlViewBuilder& GetViewR () { return m_view; }
-                SqlTriggerBuilder& GetDeleteTriggerR () { return m_deleteTrigger; }
-                SqlTriggerBuilder& GetUpdateTriggerR () { return m_updateTrigger; }
+                SqlTriggerBuilder::TriggerList& GetTriggersR () { return m_triggers; }
                 SqlViewBuilder const& GetView () const { return m_view; }
-                SqlTriggerBuilder const& GetDeleteTrigger () const{ return m_deleteTrigger; }
-                SqlTriggerBuilder const& GetUpdateTrigger ()const { return m_updateTrigger; }
+                SqlTriggerBuilder::TriggerList const& GetTriggers () const{ return m_triggers; }
 
             };
 
@@ -383,10 +392,10 @@ struct ECDbMapAnalyser
         void ProcessEndTableRelationships ();
         void ProcessLinkTableRelationships ();
         SqlViewBuilder BuildView (Class& nclass);
-        SqlTriggerBuilder BuildPolymorphicDeleteTrigger (Class& nclass);
-        SqlTriggerBuilder BuildPolymorphicUpdateTrigger (Class& nclass);
+        BentleyStatus BuildPolymorphicDeleteTrigger (Class& nclass);
+        BentleyStatus BuildPolymorphicUpdateTrigger (Class& nclass);
         void HandleLinkTable (Storage* fromStorage, std::map<Storage*, std::set<ECDbMapAnalyser::Relationship*>> const& relationshipsByStorage, bool isFrom);
-
+        static const NativeSqlBuilder GetClassFilter (std::pair<ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>> const& partition);
         DbResult ApplyChanges ();
         DbResult ExecuteDDL (Utf8CP sql);
         DbResult UpdateHoldingView ();
