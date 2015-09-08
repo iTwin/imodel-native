@@ -1287,6 +1287,9 @@ public:
 //! material ID.
 //! @see DgnDb::Materials
 //=======================================================================================
+// JSon  Material Asset Key words.
+#define MATERIAL_ASSET_Rendering        "RenderMaterial"
+
 struct DgnMaterials : DgnDbTable
 {
 private:
@@ -1319,11 +1322,9 @@ public:
         //! Constructs a Material for insertion into the materials table.
         //! @param[in]      name     The material's name. The combination of name and palette must be unique.
         //! @param[in]      palette  The name of the material's palette. The combination of name and palette must be unique.
-        //! @param[in]      value    JSON representation of the material.
         //! @param[in]      descr    Optional material description.
         //! @param[in]      parentId Optional ID of this material's parent material.
-        Material(Utf8CP name, Utf8CP palette, Utf8CP value, Utf8CP descr=nullptr, DgnMaterialId parentId=DgnMaterialId()) : m_parentId(parentId), m_name(name), m_palette(palette), 
-                            m_descr(descr), m_value(value) {}
+        Material(Utf8CP name, Utf8CP palette, Utf8CP descr=nullptr, DgnMaterialId parentId=DgnMaterialId()) : m_parentId(parentId), m_name(name), m_palette(palette), m_descr(descr) {}
 
         DgnMaterialId GetId() const {return m_id;}  //!< The ID of this material.
         DgnMaterialId GetParentId() const {return m_parentId;}  //!< The ID of this material's parent, or an invalid ID if no parent is defined.
@@ -1347,6 +1348,12 @@ public:
         //! @param[in]     value       The Json value for the asset.
         //! @param[in]     keyWord     asset keyword -- "RenderMaterial", "Physical" etc.
         DGNPLATFORM_EXPORT void          SetAsset (JsonValueCR value, char const* keyWord);
+
+        //! Set the rendering material asset.
+        void SetRenderingAsset (JsonValueCR value) { SetAsset (value, MATERIAL_ASSET_Rendering); }
+
+        //! Get the rendering material asset.
+        BentleyStatus GetRenderingAsset (JsonValueR value) { return GetAsset (value, MATERIAL_ASSET_Rendering); }
     };
 
     //! An iterator over the materials in a DgnDb
