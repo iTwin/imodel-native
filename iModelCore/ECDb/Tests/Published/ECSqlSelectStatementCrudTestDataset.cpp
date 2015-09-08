@@ -1442,6 +1442,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ecsql = "SELECT I, L FROM ONLY ecsql.PSA JOIN ONLY ecsql.P USING ecsql.PSAHasP";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
+    //AnyClass relationships
+    //This one should actually fail as both PSA and P match the AnyClass side of the relationship. This will be fixed
+    //with TFS#111034
+    ecsql = "SELECT PSA.I FROM ecsql.PSA JOIN ecsql.P USING ecsql.PSAHasAnyClass_0N";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 0);
+    //ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
     //JOIN ON
     ecsql = "SELECT end1.I, end2.L FROM ONLY ecsql.PSA end1 "
         "INNER JOIN ONLY ecsql.PSAHasPSA rel ON end1.ECInstanceId = rel.SourceECInstanceId "

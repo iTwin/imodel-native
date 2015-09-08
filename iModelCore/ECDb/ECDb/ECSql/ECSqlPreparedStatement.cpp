@@ -298,14 +298,6 @@ void ECSqlSelectPreparedStatement::AddField(std::unique_ptr<ECSqlField> field)
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        12/13
-//---------------------------------------------------------------------------------------
-DynamicSelectClauseECClass& ECSqlSelectPreparedStatement::GetDynamicSelectClauseECClassR ()
-    {
-    return m_dynamicSelectClauseECClass;
-    }
-
 
 //***************************************************************************************
 //    ECSqlInsertStatement

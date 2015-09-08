@@ -1050,7 +1050,7 @@ TEST_F (SchemaImportTestFixture, InstanceInsertionInExistingTable)
     EXPECT_FALSE (ecdb.TableExists ("TestTable"));
 
     AString ddl = "ECInstanceId INTEGER PRIMARY KEY";
-    ddl.append (", Name STRING");
+    ddl.append (", Name TEXT");
     ddl.append (", Date INTEGER");
 
     ecdb.CreateTable ("TestTable", ddl.c_str ());
@@ -1178,23 +1178,23 @@ TEST_F (SchemaImportTestFixture, MismatchDataTypesInExistingTable)
     ASSERT_TRUE (ecdb.IsDbOpen ());
 
     ASSERT_FALSE (ecdb.TableExists ("TestTable"));
-    ecdb.CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, Name STRING, Date INTEGER");
+    ecdb.CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
     ASSERT_TRUE(ecdb.TableExists("TestTable"));
 
     TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                       "<ECClass typeName='Class' isDomainClass='True'>"
-                      "<ECCustomAttributes>"
-                      "<ClassMap xmlns='ECDbMap.01.00'>"
-                      "<MapStrategy>"
-                      "<Strategy>ExistingTable</Strategy>"
-                      "</MapStrategy>"
-                      "<TableName>TestTable</TableName>"
-                      "</ClassMap>"
-                      "</ECCustomAttributes>"
-                      "<ECProperty propertyName='Name' typeName='text'/>"
-                      "<ECProperty propertyName='Date' typeName='double'/>"
+                      "  <ECCustomAttributes>"
+                      "   <ClassMap xmlns='ECDbMap.01.00'>"
+                      "    <MapStrategy>"
+                      "      <Strategy>ExistingTable</Strategy>"
+                      "    </MapStrategy>"
+                      "    <TableName>TestTable</TableName>"
+                      "   </ClassMap>"
+                      "  </ECCustomAttributes>"
+                      "  <ECProperty propertyName='Name' typeName='string'/>"
+                      "  <ECProperty propertyName='Date' typeName='double'/>"
                       "</ECClass>"
                       "</ECSchema>", false);
 
@@ -1214,7 +1214,7 @@ TEST_F (SchemaImportTestFixture, InvalidPrimaryKeyInExistingTable)
 
     ASSERT_FALSE(ecdb.TableExists("TestTable"));
 
-    ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Name STRING, Date INTEGER");
+    ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
     ASSERT_TRUE(ecdb.TableExists("TestTable"));
 
     TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -1229,7 +1229,7 @@ TEST_F (SchemaImportTestFixture, InvalidPrimaryKeyInExistingTable)
                       "<TableName>TestTable</TableName>"
                       "</ClassMap>"
                       "</ECCustomAttributes>"
-                      "<ECProperty propertyName='Name' typeName='text'/>"
+                      "<ECProperty propertyName='Name' typeName='string'/>"
                       "<ECProperty propertyName='Date' typeName='double'/>"
                       "</ECClass>"
                       "</ECSchema>", false);
