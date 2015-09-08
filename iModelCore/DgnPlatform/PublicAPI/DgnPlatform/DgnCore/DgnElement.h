@@ -129,7 +129,6 @@ public:
     AngleInDegrees GetYawAdjustment() const {return m_yawAdj;}
     //! @}
 };
-
 template <class _QvKey> struct QvElemSet;
 
 //=======================================================================================
@@ -948,8 +947,8 @@ public:
     //! Set the label (user-friendly name) of this DgnElement.
     void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
 
-    //! Get the last modified time as a DateTime timestamp
-    DateTime GetTimeStamp() const;// {DateTime timestamp; DateTime::FromJulianDay(timestamp, m_lastModTime, DateTime::Info(DateTime::Kind::Utc)); return timestamp;}
+    //! Query the database for the last modified time of this DgnElement.
+    DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
 
     //! Get the display label (for use in the GUI) of this DgnElement.
     //! @note The default implementation returns the label if it is set or the code if the label is not set.

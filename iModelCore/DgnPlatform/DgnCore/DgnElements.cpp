@@ -1206,7 +1206,7 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
     int propCount = 0;
     for (ECPropertyCP ecProperty : elementClass->GetProperties (true))
         {
-        if (ecProperty->GetName() == "LastMod")
+        if (ecProperty->GetName() == "LastMod") // TEMPORARY - Carole, just don't include LastMod in properties list in your refactoring.
             continue;
 
         if (propCount != 0)

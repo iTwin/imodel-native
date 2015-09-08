@@ -193,16 +193,17 @@ DgnElement::Code DgnElement::_GenerateDefaultCode()
     return Code(val.c_str());
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::UpdateLastModTime()
+DateTime DgnElement::QueryTimeStamp() const
     {
-    // update the last modified time directly rather than through trigger, so we can tell that we have the lastest version of this element
-    m_lastModTime = DateTime::HnsToRationalDay(DateTime::UnixMillisecondsToJulianDay(BeTimeUtilities::GetCurrentTimeAsUnixMillis()));
+    ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT LastMod FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) "WHERE ECInstanceId=?");
+    stmt.BindId (1, m_elementId);
+    stmt.Step();
+    return stmt.GetValueDateTime(0);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
@@ -375,15 +376,6 @@ DgnDbStatus DgnElement::_InsertInDb(ECSqlStatement& statement)
     statement.BindId(statement.GetParameterIndex("CodeAuthorityId"), m_code.GetAuthority());
     statement.BindId(statement.GetParameterIndex("ParentId"), m_parentId);
     
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DateTimeInfo info;
-    ECPropertyCP lastModProp = GetDgnDb().Schemas().GetECSchema(DGN_ECSCHEMA_NAME)->GetClassCP(DGN_CLASSNAME_Element)->GetPropertyP("LastMod");
-    ECN::StandardCustomAttributeHelper::GetDateTimeInfo(info, *lastModProp);
-    DateTime dt;
-    DateTime::FromJulianDay (dt, m_lastModTime, info.GetInfo(true));
-    statement.BindDateTime(statement.GetParameterIndex("LastMod"), dt);
-#endif
-
     auto stmtStatus = statement.Step();
     if (ECSqlStepStatus::Error == stmtStatus)
         {
@@ -415,9 +407,6 @@ DgnDbStatus DgnElement::_UpdateInDb()
     stmt->BindId(Column::CodeAuthorityId, m_code.GetAuthority());
     
     stmt->BindId(Column::ParentId, m_parentId);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    stmt->BindDouble(Column::LastMod, m_lastModTime);
-#endif
     stmt->BindId(Column::ElementId, m_elementId);
 
     return stmt->Step() != BE_SQLITE_DONE ? DgnDbStatus::WriteError : DgnDbStatus::Success;
