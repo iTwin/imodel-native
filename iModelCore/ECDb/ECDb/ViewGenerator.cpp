@@ -2741,18 +2741,17 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
     if (itor != m_classes.end ())
         return *(itor->second);
 
-    Class* parent = nullptr;
-    if (classMap.GetParentMapClassId () != 0LL)
-        {
-        parent = &GetClass (*GetClassMap (classMap.GetParentMapClassId ()));
-        }
-
     Storage& storage = GetStorage (classMap);
     if (classMap.GetClass ().GetIsStruct ())
-        m_classes[classMap.GetClass ().GetId ()] = Struct::Ptr (new Struct (classMap, storage, parent));
+        m_classes[classMap.GetClass ().GetId ()] = Struct::Ptr (new Struct (classMap, storage, nullptr));
     else
-        m_classes[classMap.GetClass ().GetId ()] = Class::Ptr (new Class (classMap, storage, parent));
+        m_classes[classMap.GetClass ().GetId ()] = Class::Ptr (new Class (classMap, storage, nullptr));
+
     auto ptr = m_classes[classMap.GetClass ().GetId ()].get ();
+    if (classMap.GetParentMapClassId () != 0LL)
+        {
+        ptr->SetParent(GetClass (*GetClassMap (classMap.GetParentMapClassId ())));
+        }
 
     storage.GetClassesR ().insert (ptr);
 
@@ -2761,7 +2760,11 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
         auto& storage = GetStorage (part.GetTable ().GetName ().c_str ());
         for (auto id : part.GetClassIds ())
             {
-            ptr->GetPartitionsR ()[&storage].insert (&GetClass (*GetClassMap (id)));
+            auto refClassMap = GetClassMap (id);
+            BeAssert (refClassMap != nullptr);
+            auto classM = &(GetClass (*refClassMap));
+            BeAssert (classM != nullptr);
+            ptr->GetPartitionsR ()[&storage].insert (classM);
             }
         }
 
@@ -2774,14 +2777,15 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
     if (itor != m_relationships.end ())
         return *(itor->second.get ());
 
-    Class* parent = nullptr;
+    Storage& storage = GetStorage (classMap);
+    m_relationships[classMap.GetClass ().GetId ()] = Relationship::Ptr (new Relationship (classMap, GetStorage (classMap), nullptr));
+    auto ptr = m_relationships[classMap.GetClass ().GetId ()].get ();
     if (classMap.GetParentMapClassId () != 0LL)
         {
-        parent = &GetClass (*GetClassMap (classMap.GetParentMapClassId ()));
+        ptr->SetParent (GetClass (*GetClassMap (classMap.GetParentMapClassId ())));
         }
-    Storage& storage = GetStorage (classMap);
-    m_relationships[classMap.GetClass ().GetId ()] = Relationship::Ptr (new Relationship (classMap, GetStorage (classMap), parent));
-    auto ptr = m_relationships[classMap.GetClass ().GetId ()].get ();
+
+
     for (auto& part : classMap.GetStorageDescription ().GetHorizontalPartitions ())
         {
         auto& storage = GetStorage (part.GetTable ().GetName ().c_str ());
@@ -2949,33 +2953,91 @@ ECDbMapAnalyser::ViewInfo* ECDbMapAnalyser::GetViewInfoForClass (Class const& nc
     return &(itor->second);
     }
 
-SqlTriggerBuilder ECDbMapAnalyser::BuildPolymorphicDeleteTrigger (Class& nclass)
+const NativeSqlBuilder ECDbMapAnalyser::GetClassFilter (std::pair<ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>> const& partition)
+    {
+    auto storage = partition.first;
+    auto& classes = partition.second;
+    std::set<ECN::ECClassId> classSet;
+    std::set<ECN::ECClassId> classSubset;
+    std::set<ECN::ECClassId> classSubsetNotIn;
+    NativeSqlBuilder sql;
+    for (auto c : storage->GetClasses ())
+        classSet.insert (c->GetClassMap ().GetClass ().GetId ());
+
+    for (auto c : classes)
+        {
+        BeAssert (classSet.find (c->GetClassMap ().GetClass ().GetId ()) != classSet.end ());
+        classSubset.insert (c->GetClassMap ().GetClass ().GetId ());
+        }
+
+    for (auto c : classSet)
+        {
+        if (classSubset.find (c) == classSubset.end ())
+            classSubsetNotIn.insert (c);
+        }
+
+
+    if (classSubset.size () <= classSubsetNotIn.size () || classSubsetNotIn.empty())
+        {
+        sql.Append ("IN (");
+        for (auto id : classSubset)
+            {
+            sql.Append (id);
+            if (id != *(classSubset.rbegin ()))
+                sql.Append (",");
+            }
+        sql.Append (")");
+        }
+    else
+        {
+        sql.Append (" NOT IN (");
+        for (auto id : classSubsetNotIn)
+            {
+            sql.Append (id);
+            if (id != *(classSubsetNotIn.rbegin ()))
+                sql.Append (",");
+            }
+        sql.Append (")");
+        }
+
+    return std::move (sql);
+    }
+BentleyStatus ECDbMapAnalyser::BuildPolymorphicDeleteTrigger (Class& nclass)
     {
     BeAssert (nclass.RequireView ());
     auto viewInfo = GetViewInfoForClass (nclass);
     BeAssert (viewInfo != nullptr && !viewInfo->GetView ().IsEmpty ());
-    SqlTriggerBuilder builder (SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::InsteadOf, false);
-    builder.GetOnBuilder ().Append (viewInfo->GetViewR ().GetName ());
-    builder.GetNameBuilder ().Append (nclass.GetSqlName ()).Append ("_").Append ("Delete");
-
-    auto& body = builder.GetBodyBuilder ();
     auto p = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+    auto c = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
     for (auto & i : nclass.GetPartitionsR ())
         {
         auto storage = i.first;
         if (storage->IsVirtual ())
             continue;
+        
+        SqlTriggerBuilder& builder = viewInfo->GetTriggersR ().Create (SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::InsteadOf, false);
+        builder.GetOnBuilder ().Append (viewInfo->GetViewR ().GetName ());
+        builder.GetNameBuilder ().Append (nclass.GetSqlName ()).Append ("_").Append (storage->GetTable ().GetName ().c_str()).Append ("_Delete");
+        NativeSqlBuilder classFilter = GetClassFilter (i);
+        if (!classFilter.IsEmpty ())
+            {
+            if (c == nullptr)
+                builder.GetWhenBuilder().Append("OLD.").Append ("ECClassId ").Append (classFilter);
+            else
+                builder.GetWhenBuilder ().Append ("OLD.").Append (c->GetName ().c_str ()).AppendSpace ().Append (classFilter);
+            }
 
+        auto& body = builder.GetBodyBuilder ();
         auto f = storage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
-
         body.Append ("DELETE FROM ").AppendEscaped (storage->GetTable ().GetName ().c_str ());
         body.AppendFormatted (" WHERE OLD.[%s] = [%s]", p->GetName ().c_str (), f->GetName ().c_str ());
         body.Append (";").AppendEOL ();
         }
-    return std::move (builder);
+
+    return BentleyStatus::SUCCESS;
     }
 
-SqlTriggerBuilder ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
+BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
     {
     BeAssert (nclass.RequireView ());
     BeAssert (nclass.RequireView ());
@@ -2984,13 +3046,8 @@ SqlTriggerBuilder ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
 
     auto rootPMS = PropertyMapSet::Create (nclass.GetClassMap ());
     auto rootEndPoints = rootPMS->GetEndPoints ();
-
-    SqlTriggerBuilder builder (SqlTriggerBuilder::Type::Update, SqlTriggerBuilder::Condition::InsteadOf, false);
-    builder.GetOnBuilder ().Append (viewInfo->GetViewR ().GetName ());
-    builder.GetNameBuilder ().Append (nclass.GetSqlName ()).Append ("_").Append ("Update");
-
-    auto& body = builder.GetBodyBuilder ();
     auto p = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+    auto c = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
 
     for (auto & i : nclass.GetPartitionsR ())
         {
@@ -2998,13 +3055,26 @@ SqlTriggerBuilder ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
         if (storage->IsVirtual ())
             continue;
 
+        SqlTriggerBuilder& builder = viewInfo->GetTriggersR().Create (SqlTriggerBuilder::Type::Update, SqlTriggerBuilder::Condition::InsteadOf, false);
+        builder.GetOnBuilder ().Append (viewInfo->GetViewR ().GetName ());
+        builder.GetNameBuilder ().Append (nclass.GetSqlName ()).Append ("_").Append ("Update");
+        NativeSqlBuilder classFilter = GetClassFilter (i);
+        if (!classFilter.IsEmpty ())
+            {
+            if (c == nullptr)
+                builder.GetWhenBuilder ().Append ("OLD.").Append ("ECClassId ").Append (classFilter);
+            else
+                builder.GetWhenBuilder ().Append ("OLD.").Append (c->GetName ().c_str ()).AppendSpace ().Append (classFilter);
+            }
+
+        auto& body = builder.GetBodyBuilder ();
         auto& firstClass = **(i.second.begin());
         auto f = storage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
         auto childPMS = PropertyMapSet::Create (firstClass.GetClassMap());
-
         body.Append ("UPDATE ").AppendEscaped (storage->GetTable ().GetName ().c_str ());
         body.Append ("SET ");
         int nColumns = 0;
+
         for (auto const rootE : rootEndPoints)
             {
             auto childE = childPMS->GetEndPointByAccessString (rootE->GetAccessString ().c_str ());
@@ -3024,13 +3094,15 @@ SqlTriggerBuilder ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
 
         if (nColumns == 0)
             {
-            return std::move (SqlTriggerBuilder ());
+            viewInfo->GetTriggersR ().Delete (builder);
+            return BentleyStatus::SUCCESS;
             }
 
         body.AppendFormatted (" WHERE OLD.[%s] = [%s]", p->GetName ().c_str (), f->GetName ().c_str ());
         body.Append (";").AppendEOL ();
         }
-    return std::move (builder);
+    return BentleyStatus::SUCCESS;
+
     }
 
 SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
@@ -3168,30 +3240,24 @@ DbResult ECDbMapAnalyser::ApplyChanges ()
         if (r != BE_SQLITE_OK)
             return r;
 
-        if (!viewInfo.GetDeleteTrigger ().IsEmpty ())
+        for (auto & trigger : viewInfo.GetTriggers ().GetTriggers ())
             {
-            sql = viewInfo.GetDeleteTrigger ().ToString (SqlOption::DropIfExists, true);
-            r = ExecuteDDL (sql.c_str ());
-            if (r != BE_SQLITE_OK)
-                return r;
+            if (&trigger == nullptr)
+                {
+                printf ("");
+                }
+            if (!trigger.IsEmpty ())
+                {
+                sql = trigger.ToString (SqlOption::DropIfExists, true);
+                r = ExecuteDDL (sql.c_str ());
+                if (r != BE_SQLITE_OK)
+                    return r;
 
-            sql = viewInfo.GetDeleteTrigger ().ToString (SqlOption::Create, true);
-            r = ExecuteDDL (sql.c_str ());
-            if (r != BE_SQLITE_OK)
-                return r;
-            }
-
-        if (!viewInfo.GetUpdateTrigger ().IsEmpty ())
-            {
-            sql = viewInfo.GetUpdateTrigger ().ToString (SqlOption::DropIfExists, true);
-            r = ExecuteDDL (sql.c_str ());
-            if (r != BE_SQLITE_OK)
-                return r;
-
-            sql = viewInfo.GetUpdateTrigger ().ToString (SqlOption::Create, true);
-            r = ExecuteDDL (sql.c_str ());
-            if (r != BE_SQLITE_OK)
-                return r;
+                sql = trigger.ToString (SqlOption::Create, true);
+                r = ExecuteDDL (sql.c_str ());
+                if (r != BE_SQLITE_OK)
+                    return r;
+                }
             }
 
         }
@@ -3227,6 +3293,12 @@ DbResult ECDbMapAnalyser::ApplyChanges ()
     }
 BentleyStatus ECDbMapAnalyser::Analyser (bool applyChanges)
     {
+    m_classes.clear ();
+    m_derivedClassLookup.clear ();
+    m_relationships.clear ();
+    m_storage.clear ();
+    m_viewInfos.clear ();
+
     SetupDerivedClassLookup ();
     for (auto rootClassId : GetRootClassIds ())
         {
@@ -3249,8 +3321,8 @@ BentleyStatus ECDbMapAnalyser::Analyser (bool applyChanges)
 
         auto& viewInfo = m_viewInfos[ecclass];
         viewInfo.GetViewR () = std::move (BuildView (*ecclass));
-        viewInfo.GetDeleteTriggerR () = std::move (BuildPolymorphicDeleteTrigger (*ecclass));
-        viewInfo.GetUpdateTriggerR () = std::move (BuildPolymorphicUpdateTrigger (*ecclass));
+        BuildPolymorphicDeleteTrigger (*ecclass);
+        BuildPolymorphicUpdateTrigger (*ecclass);
         }
 
     ProcessEndTableRelationships ();
