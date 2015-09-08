@@ -15,6 +15,7 @@
 #include <UnitTests/BackDoor/DgnProject/BackDoor.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
+#include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
 
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 typedef bpair<Utf8String, double> T_TimerResultPair;
@@ -49,26 +50,5 @@ protected:
     static void LogResultsToFile(bmap<Utf8String, double> results);
     };
 
-//=======================================================================================
-// @bsiclass                                                Majd.Uddin     05/2015
-//=======================================================================================
-struct PerformanceTestingFrameWork
-{
-private:
-    Db m_Db;
-    int m_startNum;
-    int m_endNum;
-    int m_increment;
-
-public:
-    PerformanceTestingFrameWork() { setCounters(); }
-    void openDb();
-    bool writeTodb(StopWatch &timerCount, Utf8String testName, Utf8String testDescription, int opCount = -1);
-    bool writeTodb(double timeInSeconds, Utf8String testName, Utf8String testDescription, int opCount = -1);
-    void setCounters();
-    int getStartNum() { return m_startNum; }
-    int getEndNum() { return m_endNum; }
-    int getIncrement() { return m_increment; }
-};
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

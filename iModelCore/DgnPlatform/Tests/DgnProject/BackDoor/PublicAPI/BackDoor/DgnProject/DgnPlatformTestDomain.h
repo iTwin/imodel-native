@@ -124,7 +124,7 @@ private:
 
     Utf8String _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
     Utf8String _GetECClassName() const override {return DPTEST_TEST_ITEM_CLASS_NAME;}
-    Dgn::DgnDbStatus _GenerateElementGeometry(Dgn::GeometricElementR el) override;
+    Dgn::DgnDbStatus _GenerateElementGeometry(Dgn::GeometricElementR el, GenerateReason) override;
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
 
