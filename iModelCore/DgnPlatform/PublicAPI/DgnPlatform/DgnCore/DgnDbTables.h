@@ -1683,7 +1683,7 @@ public:
             DGNPLATFORM_EXPORT DgnLinkType GetType() const;
             DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
             Entry const& operator*() const { return *this; }
-        }; // Entry
+        };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
@@ -1722,7 +1722,7 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
             Entry const& operator*() const { return *this; }
 
-        }; // Entry
+        };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
