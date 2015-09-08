@@ -7,13 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
-#define CHANGED_INSTANCES_TABLE_PREFIX "temp."
-#define CHANGED_INSTANCES_TABLE_NAME_NOPREFIX "ec_ChangedInstances"
-
-#define CHANGED_VALUES_TABLE_PREFIX "temp."
-#define CHANGED_VALUES_TABLE_NAME_NOPREFIX "ec_ChangedValues"
+#define CHANGED_TABLES_TEMP_PREFIX "temp."
+#define CHANGED_INSTANCES_TABLE_BASE_NAME "ec_ChangedInstances"
+#define CHANGED_VALUES_TABLE_BASE_NAME "ec_ChangedValues"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+int ChangeSummary::s_count = 0;
+IsChangedInstanceSqlFunction* ChangeSummary::s_isChangedInstanceSqlFunction = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
@@ -300,6 +301,27 @@ ChangeSummary::TableMap::~TableMap()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     09/2015
+//---------------------------------------------------------------------------------------
+ChangeSummary::ChangeSummary(ECDbR ecdb) : m_ecdb(ecdb)
+    {
+    SetupChangedTableNames();
+
+    if (s_count == 0)
+        RegisterSqlFunctions(m_ecdb);
+    s_count++;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     09/2015
+//---------------------------------------------------------------------------------------
+void ChangeSummary::SetupChangedTableNames()
+    {
+    m_instancesTableNameNoPrefix = Utf8PrintfString(CHANGED_INSTANCES_TABLE_BASE_NAME "_%d", s_count);
+    m_valuesTableNameNoPrefix = Utf8PrintfString(CHANGED_VALUES_TABLE_BASE_NAME "_%d", s_count);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
 void ChangeSummary::Initialize()
@@ -313,8 +335,6 @@ void ChangeSummary::Initialize()
     CreateValuesTable();
     PrepareValuesTableStatements();
 
-    RegisterSqlFunctions();
-   
     m_isValid = true;
     }
 
@@ -326,13 +346,11 @@ void ChangeSummary::Free()
     if (!IsValid())
         return;
 
-    UnregisterSqlFunctions();
-
     FinalizeInstancesTableStatements();
-    DestroyInstancesTable();
+    ClearInstancesTable();
 
     FinalizeValuesTableStatements();
-    DestroyValuesTable();
+    ClearValuesTable();
 
     m_isValid = false;
     }
@@ -344,6 +362,10 @@ ChangeSummary::~ChangeSummary()
     {
     Free();
     FreeTableMap();
+
+    s_count--;
+    if (s_count == 0)
+        UnregisterSqlFunctions();
     }
 
 //---------------------------------------------------------------------------------------
@@ -602,7 +624,7 @@ void ChangeSummary::ProcessSqlChangeForForeignKeyMap(SqlChange const& sqlChange,
             }
         }
 
-    ChangeSummary::Instance instance(m_ecdb, classMap.GetClassId(), instanceId, relDbOpcode, sqlChange.GetIndirect());
+    ChangeSummary::Instance instance(*this, classMap.GetClassId(), instanceId, relDbOpcode, sqlChange.GetIndirect());
     RecordInInstancesTable(instance);
     RecordInValuesTable(instance, sqlChange, classMap);
     }
@@ -616,7 +638,7 @@ void ChangeSummary::ProcessSqlChangeForStructMap(SqlChange const& sqlChange, Cha
     ECInstanceId parentInstanceId;
     if (GetStructArrayParentFromChange(parentClassId, parentInstanceId, sqlChange, classMap, instanceId))
         {
-        ChangeSummary::Instance instance(m_ecdb, parentClassId, parentInstanceId, DbOpcode::Update, sqlChange.GetIndirect());
+        ChangeSummary::Instance instance(*this, parentClassId, parentInstanceId, DbOpcode::Update, sqlChange.GetIndirect());
         RecordInInstancesTable(instance);
         // TODO: Support recording changes to struct arrays in changed values table. 
         return;
@@ -634,7 +656,7 @@ void ChangeSummary::ProcessSqlChangeForClassMap(SqlChange const& sqlChange, Chan
     if (dbOpcode == DbOpcode::Update && !SqlChangeHasUpdatesForClass(sqlChange, classMap))
         return;
 
-    ChangeSummary::Instance instance(m_ecdb, classMap.GetClassId(), instanceId, dbOpcode, sqlChange.GetIndirect());
+    ChangeSummary::Instance instance(*this, classMap.GetClassId(), instanceId, dbOpcode, sqlChange.GetIndirect());
     RecordInInstancesTable(instance);
     RecordInValuesTable(instance, sqlChange, classMap);
     }
@@ -715,7 +737,7 @@ BentleyStatus ChangeSummary::FromSqlChangeSet(ChangeSet& changeSet)
 //---------------------------------------------------------------------------------------
 Utf8String ChangeSummary::GetInstancesTableName() const
     {
-    Utf8String tableName = CHANGED_INSTANCES_TABLE_PREFIX CHANGED_INSTANCES_TABLE_NAME_NOPREFIX;
+    Utf8PrintfString tableName(CHANGED_TABLES_TEMP_PREFIX "%s", m_instancesTableNameNoPrefix.c_str());
     return tableName;
     }
 
@@ -724,30 +746,29 @@ Utf8String ChangeSummary::GetInstancesTableName() const
 //---------------------------------------------------------------------------------------
 void ChangeSummary::CreateInstancesTable()
     {
-    BeAssert(!m_ecdb.TableExists(CHANGED_INSTANCES_TABLE_PREFIX CHANGED_INSTANCES_TABLE_NAME_NOPREFIX));
+    Utf8String tableName = GetInstancesTableName();
+    if (m_ecdb.TableExists(tableName.c_str()))
+        return;
 
-    DbResult result = m_ecdb.CreateTable(CHANGED_INSTANCES_TABLE_PREFIX CHANGED_INSTANCES_TABLE_NAME_NOPREFIX, 
+    DbResult result = m_ecdb.CreateTable(tableName.c_str(),
         "[ClassId] INTEGER not null, [InstanceId] INTEGER not null, [DbOpcode] INTEGER not null, [Indirect] INTEGER not null, PRIMARY KEY (ClassId, InstanceId)");
     BeAssert(result == BE_SQLITE_OK);
 
-    Utf8CP sqlIdx2 = "CREATE INDEX " CHANGED_INSTANCES_TABLE_PREFIX "idx_" CHANGED_INSTANCES_TABLE_NAME_NOPREFIX "_op ON [" CHANGED_INSTANCES_TABLE_NAME_NOPREFIX "](DbOpcode)";
-    result = m_ecdb.ExecuteSql(sqlIdx2);
-    BeAssert(result == BE_SQLITE_OK);
-
-    Utf8CP sqlIdx3 = "CREATE INDEX " CHANGED_INSTANCES_TABLE_PREFIX "idx_" CHANGED_INSTANCES_TABLE_NAME_NOPREFIX "_ind ON [" CHANGED_INSTANCES_TABLE_NAME_NOPREFIX "](Indirect)";
-    result = m_ecdb.ExecuteSql(sqlIdx3);
+    Utf8PrintfString sqlIdx("CREATE INDEX " CHANGED_TABLES_TEMP_PREFIX "idx_%s_op ON [%s](DbOpcode)", m_instancesTableNameNoPrefix.c_str(), m_instancesTableNameNoPrefix.c_str());
+    result = m_ecdb.ExecuteSql(sqlIdx.c_str());
     BeAssert(result == BE_SQLITE_OK);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummary::DestroyInstancesTable()
+void ChangeSummary::ClearInstancesTable()
     {
-    BeAssert(m_ecdb.TableExists(CHANGED_INSTANCES_TABLE_PREFIX CHANGED_INSTANCES_TABLE_NAME_NOPREFIX));
+    Utf8String tableName = GetInstancesTableName();
+    BeAssert(m_ecdb.TableExists(tableName.c_str()));
 
-    Utf8CP sql = "DROP TABLE " CHANGED_INSTANCES_TABLE_PREFIX CHANGED_INSTANCES_TABLE_NAME_NOPREFIX;
-    DbResult result = m_ecdb.ExecuteSql(sql);
+    Utf8PrintfString sqlDeleteAll("DELETE FROM %s", tableName.c_str());
+    DbResult result = m_ecdb.ExecuteSql(sqlDeleteAll.c_str());
     BeAssert(result == BE_SQLITE_OK);
     }
 
@@ -839,7 +860,7 @@ ChangeSummary::Instance ChangeSummary::SelectInInstancesTable(ECClassId classId,
     DbResult result = m_instancesTableSelect.Step();
     if (result == BE_SQLITE_ROW)
         {
-        ChangeSummary::Instance instance(m_ecdb, classId, instanceId, (DbOpcode) m_instancesTableSelect.GetValueInt(0), m_instancesTableSelect.GetValueInt(1));
+        ChangeSummary::Instance instance(*this, classId, instanceId, (DbOpcode) m_instancesTableSelect.GetValueInt(0), m_instancesTableSelect.GetValueInt(1));
         return instance;
         }
 
@@ -1054,7 +1075,7 @@ void ChangeSummary::Dump() const
 
         printf("%" PRId64 ";%" PRId64 ";%s;%s;%s\n", instanceId.GetValueUnchecked(), (int64_t) classId, className.c_str(), opCodeStr.c_str(), indirect > 0 ? "Yes" : "No");
 
-        for (ChangeSummary::ValueIterator::const_iterator const& vEntry : instance.MakeValueIterator(m_ecdb))
+        for (ChangeSummary::ValueIterator::const_iterator const& vEntry : instance.MakeValueIterator(*this))
             {
             Utf8CP accessString = vEntry.GetAccessString();
             DbDupValue oldValue = vEntry.GetOldValue();
@@ -1073,7 +1094,7 @@ void ChangeSummary::Dump() const
 //---------------------------------------------------------------------------------------
 Utf8String ChangeSummary::GetValuesTableName() const
     {
-    Utf8String tableName = CHANGED_VALUES_TABLE_PREFIX CHANGED_VALUES_TABLE_NAME_NOPREFIX;
+    Utf8PrintfString tableName(CHANGED_TABLES_TEMP_PREFIX "%s", m_valuesTableNameNoPrefix.c_str());
     return tableName;
     }
 
@@ -1082,27 +1103,31 @@ Utf8String ChangeSummary::GetValuesTableName() const
 //---------------------------------------------------------------------------------------
 void ChangeSummary::CreateValuesTable()
     {
-    BeAssert(!m_ecdb.TableExists(CHANGED_VALUES_TABLE_PREFIX CHANGED_VALUES_TABLE_NAME_NOPREFIX));
+    Utf8String tableName = GetValuesTableName();
+    if (m_ecdb.TableExists(tableName.c_str()))
+        return;
 
-    DbResult result = m_ecdb.CreateTable(CHANGED_VALUES_TABLE_PREFIX CHANGED_VALUES_TABLE_NAME_NOPREFIX,
-                                         "[Id] INTEGER NOT NULL, [ClassId] INTEGER NOT NULL, [InstanceId] INTEGER NOT NULL, [AccessString] TEXT not null, [OldValue] BLOB, [NewValue] BLOB,  "
-                                         "PRIMARY KEY ([Id]), FOREIGN KEY ([ClassId],[InstanceId]) REFERENCES " CHANGED_INSTANCES_TABLE_NAME_NOPREFIX " ON DELETE CASCADE ON UPDATE NO ACTION");
+    Utf8PrintfString sql("[Id] INTEGER NOT NULL, [ClassId] INTEGER NOT NULL, [InstanceId] INTEGER NOT NULL, [AccessString] TEXT not null, [OldValue] BLOB, [NewValue] BLOB,  "
+                         "PRIMARY KEY ([Id]), FOREIGN KEY ([ClassId],[InstanceId]) REFERENCES %s ON DELETE CASCADE ON UPDATE NO ACTION", m_instancesTableNameNoPrefix.c_str());
+
+    DbResult result = m_ecdb.CreateTable(tableName.c_str(), sql.c_str());
     BeAssert(result == BE_SQLITE_OK);
 
-    Utf8CP sqlIdx1 = "CREATE UNIQUE INDEX " CHANGED_VALUES_TABLE_PREFIX "idx_" CHANGED_VALUES_TABLE_NAME_NOPREFIX "_AccessStrUnique ON [" CHANGED_VALUES_TABLE_NAME_NOPREFIX "] (ClassId, InstanceId, AccessString)";
-    result = m_ecdb.ExecuteSql(sqlIdx1);
+    Utf8PrintfString sqlIdx("CREATE UNIQUE INDEX " CHANGED_TABLES_TEMP_PREFIX "idx_%s_AccessStrUnique ON [%s] (ClassId, InstanceId, AccessString)", m_valuesTableNameNoPrefix.c_str(), m_valuesTableNameNoPrefix.c_str());
+    result = m_ecdb.ExecuteSql(sqlIdx.c_str());
     BeAssert(result == BE_SQLITE_OK);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummary::DestroyValuesTable()
+void ChangeSummary::ClearValuesTable()
     {
-    BeAssert(m_ecdb.TableExists(CHANGED_VALUES_TABLE_PREFIX CHANGED_VALUES_TABLE_NAME_NOPREFIX));
+    Utf8String tableName = GetValuesTableName();
+    BeAssert(m_ecdb.TableExists(tableName.c_str()));
 
-    Utf8CP sql = "DROP TABLE " CHANGED_VALUES_TABLE_PREFIX CHANGED_VALUES_TABLE_NAME_NOPREFIX;
-    DbResult result = m_ecdb.ExecuteSql(sql);
+    Utf8PrintfString sqlDeleteAll("DELETE FROM %s", tableName.c_str());
+    DbResult result = m_ecdb.ExecuteSql(sqlDeleteAll.c_str());
     BeAssert(result == BE_SQLITE_OK);
     }
 
@@ -1137,7 +1162,7 @@ ChangeSummary::Instance& ChangeSummary::Instance::operator=(ChangeSummary::Insta
     m_instanceId = other.m_instanceId;
     m_dbOpcode = other.m_dbOpcode;
     m_indirect = other.m_indirect;
-    m_ecdb = other.m_ecdb;
+    m_changeSummary = other.m_changeSummary;
     return *this;
     }
 
@@ -1148,8 +1173,9 @@ void ChangeSummary::Instance::SetupValuesTableSelectStatement(Utf8CP accessStrin
     {
     if (!m_valuesTableSelect.IsValid())
         {
-        Utf8CP selectSql = "SELECT OldValue, NewValue FROM " CHANGED_VALUES_TABLE_PREFIX CHANGED_VALUES_TABLE_NAME_NOPREFIX " WHERE ClassId=? AND InstanceId=? AND AccessString=?";
-        m_valuesTableSelect = m_ecdb->GetCachedStatement(selectSql);
+        Utf8String tableName = m_changeSummary->GetValuesTableName();
+        Utf8PrintfString sql("SELECT OldValue, NewValue FROM %s WHERE ClassId=? AND InstanceId=? AND AccessString=?", tableName.c_str());
+        m_valuesTableSelect = m_changeSummary->GetDb().GetCachedStatement(sql.c_str());
         BeAssert(m_valuesTableSelect.IsValid());
 
         m_valuesTableSelect->BindInt64(1, (int64_t) m_classId);
@@ -1165,6 +1191,13 @@ void ChangeSummary::Instance::SetupValuesTableSelectStatement(Utf8CP accessStrin
 //---------------------------------------------------------------------------------------
 DbDupValue ChangeSummary::Instance::GetOldValue(Utf8CP accessString) const
     {
+	if (!IsValid())
+	   {
+       BeAssert(false);
+       DbDupValue invalidValue(nullptr);
+       return std::move(invalidValue);
+	   }
+	
     SetupValuesTableSelectStatement(accessString);
 
     DbResult result = m_valuesTableSelect->Step();
@@ -1217,7 +1250,7 @@ ChangeSummary::Instance ChangeSummary::InstanceIterator::Entry::GetInstance() co
     DbOpcode dbOpcode = (DbOpcode) m_sql->GetValueInt(2);
     int indirect = m_sql->GetValueInt(3);
 
-    ChangeSummary::Instance instance(m_ecdb, classId, instanceId, dbOpcode, indirect);
+    ChangeSummary::Instance instance(m_changeSummary, classId, instanceId, dbOpcode, indirect);
     return instance;
     }
 
@@ -1228,7 +1261,9 @@ ChangeSummary::InstanceIterator::const_iterator ChangeSummary::InstanceIterator:
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = MakeSqlString("SELECT ClassId,InstanceId,DbOpcode,Indirect FROM " CHANGED_INSTANCES_TABLE_PREFIX CHANGED_INSTANCES_TABLE_NAME_NOPREFIX);
+        Utf8String tableName = m_changeSummary.GetInstancesTableName();
+        Utf8PrintfString sql("SELECT ClassId,InstanceId,DbOpcode,Indirect FROM %s", tableName.c_str());
+        Utf8String sqlString = MakeSqlString(sql.c_str());
         m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         m_params.Bind(*m_stmt);
         }
@@ -1237,7 +1272,7 @@ ChangeSummary::InstanceIterator::const_iterator ChangeSummary::InstanceIterator:
         m_stmt->Reset();
         }
 
-    return Entry(m_ecdb, m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    return Entry(m_changeSummary.GetDb(), m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1245,7 +1280,9 @@ ChangeSummary::InstanceIterator::const_iterator ChangeSummary::InstanceIterator:
 //---------------------------------------------------------------------------------------
 int ChangeSummary::InstanceIterator::QueryCount() const
     {
-    Utf8String sqlString = MakeSqlString("SELECT COUNT(*) FROM " CHANGED_INSTANCES_TABLE_PREFIX CHANGED_INSTANCES_TABLE_NAME_NOPREFIX);
+    Utf8String tableName = m_changeSummary.GetInstancesTableName();
+    Utf8PrintfString sql("SELECT COUNT(*) FROM %s", tableName.c_str());
+    Utf8String sqlString = MakeSqlString(sql.c_str());
 
     CachedStatementPtr stmt;
     m_db->GetCachedStatement(stmt, sqlString.c_str());
@@ -1261,8 +1298,9 @@ ChangeSummary::ValueIterator::const_iterator ChangeSummary::ValueIterator::begin
     {
     if (!m_stmt.IsValid())
         {
-        Utf8CP sql = "SELECT AccessString,OldValue,NewValue FROM " CHANGED_VALUES_TABLE_PREFIX CHANGED_VALUES_TABLE_NAME_NOPREFIX " WHERE ClassId=? AND InstanceId=?";
-        Utf8String sqlString = MakeSqlString(sql, true);
+        Utf8String tableName = m_changeSummary.GetValuesTableName();
+        Utf8PrintfString sql("SELECT AccessString,OldValue,NewValue FROM %s WHERE ClassId=? AND InstanceId=?", tableName.c_str());
+        Utf8String sqlString = MakeSqlString(sql.c_str(), true);
         DbResult result = m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         BeAssert(BE_SQLITE_OK == result);
 
@@ -1282,7 +1320,9 @@ ChangeSummary::ValueIterator::const_iterator ChangeSummary::ValueIterator::begin
 //---------------------------------------------------------------------------------------
 int ChangeSummary::ValueIterator::QueryCount() const
     {
-    Utf8String sqlString = MakeSqlString("SELECT COUNT(*) FROM " CHANGED_VALUES_TABLE_PREFIX CHANGED_VALUES_TABLE_NAME_NOPREFIX " WHERE ClassId=? AND InstanceId=?");
+    Utf8String tableName = m_changeSummary.GetValuesTableName();
+    Utf8PrintfString sql("SELECT COUNT(*) FROM %s WHERE ClassId=? AND InstanceId=?", tableName.c_str());
+    Utf8String sqlString = MakeSqlString(sql.c_str());
 
     CachedStatementPtr stmt;
     m_db->GetCachedStatement(stmt, sqlString.c_str());
@@ -1337,9 +1377,10 @@ void ChangeSummary::QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& ch
         }
 
     Utf8String sql, whereClause;
+    Utf8String tableName = GetInstancesTableName();
     if (isPolymorphic)
         {
-        sql =
+        sql = Utf8PrintfString(
             " WITH RECURSIVE"
             "    DerivedClasses(ClassId) AS ("
             "        VALUES(:baseClassId)"
@@ -1347,13 +1388,12 @@ void ChangeSummary::QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& ch
             "        SELECT ec_BaseClass.ClassId FROM ec_BaseClass, DerivedClasses WHERE ec_BaseClass.BaseClassId=DerivedClasses.ClassId"
             "        )"
             " SELECT ClassId,InstanceId,DbOpcode,Indirect"
-            " FROM " CHANGED_INSTANCES_TABLE_PREFIX CHANGED_INSTANCES_TABLE_NAME_NOPREFIX;
+            " FROM %s", tableName.c_str());
         whereClause = " WHERE ClassId IN DerivedClasses";
         }
     else
         {
-        sql = "SELECT ClassId,InstanceId,DbOpcode,Indirect"
-                        " FROM " CHANGED_INSTANCES_TABLE_PREFIX CHANGED_INSTANCES_TABLE_NAME_NOPREFIX;
+        sql = Utf8PrintfString("SELECT ClassId,InstanceId,DbOpcode,Indirect FROM %s", tableName.c_str());
         }
 
     if (queryDbOpcodes != QueryDbOpcode::All)
@@ -1394,20 +1434,28 @@ void ChangeSummary::QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& ch
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummary::RegisterSqlFunctions()
+// static
+void ChangeSummary::RegisterSqlFunctions(ECDbR ecdb)
     {
-    m_isChangedInstanceSqlFunction = new IsChangedInstanceSqlFunction(*this);
-    int status = m_ecdb.AddFunction(*m_isChangedInstanceSqlFunction);
+    if (s_isChangedInstanceSqlFunction)
+        return;
+
+    s_isChangedInstanceSqlFunction = new IsChangedInstanceSqlFunction();
+    int status = ecdb.AddFunction(*s_isChangedInstanceSqlFunction);
     BeAssert(status == 0);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
+// static
 void ChangeSummary::UnregisterSqlFunctions()
     {
-    delete m_isChangedInstanceSqlFunction;
-    m_isChangedInstanceSqlFunction = nullptr;
+    if (!s_isChangedInstanceSqlFunction)
+        return;
+
+    delete s_isChangedInstanceSqlFunction;
+    s_isChangedInstanceSqlFunction = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1419,14 +1467,15 @@ void ChangeSummary::UnregisterSqlFunctions()
 //---------------------------------------------------------------------------------------
 void IsChangedInstanceSqlFunction::_ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args)
     {
-    if (nArgs != 2 || args[0].IsNull() || args[1].IsNull())
+    if (nArgs != 3 || args[0].IsNull() || args[1].IsNull() || args[2].IsNull())
         {
-        ctx.SetResultError("Arguments to IsChangedInstance must be (ECClassId, ECInstanceId) ", -1);
+        ctx.SetResultError("Arguments to IsChangedInstance must be (changeSummary, ECClassId, ECInstanceId) ", -1);
         return;
         }
 
-    ECClassId classId = (ECClassId) args[0].GetValueInt64();
-    ECInstanceId instanceId = args[1].GetValueId<ECInstanceId>();
+    ChangeSummaryCP changeSummary = (ChangeSummaryCP) args[0].GetValueInt64();
+    ECClassId classId = (ECClassId) args[1].GetValueInt64();
+    ECInstanceId instanceId = args[2].GetValueId<ECInstanceId>();
 
     /*
      * TODO: Instead of returning a bool we can return a change id (need to set one up)
@@ -1434,8 +1483,9 @@ void IsChangedInstanceSqlFunction::_ComputeScalar(ScalarFunction::Context& ctx, 
      * avoid some of these custom functions. This needs more investigation if and when 
      * the use cases demand it. 
      */
-    int res = m_changeSummary.HasInstance(classId, instanceId) ? 1 : 0;
+    int res = changeSummary->HasInstance(classId, instanceId) ? 1 : 0;
     ctx.SetResultInt(res);
     }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

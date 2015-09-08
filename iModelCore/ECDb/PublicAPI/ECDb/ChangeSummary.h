@@ -11,9 +11,9 @@
 #include <ECDb/ECInstanceId.h>
 #include <BeSQLite/ChangeSet.h>
 
-BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+ECDB_TYPEDEFS(ChangeSummary);
 
-struct ChangeSummary;
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 //! @private internal use only
@@ -28,11 +28,9 @@ struct ChangeSummary;
 struct IsChangedInstanceSqlFunction : ScalarFunction
 {
 private:
-    ChangeSummary const& m_changeSummary;
     virtual void _ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args) override;
 public:
-    IsChangedInstanceSqlFunction(ChangeSummary const& changeSummary)
-        : m_changeSummary(changeSummary), ScalarFunction("IsChangedInstance", 2, DbValueType::IntegerVal) {}
+    IsChangedInstanceSqlFunction() : ScalarFunction("IsChangedInstance", 3, DbValueType::IntegerVal) {}
     ~IsChangedInstanceSqlFunction() {}
 };
 
@@ -184,7 +182,7 @@ struct ChangeSummary : NonCopyableClass
     struct Instance
     {
     private:
-        ECDbCP m_ecdb = nullptr;
+        ChangeSummaryCP m_changeSummary = nullptr;
         ECN::ECClassId m_classId = -1;
         ECInstanceId m_instanceId;
         DbOpcode m_dbOpcode;
@@ -198,8 +196,8 @@ struct ChangeSummary : NonCopyableClass
         Instance() {}
 
         //! Constructor
-        Instance(ECDbCR ecdb, ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect) :
-            m_ecdb(&ecdb), m_classId(classId), m_instanceId(instanceId), m_dbOpcode(dbOpcode), m_indirect(indirect)
+        Instance(ChangeSummaryCR changeSummary, ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect) :
+            m_changeSummary(&changeSummary), m_classId(classId), m_instanceId(instanceId), m_dbOpcode(dbOpcode), m_indirect(indirect)
             {}
 
         //! Copy constructor
@@ -233,25 +231,25 @@ struct ChangeSummary : NonCopyableClass
         ECDB_EXPORT DbDupValue GetNewValue(Utf8CP accessString) const;
                 
         //! Make an iterator over the changed values in a changed instance.
-        ValueIterator MakeValueIterator(ECDbR ecdb) const { return ChangeSummary::ValueIterator(ecdb, m_classId, m_instanceId); }
+        ValueIterator MakeValueIterator(ChangeSummaryCR changeSummary) const { return ChangeSummary::ValueIterator(changeSummary, m_classId, m_instanceId); }
     };
 
     //! An iterator over changed instances in a ChangeSummary
     struct InstanceIterator : BeSQLite::DbTableIterator
     {
     private:
-        ECDbCR m_ecdb;
-
+        ChangeSummaryCR m_changeSummary;
+        
     public:
-        explicit InstanceIterator(ECDbCR ecdb) : DbTableIterator((BeSQLite::DbCR) ecdb), m_ecdb(ecdb) {}
+        explicit InstanceIterator(ChangeSummaryCR changeSummary) : DbTableIterator((BeSQLite::DbCR) changeSummary.GetDb()), m_changeSummary(changeSummary) {}
 
         //! An entry in the table.
         struct Entry : DbTableIterator::Entry, std::iterator < std::input_iterator_tag, Entry const >
             {
             private:
                 friend struct InstanceIterator;
-                ECDbCR m_ecdb;
-                Entry(ECDbCR ecdb, BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid), m_ecdb(ecdb) {}
+                ChangeSummaryCR m_changeSummary;
+                Entry(ChangeSummaryCR changeSummary, BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid), m_changeSummary(changeSummary) {}
 
             public:
                 //! Get the class id of the current change
@@ -275,7 +273,7 @@ struct ChangeSummary : NonCopyableClass
         typedef Entry const_iterator;
         typedef Entry iterator;
         ECDB_EXPORT const_iterator begin() const;
-        const_iterator end() const { return Entry(m_ecdb, m_stmt.get(), false); }
+        const_iterator end() const { return Entry(m_changeSummary, m_stmt.get(), false); }
         ECDB_EXPORT int QueryCount() const;
     }; // InstanceIterator
 
@@ -283,12 +281,14 @@ struct ChangeSummary : NonCopyableClass
     struct ValueIterator : BeSQLite::DbTableIterator
     {
     private:
+        ChangeSummaryCR m_changeSummary;
         ECN::ECClassId m_classId;
         ECInstanceId m_instanceId;
 
     public:
-        explicit ValueIterator(BeSQLite::DbCR db, ECN::ECClassId classId, ECInstanceId instanceId)
-            : DbTableIterator(db), m_classId(classId), m_instanceId(instanceId) {}
+        explicit ValueIterator(ChangeSummaryCR changeSummary, ECN::ECClassId classId, ECInstanceId instanceId)
+            : DbTableIterator(changeSummary.GetDb()), m_changeSummary (changeSummary), m_classId(classId), m_instanceId(instanceId)
+            {}
 
         //! An entry in the table of values in a changed instance.
         struct Entry : DbTableIterator::Entry, std::iterator < std::input_iterator_tag, Entry const >
@@ -332,17 +332,22 @@ private:
 
     mutable TableMapByName m_tableMapByName;
 
+    Utf8String m_instancesTableNameNoPrefix;
+    Utf8String m_valuesTableNameNoPrefix;
+
     mutable Statement m_instancesTableInsert;
     mutable Statement m_instancesTableUpdate;
     mutable Statement m_instancesTableSelect;
 
     mutable Statement m_valuesTableInsert;
 
-    IsChangedInstanceSqlFunction* m_isChangedInstanceSqlFunction = nullptr;
+    static int s_count;
+    static IsChangedInstanceSqlFunction* s_isChangedInstanceSqlFunction;
     
+    void SetupChangedTableNames();
     void Initialize();
-    void RegisterSqlFunctions();
-    void UnregisterSqlFunctions();
+    static void RegisterSqlFunctions(ECDbR ecdb);
+    static void UnregisterSqlFunctions();
 
     ChangeSummary::TableMapCP GetTableMap(Utf8CP tableName) const;
     void AddTableToMap(Utf8CP tableName) const;
@@ -369,7 +374,7 @@ private:
     bool GetStructArrayParentFromChange(ECN::ECClassId& parentClassId, ECInstanceId& parentInstanceId, SqlChange const& sqlChange, ClassMap const& classMap, ECInstanceId instanceId);
 
     void CreateInstancesTable();
-    void DestroyInstancesTable();
+    void ClearInstancesTable();
     void PrepareInstancesTableStatements();
     void FinalizeInstancesTableStatements();
     void RecordInInstancesTable(ChangeSummary::Instance const& changeInstance);
@@ -381,7 +386,7 @@ private:
     Instance SelectInInstancesTable(ECN::ECClassId classId, ECInstanceId instanceId) const;
 
     void CreateValuesTable();
-    void DestroyValuesTable();
+    void ClearValuesTable();
     void PrepareValuesTableStatements();
     void FinalizeValuesTableStatements();
     void RecordInValuesTable(ChangeSummary::Instance const& changeInstance, SqlChange const& sqlChange, ChangeSummary::ClassMap const& classMap);
@@ -392,7 +397,7 @@ private:
     Utf8String ConstructWhereInClause(int queryDbOpcodes) const;
 public:
     //! Construct a ChangeSummary from a BeSQLite ChangeSet
-    ChangeSummary(ECDbR ecdb) : m_ecdb(ecdb) {}
+    ECDB_EXPORT ChangeSummary(ECDbR ecdb);
 
     //! Destructor
     ECDB_EXPORT ~ChangeSummary();
@@ -417,7 +422,7 @@ public:
 
     //! Make an iterator over the changed instances
     //! Use @ref FromSqlChangeSet to populate the ChangeSummary
-    InstanceIterator MakeInstanceIterator() const { return InstanceIterator(m_ecdb); }
+    InstanceIterator MakeInstanceIterator() const { return InstanceIterator(*this); }
 
     //! Check if the change summary includes a specific instance
     ECDB_EXPORT bool HasInstance(ECN::ECClassId classId, ECInstanceId instanceId) const;
