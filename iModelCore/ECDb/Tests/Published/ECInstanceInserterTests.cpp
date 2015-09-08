@@ -239,11 +239,11 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
 
         testInstance.SetInstanceId ("blabla");
         status = inserter.Insert (generatedKey, testInstance, false);
-        ASSERT_EQ (ERROR, status) << testScenario << ": Inserting instance with instance id which is not of type ECInstanceId is expected to fail if auto generation is disabled";
+        ASSERT_EQ (ERROR, status) << testScenario << ": Inserting instance with invalid instance id is expected to fail if auto generation is disabled";
 
-        testInstance.SetInstanceId ("-1111");
+        testInstance.SetInstanceId ("0");
         status = inserter.Insert (generatedKey, testInstance, false);
-        ASSERT_EQ (ERROR, status) << testScenario << ": Inserting instance with instance id which is not of type ECInstanceId is expected to fail if auto generation is disabled";
+        ASSERT_EQ (ERROR, status) << testScenario << ": Inserting instance with invalid instance id is expected to fail if auto generation is disabled";
 
         //now pass a valid instance id
         ECInstanceKey userProvidedKey;

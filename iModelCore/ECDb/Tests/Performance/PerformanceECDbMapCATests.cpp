@@ -14,6 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
     {
+    int instanceId = 1;
     //printf("Start profiling and press key tp continue..."); getchar();
     StopWatch timer(true);
     for (auto const& kvPair : m_sqlTestItems)
@@ -25,7 +26,7 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
         ASSERT_EQ (ECSqlStatus::Success, stat) << "preparation failed for " << selectSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, (int) (i+1)));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, instanceId++));
             ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step()) << "step failed for " << selectSql;
             stmt.Reset ();
             stmt.ClearBindings ();
@@ -42,6 +43,7 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
     {
+    int instanceId = 1;
     //printf("Start profiling and press key tp continue..."); getchar();
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
@@ -53,7 +55,7 @@ void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation Failed for " << deleteSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, (int) (i + 1)));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, instanceId++));
             ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "step failed for " << deleteSql;
             stmt.Reset ();
             stmt.ClearBindings ();
@@ -104,6 +106,7 @@ void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
     {
+    int instanceId = 1;
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
         {
@@ -116,7 +119,7 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation failed for " << insertSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, (int64_t) (i + 1)));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, (int64_t) (instanceId++)));
 
             for (int parameterIndex = 2; parameterIndex <= (propertyCount+1); parameterIndex++)
                 {
@@ -258,7 +261,7 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSub
     EXPECT_TRUE (customAttribute != nullptr);
     ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Options", ECValue ("SharedColumnsForSubclasses")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorAppliesToSubclassesphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (baseClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
 
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));

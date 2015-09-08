@@ -753,7 +753,7 @@ ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Ut
         }
 
 
-    auto newTableDef = new ECDbSqlTable (existingTableName, *this, GetManagerR ().GetIdGenerator ().NextTableId (), PersistenceType::Persisted, OwnerType::ExistingTable);
+    ECDbSqlTable* newTableDef = new ECDbSqlTable(existingTableName, *this, GetManagerR().GetIdGenerator().NextTableId(), PersistenceType::Persisted, OwnerType::ExistingTable);
     
     Statement stmt;
     if (stmt.Prepare (ecdb, SqlPrintfString ("PRAGMA table_info('%s')", existingTableName)) != BE_SQLITE_OK)
@@ -764,42 +764,36 @@ ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Ut
 
     while (stmt.Step () == BE_SQLITE_ROW)
         {
-        auto name = stmt.GetValueText (1);
+        Utf8CP name = stmt.GetValueText (1);
         Utf8String type = stmt.GetValueText (2);
-        auto notnull = stmt.GetValueInt (3) == 1;
-        auto dflt_value = stmt.GetValueText (4);
-        auto pk = stmt.GetValueInt (5) == 1;
-        type.ToLower ();
-        type.Trim ();
+        type.ToLower();
+        type.Trim();
+        const bool notnull = stmt.GetValueInt(3) == 1;
+        Utf8CP dflt_value = stmt.GetValueText(4);
+        const bool isPk = stmt.GetValueInt (5) == 1;
 
         ECDbSqlColumn::Type ecType = ECDbSqlColumn::Type::Any;
-        //following is somewhat base on sqlite funtion sqlite3AffinityType
-        if (type.rfind ("int64") != Utf8String::npos)
+        if (type.rfind ("int64") != Utf8String::npos ||
+            type.rfind ("int") != Utf8String::npos ||
+            type.rfind("integer") != Utf8String::npos)
             ecType = ECDbSqlColumn::Type::Long;
-        else if (type.rfind ("int") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Integer;
-        else if (type.rfind ("char") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::String;
-        else if (type.rfind ("clob") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::String;
-        else if (type.rfind ("text") != Utf8String::npos)
+        else if (type.rfind("char") != Utf8String::npos ||
+                 type.rfind("clob") != Utf8String::npos ||
+                 type.rfind("text") != Utf8String::npos)
             ecType = ECDbSqlColumn::Type::String;
         else if (type.rfind ("blob") != Utf8String::npos)
             ecType = ECDbSqlColumn::Type::Binary;
-        else if (type.rfind ("real") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Double;
-        else if (type.rfind ("floa") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Double;
-        else if (type.rfind ("doub") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::Double;
-        else if (type.rfind ("date") != Utf8String::npos)
-            ecType = ECDbSqlColumn::Type::DateTime;
-        else if (type.rfind ("time") != Utf8String::npos)
+        else if (type.rfind("real") != Utf8String::npos ||
+                 type.rfind("floa") != Utf8String::npos ||
+                 type.rfind("doub") != Utf8String::npos)
+                 ecType = ECDbSqlColumn::Type::Double;
+        else if (type.rfind ("date") != Utf8String::npos ||
+                 type.rfind("timestamp") != Utf8String::npos)
             ecType = ECDbSqlColumn::Type::DateTime;
         else if (type.rfind ("bool") != Utf8String::npos)
             ecType = ECDbSqlColumn::Type::Boolean;
 
-        auto column = newTableDef->CreateColumn (name, ecType);
+        ECDbSqlColumn* column = newTableDef->CreateColumn (name, ecType);
         if (column == nullptr)
             {
             BeAssert (false && "Failed to create column");
@@ -810,7 +804,7 @@ ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Ut
             column->GetConstraintR ().SetDefaultExpression (dflt_value);
 
         column->GetConstraintR ().SetIsNotNull (notnull);
-        if (pk)
+        if (isPk)
             newTableDef->GetPrimaryKeyConstraint ()->Add (name);
         }
     
@@ -1905,6 +1899,21 @@ std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
+std::map<ECDbKnownColumns, Utf8CP> ECDbSqlColumn::m_knownColumnNames =
+    { 
+        { ECDbKnownColumns::ECInstanceId, "ECInstanceId" },
+        { ECDbKnownColumns::ECClassId, "ECClassId" },
+        { ECDbKnownColumns::ECArrayIndex, "ECArrayIndex" },
+        { ECDbKnownColumns::ECPropertyPathId, "ECPropertyPathId" },
+        { ECDbKnownColumns::ParentECInstanceId, "ParentECInstanceId" },
+        { ECDbKnownColumns::SourceECClassId, "SourceECClassId" },
+        { ECDbKnownColumns::SourceECInstanceId, "SourceECInstanceId" },
+        { ECDbKnownColumns::TargetECClassId, "TargetECClassId" },
+        { ECDbKnownColumns::TargetECInstanceId, "TargetECInstanceId" }
+    };
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
 BentleyStatus DependentPropertyCollection::Add (ECClassId ecClassId, Utf8CP accessString)
     {
     //if (GetColumnR ().GetTableR ().GetEditHandleR ().AssertNotInEditMode ())
@@ -2480,7 +2489,7 @@ DbResult ECDbSqlPersistence::ReadColumn (Statement& stmt, ECDbSqlTable& o , std:
     auto constraintDefault = !stmt.IsColumnNull (7) ? stmt.GetValueText (7) : nullptr;
     auto constraintCollate = static_cast<ECDbSqlColumn::Constraint::Collation>(stmt.GetValueInt (8));
     auto primaryKey_Ordianal = stmt.IsColumnNull (9)? -1 : stmt.GetValueInt (9);
-    auto knownColumnId = Enum::ToEnum<ECDbKnownColumns>(stmt.GetValueInt (10));
+    auto knownColumnId = Enum::FromInt<ECDbKnownColumns>(stmt.GetValueInt (10));
 
     ECDbSqlColumn* n = o.CreateColumn (name, type, knownColumnId, persistenceType);
     if (!n)

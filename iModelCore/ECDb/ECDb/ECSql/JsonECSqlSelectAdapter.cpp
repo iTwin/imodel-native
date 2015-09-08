@@ -956,7 +956,7 @@ void JsonECSqlSelectAdapter::JsonFromInstanceLabel(JsonValueR jsonValue, ECClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool JsonECSqlSelectAdapter::JsonFromInstanceId(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
     {
-    ECInstanceId ecInstanceId = ecsqlValue.GetId();
+    ECInstanceId ecInstanceId = ecsqlValue.GetId<ECInstanceId>();
     //TODO: If ECInstanceId is invalid, shouldn't something else than 0 be returned?
     const int64_t ecInstanceIdVal = ecInstanceId.IsValid() ? ecInstanceId.GetValue() : 0LL;
     jsonValue = BeJsonUtilities::StringValueFromInt64(ecInstanceIdVal); // Javascript has issues with holding Int64 values!!!

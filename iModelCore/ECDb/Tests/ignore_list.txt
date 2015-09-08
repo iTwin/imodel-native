@@ -7,10 +7,15 @@ InstanceCRUDTests.* 	# No need to run with the build, used by testing after buil
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-#ECSchema Update not working in 06 yet.
+
+# TFS 178486 will address these (Affan): (ECSchema Update not working in 06 yet.)
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
 ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties
 ECDbSchemas.UpdatingExistingECSchema
-ECDbSchemas.Verify_TFS_14829_A # Affan says this must be ignored until we implement support for ecschema upgrade.
+ECDbSchemas.Verify_TFS_14829_A
+ECSqlSelectTests.SelectQueriesOnDbGeneratedDuringBuild #notified Krischan
+
+#TFS268976 will address this (Affan)
+SchemaImportTestFixture.MismatchDataTypesInExistingTable

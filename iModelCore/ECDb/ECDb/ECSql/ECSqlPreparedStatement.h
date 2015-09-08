@@ -114,7 +114,7 @@ public:
     ECSqlField::Collection const& GetFields () const { return m_fields; }
     void AddField (std::unique_ptr<ECSqlField> field);
 
-    DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR ();
+    DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR() { return m_dynamicSelectClauseECClass; }
     };
 
 //=======================================================================================
