@@ -42,8 +42,8 @@ static void DPoint2dToJson (JsonValueR outValue, DPoint2dCR point)
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
 RasterFileProperties::RasterFileProperties()
+    :m_fileId("")
     {
-    m_fileMonikerPtr = FileMoniker::Create("", "");
     }
 
 //----------------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ static void DRange2dToJson (JsonValueR outValue, DRange2dCR range)
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::ToJson(Json::Value& v) const
     {
-    m_fileMonikerPtr->ToJson(v["fileMoniker"]);
+    v["fileId"] = m_fileId.c_str();
     DRange2dToJson(v["bbox"], m_boundingBox);
     }
 
@@ -78,7 +78,7 @@ void RasterFileProperties::ToJson(Json::Value& v) const
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::FromJson(Json::Value const& v)
     {
-    m_fileMonikerPtr->FromJson(v["fileMoniker"]);
+    m_fileId = v["fileId"].asString();
     DRange2dFromJson(m_boundingBox, v["bbox"]);
     }
 
@@ -89,25 +89,21 @@ void RasterFileProperties::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, FileMonikerPtr fileMoniker)
+DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, Utf8StringCR fileId)
     {
     DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_RASTER_SCHEMA_NAME, RASTER_CLASSNAME_RasterFileModel));
     BeAssert(classId.IsValid());
 
     // Find resolved file name for the raster
-    BeFileName basePath(db.GetDbFileName());
-    Utf8String basePathUtf8(basePath);
-    Utf8String resolvedName;
-    fileMoniker->ResolveFileName(resolvedName, basePathUtf8);
-
-    // Create model name (just use the file name without extension)
-    BeFileName fileName(resolvedName);
-    WString modelName ( fileName.GetFileNameWithoutExtension().c_str() );
-    Utf8String utf8Name(modelName);
-
-    // Set RasterFileProperties
-    RasterFileProperties props;
-    props.m_fileMonikerPtr = fileMoniker;
+    BeFileName fileName;
+    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, fileId, db);
+    if (status != SUCCESS)
+        {
+        // Return an invalid model id.
+        return DgnModelId();
+        }
+    Utf8String resolvedName(fileName);
+    Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
 
     // Open raster
     RasterFilePtr rasterFilePtr = RasterFile::Create(resolvedName);
@@ -124,10 +120,13 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, FileMonikerP
         // Can't get raster extent. Return invalid model.
         return DgnModelId();
         }
+
+    RasterFileProperties props;
+    props.m_fileId = fileId;
     props.m_boundingBox = rasterRange;
 
     // Create model in DgnDb
-    RasterFileModelPtr model = new RasterFileModel(DgnModel::CreateParams(db, classId, utf8Name.c_str()), props);
+    RasterFileModelPtr model = new RasterFileModel(DgnModel::CreateParams(db, classId, modelName.c_str()), props);
     model->Insert();
     return model->GetModelId();
     }
@@ -248,17 +247,20 @@ BentleyStatus RasterFileModel::_LoadQuadTree()
     m_rasterTreeP = nullptr;
 
     // Resolve raster name
-    BeFileName basePath(GetDgnDb().GetDbFileName());
-    Utf8String basePathUtf8(basePath);
-    Utf8String resolvedName;
-    m_fileProperties.m_fileMonikerPtr->ResolveFileName(resolvedName, basePathUtf8);
+    BeFileName fileName;
+    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileName(fileName, m_fileProperties.m_fileId, GetDgnDb());
+    if (status != SUCCESS)
+        {
+        return ERROR;
+        }
+    Utf8String resolvedName(fileName);
 
     // Create RasterQuadTree
     RasterSourcePtr pSource = RasterFileSource::Create(resolvedName);
     if(pSource.IsValid())
         m_rasterTreeP = RasterQuadTree::Create(*pSource, GetDgnDb());
 
-    return m_rasterTreeP.IsValid() ? BSISUCCESS : BSIERROR;
+    return m_rasterTreeP.IsValid() ? SUCCESS : ERROR;
     }
 
 //----------------------------------------------------------------------------------------
@@ -285,76 +287,4 @@ void RasterFileModel::_FromPropertiesJson(Json::Value const& v)
     {
     T_Super::_FromPropertiesJson(v);
     m_fileProperties.FromJson(v);
-    }
-
-
-
-// POINTCLOUD_WIP_GR06 - Temporary location for FileMoniker (until we decide how to handle local file names)
-
-//----------------------------------------------------------------------------------------
-//------------------------------------  FileMoniker  -------------------------------------
-//----------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-FileMoniker::FileMoniker (Utf8StringCR fullPath, Utf8StringCR basePath)
-    {
-    m_fullPath = fullPath;
-    m_basePath = basePath;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-FileMonikerPtr FileMoniker::Create (Utf8StringCR fullPath, Utf8StringCR basePath)
-    {
-    return new FileMoniker(fullPath, basePath);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-BentleyStatus FileMoniker::ResolveFileName (Utf8StringR resolvedName, Utf8StringCR basePath) const
-    {
-    BeFileName fullPath(m_fullPath);
-    BeFileName basePathWhenCreated(m_basePath);
-    WString relativePath;
-
-    // Find relative path according to the creation paths.
-    // E.g. if fullPath == "d:\dir1\dir2\file.jpg" and basePathWhenCreated == "d:\dir1\"
-    //      then relativePath will be equal to "dir2\file.jpg"
-    BeFileName::FindRelativePath(relativePath, fullPath.c_str(), basePathWhenCreated.c_str());
-
-    // Find full path relatively to current base path. Current base path is a directory and may contain a file name (probably the name of the dgndb).
-    // E.g. if relativePath == "dir2\file.jpg" and currentBasePath == "d:\dir5\dir6\myDgnDb.dgndb"
-    //      then relativePath will be equal to "d:\dir5\dir6\dir2\file.jpg"
-    WString resolvedNameW;
-    BeFileName currentBasePath(basePath);
-    BentleyStatus status = BeFileName::ResolveRelativePath(resolvedNameW, relativePath.c_str(), currentBasePath.c_str());
-    if (status == SUCCESS)
-        {
-        Utf8String resolvedNameUtf8(resolvedNameW);
-        resolvedName = resolvedNameUtf8;
-        }
-
-    return status;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-void FileMoniker::ToJson (JsonValueR outValue) const
-    {
-    outValue["fullPath"] = m_fullPath.c_str();
-    outValue["basePath"] = m_basePath.c_str();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-void FileMoniker::FromJson (JsonValueCR inValue)
-    {
-    m_fullPath = inValue["fullPath"].asString();
-    m_basePath = inValue["basePath"].asString();
     }

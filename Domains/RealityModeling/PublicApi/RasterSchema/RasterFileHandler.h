@@ -12,10 +12,6 @@
 #include <RasterSchema/RasterHandler.h>
 #include <RasterSchema/RasterSchemaTypes.h>
 
-// POINTCLOUD_WIP_GR06 - Temporary location for FileMoniker (until we decide how to handle local file names)
-RASTERSCHEMA_TYPEDEFS(FileMoniker);
-RASTERSCHEMA_REF_COUNTED_PTR(FileMoniker);
-
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 
 struct RasterFileModelHandler;
@@ -25,8 +21,8 @@ struct RasterFileModelHandler;
 //=======================================================================================
 struct RasterFileProperties
     {
-    FileMonikerPtr              m_fileMonikerPtr;
-    DRange2d                    m_boundingBox;   //! Bounding box corners (minx,miny,maxx,maxy) in 'CoordinateSystem' unit.
+    Utf8String                  m_fileId;           //! File id provided by the application. Used to resolve the local file name.
+    DRange2d                    m_boundingBox;      //! Bounding box corners (minx,miny,maxx,maxy) in 'CoordinateSystem' unit.
 
                                 RasterFileProperties();
     void                        ToJson(Json::Value&) const;
@@ -77,30 +73,7 @@ private:
                         static  ReprojectStatus GetRasterExtentInUors(DRange2d &range, RasterFileCR rasterFile, Dgn::DgnDbCR db);
 
 public:
-    RASTERSCHEMA_EXPORT static  Dgn::DgnModelId CreateRasterFileModel(Dgn::DgnDbR db, FileMonikerPtr fileMoniker);
-};
-
-//=======================================================================================
-// POINTCLOUD_WIP_GR06 - Temporary location for FileMoniker (until we decide how to handle local file names)
-// @bsiclass                                                    Eric.Paquet     08/2015
-//=======================================================================================
-struct FileMoniker : RefCountedBase
-{
-private:
-    DEFINE_T_SUPER(RefCountedBase)
-
-protected:
-    Utf8String      m_fullPath;
-    Utf8String      m_basePath;
-
-    FileMoniker (Utf8StringCR fullPath, Utf8StringCR basePath);
-    ~FileMoniker () {};
-
-public:
-    RASTERSCHEMA_EXPORT static  FileMonikerPtr      Create (Utf8StringCR fullPath, Utf8StringCR basePath);
-    RASTERSCHEMA_EXPORT         BentleyStatus       ResolveFileName (Utf8StringR resolvedName, Utf8StringCR basePath) const;
-    RASTERSCHEMA_EXPORT         void                ToJson(JsonValueR outValue) const;
-    RASTERSCHEMA_EXPORT         void                FromJson(JsonValueCR inValue);
+    RASTERSCHEMA_EXPORT static  Dgn::DgnModelId CreateRasterFileModel(Dgn::DgnDbR db, Utf8StringCR fileId);
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE
