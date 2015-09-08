@@ -124,7 +124,7 @@ TEST_F (ValueAccessorTests, GetAccessString)
 //This Vancouver change to use a ClassLayout/PropertyLayout scheme doesn’t lend itself to
 //anyone just modifying a class on the fly as might have been easily done in the managed
 //heavyweight ECInstance.
-TEST_F (ValueAccessorTests, DISABLED_GetDefaultStandaloneEnablerBug)
+TEST_F (ValueAccessorTests, GetDefaultStandaloneEnablerBug)
     {
 #ifdef WHEN_ITS_NO_LONGER_DISABLED
     // The test doesn't compiled. But it's disabled, so I'm just commenting it out...

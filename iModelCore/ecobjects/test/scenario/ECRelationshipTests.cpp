@@ -271,7 +271,7 @@ TEST_F(ECRelationshipTests, SourceDestOrderIDs)
 // CGM: This fails on graphite because line #8 (the ArrayProperty) has an offset of 49, not 62.  I don't know
 // where these numbers come from, but since hardcoded expected values in tests can change, I am disabling this
 // until someone can investigate
-TEST_F(ECRelationshipTests, DISABLED_DumpToString) 
+TEST_F(ECRelationshipTests, DumpToString) 
     {
     CreateTestSchema();
     ECRelationshipClassCP relClass = m_schema->GetClassP ("ALikesB")->GetRelationshipClassCP();

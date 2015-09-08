@@ -76,7 +76,7 @@ TEST_F(ValueTests, ECValueToString)
 * @bsimethod                                                 Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 //Read only flag is not honored
-TEST_F(ValueTests, DISABLED_ValueReadOnly)
+TEST_F(ValueTests, ValueReadOnly)
     {
     ECSchemaPtr schema;
     ECClassP base;
