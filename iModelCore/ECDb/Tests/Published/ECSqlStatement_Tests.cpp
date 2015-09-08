@@ -1498,16 +1498,10 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindECInstanceId)
         {
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ (ECSqlStatus::Success, stat);
 
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt (1, (int) psaKey.GetECInstanceId ().GetValue ()));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt (2, (int) pKey.GetECInstanceId ().GetValue ()));
-
-        ECInstanceKey key;
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
-
-        ASSERT_EQ (pKey.GetECInstanceId ().GetValue (), key.GetECInstanceId ().GetValue ());
-        ecdb.AbandonChanges ();
+        ASSERT_EQ(ECSqlStatus::UserError, statement.BindInt(1, (int) psaKey.GetECInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
+        ASSERT_EQ(ECSqlStatus::UserError, statement.BindInt(2, (int) pKey.GetECInstanceId().GetValue())) << "Ids cannot be cast to int without potentially losing information. So BindInt cannot be used for ids";
         }
 
         {
@@ -1568,14 +1562,11 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindSourceAndTargetECInstanceId)
         }
 
         {
-        statement.Reset ();
-        statement.ClearBindings ();
+        statement.Reset();
+        statement.ClearBindings();
 
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt (1, 1111));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt (2, 2222));
-
-        ECInstanceKey key;
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+        ASSERT_EQ(ECSqlStatus::UserError, statement.BindInt(1, 1111)) << "Ids cannot be cast to int without potentially losing information. So BindInt is not supported for ids";
+        ASSERT_EQ(ECSqlStatus::UserError, statement.BindInt(2, 2222)) << "Ids cannot be cast to int without potentially losing information. So BindInt is not supported for ids";
         }
 
         {
