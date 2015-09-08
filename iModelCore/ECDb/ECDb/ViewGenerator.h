@@ -273,10 +273,13 @@ struct ECDbMapAnalyser
                 PropertyMapCP GetInstanceId () const;
                 PropertyMapCP GetClassId () const;
                 EndType GetEnd () const;
+  
             };
         private:
             EndPoint m_from;
             EndPoint m_to;
+            ECDbSqlForeignKeyConstraint::ActionType m_onDeleteAction;
+            ECDbSqlForeignKeyConstraint::ActionType m_onUpdateAction;
         public:
             Relationship (RelationshipClassMapCR classMap, Storage& storage, Class* parent);
             RelationshipClassMapCR GetRelationshipClassMap () const;
@@ -298,7 +301,17 @@ struct ECDbMapAnalyser
             bool IsHolding () const { return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () == ECN::StrengthType::STRENGTHTYPE_Holding; }
             bool IsReferencing () const { return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () == ECN::StrengthType::STRENGTHTYPE_Referencing; }
             bool IsEmbedding () const { return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () == ECN::StrengthType::STRENGTHTYPE_Embedding; }
-            
+            bool IsMarkedForCascadeDelete () const
+                {
+                BeAssert (!IsLinkTable ());
+                return m_onDeleteAction == ECDbSqlForeignKeyConstraint::ActionType::Cascade;
+                }
+            bool IsMarkedForCascadeUpdate () const
+                {
+                BeAssert (!IsLinkTable ());
+                return m_onUpdateAction == ECDbSqlForeignKeyConstraint::ActionType::Cascade;
+                }
+
         };
     private:
         struct ViewInfo

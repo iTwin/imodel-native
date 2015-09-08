@@ -2654,8 +2654,27 @@ PropertyMapCP ECDbMapAnalyser::Relationship::EndPoint::GetClassId () const { ret
 ECDbMapAnalyser::Relationship::EndType ECDbMapAnalyser::Relationship::EndPoint::GetEnd () const { return m_type; }
        
 ECDbMapAnalyser::Relationship::Relationship (RelationshipClassMapCR classMap, Storage& storage, Class* parent)
-    :Class (classMap, storage, parent), m_from (classMap, EndType::From), m_to (classMap, EndType::To)
+    :Class (classMap, storage, parent), m_from (classMap, EndType::From), m_to (classMap, EndType::To), m_onDeleteAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_onUpdateAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified)
     {
+    ECDbForeignKeyRelationshipMap foreignKeyRelMap;
+    ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap (foreignKeyRelMap, GetRelationshipClassMap ().GetRelationshipClass ());
+    bool createConstraint = false;
+    if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetCreateConstraint (createConstraint))
+        return;
+
+    if (createConstraint)
+        {
+        Utf8String onDeleteActionStr;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnDeleteAction (onDeleteActionStr))
+            return;
+
+        Utf8String onUpdateActionStr;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnUpdateAction (onUpdateActionStr))
+            return;
+
+        m_onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType (onDeleteActionStr.c_str ());
+        m_onUpdateAction = ECDbSqlForeignKeyConstraint::ToActionType (onUpdateActionStr.c_str ());
+        }
     }
 RelationshipClassMapCR ECDbMapAnalyser::Relationship::GetRelationshipClassMap () const
     { 
@@ -3447,8 +3466,8 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
         if (relationship->IsLinkTable ())
             continue;
 
-        if (relationship->GetClassMap ().GetClass ().GetName () == "ParentHasSpouse")
-            printf ("");
+        if (relationship->IsMarkedForCascadeDelete ())
+            continue;
 
         bool isSelfRelationship = false;
         auto const lhsStorages = relationship->From ().GetStorages ();
@@ -3459,60 +3478,8 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
             }
 
         bool persistedInFrom = &relationship->From () == &relationship->ForeignEnd ();
-        if (relationship->RequireCascade ())
-            {
-            for (auto fromStorage : relationship->From ().GetStorages ())
-                {
-                auto& builder = const_cast<Storage*>(fromStorage)->GetTriggerListR ()
-                    .Create (SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
 
-                builder.GetNameBuilder ()
-                    .Append (fromStorage->GetTable ().GetName ().c_str ())
-                    .Append ("_")
-                    .Append (relationship->GetSqlName ())
-                    .Append ("_CascadeDelete");
-
-                builder.GetOnBuilder ().Append (fromStorage->GetTable ().GetName ().c_str ());
-                auto& body = builder.GetBodyBuilder ();
-                body.Append ("--2 ").Append (relationship->GetRelationshipClassMap ().GetRelationshipClass ().GetFullName ()).AppendEOL ();
-                for (auto toStorage : relationship->To ().GetStorages ())
-                    {
-                    body
-                        .Append ("DELETE FROM ")
-                        .AppendEscaped (toStorage->GetTable ().GetName ().c_str ())
-                        .Append (" WHERE ");
-
-                    auto fromKeyColumn = relationship->From ().GetInstanceId ()->GetFirstColumn();
-                    auto toKeyColumn = relationship->To ().GetInstanceId ()->GetFirstColumn();
-                    if (toStorage != fromStorage)
-                        { 
-                        //Self join should not be processed here.
-                        //This is issue with EndTable our Source/Target key is always in same table. Following should fix that
-                        if (persistedInFrom)
-                            {
-                            toKeyColumn = toStorage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
-                            }
-                        else
-                            {
-                            fromKeyColumn = fromStorage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
-                            }
-                        }
-                    body.AppendFormatted ("([%s] = OLD.[%s])", 
-                        toKeyColumn->GetName ().c_str (),
-                        fromKeyColumn->GetName ().c_str ());
-                    
-                    if (relationship->IsHolding ())
-                        {
-                        body.AppendFormatted (" AND (SELECT COUNT (*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.[%s]) = 0", toKeyColumn->GetName ().c_str ());
-                        }
-                    body.Append (";").AppendEOL ();
-
-                    }
-                }
-            }
-
-
-        if (persistedInFrom || isSelfRelationship)
+        if (persistedInFrom)
             {
             for (auto toStorage : relationship->To ().GetStorages ())
                 {
@@ -3549,6 +3516,127 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
                     }
                 }
             }
+        else if (isSelfRelationship)
+            {
+            for (auto foreignEnd : relationship->ForeignEnd ().GetStorages ())
+                {
+                auto& builder = const_cast<Storage*>(foreignEnd)->GetTriggerListR ().Create (SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
+                builder.GetNameBuilder ()
+                    .Append (foreignEnd->GetTable ().GetName ().c_str ())
+                    .Append ("_")
+                    .Append (relationship->GetSqlName ())
+                    .Append ("_Self_Delete");
+
+                builder.GetOnBuilder ().Append (foreignEnd->GetTable ().GetName ().c_str ());
+                auto& body = builder.GetBodyBuilder ();
+                body.Append ("--1").Append (relationship->GetRelationshipClassMap ().GetRelationshipClass ().GetFullName ()).AppendEOL ();
+                for (auto primaryEnd : relationship->PrimaryEnd ().GetStorages ())
+                    {
+                    body.Append ("UPDATE ")
+                        .AppendEscaped (primaryEnd->GetTable ().GetName ().c_str ())
+                        .Append (" SET ")
+                        .AppendEscaped (relationship->PrimaryEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ())
+                        .Append (" = NULL");
+
+                    if (!relationship->To ().GetClassId ()->IsVirtual () && relationship->To ().GetClassId ()->IsMappedToPrimaryTable ())
+                        {
+                        body.Append (", ")
+                            .AppendEscaped (relationship->PrimaryEnd ().GetClassId ()->GetFirstColumn ()->GetName ().c_str ())
+                            .Append (" = NULL");
+                        }
+
+                    body.Append (" WHERE OLD.")
+                        .AppendEscaped (relationship->ForeignEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ())
+                        .Append (" = ")
+                        .AppendEscaped (relationship->PrimaryEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ());
+                    body.Append (";").AppendEOL ();
+                    }
+                }
+
+
+            //if (relationship->RequireCascade ())
+            //    {
+            //    for (auto foreignEnd : relationship->ForeignEnd ().GetStorages ())
+            //        {
+            //        auto& builder = const_cast<Storage*>(foreignEnd)->GetTriggerListR ().Create (SqlTriggerBuilder::Type::UpdateOf, SqlTriggerBuilder::Condition::After, false);
+            //        builder.GetNameBuilder ()
+            //            .Append (foreignEnd->GetTable ().GetName ().c_str ())
+            //            .Append ("_")
+            //            .Append (relationship->GetSqlName ())
+            //            .Append ("_Self_CascadeDelete");
+
+            //        auto keyColumn = relationship->PrimaryEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ();
+            //        builder.GetOnBuilder ().Append (foreignEnd->GetTable ().GetName ().c_str ());
+            //        builder.GetWhenBuilder ().AppendFormatted ("NEW.[%s] IS NULL AND OLD.[%s] IS NOT NULL", keyColumn, keyColumn);
+            //        builder.GetUpdateOfColumnsR ().push_back (keyColumn);
+            //        auto& body = builder.GetBodyBuilder ();
+            //        body.Append ("--6").Append (relationship->GetRelationshipClassMap ().GetRelationshipClass ().GetFullName ()).AppendEOL ();
+            //        for (auto primaryEnd : relationship->PrimaryEnd ().GetStorages ())
+            //            {
+            //            body.Append ("DELETE FROM ")
+            //                .AppendEscaped (primaryEnd->GetTable ().GetName ().c_str ());
+
+            //            body.Append (" WHERE ")
+            //                .AppendEscaped (relationship->ForeignEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ())
+            //                .Append (" = OLD.")
+            //                .AppendEscaped (relationship->ForeignEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ());
+            //            body.Append (";").AppendEOL ();
+            //            }
+            //        }
+            //    }
+
+            }
+            if (relationship->RequireCascade ())
+                {
+                for (auto fromStorage : relationship->From ().GetStorages ())
+                    {
+                    auto& builder = const_cast<Storage*>(fromStorage)->GetTriggerListR ()
+                        .Create (SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
+
+                    builder.GetNameBuilder ()
+                        .Append (fromStorage->GetTable ().GetName ().c_str ())
+                        .Append ("_")
+                        .Append (relationship->GetSqlName ())
+                        .Append ("_CascadeDelete");
+
+                    builder.GetOnBuilder ().Append (fromStorage->GetTable ().GetName ().c_str ());
+                    auto& body = builder.GetBodyBuilder ();
+                    body.Append ("--2 ").Append (relationship->GetRelationshipClassMap ().GetRelationshipClass ().GetFullName ()).AppendEOL ();
+                    for (auto toStorage : relationship->To ().GetStorages ())
+                        {
+                        body
+                            .Append ("DELETE FROM ")
+                            .AppendEscaped (toStorage->GetTable ().GetName ().c_str ())
+                            .Append (" WHERE ");
+
+                        auto toKeyColumn = relationship->To ().GetInstanceId ()->GetFirstColumn ();
+                        auto fromKeyColumn = relationship->From ().GetInstanceId ()->GetFirstColumn ();
+                        if (toStorage != fromStorage)
+                            {
+                            //Self join should not be processed here.
+                            //This is issue with EndTable our Source/Target key is always in same table. Following should fix that
+                            if (persistedInFrom)
+                                {
+                                fromKeyColumn = toStorage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+                                }
+                            else
+                                {
+                                toKeyColumn = fromStorage->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+                                }
+                            }
+                        body.AppendFormatted ("([%s] = OLD.[%s])",
+                            fromKeyColumn->GetName ().c_str (),
+                            toKeyColumn->GetName ().c_str ());
+
+                        if (relationship->IsHolding ())
+                            {
+                            body.AppendFormatted (" AND (SELECT COUNT (*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.[%s]) = 0", toKeyColumn->GetName ().c_str ());
+                            }
+                        body.Append (";").AppendEOL ();
+
+                        }
+                    }
+                }
         }
     }
 
