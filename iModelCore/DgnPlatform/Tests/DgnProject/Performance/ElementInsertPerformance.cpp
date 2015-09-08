@@ -439,67 +439,73 @@ void PerformanceElementTestFixture::TimeInsertion(int numInstances, Utf8CP schem
     DgnModelPtr model = CreatePhysicalModel();
     DgnCategoryId catid = m_db->Categories().QueryHighestId();
     DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(schemaName, className));
-    double insertTime = 0;
-    for (int i = 0; i < numInstances; i++)
+
+    bvector<DgnElementPtr> testElements;
+    if (0 == strcmp(className, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS))
         {
-        if (0 == strcmp(className, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS))
+        for (int i = 0; i < numInstances; i++)
             {
             SimpleElementPtr element = SimpleElement::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
-            }
-        else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
-            {
-            PerformanceElement1Ptr element = PerformanceElement1::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
-            }
-        else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT2_CLASS))
-            {
-            PerformanceElement2Ptr element = PerformanceElement2::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
-            }
-        else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT3_CLASS))
-            {
-            PerformanceElement3Ptr element = PerformanceElement3::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
-            }
-        else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT4_CLASS))
-            {
-            PerformanceElement4Ptr element = PerformanceElement4::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
-            }
-        else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS))
-            {
-            PerformanceElement4bPtr element = PerformanceElement4b::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
-            }
-        else if (0 == strcmp(className, "PhysicalElement"))
-            {
-            PhysicalElementPtr element = PhysicalElement::Create(PhysicalElement::CreateParams(*m_db, model->GetModelId(), mclassId, catid));
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
             }
         }
-    LOGTODB(testcaseName, testName, insertTime, Utf8PrintfString("Inserting %d %s elements", numInstances, className).c_str(), numInstances);
+    else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
+        {
+        for (int i = 0; i < numInstances; i++)
+            {
+            PerformanceElement1Ptr element = PerformanceElement1::Create(*m_db, model->GetModelId(), mclassId, catid);
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
+            }
+        }
+    else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT2_CLASS))
+        {
+        for (int i = 0; i < numInstances; i++)
+            {
+            PerformanceElement2Ptr element = PerformanceElement2::Create(*m_db, model->GetModelId(), mclassId, catid);
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
+            }
+        }
+    else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT3_CLASS))
+        {
+        for (int i = 0; i < numInstances; i++)
+            {
+            PerformanceElement3Ptr element = PerformanceElement3::Create(*m_db, model->GetModelId(), mclassId, catid);
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
+            }
+        }
+    else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT4_CLASS))
+        {
+        for (int i = 0; i < numInstances; i++)
+            {
+            PerformanceElement4Ptr element = PerformanceElement4::Create(*m_db, model->GetModelId(), mclassId, catid);
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
+            }
+        }
+    else if (0 == strcmp(className, "PhysicalElement"))
+        {
+        for (int i = 0; i < numInstances; i++)
+            {
+            PhysicalElementPtr element = PhysicalElement::Create(PhysicalElement::CreateParams(*m_db, model->GetModelId(), mclassId, catid));
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
+            }
+        }
+
+    DgnDbStatus stat = DgnDbStatus::Success;
+    StopWatch timer(true);
+    for (DgnElementPtr& element : testElements)
+        {
+        element->Insert(&stat);
+        ASSERT_EQ(DgnDbStatus::Success, stat);
+        }
+    timer.Stop();
+
+    LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Inserting %d %s elements", numInstances, className).c_str(), numInstances);
     //m_testObj.writeTodb(insertTime, "PerformanceElementTestFixture.TimeInsertion", Utf8PrintfString("Inserting %d %s elements", numInstances, className).c_str(), numInstances);
     m_db->SaveChanges();
     m_db->CloseDb();
