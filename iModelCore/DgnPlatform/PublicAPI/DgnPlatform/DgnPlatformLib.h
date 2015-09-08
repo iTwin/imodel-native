@@ -435,6 +435,21 @@ public:
 
             //! returns whether we should automatically synchronize the spatial reference to the POD file even if it is empty
             virtual bool _GetSyncEmptySpatialReferenceToFile() const { return false; }
+
+            //! Resolve the file name that corresponds to the fileId. The fileId is provided by the application, which is responsible to map this fileId to
+            //! a file that the application knows. Generally, the application will override this admin method.
+            //! @param[out]     fileName        Resolved file name. 
+            //! @param[in]      fileId          An id that can be mapped to a file
+            //! @param[in]      db              The current DgnDb file
+            //! @return SUCCESS if the name could be resolved. ERROR otherwise. 
+            virtual BentleyStatus _ResolveFileName(BeFileNameR fileName, Utf8StringCR fileId, DgnDbCR db) const {return ERROR;}
+
+            //! Create a standard fileId, to be used with _ResolveFileName.
+            //! @param[out]     fileId          An id created from fullPath and basePath
+            //! @param[in]      fullPath        Full path of the file (including name). 
+            //! @param[in]      basePath        Base path, usually the path of the current DgnDb file. 
+            //! @return SUCCESS if the fileId could be created. ERROR otherwise. 
+            virtual BentleyStatus _CreateLocalFileId(Utf8StringR fileId, BeFileNameCR fullPath, BeFileNameCR basePath) const {return ERROR;}
             };
 
         //! Supply IRealityDatahandlers
