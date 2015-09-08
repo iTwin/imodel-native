@@ -113,6 +113,14 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime(double julianDay, DateTime:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
+ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
+    {
+    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind DateTime value to %s parameter.", SystemPropertyToString());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindDouble(double value)
     {
     return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind double value to %s parameter.", SystemPropertyToString());
