@@ -15,6 +15,7 @@
 #include <UnitTests/BackDoor/DgnProject/BackDoor.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
+#include "../TestFixture/DgnDbTestFixtures.h"
 
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 typedef bpair<Utf8String, double> T_TimerResultPair;
@@ -70,5 +71,25 @@ public:
     int getEndNum() { return m_endNum; }
     int getIncrement() { return m_increment; }
 };
+
+//=======================================================================================
+// @bsiclass                                                     Krischan.Eberle      06/15
+//=======================================================================================
+struct PerformanceElementTestFixture : public DgnDbTestFixture
+    {
+
+    protected:
+        static const DgnCategoryId s_catId;
+        static const int s_instanceCount = 20000;
+        static Utf8CP const s_textVal;
+        static const int64_t s_int64Val = 20000000LL;
+        static const double s_doubleVal;
+        static Utf8CP const s_testSchemaXml;
+
+        BentleyStatus ImportTestSchema() const;
+        DgnModelId InsertDgnModel() const;
+        void CommitAndLogTiming(StopWatch& timer, Utf8CP scenario) const;
+
+    };
 
 END_DGNDB_UNIT_TESTS_NAMESPACE
