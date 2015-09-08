@@ -717,9 +717,6 @@
     <ClCompile Include="ClassMapSubclasses.cpp">
       <Filter>ECDbMap\Map</Filter>
     </ClCompile>
-    <ClCompile Include="ECInstanceId.cpp">
-      <Filter>ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\ECSqlParameterValue.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClCompile>
@@ -790,6 +787,7 @@
     <ClCompile Include="ECDbPch.cpp">
       <Filter>Mke</Filter>
     </ClCompile>
+    <ClCompile Include="ECInstanceId.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.01.00.ecschema.xml">

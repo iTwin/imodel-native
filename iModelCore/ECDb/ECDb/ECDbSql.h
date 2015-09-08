@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include "BeRepositoryBasedIdSequence.h"
 #include "MapStrategy.h"
+#include <type_traits>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define ECDBSQL_VERSION_MAJOR 1
@@ -56,17 +57,24 @@ enum class ECDbKnownColumns
 struct Enum
     {
     public:
+        template<typename T, typename U = std::underlying_type_t <T>>
+        static U ToUnderlyingType (T t){ return static_cast<U>(t); }
+        template<typename T, typename U = std::underlying_type_t <T>>
+        static U ConvertTo (T a){ return static_cast<U>(a); }
+        template<typename T, typename U = std::underlying_type_t <T>>
+        static T ConvertFrom (U a){ return static_cast<T>(a); }
         template<typename T>
-        static int ToInt (T t){ return static_cast<uint32_t>(t);}
+        static int ToInt (T a){ return ConvertTo<T, int> (a); }
         template<typename T>
-        static T ToEnum (uint32_t v){ return static_cast<T>(v);}
+        static T FromInt (int a){ return ConvertFrom <T, decltype(a)> (a); }
         template<typename T>
-        static T Or (T a, T b){ return  ToEnum (ToInt (a) | ToInt (b)); }
+        static T Or (T a, T b){ return  ConvertFrom<T> (ToUnderlyingType<T> (a) | ToUnderlyingType<T> (b)); }
         template<typename T>
-        static T And (T a, T b){ return  ToEnum (ToInt (a) & ToInt (b)); }
+        static T And (T a, T b){ return  ConvertFrom<T> (ToUnderlyingType<T> (a) & ToUnderlyingType<T> (b)); }
         template<typename T>
-        static bool In (T value, T inList){ return  (ToInt (value) & ToInt (inList)) == ToInt (value); }
+        static bool In (T value, T inList){ return  (ToUnderlyingType<T> (value) & ToUnderlyingType<T> (inList)) == ToUnderlyingType<T> (value); }
     };
+
 enum class TriggerType
     {
     Create,
@@ -451,7 +459,8 @@ struct ECDbSqlColumn : NonCopyableClass
         DependentPropertyCollection m_references;
         PersistenceType m_persistenceType;
         ECDbKnownColumns m_knowColumnId;
-        ECDbColumnId m_id;        
+        ECDbColumnId m_id;
+        static std::map<ECDbKnownColumns, Utf8CP> m_knownColumnNames;
     public:
         ECDbSqlColumn (Utf8CP name, Type type, ECDbSqlTable& owner, PersistenceType persistenceType, ECDbColumnId id)
             : m_name (name), m_ownerTable (owner), m_type (type), m_references (*this), m_persistenceType (persistenceType), m_knowColumnId (ECDbKnownColumns::DataColumn), m_id (id){}
@@ -477,6 +486,16 @@ struct ECDbSqlColumn : NonCopyableClass
         const Utf8String GetFullName () const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr () const;
         static const Utf8String BuildFullName (Utf8CP table, Utf8CP column);
+        static Utf8CP ToAccessString (ECDbKnownColumns columnId)
+            {
+            auto itor = m_knownColumnNames.find (columnId);
+            if (itor != m_knownColumnNames.end ())
+                {
+                return itor->second;
+                }
+
+            return nullptr;
+            }
     };
 
 //======================================================================================

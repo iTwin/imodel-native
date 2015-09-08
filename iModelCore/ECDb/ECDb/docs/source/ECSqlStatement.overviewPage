@@ -41,12 +41,13 @@
     instead of the hardcoded string literal @c ECInstanceId when building an ECSQL statement programmatically.
 
     @e Details
-    @li ECDb issues the ECInstanceId automatically when inserting new ECInstances into an @ref ECDbFile "ECDb file".
-    @li It is incremented sequentially (which is the most efficient way to store primary keys in an @ref ECDbFile "ECDb file")
-    @li The ECInstanceId is a number always greater than 0
-    @li It is a so-called @ref BentleyApi::BeRepositoryBasedId "repository-based id"
+    @li If not specified in the ECSQL INSERT statement, %ECDb generates the ECInstanceId automatically. In that case, the ECInstanceId
+    is a @ref BentleyApi::BeRepositoryBasedId "repository based id" and is incremented sequentially (which is the most efficient way to store primary keys in an @ref ECDbFile "ECDb file").
     @li The columns in the @ref ECDbFile "ECDb file" holding the %ECInstanceId are equivalent to SQLite's system column @p rowid.
     @li In the @ref ECDbGroup "ECDb API" the ECInstanceId is represented by the type @ref BentleyApi::BeSQLite::EC::ECInstanceId "ECInstanceId".
+
+    @note If the ECInstanceId is specified explicitly in the ECSQL INSERT statement, the caller is responsible to deal with possible primary key or other
+    constraint violations.
 
     @section ECSqlStatementErrorReporting ECSqlStatement Error Reporting
 

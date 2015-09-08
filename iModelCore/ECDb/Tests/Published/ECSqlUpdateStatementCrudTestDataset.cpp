@@ -650,7 +650,7 @@ ECSqlTestDataset ECSqlUpdateTestDataset::PolymorphicTests (int rowCountPerClass)
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
 
     ecsql = "UPDATE ecsql.Abstract SET I = 123";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, 10*2, true);
 
     ecsql = "UPDATE ONLY ecsql.Abstract SET I = 123";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
@@ -674,7 +674,7 @@ ECSqlTestDataset ECSqlUpdateTestDataset::PolymorphicTests (int rowCountPerClass)
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
 
     ecsql = "UPDATE ecsql.TCBase SET S = 'hello'";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, 0, true);
 
     ecsql = "UPDATE ONLY ecsql.TCBase SET S = 'hello'";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
