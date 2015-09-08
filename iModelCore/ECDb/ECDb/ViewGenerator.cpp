@@ -3022,9 +3022,9 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicDeleteTrigger (Class& nclass)
         if (!classFilter.IsEmpty ())
             {
             if (c == nullptr)
-                builder.GetWhenBuilder().Append ("ECClassId ").Append (classFilter);
+                builder.GetWhenBuilder().Append("OLD.").Append ("ECClassId ").Append (classFilter);
             else
-                builder.GetWhenBuilder ().Append (c->GetName().c_str()).AppendSpace().Append (classFilter);
+                builder.GetWhenBuilder ().Append ("OLD.").Append (c->GetName ().c_str ()).AppendSpace ().Append (classFilter);
             }
 
         auto& body = builder.GetBodyBuilder ();
@@ -3062,9 +3062,9 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
         if (!classFilter.IsEmpty ())
             {
             if (c == nullptr)
-                builder.GetWhenBuilder ().Append ("ECClassId ").Append (classFilter);
+                builder.GetWhenBuilder ().Append ("OLD.").Append ("ECClassId ").Append (classFilter);
             else
-                builder.GetWhenBuilder ().Append (c->GetName ().c_str ()).AppendSpace ().Append (classFilter);
+                builder.GetWhenBuilder ().Append ("OLD.").Append (c->GetName ().c_str ()).AppendSpace ().Append (classFilter);
             }
 
         auto& body = builder.GetBodyBuilder ();
