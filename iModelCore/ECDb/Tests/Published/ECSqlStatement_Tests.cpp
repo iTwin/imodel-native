@@ -1030,7 +1030,78 @@ TEST_F (ECSqlTestFixture, PolymorphicUpdateWithSharedTable)
 //    stmt.Finalize ();
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Maha Nasir                         09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSqlSelectTests, SelectQueriesOnDbGeneratedDuringBuild)
+    {
+    ECDbTestProject project;
+    ECSqlStatement stmt;
+    BeFileName dir;
 
+    BeTest::GetHost ().GetDocumentsRoot (dir);
+    dir.AppendToPath (L"DgnDb");
+    dir.AppendToPath (L"04_Plant.i.idgndb");
+    if (dir.DoesPathExist ())
+        {
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, project.Open (dir.GetNameUtf8 ().c_str (), Db::OpenParams (Db::OpenMode::Readonly)));
+        }
+
+    ECDbR ecdb = project.GetECDb ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT * FROM appdw.Equipment"));
+
+    while (stmt.Step () != ECSqlStepStatus::Done)
+        {
+        int ColCount = stmt.GetColumnCount ();
+        ASSERT_EQ (21, ColCount);
+        /*
+        for (int i = 0; i < ColCount; i++)
+        {
+        ECSqlColumnInfoCR Info = stmt.GetColumnInfo (i);
+        Utf8StringCR name = Info.GetProperty ()->GetName ();
+        switch (i)
+        {
+        case 0:
+        ASSERT_EQ ("ECInstanceId", name);
+        break;
+
+        case 1:
+        ASSERT_EQ ("ModelId", name);
+        break;
+
+        case 2:
+        ASSERT_EQ ("CategoryId", name);
+        break;
+
+        case 3:
+        ASSERT_EQ ("ParentId", name);
+        break;
+
+        case 4:
+        ASSERT_EQ ("CodeAuthorityId", name);
+        break;
+
+        case 5:
+        ASSERT_EQ ("Code", name);
+        break;
+
+        case 6:
+        ASSERT_EQ ("Label", name);
+        break;
+
+        case 7:
+        ASSERT_EQ ("LastMod", name);
+        break;
+        }
+        }*/
+        }
+
+    stmt.Finalize ();
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM appdw.Equipment WHERE INSUL_THK= '2'"));
+    ASSERT_EQ (stmt.Step (), ECSqlStepStatus::HasRow);
+    ASSERT_EQ (6, stmt.GetValueInt (0));
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Maha Nasir                         08/15
 +---------------+---------------+---------------+---------------+---------------+------*/

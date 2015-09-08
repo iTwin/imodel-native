@@ -15,6 +15,7 @@ ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties
 ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A
+ECSqlSelectTests.SelectQueriesOnDbGeneratedDuringBuild #notified Krischan
 
 #TFS268976 will address this (Affan)
 SchemaImportTestFixture.MismatchDataTypesInExistingTable
