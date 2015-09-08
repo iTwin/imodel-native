@@ -17,6 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @see @ref ECInstanceIdInECDb, ECInstanceIdHelper
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======
+//BEREPOSITORYBASED_ID_CLASS(ECInstanceId)
 typedef BeInt64Id ECInstanceId;
 
 //=======================================================================================
@@ -93,7 +94,7 @@ private:
 public:
     //! Required number of characters to represent an ECInstanceId as string.
     //! @see ECInstanceIdHelper::ToString
-    static const size_t ECINSTANCEID_STRINGBUFFER_LENGTH = std::numeric_limits<uint64_t>::digits + 1; //+1 for the trailing 0 character
+    static const size_t ECINSTANCEID_STRINGBUFFER_LENGTH = std::numeric_limits<int64_t>::digits + 2; //+2 for the sign character and the trailing 0 character
 
     //! Converts the specified ECInstanceId to its string representation.
     //! 

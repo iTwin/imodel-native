@@ -23,11 +23,25 @@ bool ECInstanceIdHelper::ToString (Utf8P stringBuffer, size_t stringBufferLength
     if (!ecInstanceId.IsValid ())
         return false;
 
-    //buffer must be big enough to store the decimal digits of an UInt64 plus the trailing \0
+    //buffer must be big enough to store the decimal digits of an int64 plus the sign character plus the trailing \0
     if (stringBufferLength < ECINSTANCEID_STRINGBUFFER_LENGTH)
         return false;
 
-    BeStringUtilities::FormatUInt64 (stringBuffer, (uint64_t) ecInstanceId.GetValue ());
+    int64_t val = ecInstanceId.GetValue();
+    const bool isNegative = val < 0LL;
+    Utf8P digitStringBuffer = stringBuffer;
+    uint64_t uvalue = val;
+    if (isNegative)
+        {
+        uvalue = -1LL * val;
+        digitStringBuffer = stringBuffer + 1;
+        }
+
+    BeStringUtilities::FormatUInt64(digitStringBuffer, uvalue);
+
+    if (isNegative)
+        stringBuffer[0] = '-';
+
     return true;
     }
 
@@ -40,10 +54,15 @@ bool ECInstanceIdHelper::FromString (ECInstanceId& ecInstanceId, Utf8CP ecInstan
     if (Utf8String::IsNullOrEmpty (ecInstanceIdString))
         return false;
 
-    uint64_t value;
-    const auto stat = BeStringUtilities::ParseUInt64 (value, ecInstanceIdString);
+    const bool isNegative = ecInstanceIdString[0] == '-';
+    if (isNegative)
+        ecInstanceIdString++;
+
+    uint64_t uvalue;
+    const auto stat = BeStringUtilities::ParseUInt64(uvalue, ecInstanceIdString);
     if (SUCCESS == stat)
         {
+        const int64_t value = isNegative ? (int64_t) (-1LL * uvalue) : (int64_t) uvalue;
         ecInstanceId = ECInstanceId (value);
         return ecInstanceId.IsValid ();
         }
