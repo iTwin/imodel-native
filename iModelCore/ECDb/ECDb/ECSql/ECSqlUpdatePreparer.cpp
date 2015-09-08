@@ -72,11 +72,35 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
 
     // WHERE clause
     NativeSqlBuilder systemWhereClause;
-    status = SystemColumnPreparer::GetFor(classMap).GetWhereClause(ctx, systemWhereClause, classMap, ECSqlType::Update,
-                    classNameExp->IsPolymorphic (), nullptr); //SQLite UPDATE does not allow table aliases
+    //status = SystemColumnPreparer::GetFor(classMap).GetWhereClause(ctx, systemWhereClause, classMap, ECSqlType::Update,
+    //                classNameExp->IsPolymorphic (), nullptr); //SQLite UPDATE does not allow table aliases
 
-    if (status != ECSqlStatus::Success)
-        return status;
+    //if (status != ECSqlStatus::Success)
+    //    return status;
+
+    auto& storageDesc = classMap.GetStorageDescription ();
+    if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().empty () || !exp.GetClassNameExp ()->IsPolymorphic ())
+        {
+        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+            {
+            if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
+                {
+                systemWhereClause.AppendEscaped (classIdColumn->GetName ().c_str ()).Append (" = ").Append (classMap.GetClass ().GetId ());
+                }
+            }
+        }
+    else if (storageDesc.GetNonVirtualHorizontalPartitionIndices ().size () == 1 && exp.GetClassNameExp ()->IsPolymorphic ())
+        {
+        if (auto classIdColumn = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+            {
+            if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
+                {
+                auto& partition = storageDesc.GetHorizontalPartitions ().at (storageDesc.GetNonVirtualHorizontalPartitionIndices ().at (0));
+                systemWhereClause.AppendEscaped (classIdColumn->GetName ().c_str ());
+                partition.AppendECClassIdFilterSql (systemWhereClause);
+                }
+            }
+        }
 
     if (!systemWhereClause.IsEmpty ())
         {

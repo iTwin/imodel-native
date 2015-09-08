@@ -60,7 +60,7 @@ ECSqlStatus ECSqlPreparer::Prepare (Utf8StringR nativeSql, ECSqlPrepareContext& 
 
         case Exp::Type::Delete:
             {
-            status = ECSqlDeletePreparer2::Prepare (context, static_cast<DeleteStatementExp const&> (ecsqlParseTree));
+            status = ECSqlDeletePreparer::Prepare (context, static_cast<DeleteStatementExp const&> (ecsqlParseTree));
             if (status != ECSqlStatus::Success)
                 return status;
 
@@ -440,22 +440,33 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         std::vector<size_t> nonVirtualPartitionIndices = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitionIndices();
         if (!exp->IsPolymorphic() || nonVirtualPartitionIndices.empty())
             {
-            table = &classMap.GetTable ();;
+            table = &classMap.GetTable ();
             }
         else
             {
-            if (nonVirtualPartitionIndices.size() > 1)
-                return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL %s is only supported if the ECClass and all its subclasses are mapped to the same table.",
-                ExpHelper::ToString(currentScopeECSqlType));
 
+            if (nonVirtualPartitionIndices.size () > 1)
+                {
+                //we need a view for it.
+                NativeSqlBuilder nativeSqlSnippet;
+                Utf8String viewName = "_" + classMap.GetClass ().GetSchema ().GetNamespacePrefix () + "_" + classMap.GetClass ().GetName ();
+                nativeSqlSnippet.AppendEscaped (viewName.c_str ());
+                BeAssert (ctx.GetECDb ().TableExists (viewName.c_str ()) && "View must exist");
+                nativeSqlSnippets.push_back (move (nativeSqlSnippet));
+
+                return ECSqlStatus::Success;
+
+                //return ctx.SetError (ECSqlStatus::InvalidECSql, "Polymorphic ECSQL %s is only supported if the ECClass and all its subclasses are mapped to the same table.",
+                //    ExpHelper::ToString (currentScopeECSqlType));
+                }
             BeAssert(classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]) != nullptr);
             HorizontalPartition const* partition = classMap.GetStorageDescription().GetHorizontalPartition(nonVirtualPartitionIndices[0]);
 
             //WIP: We need to fix deletion of subclasses' struct array entries for polymorphic delete. Until then we hard-fail
             //on attempts to polymorphic DELETES if the class has subclasses
-            if (currentScopeECSqlType == ECSqlType::Delete && partition->GetClassIds().size() > 1)
+            /*if (currentScopeECSqlType == ECSqlType::Delete && partition->GetClassIds().size() > 1)
                 return ctx.SetError(ECSqlStatus::InvalidECSql, "Polymorphic ECSQL DELETE is not yet supported.");
-
+*/
             table = &partition->GetTable();
             }
         }
