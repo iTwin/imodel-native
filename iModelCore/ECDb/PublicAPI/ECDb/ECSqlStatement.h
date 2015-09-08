@@ -26,10 +26,6 @@ enum class ECSqlStepStatus
     Error //!< ECSqlStatement::Step failed.
     };
 
-
-
-
-
 //=======================================================================================
 //! ECSqlStatement is used to perform Create, Read, Update, Delete operations (@b CRUD) 
 //! against @b ECInstances in an @ref ECDbFile "ECDb file".

@@ -47,7 +47,7 @@ ECSqlStepStatus ECSqlStepTask::Collection::ExecuteBeforeStepTaskList()
     BeAssert(stmt != nullptr && "m_selector statement is null");
     while (m_selector->Step() == ECSqlStepStatus::HasRow)
         {
-        auto iId = stmt->GetValue(0).GetId();
+        ECInstanceId iId = stmt->GetValue(0).GetId<ECInstanceId>();
         if (Execute(ExecutionCategory::ExecuteBeforeParentStep, iId) == ECSqlStepStatus::Error)
             return ECSqlStepStatus::Error;
         }

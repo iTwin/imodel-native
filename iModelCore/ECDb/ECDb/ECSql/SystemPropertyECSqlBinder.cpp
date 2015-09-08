@@ -105,7 +105,15 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindBinary(const void* value, int binary
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
+    {
+    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind DateTime value to %s parameter.", SystemPropertyToString());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
     {
     return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind DateTime value to %s parameter.", SystemPropertyToString());
     }
@@ -131,30 +139,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindGeometryBlob(const void* value, int 
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindInt(int value)
     {
-    auto stat = FailIfConstraintClassIdViolation(static_cast<ECClassId> (value));
-    if (stat != ECSqlStatus::Success)
-        return stat;
-
-    if (auto eh = GetOnBindEventHandler())
-        {
-        auto es = eh->BindInt(value);
-        if (es != ECSqlStatus::Success)
-            return GetStatusContext().SetError(es, "OnBindEventHandler Failed");
-        }
-
-    if (!IsNoop())
-        {
-        const auto sqliteStat = GetSqliteStatementR ().BindInt(m_sqliteIndex, value);
-        if (sqliteStat != BE_SQLITE_OK)
-            return SetError(sqliteStat, "ECSqlStatement::BindInt");
-        }
-
-    auto onBindEventHandler = GetOnBindRepositoryBasedIdEventHandler();
-    if (onBindEventHandler != nullptr)
-        onBindEventHandler(ECInstanceId(value));
-
-    m_bindValueIsNull = false;
-    return ResetStatus();
+    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind 32 bit integer value to %s parameter.", SystemPropertyToString());
     }
 
 //---------------------------------------------------------------------------------------

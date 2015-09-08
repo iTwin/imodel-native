@@ -52,7 +52,13 @@ private:
         {
         return m_errorStatus;
         }
+
     virtual ECSqlStatus _BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata) override
+        {
+        return m_errorStatus;
+        }
+
+    virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const* metadata) override
         {
         return m_errorStatus;
         }

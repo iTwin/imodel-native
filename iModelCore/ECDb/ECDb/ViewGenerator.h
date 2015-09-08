@@ -10,6 +10,8 @@
 #include "ECDbInternalTypes.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+struct ECSqlPrepareContext;
 enum class SqlOption
     {
     Create,
@@ -18,7 +20,6 @@ enum class SqlOption
     DropIfExists
     };
 
-struct ECSqlPrepareContext;
 
 struct SqlTriggerBuilder
     {
@@ -36,6 +37,38 @@ struct SqlTriggerBuilder
             UpdateOf,
             Delete
             };
+        struct TriggerList
+            {
+            typedef std::vector<SqlTriggerBuilder> List;
+            private:
+                List m_list;
+            public:
+                TriggerList (List const&& list)
+                    :m_list (std::move (list))
+                    {
+                    }
+
+                TriggerList ()
+                    {}
+                SqlTriggerBuilder& Create (SqlTriggerBuilder::Type type, SqlTriggerBuilder::Condition condition, bool temprary)
+                    {
+                    m_list.push_back (SqlTriggerBuilder (type, condition, temprary));
+                    return m_list.back ();
+                    }
+                List const& GetTriggers () const { return m_list; }
+                void Delete (SqlTriggerBuilder const& trigger)
+                    {
+                    for (auto itor = m_list.begin (); itor != m_list.end (); ++itor)
+                        {
+                        if (&(*itor) == &trigger)
+                            {
+                            m_list.erase (itor);
+                            break;
+                            }
+                        }
+                    }
+            };
+
 
     private:
         NativeSqlBuilder m_name;
@@ -45,271 +78,402 @@ struct SqlTriggerBuilder
         bool m_temprory;
         Type m_type;
         Condition m_condition;
-        std::unique_ptr<std::vector<Utf8String>> m_ofColumns;
-
+        std::vector<Utf8String> m_ofColumns;
+  
     public:
-        SqlTriggerBuilder (Type type, Condition condition, bool temprary)
-            :m_type (type), m_condition (condition), m_temprory (temprary)
+        SqlTriggerBuilder (){}
+        SqlTriggerBuilder (Type type, Condition condition, bool temprary);
+        SqlTriggerBuilder (SqlTriggerBuilder&& rhs);
+        SqlTriggerBuilder& operator= (SqlTriggerBuilder&& rhs);
+        SqlTriggerBuilder (SqlTriggerBuilder const& rhs);
+        SqlTriggerBuilder& operator= (SqlTriggerBuilder const& rhs);
+
+        NativeSqlBuilder& GetNameBuilder ();
+        NativeSqlBuilder& GetWhenBuilder ();
+        NativeSqlBuilder& GetBodyBuilder ();
+        NativeSqlBuilder& GetOnBuilder ();
+        Type GetType () const;
+        Condition GetCondition () const;
+        std::vector<Utf8String> const& GetUpdateOfColumns () const;
+        std::vector<Utf8String>& GetUpdateOfColumnsR ();
+        Utf8CP GetName () const;
+        Utf8CP GetWhen () const;
+        Utf8CP GetBody () const;
+        Utf8CP GetOn () const;
+        bool IsTemprory () const;
+        bool IsValid () const;
+        const Utf8String ToString (SqlOption option, bool escape) const;
+        bool IsEmpty () const { return m_body.IsEmpty (); }
+    };
+struct SqlViewBuilder
+    {
+    private:
+        NativeSqlBuilder m_name;
+        NativeSqlBuilder::List m_selectList;
+        bool m_isTmp;
+        bool m_isNullView;
+    public:
+        SqlViewBuilder ()
+            :m_isTmp (false), m_isNullView (false)
             {
-            if (m_type == Type::UpdateOf)
-                m_ofColumns = std::unique_ptr<std::vector<Utf8String>> (new std::vector<Utf8String> ());
             }
-        SqlTriggerBuilder (SqlTriggerBuilder&& rhs)
-            :m_type (std::move (rhs.m_type)), m_condition (std::move (rhs.m_condition)), m_temprory (std::move (rhs.m_temprory)), m_name (std::move (rhs.m_name)),
-            m_when (std::move (rhs.m_when)), m_body (std::move (rhs.m_body)), m_on (rhs.m_on)
+        void MarkAsNullView ()
             {
+            m_isNullView = true;
             }
-        NativeSqlBuilder& GetNameBuilder () { return m_name; }
-        NativeSqlBuilder& GetWhenBuilder () { return m_when; }
-        NativeSqlBuilder& GetBodyBuilder () { return m_body; }
-        NativeSqlBuilder& GetOnBuilder () { return m_on; }
-        Type GetType () const { return m_type; }
-        Condition GetCondition () const { return m_condition; }
-        std::vector<Utf8String> const* GetColumns () const
+
+        bool IsNullView () const { return m_isNullView; }
+        NativeSqlBuilder& GetNameBuilder ()  { return m_name; }
+        void SetTemprory (bool tmp) { m_isTmp = tmp; }
+        NativeSqlBuilder& AddSelect ()
             {
-            BeAssert (m_type == Type::UpdateOf);
-            return m_ofColumns.get ();
+            m_selectList.push_back (NativeSqlBuilder ());
+            return m_selectList.back ();
             }
-        std::vector<Utf8String>* GetUpdateOfColumnsP ()
+        bool IsEmpty () const
             {
-            BeAssert (m_type == Type::UpdateOf);
-            return m_ofColumns.get ();
+            return m_selectList.empty () && m_name.IsEmpty ();
             }
-        Utf8CP GetName () const { return m_name.ToString (); }
-        Utf8CP GetWhen () const { return m_when.ToString (); }
-        Utf8CP GetBody () const { return m_body.ToString (); }
-        Utf8CP GetOn () const { return m_on.ToString (); }
-        bool IsTemprory () const { return m_temprory; }
         bool IsValid () const
             {
             if (m_name.IsEmpty ())
                 {
-                BeAssert (false && "Must specify a trigger name");
+                BeAssert (false && "Must specify a view name");
                 return false;
                 }
 
-            if (m_on.IsEmpty ())
+            if (m_selectList.empty ())
                 {
-                BeAssert (false && "Must specify a trigger ON Table/View");
-                return false;
-                }
-
-            if (m_body.IsEmpty ())
-                {
-                BeAssert (false && "Must specify a trigger body");
-                return false;
-                }
-
-            if (m_type == Type::UpdateOf && m_ofColumns->empty ())
-                {
-                BeAssert (false && "For UPDATE OF trigger must specify atleast one column");
+                BeAssert (false && "View must have atleast one select statement");
                 return false;
                 }
 
             return true;
             }
-        const Utf8String ToString (SqlOption option, bool escape) const
+        Utf8CP GetName () const{ return m_name.ToString (); }
+        bool IsTemprory () const { return m_isTmp; }
+        bool IsCompound () { return m_selectList.size () > 1; }
+        const Utf8String ToString (SqlOption option, bool escape = false, bool useUnionAll = true) const
             {
             if (!IsValid ())
                 {
-                BeAssert (false && "Trigger specification is not valid");
+                BeAssert (false && "view specification is not valid");
                 }
 
             NativeSqlBuilder sql;
             if (option == SqlOption::Drop || option == SqlOption::DropIfExists)
                 {
-                sql.Append ("DROP TRIGGER ").AppendIf (option == SqlOption::DropIfExists, "IF EXISTS ").AppendEscapedIf (escape, GetName ()).Append (";");
+                sql.Append ("DROP VIEW ").AppendIf (option == SqlOption::DropIfExists, "IF EXISTS ").AppendEscapedIf (escape, GetName ()).Append (";");
                 }
             else
                 {
-                sql.AppendLine ("--### WARNING: SYSTEM GENERATED TRIGGER. DO NOT CHANGE THIS TRIGGER IN ANYWAY. ####");
-                sql.Append ("CREATE TRIGGER ").AppendIf (IsTemprory (), "TEMP ").AppendIf (option == SqlOption::CreateIfNotExist, "IF NOT EXISTS ").AppendEscapedIf (escape, GetName ()).AppendEOL ();
-                switch (m_condition)
+                sql.AppendLine ("--### WARNING: SYSTEM GENERATED VIEW. DO NOT CHANGE THIS VIEW IN ANYWAY. ####");
+                sql.Append ("CREATE ").AppendIf (IsTemprory (), "TEMP ").Append ("VIEW ").AppendIf (option == SqlOption::CreateIfNotExist, "IF NOT EXISTS ").AppendEscapedIf (escape, GetName ()).AppendEOL ();
+                sql.Append ("AS").AppendEOL ();
+                for (auto& select : m_selectList)
                     {
-                    case Condition::After:
-                        sql.Append ("AFTER "); break;
-                    case Condition::Before:
-                        sql.Append ("BEFORE "); break;
-                    case Condition::InsteadOf:
-                        sql.Append ("INSTEAD OF "); break;
+                    if (&select != &m_selectList.front ())
+                        sql.AppendTAB ().Append ("UNION ").AppendIf (useUnionAll, "ALL").AppendEOL ();
+
+                    sql.AppendTAB (2).AppendLine (select.ToString ());
                     }
-
-                switch (m_type)
-                    {
-                    case Type::Delete:
-                        sql.Append ("DELETE "); break;
-                    case Type::Insert:
-                        sql.Append ("INSERT "); break;
-                    case Type::Update:
-                        sql.Append ("UPDATE "); break;
-                    case Type::UpdateOf:
-                        sql.Append ("UPDATE OF ");
-                        for (auto& column : *m_ofColumns)
-                            {
-                            if (&column != &m_ofColumns->front ())
-                                sql.Append (", ");
-
-                            sql.AppendEscapedIf (escape, column.c_str ());
-                            }
-                        break;
-                    }
-
-                sql.AppendEOL ();
-                sql.Append ("ON ").AppendEscapedIf (escape, GetOn ()).AppendEOL ();
-                if (!m_when.IsEmpty ())
-                    {
-                    sql.Append ("\tWHEN ").Append (GetWhen ()).AppendEOL ();
-                    }
-
-                sql.Append ("BEGIN").AppendEOL ();
-                sql.Append (GetBody ());
-                sql.Append ("END;").AppendEOL ();;
+                sql.Append (";");
                 }
 
             return sql.ToString ();
             }
     };
-    struct SqlViewBuilder 
+
+  
+
+
+
+
+struct ECDbMapAnalyser
+    {
+    struct Class;
+    struct Struct;
+    struct Relationship;
+    struct Storage
         {
+        typedef std::unique_ptr<Storage> Ptr;
         private:
-            NativeSqlBuilder m_name;
-            NativeSqlBuilder::List m_selectList;
-            bool m_isTmp;
-            bool m_isNullView;
+            ECDbSqlTable const& m_table;
+            std::set<Class*> m_classes;
+            std::set<Relationship*> m_relationships;
+            std::map<Storage*, std::set<Relationship*>> m_cascades;
+
+            std::set<Struct*> m_structCascades;
+            SqlTriggerBuilder::TriggerList m_triggers;
         public:
-            SqlViewBuilder ()
-                :m_isTmp (false), m_isNullView (false)
-                {
-                }
-            void MarkAsNullView ()
-                {
-                m_isNullView = true;
-                }
-           
-            bool IsNullView () const { return m_isNullView; }
-            NativeSqlBuilder& GetNameBuilder ()  { return m_name; }
-            void SetTemprory (bool tmp) { m_isTmp = tmp; }
-            NativeSqlBuilder& AddSelect ()
-                {
-                m_selectList.push_back (NativeSqlBuilder ());
-                return m_selectList.back ();
-                }
-            bool IsEmpty () const
-                {
-                return m_selectList.empty () && m_name.IsEmpty ();
-                }
-            bool IsValid () const
-                {
-                if (m_name.IsEmpty ())
-                    {
-                    BeAssert (false && "Must specify a view name");
-                    return false;
-                    }
+            Storage (ECDbSqlTable const& table);
+            ECDbSqlTable const& GetTable () const;
+            bool IsVirtual () const;
+            std::set<Class*> & GetClassesR ();
+            std::set<Class*> const& GetClasses () const{ return m_classes; }
 
-                if (m_selectList.empty ())
-                    {
-                    BeAssert (false && "View must have atleast one select statement");
-                    return false;
-                    }
-
-                return true;
-                }
-            Utf8CP GetName () const{ return m_name.ToString (); }
-            bool IsTemprory () const { return m_isTmp; }
-            bool IsCompound () { return m_selectList.size () > 1; }
-            const Utf8String ToString (SqlOption option, bool escape = false, bool useUnionAll = true) const
+            std::set<Relationship*> & GetRelationshipsR ();
+            std::map<Storage*, std::set<Relationship*>> & CascadesTo ();
+            std::set<Struct* > &StructCascadeTo ()
                 {
-                if (!IsValid ())
-                    {
-                    BeAssert (false && "view specification is not valid");
-                    }
-
-                NativeSqlBuilder sql;
-                if (option == SqlOption::Drop || option == SqlOption::DropIfExists)
-                    {
-                    sql.Append ("DROP VIEW ").AppendIf (option == SqlOption::DropIfExists, "IF EXISTS ").AppendEscapedIf (escape, GetName ()).Append (";");
-                    }
-                else
-                    {
-                    sql.AppendLine ("--### WARNING: SYSTEM GENERATED VIEW. DO NOT CHANGE THIS VIEW IN ANYWAY. ####");
-                    sql.Append ("CREATE ").AppendIf (IsTemprory (), "TEMP ").Append ("VIEW ").AppendIf (option == SqlOption::CreateIfNotExist, "IF NOT EXISTS ").AppendEscapedIf (escape, GetName ()).AppendEOL ();
-                    sql.Append ("AS").AppendEOL ();
-                    for (auto& select : m_selectList)
-                        {
-                        if (&select != &m_selectList.front ())
-                            sql.AppendTAB ().Append ("UNION ").AppendIf (useUnionAll, "ALL").AppendEOL ();
-
-                        sql.AppendTAB (2).AppendLine (select.ToString ());
-                        }    
-                    sql.Append (";");
-                    }
-
-                return sql.ToString ();
+                return m_structCascades;
                 }
+            SqlTriggerBuilder::TriggerList& GetTriggerListR ();
+            SqlTriggerBuilder::TriggerList const& GetTriggerList () const;
+            void HandleStructArray ();
+            void HandleCascadeLinkTable (std::vector<Relationship*> const& relationships);
+            void Generate ();
+        };
+    struct Class
+        {
+        typedef  std::unique_ptr<Class> Ptr;
+        private:
+            ClassMapCR m_classMap;
+            Storage& m_storage;
+            bool m_inQueue;
+            Class* m_parent;
+            Utf8String m_name;
+            std::map <Storage const*, std::set<Class const*>> m_partitions;
+        public:
+            Class (ClassMapCR classMap, Storage& storage, Class* parent);
+            Utf8CP GetSqlName () const;
+            Storage& GetStorageR ();
+            Storage const& GetStorage () const 
+                {
+                return m_storage;
+                }
+            ClassMapCR GetClassMap () const;
+            Class* GetParent ();
+            void SetParent (Class& cl) { m_parent = &cl; }
+            std::map <Storage const*, std::set<Class const*>>& GetPartitionsR ();
+            bool InQueue () const;
+            void Done ();
+            std::vector<Storage const*> GetNoneVirtualStorages () const;
+            bool IsAbstract () const;
+            bool RequireView () const;
         };
 
-
-
-    struct SqlClassPersistenceMethod : NonCopyableClass
-    {
-    private:
-        SqlViewBuilder m_viewBuilder;
-        NativeSqlBuilder m_tableName;
-        NativeSqlBuilder m_rowFilter;
-        std::vector<SqlTriggerBuilder> m_triggerBuilderList;
-        ClassMapCR m_classMap;
-        bool m_finish;
-    public:
-        SqlClassPersistenceMethod (ClassMapCR classMap)
-            :m_classMap (classMap), m_finish (false)
-            {}
-
-        ~SqlClassPersistenceMethod ()
-            {}
-        ClassMapCR GetClassMap () const { return m_classMap; }
-        NativeSqlBuilder& GetTableNameBuilder () { return m_tableName; }
-        NativeSqlBuilder& GetRowFilterBuilder () { return m_rowFilter; }
-        SqlViewBuilder& GetViewBuilder () { return m_viewBuilder; }
-        bool IsFinished () const { return m_finish; }
-        void MarkAsFinish () { m_finish = true; }
-        SqlTriggerBuilder& AddTrigger (SqlTriggerBuilder::Type type, SqlTriggerBuilder::Condition condition, bool temprary)
+    struct Struct : Class
+        {
+        typedef  std::unique_ptr<Struct> Ptr;
+        public:
+            Struct (ClassMapCR classMap, Storage& storage, Class* parent)
+                :Class (classMap, storage, parent)
+                {}
+        };
+    struct Relationship : Class
+        {
+        typedef  std::unique_ptr<Relationship> Ptr;
+        enum class EndType
             {
-            m_triggerBuilderList.push_back (SqlTriggerBuilder (type, condition, temprary));
-            return m_triggerBuilderList.back ();
-            }
-        Utf8CP GetAffectedTargetId (DMLPolicy::Operation op) const
+            From, To
+            };
+        enum class PersistanceLocation
             {
-            auto target = GetClassMap().GetDMLPolicy ().Get (op);
-            if (target == DMLPolicy::Target::None)
-                return "";
-
-            if (target == DMLPolicy::Target::Table)
-                return GetClassMap ().GetTable ().GetName ().c_str();
-
-            return const_cast<SqlClassPersistenceMethod*>(this)->GetViewBuilder ().GetNameBuilder ().ToString ();
-            }
-
-        std::vector<SqlTriggerBuilder> const& GetTriggerBuilderList () { return m_triggerBuilderList; }
-        void ResetTriggers ()
+            From, To, Self
+            };
+        struct EndPoint
             {
-            m_triggerBuilderList.clear ();
-            }
-        Utf8String ToString (SqlOption option, bool escape = false)
-            {
-            NativeSqlBuilder sql;
-            sql.AppendLine ("--#-----------------------View--------------------------");
-            sql.AppendLine (m_viewBuilder.ToString (option, escape).c_str());
+            private:
+                std::set<Class*> m_classes;
+                PropertyMapCP m_ecid;
+                PropertyMapCP m_classId;
+                EndType m_type;
+            public:
+                EndPoint (RelationshipClassMapCR map, EndType type);
+                std::set<Class*>& GetClassesR ();
+                std::set<Storage const*> GetStorages () const;
 
-            if (!m_triggerBuilderList.empty ())
-                sql.AppendLine ("--#-----------------------Trigger-----------------------");
-            for (auto& trigger : m_triggerBuilderList)
+                PropertyMapCP GetInstanceId () const;
+                PropertyMapCP GetClassId () const;
+                EndType GetEnd () const;
+  
+            };
+        private:
+            EndPoint m_from;
+            EndPoint m_to;
+            ECDbSqlForeignKeyConstraint::ActionType m_onDeleteAction;
+            ECDbSqlForeignKeyConstraint::ActionType m_onUpdateAction;
+        public:
+            Relationship (RelationshipClassMapCR classMap, Storage& storage, Class* parent);
+            RelationshipClassMapCR GetRelationshipClassMap () const;
+            PersistanceLocation GetPersistanceLocation () const;
+            bool RequireCascade () const;
+            bool IsLinkTable () const;
+            EndPoint& From ();
+            EndPoint& To ();
+            EndPoint& ForeignEnd ()
                 {
-                sql.AppendLine (trigger.ToString (option, escape).c_str());
+                BeAssert (!IsLinkTable ());
+                return GetPersistanceLocation () == PersistanceLocation::From ? From () : To ();
+                }
+            EndPoint& PrimaryEnd ()
+                {
+                BeAssert (!IsLinkTable ());
+                return GetPersistanceLocation () == PersistanceLocation::To ? From () : To ();
+                }   
+            bool IsHolding () const { return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () == ECN::StrengthType::STRENGTHTYPE_Holding; }
+            bool IsReferencing () const { return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () == ECN::StrengthType::STRENGTHTYPE_Referencing; }
+            bool IsEmbedding () const { return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () == ECN::StrengthType::STRENGTHTYPE_Embedding; }
+            bool IsMarkedForCascadeDelete () const
+                {
+                BeAssert (!IsLinkTable ());
+                return m_onDeleteAction == ECDbSqlForeignKeyConstraint::ActionType::Cascade;
+                }
+            bool IsMarkedForCascadeUpdate () const
+                {
+                BeAssert (!IsLinkTable ());
+                return m_onUpdateAction == ECDbSqlForeignKeyConstraint::ActionType::Cascade;
                 }
 
-            return sql.ToString();
-            }
+        };
+    private:
+        struct ViewInfo
+            {
+            private:
+                SqlTriggerBuilder::TriggerList m_triggers;
+                SqlViewBuilder m_view;
+            public: 
+                ViewInfo (){}
+                ViewInfo (ViewInfo const& rhs)
+                    :m_triggers (rhs.m_triggers), m_view (rhs.m_view)
+                    {
+                    }
+                ViewInfo (ViewInfo const&& rhs)
+                    :m_triggers (std::move (rhs.m_triggers)), m_view (std::move (rhs.m_view))
+                    {
+                    }
+                ViewInfo& operator = (ViewInfo const& rhs)
+                        {
+                        if (this != &rhs)
+                            {
+                            m_triggers = rhs.m_triggers;
+                            m_view = rhs.m_view;
+                            }
+                        return *this;
+                        }
+                ViewInfo& operator = (ViewInfo const&& rhs)
+                    {
+                    if (this != &rhs)
+                        {
+                        m_triggers = std::move (rhs.m_triggers);
+                        m_view = std::move (rhs.m_view);
+                        }
+                    return *this;
+                    }
+                SqlViewBuilder& GetViewR () { return m_view; }
+                SqlTriggerBuilder::TriggerList& GetTriggersR () { return m_triggers; }
+                SqlViewBuilder const& GetView () const { return m_view; }
+                SqlTriggerBuilder::TriggerList const& GetTriggers () const{ return m_triggers; }
+
+            };
+
+        mutable std::map<ECN::ECClassId, std::set<ECN::ECClassId>> m_derivedClassLookup;
+        ECDbMapR m_map;
+        std::map<ECN::ECClassId, Class::Ptr> m_classes;
+        std::map<ECN::ECClassId, Relationship::Ptr> m_relationships;
+        std::map<Utf8CP, Storage::Ptr, CompareIUtf8> m_storage;
+        std::map<Class const*, ViewInfo> m_viewInfos;
+    private:
+        ECDbMapR GetMapR () { return m_map; }
+        ECDbMapCR GetMap () const { return m_map; } 
+        Storage& GetStorage (Utf8CP tableName);
+        Storage& GetStorage (ClassMapCR classMap);
+        Class& GetClass (ClassMapCR classMap);
+        Relationship&  GetRelationship (RelationshipClassMapCR classMap);
+        BentleyStatus AnalyseClass (ClassMapCR ecClassMap);
+        void AnalyseStruct (Class& classInfo);
+        BentleyStatus AnalyseRelationshipClass (RelationshipClassMapCR ecRelationshipClassMap);
+        const std::vector<ECN::ECClassId> GetRootClassIds () const;
+        const std::vector<ECN::ECClassId> GetRelationshipClassIds () const;
+        std::set<ECN::ECClassId> const& GetDerivedClassIds (ECN::ECClassId baseClassId) const;
+        ClassMapCP GetClassMap (ECN::ECClassId classId) const;
+        void SetupDerivedClassLookup ();
+        void ProcessEndTableRelationships ();
+        void ProcessLinkTableRelationships ();
+        SqlViewBuilder BuildView (Class& nclass);
+        BentleyStatus BuildPolymorphicDeleteTrigger (Class& nclass);
+        BentleyStatus BuildPolymorphicUpdateTrigger (Class& nclass);
+        void HandleLinkTable (Storage* fromStorage, std::map<Storage*, std::set<ECDbMapAnalyser::Relationship*>> const& relationshipsByStorage, bool isFrom);
+        static const NativeSqlBuilder GetClassFilter (std::pair<ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>> const& partition);
+        DbResult ApplyChanges ();
+        DbResult ExecuteDDL (Utf8CP sql);
+        DbResult UpdateHoldingView ();
+        ViewInfo* GetViewInfoForClass (Class const& nclass);
+    public:
+        ECDbMapAnalyser (ECDbMapR ecdbMap);
+        BentleyStatus Analyser (bool applyChanges);
     };
+
+//==========================================================================================================================================
+//==========================================================================================================================================
+//==========================================================================================================================================
+
+
+
+
+    //
+
+struct SqlClassPersistenceMethod : NonCopyableClass
+{
+private:
+    SqlViewBuilder m_viewBuilder;
+    NativeSqlBuilder m_tableName;
+    NativeSqlBuilder m_rowFilter;
+    std::vector<SqlTriggerBuilder> m_triggerBuilderList;
+    ClassMapCR m_classMap;
+    bool m_finish;
+public:
+    SqlClassPersistenceMethod (ClassMapCR classMap)
+        :m_classMap (classMap), m_finish (false)
+        {}
+
+    ~SqlClassPersistenceMethod ()
+        {}
+    ClassMapCR GetClassMap () const { return m_classMap; }
+    NativeSqlBuilder& GetTableNameBuilder () { return m_tableName; }
+    NativeSqlBuilder& GetRowFilterBuilder () { return m_rowFilter; }
+    SqlViewBuilder& GetViewBuilder () { return m_viewBuilder; }
+    bool IsFinished () const { return m_finish; }
+    void MarkAsFinish () { m_finish = true; }
+    SqlTriggerBuilder& AddTrigger (SqlTriggerBuilder::Type type, SqlTriggerBuilder::Condition condition, bool temprary)
+        {
+        m_triggerBuilderList.push_back (SqlTriggerBuilder (type, condition, temprary));
+        return m_triggerBuilderList.back ();
+        }
+    Utf8CP GetAffectedTargetId (DMLPolicy::Operation op) const
+        {
+        auto target = GetClassMap().GetDMLPolicy ().Get (op);
+        if (target == DMLPolicy::Target::None)
+            return "";
+
+        if (target == DMLPolicy::Target::Table)
+            return GetClassMap ().GetTable ().GetName ().c_str();
+
+        return const_cast<SqlClassPersistenceMethod*>(this)->GetViewBuilder ().GetNameBuilder ().ToString ();
+        }
+
+    std::vector<SqlTriggerBuilder> const& GetTriggerBuilderList () { return m_triggerBuilderList; }
+    void ResetTriggers ()
+        {
+        m_triggerBuilderList.clear ();
+        }
+    Utf8String ToString (SqlOption option, bool escape = false)
+        {
+        NativeSqlBuilder sql;
+        sql.AppendLine ("--#-----------------------View--------------------------");
+        sql.AppendLine (m_viewBuilder.ToString (option, escape).c_str());
+
+        if (!m_triggerBuilderList.empty ())
+            sql.AppendLine ("--#-----------------------Trigger-----------------------");
+        for (auto& trigger : m_triggerBuilderList)
+            {
+            sql.AppendLine (trigger.ToString (option, escape).c_str());
+            }
+
+        return sql.ToString();
+        }
+};
 
 
 
