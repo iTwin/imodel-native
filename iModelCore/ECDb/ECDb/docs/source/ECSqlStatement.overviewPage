@@ -42,7 +42,7 @@
 
     @e Details
     @li If not specified in the ECSQL INSERT statement, %ECDb generates the ECInstanceId automatically. In that case
-    it is incremented sequentially (which is the most efficient way to store primary keys in an @ref ECDbFile "ECDb file") and is always greater than 0.
+    it is incremented sequentially (which is the most efficient way to store primary keys in an @ref ECDbFile "ECDb file").
     @li The columns in the @ref ECDbFile "ECDb file" holding the %ECInstanceId are equivalent to SQLite's system column @p rowid.
     @li In the @ref ECDbGroup "ECDb API" the ECInstanceId is represented by the type @ref BentleyApi::BeSQLite::EC::ECInstanceId "ECInstanceId".
 
