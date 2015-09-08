@@ -318,12 +318,13 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindBinary(const void* value, int bin
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveECSqlParameterValue::_BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveECSqlParameterValue::_BindDateTime(double julianDay, DateTime::Info const* metadata)
     {
     if (!CanBindValue(PRIMITIVETYPE_DateTime))
         return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Date time values can only be bound to date time parameter values.");
 
-    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(julianDayTicksHns);
+    uint64_t jdHns = DateTime::RationalDayToHns(julianDay);
+    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(jdHns);
     const auto ecstat = metadata != nullptr ? m_value.SetDateTimeTicks(ceTicks, *metadata) : m_value.SetDateTimeTicks(ceTicks);
     const auto stat = ToECSqlStatus(ecstat);
     if (stat != ECSqlStatus::Success)

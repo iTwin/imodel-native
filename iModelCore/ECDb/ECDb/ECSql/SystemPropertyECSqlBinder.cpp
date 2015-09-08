@@ -105,7 +105,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindBinary(const void* value, int binary
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
     {
     return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind DateTime value to %s parameter.", SystemPropertyToString());
     }
