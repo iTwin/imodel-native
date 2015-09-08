@@ -982,7 +982,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
-             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId), m_lastModTime(params.m_lastModTime) 
+             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1093,8 +1093,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,LastMod=6,};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1107,8 +1107,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
                     stmt->GetValueText(Column::Label), 
                     DgnElement::Code(stmt->GetValueText(Column::Code)), 
                     elementId, 
-                    stmt->GetValueId<DgnElementId>(Column::ParentId),
-                    stmt->GetValueDouble(Column::LastMod)),
+                    stmt->GetValueId<DgnElementId>(Column::ParentId)),
                     makePersistent);
     }
 
@@ -1195,22 +1194,25 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
 
     ECClassCP elementClass = element.GetElementClass();
     if (nullptr == elementClass)
+        {
+        BeAssert(false);
+        stat = DgnDbStatus::BadElement;
         return nullptr;
+        }
 
-    Utf8PrintfString ecSql("INSERT INTO %s.%s (ECInstanceId, ", elementClass->GetSchema().GetName().c_str(), elementClass->GetName().c_str());
-    Utf8String values(":ECInstanceId, ");
-    //ECPropertyCP currentTimeStampProp = nullptr;
-    //bool hasCurrentTimeStampProp = Bentley::BeSQLite::EC::ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, m_ecClass);
+    Utf8PrintfString ecSql("INSERT INTO %s.%s (ECInstanceId,", elementClass->GetSchema().GetName().c_str(), elementClass->GetName().c_str());
+    Utf8String values(":ECInstanceId,");
+
     int propCount = 0;
     for (ECPropertyCP ecProperty : elementClass->GetProperties (true))
         {
-        //Current time stamp props are populated by SQLite, so ignore them here.
-        //if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
-        //    continue;
+        if (ecProperty->GetName() == "LastMod")
+            continue;
+
         if (propCount != 0)
             {
-            ecSql.append(", ");
-            values.append(", ");
+            ecSql.append(",");
+            values.append(",");
             }
         ecSql.append("[").append(ecProperty->GetName()).append("]");
         values.append(":").append(ecProperty->GetName());
@@ -1219,7 +1221,11 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
     ecSql.append(") VALUES (").append(values).append(")");
     CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql);
     if (!statement.IsValid())
+        {
+        BeAssert(false);
+        stat = DgnDbStatus::BadElement;
         return nullptr;
+        }
 
     if (DgnDbStatus::Success != (stat=element._InsertInDb(*statement)))
         return nullptr;

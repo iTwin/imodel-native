@@ -193,6 +193,7 @@ DgnElement::Code DgnElement::_GenerateDefaultCode()
     return Code(val.c_str());
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -201,6 +202,7 @@ void DgnElement::UpdateLastModTime()
     // update the last modified time directly rather than through trigger, so we can tell that we have the lastest version of this element
     m_lastModTime = DateTime::HnsToRationalDay(DateTime::UnixMillisecondsToJulianDay(BeTimeUtilities::GetCurrentTimeAsUnixMillis()));
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
@@ -221,7 +223,6 @@ template<class T> void DgnElement::CallAppData(T const& caller) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnInsert()
     {
-    UpdateLastModTime();
     if (!m_code.IsValid())
         m_code = _GenerateDefaultCode();
 
@@ -269,7 +270,6 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     if (m_classId != original.m_classId)
         return DgnDbStatus::WrongClass;
 
-    UpdateLastModTime();
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnUpdate(*this, original);
@@ -375,12 +375,14 @@ DgnDbStatus DgnElement::_InsertInDb(ECSqlStatement& statement)
     statement.BindId(statement.GetParameterIndex("CodeAuthorityId"), m_code.GetAuthority());
     statement.BindId(statement.GetParameterIndex("ParentId"), m_parentId);
     
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DateTimeInfo info;
     ECPropertyCP lastModProp = GetDgnDb().Schemas().GetECSchema(DGN_ECSCHEMA_NAME)->GetClassCP(DGN_CLASSNAME_Element)->GetPropertyP("LastMod");
     ECN::StandardCustomAttributeHelper::GetDateTimeInfo(info, *lastModProp);
     DateTime dt;
     DateTime::FromJulianDay (dt, m_lastModTime, info.GetInfo(true));
     statement.BindDateTime(statement.GetParameterIndex("LastMod"), dt);
+#endif
 
     auto stmtStatus = statement.Step();
     if (ECSqlStepStatus::Error == stmtStatus)
@@ -399,8 +401,8 @@ DgnDbStatus DgnElement::_InsertInDb(ECSqlStatement& statement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_UpdateInDb()
     {
-    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,LastMod=5,CodeAuthorityId=6,ElementId=7};
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,LastMod=?,CodeAuthorityId=? WHERE Id=?");
+    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,CodeAuthorityId=5,ElementId=6};
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,CodeAuthorityId=? WHERE Id=?");
 
     // note: ECClassId and ModelId cannot be modified.
     stmt->BindId(Column::CategoryId, m_categoryId);
@@ -413,7 +415,9 @@ DgnDbStatus DgnElement::_UpdateInDb()
     stmt->BindId(Column::CodeAuthorityId, m_code.GetAuthority());
     
     stmt->BindId(Column::ParentId, m_parentId);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     stmt->BindDouble(Column::LastMod, m_lastModTime);
+#endif
     stmt->BindId(Column::ElementId, m_elementId);
 
     return stmt->Step() != BE_SQLITE_DONE ? DgnDbStatus::WriteError : DgnDbStatus::Success;
@@ -856,13 +860,11 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     if (&other == this)
         return;
 
-    // Copying between DgnDbs is allowed. Caller must do ID remapping.
-
+    // Copying between DgnDbs is allowed. Caller must do Id remapping.
     m_categoryId = other.m_categoryId;
     m_code       = other.m_code;
     m_label      = other.m_label;
     m_parentId   = other.m_parentId;
-    m_lastModTime = other.m_lastModTime;
     }
 
 /*---------------------------------------------------------------------------------**//**
