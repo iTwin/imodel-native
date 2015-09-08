@@ -374,7 +374,7 @@ DgnDbStatus DgnElement::_InsertInDb(ECSqlStatement& statement)
     statement.BindText(statement.GetParameterIndex("Code"), m_code.GetValueCP(), IECSqlBinder::MakeCopy::No);
     statement.BindId(statement.GetParameterIndex("CodeAuthorityId"), m_code.GetAuthority());
     statement.BindId(statement.GetParameterIndex("ParentId"), m_parentId);
-    statement.BindDateTime(statement.GetParameterIndex("LastMod"), m_lastModTime, &DateTime::Info::GetUtc ());
+    statement.GetBinder(statement.GetParameterIndex("LastMod")).BindDateTime(m_lastModTime, &DateTime::Info::UTC);
 
     auto stmtStatus = statement.Step();
     if (ECSqlStepStatus::Error == stmtStatus)
