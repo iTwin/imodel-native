@@ -1191,21 +1191,17 @@ void ChangeSummary::Instance::SetupValuesTableSelectStatement(Utf8CP accessStrin
 //---------------------------------------------------------------------------------------
 DbDupValue ChangeSummary::Instance::GetOldValue(Utf8CP accessString) const
     {
-	if (!IsValid())
+    BeAssert(IsValid());
+
+	if (IsValid())
 	   {
-       BeAssert(false);
-       DbDupValue invalidValue(nullptr);
-       return std::move(invalidValue);
+       SetupValuesTableSelectStatement(accessString);
+       DbResult result = m_valuesTableSelect->Step();
+       if (result == BE_SQLITE_ROW)
+           return std::move(m_valuesTableSelect->GetDbValue(0));
+       BeAssert(result == BE_SQLITE_DONE);
 	   }
 	
-    SetupValuesTableSelectStatement(accessString);
-
-    DbResult result = m_valuesTableSelect->Step();
-    if (result == BE_SQLITE_ROW)
-        return std::move(m_valuesTableSelect->GetDbValue(0));
-
-    BeAssert(result == BE_SQLITE_DONE);
-
     DbDupValue invalidValue(nullptr);
     return std::move(invalidValue);
     }
@@ -1215,13 +1211,16 @@ DbDupValue ChangeSummary::Instance::GetOldValue(Utf8CP accessString) const
 //---------------------------------------------------------------------------------------
 DbDupValue ChangeSummary::Instance::GetNewValue(Utf8CP accessString) const
     {
-    SetupValuesTableSelectStatement(accessString);
+    BeAssert(IsValid());
 
-    DbResult result = m_valuesTableSelect->Step();
-    if (result == BE_SQLITE_ROW)
-        return std::move(m_valuesTableSelect->GetDbValue(1));
-
-    BeAssert(result == BE_SQLITE_DONE);
+    if (IsValid())
+        {
+        SetupValuesTableSelectStatement(accessString);
+        DbResult result = m_valuesTableSelect->Step();
+        if (result == BE_SQLITE_ROW)
+            return std::move(m_valuesTableSelect->GetDbValue(1));
+        BeAssert(result == BE_SQLITE_DONE);
+        }
 
     DbDupValue invalidValue(nullptr);
     return std::move(invalidValue);
@@ -1232,6 +1231,12 @@ DbDupValue ChangeSummary::Instance::GetNewValue(Utf8CP accessString) const
 //---------------------------------------------------------------------------------------
 bool ChangeSummary::Instance::HasValue(Utf8CP accessString) const
     {
+    if (!IsValid())
+        {
+        BeAssert(false);
+        return false;
+        }
+
     SetupValuesTableSelectStatement(accessString);
 
     DbResult result = m_valuesTableSelect->Step();
@@ -1425,7 +1430,7 @@ void ChangeSummary::QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& ch
         DbOpcode dbOpcode = (DbOpcode) stmt->GetValueInt(2);
         int indirect = stmt->GetValueInt(3);
 
-        ChangeSummary::Instance instance(m_ecdb, classId, instanceId, dbOpcode, indirect);
+        ChangeSummary::Instance instance(*this, classId, instanceId, dbOpcode, indirect);
         changes[instanceId] = instance;
         }
     BeAssert(result == BE_SQLITE_DONE);
