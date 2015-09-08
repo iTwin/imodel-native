@@ -129,7 +129,6 @@ public:
     AngleInDegrees GetYawAdjustment() const {return m_yawAdj;}
     //! @}
 };
-
 template <class _QvKey> struct QvElemSet;
 
 //=======================================================================================
@@ -213,10 +212,9 @@ public:
         Utf8CP          m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
-        double          m_lastModTime;
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
-                     DgnElementId parent=DgnElementId(), double lastModTime=0.0) :
-                     m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent), m_lastModTime(lastModTime) {}
+                     DgnElementId parent=DgnElementId()) :
+                     m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
         void SetLabel(Utf8CP label) {m_label = label;}  //!< Set the label for DgnElements created with this CreateParams
@@ -561,7 +559,6 @@ public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
-    void UpdateLastModTime();
     template<class T> void CallAppData(T const& caller) const;
 
 protected:
@@ -585,7 +582,6 @@ protected:
     DgnCategoryId   m_categoryId;
     Code            m_code;
     Utf8String      m_label;
-    double          m_lastModTime;
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -784,7 +780,7 @@ protected:
     //! Generate the CreateParams to use for Import
     //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
     //! @return CreateParams initialized with the element's current data
-    //! @remarks The m_id and m_lastModTime fields are \em not set, as it is never correct for two elements to have the same ID, and lastModTime is computed. The m_parentId field is not set,
+    //! @remarks The m_id fields are \em not set, as it is never correct for two elements to have the same Id. The m_parentId field is not set,
     //! as it is not clear if the copy should be a child of the same parent as the original. The caller can set this if appropriate.
     //! The m_code field is copied \em only when cloning between two different DgnDbs, as it is never correct for two elements to have the same code.
     CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
@@ -964,12 +960,8 @@ public:
     //! Set the label (user-friendly name) of this DgnElement.
     void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
 
-    //! Get the time this element was last modified.
-    //! @note the time is in UTC Julian days.
-    double GetLastModifiedTime() const {return m_lastModTime;}
-
-    //! Get the last modified time as a DateTime timestamp
-    DateTime GetTimeStamp() const {DateTime timestamp; DateTime::FromJulianDay(timestamp, m_lastModTime, DateTime::Info(DateTime::Kind::Utc)); return timestamp;}
+    //! Query the database for the last modified time of this DgnElement.
+    DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
 
     //! Get the display label (for use in the GUI) of this DgnElement.
     //! @note The default implementation returns the label if it is set or the code if the label is not set.
