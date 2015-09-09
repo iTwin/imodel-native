@@ -71,11 +71,19 @@ public:
     ECDB_EXPORT ECSqlStatus BindDateTime(DateTimeCR value);
 
 //__PUBLISH_SECTION_END__
-    //! Binds a %DateTime value expressed as Julian Day ticks to the parameter
-    //! @param[in] julianDayTicksHns DateTime value as Julian Day ticks in hecto-nanoseconds
+    //! Binds a %DateTime value expressed as Julian Day to the parameter
+    //! @param[in] julianDayTicks DateTime value as Julian Day
     //! @param[in] metadata DateTime metadata. Pass nullptr if no metadata exist for the ticks
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata);
+    //! @see BentleyApi::DateTime::ToJulianDay
+    ECDB_EXPORT ECSqlStatus BindDateTime(double julianDay, DateTime::Info const* metadata);
+
+    //! Binds a %DateTime value expressed as Julian Day ticks to the parameter
+    //! @param[in] julianDayTicksHns DateTime value as Julian Day ticks in hecto-nanoseconds    
+    //! @param[in] metadata DateTime metadata. Pass nullptr if no metadata exist for the ticks
+    //! @return ECSqlStatus::Success or error codes
+    //! @see BentleyApi::DateTime::ToJulianDay
+    ECDB_EXPORT ECSqlStatus BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata);
 
 //__PUBLISH_SECTION_START__
 

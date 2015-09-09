@@ -135,9 +135,17 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindBinary(const void* value, int binary
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2015
+//---------------------------------------------------------------------------------------
+ECSqlStatus PointToColumnsECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
+    {
+    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind DateTime value to Point2D / Point3D parameter.");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PointToColumnsECSqlBinder::_BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus PointToColumnsECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
     {
     return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind DateTime value to Point2D / Point3D parameter.");
     }

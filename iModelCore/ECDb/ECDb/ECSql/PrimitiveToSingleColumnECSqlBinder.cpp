@@ -88,28 +88,36 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBinary(const void* value, i
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
     {
-    const auto stat = CanBind(PRIMITIVETYPE_DateTime);
+    const double jd = DateTime::HnsToRationalDay(julianDayHns);
+    return _BindDateTime(jd, metadata);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      07/2014
+//---------------------------------------------------------------------------------------
+ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
+    {
+    const ECSqlStatus stat = CanBind(PRIMITIVETYPE_DateTime);
     if (stat != ECSqlStatus::Success)
         return stat;
 
     if (metadata != nullptr && metadata->GetKind() == DateTime::Kind::Local)
         return GetStatusContext().SetError(ECSqlStatus::UserError, "ECDb does not support to bind local date times.");
 
-    auto const& parameterTypeInfo = GetTypeInfo();
+    ECSqlTypeInfo const& parameterTypeInfo = GetTypeInfo();
     if (!parameterTypeInfo.DateTimeInfoMatches(metadata))
         return GetStatusContext().SetError(ECSqlStatus::UserError, "Metadata of DateTime value to bind doesn't match the metadata on the corresponding ECProperty.");
 
-    if (auto eh = GetOnBindEventHandler())
+    if (IECSqlBinder* eh = GetOnBindEventHandler())
         {
-        auto es = eh->BindDateTime(julianDayTicksHns, metadata);
+        const ECSqlStatus es = eh->BindDateTime(julianDay, metadata);
         if (es != ECSqlStatus::Success)
             return GetStatusContext().SetError(es, "OnBindEventHandler Failed");
         }
 
-    const double jd = DateTime::HnsToRationalDay(julianDayTicksHns);
-    const auto sqliteStat = GetSqliteStatementR ().BindDouble(m_sqliteIndex, jd);
+    const DbResult sqliteStat = GetSqliteStatementR().BindDouble(m_sqliteIndex, julianDay);
     if (sqliteStat != BE_SQLITE_OK)
         return SetError(sqliteStat, "ECSqlStatement::BindDateTime");
 

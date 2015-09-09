@@ -24,7 +24,8 @@ public:
 
     virtual ECSqlStatus _BindBoolean(bool value) = 0;
     virtual ECSqlStatus _BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) = 0;
-    virtual ECSqlStatus _BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata) = 0;
+    virtual ECSqlStatus _BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata) = 0;
+    virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const* metadata) = 0;
     virtual ECSqlStatus _BindDouble(double value) = 0;
     virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) = 0;
     virtual ECSqlStatus _BindInt(int value) = 0;
