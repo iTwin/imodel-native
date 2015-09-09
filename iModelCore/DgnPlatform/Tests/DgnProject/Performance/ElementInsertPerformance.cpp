@@ -101,6 +101,7 @@ TEST_F(PerformanceElementItem, CRUD)
 
 //static
 const DgnCategoryId PerformanceElementTestFixture::s_catId = DgnCategoryId((int64_t)123);
+const DgnAuthorityId PerformanceElementTestFixture::s_codeAuthorityId = DgnAuthorityId((int64_t) 1);
 Utf8CP const PerformanceElementTestFixture::s_textVal = "bla bla";
 const double PerformanceElementTestFixture::s_doubleVal = -3.1415;
 Utf8CP const PerformanceElementTestFixture::s_testSchemaXml =
@@ -165,23 +166,17 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
     return SUCCESS;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  06/15
-//+---------------+---------------+---------------+---------------+---------------+------
-DgnModelId PerformanceElementTestFixture::InsertDgnModel() const
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+PhysicalModelPtr PerformanceElementTestFixture::CreatePhysicalModel() const
     {
-    //cannot let ECDb generate the model id as DgnDb has its own sequence and model id 1 is already in use
-    ECSqlStatement stmt;
-    if (stmt.Prepare(*m_db, "INSERT INTO dgn.Model3d (ECInstanceId, Name) VALUES (200, 'TestModel')") != ECSqlStatus::Success)
-        return DgnModelId();
-
-    ECInstanceKey newKey;
-    if (stmt.Step(newKey) == ECSqlStepStatus::Done)
-        return DgnModelId (newKey.GetECInstanceId().GetValue ());
-
-    return DgnModelId();
+    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
+    PhysicalModelPtr targetModel = new PhysicalModel(PhysicalModel::CreateParams(*m_db, mclassId, "Instances"));
+    EXPECT_EQ( DgnDbStatus::Success , targetModel->Insert() );       /* Insert the new model into the DgnDb */
+    return targetModel;
     }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -193,7 +188,7 @@ void PerformanceElementTestFixture::CommitAndLogTiming(StopWatch& timer, Utf8CP 
     LOG.infov("%s> Inserting %d instances (5 inheritence levels, 3 properties per class) took %.4f seconds. Commit time: %.4f seconds", scenario, s_instanceCount,
                             timer.GetElapsedSeconds(),
                             commitTimer.GetElapsedSeconds ());
-    LOGTODB(testcaseName, testName, commitTimer.GetElapsedSeconds(), scenario, s_instanceCount);
+    LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), scenario, s_instanceCount);
     }
 
 
@@ -205,7 +200,9 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceSingleInsertNumberedParams.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    DgnModelId modelId = InsertDgnModel();
+    PhysicalModelPtr model = CreatePhysicalModel();
+    ASSERT_TRUE(model != nullptr);
+    DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
     StopWatch timer(true);
@@ -214,35 +211,36 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,Code,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"
                                                                              "Prop4_1,Prop4_2,Prop4_3) "
-                                                                             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                                                             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
         ASSERT_TRUE(insertStmt != nullptr);
         CachedECSqlStatement& stmt = *insertStmt;
 
         stmt.BindId(1, modelId);
         stmt.BindId(2, s_catId);
+        stmt.BindId(3, s_codeAuthorityId);
         code.Sprintf("Id-%d", i);
-        stmt.BindText(3, code.c_str(), IECSqlBinder::MakeCopy::No);
+        stmt.BindText(4, code.c_str(), IECSqlBinder::MakeCopy::No);
 
-        stmt.BindText(4, s_textVal, IECSqlBinder::MakeCopy::No);
-        stmt.BindInt64(5, s_int64Val);
-        stmt.BindDouble(6, s_doubleVal);
+        stmt.BindText(5, s_textVal, IECSqlBinder::MakeCopy::No);
+        stmt.BindInt64(6, s_int64Val);
+        stmt.BindDouble(7, s_doubleVal);
 
-        stmt.BindText(7, s_textVal, IECSqlBinder::MakeCopy::No);
-        stmt.BindInt64(8, s_int64Val);
-        stmt.BindDouble(9, s_doubleVal);
+        stmt.BindText(8, s_textVal, IECSqlBinder::MakeCopy::No);
+        stmt.BindInt64(9, s_int64Val);
+        stmt.BindDouble(10, s_doubleVal);
 
-        stmt.BindText(10, s_textVal, IECSqlBinder::MakeCopy::No);
-        stmt.BindInt64(11, s_int64Val);
-        stmt.BindDouble(12, s_doubleVal);
+        stmt.BindText(11, s_textVal, IECSqlBinder::MakeCopy::No);
+        stmt.BindInt64(12, s_int64Val);
+        stmt.BindDouble(13, s_doubleVal);
 
-        stmt.BindText(13, s_textVal, IECSqlBinder::MakeCopy::No);
-        stmt.BindInt64(14, s_int64Val);
-        stmt.BindDouble(15, s_doubleVal);
+        stmt.BindText(14, s_textVal, IECSqlBinder::MakeCopy::No);
+        stmt.BindInt64(15, s_int64Val);
+        stmt.BindDouble(16, s_doubleVal);
 
         ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
 
@@ -262,7 +260,9 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceInsertUpdateApproach.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    DgnModelId modelId = InsertDgnModel();
+    PhysicalModelPtr model = CreatePhysicalModel();
+    ASSERT_TRUE(model != nullptr);
+    DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
     StopWatch timer(true);
@@ -271,7 +271,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId, CategoryId, Code) VALUES (?,?,?)");
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code) VALUES (?,?,?,?)");
         ASSERT_TRUE(insertStmt != nullptr);
 
         std::vector<CachedECSqlStatementPtr> updateStmts;
@@ -293,8 +293,9 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
 
         insertStmt->BindId(1, modelId);
         insertStmt->BindId(2, s_catId);
+        insertStmt->BindId(3, s_codeAuthorityId);
         code.Sprintf("Id-%d", i);
-        insertStmt->BindText(3, code.c_str(), IECSqlBinder::MakeCopy::No);
+        insertStmt->BindText(4, code.c_str(), IECSqlBinder::MakeCopy::No);
 
         ECInstanceKey newKey;
         ASSERT_EQ(ECSqlStepStatus::Done, insertStmt->Step(newKey));
@@ -324,7 +325,9 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceSingleInsertNamedParams.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    DgnModelId modelId = InsertDgnModel();
+    PhysicalModelPtr model = CreatePhysicalModel();
+    ASSERT_TRUE(model != nullptr);
+    DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
     StopWatch timer(true);
@@ -332,12 +335,12 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,Code,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"
                                                                              "Prop4_1,Prop4_2,Prop4_3) "
-                                                                             "VALUES (:modelid,:catid,:code,"
+                                                                             "VALUES (:modelid,:catid,:authorityid,:code,"
                                                                              ":p11,:p12,:p13,"
                                                                              ":p21,:p22,:p23,"
                                                                              ":p31,:p32,:p33,"
@@ -348,6 +351,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
 
         stmt.BindId(stmt.GetParameterIndex("modelid"), modelId);
         stmt.BindId(stmt.GetParameterIndex("catid"), s_catId);
+        stmt.BindId(stmt.GetParameterIndex("authorityid"), s_codeAuthorityId);
         code.Sprintf("Id-%d", i);
         stmt.BindText(stmt.GetParameterIndex("code"), code.c_str(), IECSqlBinder::MakeCopy::No);
 

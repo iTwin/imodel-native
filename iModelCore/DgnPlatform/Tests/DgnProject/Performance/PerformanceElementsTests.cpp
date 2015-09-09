@@ -420,7 +420,6 @@ struct PerformanceElementsTestFixture : public PerformanceElementTestFixture
     {
     protected:
     //PerformanceTestingFrameWork     m_testObj;
-    PhysicalModelPtr CreatePhysicalModel() const;
     void TimeInsertion(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName);
     void TimeUpdate(int numInstances, Utf8CP schemaName, Utf8CP className);
     };
@@ -506,17 +505,6 @@ void PerformanceElementsTestFixture::TimeInsertion(int numInstances, Utf8CP sche
     //m_testObj.writeTodb(insertTime, "PerformanceElementTestFixture.TimeInsertion", Utf8PrintfString("Inserting %d %s elements", numInstances, className).c_str(), numInstances);
     m_db->SaveChanges();
     m_db->CloseDb();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PhysicalModelPtr PerformanceElementsTestFixture::CreatePhysicalModel() const
-    {
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr targetModel = new PhysicalModel(PhysicalModel::CreateParams(*m_db, mclassId, "Instances"));
-    EXPECT_EQ( DgnDbStatus::Success , targetModel->Insert() );       /* Insert the new model into the DgnDb */
-    return targetModel;
     }
 
 TEST_F(PerformanceElementsTestFixture, ElementInsert)
