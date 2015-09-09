@@ -86,5 +86,38 @@ private:
     Utf8String m_mapInfo;
 };
 
+//=======================================================================================
+//! Base class for data source.
+//! @bsiclass
+//=======================================================================================
+struct CompoundDataSource : public RealityDataSource
+    {
+    DEFINE_T_SUPER(RealityDataSource)
+
+    public:
+        friend struct RealityDataSourceSerializer;
+
+        REALITYPACKAGE_EXPORT static CompoundDataSourcePtr Create(Utf8CP uri, WCharCP type);
+
+        //! Get/Set The source data.
+        //! The string used here should represent a xml fragment containing all the nodes/infos required for Usgs processing.
+        //! You can take a look at PublicApi/RealityPackage/UsgsDataSource.h for more details on the structure of a UsgsData object.
+        REALITYPACKAGE_EXPORT Utf8StringCR  Get() const;
+        REALITYPACKAGE_EXPORT void          Set(Utf8CP data);
+
+    protected:
+        CompoundDataSource() {}
+        CompoundDataSource(Utf8CP uri, WCharCP type);
+        virtual ~CompoundDataSource();
+
+        virtual RealityPackageStatus _Read(BeXmlNodeR dataSourceNode);
+        virtual RealityPackageStatus _Write(BeXmlNodeR dataSourceNode) const;
+
+        virtual Utf8CP _GetElementName() const;
+
+    private:
+        Utf8String m_data;
+    };
+
 END_BENTLEY_REALITYPACKAGE_NAMESPACE
 

@@ -71,6 +71,8 @@
 #define PACKAGE_ELEMENT_WmsSource           "WmsSource"
 #define WMS_SOURCE_TYPE                     L"wms"
 
+#define PACKAGE_ELEMENT_CompoundSource      "CompoundSource"
+
 #define SPACE_DELIMITER    " "
 #define SPACE_DELIMITER_U L" "
 

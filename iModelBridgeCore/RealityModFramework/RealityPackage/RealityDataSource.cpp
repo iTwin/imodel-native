@@ -170,3 +170,86 @@ RealityPackageStatus WmsDataSource::_Write(BeXmlNodeR dataSourceNode) const
 
     return status;
     }
+
+
+//=======================================================================================
+//                              CompoundDataSource
+//=======================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+Utf8StringCR CompoundDataSource::Get() const { return m_data; }
+void CompoundDataSource::Set(Utf8CP data) { m_data = data; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+CompoundDataSource::CompoundDataSource(Utf8CP uri, WCharCP type)
+    :RealityDataSource(uri, type)
+    {}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+CompoundDataSource::~CompoundDataSource() {}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+Utf8CP CompoundDataSource::_GetElementName() const { return PACKAGE_ELEMENT_CompoundSource; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+CompoundDataSourcePtr CompoundDataSource::Create(Utf8CP uri, WCharCP type)
+    {
+    if (Utf8String::IsNullOrEmpty(uri) || WString::IsNullOrEmpty(type))
+        return NULL;
+
+    return new CompoundDataSource(uri, type);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+RealityPackageStatus CompoundDataSource::_Read(BeXmlNodeR dataSourceNode)
+    {
+    // Always read base first.
+    RealityPackageStatus status = T_Super::_Read(dataSourceNode);
+    if (RealityPackageStatus::Success != status)
+        return status;
+
+    // Create MapInfo xml fragment from xml node.
+    BeXmlStatus xmlStatus = BEXML_Success;
+    xmlStatus = dataSourceNode.GetXmlString(m_data);
+    if (BEXML_Success != xmlStatus)
+        return RealityPackageStatus::XmlReadError;
+
+    return status;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 9/2015
+//-------------------------------------------------------------------------------------
+RealityPackageStatus CompoundDataSource::_Write(BeXmlNodeR dataSourceNode) const
+    {
+    // Always write base first.
+    RealityPackageStatus status = T_Super::_Write(dataSourceNode);
+    if (RealityPackageStatus::Success != status)
+        return status;
+
+    //&&JFC TODO Doc why we can accept an empty string here.
+    if (m_data.empty())
+        return RealityPackageStatus::Success;
+
+    // Create Xml Dom from string.
+    BeXmlStatus xmlStatus = BEXML_Success;
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, m_data.c_str());
+    if (BEXML_Success != xmlStatus)
+        return RealityPackageStatus::XmlReadError;
+
+    // Add root node.
+    dataSourceNode.ImportNode(pXmlDom->GetRootElement());
+
+    return status;
+    }

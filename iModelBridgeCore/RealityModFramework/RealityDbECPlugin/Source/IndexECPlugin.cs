@@ -750,7 +750,7 @@ namespace Bentley.ECPluginExamples
             string name = Guid.NewGuid().ToString();
             try
             {
-                RealityDataPackageNet.Create (m_packagesLocation, name, selectedRegion, wmsMapInfoList);
+                RealityDataPackageNet.Create (m_packagesLocation, name, selectedRegion, wmsMapInfoList, null);
 
             }
             catch (Exception e)

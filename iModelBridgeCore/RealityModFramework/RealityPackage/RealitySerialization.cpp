@@ -33,6 +33,7 @@ RealityDataSourceSerializer::RealityDataSourceSerializer()
     {
     REGISTER_REALITY_SOURCE(RealityDataSource, PACKAGE_ELEMENT_Source);
     REGISTER_REALITY_SOURCE(WmsDataSource, PACKAGE_ELEMENT_WmsSource);
+    REGISTER_REALITY_SOURCE(CompoundDataSource, PACKAGE_ELEMENT_CompoundSource);
     }
 
 //----------------------------------------------------------------------------------------

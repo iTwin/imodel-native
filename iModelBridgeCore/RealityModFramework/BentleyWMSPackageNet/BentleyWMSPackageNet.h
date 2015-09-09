@@ -7,21 +7,18 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <RealityPackage/RealityDataSource.h>
+#include <Bentley/BeFileName.h>
 #include <RealityPackage/RealityDataPackage.h>
-#include <RealityPlatform/WMSSource.h>
-
 
 #using  <mscorlib.dll>
 
-
 using RealityPackage::RealityDataPackage;
-using RealityPlatform::WmsSource;
 using namespace System::Collections::Generic;
 
 
 // Forward declaration
 namespace BentleyRealityDataPackage { ref class WmsMapInfoNet; }
+namespace BentleyRealityDataPackage { ref class UsgsSourceNet; }
 
 namespace BentleyRealityDataPackage
     {   
@@ -31,7 +28,12 @@ namespace BentleyRealityDataPackage
     public ref class RealityDataPackageNet
         {
         public:
-            static void Create(System::String^ location, System::String^ name, List<double>^ regionOfInterest, List<WmsMapInfoNet^>^ wmsMapInfoList);
+            //! Create package.
+            static void Create(System::String^ location, 
+                               System::String^ name,
+                               List<double>^ regionOfInterest,
+                               List<WmsMapInfoNet^>^ wmsMapInfoList,
+                               List<UsgsSourceNet^>^ usgsSourceList);
         
         private:
             RealityDataPackageNet();
@@ -84,6 +86,38 @@ namespace BentleyRealityDataPackage
                           bool isTransparent);
 
             ~WmsMapInfoNet();
+
+            System::String^ m_url;
+            System::String^ m_copyright;
+            System::String^ m_xmlFragment;
+        };
+
+    //=====================================================================================
+    //! @bsiclass                                   Jean-Francois.Cote               9/2015
+    //=====================================================================================
+    public ref class UsgsSourceNet
+        {
+        public:
+            static UsgsSourceNet^ Create(System::String^ copyright,
+                                         System::String^ url,
+                                         System::String^ dataType,
+                                         System::String^ dataLocation,
+                                         List<System::String^>^ sisterFiles,
+                                         System::String^ metadata);
+
+            System::String^ GetUrl() { return m_url; }
+            System::String^ GetCopyright() { return m_copyright; }
+            System::String^ GetXml() { return m_xmlFragment; }
+
+        private:
+            UsgsSourceNet(System::String^ copyright, 
+                          System::String^ url, 
+                          System::String^ dataType, 
+                          System::String^ dataLocation,
+                          List<System::String^>^ sisterFiles,
+                          System::String^ metadata);
+
+            ~UsgsSourceNet();
 
             System::String^ m_url;
             System::String^ m_copyright;
