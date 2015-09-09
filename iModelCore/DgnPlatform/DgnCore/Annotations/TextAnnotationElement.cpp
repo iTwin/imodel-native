@@ -10,6 +10,87 @@
 #include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationPersistence.h>
 
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+namespace dgn_ElementHandler
+{
+HANDLER_DEFINE_MEMBERS(TextAnnotation);
+}
+
+namespace dgn_AspectHandler
+{
+HANDLER_DEFINE_MEMBERS(TextAnnotationData);
+}
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     09/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus TextAnnotationDataAspect::_UpdateProperties(DgnElementCR el)
+    {
+    // T_Super::_UpdateProperties is pure; it is a link error to chain, so don't.
+    
+    bvector<Byte> annotationBlob;
+    if (m_annotation.IsValid())
+        {
+        if (SUCCESS != TextAnnotationPersistence::EncodeAsFlatBuf(annotationBlob, *m_annotation))
+            return DgnDbStatus::WriteError;
+        }
+
+    CachedECSqlStatementPtr update = el.GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationDataAspect) " SET TextAnnotation=? WHERE ECInstanceId=?");
+    if (!update.IsValid())
+        return DgnDbStatus::WriteError;
+
+    if (annotationBlob.empty())
+        update->BindNull(1);
+    else
+        update->BindBinary(1, &annotationBlob[0], (int)annotationBlob.size(), IECSqlBinder::MakeCopy::No);
+
+    update->BindId(2, el.GetElementId());
+
+    if (ECSqlStepStatus::Done != update->Step())
+        return DgnDbStatus::WriteError;
+
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     09/2015
+//---------------------------------------------------------------------------------------
+DgnDbStatus TextAnnotationDataAspect::_LoadProperties(DgnElementCR el)
+    {
+    // T_Super::_LoadProperties is pure; it is a link error to chain, so don't.
+    
+    CachedECSqlStatementPtr select = el.GetDgnDb().GetPreparedECSqlStatement("SELECT TextAnnotation FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationDataAspect) " WHERE ECInstanceId=?");
+    if (!select.IsValid())
+        return DgnDbStatus::ReadError;
+
+    select->BindId(1, el.GetElementId());
+
+    if ((ECSqlStepStatus::HasRow != select->Step()) || select->IsValueNull(0))
+        {
+        m_annotation = nullptr;
+        return DgnDbStatus::Success;
+        }
+
+    int dataSize = 0;
+    ByteCP data = (ByteCP)select->GetValueBinary(0, &dataSize);
+    if ((0 == dataSize) || (nullptr == data))
+        {
+        m_annotation = nullptr;
+        return DgnDbStatus::Success;
+        }
+
+    TextAnnotationPtr annotation = TextAnnotation::Create(el.GetDgnDb());
+    if (SUCCESS != TextAnnotationPersistence::DecodeFromFlatBuf(*annotation, data, (size_t)dataSize))
+        return DgnDbStatus::ReadError;
+
+    m_annotation = annotation;
+
+    return DgnDbStatus::Success;
+    }
+
 //=======================================================================================
 // We want to re-use TextAnnotationDraw, which requires a context, so use an IElementGraphicsProcessor to listen to context events and emit to an ElementGeometryBuilder.
 // Note that this is tightly coupled with TextAnnotationDraw (and AnnotationFrameDraw, AnnotationLeaderDraw, and AnnotationTextBlockDraw), which uses a subset of draw commands.
@@ -84,19 +165,28 @@ void TextAnnotationGraphicsProcessor::_OutputGraphics(ViewContextR context)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-void TextAnnotationElement::_UpdateGeomStream()
+void TextAnnotationDataAspect::_AppendGeometry(ElementGeometryBuilderR builder, TextAnnotationElementR el) const
     {
     if (!m_annotation.IsValid())
-        {
-        GetGeomStreamR().Clear();
         return;
+    
+    TextAnnotationGraphicsProcessor annotationGraphics(*m_annotation, el.GetCategoryId(), builder);
+    ElementGraphicsOutput::Process(annotationGraphics, el.GetDgnDb());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     09/2015
+//---------------------------------------------------------------------------------------
+TextAnnotationDataAspectR TextAnnotationElement::GetDataAspectR()
+    {
+    TextAnnotationDataAspectP aspect = TextAnnotationDataAspect::GetP(*this);
+    if (nullptr == aspect)
+        {
+        aspect = new TextAnnotationDataAspect();
+        TextAnnotationDataAspect::SetAspect(*this, *aspect);
         }
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), m_categoryId, m_placement.GetOrigin(), m_placement.GetAngle());
-    TextAnnotationGraphicsProcessor annotationGraphics(*m_annotation, m_categoryId, *builder);
-    ElementGraphicsOutput::Process(annotationGraphics, GetDgnDb());
-
-    builder->SetGeomStreamAndPlacement(*this);
+    return *aspect;
     }
 
 //---------------------------------------------------------------------------------------
@@ -104,32 +194,34 @@ void TextAnnotationElement::_UpdateGeomStream()
 //---------------------------------------------------------------------------------------
 DgnDbStatus TextAnnotationElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
     {
-    bvector<Byte> annotationBlob;
-    if (m_annotation.IsValid())
-        {
-        if (SUCCESS != TextAnnotationPersistence::EncodeAsFlatBuf(annotationBlob, *m_annotation))
-            return DgnDbStatus::WriteError;
-        }
-    
-    DgnDbStatus superStatus = T_Super::_InsertInDb(statement);
-    if (DgnDbStatus::Success != superStatus)
-        return superStatus;
-    
-    CachedECSqlStatementPtr insert = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationDataAspect) " (ECInstanceId, TextAnnotation) VALUES (?,?)");
-    if (!insert.IsValid())
-        return DgnDbStatus::WriteError;
-    
-    insert->BindId(1, GetElementId());
-    
-    if (annotationBlob.empty())
-        insert->BindNull(2);
-    else
-        insert->BindBinary(2, &annotationBlob[0], (int)annotationBlob.size(), IECSqlBinder::MakeCopy::No);
-    
-    if (ECSqlStepStatus::Done != insert->Step())
-        return DgnDbStatus::WriteError;
+    //bvector<Byte> annotationBlob;
+    //if (m_annotation.IsValid())
+    //    {
+    //    if (SUCCESS != TextAnnotationPersistence::EncodeAsFlatBuf(annotationBlob, *m_annotation))
+    //        return DgnDbStatus::WriteError;
+    //    }
+    //
+    //DgnDbStatus superStatus = T_Super::_InsertInDb(statement);
+    //if (DgnDbStatus::Success != superStatus)
+    //    return superStatus;
+    //
+    //CachedECSqlStatementPtr insert = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationDataAspect) " (ECInstanceId, TextAnnotation) VALUES (?,?)");
+    //if (!insert.IsValid())
+    //    return DgnDbStatus::WriteError;
+    //
+    //insert->BindId(1, GetElementId());
+    //
+    //if (annotationBlob.empty())
+    //    insert->BindNull(2);
+    //else
+    //    insert->BindBinary(2, &annotationBlob[0], (int)annotationBlob.size(), IECSqlBinder::MakeCopy::No);
+    //
+    //if (ECSqlStepStatus::Done != insert->Step())
+    //    return DgnDbStatus::WriteError;
 
-    return DgnDbStatus::Success;
+    //return DgnDbStatus::Success;
+    
+    return T_Super::_InsertInDb(statement);
     }
 
 //---------------------------------------------------------------------------------------
@@ -137,32 +229,34 @@ DgnDbStatus TextAnnotationElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& sta
 //---------------------------------------------------------------------------------------
 DgnDbStatus TextAnnotationElement::_UpdateInDb()
     {
-    bvector<Byte> annotationBlob;
-    if (m_annotation.IsValid())
-        {
-        if (SUCCESS != TextAnnotationPersistence::EncodeAsFlatBuf(annotationBlob, *m_annotation))
-            return DgnDbStatus::WriteError;
-        }
+    //bvector<Byte> annotationBlob;
+    //if (m_annotation.IsValid())
+    //    {
+    //    if (SUCCESS != TextAnnotationPersistence::EncodeAsFlatBuf(annotationBlob, *m_annotation))
+    //        return DgnDbStatus::WriteError;
+    //    }
 
-    DgnDbStatus superStatus = T_Super::_UpdateInDb();
-    if (DgnDbStatus::Success != superStatus)
-        return superStatus;
+    //DgnDbStatus superStatus = T_Super::_UpdateInDb();
+    //if (DgnDbStatus::Success != superStatus)
+    //    return superStatus;
 
-    CachedECSqlStatementPtr update = GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationDataAspect) " SET TextAnnotation=? WHERE ECInstanceId=?");
-    if (!update.IsValid())
-        return DgnDbStatus::WriteError;
+    //CachedECSqlStatementPtr update = GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationDataAspect) " SET TextAnnotation=? WHERE ECInstanceId=?");
+    //if (!update.IsValid())
+    //    return DgnDbStatus::WriteError;
 
-    if (annotationBlob.empty())
-        update->BindNull(1);
-    else
-        update->BindBinary(1, &annotationBlob[0], (int)annotationBlob.size(), IECSqlBinder::MakeCopy::No);
+    //if (annotationBlob.empty())
+    //    update->BindNull(1);
+    //else
+    //    update->BindBinary(1, &annotationBlob[0], (int)annotationBlob.size(), IECSqlBinder::MakeCopy::No);
 
-    update->BindId(2, GetElementId());
+    //update->BindId(2, GetElementId());
 
-    if (ECSqlStepStatus::Done != update->Step())
-        return DgnDbStatus::WriteError;
+    //if (ECSqlStepStatus::Done != update->Step())
+    //    return DgnDbStatus::WriteError;
 
-    return DgnDbStatus::Success;
+    //return DgnDbStatus::Success;
+    
+    return T_Super::_UpdateInDb();
     }
 
 //---------------------------------------------------------------------------------------
@@ -170,37 +264,39 @@ DgnDbStatus TextAnnotationElement::_UpdateInDb()
 //---------------------------------------------------------------------------------------
 DgnDbStatus TextAnnotationElement::_LoadFromDb()
     {
-    DgnDbStatus superStatus = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != superStatus)
-        return superStatus;
+    //DgnDbStatus superStatus = T_Super::_LoadFromDb();
+    //if (DgnDbStatus::Success != superStatus)
+    //    return superStatus;
 
-    CachedECSqlStatementPtr select = GetDgnDb().GetPreparedECSqlStatement("SELECT TextAnnotation FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationDataAspect) " WHERE ECInstanceId=?");
-    if (!select.IsValid())
-        return DgnDbStatus::ReadError;
-    
-    select->BindId(1, GetElementId());
-        
-    if ((ECSqlStepStatus::HasRow != select->Step()) || select->IsValueNull(0))
-        {
-        m_annotation = nullptr;
-        return DgnDbStatus::Success;
-        }
-    
-    int dataSize = 0;
-    ByteCP data = (ByteCP)select->GetValueBinary(0, &dataSize);
-    if ((0 == dataSize) || (nullptr == data))
-        {
-        m_annotation = nullptr;
-        return DgnDbStatus::Success;
-        }
-    
-    TextAnnotationPtr annotation = TextAnnotation::Create(GetDgnDb());
-    if (SUCCESS != TextAnnotationPersistence::DecodeFromFlatBuf(*annotation, data, (size_t)dataSize))
-        return DgnDbStatus::ReadError;
-    
-    m_annotation = annotation;
-    
-    return DgnDbStatus::Success;
+    //CachedECSqlStatementPtr select = GetDgnDb().GetPreparedECSqlStatement("SELECT TextAnnotation FROM " DGN_SCHEMA(DGN_CLASSNAME_TextAnnotationDataAspect) " WHERE ECInstanceId=?");
+    //if (!select.IsValid())
+    //    return DgnDbStatus::ReadError;
+    //
+    //select->BindId(1, GetElementId());
+    //    
+    //if ((ECSqlStepStatus::HasRow != select->Step()) || select->IsValueNull(0))
+    //    {
+    //    m_annotation = nullptr;
+    //    return DgnDbStatus::Success;
+    //    }
+    //
+    //int dataSize = 0;
+    //ByteCP data = (ByteCP)select->GetValueBinary(0, &dataSize);
+    //if ((0 == dataSize) || (nullptr == data))
+    //    {
+    //    m_annotation = nullptr;
+    //    return DgnDbStatus::Success;
+    //    }
+    //
+    //TextAnnotationPtr annotation = TextAnnotation::Create(GetDgnDb());
+    //if (SUCCESS != TextAnnotationPersistence::DecodeFromFlatBuf(*annotation, data, (size_t)dataSize))
+    //    return DgnDbStatus::ReadError;
+    //
+    //m_annotation = annotation;
+    //
+    //return DgnDbStatus::Success;
+
+    return T_Super::_LoadFromDb();
     }
 
 //---------------------------------------------------------------------------------------
@@ -210,9 +306,23 @@ void TextAnnotationElement::_CopyFrom(DgnElementCR rhsElement)
     {
     T_Super::_CopyFrom(rhsElement);
     
-    TextAnnotationElementCP rhs = dynamic_cast<TextAnnotationElementCP>(&rhsElement);
-    if (nullptr == rhs)
+    //TextAnnotationElementCP rhs = dynamic_cast<TextAnnotationElementCP>(&rhsElement);
+    //if (nullptr == rhs)
+    //    return;
+    //
+    //m_annotation = (rhs->m_annotation.IsValid() ? rhs->m_annotation->Clone() : nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     09/2015
+//---------------------------------------------------------------------------------------
+void TextAnnotationElement::_UpdateGeomStream()
+    {
+    TextAnnotationDataAspectCP dataAspect = GetDataAspectCP();
+    if (nullptr == dataAspect)
         return;
     
-    m_annotation = (rhs->m_annotation.IsValid() ? rhs->m_annotation->Clone() : nullptr);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), m_categoryId, m_placement.GetOrigin(), m_placement.GetAngle());
+    dataAspect->_AppendGeometry(*builder, *this);
+    builder->SetGeomStreamAndPlacement(*this);
     }

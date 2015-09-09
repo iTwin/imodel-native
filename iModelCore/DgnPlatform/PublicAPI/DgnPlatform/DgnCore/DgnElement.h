@@ -155,6 +155,13 @@ typedef QvElemSet<QvKey32> T_QvElemSet;
     protected: virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
+#define DGNASPECT_DECLARE_MEMBERS(__ECSchemaName__,__ECClassName__,__superclass__) \
+    private:    typedef __superclass__ T_Super;\
+    public:     static Utf8CP MyECSchemaName() {return __ECSchemaName__;}\
+                static Utf8CP MyECClassName() {return __ECClassName__;}\
+    protected:  virtual Utf8CP _GetECSchemaName() const override {return MyECSchemaName();}\
+                virtual Utf8CP _GetECClassName() const override {return MyECClassName();}
+
 //=======================================================================================
 //! An instance of a DgnElement in memory. DgnElements are the building blocks for a DgnDb.
 //! @ingroup DgnElementGroup
@@ -293,15 +300,15 @@ public:
         ChangeType m_changeType;
 
         DgnDbStatus InsertThis(DgnElementCR el);
-        Utf8String  GetFullEcSqlClassName() {return _GetECSchemaName().append(".").append(_GetECClassName());}
+        Utf8String  GetFullEcSqlClassName() {return Utf8String(_GetECSchemaName()).append(".").append(_GetECClassName());}
 
         DGNPLATFORM_EXPORT Aspect();
 
         //! The subclass must implement this method to return the name of the schema that defines the aspect.
-        virtual Utf8String _GetECSchemaName() const = 0;
+        virtual Utf8CP _GetECSchemaName() const = 0;
 
         //! The subclass must implement this method to return the name of the class that defines the aspect.
-        virtual Utf8String _GetECClassName() const = 0;
+        virtual Utf8CP _GetECClassName() const = 0;
 
         //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
         virtual BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) = 0;
@@ -1508,8 +1515,8 @@ struct InstanceBackedItem : DgnElement::Item
 {
     ECN::IECInstancePtr m_instance;
 
-    Utf8String _GetECSchemaName() const override {return m_instance->GetClass().GetSchema().GetName();}
-    Utf8String _GetECClassName() const override {return m_instance->GetClass().GetName();}
+    Utf8CP _GetECSchemaName() const override {return m_instance->GetClass().GetSchema().GetName().c_str();}
+    Utf8CP _GetECClassName() const override {return m_instance->GetClass().GetName().c_str();}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el) override;

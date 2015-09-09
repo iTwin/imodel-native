@@ -83,7 +83,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_1).get());
 
-        TextAnnotationElementPtr annotationElement1 = TextAnnotationElement::Create(TextAnnotationElement::CreateParams(*db, modelId, TextAnnotationElement::QueryClassId(*db), categoryId));
+        TextAnnotationElementPtr annotationElement1 = new TextAnnotationElement(TextAnnotationElement::CreateParams(*db, modelId, TextAnnotationElement::QueryDgnClassId(*db), categoryId));
         annotationElement1->SetAnnotation(&annotation);
         TextAnnotationElementCPtr insertedAnnotationElement1 = annotationElement1->Insert();
         ASSERT_TRUE(insertedAnnotationElement1.IsValid());
