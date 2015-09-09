@@ -56,8 +56,6 @@ protected:
     static DgnElement::Code CreateCode(DgnAuthorityId authorityId, Utf8StringCR value) { return DgnElement::Code(authorityId, value); }
     DgnElement::Code CreateCode(Utf8StringCR value) const { return DgnElement::Code(m_authorityId, value); }
 
-    //! The built-in "local" code-generating authority
-    static DgnAuthorityId LocalId() {return DgnAuthorityId(1LL);}
 public:
     DgnDbR GetDgnDb() const { return m_dgndb; }
     DgnAuthorityId GetAuthorityId() const { return m_authorityId; }
@@ -76,6 +74,9 @@ public:
     DGNPLATFORM_EXPORT static DgnAuthorityPtr Import(DgnDbStatus* status, DgnAuthorityCR sourceAuthority, DgnImportContext& importer);
 
     DGNPLATFORM_EXPORT static DgnElement::Code GenerateDefaultCode(DgnElementCR el);
+
+    //! The built-in "local" code-generating authority
+    static DgnAuthorityId LocalId() {return DgnAuthorityId((int64_t)1LL);}
 };
 
 //=======================================================================================
@@ -100,7 +101,10 @@ struct EXPORT_VTABLE_ATTRIBUTE NamespaceAuthority : DgnAuthority
 
     NamespaceAuthority(CreateParams const& params) : T_Super(params) { }
 
+    DGNPLATFORM_EXPORT DgnElement::Code CreateCode(Utf8StringCR value) const { return T_Super::CreateCode(value); }
     DGNPLATFORM_EXPORT static DgnElement::Code CreateCode(Utf8StringCR authorityName, Utf8StringCR value, DgnDbCR dgndb);
+
+    DGNPLATFORM_EXPORT static RefCountedPtr<NamespaceAuthority> CreateNamespaceAuthority(Utf8CP name, DgnDbR dgndb, Utf8CP uri = nullptr);
 };
 
 #define AUTHORITYHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \

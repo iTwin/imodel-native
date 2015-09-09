@@ -306,3 +306,13 @@ DgnElement::Code NamespaceAuthority::CreateCode(Utf8StringCR authorityName, Utf8
     return authId.IsValid() ? DgnAuthority::CreateCode(authId, value) : DgnElement::Code();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<NamespaceAuthority> NamespaceAuthority::CreateNamespaceAuthority(Utf8CP authorityName, DgnDbR dgndb, Utf8CP uri)
+    {
+    auto& hdlr = dgn_AuthorityHandler::Namespace::GetHandler();
+    CreateParams params(dgndb, dgndb.Domains().GetClassId(hdlr), authorityName, uri);
+    return static_cast<NamespaceAuthority*>(hdlr.Create(params).get());
+    }
+
