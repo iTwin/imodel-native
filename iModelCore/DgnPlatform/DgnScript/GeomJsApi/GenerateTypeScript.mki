@@ -40,6 +40,8 @@ $(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts\
                  $(geomJsApiTsDir)GeomJsApiProjectionTemplate.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDpoint3d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDVector3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDpoint2d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDVector2d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsYawPitchRollAngles.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDRay3d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDPoint3dDVector3dDVector3d.h\
@@ -51,6 +53,9 @@ $(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsRotMatrix.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsTransform.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDPoint3dArray.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsPolyfaceMesh.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsPolyfaceVisitor.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsBsplineCurve.h\
                  $(DgnPlatformAPISrc)GeomJsApi.h
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \

@@ -122,12 +122,12 @@ TEST_F(DgnMaterialsTest, Materials)
     SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
     DgnMaterials& materials= m_project->Materials();
 
-    DgnMaterials::Material material1("Material1", "Palette1", "some big json string", "descr of mat 1");
+    DgnMaterials::Material material1("Material1", "Palette1", "descr of mat 1");
     DgnMaterialId materialId = materials.Insert(material1);
     EXPECT_TRUE(materialId.IsValid());
     EXPECT_TRUE(materialId == material1.GetId());
 
-    DgnMaterials::Material material2("Material2", "Palette", "some other json string", "descr of mat 2");
+    DgnMaterials::Material material2("Material2", "Palette", "descr of mat 2");
     DgnMaterialId materialId2 = materials.Insert(material2);
     EXPECT_TRUE(materialId2.IsValid());
 

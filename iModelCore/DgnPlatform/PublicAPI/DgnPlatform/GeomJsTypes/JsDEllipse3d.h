@@ -25,6 +25,7 @@ struct JsDEllipse3d : JsGeomWrapperBase<DEllipse3d>
         }
     public:
     JsDEllipse3d() {}
+    
     JsDEllipse3d (JsDPoint3dP center, JsDVector3dP vector0, JsDVector3dP vector90,
                 JsAngleP startAngle, JsAngleP sweepAngle)
         {
@@ -34,6 +35,8 @@ struct JsDEllipse3d : JsGeomWrapperBase<DEllipse3d>
                     sweepAngle->GetRadians ()
                     );
          }
+    
+    JsDEllipse3dP Clone () {return new JsDEllipse3d (m_data);}
     
     static JsDEllipse3dP FromCoordinates (
             double cx, double cy, double cz,
@@ -64,6 +67,12 @@ struct JsDEllipse3d : JsGeomWrapperBase<DEllipse3d>
     void SetStartAngle (JsAngleP angle) {m_data.start = angle->GetRadians ();}
     void SetSweepAngle (JsAngleP angle) {m_data.sweep = angle->GetRadians ();}
     
+    JsDRange3dP Range ()
+        {
+        DRange3d range;
+        m_data.GetRange (range);
+        return new JsDRange3d (range);
+        }
     JsDPoint3dP PointAtFraction (double f)
         {
         DPoint3d xyz;

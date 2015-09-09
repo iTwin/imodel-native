@@ -11,6 +11,8 @@
 #include "DgnDbTables.h"
 #include "DgnModel.h"
 #include "DgnDomain.h"
+#include "DgnMaterial.h"
+#include "DgnTexture.h"
 #include <Bentley/BeFileName.h>
 
 /** @addtogroup DgnDbGroup

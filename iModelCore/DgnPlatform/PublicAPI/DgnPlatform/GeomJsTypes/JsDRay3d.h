@@ -20,11 +20,15 @@ struct JsDRay3d : JsGeomWrapperBase<DRay3d>
 {
 public:
     JsDRay3d() {}
+    JsDRay3d(DRay3dCR data) {m_data = data;}
+
     JsDRay3d (DPoint3dCR point, DVec3dCR vector) {m_data.InitFromOriginAndVector (point, vector);}
     JsDRay3d (JsDPoint3dP point, JsDVector3dP vector) {m_data.InitFromOriginAndVector (point->Get (), vector->Get ());}
 
     JsDRay3d (double x0, double y0, double z0, double ux, double uy, double uz)
         {m_data.InitFromOriginAndVector (DPoint3d::From (x0, y0, z0), DVec3d::From (ux, uy, uz));}
+
+    JsDRay3dP Clone (){return new JsDRay3d (m_data);}
 
     JsDPoint3dP GetOrigin() {return new JsDPoint3d (m_data.origin);}
     JsDVector3dP     GetDirection() {return new JsDVector3d (m_data.direction);}

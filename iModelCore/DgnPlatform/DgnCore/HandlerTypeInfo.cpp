@@ -123,32 +123,36 @@ static void getCategoryString(Utf8StringR categoryStr, DgnElementCR element)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const
+    {
+    Utf8String categoryStr, modelStr;
+
+    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(GetModel()->GetModelName());
+    getCategoryString(categoryStr, *this);
+
+    descr = GetCode().GetValue();
+    descr.append(delimiter).append(modelStr.c_str());
+    descr.append(delimiter).append(categoryStr.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString(HitDetailCP hit, Utf8StringR pathDescr, Utf8CP delimiter) const
+void HitDetail::_GetInfoString(Utf8StringR descr, Utf8CP delimiter) const
     {
-    if (nullptr == hit)
-        return;
-
-    GeometricElementCPtr element = hit->GetElement();
+    GeometricElementCPtr element = GetElement();
 
     if (!element.IsValid())
         {
-        IElemTopologyCP elemTopo = hit->GetElemTopology();
+        IElemTopologyCP elemTopo = GetElemTopology();
         ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
 
         if (nullptr != transientHandler)
-            transientHandler->_GetTransientInfoString(*hit, pathDescr, delimiter);
+            transientHandler->_GetTransientInfoString(*this, descr, delimiter);
         return;
         }
 
-    pathDescr = element->GetCode().GetValue();
-
-    Utf8String categoryStr, modelStr;
-
-    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(element->GetModel()->GetModelName());
-    getCategoryString(categoryStr, *element);
-
-    pathDescr.append(delimiter).append(modelStr.c_str());
-    pathDescr.append(delimiter).append(categoryStr.c_str());
+    element->_GetInfoString(*this, descr, delimiter);
     }
