@@ -35,7 +35,8 @@ public:
             azx, azy, azz
             );
         }
-        
+    JsRotMatrixP Clone() {return new JsRotMatrix(m_data);}
+    
     static JsRotMatrixP CreateIdentity (){return new JsRotMatrix (RotMatrix::FromIdentity ());}
     static JsRotMatrixP CreateUniformScale (double s){return new JsRotMatrix (RotMatrix::FromScale (s));}
     static JsRotMatrixP CreateScale (double scaleX, double scaleY, double scaleZ){return new JsRotMatrix (RotMatrix::FromScaleFactors (scaleX, scaleY, scaleZ));}
@@ -49,6 +50,24 @@ public:
         {return new JsRotMatrix (RotMatrix::FromRotate90 (axis->Get  ()));}
     static JsRotMatrixP CreateDirectionalScale (JsDVector3dP direction, double scale)
         {return new JsRotMatrix (RotMatrix::FromDirectionAndScale (direction->Get  (), scale));}
+    static JsRotMatrixP CreateRowValues(double          x00,
+                                        double          x01,
+                                        double          x02,
+                                        double          x10,
+                                        double          x11,
+                                        double          x12,
+                                        double          x20,
+                                        double          x21,
+                                        double          x22)
+    {
+         RotMatrix a;
+         a.InitFromRowValues (
+            x00, x01, x02,
+            x10, x11, x12,
+            x20, x21, x22
+            );
+         return new JsRotMatrix(a);
+    }
     // TODO: square and normalize !!!
     
     static JsRotMatrixP Create1Vector (JsDVector3dP direction, double axisIndex)
@@ -73,14 +92,14 @@ public:
         return new JsDVector3d (result);
         }        
 
-    JsDVector3dP MultiplyXYZ (JsDVector3dP vector, double x, double y, double z)
+    JsDVector3dP MultiplyXYZ (double x, double y, double z)
         {
         DVec3d result;
         m_data.MultiplyComponents (result, x, y, z);
         return new JsDVector3d (result);
         }        
         
-    JsDVector3dP MultiplyTransposeXYZ (JsDVector3dP vector, double x, double y, double z)
+    JsDVector3dP MultiplyTransposeXYZ ( double x, double y, double z)
         {
         DVec3d result;
         m_data.MultiplyTransposeComponents (result, x, y, z);
@@ -157,7 +176,7 @@ public:
     double MaxDiff (JsRotMatrixP other){return m_data.MaxDiff (other->m_data);}
     
     bool IsIdentity (){return m_data.IsIdentity ();}
-    bool IsDigaonal (){return m_data.IsDiagonal ();}
+    bool IsDiagonal (){return m_data.IsDiagonal ();}
     bool IsSignedPermutation (){return m_data.IsSignedPermutation ();}
     bool IsRigid (){return m_data.IsRigid ();}
     bool HasUnitLengthMutuallyPerpendicularRowsAndColumns (){return m_data.IsOrthogonal ();}

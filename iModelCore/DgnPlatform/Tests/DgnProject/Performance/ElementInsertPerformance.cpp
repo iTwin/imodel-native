@@ -28,8 +28,6 @@ USING_DGNDB_UNIT_TESTS_NAMESPACE
 //=======================================================================================
 struct PerformanceElementItem : public DgnDbTestFixture
 {
-public:
-    PerformanceTestingFrameWork     m_testObj;
 
 };
 
@@ -40,9 +38,12 @@ public:
 TEST_F(PerformanceElementItem, CRUD)
 {
     //Read from ecdb: the start, maximum and increment number to run the test
-    int startCount = m_testObj.getStartNum();
-    int maxCount = m_testObj.getEndNum();
-    int increment = m_testObj.getIncrement();
+    int startCount, maxCount,increment;
+    if (! PerformanceResultRecorder::getCounters(startCount, maxCount, increment))
+        {
+        startCount = increment = 100;
+        maxCount = 1000;
+        }
 
     StopWatch elementTimer("Insert Element", false);
 
@@ -90,10 +91,10 @@ TEST_F(PerformanceElementItem, CRUD)
         }
 
         //Write results to Db for analysis
-        m_testObj.writeTodb(insertTime, "ElementCRUDPerformance,InsertElementItem", "", counter);
-        m_testObj.writeTodb(selectTime, "ElementCRUDPerformance,SelectSignleElementItem", "", counter);
-        m_testObj.writeTodb(updateTime, "ElementCRUDPerformance,UpdateElementItem", "", counter);
-        m_testObj.writeTodb(deleteTime, "ElementCRUDPerformance,DeleteElementItem", "", counter);
+        LOGTODB(TEST_DETAILS, insertTime, "Insert", counter);
+        LOGTODB(TEST_DETAILS, selectTime, "Select", counter);
+        LOGTODB(TEST_DETAILS, updateTime, "Update", counter);
+        LOGTODB(TEST_DETAILS, deleteTime, "Delete", counter);
     }
 
 }
@@ -184,7 +185,7 @@ DgnModelId PerformanceElementTestFixture::InsertDgnModel() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementTestFixture::CommitAndLogTiming(StopWatch& timer, Utf8CP scenario) const
+void PerformanceElementTestFixture::CommitAndLogTiming(StopWatch& timer, Utf8CP scenario, Utf8String testcaseName, Utf8String testName) const
     {
     StopWatch commitTimer(true);
     ASSERT_EQ(BE_SQLITE_OK, m_db->SaveChanges());
@@ -192,6 +193,7 @@ void PerformanceElementTestFixture::CommitAndLogTiming(StopWatch& timer, Utf8CP 
     LOG.infov("%s> Inserting %d instances (5 inheritence levels, 3 properties per class) took %.4f seconds. Commit time: %.4f seconds", scenario, s_instanceCount,
                             timer.GetElapsedSeconds(),
                             commitTimer.GetElapsedSeconds ());
+    LOGTODB(testcaseName, testName, commitTimer.GetElapsedSeconds(), scenario, s_instanceCount);
     }
 
 
@@ -249,7 +251,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
         }
 
     timer.Stop();
-    CommitAndLogTiming(timer, "Single Insert (numeric parameters)");
+    CommitAndLogTiming(timer, "Single Insert (numeric parameters)", TEST_DETAILS);
     }
 
 //--------------------------------------------------------------------------------------
@@ -312,7 +314,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
         }
 
     timer.Stop();
-    CommitAndLogTiming(timer, "Insert & Update sub props");
+    CommitAndLogTiming(timer, "Insert & Update sub props", TEST_DETAILS);
     }
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
@@ -372,5 +374,5 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
         }
 
     timer.Stop();
-    CommitAndLogTiming(timer, "Single Insert (named parameters)");
+    CommitAndLogTiming(timer, "Single Insert (named parameters)", TEST_DETAILS);
     }

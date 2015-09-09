@@ -205,10 +205,13 @@ DgnElement::Code DgnElement::_GenerateDefaultCode()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::UpdateLastModTime()
+DateTime DgnElement::QueryTimeStamp() const
     {
-    // update the last modified time directly rather than through trigger, so we can tell that we have the lastest version of this element
-    m_lastModTime = DateTime::HnsToRationalDay(DateTime::UnixMillisecondsToJulianDay(BeTimeUtilities::GetCurrentTimeAsUnixMillis()));
+    ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT LastMod FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) "WHERE ECInstanceId=?");
+    stmt.BindId (1, m_elementId);
+    stmt.Step();
+    return stmt.GetValueDateTime(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -230,7 +233,6 @@ template<class T> void DgnElement::CallAppData(T const& caller) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnInsert()
     {
-    UpdateLastModTime();
     if (!m_code.IsValid())
         m_code = _GenerateDefaultCode();
 
@@ -278,7 +280,6 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     if (m_classId != original.m_classId)
         return DgnDbStatus::WrongClass;
 
-    UpdateLastModTime();
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnUpdate(*this, original);
@@ -412,7 +413,6 @@ DgnDbStatus DgnElement::_BindInsertParams(ECSqlStatement& statement)
     
     return DgnDbStatus::Success;
     }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -426,8 +426,8 @@ DgnDbStatus DgnElement::_InsertSecondary()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_UpdateInDb()
     {
-    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,LastMod=5,CodeAuthorityId=6,ElementId=7};
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,LastMod=?,CodeAuthorityId=? WHERE Id=?");
+    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,CodeAuthorityId=5,ElementId=6};
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,CodeAuthorityId=? WHERE Id=?");
 
     // note: ECClassId and ModelId cannot be modified.
     stmt->BindId(Column::CategoryId, m_categoryId);
@@ -440,7 +440,6 @@ DgnDbStatus DgnElement::_UpdateInDb()
     stmt->BindId(Column::CodeAuthorityId, m_code.GetAuthority());
     
     stmt->BindId(Column::ParentId, m_parentId);
-    stmt->BindDouble(Column::LastMod, m_lastModTime);
     stmt->BindId(Column::ElementId, m_elementId);
 
     return stmt->Step() != BE_SQLITE_DONE ? DgnDbStatus::WriteError : DgnDbStatus::Success;
@@ -878,13 +877,11 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     if (&other == this)
         return;
 
-    // Copying between DgnDbs is allowed. Caller must do ID remapping.
-
+    // Copying between DgnDbs is allowed. Caller must do Id remapping.
     m_categoryId = other.m_categoryId;
     m_code       = other.m_code;
     m_label      = other.m_label;
     m_parentId   = other.m_parentId;
-    m_lastModTime = other.m_lastModTime;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1838,24 +1835,24 @@ DgnElement::Item* DgnElement::Item::Load(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::Item::CallGenerateElementGeometry(DgnElementR el)
+DgnDbStatus DgnElement::Item::CallGenerateElementGeometry(DgnElementR el, GenerateReason reason)
     {
     GeometricElementP gel = el.ToGeometricElementP();
     if (nullptr == gel)
         return DgnDbStatus::Success;
 
-    return _GenerateElementGeometry(*gel);
+    return _GenerateElementGeometry(*gel, reason);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::Item::GenerateElementGeometry(GeometricElementR el)
+DgnDbStatus DgnElement::Item::GenerateElementGeometry(GeometricElementR el, GenerateReason reason)
     {
     Item* item = GetItemP(el);
     if (nullptr == item)
         return DgnDbStatus::NotFound;
-    return item->_GenerateElementGeometry(el);
+    return item->_GenerateElementGeometry(el, reason);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1904,7 +1901,7 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus InstanceBackedItem::_GenerateElementGeometry(GeometricElementR el)
+DgnDbStatus InstanceBackedItem::_GenerateElementGeometry(GeometricElementR el, GenerateReason)
     {
     Placement3d placement;
     DgnElement3dP e3d = el.ToElement3dP();

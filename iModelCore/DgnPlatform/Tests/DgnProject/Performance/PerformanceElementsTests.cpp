@@ -419,16 +419,16 @@ SimpleElementCPtr SimpleElement::Insert()
 struct PerformanceElementsTestFixture : public PerformanceElementTestFixture
     {
     protected:
-    PerformanceTestingFrameWork     m_testObj;
+    //PerformanceTestingFrameWork     m_testObj;
     PhysicalModelPtr CreatePhysicalModel() const;
-    void TimeInsertion(int numInstances, Utf8CP schemaName, Utf8CP className);
+    void TimeInsertion(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName);
     void TimeUpdate(int numInstances, Utf8CP schemaName, Utf8CP className);
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElementsTestFixture::TimeInsertion(int numInstances, Utf8CP schemaName, Utf8CP className)
+void PerformanceElementsTestFixture::TimeInsertion(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceElementClass.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
@@ -446,67 +446,64 @@ void PerformanceElementsTestFixture::TimeInsertion(int numInstances, Utf8CP sche
     DgnModelPtr model = CreatePhysicalModel();
     DgnCategoryId catid = m_db->Categories().QueryHighestId();
     DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(schemaName, className));
-    double insertTime = 0;
+    bvector<DgnElementPtr> testElements;
     for (int i = 0; i < numInstances; i++)
         {
         if (0 == strcmp(className, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS))
             {
             SimpleElementPtr element = SimpleElement::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
             }
         else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
             {
             PerformanceElement1Ptr element = PerformanceElement1::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
             }
         else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT2_CLASS))
             {
             PerformanceElement2Ptr element = PerformanceElement2::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
             }
         else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT3_CLASS))
             {
             PerformanceElement3Ptr element = PerformanceElement3::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
             }
         else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT4_CLASS))
             {
             PerformanceElement4Ptr element = PerformanceElement4::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
             }
         else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS))
             {
             PerformanceElement4bPtr element = PerformanceElement4b::Create(*m_db, model->GetModelId(), mclassId, catid);
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
             }
         else if (0 == strcmp(className, "PhysicalElement"))
             {
             PhysicalElementPtr element = PhysicalElement::Create(PhysicalElement::CreateParams(*m_db, model->GetModelId(), mclassId, catid));
-            StopWatch insertTimer(true);
-            element->Insert();
-            insertTimer.Stop();
-            insertTime += insertTimer.GetElapsedSeconds();
+            ASSERT_TRUE(element != nullptr);
+            testElements.push_back(element);
             }
         }
-    m_testObj.writeTodb(insertTime, "PerformanceElementTestFixture.TimeInsertion", Utf8PrintfString("Inserting %d %s elements", numInstances, className).c_str(), numInstances);
+
+    DgnDbStatus stat = DgnDbStatus::Success;
+    StopWatch timer(true);
+    for (DgnElementPtr& element : testElements)
+        {
+        element->Insert(&stat);
+        ASSERT_EQ(DgnDbStatus::Success, stat);
+        }
+    timer.Stop();
+
+    LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Inserting %d %s elements", numInstances, className).c_str(), numInstances);
+    //m_testObj.writeTodb(insertTime, "PerformanceElementTestFixture.TimeInsertion", Utf8PrintfString("Inserting %d %s elements", numInstances, className).c_str(), numInstances);
     m_db->SaveChanges();
     m_db->CloseDb();
     }
@@ -524,16 +521,16 @@ PhysicalModelPtr PerformanceElementsTestFixture::CreatePhysicalModel() const
 
 TEST_F(PerformanceElementsTestFixture, ElementInsert)
     {
-    TimeInsertion(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS);
-    TimeInsertion(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS);
-    TimeInsertion(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS);
-    TimeInsertion(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    TimeInsertion(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    TimeInsertion(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS);
-    TimeInsertion(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS);
-    TimeInsertion(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS);
-    TimeInsertion(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS);
-    TimeInsertion(1000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
-    TimeInsertion(10000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
-    TimeInsertion(100000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    TimeInsertion(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeInsertion(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeInsertion(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
+    TimeInsertion(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeInsertion(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeInsertion(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
+    TimeInsertion(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeInsertion(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeInsertion(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
+    TimeInsertion(1000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    TimeInsertion(10000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
+    TimeInsertion(100000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
     }

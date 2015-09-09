@@ -375,12 +375,11 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::HitDetail(DgnViewportR viewport, GeometricElementCP element, DPoint3dCR testPoint, HitSource source, ViewFlagsCR viewFlags, GeomDetailCR geomDetail) : m_viewport(viewport)
+HitDetail::HitDetail(DgnViewportR viewport, GeometricElementCP element, DPoint3dCR testPoint, HitSource source, GeomDetailCR geomDetail) : m_viewport(viewport)
     {
     m_elementId         = (nullptr != element ? element->GetElementId() : DgnElementId());
     m_locateSource      = source;
     m_testPoint         = testPoint;
-    m_viewFlags         = viewFlags;
     m_geomDetail        = geomDetail;
     m_subSelectionMode  = SubSelectionMode::None;
     }
@@ -393,7 +392,6 @@ HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport)
     m_elementId         = from.m_elementId;
     m_locateSource      = from.m_locateSource;
     m_testPoint         = from.m_testPoint;
-    m_viewFlags         = from.m_viewFlags;
     m_geomDetail        = from.m_geomDetail;
     m_elemTopo          = from.m_elemTopo.IsValid() ? from.m_elemTopo->_Clone() : nullptr;
     m_subSelectionMode  = from.m_subSelectionMode;
@@ -475,12 +473,10 @@ void HitDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose dra
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/2007
+* @bsimethod                                                    Brien.Bastings  09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_GetInfoString(Utf8StringR pathDescr, Utf8CP delimiter) const
-    {
-    T_HOST.GetGraphicsAdmin()._GetInfoString(this, pathDescr, delimiter);
-    }
+IElemTopologyCP HitDetail::GetElemTopology() const {return (m_elemTopo.IsValid() ? m_elemTopo.get() : nullptr);}
+void HitDetail::SetElemTopology(IElemTopologyP topo) {m_elemTopo = topo;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
