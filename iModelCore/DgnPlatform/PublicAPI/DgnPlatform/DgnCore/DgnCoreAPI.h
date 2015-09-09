@@ -43,6 +43,7 @@
 #include "GeomPart.h"
 #include "Annotations/TextAnnotation.h"
 #include "DgnFont.h"
+#include "RenderMaterial.h"
 
 //__PUBLISH_SECTION_END__
 #include "SnapContext.h"

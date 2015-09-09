@@ -982,7 +982,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
-             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId), m_lastModTime(params.m_lastModTime) 
+             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1093,15 +1093,15 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,LastMod=6,CodeAuthority=7};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod,CodeAuthorityId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,CodeAuthorityId=6,};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,CodeAuthorityId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
-    DgnElement::Code code(stmt->GetValueId<DgnAuthorityId>(Column::CodeAuthority), stmt->GetValueText(Column::Code));
+    DgnElement::Code code(stmt->GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt->GetValueText(Column::Code));
 
     return LoadElement(DgnElement::CreateParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
@@ -1109,8 +1109,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
                     stmt->GetValueText(Column::Label), 
                     code,
                     elementId, 
-                    stmt->GetValueId<DgnElementId>(Column::ParentId),
-                    stmt->GetValueDouble(Column::LastMod)),
+                    stmt->GetValueId<DgnElementId>(Column::ParentId)),
                     makePersistent);
     }
 
@@ -1197,33 +1196,34 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
 
     ECClassCP elementClass = element.GetElementClass();
     if (nullptr == elementClass)
-        return nullptr;
-
-    Utf8PrintfString ecSql("INSERT INTO %s.%s (ECInstanceId, ", elementClass->GetSchema().GetName().c_str(), elementClass->GetName().c_str());
-    Utf8String values(":ECInstanceId, ");
-    //ECPropertyCP currentTimeStampProp = nullptr;
-    //bool hasCurrentTimeStampProp = Bentley::BeSQLite::EC::ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, m_ecClass);
-    int propCount = 0;
-    for (ECPropertyCP ecProperty : elementClass->GetProperties (true))
         {
-        //Current time stamp props are populated by SQLite, so ignore them here.
-        //if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
-        //    continue;
-        if (propCount != 0)
-            {
-            ecSql.append(", ");
-            values.append(", ");
-            }
-        ecSql.append("[").append(ecProperty->GetName()).append("]");
-        values.append(":").append(ecProperty->GetName());
-        propCount++;
+        BeAssert(false);
+        stat = DgnDbStatus::BadElement;
+        return nullptr;
         }
-    ecSql.append(") VALUES (").append(values).append(")");
-    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql);
+
+    bvector<Utf8String> insertParams;
+    element._GetInsertParams(insertParams);
+    Utf8String ecSql = ECSqlInsertBuilder::BuildECSqlForClass(*elementClass, insertParams);
+    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql.c_str());
     if (!statement.IsValid())
         return nullptr;
 
-    if (DgnDbStatus::Success != (stat=element._InsertInDb(*statement)))
+    if (DgnDbStatus::Success != (stat=element._BindInsertParams(*statement)))
+        return nullptr;
+
+    if (ECSqlStepStatus::Error == statement->Step())
+        {
+        // SQLite doesn't tell us which constraint failed - check if it's the Code.
+        auto existingElemWithCode = QueryElementIdByCode(element.m_code);
+        if (existingElemWithCode.IsValid())
+            stat = DgnDbStatus::DuplicateCode;
+        else
+            stat = DgnDbStatus::WriteError;
+        return nullptr;
+        }
+
+    if (DgnDbStatus::Success != (stat = element._InsertSecondary()))
         return nullptr;
 
     DgnElementPtr newElement = element.CopyForEdit();

@@ -28,7 +28,7 @@ bool TestElementDrivesElementHandler::s_shouldFail;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el)
+DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el, GenerateReason)
     {
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(el);
     

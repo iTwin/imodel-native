@@ -68,7 +68,9 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
 void PerformanceDgnECTests::RunInsertTests
 (
 ECSchemaR schema,
-DgnDbTestDgnManager tdm
+DgnDbTestDgnManager tdm,
+Utf8String testcaseName,
+Utf8String testName
 )
     {
     DgnModelP model = tdm.GetDgnModelP();
@@ -146,8 +148,12 @@ DgnDbTestDgnManager tdm
     attachingTimer.Stop();
     totalInsertingStopwatch.Stop();
     PERFORMANCELOG.infov (L"Inserting %d instances (total): %.4lf", TESTCLASS_INSTANCE_COUNT, totalInsertingStopwatch.GetElapsedSeconds ());
+    LOGTODB(testcaseName, testName, totalInsertingStopwatch.GetElapsedSeconds(), "Inserting instances (total)", TESTCLASS_INSTANCE_COUNT);
     PERFORMANCELOG.infov (L"Inserting %d instances (inserting): %.4lf", TESTCLASS_INSTANCE_COUNT, insertingTimer.GetElapsedSeconds());
+    LOGTODB(testcaseName, testName, insertingTimer.GetElapsedSeconds(), "Inserting instances (inserting)", TESTCLASS_INSTANCE_COUNT);
     PERFORMANCELOG.infov (L"Creating and Inserting %d elements with primary instance attached: %.4lf", TESTCLASS_INSTANCE_COUNT, attachingTimer.GetElapsedSeconds());
+    LOGTODB(testcaseName, testName, attachingTimer.GetElapsedSeconds(), "Creating and Inserting elements with primary instance attached", TESTCLASS_INSTANCE_COUNT);
+
 
     bmap<Utf8String, double> results;
     Utf8String total(totalInsertingStopwatch.GetDescription().c_str());
@@ -167,7 +173,9 @@ DgnDbTestDgnManager tdm
 void PerformanceDgnECTests::RunQueryTests
 (
 ECSchemaR schema,
-DgnDbTestDgnManager tdm
+DgnDbTestDgnManager tdm,
+Utf8String testcaseName,
+Utf8String testName
 )
     {
     //DgnModelP model = tdm.GetDgnModelP();
@@ -253,6 +261,7 @@ DgnDbTestDgnManager tdm
     stopwatch.Stop();
     bmap<Utf8String, double> results;
     PERFORMANCELOG.infov("Found %d instances of class %ls:%ls in %.4lf seconds", count, schema.GetFullSchemaName().c_str(), TEST_CLASS_NAME, stopwatch.GetElapsedSeconds());
+    LOGTODB(testcaseName, testName, stopwatch.GetElapsedSeconds(), Utf8PrintfString("Found Instance of class: %ls ", TEST_CLASS_NAME).c_str(), count);
     results[Utf8String(stopwatch.GetDescription().c_str())] = stopwatch.GetElapsedSeconds();
 
     wchar_t countName[256];
@@ -270,6 +279,7 @@ DgnDbTestDgnManager tdm
         }
     countWatch.Stop();
     PERFORMANCELOG.infov("Found %d instances of class %ls:%ls in %.4lf seconds", count, schema.GetFullSchemaName().c_str(), TEST_CLASS_NAME, countWatch.GetElapsedSeconds());
+    LOGTODB(testcaseName, testName, stopwatch.GetElapsedSeconds(), Utf8PrintfString("Found Instance of class: %ls ", TEST_CLASS_NAME).c_str(), count);
     results[Utf8String(countWatch.GetDescription().c_str())] = countWatch.GetElapsedSeconds();
     LogResultsToFile(results);
     }
@@ -280,8 +290,8 @@ TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstances)
 
     ECSchemaPtr schema;
     PerformanceTestFixture::ImportTestSchema (schema, tdm, 25, 25);
-    RunInsertTests(*schema, tdm);
-    RunQueryTests(*schema, tdm);
+    RunInsertTests(*schema, tdm, TEST_DETAILS);
+    RunQueryTests(*schema, tdm, TEST_DETAILS);
     }
 
 TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstancesWithComplexSchema)
@@ -290,8 +300,8 @@ TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstancesWithComplexSchema)
 
     ECSchemaPtr schema;
     PerformanceTestFixture::ImportComplexTestSchema (schema, tdm);
-    RunInsertTests(*schema, tdm);
-    //RunQueryTests(*schema, tdm);
+    RunInsertTests(*schema, tdm, TEST_DETAILS);
+    //RunQueryTests(*schema, tdm, TEST_DETAILS);
 
     }
 END_DGNDB_UNIT_TESTS_NAMESPACE

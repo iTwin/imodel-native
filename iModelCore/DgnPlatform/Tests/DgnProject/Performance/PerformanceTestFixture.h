@@ -15,6 +15,8 @@
 #include <UnitTests/BackDoor/DgnProject/BackDoor.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
+#include "../TestFixture/DgnDbTestFixtures.h"
+#include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
 
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 typedef bpair<Utf8String, double> T_TimerResultPair;
@@ -49,26 +51,26 @@ protected:
     static void LogResultsToFile(bmap<Utf8String, double> results);
     };
 
-//=======================================================================================
-// @bsiclass                                                Majd.Uddin     05/2015
-//=======================================================================================
-struct PerformanceTestingFrameWork
-{
-private:
-    Db m_Db;
-    int m_startNum;
-    int m_endNum;
-    int m_increment;
 
-public:
-    PerformanceTestingFrameWork() { setCounters(); }
-    void openDb();
-    bool writeTodb(StopWatch &timerCount, Utf8String testName, Utf8String testDescription, int opCount = -1);
-    bool writeTodb(double timeInSeconds, Utf8String testName, Utf8String testDescription, int opCount = -1);
-    void setCounters();
-    int getStartNum() { return m_startNum; }
-    int getEndNum() { return m_endNum; }
-    int getIncrement() { return m_increment; }
-};
+//=======================================================================================
+// @bsiclass                                                     Krischan.Eberle      06/15
+//=======================================================================================
+struct PerformanceElementTestFixture : public DgnDbTestFixture
+    {
+
+    protected:
+        static const DgnCategoryId s_catId;
+        static const DgnAuthorityId s_codeAuthorityId;
+        static const int s_instanceCount = 100000;
+        static Utf8CP const s_textVal;
+        static const int64_t s_int64Val = 20000000LL;
+        static const double s_doubleVal;
+        static Utf8CP const s_testSchemaXml;
+
+        BentleyStatus ImportTestSchema() const;
+        PhysicalModelPtr CreatePhysicalModel() const;
+        void CommitAndLogTiming(StopWatch& timer, Utf8CP scenario, Utf8String testcaseName, Utf8String testName) const;
+
+    };
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

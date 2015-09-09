@@ -170,14 +170,15 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
     auto key1 = InsertElement(DgnElement::Code(), m_defaultModelId, m_defaultCategoryId)->GetElementKey();
     EXPECT_TRUE(key1.GetElementId().IsValid());
 
+
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertElementGeomUsesParts(key1.GetElementId(), existingPartId) );
     DgnElementCPtr elem = m_db->Elements().GetElement(key1.GetElementId());
-
+    m_db->SaveChanges ();
     // Delete Element
     ASSERT_EQ(DgnDbStatus::Success, m_db->Elements().Delete(*m_db->Elements().GetElement(key1.GetElementId())));
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts)));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
