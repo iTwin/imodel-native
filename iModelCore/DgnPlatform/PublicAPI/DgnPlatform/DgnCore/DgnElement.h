@@ -984,7 +984,6 @@ public:
     //! Query the DgnDb for the children of this DgnElement.
     //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
     DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
-
 };
 
 //=======================================================================================
