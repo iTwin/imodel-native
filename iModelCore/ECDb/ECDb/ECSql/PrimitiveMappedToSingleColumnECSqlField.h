@@ -20,33 +20,34 @@ private:
     int m_sqliteColumnIndex;
     DateTime::Info m_datetimeMetadata;
 
-    bool CanGetValue (ECN::PrimitiveType requestedType) const;
-    bool CanGetValue (ECN::PrimitiveType testType, ECN::PrimitiveType requestedType, Utf8CP typeName, Utf8CP getValueMethodName) const;
+    bool CanGetValue(ECN::PrimitiveType requestedType) const;
+    bool CanGetValue(ECN::PrimitiveType testType, ECN::PrimitiveType requestedType, Utf8CP typeName, Utf8CP getValueMethodName) const;
 
-    virtual ECSqlStatus _Init (ECSqlStatusContext& statusContext) override;
+    virtual ECSqlStatus _Init(ECSqlStatusContext& statusContext) override;
 
-    virtual bool _IsNull () const override;
+    virtual bool _IsNull() const override;
 
-    virtual IECSqlPrimitiveValue const& _GetPrimitive () const override;
-    virtual IECSqlStructValue const& _GetStruct () const override;
-    virtual IECSqlArrayValue const& _GetArray () const override;
+    virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
+    virtual IECSqlStructValue const& _GetStruct() const override;
+    virtual IECSqlArrayValue const& _GetArray() const override;
 
-    virtual void const* _GetBinary (int* binarySize) const override;
-    virtual bool _GetBoolean () const override;
-    virtual uint64_t _GetDateTimeJulianDays (DateTime::Info& metadata) const override;
-    virtual double _GetDouble () const override;
-    virtual int _GetInt () const override;
-    virtual int64_t _GetInt64 () const override;
-    virtual Utf8CP _GetText () const override;
-    virtual DPoint2d _GetPoint2D () const override;
-    virtual DPoint3d _GetPoint3D () const override;
+    virtual void const* _GetBinary(int* binarySize) const override;
+    virtual bool _GetBoolean() const override;
+    virtual uint64_t _GetDateTimeJulianDaysHns(DateTime::Info& metadata) const override;
+    virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
+    virtual double _GetDouble() const override;
+    virtual int _GetInt() const override;
+    virtual int64_t _GetInt64() const override;
+    virtual Utf8CP _GetText() const override;
+    virtual DPoint2d _GetPoint2D() const override;
+    virtual DPoint3d _GetPoint3D() const override;
     virtual IGeometryPtr _GetGeometry() const override;
     virtual void const* _GetGeometryBlob(int* blobSize) const override;
 
-    int GetSqliteColumnIndex () const;
+    int GetSqliteColumnIndex() const;
 
 public:
-    PrimitiveMappedToSingleColumnECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int ecsqlColumnIndex);
-    ~PrimitiveMappedToSingleColumnECSqlField () {}
+    PrimitiveMappedToSingleColumnECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int ecsqlColumnIndex);
+    ~PrimitiveMappedToSingleColumnECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
