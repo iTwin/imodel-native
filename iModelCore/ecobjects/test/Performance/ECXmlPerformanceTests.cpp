@@ -13,7 +13,7 @@ using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct ECXmlPerformanceTest   : PerformanceTestFixture {
+struct PerformanceECXml : PerformanceTestFixture {
 
 void TimeSchema
 (
@@ -115,7 +115,7 @@ ECSchemaReadContextPtr   schemaContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
+TEST_F(PerformanceECXml, ReadingAndWritingSchema)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
@@ -126,7 +126,7 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
     TimeSchema(L"CustomAttributeTest.01.00.ecschema.xml", schemaContext);
     };
 
-TEST_F(ECXmlPerformanceTest, ReadingAndWritingInstance)
+TEST_F(PerformanceECXml, ReadingAndWritingInstance)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
