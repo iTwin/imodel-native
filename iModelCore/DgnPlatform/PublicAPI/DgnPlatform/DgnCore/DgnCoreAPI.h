@@ -31,6 +31,7 @@
 #include "LineStyle.h"
 #include "DgnElementDependency.h"
 #include "DgnDb.h"
+#include "DgnAuthority.h"
 #include "NotificationManager.h"
 #include "ScanCriteria.h"
 #include "SolidKernel.h"
@@ -42,6 +43,7 @@
 #include "GeomPart.h"
 #include "Annotations/TextAnnotation.h"
 #include "DgnFont.h"
+#include "RenderMaterial.h"
 
 //__PUBLISH_SECTION_END__
 #include "SnapContext.h"

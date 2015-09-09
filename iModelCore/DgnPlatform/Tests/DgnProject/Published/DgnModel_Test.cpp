@@ -534,16 +534,17 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
     // ******************************
     //  Create some Authorities. 
     DgnAuthorityId sourceAuthorityId;
+    RefCountedPtr<NamespaceAuthority> auth1;
         {
-        DgnAuthorities::Authority authority0("TestAuthority_NotUsed");
-        DgnAuthorities::Authority authority1("TestAuthority");
-        DgnAuthorities::Authority authority2("TestAuthority_AlsoNotUsed");
-        ASSERT_TRUE( db->Authorities().Insert(authority0).IsValid() );
-        ASSERT_TRUE( db->Authorities().Insert(authority1).IsValid() );
-        ASSERT_TRUE( db->Authorities().Insert(authority2).IsValid() );
+        auto auth0 = NamespaceAuthority::CreateNamespaceAuthority("TestAuthority_NotUsed", *db);
+        auth1 = NamespaceAuthority::CreateNamespaceAuthority("TestAuthority", *db);
+        auto auth2 = NamespaceAuthority::CreateNamespaceAuthority("TestAuthority_AlsoNotUsed", *db);
+        ASSERT_EQ(DgnDbStatus::Success, auth0->Insert());
+        ASSERT_EQ(DgnDbStatus::Success, auth1->Insert());
+        ASSERT_EQ(DgnDbStatus::Success, auth2->Insert());
         
         // We'll use the *second one*, so that the source and destination authority IDs will be different.
-        sourceAuthorityId = authority1.GetId();
+        sourceAuthorityId = auth1->GetAuthorityId();
         }
 
     // ******************************
@@ -555,7 +556,7 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
 
     // Put an element with an Item into moddel1
         {
-        DgnElement::Code code("TestElement", sourceAuthorityId);
+        DgnElement::Code code = auth1->CreateCode("TestElement");
         DgnCategoryId gcatid = db->Categories().QueryHighestId();
         TestElementPtr tempEl = TestElement::Create(*db, model1->GetModelId(), gcatid, code);
         DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
@@ -569,8 +570,8 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
         ASSERT_TRUE( el.IsValid() );
         DgnAuthorityId said = el->GetCode().GetAuthority();
         ASSERT_TRUE( said == sourceAuthorityId );
-        DgnAuthorities::Authority sourceAuthority = db->Authorities().Query(sourceAuthorityId);
-        ASSERT_STREQ( sourceAuthority.GetName().c_str(), "TestAuthority" );
+        auto sourceAuthority = db->Authorities().LoadAuthority(sourceAuthorityId);
+        ASSERT_STREQ( sourceAuthority->GetName().c_str(), "TestAuthority" );
         }
 
     //  *******************************
@@ -593,8 +594,8 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
         DgnAuthorityId daid = el->GetCode().GetAuthority();
         ASSERT_TRUE( daid.IsValid() );
         ASSERT_NE( daid , sourceAuthorityId ) << "Authority ID should have been remapped";
-        DgnAuthorities::Authority destAuthority = db2->Authorities().Query(daid);
-        ASSERT_STREQ( destAuthority.GetName().c_str(), "TestAuthority" );
+        auto destAuthority = db2->Authorities().LoadAuthority(daid);
+        ASSERT_STREQ( destAuthority->GetName().c_str(), "TestAuthority" );
         db2->SaveChanges();
         }
     }

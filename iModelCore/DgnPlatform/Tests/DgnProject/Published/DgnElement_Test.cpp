@@ -37,12 +37,12 @@ TEST_F (DgnElementTests, ResetStatistics)
     EXPECT_TRUE (M1id.IsValid());
 
     //Inserts 2 elements.
-    auto keyE1 = InsertElement(DgnElement::Code("E1"), M1id);
+    auto keyE1 = InsertElement(DgnElement::Code(), M1id);
     DgnElementId E1id = keyE1->GetElementId();
     DgnElementCPtr E1 = m_db->Elements().GetElement(E1id);
     EXPECT_TRUE (E1 != nullptr);
 
-    auto keyE2 = InsertElement(DgnElement::Code("E2"), M1id);
+    auto keyE2 = InsertElement(DgnElement::Code(), M1id);
     DgnElementId E2id = keyE2->GetElementId();
     DgnElementCPtr E2 = m_db->Elements().GetElement(E2id);
     EXPECT_TRUE (E2 != nullptr);
@@ -112,7 +112,7 @@ TEST_F (DgnElementTests, UpdateElement)
     DgnModelId m1id = m_db->Models().QueryModelId("model1");
     EXPECT_TRUE(m1id.IsValid());
 
-    auto keyE1 = InsertElement(DgnElement::Code("E1"), m1id);
+    auto keyE1 = InsertElement(DgnElement::Code(), m1id);
     DgnElementId e1id = keyE1->GetElementId();
     DgnElementCPtr e1 = m_db->Elements().GetElement(e1id);
     EXPECT_TRUE(e1 != nullptr);
@@ -124,19 +124,9 @@ TEST_F (DgnElementTests, UpdateElement)
     DgnElementPtr e1Copy = e1->CopyForEdit();
     e1Copy->SetLabel("Updated Test Element");
 
-    DgnElement::Code updatedCode("This is the updated Element.");
-    e1Copy->SetCode(updatedCode);
-
     DgnElementCPtr updatedElement = e1Copy->Update();
 
     EXPECT_STREQ("Updated Test Element", updatedElement->GetLabel());
-    EXPECT_TRUE(updatedCode == updatedElement->GetCode());
-
-    //Codes must be unique
-    EXPECT_TRUE(InsertElement(DgnElement::Code("MyCode"), m1id).IsValid());
-    DgnDbStatus insertStatus;
-    EXPECT_FALSE(InsertElement(DgnElement::Code("MyCode"), m1id, DgnCategoryId(), &insertStatus).IsValid());
-    EXPECT_EQ(insertStatus, DgnDbStatus::DuplicateCode);
     }
 
 

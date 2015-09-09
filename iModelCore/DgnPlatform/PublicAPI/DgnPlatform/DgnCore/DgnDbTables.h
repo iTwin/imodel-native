@@ -32,9 +32,11 @@
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
 #define DGN_CLASSNAME_Link                  "Link"
+#define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_Material              "Material"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
+#define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
 #define DGN_CLASSNAME_PhysicalView          "PhysicalView"
@@ -1113,308 +1115,6 @@ public:
     DGNPLATFORM_EXPORT DgnFontId AcquireId(DgnFontCR);
 };
 
-//=======================================================================================
-//! The DgnTextures holds the textures defined for a DgnDb. Texture data is stored as a
-//! binary blob interpreted according to the specified texture format. Textures may be
-//! optionally named, but names must be unique within the DgnDb.
-//=======================================================================================
-struct DgnTextures : DgnDbTable
-{
-private:
-    friend struct DgnDb;
-    explicit DgnTextures(DgnDbR db) : DgnDbTable(db) { }
-
-    static uintptr_t                            s_nextQvTextureId;
-    mutable bmap <DgnTextureId, uintptr_t>      m_qvTextureIds;
-
-public:
-    //! Supported texture formats. A texture's binary data is interpreted according to its specified format.
-    enum class Format
-    {
-        JPEG        = 0,    //!< JPEG
-        RAW         = 1,    //!< Raw RGBA bitmap
-        PNG         = 2,    //!< PNG
-        TIFF        = 3,    //!< TIFF
-        Unknown     = 0xff  //!< Unrecognized texture format.
-    };
-
-    enum class Flags : uint32_t
-    {
-        None        = 0,    //!< No flags
-    };
-
-    //! Holds the raw texture data
-    struct TextureData
-    {
-    private:
-        friend struct DgnTextures;
-
-        bvector<Byte>       m_data;
-        uint32_t            m_width;
-        uint32_t            m_height;
-        Flags               m_flags;
-        Format              m_format;
-    public:
-        //! Constructs an empty, invalid texture data
-        TextureData() : m_width(0), m_height(0), m_flags(Flags::None), m_format(Format::Unknown) { }
-
-        //! Constructor
-        //! @param[in]      format   The format of the raw texture data
-        //! @param[in]      data     The texture data encoded according to specified format. Must be non-null.
-        //! @param[in]      dataSize The number of byte in the texture data. Must be greater than 0
-        //! @param[in]      width    The width of the texture
-        //! @param[in]      height   The height of the texture
-        //! @param[in]      flags    Additional texture flags
-        TextureData(Format format, ByteCP data, size_t dataSize, uint32_t width, uint32_t height, Flags flags = Flags::None)
-            : m_data(data, data + dataSize), m_width(width), m_height(height), m_format(format), m_flags(flags)  { }
-
-        Format                  GetFormat() const       { return m_format; }//!< The format of the texture data
-        uint32_t                GetWidth() const        { return m_width; } //!< The texture width
-        uint32_t                GetHeight() const       { return m_height; }//!< The texture height
-        bvector<Byte> const&    GetData() const         { return m_data; }  //!< The raw texture data
-        Flags                   GetFlags() const        { return m_flags; }//!< Texture flags
-        };
-
-    //=======================================================================================
-    //! Holds a texture's data in memory.
-    //=======================================================================================
-    struct Texture
-    {
-    private:
-        friend struct DgnTextures;
-
-        DgnTextureId        m_id;
-        Utf8String          m_name;
-        Utf8String          m_descr;
-        TextureData         m_data;
-
-    public:
-        //! Constructs an empty, invalid texture
-        Texture() { }
-        //! Constructs a texture for insertion into the textures table
-        //! @param[in]      data  The encoded texture data
-        //! @param[in]      name  The optional name of this texture. Must be unique within the DgnDb.
-        //! @param[in]      descr The optional texture description
-        explicit Texture(TextureData const& data, Utf8CP name = nullptr, Utf8CP descr = nullptr) : m_data(data), m_name(name), m_descr(descr) { }
-
-        bool                                IsValid() const         { return m_id.IsValid(); }  //!< Test whether this is a valid texture
-
-        DgnTextureId                        GetId() const           { return m_id; }    //!< The ID of the texture
-        Utf8StringCR                        GetName() const         { return m_name; }  //!< The optional texture name
-        Utf8StringCR                        GetDescription() const  { return m_descr; } //!< The optional texture description
-        TextureData const&                  GetData() const         { return m_data; }  //!< The encoded texture data
-        DGNPLATFORM_EXPORT BentleyStatus    GetImage (bvector<Byte>& image) const;      //!< The image data (RGBA).
-
-        void    SetName(Utf8CP name)               { m_name = name; }      //!< Set the texture name
-        void    SetDescription(Utf8CP descr)       { m_descr = descr; }    //!< Set the texture description
-        void    SetData(TextureData const& data)   { m_data = data; }      //!< Set the texture data
-    };
-
-    //! An iterator over the textures in a DgnDb
-    struct Iterator : BeSQLite::DbTableIterator
-    {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
-
-        //! An entry in the texture table
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
-        public:
-            DGNPLATFORM_EXPORT DgnTextureId GetId() const;          //!< The texture ID
-            DGNPLATFORM_EXPORT Utf8CP       GetName() const;        //!< The texture name
-            DGNPLATFORM_EXPORT Utf8CP       GetDescr() const;       //!< The texture description
-            DGNPLATFORM_EXPORT Format       GetFormat() const;      //!< The texture format
-            DGNPLATFORM_EXPORT Flags        GetFlags() const;       //!< The texture flags
-            DGNPLATFORM_EXPORT uint32_t     GetWidth() const;       //!< The texture width
-            DGNPLATFORM_EXPORT uint32_t     GetHeight() const;      //!< The texture height
-            DGNPLATFORM_EXPORT size_t       GetDataSize() const;    //!< The number of bytes in the encoded texture data
-            DGNPLATFORM_EXPORT ByteCP       GetDataBytes() const;   //!< The encoded texture data
-
-            Entry const&    operator*() const   { return *this; }
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-
-        DGNPLATFORM_EXPORT size_t   QueryCount() const;         //!< The number of entries in the texture table
-        DGNPLATFORM_EXPORT Entry    begin() const;              //!< An iterator to the first entry in the table
-        Entry end() const { return Entry(nullptr, false); }    //!< An iterator one beyond the last entry in the table
-    };
-
-    //! Obtain an iterator over the textures in a DgnDb.
-    Iterator MakeIterator() const {return Iterator(m_dgndb);}
-
-    //! Insert a new texture into the DgnDb. If the texture is named, its name must be unique.
-    //! @param[in]      texture The new texture
-    //! @param[out]     result  If supplied, holds the result of the insert operation
-    //! @return The ID of the newly-created texture, or an invalid ID if insertion failed.
-    DGNPLATFORM_EXPORT DgnTextureId Insert(Texture& texture, DgnDbStatus* result = nullptr);
-
-    //! Change the properties of the specified texture. This method cannot be used to change the texture name
-    //! @param[in]      texture The modified texture.
-    //! @return Success if the texture was updated, or else an error code.
-    DGNPLATFORM_EXPORT DgnDbStatus  Update(Texture const& texture) const;
-
-    //! Look up a texture by ID.
-    //! @param[in]      id The ID of the desired texture
-    //! @return The texture with the specified ID, or an invalid texture if no such texture exists.
-    DGNPLATFORM_EXPORT Texture      Query(DgnTextureId id) const;
-
-    //! Remove a texture from the DgnDb.
-    //! @param[in] id the id of the texture to remove.
-    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the textureId did not exist prior to this call.
-    //! @note Deleting a texture can result in an inconsistent database. There is no checking that the texture to be removed is not in use somehow, and
-    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
-    //! know for sure that the texture is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnTextureId id);
-
-    //! Look up the ID of the texture with the specified name
-    //! @param[in]      name The name of the desired texture
-    //! @return The ID of the texture with the specified name, or an invalid ID if no such texture exists.
-    DGNPLATFORM_EXPORT DgnTextureId QueryTextureId(Utf8StringCR name) const;
-
-    DGNPLATFORM_EXPORT uintptr_t   GetQvTextureId (DgnTextureId TextureId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
-    DGNPLATFORM_EXPORT uintptr_t   AddQvTextureId (DgnTextureId TextureId) const; //!< set QuickVision material ID for supplied material Id.
-
-};
-
-//=======================================================================================
-//! The DgnMaterials holds the materials defined for a DgnDb. Each material has a unique
-//! combination of palette and material name, and an optional description and parent
-//! material ID.
-//! @see DgnDb::Materials
-//=======================================================================================
-struct DgnMaterials : DgnDbTable
-{
-private:
-    friend struct DgnDb;
-    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) {}
-
-    static uintptr_t                            s_nextQvMaterialId;
-    mutable bmap <DgnMaterialId, uintptr_t>     m_qvMaterialIds;
-
-public:
-
-    //=======================================================================================
-    //! Holds a material's data in memory.
-    //=======================================================================================
-    struct Material
-    {
-    private:
-        friend struct DgnMaterials;
-
-        DgnMaterialId m_id;
-        DgnMaterialId m_parentId;
-        Utf8String    m_name;
-        Utf8String    m_descr;
-        Utf8String    m_palette;
-        Utf8String    m_value;
-
-    public:
-        //! Constructs an empty, invalid Material
-        Material() {}
-        //! Constructs a Material for insertion into the materials table.
-        //! @param[in]      name     The material's name. The combination of name and palette must be unique.
-        //! @param[in]      palette  The name of the material's palette. The combination of name and palette must be unique.
-        //! @param[in]      value    JSON representation of the material.
-        //! @param[in]      descr    Optional material description.
-        //! @param[in]      parentId Optional ID of this material's parent material.
-        Material(Utf8CP name, Utf8CP palette, Utf8CP value, Utf8CP descr=nullptr, DgnMaterialId parentId=DgnMaterialId()) : m_parentId(parentId), m_name(name), m_palette(palette), 
-                            m_descr(descr), m_value(value) {}
-
-        DgnMaterialId GetId() const {return m_id;}  //!< The ID of this material.
-        DgnMaterialId GetParentId() const {return m_parentId;}  //!< The ID of this material's parent, or an invalid ID if no parent is defined.
-        Utf8StringCR GetName() const {return m_name;}   //!< The name of this material.
-        Utf8StringCR GetPalette() const {return m_palette;} //!< The name of this material's palette.
-        Utf8StringCR GetValue() const {return m_value;} //!< JSON representation of this material.
-        Utf8StringCR GetDescr() const {return m_descr;} //!< Description of this material.                                                                              
-        void SetName(Utf8CP val) {m_name = val;} //!< Sets the name of this material.
-        void SetPalette(Utf8CP val) {m_palette = val;} //!< Sets the name of this material's palette.
-        void SetValue(Utf8CP val) {m_value = val;} //!< Sets the JSON representation of this material.
-        void SetDescr(Utf8CP val) {m_descr= val;} //!< Sets the description of this material.
-        void SetParentId(DgnMaterialId id) {m_parentId=id;} //!< Sets the parent material ID.
-        bool IsValid() const {return m_id.IsValid();} //!< Test if the Material is valid.
-        
-        //! Get an asset of the material as a Json value.  (Rendering, physical etc.)
-        //! @param[out]     value       The Json value for the asset.
-        //! @param[in]      keyWord     asset keyword -- "RenderMaterial", "Physical" etc.
-        DGNPLATFORM_EXPORT BentleyStatus GetAsset (JsonValueR value, char const* keyWord) const; 
-
-        //! Set an asset of material from a Json value.
-        //! @param[in]     value       The Json value for the asset.
-        //! @param[in]     keyWord     asset keyword -- "RenderMaterial", "Physical" etc.
-        DGNPLATFORM_EXPORT void          SetAsset (JsonValueCR value, char const* keyWord);
-    };
-
-    //! An iterator over the materials in a DgnDb
-    struct Iterator : BeSQLite::DbTableIterator
-    {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
-
-        //! An entry in the material table.
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
-        public:
-            DGNPLATFORM_EXPORT DgnMaterialId GetId() const; //!< The material ID.
-            DGNPLATFORM_EXPORT DgnMaterialId GetParentId() const; //!< The parent material ID.
-            DGNPLATFORM_EXPORT Utf8CP GetName() const; //!< The material name.
-            DGNPLATFORM_EXPORT Utf8CP GetPalette() const; //!< The material palette name.
-            DGNPLATFORM_EXPORT Utf8CP GetValue() const; //!< The JSON representation of the material.
-            DGNPLATFORM_EXPORT Utf8CP GetDescr() const; //!< The material description.
-            Entry const& operator*() const {return *this;}
-        };
-
-    typedef Entry const_iterator;
-    typedef Entry iterator;
-    DGNPLATFORM_EXPORT size_t QueryCount() const; //!< The number of entries in the material table.
-    DGNPLATFORM_EXPORT Entry begin() const; //!< An iterator to the first entry in the table.
-    Entry end() const {return Entry(nullptr, false);} //!< An iterator one beyond the last entry in the table.
-    };
-
-    //! Obtain an iterator over the materials in a DgnDb.
-    Iterator MakeIterator() const {return Iterator(m_dgndb);}
-
-    //! Insert a new material into the DgnDb. The combination of material+palette name must be unique.
-    //! @param[in]      material    The new material
-    //! @param[out]     result      If supplied, holds the result of the insert operation
-    //! @return The DgnMaterialId of the newly created material, or an invalid ID if the material was not created.
-    DGNPLATFORM_EXPORT DgnMaterialId Insert(Material& material, DgnDbStatus* result=nullptr);
-
-    //! Remove a material from the DgnDb.
-    //! @param[in] id the id of the material to remove.
-    //! @return whether the delete statement succeeded. Note that this method will return BE_SQLITE_OK even if the materialId did not exist prior to this call.
-    //! @note Deleting a material can result in an inconsistent database. There is no checking that the material to be removed is not in use somehow, and
-    //! in general the answer to that question is nearly impossible to determine. It is very rarely possible to use this method unless you
-    //! know for sure that the material is no longer necessary (for example, on a blank database). Otherwise, avoid using this method.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult Delete(DgnMaterialId id);
-
-    //! Change the properties of the specified material. This method cannot be used to change the material or palette name.
-    //! @param[in]      material The modified material.
-    //! @return Success if the material was updated, or else an error code.
-    DGNPLATFORM_EXPORT DgnDbStatus Update(Material const& material) const;
-
-    //! Look up a material by ID.
-    //! @param[in]      id The ID of the desired material
-    //! @return The material with the specified ID, or an invalid material if no such ID exists.
-    DGNPLATFORM_EXPORT Material Query(DgnMaterialId id) const;
-
-    //! Look up the ID of the material with the specifed name and palette name.
-    //! @param[in]      name    The material name
-    //! @param[in]      palette The palette name
-    //! @return The ID of the specified material, or an invalid ID if no such material exists.
-    DGNPLATFORM_EXPORT DgnMaterialId QueryMaterialId(Utf8StringCR name, Utf8StringCR palette) const;
-
-    DGNPLATFORM_EXPORT uintptr_t   GetQvMaterialId (DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
-    DGNPLATFORM_EXPORT uintptr_t   AddQvMaterialId (DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
-
-};
 
 //=======================================================================================
 //! A DgnElement within a DgnDb can be identified by a "code" which is unique among all
@@ -1431,87 +1131,25 @@ private:
     explicit DgnAuthorities(DgnDbR db) : DgnDbTable(db) {}
 
 public:
-    //=======================================================================================
-    //! Holds an authority's data in memory.
-    //=======================================================================================
-    struct Authority
-    {
-    private:
-        friend struct DgnAuthorities;
+    //! Look up the ID of the authority with the specified name.
+    DGNPLATFORM_EXPORT DgnAuthorityId QueryAuthorityId(Utf8StringCR name) const;
 
-        DgnAuthorityId  m_id;
-        Utf8String      m_name;
-        Utf8String      m_uri;
-    public:
-        //! Constructs an empty, invalid Authority
-        Authority() { }
-        //! Constructs a new Authority for insertion into the authorities table.
-        //! @param[in]      name The name of the authority. Must be unique.
-        //! @param[in]      uri  The optional Uri of the authority.
-        explicit Authority(Utf8CP name, Utf8CP uri = nullptr) : m_name(name), m_uri(uri) { }
-
-        DgnAuthorityId  GetId() const   { return m_id; } //!< This authority's ID.
-        Utf8StringCR    GetName() const { return m_name; } //!< This authority's unique name.
-        Utf8StringCR    GetUri() const  { return m_uri; } //!< This authority's URI.
-        bool            IsValid() const { return m_id.IsValid(); } //!< Test whether this Authority is valid.
-
-        void            SetName(Utf8CP val)    { m_name = val; } //!< Set the name of the authority. Must be unique.
-        void            SetUri(Utf8CP val)     { m_uri = val; } //!< Set the URI of the authority.
-    };
-
-    //! An iterator over the Authorities within a DgnDb.
-    struct Iterator : BeSQLite::DbTableIterator
-    {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
-
-        //! An entry in the Authorities table.
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
-        public:
-            DGNPLATFORM_EXPORT DgnAuthorityId   GetId() const; //!< The authority ID.
-            DGNPLATFORM_EXPORT Utf8CP           GetName() const; //!< The authority name.
-            DGNPLATFORM_EXPORT Utf8CP           GetUri() const; //!< The authority URI.
-
-            Entry const& operator*() const      { return *this; }
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNPLATFORM_EXPORT size_t   QueryCount() const; //!< The number of entries in the table.
-        DGNPLATFORM_EXPORT Entry    begin() const; //!< An iterator to the first entry in the table.
-        Entry                       end() const { return Entry(nullptr, false); } //!< An iterator one beyond the last entry in the table.
-    };
-
-    //! Obtain an iterator over the authorities within a DgnDb.
-    Iterator    MakeIterator() const    { return Iterator(m_dgndb); }
+    //! Load an authority by ID
+    //! @param[in] authorityId The ID of the authority to load
+    //! @param[out] status     Optional return status of the operation
+    //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded
+    DGNPLATFORM_EXPORT DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
 
     //! Add a new Authority to the table.
-    //! @param[in]      authority   The new entry to add.
-    //! @param[out]     result      The result of the insert operation.
-    //! @return The ID of the newly-created Authority, or an invalid ID if insertion failed.
-    DGNPLATFORM_EXPORT DgnAuthorityId   Insert(Authority& authority, DgnDbStatus* result = nullptr);
+    //! @param[in]  authority The new entry to add.
+    //! @return The result of the insert operation.
+    //! @remarks If successful, this method will assign a valid DgnAuthorityId to the supplied authority
+    DGNPLATFORM_EXPORT DgnDbStatus Insert(DgnAuthorityR authority);
 
-    //! Change the properties of an Authority. This method cannot be used to change the authority's name.
-    //! @param[in]      authority The modified Authority.
-    //! @return Success if the update was successful, or else an error code.
-    DGNPLATFORM_EXPORT DgnDbStatus      Update(Authority const& authority) const;
-
-    //! Look up an Authority by ID.
-    //! @param[in]      id The ID of the desired Authority.
-    //! @return The Authority with the specified ID, or an invalid ID if no such Authority exists.
-    DGNPLATFORM_EXPORT Authority        Query(DgnAuthorityId id) const;
-
-    //! Look up the ID of the authority with the specified name.
-    //! @param[in]      name The name of the desired Authority.
-    //! @return The ID corresponding to the name, or an invalid ID if no such name exists.
-    DGNPLATFORM_EXPORT DgnAuthorityId   QueryAuthorityId(Utf8StringCR name) const;
-
-    //! The built-in "local" code-generating authority
-    static DgnAuthorityId Local() {return DgnAuthorityId(1LL);}
+    //! Update an existing authority in the DgnDb
+    //! @param[in]  authority   The modified authority
+    //! @return The result of the update operation
+    DGNPLATFORM_EXPORT DgnDbStatus Update(DgnAuthorityR authority);
 };
 
 //=======================================================================================
@@ -1643,7 +1281,7 @@ public:
 };
 
 //=======================================================================================
-// Links are shared resources, referenced by elements. As such, it doesn't make sense to expose an explicit API to create and delete them. Either the detach API will clean it up if it's the last use, or this will be part of a larger GC scheme for shared resources.
+// Links are shared resources, referenced by elements. 
 //! @see DgnDb::Links
 // @bsiclass
 //=======================================================================================
@@ -1683,7 +1321,7 @@ public:
             DGNPLATFORM_EXPORT DgnLinkType GetType() const;
             DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
             Entry const& operator*() const { return *this; }
-        }; // Entry
+        };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
@@ -1722,7 +1360,7 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
             Entry const& operator*() const { return *this; }
 
-        }; // Entry
+        };
 
         typedef Entry const_iterator;
         typedef Entry iterator;

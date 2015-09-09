@@ -12,7 +12,6 @@
 
 Classes for working with %DgnElements in memory.
 @ref PAGE_ElementOverview
-
 */
 
 BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
@@ -99,6 +98,8 @@ public:
     //! @{
     //! Make sure that a DgnAuthority has been imported
     DGNPLATFORM_EXPORT DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId);
+    //! Register a copy of a DgnAuthority
+    DGNPLATFORM_EXPORT DgnAuthorityId AddAuthorityId(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Look up a copy of a model
     DGNPLATFORM_EXPORT DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a model
@@ -129,7 +130,6 @@ public:
     AngleInDegrees GetYawAdjustment() const {return m_yawAdj;}
     //! @}
 };
-
 template <class _QvKey> struct QvElemSet;
 
 //=======================================================================================
@@ -170,30 +170,28 @@ public:
     friend struct dgn_TxnTable::Element;
     friend struct MultiAspect;
 
-    //! A unique "identification string" for a DgnElement. Within a DgnDb, all values of Code must be unique.
-    //! A Code is a two-part identifier: [DgnAuthorityId authority, Utf8String value]. Sometimes the Code for a DgnElement is assigned by some external authority,
-    //! in which case its format, meaning, and uniqueness is established externally (see DgnDb::DgnAuthorities.)
-    //! DgnElements that have no stable external identity (i.e. have no external meaning) may use the value DgnAuthorities::Local(), which means the Code::Value is locally generated
-    //! and only guaranteed to be unique within the DgnDb of the DgnElement.
-    //! DgnElements must always have a valid DgnElement::Code (a valid DgnAuthorityId and a non-NULL value) to be inserted in a DgnDb.
+    //! A Code is a two-part identifier: [DgnAuthorityId authority, Utf8String value].
+    //! The Code for a DgnElement is assigned by some external authority, according to some scheme meaningful to that authority.
+    //! DgnElements must always have a valid DgnElement::Code (a valid DgnAuthorityId and a unique, non-NULL value) to be inserted in a DgnDb.
     struct Code
     {
     private:
         DgnAuthorityId  m_authority;
         Utf8String      m_value;
-    public:
-        bool operator==(Code const& other) const {return m_authority==other.m_authority && m_value==other.m_value;}
 
-        //! construct a Code from a Value and DgnAuthorityId.
-        //! @param[in] value identification string for this Code. If nullptr, this Code will be invalid.
-        //! @param[in] authority The DgnAuthoritiyId of the DgnAuthority that issued the value. Use DgnAuthorities::Local() to indicate the value is locally assigned.
-        explicit Code(Utf8CP value=nullptr, DgnAuthorityId authority=DgnAuthorities::Local()) : m_value(value) {m_authority=authority;}
-        //! construct a Code from a Value and DgnAuthorityId.
-        //! @param[in] value identification string for this Code. If nullptr, this Code will be invalid.
-        //! @param[in] authority The DgnAuthoritiyId of the DgnAuthority that issued the value. Use DgnAuthorities::Local() to indicate the value is locally assigned.
-        explicit Code(Utf8String const& value, DgnAuthorityId authority=DgnAuthorities::Local()) : m_value(value) {m_authority=authority;}
+        friend struct DgnAuthority;
+        friend struct DgnElements;
+        friend struct DgnModel;
+        Code(DgnAuthorityId authorityId, Utf8StringCR value) : m_authority(authorityId), m_value(value) { }
+    public:
+        //! Constructs an empty, invalid code
+        Code() { }
+
         //! Determine whether this Code is valid
         bool IsValid() const {return m_authority.IsValid() && !m_value.empty();}
+        //! Determine if two Codes are equivalent
+        bool operator==(Code const& other) const {return m_authority==other.m_authority && m_value==other.m_value;}
+
         //! Get the value for this Code
         Utf8StringCR GetValue() const {return m_value;}
         Utf8CP GetValueCP() const {return m_value.c_str();}
@@ -213,10 +211,9 @@ public:
         Utf8CP          m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
-        double          m_lastModTime;
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
-                     DgnElementId parent=DgnElementId(), double lastModTime=0.0) :
-                     m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent), m_lastModTime(lastModTime) {}
+                     DgnElementId parent=DgnElementId()) :
+                     m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
         void SetLabel(Utf8CP label) {m_label = label;}  //!< Set the label for DgnElements created with this CreateParams
@@ -458,6 +455,17 @@ public:
     struct EXPORT_VTABLE_ATTRIBUTE Item : UniqueAspect
     {
         DEFINE_T_SUPER(UniqueAspect)
+
+        //! The reason why _GenerateElementGeometry is being called
+        enum class GenerateReason 
+            {
+            Insert,         //!< The Element is being inserted into the Db
+            Update,         //!< Some aspect of the Element's content has changed.
+            TempDraw,       //!< A tool wants to draw the Element temporarily (the Element may not be persistent)
+            BulkInsert,     //!< An application is creating a large number of Elements 
+            Other           //!< An unspecified reason
+            };
+
     private:
         static Key s_key;
         static Key& GetKey() {return s_key;}
@@ -467,16 +475,17 @@ public:
 
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final; // *** WIP_ECSQL Polymorphic delete
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
-        DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateElementGeometry(el);}
-        DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateElementGeometry(el);}
+        DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateElementGeometry(el, GenerateReason::Insert);}
+        DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateElementGeometry(el, GenerateReason::Update);}
         static void SetItem0(DgnElementCR el, Item& item);
-        DgnDbStatus CallGenerateElementGeometry(DgnElementR);
+        DgnDbStatus CallGenerateElementGeometry(DgnElementR, GenerateReason);
 
     protected:
         //! The subclass must implement this method to generate geometry and store it on \a el.
         //! The platform invokes _GenerateElementGeometry just \em before an element is inserted and/or updated.
         //! @param el   The element to be updated.
-        virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR el) = 0;
+        //! @param reason An indication of why the caller is requesting the element's geometry to be generated.
+        virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason reason) = 0;
 
         //! Utility method to return the ECSchema name of an ECInstance.
         //! @param instance The instance currently assigned to this Item, or null if the Item has no in-memory instance.
@@ -532,7 +541,8 @@ public:
 
         //! Invoke the _GenerateElementGeometry method on the item
         //! @param el   The host element
-        DGNPLATFORM_EXPORT static DgnDbStatus GenerateElementGeometry(GeometricElementR el);
+        //! @param reason An indication of why the caller is requesting the element's geometry to be generated.
+        DGNPLATFORM_EXPORT static DgnDbStatus GenerateElementGeometry(GeometricElementR el, GenerateReason reason);
 
         //! Execute the EGA that is specified for this Item.
         //! @param el   The element to be updated
@@ -548,7 +558,7 @@ public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
-    void UpdateLastModTime();
+    void GetParamList(bvector<Utf8String>& paramList, bool isForUpdate = false);
     template<class T> void CallAppData(T const& caller) const;
 
 protected:
@@ -572,7 +582,6 @@ protected:
     DgnCategoryId   m_categoryId;
     Code            m_code;
     Utf8String      m_label;
-    double          m_lastModTime;
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -595,11 +604,24 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
-    //! Called to insert a new DgnElement into the DgnDb. Override to save subclass properties.
+    //! Called to get a list of parameters/properties that need to be inserted when inserting a new element in the table.
+    //! @note If you override this method, you must call T_Super::_GetInsertParams in order to get the superclasses' properties.
+    //! This call will be followed by a call to _BindInsertParams which will actually bind the parameter values to the statement.
+    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8String>& insertParams);
+
+    //! Called to bind the element's property values to the ECSqlStatement when inserting
+    //! a new element.  The parameters to bind were the ones that were added in the call
+    //! to _GetInsertParams.  
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
-    //! Then you @em must call T_Super::_InsertInDb, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement);
+    //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
+
+    //! Called after a DgnElement was inserted into the database.  Override this
+    //! only if your derived class needs to insert into a secondary table that is dependent
+    //! on a foreign key from the initial insert.
+    //! @note If you override this method, you @em must call T_Super::_InsertSecondary() first.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertSecondary();
 
     //! Called after a DgnElement was successfully inserted into the database.
     //! @note If you override this method, you @em must call T_Super::_OnInserted.
@@ -769,12 +791,13 @@ protected:
     DGNPLATFORM_EXPORT void ClearAllAppData(); //!< @private
 
     //! Generate the CreateParams to use for Import
+    //! @param destModel Specifies the model into which the element is being cloned
     //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
     //! @return CreateParams initialized with the element's current data
-    //! @remarks The m_id and m_lastModTime fields are \em not set, as it is never correct for two elements to have the same ID, and lastModTime is computed. The m_parentId field is not set,
+    //! @remarks The m_id fields are \em not set, as it is never correct for two elements to have the same Id. The m_parentId field is not set,
     //! as it is not clear if the copy should be a child of the same parent as the original. The caller can set this if appropriate.
     //! The m_code field is copied \em only when cloning between two different DgnDbs, as it is never correct for two elements to have the same code.
-    CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
+    CreateParams GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const;
 
 public:
     static Utf8CP MyECClassName() {return DGN_CLASSNAME_Element;}
@@ -951,12 +974,8 @@ public:
     //! Set the label (user-friendly name) of this DgnElement.
     void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
 
-    //! Get the time this element was last modified.
-    //! @note the time is in UTC Julian days.
-    double GetLastModifiedTime() const {return m_lastModTime;}
-
-    //! Get the last modified time as a DateTime timestamp
-    DateTime GetTimeStamp() const {DateTime timestamp; DateTime::FromJulianDay(timestamp, m_lastModTime, DateTime::Info(DateTime::Kind::Utc)); return timestamp;}
+    //! Query the database for the last modified time of this DgnElement.
+    DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
 
     //! Get the display label (for use in the GUI) of this DgnElement.
     //! @note The default implementation returns the label if it is set or the code if the label is not set.
@@ -966,7 +985,6 @@ public:
     //! Query the DgnDb for the children of this DgnElement.
     //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
     DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
-
 };
 
 //=======================================================================================
@@ -1119,7 +1137,7 @@ protected:
     GeomStream m_geom;
 
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertSecondary() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
@@ -1426,8 +1444,13 @@ public:
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    //! @note Element codes are usually, but not necessarily, unique. If not unique, this method returns the first one found.
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnElement::Code const& code) const;
+
+    //! Query for the DgnElementId of the element that has the specified code
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnAuthorityId codeAuthorityId, Utf8StringCR codeValue) const;
+
+    //! Query for the DgnElementId of the element that has the specified code
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8StringCR codeAuthorityName, Utf8StringCR codeValue) const;
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
@@ -1512,7 +1535,7 @@ struct InstanceBackedItem : DgnElement::Item
     Utf8String _GetECClassName() const override {return m_instance->GetClass().GetName();}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason) override;
 
     InstanceBackedItem() {;}
 
