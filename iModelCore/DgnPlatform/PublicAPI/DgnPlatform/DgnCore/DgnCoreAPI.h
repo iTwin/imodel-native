@@ -31,6 +31,7 @@
 #include "LineStyle.h"
 #include "DgnElementDependency.h"
 #include "DgnDb.h"
+#include "DgnAuthority.h"
 #include "NotificationManager.h"
 #include "ScanCriteria.h"
 #include "SolidKernel.h"

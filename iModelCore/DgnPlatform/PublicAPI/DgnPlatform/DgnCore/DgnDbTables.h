@@ -32,9 +32,11 @@
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
 #define DGN_CLASSNAME_Link                  "Link"
+#define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_Material              "Material"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
+#define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
 #define DGN_CLASSNAME_PhysicalView          "PhysicalView"
@@ -1431,87 +1433,25 @@ private:
     explicit DgnAuthorities(DgnDbR db) : DgnDbTable(db) {}
 
 public:
-    //=======================================================================================
-    //! Holds an authority's data in memory.
-    //=======================================================================================
-    struct Authority
-    {
-    private:
-        friend struct DgnAuthorities;
+    //! Look up the ID of the authority with the specified name.
+    DGNPLATFORM_EXPORT DgnAuthorityId QueryAuthorityId(Utf8StringCR name) const;
 
-        DgnAuthorityId  m_id;
-        Utf8String      m_name;
-        Utf8String      m_uri;
-    public:
-        //! Constructs an empty, invalid Authority
-        Authority() { }
-        //! Constructs a new Authority for insertion into the authorities table.
-        //! @param[in]      name The name of the authority. Must be unique.
-        //! @param[in]      uri  The optional Uri of the authority.
-        explicit Authority(Utf8CP name, Utf8CP uri = nullptr) : m_name(name), m_uri(uri) { }
-
-        DgnAuthorityId  GetId() const   { return m_id; } //!< This authority's ID.
-        Utf8StringCR    GetName() const { return m_name; } //!< This authority's unique name.
-        Utf8StringCR    GetUri() const  { return m_uri; } //!< This authority's URI.
-        bool            IsValid() const { return m_id.IsValid(); } //!< Test whether this Authority is valid.
-
-        void            SetName(Utf8CP val)    { m_name = val; } //!< Set the name of the authority. Must be unique.
-        void            SetUri(Utf8CP val)     { m_uri = val; } //!< Set the URI of the authority.
-    };
-
-    //! An iterator over the Authorities within a DgnDb.
-    struct Iterator : BeSQLite::DbTableIterator
-    {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
-
-        //! An entry in the Authorities table.
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
-        public:
-            DGNPLATFORM_EXPORT DgnAuthorityId   GetId() const; //!< The authority ID.
-            DGNPLATFORM_EXPORT Utf8CP           GetName() const; //!< The authority name.
-            DGNPLATFORM_EXPORT Utf8CP           GetUri() const; //!< The authority URI.
-
-            Entry const& operator*() const      { return *this; }
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNPLATFORM_EXPORT size_t   QueryCount() const; //!< The number of entries in the table.
-        DGNPLATFORM_EXPORT Entry    begin() const; //!< An iterator to the first entry in the table.
-        Entry                       end() const { return Entry(nullptr, false); } //!< An iterator one beyond the last entry in the table.
-    };
-
-    //! Obtain an iterator over the authorities within a DgnDb.
-    Iterator    MakeIterator() const    { return Iterator(m_dgndb); }
+    //! Load an authority by ID
+    //! @param[in] authorityId The ID of the authority to load
+    //! @param[out] status     Optional return status of the operation
+    //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded
+    DGNPLATFORM_EXPORT DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
 
     //! Add a new Authority to the table.
-    //! @param[in]      authority   The new entry to add.
-    //! @param[out]     result      The result of the insert operation.
-    //! @return The ID of the newly-created Authority, or an invalid ID if insertion failed.
-    DGNPLATFORM_EXPORT DgnAuthorityId   Insert(Authority& authority, DgnDbStatus* result = nullptr);
+    //! @param[in]  authority The new entry to add.
+    //! @return The result of the insert operation.
+    //! @remarks If successful, this method will assign a valid DgnAuthorityId to the supplied authority
+    DGNPLATFORM_EXPORT DgnDbStatus Insert(DgnAuthorityR authority);
 
-    //! Change the properties of an Authority. This method cannot be used to change the authority's name.
-    //! @param[in]      authority The modified Authority.
-    //! @return Success if the update was successful, or else an error code.
-    DGNPLATFORM_EXPORT DgnDbStatus      Update(Authority const& authority) const;
-
-    //! Look up an Authority by ID.
-    //! @param[in]      id The ID of the desired Authority.
-    //! @return The Authority with the specified ID, or an invalid ID if no such Authority exists.
-    DGNPLATFORM_EXPORT Authority        Query(DgnAuthorityId id) const;
-
-    //! Look up the ID of the authority with the specified name.
-    //! @param[in]      name The name of the desired Authority.
-    //! @return The ID corresponding to the name, or an invalid ID if no such name exists.
-    DGNPLATFORM_EXPORT DgnAuthorityId   QueryAuthorityId(Utf8StringCR name) const;
-
-    //! The built-in "local" code-generating authority
-    static DgnAuthorityId Local() {return DgnAuthorityId(1LL);}
+    //! Update an existing authority in the DgnDb
+    //! @param[in]  authority   The modified authority
+    //! @return The result of the update operation
+    DGNPLATFORM_EXPORT DgnDbStatus Update(DgnAuthorityR authority);
 };
 
 //=======================================================================================

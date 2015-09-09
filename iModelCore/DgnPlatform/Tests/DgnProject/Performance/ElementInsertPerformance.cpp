@@ -280,7 +280,7 @@ TEST_F(PerformanceElementItem, CRUD)
         {
             //First insert the Element
             elementTimer.Start();
-            DgnElementCPtr el = InsertElement(DgnElement::Code(Utf8PrintfString("E%d", i)));
+            DgnElementCPtr el = InsertElement(DgnElement::Code());
             EXPECT_TRUE(el.IsValid());
             elementTimer.Stop();
             insertTime = insertTime + elementTimer.GetElapsedSeconds();

@@ -521,6 +521,7 @@ TEST_F(DgnModelTests, ImportGroups)
 
     }
 
+#ifdef WIP_DGNAUTHORITY
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
@@ -598,6 +599,7 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
         db2->SaveChanges();
         }
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15

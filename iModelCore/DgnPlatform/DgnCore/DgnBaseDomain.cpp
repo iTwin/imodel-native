@@ -51,6 +51,12 @@ namespace dgn_AspectHandler
 HANDLER_DEFINE_MEMBERS(Aspect)
 };
 
+namespace dgn_AuthorityHandler
+{
+HANDLER_DEFINE_MEMBERS(Authority)
+HANDLER_DEFINE_MEMBERS(Local)
+HANDLER_DEFINE_MEMBERS(Namespace)
+};
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -90,6 +96,10 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
     RegisterHandler(dgn_ElementHandler::Group::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalText::GetHandler());
+
+    RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Namespace::GetHandler());
 
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());

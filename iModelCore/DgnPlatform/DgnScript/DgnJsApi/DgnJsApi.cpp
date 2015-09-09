@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid, Utf8CP code)//, RefCountedPtr<T> geom)
+static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid)//, RefCountedPtr<T> geom)
     {
     Utf8CP dot = strchr(ecSqlClassName, '.');
     if (nullptr == dot)
@@ -30,9 +30,6 @@ static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf
     DgnDbR db = model.GetDgnDb();
     DgnClassId pclassId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
     PhysicalElementPtr el = PhysicalElement::Create(PhysicalElement::CreateParams(db, model.GetModelId(), pclassId, catid));
-
-    if (nullptr != code)
-        el->SetCode(DgnElement::Code(code));
 
     return el;
     }
@@ -96,7 +93,7 @@ JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP 
 JsDgnElement* JsDgnModel::CreateElement(Utf8StringCR ecSqlClassName, Utf8StringCR categoryName)
     {
     DgnCategoryId catid = m_model->GetDgnDb().Categories().QueryCategoryId(categoryName.c_str());
-    return new JsDgnElement(*createPhysicalElement(*m_model, ecSqlClassName.c_str(), catid, nullptr));
+    return new JsDgnElement(*createPhysicalElement(*m_model, ecSqlClassName.c_str(), catid));
     }
 
 //---------------------------------------------------------------------------------------

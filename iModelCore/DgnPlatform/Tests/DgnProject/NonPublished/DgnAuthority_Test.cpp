@@ -9,6 +9,7 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
+#ifdef WIP_DGNAUTHORITY
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -121,4 +122,5 @@ TEST_F (DgnAuthoritiesTest, Authorities)
     auto updatedAuth = auths.Query (auth.GetId());
     Compare (auth, updatedAuth);
     }
+#endif
 

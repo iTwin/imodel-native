@@ -186,11 +186,7 @@ ECClassCP DgnElement::GetElementClass() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::Code DgnElement::_GenerateDefaultCode()
     {
-    if (!m_elementId.IsValid())
-        return Code();
-
-    Utf8PrintfString val("%s [%u:%u]", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & m_elementId.GetValue()));
-    return Code(val.c_str());
+    return DgnAuthority::GenerateDefaultCode (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -821,7 +817,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const
     {
-    DgnElement::CreateParams params = GetCreateParamsForImport(importer);
+    DgnElement::CreateParams params = GetCreateParamsForImport(destModel, importer);
     params.m_modelId = destModel.GetModelId();
 
     DgnElementPtr cloneElem = GetElementHandler().Create(params);
@@ -909,14 +905,17 @@ void GeometricElement::_RemapIds(DgnImportContext& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnImportContext& importer) const
+DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const
     {
     CreateParams parms(importer.GetDestinationDb(), GetModelId(), GetElementClassId(), GetCategoryId());
+    DgnAuthorityPtr authority = GetCode().IsValid() ? GetDgnDb().Authorities().LoadAuthority(GetCode().GetAuthority()) : nullptr;
+    if (authority.IsValid())
+        parms.m_code = authority->CloneCodeForImport(*this, destModel, importer);
+
     if (importer.IsBetweenDbs())
         {
         // Caller probably wants to preserve these when copying between Dbs. We never preserve them when copying within a Db.
         parms.m_label = GetLabel();
-        parms.m_code = GetCode();
 
         parms.RelocateToDestinationDb(importer);
         }
