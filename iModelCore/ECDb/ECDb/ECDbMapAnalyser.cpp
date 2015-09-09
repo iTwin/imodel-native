@@ -1378,10 +1378,6 @@ DbResult ECDbMapAnalyser::ApplyChanges ()
 
         for (auto & trigger : viewInfo.GetTriggers ().GetTriggers ())
             {
-            if (&trigger == nullptr)
-                {
-                printf ("");
-                }
             if (!trigger.IsEmpty ())
                 {
                 sql = trigger.ToString (SqlOption::DropIfExists, true);
