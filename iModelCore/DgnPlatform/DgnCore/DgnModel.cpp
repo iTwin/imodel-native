@@ -998,7 +998,7 @@ DgnDbStatus ComponentSolution::Query(Solution& sln, SolutionId sid)
     {
     //DgnModelId cmid = GetDgnDb().Models().QueryModelId(sid.m_modelName.c_str());
 
-    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id,Range FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=? AND SolutionName=?");
+    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id,Range,Parameters FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=? AND SolutionName=?");
     stmt->BindText(1, sid.m_modelName, Statement::MakeCopy::No);
     stmt->BindText(2, sid.m_solutionName, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt->Step())
@@ -1006,6 +1006,12 @@ DgnDbStatus ComponentSolution::Query(Solution& sln, SolutionId sid)
     sln.m_id = sid;
     sln.m_rowId = stmt->GetValueInt64(0);
     sln.m_range = *(ElementAlignedBox3d*)stmt->GetValueBlob(1);
+    Utf8CP parametersJsonSerialized = stmt->GetValueText(2);
+    Json::Value parametersJson(Json::objectValue);
+    if (!Json::Reader::Parse(parametersJsonSerialized, parametersJson))
+        return DgnDbStatus::ReadError;
+    sln.m_parameters = ModelSolverDef::ParameterSet(parametersJson);
+        
     sln.m_componentModelId = GetDgnDb().Models().QueryModelId(sid.m_modelName.c_str());
     return DgnDbStatus::Success;
     }
@@ -1037,7 +1043,8 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
         return SolutionId();
         }
 
-    Utf8String solutionName = componentModel.GetSolver().GetParameters().ComputeSolutionName();
+    ModelSolverDef::ParameterSet const& currentParameters = componentModel.GetSolver().GetParameters();
+    Utf8String solutionName = currentParameters.ComputeSolutionName();
 
     SolutionId sid;
     sid.m_modelName = componentModel.GetModelName();
@@ -1137,10 +1144,11 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
     ElementAlignedBox3d box = placement.GetElementBox();
         
     //  Insert a row into the ComponentSolution table that is keyed by the solutionId and that captures the solution geometry
-    CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " (ComponentModelName,SolutionName,Range) VALUES(?,?,?)");
+    CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " (ComponentModelName,SolutionName,Parameters,Range) VALUES(?,?,?,?)");
     istmt->BindText(1, componentModel.GetModelName(), Statement::MakeCopy::No);
     istmt->BindText(2, solutionName, Statement::MakeCopy::No);
-    istmt->BindBlob(3, &box, sizeof(box), Statement::MakeCopy::No);
+    istmt->BindText(3, Json::FastWriter::ToString(currentParameters.ToJson()).c_str(), Statement::MakeCopy::Yes);
+    istmt->BindBlob(4, &box, sizeof(box), Statement::MakeCopy::No);
     if (BE_SQLITE_DONE != istmt->Step())
         return SolutionId();
     istmt = nullptr;
@@ -1196,7 +1204,7 @@ DgnElementPtr ComponentSolution::CreateSolutionInstanceElement(DgnModelR destina
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, SolutionId solutionId)
+DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, SolutionId solutionId)
     {
     DgnDbR db = instanceElement.GetDgnDb();
 
@@ -1211,14 +1219,18 @@ DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceEl
     if (!cm.IsValid())
         return DgnDbStatus::NotFound;
 
-    DgnClassId cmItemClassId = DgnClassId(db.Schemas().GetECClassId(componentSchemaName, cm->GetItemECClassName().c_str()));
+    Utf8String componentSchemaName = cm->GetItemECSchemaName();
+    DgnClassId cmItemClassId = DgnClassId(db.Schemas().GetECClassId(componentSchemaName.c_str(), cm->GetItemECClassName().c_str()));
     if (!cmItemClassId.IsValid())
+        {
+        BeAssert(false && "you must store the name of the generated ECSchema in the ComponentModel");
         return DgnDbStatus::WrongClass;
+        }
 
     // Make and return a standalone instance of the itemClass that holds the parameters as properties. It is up to the caller to transfer these properties to the DgnElement::Item object.
     auto itemClass = db.Schemas().GetECClass(cmItemClassId.GetValue());
     itemProperties = itemClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ModelSolverDef::ParameterSet const& params = cm->GetSolver().GetParameters();
+    ModelSolverDef::ParameterSet const& params = sln.GetParameters();
     for (auto param : params)
         {
         if (ECN::ECOBJECTS_STATUS_Success != itemProperties->SetValue(param.GetName().c_str(), param.GetValue()))
@@ -1729,6 +1741,9 @@ DgnDbStatus ComponentModel::GenerateECClass(ECN::ECSchemaR schema)
     egaSpec->SetValue("Inputs", ECValue(paramsList.c_str()));   // NB: paramsList must be in the same order as m_solver.GetParameters, so that clients can use it to generate the solution name
     ecclass->SetCustomAttribute(*egaSpec);
 
+    m_itemECSchemaName = schema.GetName();
+    Update();
+
     return DgnDbStatus::Success;
     }
 
@@ -1788,6 +1803,7 @@ void ComponentModel::_ToPropertiesJson(Json::Value& json) const
     T_Super::_ToPropertiesJson(json);
     json["ComponentElementCategoryName"] = m_elementCategoryName.c_str();
     json["ComponentElementECClassName"]  = m_elementECClassName.c_str();
+    json["ComponentItemECSchemaName"]    = m_itemECSchemaName.c_str();
     json["ComponentItemECClassName"]     = m_itemECClassName.c_str();
     json["ComponentItemECBaseClassName"] = m_itemECBaseClassName.c_str();
     }
@@ -1800,6 +1816,7 @@ void ComponentModel::_FromPropertiesJson(Json::Value const& json)
     T_Super::_FromPropertiesJson(json);
     m_elementCategoryName = json["ComponentElementCategoryName"].asCString();
     m_elementECClassName  = json["ComponentElementECClassName"].asCString();
+    m_itemECSchemaName     = json["ComponentItemECSchemaName"].asCString();
     m_itemECClassName     = json["ComponentItemECClassName"].asCString();
     m_itemECBaseClassName = json["ComponentItemECBaseClassName"].asCString();
     }
