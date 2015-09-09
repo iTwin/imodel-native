@@ -487,11 +487,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>Element2d</BaseClass>
     </ECClass>
 
-    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
-        <BaseClass>PhysicalElement</BaseClass>
-        <ECProperty propertyName="TextAnnotationBlob" typeName="binary"/>
-    </ECClass>
-
     <!-- Abstract -->
     <ECClass typeName="ElementAspect" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
         <!-- An ElementAspect is related to an Element with a relationship of strength="embedding" (ElementAspect is deleted if the Element is deleted) -->
@@ -648,6 +643,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
+    </ECClass>
+
+    <ECClass typeName="TextAnnotationElement" isDomainClass="True">
+        <BaseClass>DrawingElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="TextAnnotationDataAspect" isDomainClass="True">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="TextAnnotation" typeName="binary"/>
     </ECClass>
 
     <ECClass typeName="Material" isDomainClass="True" >

@@ -997,6 +997,7 @@ public:
     uint8_t const* GetData() const {return m_data;} //!< Get a const pointer to the GeomStream.
     uint8_t* GetDataR() const {return m_data;}      //!< Get a writable pointer to the GeomStream.
     bool HasGeometry() const {return 0 != m_size;}  //!< return false if this GeomStream is empty.
+    void Clear() {FREE_AND_CLEAR(m_data); m_size = m_allocSize = 0;} //!< Return this object to an empty/uninitialized state.
 
     //! Reserve memory for this GeomStream.
     //! @param[in] size the number of bytes to reserve
