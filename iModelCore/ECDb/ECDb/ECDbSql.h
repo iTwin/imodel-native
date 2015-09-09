@@ -57,11 +57,11 @@ enum class ECDbKnownColumns
 struct Enum
     {
     public:
-        template<typename T, typename U = std::underlying_type_t <T>>
+        template<typename T, typename U = typename std::underlying_type <T>::type>
         static U ToUnderlyingType (T t){ return static_cast<U>(t); }
-        template<typename T, typename U = std::underlying_type_t <T>>
+        template<typename T, typename U = typename std::underlying_type <T>::type>
         static U ConvertTo (T a){ return static_cast<U>(a); }
-        template<typename T, typename U = std::underlying_type_t <T>>
+        template<typename T, typename U = typename std::underlying_type <T>::type>
         static T ConvertFrom (U a){ return static_cast<T>(a); }
         template<typename T>
         static int ToInt (T a){ return ConvertTo<T, int> (a); }
