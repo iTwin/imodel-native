@@ -75,10 +75,6 @@ struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationElement : DrawingElement
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_TextAnnotationElement, DrawingElement);
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement&) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual void _UpdateGeomStream();
