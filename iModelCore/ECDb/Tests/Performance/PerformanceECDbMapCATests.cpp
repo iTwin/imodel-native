@@ -26,7 +26,7 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
         ASSERT_EQ (ECSqlStatus::Success, stat) << "preparation failed for " << selectSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, instanceId++));
+            ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (1, (int64_t)(instanceId++)));
             ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step()) << "step failed for " << selectSql;
             stmt.Reset ();
             stmt.ClearBindings ();
@@ -55,7 +55,7 @@ void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation Failed for " << deleteSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, instanceId++));
+            ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (1, (int64_t)(instanceId++)));
             ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "step failed for " << deleteSql;
             stmt.Reset ();
             stmt.ClearBindings ();
@@ -90,7 +90,7 @@ void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
                 ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(parameterIndex, ("UpdatedValue"), IECSqlBinder::MakeCopy::No));
                 }
 
-            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(propertyCount + 1, instanceId++));
+            ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (1, (int64_t)(instanceId++)));
             ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "step failed for " << updateSql;
             stmt.Reset ();
             stmt.ClearBindings ();
@@ -230,8 +230,8 @@ void PerformanceECDbMapCATestFixture::CreateClassHierarchy(ECSchemaR testSchema,
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSubclasses)
     {
-    m_instancesPerClass = 100;
-    m_propertiesPerClass = 4;
+    m_instancesPerClass = 100000;
+    m_propertiesPerClass = 100;
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("CRUDOperationWithSharedColumns.ecdb");
 
@@ -283,8 +283,8 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSub
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithOutSharedColumnsForSubClasses)
     {
-    m_instancesPerClass = 100;
-    m_propertiesPerClass = 4;
+    m_instancesPerClass = 100000;
+    m_propertiesPerClass = 100;
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("CRUDOperationWithOutSharedColumnsForSubClasses.ecdb");
 
