@@ -887,7 +887,7 @@ public:
                     Properties props=Properties(), DgnModelId id=DgnModelId()) :
             T_Super(dgndb, classId, name.c_str(), props, solver, id), 
             m_elementCategoryName(elementCategory), m_elementECClassName(elementECClassName), 
-            m_itemECClassName(!itemECClassName.empty()? itemECClassName: name), m_itemECBaseClassName(elementItemECBaseClassName)
+            m_itemECClassName(itemECClassName), m_itemECBaseClassName(elementItemECBaseClassName)
             {}
 
         //! @private
@@ -957,23 +957,17 @@ public:
 
     /**
     * Utility function to generate ECClasses for all ComponentModels in \a db and add them to \a schema.
-    * Here is an example of generating an ECSchema for all of the components in a specified DgnDb:
-    * @verbatim
-    ECN::ECSchemaPtr schema;
-    if (ECN::ECOBJECTS_STATUS_Success != ECN::ECSchema::CreateSchema(schema, L"SomeSchema", 0, 0))
-        return ERROR;
-    schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(GetDgnDb().Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
-    ... or whatever schema reference is needed to identify and resolve the Item's base class.
-    if (DgnDbStatus::Success != ComponentModel::AddAllToECSchema(*schema, *m_componentDb))
-        return ERROR;
-    if (ECN::SCHEMA_WRITE_STATUS_Success !=  schema->WriteToXmlFile(schemaFileName))
-        return ERROR;
-    @endverbatim
     * @param schema   The schema to populate
     * @param db       The DgnDb that contains ComponentModels
     * @return DgnDbStatus::Success if all ComponentModels in the file were successfully exported 
     */
     DGNPLATFORM_EXPORT static DgnDbStatus AddAllToECSchema(ECN::ECSchemaR schema, DgnDbR db);
+
+    //! Generate an ECSchema that defines all of the Components in \a componentDb and then import it into \a clientDb
+    //! @param clientDb Where to write the generated schema
+    //! @param componentDb The Db to query for schema info
+    //! @param schemaName   Optional. The name of the schema to generate. Defaults to the basename of componentDb.
+    DGNPLATFORM_EXPORT static DgnDbStatus ExportSchemaTo(DgnDbR clientDb, DgnDbR componentDb, Utf8StringCR schemaName = Utf8String());
 
     //! Get the name of the dgn.Element subclass that was specified in CreateParams.
     //! This is the class that ComponentSolution will use when creating an instance of a solution.

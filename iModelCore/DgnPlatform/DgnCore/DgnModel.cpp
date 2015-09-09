@@ -1627,6 +1627,9 @@ ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params)
     m_elementECClassName = params.GetElementECClassName();
     m_itemECClassName = params.GetItemECClassName();
     m_itemECBaseClassName = params.GetItemECBaseClassName();
+
+    if (m_itemECClassName.empty())
+        m_itemECClassName = GetModelName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1673,10 +1676,48 @@ DgnDbStatus ComponentModel::ImportSchema(DgnDbR db, BeFileNameCR schemaFile)
     if (SCHEMA_READ_STATUS_Success != readSchemaStatus)
         return DgnDbStatus::ReadError;
 
+    if (nullptr != db.Schemas().GetECSchema(schemaPtr->GetName().c_str()))
+        return DgnDbStatus::AlreadyLoaded;
+
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
         return DgnDbStatus::BadSchema;
 
     db.Domains().SyncWithSchemas();
+
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DgnDbStatus ComponentModel::ExportSchemaTo(DgnDbR clientDb, DgnDbR componentDb, Utf8StringCR schemaNameIn)
+    {
+    Utf8String schemaName(schemaNameIn);
+    if (schemaName.empty())
+        schemaName = Utf8String(componentDb.GetFileName().GetFileNameWithoutExtension());
+
+    if (nullptr != clientDb.Schemas().GetECSchema(schemaName.c_str()))
+        return DgnDbStatus::AlreadyLoaded;
+
+    // Ask componentDb to generate a schema
+    ECN::ECSchemaPtr schema;
+    if (ECN::ECOBJECTS_STATUS_Success != ECN::ECSchema::CreateSchema(schema, schemaName, 0, 0))
+        return DgnDbStatus::BadSchema;
+    
+    schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(componentDb.Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
+
+    if (DgnDbStatus::Success != ComponentModel::AddAllToECSchema(*schema, componentDb))
+        return DgnDbStatus::BadSchema;
+
+    componentDb.SaveChanges(); // *** TRICKY: AddAllToECSchema set the ItemECSchemaName property of the comonent models. Save it.
+        
+    //  Import the schema into clientDb
+    ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
+    contextPtr->AddSchema(*schema);
+    if (BentleyStatus::SUCCESS != clientDb.Schemas().ImportECSchemas(contextPtr->GetCache()))
+        return DgnDbStatus::BadSchema;
+
+    clientDb.Domains().SyncWithSchemas();
 
     return DgnDbStatus::Success;
     }
