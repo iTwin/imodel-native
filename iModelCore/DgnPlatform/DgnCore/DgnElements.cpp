@@ -1200,34 +1200,28 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
         return nullptr;
         }
 
-    Utf8PrintfString ecSql("INSERT INTO %s.%s (ECInstanceId,", elementClass->GetSchema().GetName().c_str(), elementClass->GetName().c_str());
-    Utf8String values(":ECInstanceId,");
-
-    int propCount = 0;
-    for (ECPropertyCP ecProperty : elementClass->GetProperties (true))
-        {
-        if (ecProperty->GetName() == "LastMod") // TEMPORARY - Carole, just don't include LastMod in properties list in your refactoring.
-            continue;
-
-        if (propCount != 0)
-            {
-            ecSql.append(",");
-            values.append(",");
-            }
-        ecSql.append("[").append(ecProperty->GetName()).append("]");
-        values.append(":").append(ecProperty->GetName());
-        propCount++;
-        }
-    ecSql.append(") VALUES (").append(values).append(")");
-    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql);
+    bvector<Utf8String> insertParams;
+    element._GetInsertParams(insertParams);
+    Utf8String ecSql = ECSqlInsertBuilder::BuildECSqlForClass(*elementClass, insertParams);
+    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql.c_str());
     if (!statement.IsValid())
+        return nullptr;
+
+    if (DgnDbStatus::Success != (stat=element._BindInsertParams(*statement)))
+        return nullptr;
+
+    if (ECSqlStepStatus::Error == statement->Step())
         {
-        BeAssert(false);
-        stat = DgnDbStatus::BadElement;
+        // SQLite doesn't tell us which constraint failed - check if it's the Code.
+        auto existingElemWithCode = QueryElementIdByCode(element.m_code);
+        if (existingElemWithCode.IsValid())
+            stat = DgnDbStatus::DuplicateCode;
+        else
+            stat = DgnDbStatus::WriteError;
         return nullptr;
         }
 
-    if (DgnDbStatus::Success != (stat=element._InsertInDb(*statement)))
+    if (DgnDbStatus::Success != (stat = element._InsertSecondary()))
         return nullptr;
 
     DgnElementPtr newElement = element.CopyForEdit();

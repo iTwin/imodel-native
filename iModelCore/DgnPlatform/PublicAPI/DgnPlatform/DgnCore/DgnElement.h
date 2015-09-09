@@ -558,6 +558,7 @@ public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
+    void GetParamList(bvector<Utf8String>& paramList, bool isForUpdate = false);
     template<class T> void CallAppData(T const& caller) const;
 
 protected:
@@ -603,11 +604,24 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
-    //! Called to insert a new DgnElement into the DgnDb. Override to save subclass properties.
+    //! Called to get a list of parameters/properties that need to be inserted when inserting a new element in the table.
+    //! @note If you override this method, you must call T_Super::_GetInsertParams in order to get the superclasses' properties.
+    //! This call will be followed by a call to _BindInsertParams which will actually bind the parameter values to the statement.
+    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8String>& insertParams);
+
+    //! Called to bind the element's property values to the ECSqlStatement when inserting
+    //! a new element.  The parameters to bind were the ones that were added in the call
+    //! to _GetInsertParams.  
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
-    //! Then you @em must call T_Super::_InsertInDb, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement);
+    //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
+
+    //! Called after a DgnElement was inserted into the database.  Override this
+    //! only if your derived class needs to insert into a secondary table that is dependent
+    //! on a foreign key from the initial insert.
+    //! @note If you override this method, you @em must call T_Super::_InsertSecondary() first.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertSecondary();
 
     //! Called after a DgnElement was successfully inserted into the database.
     //! @note If you override this method, you @em must call T_Super::_OnInserted.
@@ -1123,7 +1137,7 @@ protected:
     GeomStream m_geom;
 
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertSecondary() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;

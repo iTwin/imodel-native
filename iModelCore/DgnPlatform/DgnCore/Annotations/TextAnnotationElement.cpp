@@ -140,9 +140,18 @@ DgnDbStatus PhysicalTextAnnotationElement::UpdatePropertiesInDb()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+void PhysicalTextAnnotationElement::_GetInsertParams(bvector<Utf8String>& insertParams)
+    {
+    T_Super::_GetInsertParams(insertParams);
+    insertParams.push_back("TextAnnotationBlob");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus PhysicalTextAnnotationElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus PhysicalTextAnnotationElement::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     bvector<Byte> annotationBlob;
     if (m_annotation.IsValid())
@@ -153,9 +162,9 @@ DgnDbStatus PhysicalTextAnnotationElement::_InsertInDb(BeSQLite::EC::ECSqlStatem
     if (annotationBlob.empty())
         statement.BindNull(statement.GetParameterIndex("TextAnnotationBlob"));
     else
-        statement.BindBinary(statement.GetParameterIndex("TextAnnotationBlob"), &annotationBlob[0], (int)annotationBlob.size(), IECSqlBinder::MakeCopy::No);
+        statement.BindBinary(statement.GetParameterIndex("TextAnnotationBlob"), &annotationBlob[0], (int)annotationBlob.size(), IECSqlBinder::MakeCopy::Yes);
 
-    return T_Super::_InsertInDb(statement);
+    return T_Super::_BindInsertParams(statement);
     }
 
 //---------------------------------------------------------------------------------------
