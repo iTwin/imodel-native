@@ -16,8 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 PointMappedToColumnsECSqlField::PointMappedToColumnsECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex) 
     : ECSqlField (ecsqlStatement, move (ecsqlColumnInfo)), m_xColumnIndex (xColumnIndex), m_yColumnIndex (yColumnIndex), m_zColumnIndex (zColumnIndex)
-    {
-    }
+    {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
@@ -36,19 +35,13 @@ bool PointMappedToColumnsECSqlField::_IsNull () const
     corrupted data sooner than later. 
     */
     if (GetSqliteStatement ().IsColumnNull (m_xColumnIndex))
-        {
         return true;
-        }
 
     if (GetSqliteStatement ().IsColumnNull (m_yColumnIndex))
-        {
         return true;
-        }
 
     if (IsPoint3D ())
-        {
         return GetSqliteStatement ().IsColumnNull (m_zColumnIndex);
-        }
 
     return false;
 
@@ -119,11 +112,21 @@ bool PointMappedToColumnsECSqlField::_GetBoolean () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-uint64_t PointMappedToColumnsECSqlField::_GetDateTimeJulianDays (DateTime::Info& metadata) const
+uint64_t PointMappedToColumnsECSqlField::_GetDateTimeJulianDaysHns (DateTime::Info& metadata) const
     {
     SetError (ECSqlStatus::UserError, "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
-    return NoopECSqlValue::GetSingleton ().GetDateTimeJulianDays (metadata);
+    return NoopECSqlValue::GetSingleton ().GetDateTimeJulianDaysHns (metadata);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    06/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+double PointMappedToColumnsECSqlField::_GetDateTimeJulianDays(DateTime::Info& metadata) const
+    {
+    SetError(ECSqlStatus::UserError, "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    BeAssert(false && "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata);
     }
 
 //-----------------------------------------------------------------------------------------

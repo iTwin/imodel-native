@@ -51,7 +51,7 @@ bool IECSqlValue::GetBoolean () const
 DateTime IECSqlValue::GetDateTime () const
     {
     DateTime::Info metadata;
-    const uint64_t jdHns = GetDateTimeJulianDays (metadata);
+    const uint64_t jdHns = GetDateTimeJulianDaysHns (metadata);
 
     DateTime dt;
     if (SUCCESS != DateTime::FromJulianDay (dt, jdHns, metadata))
@@ -66,7 +66,15 @@ DateTime IECSqlValue::GetDateTime () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 07/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-uint64_t IECSqlValue::GetDateTimeJulianDays (DateTime::Info& metadata) const
+uint64_t IECSqlValue::GetDateTimeJulianDaysHns(DateTime::Info& metadata) const
+    {
+    return _GetPrimitive()._GetDateTimeJulianDaysHns(metadata);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 07/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+double IECSqlValue::GetDateTimeJulianDays (DateTime::Info& metadata) const
     {
     return _GetPrimitive ()._GetDateTimeJulianDays (metadata);
     }

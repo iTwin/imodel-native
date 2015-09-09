@@ -83,14 +83,23 @@ bool PrimitiveMappedToSingleColumnECSqlField::_GetBoolean () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-uint64_t PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDays (DateTime::Info& metadata) const
+double PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDays(DateTime::Info& metadata) const
     {
-    if (!CanGetValue (PRIMITIVETYPE_DateTime))
-        return NoopECSqlValue::GetSingleton ().GetDateTimeJulianDays (metadata);
+    if (!CanGetValue(PRIMITIVETYPE_DateTime))
+        return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata);
 
-    const auto jd = GetSqliteStatement ().GetValueDouble (GetSqliteColumnIndex ());
+    const double jd = GetSqliteStatement().GetValueDouble(GetSqliteColumnIndex());
     metadata = m_datetimeMetadata;
-    return DateTime::RationalDayToHns (jd);
+    return jd;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       06/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+uint64_t PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDaysHns (DateTime::Info& metadata) const
+    {
+    const double jd = _GetDateTimeJulianDays(metadata);
+    return DateTime::RationalDayToHns(jd);
     }
 
 //-----------------------------------------------------------------------------------------
