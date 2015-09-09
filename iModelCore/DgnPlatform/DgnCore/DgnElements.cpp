@@ -1406,8 +1406,24 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code const& code) const
     {
+    return QueryElementIdByCode(code.GetAuthority(), code.GetValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId DgnElements::QueryElementIdByCode(Utf8StringCR authority, Utf8StringCR value) const
+    {
+    return QueryElementIdByCode(GetDgnDb().Authorities().QueryAuthorityId(authority), value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8StringCR value) const
+    {
     CachedStatementPtr statement=GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? AND CodeAuthorityId=? LIMIT 1"); // find first if code not unique
-    statement->BindText(1, code.GetValue(), Statement::MakeCopy::No);
-    statement->BindId(2, code.GetAuthority());
+    statement->BindText(1, value, Statement::MakeCopy::No);
+    statement->BindId(2, authority);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }

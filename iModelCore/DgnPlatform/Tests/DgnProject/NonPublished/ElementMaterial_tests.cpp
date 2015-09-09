@@ -153,7 +153,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"ElemGeometryBuilderWithMaterials.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
-    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code("Test1"));
+    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());

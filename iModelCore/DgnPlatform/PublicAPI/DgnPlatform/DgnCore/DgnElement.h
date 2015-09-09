@@ -1446,8 +1446,13 @@ public:
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    //! @note Element codes are usually, but not necessarily, unique. If not unique, this method returns the first one found.
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnElement::Code const& code) const;
+
+    //! Query for the DgnElementId of the element that has the specified code
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnAuthorityId codeAuthorityId, Utf8StringCR codeValue) const;
+
+    //! Query for the DgnElementId of the element that has the specified code
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8StringCR codeAuthorityName, Utf8StringCR codeValue) const;
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
