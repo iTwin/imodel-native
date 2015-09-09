@@ -25,7 +25,8 @@ public:
 
     virtual void const* _GetBinary (int* binarySize) const = 0;
     virtual bool _GetBoolean () const = 0;
-    virtual uint64_t _GetDateTimeJulianDays (DateTime::Info& metadata) const = 0;
+    virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const = 0;
+    virtual uint64_t _GetDateTimeJulianDaysHns(DateTime::Info& metadata) const = 0;
     virtual double _GetDouble () const = 0;
     virtual int _GetInt () const = 0;
     virtual int64_t _GetInt64 () const = 0;

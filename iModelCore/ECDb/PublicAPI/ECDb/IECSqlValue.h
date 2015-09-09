@@ -78,7 +78,15 @@ public:
     //! Gets the value as DateTime Julian Day ticks in hecto-nanoseconds.
     //! @param[out] metadata DateTime metadata.
     //! @return Julian Day ticks in hecto-nanoseconds
-    ECDB_EXPORT uint64_t GetDateTimeJulianDays(DateTime::Info& metadata) const;
+    //! @see BentleyApi::DateTime::FromJulianDay
+    ECDB_EXPORT uint64_t GetDateTimeJulianDaysHns(DateTime::Info& metadata) const;
+
+    //! Gets the value as DateTime Julian Day.
+    //! @param[out] metadata DateTime metadata.
+    //! @return Julian Day
+    //! @see BentleyApi::DateTime::FromJulianDay
+    ECDB_EXPORT double GetDateTimeJulianDays(DateTime::Info& metadata) const;
+
 //__PUBLISH_SECTION_START__
 
     //! Gets the value as a double

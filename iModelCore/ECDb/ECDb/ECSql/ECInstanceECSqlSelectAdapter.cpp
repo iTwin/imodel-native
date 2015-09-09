@@ -336,70 +336,70 @@ IECSqlValue const& value
 
     switch (primitiveType)
         {
-        case ECN::PRIMITIVETYPE_Integer:
-            {
-            auto intValue = value.GetInt ();
-            val.SetInteger(intValue);
-            break;
-            }
-        case ECN::PRIMITIVETYPE_String :
-            {
-            auto str = value.GetText ();
-            val.SetUtf8CP(str);
-            break;
-            }
-        case ECN::PRIMITIVETYPE_Long: 
-            {
-            auto intValue = value.GetInt64 ();
-            val.SetLong(intValue);
-            break;
-            }
-        case ECN::PRIMITIVETYPE_Double: 
-            {
-            auto doubleValue = value.GetDouble ();
-            val.SetDouble(doubleValue);
-            break;
-            }
-        case ECN::PRIMITIVETYPE_Boolean : 
-            {
-            auto boolValue = value.GetBoolean ();
-            val.SetBoolean(boolValue);
-            break;
-            }
-        case ECN::PRIMITIVETYPE_Binary :
-            {
-            int size = 0;
-            const Byte* b = (const Byte *)value.GetBinary (&size);
-            val.SetBinary(b, size, false);
-            break;
-            }
-        case ECN::PRIMITIVETYPE_Point2D : 
-            {
-            auto d = value.GetPoint2D ();
-            val.SetPoint2D(d);
-            break;
-            }
-        case ECN::PRIMITIVETYPE_Point3D : 
-            {
-            auto d = value.GetPoint3D ();
-            val.SetPoint3D(d);
-            break;
-            }
-        case ECN::PRIMITIVETYPE_DateTime :
-            {
-            DateTime::Info metadata;
-            const uint64_t jdHns = value.GetDateTimeJulianDays (metadata);
-            const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks (jdHns);
-            val.SetDateTimeTicks(ceTicks, metadata);
-            break;
-            }
-        case ECN::PRIMITIVETYPE_IGeometry:
-            {
-            int bgfbSize = -1;
-            void const* bgfb = value.GetGeometryBlob (&bgfbSize);
-            val.SetBinary (static_cast<Byte const*> (bgfb), (size_t) bgfbSize, false);
-            break;
-            }
+            case ECN::PRIMITIVETYPE_Integer:
+                {
+                auto intValue = value.GetInt();
+                val.SetInteger(intValue);
+                break;
+                }
+            case ECN::PRIMITIVETYPE_String:
+                {
+                auto str = value.GetText();
+                val.SetUtf8CP(str);
+                break;
+                }
+            case ECN::PRIMITIVETYPE_Long:
+                {
+                auto intValue = value.GetInt64();
+                val.SetLong(intValue);
+                break;
+                }
+            case ECN::PRIMITIVETYPE_Double:
+                {
+                auto doubleValue = value.GetDouble();
+                val.SetDouble(doubleValue);
+                break;
+                }
+            case ECN::PRIMITIVETYPE_Boolean:
+                {
+                auto boolValue = value.GetBoolean();
+                val.SetBoolean(boolValue);
+                break;
+                }
+            case ECN::PRIMITIVETYPE_Binary:
+                {
+                int size = 0;
+                const Byte* b = (const Byte *) value.GetBinary(&size);
+                val.SetBinary(b, size, false);
+                break;
+                }
+            case ECN::PRIMITIVETYPE_Point2D:
+                {
+                auto d = value.GetPoint2D();
+                val.SetPoint2D(d);
+                break;
+                }
+            case ECN::PRIMITIVETYPE_Point3D:
+                {
+                auto d = value.GetPoint3D();
+                val.SetPoint3D(d);
+                break;
+                }
+            case ECN::PRIMITIVETYPE_DateTime:
+                {
+                DateTime::Info metadata;
+                const uint64_t jdHns = value.GetDateTimeJulianDaysHns(metadata);
+                const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(jdHns);
+                val.SetDateTimeTicks(ceTicks, metadata);
+                break;
+                }
+            case ECN::PRIMITIVETYPE_IGeometry:
+                {
+                int bgfbSize = -1;
+                void const* bgfb = value.GetGeometryBlob(&bgfbSize);
+                val.SetBinary(static_cast<Byte const*> (bgfb), (size_t) bgfbSize, false);
+                break;
+                }
         }
 
     return SUCCESS;
