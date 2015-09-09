@@ -24,8 +24,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
  @addtogroup ViewContext
  A ViewContext holds the <i>current state</i> of an operation on a DgnViewport. A ViewContext must be first
  \e attached to a DgnViewport to be useful, and must be \e detached from the DgnViewport to free any memory associated with its internal state.
-
-
 /** @beginGroup */
 
 enum FilterLODFlags
@@ -115,7 +113,6 @@ struct  ILineStyle
     virtual ILineStyleComponent const* _GetComponent() const = 0;
     virtual bool _IsSnappable() const = 0;
 };
-
 
 //=======================================================================================
 // @bsiclass
@@ -217,7 +214,7 @@ public:
             ColorDefCR GetForegroundColor() const { return m_foregroundColor; }
             double GetQualityFactor() const { return m_quality; }
 
-            DGNPLATFORM_EXPORT void SetFlags(uint32_t flags);
+            void SetFlags(uint32_t flags) {m_flags = flags;}
             DGNPLATFORM_EXPORT void SetContrast(int8_t value);
             DGNPLATFORM_EXPORT void SetBrightness(int8_t value);
             DGNPLATFORM_EXPORT void SetGreyscale(bool value);

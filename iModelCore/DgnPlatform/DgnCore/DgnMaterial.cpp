@@ -113,13 +113,12 @@ DgnMaterialId DgnMaterials::QueryMaterialId(Utf8StringCR name, Utf8StringCR pale
     return BE_SQLITE_ROW != stmt.Step() ? DgnMaterialId() : stmt.GetValueId<DgnMaterialId>(0);
     }
 
+uintptr_t   DgnMaterials::AddQvMaterialId (DgnMaterialId materialId) const        { return (m_qvMaterialIds[materialId] = ++s_nextQvMaterialId); }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t   DgnMaterials::s_nextQvMaterialId;
-
-uintptr_t   DgnMaterials::AddQvMaterialId (DgnMaterialId materialId) const        { return (m_qvMaterialIds[materialId] = ++s_nextQvMaterialId); }
-uintptr_t   DgnMaterials::GetQvMaterialId (DgnMaterialId materialId) const
+Render::MaterialPtr DgnMaterials::GetQvMaterialId (DgnMaterialId materialId) const
     {
     auto const&   found = m_qvMaterialIds.find(materialId);
 
@@ -129,7 +128,7 @@ uintptr_t   DgnMaterials::GetQvMaterialId (DgnMaterialId materialId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnMaterials::Material::GetAsset (JsonValueR value, char const* keyWord) const
+BentleyStatus DgnMaterials::Material::GetAsset (JsonValueR value, Utf8CP keyWord) const
     {
     Json::Value root;
 
@@ -143,7 +142,7 @@ BentleyStatus DgnMaterials::Material::GetAsset (JsonValueR value, char const* ke
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  DgnMaterials::Material::SetAsset (JsonValueCR value, char const* keyWord)
+void  DgnMaterials::Material::SetAsset (JsonValueCR value, Utf8CP keyWord)
     {
     Json::Value root;
 

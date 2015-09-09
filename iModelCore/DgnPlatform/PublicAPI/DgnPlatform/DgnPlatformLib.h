@@ -793,8 +793,6 @@ public:
             //! Return true if you want SQLite to log errors. Should be used only for limited debugging purposes.
             virtual bool _GetLogSQLiteErrors() {return false;}
 
-            DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCP, Utf8StringR pathDescr, Utf8CP delimiter) const;
-
             //! MicroStation internal only.
             DGNPLATFORM_EXPORT static void ChangeAdmin(NotificationAdmin&);
             };

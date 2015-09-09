@@ -18,6 +18,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 #include <Bentley/BeAssert.h>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
+
 struct Graphic;
 DEFINE_REF_COUNTED_PTR(Graphic)
 

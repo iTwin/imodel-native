@@ -26,7 +26,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MRImage)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Output)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrMatSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PlotInfo)
@@ -35,12 +35,23 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewDraw)
 
-DEFINE_REF_COUNTED_PTR(Target)
-DEFINE_REF_COUNTED_PTR(Scene)
-DEFINE_REF_COUNTED_PTR(Task)
 DEFINE_REF_COUNTED_PTR(Graphic)
-DEFINE_REF_COUNTED_PTR(MRImage)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
+DEFINE_REF_COUNTED_PTR(MultiResImage)
+DEFINE_REF_COUNTED_PTR(Scene)
+DEFINE_REF_COUNTED_PTR(Target)
+DEFINE_REF_COUNTED_PTR(Task)
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct RenderManager
+{
+    BeConditionVariable m_cv;
+    std::deque<TaskPtr> m_tasks;
+
+    DGNPLATFORM_EXPORT void AddTask(Task&);
+};
 
 //=======================================================================================
 //! Supplies implementation of rendering operations for a DgnViewport.
@@ -48,18 +59,6 @@ DEFINE_REF_COUNTED_PTR(LineStyleInfo)
 //=======================================================================================
 struct Renderer
 {
-    BeConditionVariable m_cv;
-    std::deque<TaskPtr> m_tasks;
-
-    //! Display control for edges marked as invisible in Mesh Elements and
-    //! for B-spline Curve/Surface control polygons ("splframe" global).
-    enum class ControlPolyDisplay
-    {
-        ByElement = 0, //! display according to element property.
-        Always    = 1, //! display on for all elements
-        Never     = 2, //! display off for all elements
-    };
-
     //! Save cache entry for symbol (if host has chosen to have a symbol cache).
     virtual void _SaveGraphicForSymbol(IDisplaySymbol* symbol, Graphic* graphic) {}
 
@@ -86,10 +85,10 @@ struct Renderer
     virtual void _DrawTile(ViewDrawR, uintptr_t textureId, DPoint3d const* verts) {}
 
     //! Create a 3D multi-resolution image.
-    virtual MRImagePtr _CreateMRImage(DPoint3dCP fourCorners, Point2dCR imageSize, Point2dCR tileSize, bool enableAlpha, int format, int tileFlags, int numLayers) {return nullptr;}
+    virtual MultiResImagePtr _CreateMRImage(DPoint3dCP fourCorners, Point2dCR imageSize, Point2dCR tileSize, bool enableAlpha, int format, int tileFlags, int numLayers) {return nullptr;}
 
     //! Add an image tile to a qvMRImage.
-    virtual Graphic* _CreateTile(bool is3d, GraphicCacheP hCache, MRImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return nullptr;}
+    virtual Graphic* _CreateTile(bool is3d, GraphicCacheP hCache, MultiResImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return nullptr;}
 
     //! Define a custom raster format(QV_*_FORMAT) for color index data. Return 0 if error.
     virtual int _DefineCIFormat(int dataType, int numColors, QvUInt32 const* pTBGRColors){return 0;}
@@ -99,9 +98,6 @@ struct Renderer
 
     //! An InteractiveHost may choose to allow applications to display non-persistent geometry during an update.
     virtual void _CallViewTransients(ViewContextR, bool isPreupdate) {}
-
-    //! @return Value to use for display control setting of mesh edges marked as invisible and for bspline curve/surface control polygons.
-    virtual ControlPolyDisplay _GetControlPolyDisplay() {return ControlPolyDisplay::ByElement;}
 
     virtual bool _WantInvertBlackBackground() {return false;}
 
@@ -124,17 +120,12 @@ struct Renderer
 
     //! Return minimum ratio between near and far clip planes for cameras - for z-Buffered output this is dictated by the depth of the z-Buffer
     //! for pre DX11 this was .0003 - For DX11 it is approximately 1.0E-6.
-    virtual double _GetCameraFrustumNearScaleLimit() { return 1.0E-6; }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    virtual void _DrawInVp(HitDetailCP, DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
-#endif
+    virtual double _GetCameraFrustumNearScaleLimit() {return 1.0E-6;}
 
     //! Return false to inhibit creating rule lines for surface/solid geometry for wireframe display.
     //! Can be used to improve display performance in applications that only work in shaded views (or those that will clear all Graphicss before switching to wireframe)
     virtual bool _WantWireframeRuleDisplay() {return true;}
 
-    DGNPLATFORM_EXPORT void AddTask(Task&);
 };
 
 //=======================================================================================
@@ -155,9 +146,23 @@ struct Graphic : IRefCounted
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct Material : IRefCounted
+{
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct Texture : IRefCounted
+{
+};
+
+//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   08/15
 //=======================================================================================
-struct MRImage : IRefCounted
+struct MultiResImage : IRefCounted
 {
 };
 
@@ -166,7 +171,6 @@ struct MRImage : IRefCounted
 //=======================================================================================
 struct Target : IRefCounted
 {
-
 };
 
 //=======================================================================================
@@ -174,7 +178,6 @@ struct Target : IRefCounted
 //=======================================================================================
 struct Scene : IRefCounted
 {
-
 };
 
 //=======================================================================================
@@ -340,6 +343,7 @@ public:
     DGNPLATFORM_EXPORT void SetKeys(uint16_t nKeys, ColorDef const* colors, double const* values);
 };
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 typedef RefCountedPtr<struct QVAliasMaterialId> QVAliasMaterialIdPtr;
 
 //=======================================================================================
@@ -371,6 +375,7 @@ DGNPLATFORM_EXPORT uintptr_t GetId() const;
 //! @param[in] qvAliasMaterialId            Id for generated Qv material
 DGNPLATFORM_EXPORT static QVAliasMaterialIdPtr Create(uintptr_t qvAliasMaterialId);
 };
+#endif
 
 #if defined (NEEDS_WORK_MATERIALS)
 typedef RefCountedPtr<struct MaterialUVDetail> MaterialUVDetailPtr;

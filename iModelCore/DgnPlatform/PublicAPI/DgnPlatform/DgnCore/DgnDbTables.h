@@ -1286,9 +1286,7 @@ struct DgnMaterials : DgnDbTable
 private:
     friend struct DgnDb;
     explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) {}
-
-    static uintptr_t                            s_nextQvMaterialId;
-    mutable bmap <DgnMaterialId, uintptr_t>     m_qvMaterialIds;
+    mutable bmap<DgnMaterialId, Render::MaterialPtr> m_qvMaterialIds;
 
 public:
 
@@ -1335,12 +1333,12 @@ public:
         //! Get an asset of the material as a Json value.  (Rendering, physical etc.)
         //! @param[out]     value       The Json value for the asset.
         //! @param[in]      keyWord     asset keyword -- "RenderMaterial", "Physical" etc.
-        DGNPLATFORM_EXPORT BentleyStatus GetAsset(JsonValueR value, char const* keyWord) const; 
+        DGNPLATFORM_EXPORT BentleyStatus GetAsset(JsonValueR value, Utf8CP keyWord) const; 
 
         //! Set an asset of material from a Json value.
         //! @param[in]     value       The Json value for the asset.
         //! @param[in]     keyWord     asset keyword -- "RenderMaterial", "Physical" etc.
-        DGNPLATFORM_EXPORT void          SetAsset(JsonValueCR value, char const* keyWord);
+        DGNPLATFORM_EXPORT void SetAsset(JsonValueCR value, Utf8CP keyWord);
     };
 
     //! An iterator over the materials in a DgnDb
@@ -1405,9 +1403,8 @@ public:
     //! @return The ID of the specified material, or an invalid ID if no such material exists.
     DGNPLATFORM_EXPORT DgnMaterialId QueryMaterialId(Utf8StringCR name, Utf8StringCR palette) const;
 
-    DGNPLATFORM_EXPORT uintptr_t GetQvMaterialId(DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
-    DGNPLATFORM_EXPORT uintptr_t AddQvMaterialId(DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
-
+    DGNPLATFORM_EXPORT Render::MaterialPtr FindRenderMaterial(DgnMaterialId materialId) const; //!< Attempt to look up a Render::Material by DgnMaterialId. Will be invalid if not present.
+    DGNPLATFORM_EXPORT Render::MaterialPtr AddRenderMaterial(DgnMaterialId materialId) const; //!< Add a Render::Material by DgnMaterialId.
 };
 
 //=======================================================================================

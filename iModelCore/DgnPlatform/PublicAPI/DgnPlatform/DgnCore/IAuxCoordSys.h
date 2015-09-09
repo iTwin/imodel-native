@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 
-#include "../DgnPlatform.h"
+#include "Render.h"
 #include "ValueFormat.h"
 
 //__PUBLISH_SECTION_END__
@@ -197,7 +197,7 @@ DGNPLATFORM_EXPORT static IACSManagerR GetManager ();
 //! An IAuxCoordSys is an object that holds the data which
 //! describes an auxiliary coordinate system
 //=======================================================================================
-struct          IAuxCoordSys : public RefCountedBase
+struct IAuxCoordSys : RefCountedBase
 {
 //__PUBLISH_SECTION_END__
 protected:

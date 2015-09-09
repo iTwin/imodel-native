@@ -1456,14 +1456,6 @@ bool ViewContext::RasterDisplayParams::operator!=(RasterDisplayParams const& rhs
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::RasterDisplayParams::SetFlags(uint32_t flags)     
-    {
-    m_flags = flags;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Stephane.Poulin                 11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::RasterDisplayParams::SetContrast(int8_t value)     
     {
     m_contrast = value;
@@ -1807,19 +1799,6 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
     if (!(rhs.m_gradient == m_gradient))
         return false;
 
-#ifdef WIP_VANCOUVER_MERGE // linestyle
-    if (!(rhs.m_lStyleSymb == m_lStyleSymb))
-        return false;
-
-    if (m_materialDetail.IsValid() && rhs.m_materialDetail.IsValid())
-        {
-        if (!(m_materialDetail->Equals(*rhs.m_materialDetail)))
-            return false;
-        }
-    else if (m_materialDetail.IsNull() != rhs.m_materialDetail.IsNull())
-        return false;
-#endif
-
     return true;
     }
 
@@ -1829,21 +1808,6 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
 void ElemMatSymb::SetMaterial(DgnMaterialId material)
     {
     m_material = material;
-
-#ifdef DGNPLATFORM_WIP_MATERIAL
-    // Shouldn't need "seedContext" to create geometry map...from DgnGeomPart/GeomStream...not element...
-    if (nullptr != material &&
-        nullptr != seedContext &&
-        material->NeedsQvGeometryTexture())
-        {
-        bool                useCellColors;
-        EditElementHandle   eh;
-
-        if (seedContext->GetIViewDraw().IsOutputQuickVision() &&
-            SUCCESS == material->GetGeometryMapDefinition(eh, useCellColors))
-            seedContext->GetIViewDraw().DefineQVGeometryMap(*material, eh, nullptr, useCellColors, *seedContext);
-        }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
