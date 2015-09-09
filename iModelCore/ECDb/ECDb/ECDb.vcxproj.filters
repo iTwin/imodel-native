@@ -428,6 +428,9 @@
     <ClInclude Include="..\PublicAPI\ECDb\ChangeSummary.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
+    <ClInclude Include="ECDbMapAnalyser.h">
+      <Filter>ECDbMap\Map</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -717,6 +720,9 @@
     <ClCompile Include="ClassMapSubclasses.cpp">
       <Filter>ECDbMap\Map</Filter>
     </ClCompile>
+    <ClCompile Include="ECInstanceId.cpp">
+      <Filter>ECSql</Filter>
+    </ClCompile>
     <ClCompile Include="ECSql\ECSqlParameterValue.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClCompile>
@@ -787,7 +793,9 @@
     <ClCompile Include="ECDbPch.cpp">
       <Filter>Mke</Filter>
     </ClCompile>
-    <ClCompile Include="ECInstanceId.cpp" />
+    <ClCompile Include="ECDbMapAnalyser.cpp">
+      <Filter>ECDbMap\Map</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.01.00.ecschema.xml">
