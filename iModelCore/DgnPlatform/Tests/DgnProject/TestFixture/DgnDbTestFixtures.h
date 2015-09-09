@@ -59,7 +59,7 @@ protected:
 
     Utf8String m_testItemProperty;
 
-    virtual DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement) override;
+    virtual DgnDbStatus _InsertSecondary() override;
     virtual DgnDbStatus _UpdateInDb() override;
     virtual DgnDbStatus _DeleteInDb() const override;
 

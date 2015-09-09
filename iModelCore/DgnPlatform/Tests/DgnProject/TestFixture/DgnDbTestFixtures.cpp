@@ -54,14 +54,15 @@ TestElementPtr TestElement::Create(DgnDbR db, Render::ElemDisplayParamsCR ep, Dg
 
     return testElement;
 }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus TestElement::_InsertSecondary()
 {
-    DgnDbStatus status = T_Super::_InsertInDb(statement);
-    if (DgnDbStatus::Success != status)
-        return status;
+    DgnDbStatus stat = T_Super::_InsertSecondary();
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
     insertStmt->BindId(1, GetElementId());
