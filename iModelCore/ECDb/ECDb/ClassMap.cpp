@@ -1529,7 +1529,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
     if (classMap.GetClassMapType () == IClassMap::Type::RelationshipLinkTable ||
         classMap.GetClassMapType () == IClassMap::Type::RelationshipEndTable)
         {
-        RelationshipClassMapCR const& relationshipMap = static_cast<RelationshipClassMapCR>(classMap);
+        RelationshipClassMapCR relationshipMap = static_cast<RelationshipClassMapCR>(classMap);
         auto const& sourceConstraints = relationshipMap.GetRelationshipClass ().GetSource ().GetClasses ();
         auto const& targetConstraints = relationshipMap.GetRelationshipClass ().GetTarget ().GetClasses ();
         auto sourceECInstanceIdColumn = relationshipMap.GetSourceECInstanceIdPropMap ()->GetFirstColumn ();
@@ -1565,7 +1565,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
             if (pm->Is3d ())
                 propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint ((baseAccessString + ".Z").c_str (), *columns[2], ECValue ())));
             }
-        else if (auto pm = dynamic_cast<PropertyMapToTable const*> (propMap))
+        else if (nullptr != dynamic_cast<PropertyMapToTable const*> (propMap))
             {
             feedback = TraversalFeedback::NextSibling;
             }
