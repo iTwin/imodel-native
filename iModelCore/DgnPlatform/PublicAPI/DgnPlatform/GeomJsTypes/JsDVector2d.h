@@ -31,7 +31,7 @@ public:
 
     DeclareAndImplementMethods_AddVector(DVec2d,JsDVector2d,JsDVector2dP,DVec2d,JsDVector2d,JsDVector2dP)
     DeclareAndImplementMethods_Distance (JsDVector2dP)
-    DeclareAndImplementMethods_Magnitude
+    DeclareAndImplementMethods_VectorMagnitudeAndScaling(JsDVector2dP)
 
     JsDVector2dP Clone (){return new JsDVector2d (m_data);}
 
@@ -107,7 +107,7 @@ static JsDVector2dP FromXYAngleAndMagnitude (double angle, double magnitude)
     {
     return new JsDVector2d(DVec2d::FromCrossProduct(m_data,vectorB->Get()));
     }
-JsDVector2dP NormalizedCrossProduct(JsDVector2dP vectorB)
+JsDVector2dP UnitCrossProduct(JsDVector2dP vectorB)
     {
     return new JsDVector2d(DVec2d::FromNormalizedCrossProduct(m_data,vectorB->Get()));
     }
