@@ -160,16 +160,19 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
 
+    BeFileName textureImage;
+    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(textureImage, L"TextureImage.png", L"TextureImage.png", __FILE__));
+
     ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
-    elemDisplayParams.SetMaterial (createTexturedMaterial (*m_db, "Parametric Texture",  L"D:\\graphite\\source\\ECDb\\ECDb\\docs\\images\\ecdb_encapsulation.png", RenderMaterial::MapUnits::Relative));
+    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), RenderMaterial::MapUnits::Relative));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     DPoint3d        origin = DPoint3d::FromZero();
 
     appendGeometry (origin, *builder);
 
-    elemDisplayParams.SetMaterial (createTexturedMaterial (*m_db, "Meter Texture",  L"D:\\graphite\\source\\ECDb\\ECDb\\docs\\images\\ecdb_encapsulation.png", RenderMaterial::MapUnits::Meters));
+    elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , RenderMaterial::MapUnits::Meters));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     appendGeometry (origin, *builder);
