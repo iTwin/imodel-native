@@ -522,6 +522,20 @@ public:
     //! @return this builder instance
     ECDB_EXPORT ECSqlInsertBuilderR AddValue (Utf8CP targetProperty, Utf8CP targetValue);
 
+    //! A convenience method that will create the entire ECSql for INSERTing a given ECClass with all of its properties as well
+    //! all of the inherited properties.  The VALUES will be named parameters in the format of :&lt;PropertyName&gt;
+    //! @param[in] targetClass Target class for the Insert statement
+    //! @return The ECSql string to be used with an ECSqlStatement
+    ECDB_EXPORT static Utf8String BuildECSqlForClass(ECN::ECClassCR targetClass);
+
+    //! A convenience method that will create the entire ECSql for INSERTing a given ECClass.  This overload takes a list
+    //! of parameters to be bound, instead of using all of the properties from an ECClass.
+    //! The VALUES will be named parameters in the format of :&lt;ParameterName&gt;
+    //! @param[in] targetClass Target class for the Insert statement
+    //! @param[in] insertParams List of parameters to use for the INSERT statement
+    //! @return The ECSql string to be used with an ECSqlStatement
+    ECDB_EXPORT static Utf8String BuildECSqlForClass(ECN::ECClassCR targetClass, bvector<Utf8String>& insertParams);
+
 //__PUBLISH_SECTION_END__
     ClassClause const& GetTargetClass () const;
     bvector<Utf8String> const& GetTargetPropertiesClause () const;
