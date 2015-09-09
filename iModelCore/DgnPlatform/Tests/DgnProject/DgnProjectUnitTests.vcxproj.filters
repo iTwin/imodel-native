@@ -181,6 +181,9 @@
     <ClCompile Include="Performance\PerformanceElementsTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\ElementMaterial_tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
