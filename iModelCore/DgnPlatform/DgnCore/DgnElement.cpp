@@ -204,7 +204,7 @@ DgnElement::Code DgnElement::_GenerateDefaultCode()
 DateTime DgnElement::QueryTimeStamp() const
     {
     ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT LastMod FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) "WHERE ECInstanceId=?");
+    stmt.Prepare(GetDgnDb(), "SELECT " DGN_ELEMENT_PROPNAME_LASTMOD " FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE " DGN_ELEMENT_PROPNAME_ECINSTANCEID "=?");
     stmt.BindId (1, m_elementId);
     stmt.Step();
     return stmt.GetValueDateTime(0);
@@ -1649,7 +1649,7 @@ DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::Item::_DeleteInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementItem) " WHERE(ECInstanceId=?)");
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementItem) " WHERE ECInstanceId=?");
     stmt->BindId(1, GetAspectInstanceId(el));
     BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
     return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
@@ -1938,7 +1938,7 @@ DgnDbStatus InstanceBackedItem::_LoadProperties(DgnElementCR el)
     {
     BeSQLite::EC::ECInstanceId eid(el.GetElementId().GetValue());
 
-    EC::CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("SELECT * FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE (ECInstanceId=?)");
+    EC::CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("SELECT * FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE ECInstanceId=?");
     stmt->BindId(1, eid);
     if (ECSqlStepStatus::HasRow != stmt->Step())
         return DgnDbStatus::ReadError;
