@@ -1044,7 +1044,7 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
     sid.m_solutionName = solutionName;
 
     Solution sln;
-    if (DgnDbStatus::Success == Query(sln, sid))
+    if (DgnDbStatus::Success == Query(sln, sid)) // see if this solution is already cached.
         return sid;
 
     DgnCategoryId componentCategoryId = GetDgnDb().Categories().QueryCategoryId(componentModel.GetElementCategoryName().c_str());
@@ -1054,7 +1054,7 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
         return SolutionId();
         }
 
-    //  Accumulate geometry by SubCategory
+    //  Gather geometry by SubCategory
     bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     // *** WIP_IMPORT: add another dimension: break out builders by same ElemDisplayParams
     componentModel.FillModel();
     for (auto const& mapEntry : componentModel)
@@ -1092,7 +1092,7 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
     
     if(builders.empty())
         {
-        BeDataAssert(false && "A component model contains no elements in the component's category.");
+        BeDataAssert(false && "Component model contains no elements in the component's category.");
         return SolutionId();
         }
 
@@ -1110,12 +1110,14 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
         builder->CreateGeomPart(GetDgnDb(), true);
         builder->SetGeomStream(*geomPart);
         if (BSISUCCESS != GetDgnDb().GeomParts().InsertGeomPart(*geomPart))
+            {
+            BeAssert(false && "cannot create geompart for solution geometry -- what could have gone wrong?");
             return SolutionId();
-
+            }
         subcatAndGeoms.push_back(make_bpair(clientsubcatid, geomPart->GetId()));
         }
 
-    //  The solution is a geomstream that refers to the geomparts
+    //  Build a single geomstream that refers to all of the geomparts -- that's the solution
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(componentModel, componentCategoryId, DPoint3d::FromZero(), YawPitchRollAngles());
     for (bpair<DgnSubCategoryId,DgnGeomPartId> const& subcatAndGeom : subcatAndGeoms)
         {
@@ -1124,17 +1126,17 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
         builder->Append(subcatAndGeom.second, noTransform);
         }
 
-
     GeomStream  geom;
-    if (builder->GetGeomStream(geom) != BSISUCCESS)
-        return SolutionId();
-
     Placement3d placement;
-    if (builder->GetPlacement(placement) != BSISUCCESS)
+    if (builder->GetGeomStream(geom) != BSISUCCESS || builder->GetPlacement(placement) != BSISUCCESS)
+        {
+        BeAssert(false);
         return SolutionId();
+        }
 
     ElementAlignedBox3d box = placement.GetElementBox();
         
+    //  Insert a row into the ComponentSolution table that is keyed by the solutionId and that captures the solution geometry
     CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " (ComponentModelName,SolutionName,Range) VALUES(?,?,?)");
     istmt->BindText(1, componentModel.GetModelName(), Statement::MakeCopy::No);
     istmt->BindText(2, solutionName, Statement::MakeCopy::No);

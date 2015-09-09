@@ -427,7 +427,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     auto rc = changeset.FromChangeTrack(*this);
     UNUSED_VARIABLE(rc);
     BeAssert(BE_SQLITE_OK == rc);
-    BeAssert(0 != changeset.GetSize());
+    //BeAssert(0 != changeset.GetSize());
     Restart();  // clear the change tracker, since we have captured all the changes in the changeset
 
     if (!isCommit)
