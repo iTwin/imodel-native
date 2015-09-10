@@ -149,7 +149,6 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 #include <Bentley/RefCounted.h>
 #include <Bentley/DateTime.h>
 #include <Bentley/BeVersion.h>
-#include "BeAppData.h"
 
 //__PUBLISH_SECTION_END__
 #include <Bentley/BeAssert.h>
@@ -1965,21 +1964,6 @@ protected:
     BE_SQLITE_EXPORT RepositoryLocalValueCache& GetRLVCache();
 };
 
-//=======================================================================================
-//! Applications subclass from this class to store in-memory data on a Db via Db::AddAppData.
-// @bsiclass
-//=======================================================================================
-struct DbAppData
-{
-    struct Key : AppDataKey {};
-
-    virtual ~DbAppData() {}
-
-    //! This method is called whenever this object is removed from its host BeSQLite::Db. This can happen either by an explicit call to
-    //! Db::DropAppData, or because the Db itself is being deleted (in which case all of its DbAppData is notified \b before the Db is deleted).
-    //! @param[in] host The host Db on which this DbAppData resided.
-    virtual void _OnCleanup(DbR host) = 0;
-};
 
 //=======================================================================================
 //! A BeSQLite database file. This class is a wrapper around the SQLite datatype "sqlite3"
@@ -2091,46 +2075,19 @@ public:
     };
 
     //=======================================================================================
-    // @bsiclass                                                    Keith.Bentley   09/13
+    //! Applications subclass from this class to store in-memory data on a Db via AddAppData.
+    // @bsiclass
     //=======================================================================================
-    struct DbAppDataList : NonCopyableClass
+    struct AppData : RefCountedBase
     {
-    private:
-        friend struct Db;
-        typedef AppDataList<DbAppData, DbAppData::Key, DbR> T_AppDataList;
-        DbR            m_db;
-        T_AppDataList  m_entries;
-        DbAppDataList(Db& db) : m_db(db) {}
-
-    public:
-
-        //@{
-        //! Add DbAppData to this Db. After this call, \c appData will be notified for the events relevant to this Db.
-        //! @param[in] key A unique key to differentiate \c appData from all of the other DbAppData objects stored on this Db.
-        //! By convention, uniqueness is enforced by using the address of a (any) static object. Since all applications
-        //! share the same address space, every key will be unique. Note that this means that the value of your key will be different for
-        //! every session. But that's OK, the only thing important about \c key is that it be unique.
-        //! @param[in] appData The application's instance of a subclass of DbAppData to store on this Db.
-        //! @return SUCCESS if \c appData was successfully added to this Db. Note that it is not legal to add or drop DbAppData
-        //! to/from this Db from within any of the methods of DbAppData.
-        BE_SQLITE_EXPORT StatusInt Add(DbAppData::Key const& key, DbAppData* appData);
-
-        //! Remove a DbAppData object from this Db by its key.
-        //! @param[in] key The key to find the appropriate DbAppData. See discussion of keys in #Add.
-        //! @return SUCCESS if a DbAppData object with \c key was found and was dropped. ERROR if no DbAppData with \c key exists.
-        //! @note After the DbAppData object is removed, its DbAppData::_OnCleanup method is called.
-        BE_SQLITE_EXPORT StatusInt Drop(DbAppData::Key const& key);
-
-        //! Search for the DbAppData on this Db with \c key. See discussion of keys in #Add.
-        //! @return A pointer to the DbAppData object with \c key. nullptr if not found.
-        BE_SQLITE_EXPORT DbAppData* Find(DbAppData::Key const& key) const;
+        struct Key : NonCopyableClass {};
     };
 
 protected:
     DbFile* m_dbFile;
     mutable StatementCache* m_statements;
     DbEmbeddedFileTable m_embeddedFiles;
-    DbAppDataList m_appData;
+    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     //! Called after a new Db had been created.
     //! Override to perform additional processing when Db is created
@@ -2552,8 +2509,23 @@ public:
     //! Get the DbEmbeddedFileTable for this Db.
     BE_SQLITE_EXPORT DbEmbeddedFileTable& EmbeddedFiles();
 
-    //! Get the list of DbAppData attached to this Db.
-    BE_SQLITE_EXPORT DbAppDataList& AppData() const {return const_cast<DbAppDataList&>(m_appData);}
+    //! Add Db::AppData to this Db.
+    //! @param[in] key A unique key to differentiate \c appData from all of the other AppData objects stored on this Db.
+    //! By convention, uniqueness is enforced by using the address of a (any) static object. Since all applications
+    //! share the same address space, every key will be unique. Note that this means that the value of your key will be different for
+    //! every session. But that's OK, the only thing important about \c key is that it be unique.
+    //! If AppData with this key already exists on this Db, it is dropped and replaced with \a appData.
+    //! @param[in] appData The application's instance of a subclass of AppData to store on this Db.
+    BE_SQLITE_EXPORT void AddAppData(AppData::Key const& key, AppData* appData) const;
+
+    //! Remove a Db::AppData object from this Db by its key.
+    //! @param[in] key The key to find the appropriate AppData. See discussion of keys in AddAppData.
+    //! @return SUCCESS if a AppData object with \c key was found and was dropped. ERROR if no AppData with \c key exists.
+    BE_SQLITE_EXPORT StatusInt DropAppData(AppData::Key const& key) const;
+
+    //! Search for the Db::AppData on this Db with \c key. See discussion of keys in AddAppData.
+    //! @return A pointer to the AppData object with \c key. nullptr if not found.
+    BE_SQLITE_EXPORT AppData* FindAppData(AppData::Key const& key) const;
 
     //! Dump statement results to stdout (for debugging purposes, only, e.g. to examine data in a temp table)
     BE_SQLITE_EXPORT void DumpSqlResults(Utf8CP sql);
