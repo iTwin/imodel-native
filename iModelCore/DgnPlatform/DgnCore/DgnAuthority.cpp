@@ -58,9 +58,25 @@ DgnAuthorityId DgnImportContext::RemapAuthorityId(DgnAuthorityId source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Code DgnAuthority::_CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const
+DgnDbStatus DgnAuthority::Insert()
     {
-    return importer.IsBetweenDbs() ? srcElem.GetCode() : DgnElement::Code();
+    return GetDgnDb().Authorities().Insert(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnAuthority::Update()
+    {
+    return GetDgnDb().Authorities().Update(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code DgnAuthority::_CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const
+    {
+    return importer.IsBetweenDbs() ? srcElem.GetCode() : DgnAuthority::Code();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -267,14 +283,14 @@ Utf8String DgnAuthority::SerializeProperties() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Code DgnAuthority::GenerateDefaultCode(DgnElementCR el)
+DgnAuthority::Code DgnAuthority::GenerateDefaultCode(DgnElementCR el)
     {
     auto elemId = el.GetElementId();
     if (!elemId.IsValid())
-        return DgnElement::Code();
+        return DgnAuthority::Code();
 
     Utf8PrintfString val("%s%u-%u", el.GetElementClass()->GetName().c_str(), elemId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & elemId.GetValue()));
-    return DgnElement::Code(DgnAuthority::LocalId(), val);
+    return DgnAuthority::Code(DgnAuthority::LocalId(), val);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -300,10 +316,10 @@ AuthorityHandlerR DgnAuthority::GetAuthorityHandler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Code NamespaceAuthority::CreateCode(Utf8StringCR authorityName, Utf8StringCR value, DgnDbCR dgndb)
+DgnAuthority::Code NamespaceAuthority::CreateCode(Utf8StringCR authorityName, Utf8StringCR value, DgnDbCR dgndb)
     {
     auto authId = dgndb.Authorities().QueryAuthorityId(authorityName);
-    return authId.IsValid() ? DgnAuthority::CreateCode(authId, value) : DgnElement::Code();
+    return authId.IsValid() ? DgnAuthority::CreateCode(authId, value) : DgnAuthority::Code();
     }
 
 /*---------------------------------------------------------------------------------**//**
