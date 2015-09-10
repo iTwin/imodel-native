@@ -39,6 +39,7 @@
     <ClCompile Include="NonPublished\ElementAgenda_Test.cpp" />
     <ClCompile Include="NonPublished\ElementGeometryBuilder_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementGeomPart_Tests.cpp" />
+    <ClCompile Include="NonPublished\ElementMaterial_tests.cpp" />
     <ClCompile Include="NonPublished\ElementProperties.cpp" />
     <ClCompile Include="NonPublished\EntityAndItem_Test.cpp" />
     <ClCompile Include="NonPublished\MSElementDescr_Test.cpp" />
@@ -50,6 +51,7 @@
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp" />
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
     <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
+    <ClCompile Include="Performance\PerformanceElementsTests.cpp" />
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
     <ClCompile Include="Performance\RelationshipPerformance_Test.cpp" />
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
@@ -90,7 +92,7 @@
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h" />
     <ClInclude Include="NonPublished\GenericDgnModelTestFixture.h" />
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
-    <ClInclude Include="Performance\ElementInsertPerformance.h" />
+    <ClInclude Include="Performance\PerformanceElements.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
     <ClInclude Include="Performance\TestSchemaHelper.h" />
     <ClInclude Include="Published\AnnotationTestFixture.h" />

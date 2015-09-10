@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Performance/ElementInsertPerformance.h $
+|  $Source: Tests/DgnProject/Performance/PerformanceElements.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -46,7 +46,9 @@ struct PerformanceElement1 : Dgn::PhysicalElement
     protected:
         PerformanceElement1(CreateParams const& params, Utf8CP prop1_1 = NULL, int64_t prop1_2 = 10000000LL, double prop1_3 = -3.1415) : T_Super(params), m_prop1_1(prop1_1), m_prop1_2(prop1_2), m_prop1_3(prop1_3) {}
 
-        virtual Dgn::DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+        virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual Dgn::DgnDbStatus _UpdateInDb() override;
 
     public:
         static PerformanceElement1Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -73,7 +75,9 @@ struct PerformanceElement2 : PerformanceElement1
             Utf8CP prop1_1 = NULL, int64_t prop1_2 = 10000000LL, double prop1_3 = -3.1415,
             Utf8CP prop2_1 = NULL, int64_t prop2_2 = 20000000LL, double prop2_3 = 2.71828) : T_Super(params, prop1_1, prop1_2, prop1_3), m_prop2_1(prop2_1), m_prop2_2(prop2_2), m_prop2_3(prop2_3) {}
 
-        virtual Dgn::DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+        virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual Dgn::DgnDbStatus _UpdateInDb() override;
 
     public:
         static PerformanceElement2Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -100,7 +104,9 @@ struct PerformanceElement3 : PerformanceElement2
             Utf8CP prop2_1 = NULL, int64_t prop2_2 = 20000000LL, double prop2_3 = 2.71828,
             Utf8CP prop3_1 = NULL, int64_t prop3_2 = 30000000LL, double prop3_3 = 1.414121) : T_Super(params, prop1_1, prop1_2, prop1_3, prop2_1, prop2_2, prop2_3), m_prop3_1(prop3_1), m_prop3_2(prop3_2), m_prop3_3(prop3_3) {}
 
-        virtual Dgn::DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+        virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual Dgn::DgnDbStatus _UpdateInDb() override;
 
     public:
         static PerformanceElement3Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -130,7 +136,9 @@ struct PerformanceElement4 : PerformanceElement3
             Utf8CP prop4_1 = NULL, int64_t prop4_2 = 40000000LL, double prop4_3 = 1.61803398874) : T_Super(params, prop1_1, prop1_2, prop1_3, prop2_1, prop2_2, prop2_3, prop3_1, prop3_2, prop3_3), 
             m_prop4_1(prop4_1), m_prop4_2(prop4_2), m_prop4_3(prop4_3) {}
 
-        virtual Dgn::DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+        virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual Dgn::DgnDbStatus _UpdateInDb() override;
 
     public:
         static PerformanceElement4Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -161,7 +169,9 @@ struct PerformanceElement4b : PerformanceElement3
             T_Super(params, prop1_1, prop1_2, prop1_3, prop2_1, prop2_2, prop2_3, prop3_1, prop3_2, prop3_3), 
             m_prop4b_1(prop4b_1), m_prop4b_2(prop4b_2), m_prop4b_3(prop4b_3), m_prop4b_4(prop4b_4) {}
 
-        virtual Dgn::DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+        virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+        virtual Dgn::DgnDbStatus _UpdateInDb() override;
 
     public:
         static PerformanceElement4bPtr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -180,8 +190,6 @@ struct SimpleElement: Dgn::DgnElement
 
     protected:
         SimpleElement(CreateParams const& params) : T_Super(params) {}
-
-        virtual Dgn::DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement) override;
 
     public:
         static SimpleElementPtr Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category);
@@ -243,12 +251,12 @@ struct PerformanceElement4bHandler : Dgn::dgn_ElementHandler::Physical
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Carole.MacDonald            08/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-struct ElementInsertPerformanceTestDomain : DgnDomain
+struct PerformanceElementsTestDomain : DgnDomain
     {
-    DOMAIN_DECLARE_MEMBERS(ElementInsertPerformanceTestDomain, )
+    DOMAIN_DECLARE_MEMBERS(PerformanceElementsTestDomain, )
     public:
-        ElementInsertPerformanceTestDomain();
-        static void RegisterDomainAndImportSchema(DgnDbR db, Utf8CP schemaXml);
+        PerformanceElementsTestDomain();
+        static void RegisterDomainAndImportSchema(DgnDbR db, ECN::ECSchemaR schema);
     };
 
     }; // namespace 

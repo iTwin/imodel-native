@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include    <Json/Value.h>
+
 //__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -76,8 +78,11 @@ struct RenderMaterial
         Inches                 = 6,
         };
 
-    DGNPLATFORM_EXPORT static Json::Value      GetLastDataLayerFromMap (Json::Value const& map);
-    DGNPLATFORM_EXPORT static double           GetMapUnitScale (MapUnits mapUnits);
+
+    DGNPLATFORM_EXPORT static double    GetMapUnitScale (MapUnits mapUnits);
+    DGNPLATFORM_EXPORT static void      SetColor (Json::Value& renderMaterial, char const* keyword, RgbFactorCR color);
+    DGNPLATFORM_EXPORT static void      SetPoint (Json::Value& renderMaterial, char const* keyword, DPoint3dCR point);
+
 
 
 };  // RenderMaterial.
@@ -85,9 +90,7 @@ struct RenderMaterial
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-
-// JSon keys.
-#define RENDER_MATERIAL_Root                                        "RenderMaterial"
+                                                                                      
 
 // From V8 Flags.
 #define RENDER_MATERIAL_FlagNoShadows                               "NoShadows"             

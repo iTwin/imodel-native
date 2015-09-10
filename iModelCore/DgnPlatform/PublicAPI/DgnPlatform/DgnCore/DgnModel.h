@@ -682,6 +682,114 @@ public:
     explicit PhysicalModel(CreateParams const& params) : T_Super(params) {}
 };
 
+
+//=======================================================================================
+//! Captures the results of "solving" a ComponentModel.
+//! The basic pattern for placing instances of component solutions is:
+//!     -# Make sure the component's schema has been generated. See ComponentModel::AddAllToECSchema.
+//!     -# Once per schema, import the component's schema into the target DgnDb. See ComponentModel::ImportSchema.
+//!     -# Once per component model, copy the model into the client's DgnDb. See ComponentModel::ImportModel.
+//!     -# Once per solution parameter set, solve and capture a solution. See ComponentSolution.
+//!     -# Create and place as many instances of a captured solution as you like. See ComponentSolution::CreateInstance.
+//! @see ComponentModel
+// @bsiclass                                                    Keith.Bentley   10/11
+//=======================================================================================
+struct ComponentSolution : DgnDbTable
+{
+    DEFINE_T_SUPER(DgnDbTable)
+
+public:
+    //! Identifies a solution the ComponentSolution table
+    struct SolutionId
+        {
+        friend struct ComponentModel;
+        friend struct ComponentSolution;
+      private:
+        Utf8String m_modelName;
+        Utf8String m_solutionName;
+
+        SolutionId(Utf8String m, Utf8String s) : m_modelName(m), m_solutionName(s) {;}
+
+      public:
+        SolutionId() {;}
+
+        bool IsValid() const {return !m_modelName.empty() && !m_solutionName.empty();}
+
+        bool operator==(SolutionId const& rhs) const {return m_modelName==rhs.m_modelName && m_solutionName==rhs.m_solutionName;}
+        };
+
+    //! Access to the geometry of a captured solution
+    struct Solution
+        {
+        friend struct ComponentSolution;
+      private:
+        uint64_t m_rowId;
+        SolutionId m_id;
+        ModelSolverDef::ParameterSet m_parameters;
+        DgnModelId  m_componentModelId;
+        ElementAlignedBox3d m_range;
+
+      public:
+        Solution() : m_rowId(0) {;}
+
+        bool IsValid() {return m_id.IsValid() && m_rowId != 0;}
+
+        //! Get the parameter set that was used to generate this solution
+        ModelSolverDef::ParameterSet const& GetParameters() {return m_parameters;}
+
+        //! Get the range of the solution geometry.
+        ElementAlignedBox3d GetRange() const {return m_range;}
+
+        //! Read the captured solution geometry
+        //! @param[out]  geomStream     Where to write the geometry
+        //! @param[in]   db             The DgnDb to query
+        //! @return non-zero if the geometry could not be read
+        DgnDbStatus QueryGeomStream(GeomStreamR geomStream, DgnDbR db) const;
+        };
+
+    ComponentSolution(DgnDbR db) : T_Super(db) {;}
+
+    //! @name Capturing Solutions
+    //@{
+
+    //! Look up a captured solution
+    //! @param[out] solution  The solution data
+    //! @param[in] sid     The solution id
+    //! @return non-zero if no such solution exists
+    //! @see CaptureSolution
+    DGNPLATFORM_EXPORT DgnDbStatus Query(Solution& solution, SolutionId sid);
+
+    //! Harvest geometry from the component model and store in the solutions table.
+    //! @param[in] componentModel The ComponentModel that is to be harvested
+    //! @return The ID of the captured solution
+    //! @see ComponentModel::Solve
+    DGNPLATFORM_EXPORT SolutionId CaptureSolution(ComponentModelR componentModel);
+    //@}
+
+    //! @name Creating a Solution Instance
+    //@{
+    //! A convenience method to create a new element that will hold an instance of a captured solution geometry. The caller must insert the returned element into the Db.
+    //! This convenience method creates an element based on the class specified by ComponentModel::GetElementECClassName and assigns it to the category
+    //! specified by ComponentModel::GetElementCategoryName. The caller should call CreateSolutionInstanceItem next.
+    //! @note The caller does not have to call this method to capture an instance. The caller could create an instance element based on a different class or in a different category, as long as it is 
+    //! compatible with the ComponentModel's generated item.
+    //! @param[in] destinationModel The model where the instance will be inserted by the caller
+    //! @param[in] solutionId Identifies a captured solution. See CaptureSolution and QuerySolutionId
+    //! @param[in] origin The element's placement origin
+    //! @param[in] angles The element's placement angles
+    //! @return An new element that could be inserted as an instance of a captured solution (but only \em after calling CreateSolutionInstanceItem)
+    //! @see CreateSolutionInstanceItem, CaptureSolution, QuerySolution
+    DGNPLATFORM_EXPORT DgnElementPtr CreateSolutionInstanceElement(DgnModelR destinationModel, SolutionId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles);
+
+    //! Create an item that holds the geometry from specified solution and set it on the specified element.
+    //! @param instanceElement  The element to update with the new item
+    //! @param itemProperties   An ECInstance that contains the item's properties. It is up to the caller to transfer these properties to the DgnElement::Item object before inserting or updating the element.
+    //! @param solutionId       Identifies the solution to use
+    //! @return non-zero error status if the item could not be created
+    DGNPLATFORM_EXPORT DgnDbStatus CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, SolutionId solutionId);
+    //@}
+    };
+
 /*=======================================================================================*//**
 * A DgnModel3d that captures the definition of a parametric component and its current solution.
 * Collaborates with ComponentSolution.
@@ -779,7 +887,7 @@ public:
                     Properties props=Properties(), DgnModelId id=DgnModelId()) :
             T_Super(dgndb, classId, name.c_str(), props, solver, id), 
             m_elementCategoryName(elementCategory), m_elementECClassName(elementECClassName), 
-            m_itemECClassName(!itemECClassName.empty()? itemECClassName: name), m_itemECBaseClassName(elementItemECBaseClassName)
+            m_itemECClassName(itemECClassName), m_itemECBaseClassName(elementItemECBaseClassName)
             {}
 
         //! @private
@@ -812,6 +920,7 @@ public:
     };
 
 private:
+    Utf8String m_itemECSchemaName;
     Utf8String m_itemECClassName;
     Utf8String m_itemECBaseClassName;
     Utf8String m_elementECClassName;
@@ -834,11 +943,12 @@ public:
     //! Query if the ComponentModel is correctly defined.
     DGNPLATFORM_EXPORT bool IsValid() const;
 
-    //! Create an ECClass definition for the dgn.ElementItem subclass that ComponentSolution should use when creating an instance of a solution. 
+    //! Create an ECClass definition for the dgn.ElementItem subclass that ComponentSolution should use when creating an instance of a solution.
     //! The generated class will be:
     //!     * Derived from the class specified by GetItemECBaseClassName.
     //!     * Given a name equal to the name of the ComponentModel. 
     //!     * Assigned properties corresponding to the ComponentModel's parameters.
+    //! @note This method also sets m_itemECSchemaName and calls Update on this model. The caller should call SaveChanges on the component Db.
     //! @see GetItemECBaseClassName, AddAllToECSchema
     DGNPLATFORM_EXPORT DgnDbStatus GenerateECClass(ECN::ECSchemaR);
 
@@ -847,28 +957,28 @@ public:
 
     /**
     * Utility function to generate ECClasses for all ComponentModels in \a db and add them to \a schema.
-    * Here is an example of generating an ECSchema for all of the components in a specified DgnDb:
-    * @verbatim
-    ECN::ECSchemaPtr schema;
-    if (ECN::ECOBJECTS_STATUS_Success != ECN::ECSchema::CreateSchema(schema, L"SomeSchema", 0, 0))
-        return ERROR;
-    schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(GetDgnDb().Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
-    ... or whatever schema reference is needed to identify and resolve the Item's base class.
-    if (DgnDbStatus::Success != ComponentModel::AddAllToECSchema(*schema, *m_componentDb))
-        return ERROR;
-    if (ECN::SCHEMA_WRITE_STATUS_Success !=  schema->WriteToXmlFile(schemaFileName))
-        return ERROR;
-    @endverbatim
     * @param schema   The schema to populate
     * @param db       The DgnDb that contains ComponentModels
     * @return DgnDbStatus::Success if all ComponentModels in the file were successfully exported 
     */
     DGNPLATFORM_EXPORT static DgnDbStatus AddAllToECSchema(ECN::ECSchemaR schema, DgnDbR db);
 
+    //! Generate an ECSchema that defines all of the Components in \a componentDb and then import it into \a clientDb
+    //! @param clientDb Where to write the generated schema
+    //! @param componentDb The Db to query for schema info
+    //! @param schemaName   Optional. The name of the schema to generate. Defaults to the basename of componentDb.
+    DGNPLATFORM_EXPORT static DgnDbStatus ExportSchemaTo(DgnDbR clientDb, DgnDbR componentDb, Utf8StringCR schemaName = Utf8String());
+
     //! Get the name of the dgn.Element subclass that was specified in CreateParams.
     //! This is the class that ComponentSolution will use when creating an instance of a solution.
     //! @see GenerateECClass, GetItemECBaseClassName, GetElementCategoryName
     DGNPLATFORM_EXPORT Utf8String GetElementECClassName() const;
+
+    //! Get the name of the ECSchema that was passed to ComponentModel::GenerateECClass 
+    Utf8StringCR GetItemECSchemaName() const {return m_itemECSchemaName;}
+
+    //! Set/override the name of the ECSchema that defines the item's ECClass.
+    void SetItemECSchemaName(Utf8CP s) {m_itemECSchemaName=s;}
 
     //! Get the name of the Item ECClass that ComponentModel::GenerateECClass will create
     //! @see ComponentModel::GenerateECClass

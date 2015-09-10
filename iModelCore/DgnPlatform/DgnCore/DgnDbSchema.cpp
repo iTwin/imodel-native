@@ -72,7 +72,14 @@ DbResult DgnDb::CreateDgnDbTables()
 
     // Every DgnDb has a "local" authority for element codes
         {
-        Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name) VALUES (1,'Local')"); // WIP: use Authority API when it exists
+        Json::Value authorityProps(Json::objectValue);
+        authorityProps["uri"] = "";
+        Utf8String authorityJson = Json::FastWriter::ToString(authorityProps);
+
+        Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Props) VALUES (1,'Local',?,?)"); // WIP: use Authority API when it exists
+        statement.BindId(1, Domains().GetClassId(dgn_AuthorityHandler::Local::GetHandler()));
+        statement.BindText(2, authorityJson, Statement::MakeCopy::No);
+
         DbResult result = statement.Step();
         BeAssert(BE_SQLITE_DONE == result);
         UNUSED_VARIABLE(result);

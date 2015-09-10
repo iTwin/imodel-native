@@ -9,6 +9,8 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
+#define EXPECT_STR_EQ(X,Y) { if ((X).empty() || (Y).empty()) { EXPECT_EQ ((X).empty(), (Y).empty()); } else { EXPECT_EQ ((X), (Y)); } }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -36,16 +38,29 @@ protected:
         return *m_db;
         }
 
-    template<typename LHS, typename RHS>
-    void        Compare (LHS const& lhs, RHS const& rhs)
+    void Compare(DgnAuthorityId id, Utf8StringCR name, Utf8StringCR uri)
         {
-        EXPECT_EQ (lhs.GetId(), rhs.GetId());
-        EXPECT_EQ (lhs.GetName(), rhs.GetName());
-        Utf8String lhsUri = lhs.GetUri(), rhsUri = rhs.GetUri();
-        if (lhsUri.empty() || rhsUri.empty())
-            EXPECT_EQ (lhsUri.empty(), rhsUri.empty());
-        else
-            EXPECT_EQ (lhsUri, rhsUri);
+        DgnAuthorityPtr auth = GetDb().Authorities().LoadAuthority(id);
+        ASSERT_TRUE(auth.IsValid());
+        EXPECT_EQ(auth->GetName(), name);
+        EXPECT_STR_EQ(auth->GetUri(), uri);
+
+        DgnAuthorityId authId = GetDb().Authorities().QueryAuthorityId(name);
+        EXPECT_TRUE(authId.IsValid());
+        EXPECT_EQ(authId, id);
+        }
+
+    DgnAuthorityPtr Create(Utf8CP name, Utf8CP uri = nullptr, bool insert = true)
+        {
+        DgnAuthorityPtr auth = NamespaceAuthority::CreateNamespaceAuthority(name, GetDb(), uri);
+        if (insert)
+            {
+            EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
+            auto authId = auth->GetAuthorityId();
+            EXPECT_TRUE(authId.IsValid());
+            }
+
+        return auth;
         }
     };
 
@@ -59,66 +74,32 @@ TEST_F (DgnAuthoritiesTest, Authorities)
 
     // Every newly-created DgnDb contains exactly one "local" authority
     DgnAuthorities& auths = db.Authorities();
-    DgnAuthorities::Authority localAuth = auths.Query (DgnAuthorities::Local());
+    DgnAuthorityPtr localAuth = auths.LoadAuthority(DgnAuthority::LocalId());
     ASSERT_TRUE (localAuth.IsValid());
-    ASSERT_EQ (localAuth.GetId(), DgnAuthorities::Local());
-    ASSERT_TRUE (localAuth.GetName().Equals ("Local")) << "Actual: " << localAuth.GetName().c_str();
+    ASSERT_EQ (localAuth->GetAuthorityId(), DgnAuthority::LocalId());
+    ASSERT_TRUE (localAuth->GetName().Equals ("Local")) << "Actual: " << localAuth->GetName().c_str();
     auto localAuthId = auths.QueryAuthorityId ("Local");
-    ASSERT_EQ (localAuthId, DgnAuthorities::Local()) << localAuthId.GetValueUnchecked();
+    ASSERT_EQ (localAuthId, DgnAuthority::LocalId()) << localAuthId.GetValueUnchecked();
 
     // Create some new authorities
-    bvector<DgnAuthorities::Authority> expected;
-    expected.push_back (localAuth);
+    auto auth1Id = Create("Auth1")->GetAuthorityId();
+    auto auth2Id = Create("Auth2", "auth2:uri")->GetAuthorityId();
 
-    DgnAuthorities::Authority auth ("Auth1");
-    auto authId = auths.Insert (auth);
-    EXPECT_TRUE (authId.IsValid());
-    EXPECT_TRUE (auth.IsValid());
-    EXPECT_EQ (auth.GetId(), authId);
-
-    expected.push_back (auth);
-
-    auth = DgnAuthorities::Authority ("Auth2", "auth2:uri");
-    authId = auths.Insert (auth);
-    EXPECT_TRUE (authId.IsValid());
-
-    expected.push_back (auth);
-
-    size_t nAuths = 0;
-    for (auto& entry : auths.MakeIterator())
-        {
-        nAuths++;
-        auto match = std::find_if (expected.begin(), expected.end(), [&](DgnAuthorities::Authority const& arg) { return arg.GetId() == entry.GetId(); });
-        ASSERT_FALSE (match == expected.end());
-        Compare (*match, entry);
-        }
-
-    for (auto const& expectedAuth : expected)
-        {
-        authId = auths.QueryAuthorityId (expectedAuth.GetName());
-        EXPECT_TRUE (authId.IsValid());
-        auth = auths.Query (authId);
-        EXPECT_TRUE (auth.IsValid());
-        Compare (expectedAuth, auth);
-        }
-
-    EXPECT_EQ (nAuths, expected.size());
-
-    auto iter = auths.MakeIterator();
-    EXPECT_EQ (nAuths, iter.QueryCount());
+    // Test persistent
+    Compare(auth1Id, "Auth1", nullptr);
+    Compare(auth2Id, "Auth2", "auth2:uri");
+    Compare(DgnAuthority::LocalId(), "Local", nullptr);
 
     // Names must be unique
-    DgnDbStatus status;
-    auth = DgnAuthorities::Authority ("Auth1", "This is a duplicate name");
-    authId = auths.Insert (auth, &status);
-    EXPECT_FALSE (authId.IsValid());
-    EXPECT_EQ (status, DgnDbStatus::DuplicateName);
+    auto badAuth = Create("Auth1", "This is a duplicate name", false);
+    EXPECT_EQ(DgnDbStatus::DuplicateName, badAuth->Insert());
+    EXPECT_FALSE(badAuth->GetAuthorityId().IsValid());
 
     // Update the URI of an existing item
-    auth = expected.back();
-    auth.SetUri ("updated URI");
-    EXPECT_EQ (DgnDbStatus::Success, auths.Update (auth));
-    auto updatedAuth = auths.Query (auth.GetId());
-    Compare (auth, updatedAuth);
+    auto updatedAuth = auths.LoadAuthority(auth2Id);
+    ASSERT_TRUE(updatedAuth.IsValid());
+    updatedAuth->SetUri("updated URI");
+    EXPECT_EQ(DgnDbStatus::Success, updatedAuth->Update());
+    Compare(auth2Id, "Auth2", "updated URI");
     }
 

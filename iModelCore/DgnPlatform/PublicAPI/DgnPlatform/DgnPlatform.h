@@ -76,6 +76,7 @@ DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutResult)
 DGNPLATFORM_TYPEDEFS (DgnMarkupProject)
 DGNPLATFORM_TYPEDEFS (DgnModel)
+DGNPLATFORM_TYPEDEFS (DgnAuthority)
 DGNPLATFORM_TYPEDEFS (DgnResourceURI)
 DGNPLATFORM_TYPEDEFS (DgnGlyph)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext)
@@ -246,6 +247,7 @@ DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
 DGNPLATFORM_REF_COUNTED_PTR (RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (SheetViewController)
 DGNPLATFORM_REF_COUNTED_PTR (TxnManager)
+DGNPLATFORM_REF_COUNTED_PTR (DgnAuthority)
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive)
@@ -290,6 +292,7 @@ BEREPOSITORYBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a 
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnCategoryId)      //!< An Id that is assigned to a DgnCategory.  A DgnElement belongs to exactly one DgnCategory. @ingroup DgnCategoryGroup
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
+BESERVER_ISSUED_ID_CLASS(DgnLightId)         //!< An Id that is assigned to a light. See DgnDb#Lights.
 BESERVER_ISSUED_ID_CLASS(DgnMaterialId)      //!< An Id that is assigned to a material. See DgnDb#Materials.
 BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
@@ -299,10 +302,13 @@ BESERVER_ISSUED_ID_CLASS(DgnTextureId)       //!< An Id that is assigned to a te
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};
+namespace dgn_AuthorityHandler {struct Authority;};
 typedef struct dgn_ElementHandler::Element* ElementHandlerP;
 typedef struct dgn_ElementHandler::Element& ElementHandlerR;
 typedef struct dgn_ModelHandler::Model* ModelHandlerP;
 typedef struct dgn_ModelHandler::Model& ModelHandlerR;
+typedef struct dgn_AuthorityHandler::Authority* AuthorityHandlerP;
+typedef struct dgn_AuthorityHandler::Authority& AuthorityHandlerR;
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14

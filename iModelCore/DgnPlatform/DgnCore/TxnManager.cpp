@@ -427,7 +427,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     auto rc = changeset.FromChangeTrack(*this);
     UNUSED_VARIABLE(rc);
     BeAssert(BE_SQLITE_OK == rc);
-    BeAssert(0 != changeset.GetSize());
+    //BeAssert(0 != changeset.GetSize());
     Restart();  // clear the change tracker, since we have captured all the changes in the changeset
 
     if (!isCommit)
@@ -1093,7 +1093,7 @@ void dgn_TxnTable::ModelDep::_OnValidateUpdate(Changes::Change const& change)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, ChangeType changeType)
     {
-    enum Column : int {ElementId=1,ModelId=2,ChangeType=3,LastMod=4};
+    enum Column : int {ElementId=1,ModelId=2,ChangeType=3};
 
     BeAssert(modelId.IsValid());
     BeAssert(elementId.IsValid());
