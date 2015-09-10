@@ -1265,7 +1265,7 @@ DgnDbStatus DgnElement::Aspect::InsertThis(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnClassId  DgnElement::Aspect::GetECClassId(DgnDbR db) const
     {
-    return DgnClassId(db.Schemas().GetECClassId(_GetECSchemaName().c_str(), _GetECClassName().c_str()));
+    return DgnClassId(db.Schemas().GetECClassId(_GetECSchemaName(), _GetECClassName()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1273,7 +1273,7 @@ DgnClassId  DgnElement::Aspect::GetECClassId(DgnDbR db) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::ECClassCP  DgnElement::Aspect::GetECClass(DgnDbR db) const
     {
-    return db.Schemas().GetECClass(_GetECSchemaName().c_str(), _GetECClassName().c_str());
+    return db.Schemas().GetECClass(_GetECSchemaName(), _GetECClassName());
     }
 
 /*---------------------------------------------------------------------------------**//**
