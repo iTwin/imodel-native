@@ -22,7 +22,6 @@ protected:
     DgnModelPtr m_testModel;
     DgnCategoryId m_testCategoryId;
     DgnElementId m_testElementId;
-    uint32_t m_uniqueCodeAutoIncrement;
 
     void CreateDgnDb();
     void OpenDgnDb();
@@ -42,10 +41,8 @@ protected:
 
     bool ChangeSummaryHasInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
     BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
-
-    DgnElement::Code MakeElementCode (Utf8CP text) { return DgnElement::Code (Utf8PrintfString("%s - %u", text, ++m_uniqueCodeAutoIncrement)); }
 public:
-    ChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true), m_uniqueCodeAutoIncrement(0) {}
+    ChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true) {}
     virtual ~ChangeSummaryTestFixture() {m_testDb->SaveChanges();}
     virtual void SetUp() override {}
     virtual void TearDown() override {}
@@ -147,7 +144,6 @@ void ChangeSummaryTestFixture::InsertElement()
     BeAssert(m_testCategoryId.IsValid());
 
     PhysicalElementPtr testElement = PhysicalElement::Create(*physicalTestModel, m_testCategoryId);
-    testElement->SetCode(MakeElementCode("ChangeSetTestElementCode"));
     testElement->SetLabel("ChangeSetTestElementLabel");
 
     DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
@@ -172,7 +168,6 @@ void ChangeSummaryTestFixture::ModifyElement()
     RefCountedPtr<PhysicalElement> testElement = m_testDb->Elements().GetForEdit<PhysicalElement>(m_testElementId);
     BeAssert(testElement.IsValid());
 
-    testElement->SetCode(MakeElementCode("ModifiedElementCode"));
     testElement->SetLabel("ModifiedElementLabel");
 
     DgnDbStatus dbStatus;

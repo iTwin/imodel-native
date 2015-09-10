@@ -23,6 +23,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <ECProperty propertyName="ComponentModelName" typeName="string"/>
         <ECProperty propertyName="SolutionName" typeName="string"/>
+        <!-- The parameters used to generate this solution, as a JSON array -->
+        <ECProperty propertyName="Parameters" typeName="string"/>
         <!-- WIP_COMPONENTS: I want (ComponentModelId,Parameters) to be unique and indexed -->
         <ECProperty propertyName="Geom" typeName="binary"/>
         <ECProperty propertyName="Range" typeName="binary"/>
@@ -902,6 +904,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <!-- Authority for element codes and classifications -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
@@ -914,15 +920,13 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Uri" typeName="string" description="URI for authority" >
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <Collation>NoCase</Collation>
-                    <!-- Optional for an authority to have a URI -->
-                    <IsNullable>True</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="Props" typeName="string" description="Json string containing properties like URI" />
+    </ECClass>
+    <ECClass typeName="LocalAuthority" isDomainClass="True">
+        <BaseClass>Authority</BaseClass>
+    </ECClass>
+    <ECClass typeName="NamespaceAuthority" isDomainClass="True">
+        <BaseClass>Authority</BaseClass>
     </ECClass>
 
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" isDomainClass="True" strengthDirection="forward" strength="referencing">
