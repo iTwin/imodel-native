@@ -29,8 +29,7 @@ DgnAuthorityId DgnImportContext::RemapAuthorityId(DgnAuthorityId source)
     if (dest.IsValid())
         return dest;
 
-
-    DgnAuthorityPtr sourceAuthority = m_sourceDb.Authorities().LoadAuthority(source);
+    DgnAuthorityCPtr sourceAuthority = m_sourceDb.Authorities().GetAuthority(source);
     if (sourceAuthority.IsNull())
         {
         BeDataAssert(false && "Missing source authority");
@@ -61,14 +60,6 @@ DgnAuthorityId DgnImportContext::RemapAuthorityId(DgnAuthorityId source)
 DgnDbStatus DgnAuthority::Insert()
     {
     return GetDgnDb().Authorities().Insert(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnAuthority::Update()
-    {
-    return GetDgnDb().Authorities().Update(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -165,24 +156,11 @@ DgnDbStatus DgnAuthorities::Insert(DgnAuthorityR auth)
         return DgnDbStatus::WriteError;
 
     auth.m_authorityId = newId;
+
+    BeDbMutexHolder _v(m_mutex);
+    m_loadedAuthorities.push_back(DgnAuthorityPtr(&auth));
+
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnAuthorities::Update(DgnAuthorityR auth)
-    {
-    if (!auth.GetAuthorityId().IsValid())
-        return DgnDbStatus::InvalidId;
-
-    Utf8String props = auth.SerializeProperties();
-
-    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Authority) " SET Props=? WHERE Id=?");
-    stmt.BindText(1, props, Statement::MakeCopy::No);
-    stmt.BindId(2, auth.GetAuthorityId());
-
-    return BE_SQLITE_DONE == stmt.Step() ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -231,6 +209,33 @@ DgnAuthorityPtr DgnAuthorities::LoadAuthority(DgnAuthorityId id, DgnDbStatus* ou
 
     status = DgnDbStatus::Success;
     return auth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthorityCPtr DgnAuthorities::GetAuthority(DgnAuthorityId id)
+    {
+    if (!id.IsValid())
+        return nullptr;
+
+    DgnAuthorityPtr authority;
+
+    BeDbMutexHolder _v(m_mutex);
+    auto found = std::find_if(m_loadedAuthorities.begin(), m_loadedAuthorities.end(), [&id](DgnAuthorityPtr const& arg) { return arg->GetAuthorityId() == id; });
+    if (m_loadedAuthorities.end() != found)
+        {
+        authority = *found;
+        }
+    else
+        {
+        authority = LoadAuthority(id, nullptr);
+        BeDataAssert(authority.IsValid());
+        if (authority.IsValid())
+            m_loadedAuthorities.push_back(authority);
+        }
+
+    return authority.get();
     }
 
 /*---------------------------------------------------------------------------------**//**

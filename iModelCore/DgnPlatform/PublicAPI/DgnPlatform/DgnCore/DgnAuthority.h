@@ -105,12 +105,10 @@ public:
     DgnClassId GetClassId() const { return m_classId; }
     Utf8StringCR GetName() const { return m_name; }
     Utf8StringCR GetUri() const { return m_uri; }
-    void SetUri(Utf8StringCR uri) { m_uri = uri; }
 
     DGNPLATFORM_EXPORT AuthorityHandlerR GetAuthorityHandler() const;
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
-    DGNPLATFORM_EXPORT DgnDbStatus Update();
 
     DgnAuthority::Code CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const { return _CloneCodeForImport(srcElem, destModel, importer); }
 

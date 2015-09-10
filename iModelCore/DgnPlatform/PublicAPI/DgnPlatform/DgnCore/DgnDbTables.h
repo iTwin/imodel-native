@@ -1131,26 +1131,26 @@ private:
     friend struct DgnDb;
     explicit DgnAuthorities(DgnDbR db) : DgnDbTable(db) {}
 
+    typedef bvector<DgnAuthorityPtr> LoadedAuthorities;
+
+    LoadedAuthorities   m_loadedAuthorities;
+    BeSQLite::BeDbMutex m_mutex;
+
+    DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
 public:
     //! Look up the ID of the authority with the specified name.
     DGNPLATFORM_EXPORT DgnAuthorityId QueryAuthorityId(Utf8StringCR name) const;
 
-    //! Load an authority by ID
+    //! Look up an authority by ID. The authority will be loaded from the database if necessary.
     //! @param[in] authorityId The ID of the authority to load
-    //! @param[out] status     Optional return status of the operation
     //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded
-    DGNPLATFORM_EXPORT DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(DgnAuthorityId authorityId);
 
     //! Add a new Authority to the table.
     //! @param[in]  authority The new entry to add.
     //! @return The result of the insert operation.
     //! @remarks If successful, this method will assign a valid DgnAuthorityId to the supplied authority
     DGNPLATFORM_EXPORT DgnDbStatus Insert(DgnAuthorityR authority);
-
-    //! Update an existing authority in the DgnDb
-    //! @param[in]  authority   The modified authority
-    //! @return The result of the update operation
-    DGNPLATFORM_EXPORT DgnDbStatus Update(DgnAuthorityR authority);
 };
 
 //=======================================================================================
