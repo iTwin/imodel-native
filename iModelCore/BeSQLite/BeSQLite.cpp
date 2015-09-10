@@ -587,7 +587,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::Db() : m_embeddedFiles(*this), m_appData(*this), m_dbFile(nullptr), m_statements(nullptr) {}
+Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(nullptr) {}
 Db::~Db() {DoCloseDb();}
 
 /*---------------------------------------------------------------------------------**//**
@@ -1812,12 +1812,6 @@ bool Db::IsDbOpen() const
     return  (nullptr != m_dbFile) && (nullptr != m_dbFile->m_sqlDb);
     }
 
-struct CleanupCaller
-    {
-    DbR m_db;
-    CleanupCaller(DbR db) : m_db(db) {}
-    void CallHandler(DbAppData& handler) const {handler._OnCleanup(m_db);}
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
@@ -1827,8 +1821,7 @@ void Db::DoCloseDb()
     if (!IsDbOpen())
         return;
 
-    m_appData.m_entries.CallAll(CleanupCaller(*this));
-    m_appData.m_entries.m_list.clear();
+    m_appData.clear();
 
     DELETE_AND_CLEAR(m_statements);
     DELETE_AND_CLEAR(m_dbFile);
@@ -1846,25 +1839,31 @@ void Db::CloseDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Db::DbAppDataList::Add(DbAppData::Key const& key, DbAppData* obj)
+StatusInt Db::DropAppData(AppData::Key const& key) const
     {
-    return m_entries.AddAppData(key, obj, m_db);
+    return 0==m_appData.erase(&key) ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Db::DbAppDataList::Drop(DbAppData::Key const& key)
+void Db::AddAppData(AppData::Key const& key, AppData* appData) const
     {
-    return m_entries.DropAppData(key, m_db);
+    auto entry = m_appData.Insert(&key, appData);
+    if (entry.second)
+        return;
+
+    // we already had appdata for this key. Clean up old and save new.
+    entry.first->second = appData;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbAppData* Db::DbAppDataList::Find(DbAppData::Key const& key) const
+Db::AppData* Db::FindAppData(AppData::Key const& key) const
     {
-    return m_entries.FindAppData(key);
+    auto entry = m_appData.find(&key);
+    return entry==m_appData.end() ? nullptr : entry->second.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
