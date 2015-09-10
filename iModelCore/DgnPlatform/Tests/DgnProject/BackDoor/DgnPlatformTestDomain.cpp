@@ -52,7 +52,7 @@ DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el, GenerateRea
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
     {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), nullptr, DgnElement::Code(elementCode)));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), nullptr/*, DgnElement::Code(elementCode)*/));
     return testElement;
     }
 

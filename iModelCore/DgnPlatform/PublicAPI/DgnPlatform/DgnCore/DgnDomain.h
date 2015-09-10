@@ -242,9 +242,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         //! get a localized description of this handler's class
         virtual void _GetLocalizedDescription(Utf8StringR descr, uint32_t desiredLength) {descr = "";}
 
-        virtual ElementHandlerP _ToElementHandler() {return nullptr;} //!< dynamic_cast this Handler to an ElementHandler
-        virtual ModelHandlerP _ToModelHandler() {return nullptr;}     //!< dynamic_cast this Handler to a ModelHandler
-        virtual ViewHandlerP _ToViewHandler() {return nullptr;}       //!< dynamic_cast this Handler to a ViewHandler
+        virtual ElementHandlerP _ToElementHandler() {return nullptr;}       //!< dynamic_cast this Handler to an ElementHandler
+        virtual ModelHandlerP _ToModelHandler() {return nullptr;}           //!< dynamic_cast this Handler to a ModelHandler
+        virtual ViewHandlerP _ToViewHandler() {return nullptr;}             //!< dynamic_cast this Handler to a ViewHandler
+        virtual AuthorityHandlerP _ToAuthorityHandler() {return nullptr;}   //!< dynamic_cast this Handler to an AuthorityHandler
 
         static Handler& z_GetHandlerInstance(); //!< @private
         DGNPLATFORM_EXPORT static Handler& GetHandler() {return z_GetHandlerInstance();}//!< @private

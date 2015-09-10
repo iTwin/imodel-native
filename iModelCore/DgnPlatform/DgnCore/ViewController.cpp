@@ -531,11 +531,10 @@ StandardView ViewController::IsStandardViewRotation(RotMatrixCR rMatrix, bool ch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController::GetStandardViewName(WStringR name, StandardView viewID)
+Utf8String ViewController::GetStandardViewName(StandardView viewID)
     {
-    name = L"";
     if (viewID < StandardView::Top || viewID > StandardView::RightIso)
-        return ERROR;
+        return "";
 
     L10N::StringId names[]={
         DgnCoreL10N::VIEWTITLE_MessageID_Top(),   
@@ -548,19 +547,21 @@ BentleyStatus ViewController::GetStandardViewName(WStringR name, StandardView vi
         DgnCoreL10N::VIEWTITLE_MessageID_RightIso(), 
         };
 
-    name = DgnCoreL10N::GetStringW(*(static_cast<int>(viewID) - 1 + names));
-    return  SUCCESS;
+    return DgnCoreL10N::GetString(*(static_cast<int>(viewID) - 1 + names));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController::GetStandardViewByName(RotMatrix* rotP, StandardView* standardIdP, WCharCP viewName)
+BentleyStatus ViewController::GetStandardViewByName(RotMatrix* rotP, StandardView* standardIdP, Utf8CP viewName)
     {
-    WString tName;
-    for (int i = static_cast<int>(StandardView::Top); SUCCESS == GetStandardViewName(tName,(StandardView)i); ++i)
+    for (int i = static_cast<int>(StandardView::Top); i <= (int) StandardView::RightIso; ++i)
         {
-        if (0 == BeStringUtilities::Wcsicmp(viewName, tName.c_str()))
+        Utf8String tname = GetStandardViewName((StandardView) i);
+        if (tname.empty())
+            return ERROR;
+
+        if (tname == viewName)
             {
             if (nullptr != rotP)
                 bsiRotMatrix_getStandardRotation(rotP, i);
