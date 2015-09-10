@@ -13,6 +13,7 @@
 #include "DgnDomain.h"
 #include "DgnMaterial.h"
 #include "DgnTexture.h"
+#include "DgnLight.h"
 #include <Bentley/BeFileName.h>
 
 /** @addtogroup DgnDbGroup
@@ -140,6 +141,7 @@ protected:
     DgnLinks        m_links;
     DgnAuthorities  m_authorities;
     DgnTextures     m_textures;
+    DgnLights       m_lights;
     TxnManagerPtr   m_txnManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
 
@@ -197,6 +199,7 @@ public:
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
     DgnMaterials& Materials() const {return const_cast<DgnMaterials&>(m_materials);}     //!< The materials for this DgnDb
+    DgnLights& Lights() const {return const_cast<DgnLights&>(m_lights);}                 //!< The lights for this DgnDb
     DgnTextures& Textures() const { return const_cast<DgnTextures&>(m_textures); }       //!< The textures for this DgnDb.
     DgnAuthorities& Authorities() const { return const_cast<DgnAuthorities&>(m_authorities); }   //!< The authorities associated with this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.

@@ -530,17 +530,16 @@ public:
     DGNPLATFORM_EXPORT static StandardView IsStandardViewRotation(RotMatrixCR rotation, bool check3D);
 
     //! Gets the name of a StandardView.
-    //! @param[out] viewName On SUCCESS, filled in with the name of the standard view.
     //! @param[in]  standardView The StandardView of interest
-    //! @return SUCCESS if viewName is valid.
-    DGNPLATFORM_EXPORT static BentleyStatus GetStandardViewName(WStringR viewName, StandardView standardView);
+    //! @return the ViewName. 
+    DGNPLATFORM_EXPORT static Utf8String GetStandardViewName(StandardView standardView);
 
     //! Get the RotMatrix for a standard view by name.
     //! @param[out] rotMatrix   The rotation of the standard view (optional)
     //! @param[out] standardId  The identifier of the standard view (optional)
     //! @param[in]  viewName    The name of the standard view to look up. Note that the comparison is case-insensitive.
     //! @return SUCCESS if viewName was interpreted correctly and rotMatrix and standardId are valid.
-    DGNPLATFORM_EXPORT static BentleyStatus GetStandardViewByName(RotMatrixP rotMatrix, StandardView* standardId, WCharCP viewName);
+    DGNPLATFORM_EXPORT static BentleyStatus GetStandardViewByName(RotMatrixP rotMatrix, StandardView* standardId, Utf8CP viewName);
 
     //! Change the view orientation to one of the standard views.
     //! @param[in] standardView the rotation to which the view should be set.

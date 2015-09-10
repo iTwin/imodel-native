@@ -335,7 +335,6 @@ public:
 
         //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
         DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}
-
     };
 
     //! Represents an ElementAspect subclass for the case where the host Element can have multiple instances of the subclass.
