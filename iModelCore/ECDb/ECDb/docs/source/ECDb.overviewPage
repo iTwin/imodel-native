@@ -59,7 +59,7 @@
     - the <b>%EC CRUD</b> API for performing Create, Read, Update, Delete operations on %ECInstances in an
     @ref ECDbFile "ECDb file" (see @ref ECSqlStatementOverview)
     - <b>ECSchema management</b> capabilities (e.g. importing ECSchemas into an @ref ECDbFile "ECDb file",
-    retrieving ECSchema entities from an @ref ECDbFile "ECDb file" (see BentleyApi::BeSQLite::EC::ECDbSchemaManager))
+    retrieving ECSchema entities from an @ref ECDbFile "ECDb file" (see BentleyApi::BeSQLite::EC::ECDbSchemaManager and @ref ECDbECSchemaRules))
     - Internally maps %EC data to SQLite tables and columns
 
     @section ECDbMapping ECSQL hides away the database mapping of EC data
@@ -112,10 +112,11 @@
     @li @subpage ECSQLOverview
     @li @subpage ECSQLSamples
     @li @subpage ECSqlStatementOverview
+    @li @subpage ECDbECSchemaRules
     @li @subpage ECDbTransactions
+    @li @subpage ECDbSchemaMappingCustomization
     @li @subpage ECDbCreatingECDbFromScratch
     @li @subpage ECDbCodeSamples
-    @li @subpage ECDbSchemaMappingCustomization
 
     @see @ref ECDbOverview
     */
@@ -143,6 +144,46 @@
     So %ECDb files are ideal for applications that work with EC business data and without DGN content.
     The %ECDb file format is slimmer than the DgnDb file format, and you can work against the @ref ECDbOverview "ECDb API" directly.
     The DGN related technology stack is not needed in that case.
+
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbECSchemaRules Rules for ECSchemas supported by ECDb
+    
+    There are some rules creators of @ref BentleyApi::ECN::ECSchema "ECSchemas" should follow so that the 
+    %ECSchema can be used in %ECDb. These rules are semantically common sense anyways and might eventually be merged into the 
+    %ECSchema specification, so it should be straightforward to follow them.
+
+    ### Naming
+    Names may not differ only by case. This applies to
+    - %ECSchemas
+    - %ECClasses within a schema
+    - %ECProperties withing a class (including inherited properties)
+    
+    It is suggested that you avoid names that only differ by case throughout the system
+
+ //   ### Schema
+ //  - A unique namespace prefix must be defined and the namespace prefix must be a valid ECName.
+
+    ### Class
+    - Consistent class hierarchies:
+        - An @ref BentleyApi::ECN::ECClass "ECClass" may not have an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" as a base class
+          and vice versa
+        - A domain class may not have a struct as subclass or vice versa
+        - a class 
+    - Abstract classes cannot be instantiated. This means you cannot use an abstract class in an ECSQL INSERT statement.
+        - A class is considered abstract if isDomainClass, isStruct, and isCustomAttributeClass are all set to @b false.
+
+    ### Relationship Class
+    - An @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" may not have a regular @ref BentleyApi::ECN::ECClass "ECClass" as a base class
+    - Abstract relationship classes may not be instantiated or used to relate instances in a repository.
+        - A relationship class is abstract if isDomainClass is false or if the relationship constraints are not well-defined.
+        - A relationship constraint is well-defined if at least one class is specified.
+    - A relationship constraint may only specify regular ECClasses and not ECRelationshipClasses.
+
+    ### Properties
+    - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass"
 
     @see @ref ECDbOverview
     */
