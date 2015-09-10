@@ -334,32 +334,11 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
         {
         BeRepositoryBasedId id (BeRepositoryId (2), 2);
         Statement stmt;
-        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S,LastMod) VALUES (?, 1,'INSERT with literal NULL',NULL)"));
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S) VALUES (?, 1,'INSERT with literal NULL')"));
         stmt.BindId (1, id);
         ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
 
-        AssertCurrentTimeStamp (ecdb, id, true, "SQLITE INSERT with literal NULL");
-        }
-
-        {
-        BeRepositoryBasedId id (BeRepositoryId (2), 3);
-        Statement stmt;
-        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S,LastMod) VALUES (?,1,'INSERT with unbound parameter',?)"));
-        stmt.BindId (1, id);
-        ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
-
-        AssertCurrentTimeStamp (ecdb, id, true, "SQLITE INSERT with unbound parameter.");
-        }
-
-        {
-        BeRepositoryBasedId id (BeRepositoryId (2), 4);
-        Statement stmt;
-        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S,LastMod) VALUES (?,1,'INSERT with NULL-bound parameter',?)"));
-        stmt.BindId (1, id);
-        stmt.BindNull (2);
-        ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
-
-        AssertCurrentTimeStamp (ecdb, id, true, "SQLITE INSERT with NULL-bound parameter");
+        AssertCurrentTimeStamp (ecdb, id, false, "SQLITE INSERT with literal NULL");
         }
 
         {

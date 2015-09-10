@@ -66,6 +66,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbProfileUpgrader.h \
                 $(baseDir)ECDbSystemSchemaHelper.h \
                 $(baseDir)ECDbPolicyManager.h \
+                $(baseDir)ECDbMapAnalyser.h \
                 $(baseDir)ECSql/DynamicSelectClauseECClass.h \
                 $(baseDir)ECSql/ECSqlStatusContext.h \
                 $(baseDir)ECSql/Parser/SqlTypes.h \
@@ -141,6 +142,7 @@ always:
 #----------------------------------------------------------------------
 PchCompiland = $(baseDir)ECDbPch.cpp
 PchOutputDir = $(o)
+PchExtraOptions = -Zm200
 %if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
     # Compiling using DgnHandlerInternal.h.gch causes internal compiler error in GCC using windows ndk toolchain
     GCC_NO_PRE_COMPILED_HEADER = 1
@@ -170,7 +172,7 @@ $(o)ECDbMap$(oext):											$(baseDir)ECDbMap.cpp                       $(ECDb
 
 $(o)ECSchemaComparers$(oext):								$(baseDir)ECSchemaComparers.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)MapStrategy$(oext):									    $(baseDir)MapStrategy.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)MapStrategy$(oext):									    $(baseDir)MapStrategy.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMapInfo$(oext):									$(baseDir)ClassMapInfo.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -186,9 +188,9 @@ $(o)PropertyMap$(oext):										$(baseDir)PropertyMap.cpp                   $(E
 
 $(o)SystemPropertyMap$(oext):								$(baseDir)SystemPropertyMap.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
  
-$(o)ColumnInfo$(oext):										$(baseDir)ColumnInfo.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ColumnInfo$(oext):										$(baseDir)ColumnInfo.cpp                    $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbImpl$(oext):										$(baseDir)ECDbImpl.cpp                     $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbImpl$(oext):										$(baseDir)ECDbImpl.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDb$(oext):											$(baseDir)ECDb.cpp                          $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -199,6 +201,8 @@ $(o)ECDbSchemaPersistence$(oext):							$(baseDir)ECDbSchemaPersistence.cpp     
 $(o)ECDbSchemaReader$(oext):								$(baseDir)ECDbSchemaReader.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSchemaWriter$(oext):								$(baseDir)ECDbSchemaWriter.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECDbMapAnalyser$(oext):								    $(baseDir)ECDbMapAnalyser.cpp               $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSchemaManager$(oext):								$(baseDir)ECDbSchemaManager.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 

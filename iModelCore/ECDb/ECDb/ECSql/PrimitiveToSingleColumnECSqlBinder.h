@@ -32,7 +32,8 @@ private:
     virtual ECSqlStatus _BindNull() override;
     virtual ECSqlStatus _BindBoolean(bool value) override;
     virtual ECSqlStatus _BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) override;
-    virtual ECSqlStatus _BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata) override;
+    virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const* metadata) override;
+    virtual ECSqlStatus _BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata) override;
     virtual ECSqlStatus _BindDouble(double value) override;
     virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
     virtual ECSqlStatus _BindInt(int value) override;

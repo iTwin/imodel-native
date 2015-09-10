@@ -195,7 +195,7 @@ ECSqlStatus ECSqlParameterValue::BindTo(ECSqlStatusContext& statusContext, ECSql
                     //Use Julian Days to avoid to unnecessary computation of DateTime from JD
                     //and back from DateTime to JD again
                     DateTime::Info metadata;
-                    uint64_t jdHns = from.GetDateTimeJulianDays(metadata);
+                    uint64_t jdHns = from.GetDateTimeJulianDaysHns(metadata);
                     return to.BindDateTime(jdHns, &metadata);
                     }
 
@@ -318,12 +318,21 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindBinary(const void* value, int bin
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveECSqlParameterValue::_BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveECSqlParameterValue::_BindDateTime(double julianDay, DateTime::Info const* metadata)
+    {
+    const uint64_t jdHns = DateTime::RationalDayToHns(julianDay);
+    return _BindDateTime(jdHns, metadata);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2014
+//---------------------------------------------------------------------------------------
+ECSqlStatus PrimitiveECSqlParameterValue::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
     {
     if (!CanBindValue(PRIMITIVETYPE_DateTime))
         return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Date time values can only be bound to date time parameter values.");
 
-    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(julianDayTicksHns);
+    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(julianDayHns);
     const auto ecstat = metadata != nullptr ? m_value.SetDateTimeTicks(ceTicks, *metadata) : m_value.SetDateTimeTicks(ceTicks);
     const auto stat = ToECSqlStatus(ecstat);
     if (stat != ECSqlStatus::Success)
@@ -331,7 +340,6 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindDateTime(uint64_t julianDayTicksH
 
     return ResetStatus();
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
@@ -488,13 +496,21 @@ bool PrimitiveECSqlParameterValue::_GetBoolean() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-uint64_t PrimitiveECSqlParameterValue::_GetDateTimeJulianDays(DateTime::Info& metadata) const
+uint64_t PrimitiveECSqlParameterValue::_GetDateTimeJulianDaysHns(DateTime::Info& metadata) const
     {
     bool hasMetdata = false;
     const int64_t ceTicks = m_value.GetDateTimeTicks(hasMetdata, metadata);
     return DateTime::CommonEraTicksToJulianDay(ceTicks);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2015
+//---------------------------------------------------------------------------------------
+double PrimitiveECSqlParameterValue::_GetDateTimeJulianDays(DateTime::Info& metadata) const
+    {
+    const uint64_t jdHns = _GetDateTimeJulianDaysHns(metadata);
+    return DateTime::HnsToRationalDay(jdHns);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014

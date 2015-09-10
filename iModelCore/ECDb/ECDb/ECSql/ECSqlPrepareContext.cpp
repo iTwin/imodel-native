@@ -230,7 +230,7 @@ Utf8String ECSqlPrepareContext::CreateECInstanceIdSelectionQuery (ECSqlPrepareCo
         selectBuilder.AppendDot ();
         }
 
-    selectBuilder.Append ("[ECInstanceId], GetECClassId() FROM");
+    selectBuilder.Append ("ECInstanceId, GetECClassId() FROM");
 
     selectBuilder.AppendSpace ();
     if (!classNameExpr.IsPolymorphic ())

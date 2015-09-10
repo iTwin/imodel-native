@@ -206,7 +206,16 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindGeometry
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          01/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
+    {
+    const uint64_t jdHns = DateTime::RationalDayToHns(julianDay);
+    return _BindDateTime(jdHns, metadata);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan          01/2014
+//---------------------------------------------------------------------------------------
+ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_DateTime);
     if (ECSqlStatus::Success != status)
@@ -218,7 +227,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime
     if (!m_arrayTypeInfo.DateTimeInfoMatches(metadata))
         return m_statusContext.SetError(ECSqlStatus::UserError, "Metadata of DateTime value to bind doesn't match the metadata on the corresponding ECProperty.");
 
-    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(julianDayTicksHns);
+    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(julianDayHns);
     ECValue v;
     if (metadata == nullptr)
         v.SetDateTimeTicks(ceTicks);

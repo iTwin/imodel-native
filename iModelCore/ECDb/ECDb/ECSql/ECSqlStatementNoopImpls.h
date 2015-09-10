@@ -52,7 +52,13 @@ private:
         {
         return m_errorStatus;
         }
+
     virtual ECSqlStatus _BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata) override
+        {
+        return m_errorStatus;
+        }
+
+    virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const* metadata) override
         {
         return m_errorStatus;
         }
@@ -192,9 +198,15 @@ private:
         {
         return false;
         }
-    virtual uint64_t _GetDateTimeJulianDays(DateTime::Info& metadata) const override
+
+    virtual uint64_t _GetDateTimeJulianDaysHns(DateTime::Info& metadata) const override
         {
         return 0ULL;
+        }
+
+    virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override
+        {
+        return 0.0;
         }
 
     virtual double _GetDouble() const override

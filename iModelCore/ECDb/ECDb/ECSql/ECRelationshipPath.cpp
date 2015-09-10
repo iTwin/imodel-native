@@ -600,14 +600,14 @@ ECRelatedItemsDisplaySpecificationsCache* ECRelatedItemsDisplaySpecificationsCac
     {
     ECRelatedItemsDisplaySpecificationsCache* cache = 
         reinterpret_cast <ECRelatedItemsDisplaySpecificationsCache *> 
-        (ecDb.AppData().Find (ECRelatedItemsDisplaySpecificationsCache::GetKey()));
+        (ecDb.FindAppData(ECRelatedItemsDisplaySpecificationsCache::GetKey()));
 
     if (nullptr == cache)
         {
         cache = new ECRelatedItemsDisplaySpecificationsCache (ecDb);
         if (SUCCESS != cache->Initialize())
             return nullptr;
-        ecDb.AppData().Add (ECRelatedItemsDisplaySpecificationsCache::GetKey(), cache);
+        ecDb.AddAppData(ECRelatedItemsDisplaySpecificationsCache::GetKey(), cache);
         }
     return cache;
     }

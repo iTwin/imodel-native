@@ -284,16 +284,24 @@ bool PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetBoolea
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-uint64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDateTimeJulianDays (DateTime::Info& metadata) const
+uint64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDateTimeJulianDaysHns (DateTime::Info& metadata) const
     {
     if (!CanRead(PRIMITIVETYPE_DateTime))
-        return NoopECSqlValue::GetSingleton ().GetDateTimeJulianDays(metadata);
+        return NoopECSqlValue::GetSingleton ().GetDateTimeJulianDaysHns(metadata);
 
     bool hasMetadata = false;
     const int64_t ceTicks = m_value.GetDateTimeTicks (hasMetadata, metadata);
     return DateTime::CommonEraTicksToJulianDay (ceTicks);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2015
+//---------------------------------------------------------------------------------------
+double PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDateTimeJulianDays(DateTime::Info& metadata) const
+    {
+    const uint64_t jdHns = _GetDateTimeJulianDaysHns(metadata);
+    return DateTime::HnsToRationalDay(jdHns);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013

@@ -17,7 +17,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @see @ref ECInstanceIdInECDb, ECInstanceIdHelper
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======
-//BEREPOSITORYBASED_ID_CLASS(ECInstanceId)
 typedef BeInt64Id ECInstanceId;
 
 //=======================================================================================

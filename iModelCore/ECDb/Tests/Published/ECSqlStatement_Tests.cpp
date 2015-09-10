@@ -2765,88 +2765,88 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_LastStatus)
     {
     const auto perClassRowCount = 10;
     // Create and populate a sample project
-    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::Readonly), perClassRowCount);
+    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus on a new ECSqlStatement is expected to return ECSqlStatus::Success.";
+        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ()) << "GetLastStatus on a new ECSqlStatement is expected to return ECSqlStatus::Success.";
         ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage on a new ECSqlStatement is expected to return empty string.";
 
         auto stat = stmt.Prepare (ecdb, "SELECT * FROM ecsql.P WHERE I = ?");
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Preparation for a valid ECSQL failed.";
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after successful call to Prepare is expected to return ECSqlStatus::Success.";
+        ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation for a valid ECSQL failed.";
+        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ()) << "GetLastStatus after successful call to Prepare is expected to return ECSqlStatus::Success.";
         ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to Prepare is expected to return empty string.";
 
         BeTest::SetFailOnAssert (false);
         stat = stmt.BindPoint2D (1, DPoint2d::From (1.0, 1.0));
         BeTest::SetFailOnAssert (true);
-        ASSERT_EQ (static_cast<int> (stat), static_cast<int> (stmt.GetLastStatus ()));
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::UserError), static_cast<int> (stat)) << "Cannot bind points to int parameter";
+        ASSERT_EQ (stat, stmt.GetLastStatus ());
+        ASSERT_EQ (ECSqlStatus::UserError, stat) << "Cannot bind points to int parameter";
 
         stat = stmt.BindInt (1, 123);
-        ASSERT_EQ (static_cast<int> (stat), static_cast<int> (stmt.GetLastStatus ()));
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
+        ASSERT_EQ (stat, stmt.GetLastStatus ());
+        ASSERT_EQ (ECSqlStatus::Success, stat);
 
         BeTest::SetFailOnAssert (false);
         stat = stmt.BindDouble (2, 3.14);
         BeTest::SetFailOnAssert (true);
-        ASSERT_EQ (static_cast<int> (stat), static_cast<int> (stmt.GetLastStatus ()));
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stat)) << "Index out of bounds error expected.";
+        ASSERT_EQ (stat, stmt.GetLastStatus ());
+        ASSERT_EQ (ECSqlStatus::IndexOutOfBounds, stat) << "Index out of bounds error expected.";
 
         while (stmt.Step () == ECSqlStepStatus::HasRow)
             {
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after successful call to Step is expected to return ECSqlStatus::Success.";
+            ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ()) << "GetLastStatus after successful call to Step is expected to return ECSqlStatus::Success.";
             ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to Step is expected to return empty string.";
 
             stmt.GetColumnInfo (0);
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+            ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ());
             
             BeTest::SetFailOnAssert (false);
             stmt.GetColumnInfo (-1);
             BeTest::SetFailOnAssert (true);
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ()));
+            ASSERT_EQ (ECSqlStatus::IndexOutOfBounds, stmt.GetLastStatus ());
             stmt.GetColumnInfo (0);
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+            ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ());
             BeTest::SetFailOnAssert (false);
             stmt.GetColumnInfo (100);
             BeTest::SetFailOnAssert (true);
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ()));
+            ASSERT_EQ(ECSqlStatus::IndexOutOfBounds, stmt.GetLastStatus());
             stmt.GetColumnInfo (0);
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.GetLastStatus());
 
             BeTest::SetFailOnAssert (false);
             stmt.GetValueInt (-1);
             BeTest::SetFailOnAssert (true);
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ()));
+            ASSERT_EQ(ECSqlStatus::IndexOutOfBounds, stmt.GetLastStatus());
             stmt.GetValueInt (0);
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.GetLastStatus());
             BeTest::SetFailOnAssert (false);
             stmt.GetValueInt (100);
             BeTest::SetFailOnAssert (true);
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ()));
+            ASSERT_EQ(ECSqlStatus::IndexOutOfBounds, stmt.GetLastStatus());
             stmt.GetValueDouble (1);
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.GetLastStatus());
             BeTest::SetFailOnAssert (false);
             stmt.GetValuePoint2D (1);
             BeTest::SetFailOnAssert (true);
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::UserError), static_cast<int> (stmt.GetLastStatus ()));
+            ASSERT_EQ(ECSqlStatus::UserError, stmt.GetLastStatus());
             }
 
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after successful call to Step is expected to return ECSqlStatus::Success.";
+        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus()) << "GetLastStatus after successful call to Step is expected to return ECSqlStatus::Success.";
         ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to Step is expected to return empty string.";
 
         stat = stmt.ClearBindings ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "ECSqlStatement::Reset failed unexpectedly.";
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after successful call to ClearBindings is expected to return ECSqlStatus::Success.";
+        ASSERT_EQ (ECSqlStatus::Success, stat) << "ECSqlStatement::Reset failed unexpectedly.";
+        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ()) << "GetLastStatus after successful call to ClearBindings is expected to return ECSqlStatus::Success.";
         ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to ClearBindings is expected to return empty string.";
 
         stat = stmt.Reset ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "ECSqlStatement::Reset failed unexpectedly.";
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after successful call to Reset is expected to return ECSqlStatus::Success.";
+        ASSERT_EQ (ECSqlStatus::Success, stat) << "ECSqlStatement::Reset failed unexpectedly.";
+        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus()) << "GetLastStatus after successful call to Reset is expected to return ECSqlStatus::Success.";
         ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "ECSqlStatement::GetLastStatusMessage after successful call to Reset is expected to return empty string.";
 
         stmt.Finalize ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after successful call to Finalize is expected to return ECSqlStatus::Success.";
+        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus()) << "GetLastStatus after successful call to Finalize is expected to return ECSqlStatus::Success.";
         ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "ECSqlStatement::GetLastStatusMessage after call to Finalize is expected to return empty string.";
         }
 
@@ -2877,6 +2877,26 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_LastStatus)
 
         ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after successful call to Step is expected to return ECSqlStatus::Success.";
         ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to Step is expected to return empty string.";
+        }
+
+        {
+        BeRepositoryBasedId id(BeRepositoryId(111), 111); //an id not used in the current file
+        ECSqlStatement stmt;
+        ECSqlStatus stat = stmt.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (?)");
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation failed unexpectedly: " << stmt.GetLastStatusMessage().c_str();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
+
+        ECInstanceKey newKey;
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step(newKey)) << "Step failed unexpectedly: " << stmt.GetLastStatusMessage().c_str();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetLastStatus()) << "Unexpected ECSqlStatement::GetLastStatus after successful Step";
+        ASSERT_EQ(id.GetValue(), newKey.GetECInstanceId().GetValue());
+        stmt.Reset();
+        stmt.ClearBindings();
+
+        //reuse same id again to provoke constraint violation
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
+        ASSERT_EQ(ECSqlStepStatus::Error, stmt.Step(newKey)) << "Step succeeded unexpectedly although it should not because a row with the same ECInstanceId already exists.";
+        ASSERT_EQ(ECSqlStatus::ConstraintViolation, stmt.GetLastStatus()) << "Unexpected ECSqlStatement::GetLastStatus after insert of row with same ECInstanceId";
         }
     }
 
