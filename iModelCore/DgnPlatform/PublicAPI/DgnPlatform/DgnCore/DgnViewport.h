@@ -431,7 +431,7 @@ protected:
     CameraInfo      m_camera;
     ViewFlags       m_rootViewFlags;            // view flags for root model
     ColorDef        m_backgroundColor;
-    Render::OutputP    m_output;
+    Render::OutputP m_output;
     DMap4d          m_rootToView;
     DMap4d          m_rootToNpc;
     double          m_minLOD;                   // default level of detail filter size

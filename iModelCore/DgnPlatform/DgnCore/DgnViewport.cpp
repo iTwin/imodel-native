@@ -1389,7 +1389,7 @@ Renderer& DgnViewport::_GetRenderer() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Renderer::AddTask(Task& task)
+void RenderManager::AddTask(Task& task)
     {
     BeMutexHolder lock(m_cv.GetMutex());
     m_tasks.push_back(&task);

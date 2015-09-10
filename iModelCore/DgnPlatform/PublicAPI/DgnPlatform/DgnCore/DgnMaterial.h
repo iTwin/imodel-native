@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDbTables.h"
+#include "Render.h"
 
 // JSon  Material Asset Keywords.
 #define MATERIAL_ASSET_Rendering "RenderMaterial"
@@ -26,8 +27,6 @@ struct DgnMaterials : DgnDbTable
 private:
     friend struct DgnDb;
     explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) {}
-
-    mutable bmap <DgnMaterialId, uintptr_t>     m_qvMaterialIds;
 
 public:
 
@@ -147,9 +146,6 @@ public:
     //! @param[in]      palette The palette name
     //! @return The ID of the specified material, or an invalid ID if no such material exists.
     DGNPLATFORM_EXPORT DgnMaterialId QueryMaterialId(Utf8StringCR name, Utf8StringCR palette) const;
-
-    DGNPLATFORM_EXPORT uintptr_t GetQvMaterialId(DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
-    DGNPLATFORM_EXPORT uintptr_t AddQvMaterialId(DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

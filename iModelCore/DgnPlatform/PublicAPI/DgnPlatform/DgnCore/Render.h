@@ -26,10 +26,12 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Output)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrMatSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PlotInfo)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Renderer)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
@@ -37,7 +39,9 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ViewDraw)
 
 DEFINE_REF_COUNTED_PTR(Graphic)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
+DEFINE_REF_COUNTED_PTR(Material)
 DEFINE_REF_COUNTED_PTR(MultiResImage)
+DEFINE_REF_COUNTED_PTR(Renderer)
 DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(Target)
 DEFINE_REF_COUNTED_PTR(Task)
@@ -54,7 +58,7 @@ struct RenderManager
 };
 
 //=======================================================================================
-//! Supplies implementation of rendering operations for a DgnViewport.
+//! Supplies implementation of rendering operations for a type of a DgnViewport.
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
 struct Renderer

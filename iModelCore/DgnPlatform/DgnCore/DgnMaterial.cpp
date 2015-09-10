@@ -113,26 +113,32 @@ DgnMaterialId DgnMaterials::QueryMaterialId(Utf8StringCR name, Utf8StringCR pale
     return BE_SQLITE_ROW != stmt.Step() ? DgnMaterialId() : stmt.GetValueId<DgnMaterialId>(0);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::MaterialPtr DgnMaterials::GetQvMaterialId (DgnMaterialId materialId) const
+Render::Material* DgnMaterials::FindRenderMaterial(DgnMaterialId materialId) const
     {
-    auto const&   found = m_qvMaterialIds.find(materialId);
+    auto const& found = m_renderMaterials.find(materialId);
+    return found == m_renderMaterials.end() ? 0 : found->second.get(); 
+    }
 
-    return (found == m_qvMaterialIds.end()) ? 0 : found->second; 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnMaterials::AddRenderMaterial(DgnMaterialId id, Render::Material* material) const
+    {
+    m_renderMaterials.Insert(id, material);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnMaterials::Material::GetAsset(JsonValueR value, Utf8CP keyWord) const
+BentleyStatus DgnMaterials::Material::GetAsset(JsonValueR value, Utf8CP keyword) const
     {
     Json::Value root;
 
     if (!Json::Reader::Parse(GetValue(), root) ||
-        (value = root[keyWord]).isNull())
+        (value = root[keyword]).isNull())
         return ERROR;
 
     return SUCCESS;

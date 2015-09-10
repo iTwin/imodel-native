@@ -19,7 +19,8 @@ struct QvViewport : DgnViewport
 {
     DEFINE_T_SUPER(DgnViewport)
 protected:
-    Render::CachedDrawP    m_cachedOutput;
+    Render::CachedDrawP m_cachedOutput;
+    Render::Renderer*   m_renderer;
 
     DGNVIEW_EXPORT void DestroyQvViewport();
     DGNVIEW_EXPORT virtual void _AllocateOutput() override;

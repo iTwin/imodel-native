@@ -19,7 +19,7 @@
 
 Classes for creating and opening a DgnDb.
 
-A DgnDb is a BeSQLite::Db that holds graphic and non-graphic data. A DgnDb object is used to access the database.
+A DgnDb is a BeSQLite::Db that holds data based on the Dgn schema. A DgnDb object is used to access the database.
 
 @ref PAGE_DgnPlatform
 */
@@ -54,7 +54,6 @@ public:
     BeFileName      m_seedDb;
     BeDbGuid        m_guid;
 
-    //! ctor for CreateDgnDbParams.
     //! @param[in] guid The BeDbGuid to store in the newly created DgnDb. If not supplied, a new BeDbGuid is created.
     //! @note The new BeDbGuid can be obtained via GetGuid.
     CreateDgnDbParams(BeDbGuid guid=BeDbGuid()) : BeSQLite::Db::CreateParams(), m_guid(guid) {if (!m_guid.IsValid()) m_guid.Create(); }
@@ -197,8 +196,8 @@ public:
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
     DgnMaterials& Materials() const {return const_cast<DgnMaterials&>(m_materials);}     //!< The materials for this DgnDb
-    DgnTextures& Textures() const { return const_cast<DgnTextures&>(m_textures); }       //!< The textures for this DgnDb.
-    DgnAuthorities& Authorities() const { return const_cast<DgnAuthorities&>(m_authorities); }   //!< The authorities associated with this DgnDb
+    DgnTextures& Textures() const {return const_cast<DgnTextures&>(m_textures);}         //!< The textures for this DgnDb.
+    DgnAuthorities& Authorities() const {return const_cast<DgnAuthorities&>(m_authorities);} //!< The authorities associated with this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
 
     //! Gets a cached and prepared ECSqlStatement.
