@@ -1234,7 +1234,9 @@ return true;
 
         IScalableMeshMeshPtr meshPtr;
 
+#ifndef NO_3D_MESH	
         Create3dDelaunayMesh(&points[0], (int)node->size(), &draw, &meshPtr, nullptr, m_tetGen);
+#endif
 
         //std::sort (points.begin (), points.end (), [](DPoint3d& a, DPoint3d& b)
         //    {
@@ -1546,8 +1548,8 @@ return true;
             bounds.pop();
             continue;
             }
-        DPoint3d sphereCenter;
-        double sphereRadius;
+        DPoint3d sphereCenter(DPoint3d::FromZero());        
+        double sphereRadius = 0;
         //bound_sphereCompute(&sphereCenter, &sphereRadius, facePoints,3);
         //EXTENT neighborExt = node->m_apNeighborNodes[neighborInd][neighborSubInd]->GetContentExtent();
         if (ExtentOp<EXTENT>::Overlap(neighborExt, ExtentOp<EXTENT>::Create(sphereCenter.x - sphereRadius, sphereCenter.y - sphereRadius,
@@ -1692,7 +1694,9 @@ template<class POINT, class EXTENT> bool ScalableMesh3DDelaunayMesher<POINT, EXT
     extentMin = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), ExtentOp<EXTENT>::GetZMin(ext));
     extentMax = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext), ExtentOp<EXTENT>::GetZMax(ext));
     if (stitchedPoints.size() <= 3) return false;
+#ifndef NO_3D_MESH	
     Create3dDelaunayMesh (&stitchedPoints[0], (int)stitchedPoints.size (), &draw, &meshPtr, nullptr, m_tetGen);
+#endif
     ScalableMeshMesh* meshP((ScalableMeshMesh*)meshPtr.get());
     assert(meshP != 0);
     bvector<int> contourPointsId;

@@ -52,6 +52,10 @@ PchExtraOptions    = -Zm180 -openmp
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
 CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
 
+%if !defined (3DMesh)
+CCPchOpts + -DNO_3D_MESH
+%endif
+
 PCHHeaderDepends=$(o)ScalableMeshPCH$(oext)
 MultiCompileDepends=$(_MakeFileSpec) 
 #DisableMultiCompile=1
