@@ -291,6 +291,8 @@ UsgsSourceNet::UsgsSourceNet(System::String^ copyright,
         }
 
     // Set members.
+    m_url = gcnew System::String(url);
+
     m_copyright = gcnew System::String(copyright);
 
     Utf8String xmlFragment;
