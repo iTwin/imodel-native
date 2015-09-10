@@ -142,6 +142,7 @@ always:
 #----------------------------------------------------------------------
 PchCompiland = $(baseDir)ECDbPch.cpp
 PchOutputDir = $(o)
+PchExtraOptions = -Zm200
 %if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
     # Compiling using DgnHandlerInternal.h.gch causes internal compiler error in GCC using windows ndk toolchain
     GCC_NO_PRE_COMPILED_HEADER = 1
