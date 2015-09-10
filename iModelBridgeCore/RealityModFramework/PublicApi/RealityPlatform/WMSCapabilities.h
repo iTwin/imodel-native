@@ -22,6 +22,9 @@ BEGIN_BENTLEY_WMSPARSER_NAMESPACE
 struct WMSCapabilities : RefCountedBase
     {
     public:
+        //! Attempts to parse the WideChar XML fragment provided.
+        WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromString(WMSParserStatus& status, WCharCP source, WStringP errorMsg = NULL);
+
         //! Attempts to parse the UTF-8 XML fragment provided.
         WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromString(WMSParserStatus& status, Utf8CP source, WStringP errorMsg = NULL);
         

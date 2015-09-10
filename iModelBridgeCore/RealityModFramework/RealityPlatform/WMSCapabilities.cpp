@@ -83,6 +83,64 @@ void WMSCapabilities::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR x
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
+WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromString(WMSParserStatus& status, WCharCP source, WStringP errorMsg)
+    {
+    status = WMSParserStatus::Success;
+
+    BeXmlStatus xmlStatus = BEXML_Success;
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, source, 0, errorMsg);
+    if (BEXML_Success != xmlStatus)
+        {
+        status = WMSParserStatus::XmlReadError;
+        return NULL;
+        }
+
+    BeXmlNodeP pRootNode = pXmlDom->GetRootElement();
+    if (NULL == pRootNode)
+        return NULL;
+
+    // Read version attribute and valid it.
+    Utf8String version;
+    if (BEXML_Success != pRootNode->GetAttributeStringValue(version, WMS_ROOT_ATTRIBUTE_Version))
+        {
+        status = WMSParserStatus::UnknownVersion;
+        return NULL;
+        }
+
+    if (!version.Equals("1.3.0") &&
+        !version.Equals("1.1.1") &&
+        !version.Equals("1.1.0") &&
+        !version.Equals("1.0.0"))
+        {
+        status = WMSParserStatus::UnknownVersion;
+        return NULL;
+        }
+
+    WMSCapabilitiesPtr pCapabilities = new WMSCapabilities(version);
+    if (!pCapabilities.IsValid())
+        return NULL;
+
+    //Read namespace attribute.
+    Utf8CP xmlns = pRootNode->GetNamespace();
+    if (NULL != xmlns)
+        {
+        pCapabilities->SetNamespace(xmlns);
+        pXmlDom->RegisterNamespace(WMS_PREFIX, xmlns);
+        }
+
+    //Read nodes.
+    pCapabilities->Read(status, WMS_ELEMENT_Service, *pXmlDom, *pRootNode);
+    pCapabilities->Read(status, WMS_ELEMENT_Capability, *pXmlDom, *pRootNode);
+
+    //if (WMSParserStatus::Success != status)
+    //    return NULL;
+
+    return pCapabilities;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 3/2015
+//-------------------------------------------------------------------------------------
 WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromString(WMSParserStatus& status, Utf8CP source, WStringP errorMsg)
     {
     status = WMSParserStatus::Success;
