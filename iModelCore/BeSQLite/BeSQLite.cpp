@@ -36,7 +36,6 @@ USING_NAMESPACE_BENTLEY
 
 #define RUNONCE_CHECK(var,stat) {if (var) return stat; var=true;}
 
-
 using namespace std;
 USING_NAMESPACE_BENTLEY_SQLITE
 
