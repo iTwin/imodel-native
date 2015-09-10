@@ -201,11 +201,14 @@ void ECSqlStatusContext::Log () const
 //static 
 ECSqlStatus ECSqlStatusContext::MapSqliteStatus (DbResult sqliteStatus)
     {
+    if (BE_SQLITE_OK == sqliteStatus)
+        return ECSqlStatus::Success;
+
+    if (BE_SQLITE_CONSTRAINT_BASE == (sqliteStatus & BE_SQLITE_CONSTRAINT_BASE))
+        return ECSqlStatus::ConstraintViolation;
+    
     switch (sqliteStatus)
         {
-        case BE_SQLITE_OK:
-            return ECSqlStatus::Success;
-
         case BE_SQLITE_RANGE:
             return ECSqlStatus::IndexOutOfBounds;
 
