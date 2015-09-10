@@ -2,7 +2,7 @@
 #
 #  $Source: GenerateDeliveryFile.py $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 import os, sys
@@ -27,8 +27,8 @@ def main ():
                 
             destPath = os.path.join (outputDir, name)
             sourcePath = path
-            print ('src = ' + sourcePath.replace ('\\', '/'))
-            print ('dest = ' + destPath.replace ('\\', '/'))
+            print ('src = ' + sourcePath.replace ('\\', '/').replace('$', '$$'))
+            print ('dest = ' + destPath.replace ('\\', '/').replace('$', '$$'))
             if os.path.isdir (path):
                 print ('always:')
                 print ('    !~@mkdir $(dest)')
