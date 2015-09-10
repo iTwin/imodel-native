@@ -932,6 +932,7 @@ private:
     DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;//!< @private
     DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;//!< @private
     DGNPLATFORM_EXPORT void _GetSolverOptions(Json::Value&) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
 
 public:
     /**
