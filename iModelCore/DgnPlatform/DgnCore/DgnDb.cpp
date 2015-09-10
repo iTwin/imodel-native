@@ -369,7 +369,7 @@ DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(sour
         return;
         }
 
-    WString spn, dpn;
+    BeFileName spn, dpn;
     if (0 != wcscmp(sourceGcs->GetProjectionName(spn), destGcs->GetProjectionName(dpn)))
         {
         m_areCompatibleDbs = false;
