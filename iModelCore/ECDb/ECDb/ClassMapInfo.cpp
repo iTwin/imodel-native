@@ -618,7 +618,15 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
             if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnUpdateAction(onUpdateActionStr))
                 return ERROR;
 
-            m_onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType(onDeleteActionStr.c_str());
+            const ECDbSqlForeignKeyConstraint::ActionType onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType(onDeleteActionStr.c_str());
+            if (onDeleteAction == ECDbSqlForeignKeyConstraint::ActionType::Cascade && relClass->GetStrength() != StrengthType::STRENGTHTYPE_Embedding)
+                {
+                LOG.errorv("ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%s' can only define a CASCADE DELETE constraint if the relationship strength is 'Embedding'.",
+                           GetECClass().GetFullName());
+                return ERROR;
+                }
+
+            m_onDeleteAction = onDeleteAction;
             m_onUpdateAction = ECDbSqlForeignKeyConstraint::ToActionType(onUpdateActionStr.c_str());
             }
 
