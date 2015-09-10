@@ -376,6 +376,7 @@ void ComponentModelTest::GenerateCMSchema()
     schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(m_componentDb->Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
     ASSERT_EQ( DgnDbStatus::Success , ComponentModel::AddAllToECSchema(*schema, *m_componentDb) );
     ASSERT_EQ( ECN::SCHEMA_WRITE_STATUS_Success , schema->WriteToXmlFile(m_componentSchemaFileName) );
+    m_componentDb->SaveChanges(); // AddAllToECSchema modifies the component models, so we must save the changes
     CloseComponentDb();
     }
 
@@ -444,9 +445,6 @@ void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_SolveAndCapture(ComponentSolution::SolutionId& solutionId, Utf8CP componentName, Json::Value const& parmsToChange, bool solutionAlreadyExists)
     {
-    //  -------------------------------------------------------
-    //  ComponentModel - Solve for the given parameter values
-    //  -------------------------------------------------------
     // *** WIP_COMPONENT_MODEL -- get txn mark
 
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
@@ -462,10 +460,27 @@ void ComponentModelTest::Client_SolveAndCapture(ComponentSolution::SolutionId& s
         sparam->SetValue(ecv);
         }
 
+    //  -------------------------------------------------------
+    //  See if solution already exsits. If so, return it without calling Solve. This will be the common pattern.
+    //  -------------------------------------------------------
+    ComponentSolution solutions(*m_clientDb);
+
+    solutionId = componentModel->ComputeSolutionId(newParameterValues);
+    ComponentSolution::Solution existingSln;
+    if (DgnDbStatus::Success == solutions.Query(existingSln, solutionId)) // see if this solution is already cached.
+        {
+        ASSERT_TRUE( solutionAlreadyExists ); // make sure the caller expects the solution to already exist
+        return;
+        }
+
+    //  -------------------------------------------------------
+    //  Solution does not exist. Solve for the given parameter values
+    //  -------------------------------------------------------
+    ASSERT_TRUE( !solutionAlreadyExists ); // make sure the caller expected to have to solve for a new solution
     ASSERT_EQ( DgnDbStatus::Success , componentModel->Solve(newParameterValues) );
 
     //  -------------------------------------------------------
-    //  ComponentModel - Capture (or look up) the solution geometry
+    //  Capture the solution geometry
     //  -------------------------------------------------------
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
@@ -473,15 +488,8 @@ void ComponentModelTest::Client_SolveAndCapture(ComponentSolution::SolutionId& s
     RefCountedPtr<ComponentModel> cmCopy = m_clientDb->Models().Get<ComponentModel>(ccId);
     ASSERT_TRUE( cmCopy.IsValid() ) << "We should have imported the CM and created a cmCopy in a previous step";
 
-    ComponentSolution solutions(*m_clientDb);
-
-    ComponentSolution::SolutionId existingSid = componentModel->ComputeSolutionId(newParameterValues);
-
     solutionId = solutions.CaptureSolution(*componentModel);
     ASSERT_TRUE( solutionId.IsValid() );
-
-    if (solutionAlreadyExists)
-        ASSERT_EQ( solutionId, existingSid );
 
     // *** WIP_COMPONENT_MODEL -- roll back to mark
     }
@@ -500,17 +508,19 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
     YawPitchRollAngles placementAngles = YawPitchRollAngles::FromDegrees(4,5,6);
 
     ComponentSolution solutions(*m_clientDb);
-    PhysicalElementPtr instance = solutions.CreateSolutionInstanceElement(*targetModel, solutionId, placementOrigin, placementAngles)->ToPhysicalElementP();
-    ASSERT_TRUE( instance.IsValid() );
+    DgnElementPtr instanceDgnElement = solutions.CreateSolutionInstanceElement(*targetModel, solutionId, placementOrigin, placementAngles);
+    ASSERT_TRUE( instanceDgnElement.IsValid() );
+    PhysicalElementPtr instanceElement = instanceDgnElement->ToPhysicalElementP();
+    ASSERT_TRUE( instanceElement.IsValid() );
     
     ECN::IECInstancePtr props;
-    ASSERT_EQ( DgnDbStatus::Success , solutions.CreateSolutionInstanceItem(*instance, props, TEST_JS_NAMESPACE, solutionId) );
+    ASSERT_EQ( DgnDbStatus::Success , solutions.CreateSolutionInstanceItem(*instanceElement, props, solutionId) );
     
-    DgnElementCPtr newEl = instance->Insert();
+    DgnElementCPtr newEl = instanceElement->Insert();
     ASSERT_TRUE( newEl.IsValid() );
     ASSERT_TRUE( newEl->ToPhysicalElement() != nullptr );
 
-    ieid = instance->GetElementId();
+    ieid = instanceElement->GetElementId();
 
     ASSERT_TRUE( newEl->GetElementId() == ieid );
 
@@ -625,6 +635,14 @@ void ComponentModelTest::SimulateClient()
     
     Client_CheckComponentInstance(w3, 2, wsln3["X"].asDouble(), wsln3["Y"].asDouble(), wsln3["Z"].asDouble());
     Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+
+    //  new instance of new solution should not affect existing instances of other solutions
+    if (true)
+        {
+        DgnElementId w1_second_time;
+        Client_SolveAndPlaceInstance(w1_second_time, "Instances", TEST_WIDGET_COMPONENT_NAME, wsln1, true);
+        Client_CheckComponentInstance(w1_second_time, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+        }
 
     // Just for a little variety, close the client Db and re-open it
     CloseClientDb();

@@ -23,6 +23,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <ECProperty propertyName="ComponentModelName" typeName="string"/>
         <ECProperty propertyName="SolutionName" typeName="string"/>
+        <!-- The parameters used to generate this solution, as a JSON array -->
+        <ECProperty propertyName="Parameters" typeName="string"/>
         <!-- WIP_COMPONENTS: I want (ComponentModelId,Parameters) to be unique and indexed -->
         <ECProperty propertyName="Geom" typeName="binary"/>
         <ECProperty propertyName="Range" typeName="binary"/>
