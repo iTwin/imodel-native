@@ -502,13 +502,13 @@ public:
         //! in-memory instance data, if it has in-memory instance data. If not, it can assert and/or return empty strings. This base
         //! class cannot implement _GetECSchemaName and _GetECClassName to do that, since only the subclass knows its in-memory instance.
         //! If the subclass holds an IECInstancePtr, then it can implement those methods by calling these utility methods.
-        DGNPLATFORM_EXPORT static Utf8String GetECSchemaNameOfInstance(ECN::IECInstanceCP instance);
+        DGNPLATFORM_EXPORT static Utf8CP GetECSchemaNameOfInstance(ECN::IECInstanceCP instance);
 
         //! Utility method to return the ECClass name of an ECInstance.
         //! @param instance The instance currently assigned to this Item, or null if the Item has no in-memory instance.
         //! @return the ECClass name from the instance or the empty string if \a instance is nullptr.
         //! @see GetECSchemaNameOfInstance
-        DGNPLATFORM_EXPORT static Utf8String GetECClassNameOfInstance(ECN::IECInstanceCP instance);
+        DGNPLATFORM_EXPORT static Utf8CP GetECClassNameOfInstance(ECN::IECInstanceCP instance);
 
         //! Utility method to load an existing instance of an Item
         //! A subclass may call this as part of its implementation of _LoadProperties

@@ -1732,27 +1732,29 @@ DgnDbStatus DgnElement::Item::LoadPropertiesIntoInstance(ECN::IECInstancePtr& in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnElement::Item::GetECSchemaNameOfInstance(ECN::IECInstanceCP instance)
+Utf8CP DgnElement::Item::GetECSchemaNameOfInstance(ECN::IECInstanceCP instance)
     {
     if (nullptr == instance)
         {
         BeAssert(false && "Item has no instance");
-        return "";
+        return nullptr;
         }
-    return Utf8String(instance->GetClass().GetSchema().GetName());
+    
+    return instance->GetClass().GetSchema().GetName().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnElement::Item::GetECClassNameOfInstance(ECN::IECInstanceCP instance)
+Utf8CP DgnElement::Item::GetECClassNameOfInstance(ECN::IECInstanceCP instance)
     {
     if (nullptr == instance)
         {
         BeAssert(false && "Item has no instance");
-        return "";
+        return nullptr;
         }
-    return Utf8String(instance->GetClass().GetName());
+    
+    return instance->GetClass().GetName().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
