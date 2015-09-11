@@ -1149,7 +1149,7 @@ public:
     //! Look up an authority by name. The authority will be loaded from the database if necessary.
     //! @param[in] name The name of the authority to load
     //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded
-    DgnAuthorityCPtr GetAuthority(Utf8StringCR name) { return GetAuthority(QueryAuthorityId(name)); }
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(Utf8StringCR name);
 
     //! Look up an authority of a particular type by ID. The authority will be loaded from the database if necessary.
     //! @param[in] authorityId The ID of the authority to load

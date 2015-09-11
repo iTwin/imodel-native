@@ -241,6 +241,16 @@ DgnAuthorityCPtr DgnAuthorities::GetAuthority(DgnAuthorityId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthorityCPtr DgnAuthorities::GetAuthority(Utf8StringCR name)
+    {
+    // good chance it's already loaded - check there before running a query
+    auto found = std::find_if(m_loadedAuthorities.begin(), m_loadedAuthorities.end(), [&name](DgnAuthorityPtr const& arg) { return arg->GetName().Equals(name); });
+    return m_loadedAuthorities.end() != found ? (*found).get() : GetAuthority(QueryAuthorityId(name));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthority::DgnAuthority(CreateParams const& params)
     : m_dgndb(params.m_dgndb), m_authorityId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_uri(params.m_uri)
     {
