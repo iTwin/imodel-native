@@ -46,9 +46,9 @@ BoundingPolygonPtr BoundingPolygon::Create(DPoint2dCP pPoints, size_t count)
 
     for(size_t i=0; i < count; ++i)
         {
-        if(!RealityDataSerializer::IsValidLatLong(pPoints[i].x, pPoints[i].y))
+        if(!RealityDataSerializer::IsValidLongLat(pPoints[i].x, pPoints[i].y))
             {
-            BeDataAssert(!"Invalid polygon lat/long");
+            BeDataAssert(!"Invalid polygon long/lat");
             return NULL;
             }
         }
@@ -115,7 +115,7 @@ BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygonStr)
     while(tokenizer.HasValue())
         {
         DPoint2d point;
-        if(!tokenizer.Get(point.x) || !tokenizer.Get(point.y) || !RealityDataSerializer::IsValidLatLong(point.x, point.y))
+        if(!tokenizer.Get(point.x) || !tokenizer.Get(point.y) || !RealityDataSerializer::IsValidLongLat(point.x, point.y))
             {
             BeDataAssert(!"Invalid polygon data");
             points.clear(); // incomplete x-y sequence.
@@ -535,10 +535,10 @@ RealityPackageStatus ImageryData::_Read(BeXmlNodeR dataNode)
         return RealityPackageStatus::Success;   // Corners are optional
         }
 
-    if(RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLatLong(m_corners[LowerLeft].x,  m_corners[LowerLeft].y,  *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerLeft))   ||
-       RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLatLong(m_corners[LowerRight].x, m_corners[LowerRight].y, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerRight))  ||
-       RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLatLong(m_corners[UpperLeft].x,  m_corners[UpperLeft].y,  *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperLeft))   ||
-       RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLatLong(m_corners[UpperRight].x, m_corners[UpperRight].y, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperRight))  ||
+    if (RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(m_corners[LowerLeft].x, m_corners[LowerLeft].y, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerLeft)) ||
+        RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(m_corners[LowerRight].x, m_corners[LowerRight].y, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerRight)) ||
+        RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(m_corners[UpperLeft].x, m_corners[UpperLeft].y, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperLeft)) ||
+        RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(m_corners[UpperRight].x, m_corners[UpperRight].y, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperRight)) ||
        !HasValidCorners(m_corners))
         {
         InvalidateCorners();
@@ -565,10 +565,10 @@ RealityPackageStatus ImageryData::_Write(BeXmlNodeR dataNode) const
     if(NULL == pCornerNode)
         return RealityPackageStatus::UnknownError;
 
-    if(RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLatLong(*pCornerNode, PACKAGE_ELEMENT_LowerLeft,  m_corners[LowerLeft].x,  m_corners[LowerLeft].y))   ||
-       RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLatLong(*pCornerNode, PACKAGE_ELEMENT_LowerRight, m_corners[LowerRight].x, m_corners[LowerRight].y))  ||
-       RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLatLong(*pCornerNode, PACKAGE_ELEMENT_UpperLeft,  m_corners[UpperLeft].x,  m_corners[UpperLeft].y))   ||
-       RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLatLong(*pCornerNode, PACKAGE_ELEMENT_UpperRight, m_corners[UpperRight].x, m_corners[UpperRight].y)))
+    if (RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_LowerLeft, m_corners[LowerLeft].x, m_corners[LowerLeft].y)) ||
+        RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_LowerRight, m_corners[LowerRight].x, m_corners[LowerRight].y)) ||
+        RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_UpperLeft, m_corners[UpperLeft].x, m_corners[UpperLeft].y)) ||
+        RealityPackageStatus::Success != (status = RealityDataSerializer::WriteLongLat(*pCornerNode, PACKAGE_ELEMENT_UpperRight, m_corners[UpperRight].x, m_corners[UpperRight].y)))
         {
         return status;
         }
@@ -586,9 +586,9 @@ bool ImageryData::HasValidCorners(DPoint2dCP pCorners)
 
     for(size_t i=0; i < 4; ++i)
         {
-        if(!RealityDataSerializer::IsValidLatLong(pCorners[i].x, pCorners[i].y))
+        if(!RealityDataSerializer::IsValidLongLat(pCorners[i].x, pCorners[i].y))
             {
-            BeDataAssert(!"Invalid lat/long");
+            BeDataAssert(!"Invalid long/lat");
             return false;
             }
         }
@@ -668,18 +668,18 @@ RealityPackageStatus ModelData::_Write(BeXmlNodeR dataNode) const
 //=======================================================================================
 //                              PinnedData
 //=======================================================================================
-PinnedData::PinnedData(RealityDataSourceR dataSource, double latitude, double longitude):RealityData(dataSource){m_location.Init(latitude, longitude);}
+PinnedData::PinnedData(RealityDataSourceR dataSource, double longitude, double latitude):RealityData(dataSource){m_location.Init(longitude, latitude);}
 PinnedData::~PinnedData(){}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-PinnedDataPtr PinnedData::Create(RealityDataSourceR dataSource, double latitude, double longitude)
+PinnedDataPtr PinnedData::Create(RealityDataSourceR dataSource, double longitude, double latitude)
     {
-    if(!RealityDataSerializer::IsValidLatLong(latitude, longitude))
+    if(!RealityDataSerializer::IsValidLongLat(longitude, latitude))
         return NULL;
     
-    return new PinnedData(dataSource, latitude, longitude);
+    return new PinnedData(dataSource, longitude, latitude);
     }
 
 //----------------------------------------------------------------------------------------
@@ -692,10 +692,10 @@ RealityPackageStatus PinnedData::_Read(BeXmlNodeR dataNode)
     if(RealityPackageStatus::Success != status)
         return status;
     
-    if(RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLatLong(m_location.x, m_location.y, dataNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Position))) 
+    if(RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(m_location.x, m_location.y, dataNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Position))) 
         return status;  // location is mandatory for pinned data.
 
-    return RealityDataSerializer::IsValidLatLong(m_location.x, m_location.y) ? RealityPackageStatus::Success : RealityPackageStatus::InvalidLatitudeLongitude;
+    return RealityDataSerializer::IsValidLongLat(m_location.x, m_location.y) ? RealityPackageStatus::Success : RealityPackageStatus::InvalidLongitudeLatitude;
     }
 
 //----------------------------------------------------------------------------------------
@@ -703,14 +703,14 @@ RealityPackageStatus PinnedData::_Read(BeXmlNodeR dataNode)
 //----------------------------------------------------------------------------------------
 RealityPackageStatus PinnedData::_Write(BeXmlNodeR dataNode) const
     {
-    BeAssert(RealityDataSerializer::IsValidLatLong(m_location.x, m_location.y));
+    BeAssert(RealityDataSerializer::IsValidLongLat(m_location.x, m_location.y));
 
     // Write base first
     RealityPackageStatus status = T_Super::_Write(dataNode);
     if(RealityPackageStatus::Success != status)
         return status;
 
-    status = RealityDataSerializer::WriteLatLong(dataNode, PACKAGE_ELEMENT_Position, GetLocation().x, GetLocation().y);
+    status = RealityDataSerializer::WriteLongLat(dataNode, PACKAGE_ELEMENT_Position, GetLocation().x, GetLocation().y);
        
     return status;
     }
@@ -721,7 +721,7 @@ RealityPackageStatus PinnedData::_Write(BeXmlNodeR dataNode) const
 DPoint2dCR PinnedData::GetLocation() const{return m_location;}
 bool PinnedData::SetLocation(DPoint2dCR location)
     {
-    if(!RealityDataSerializer::IsValidLatLong(location.x, location.y))
+    if(!RealityDataSerializer::IsValidLongLat(location.x, location.y))
         return false;
 
     m_location = location;

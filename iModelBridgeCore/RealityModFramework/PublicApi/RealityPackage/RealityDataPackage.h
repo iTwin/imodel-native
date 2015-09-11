@@ -30,7 +30,7 @@ public:
     static BoundingPolygonPtr Create();
 
     //! Create a polygon from points. Duplication will be forced on first/last point. 
-    //! Return NULL if count is less than 3 or if points value are not within lat/long range.
+    //! Return NULL if count is less than 3 or if points value are not within long/lat range.
     REALITYPACKAGE_EXPORT static BoundingPolygonPtr Create(DPoint2dCP pPoints, size_t count);
 
     //! The polygon points in lat/long including the duplicated closing point.
@@ -278,26 +278,26 @@ public:
     friend RealityDataSerializer;
 
     //! Create a new PinnedData.
-    REALITYPACKAGE_EXPORT static PinnedDataPtr Create(RealityDataSourceR dataSource, double latitude, double longitude);
+    REALITYPACKAGE_EXPORT static PinnedDataPtr Create(RealityDataSourceR dataSource, double longitude, double latitude);
 
-    //! Get the object location in lat/long coordinate. 
+    //! Get the object location in long/lat coordinate. 
     REALITYPACKAGE_EXPORT DPoint2dCR GetLocation() const; 
 
-    //! Set the object location in lat/long coordinate. 
-    //! Latitudes range from -90 to 90. Longitudes range from -180 to 180.
+    //! Set the object location in long/lat coordinate. 
+    //! Longitudes range from -180 to 180. Latitudes range from -90 to 90.
     //! False is returned if location is invalid.
     REALITYPACKAGE_EXPORT bool SetLocation(DPoint2dCR location); 
 
     static Utf8CP ElementName;
 private:
     explicit PinnedData(){m_location.Zero();}; // for persistence
-    PinnedData(RealityDataSourceR dataSource, double latitude, double longitude);
+    PinnedData(RealityDataSourceR dataSource, double longitude, double latitude);
     virtual ~PinnedData();
 
     virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
     virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
 
-    DPoint2d m_location;        //!spatial location in lat/long
+    DPoint2d m_location;        //!spatial location in long/lat
 };
 
 //=======================================================================================

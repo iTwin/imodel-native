@@ -65,7 +65,7 @@ enum class RealityPackageStatus
     XmlReadError,                       //!< File access error or invalid xml stream.
     PolygonParsingError,                //!< Polygon must be a space delimited list of x y double values.
     InvalidDateFormat,                  //!< The date format is invalid. It must utc time.
-    InvalidLatitudeLongitude,           //!< Latitude [-90, 90] Longitude[-180, 180] 
+    InvalidLongitudeLatitude,           //!< Longitude[-180, 180] Latitude [-90, 90]
     MissingSourceAttribute,             //!< Data source must have an 'uri' and a 'type' attribute.
     MissingDataSource,                  //!< Each RealityData must have a data source.
     WriteToFileError,                   //!< Make sure path is valid and you have write permission.

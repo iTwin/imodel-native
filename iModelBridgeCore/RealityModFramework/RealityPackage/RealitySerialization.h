@@ -195,9 +195,9 @@ struct RealityDataSerializer
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  3/2015
     //----------------------------------------------------------------------------------------
-    static bool IsValidLatLong(double latitude, double longitude)
+    static bool IsValidLongLat(double longitude, double latitude)
         {
-        if(IN_RANGE(latitude, -90, 90) && IN_RANGE(longitude, -180, 180))
+        if (IN_RANGE(longitude, -180, 180) && IN_RANGE(latitude, -90, 90))
             return true;
 
         return false;
@@ -206,18 +206,18 @@ struct RealityDataSerializer
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  3/2015
     //----------------------------------------------------------------------------------------
-    static RealityPackageStatus ReadLatLong(double& latitude, double& longitude, BeXmlNodeR parent, Utf8CP childName)
+    static RealityPackageStatus ReadLongLat(double& longitude, double& latitude, BeXmlNodeR parent, Utf8CP childName)
         {
-        DPoint2d latLong;
-        RealityPackageStatus status = ReadDPoint2d(latLong, parent, childName);
+        DPoint2d longLat;
+        RealityPackageStatus status = ReadDPoint2d(longLat, parent, childName);
         if(RealityPackageStatus::Success != status)
             return status;
 
-        if(!IsValidLatLong(latLong.x, latLong.y))
-            return RealityPackageStatus::InvalidLatitudeLongitude;
+        if(!IsValidLongLat(longLat.x, longLat.y))
+            return RealityPackageStatus::InvalidLongitudeLatitude;
 
-        latitude = latLong.x;
-        longitude = latLong.y;
+        longitude = longLat.x;
+        latitude = longLat.y;
 
         return RealityPackageStatus::Success;
         }
@@ -225,14 +225,14 @@ struct RealityDataSerializer
      //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  3/2015
     //----------------------------------------------------------------------------------------
-    static RealityPackageStatus WriteLatLong(BeXmlNodeR parent, Utf8CP childName, double latitude, double longitude)
+    static RealityPackageStatus WriteLongLat(BeXmlNodeR parent, Utf8CP childName, double longitude, double latitude)
         {
-        if(!IsValidLatLong(latitude, longitude))
-            return RealityPackageStatus::InvalidLatitudeLongitude;
+        if(!IsValidLongLat(longitude, latitude))
+            return RealityPackageStatus::InvalidLongitudeLatitude;
 
-        DPoint2d latLong = {latitude, longitude};
+        DPoint2d longLat = {longitude, latitude};
 
-        return WriteDPoint2d(parent, childName, latLong);
+        return WriteDPoint2d(parent, childName, longLat);
         }
 
     //----------------------------------------------------------------------------------------

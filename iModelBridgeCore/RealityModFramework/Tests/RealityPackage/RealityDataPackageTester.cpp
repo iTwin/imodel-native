@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 #define WIDEN(quote) _WIDEN(quote)
 #define _WIDEN(quote) L##quote
 
-#define LATLONG_EPSILON 0.000000001 // precision of 0.1 millimeter
+#define LONGLAT_EPSILON 0.000000001 // precision of 0.1 millimeter
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -132,7 +132,7 @@ TEST_F (PackageTestFixture, InvalidDataSource)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-TEST_F (PackageTestFixture, InvalidLatLong)
+TEST_F(PackageTestFixture, InvalidLongLat)
     {
     Utf8CP package =
         "<?xml version='1.0' encoding='UTF-8'?>"
@@ -142,7 +142,7 @@ TEST_F (PackageTestFixture, InvalidLatLong)
                 "<ImageryData>"
                     "<Source uri='./file.ext' type='image/jpeg'/>"
                     "<Corners>"
-                        "<LowerLeft>55.55 999.9999</LowerLeft>"
+                        "<LowerLeft>999.9999 55.55</LowerLeft>"
                     "</Corners>"
                 "</ImageryData>"
             "</ImageryGroup>"
@@ -153,7 +153,7 @@ TEST_F (PackageTestFixture, InvalidLatLong)
     RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromString(status, package, &parseError);
 
     ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
-    ASSERT_EQ(RealityPackageStatus::InvalidLatitudeLongitude, status);
+    ASSERT_EQ(RealityPackageStatus::InvalidLongitudeLatitude, status);
     ASSERT_TRUE(!pPackage.IsValid());
     }
 
@@ -202,23 +202,23 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     #define RPACKAGE_ID             "123asd789avbdlk"
     #define RPACKAGE_POLYGON        "1.0252 53.04 41.024452 53.0444 44 -55.54 -19.066252 -73.0666664 1.0252 53.04"
     #define RPACKAGE_JPEG           "./imagery/map.jpeg"
-    #define RPACKAGE_JPEG_LL_x      5.123456789
-    #define RPACKAGE_JPEG_LL_y      4.987654321
-    #define RPACKAGE_JPEG_LR_x      55.4554
-    #define RPACKAGE_JPEG_LR_y      22.44
-    #define RPACKAGE_JPEG_UL_x      15.4551234
-    #define RPACKAGE_JPEG_UL_y      111.22
-    #define RPACKAGE_JPEG_UR_x      5.14
-    #define RPACKAGE_JPEG_UR_y      89.999
+    #define RPACKAGE_JPEG_LL_x      4.987654321
+    #define RPACKAGE_JPEG_LL_y      5.123456789
+    #define RPACKAGE_JPEG_LR_x      22.44
+    #define RPACKAGE_JPEG_LR_y      55.4554
+    #define RPACKAGE_JPEG_UL_x      111.22
+    #define RPACKAGE_JPEG_UL_y      15.4551234
+    #define RPACKAGE_JPEG_UR_x      89.999
+    #define RPACKAGE_JPEG_UR_y      5.14
     #define RPACKAGE_WMS_URI        "http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&request=GetCapabilities&version=1.3.0"
     #define RPACKAGE_WMS_URI_AMP    "http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&amp;request=GetCapabilities&amp;version=1.3.0"
     #define RPACKAGE_ROAD_URI       "./model/roads.shp"
     #define RPACKAGE_HOUSE_URI      "./pinned/myHouse.jpeg"
-    #define RPACKAGE_HOUSE_LAT      89.123456789
     #define RPACKAGE_HOUSE_LONG     -180
+    #define RPACKAGE_HOUSE_LAT      89.123456789
     #define RPACKAGE_TRAFFIC_URI    "./pinned/roadTraffic.avi"
-    #define RPACKAGE_TRAFFIC_LAT    -90
     #define RPACKAGE_TRAFFIC_LONG   166.987654321
+    #define RPACKAGE_TRAFFIC_LAT    -90
     #define RPACKAGE_CANADA_POD_URI "./terrain/canada.pod"
     #define RPACKAGE_CANADA_DTM_URI "./terrain/canada.dtm"
 
@@ -267,12 +267,12 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
             "<PinnedGroup>"
                 "<PinnedData>"
                     "<Source uri='" RPACKAGE_HOUSE_URI "' type='image/jpeg'/>"
-                    "<Position>" STRINGIFY(RPACKAGE_HOUSE_LAT) " " STRINGIFY(RPACKAGE_HOUSE_LONG) "</Position>"
+                    "<Position>" STRINGIFY(RPACKAGE_HOUSE_LONG) " " STRINGIFY(RPACKAGE_HOUSE_LAT) "</Position>"
                     UNKNOWN_PINNED_ELEMENT
                 "</PinnedData>"
                 "<PinnedData>"
                     "<Source uri='" RPACKAGE_TRAFFIC_URI "' type='video/avi'/>"
-                    "<Position>" STRINGIFY(RPACKAGE_TRAFFIC_LAT) " " STRINGIFY(RPACKAGE_TRAFFIC_LONG) "</Position>"
+                    "<Position>" STRINGIFY(RPACKAGE_TRAFFIC_LONG) " " STRINGIFY(RPACKAGE_TRAFFIC_LAT) "</Position>"
                 "</PinnedData>"
             "</PinnedGroup>"
             "<TerrainGroup>"
@@ -324,14 +324,14 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     // Imagery
     ASSERT_STREQ(RPACKAGE_JPEG, pPackage->GetImageryGroup()[0]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"image/jpeg", pPackage->GetImageryGroup()[0]->GetSource().GetType().c_str());
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].x, RPACKAGE_JPEG_LL_x, LATLONG_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].y, RPACKAGE_JPEG_LL_y, LATLONG_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].x, RPACKAGE_JPEG_LR_x, LATLONG_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].y, RPACKAGE_JPEG_LR_y, LATLONG_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].x, RPACKAGE_JPEG_UL_x, LATLONG_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].y, RPACKAGE_JPEG_UL_y, LATLONG_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].x, RPACKAGE_JPEG_UR_x, LATLONG_EPSILON);
-    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].y, RPACKAGE_JPEG_UR_y, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].x, RPACKAGE_JPEG_LL_x, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].y, RPACKAGE_JPEG_LL_y, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].x, RPACKAGE_JPEG_LR_x, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].y, RPACKAGE_JPEG_LR_y, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].x, RPACKAGE_JPEG_UL_x, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].y, RPACKAGE_JPEG_UL_y, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].x, RPACKAGE_JPEG_UR_x, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].y, RPACKAGE_JPEG_UR_y, LONGLAT_EPSILON);
     ASSERT_STREQ(RPACKAGE_WMS_URI, pPackage->GetImageryGroup()[1]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"wms", pPackage->GetImageryGroup()[1]->GetSource().GetType().c_str());
 
@@ -342,12 +342,12 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     // Pinned
     ASSERT_STREQ(RPACKAGE_HOUSE_URI, pPackage->GetPinnedGroup()[0]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"image/jpeg", pPackage->GetPinnedGroup()[0]->GetSource().GetType().c_str());
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().x, RPACKAGE_HOUSE_LAT, LATLONG_EPSILON);
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().y, RPACKAGE_HOUSE_LONG, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().x, RPACKAGE_HOUSE_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().y, RPACKAGE_HOUSE_LAT, LONGLAT_EPSILON);
     ASSERT_STREQ(RPACKAGE_TRAFFIC_URI, pPackage->GetPinnedGroup()[1]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"video/avi", pPackage->GetPinnedGroup()[1]->GetSource().GetType().c_str());
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().x, RPACKAGE_TRAFFIC_LAT, LATLONG_EPSILON);
-    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().y, RPACKAGE_TRAFFIC_LONG, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().x, RPACKAGE_TRAFFIC_LONG, LONGLAT_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().y, RPACKAGE_TRAFFIC_LAT, LONGLAT_EPSILON);
 
     // Terrain
     ASSERT_STREQ(RPACKAGE_CANADA_POD_URI, pPackage->GetTerrainGroup()[0]->GetSource().GetUri().c_str());
@@ -421,10 +421,10 @@ TEST_F (PackageTestFixture, CreateAndRead)
     ASSERT_TRUE(pShapeModel.IsValid());
     pPackage->GetModelGroupR().push_back(pShapeModel);
 
-    PinnedDataPtr pPinnedJpeg = PinnedData::Create(*pMyHouseDataDataSource, 89.123456789, -180);
+    PinnedDataPtr pPinnedJpeg = PinnedData::Create(*pMyHouseDataDataSource, -180, 89.123456789);
     ASSERT_TRUE(pPinnedJpeg.IsValid());
     pPackage->GetPinnedGroupR().push_back(pPinnedJpeg);
-    pPackage->GetPinnedGroupR().push_back(PinnedData::Create(*pAviDataDataSource, -90, 166.987654321));
+    pPackage->GetPinnedGroupR().push_back(PinnedData::Create(*pAviDataDataSource, 166.987654321, -90));
 
     TerrainDataPtr pPodTerrain = TerrainData::Create(*pPodDataSource);
     ASSERT_TRUE(pPodTerrain.IsValid());
@@ -469,8 +469,8 @@ TEST_F (PackageTestFixture, CreateAndRead)
     ASSERT_EQ(pPackage->GetBoundingPolygon().GetPointCount(), pReadPackage->GetBoundingPolygon().GetPointCount());
     for(size_t index=0; index < pPackage->GetBoundingPolygon().GetPointCount(); ++index)
         {
-        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].x, pReadPackage->GetBoundingPolygon().GetPointCP()[index].x, LATLONG_EPSILON);
-        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].y, pReadPackage->GetBoundingPolygon().GetPointCP()[index].y, LATLONG_EPSILON);
+        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].x, pReadPackage->GetBoundingPolygon().GetPointCP()[index].x, LONGLAT_EPSILON);
+        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].y, pReadPackage->GetBoundingPolygon().GetPointCP()[index].y, LONGLAT_EPSILON);
         }
 
     // *** Imagery Data
@@ -486,14 +486,14 @@ TEST_F (PackageTestFixture, CreateAndRead)
         ASSERT_EQ(0 != (pLeft->GetCornersCP()), 0 != (pRight->GetCornersCP()));
         if(pLeft->GetCornersCP())
             {
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].x, pRight->GetCornersCP()[ImageryData::LowerLeft].x, LATLONG_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].y, pRight->GetCornersCP()[ImageryData::LowerLeft].y, LATLONG_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].x, pRight->GetCornersCP()[ImageryData::LowerRight].x, LATLONG_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].y, pRight->GetCornersCP()[ImageryData::LowerRight].y, LATLONG_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].x, pRight->GetCornersCP()[ImageryData::UpperLeft].x, LATLONG_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].y, pRight->GetCornersCP()[ImageryData::UpperLeft].y, LATLONG_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].x, pRight->GetCornersCP()[ImageryData::UpperRight].x, LATLONG_EPSILON);
-            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].y, pRight->GetCornersCP()[ImageryData::UpperRight].y, LATLONG_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].x, pRight->GetCornersCP()[ImageryData::LowerLeft].x, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].y, pRight->GetCornersCP()[ImageryData::LowerLeft].y, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].x, pRight->GetCornersCP()[ImageryData::LowerRight].x, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].y, pRight->GetCornersCP()[ImageryData::LowerRight].y, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].x, pRight->GetCornersCP()[ImageryData::UpperLeft].x, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].y, pRight->GetCornersCP()[ImageryData::UpperLeft].y, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].x, pRight->GetCornersCP()[ImageryData::UpperRight].x, LONGLAT_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].y, pRight->GetCornersCP()[ImageryData::UpperRight].y, LONGLAT_EPSILON);
             }
         }
     
@@ -517,8 +517,8 @@ TEST_F (PackageTestFixture, CreateAndRead)
 
         ASSERT_STREQ(pLeft->GetSource().GetUri().c_str(), pRight->GetSource().GetUri().c_str());
         ASSERT_STREQ(pLeft->GetSource().GetType().c_str(), pRight->GetSource().GetType().c_str());
-        ASSERT_NEAR(pLeft->GetLocation().x, pRight->GetLocation().x, LATLONG_EPSILON);
-        ASSERT_NEAR(pLeft->GetLocation().y, pRight->GetLocation().y, LATLONG_EPSILON);
+        ASSERT_NEAR(pLeft->GetLocation().x, pRight->GetLocation().x, LONGLAT_EPSILON);
+        ASSERT_NEAR(pLeft->GetLocation().y, pRight->GetLocation().y, LONGLAT_EPSILON);
         }
 
     // *** Terrain data.
