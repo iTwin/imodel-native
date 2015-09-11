@@ -156,6 +156,13 @@ typedef QvElemSet<QvKey32> T_QvElemSet;
     protected: virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
+#define DGNASPECT_DECLARE_MEMBERS(__ECSchemaName__,__ECClassName__,__superclass__) \
+    private:    typedef __superclass__ T_Super;\
+    public:     static Utf8CP MyECSchemaName() {return __ECSchemaName__;}\
+                static Utf8CP MyECClassName() {return __ECClassName__;}\
+    protected:  virtual Utf8CP _GetECSchemaName() const override {return MyECSchemaName();}\
+                virtual Utf8CP _GetECClassName() const override {return MyECClassName();}
+
 //=======================================================================================
 //! An instance of a DgnElement in memory. DgnElements are the building blocks for a DgnDb.
 //! @ingroup DgnElementGroup
@@ -263,15 +270,15 @@ public:
         ChangeType m_changeType;
 
         DgnDbStatus InsertThis(DgnElementCR el);
-        Utf8String  GetFullEcSqlClassName() {return _GetECSchemaName().append(".").append(_GetECClassName());}
+        Utf8String  GetFullEcSqlClassName() {return Utf8String(_GetECSchemaName()).append(".").append(_GetECClassName());}
 
         DGNPLATFORM_EXPORT Aspect();
 
         //! The subclass must implement this method to return the name of the schema that defines the aspect.
-        virtual Utf8String _GetECSchemaName() const = 0;
+        virtual Utf8CP _GetECSchemaName() const = 0;
 
         //! The subclass must implement this method to return the name of the class that defines the aspect.
-        virtual Utf8String _GetECClassName() const = 0;
+        virtual Utf8CP _GetECClassName() const = 0;
 
         //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
         virtual BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) = 0;
@@ -308,7 +315,6 @@ public:
 
         //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
         DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}
-
     };
 
     //! Represents an ElementAspect subclass for the case where the host Element can have multiple instances of the subclass.
@@ -469,13 +475,13 @@ public:
         //! in-memory instance data, if it has in-memory instance data. If not, it can assert and/or return empty strings. This base
         //! class cannot implement _GetECSchemaName and _GetECClassName to do that, since only the subclass knows its in-memory instance.
         //! If the subclass holds an IECInstancePtr, then it can implement those methods by calling these utility methods.
-        DGNPLATFORM_EXPORT static Utf8String GetECSchemaNameOfInstance(ECN::IECInstanceCP instance);
+        DGNPLATFORM_EXPORT static Utf8CP GetECSchemaNameOfInstance(ECN::IECInstanceCP instance);
 
         //! Utility method to return the ECClass name of an ECInstance.
         //! @param instance The instance currently assigned to this Item, or null if the Item has no in-memory instance.
         //! @return the ECClass name from the instance or the empty string if \a instance is nullptr.
         //! @see GetECSchemaNameOfInstance
-        DGNPLATFORM_EXPORT static Utf8String GetECClassNameOfInstance(ECN::IECInstanceCP instance);
+        DGNPLATFORM_EXPORT static Utf8CP GetECClassNameOfInstance(ECN::IECInstanceCP instance);
 
         //! Utility method to load an existing instance of an Item
         //! A subclass may call this as part of its implementation of _LoadProperties
@@ -988,6 +994,7 @@ public:
     uint8_t const* GetData() const {return m_data;} //!< Get a const pointer to the GeomStream.
     uint8_t* GetDataR() const {return m_data;}      //!< Get a writable pointer to the GeomStream.
     bool HasGeometry() const {return 0 != m_size;}  //!< return false if this GeomStream is empty.
+    void Clear() {FREE_AND_CLEAR(m_data); m_size = m_allocSize = 0;} //!< Return this object to an empty/uninitialized state.
 
     //! Reserve memory for this GeomStream.
     //! @param[in] size the number of bytes to reserve
@@ -1504,8 +1511,8 @@ struct InstanceBackedItem : DgnElement::Item
 {
     ECN::IECInstancePtr m_instance;
 
-    Utf8String _GetECSchemaName() const override {return m_instance->GetClass().GetSchema().GetName();}
-    Utf8String _GetECClassName() const override {return m_instance->GetClass().GetName();}
+    Utf8CP _GetECSchemaName() const override {return m_instance->GetClass().GetSchema().GetName().c_str();}
+    Utf8CP _GetECClassName() const override {return m_instance->GetClass().GetName().c_str();}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason) override;

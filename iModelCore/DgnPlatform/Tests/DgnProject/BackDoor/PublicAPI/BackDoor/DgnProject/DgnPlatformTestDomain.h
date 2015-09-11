@@ -122,8 +122,8 @@ private:
 
     explicit TestItem(Utf8CP prop) : m_testItemProperty(prop) {;}
 
-    Utf8String _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
-    Utf8String _GetECClassName() const override {return DPTEST_TEST_ITEM_CLASS_NAME;}
+    Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
+    Utf8CP _GetECClassName() const override {return DPTEST_TEST_ITEM_CLASS_NAME;}
     Dgn::DgnDbStatus _GenerateElementGeometry(Dgn::GeometricElementR el, GenerateReason) override;
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
@@ -167,8 +167,8 @@ private:
 
     explicit TestUniqueAspect(Utf8CP prop) : m_testUniqueAspectProperty(prop) {;}
 
-    Utf8String _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
-    Utf8String _GetECClassName() const override {return DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME;}
+    Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
+    Utf8CP _GetECClassName() const override {return DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME;}
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
 
@@ -210,8 +210,8 @@ private:
 
     explicit TestMultiAspect(Utf8CP prop) : m_testMultiAspectProperty(prop) {;}
 
-    Utf8String _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
-    Utf8String _GetECClassName() const override {return DPTEST_TEST_MULTI_ASPECT_CLASS_NAME;}
+    Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
+    Utf8CP _GetECClassName() const override {return DPTEST_TEST_MULTI_ASPECT_CLASS_NAME;}
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
 
