@@ -177,11 +177,12 @@
 
     ### Relationship Class
     - An @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" may not have a regular @ref BentleyApi::ECN::ECClass "ECClass" as a base class
+    - For non-abstract relationship classes, both relationship constraints must be well-defined.
+        - At least one class must be specified for each constraint
+        - A relationship constraint may only specify regular ECClasses and not ECRelationshipClasses.
+    - For abstract relationship classes constraints must not be specified because they are not inherited.
     - Abstract relationship classes may not be instantiated or used to relate instances in a repository.
-        - A relationship class is abstract if isDomainClass is false or if the relationship constraints are not well-defined.
-        - A relationship constraint is well-defined if at least one class is specified.
-    - A relationship constraint may only specify regular ECClasses and not ECRelationshipClasses.
-
+    
     ### Properties
     - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass"
 

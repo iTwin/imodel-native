@@ -1102,6 +1102,9 @@ ECSqlTestDataset ECSqlSelectTestDataset::FromTests( int rowCountPerClass )
     ecsql = "SELECT I, S FROM ONLY ecsql.AbstractNoSubclasses";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 0);
 
+    ecsql = "SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ecsql.AbstractR";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported, "THis should work and will be fixed.");
+
     //*******************************************************
     // Unmapped classes
     //*******************************************************
