@@ -44,6 +44,7 @@
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp" />
     <ClCompile Include="Published\ECDbRelationshipTests.cpp" />
     <ClCompile Include="Published\ECDbSchemaManager_Test.cpp" />
+    <ClCompile Include="Published\ECDbSchemaRules_Test.cpp" />
     <ClCompile Include="Published\ECDb_Tests.cpp" />
     <ClCompile Include="Published\ECInstanceAdaptersTestFixture.cpp" />
     <ClCompile Include="Published\ECInstanceECSqlSelectAdpaterTests.cpp" />
