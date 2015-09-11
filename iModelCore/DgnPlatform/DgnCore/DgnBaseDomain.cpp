@@ -43,7 +43,6 @@ HANDLER_DEFINE_MEMBERS(Element)
 HANDLER_DEFINE_MEMBERS(Group)
 HANDLER_DEFINE_MEMBERS(Physical)
 HANDLER_DEFINE_MEMBERS(Drawing)
-HANDLER_DEFINE_MEMBERS(PhysicalText)
 };
 
 namespace dgn_AspectHandler
@@ -76,6 +75,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(DgnElementDependencyHandler::GetHandler());
     RegisterHandler(dgn_AspectHandler::Aspect::GetHandler());
+    RegisterHandler(dgn_AspectHandler::TextAnnotationData::GetHandler());
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
@@ -95,7 +95,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
     RegisterHandler(dgn_ElementHandler::Group::GetHandler());
-    RegisterHandler(dgn_ElementHandler::PhysicalText::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TextAnnotation::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());

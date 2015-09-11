@@ -71,14 +71,16 @@ public:
     struct ChangeSetInfo
     {
         bool          m_isValid;
+        bool          m_hadSqliteError;
         uint64_t      m_sequenceNumber;  //!< Where this changeset/patchset falls in the sequence of changes generated from the project. This value is assigned by changes file, not by SatelliteChangeSets! This value is also the "name" of the embedded changeset "file" in this db.
         ChangeSetType m_type;            //!< The type of changeset this is
         Utf8String    m_description;     //!< The user's description of the change
         DateTime      m_time;            //!< When the project's changes were committed and this changeset/patchset was recorded. In DateTime format, UTC.
 
-        ChangeSetInfo(uint64_t num, ChangeSetType type, Utf8CP descr, DateTime time) : m_sequenceNumber(num), m_type(type), m_description(descr), m_time(time) {m_isValid=true;}
+        ChangeSetInfo(uint64_t num, ChangeSetType type, Utf8CP descr, DateTime time) : m_sequenceNumber(num), m_type(type), m_description(descr), m_time(time) {m_isValid=true; m_hadSqliteError=false;}
         ChangeSetInfo(BeSQLite::Statement&);
         bool IsValid() const {return m_isValid;}
+        bool HadSqliteError() const {return m_hadSqliteError;}
     };
 
     typedef bmap<uint64_t, BeFileName> T_ChangesFileDictionary;
