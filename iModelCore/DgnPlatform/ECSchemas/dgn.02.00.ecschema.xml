@@ -467,6 +467,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>True</IsNullable>
+                    <Collation>NoCase</Collation>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
