@@ -1146,6 +1146,20 @@ public:
     //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded
     DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(DgnAuthorityId authorityId);
 
+    //! Look up an authority by name. The authority will be loaded from the database if necessary.
+    //! @param[in] name The name of the authority to load
+    //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded
+    DgnAuthorityCPtr GetAuthority(Utf8StringCR name) { return GetAuthority(QueryAuthorityId(name)); }
+
+    //! Look up an authority of a particular type by ID. The authority will be loaded from the database if necessary.
+    //! @param[in] authorityId The ID of the authority to load
+    //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded or is not of the desired type.
+    template<typename T> RefCountedCPtr<T> Get(DgnAuthorityId authorityId) { return dynamic_cast<T const*>(GetAuthority(authorityId).get()); }
+
+    //! Look up an authority of a particular type by name. The authority will be loaded from the database if necessary.
+    //! @param[in] name The name of the authority to load
+    //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded or is not of the desired type.
+    template<typename T> RefCountedCPtr<T> Get(Utf8StringCR name) { return dynamic_cast<T const*>(GetAuthority(name).get()); }
     //! Add a new Authority to the table.
     //! @param[in]  authority The new entry to add.
     //! @return The result of the insert operation.

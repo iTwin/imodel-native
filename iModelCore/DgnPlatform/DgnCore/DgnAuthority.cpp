@@ -294,8 +294,8 @@ DgnAuthority::Code DgnAuthority::GenerateDefaultCode(DgnElementCR el)
     if (!elemId.IsValid())
         return DgnAuthority::Code();
 
-    Utf8PrintfString val("%s%u-%u", el.GetElementClass()->GetName().c_str(), elemId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & elemId.GetValue()));
-    return DgnAuthority::Code(DgnAuthority::LocalId(), val);
+    Utf8PrintfString val("%u-%u", elemId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & elemId.GetValue()));
+    return DgnAuthority::Code(DgnAuthority::LocalId(), val, el.GetElementClass()->GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -321,19 +321,21 @@ AuthorityHandlerR DgnAuthority::GetAuthorityHandler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code NamespaceAuthority::CreateCode(Utf8StringCR authorityName, Utf8StringCR value, DgnDbCR dgndb)
-    {
-    auto authId = dgndb.Authorities().QueryAuthorityId(authorityName);
-    return authId.IsValid() ? DgnAuthority::CreateCode(authId, value) : DgnAuthority::Code();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<NamespaceAuthority> NamespaceAuthority::CreateNamespaceAuthority(Utf8CP authorityName, DgnDbR dgndb, Utf8CP uri)
     {
     auto& hdlr = dgn_AuthorityHandler::Namespace::GetHandler();
     CreateParams params(dgndb, dgndb.Domains().GetClassId(hdlr), authorityName, uri);
     return static_cast<NamespaceAuthority*>(hdlr.Create(params).get());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthority::Code NamespaceAuthority::CreateCode(Utf8StringCR authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace)
+    {
+    auto auth = dgndb.Authorities().Get<NamespaceAuthority>(authorityName);
+    BeDataAssert(auth.IsValid());
+    return auth.IsValid() ? auth->CreateCode(value, nameSpace) : DgnAuthority::Code();
+    }
+
 

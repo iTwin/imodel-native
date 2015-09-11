@@ -28,7 +28,7 @@ public:
     //! The Code is stored as a three-part identifier: DgnAuthorityId, namespace, and value.
     //! The combination of the three must be unique within all objects of a given type
     //! (e.g., Elements, Categories, Materials) within a DgnDb. None of the three parts may
-    //! be null, but the namespace and/or value may be empty strings.
+    //! be null, but the namespace may be an empty string.
     //!
     //! To obtain a Code, talk to the relevant DgnAuthority.
     // @bsiclass                                                     Paul.Connelly  09/15
@@ -38,6 +38,7 @@ public:
     private:
         DgnAuthorityId  m_authority;
         Utf8String      m_value;
+        Utf8String      m_nameSpace;
 
         friend struct DgnAuthority;
         friend struct DgnElements;
@@ -45,7 +46,7 @@ public:
         friend struct DgnCategories;
         friend struct DgnMaterials;
 
-        Code(DgnAuthorityId authorityId, Utf8StringCR value) : m_authority(authorityId), m_value(value) { }
+        Code(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
     public:
         //! Constructs an empty, invalid code
         Code() { }
@@ -53,11 +54,13 @@ public:
         //! Determine whether this Code is valid
         bool IsValid() const {return m_authority.IsValid() && !m_value.empty();}
         //! Determine if two Codes are equivalent
-        bool operator==(Code const& other) const {return m_authority==other.m_authority && m_value==other.m_value;}
+        bool operator==(Code const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
 
         //! Get the value for this Code
         Utf8StringCR GetValue() const {return m_value;}
         Utf8CP GetValueCP() const {return m_value.c_str();}
+        //! Get the namespace for this Code
+        Utf8StringCR GetNameSpace() const {return m_nameSpace;}
         //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
         DgnAuthorityId GetAuthority() const {return m_authority;}
         void RelocateToDestinationDb(DgnImportContext&);
@@ -96,8 +99,8 @@ protected:
 
     DGNPLATFORM_EXPORT virtual DgnAuthority::Code _CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
-    static DgnAuthority::Code CreateCode(DgnAuthorityId authorityId, Utf8StringCR value) { return DgnAuthority::Code(authorityId, value); }
-    DgnAuthority::Code CreateCode(Utf8StringCR value) const { return DgnAuthority::Code(m_authorityId, value); }
+    static DgnAuthority::Code CreateCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) { return DgnAuthority::Code(authorityId, value, nameSpace); }
+    DgnAuthority::Code CreateCode(Utf8StringCR value, Utf8StringCR nameSpace) const { return DgnAuthority::Code(m_authorityId, value, nameSpace); }
 
 public:
     DgnDbR GetDgnDb() const { return m_dgndb; }
@@ -142,10 +145,10 @@ struct EXPORT_VTABLE_ATTRIBUTE NamespaceAuthority : DgnAuthority
 
     NamespaceAuthority(CreateParams const& params) : T_Super(params) { }
 
-    DGNPLATFORM_EXPORT DgnAuthority::Code CreateCode(Utf8StringCR value) const { return T_Super::CreateCode(value); }
-    DGNPLATFORM_EXPORT static DgnAuthority::Code CreateCode(Utf8StringCR authorityName, Utf8StringCR value, DgnDbCR dgndb);
+    DGNPLATFORM_EXPORT DgnAuthority::Code CreateCode(Utf8StringCR value, Utf8StringCR nameSpace = "") const { return T_Super::CreateCode(value, nameSpace); }
 
     DGNPLATFORM_EXPORT static RefCountedPtr<NamespaceAuthority> CreateNamespaceAuthority(Utf8CP name, DgnDbR dgndb, Utf8CP uri = nullptr);
+    DGNPLATFORM_EXPORT static DgnAuthority::Code CreateCode(Utf8StringCR authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace="");
 };
 
 #define AUTHORITYHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \

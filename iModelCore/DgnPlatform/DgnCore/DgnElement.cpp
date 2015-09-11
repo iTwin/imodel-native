@@ -17,6 +17,7 @@ DgnElement::Item::Key  DgnElement::Item::s_key;
 #define DGN_ELEMENT_PROPNAME_LABEL "Label"
 #define DGN_ELEMENT_PROPNAME_CODE "Code"
 #define DGN_ELEMENT_PROPNAME_CODEAUTHORITYID "CodeAuthorityId"
+#define DGN_ELEMENT_PROPNAME_CODENAMESPACE "CodeNameSpace"
 #define DGN_ELEMENT_PROPNAME_PARENTID "ParentId"
 #define DGN_ELEMENT_PROPNAME_LASTMOD "LastMod"
 
@@ -379,6 +380,7 @@ void DgnElement::GetParamList(bvector<Utf8String>& paramList, bool isForUpdate)
         paramList.push_back(DGN_ELEMENT_PROPNAME_LABEL);
     paramList.push_back(DGN_ELEMENT_PROPNAME_CODE);
     paramList.push_back(DGN_ELEMENT_PROPNAME_CODEAUTHORITYID);
+    paramList.push_back(DGN_ELEMENT_PROPNAME_CODENAMESPACE);
     paramList.push_back(DGN_ELEMENT_PROPNAME_PARENTID);
     }
 
@@ -405,6 +407,7 @@ DgnDbStatus DgnElement::_BindInsertParams(ECSqlStatement& statement)
 
     statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODE), m_code.GetValueCP(), IECSqlBinder::MakeCopy::No);
     statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODEAUTHORITYID), m_code.GetAuthority());
+    statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODENAMESPACE), m_code.GetNameSpace().c_str(), IECSqlBinder::MakeCopy::No);
     statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_PARENTID), m_parentId);
     
     return DgnDbStatus::Success;
@@ -422,8 +425,8 @@ DgnDbStatus DgnElement::_InsertSecondary()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_UpdateInDb()
     {
-    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,CodeAuthorityId=5,ElementId=6};
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,CodeAuthorityId=? WHERE Id=?");
+    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,CodeAuthorityId=5,CodeNameSpace=6,ElementId=7};
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,CodeAuthorityId=?,CodeNameSpace=? WHERE Id=?");
 
     // note: ECClassId and ModelId cannot be modified.
     stmt->BindId(Column::CategoryId, m_categoryId);
@@ -434,6 +437,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
     BeAssert (m_code.IsValid());
     stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
     stmt->BindId(Column::CodeAuthorityId, m_code.GetAuthority());
+    stmt->BindText(Column::CodeNameSpace, m_code.GetNameSpace(), Statement::MakeCopy::No);
     
     stmt->BindId(Column::ParentId, m_parentId);
     stmt->BindId(Column::ElementId, m_elementId);
