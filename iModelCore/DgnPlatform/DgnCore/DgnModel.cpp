@@ -1665,6 +1665,22 @@ bool ComponentModel::IsValid() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::_OnDelete()
+    {
+    //  *** TRICKY: We don't/can't have a trigger do this, because the solutions table references this model by name
+    Statement delSolutions;
+
+    delSolutions.Prepare(GetDgnDb(), "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=?");
+    delSolutions.BindText(1, GetModelName(), Statement::MakeCopy::No);
+    delSolutions.Step();
+
+    // *** NEEDS WORK: I should kill off all of the GeomParts referenced by the geomstreams in the rows of ComponentSolution 
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::ImportSchema(DgnDbR db, BeFileNameCR schemaFile)
     {
     ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();

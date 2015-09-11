@@ -1360,17 +1360,14 @@ Utf8String StreetMapModelHandler::CreateGoogleMapsUrl (WebMercatorTilingSystem::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String dgn_ModelHandler::StreetMap::CreateMapquestUrl (WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Mercator const& props)
+Utf8String dgn_ModelHandler::StreetMap::CreateOsmUrl (WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Mercator const& props)
     {
-    Utf8String url = "http://otile1.mqcdn.com/tiles/1.0.0/";
-    if (!props.m_mapType.empty() && props.m_mapType[0] == '0')
-        url += "map/";
-    else
-        url += "sat/";  // "Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency"
+    Utf8String url;
 
-    // Filename(url) format is /zoom/x/y.png
-    // see http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
-    url += Utf8PrintfString ("%d/%d/%d.jpg",tileid.zoomLevel, tileid.column, tileid.row);
+    if (!props.m_mapType.empty() && props.m_mapType[0] == '0')  // "(c) OpenStreetMap contributors"
+        url = Utf8PrintfString ("http://a.tile.openstreetmap.org/%d/%d/%d.png",tileid.zoomLevel, tileid.column, tileid.row);
+    else // *** For now, use MapQuest for satellite images (just in developer builds) ***
+        url = Utf8PrintfString ("http://otile1.mqcdn.com/tiles/1.0.0/sat/%d/%d/%d.jpg",tileid.zoomLevel, tileid.column, tileid.row);  // "Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency"
 
     // *** WIP_WEBMERCATOR m_features
 
@@ -1395,19 +1392,13 @@ BentleyStatus dgn_ModelHandler::StreetMap::_CreateUrl (Utf8StringR url, ImageUti
         return BSIERROR;
         }
 
-    if (props.m_mapService[0] == '0') // "(c) OpenStreetMap contributors"
+    if (props.m_mapService[0] == '0')
         {
-        #ifdef WIP_MAPQUEST_NO_LONGER_AVAILABLE
-            url = CreateMapquestUrl (tileid, props);
-        #else
-            #ifndef NDEBUG  // *** In a developer build, go ahead and use OSM
-                url = Utf8PrintfString ("http://tile.openstreetmap.org/%d/%d/%d.png", tileid.zoomLevel, tileid.column, tileid.row);
-            #endif
+        #ifndef NDEBUG  // *** In a developer build, go ahead and use OSM
+            url = CreateOsmUrl (tileid, props);
         #endif
         }
 #ifdef WIP_MAP_SERVICE
-    else if (OpenStreetMaps)
-        url = Utf8PrintfString ("http://tile.openstreetmap.org/%d/%d/%d.png", tileid.zoomLevel, tileid.column, tileid.row);
     else if (GoogleMaps)
         url = CreateGoogleMapsUrl (tileid);
     else if (BlackAndWhite)
@@ -1433,9 +1424,9 @@ static Utf8String getStreetMapServerDescription(dgn_ModelHandler::StreetMap::Map
     Utf8String descr;
     switch (mapService)
         {
-        case dgn_ModelHandler::StreetMap::MapService::MapQuest:
+        case dgn_ModelHandler::StreetMap::MapService::OpenStreetMaps:
             {
-            descr = ("MapQuest");   // *** WIP translate
+            descr = ("Open Street Maps");   // *** WIP translate
             if (dgn_ModelHandler::StreetMap::MapType::Map == mapType)
                 descr.append(" Map");   // *** WIP translate
             else
