@@ -43,7 +43,7 @@ VewControllerDepends = $(DgnCoreAPISrc)ViewController.h $(DgnCoreAPISrc)ViewCont
 HandlerDepends  =   $(DgnCoreAPISrc)ElementHandler.h \
                     $(contextDepends)
 
-RealityDataHandlerDepends = $(DgnCoreAPISrc)DgnViewport.h $(DgnCoreAPISrc)RealityDataCache.h
+RealityDataHandlerDepends = $(DgnCoreAPISrc)DgnViewport.h $(DgnCoreAPISrc)HttpHandler.h $(DgnCoreAPISrc)RealityDataCache.h
 
 WebMercatorDepends = $(DgnCoreAPISrc)WebMercator.h $(DgnCoreAPISrc)DgnDbTables.h
 
@@ -170,6 +170,8 @@ $(coreObjs)SectioningPhysicalViewController$(oext): $(DgnCoreDir)SectioningPhysi
 $(coreObjs)DgnElements$(oext): $(DgnCoreDir)DgnElements.cpp $(DgnCoreAPISrc)DgnDb.h ${MultiCompileDepends}
 
 $(coreObjs)DgnViewport$(oext):    $(DgnCoreDir)DgnViewport.cpp $(contextDepends) ${MultiCompileDepends}
+
+$(coreObjs)HttpHandler$(oext) : $(DgnCoreDir)HttpHandler.cpp $(DgnCoreAPISrc)HttpHandler.h ${MultiCompileDepends}
 
 $(coreObjs)RealityDataCache$(oext) : $(DgnCoreDir)RealityDataCache.cpp $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
