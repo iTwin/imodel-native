@@ -570,7 +570,7 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
         ASSERT_TRUE( el.IsValid() );
         DgnAuthorityId said = el->GetCode().GetAuthority();
         ASSERT_TRUE( said == sourceAuthorityId );
-        auto sourceAuthority = db->Authorities().LoadAuthority(sourceAuthorityId);
+        auto sourceAuthority = db->Authorities().GetAuthority(sourceAuthorityId);
         ASSERT_STREQ( sourceAuthority->GetName().c_str(), "TestAuthority" );
         }
 
@@ -594,7 +594,7 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
         DgnAuthorityId daid = el->GetCode().GetAuthority();
         ASSERT_TRUE( daid.IsValid() );
         ASSERT_NE( daid , sourceAuthorityId ) << "Authority ID should have been remapped";
-        auto destAuthority = db2->Authorities().LoadAuthority(daid);
+        auto destAuthority = db2->Authorities().GetAuthority(daid);
         ASSERT_STREQ( destAuthority->GetName().c_str(), "TestAuthority" );
         db2->SaveChanges();
         }

@@ -211,12 +211,12 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,CodeNameSpace"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"
                                                                              "Prop4_1,Prop4_2,Prop4_3) "
-                                                                             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                                                             "VALUES (?,?,?,?,\"\",?,?,?,?,?,?,?,?,?,?,?,?)");
         ASSERT_TRUE(insertStmt != nullptr);
         CachedECSqlStatement& stmt = *insertStmt;
 
@@ -271,7 +271,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code) VALUES (?,?,?,?)");
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,CodeNameSpace) VALUES (?,?,?,?,\"\")");
         ASSERT_TRUE(insertStmt != nullptr);
 
         std::vector<CachedECSqlStatementPtr> updateStmts;
@@ -335,12 +335,12 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,CodeNameSpace"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"
                                                                              "Prop4_1,Prop4_2,Prop4_3) "
-                                                                             "VALUES (:modelid,:catid,:authorityid,:code,"
+                                                                             "VALUES (:modelid,:catid,:authorityid,:code,\"\""
                                                                              ":p11,:p12,:p13,"
                                                                              ":p21,:p22,:p23,"
                                                                              ":p31,:p32,:p33,"
