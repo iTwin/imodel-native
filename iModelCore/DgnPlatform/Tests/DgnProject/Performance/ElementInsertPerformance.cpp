@@ -108,7 +108,7 @@ Utf8CP const PerformanceElementTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
     "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
     "  <ECClass typeName='Element1' >"
-    "    <BaseClass>dgn:GeometricElement</BaseClass>"
+    "    <BaseClass>dgn:PhysicalElement</BaseClass>"
     "    <ECProperty propertyName='Prop1_1' typeName='string' />"
     "    <ECProperty propertyName='Prop1_2' typeName='long' />"
     "    <ECProperty propertyName='Prop1_3' typeName='double' />"
