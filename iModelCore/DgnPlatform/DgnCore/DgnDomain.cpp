@@ -246,7 +246,7 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
         return DgnDbStatus::FileNotFound;
         }
 
-    WString schemaBaseNameW;
+    BeFileName schemaBaseNameW;
     schemaFile.ParseName(NULL, NULL, &schemaBaseNameW, NULL);
     Utf8String schemaBaseName(schemaBaseNameW);
 

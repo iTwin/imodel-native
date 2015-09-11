@@ -210,14 +210,10 @@ DPoint3d TextString::ComputeJustificationOrigin(HorizontalJustification hjust, V
 void TextString::SetOriginFromJustificationOrigin(DPoint3dCR jorigin, HorizontalJustification hjust, VerticalJustification vjust)
     {
     DPoint3d offsetFromJustification = DPoint3d::From(ComputeOffsetToJustification(hjust, vjust));
-    offsetFromJustification.Negate();
-
-    RotMatrix invertedOrientation = m_orientation;
-    m_orientation.Invert();
-    invertedOrientation.Multiply(offsetFromJustification);
+    m_orientation.Multiply(offsetFromJustification);
     
     m_origin = jorigin;
-    m_origin.Add(offsetFromJustification);
+    m_origin.Subtract(offsetFromJustification);
     }
 
 //---------------------------------------------------------------------------------------

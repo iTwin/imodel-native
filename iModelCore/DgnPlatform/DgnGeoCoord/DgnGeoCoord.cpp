@@ -16,7 +16,7 @@
 // tolerance is from old geocoord code
 #define GEOCOORD_CLOSE_TOLERANCE (1e-5)
 #define GEOCOORD66_SIZE (sizeof(GeoCoordType66) + 80*sizeof(double))
-#define GEOCOORD66_VerticalDatumValid     (0x8117)
+#define GEOCOORD66_VerticalDatumValid (0x8117)
 #if defined (TEST_TYPE66_CREATE)
 static GeoCoordType66*     s_oldType66;
 static ProjectionParams*   s_oldProjectionParams;
@@ -197,10 +197,10 @@ ProjectionParams    &projectionParams
         if (COORDSYS_UTM == extracted.coordsys)
             {
             Proj_Utmzn       utmzn;
-            memset (&utmzn, 0, sizeof (utmzn));
+            memset(&utmzn, 0, sizeof (utmzn));
 
                 int v;
-            if (!sscanf (extracted.zone_knm, "%d", &v))
+            if (!sscanf(extracted.zone_knm, "%d", &v))
                 {
                 utmzn.zoneNo = 0;
                 return GeoCoordError_InvalidUTMZone;
@@ -210,31 +210,31 @@ ProjectionParams    &projectionParams
             extracted.coordsys = extracted.projType = COORDSYS_UTMZN;
 
             // the old code would have always ended up with hemisphere OBE_HEMISPHERE_NORTH, but this looks like what it was trying to do.
-            utmzn.hemisphere = (0 == BeStringUtilities::Stricmp (extracted.grp_knm, "UTMS")) ? OBE_HEMISPHERE_SOUTH : OBE_HEMISPHERE_NORTH;
+            utmzn.hemisphere = (0 == BeStringUtilities::Stricmp(extracted.grp_knm, "UTMS")) ? OBE_HEMISPHERE_SOUTH : OBE_HEMISPHERE_NORTH;
             utmzn.gcDom     = projectionParams.trmer.gcDom;
             utmzn.paper_scl = projectionParams.trmer.paper_scl;
             utmzn.quad      = projectionParams.trmer.quad;
-            CSMap::CS_stncp (utmzn.unit_nm, projectionParams.trmer.unit_nm, DIM (utmzn.unit_nm));
-            CSMap::CS_stncp (utmzn.dat_knm, projectionParams.trmer.dat_knm, DIM (utmzn.dat_knm));
-            CSMap::CS_stncp (utmzn.ell_knm, projectionParams.trmer.ell_knm, DIM (utmzn.ell_knm));
+            CSMap::CS_stncp(utmzn.unit_nm, projectionParams.trmer.unit_nm, DIM (utmzn.unit_nm));
+            CSMap::CS_stncp(utmzn.dat_knm, projectionParams.trmer.dat_knm, DIM (utmzn.dat_knm));
+            CSMap::CS_stncp(utmzn.ell_knm, projectionParams.trmer.ell_knm, DIM (utmzn.ell_knm));
 
             /* Copy the whole thing into the projectionParams union. */
             projectionParams.utmzn = utmzn;
             }
         else if (COORDSYS_STERO == extracted.coordsys)
             {
-            if (fabs (projectionParams.stero.org_lat - 90.0) < GEOCOORD_CLOSE_TOLERANCE)
+            if (fabs(projectionParams.stero.org_lat - 90.0) < GEOCOORD_CLOSE_TOLERANCE)
                 {
                 /* Format is identical */
                 extracted.prj_code  = cs_PRJCOD_PSTRO;
                 extracted.projType  =  COORDSYS_PSTRO;
-                strcpy (extracted.prj_knm, CS_PSTRO);
+                strcpy(extracted.prj_knm, CS_PSTRO);
                 }
             else
                 {
                 extracted.prj_code  = cs_PRJCOD_SSTRO;
                 extracted.projType  =  COORDSYS_STERO;
-                strcpy (extracted.prj_knm, CS_STERO);
+                strcpy(extracted.prj_knm, CS_STERO);
                 }
             }
         }
@@ -258,21 +258,21 @@ ProjectionParams    &projectionParams
             projectionParams.unity.domLL.max_lat = projectionParams.unity.domEN.max_y;
 
             // I have no idea what this "logic" was supposed to accomplish, but it was in the old geocoord stuff.
-            if ( (fabs (projectionParams.unity.domLL.min_lng) > GEOCOORD_CLOSE_TOLERANCE) ||
-                 (fabs (projectionParams.unity.domLL.max_lng) > GEOCOORD_CLOSE_TOLERANCE) )
+            if ( (fabs(projectionParams.unity.domLL.min_lng) > GEOCOORD_CLOSE_TOLERANCE) ||
+                 (fabs(projectionParams.unity.domLL.max_lng) > GEOCOORD_CLOSE_TOLERANCE) )
                 {
-                if ( (fabs (projectionParams.unity.domLL.min_lat) > GEOCOORD_CLOSE_TOLERANCE) &&
-                     (fabs (projectionParams.unity.domLL.max_lat) > GEOCOORD_CLOSE_TOLERANCE) )
+                if ( (fabs(projectionParams.unity.domLL.min_lat) > GEOCOORD_CLOSE_TOLERANCE) &&
+                     (fabs(projectionParams.unity.domLL.max_lat) > GEOCOORD_CLOSE_TOLERANCE) )
                     {
                     projectionParams.unity.domLL.min_lat = -90;
                     projectionParams.unity.domLL.max_lat =  90;
                     }
                 }
-            else if ( (fabs (projectionParams.unity.domLL.min_lat) > GEOCOORD_CLOSE_TOLERANCE) ||
-                      (fabs (projectionParams.unity.domLL.max_lat) > GEOCOORD_CLOSE_TOLERANCE) )
+            else if ( (fabs(projectionParams.unity.domLL.min_lat) > GEOCOORD_CLOSE_TOLERANCE) ||
+                      (fabs(projectionParams.unity.domLL.max_lat) > GEOCOORD_CLOSE_TOLERANCE) )
                 {
-                if ( (fabs (projectionParams.unity.domLL.min_lng) > GEOCOORD_CLOSE_TOLERANCE) &&
-                     (fabs (projectionParams.unity.domLL.max_lng) > GEOCOORD_CLOSE_TOLERANCE) )
+                if ( (fabs(projectionParams.unity.domLL.min_lng) > GEOCOORD_CLOSE_TOLERANCE) &&
+                     (fabs(projectionParams.unity.domLL.max_lng) > GEOCOORD_CLOSE_TOLERANCE) )
                     {
                     projectionParams.unity.domLL.min_lng = -270;
                     projectionParams.unity.domLL.max_lng =  270;
@@ -312,15 +312,15 @@ const short         *type66AppData
 )
     {
     // start by setting whole structure to 0's.
-    memset ((void*)&extracted, 0, sizeof (extracted));
-    memset ((void*)&projectionParams, 0, sizeof (projectionParams));
+    memset((void*)&extracted, 0, sizeof (extracted));
+    memset((void*)&projectionParams, 0, sizeof (projectionParams));
     localTransformer = NULL;
 
     StatusInt   status = SUCCESS;
 
     // this used to use the resource conversion logic, but it turns out that the structure was set up
     // correctly, grouping the doubles and filling in the holes so just requires a memcpy.
-    memcpy (&extracted, &type66AppData[1], sizeof (extracted));
+    memcpy(&extracted, &type66AppData[1], sizeof (extracted));
 
     // check the version and size. In the old GeoCoord code, the type 66 was accepted unless its version was newer than GCOORD_CURRENT_VERSION, so do that here, too.
     if (extracted.version > GCOORD_08119_VERSION)
@@ -331,16 +331,16 @@ const short         *type66AppData
         {
         // Sys34 , Sys34-1999, and Sys34-2001
         Byte*   inputData   = (Byte*) &type66AppData[429];
-        memcpy (&projectionParams.sys34.zoneNo, inputData, 4);
-        memcpy (&projectionParams.sys34.x_off,  inputData+4, 176);
+        memcpy(&projectionParams.sys34.zoneNo, inputData, 4);
+        memcpy(&projectionParams.sys34.x_off,  inputData+4, 176);
         }
     else
         {
-        memcpy (&projectionParams, &type66AppData[429], sizeof (projectionParams));
+        memcpy(&projectionParams, &type66AppData[429], sizeof (projectionParams));
         }
 
 #if defined (NOTNOW)
-    if (IsKeyNameCoordinateSystem (extracted.coordsys))
+    if (IsKeyNameCoordinateSystem(extracted.coordsys))
         {
         // when there's a "Key Name" coordinate system, extracted.coordsys will differ from extracted.projType.
         // The information stored in the union is presumably appropriate to extracted.projType, but we should be
@@ -355,10 +355,10 @@ const short         *type66AppData
 
     // upgrade old format only.
     if ( (GCOORD_COMPATIBLE_08117_VERSION == extracted.version) && (extracted.minor_version < GCOORD_COMPATIBLE_08117_MINOR_VERSION) )
-        UpgradeType66Data (extracted, projectionParams);
+        UpgradeType66Data(extracted, projectionParams);
 
     if (GCOORD_08119_VERSION == extracted.version)
-        localTransformer = LocalTransformer::CreateLocalTransformer ((LocalTransformType)extracted.localTransformType, extracted.transformParams);
+        localTransformer = LocalTransformer::CreateLocalTransformer((LocalTransformType)extracted.localTransformType, extracted.transformParams);
     else
         extracted.dtmOrElpsdFromUserLib = 0;
 
@@ -377,19 +377,19 @@ GeoCoordType66      &extracted
     {
     csDef.protect = static_cast<short>(extracted.protect); // NEEDSWORK - is cast correct?  Should protect be a short?
 
-    CSMap::CS_stncp (csDef.group,   extracted.grp_knm, DIM(csDef.group));
-    CSMap::CS_stncp (csDef.prj_knm, extracted.prj_knm, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.source,  extracted.source, DIM(csDef.source));
-    CSMap::CS_stncp (csDef.desc_nm, extracted.desc_nm, DIM(csDef.desc_nm));
+    CSMap::CS_stncp(csDef.group,   extracted.grp_knm, DIM(csDef.group));
+    CSMap::CS_stncp(csDef.prj_knm, extracted.prj_knm, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.source,  extracted.source, DIM(csDef.source));
+    CSMap::CS_stncp(csDef.desc_nm, extracted.desc_nm, DIM(csDef.desc_nm));
 
     // I think this will be ignored by cs_map (unless we do cs_csloc, which we don't). I put into the structure
     //   so that it will be retained and then saved back to the type 66, as that what I found in all existing type 66's.
-    CSMap::CS_stncp (csDef.key_nm,  extracted.cs_knm, DIM(csDef.key_nm));
+    CSMap::CS_stncp(csDef.key_nm,  extracted.cs_knm, DIM(csDef.key_nm));
 
 #if 0
     // truncate desc_nm at comma. (from old version, claims it was stripping unit name).
     char*   pComma;
-    if (NULL  != (pComma = strrchr (csDef.desc_nm, ',')))
+    if (NULL  != (pComma = strrchr(csDef.desc_nm, ',')))
         *pComma = 0;
 #endif
     }
@@ -424,11 +424,11 @@ CSDefinition        &csDef,
 Proj_alber          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_ALBER, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_ALBER, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.lat_1;
     csDef.prj_prm2  = params.lat_2;
@@ -449,11 +449,11 @@ CSDefinition        &csDef,
 Proj_azede          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_AZEDE, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_AZEDE, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.az;
     csDef.prj_prm2  = params.ellElev;
@@ -474,11 +474,11 @@ CSDefinition        &csDef,
 Proj_azmea          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_AZMEA, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_AZMEA, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.az;
     csDef.org_lng   = params.org_lng;
@@ -498,11 +498,11 @@ CSDefinition        &csDef,
 Proj_azmed          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_AZMED, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_AZMED, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.az;
     csDef.org_lng   = params.org_lng;
@@ -522,11 +522,11 @@ CSDefinition        &csDef,
 Proj_bonne          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_BONNE, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_BONNE, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -545,11 +545,11 @@ CSDefinition        &csDef,
 Proj_bpcnc          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_BPCNC, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_BPCNC, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.lng_1;
     csDef.prj_prm2  = params.lat_1;
@@ -573,11 +573,11 @@ CSDefinition        &csDef,
 Proj_csini          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_CSINI, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_CSINI, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -596,11 +596,11 @@ CSDefinition        &csDef,
 Proj_edcnc          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_EDCNC, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_EDCNC, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.lat_1;
     csDef.prj_prm2  = params.lat_2;
@@ -622,11 +622,11 @@ Proj_edcyl          &params,
 CharCP            csMapCoordName
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.std_lat;
     csDef.org_lat   = params.org_lat;
@@ -647,11 +647,11 @@ CSDefinition        &csDef,
 Proj_pcarree         &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_PCARREE, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_PCARREE, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lat   = params.org_lat;
     csDef.org_lng   = params.org_lng;
@@ -672,11 +672,11 @@ CSDefinition        &csDef,
 Proj_ekrt4          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_EKRT4, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_EKRT4, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     csDef.map_scl   = params.paper_scl;
@@ -694,11 +694,11 @@ CSDefinition        &csDef,
 Proj_ekrt6          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_EKRT6, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_EKRT6, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     csDef.map_scl   = params.paper_scl;
@@ -717,11 +717,11 @@ Proj_trmer          &params,
 CharCP            csMapCoordName
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -742,11 +742,11 @@ CSDefinition        &csDef,
 Proj_tmmin          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_TMMIN, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_TMMIN, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     csDef.prj_prm2  = params.ellElev;
@@ -768,11 +768,11 @@ CSDefinition        &csDef,
 Proj_tmwis          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_TMWIS, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_TMWIS, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     csDef.prj_prm2  = params.geoidSep;
@@ -795,11 +795,11 @@ CSDefinition        &csDef,
 Proj_trmaf          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_TRMAF, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_TRMAF, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     // NOTE: The CSMap documentation has them ordered A0,B0,A1,A2,B1,B2, and the code looks like that is exactly what they expect.
@@ -831,11 +831,11 @@ Proj_utmzn          &params,
 CharCP            csMapCoordName
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.zoneNo;
     csDef.prj_prm2  = (OBE_HEMISPHERE_NORTH == params.hemisphere ? 1 : -1); // Any positive is North, any negative is south (0 is interpreted as North)
@@ -848,7 +848,7 @@ CharCP            csMapCoordName
         {
         try
             {
-            WString keyName (csDef.key_nm, BentleyCharEncoding::Utf8);
+            WString keyName(csDef.key_nm, BentleyCharEncoding::Utf8);
             BaseGCSPtr tempGCS = BaseGCS::CreateGCS(keyName.c_str());
             if (tempGCS->IsValid())
                 csDef.prj_prm2  = tempGCS->GetHemisphere();
@@ -871,11 +871,11 @@ CSDefinition        &csDef,
 Proj_gnomc          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_GNOMC, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_GNOMC, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -921,13 +921,13 @@ CSDefinition        &csDef,
 Proj_hmlsn          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_HMLSN, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_HMLSN, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
-    ZonesToCsDef (&csDef.prj_prm1, params.zone, params.nZones);
+    ZonesToCsDef(&csDef.prj_prm1, params.zone, params.nZones);
     csDef.org_lng   = params.org_lng;
     csDef.map_scl   = params.paper_scl;
     csDef.x_off     = params.x_off;
@@ -945,11 +945,11 @@ Proj_Oblq1          &params,
 CharCP              csMapCoordName
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.lng_c;
     csDef.prj_prm2  = params.lat_c;
@@ -971,11 +971,11 @@ CSDefinition        &csDef,
 Proj_Mndotobl       &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_MNDOTOBL, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_MNDOTOBL, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.lng_c;
     csDef.prj_prm2  = params.lat_c;
@@ -999,11 +999,11 @@ Proj_Oblq2          &params,
 CharCP              csMapCoordName
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.lng_1;
     csDef.prj_prm2  = params.lat_1;
@@ -1028,11 +1028,11 @@ Proj_Hueov          &params
 )
     {
     // No CSMap documentation, looking at old geocoord stuff.
-    CSMap::CS_stncp (csDef.prj_knm, CS_HUEOV, DIM(csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_HUEOV, DIM(csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -1056,11 +1056,11 @@ CharCP         csMapCoordName
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord code.
-    CSMap::CS_stncp (csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.pole_lng;
     csDef.prj_prm2  = params.pole_lat;
@@ -1075,7 +1075,7 @@ CharCP         csMapCoordName
     csDef.quad      = (short) params.quad;
 
     if (params.apply95)
-        CSMap::CS_stncp (csDef.prj_knm, CS_KRVK95, DIM (csDef.prj_knm));
+        CSMap::CS_stncp(csDef.prj_knm, CS_KRVK95, DIM (csDef.prj_knm));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1089,11 +1089,11 @@ CharCP            csMapCoordName
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord cold.
-    CSMap::CS_stncp (csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -1116,11 +1116,11 @@ CharCP         csMapCoordName
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord cold.
-    CSMap::CS_stncp (csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.lat_1;
     csDef.prj_prm2  = params.lat_2;
@@ -1143,11 +1143,11 @@ Proj_Lmmin          &params
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord code.
-    CSMap::CS_stncp (csDef.prj_knm, CS_LMMIN, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_LMMIN, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.lat_1;
     csDef.prj_prm2  = params.lat_2;
@@ -1171,11 +1171,11 @@ Proj_Lmwis          &params
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord code.
-    CSMap::CS_stncp (csDef.prj_knm, CS_LMWIS, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_LMWIS, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.lat_1;
     csDef.prj_prm2  = params.lat_2;
@@ -1199,11 +1199,11 @@ CSDefinition        &csDef,
 Proj_lmbrtaf        &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_LMBRTAF, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_LMBRTAF, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.lat_1;
     csDef.prj_prm2  = params.lat_2;
@@ -1235,11 +1235,11 @@ Proj_millr          &params
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord cold.
-    CSMap::CS_stncp (csDef.prj_knm, CS_MILLR, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_MILLR, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     csDef.map_scl   = params.paper_scl;
@@ -1258,11 +1258,11 @@ Proj_modpc          &params
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord cold.
-    CSMap::CS_stncp (csDef.prj_knm, CS_MODPC, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_MODPC, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     csDef.prj_prm2  = params.lng_1;
@@ -1283,13 +1283,13 @@ CSDefinition        &csDef,
 Proj_molwd          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_MOLWD, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_MOLWD, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
-    ZonesToCsDef (&csDef.prj_prm1, params.zone, params.nZones);
+    ZonesToCsDef(&csDef.prj_prm1, params.zone, params.nZones);
     csDef.org_lng   = params.org_lng;
     csDef.map_scl   = params.paper_scl;
     csDef.x_off     = params.x_off;
@@ -1306,11 +1306,11 @@ CSDefinition        &csDef,
 Proj_mrcat          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_MRCAT, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_MRCAT, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     csDef.prj_prm2  = params.std_lat;
@@ -1330,11 +1330,11 @@ CSDefinition        &csDef,
 Proj_mrcsr          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_MRCSR, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_MRCSR, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     csDef.scl_red   = params.scl_red;
@@ -1353,11 +1353,11 @@ CSDefinition        &csDef,
 Proj_mrcatpv        &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_MRCATPV, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_MRCATPV, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     
@@ -1377,18 +1377,18 @@ CSDefinition        &csDef,
 Proj_mstro          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_MSTRO, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_MSTRO, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.org_lat   = params.org_lat;
     csDef.scl_red   = params.scl_red;
 
     // copy the imaginary numbers to prj_prm1 - prj_prm24
-    memcpy (&csDef.prj_prm1, params.ABary, 24*sizeof(double));
+    memcpy(&csDef.prj_prm1, params.ABary, 24*sizeof(double));
 
     csDef.map_scl   = params.paper_scl;
     csDef.x_off     = params.x_off;
@@ -1405,11 +1405,11 @@ CSDefinition        &csDef,
 Proj_nacyl          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_NACYL, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_NACYL, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.prj_prm1  = params.std_lat;
@@ -1428,10 +1428,10 @@ CSDefinition        &csDef,
 Proj_nerth          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_NERTH, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_NERTH, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.map_scl   = params.paper_scl;
     csDef.x_off     = params.x_off;
@@ -1448,10 +1448,10 @@ CSDefinition        &csDef,
 Proj_nesrt          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_NESRT, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_NESRT, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.scale;
     csDef.prj_prm2  = params.rotateDeg;
@@ -1472,11 +1472,11 @@ CSDefinition        &csDef,
 Proj_nzlnd          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_NZLND, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_NZLND, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -1497,11 +1497,11 @@ CSDefinition        &csDef,
 Proj_ortho          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_ORTHO, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_ORTHO, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -1522,11 +1522,11 @@ Proj_stero          &params,
 CharCP            csMapCoordName
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -1548,11 +1548,11 @@ CSDefinition        &csDef,
 Proj_ost97          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_OST97, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_OST97, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
     csDef.map_scl   = params.paper_scl;
     csDef.quad      = (short) params.quad;
 
@@ -1560,12 +1560,12 @@ Proj_ost97          &params
     // the unit name and either the datum name or ellipsoid name. Since none is usually stored we set these to the
     // hard coded values. Take note also that previous version of GCS system (GeoGraphics/Map) did store this information so for
     // backward compatibility we should probably even though not useful (see Ost97FromCsDef)
-    if (strlen (csDef.dat_knm) == 0)
-        CSMap::CS_stncp (csDef.dat_knm, "WGS84", DIM (csDef.dat_knm));
-    if (strlen (csDef.elp_knm) == 0)
-        CSMap::CS_stncp (csDef.elp_knm, "WGS84", DIM (csDef.elp_knm));
-    if (strlen (csDef.unit) == 0)
-        CSMap::CS_stncp (csDef.unit, "METER", DIM (csDef.unit));
+    if (strlen(csDef.dat_knm) == 0)
+        CSMap::CS_stncp(csDef.dat_knm, "WGS84", DIM (csDef.dat_knm));
+    if (strlen(csDef.elp_knm) == 0)
+        CSMap::CS_stncp(csDef.elp_knm, "WGS84", DIM (csDef.elp_knm));
+    if (strlen(csDef.unit) == 0)
+        CSMap::CS_stncp(csDef.unit, "METER", DIM (csDef.unit));
     if (0 == csDef.map_scl)
         csDef.map_scl = 1.0;
     if (0 == csDef.quad)
@@ -1582,11 +1582,11 @@ CSDefinition        &csDef,
 Proj_ost97          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_OST02, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_OST02, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
     csDef.map_scl   = params.paper_scl;
     csDef.quad      = (short) params.quad;
 
@@ -1594,12 +1594,12 @@ Proj_ost97          &params
     // the unit name and either the datum name or ellipsoid name. Since none is usually stored we set these to the
     // hard coded values. Take note also that previous version of GCS system (GeoGraphics/Map) did store this information so for
     // backward compatibility we should probably even though not useful(see Ost02FromCsDef)
-    if (strlen (csDef.dat_knm) == 0)
-        CSMap::CS_stncp (csDef.dat_knm, "WGS84", DIM (csDef.dat_knm));
-    if (strlen (csDef.elp_knm) == 0)
-        CSMap::CS_stncp (csDef.elp_knm, "WGS84", DIM (csDef.elp_knm));
-    if (strlen (csDef.unit) == 0)
-        CSMap::CS_stncp (csDef.unit, "METER", DIM (csDef.unit));
+    if (strlen(csDef.dat_knm) == 0)
+        CSMap::CS_stncp(csDef.dat_knm, "WGS84", DIM (csDef.dat_knm));
+    if (strlen(csDef.elp_knm) == 0)
+        CSMap::CS_stncp(csDef.elp_knm, "WGS84", DIM (csDef.elp_knm));
+    if (strlen(csDef.unit) == 0)
+        CSMap::CS_stncp(csDef.unit, "METER", DIM (csDef.unit));
     if (0 == csDef.map_scl)
         csDef.map_scl = 1.0;
     if (0 == csDef.quad)
@@ -1615,11 +1615,11 @@ CSDefinition        &csDef,
 Proj_plycn          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_PLYCN, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_PLYCN, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -1639,11 +1639,11 @@ CSDefinition        &csDef,
 Proj_pstsl          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_PSTSL, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_PSTSL, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -1664,11 +1664,11 @@ CSDefinition        &csDef,
 Proj_robin          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_ROBIN, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_ROBIN, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.map_scl   = params.paper_scl;
@@ -1686,13 +1686,13 @@ CSDefinition        &csDef,
 Proj_sinus          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_SINUS, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_SINUS, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
-    ZonesToCsDef (&csDef.prj_prm1, params.zone, params.nZones);
+    ZonesToCsDef(&csDef.prj_prm1, params.zone, params.nZones);
     csDef.org_lng   = params.org_lng;
     csDef.map_scl   = params.paper_scl;
     csDef.x_off     = params.x_off;
@@ -1709,11 +1709,11 @@ CSDefinition        &csDef,
 Proj_swiss          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_SWISS, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_SWISS, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -1734,11 +1734,11 @@ Proj_sys34          &params,
 CharCP            csMapCoordName
 )
     {
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.prj_knm, csMapCoordName, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.prj_prm1  = params.zoneNo;
     csDef.map_scl   = params.paper_scl;
@@ -1756,11 +1756,11 @@ CSDefinition        &csDef,
 Proj_tacyl          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_TACYL, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_TACYL, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.org_lat   = params.org_lat;
@@ -1781,11 +1781,11 @@ CSDefinition        &csDef,
 Proj_vdgrn          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_VDGRN, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_VDGRN, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.map_scl   = params.paper_scl;
@@ -1803,11 +1803,11 @@ CSDefinition        &csDef,
 Proj_winkt          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_WINKT, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
-    DomainToCsDef (csDef, params.gcDom);
+    CSMap::CS_stncp(csDef.prj_knm, CS_WINKT, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    DomainToCsDef(csDef, params.gcDom);
 
     csDef.org_lng   = params.org_lng;
     csDef.prj_prm1  = params.std_lat;
@@ -1827,10 +1827,10 @@ CSDefinition        &csDef,
 Proj_unity          &params
 )
     {
-    CSMap::CS_stncp (csDef.prj_knm, CS_UNITY, DIM (csDef.prj_knm));
-    CSMap::CS_stncp (csDef.unit, params.unit_nm, DIM(csDef.unit));
-    CSMap::CS_stncp (csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
-    CSMap::CS_stncp (csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
+    CSMap::CS_stncp(csDef.prj_knm, CS_UNITY, DIM (csDef.prj_knm));
+    CSMap::CS_stncp(csDef.unit, params.unit_nm, DIM(csDef.unit));
+    CSMap::CS_stncp(csDef.dat_knm, params.dat_knm, DIM(csDef.dat_knm));
+    CSMap::CS_stncp(csDef.elp_knm, params.ell_knm, DIM(csDef.elp_knm));
 
     csDef.ll_min[0] = params.domLL.min_lng;
     csDef.ll_min[1] = params.domLL.min_lat;
@@ -1852,11 +1852,11 @@ Proj_unity          &params
 
 #if defined (NEEDSWORK_UNITY)
     // in the old code - need to figure out what it did.
-    if (0 != BeStringUtilties::Stricmp (pCsDef->unit, STRING_DEGREE))
+    if (0 != BeStringUtilties::Stricmp(pCsDef->unit, STRING_DEGREE))
         {
         /* CSMap structures carry range in units of the coordinate system.  Convert it if necessary */
-        status = ucrdConvert_distanceDegreesToAngular (&pCsDef->prj_prm1, pCsDef->prj_prm1, pCsDef->unit);
-        status = ucrdConvert_distanceDegreesToAngular (&pCsDef->prj_prm2, pCsDef->prj_prm2, pCsDef->unit);
+        status = ucrdConvert_distanceDegreesToAngular(&pCsDef->prj_prm1, pCsDef->prj_prm1, pCsDef->unit);
+        status = ucrdConvert_distanceDegreesToAngular(&pCsDef->prj_prm2, pCsDef->prj_prm2, pCsDef->unit);
         }
 #endif
     }
@@ -1875,281 +1875,281 @@ ProjectionParams    &params
     switch (projectionType)
         {
         case COORDSYS_ALBER:    // Albers equal area projection
-            AlbersToCsDef (csDef, params.alber);
+            AlbersToCsDef(csDef, params.alber);
             break;
 
         case COORDSYS_AZEDE:    // Azimuthal Equidistant Projection with Elevated Ellipsoid.
-            AzimuthalEquidistantElevatedToCsDef (csDef, params.azede);
+            AzimuthalEquidistantElevatedToCsDef(csDef, params.azede);
             break;
 
         case COORDSYS_AZMEA:    // Azimuthal Equal Area Projection.
-            AzimuthalEqualAreaToCsDef (csDef, params.azmea);
+            AzimuthalEqualAreaToCsDef(csDef, params.azmea);
             break;
 
         case COORDSYS_AZMED:    // Azimuthal Equidistant Projection.
-            AzimuthalEquidistantToCsDef (csDef, params.azmed);
+            AzimuthalEquidistantToCsDef(csDef, params.azmed);
             break;
 
         case COORDSYS_BONNE:    // Bonne Projection
-            BonneToCsDef (csDef, params.bonne);
+            BonneToCsDef(csDef, params.bonne);
             break;
 
         case COORDSYS_BPCNC:    // Bipolar Oblique Conic Projection
-            BipolarObliqueConformalConicToCsDef (csDef, params.bpcnc);
+            BipolarObliqueConformalConicToCsDef(csDef, params.bpcnc);
             break;
 
         case COORDSYS_CSINI:    // Cassini Cylindrical Projection
-            CassiniToCsDef (csDef, params.csini);
+            CassiniToCsDef(csDef, params.csini);
             break;
 
         case COORDSYS_EDCNC:    // Equidistant Conic Projection
-            EquidistantConicToCsDef (csDef, params.edcnc);
+            EquidistantConicToCsDef(csDef, params.edcnc);
             break;
 
         case COORDSYS_EDCYL:    // Equidistant Cylindrical Projection
-            EquidistantCylindricalToCsDef (csDef, params.edcyl, CS_EDCYL);
+            EquidistantCylindricalToCsDef(csDef, params.edcyl, CS_EDCYL);
             break;
 
         case COORDSYS_EKRT4:    // Eckert IV Projection
-            Eckert4ToCsDef (csDef, params.ekrt4);
+            Eckert4ToCsDef(csDef, params.ekrt4);
             break;
 
         case COORDSYS_EKRT6:    // Eckert VI Projection
-            Eckert6ToCsDef (csDef, params.ekrt6);
+            Eckert6ToCsDef(csDef, params.ekrt6);
             break;
 
         case COORDSYS_GAUSK:    // Gauss Kruger Projection (Transvers Mercator variant)
-            TransverseMercatorToCsDef (csDef, params.trmer, CS_GAUSK);
+            TransverseMercatorToCsDef(csDef, params.trmer, CS_GAUSK);
             break;
 
         case COORDSYS_GNOMC:    // Gnomic Projection
-            GnomicToCsDef (csDef, params.gnomc);
+            GnomicToCsDef(csDef, params.gnomc);
             break;
 
         case COORDSYS_HMLSN:    // Homolsine Projection
-            HomolsineToCsDef (csDef, params.hmlsn);
+            HomolsineToCsDef(csDef, params.hmlsn);
             break;
 
         case COORDSYS_HOM1U:    // Hotine Oblique Mercator 1 Point Unrectified Projection (CSMap says rarely used).
         case COORDSYS_OBLQ1:    // CSMap calls it HOM1XY - Alask Variation, Rectified
-            ObliqueMercator1PointToCsDef (csDef, params.oblq1, (COORDSYS_HOM1U == projectionType) ? CS_HOM1U : CS_OBLQ1);
+            ObliqueMercator1PointToCsDef(csDef, params.oblq1, (COORDSYS_HOM1U == projectionType) ? CS_HOM1U : CS_OBLQ1);
             break;
 
         case COORDSYS_HOM2U:    // Hotine Oblique Mercator 1 Point Unrectified Projection (CSMap says rarely used).
         case COORDSYS_OBLQ2:
-            ObliqueMercator2PointToCsDef (csDef, params.oblq2, (COORDSYS_HOM1U == projectionType) ? CS_HOM2U : CS_OBLQ2);
+            ObliqueMercator2PointToCsDef(csDef, params.oblq2, (COORDSYS_HOM1U == projectionType) ? CS_HOM2U : CS_OBLQ2);
             break;
 
         case COORDSYS_HUEOV:    // Hungarian EOV Projection.
-            HungarianEOVToCsDef (csDef, params.hueov);
+            HungarianEOVToCsDef(csDef, params.hueov);
             break;
 
         case COORDSYS_KRVKG:    // Krovak Oblique Conformal Conic
-            KrovakToCsDef (csDef, params.krvkg, CS_KRVKG);
+            KrovakToCsDef(csDef, params.krvkg, CS_KRVKG);
             break;
         case COORDSYS_KRVKP:
-            KrovakToCsDef (csDef, params.krvkg, CS_KRVKP);
+            KrovakToCsDef(csDef, params.krvkg, CS_KRVKP);
             break;
         case COORDSYS_KRVKR:
-            KrovakToCsDef (csDef, params.krvkg, CS_KRVKR);
+            KrovakToCsDef(csDef, params.krvkg, CS_KRVKR);
             break;
 
         case COORDSYS_LM1SP:    // Lambert Tangential Projection
         case COORDSYS_LMTAN:
-            LambertTangentialToCsDef (csDef, params.lmtan, (COORDSYS_LM1SP == projectionType) ? CS_LM1SP : CS_LMTAN);
+            LambertTangentialToCsDef(csDef, params.lmtan, (COORDSYS_LM1SP == projectionType) ? CS_LM1SP : CS_LMTAN);
             break;
 
         case COORDSYS_LMBRT:    // Lambert Conformal Conic Projection
         case COORDSYS_LMBLG:    // Belgium variation
-            LambertConformalConicToCsDef (csDef, params.lmbrt, (COORDSYS_LMBRT == projectionType) ? CS_LMBRT : CS_LMBLG);;
+            LambertConformalConicToCsDef(csDef, params.lmbrt, (COORDSYS_LMBRT == projectionType) ? CS_LMBRT : CS_LMBLG);;
             break;
 
         case COORDSYS_LMMIN:    // Lambert Conformal Conic Projection, Minnesota variation
-            LambertConformalConicMinnesotaToCsDef (csDef, params.lmmin);
+            LambertConformalConicMinnesotaToCsDef(csDef, params.lmmin);
             break;
 
         case COORDSYS_LMWIS:    // Lambert Conformal Conic Projection, Minnesota variation
-            LambertConformalConicWisconsinToCsDef (csDef, params.lmwis);
+            LambertConformalConicWisconsinToCsDef(csDef, params.lmwis);
             break;
 
         case COORDSYS_MILLR:    // Miller Projection
-            MillerToCsDef (csDef, params.millr);
+            MillerToCsDef(csDef, params.millr);
             break;
 
         case COORDSYS_MODPC:    // Modified Polyconic Projection
-            ModifiedPolyconicToCsDef (csDef, params.modpc);
+            ModifiedPolyconicToCsDef(csDef, params.modpc);
             break;
 
         case COORDSYS_MOLWD:    // Mollweide Projection
-            MollweideToCsDef (csDef, params.molwd);
+            MollweideToCsDef(csDef, params.molwd);
             break;
 
         case COORDSYS_MRCAT:    // Mercator Projection
-            MercatorToCsDef (csDef, params.mrcat);
+            MercatorToCsDef(csDef, params.mrcat);
             break;
 
         case COORDSYS_MRCSR:    // Mercator Projection with Scale Reduction
-            MercatorScaleReductionToCsDef (csDef, params.mrcsr);
+            MercatorScaleReductionToCsDef(csDef, params.mrcsr);
             break;
 
         case COORDSYS_MSTRO:    // Modified Stereographic Projection
-            ModifiedStereographicToCsDef (csDef, params.mstro);
+            ModifiedStereographicToCsDef(csDef, params.mstro);
             break;
 
         case COORDSYS_NACYL:    // Normal Aspect Authalic Cylindrical Projection
-            NormalAspectAuthalicCylindricalToCsDef (csDef, params.nacyl);
+            NormalAspectAuthalicCylindricalToCsDef(csDef, params.nacyl);
             break;
 
         case COORDSYS_NERTH:    // Non-earth Projection
-            NonEarthToCsDef (csDef, params.nerth);
+            NonEarthToCsDef(csDef, params.nerth);
             break;
 
         case COORDSYS_NESRT:    // Non-earth with scale, rotation, and translation
-            NonEarthScaleRotationTranslationToCsDef (csDef, params.nesrt);
+            NonEarthScaleRotationTranslationToCsDef(csDef, params.nesrt);
             break;
 
         case COORDSYS_NZLND:    // New Zealand Projection
-            NewZealandToCsDef (csDef, params.nzlnd);
+            NewZealandToCsDef(csDef, params.nzlnd);
             break;
 
         case COORDSYS_ORTHO:    // Orthographic Projection
-            OrthographicToCsDef (csDef, params.ortho);
+            OrthographicToCsDef(csDef, params.ortho);
             break;
 
         case COORDSYS_OSTRO:    // Oblique Stereographic Projection
-            StereographicToCsDef (csDef, params.ostro, CS_OSTRO);
+            StereographicToCsDef(csDef, params.ostro, CS_OSTRO);
             break;
 
         case COORDSYS_PSTRO:    // Polar Sterographic Projection
-            StereographicToCsDef (csDef, params.ostro, CS_PSTRO);
+            StereographicToCsDef(csDef, params.ostro, CS_PSTRO);
             break;
 
         case COORDSYS_OST97:    // Ordinance Survey Grid Transformation of 1997
             // This is a variation of Transverse Mercator (see csmap documentation) but there are no parameters - everything is hard coded.
             // yet for backward compatibility and due to a csmap issue we must still store as much as possible (datum, unit, ellipsoid...)
-            Ost97ToCsDef (csDef, params.ost97);
+            Ost97ToCsDef(csDef, params.ost97);
             break;
 
         case COORDSYS_OST02:    // Ordinance Survey Grid Transformation of 2002
             // This is a variation of Transverse Mercator (see csmap documentation) but there are no parameters - everything is hard coded.
             // yet for backward compatibility and due to a csmap issue we must still store as much as possible (datum, unit, ellipsoid...)
-            Ost02ToCsDef (csDef, params.ost97);
+            Ost02ToCsDef(csDef, params.ost97);
             break;
 
         case COORDSYS_PLYCN:    // American Polyconic Projection
-            AmericanPolyconicToCsDef (csDef, params.plycn);
+            AmericanPolyconicToCsDef(csDef, params.plycn);
             break;
 
         case COORDSYS_PSTSL:    // Polar Stereographic with Standard Latitude
-            PolarStereographicStandardLatToCsDef (csDef, params.pstsl);
+            PolarStereographicStandardLatToCsDef(csDef, params.pstsl);
             break;
 
         case COORDSYS_ROBIN:    // Robinson Projection
-            RobinsonToCsDef (csDef, params.robin);
+            RobinsonToCsDef(csDef, params.robin);
             break;
 
         case COORDSYS_RSKEW:    // Rectified Skew Orthomorphic
-            ObliqueMercator1PointToCsDef (csDef, params.oblq1, CS_RSKEW);
+            ObliqueMercator1PointToCsDef(csDef, params.oblq1, CS_RSKEW);
             break;
 
         case COORDSYS_RSKWC:    // Rectified Skew Orthomorphic Centered
-            ObliqueMercator1PointToCsDef (csDef, params.oblq1, CS_RSKWC);
+            ObliqueMercator1PointToCsDef(csDef, params.oblq1, CS_RSKWC);
             break;
 
         case COORDSYS_RSKWO:    // Rectified Skew Orthomorphic Origin
-            ObliqueMercator1PointToCsDef (csDef, params.oblq1, CS_RSKWO);
+            ObliqueMercator1PointToCsDef(csDef, params.oblq1, CS_RSKWO);
             break;
 
         case COORDSYS_SINUS:    // Sinusoidal Projection
-            SinusoidalToCsDef (csDef, params.sinus);
+            SinusoidalToCsDef(csDef, params.sinus);
             break;
 
         case COORDSYS_SOTRM:    // Transverse Mercator South Oriented Projection
-            TransverseMercatorToCsDef (csDef, params.trmer, CS_SOTRM);
+            TransverseMercatorToCsDef(csDef, params.trmer, CS_SOTRM);
             break;
 
         case COORDSYS_STERO:    // Stereographic Projection
-            StereographicToCsDef (csDef, params.stero, CS_STERO);
+            StereographicToCsDef(csDef, params.stero, CS_STERO);
             break;
 
 
         case COORDSYS_SWISS:    // Oblique CylindricalSwiss Projection
-            SwissToCsDef (csDef, params.swiss);
+            SwissToCsDef(csDef, params.swiss);
             break;
 
         case COORDSYS_SYS34:    // Danish System 34
         case COORDSYS_S3499:    // Danish System 34 with 1999 Polynomial.
         case COORDSYS_S3401:    // Danish System 34 with 2001 Polynomial.
-            Danish34ToCsDef (csDef, params.sys34, (COORDSYS_SYS34 == projectionType) ? CS_SYS34 : ((COORDSYS_S3499 == projectionType) ? CS_S3499 : CS_S3401));
+            Danish34ToCsDef(csDef, params.sys34, (COORDSYS_SYS34 == projectionType) ? CS_SYS34 : ((COORDSYS_S3499 == projectionType) ? CS_S3499 : CS_S3401));
             break;
 
         case COORDSYS_TACYL:    // Transverse Authalic Cylindrical Projection
-            TransverseAuthalicCylindricalToCsDef (csDef, params.tacyl);
+            TransverseAuthalicCylindricalToCsDef(csDef, params.tacyl);
             break;
 
         case COORDSYS_TMMIN:    // Transverse Mercator, Minnesota
-            TransverseMercatorMinnesotaToCsDef (csDef, params.tmmin);
+            TransverseMercatorMinnesotaToCsDef(csDef, params.tmmin);
             break;
 
         case COORDSYS_TMWIS:    // Transverse Mercator, Wisconsin County
-            TransverseMercatorWisconsinToCsDef (csDef, params.tmwis);
+            TransverseMercatorWisconsinToCsDef(csDef, params.tmwis);
             break;
 
         case COORDSYS_TRMAF:    // Transverse Mercator with Affine Post Process
-            TransverseMercatorAffinePostProcessToCsDef (csDef, params.trmaf);
+            TransverseMercatorAffinePostProcessToCsDef(csDef, params.trmaf);
             break;
 
         case COORDSYS_TRMER:    // Transverse Mercator Projection
-            TransverseMercatorToCsDef (csDef, params.trmer, CS_TRMER);
+            TransverseMercatorToCsDef(csDef, params.trmer, CS_TRMER);
             break;
 
         case COORDSYS_TMKRG:    // Transverse Mercator Projection
-            TransverseMercatorToCsDef (csDef, params.trmer, CS_TMKRG);
+            TransverseMercatorToCsDef(csDef, params.trmer, CS_TMKRG);
             break;
 
         case COORDSYS_UTMZN:    // Universal Tranverse Mercator Zone Projections
-            UniversalTransverseMercatorZoneToCsDef (csDef, params.utmzn, CS_UTMZN);
+            UniversalTransverseMercatorZoneToCsDef(csDef, params.utmzn, CS_UTMZN);
             break;
 
         case COORDSYS_Geographic:   // Unity (Lat/Long) pseudo-projection.
-            GeographicToCsDef (csDef, params.unity);
+            GeographicToCsDef(csDef, params.unity);
             break;
 
         case COORDSYS_VDGRN:        // Van der Grinten Projection
-            VanDerGrintenToCsDef (csDef, params.vdgrn);
+            VanDerGrintenToCsDef(csDef, params.vdgrn);
             break;
 
         case COORDSYS_WINKT:        // Winkel-Tripel Projection
-            WinkelTripelToCsDef (csDef, params.winkt);
+            WinkelTripelToCsDef(csDef, params.winkt);
             break;
 
         case COORDSYS_LMBRTAF:      // Lambert with Affine Post Processor
-            LambertAffinePostProcessToCsDef (csDef, params.lmbrtaf);
+            LambertAffinePostProcessToCsDef(csDef, params.lmbrtaf);
             break;
 
         // TOTAL_SPECIAL
         case COORDSYS_UTMZNBF:     // UTM Zone, using TOTal BF calculation
-            UniversalTransverseMercatorZoneToCsDef (csDef, params.utmzn, CS_UTMZNBF);
+            UniversalTransverseMercatorZoneToCsDef(csDef, params.utmzn, CS_UTMZNBF);
             break;
 
         case COORDSYS_TRMERBF:     // Transverse Mercator, using TOTAL BF calculation
-            TransverseMercatorToCsDef (csDef, params.trmer, CS_TRMERBF);
+            TransverseMercatorToCsDef(csDef, params.trmer, CS_TRMERBF);
             break;
 
         case COORDSYS_EDCYLE:     // Equidistant Cylindrical Ellipsoid or Spherical form
-            EquidistantCylindricalToCsDef (csDef, params.edcyl, CS_EDCYLE);
+            EquidistantCylindricalToCsDef(csDef, params.edcyl, CS_EDCYLE);
             break;
 
         case COORDSYS_PCARREE:     // Simple Cylindrical / Plate Carree
-            PlateCarreeToCsDef (csDef, params.pcarree);
+            PlateCarreeToCsDef(csDef, params.pcarree);
             break;
 
         case COORDSYS_MRCATPV:    // Popular Visualization Pseudo Mercator Projection
-            PopularVisualizationMercatorToCsDef (csDef, params.mrcatpv);
+            PopularVisualizationMercatorToCsDef(csDef, params.mrcatpv);
             break;
 
        case COORDSYS_MNDOTOBL:    // Minnesota DOT Oblique Mercator
-            MinnesotaDOTObliqueMercatorToCsDef (csDef, params.mndotobl);
+            MinnesotaDOTObliqueMercatorToCsDef(csDef, params.mndotobl);
             break;
 
         default:
@@ -2157,7 +2157,7 @@ ProjectionParams    &params
         }
 
     // this was the tolerance used in the old code.
-    if (fabs (csDef.map_scl) <= GEOCOORD_CLOSE_TOLERANCE)
+    if (fabs(csDef.map_scl) <= GEOCOORD_CLOSE_TOLERANCE)
         csDef.map_scl = 1.0;
 
     // we do not want to send map_scl to CSMap. We'll handle it internally. We set it to 1.0 in csDef, and we'll store it as a member of DgnGCS.
@@ -2180,11 +2180,11 @@ ProjectionParams    &projectionParams
 )
     {
     // convert the type 66 and projectionParams to a CSDefinition/CSDatum pair that can be made into CSParameters.
-    memset ((void*)&csDef, 0, sizeof(csDef));
+    memset((void*)&csDef, 0, sizeof(csDef));
 
     // get the strings from the type 66.
-    CommonParamsToCSDef (csDef, extracted);
-    ProjectionParamsToCSDef (csDef, paperScale, extracted.projType, projectionParams);
+    CommonParamsToCSDef(csDef, extracted);
+    ProjectionParamsToCSDef(csDef, paperScale, extracted.projType, projectionParams);
 
     return SUCCESS;
     }
@@ -2203,7 +2203,7 @@ CharCP        projectionKeyName
 
     for (iCoordSys=0, coordSys = csDataMap; iCoordSys < DIM (csDataMap); iCoordSys++, coordSys++)
         {
-        if ( (NULL != coordSys->keyName) && (0 == strcmp (projectionKeyName, coordSys->keyName)) )
+        if ( (NULL != coordSys->keyName) && (0 == strcmp(projectionKeyName, coordSys->keyName)) )
             return coordSys->projectionCode;
         }
     return COORDSYS_NONE;
@@ -2222,10 +2222,10 @@ const CSDefinition  &csDef
     {
     type66.protect = csDef.protect;
 
-    CSMap::CS_stncp (type66.grp_knm, csDef.group,   DIM(type66.grp_knm));
-    CSMap::CS_stncp (type66.prj_knm, csDef.prj_knm, DIM(type66.prj_knm));
-    CSMap::CS_stncp (type66.source,  csDef.source,  DIM(type66.source));
-    CSMap::CS_stncp (type66.desc_nm, csDef.desc_nm, DIM(type66.desc_nm));
+    CSMap::CS_stncp(type66.grp_knm, csDef.group,   DIM(type66.grp_knm));
+    CSMap::CS_stncp(type66.prj_knm, csDef.prj_knm, DIM(type66.prj_knm));
+    CSMap::CS_stncp(type66.source,  csDef.source,  DIM(type66.source));
+    CSMap::CS_stncp(type66.desc_nm, csDef.desc_nm, DIM(type66.desc_nm));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2251,12 +2251,12 @@ const CSDefinition  &csDef
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            SaveEllipsoidName (CharP ellipsoidName, const CSDefinition& csDef, size_t charCount)
+void            SaveEllipsoidName(CharP ellipsoidName, const CSDefinition& csDef, size_t charCount)
     {
     if ( (0 != csDef.elp_knm[0]) || (NULL == m_datum) )
-        CSMap::CS_stncp (ellipsoidName, csDef.elp_knm, (int)charCount);
+        CSMap::CS_stncp(ellipsoidName, csDef.elp_knm, (int)charCount);
     else
-        CSMap::CS_stncp (ellipsoidName, m_datum->ell_knm, (int)charCount);
+        CSMap::CS_stncp(ellipsoidName, m_datum->ell_knm, (int)charCount);
     }
 
 
@@ -2269,11 +2269,11 @@ Proj_alber          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
 
-    DomainFromCsDef (params.gcDom, csDef);
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.lat_1        = csDef.prj_prm1;
     params.lat_2        = csDef.prj_prm2;
@@ -2294,10 +2294,10 @@ Proj_azede          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.az           = csDef.prj_prm1;
     params.ellElev      = csDef.prj_prm2;
@@ -2318,10 +2318,10 @@ Proj_azmea          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.az           = csDef.prj_prm1;
     params.org_lng      = csDef.org_lng;
@@ -2341,10 +2341,10 @@ Proj_azmed          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.az           = csDef.prj_prm1;
     params.org_lng      = csDef.org_lng;
@@ -2364,10 +2364,10 @@ Proj_bonne          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.org_lat      = csDef.org_lat;
@@ -2386,10 +2386,10 @@ Proj_bpcnc          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.lng_1        = csDef.prj_prm1;
     params.lat_1        = csDef.prj_prm2;
@@ -2413,10 +2413,10 @@ Proj_csini          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     params.org_lat      = csDef.org_lat;
@@ -2435,10 +2435,10 @@ Proj_edcnc          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.lat_1        = csDef.prj_prm1;
     params.lat_2        = csDef.prj_prm2;
@@ -2459,10 +2459,10 @@ Proj_edcyl          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.std_lat      = csDef.prj_prm1;
     params.org_lat      = csDef.org_lat;
@@ -2482,10 +2482,10 @@ Proj_ekrt4          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     params.paper_scl    = csDef.map_scl;
@@ -2503,10 +2503,10 @@ Proj_ekrt6          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     params.paper_scl    = csDef.map_scl;
@@ -2524,10 +2524,10 @@ Proj_trmer          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    SaveEllipsoidName (params.ell_knm, csDef, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    SaveEllipsoidName(params.ell_knm, csDef, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     params.org_lat      = csDef.org_lat;
@@ -2548,10 +2548,10 @@ Proj_tmmin          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     params.ellElev      = csDef.prj_prm2;
@@ -2573,10 +2573,10 @@ Proj_tmwis          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     params.geoidSep     = csDef.prj_prm2;
@@ -2599,10 +2599,10 @@ Proj_trmaf          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     // NOTE: The CSMap documentation has them ordered A0,B0,A1,A2,B1,B2, and the code looks like that is exactly what they expect.
@@ -2633,10 +2633,10 @@ Proj_utmzn          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.zoneNo       =  (int32_t) csDef.prj_prm1;
     params.hemisphere   =  (int32_t) (0 > csDef.prj_prm2 ?  OBE_HEMISPHERE_SOUTH : OBE_HEMISPHERE_NORTH);
@@ -2655,10 +2655,10 @@ Proj_gnomc          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.org_lat      = csDef.org_lat;
@@ -2722,12 +2722,12 @@ Proj_hmlsn          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
-    ZonesFromCsDef (params.zone, &params.nZones, &csDef.prj_prm1);
+    ZonesFromCsDef(params.zone, &params.nZones, &csDef.prj_prm1);
     params.org_lng      = csDef.org_lng;
     params.paper_scl    = csDef.map_scl;
     params.x_off        = csDef.x_off;
@@ -2744,10 +2744,10 @@ Proj_Oblq1          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.lng_c        = csDef.prj_prm1;
     params.lat_c        = csDef.prj_prm2;
@@ -2769,10 +2769,10 @@ Proj_Oblq2          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.lng_1        = csDef.prj_prm1;
     params.lat_1        = csDef.prj_prm2;
@@ -2796,10 +2796,10 @@ Proj_Mndotobl       &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.lng_c        = csDef.prj_prm1;
     params.lat_c        = csDef.prj_prm2;
@@ -2823,10 +2823,10 @@ const CSDefinition  &csDef
 )
     {
     // No CSMap documentation, looking at old geocoord stuff.
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.org_lat      = csDef.org_lat;
@@ -2849,10 +2849,10 @@ const CSDefinition  &csDef
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord cold.
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.pole_lng  = csDef.prj_prm1;
     params.pole_lat  = csDef.prj_prm2;
@@ -2866,7 +2866,7 @@ const CSDefinition  &csDef
     params.y_off     = csDef.y_off;
     params.quad      = csDef.quad;
 
-    if (0 == strcmp (csDef.prj_knm, CS_KRVK95))
+    if (0 == strcmp(csDef.prj_knm, CS_KRVK95))
         params.apply95 = 1;
     }
 
@@ -2880,10 +2880,10 @@ const CSDefinition  &csDef
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord cold.
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.org_lat      = csDef.org_lat;
@@ -2905,10 +2905,10 @@ const CSDefinition  &csDef
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord cold.
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.lat_1        = csDef.prj_prm1;
     params.lat_2        = csDef.prj_prm2;
@@ -2931,10 +2931,10 @@ const CSDefinition  &csDef
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord code.
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.lat_1        = csDef.prj_prm1;
     params.lat_2        = csDef.prj_prm2;
@@ -2958,10 +2958,10 @@ const CSDefinition  &csDef
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord code.
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.lat_1        = csDef.prj_prm1;
     params.lat_2        = csDef.prj_prm2;
@@ -2986,10 +2986,10 @@ const CSDefinition  &csDef
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord cold.
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     params.paper_scl    = csDef.map_scl;
@@ -3008,10 +3008,10 @@ const CSDefinition  &csDef
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord cold.
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     params.lng_1        = csDef.prj_prm2;
@@ -3032,12 +3032,12 @@ Proj_molwd          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
-    ZonesFromCsDef (params.zone, &params.nZones, &csDef.prj_prm1);
+    ZonesFromCsDef(params.zone, &params.nZones, &csDef.prj_prm1);
     params.org_lng      = csDef.org_lng;
     params.paper_scl    = csDef.map_scl;
     params.x_off        = csDef.x_off;
@@ -3054,10 +3054,10 @@ Proj_mrcat          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     params.std_lat      = csDef.prj_prm2;
@@ -3077,10 +3077,10 @@ Proj_mrcsr          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     params.scl_red      = csDef.scl_red;
@@ -3099,17 +3099,17 @@ Proj_mstro          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.org_lat      = csDef.org_lat;
     params.scl_red      = csDef.scl_red;
 
     // copy the imaginary numbers to prj_prm1 - prj_prm24
-    memcpy (params.ABary, &csDef.prj_prm1, 24*sizeof(double));
+    memcpy(params.ABary, &csDef.prj_prm1, 24*sizeof(double));
 
     params.paper_scl    = csDef.map_scl;
     params.x_off        = csDef.x_off;
@@ -3126,10 +3126,10 @@ Proj_nacyl          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.std_lat      = csDef.prj_prm1;
@@ -3148,10 +3148,10 @@ Proj_nerth          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.paper_scl    = csDef.map_scl;
     params.x_off        = csDef.x_off;
@@ -3168,9 +3168,9 @@ Proj_nesrt          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.scale        = csDef.prj_prm1;
     params.rotateDeg    = csDef.prj_prm2;
@@ -3191,10 +3191,10 @@ Proj_nzlnd          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng       = csDef.org_lng;
     params.org_lat       = csDef.org_lat;
@@ -3214,10 +3214,10 @@ Proj_ortho          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng       = csDef.org_lng;
     params.org_lat       = csDef.org_lat;
@@ -3237,10 +3237,10 @@ Proj_stero          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.org_lat      = csDef.org_lat;
@@ -3265,10 +3265,10 @@ const CSDefinition  &csDef
     // All parameters are hard-coded ... we only save as this information since it is required for
     // recreation of the GCS upon reload (CSMAP issue) and to reload the DGN into Map XM or GeoGraphics
 
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.paper_scl    = csDef.map_scl;
     params.quad         = csDef.quad;
@@ -3286,10 +3286,10 @@ const CSDefinition  &csDef
     // All parameters are hard-coded ... we only save as this information since it is required for
     // recreation of the GCS upon reload (CSMAP issue) and to reload the DGN into Map XM or GeoGraphics
 
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.paper_scl    = csDef.map_scl;
     params.quad         = csDef.quad;
@@ -3305,10 +3305,10 @@ Proj_plycn          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     params.org_lat      = csDef.org_lat;
@@ -3328,10 +3328,10 @@ Proj_pstsl          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.org_lat      = csDef.org_lat;
@@ -3352,10 +3352,10 @@ Proj_robin          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.paper_scl    = csDef.map_scl;
@@ -3373,12 +3373,12 @@ Proj_sinus          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
-    ZonesFromCsDef (params.zone, &params.nZones, &csDef.prj_prm1);
+    ZonesFromCsDef(params.zone, &params.nZones, &csDef.prj_prm1);
     params.org_lng      = csDef.org_lng;
     params.paper_scl    = csDef.map_scl;
     params.x_off        = csDef.x_off;
@@ -3395,10 +3395,10 @@ Proj_swiss          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng       = csDef.org_lng;
     params.org_lat       = csDef.org_lat;
@@ -3418,10 +3418,10 @@ Proj_sys34          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.zoneNo       = (int32_t) csDef.prj_prm1;
     params.paper_scl    = csDef.map_scl;
@@ -3439,10 +3439,10 @@ Proj_tacyl          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.org_lat      = csDef.org_lat;
@@ -3463,10 +3463,10 @@ Proj_vdgrn          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.paper_scl    = csDef.map_scl;
@@ -3484,10 +3484,10 @@ Proj_winkt          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.org_lng;
     params.std_lat      = csDef.prj_prm1;
@@ -3508,10 +3508,10 @@ const CSDefinition  &csDef
 )
     {
     // The CSMap documentation doesn't say anything about these parameters. Based on old geocoord cold.
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.lat_1        = csDef.prj_prm1;
     params.lat_2        = csDef.prj_prm2;
@@ -3541,10 +3541,10 @@ Proj_pcarree        &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lat      = csDef.org_lat;
     params.org_lng      = csDef.org_lng;
@@ -3563,10 +3563,10 @@ Proj_mrcatpv        &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit,    DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
-    DomainFromCsDef (params.gcDom, csDef);
+    CSMap::CS_stncp(params.unit_nm, csDef.unit,    DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    DomainFromCsDef(params.gcDom, csDef);
 
     params.org_lng      = csDef.prj_prm1;
     
@@ -3588,9 +3588,9 @@ Proj_unity          &params,
 const CSDefinition  &csDef
 )
     {
-    CSMap::CS_stncp (params.unit_nm, csDef.unit, DIM(params.unit_nm));
-    CSMap::CS_stncp (params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
-    CSMap::CS_stncp (params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
+    CSMap::CS_stncp(params.unit_nm, csDef.unit, DIM(params.unit_nm));
+    CSMap::CS_stncp(params.dat_knm, csDef.dat_knm, DIM(params.dat_knm));
+    CSMap::CS_stncp(params.ell_knm, csDef.elp_knm, DIM(params.ell_knm));
 
     params.domLL.min_lng = csDef.ll_min[0];
     params.domLL.min_lat = csDef.ll_min[1];
@@ -3613,11 +3613,11 @@ const CSDefinition  &csDef
 
 #if defined (NEEDSWORK_UNITY)
     // in the old code - need to figure out what it did.
-    if (0 != BeStringUtilties::Stricmp (pCsDef->unit, STRING_DEGREE))
+    if (0 != BeStringUtilties::Stricmp(pCsDef->unit, STRING_DEGREE))
         {
         /* CSMap structures carry range in units of the coordinate system.  Convert it if necessary */
-        status = ucrdConvert_distanceDegreesToAngular (&pCsDef->prj_prm1, pCsDef->prj_prm1, pCsDef->unit);
-        status = ucrdConvert_distanceDegreesToAngular (&pCsDef->prj_prm2, pCsDef->prj_prm2, pCsDef->unit);
+        status = ucrdConvert_distanceDegreesToAngular(&pCsDef->prj_prm1, pCsDef->prj_prm1, pCsDef->unit);
+        status = ucrdConvert_distanceDegreesToAngular(&pCsDef->prj_prm2, pCsDef->prj_prm2, pCsDef->unit);
         }
 #endif
     }
@@ -3633,282 +3633,282 @@ const CSDefinition  &csDef
 )
     {
     // make sure it starts out clear.
-    memset (&params, 0, sizeof(params));
+    memset(&params, 0, sizeof(params));
 
     switch (projectionType)
         {
         case COORDSYS_ALBER:    // Albers equal area projection
-            AlbersFromCsDef (params.alber, csDef);
+            AlbersFromCsDef(params.alber, csDef);
             break;
 
         case COORDSYS_AZEDE:    // Azimuthal Equidistant Projection with Elevated Ellipsoid.
-            AzimuthalEquidistantElevatedFromCsDef (params.azede, csDef);
+            AzimuthalEquidistantElevatedFromCsDef(params.azede, csDef);
             break;
 
         case COORDSYS_AZMEA:    // Azimuthal Equal Area Projection.
-            AzimuthalEqualAreaFromCsDef (params.azmea, csDef);
+            AzimuthalEqualAreaFromCsDef(params.azmea, csDef);
             break;
 
         case COORDSYS_AZMED:    // Azimuthal Equidistant Projection.
-            AzimuthalEquidistantFromCsDef (params.azmed, csDef);
+            AzimuthalEquidistantFromCsDef(params.azmed, csDef);
             break;
 
         case COORDSYS_BONNE:    // Bonne Projection
-            BonneFromCsDef (params.bonne, csDef);
+            BonneFromCsDef(params.bonne, csDef);
             break;
 
         case COORDSYS_BPCNC:    // Bipolar Oblique Conic Projection
-            BipolarObliqueConformalConicFromCsDef (params.bpcnc, csDef);
+            BipolarObliqueConformalConicFromCsDef(params.bpcnc, csDef);
             break;
 
         case COORDSYS_CSINI:    // Cassini Cylindrical Projection
-            CassiniFromCsDef (params.csini, csDef);
+            CassiniFromCsDef(params.csini, csDef);
             break;
 
         case COORDSYS_EDCNC:    // Equidistant Conic Projection
-            EquidistantConicFromCsDef (params.edcnc, csDef);
+            EquidistantConicFromCsDef(params.edcnc, csDef);
             break;
 
         case COORDSYS_EDCYL:    // Equidistant Cylindrical Projection
-            EquidistantCylindricalFromCsDef (params.edcyl, csDef);
+            EquidistantCylindricalFromCsDef(params.edcyl, csDef);
             break;
 
         case COORDSYS_EKRT4:    // Eckert IV Projection
-            Eckert4FromCsDef (params.ekrt4, csDef);
+            Eckert4FromCsDef(params.ekrt4, csDef);
             break;
 
         case COORDSYS_EKRT6:    // Eckert VI Projection
-            Eckert6FromCsDef (params.ekrt6, csDef);
+            Eckert6FromCsDef(params.ekrt6, csDef);
             break;
 
         case COORDSYS_GAUSK:    // Gauss Kruger Projection (Transvers Mercator variant)
-            TransverseMercatorFromCsDef (params.trmer, csDef);
+            TransverseMercatorFromCsDef(params.trmer, csDef);
             break;
 
         case COORDSYS_GNOMC:    // Gnomic Projection
-            GnomicFromCsDef (params.gnomc, csDef);
+            GnomicFromCsDef(params.gnomc, csDef);
             break;
 
         case COORDSYS_HMLSN:    // Homolsine Projection
-            HomolsineFromCsDef (params.hmlsn, csDef);
+            HomolsineFromCsDef(params.hmlsn, csDef);
             break;
 
         case COORDSYS_HOM1U:    // Hotine Oblique Mercator 1 Point Unrectified Projection (CSMap says rarely used).
         case COORDSYS_OBLQ1:    // CSMap calls it HOM1XY - Alask Variation, Rectified
-            ObliqueMercator1PointFromCsDef (params.oblq1, csDef);
+            ObliqueMercator1PointFromCsDef(params.oblq1, csDef);
             break;
 
         case COORDSYS_HOM2U:    // Hotine Oblique Mercator 1 Point Unrectified Projection (CSMap says rarely used).
         case COORDSYS_OBLQ2:
-            ObliqueMercator2PointFromCsDef (params.oblq2, csDef);
+            ObliqueMercator2PointFromCsDef(params.oblq2, csDef);
             break;
 
         case COORDSYS_HUEOV:    // Hungarian EOV Projection.
-            HungarianEOVFromCsDef (params.hueov, csDef);
+            HungarianEOVFromCsDef(params.hueov, csDef);
             break;
 
         case COORDSYS_KRVKG:    // Krovak Oblique Conformal Conic
-            KrovakFromCsDef (params.krvkg, csDef);
+            KrovakFromCsDef(params.krvkg, csDef);
             break;
         case COORDSYS_KRVKP:
-            KrovakFromCsDef (params.krvkg, csDef);
+            KrovakFromCsDef(params.krvkg, csDef);
             break;
         case COORDSYS_KRVKR:
-            KrovakFromCsDef (params.krvkg, csDef);
+            KrovakFromCsDef(params.krvkg, csDef);
             break;
 
         case COORDSYS_LM1SP:    // Lambert Tangential Projection
         case COORDSYS_LMTAN:
-            LambertTangentialFromCsDef (params.lmtan, csDef);
+            LambertTangentialFromCsDef(params.lmtan, csDef);
             break;
 
         case COORDSYS_LMBRT:    // Lambert Conformal Conic Projection
         case COORDSYS_LMBLG:    // Belgium variation
-            LambertConformalConicFromCsDef (params.lmbrt, csDef);;
+            LambertConformalConicFromCsDef(params.lmbrt, csDef);;
             break;
 
         case COORDSYS_LMMIN:    // Lambert Conformal Conic Projection, Minnesota variation
-            LambertConformalConicMinnesotaFromCsDef (params.lmmin, csDef);
+            LambertConformalConicMinnesotaFromCsDef(params.lmmin, csDef);
             break;
 
         case COORDSYS_LMWIS:    // Lambert Conformal Conic Projection, Minnesota variation
-            LambertConformalConicWisconsinFromCsDef (params.lmwis, csDef);
+            LambertConformalConicWisconsinFromCsDef(params.lmwis, csDef);
             break;
 
         case COORDSYS_MILLR:    // Miller Projection
-            MillerFromCsDef (params.millr, csDef);
+            MillerFromCsDef(params.millr, csDef);
             break;
 
         case COORDSYS_MODPC:    // Modified Polyconic Projection
-            ModifiedPolyconicFromCsDef (params.modpc, csDef);
+            ModifiedPolyconicFromCsDef(params.modpc, csDef);
             break;
 
         case COORDSYS_MOLWD:    // Mollweide Projection
-            MollweideFromCsDef (params.molwd, csDef);
+            MollweideFromCsDef(params.molwd, csDef);
             break;
 
         case COORDSYS_MRCAT:    // Mercator Projection
-            MercatorFromCsDef (params.mrcat, csDef);
+            MercatorFromCsDef(params.mrcat, csDef);
             break;
 
         case COORDSYS_MRCSR:    // Mercator Projection with Scale Reduction
-            MercatorScaleReductionFromCsDef (params.mrcsr, csDef);
+            MercatorScaleReductionFromCsDef(params.mrcsr, csDef);
             break;
 
         case COORDSYS_MSTRO:    // Modified Stereographic Projection
-            ModifiedStereographicFromCsDef (params.mstro, csDef);
+            ModifiedStereographicFromCsDef(params.mstro, csDef);
             break;
 
         case COORDSYS_NACYL:    // Normal Aspect Authalic Cylindrical Projection
-            NormalAspectAuthalicCylindricalFromCsDef (params.nacyl, csDef);
+            NormalAspectAuthalicCylindricalFromCsDef(params.nacyl, csDef);
             break;
 
         case COORDSYS_NERTH:    // Non-earth Projection
-            NonEarthFromCsDef (params.nerth, csDef);
+            NonEarthFromCsDef(params.nerth, csDef);
             break;
 
         case COORDSYS_NESRT:    // Non-earth with scale, rotation, and translation
-            NonEarthScaleRotationTranslationFromCsDef (params.nesrt, csDef);
+            NonEarthScaleRotationTranslationFromCsDef(params.nesrt, csDef);
             break;
 
         case COORDSYS_NZLND:    // New Zealand Projection
-            NewZealandFromCsDef (params.nzlnd, csDef);
+            NewZealandFromCsDef(params.nzlnd, csDef);
             break;
 
         case COORDSYS_ORTHO:    // Orthographic Projection
-            OrthographicFromCsDef (params.ortho, csDef);
+            OrthographicFromCsDef(params.ortho, csDef);
             break;
 
         case COORDSYS_OSTRO:    // Oblique Stereographic Projection
-            StereographicFromCsDef (params.ostro, csDef);
+            StereographicFromCsDef(params.ostro, csDef);
             break;
 
         case COORDSYS_PSTRO:    // Polar Sterographic Projection
-            StereographicFromCsDef (params.ostro, csDef);
+            StereographicFromCsDef(params.ostro, csDef);
             break;
 
         case COORDSYS_OST97:    // Ordinance Survey Grid Transformation of 1997
-            Ost97FromCsDef (params.ost97, csDef);
+            Ost97FromCsDef(params.ost97, csDef);
             break;
 
         case COORDSYS_OST02:    // Ordinance Survey Grid Transformation of 2002
             // This is a variation of Transverse Mercator (see csmap documentation) but there are no parameters - everything is hard coded.
-            Ost02FromCsDef (params.ost97, csDef);
+            Ost02FromCsDef(params.ost97, csDef);
             break;
 
         case COORDSYS_PLYCN:    // American Polyconic Projection
-            AmericanPolyconicFromCsDef (params.plycn, csDef);
+            AmericanPolyconicFromCsDef(params.plycn, csDef);
             break;
 
         case COORDSYS_PSTSL:    // Polar Stereographic with Standard Latitude
-            PolarStereographicStandardLatFromCsDef (params.pstsl, csDef);
+            PolarStereographicStandardLatFromCsDef(params.pstsl, csDef);
             break;
 
         case COORDSYS_ROBIN:    // Robinson Projection
-            RobinsonFromCsDef (params.robin, csDef);
+            RobinsonFromCsDef(params.robin, csDef);
             break;
 
         case COORDSYS_RSKEW:    // Rectified Skew Orthomorphic
-            ObliqueMercator1PointFromCsDef (params.oblq1, csDef);
+            ObliqueMercator1PointFromCsDef(params.oblq1, csDef);
             break;
 
         case COORDSYS_RSKWC:    // Rectified Skew Orthomorphic Centered
-            ObliqueMercator1PointFromCsDef (params.oblq1, csDef);
+            ObliqueMercator1PointFromCsDef(params.oblq1, csDef);
             break;
 
         case COORDSYS_RSKWO:    // Rectified Skew Orthomorphic Origin
-            ObliqueMercator1PointFromCsDef (params.oblq1, csDef);
+            ObliqueMercator1PointFromCsDef(params.oblq1, csDef);
             break;
 
         case COORDSYS_SINUS:    // Sinusoidal Projection
-            SinusoidalFromCsDef (params.sinus, csDef);
+            SinusoidalFromCsDef(params.sinus, csDef);
             break;
 
         case COORDSYS_SOTRM:    // Transverse Mercator South Oriented Projection
-            TransverseMercatorFromCsDef (params.trmer, csDef);
+            TransverseMercatorFromCsDef(params.trmer, csDef);
             break;
 
         case COORDSYS_STERO:    // Stereographic Projection
-            StereographicFromCsDef (params.stero, csDef);
+            StereographicFromCsDef(params.stero, csDef);
             break;
 
         case COORDSYS_SWISS:    // Oblique CylindricalSwiss Projection
-            SwissFromCsDef (params.swiss, csDef);
+            SwissFromCsDef(params.swiss, csDef);
             break;
 
         case COORDSYS_SYS34:    // Danish System 34
         case COORDSYS_S3499:    // Danish System 34 with 1999 Polynomial.
         case COORDSYS_S3401:    // Danish System 34 with 2001 Polynomial.
-            Danish34FromCsDef (params.sys34, csDef);
+            Danish34FromCsDef(params.sys34, csDef);
             break;
 
         case COORDSYS_TACYL:    // Transverse Authalic Cylindrical Projection
-            TransverseAuthalicCylindricalFromCsDef (params.tacyl, csDef);
+            TransverseAuthalicCylindricalFromCsDef(params.tacyl, csDef);
             break;
 
         case COORDSYS_TMMIN:    // Transverse Mercator, Minnesota
-            TransverseMercatorMinnesotaFromCsDef (params.tmmin, csDef);
+            TransverseMercatorMinnesotaFromCsDef(params.tmmin, csDef);
             break;
 
         case COORDSYS_TMWIS:    // Transverse Mercator, Wisconsin County
-            TransverseMercatorWisconsinFromCsDef (params.tmwis, csDef);
+            TransverseMercatorWisconsinFromCsDef(params.tmwis, csDef);
             break;
 
         case COORDSYS_TRMAF:    // Transverse Mercator with Affine Post Process
-            TransverseMercatorAffinePostProcessFromCsDef (params.trmaf, csDef);
+            TransverseMercatorAffinePostProcessFromCsDef(params.trmaf, csDef);
             break;
 
         case COORDSYS_TRMER:    // Transverse Mercator Projection
-            TransverseMercatorFromCsDef (params.trmer, csDef);
+            TransverseMercatorFromCsDef(params.trmer, csDef);
             break;
 
         case COORDSYS_TMKRG:    // Transverse Mercator Projection
-            TransverseMercatorFromCsDef (params.trmer, csDef);
+            TransverseMercatorFromCsDef(params.trmer, csDef);
             break;
 
         case COORDSYS_UTMZN:    // Universal Tranverse Mercator Zone Projections
-            UniversalTransverseMercatorZoneFromCsDef (params.utmzn, csDef);
+            UniversalTransverseMercatorZoneFromCsDef(params.utmzn, csDef);
             break;
 
         case COORDSYS_Geographic:   // Unity (Lat/Long) pseudo-projection.
-            GeographicFromCsDef (params.unity, csDef);
+            GeographicFromCsDef(params.unity, csDef);
             break;
 
         case COORDSYS_VDGRN:        // Van der Grinten Projection
-            VanDerGrintenFromCsDef (params.vdgrn, csDef);
+            VanDerGrintenFromCsDef(params.vdgrn, csDef);
             break;
 
         case COORDSYS_WINKT:        // Winkel-Tripel Projection
-            WinkelTripelFromCsDef (params.winkt, csDef);
+            WinkelTripelFromCsDef(params.winkt, csDef);
             break;
 
         case COORDSYS_LMBRTAF:        // Winkel-Tripel Projection
-            LambertAffinePostProcessFromCsDef (params.lmbrtaf, csDef);
+            LambertAffinePostProcessFromCsDef(params.lmbrtaf, csDef);
             break;
 
         // TOTAL_SPECIAL
         case COORDSYS_UTMZNBF:
-            UniversalTransverseMercatorZoneFromCsDef (params.utmzn, csDef);
+            UniversalTransverseMercatorZoneFromCsDef(params.utmzn, csDef);
             break;
 
         case COORDSYS_TRMERBF:
-            TransverseMercatorFromCsDef (params.trmer, csDef);
+            TransverseMercatorFromCsDef(params.trmer, csDef);
             break;
 
         case COORDSYS_EDCYLE:    // Equidistant Cylindrical Ellipsoidal Projection
-            EquidistantCylindricalFromCsDef (params.edcyl, csDef);
+            EquidistantCylindricalFromCsDef(params.edcyl, csDef);
             break;
 
         case COORDSYS_PCARREE:    // Simple Cylindrical / Plate Carree
-            PlateCarreeFromCsDef (params.pcarree, csDef);
+            PlateCarreeFromCsDef(params.pcarree, csDef);
             break;
 
         case COORDSYS_MRCATPV:    // Popular Visualization Pseudo Mercator
-            PopularVisualizationMercatorFromCsDef (params.mrcatpv, csDef);
+            PopularVisualizationMercatorFromCsDef(params.mrcatpv, csDef);
             break;
 
         case COORDSYS_MNDOTOBL:
-            MinnesotaDOTObliqueMercatorFromCsDef (params.mndotobl, csDef);
+            MinnesotaDOTObliqueMercatorFromCsDef(params.mndotobl, csDef);
             break;
 
         default:
@@ -3934,7 +3934,7 @@ LocalTransformerP   localTransformer
 )
     {
     // convert the type 66 and projectionParams to a CSDefinition/CSDatum pair that can be made into CSParameters.
-    memset ((void*)&type66, 0, sizeof(type66));
+    memset((void*)&type66, 0, sizeof(type66));
 
     // must match previous geocoord code
     type66.gcoord66_size        = GEOCOORD66_SIZE;
@@ -3952,15 +3952,15 @@ LocalTransformerP   localTransformer
 
     // this ridiculous unit stuff is only needed in the case where this file is saved to V7. I don't think the V8 geocoord stuff used it.
 #ifdef WIP_DGN_GEOCOORD
-    double  subPerMast          = dgnModel_getSubPerMaster (cache);
-    double  uorPerSub           = dgnModel_getUorPerSub (cache);
-    type66.deprec_subpermast    = DataConvert::RoundDoubleToULong (subPerMast);
-    type66.deprec_uorpersub     = DataConvert::RoundDoubleToULong (uorPerSub);
+    double  subPerMast          = dgnModel_getSubPerMaster(cache);
+    double  uorPerSub           = dgnModel_getUorPerSub(cache);
+    type66.deprec_subpermast    = DataConvert::RoundDoubleToULong(subPerMast);
+    type66.deprec_uorpersub     = DataConvert::RoundDoubleToULong(uorPerSub);
 #else
     type66.deprec_subpermast = type66.deprec_uorpersub = 1;
 #endif
 
-    CSMapProjectionTypes        projectionType = CoordinateSystemDgnFormatter::MSProjectionTypeFromCSDef (csParams.csdef.prj_knm);
+    CSMapProjectionTypes        projectionType = CoordinateSystemDgnFormatter::MSProjectionTypeFromCSDef(csParams.csdef.prj_knm);
     type66.protect              = csParams.csdef.protect;
     type66.projType             = projectionType;
     type66.family               = 0;    // not used
@@ -3970,8 +3970,8 @@ LocalTransformerP   localTransformer
     // this stuff is hopefully never used, just ancient stupidity.
     WChar masterUnitLabel[MAX_StandardUnit::NAME_LENGTH];
     WChar subUnitLabel[MAX_StandardUnit::NAME_LENGTH];
-    dgnModel_GetMasterUnitsLabel (cache, masterUnitLabel);
-    dgnModel_GetSubUnitsLabel (cache, subUnitLabel);
+    dgnModel_GetMasterUnitsLabel(cache, masterUnitLabel);
+    dgnModel_GetSubUnitsLabel(cache, subUnitLabel);
     type66.deprec_mastname[0] = (char) masterUnitLabel[0];
     type66.deprec_mastname[1] = (char) masterUnitLabel[1];
     type66.deprec_subname[0]  = (char) subUnitLabel[0];
@@ -3985,24 +3985,24 @@ LocalTransformerP   localTransformer
 #endif
 
     // used by some projections.
-    CSMap::CS_stncp (type66.cs_knm,     csParams.csdef.key_nm,  DIM (type66.cs_knm));
-    CSMap::CS_stncp (type66.grp_knm,    csParams.csdef.group,   DIM (type66.grp_knm));
-    CSMap::CS_stncp (type66.prj_knm,    csParams.csdef.prj_knm, DIM (type66.prj_knm));
-    CSMap::CS_stncp (type66.dat_nm,     csParams.datum.dt_name, DIM (type66.dat_nm));
-    CSMap::CS_stncp (type66.ell_nm,     csParams.datum.el_name, DIM (type66.ell_nm));
-    CSMap::CS_stncp (type66.desc_nm,    csParams.csdef.desc_nm, DIM (type66.desc_nm));
-    CSMap::CS_stncp (type66.source,     csParams.csdef.source,  DIM (type66.source));
+    CSMap::CS_stncp(type66.cs_knm,     csParams.csdef.key_nm,  DIM (type66.cs_knm));
+    CSMap::CS_stncp(type66.grp_knm,    csParams.csdef.group,   DIM (type66.grp_knm));
+    CSMap::CS_stncp(type66.prj_knm,    csParams.csdef.prj_knm, DIM (type66.prj_knm));
+    CSMap::CS_stncp(type66.dat_nm,     csParams.datum.dt_name, DIM (type66.dat_nm));
+    CSMap::CS_stncp(type66.ell_nm,     csParams.datum.el_name, DIM (type66.ell_nm));
+    CSMap::CS_stncp(type66.desc_nm,    csParams.csdef.desc_nm, DIM (type66.desc_nm));
+    CSMap::CS_stncp(type66.source,     csParams.csdef.source,  DIM (type66.source));
 
     if (0 != type66.projType)
         {
         WString projName;
-        BaseGeoCoordResource::GetLocalizedProjectionName (projName, projectionType);
-        strcpy (type66.prj_nm, Utf8String(projName).c_str());
+        BaseGeoCoordResource::GetLocalizedProjectionName(projName, projectionType);
+        strcpy(type66.prj_nm, Utf8String(projName).c_str());
         }
 
     // so far, in every case I've seen that zone_knm has been set, it's been the same as cs_knm. I think it was used differently in the dim(witted) past.
-    if (IsKeyNameCoordinateSystem (type66.coordsys))
-        CSMap::CS_stncp (type66.zone_knm,   csParams.csdef.key_nm, DIM (type66.zone_knm));
+    if (IsKeyNameCoordinateSystem(type66.coordsys))
+        CSMap::CS_stncp(type66.zone_knm,   csParams.csdef.key_nm, DIM (type66.zone_knm));
 
     type66.to84_via                 = csParams.datum.to84_via;
     type66.minor_version            = (GCOORD_COMPATIBLE_08117_VERSION == type66.version) ? GCOORD_COMPATIBLE_08117_MINOR_VERSION : GCOORD_08119_MINOR_VERSION;
@@ -4017,7 +4017,7 @@ LocalTransformerP   localTransformer
     type66.verticalDatumValid   = GEOCOORD66_VerticalDatumValid;
 
     if (NULL != localTransformer)
-        localTransformer->SaveParameters (type66.localTransformType, type66.transformParams);
+        localTransformer->SaveParameters(type66.localTransformType, type66.transformParams);
     }
 
 #if defined (TEST_TYPE66_CREATE)
@@ -4032,102 +4032,102 @@ GeoCoordType66      &newType66
 )
     {
     if (oldType66.gcoord66_size != newType66.gcoord66_size)
-        printf ("Error in gcoord_size, old is %d, new is %d\n", oldType66.gcoord66_size, newType66.gcoord66_size);
+        printf("Error in gcoord_size, old is %d, new is %d\n", oldType66.gcoord66_size, newType66.gcoord66_size);
 
     if (oldType66.version != newType66.version)
-        printf ("Error in version, old is %d, new is %d\n", oldType66.version, newType66.version);
+        printf("Error in version, old is %d, new is %d\n", oldType66.version, newType66.version);
 
     if (oldType66.e_rad != newType66.e_rad)
-        printf ("Error in e_rad, old is %lf, new is %lf\n", oldType66.e_rad, newType66.e_rad);
+        printf("Error in e_rad, old is %lf, new is %lf\n", oldType66.e_rad, newType66.e_rad);
 
     if (oldType66.p_rad != newType66.p_rad)
-        printf ("Error in p_rad, old is %lf, new is %lf\n", oldType66.p_rad, newType66.p_rad);
+        printf("Error in p_rad, old is %lf, new is %lf\n", oldType66.p_rad, newType66.p_rad);
 
     if (oldType66.delta_X != newType66.delta_X)
-        printf ("Error in delta_X, old is %lf, new is %lf\n", oldType66.delta_X, newType66.delta_X);
+        printf("Error in delta_X, old is %lf, new is %lf\n", oldType66.delta_X, newType66.delta_X);
     if (oldType66.delta_Y != newType66.delta_Y)
-        printf ("Error in delta_Y, old is %lf, new is %lf\n", oldType66.delta_Y, newType66.delta_Y);
+        printf("Error in delta_Y, old is %lf, new is %lf\n", oldType66.delta_Y, newType66.delta_Y);
     if (oldType66.delta_Z != newType66.delta_Z)
-        printf ("Error in delta_Z, old is %lf, new is %lf\n", oldType66.delta_Z, newType66.delta_Z);
+        printf("Error in delta_Z, old is %lf, new is %lf\n", oldType66.delta_Z, newType66.delta_Z);
 
     if (oldType66.rot_X != newType66.rot_X)
-        printf ("Error in rot_X, old is %lf, new is %lf\n", oldType66.rot_X, newType66.rot_X);
+        printf("Error in rot_X, old is %lf, new is %lf\n", oldType66.rot_X, newType66.rot_X);
     if (oldType66.rot_Y != newType66.rot_Y)
-        printf ("Error in rot_Y, old is %lf, new is %lf\n", oldType66.rot_Y, newType66.rot_Y);
+        printf("Error in rot_Y, old is %lf, new is %lf\n", oldType66.rot_Y, newType66.rot_Y);
     if (oldType66.rot_Z != newType66.rot_Z)
-        printf ("Error in rot_Z, old is %lf, new is %lf\n", oldType66.rot_Z, newType66.rot_Z);
+        printf("Error in rot_Z, old is %lf, new is %lf\n", oldType66.rot_Z, newType66.rot_Z);
 
     if (oldType66.bwscale != newType66.bwscale)
-        printf ("Error in bwscale, old is %lf, new is %lf\n", oldType66.bwscale, newType66.bwscale);
+        printf("Error in bwscale, old is %lf, new is %lf\n", oldType66.bwscale, newType66.bwscale);
 
     if (oldType66.deprec_globorg.x != newType66.deprec_globorg.x)
-        printf ("Error in deprec_globorg.x, old is %lf, new is %lf\n", oldType66.deprec_globorg.x, newType66.deprec_globorg.x);
+        printf("Error in deprec_globorg.x, old is %lf, new is %lf\n", oldType66.deprec_globorg.x, newType66.deprec_globorg.x);
     if (oldType66.deprec_globorg.y != newType66.deprec_globorg.y)
-        printf ("Error in deprec_globorg.y, old is %lf, new is %lf\n", oldType66.deprec_globorg.y, newType66.deprec_globorg.y);
+        printf("Error in deprec_globorg.y, old is %lf, new is %lf\n", oldType66.deprec_globorg.y, newType66.deprec_globorg.y);
     if (oldType66.deprec_globorg.z != newType66.deprec_globorg.z)
-        printf ("Error in deprec_globorg.z, old is %lf, new is %lf\n", oldType66.deprec_globorg.z, newType66.deprec_globorg.z);
+        printf("Error in deprec_globorg.z, old is %lf, new is %lf\n", oldType66.deprec_globorg.z, newType66.deprec_globorg.z);
 
 #if defined (DONT_CHECK)
     // most (but not all) of the type 66's I checked had deprec_mastunits set to 0. Certainly it is useless.
     if (oldType66.deprec_mastunits != newType66.deprec_mastunits)
-        printf ("Error in deprec_mastunits, old is %d, new is %d\n", oldType66.deprec_mastunits, newType66.deprec_mastunits);
+        printf("Error in deprec_mastunits, old is %d, new is %d\n", oldType66.deprec_mastunits, newType66.deprec_mastunits);
 #endif
     if (oldType66.deprec_subpermast != newType66.deprec_subpermast)
-        printf ("Error in deprec_subpermast, old is %d, new is %d\n", oldType66.deprec_subpermast, newType66.deprec_subpermast);
+        printf("Error in deprec_subpermast, old is %d, new is %d\n", oldType66.deprec_subpermast, newType66.deprec_subpermast);
     if (oldType66.deprec_uorpersub != newType66.deprec_uorpersub)
-        printf ("Error in deprec_uorpersub, old is %d, new is %d\n", oldType66.deprec_uorpersub, newType66.deprec_uorpersub);
+        printf("Error in deprec_uorpersub, old is %d, new is %d\n", oldType66.deprec_uorpersub, newType66.deprec_uorpersub);
 
     if (oldType66.protect != newType66.protect)
-        printf ("Error in protect, old is %d, new is %d\n", oldType66.protect, newType66.protect);
+        printf("Error in protect, old is %d, new is %d\n", oldType66.protect, newType66.protect);
 
     if (oldType66.projType != newType66.projType)
-        printf ("Error in projType, old is %d, new is %d\n", oldType66.projType, newType66.projType);
+        printf("Error in projType, old is %d, new is %d\n", oldType66.projType, newType66.projType);
 
     if (oldType66.family != newType66.family)
-        printf ("Error in family, old is %d, new is %d\n", oldType66.family, newType66.family);
+        printf("Error in family, old is %d, new is %d\n", oldType66.family, newType66.family);
 
     if (oldType66.coordsys != newType66.coordsys)
-        printf ("Error in coordsys, old is %d, new is %d\n", oldType66.coordsys, newType66.coordsys);
+        printf("Error in coordsys, old is %d, new is %d\n", oldType66.coordsys, newType66.coordsys);
 
     if (oldType66.deprec_mastname[0] != newType66.deprec_mastname[0])
-        printf ("Error in deprec_mastname[0], old is %c, new is %c\n", oldType66.deprec_mastname[0], newType66.deprec_mastname[0]);
+        printf("Error in deprec_mastname[0], old is %c, new is %c\n", oldType66.deprec_mastname[0], newType66.deprec_mastname[0]);
     if (oldType66.deprec_mastname[1] != newType66.deprec_mastname[1])
-        printf ("Error in deprec_mastname[1], old is %c, new is %c\n", oldType66.deprec_mastname[1], newType66.deprec_mastname[1]);
+        printf("Error in deprec_mastname[1], old is %c, new is %c\n", oldType66.deprec_mastname[1], newType66.deprec_mastname[1]);
     if (oldType66.deprec_subname[0] != newType66.deprec_subname[0])
-        printf ("Error in deprec_subname[0], old is %c, new is %c\n", oldType66.deprec_subname[0], newType66.deprec_subname[0]);
+        printf("Error in deprec_subname[0], old is %c, new is %c\n", oldType66.deprec_subname[0], newType66.deprec_subname[0]);
     if (oldType66.deprec_subname[1] != newType66.deprec_subname[1])
-        printf ("Error in deprec_subname[1], old is %c, new is %c\n", oldType66.deprec_subname[1], newType66.deprec_subname[1]);
+        printf("Error in deprec_subname[1], old is %c, new is %c\n", oldType66.deprec_subname[1], newType66.deprec_subname[1]);
 
-    if (0 != strcmp (oldType66.cs_knm, newType66.cs_knm))
-        printf ("Error in cs_knm, old is '%s', new is '%s'\n", oldType66.cs_knm, newType66.cs_knm);
-    if (0 != strcmp (oldType66.grp_knm, newType66.grp_knm))
-        printf ("Error in grp_knm, old is '%s', new is '%s'\n", oldType66.grp_knm, newType66.grp_knm);
-    if (0 != strcmp (oldType66.zone_knm, newType66.zone_knm))
-        printf ("Error in zone_knm, old is '%s', new is '%s'\n", oldType66.zone_knm, newType66.zone_knm);
-    if (0 != strcmp (oldType66.prj_knm, newType66.prj_knm))
-        printf ("Error in prj_knm, old is '%s', new is '%s'\n", oldType66.prj_knm, newType66.prj_knm);
+    if (0 != strcmp(oldType66.cs_knm, newType66.cs_knm))
+        printf("Error in cs_knm, old is '%s', new is '%s'\n", oldType66.cs_knm, newType66.cs_knm);
+    if (0 != strcmp(oldType66.grp_knm, newType66.grp_knm))
+        printf("Error in grp_knm, old is '%s', new is '%s'\n", oldType66.grp_knm, newType66.grp_knm);
+    if (0 != strcmp(oldType66.zone_knm, newType66.zone_knm))
+        printf("Error in zone_knm, old is '%s', new is '%s'\n", oldType66.zone_knm, newType66.zone_knm);
+    if (0 != strcmp(oldType66.prj_knm, newType66.prj_knm))
+        printf("Error in prj_knm, old is '%s', new is '%s'\n", oldType66.prj_knm, newType66.prj_knm);
 
     // the old prj_nm's often have " Projection" at the end, as in "Universal Tranverse Mercator Projection", but I think that was later shortened, so don't count as error.
-    if (0 != strncmp (oldType66.prj_nm, newType66.prj_nm, strlen(newType66.prj_nm)))
-        printf ("Error in prj_nm, old is '%s', new is '%s'\n", oldType66.prj_nm, newType66.prj_nm);
-    if (0 != strcmp (oldType66.dat_nm, newType66.dat_nm))
-        printf ("Error in dat_nm, old is '%s', new is '%s'\n", oldType66.dat_nm, newType66.dat_nm);
-    if (0 != strcmp (oldType66.ell_nm, newType66.ell_nm))
-        printf ("Error in ell_nm, old is '%s', new is '%s'\n", oldType66.ell_nm, newType66.ell_nm);
-    if (0 != strcmp (oldType66.desc_nm, newType66.desc_nm))
-        printf ("Error in desc_nm, old is '%s', new is '%s'\n", oldType66.desc_nm, newType66.desc_nm);
-    if (0 != strcmp (oldType66.source, newType66.source))
-        printf ("Error in source, old is '%s', new is '%s'\n", oldType66.source, newType66.source);
+    if (0 != strncmp(oldType66.prj_nm, newType66.prj_nm, strlen(newType66.prj_nm)))
+        printf("Error in prj_nm, old is '%s', new is '%s'\n", oldType66.prj_nm, newType66.prj_nm);
+    if (0 != strcmp(oldType66.dat_nm, newType66.dat_nm))
+        printf("Error in dat_nm, old is '%s', new is '%s'\n", oldType66.dat_nm, newType66.dat_nm);
+    if (0 != strcmp(oldType66.ell_nm, newType66.ell_nm))
+        printf("Error in ell_nm, old is '%s', new is '%s'\n", oldType66.ell_nm, newType66.ell_nm);
+    if (0 != strcmp(oldType66.desc_nm, newType66.desc_nm))
+        printf("Error in desc_nm, old is '%s', new is '%s'\n", oldType66.desc_nm, newType66.desc_nm);
+    if (0 != strcmp(oldType66.source, newType66.source))
+        printf("Error in source, old is '%s', new is '%s'\n", oldType66.source, newType66.source);
 
     if (oldType66.to84_via != newType66.to84_via)
-        printf ("Error in to84_via, old is %d, new is %d\n", oldType66.to84_via, newType66.to84_via);
+        printf("Error in to84_via, old is %d, new is %d\n", oldType66.to84_via, newType66.to84_via);
 
     if (oldType66.minor_version != newType66.minor_version)
-        printf ("Error in minor_version, old is %d, new is %d\n", oldType66.minor_version, newType66.minor_version);
+        printf("Error in minor_version, old is %d, new is %d\n", oldType66.minor_version, newType66.minor_version);
     if (oldType66.attributes != newType66.attributes)
-        printf ("Error in attributes, old is %d, new is %d\n", oldType66.attributes, newType66.attributes);
+        printf("Error in attributes, old is %d, new is %d\n", oldType66.attributes, newType66.attributes);
     if (oldType66.prj_code != newType66.prj_code)
-        printf ("Error in prj_code, old is %d, new is %d\n", oldType66.prj_code, newType66.prj_code);
+        printf("Error in prj_code, old is %d, new is %d\n", oldType66.prj_code, newType66.prj_code);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4166,7 +4166,7 @@ LocalTransformerP   localTransformer
     GeoCoordType66      type66;
     ProjectionParams    projectionParams;
 
-    FormatType66Struct (type66, csParams, coordSysId, project, datumOrEllipsoidFromUserLib, verticalDatum, localTransformer);
+    FormatType66Struct(type66, csParams, coordSysId, project, datumOrEllipsoidFromUserLib, verticalDatum, localTransformer);
 
     // set map_scl only for the purpose of saving it to the type 66. We don't have CSMap handling it.
     csParams.csdef.map_scl = paperScaleFromType66;
@@ -4178,7 +4178,7 @@ LocalTransformerP   localTransformer
         m_datum = &csParams.datum;
     else
         m_datum = NULL;
-    FormatProjectionParams (type66.projType, projectionParams, csParams.csdef);
+    FormatProjectionParams(type66.projType, projectionParams, csParams.csdef);
     // make sure we're not holding a stale datum.
     m_datum = NULL;
 
@@ -4187,9 +4187,9 @@ LocalTransformerP   localTransformer
 
 #if defined (TEST_TYPE66_CREATE)
     if (NULL != s_oldType66)
-        CompareType66 (*s_oldType66, type66);
+        CompareType66(*s_oldType66, type66);
     if (NULL != s_oldProjectionParams)
-        CompareProjectionParams (*s_oldProjectionParams, projectionParams);
+        CompareProjectionParams(*s_oldProjectionParams, projectionParams);
 #endif
 
     // set up the type 66 appData. Note this is the same format used by DgnV8
@@ -4197,19 +4197,19 @@ LocalTransformerP   localTransformer
 
     // this used to use the resource conversion logic, but it turns out that the structure was set up
     // correctly, grouping the doubles and filling in the holes so just requires a memcpy.
-    memcpy (&type66AppData[1], &type66, sizeof (GeoCoordType66));
+    memcpy(&type66AppData[1], &type66, sizeof (GeoCoordType66));
     
     // The ProjectionParams union was also set up correctly to allow a simple memcpy for every type of projection EXCEPT the Sys34 projection.
     if ( (COORDSYS_SYS34 == type66.projType) || (COORDSYS_S3499 == type66.projType) || (COORDSYS_S3401 == type66.projType) )
         {
         // Sys34 and Sys34-1999
         Byte*   outputData   = (Byte*) &type66AppData[429];
-        memcpy (outputData,   &projectionParams.sys34.zoneNo, 4);
-        memcpy (outputData+4, &projectionParams.sys34.x_off,  176);
+        memcpy(outputData,   &projectionParams.sys34.zoneNo, 4);
+        memcpy(outputData+4, &projectionParams.sys34.x_off,  176);
         }
     else
         {
-        memcpy (type66AppData+429, &projectionParams, sizeof(ProjectionParams));
+        memcpy(type66AppData+429, &projectionParams, sizeof(ProjectionParams));
         }
 
     //  The first short is the primary/alt flag
@@ -4236,7 +4236,7 @@ DgnGCS::DgnGCS () : BaseGCS()
     {
     m_uorsPerBaseUnit               = 1.0;
     m_paperScaleFromType66          = 1.0;
-    m_globalOrigin.Zero ();
+    m_globalOrigin.Zero();
 
     m_datumOrEllipsoidFromUserLib   = false;
     }
@@ -4251,7 +4251,7 @@ WCharCP         coordinateSystemName
     {
     m_uorsPerBaseUnit               = 1.0;
     m_paperScaleFromType66          = 1.0;
-    m_globalOrigin.Zero ();
+    m_globalOrigin.Zero();
     m_datumOrEllipsoidFromUserLib   = false;
     SetDatumOrEllipsoidInUserLibrary();
     }
@@ -4265,7 +4265,7 @@ WCharCP         coordinateSystemName,
 DgnDbR     modelRef
 ) : BaseGCS (coordinateSystemName)
     {
-    InitCacheParameters (modelRef, 1.0);
+    InitCacheParameters(modelRef, 1.0);
     SetDatumOrEllipsoidInUserLibrary();
     }
 
@@ -4285,7 +4285,7 @@ bool            datumOrEllipsoidFromUserLibrary
     // However, whether the datum or ellipsoid is in a user library is stored in the type 66.
     // If we don't have the user library at runtime, we don't have a way of telling whether 
     //   the datum or ellipsoid came from there, so we need to keep what the type 66 tells us.
-    InitCacheParameters (cache, paperScale);
+    InitCacheParameters(cache, paperScale);
     m_datumOrEllipsoidFromUserLib = datumOrEllipsoidFromUserLibrary;
     }
 
@@ -4298,7 +4298,7 @@ BaseGCSCP       baseGCS,
 DgnDbR     modelRef
 ) : BaseGCS (*baseGCS)
     {
-    InitCacheParameters (modelRef, 1.0);
+    InitCacheParameters(modelRef, 1.0);
     DgnGCSCP    sourceMstnGCS;
     if (NULL != (sourceMstnGCS = dynamic_cast <DgnGCSCP> (baseGCS)))
         m_datumOrEllipsoidFromUserLib = sourceMstnGCS->m_datumOrEllipsoidFromUserLib;
@@ -4315,7 +4315,7 @@ DgnDbR     modelRef
 DgnGCS::DgnGCS (DgnDbR  modelRef) : BaseGCS ()
     {
     m_datumOrEllipsoidFromUserLib   = false;
-    InitCacheParameters (modelRef, 1.0);
+    InitCacheParameters(modelRef, 1.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4341,10 +4341,10 @@ double      paperScale
     m_paperScaleFromType66          = paperScale;
 
 #ifdef WIP_DGN_GEOCOORD
-    double      uorPerStorage = dgnModel_getUorPerStorage (project);
+    double      uorPerStorage = dgnModel_getUorPerStorage(project);
 
     UnitInfo    storageUnitInfo;
-    if (SUCCESS != dgnModel_getStorageUnit (project, &storageUnitInfo))
+    if (SUCCESS != dgnModel_getStorageUnit(project, &storageUnitInfo))
         m_uorsPerBaseUnit = 100000.0;
 
     else
@@ -4353,7 +4353,7 @@ double      paperScale
         // Thus for a Lat/Long based coordinate system, if the design file storage units are Dgn::UnitBase::Meter, a meter is treated as a degree.
         // Similarly, for a projected coordinate system, if the design file storage units are Dgn::UnitBase::Degree, a degree is treated as a meter.
         m_uorsPerBaseUnit = (uorPerStorage * storageUnitInfo.numerator) / (storageUnitInfo.denominator * m_paperScaleFromType66);
-        dgnModel_getGlobalOrigin (project, &m_globalOrigin);
+        dgnModel_getGlobalOrigin(project, &m_globalOrigin);
         }
 #else
     m_uorsPerBaseUnit = 1; // in DgnDb, all coordinates are stored in meters
@@ -4364,7 +4364,7 @@ double      paperScale
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DgnGCS::SetDatumOrEllipsoidInUserLibrary ()
+void            DgnGCS::SetDatumOrEllipsoidInUserLibrary()
     {
     m_datumOrEllipsoidFromUserLib   = false;
 
@@ -4372,12 +4372,12 @@ void            DgnGCS::SetDatumOrEllipsoidInUserLibrary ()
     if (NULL != m_csParameters)
         {
         // m_sourceLibrary should always be set by the BaseGCS constructor.
-        assert (NULL != m_sourceLibrary);
+        assert(NULL != m_sourceLibrary);
         if ( (NULL != m_sourceLibrary) && m_sourceLibrary->IsUserLibrary() )
             {
-            WString datumName (m_csParameters->csdef.dat_knm, BentleyCharEncoding::Utf8);
-            WString ellipsoidName (m_csParameters->csdef.elp_knm, BentleyCharEncoding::Utf8);
-            m_datumOrEllipsoidFromUserLib   = m_sourceLibrary->DatumInLibrary (datumName.c_str()) || m_sourceLibrary->EllipsoidInLibrary (ellipsoidName.c_str());
+            WString datumName(m_csParameters->csdef.dat_knm, BentleyCharEncoding::Utf8);
+            WString ellipsoidName(m_csParameters->csdef.elp_knm, BentleyCharEncoding::Utf8);
+            m_datumOrEllipsoidFromUserLib   = m_sourceLibrary->DatumInLibrary(datumName.c_str()) || m_sourceLibrary->EllipsoidInLibrary(ellipsoidName.c_str());
             }
         }
     }
@@ -4385,7 +4385,7 @@ void            DgnGCS::SetDatumOrEllipsoidInUserLibrary ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DgnGCS::GetDatumOrEllipsoidInUserLibrary ()
+bool            DgnGCS::GetDatumOrEllipsoidInUserLibrary()
     {
     return m_datumOrEllipsoidFromUserLib;
     }
@@ -4450,8 +4450,8 @@ DPoint3dR               outCartesian,       // <= cartesian, units of coordinate
 DPoint3dCR              inUors              // => UORS
 ) const
     {
-    outCartesian.DifferenceOf (inUors, m_globalOrigin);
-    outCartesian.Scale (m_csParameters->csdef.scale / m_uorsPerBaseUnit);
+    outCartesian.DifferenceOf(inUors, m_globalOrigin);
+    outCartesian.Scale(m_csParameters->csdef.scale / m_uorsPerBaseUnit);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4464,8 +4464,8 @@ DPoint3dCR              inCartesian         // => cartesian, units of coordinate
 ) const
     {
     outUors = inCartesian;
-    outUors.Scale (m_uorsPerBaseUnit / m_csParameters->csdef.scale);
-    outUors.SumOf (m_globalOrigin,outUors);
+    outUors.Scale(m_uorsPerBaseUnit / m_csParameters->csdef.scale);
+    outUors.SumOf(m_globalOrigin,outUors);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4506,8 +4506,8 @@ DPoint3dCR              inUors              // => cartesian, in UORS
 ) const
     {
     DPoint3d    cartesian;
-    CartesianFromUors (cartesian, inUors);
-    return LatLongFromCartesian (outLatLong, cartesian);
+    CartesianFromUors(cartesian, inUors);
+    return LatLongFromCartesian(outLatLong, cartesian);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4520,8 +4520,8 @@ GeoPointCR              inLatLong           // => latitude longitude
 ) const
     {
     DPoint3d cartesian;
-    ReprojectStatus status = CartesianFromLatLong (cartesian, inLatLong);
-    UorsFromCartesian (outUors, cartesian);
+    ReprojectStatus status = CartesianFromLatLong(cartesian, inLatLong);
+    UorsFromCartesian(outUors, cartesian);
 
     return status;
     }
@@ -4570,7 +4570,7 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
 
         // convert the input LatLong to meters.
         GeoPoint    srcLatLong;
-        stat1 = LatLongFromUors (srcLatLong, *inUors);
+        stat1 = LatLongFromUors(srcLatLong, *inUors);
 
         // does caller want the latlong in source coordinates?
         if (NULL != outLatLongSrc)
@@ -4578,14 +4578,14 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
 
         // convert srcLatLong to destLatLong
         GeoPoint    destLatLong;
-        stat2 = LatLongFromLatLong (destLatLong, srcLatLong, destMstnGCS);
+        stat2 = LatLongFromLatLong(destLatLong, srcLatLong, destMstnGCS);
 
         // does the caller want the destination LatLong?
         if (NULL != outLatLongDest)
             *outLatLongDest++ = destLatLong;
 
         // convert dstLatLong to destination cartesian.
-        stat3 = destMstnGCS.UorsFromLatLong (*outUorsDest, destLatLong);
+        stat3 = destMstnGCS.UorsFromLatLong(*outUorsDest, destLatLong);
 
         if (REPROJECT_Success == status)
             {
@@ -4763,7 +4763,7 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
     if (NULL == extent)
         {
         // If it's a LL coordinate system, we don't want 10 degrees, we want about 10 meters, and there's about 111,000 meters per degree at the equator.
-        if ( (NULL != m_csParameters) && (0 == strcmp (m_csParameters->csdef.unit, "Degree")) )
+        if ( (NULL != m_csParameters) && (0 == strcmp(m_csParameters->csdef.unit, "Degree")) )
             localExtent.x = localExtent.y = localExtent.z = m_csParameters->csdef.unit_scl / 10000;
         else
             localExtent.x = localExtent.y = localExtent.z = (m_uorsPerBaseUnit * sReferenceFrameSize);
@@ -4772,20 +4772,20 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
         }
 
     points[0] = elementOrigin;
-    points[1].Init (elementOrigin.x + extent->x, elementOrigin.y, elementOrigin.z);
-    points[2].Init (elementOrigin.x, elementOrigin.y + extent->y, elementOrigin.z);
-    points[3].Init (elementOrigin.x, elementOrigin.y, elementOrigin.z + extent->z);
+    points[1].Init(elementOrigin.x + extent->x, elementOrigin.y, elementOrigin.z);
+    points[2].Init(elementOrigin.x, elementOrigin.y + extent->y, elementOrigin.z);
+    points[3].Init(elementOrigin.x, elementOrigin.y, elementOrigin.z + extent->z);
 
     DPoint3d transformedPoints[4];
-    ReprojectStatus status = ReprojectUors (transformedPoints, NULL, NULL, points, 4, destMstnGCS);
+    ReprojectStatus status = ReprojectUors(transformedPoints, NULL, NULL, points, 4, destMstnGCS);
 
-    frameA.InitFrom4Points (points[0], points[1], points[2], points[3]);
+    frameA.InitFrom4Points(points[0], points[1], points[2], points[3]);
     frameAInverse.InverseOf(frameA);
 
-    frameB.InitFrom4Points (transformedPoints[0], transformedPoints[1], transformedPoints[2], transformedPoints[3]);
+    frameB.InitFrom4Points(transformedPoints[0], transformedPoints[1], transformedPoints[2], transformedPoints[3]);
     RotMatrix axesA, axesB;
-    axesA.InitFrom (frameA);
-    axesB.InitFrom (frameB);
+    axesA.InitFrom(frameA);
+    axesB.InitFrom(frameB);
 
     // frameB is the direct image of the points.   Modify it per requests ....
     if (doScale)
@@ -4799,11 +4799,11 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
             // Get the ratio of x axis lengths.  Apply this to frameA axes, install in frameB.
             // uor scaling effects are already present in the vectors we inspect.
             DVec3d xVectorA, xVectorB;
-            axesA.GetColumn (xVectorA, 0);
-            axesB.GetColumn (xVectorB, 0);
-            double scale = xVectorB.Magnitude () / xVectorA.Magnitude ();
-            axesB.ScaleColumns (axesA, scale, scale, scale);
-            frameB.SetMatrix (axesB);
+            axesA.GetColumn(xVectorA, 0);
+            axesB.GetColumn(xVectorB, 0);
+            double scale = xVectorB.Magnitude() / xVectorA.Magnitude();
+            axesB.ScaleColumns(axesA, scale, scale, scale);
+            frameB.SetMatrix(axesB);
             }
         }
     else
@@ -4814,19 +4814,19 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
             {
             // Accept the output directions but resize back to sReferenceFrameSize ...
             DVec3d xAxis, yAxis, zAxis;
-            axesB.GetColumns (xAxis, yAxis, zAxis);
-            double f = ax / xAxis.Magnitude ();
-            xAxis.Scale (f);
-            yAxis.Scale (f);
-            zAxis.Scale (f);
-            axesB.InitFromColumnVectors (xAxis, yAxis, zAxis);
-            frameB.SetMatrix (axesB);
+            axesB.GetColumns(xAxis, yAxis, zAxis);
+            double f = ax / xAxis.Magnitude();
+            xAxis.Scale(f);
+            yAxis.Scale(f);
+            zAxis.Scale(f);
+            axesB.InitFromColumnVectors(xAxis, yAxis, zAxis);
+            frameB.SetMatrix(axesB);
             }
         else
             {
             // No change except uor effects ...
-            axesB.InitFromScaleFactors (ax, ax, ax);
-            frameB.SetMatrix (axesB);
+            axesB.InitFromScaleFactors(ax, ax, ax);
+            frameB.SetMatrix(axesB);
             }
         }
 
@@ -4834,16 +4834,16 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
     if (sDoPerpendicularAxes)
         {
         RotMatrix unitB;
-        axesB.InitFrom (frameB);
+        axesB.InitFrom(frameB);
         unitB.SquareAndNormalizeColumns(axesB, 0, 1);
         DVec3d xVectorB;
-        axesB.GetColumn (xVectorB, 0);
-        double b = xVectorB.Magnitude ();
-        axesB.ScaleColumns (unitB, b, b, b);
+        axesB.GetColumn(xVectorB, 0);
+        double b = xVectorB.Magnitude();
+        axesB.ScaleColumns(unitB, b, b, b);
         }
 
 
-    outTransform->InitProduct (frameB, frameAInverse);
+    outTransform->InitProduct(frameB, frameAInverse);
     return status;
     }
 
@@ -4865,17 +4865,17 @@ DgnDbR     cache
 
     // first, extract the type 66 into its two components.
     StatusInt   status;
-    if (SUCCESS != (status = csf->Extract (extracted, projectionParams, localTransformer, &type66AppData[0])))
+    if (SUCCESS != (status = csf->Extract(extracted, projectionParams, localTransformer, &type66AppData[0])))
         {
         if (GeoCoordError_BadType66Version != status)
-            assert (false);
+            assert(false);
         return NULL;
         }
 
     double  paperScale = 1.0;
 
 #if defined (NOTNOW)
-    if (csf->IsKeyNameCoordinateSystem (extracted.coordsys))
+    if (csf->IsKeyNameCoordinateSystem(extracted.coordsys))
         {
         // when there's a "Key Name" coordinate system, extracted.coordsys will differ from extracted.projType.
         // The information stored in the union is presumably appropriate to extracted.projType, but we should be
@@ -4891,9 +4891,9 @@ DgnDbR     cache
         // if not a keyname, then we have the parameters in the type 66, and we populate the CsDef, CsDatum or CsEllipsoid structure from there.
         CSDefinition                    csProjectionDefinition;
 
-        if (SUCCESS != csf->ConvertToCSDef (csProjectionDefinition, paperScale, extracted, projectionParams))
+        if (SUCCESS != csf->ConvertToCSDef(csProjectionDefinition, paperScale, extracted, projectionParams))
             {
-            assert (false);
+            assert(false);
             return NULL;
             }
 
@@ -4909,14 +4909,14 @@ DgnDbR     cache
                 // there's a datum.
                 WGS84ConvertCode    convertType = (WGS84ConvertCode) extracted.to84_via;
                 
-                assert ( (ConvertType_MOLO == convertType) || (ConvertType_3PARM == convertType) || (ConvertType_GEOCTR == convertType) || (ConvertType_BURS == convertType) ||
+                assert( (ConvertType_MOLO == convertType) || (ConvertType_3PARM == convertType) || (ConvertType_GEOCTR == convertType) || (ConvertType_BURS == convertType) ||
                          (ConvertType_7PARM == convertType) || (ConvertType_6PARM == convertType) || (ConvertType_4PARM == convertType) );
 
-                memset (&datumDef, 0, sizeof(datumDef));
+                memset(&datumDef, 0, sizeof(datumDef));
                 datumDefP           = &datumDef;
-                CSMap::CS_stncp (datumDef.key_nm, csProjectionDefinition.dat_knm, sizeof (datumDef.key_nm));
-                CSMap::CS_stncp (datumDef.name, extracted.dat_nm, sizeof (datumDef.name));
-                CSMap::CS_stncp (datumDef.ell_knm, csProjectionDefinition.elp_knm, sizeof (datumDef.ell_knm));
+                CSMap::CS_stncp(datumDef.key_nm, csProjectionDefinition.dat_knm, sizeof (datumDef.key_nm));
+                CSMap::CS_stncp(datumDef.name, extracted.dat_nm, sizeof (datumDef.name));
+                CSMap::CS_stncp(datumDef.ell_knm, csProjectionDefinition.elp_knm, sizeof (datumDef.ell_knm));
                 datumDef.to84_via   = static_cast<short>(extracted.to84_via);   // NEEDSWORK - is cast correct?  Should to84_via be a short?
                 datumDef.delta_X    = extracted.delta_X;
                 datumDef.delta_Y    = extracted.delta_Y;
@@ -4928,32 +4928,32 @@ DgnDbR     cache
                 }
             else if (0 == csProjectionDefinition.elp_knm[0])
                 {
-                assert (false);
+                assert(false);
                 return NULL;
                 }
 
             // we must always have the ellipsoid info.
-            memset (&ellipsoidDef, 0, sizeof(ellipsoidDef));
-            CSMap::CS_stncp (ellipsoidDef.key_nm, csProjectionDefinition.elp_knm, sizeof (ellipsoidDef.key_nm));
-            CSMap::CS_stncp (ellipsoidDef.name, extracted.ell_nm, sizeof (ellipsoidDef.name));
+            memset(&ellipsoidDef, 0, sizeof(ellipsoidDef));
+            CSMap::CS_stncp(ellipsoidDef.key_nm, csProjectionDefinition.elp_knm, sizeof (ellipsoidDef.key_nm));
+            CSMap::CS_stncp(ellipsoidDef.name, extracted.ell_nm, sizeof (ellipsoidDef.name));
             ellipsoidDef.e_rad  = extracted.e_rad;
             ellipsoidDef.p_rad  = extracted.p_rad;
 
             // fill in flattening and eccentricity.
-            Ellipsoid::CalculateParameters (ellipsoidDef.flat, ellipsoidDef.ecent, ellipsoidDef.e_rad, ellipsoidDef.p_rad);
-            if (NULL == (csParameters = CSMap::CScsloc2 (&csProjectionDefinition, datumDefP, &ellipsoidDef)))
+            Ellipsoid::CalculateParameters(ellipsoidDef.flat, ellipsoidDef.ecent, ellipsoidDef.e_rad, ellipsoidDef.p_rad);
+            if (NULL == (csParameters = CSMap::CScsloc2(&csProjectionDefinition, datumDefP, &ellipsoidDef)))
                 {
-                assert (false);
+                assert(false);
                 return NULL;
                 }
             }
 
-        else if (NULL == (csParameters = CSMap::CScsloc1 (&csProjectionDefinition)))
+        else if (NULL == (csParameters = CSMap::CScsloc1(&csProjectionDefinition)))
             {
 //          char    errorMsg[512];
 //          CSMap::CS_errmsg (errorMsg, DIM(errorMsg));
 //          printf ("ERROR: %s trying to create from saved type 66 parameters\n", errorMsg);
-            assert (false);
+            assert(false);
             return NULL;
             }
         }
@@ -4963,17 +4963,17 @@ DgnDbR     cache
 
     // if the VerticalDatumValid is set correctly, extract VerticalDatum code.
     if (GEOCOORD66_VerticalDatumValid == extracted.verticalDatumValid)
-        mstnGCS->SetVerticalDatumCode ((VertDatumCode) extracted.verticalDatum);
+        mstnGCS->SetVerticalDatumCode((VertDatumCode) extracted.verticalDatum);
 
     // set the local transformer.
-    mstnGCS->SetLocalTransformer (localTransformer);
+    mstnGCS->SetLocalTransformer(localTransformer);
 
 #if defined (TEST_TYPE66_CREATE)
     short type66AppData[2000];
     uint32_t type66AppDataBytes;
     s_oldType66             = &extracted;
     s_oldProjectionParams   = &projectionParams;
-    mstnGCS->CreateGeoCoordType66 (type66AppData, type66AppDataBytes, cache, true);
+    mstnGCS->CreateGeoCoordType66(type66AppData, type66AppDataBytes, cache, true);
     s_oldType66             = NULL;
     s_oldProjectionParams   = NULL;
     const uint16_t *t1, *t2;
@@ -4981,7 +4981,7 @@ DgnDbR     cache
     for (t1 = (uint16_t*)&type66AppData[429], t2 = (uint16_t*)&test66.applicationElm.appData[429], count=429; count < (GEOCOORD66_SIZE / sizeof(short)); count++, t1++, t2++)
         {
         if (*t1 != *t2)
-            printf ("difference found at offset %d, existing is 0x%04x, new is 0x%04x\n", count, *t1, *t2);
+            printf("difference found at offset %d, existing is 0x%04x, new is 0x%04x\n", count, *t1, *t2);
 
         }
 #endif
@@ -4991,73 +4991,69 @@ DgnDbR     cache
 /*=================================================================================**//**
 * @bsiclass                                                     Keith.Bentley   10/07
 +===============+===============+===============+===============+===============+======*/
-struct      NotFoundAppData: BeSQLite::DbAppData
+struct      NotFoundAppData: BeSQLite::Db::AppData
 {
-static BeSQLite::DbAppData::Key const& GetKey()
+static BeSQLite::Db::AppData::Key const& GetKey()
     {
-    static BeSQLite::DbAppData::Key s_key;
+    static BeSQLite::Db::AppData::Key s_key;
     return s_key;
     }
-
-    virtual void _OnCleanup(DbR) override {delete this;}
 };
 
 /*=================================================================================**//**
 * @bsiclass                                                     Keith.Bentley   10/07
 +===============+===============+===============+===============+===============+======*/
-struct      DgnGCSAppData: BeSQLite::DbAppData
+struct      DgnGCSAppData: BeSQLite::Db::AppData
 {
     DgnGCSPtr m_gcs;
 
-static BeSQLite::DbAppData::Key const& GetKey()
+static BeSQLite::Db::AppData::Key const& GetKey()
     {
-    static BeSQLite::DbAppData::Key s_key;
+    static BeSQLite::Db::AppData::Key s_key;
     return s_key;
     }
 
-    virtual void _OnCleanup(DbR) override {delete this;}
-
-    DgnGCSAppData (DgnGCS& gcs) : m_gcs(&gcs) {;}
+    DgnGCSAppData(DgnGCS& gcs) : m_gcs(&gcs) {;}
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
 * @bsimethod                                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGCSP         DgnGCS::FromProject (DgnDbR project)
+DgnGCSP         DgnGCS::FromProject(DgnDbR project)
     {
     // See if we already have it cached
-    auto saved = (DgnGCSAppData*) project.AppData().Find (DgnGCSAppData::GetKey());
+    auto saved = (DgnGCSAppData*) project.FindAppData(DgnGCSAppData::GetKey());
     if (NULL != saved)
         return saved->m_gcs.get();
 
-    if (NULL != project.AppData().Find (NotFoundAppData::GetKey()))
+    if (NULL != project.FindAppData(NotFoundAppData::GetKey()))
         return NULL;
 
     // Make sure GCS is initialized
     T_HOST.GetGeoCoordinationAdmin()._GetServices();
 
     uint32_t propSize;
-    if (project.QueryPropertySize (propSize, DgnProjectProperty::DgnGCS()) != BeSQLite::BE_SQLITE_ROW)
+    if (project.QueryPropertySize(propSize, DgnProjectProperty::DgnGCS()) != BeSQLite::BE_SQLITE_ROW)
         {
-        project.AppData().Add (NotFoundAppData::GetKey(), new NotFoundAppData());
+        project.AddAppData(NotFoundAppData::GetKey(), new NotFoundAppData());
         return NULL;
         }
 
-    ScopedArray<Byte> buffer (propSize);
-    project.QueryProperty (buffer.GetData(), propSize, DgnProjectProperty::DgnGCS());
+    ScopedArray<Byte> buffer(propSize);
+    project.QueryProperty(buffer.GetData(), propSize, DgnProjectProperty::DgnGCS());
 
-    auto gcs = FromGeoCoordType66AppData ((short const*)buffer.GetData(), project);
+    auto gcs = FromGeoCoordType66AppData((short const*)buffer.GetData(), project);
     if (NULL == gcs)
         {
-        project.AppData().Add (NotFoundAppData::GetKey(), new NotFoundAppData());
+        project.AddAppData(NotFoundAppData::GetKey(), new NotFoundAppData());
         return NULL;
         }
 
         // *** NEEDS WORK: Global origin is not saved, right? I have to get it from the project, don't I?
     gcs->m_globalOrigin = project.Units().GetGlobalOrigin();
 
-    project.AppData().Add (DgnGCSAppData::GetKey(), new DgnGCSAppData(*gcs));
+    project.AddAppData(DgnGCSAppData::GetKey(), new DgnGCSAppData(*gcs));
     return gcs;
     }
 
@@ -5074,27 +5070,27 @@ bool                primary
     {
     CoordinateSystemDgnFormatter*   csf = CoordinateSystemDgnFormatter::GetInstance();
 
-    return csf->FormatGeoCoordType66 (type66AppData, type66AppDataBytes, *m_csParameters, m_coordSysId, cache, primary, m_paperScaleFromType66, m_datumOrEllipsoidFromUserLib, m_verticalDatum, m_localTransformer.get());
+    return csf->FormatGeoCoordType66(type66AppData, type66AppDataBytes, *m_csParameters, m_coordSysId, cache, primary, m_paperScaleFromType66, m_datumOrEllipsoidFromUserLib, m_verticalDatum, m_localTransformer.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       DgnGCS::Store (DgnDbR project)
+StatusInt       DgnGCS::Store(DgnDbR project)
     {
     if (!IsValid())
         return GEOCOORDERR_InvalidCoordSys;
 
     // make sure the scale and global origin is set right.
-    InitCacheParameters (project, m_paperScaleFromType66);
+    InitCacheParameters(project, m_paperScaleFromType66);
 
     short type66AppData[2000];
     uint32_t type66AppDataBytes;
-    auto status = CreateGeoCoordType66 (type66AppData, type66AppDataBytes, project, true);
+    auto status = CreateGeoCoordType66(type66AppData, type66AppDataBytes, project, true);
     if (SUCCESS != status)
         return status;
 
-    return project.SaveProperty (DgnProjectProperty::DgnGCS(), type66AppData, type66AppDataBytes) == BeSQLite::BE_SQLITE_OK? SUCCESS: ERROR;
+    return project.SaveProperty(DgnProjectProperty::DgnGCS(), type66AppData, type66AppDataBytes) == BeSQLite::BE_SQLITE_OK? SUCCESS: ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5105,14 +5101,14 @@ WCharCP        DgnGCS::GetProjectionName
 WStringR    outputBuffer
 ) const
     {
-    CSMapProjectionTypes projectionType = CoordinateSystemDgnFormatter::MSProjectionTypeFromCSDef (m_csParameters->csdef.prj_knm);
-    return BaseGeoCoordResource::GetLocalizedProjectionName (outputBuffer, projectionType);
+    CSMapProjectionTypes projectionType = CoordinateSystemDgnFormatter::MSProjectionTypeFromCSDef(m_csParameters->csdef.prj_knm);
+    return BaseGeoCoordResource::GetLocalizedProjectionName(outputBuffer, projectionType);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP         DgnGCS::GetDisplayName (WStringR outputBuffer) const
+WCharCP         DgnGCS::GetDisplayName(WStringR outputBuffer) const
     {
     if ( (NULL != m_csParameters) && (0 != *m_csParameters->csdef.key_nm) )
         {
@@ -5120,7 +5116,7 @@ WCharCP         DgnGCS::GetDisplayName (WStringR outputBuffer) const
         }
     else 
         {
-        GetProjectionName (outputBuffer);
+        GetProjectionName(outputBuffer);
         }
 
     if (m_localTransformer.IsValid())
@@ -5130,8 +5126,8 @@ WCharCP         DgnGCS::GetDisplayName (WStringR outputBuffer) const
 
         if (!transformerDescription.empty())
             {
-            outputBuffer.append (L" ");
-            outputBuffer.append (transformerDescription);
+            outputBuffer.append(L" ");
+            outputBuffer.append(transformerDescription);
             }
         }
 
@@ -5150,23 +5146,23 @@ StandardUnit&   standardUnitNumber
     standardUnitNumber = StandardUnit::None;
 
     int     csUnitCode;
-    if (-1 == (csUnitCode = GetUnitCode ()))
+    if (-1 == (csUnitCode = GetUnitCode()))
         {
         // should never happen.
-        assert (false);
-        unitDef.Init (Dgn::UnitBase::Meter, Dgn::UnitSystem::Metric, 1.0, 1.0, L"Meters"); 
+        assert(false);
+        unitDef.Init(Dgn::UnitBase::Meter, Dgn::UnitSystem::Metric, 1.0, 1.0, L"Meters"); 
         return ERROR;
         }
 
     // convert from CS units to our UnitInfo.
-    cs_Unittab_ const* csUnits = CSMap::GetCSUnitInfo (csUnitCode);
+    cs_Unittab_ const* csUnits = CSMap::GetCSUnitInfo(csUnitCode);
 
     Dgn::UnitBase base = (cs_UTYP_LEN == csUnits->type) ? Dgn::UnitBase::Meter : Dgn::UnitBase::Degree;
 
     // CS_Map has only a numerator, no denominator.
-    unitDef.Init (base, Dgn::UnitSystem::Undefined, 1.0, csUnits->factor, L""); 
+    unitDef.Init(base, Dgn::UnitSystem::Undefined, 1.0, csUnits->factor, L""); 
 
-    standardUnitNumber = unitDef.IsStandardUnit ();
+    standardUnitNumber = unitDef.IsStandardUnit();
     if ( (StandardUnit::None == standardUnitNumber) || (StandardUnit::Custom == standardUnitNumber) )
         {
         Dgn::UnitSystem system;
@@ -5178,13 +5174,13 @@ StandardUnit&   standardUnitNumber
         else
             system = Dgn::UnitSystem::Undefined;
 
-        WString label (csUnits->name, BentleyCharEncoding::Utf8);
-        unitDef.Init (base, system, 1.0, csUnits->factor, label.c_str()); 
+        WString label(csUnits->name, BentleyCharEncoding::Utf8);
+        unitDef.Init(base, system, 1.0, csUnits->factor, label.c_str()); 
         }
     else
         {
         // get the MicroStation definition if we have one.
-        unitDef = UnitDefinition::GetStandardUnit ((StandardUnit) standardUnitNumber);
+        unitDef = UnitDefinition::GetStandardUnit((StandardUnit) standardUnitNumber);
         }
 
     return SUCCESS;
@@ -5193,12 +5189,12 @@ StandardUnit&   standardUnitNumber
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DgnGCS::UnitsIdentical (DgnGCSCR other) const
+bool            DgnGCS::UnitsIdentical(DgnGCSCR other) const
     {
     if (m_uorsPerBaseUnit != other.m_uorsPerBaseUnit)
         return false;
 
-    return m_globalOrigin.IsEqual (other.m_globalOrigin, 0.000001);
+    return m_globalOrigin.IsEqual(other.m_globalOrigin, 0.000001);
     }
 
 
@@ -5226,7 +5222,7 @@ UnitDefinitionCR  unitDef
     double  prod1 = unitDef.GetDenominator();
     double  prod2 = unitDef.GetNumerator() * csUnitInfo->factor;
 
-    return (1.0e-9 * fabs (prod1 + prod2) >= fabs (prod1 - prod2));
+    return (1.0e-9 * fabs(prod1 + prod2) >= fabs(prod1 - prod2));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5241,9 +5237,9 @@ UnitDefinitionCR    unitDef
     for (int icsUnit = 0; ; icsUnit++)
         {
         CSUnitInfo const*  csUnitInfo;
-        if (NULL == (csUnitInfo = CSMap::GetCSUnitInfo (icsUnit)))
+        if (NULL == (csUnitInfo = CSMap::GetCSUnitInfo(icsUnit)))
             break;
-        if (unitsSame (csUnitInfo, unitDef))
+        if (unitsSame(csUnitInfo, unitDef))
             {
             csUnitName.AssignA (csUnitInfo->name);
             return SUCCESS;
@@ -5272,25 +5268,25 @@ DgnDbR     cache
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeoCoordinationAdmin*  DgnGeoCoordinationAdmin::Create (BeFileNameCR dataDirectory/*, IACSManagerR mgr*/)
+DgnGeoCoordinationAdmin*  DgnGeoCoordinationAdmin::Create(BeFileNameCR dataDirectory/*, IACSManagerR mgr*/)
     {
-    return new DgnGeoCoordinationAdmin (dataDirectory/*, mgr*/);
+    return new DgnGeoCoordinationAdmin(dataDirectory/*, mgr*/);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnGeoCoordinationAdmin::CompleteInitialization () const
+void DgnGeoCoordinationAdmin::CompleteInitialization() const
     {
     RUNONCE_CHECK (m_initializationComplete)
 
-    BentleyApi::GeoCoordinates::BaseGCS::Initialize (m_dataDirectory.c_str());
+    BentleyApi::GeoCoordinates::BaseGCS::Initialize(m_dataDirectory.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeoCoordinationAdmin::DgnGeoCoordinationAdmin (BeFileNameCR dataDirectory/*, IACSManagerR mgr*/)
+DgnGeoCoordinationAdmin::DgnGeoCoordinationAdmin(BeFileNameCR dataDirectory/*, IACSManagerR mgr*/)
     {
     m_initializationComplete  = false;
     m_gcrp                    = NULL;
