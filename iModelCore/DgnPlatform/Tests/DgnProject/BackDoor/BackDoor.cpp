@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/BackDoor/DgnProject/BackDoor.h>
-
+#include <DgnPlatform/DgnCore/RealityDataCache.h>
 #include <Logging/bentleylogging.h>
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
@@ -85,8 +85,41 @@ namespace DirectionParser
             }
     };
 
+    /*---------------------------------------------------------------------------------**//**
+    * @bsinamespace
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    namespace RealityData
+    {
+        /*---------------------------------------------------------------------------------**//**
+        * @bsiclass                                     Grigas.Petraitis                07/15
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        struct Work : RefCounted<RealityDataWork>
+        {
+        typedef std::function<void()> Handler;
+        private:
+            Handler m_handler;
+            Work(Handler const& handler) : m_handler(handler) {}
+        protected:
+            virtual void _DoWork() override {m_handler();}
+        public:
+            static RefCountedPtr<Work> Create(Handler const& handler) {return new Work(handler);}
+        };
 
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Grigas.Petraitis                07/15
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void RunOnAnotherThread(std::function<void()> const& handler)
+            {
+            RealityDataWorkerThreadPtr thread = RealityDataWorkerThread::Create();
+            thread->Start();
+            thread->DoWork(*Work::Create([handler, thread]()
+                {
+                handler();
+                thread->Terminate();
+                }));
+            }
 
+    }; // RealityData
 }
 
 /*---------------------------------------------------------------------------------**//**
