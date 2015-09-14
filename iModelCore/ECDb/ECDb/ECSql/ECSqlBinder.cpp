@@ -261,20 +261,25 @@ void ECSqlParameterMap::OnClearBindings ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
+//static
 ECSqlStatus ArrayConstraintValidator::Validate (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& expected, uint32_t actualArrayLength)
     {
     const uint32_t expectedMinOccurs = expected.GetArrayMinOccurs ();
-    const uint32_t expectedMaxOccurs = expected.GetArrayMaxOccurs ();
     if (actualArrayLength < expectedMinOccurs)
-        {
-        LOG.warningv ("Array to be bound to the array parameter must at least have %d element(s) as defined in the respective ECProperty.", expectedMinOccurs);
-        //return statusContext.SetError (ECSqlStatus::UserError, true, "Array to be bound to the array parameter must at least have %d element(s) as defined in the respective ECProperty.", expectedMinOccurs);
-        }
-    else if (actualArrayLength > expectedMaxOccurs)
-        {
-        LOG.warningv ("Array to be bound to the array parameter must at most have %d element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
-        //return statusContext.SetError (ECSqlStatus::UserError, true, "Array to be bound to the array parameter must at most have %d element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
-        }
+        return statusContext.SetError (ECSqlStatus::UserError, "Array to be bound to the array parameter must at least have %d element(s) as defined in the respective ECProperty.", expectedMinOccurs);
+
+    return ValidateMaximum(statusContext, expected, actualArrayLength);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      09/2015
+//---------------------------------------------------------------------------------------
+//static
+ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& expected, uint32_t actualArrayLength)
+    {
+    const uint32_t expectedMaxOccurs = expected.GetArrayMaxOccurs();
+    if (actualArrayLength > expectedMaxOccurs)
+        return statusContext.SetError(ECSqlStatus::UserError, "Array to be bound to the array parameter must at most have %d element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
 
     return ECSqlStatus::Success;
     }

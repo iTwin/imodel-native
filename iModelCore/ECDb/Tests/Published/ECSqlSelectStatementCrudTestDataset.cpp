@@ -917,9 +917,28 @@ ECSqlTestDataset ECSqlSelectTestDataset::DateTimeTests (int rowCountPerClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (int rowCountPerClass)
+ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (ECDbTestProject& testProject, int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
+
+    bvector<ECInstanceId> psaIds;
+
+            {
+            ECSqlStatement stmt;
+            if (ECSqlStatus::Success != stmt.Prepare(testProject.GetECDb(), "SELECT ECInstanceId FROM ONLY ecsql.PSA"))
+                return dataset;
+
+            while (stmt.Step() == ECSqlStepStatus::HasRow)
+                psaIds.push_back(stmt.GetValueId<ECInstanceId>(0));
+            }
+
+    if (rowCountPerClass != (int) psaIds.size() || rowCountPerClass < 5)
+        {
+        LOG.errorv("Test set up failure. Row count per class (%d) should match the number of ids in test class (%d) and should be at least 5.",
+                    rowCountPerClass, psaIds.size());
+        BeAssert(false);
+        return dataset;
+        }
 
     Utf8CP ecsql = "SELECT I FROM ecsql.PSA WHERE ECInstanceId >= 0";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
@@ -933,52 +952,48 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (int rowCountPerClass
     ecsql = "SELECT I FROM ecsql.PSA WHERE ECInstanceId >= 0 OR I > 123";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN (I-31, I-32.0)";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 2);
+    Utf8String ecsqlStr;
+    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId ='%lld'", psaIds[0].GetValue());
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsqlStr.c_str(), IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 1);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId = '98'";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 1);
-
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId <= '10000'";
+    ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId <= '10000'";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, rowCountPerClass);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN ('91', '92')";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 2);
+    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId IN ('%lld', '%lld')", psaIds[0].GetValue(), psaIds[2].GetValue());
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsqlStr.c_str(), IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 2);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId BETWEEN '91' AND '94'";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 4);
+    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId BETWEEN '%lld' AND '%lld'", psaIds[0].GetValue(), psaIds[3].GetValue());
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsqlStr.c_str(), IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 4);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN (91, (select ECInstanceId from ecsql.P where ECInstanceId = 92))";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 2);;
+    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId IN (%lld, (select ECInstanceId from ecsql.PSA where ECInstanceId = %lld))", psaIds[0].GetValue(), psaIds[2].GetValue());
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsqlStr.c_str(), 3, 2);;
 
         {
-        ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = :id";
+        ecsql = "SELECT I, Dt FROM ecsql.PSA WHERE ECInstanceId = :id";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue (91LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue (psaIds[0].GetValue())));
         }
 
         {
-        ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = :id";
+        ecsql = "SELECT I, Dt FROM ecsql.PSA WHERE ECInstanceId = :id";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue ("91")));
+        Utf8String strVal;
+        strVal.Sprintf("%lld", psaIds[0].GetValue());
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue (strVal.c_str())));
         }
 
         {
-        ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = ?";
+        ecsql = "SELECT I, Dt FROM ecsql.PSA WHERE ECInstanceId = ?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (92LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (psaIds[0].GetValue())));
         }
 
         {
-        ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = ?";
+        ecsql = "SELECT I, Dt FROM ecsql.PSA WHERE ECInstanceId = ?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("91")));
-        }
-
-        {
-        ecsql = "SELECT I FROM ecsql.P WHERE ECInstanceId = ?";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "Binding string to ECInstanceId parameter is no error as ECInstanceId can be expressed as number and string.", 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("123")));
+        Utf8String strVal;
+        strVal.Sprintf("%lld", psaIds[0].GetValue());
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(strVal.c_str())));
         }
 
     ecsql = "SELECT L FROM ecsql.PSA ECInstanceId";

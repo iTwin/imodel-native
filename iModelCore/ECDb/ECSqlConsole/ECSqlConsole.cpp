@@ -197,10 +197,6 @@ void ECSqlConsole::RunCommand (Utf8CP cmd)
     command->Run (GetSession (), args);
     executionTimer.Stop ();
     Console::WriteLine ("[Execution Time: %.4f seconds]", executionTimer.GetElapsedSeconds ());
-    if (GetSession ().GetECDb ().IsDbOpen ())
-        {
-        Console::WriteLine ("\r\n[Sqlite rows modified: %d]", GetSession ().GetECDb ().GetModifiedRowCount ());
-        }
 		
     //Add command to history (except history command itself)
     if (dynamic_cast<HistoryCommand const*> (command) == nullptr)

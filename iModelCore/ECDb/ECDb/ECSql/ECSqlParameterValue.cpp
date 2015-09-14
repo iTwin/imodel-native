@@ -824,7 +824,7 @@ IECSqlArrayBinder& ArrayECSqlParameterValue::_BindArray(uint32_t initialCapacity
 IECSqlBinder& ArrayECSqlParameterValue::_AddArrayElement()
     {
     auto const& typeInfo = GetTypeInfo();
-    const auto stat = ArrayConstraintValidator::Validate(GetStatusContext(), typeInfo, (uint32_t) m_arrayElementValues.Size() + 1);
+    const auto stat = ArrayConstraintValidator::ValidateMaximum(GetStatusContext(), typeInfo, (uint32_t) m_arrayElementValues.Size() + 1);
     if (stat != ECSqlStatus::Success)
         return NoopECSqlBinderFactory::GetBinder(stat).AddArrayElement();
     
