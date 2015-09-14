@@ -183,6 +183,7 @@ public:
     //! Parameters for creating new DgnElements
     struct CreateParams
     {
+    public:
         DgnDbR          m_dgndb;
         DgnModelId      m_modelId;
         DgnClassId      m_classId;
@@ -191,6 +192,10 @@ public:
         Utf8CP          m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
+
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
+                     DgnElementId parent=DgnElementId()) : CreateParams(db, modelId, classId, DgnCategoryId(), label, code, id, parent) { }
+
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
                      DgnElementId parent=DgnElementId()) :
                      m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
@@ -1113,6 +1118,15 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 {
     DEFINE_T_SUPER(DgnElement);
 
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(GeometricElement::T_Super::CreateParams);
+
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
+                     DgnElementId parent=DgnElementId()) : T_Super(db, modelId, classId, category, label, code, id, parent) {} 
+
+        CreateParams(T_Super const& params) : T_Super(params) { }
+    };
 protected:
     GeomStream m_geom;
 
@@ -1157,9 +1171,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
 {
     DEFINE_T_SUPER(GeometricElement);
 
-    struct CreateParams : DgnElement::CreateParams
+    struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(DgnElement::CreateParams);
+    DEFINE_T_SUPER(DgnElement3d::T_Super::CreateParams);
 
     Placement3dCR m_placement;
     CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
@@ -1221,11 +1235,12 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
 {
     DEFINE_T_SUPER(GeometricElement);
-    struct CreateParams : DgnElement::CreateParams
+    struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(DgnElement::CreateParams);
+    DEFINE_T_SUPER(DgnElement2d::T_Super::CreateParams);
 
     Placement2dCR m_placement;
+
     CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
         T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
 

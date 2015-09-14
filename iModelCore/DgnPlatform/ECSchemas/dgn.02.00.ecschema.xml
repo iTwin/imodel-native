@@ -421,7 +421,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <!-- Foreign key relationship: ElementIsInCategory.CategoryId -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
