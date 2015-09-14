@@ -40,7 +40,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_colors(*this), m_categories(*this), m_domains(*this), m_styles(*this), m_views(*this),
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
-                 m_materials(*this), m_links(*this), m_authorities(*this), m_textures(*this),
+                 m_materials(*this), m_links(*this), m_authorities(*this), m_textures(*this), m_lights(*this),
                  m_ecsqlCache(50, "DgnDb")
     {
     }
@@ -272,8 +272,16 @@ DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnno
 DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProgramText, DgnScriptType stype, bool updateExisting)
     {
     DbEmbeddedFileTable& files = GetDgnDb().EmbeddedFiles();
-    if (BE_SQLITE_OK != files.AddEntry(tsProgramName, (DgnScriptType::JavaScript == stype)? "js": "ts")
-     || BE_SQLITE_OK != files.Save(tsProgramText, strlen(tsProgramText)+1, tsProgramName, true))
+    DbResult res = files.AddEntry(tsProgramName, (DgnScriptType::JavaScript == stype)? "js": "ts");
+    if (BE_SQLITE_OK != res)
+        {
+        if (!BeSQLiteLib::IsConstraintDbResult(res) || !updateExisting)
+            {
+            return DgnDbStatus::SQLiteError;
+            }
+        }
+
+    if (BE_SQLITE_OK != files.Save(tsProgramText, strlen(tsProgramText)+1, tsProgramName, true))
         return DgnDbStatus::SQLiteError;
     
     return DgnDbStatus::Success;
@@ -369,7 +377,7 @@ DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(sour
         return;
         }
 
-    WString spn, dpn;
+    BeFileName spn, dpn;
     if (0 != wcscmp(sourceGcs->GetProjectionName(spn), destGcs->GetProjectionName(dpn)))
         {
         m_areCompatibleDbs = false;

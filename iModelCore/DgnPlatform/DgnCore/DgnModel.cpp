@@ -881,8 +881,8 @@ void DgnModel::_FillModel()
     if (IsFilled())
         return;
 
-    enum Column : int {Id=0,ClassId=1,CategoryId=2,Label=3,Code=4,ParentId=5};
-    Statement stmt(m_dgndb, "SELECT Id,ECClassId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    enum Column : int {Id=0,ClassId=1,CategoryId=2,Label=3,Code=4,ParentId=5,CodeAuthorityId=6,CodeNameSpace=7};
+    Statement stmt(m_dgndb, "SELECT Id,ECClassId,CategoryId,Label,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     SetFilled();
@@ -904,7 +904,7 @@ void DgnModel::_FillModel()
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
             stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
             stmt.GetValueText(Column::Label), 
-            DgnElement::Code(stmt.GetValueText(Column::Code)), 
+            DgnElement::Code(stmt.GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt.GetValueText(Column::Code), stmt.GetValueText(Column::CodeNameSpace)), 
             id,
             stmt.GetValueId<DgnElementId>(Column::ParentId)), true);
         }
@@ -998,7 +998,7 @@ DgnDbStatus ComponentSolution::Query(Solution& sln, SolutionId sid)
     {
     //DgnModelId cmid = GetDgnDb().Models().QueryModelId(sid.m_modelName.c_str());
 
-    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id,Range FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=? AND SolutionName=?");
+    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id,Range,Parameters FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=? AND SolutionName=?");
     stmt->BindText(1, sid.m_modelName, Statement::MakeCopy::No);
     stmt->BindText(2, sid.m_solutionName, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt->Step())
@@ -1006,6 +1006,12 @@ DgnDbStatus ComponentSolution::Query(Solution& sln, SolutionId sid)
     sln.m_id = sid;
     sln.m_rowId = stmt->GetValueInt64(0);
     sln.m_range = *(ElementAlignedBox3d*)stmt->GetValueBlob(1);
+    Utf8CP parametersJsonSerialized = stmt->GetValueText(2);
+    Json::Value parametersJson(Json::objectValue);
+    if (!Json::Reader::Parse(parametersJsonSerialized, parametersJson))
+        return DgnDbStatus::ReadError;
+    sln.m_parameters = ModelSolverDef::ParameterSet(parametersJson);
+        
     sln.m_componentModelId = GetDgnDb().Models().QueryModelId(sid.m_modelName.c_str());
     return DgnDbStatus::Success;
     }
@@ -1037,14 +1043,15 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
         return SolutionId();
         }
 
-    Utf8String solutionName = componentModel.GetSolver().GetParameters().ComputeSolutionName();
+    ModelSolverDef::ParameterSet const& currentParameters = componentModel.GetSolver().GetParameters();
+    Utf8String solutionName = currentParameters.ComputeSolutionName();
 
     SolutionId sid;
     sid.m_modelName = componentModel.GetModelName();
     sid.m_solutionName = solutionName;
 
     Solution sln;
-    if (DgnDbStatus::Success == Query(sln, sid))
+    if (DgnDbStatus::Success == Query(sln, sid)) // see if this solution is already cached.
         return sid;
 
     DgnCategoryId componentCategoryId = GetDgnDb().Categories().QueryCategoryId(componentModel.GetElementCategoryName().c_str());
@@ -1054,7 +1061,7 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
         return SolutionId();
         }
 
-    //  Accumulate geometry by SubCategory
+    //  Gather geometry by SubCategory
     bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     // *** WIP_IMPORT: add another dimension: break out builders by same ElemDisplayParams
     componentModel.FillModel();
     for (auto const& mapEntry : componentModel)
@@ -1092,7 +1099,7 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
     
     if(builders.empty())
         {
-        BeDataAssert(false && "A component model contains no elements in the component's category.");
+        BeDataAssert(false && "Component model contains no elements in the component's category.");
         return SolutionId();
         }
 
@@ -1110,12 +1117,14 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
         builder->CreateGeomPart(GetDgnDb(), true);
         builder->SetGeomStream(*geomPart);
         if (BSISUCCESS != GetDgnDb().GeomParts().InsertGeomPart(*geomPart))
+            {
+            BeAssert(false && "cannot create geompart for solution geometry -- what could have gone wrong?");
             return SolutionId();
-
+            }
         subcatAndGeoms.push_back(make_bpair(clientsubcatid, geomPart->GetId()));
         }
 
-    //  The solution is a geomstream that refers to the geomparts
+    //  Build a single geomstream that refers to all of the geomparts -- that's the solution
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(componentModel, componentCategoryId, DPoint3d::FromZero(), YawPitchRollAngles());
     for (bpair<DgnSubCategoryId,DgnGeomPartId> const& subcatAndGeom : subcatAndGeoms)
         {
@@ -1124,21 +1133,22 @@ ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR
         builder->Append(subcatAndGeom.second, noTransform);
         }
 
-
     GeomStream  geom;
-    if (builder->GetGeomStream(geom) != BSISUCCESS)
-        return SolutionId();
-
     Placement3d placement;
-    if (builder->GetPlacement(placement) != BSISUCCESS)
+    if (builder->GetGeomStream(geom) != BSISUCCESS || builder->GetPlacement(placement) != BSISUCCESS)
+        {
+        BeAssert(false);
         return SolutionId();
+        }
 
     ElementAlignedBox3d box = placement.GetElementBox();
         
-    CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " (ComponentModelName,SolutionName,Range) VALUES(?,?,?)");
+    //  Insert a row into the ComponentSolution table that is keyed by the solutionId and that captures the solution geometry
+    CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " (ComponentModelName,SolutionName,Parameters,Range) VALUES(?,?,?,?)");
     istmt->BindText(1, componentModel.GetModelName(), Statement::MakeCopy::No);
     istmt->BindText(2, solutionName, Statement::MakeCopy::No);
-    istmt->BindBlob(3, &box, sizeof(box), Statement::MakeCopy::No);
+    istmt->BindText(3, Json::FastWriter::ToString(currentParameters.ToJson()).c_str(), Statement::MakeCopy::Yes);
+    istmt->BindBlob(4, &box, sizeof(box), Statement::MakeCopy::No);
     if (BE_SQLITE_DONE != istmt->Step())
         return SolutionId();
     istmt = nullptr;
@@ -1194,7 +1204,7 @@ DgnElementPtr ComponentSolution::CreateSolutionInstanceElement(DgnModelR destina
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, SolutionId solutionId)
+DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, SolutionId solutionId)
     {
     DgnDbR db = instanceElement.GetDgnDb();
 
@@ -1209,14 +1219,18 @@ DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceEl
     if (!cm.IsValid())
         return DgnDbStatus::NotFound;
 
-    DgnClassId cmItemClassId = DgnClassId(db.Schemas().GetECClassId(componentSchemaName, cm->GetItemECClassName().c_str()));
+    Utf8String componentSchemaName = cm->GetItemECSchemaName();
+    DgnClassId cmItemClassId = DgnClassId(db.Schemas().GetECClassId(componentSchemaName.c_str(), cm->GetItemECClassName().c_str()));
     if (!cmItemClassId.IsValid())
+        {
+        BeAssert(false && "you must store the name of the generated ECSchema in the ComponentModel");
         return DgnDbStatus::WrongClass;
+        }
 
     // Make and return a standalone instance of the itemClass that holds the parameters as properties. It is up to the caller to transfer these properties to the DgnElement::Item object.
     auto itemClass = db.Schemas().GetECClass(cmItemClassId.GetValue());
     itemProperties = itemClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ModelSolverDef::ParameterSet const& params = cm->GetSolver().GetParameters();
+    ModelSolverDef::ParameterSet const& params = sln.GetParameters();
     for (auto param : params)
         {
         if (ECN::ECOBJECTS_STATUS_Success != itemProperties->SetValue(param.GetName().c_str(), param.GetValue()))
@@ -1355,6 +1369,8 @@ DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& impor
         return nullptr;
 
     model->_InitFrom(*this);
+
+    model->m_solver.RelocateToDestinationDb(importer);
 
     return model;
     }
@@ -1611,6 +1627,9 @@ ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params)
     m_elementECClassName = params.GetElementECClassName();
     m_itemECClassName = params.GetItemECClassName();
     m_itemECBaseClassName = params.GetItemECBaseClassName();
+
+    if (m_itemECClassName.empty())
+        m_itemECClassName = GetModelName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1646,6 +1665,22 @@ bool ComponentModel::IsValid() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::_OnDelete()
+    {
+    //  *** TRICKY: We don't/can't have a trigger do this, because the solutions table references this model by name
+    Statement delSolutions;
+
+    delSolutions.Prepare(GetDgnDb(), "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=?");
+    delSolutions.BindText(1, GetModelName(), Statement::MakeCopy::No);
+    delSolutions.Step();
+
+    // *** NEEDS WORK: I should kill off all of the GeomParts referenced by the geomstreams in the rows of ComponentSolution 
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::ImportSchema(DgnDbR db, BeFileNameCR schemaFile)
     {
     ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
@@ -1657,10 +1692,48 @@ DgnDbStatus ComponentModel::ImportSchema(DgnDbR db, BeFileNameCR schemaFile)
     if (SCHEMA_READ_STATUS_Success != readSchemaStatus)
         return DgnDbStatus::ReadError;
 
+    if (nullptr != db.Schemas().GetECSchema(schemaPtr->GetName().c_str()))
+        return DgnDbStatus::AlreadyLoaded;
+
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
         return DgnDbStatus::BadSchema;
 
     db.Domains().SyncWithSchemas();
+
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DgnDbStatus ComponentModel::ExportSchemaTo(DgnDbR clientDb, DgnDbR componentDb, Utf8StringCR schemaNameIn)
+    {
+    Utf8String schemaName(schemaNameIn);
+    if (schemaName.empty())
+        schemaName = Utf8String(componentDb.GetFileName().GetFileNameWithoutExtension());
+
+    if (nullptr != clientDb.Schemas().GetECSchema(schemaName.c_str()))
+        return DgnDbStatus::AlreadyLoaded;
+
+    // Ask componentDb to generate a schema
+    ECN::ECSchemaPtr schema;
+    if (ECN::ECOBJECTS_STATUS_Success != ECN::ECSchema::CreateSchema(schema, schemaName, 0, 0))
+        return DgnDbStatus::BadSchema;
+    
+    schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(componentDb.Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
+
+    if (DgnDbStatus::Success != ComponentModel::AddAllToECSchema(*schema, componentDb))
+        return DgnDbStatus::BadSchema;
+
+    componentDb.SaveChanges(); // *** TRICKY: AddAllToECSchema set the ItemECSchemaName property of the comonent models. Save it.
+        
+    //  Import the schema into clientDb
+    ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
+    contextPtr->AddSchema(*schema);
+    if (BentleyStatus::SUCCESS != clientDb.Schemas().ImportECSchemas(contextPtr->GetCache()))
+        return DgnDbStatus::BadSchema;
+
+    clientDb.Domains().SyncWithSchemas();
 
     return DgnDbStatus::Success;
     }
@@ -1725,6 +1798,9 @@ DgnDbStatus ComponentModel::GenerateECClass(ECN::ECSchemaR schema)
     egaSpec->SetValue("Inputs", ECValue(paramsList.c_str()));   // NB: paramsList must be in the same order as m_solver.GetParameters, so that clients can use it to generate the solution name
     ecclass->SetCustomAttribute(*egaSpec);
 
+    m_itemECSchemaName = schema.GetName();
+    Update();
+
     return DgnDbStatus::Success;
     }
 
@@ -1784,6 +1860,7 @@ void ComponentModel::_ToPropertiesJson(Json::Value& json) const
     T_Super::_ToPropertiesJson(json);
     json["ComponentElementCategoryName"] = m_elementCategoryName.c_str();
     json["ComponentElementECClassName"]  = m_elementECClassName.c_str();
+    json["ComponentItemECSchemaName"]    = m_itemECSchemaName.c_str();
     json["ComponentItemECClassName"]     = m_itemECClassName.c_str();
     json["ComponentItemECBaseClassName"] = m_itemECBaseClassName.c_str();
     }
@@ -1796,6 +1873,7 @@ void ComponentModel::_FromPropertiesJson(Json::Value const& json)
     T_Super::_FromPropertiesJson(json);
     m_elementCategoryName = json["ComponentElementCategoryName"].asCString();
     m_elementECClassName  = json["ComponentElementECClassName"].asCString();
+    m_itemECSchemaName     = json["ComponentItemECSchemaName"].asCString();
     m_itemECClassName     = json["ComponentItemECClassName"].asCString();
     m_itemECBaseClassName = json["ComponentItemECBaseClassName"].asCString();
     }

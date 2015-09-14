@@ -31,10 +31,13 @@
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
+#define DGN_CLASSNAME_Light                 "Light"
 #define DGN_CLASSNAME_Link                  "Link"
+#define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_Material              "Material"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
+#define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
 #define DGN_CLASSNAME_PhysicalView          "PhysicalView"
@@ -1128,88 +1131,40 @@ private:
     friend struct DgnDb;
     explicit DgnAuthorities(DgnDbR db) : DgnDbTable(db) {}
 
+    typedef bvector<DgnAuthorityPtr> LoadedAuthorities;
+
+    LoadedAuthorities   m_loadedAuthorities;
+    BeSQLite::BeDbMutex m_mutex;
+
+    DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
 public:
-    //=======================================================================================
-    //! Holds an authority's data in memory.
-    //=======================================================================================
-    struct Authority
-    {
-    private:
-        friend struct DgnAuthorities;
-
-        DgnAuthorityId  m_id;
-        Utf8String      m_name;
-        Utf8String      m_uri;
-    public:
-        //! Constructs an empty, invalid Authority
-        Authority() { }
-        //! Constructs a new Authority for insertion into the authorities table.
-        //! @param[in]      name The name of the authority. Must be unique.
-        //! @param[in]      uri  The optional Uri of the authority.
-        explicit Authority(Utf8CP name, Utf8CP uri = nullptr) : m_name(name), m_uri(uri) { }
-
-        DgnAuthorityId  GetId() const   { return m_id; } //!< This authority's ID.
-        Utf8StringCR    GetName() const { return m_name; } //!< This authority's unique name.
-        Utf8StringCR    GetUri() const  { return m_uri; } //!< This authority's URI.
-        bool            IsValid() const { return m_id.IsValid(); } //!< Test whether this Authority is valid.
-
-        void            SetName(Utf8CP val)    { m_name = val; } //!< Set the name of the authority. Must be unique.
-        void            SetUri(Utf8CP val)     { m_uri = val; } //!< Set the URI of the authority.
-    };
-
-    //! An iterator over the Authorities within a DgnDb.
-    struct Iterator : BeSQLite::DbTableIterator
-    {
-    public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
-
-        //! An entry in the Authorities table.
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
-        public:
-            DGNPLATFORM_EXPORT DgnAuthorityId   GetId() const; //!< The authority ID.
-            DGNPLATFORM_EXPORT Utf8CP           GetName() const; //!< The authority name.
-            DGNPLATFORM_EXPORT Utf8CP           GetUri() const; //!< The authority URI.
-
-            Entry const& operator*() const      { return *this; }
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNPLATFORM_EXPORT size_t   QueryCount() const; //!< The number of entries in the table.
-        DGNPLATFORM_EXPORT Entry    begin() const; //!< An iterator to the first entry in the table.
-        Entry                       end() const { return Entry(nullptr, false); } //!< An iterator one beyond the last entry in the table.
-    };
-
-    //! Obtain an iterator over the authorities within a DgnDb.
-    Iterator    MakeIterator() const    { return Iterator(m_dgndb); }
-
-    //! Add a new Authority to the table.
-    //! @param[in]      authority   The new entry to add.
-    //! @param[out]     result      The result of the insert operation.
-    //! @return The ID of the newly-created Authority, or an invalid ID if insertion failed.
-    DGNPLATFORM_EXPORT DgnAuthorityId   Insert(Authority& authority, DgnDbStatus* result = nullptr);
-
-    //! Change the properties of an Authority. This method cannot be used to change the authority's name.
-    //! @param[in]      authority The modified Authority.
-    //! @return Success if the update was successful, or else an error code.
-    DGNPLATFORM_EXPORT DgnDbStatus      Update(Authority const& authority) const;
-
-    //! Look up an Authority by ID.
-    //! @param[in]      id The ID of the desired Authority.
-    //! @return The Authority with the specified ID, or an invalid ID if no such Authority exists.
-    DGNPLATFORM_EXPORT Authority        Query(DgnAuthorityId id) const;
-
     //! Look up the ID of the authority with the specified name.
-    //! @param[in]      name The name of the desired Authority.
-    //! @return The ID corresponding to the name, or an invalid ID if no such name exists.
-    DGNPLATFORM_EXPORT DgnAuthorityId   QueryAuthorityId(Utf8StringCR name) const;
+    DGNPLATFORM_EXPORT DgnAuthorityId QueryAuthorityId(Utf8StringCR name) const;
 
-    //! The built-in "local" code-generating authority
-    static DgnAuthorityId Local() {return DgnAuthorityId((int64_t)1LL);}
+    //! Look up an authority by ID. The authority will be loaded from the database if necessary.
+    //! @param[in] authorityId The ID of the authority to load
+    //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(DgnAuthorityId authorityId);
+
+    //! Look up an authority by name. The authority will be loaded from the database if necessary.
+    //! @param[in] name The name of the authority to load
+    //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(Utf8StringCR name);
+
+    //! Look up an authority of a particular type by ID. The authority will be loaded from the database if necessary.
+    //! @param[in] authorityId The ID of the authority to load
+    //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded or is not of the desired type.
+    template<typename T> RefCountedCPtr<T> Get(DgnAuthorityId authorityId) { return dynamic_cast<T const*>(GetAuthority(authorityId).get()); }
+
+    //! Look up an authority of a particular type by name. The authority will be loaded from the database if necessary.
+    //! @param[in] name The name of the authority to load
+    //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded or is not of the desired type.
+    template<typename T> RefCountedCPtr<T> Get(Utf8StringCR name) { return dynamic_cast<T const*>(GetAuthority(name).get()); }
+    //! Add a new Authority to the table.
+    //! @param[in]  authority The new entry to add.
+    //! @return The result of the insert operation.
+    //! @remarks If successful, this method will assign a valid DgnAuthorityId to the supplied authority
+    DGNPLATFORM_EXPORT DgnDbStatus Insert(DgnAuthorityR authority);
 };
 
 //=======================================================================================
@@ -1477,109 +1432,5 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementKey, DgnLinkId);
     DGNPLATFORM_EXPORT void PurgeUnused();
 };
-
-//=======================================================================================
-//! A helper class used to import a ComponentModel from one dgndb to another.
-//! The basic pattern for placing instances of component solutions is:
-//!     -# Make sure the component's schema has been generated. See ComponentModel::AddAllToECSchema.
-//!     -# Once per schema, import the component's schema into the target DgnDb. See ComponentModel::ImportSchema.
-//!     -# Once per component model, copy the model into the client's DgnDb. See ComponentModel::ImportModel.
-//!     -# Once per solution parameter set, solve and capture a solution. See ComponentSolution.
-//!     -# Create and place as many instances of a captured solution as you like. See ComponentSolution::CreateInstance.
-//! @see ComponentModel
-// @bsiclass                                                    Keith.Bentley   10/11
-//=======================================================================================
-struct ComponentSolution : DgnDbTable
-{
-    DEFINE_T_SUPER(DgnDbTable)
-
-public:
-    //! Identifies a solution the ComponentSolution table
-    struct SolutionId
-        {
-        friend struct ComponentModel;
-        friend struct ComponentSolution;
-      private:
-        Utf8String m_modelName;
-        Utf8String m_solutionName;
-
-        SolutionId(Utf8String m, Utf8String s) : m_modelName(m), m_solutionName(s) {;}
-
-      public:
-        SolutionId() {;}
-
-        bool IsValid() const {return !m_modelName.empty() && !m_solutionName.empty();}
-
-        bool operator==(SolutionId const& rhs) const {return m_modelName==rhs.m_modelName && m_solutionName==rhs.m_solutionName;}
-        };
-
-    //! Access to the geometry of a captured solution
-    struct Solution
-        {
-        friend struct ComponentSolution;
-      private:
-        uint64_t m_rowId;
-        SolutionId m_id;
-        DgnModelId  m_componentModelId;
-        ElementAlignedBox3d m_range;
-
-      public:
-        Solution() : m_rowId(0) {;}
-
-        bool IsValid() {return m_id.IsValid() && m_rowId != 0;}
-
-        //! Get the range of the solution geometry.
-        ElementAlignedBox3d GetRange() const {return m_range;}
-
-        //! Read the captured solution geometry
-        //! @param[out]  geomStream     Where to write the geometry
-        //! @param[in]   db             The DgnDb to query
-        //! @return non-zero if the geometry could not be read
-        DgnDbStatus QueryGeomStream(GeomStreamR geomStream, DgnDbR db) const;
-        };
-
-    ComponentSolution(DgnDbR db) : T_Super(db) {;}
-
-    //! @name Capturing Solutions
-    //@{
-
-    //! Look up a captured solution
-    //! @param[out] solution  The solution data
-    //! @param[in] sid     The solution id
-    //! @return non-zero if no such solution exists
-    //! @see CaptureSolution
-    DGNPLATFORM_EXPORT DgnDbStatus Query(Solution& solution, SolutionId sid);
-
-    //! Harvest geometry from the component model and store in the solutions table.
-    //! @param[in] componentModel The ComponentModel that is to be harvested
-    //! @return The ID of the captured solution
-    //! @see ComponentModel::Solve
-    DGNPLATFORM_EXPORT SolutionId CaptureSolution(ComponentModelR componentModel);
-    //@}
-
-    //! @name Creating a Solution Instance
-    //@{
-    //! A convenience method to create a new element that will hold an instance of a captured solution geometry. The caller must insert the returned element into the Db.
-    //! This convenience method creates an element based on the class specified by ComponentModel::GetElementECClassName and assigns it to the category
-    //! specified by ComponentModel::GetElementCategoryName. The caller should call CreateSolutionInstanceItem next.
-    //! @note The caller does not have to call this method to capture an instance. The caller could create an instance element based on a different class or in a different category, as long as it is 
-    //! compatible with the ComponentModel's generated item.
-    //! @param[in] destinationModel The model where the instance will be inserted by the caller
-    //! @param[in] solutionId Identifies a captured solution. See CaptureSolution and QuerySolutionId
-    //! @param[in] origin The element's placement origin
-    //! @param[in] angles The element's placement angles
-    //! @return An new element that could be inserted as an instance of a captured solution (but only \em after calling CreateSolutionInstanceItem)
-    //! @see CreateSolutionInstanceItem, CaptureSolution, QuerySolution
-    DGNPLATFORM_EXPORT DgnElementPtr CreateSolutionInstanceElement(DgnModelR destinationModel, SolutionId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles);
-
-    //! Create an item that holds the geometry from specified solution and set it on the specified element.
-    //! @param instanceElement  The element to update with the new item
-    //! @param itemProperties   An ECInstance that contains the item's properties. It is up to the caller to transfer these properties to the DgnElement::Item object before inserting or updating the element.
-    //! @param solutionId       Identifies the solution to use
-    //! @param componentSchemaName  The name of the schema (in the element's DgnDb) that defines the component model item ECClass definition
-    //! @return non-zero error status if the item could not be created
-    DGNPLATFORM_EXPORT DgnDbStatus CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, SolutionId solutionId);
-    //@}
-    };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

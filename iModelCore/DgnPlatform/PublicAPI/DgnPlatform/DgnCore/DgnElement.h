@@ -17,6 +17,7 @@ Classes for working with %DgnElements in memory.
 BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 #include <Bentley/BeAssert.h>
+#include "DgnAuthority.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -98,6 +99,8 @@ public:
     //! @{
     //! Make sure that a DgnAuthority has been imported
     DGNPLATFORM_EXPORT DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId);
+    //! Register a copy of a DgnAuthority
+    DGNPLATFORM_EXPORT DgnAuthorityId AddAuthorityId(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_remap.Add(sourceId, targetId);}
     //! Look up a copy of a model
     DGNPLATFORM_EXPORT DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a model
@@ -153,6 +156,13 @@ typedef QvElemSet<QvKey32> T_QvElemSet;
     protected: virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
+#define DGNASPECT_DECLARE_MEMBERS(__ECSchemaName__,__ECClassName__,__superclass__) \
+    private:    typedef __superclass__ T_Super;\
+    public:     static Utf8CP MyECSchemaName() {return __ECSchemaName__;}\
+                static Utf8CP MyECClassName() {return __ECClassName__;}\
+    protected:  virtual Utf8CP _GetECSchemaName() const override {return MyECSchemaName();}\
+                virtual Utf8CP _GetECClassName() const override {return MyECClassName();}
+
 //=======================================================================================
 //! An instance of a DgnElement in memory. DgnElements are the building blocks for a DgnDb.
 //! @ingroup DgnElementGroup
@@ -168,37 +178,7 @@ public:
     friend struct dgn_TxnTable::Element;
     friend struct MultiAspect;
 
-    //! A unique "identification string" for a DgnElement. Within a DgnDb, all values of Code must be unique.
-    //! A Code is a two-part identifier: [DgnAuthorityId authority, Utf8String value]. Sometimes the Code for a DgnElement is assigned by some external authority,
-    //! in which case its format, meaning, and uniqueness is established externally (see DgnDb::DgnAuthorities.)
-    //! DgnElements that have no stable external identity (i.e. have no external meaning) may use the value DgnAuthorities::Local(), which means the Code::Value is locally generated
-    //! and only guaranteed to be unique within the DgnDb of the DgnElement.
-    //! DgnElements must always have a valid DgnElement::Code (a valid DgnAuthorityId and a non-NULL value) to be inserted in a DgnDb.
-    struct Code
-    {
-    private:
-        DgnAuthorityId  m_authority;
-        Utf8String      m_value;
-    public:
-        bool operator==(Code const& other) const {return m_authority==other.m_authority && m_value==other.m_value;}
-
-        //! construct a Code from a Value and DgnAuthorityId.
-        //! @param[in] value identification string for this Code. If nullptr, this Code will be invalid.
-        //! @param[in] authority The DgnAuthoritiyId of the DgnAuthority that issued the value. Use DgnAuthorities::Local() to indicate the value is locally assigned.
-        explicit Code(Utf8CP value=nullptr, DgnAuthorityId authority=DgnAuthorities::Local()) : m_value(value) {m_authority=authority;}
-        //! construct a Code from a Value and DgnAuthorityId.
-        //! @param[in] value identification string for this Code. If nullptr, this Code will be invalid.
-        //! @param[in] authority The DgnAuthoritiyId of the DgnAuthority that issued the value. Use DgnAuthorities::Local() to indicate the value is locally assigned.
-        explicit Code(Utf8String const& value, DgnAuthorityId authority=DgnAuthorities::Local()) : m_value(value) {m_authority=authority;}
-        //! Determine whether this Code is valid
-        bool IsValid() const {return m_authority.IsValid() && !m_value.empty();}
-        //! Get the value for this Code
-        Utf8StringCR GetValue() const {return m_value;}
-        Utf8CP GetValueCP() const {return m_value.c_str();}
-        //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
-        DgnAuthorityId GetAuthority() const {return m_authority;}
-        void RelocateToDestinationDb(DgnImportContext&);
-    };
+    typedef DgnAuthority::Code Code;
 
     //! Parameters for creating new DgnElements
     struct CreateParams
@@ -290,15 +270,15 @@ public:
         ChangeType m_changeType;
 
         DgnDbStatus InsertThis(DgnElementCR el);
-        Utf8String  GetFullEcSqlClassName() {return _GetECSchemaName().append(".").append(_GetECClassName());}
+        Utf8String  GetFullEcSqlClassName() {return Utf8String(_GetECSchemaName()).append(".").append(_GetECClassName());}
 
         DGNPLATFORM_EXPORT Aspect();
 
         //! The subclass must implement this method to return the name of the schema that defines the aspect.
-        virtual Utf8String _GetECSchemaName() const = 0;
+        virtual Utf8CP _GetECSchemaName() const = 0;
 
         //! The subclass must implement this method to return the name of the class that defines the aspect.
-        virtual Utf8String _GetECClassName() const = 0;
+        virtual Utf8CP _GetECClassName() const = 0;
 
         //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
         virtual BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) = 0;
@@ -335,7 +315,6 @@ public:
 
         //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
         DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}
-
     };
 
     //! Represents an ElementAspect subclass for the case where the host Element can have multiple instances of the subclass.
@@ -496,13 +475,13 @@ public:
         //! in-memory instance data, if it has in-memory instance data. If not, it can assert and/or return empty strings. This base
         //! class cannot implement _GetECSchemaName and _GetECClassName to do that, since only the subclass knows its in-memory instance.
         //! If the subclass holds an IECInstancePtr, then it can implement those methods by calling these utility methods.
-        DGNPLATFORM_EXPORT static Utf8String GetECSchemaNameOfInstance(ECN::IECInstanceCP instance);
+        DGNPLATFORM_EXPORT static Utf8CP GetECSchemaNameOfInstance(ECN::IECInstanceCP instance);
 
         //! Utility method to return the ECClass name of an ECInstance.
         //! @param instance The instance currently assigned to this Item, or null if the Item has no in-memory instance.
         //! @return the ECClass name from the instance or the empty string if \a instance is nullptr.
         //! @see GetECSchemaNameOfInstance
-        DGNPLATFORM_EXPORT static Utf8String GetECClassNameOfInstance(ECN::IECInstanceCP instance);
+        DGNPLATFORM_EXPORT static Utf8CP GetECClassNameOfInstance(ECN::IECInstanceCP instance);
 
         //! Utility method to load an existing instance of an Item
         //! A subclass may call this as part of its implementation of _LoadProperties
@@ -791,12 +770,13 @@ protected:
     DGNPLATFORM_EXPORT void ClearAllAppData(); //!< @private
 
     //! Generate the CreateParams to use for Import
+    //! @param destModel Specifies the model into which the element is being cloned
     //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
     //! @return CreateParams initialized with the element's current data
     //! @remarks The m_id fields are \em not set, as it is never correct for two elements to have the same Id. The m_parentId field is not set,
     //! as it is not clear if the copy should be a child of the same parent as the original. The caller can set this if appropriate.
     //! The m_code field is copied \em only when cloning between two different DgnDbs, as it is never correct for two elements to have the same code.
-    CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
+    CreateParams GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const;
 
 public:
     static Utf8CP MyECClassName() {return DGN_CLASSNAME_Element;}
@@ -1014,6 +994,7 @@ public:
     uint8_t const* GetData() const {return m_data;} //!< Get a const pointer to the GeomStream.
     uint8_t* GetDataR() const {return m_data;}      //!< Get a writable pointer to the GeomStream.
     bool HasGeometry() const {return 0 != m_size;}  //!< return false if this GeomStream is empty.
+    void Clear() {FREE_AND_CLEAR(m_data); m_size = m_allocSize = 0;} //!< Return this object to an empty/uninitialized state.
 
     //! Reserve memory for this GeomStream.
     //! @param[in] size the number of bytes to reserve
@@ -1443,8 +1424,13 @@ public:
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    //! @note Element codes are usually, but not necessarily, unique. If not unique, this method returns the first one found.
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnElement::Code const& code) const;
+
+    //! Query for the DgnElementId of the element that has the specified code
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnAuthorityId codeAuthorityId, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
+
+    //! Query for the DgnElementId of the element that has the specified code
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8StringCR codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
@@ -1525,8 +1511,8 @@ struct InstanceBackedItem : DgnElement::Item
 {
     ECN::IECInstancePtr m_instance;
 
-    Utf8String _GetECSchemaName() const override {return m_instance->GetClass().GetSchema().GetName();}
-    Utf8String _GetECClassName() const override {return m_instance->GetClass().GetName();}
+    Utf8CP _GetECSchemaName() const override {return m_instance->GetClass().GetSchema().GetName().c_str();}
+    Utf8CP _GetECClassName() const override {return m_instance->GetClass().GetName().c_str();}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason) override;
