@@ -663,20 +663,6 @@ LsRasterImageComponent* LsRasterImageComponent::LoadRasterImage  (LsComponentRea
     return  rasterImage;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-bool LsCompoundComponent::_SupportsConvertToRaster() const
-    {
-    for (size_t compNum = 0; compNum < GetNumComponents(); compNum++)
-        {
-        if (!GetComponentCP (compNum)->_SupportsConvertToRaster ())
-            return  false;
-        }
-
-    return true;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   08/08
 +---------------+---------------+---------------+---------------+---------------+------*/

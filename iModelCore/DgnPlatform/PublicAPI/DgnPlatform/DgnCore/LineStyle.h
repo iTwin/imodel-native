@@ -454,7 +454,6 @@ public:
     virtual bool        _IsAffectedByWidth (bool currentStatusOnly) const {return false;}
     virtual bool        _ContainsComponent (LsComponentP other) const {return other == this;}
     virtual bool        _HasUniformFullWidth (double *pWidth) const  {if (pWidth) *pWidth=0.0; return false;}
-    virtual bool        _SupportsConvertToRaster() const { return true; }
     virtual double      _CalcRepetitions (LineStyleSymbCP) const;
 
     virtual bool        _IsContinuous           () const override  {return false;}
@@ -695,35 +694,55 @@ public:
         VERTEX_Any          = (VERTEX_LineOrigin | VERTEX_LineEnd | VERTEX_Each)
         };
 
-    DGNPLATFORM_EXPORT bool                     GetNoPartial            () const;
-    DGNPLATFORM_EXPORT void                     SetNoPartial            (bool value);
-    DGNPLATFORM_EXPORT bool                     GetClipPartial          () const;
-    DGNPLATFORM_EXPORT void                     SetClipPartial          (bool value);
-    DGNPLATFORM_EXPORT bool                     GetStretchable          () const;
-    DGNPLATFORM_EXPORT void                     SetStretchable          (bool value);
     DGNPLATFORM_EXPORT bool                     GetDgnDb              () const;
     DGNPLATFORM_EXPORT void                     SetDgnDb              (bool value);
-    DGNPLATFORM_EXPORT bool                     GetUseColor             () const;
-    DGNPLATFORM_EXPORT void                     SetUseColor             (bool value);
-    DGNPLATFORM_EXPORT bool                     GetUseWeight            () const;
-    DGNPLATFORM_EXPORT void                     SetUseWeight            (bool value);
-    DGNPLATFORM_EXPORT StrokeJustification      GetJustification        () const;
-    DGNPLATFORM_EXPORT void                     SetJustification        (StrokeJustification value);
-    DGNPLATFORM_EXPORT RotationMode             GetRotationMode         () const;
-    DGNPLATFORM_EXPORT void                     SetRotationMode         (RotationMode value);
-    DGNPLATFORM_EXPORT VertexMask               GetVertexMask           () const;
-    DGNPLATFORM_EXPORT void                     SetVertexMask           (VertexMask value);
-    DGNPLATFORM_EXPORT double                   GetXOffset              () const;
-    DGNPLATFORM_EXPORT void                     SetXOffset              (double value);
-    DGNPLATFORM_EXPORT double                   GetYOffset              () const;
-    DGNPLATFORM_EXPORT void                     SetYOffset              (double value);
-    DGNPLATFORM_EXPORT double                   GetAngle                () const;
-    DGNPLATFORM_EXPORT void                     SetAngle                (double value);
-    DGNPLATFORM_EXPORT int                      GetStrokeNumber         () const;
-    DGNPLATFORM_EXPORT void                     SetStrokeNumber         (int value);
-    DGNPLATFORM_EXPORT LsSymbolComponentP       GetSymbolComponentP     () const;
-    DGNPLATFORM_EXPORT LsSymbolComponentCP      GetSymbolComponentCP    () const;
-    DGNPLATFORM_EXPORT void                     SetSymbolComponent      (LsSymbolComponentR symbolComponent);
+
+    DGNPLATFORM_EXPORT bool                     GetNoPartial            () const;                       //!<  Whether to draw a partial symbol at the end of a segment; false means do not draw.
+    DGNPLATFORM_EXPORT void                     SetNoPartial            (bool value);                   //!<  Whether to draw a partial symbol at the end of a segment; false means do not draw.
+
+    DGNPLATFORM_EXPORT bool                     GetClipPartial          () const;                       //!<  Clip symbol to the end of a segment.
+    DGNPLATFORM_EXPORT void                     SetClipPartial          (bool value);                   //!<  Clip symbol to the end of a segment.
+
+    DGNPLATFORM_EXPORT bool                     GetStretchable          () const;                       //!<  Allow the symbol to be stretched if the stroke is stretched.
+    DGNPLATFORM_EXPORT void                     SetStretchable          (bool value);                   //!<  Allow the symbol to be stretched if the stroke is stretched.
+
+    DGNPLATFORM_EXPORT bool                     GetProject              () const;                       //!<  Allow the symbol to display past the end of a segment.
+    DGNPLATFORM_EXPORT void                     SetProject              (bool value);                   //!<  Allow the symbol to display past the end of a segment.
+
+    DGNPLATFORM_EXPORT bool                     GetUseElementColor      () const;                       //!<  Use the color from the symbol.
+    DGNPLATFORM_EXPORT void                     SetUseElementColor      (bool value);                   //!<  Use the color from the symbol.
+
+    DGNPLATFORM_EXPORT bool                     GetUseElementWeight     () const;                       //!<  Use the weight from the symbol.
+    DGNPLATFORM_EXPORT void                     SetUseElementWeight     (bool value);                   //!<  Use the weight from the symbol.
+
+    DGNPLATFORM_EXPORT StrokeJustification      GetJustification        () const;                       //!<  The justification of the symbol relative to its placement point.
+    DGNPLATFORM_EXPORT void                     SetJustification        (StrokeJustification value);    //!<  The justification of the symbol relative to its placement point.
+
+    DGNPLATFORM_EXPORT RotationMode             GetRotationMode         () const;                       //!<  What the rotation angle is relative to - element, global, or adjusted to be readable.
+    DGNPLATFORM_EXPORT void                     SetRotationMode         (RotationMode value);           //!<  What the rotation angle is relative to - element, global, or adjusted to be readable.
+
+    DGNPLATFORM_EXPORT VertexMask               GetVertexMask           () const;                       //!<  Which vertices (if any) to place the symbol at, as opposed to a stroke number.
+    DGNPLATFORM_EXPORT void                     SetVertexMask           (VertexMask value);             //!<  Which vertices (if any) to place the symbol at, as opposed to a stroke number.
+
+    DGNPLATFORM_EXPORT double                   GetXOffset              () const;                       //!<  An offset from the stored origin of the symbol to the placement origin, in symbol coordinates.
+    DGNPLATFORM_EXPORT void                     SetXOffset              (double value);                 //!<  An offset from the stored origin of the symbol to the placement origin, in symbol coordinates.
+
+    DGNPLATFORM_EXPORT double                   GetYOffset              () const;                       //!<  An offset from the stored origin of the symbol to the placement origin, in symbol coordinates.
+    DGNPLATFORM_EXPORT void                     SetYOffset              (double value);                 //!<  An offset from the stored origin of the symbol to the placement origin, in symbol coordinates.
+
+    DGNPLATFORM_EXPORT double                   GetAngle                () const;                       //!<  A rotation angle for the symbol around the placement origin.
+    DGNPLATFORM_EXPORT void                     SetAngle                (double value);                 //!<  A rotation angle for the symbol around the placement origin.
+
+    DGNPLATFORM_EXPORT int                      GetStrokeNumber         () const;                       //!<  The index of the stroke to place this symbol.
+    DGNPLATFORM_EXPORT void                     SetStrokeNumber         (int value);                    //!<  The index of the stroke to place this symbol.
+
+    DGNPLATFORM_EXPORT LsCacheSymbolComponentP       GetSymbolComponentP     () const;                       //!<  A pointer into the geometry; GetSymbolComponentCP is preferred.
+    DGNPLATFORM_EXPORT LsCacheSymbolComponentCP      GetSymbolComponentCP    () const;                       //!<  A pointer into the geometry.
+
+    //! Update the symbol component (geometry) in the SymbolReference.
+    //! @param[in] symbolComponent The new symbol component to use
+    //! @see GetSymbolComponentCP()
+    DGNPLATFORM_EXPORT void                     SetSymbolComponent      (LsCacheSymbolComponentR symbolComponent);
     };
 
 //__PUBLISH_SECTION_END__
@@ -782,7 +801,6 @@ public:
     virtual bool    _IsAffectedByWidth           (bool currentStatusOnly) const override;
     virtual bool    _IsBySegment                 () const override;
     virtual bool    _HasLineCodes                () const override;
-    virtual bool    _SupportsConvertToRaster    () const override;
     virtual bool    _ContainsComponent           (LsComponentP other) const override;
     void            Free                        (bool    sub);
     virtual StatusInt _DoStroke                 (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
@@ -1009,7 +1027,6 @@ public:
 
 
     size_t          GetStrokeCount          () const {return  m_nStrokes;}
-    virtual bool    _SupportsConvertToRaster () const override;
     double          _CalcRepetitions         (LineStyleSymbCP) const;
     LsStrokeP       InsertStroke            (LsStrokeCR stroke);
     void            InsertStroke            (double length, bool isDash);
@@ -1123,7 +1140,6 @@ public:
     static LsPointComponentPtr      Create                  (LsLocation&location) { LsPointComponentP retval = new LsPointComponent (&location); retval->m_isDirty = true; return retval; }
     virtual double                  _GetMaxWidth             (DgnModelP modelRef)  const override;
     //  T_SymbolsCollectionConstIter    GetSymbols ()           const   {return m_symbols.begin ();}
-    virtual bool                    _SupportsConvertToRaster    () const override;
     virtual bool                    _ContainsComponent       (LsComponentP other) const override;
     void                            Free                    (bool    sub);
     bool                            HasStrokeSymbol         () const;
