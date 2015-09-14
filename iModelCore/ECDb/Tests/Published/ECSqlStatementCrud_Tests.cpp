@@ -73,7 +73,7 @@ TEST_F (ECSqlSelectTestFixture, AliasTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, ECInstanceIdTests)
     {
-    auto dataset = ECSqlSelectTestDataset::ECInstanceIdTests (PerClassRowCount);
+    auto dataset = ECSqlSelectTestDataset::ECInstanceIdTests (GetTestProject(), PerClassRowCount);
     RunTest (dataset);
     }
 

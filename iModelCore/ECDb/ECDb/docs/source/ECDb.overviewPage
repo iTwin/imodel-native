@@ -167,24 +167,25 @@
  //  - A unique namespace prefix must be defined and the namespace prefix must be a valid ECName.
 
     ### Class
+    - Abstract classes cannot be instantiated. This means you cannot use an abstract class in an ECSQL INSERT statement.
+        - A class is @b abstract if isDomainClass, isStruct, and isCustomAttributeClass are all set to @b false.
     - Consistent class hierarchies:
         - An @ref BentleyApi::ECN::ECClass "ECClass" may not have an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" as a base class
           and vice versa
         - A domain class may not have a struct as subclass or vice versa
         - a class 
-    - Abstract classes cannot be instantiated. This means you cannot use an abstract class in an ECSQL INSERT statement.
-        - A class is considered abstract if isDomainClass, isStruct, and isCustomAttributeClass are all set to @b false.
 
     ### Relationship Class
     - An @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" may not have a regular @ref BentleyApi::ECN::ECClass "ECClass" as a base class
     - For non-abstract relationship classes, both relationship constraints must be well-defined.
         - At least one class must be specified for each constraint
-        - A relationship constraint may only specify regular ECClasses and not ECRelationshipClasses.
+        - Only regular ECClasses and not ECRelationshipClasses may be specified as constraint classes.
     - For abstract relationship classes constraints must not be specified because they are not inherited.
     - Abstract relationship classes may not be instantiated or used to relate instances in a repository.
     
     ### Properties
-    - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass"
+    - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
+    - @ref BentleyApi::ECN::ArrayECProperty "Array ECProperties'" @b MinOccurs and @b MaxOccurs are enforced.
 
     @see @ref ECDbOverview
     */
