@@ -13,13 +13,21 @@
 
 BEGIN_BENTLEY_WMSPARSER_NAMESPACE
 
+// Required so that the class can be used from c++/cli.
+// See compiler warning C4692.
+#if defined (_MANAGED)
+#define MPUBLIC public
+#else
+#define MPUBLIC
+#endif
+
 //=======================================================================================
 //! A WMS_Capabilities document is returned in response to a GetCapabilities request 
 //! made on a WMS.
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSCapabilities : RefCountedBase
+MPUBLIC struct WMSCapabilities : RefCountedBase
     {
     public:
         //! Attempts to parse the WideChar XML fragment provided.
@@ -35,12 +43,12 @@ struct WMSCapabilities : RefCountedBase
         WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromFile(WMSParserStatus& status, Utf8CP fileName, WStringP errorMsg = NULL);
 
         //! Element.
-        WMSPARSER_EXPORT Utf8StringCR           GetVersion() const { return m_version; }
-        WMSPARSER_EXPORT static Utf8StringCR    GetNamespace() { return m_namespace; }
+        Utf8StringCR           GetVersion() const { return m_version; }
+        static Utf8StringCR    GetNamespace() { return m_namespace; }
 
         //! Complex type.
-        WMSPARSER_EXPORT WMSServiceCP       GetServiceGroup() const { return m_pService.get(); }
-        WMSPARSER_EXPORT WMSCapabilityCP    GetCapabilityGroup() const { return m_pCapability.get(); }
+        WMSServiceCP       GetServiceGroup() const { return m_pService.get(); }
+        WMSCapabilityCP    GetCapabilityGroup() const { return m_pCapability.get(); }
 
     protected:
         //! Constructor.
@@ -70,7 +78,7 @@ struct WMSCapabilities : RefCountedBase
 //!
 //! @bsiclass                                   Jean-Francois.Cote               8/2015
 //=====================================================================================
-struct WMSSingleLevelList : RefCountedBase
+MPUBLIC struct WMSSingleLevelList : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -79,7 +87,7 @@ struct WMSSingleLevelList : RefCountedBase
         //! Create from xml node.
         WMSPARSER_EXPORT static WMSSingleLevelListPtr Create(WMSParserStatus& status, BeXmlNodeR parentNode, Utf8CP nodeName);
 
-        WMSPARSER_EXPORT const bvector<Utf8String>& Get() const { return m_list; };
+        const bvector<Utf8String>& Get() const { return m_list; };
 
     protected:
         //! Constructor.
@@ -101,7 +109,7 @@ struct WMSSingleLevelList : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSMultiLevelList : RefCountedBase
+MPUBLIC struct WMSMultiLevelList : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -110,7 +118,7 @@ struct WMSMultiLevelList : RefCountedBase
         //! Create from xml node.
         WMSPARSER_EXPORT static WMSMultiLevelListPtr Create(WMSParserStatus& status, BeXmlNodeR parentNode);
 
-        WMSPARSER_EXPORT const bvector<Utf8String>& Get() const { return m_list; };
+        const bvector<Utf8String>& Get() const { return m_list; };
 
     protected:
         //! Constructor.
@@ -128,7 +136,7 @@ struct WMSMultiLevelList : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSService : RefCountedBase
+MPUBLIC struct WMSService : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -138,34 +146,34 @@ struct WMSService : RefCountedBase
         WMSPARSER_EXPORT static WMSServicePtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT Utf8StringCR   GetName() const { return m_name; }
-        WMSPARSER_EXPORT Utf8StringR    GetNameR() { return m_name; }
+        Utf8StringCR   GetName() const { return m_name; }
+        Utf8StringR    GetNameR() { return m_name; }
 
-        WMSPARSER_EXPORT Utf8StringCR   GetTitle() const { return m_title; }
-        WMSPARSER_EXPORT Utf8StringR    GetTitleR() { return m_title; }
+        Utf8StringCR   GetTitle() const { return m_title; }
+        Utf8StringR    GetTitleR() { return m_title; }
 
-        WMSPARSER_EXPORT Utf8StringCR   GetAbstract() const { return m_abstract; }
-        WMSPARSER_EXPORT Utf8StringR    GetAbstractR() { return m_abstract; }
+        Utf8StringCR   GetAbstract() const { return m_abstract; }
+        Utf8StringR    GetAbstractR() { return m_abstract; }
 
-        WMSPARSER_EXPORT Utf8StringCR   GetFees() const { return m_fees; }
-        WMSPARSER_EXPORT Utf8StringR    GetFeesR() { return m_fees; }
+        Utf8StringCR   GetFees() const { return m_fees; }
+        Utf8StringR    GetFeesR() { return m_fees; }
 
-        WMSPARSER_EXPORT Utf8StringCR   GetAccessConstraints() const { return m_accessConstraints; }
-        WMSPARSER_EXPORT Utf8StringR    GetAccessConstraintsR() { return m_accessConstraints; }
+        Utf8StringCR   GetAccessConstraints() const { return m_accessConstraints; }
+        Utf8StringR    GetAccessConstraintsR() { return m_accessConstraints; }
 
-        WMSPARSER_EXPORT size_t const&  GetLayerLimit() const { return m_layerLimit; }
-        WMSPARSER_EXPORT void           SetLayerLimit(Utf8StringR layerLimit) { m_layerLimit = atoi(layerLimit.c_str()); }
+        size_t const&  GetLayerLimit() const { return m_layerLimit; }
+        void           SetLayerLimit(Utf8StringR layerLimit) { m_layerLimit = atoi(layerLimit.c_str()); }
 
-        WMSPARSER_EXPORT size_t const&  GetMaxWidth() const { return m_maxWidth; }
-        WMSPARSER_EXPORT void           SetMaxWidth(Utf8StringR width) { m_maxWidth = atoi(width.c_str()); }
+        size_t const&  GetMaxWidth() const { return m_maxWidth; }
+        void           SetMaxWidth(Utf8StringR width) { m_maxWidth = atoi(width.c_str()); }
 
-        WMSPARSER_EXPORT size_t const&  GetMaxHeight() const { return m_maxHeight; }
-        WMSPARSER_EXPORT void           SetMaxHeight(Utf8StringR height) { m_maxHeight = atoi(height.c_str()); }
+        size_t const&  GetMaxHeight() const { return m_maxHeight; }
+        void           SetMaxHeight(Utf8StringR height) { m_maxHeight = atoi(height.c_str()); }
 
         //! Complex type.
-        WMSPARSER_EXPORT const bvector<Utf8String>& GetKeywordList() const { return m_pKeywordList->Get(); }
-        WMSPARSER_EXPORT WMSOnlineResourceCP        GetOnlineResource() const { return m_pOnlineResource.get(); }
-        WMSPARSER_EXPORT WMSContactInformationCP    GetContactInformation() const { return m_pContactInformation.get(); }
+        const bvector<Utf8String>& GetKeywordList() const { return m_pKeywordList->Get(); }
+        WMSOnlineResourceCP        GetOnlineResource() const { return m_pOnlineResource.get(); }
+        WMSContactInformationCP    GetContactInformation() const { return m_pContactInformation.get(); }
 
     protected:
         //! Constructor.
@@ -197,7 +205,7 @@ struct WMSService : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSOnlineResource : RefCountedBase
+MPUBLIC struct WMSOnlineResource : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -207,12 +215,12 @@ struct WMSOnlineResource : RefCountedBase
         WMSPARSER_EXPORT static WMSOnlineResourcePtr Create(WMSParserStatus& status, BeXmlNodeR parentNode);
 
         //! The xlink:type attribute.
-        WMSPARSER_EXPORT Utf8StringCR  GetType() const { return m_type; }
-        WMSPARSER_EXPORT Utf8StringR   GetTypeR() { return m_type; }
+        Utf8StringCR  GetType() const { return m_type; }
+        Utf8StringR   GetTypeR() { return m_type; }
 
         //! The xlink:href attribute.
-        WMSPARSER_EXPORT Utf8StringCR  GetHref() const { return m_href; }
-        WMSPARSER_EXPORT Utf8StringR   GetHrefR() { return m_href; }
+        Utf8StringCR  GetHref() const { return m_href; }
+        Utf8StringR   GetHrefR() { return m_href; }
 
     protected:
         //! Constructor.
@@ -229,7 +237,7 @@ struct WMSOnlineResource : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSContactInformation : RefCountedBase
+MPUBLIC struct WMSContactInformation : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -239,21 +247,21 @@ struct WMSContactInformation : RefCountedBase
         WMSPARSER_EXPORT static WMSContactInformationPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT Utf8StringCR  GetPosition() const { return m_position; }
-        WMSPARSER_EXPORT Utf8StringR   GetPositionR() { return m_position; }
+        Utf8StringCR  GetPosition() const { return m_position; }
+        Utf8StringR   GetPositionR() { return m_position; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetVoiceTelephone() const { return m_voiceTelephone; }
-        WMSPARSER_EXPORT Utf8StringR   GetVoiceTelephoneR() { return m_voiceTelephone; }
+        Utf8StringCR  GetVoiceTelephone() const { return m_voiceTelephone; }
+        Utf8StringR   GetVoiceTelephoneR() { return m_voiceTelephone; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetFacsimileTelephone() const { return m_facsimileTelephone; }
-        WMSPARSER_EXPORT Utf8StringR   GetFacsimileTelephoneR() { return m_facsimileTelephone; }
+        Utf8StringCR  GetFacsimileTelephone() const { return m_facsimileTelephone; }
+        Utf8StringR   GetFacsimileTelephoneR() { return m_facsimileTelephone; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetEmailAddress() const { return m_emailAddress; }
-        WMSPARSER_EXPORT Utf8StringR   GetEmailAddressR() { return m_emailAddress; }
+        Utf8StringCR  GetEmailAddress() const { return m_emailAddress; }
+        Utf8StringR   GetEmailAddressR() { return m_emailAddress; }
 
         //! Complex type.
-        WMSPARSER_EXPORT WMSContactPersonCP     GetPerson() const { return m_pPerson.get(); }
-        WMSPARSER_EXPORT WMSContactAddressCP    GetAddress() const { return m_pAddress.get(); }
+        WMSContactPersonCP     GetPerson() const { return m_pPerson.get(); }
+        WMSContactAddressCP    GetAddress() const { return m_pAddress.get(); }
 
     protected:
         //! Constructor.
@@ -277,7 +285,7 @@ struct WMSContactInformation : RefCountedBase
 //=======================================================================================
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSContactPerson : RefCountedBase
+MPUBLIC struct WMSContactPerson : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -287,11 +295,11 @@ struct WMSContactPerson : RefCountedBase
         WMSPARSER_EXPORT static WMSContactPersonPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT Utf8StringCR  GetName() const { return m_name; }
-        WMSPARSER_EXPORT Utf8StringR   GetNameR() { return m_name; }
+        Utf8StringCR  GetName() const { return m_name; }
+        Utf8StringR   GetNameR() { return m_name; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetOrganization() const { return m_organization; }
-        WMSPARSER_EXPORT Utf8StringR   GetOrganizationR() { return m_organization; }
+        Utf8StringCR  GetOrganization() const { return m_organization; }
+        Utf8StringR   GetOrganizationR() { return m_organization; }
 
     protected:
         //! Constructor.
@@ -306,7 +314,7 @@ struct WMSContactPerson : RefCountedBase
 //=======================================================================================
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSContactAddress : RefCountedBase
+MPUBLIC struct WMSContactAddress : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -316,23 +324,23 @@ struct WMSContactAddress : RefCountedBase
         WMSPARSER_EXPORT static WMSContactAddressPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT Utf8StringCR  GetType() const { return m_type; }
-        WMSPARSER_EXPORT Utf8StringR   GetTypeR() { return m_type; }
+        Utf8StringCR  GetType() const { return m_type; }
+        Utf8StringR   GetTypeR() { return m_type; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetAddress() const { return m_address; }
-        WMSPARSER_EXPORT Utf8StringR   GetAddressR() { return m_address; }
+        Utf8StringCR  GetAddress() const { return m_address; }
+        Utf8StringR   GetAddressR() { return m_address; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetCity() const { return m_city; }
-        WMSPARSER_EXPORT Utf8StringR   GetCityR() { return m_city; }
+        Utf8StringCR  GetCity() const { return m_city; }
+        Utf8StringR   GetCityR() { return m_city; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetStateOrProvince() const { return m_stateOrProvince; }
-        WMSPARSER_EXPORT Utf8StringR   GetStateOrProvinceR() { return m_stateOrProvince; }
+        Utf8StringCR  GetStateOrProvince() const { return m_stateOrProvince; }
+        Utf8StringR   GetStateOrProvinceR() { return m_stateOrProvince; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetPostCode() const { return m_postCode; }
-        WMSPARSER_EXPORT Utf8StringR   GetPostCodeR() { return m_postCode; }
+        Utf8StringCR  GetPostCode() const { return m_postCode; }
+        Utf8StringR   GetPostCodeR() { return m_postCode; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetCountry() const { return m_country; }
-        WMSPARSER_EXPORT Utf8StringR   GetCountryR() { return m_country; }
+        Utf8StringCR  GetCountry() const { return m_country; }
+        Utf8StringR   GetCountryR() { return m_country; }
 
     protected:
         //! Constructor.
@@ -355,7 +363,7 @@ struct WMSContactAddress : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSCapability : RefCountedBase
+MPUBLIC struct WMSCapability : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -365,9 +373,9 @@ struct WMSCapability : RefCountedBase
         WMSPARSER_EXPORT static WMSCapabilityPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Complex type.
-        WMSPARSER_EXPORT WMSRequestCP               GetRequest() const { return m_pRequest.get(); }
-        WMSPARSER_EXPORT const bvector<Utf8String>& GetExceptionList() const { return m_pExceptionList->Get(); }
-        WMSPARSER_EXPORT bvector<WMSLayerPtr>       GetLayerList() const { return m_pLayerList; }
+        WMSRequestCP               GetRequest() const { return m_pRequest.get(); }
+        const bvector<Utf8String>& GetExceptionList() const { return m_pExceptionList->Get(); }
+        bvector<WMSLayerPtr>       GetLayerList() const { return m_pLayerList; }
 
     protected:
         //! Constructor.
@@ -388,7 +396,7 @@ struct WMSCapability : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSRequest : RefCountedBase
+MPUBLIC struct WMSRequest : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -398,9 +406,9 @@ struct WMSRequest : RefCountedBase
         WMSPARSER_EXPORT static WMSRequestPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Complex type.
-        WMSPARSER_EXPORT WMSOperationTypeCP GetCapabilities() const { return m_pGetCapabilities.get(); }
-        WMSPARSER_EXPORT WMSOperationTypeCP GetMap() const { return m_pGetMap.get(); }
-        WMSPARSER_EXPORT WMSOperationTypeCP GetFeatureInfo() const { return m_pGetFeatureInfo.get(); }
+        WMSOperationTypeCP GetCapabilities() const { return m_pGetCapabilities.get(); }
+        WMSOperationTypeCP GetMap() const { return m_pGetMap.get(); }
+        WMSOperationTypeCP GetFeatureInfo() const { return m_pGetFeatureInfo.get(); }
 
     protected:
         //! Constructor.
@@ -422,7 +430,7 @@ struct WMSRequest : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSOperationType : RefCountedBase
+MPUBLIC struct WMSOperationType : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -432,8 +440,8 @@ struct WMSOperationType : RefCountedBase
         WMSPARSER_EXPORT static WMSOperationTypePtr Create(WMSParserStatus& status, BeXmlNodeR parentNode);
 
         //! Complex type.
-        WMSPARSER_EXPORT bvector<Utf8String>    GetFormatList() const { return m_pFormatList->Get(); }
-        WMSPARSER_EXPORT WMSDCPTypeCP           GetDcpType() const { return m_pDcpType.get(); }
+        bvector<Utf8String>    GetFormatList() const { return m_pFormatList->Get(); }
+        WMSDCPTypeCP           GetDcpType() const { return m_pDcpType.get(); }
 
     protected:
         //! Constructor.
@@ -458,7 +466,7 @@ struct WMSOperationType : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSDCPType : RefCountedBase
+MPUBLIC struct WMSDCPType : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -468,8 +476,8 @@ struct WMSDCPType : RefCountedBase
         WMSPARSER_EXPORT static WMSDCPTypePtr Create(WMSParserStatus& status, BeXmlNodeR parentNode);
 
         //! Complex type.
-        WMSPARSER_EXPORT WMSOnlineResourceCP    GetHttpGet() const { return m_pHttpGet.get(); }
-        WMSPARSER_EXPORT WMSOnlineResourceCP    GetHttpPost() const { return m_pHttpPost.get(); }
+        WMSOnlineResourceCP    GetHttpGet() const { return m_pHttpGet.get(); }
+        WMSOnlineResourceCP    GetHttpPost() const { return m_pHttpPost.get(); }
 
     protected:
         //! Constructor.
@@ -489,7 +497,7 @@ struct WMSDCPType : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSLayer : RefCountedBase
+MPUBLIC struct WMSLayer : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -499,55 +507,55 @@ struct WMSLayer : RefCountedBase
         WMSPARSER_EXPORT static WMSLayerPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Attribute.
-        WMSPARSER_EXPORT bool const&    IsQueryable() const { return m_queryable; }
-        WMSPARSER_EXPORT void           SetQueryable(Utf8StringR queryable) { m_queryable = (atoi(queryable.c_str()) != 0); }
+        bool const&    IsQueryable() const { return m_queryable; }
+        void           SetQueryable(Utf8StringR queryable) { m_queryable = (atoi(queryable.c_str()) != 0); }
 
-        WMSPARSER_EXPORT bool const&    IsOpaque() const { return m_opaque; }
-        WMSPARSER_EXPORT void           SetOpaque(Utf8StringR opaque) { m_opaque = (atoi(opaque.c_str()) != 0); }
+        bool const&    IsOpaque() const { return m_opaque; }
+        void           SetOpaque(Utf8StringR opaque) { m_opaque = (atoi(opaque.c_str()) != 0); }
 
-        WMSPARSER_EXPORT bool const&    HasSubsets() const { return m_noSubsets; }
-        WMSPARSER_EXPORT void           SetSubsets(Utf8StringR noSubsets) { m_noSubsets = (atoi(noSubsets.c_str()) != 0); }
+        bool const&    HasSubsets() const { return m_noSubsets; }
+        void           SetSubsets(Utf8StringR noSubsets) { m_noSubsets = (atoi(noSubsets.c_str()) != 0); }
 
-        WMSPARSER_EXPORT size_t const&  GetCascaded() const { return m_cascaded; }
-        WMSPARSER_EXPORT void           SetCascaded(Utf8StringR cascaded) { m_cascaded = atoi(cascaded.c_str()); }
+        size_t const&  GetCascaded() const { return m_cascaded; }
+        void           SetCascaded(Utf8StringR cascaded) { m_cascaded = atoi(cascaded.c_str()); }
 
-        WMSPARSER_EXPORT size_t const&  GetFixedWidth() const { return m_fixedWidth; }
-        WMSPARSER_EXPORT void           SetFixedWidth(Utf8StringR width) { m_fixedWidth = atoi(width.c_str()); }
+        size_t const&  GetFixedWidth() const { return m_fixedWidth; }
+        void           SetFixedWidth(Utf8StringR width) { m_fixedWidth = atoi(width.c_str()); }
 
-        WMSPARSER_EXPORT size_t const&  GetFixedHeight() const { return m_fixedHeight; }
-        WMSPARSER_EXPORT void           SetFixedHeight(Utf8StringR height) { m_fixedHeight = atoi(height.c_str()); }
+        size_t const&  GetFixedHeight() const { return m_fixedHeight; }
+        void           SetFixedHeight(Utf8StringR height) { m_fixedHeight = atoi(height.c_str()); }
 
         //! Element.
-        WMSPARSER_EXPORT Utf8StringCR  GetName() const { return m_name; }
-        WMSPARSER_EXPORT Utf8StringR   GetNameR() { return m_name; }
+        Utf8StringCR  GetName() const { return m_name; }
+        Utf8StringR   GetNameR() { return m_name; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetTitle() const { return m_title; }
-        WMSPARSER_EXPORT Utf8StringR   GetTitleR() { return m_title; }
+        Utf8StringCR  GetTitle() const { return m_title; }
+        Utf8StringR   GetTitleR() { return m_title; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetAbstract() const { return m_abstract; }
-        WMSPARSER_EXPORT Utf8StringR   GetAbstractR() { return m_abstract; }
+        Utf8StringCR  GetAbstract() const { return m_abstract; }
+        Utf8StringR   GetAbstractR() { return m_abstract; }
 
-        WMSPARSER_EXPORT double const&  GetMinScaleDenom() const { return m_minScaleDenom; }
-        WMSPARSER_EXPORT void           SetMinScaleDenom(Utf8StringR denom) { m_minScaleDenom = strtod(denom.c_str(), NULL); }
+        double const&  GetMinScaleDenom() const { return m_minScaleDenom; }
+        void           SetMinScaleDenom(Utf8StringR denom) { m_minScaleDenom = strtod(denom.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetMaxScaleDenom() const { return m_maxScaleDenom; }
-        WMSPARSER_EXPORT void           SetMaxScaleDenom(Utf8StringR denom) { m_maxScaleDenom = strtod(denom.c_str(), NULL); }
+        double const&  GetMaxScaleDenom() const { return m_maxScaleDenom; }
+        void           SetMaxScaleDenom(Utf8StringR denom) { m_maxScaleDenom = strtod(denom.c_str(), NULL); }
 
         //! Complex type.
-        WMSPARSER_EXPORT bvector<Utf8String>           GetKeywordList() const { return m_pKeywordList->Get(); }
-        WMSPARSER_EXPORT bvector<Utf8String>           GetCRSList() const { return m_pCRSList->Get(); }
-        WMSPARSER_EXPORT WMSGeoBoundingBoxCP        GetGeoBBox() const { return m_pGeoBBox.get(); }
-        WMSPARSER_EXPORT WMSLatLonBoundingBoxCP     GetLatLonBBox() const { return m_pLatLonBBox.get(); }
-        WMSPARSER_EXPORT bvector<WMSBoundingBoxPtr> GetBBox() const { return m_pBBoxList; }
-        WMSPARSER_EXPORT bvector<WMSDimensionPtr>   GetDimensionList() const { return m_pDimensionList; }
-        WMSPARSER_EXPORT WMSAttributionCP           GetAttribution() const { return m_pAttribution.get(); }
-        WMSPARSER_EXPORT WMSUrlCP                   GetAuthorityUrl() const { return m_pAuthorityUrl.get(); }
-        WMSPARSER_EXPORT WMSUrlCP                   GetDataUrl() const { return m_pDataUrl.get(); }
-        WMSPARSER_EXPORT WMSUrlCP                   GetFeatureListUrl() const { return m_pFeatureListUrl.get(); }
-        WMSPARSER_EXPORT bvector<WMSUrlPtr>         GetMetadataUrlList() const { return m_pMetadataUrlList; }
-        WMSPARSER_EXPORT WMSIdentifierCP            GetIdentifier() const { return m_pIdentifier.get(); }
-        WMSPARSER_EXPORT WMSStyleCP                 GetStyle() const { return m_pStyle.get(); }
-        WMSPARSER_EXPORT bvector<WMSLayerPtr>       GetLayerList() const { return m_pLayerList; }
+        bvector<Utf8String>         GetKeywordList() const { return m_pKeywordList->Get(); }
+        bvector<Utf8String>         GetCRSList() const { return m_pCRSList->Get(); }
+        WMSGeoBoundingBoxCP         GetGeoBBox() const { return m_pGeoBBox.get(); }
+        WMSLatLonBoundingBoxCP      GetLatLonBBox() const { return m_pLatLonBBox.get(); }
+        bvector<WMSBoundingBoxPtr>  GetBBox() const { return m_pBBoxList; }
+        bvector<WMSDimensionPtr>    GetDimensionList() const { return m_pDimensionList; }
+        WMSAttributionCP            GetAttribution() const { return m_pAttribution.get(); }
+        WMSUrlCP                    GetAuthorityUrl() const { return m_pAuthorityUrl.get(); }
+        WMSUrlCP                    GetDataUrl() const { return m_pDataUrl.get(); }
+        WMSUrlCP                    GetFeatureListUrl() const { return m_pFeatureListUrl.get(); }
+        bvector<WMSUrlPtr>          GetMetadataUrlList() const { return m_pMetadataUrlList; }
+        WMSIdentifierCP             GetIdentifier() const { return m_pIdentifier.get(); }
+        WMSStyleCP                  GetStyle() const { return m_pStyle.get(); }
+        bvector<WMSLayerPtr>        GetLayerList() const { return m_pLayerList; }
 
     protected:
         //! Constructor.
@@ -599,7 +607,7 @@ struct WMSLayer : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSGeoBoundingBox : RefCountedBase
+MPUBLIC struct WMSGeoBoundingBox : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -609,17 +617,17 @@ struct WMSGeoBoundingBox : RefCountedBase
         WMSPARSER_EXPORT static WMSGeoBoundingBoxPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT double const&  GetWestBoundLong() const { return m_westBoundLong; }
-        WMSPARSER_EXPORT void           SetWestBoundLong(Utf8StringR longitude) { m_westBoundLong = strtod(longitude.c_str(), NULL); }
+        double const&  GetWestBoundLong() const { return m_westBoundLong; }
+        void           SetWestBoundLong(Utf8StringR longitude) { m_westBoundLong = strtod(longitude.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetEastBoundLong() const { return m_eastBoundLong; }
-        WMSPARSER_EXPORT void           SetEastBoundLong(Utf8StringR longitude) { m_eastBoundLong = strtod(longitude.c_str(), NULL); }
+        double const&  GetEastBoundLong() const { return m_eastBoundLong; }
+        void           SetEastBoundLong(Utf8StringR longitude) { m_eastBoundLong = strtod(longitude.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetSouthBoundLat() const { return m_southBoundLat; }
-        WMSPARSER_EXPORT void           SetSouthBoundLat(Utf8StringR latitude) { m_southBoundLat = strtod(latitude.c_str(), NULL); }
+        double const&  GetSouthBoundLat() const { return m_southBoundLat; }
+        void           SetSouthBoundLat(Utf8StringR latitude) { m_southBoundLat = strtod(latitude.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetNorthBoundLat() const { return m_northBoundLat; }
-        WMSPARSER_EXPORT void           SetNorthBoundLat(Utf8StringR latitude) { m_northBoundLat = strtod(latitude.c_str(), NULL); }
+        double const&  GetNorthBoundLat() const { return m_northBoundLat; }
+        void           SetNorthBoundLat(Utf8StringR latitude) { m_northBoundLat = strtod(latitude.c_str(), NULL); }
 
     protected:
         //! Constructor.
@@ -641,7 +649,7 @@ struct WMSGeoBoundingBox : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSLatLonBoundingBox : RefCountedBase
+MPUBLIC struct WMSLatLonBoundingBox : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -651,17 +659,17 @@ struct WMSLatLonBoundingBox : RefCountedBase
         WMSPARSER_EXPORT static WMSLatLonBoundingBoxPtr Create(WMSParserStatus& status, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT double const&  GetMinX() const { return m_minX; }
-        WMSPARSER_EXPORT void           SetMinX(Utf8StringR minX) { m_minX = strtod(minX.c_str(), NULL); }
+        double const&  GetMinX() const { return m_minX; }
+        void           SetMinX(Utf8StringR minX) { m_minX = strtod(minX.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetMinY() const { return m_minY; }
-        WMSPARSER_EXPORT void           SetMinY(Utf8StringR minY) { m_minY = strtod(minY.c_str(), NULL); }
+        double const&  GetMinY() const { return m_minY; }
+        void           SetMinY(Utf8StringR minY) { m_minY = strtod(minY.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetMaxX() const { return m_maxX; }
-        WMSPARSER_EXPORT void           SetMaxX(Utf8StringR maxX) { m_maxX = strtod(maxX.c_str(), NULL); }
+        double const&  GetMaxX() const { return m_maxX; }
+        void           SetMaxX(Utf8StringR maxX) { m_maxX = strtod(maxX.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetMaxY() const { return m_maxY; }
-        WMSPARSER_EXPORT void           SetMaxY(Utf8StringR maxY) { m_maxY = strtod(maxY.c_str(), NULL); }
+        double const&  GetMaxY() const { return m_maxY; }
+        void           SetMaxY(Utf8StringR maxY) { m_maxY = strtod(maxY.c_str(), NULL); }
 
     protected:
         //! Constructor.
@@ -681,7 +689,7 @@ struct WMSLatLonBoundingBox : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSBoundingBox : RefCountedBase
+MPUBLIC struct WMSBoundingBox : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -691,26 +699,26 @@ struct WMSBoundingBox : RefCountedBase
         WMSPARSER_EXPORT static WMSBoundingBoxPtr Create(WMSParserStatus& status, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT Utf8StringCR   GetCRS() const { return m_crs; }
-        WMSPARSER_EXPORT Utf8StringR    GetCRSR() { return m_crs; }
+        Utf8StringCR   GetCRS() const { return m_crs; }
+        Utf8StringR    GetCRSR() { return m_crs; }
 
-        WMSPARSER_EXPORT double const&  GetMinX() const { return m_minX; }
-        WMSPARSER_EXPORT void           SetMinX(Utf8StringR minX) { m_minX = strtod(minX.c_str(), NULL); }
+        double const&  GetMinX() const { return m_minX; }
+        void           SetMinX(Utf8StringR minX) { m_minX = strtod(minX.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetMinY() const { return m_minY; }
-        WMSPARSER_EXPORT void           SetMinY(Utf8StringR minY) { m_minY = strtod(minY.c_str(), NULL); }
+        double const&  GetMinY() const { return m_minY; }
+        void           SetMinY(Utf8StringR minY) { m_minY = strtod(minY.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetMaxX() const { return m_maxX; }
-        WMSPARSER_EXPORT void           SetMaxX(Utf8StringR maxX) { m_maxX = strtod(maxX.c_str(), NULL); }
+        double const&  GetMaxX() const { return m_maxX; }
+        void           SetMaxX(Utf8StringR maxX) { m_maxX = strtod(maxX.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetMaxY() const { return m_maxY; }
-        WMSPARSER_EXPORT void           SetMaxY(Utf8StringR maxY) { m_maxY = strtod(maxY.c_str(), NULL); }
+        double const&  GetMaxY() const { return m_maxY; }
+        void           SetMaxY(Utf8StringR maxY) { m_maxY = strtod(maxY.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetResX() const { return m_resX; }
-        WMSPARSER_EXPORT void           SetResX(Utf8StringR resX) { m_resX = strtod(resX.c_str(), NULL); }
+        double const&  GetResX() const { return m_resX; }
+        void           SetResX(Utf8StringR resX) { m_resX = strtod(resX.c_str(), NULL); }
 
-        WMSPARSER_EXPORT double const&  GetResY() const { return m_resY; }
-        WMSPARSER_EXPORT void           SetResY(Utf8StringR resY) { m_resY = strtod(resY.c_str(), NULL); }
+        double const&  GetResY() const { return m_resY; }
+        void           SetResY(Utf8StringR resY) { m_resY = strtod(resY.c_str(), NULL); }
 
     protected:
         //! Constructor.
@@ -733,7 +741,7 @@ struct WMSBoundingBox : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSDimension : RefCountedBase
+MPUBLIC struct WMSDimension : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -743,29 +751,29 @@ struct WMSDimension : RefCountedBase
         WMSPARSER_EXPORT static WMSDimensionPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT Utf8StringCR  GetName() const { return m_name; }
-        WMSPARSER_EXPORT Utf8StringR   GetNameR() { return m_name; }
+        Utf8StringCR  GetName() const { return m_name; }
+        Utf8StringR   GetNameR() { return m_name; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetUnits() const { return m_units; }
-        WMSPARSER_EXPORT Utf8StringR   GetUnitsR() { return m_units; }
+        Utf8StringCR  GetUnits() const { return m_units; }
+        Utf8StringR   GetUnitsR() { return m_units; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetUnitSymbol() const { return m_unitSymbol; }
-        WMSPARSER_EXPORT Utf8StringR   GetUnitSymbolR() { return m_unitSymbol; }
+        Utf8StringCR  GetUnitSymbol() const { return m_unitSymbol; }
+        Utf8StringR   GetUnitSymbolR() { return m_unitSymbol; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetDefault() const { return m_default; }
-        WMSPARSER_EXPORT Utf8StringR   GetDefaultR() { return m_default; }
+        Utf8StringCR  GetDefault() const { return m_default; }
+        Utf8StringR   GetDefaultR() { return m_default; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetDimension() const { return m_dimension; }
-        WMSPARSER_EXPORT Utf8StringR   GetDimensionR() { return m_dimension; }
+        Utf8StringCR  GetDimension() const { return m_dimension; }
+        Utf8StringR   GetDimensionR() { return m_dimension; }
 
-        WMSPARSER_EXPORT bool const&    GetMultipleValues() const { return m_multipleValues; }
-        WMSPARSER_EXPORT void           SetMultipleValues(Utf8StringR multipleValues) { m_multipleValues = (atoi(multipleValues.c_str()) != 0); }
+        bool const&    GetMultipleValues() const { return m_multipleValues; }
+        void           SetMultipleValues(Utf8StringR multipleValues) { m_multipleValues = (atoi(multipleValues.c_str()) != 0); }
 
-        WMSPARSER_EXPORT bool const&    GetNearestValue() const { return m_nearestValue; }
-        WMSPARSER_EXPORT void           SetNearestValue(Utf8StringR nearestValue) { m_nearestValue = (atoi(nearestValue.c_str()) != 0); }
+        bool const&    GetNearestValue() const { return m_nearestValue; }
+        void           SetNearestValue(Utf8StringR nearestValue) { m_nearestValue = (atoi(nearestValue.c_str()) != 0); }
 
-        WMSPARSER_EXPORT bool const&    GetCurrent() const { return m_current; }
-        WMSPARSER_EXPORT void           SetCurrent(Utf8StringR current) { m_current = (atoi(current.c_str()) != 0); }
+        bool const&    GetCurrent() const { return m_current; }
+        void           SetCurrent(Utf8StringR current) { m_current = (atoi(current.c_str()) != 0); }
 
     protected:
         //! Constructor.
@@ -792,7 +800,7 @@ struct WMSDimension : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSAttribution : RefCountedBase
+MPUBLIC struct WMSAttribution : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -802,12 +810,12 @@ struct WMSAttribution : RefCountedBase
         WMSPARSER_EXPORT static WMSAttributionPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT Utf8StringCR  GetTitle() const { return m_title; }
-        WMSPARSER_EXPORT Utf8StringR   GetTitleR() { return m_title; }
+        Utf8StringCR  GetTitle() const { return m_title; }
+        Utf8StringR   GetTitleR() { return m_title; }
 
         //! Complex type.
-        WMSPARSER_EXPORT WMSOnlineResourceCP    GetOnlineResource() const { return m_pOnlineRes.get(); }
-        WMSPARSER_EXPORT WMSUrlCP               GetLogoUrl() const { return m_pLogoUrl.get(); }
+        WMSOnlineResourceCP    GetOnlineResource() const { return m_pOnlineRes.get(); }
+        WMSUrlCP               GetLogoUrl() const { return m_pLogoUrl.get(); }
 
     protected:
         //! Constructor.
@@ -860,7 +868,7 @@ struct WMSAttribution : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSUrl : RefCountedBase
+MPUBLIC struct WMSUrl : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -870,21 +878,21 @@ struct WMSUrl : RefCountedBase
         WMSPARSER_EXPORT static WMSUrlPtr Create(WMSParserStatus& status, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT size_t const&  GetHeight() const { return m_height; }
-        WMSPARSER_EXPORT void           SetHeight(Utf8StringR height) { m_height = atoi(height.c_str()); }
+        size_t const&  GetHeight() const { return m_height; }
+        void           SetHeight(Utf8StringR height) { m_height = atoi(height.c_str()); }
 
-        WMSPARSER_EXPORT size_t const&  GetWidth() const { return m_width; }
-        WMSPARSER_EXPORT void           SetWidth(Utf8StringR width) { m_width = atoi(width.c_str()); }
+        size_t const&  GetWidth() const { return m_width; }
+        void           SetWidth(Utf8StringR width) { m_width = atoi(width.c_str()); }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetType() const { return m_type; }
-        WMSPARSER_EXPORT Utf8StringR   GetTypeR() { return m_type; }
+        Utf8StringCR  GetType() const { return m_type; }
+        Utf8StringR   GetTypeR() { return m_type; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetName() const { return m_name; }
-        WMSPARSER_EXPORT Utf8StringR   GetNameR() { return m_name; }
+        Utf8StringCR  GetName() const { return m_name; }
+        Utf8StringR   GetNameR() { return m_name; }
 
         //! Complex type.
-        WMSPARSER_EXPORT bvector<Utf8String>       GetFormatList() const { return m_pFormatList->Get(); }
-        WMSPARSER_EXPORT WMSOnlineResourceCP    GetOnlineResource() const { return m_pOnlineRes.get(); }
+        bvector<Utf8String> GetFormatList() const { return m_pFormatList->Get(); }
+        WMSOnlineResourceCP GetOnlineResource() const { return m_pOnlineRes.get(); }
 
     protected:
         //! Constructor.
@@ -908,7 +916,7 @@ struct WMSUrl : RefCountedBase
 //=======================================================================================
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSIdentifier : RefCountedBase
+MPUBLIC struct WMSIdentifier : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -918,11 +926,11 @@ struct WMSIdentifier : RefCountedBase
         WMSPARSER_EXPORT static WMSIdentifierPtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT Utf8StringCR  GetAuthority() const { return m_authority; }
-        WMSPARSER_EXPORT Utf8StringR   GetAuthorityR() { return m_authority; }
+        Utf8StringCR  GetAuthority() const { return m_authority; }
+        Utf8StringR   GetAuthorityR() { return m_authority; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetID() const { return m_id; }
-        WMSPARSER_EXPORT Utf8StringR   GetIDR() { return m_id; }
+        Utf8StringCR  GetID() const { return m_id; }
+        Utf8StringR   GetIDR() { return m_id; }
 
     protected:        
         //! Constructor.
@@ -941,7 +949,7 @@ struct WMSIdentifier : RefCountedBase
 //!
 //! @bsiclass                                     Jean-Francois.Cote              03/2015
 //=======================================================================================
-struct WMSStyle : RefCountedBase
+MPUBLIC struct WMSStyle : RefCountedBase
     {
     public:
         //! Create empty in case the information is missing from the WmsCapabilities.
@@ -951,19 +959,19 @@ struct WMSStyle : RefCountedBase
         WMSPARSER_EXPORT static WMSStylePtr Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         //! Element.
-        WMSPARSER_EXPORT Utf8StringCR  GetName() const { return m_name; }
-        WMSPARSER_EXPORT Utf8StringR   GetNameR() { return m_name; }
+        Utf8StringCR  GetName() const { return m_name; }
+        Utf8StringR   GetNameR() { return m_name; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetTitle() const { return m_title; }
-        WMSPARSER_EXPORT Utf8StringR   GetTitleR() { return m_title; }
+        Utf8StringCR  GetTitle() const { return m_title; }
+        Utf8StringR   GetTitleR() { return m_title; }
 
-        WMSPARSER_EXPORT Utf8StringCR  GetAbstract() const { return m_abstract; }
-        WMSPARSER_EXPORT Utf8StringR   GetAbstractR() { return m_abstract; }
+        Utf8StringCR  GetAbstract() const { return m_abstract; }
+        Utf8StringR   GetAbstractR() { return m_abstract; }
 
         //! Complex type.
-        WMSPARSER_EXPORT WMSUrlCP   GetLegendUrl() const { return m_pLegendUrl.get(); }
-        WMSPARSER_EXPORT WMSUrlCP   GetStyleSheetUrl() const { return m_pStyleSheetUrl.get(); }
-        WMSPARSER_EXPORT WMSUrlCP   GetStyleUrl() const { return m_pStyleUrl.get(); }
+        WMSUrlCP   GetLegendUrl() const { return m_pLegendUrl.get(); }
+        WMSUrlCP   GetStyleSheetUrl() const { return m_pStyleSheetUrl.get(); }
+        WMSUrlCP   GetStyleUrl() const { return m_pStyleUrl.get(); }
 
     protected:
         //! Constructor.
