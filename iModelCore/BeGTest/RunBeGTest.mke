@@ -58,7 +58,7 @@ always:
 always:
     !~@mkdir ${LogDir}
     !~@mkdir ${OutputDir}
-    $(RunPrefix) $(_MakeFilePath)RunTests.py --truncate_output --output_dir=$(OutputDir) --log_file=$(LogFile)
+    $(RunPrefix) $(_MakeFilePath)RunTests.py --gtest_output="xml:$(LogDir)TestResults.xml" --truncate_output --output_dir=$(OutputDir) --log_file=$(LogFile)
     %if !defined (NO_BREAK)
        $(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
     %else
