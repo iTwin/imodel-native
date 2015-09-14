@@ -18,7 +18,7 @@
 #include <DgnPlatform/Tools/KeyTree.h>
 
 //  These are both used to try different configurations while testing.  They must both be eliminated
-#define LINESTYLES_ENABLED 0
+#define LINESTYLES_ENABLED 1
 #define TRYING_DIRECT_LINESTYLES 0
 
 #define LSID_DEFAULT        0
@@ -101,6 +101,14 @@ enum class LsComponentType
     LinePoint       = 4,
     Internal        = 6,
     RasterImage     = 7,
+};
+
+enum class LsOkayForTextureGeneration
+{
+    Unknown                 = -1,  //  Only used as component's cached value
+    NoChangeRequired        = 0,
+    ChangeRequired          = 1,
+    NotAllowed              = 2,
 };
 
 #pragma pack(push)
@@ -422,6 +430,7 @@ protected:
     // Should only be used for setting descr in resource definition
     void      CopyDescription (Utf8CP buffer);
     static void GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLite::PropertySpec spec);
+    static void UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&current, LsOkayForTextureGeneration const&newValue);
 
 public:
     LsComponent (DgnDbR, LsComponentType componentType, LsComponentId componentId);
@@ -460,6 +469,9 @@ public:
     virtual StatusInt   _StrokeBSplineCurve     (ViewContextP context, LineStyleSymbP lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
     virtual StatusInt   _DoStroke               (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const {return SUCCESS;}
     virtual void        _LoadFinished           () { m_isDirty = false; }
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const = 0;
+    virtual LsComponentPtr _GetForTextureGeneration() const = 0;
+    virtual void _StartTextureGeneration() const = 0;
     virtual BentleyStatus _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const   { return BSIERROR; }
     virtual BentleyStatus _GetRasterTextureWidth (double& width) const                                      { return BSIERROR; }
 
@@ -519,6 +531,9 @@ protected:
     virtual BentleyStatus   _GetRasterTextureWidth (double& width) const override;
     virtual bool            _HasWidth () const override  { return 0 != (m_flags & FlagMask_TrueWidth); }
     virtual double          _GetMaxWidth (DgnModelP modelRef) const override  { return _HasWidth() ? m_trueWidth : 0.0; }
+    virtual void _StartTextureGeneration() const override {}
+    virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsRasterImageComponentP>(this); }
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
 
 public:
     static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
@@ -590,6 +605,9 @@ public:
     BentleyStatus       CreateFromComponent (LsPointSymbolComponentCP lpsComp);
 
     static BentleyStatus CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId id);
+    virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsSymbolComponentP>(this); }
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
+    virtual void _StartTextureGeneration() const override {}
 
 //__PUBLISH_SECTION_START__
 public:
@@ -740,8 +758,10 @@ private:
     T_ComponentsCollection m_components;
     DPoint2d            m_size;
     bool                m_postProcessed;
+    mutable LsOkayForTextureGeneration m_okayForTextureGeneration;
 
                     LsCompoundComponent         (LsLocationCP pLocation);
+                    LsCompoundComponent         (LsCompoundComponentCR source);
 protected:
     virtual         ~LsCompoundComponent        ();
 
@@ -767,6 +787,9 @@ public:
     void            Free                        (bool    sub);
     virtual StatusInt _DoStroke                 (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
     bool            _HasUniformFullWidth         (double *pWidth)   const;
+    virtual void _StartTextureGeneration() const override;
+    virtual LsComponentPtr _GetForTextureGeneration() const override;
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -827,16 +850,16 @@ private:
     double          m_orgWidth;       // Stroke origin width
     double          m_endWidth;       // Stroke end width
 
-    Byte m_strokeMode;     // bit 0: dash, first rep | gap    dash
+    Byte m_strokeMode;                // bit 0: dash, first rep | gap    dash
                                       // bit 1: dash, int. rep  | gap    dash
                                       // bit 2: dash, last rep  | gap    dash
                                       // bit 4: rigid           | on     off
                                       // bit 5: stretchable     | on     off
 
-    Byte m_widthMode;      // bit 0: left half       | off    on
+    Byte m_widthMode;                 // bit 0: left half       | off    on
                                       // bit 1: right half      | off    on
 
-    Byte m_capMode;        // 0 = closed       1 = open
+    Byte m_capMode;                   // 0 = closed       1 = open
                                       // 2 = extended     3 = hexagon
                                       // 4 = octagon      5 = decagon
                                       // and so on, (n vectors in cap - up to 255)
@@ -940,7 +963,7 @@ protected:
     DPoint3dCP      m_startTangent;
     DPoint3dCP      m_endTangent;
     int             m_nIterate;
-
+    mutable LsOkayForTextureGeneration m_okayForTextureGeneration;
     struct {
         uint32_t   phaseMode:2;
         uint32_t   iterationLimit:1;
@@ -1023,6 +1046,9 @@ public:
     double          GetLength               (double*) const;
     virtual double  _GetMaxWidth             (DgnModelP modelRef) const override;
     bool            RequiresLength          () const;
+    virtual void _StartTextureGeneration() const override { m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown; }
+    virtual LsComponentPtr _GetForTextureGeneration() const override;
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
                                                               
 //__PUBLISH_SECTION_START__
 public:
@@ -1075,12 +1101,14 @@ struct          LsPointComponent : public LsComponent
     LsStrokePatternComponentPtr m_strokeComponent;
     T_SymbolsCollection     m_symbols;
     bool                    m_postProcessed;
+    mutable LsOkayForTextureGeneration m_okayForTextureGeneration;
 
 private:
     virtual bool                    _ProcessSymbol           (ViewContextP, Centerline const*, LineStyleSymbCP, LsStrokeCP, int strokeIndex, int endCondition) const override;
 
     LsSymbolReferenceP              GetSymbolReferenceP     (T_SymbolsCollectionConstIter iter) const;
     LsPointComponent    (LsLocationCP pLocation);
+    LsPointComponent    (LsPointComponentCR source);
 
 protected:
     ~LsPointComponent   ();
@@ -1099,6 +1127,9 @@ public:
     virtual bool                    _ContainsComponent       (LsComponentP other) const override;
     void                            Free                    (bool    sub);
     bool                            HasStrokeSymbol         () const;
+    virtual LsComponentPtr _GetForTextureGeneration() const override;
+    virtual void _StartTextureGeneration() const override;
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
 
     static BentleyStatus   CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId id);
 
@@ -1155,6 +1186,8 @@ public:
     virtual bool        _HasLineCodes                    () const override {return IsHardwareStyle();}
     virtual StatusInt   _DoStroke                       (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
     static LsInternalComponentPtr CreateInternalComponent   (LsLocation&location);
+    virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsInternalComponentP>(this); }
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
 
 //__PUBLISH_SECTION_START__
 public:
@@ -1210,13 +1243,13 @@ private:
     bool                m_componentLoadPostProcessed;
 
     // For raster styles...
-    mutable bool        m_rasterInitialized;
-    mutable uintptr_t   m_rasterTexture;
+    mutable bool        m_textureInitialized;
+    mutable uintptr_t   m_textureHandle;
 
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle (LsComponentType componentType, LsComponentId componentID);
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
-    intptr_t            GenerateRasterTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb);
+    intptr_t            GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb);
 
 public:
     DGNPLATFORM_EXPORT static double GetUnitDef (Json::Value& lsDefinition);

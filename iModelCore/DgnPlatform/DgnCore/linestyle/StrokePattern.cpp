@@ -1095,6 +1095,7 @@ double          LsStrokePatternComponent::GetDistancePhase () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsStrokePatternComponent::SetDistancePhase (double newPhase)
     {
+    SetPhaseMode (PHASEMODE_Fixed);
     m_phaseShift = newPhase;
     }
 
