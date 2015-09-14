@@ -271,6 +271,8 @@ $(coreObjs)DgnCategories$(oext) : $(DgnCoreDir)DgnCategories.cpp $(DgnCoreAPISrc
 
 $(coreObjs)DgnMaterial$(oext) : $(DgnCoreDir)DgnMaterial.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
+$(coreObjs)DgnLight$(oext) : $(DgnCoreDir)DgnLight.cpp $(DgnCoreAPISrc)DgnDbTables.h $(DgnCoreAPISrc)DgnLight.h ${MultiCompileDepends}
+
 $(coreObjs)DgnTexture$(oext) : $(DgnCoreDir)DgnTexture.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)DgnAuthority$(oext) : $(DgnCoreDir)DgnAuthority.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}

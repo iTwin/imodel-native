@@ -12,8 +12,6 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECDbApi.h>
 #include "PerformanceTestFixture.h"
-#include "../TestFixture/DgnDbTestFixtures.h"
-#include "ElementInsertPerformance.h"
 
 #include <Logging/bentleylogging.h>
 
@@ -23,228 +21,9 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_DGNDB_UNIT_TESTS_NAMESPACE
-using namespace ElementInsertPerformanceTestNamespace;
-
-HANDLER_DEFINE_MEMBERS(SimpleElementHandler)
-HANDLER_DEFINE_MEMBERS(PerformanceElement1Handler)
-HANDLER_DEFINE_MEMBERS(PerformanceElement2Handler)
-HANDLER_DEFINE_MEMBERS(PerformanceElement3Handler)
-HANDLER_DEFINE_MEMBERS(PerformanceElement4Handler)
-HANDLER_DEFINE_MEMBERS(PerformanceElement4bHandler)
-DOMAIN_DEFINE_MEMBERS(ElementInsertPerformanceTestDomain)
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-ElementInsertPerformanceTestDomain::ElementInsertPerformanceTestDomain() : DgnDomain(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, "Test Schema", 1)
-    {
-    RegisterHandler(SimpleElementHandler::GetHandler());
-    RegisterHandler(PerformanceElement1Handler::GetHandler());
-    RegisterHandler(PerformanceElement2Handler::GetHandler());
-    RegisterHandler(PerformanceElement4Handler::GetHandler());
-    RegisterHandler(PerformanceElement4bHandler::GetHandler());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void ElementInsertPerformanceTestDomain::RegisterDomainAndImportSchema(DgnDbR db, Utf8CP schemaXml)
-    {
-    DgnDomains::RegisterDomain(ElementInsertPerformanceTestDomain::GetDomain()); 
-
-    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
-    BeFileName searchDir;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
-    searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
-    schemaContext->AddSchemaPath(searchDir.GetName ());
-
-    ECN::ECSchemaPtr schema = nullptr;
-    if (ECN::SCHEMA_READ_STATUS_Success != ECN::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext))
-        return;
-
-    DgnBaseDomain::GetDomain().ImportSchema(db, schemaContext->GetCache());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement1::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    statement.BindText(statement.GetParameterIndex("Prop1_1"), m_prop1_1.c_str(), IECSqlBinder::MakeCopy::No);
-    statement.BindInt64(statement.GetParameterIndex("Prop1_2"), m_prop1_2);
-    statement.BindDouble(statement.GetParameterIndex("Prop1_3"), m_prop1_3);
-    return T_Super::_InsertInDb(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement1Ptr PerformanceElement1::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category)
-    {
-    PerformanceElement1Ptr ptr = new PerformanceElement1(PhysicalElement::CreateParams(db, modelId, classId, category));
-    if (!ptr.IsValid())
-        return nullptr;
-    return ptr.get();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement1CPtr PerformanceElement1::Insert()
-    {
-    return GetDgnDb().Elements().Insert<PerformanceElement1>(*this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement2::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    statement.BindText(statement.GetParameterIndex("Prop2_1"), m_prop2_1.c_str(), IECSqlBinder::MakeCopy::No);
-    statement.BindInt64(statement.GetParameterIndex("Prop2_2"), m_prop2_2);
-    statement.BindDouble(statement.GetParameterIndex("Prop2_3"), m_prop2_3);
-    return T_Super::_InsertInDb(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement2Ptr PerformanceElement2::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category)
-    {
-    PerformanceElement2Ptr ptr = new PerformanceElement2(PhysicalElement::CreateParams(db, modelId, classId, category));
-    if (!ptr.IsValid())
-        return nullptr;
-    return ptr.get();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement2CPtr PerformanceElement2::Insert()
-    {
-    return GetDgnDb().Elements().Insert<PerformanceElement2>(*this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement3::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    statement.BindText(statement.GetParameterIndex("Prop3_1"), m_prop3_1.c_str(), IECSqlBinder::MakeCopy::No);
-    statement.BindInt64(statement.GetParameterIndex("Prop3_2"), m_prop3_2);
-    statement.BindDouble(statement.GetParameterIndex("Prop3_3"), m_prop3_3);
-    return T_Super::_InsertInDb(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement3Ptr PerformanceElement3::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category)
-    {
-    PerformanceElement3Ptr ptr = new PerformanceElement3(PhysicalElement::CreateParams(db, modelId, classId, category));
-    if (!ptr.IsValid())
-        return nullptr;
-    return ptr.get();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement3CPtr PerformanceElement3::Insert()
-    {
-    return GetDgnDb().Elements().Insert<PerformanceElement3>(*this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement4::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    statement.BindText(statement.GetParameterIndex("Prop4_1"), m_prop4_1.c_str(), IECSqlBinder::MakeCopy::No);
-    statement.BindInt64(statement.GetParameterIndex("Prop4_2"), m_prop4_2);
-    statement.BindDouble(statement.GetParameterIndex("Prop4_3"), m_prop4_3);
-    return T_Super::_InsertInDb(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement4Ptr PerformanceElement4::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category)
-    {
-    PerformanceElement4Ptr ptr = new PerformanceElement4(PhysicalElement::CreateParams(db, modelId, classId, category));
-    if (!ptr.IsValid())
-        return nullptr;
-    return ptr.get();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement4CPtr PerformanceElement4::Insert()
-    {
-    return GetDgnDb().Elements().Insert<PerformanceElement4>(*this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus PerformanceElement4b::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    statement.BindText(statement.GetParameterIndex("Prop4b_1"), m_prop4b_1.c_str(), IECSqlBinder::MakeCopy::No);
-    statement.BindInt64(statement.GetParameterIndex("Prop4b_2"), m_prop4b_2);
-    statement.BindDouble(statement.GetParameterIndex("Prop4b_3"), m_prop4b_3);
-    statement.BindPoint3D(statement.GetParameterIndex("Prop4b_4"), m_prop4b_4);
-    return T_Super::_InsertInDb(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement4bPtr PerformanceElement4b::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category)
-    {
-    PerformanceElement4bPtr ptr = new PerformanceElement4b(PhysicalElement::CreateParams(db, modelId, classId, category));
-    if (!ptr.IsValid())
-        return nullptr;
-    return ptr.get();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement4bCPtr PerformanceElement4b::Insert()
-    {
-    return GetDgnDb().Elements().Insert<PerformanceElement4b>(*this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus SimpleElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
-    {
-    return T_Super::_InsertInDb(statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-SimpleElementPtr SimpleElement::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category)
-    {
-    SimpleElementPtr ptr = new SimpleElement(DgnElement::CreateParams(db, modelId, classId, category));
-    if (!ptr.IsValid())
-        return nullptr;
-    return ptr.get();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-SimpleElementCPtr SimpleElement::Insert()
-    {
-    return GetDgnDb().Elements().Insert<SimpleElement>(*this).get();
-    }
 
 //=======================================================================================
-//! Test Fixtrue for tests
+//! Test Fixture for tests
 // @bsiclass                                                     Majd.Uddin      06/15
 //=======================================================================================
 struct PerformanceElementItem : public DgnDbTestFixture
@@ -281,7 +60,7 @@ TEST_F(PerformanceElementItem, CRUD)
         {
             //First insert the Element
             elementTimer.Start();
-            DgnElementCPtr el = InsertElement(DgnElement::Code(Utf8PrintfString("E%d", i)));
+            DgnElementCPtr el = InsertElement(DgnElement::Code());
             EXPECT_TRUE(el.IsValid());
             elementTimer.Stop();
             insertTime = insertTime + elementTimer.GetElapsedSeconds();
@@ -320,26 +99,6 @@ TEST_F(PerformanceElementItem, CRUD)
 
 }
 
-//=======================================================================================
-// @bsiclass                                                     Krischan.Eberle      06/15
-//=======================================================================================
-struct PerformanceElementTestFixture : public DgnDbTestFixture
-    {
-protected:
-    static const DgnCategoryId s_catId;
-    static const DgnAuthorityId s_codeAuthorityId;
-    static const int s_instanceCount = 100000;
-    static Utf8CP const s_textVal;
-    static const int64_t s_int64Val = 20000000LL;
-    static const double s_doubleVal;
-    static Utf8CP const s_testSchemaXml;
-
-    BentleyStatus ImportTestSchema() const;
-    PhysicalModelPtr CreatePhysicalModel() const;
-    void CommitAndLogTiming(StopWatch& timer, Utf8CP scenario, Utf8String testcaseName, Utf8String testName) const;
-    void TimeInsertion(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName);
-    };
-
 //static
 const DgnCategoryId PerformanceElementTestFixture::s_catId = DgnCategoryId((int64_t)123);
 const DgnAuthorityId PerformanceElementTestFixture::s_codeAuthorityId = DgnAuthorityId((int64_t) 1);
@@ -349,7 +108,7 @@ Utf8CP const PerformanceElementTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
     "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
     "  <ECClass typeName='Element1' >"
-    "    <BaseClass>dgn:GeometricElement</BaseClass>"
+    "    <BaseClass>dgn:PhysicalElement</BaseClass>"
     "    <ECProperty propertyName='Prop1_1' typeName='string' />"
     "    <ECProperty propertyName='Prop1_2' typeName='long' />"
     "    <ECProperty propertyName='Prop1_3' typeName='double' />"
@@ -407,87 +166,6 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElementTestFixture::TimeInsertion(int numInstances, Utf8CP schemaName, Utf8CP className, Utf8String testcaseName, Utf8String testName)
-    {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceElementClass.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
-    ElementInsertPerformanceTestDomain::RegisterDomainAndImportSchema(*m_db, s_testSchemaXml);
-
-    DgnModelPtr model = CreatePhysicalModel();
-    DgnCategoryId catid = m_db->Categories().QueryHighestId();
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(schemaName, className));
-
-    bvector<DgnElementPtr> testElements;
-    if (0 == strcmp(className, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS))
-        {
-        for (int i = 0; i < numInstances; i++)
-            {
-            SimpleElementPtr element = SimpleElement::Create(*m_db, model->GetModelId(), mclassId, catid);
-            ASSERT_TRUE(element != nullptr);
-            testElements.push_back(element);
-            }
-        }
-    else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
-        {
-        for (int i = 0; i < numInstances; i++)
-            {
-            PerformanceElement1Ptr element = PerformanceElement1::Create(*m_db, model->GetModelId(), mclassId, catid);
-            ASSERT_TRUE(element != nullptr);
-            testElements.push_back(element);
-            }
-        }
-    else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT2_CLASS))
-        {
-        for (int i = 0; i < numInstances; i++)
-            {
-            PerformanceElement2Ptr element = PerformanceElement2::Create(*m_db, model->GetModelId(), mclassId, catid);
-            ASSERT_TRUE(element != nullptr);
-            testElements.push_back(element);
-            }
-        }
-    else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT3_CLASS))
-        {
-        for (int i = 0; i < numInstances; i++)
-            {
-            PerformanceElement3Ptr element = PerformanceElement3::Create(*m_db, model->GetModelId(), mclassId, catid);
-            ASSERT_TRUE(element != nullptr);
-            testElements.push_back(element);
-            }
-        }
-    else if (0 == strcmp(className, ELEMENT_PERFORMANCE_ELEMENT4_CLASS))
-        {
-        for (int i = 0; i < numInstances; i++)
-            {
-            PerformanceElement4Ptr element = PerformanceElement4::Create(*m_db, model->GetModelId(), mclassId, catid);
-            ASSERT_TRUE(element != nullptr);
-            testElements.push_back(element);
-            }
-        }
-    else if (0 == strcmp(className, "PhysicalElement"))
-        {
-        for (int i = 0; i < numInstances; i++)
-            {
-            PhysicalElementPtr element = PhysicalElement::Create(PhysicalElement::CreateParams(*m_db, model->GetModelId(), mclassId, catid));
-            ASSERT_TRUE(element != nullptr);
-            testElements.push_back(element);
-            }
-        }
-
-    DgnDbStatus stat = DgnDbStatus::Success;
-    StopWatch timer(true);
-    for (DgnElementPtr& element : testElements)
-        {
-        element->Insert(&stat);
-        ASSERT_EQ(DgnDbStatus::Success, stat);
-        }
-    timer.Stop();
-
-    LOGTODB(testcaseName, testName, timer.GetElapsedSeconds(), Utf8PrintfString("Inserting %d %s elements", numInstances, className).c_str(), numInstances);
-    m_db->SaveChanges();
-    m_db->CloseDb();
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2015
@@ -533,12 +211,12 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,CodeNameSpace"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"
                                                                              "Prop4_1,Prop4_2,Prop4_3) "
-                                                                             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                                                             "VALUES (?,?,?,?,\"\",?,?,?,?,?,?,?,?,?,?,?,?)");
         ASSERT_TRUE(insertStmt != nullptr);
         CachedECSqlStatement& stmt = *insertStmt;
 
@@ -593,7 +271,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code) VALUES (?,?,?,?)");
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,CodeNameSpace) VALUES (?,?,?,?,\"\")");
         ASSERT_TRUE(insertStmt != nullptr);
 
         std::vector<CachedECSqlStatementPtr> updateStmts;
@@ -657,12 +335,12 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     for (int i = 0; i < s_instanceCount; i++)
         {
         //Call GetPreparedECSqlStatement for each instance (instead of once before) to insert as this is closer to the real world scenario
-        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,"
+        CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId,CategoryId,CodeAuthorityId,Code,CodeNameSpace"
                                                                              "Prop1_1,Prop1_2,Prop1_3,"
                                                                              "Prop2_1,Prop2_2,Prop2_3,"
                                                                              "Prop3_1,Prop3_2,Prop3_3,"
                                                                              "Prop4_1,Prop4_2,Prop4_3) "
-                                                                             "VALUES (:modelid,:catid,:authorityid,:code,"
+                                                                             "VALUES (:modelid,:catid,:authorityid,:code,\"\""
                                                                              ":p11,:p12,:p13,"
                                                                              ":p21,:p22,:p23,"
                                                                              ":p31,:p32,:p33,"
@@ -703,28 +381,3 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     CommitAndLogTiming(timer, "Single Insert (named parameters)", TEST_DETAILS);
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                  08/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithDgnElementApi)
-    {
- //   TimeInsertion(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
-//    TimeInsertion(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
-    TimeInsertion(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_SIMPLEELEMENT_CLASS, TEST_DETAILS);
-    
-//    TimeInsertion(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
-//    TimeInsertion(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
-    TimeInsertion(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT1_CLASS, TEST_DETAILS);
-    
-  //  TimeInsertion(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, TEST_DETAILS);
-    //TimeInsertion(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, TEST_DETAILS);
-    TimeInsertion(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4_CLASS, TEST_DETAILS);
-
-    //TimeInsertion(1000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
-    //TimeInsertion(10000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
-    TimeInsertion(100000, ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_PERFORMANCE_ELEMENT4b_CLASS, TEST_DETAILS);
-    
-    //TimeInsertion(1000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
-    //TimeInsertion(10000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
-    TimeInsertion(100000, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement, TEST_DETAILS);
-    }

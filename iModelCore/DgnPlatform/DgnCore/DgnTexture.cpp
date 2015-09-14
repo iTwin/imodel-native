@@ -10,12 +10,12 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextureId DgnTextures::Insert (Texture& tx, DgnDbStatus* outResult)
+DgnTextureId DgnTextures::Insert(Texture& tx, DgnDbStatus* outResult)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(result, outResult);
     DgnTextureId newId;
 
-    auto status = m_dgndb.GetServerIssuedId (newId, DGN_TABLE(DGN_CLASSNAME_Texture), "Id");
+    auto status = m_dgndb.GetServerIssuedId(newId, DGN_TABLE(DGN_CLASSNAME_Texture), "Id");
     if (BE_SQLITE_OK != status)
         {
         result = DgnDbStatus::ForeignKeyConstraint;
@@ -23,15 +23,15 @@ DgnTextureId DgnTextures::Insert (Texture& tx, DgnDbStatus* outResult)
         }
 
     TextureData const& data = tx.GetData();
-    Statement stmt (m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Texture) " (Id,Name,Descr,Data,Format,Width,Height,Flags) Values(?,?,?,?,?,?,?,?)");
-    stmt.BindId (1, newId);
-    stmt.BindText (2, tx.GetName().empty() ? nullptr : tx.GetName().c_str(), Statement::MakeCopy::No);  // NB: BindText() with an empty Utf8String is NOT equivalent to BindText() with a null Utf8CP...
-    stmt.BindText (3, tx.GetDescription(), Statement::MakeCopy::No);
-    stmt.BindBlob (4, &data.GetData()[0], static_cast<int>(data.GetData().size()), Statement::MakeCopy::No);
-    stmt.BindInt (5, static_cast<int>(data.GetFormat()));
-    stmt.BindInt (6, static_cast<int>(data.GetWidth()));
-    stmt.BindInt (7, static_cast<int>(data.GetHeight()));
-    stmt.BindInt (8, static_cast<int>(data.GetFlags()));
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Texture) " (Id,Name,Descr,Data,Format,Width,Height,Flags) Values(?,?,?,?,?,?,?,?)");
+    stmt.BindId(1, newId);
+    stmt.BindText(2, tx.GetName().empty() ? nullptr : tx.GetName().c_str(), Statement::MakeCopy::No);  // NB: BindText() with an empty Utf8String is NOT equivalent to BindText() with a null Utf8CP...
+    stmt.BindText(3, tx.GetDescription(), Statement::MakeCopy::No);
+    stmt.BindBlob(4, &data.GetData()[0], static_cast<int>(data.GetData().size()), Statement::MakeCopy::No);
+    stmt.BindInt(5, static_cast<int>(data.GetFormat()));
+    stmt.BindInt(6, static_cast<int>(data.GetWidth()));
+    stmt.BindInt(7, static_cast<int>(data.GetHeight()));
+    stmt.BindInt(8, static_cast<int>(data.GetFlags()));
 
     status = stmt.Step();
     if (BE_SQLITE_DONE != status)
@@ -48,30 +48,30 @@ DgnTextureId DgnTextures::Insert (Texture& tx, DgnDbStatus* outResult)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnTextures::Update (Texture const& tx) const
+DgnDbStatus DgnTextures::Update(Texture const& tx) const
     {
     if (!tx.IsValid())
         return DgnDbStatus::InvalidId;
 
     auto const& data = tx.GetData();
-    Statement stmt (m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Texture) " SET Descr=?,Data=?,Format=?,Width=?,Height=?,Flags=? WHERE Id=?");
-    stmt.BindText (1, tx.GetDescription(), Statement::MakeCopy::No);
-    stmt.BindBlob (2, &data.GetData()[0], static_cast<int>(data.GetData().size()), Statement::MakeCopy::No);
-    stmt.BindInt (3, static_cast<int>(data.GetFormat()));
-    stmt.BindInt (4, static_cast<int>(data.GetWidth()));
-    stmt.BindInt (5, static_cast<int>(data.GetHeight()));
-    stmt.BindInt (6, static_cast<int>(data.GetFlags()));
-    stmt.BindId (7, tx.GetId());
+    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Texture) " SET Descr=?,Data=?,Format=?,Width=?,Height=?,Flags=? WHERE Id=?");
+    stmt.BindText(1, tx.GetDescription(), Statement::MakeCopy::No);
+    stmt.BindBlob(2, &data.GetData()[0], static_cast<int>(data.GetData().size()), Statement::MakeCopy::No);
+    stmt.BindInt(3, static_cast<int>(data.GetFormat()));
+    stmt.BindInt(4, static_cast<int>(data.GetWidth()));
+    stmt.BindInt(5, static_cast<int>(data.GetHeight()));
+    stmt.BindInt(6, static_cast<int>(data.GetFlags()));
+    stmt.BindId(7, tx.GetId());
 
     DbResult status = stmt.Step();
-    BeDataAssert (BE_SQLITE_DONE == status);
+    BeDataAssert(BE_SQLITE_DONE == status);
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnTextures::Format extractFormat (int value)
+static DgnTextures::Format extractFormat(int value)
     {
     auto fmt = static_cast<DgnTextures::Format>(value);
     switch (fmt)
@@ -101,7 +101,7 @@ DbResult DgnTextures::Delete(DgnTextureId textureId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextures::Texture DgnTextures::Query (DgnTextureId id) const
+DgnTextures::Texture DgnTextures::Query(DgnTextureId id) const
     {
     Texture tx;
     if (!id.IsValid())
@@ -109,24 +109,24 @@ DgnTextures::Texture DgnTextures::Query (DgnTextureId id) const
 
     BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement (stmt, "SELECT Name,Descr,Data,Format,Width,Height,Flags FROM " DGN_TABLE(DGN_CLASSNAME_Texture) " WHERE Id=?");
-    stmt->BindId (1, id);
+    m_dgndb.GetCachedStatement(stmt, "SELECT Name,Descr,Data,Format,Width,Height,Flags FROM " DGN_TABLE(DGN_CLASSNAME_Texture) " WHERE Id=?");
+    stmt->BindId(1, id);
 
     if (BE_SQLITE_ROW == stmt->Step())
         {
         tx.m_id = id;
-        tx.m_name.AssignOrClear (stmt->GetValueText (0));
-        tx.m_descr.AssignOrClear (stmt->GetValueText (1));
+        tx.m_name.AssignOrClear(stmt->GetValueText(0));
+        tx.m_descr.AssignOrClear(stmt->GetValueText(1));
 
-        size_t dataSize = static_cast<size_t>(stmt->GetColumnBytes (2));
-        BeAssert (dataSize > 0);
-        ByteCP data = static_cast<ByteCP>(stmt->GetValueBlob (2));
-        tx.m_data.m_data.insert (tx.m_data.m_data.begin(), data, data + dataSize);
+        size_t dataSize = static_cast<size_t>(stmt->GetColumnBytes(2));
+        BeAssert(dataSize > 0);
+        ByteCP data = static_cast<ByteCP>(stmt->GetValueBlob(2));
+        tx.m_data.m_data.insert(tx.m_data.m_data.begin(), data, data + dataSize);
 
-        tx.m_data.m_format = extractFormat (stmt->GetValueInt (3));
-        tx.m_data.m_width = static_cast<uint32_t>(stmt->GetValueInt (4));
-        tx.m_data.m_height = static_cast<uint32_t>(stmt->GetValueInt (5));
-        tx.m_data.m_flags = static_cast<DgnTextures::Flags>(stmt->GetValueInt (6));
+        tx.m_data.m_format = extractFormat(stmt->GetValueInt(3));
+        tx.m_data.m_width = static_cast<uint32_t>(stmt->GetValueInt(4));
+        tx.m_data.m_height = static_cast<uint32_t>(stmt->GetValueInt(5));
+        tx.m_data.m_flags = static_cast<DgnTextures::Flags>(stmt->GetValueInt(6));
         }
 
     return tx;
@@ -135,10 +135,10 @@ DgnTextures::Texture DgnTextures::Query (DgnTextureId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextureId DgnTextures::QueryTextureId (Utf8StringCR name) const
+DgnTextureId DgnTextures::QueryTextureId(Utf8StringCR name) const
     {
-    Statement stmt (m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Texture) " WHERE Name=?");
-    stmt.BindText (1, name, Statement::MakeCopy::No);
+    Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Texture) " WHERE Name=?");
+    stmt.BindText(1, name, Statement::MakeCopy::No);
     DgnTextureId id;
     if (BE_SQLITE_ROW == stmt.Step())
         id = stmt.GetValueId<DgnTextureId>(0);
@@ -153,16 +153,16 @@ DgnTextures::Iterator::const_iterator DgnTextures::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sql = MakeSqlString ("SELECT Id,Name,Descr,Data,Format,Width,Height,Flags FROM " DGN_TABLE(DGN_CLASSNAME_Texture));
-        m_db->GetCachedStatement (m_stmt, sql.c_str());
-        m_params.Bind (*m_stmt);
+        Utf8String sql = MakeSqlString("SELECT Id,Name,Descr,Data,Format,Width,Height,Flags FROM " DGN_TABLE(DGN_CLASSNAME_Texture));
+        m_db->GetCachedStatement(m_stmt, sql.c_str());
+        m_params.Bind(*m_stmt);
         }
     else
         {
         m_stmt->Reset();
         }
 
-    return Entry (m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,50 +170,53 @@ DgnTextures::Iterator::const_iterator DgnTextures::Iterator::begin() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t DgnTextures::Iterator::QueryCount() const
     {
-    Utf8String sqlString = MakeSqlString ("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Texture));
+    Utf8String sqlString = MakeSqlString("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Texture));
     Statement sql;
-    sql.Prepare (*m_db, sqlString.c_str());
-    return (BE_SQLITE_ROW == sql.Step()) ? static_cast<size_t>(sql.GetValueInt (0)) : 0;
+    sql.Prepare(*m_db, sqlString.c_str());
+    return (BE_SQLITE_ROW == sql.Step()) ? static_cast<size_t>(sql.GetValueInt(0)) : 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureId DgnTextures::Iterator::Entry::GetId() const            { Verify(); return m_sql->GetValueId<DgnTextureId>(0); }
-Utf8CP DgnTextures::Iterator::Entry::GetName() const                { Verify(); return m_sql->GetValueText (1); }
-Utf8CP DgnTextures::Iterator::Entry::GetDescr() const               { Verify(); return m_sql->GetValueText (2); }
-size_t DgnTextures::Iterator::Entry::GetDataSize() const            { Verify(); return static_cast<size_t> (m_sql->GetColumnBytes (3)); }
-ByteCP DgnTextures::Iterator::Entry::GetDataBytes() const           { Verify(); return static_cast<ByteCP> (m_sql->GetValueBlob (3)); }
-DgnTextures::Format DgnTextures::Iterator::Entry::GetFormat() const { Verify(); return extractFormat (m_sql->GetValueInt (4)); }
-uint32_t DgnTextures::Iterator::Entry::GetWidth() const             { Verify(); return static_cast<uint32_t> (m_sql->GetValueInt (5)); }
-uint32_t DgnTextures::Iterator::Entry::GetHeight() const            { Verify(); return static_cast<uint32_t> (m_sql->GetValueInt (6)); }
-DgnTextures::Flags DgnTextures::Iterator::Entry::GetFlags() const   { Verify(); return static_cast<DgnTextures::Flags> (m_sql->GetValueInt (7)); }
-
+Utf8CP DgnTextures::Iterator::Entry::GetName() const                { Verify(); return m_sql->GetValueText(1); }
+Utf8CP DgnTextures::Iterator::Entry::GetDescr() const               { Verify(); return m_sql->GetValueText(2); }
+size_t DgnTextures::Iterator::Entry::GetDataSize() const            { Verify(); return static_cast<size_t> (m_sql->GetColumnBytes(3)); }
+ByteCP DgnTextures::Iterator::Entry::GetDataBytes() const           { Verify(); return static_cast<ByteCP> (m_sql->GetValueBlob(3)); }
+DgnTextures::Format DgnTextures::Iterator::Entry::GetFormat() const { Verify(); return extractFormat(m_sql->GetValueInt(4)); }
+uint32_t DgnTextures::Iterator::Entry::GetWidth() const             { Verify(); return static_cast<uint32_t> (m_sql->GetValueInt(5)); }
+uint32_t DgnTextures::Iterator::Entry::GetHeight() const            { Verify(); return static_cast<uint32_t> (m_sql->GetValueInt(6)); }
+DgnTextures::Flags DgnTextures::Iterator::Entry::GetFlags() const   { Verify(); return static_cast<DgnTextures::Flags> (m_sql->GetValueInt(7)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t   DgnTextures::s_nextQvTextureId;
+uintptr_t DgnTextures::AddQvTextureId(DgnTextureId TextureId) const 
+    { 
+    static uintptr_t s_nextQvTextureId;
+    return (m_qvTextureIds[TextureId] = ++s_nextQvTextureId); 
+    }
 
-uintptr_t   DgnTextures::AddQvTextureId (DgnTextureId TextureId) const        { return (m_qvTextureIds[TextureId] = ++s_nextQvTextureId); }
-uintptr_t   DgnTextures::GetQvTextureId (DgnTextureId TextureId) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uintptr_t DgnTextures::GetQvTextureId(DgnTextureId TextureId) const
     {
-    auto const&   found = m_qvTextureIds.find(TextureId);
-
+    auto const& found = m_qvTextureIds.find(TextureId);
     return (found == m_qvTextureIds.end()) ? 0 : found->second; 
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DgnTextures::Texture::GetImage (bvector<Byte>& image) const
+BentleyStatus DgnTextures::Texture::GetImage(bvector<Byte>& image) const
     {
     TextureData const&              textureData = GetData();
     ImageUtilities::RgbImageInfo    imageInfo;
     BentleyStatus                   status = ERROR;
 
-    memset (&imageInfo, 0, sizeof (imageInfo));
+    memset(&imageInfo, 0, sizeof (imageInfo));
     switch (textureData.GetFormat())
         {
         case DgnTextures::Format::RAW:
@@ -221,7 +224,7 @@ BentleyStatus   DgnTextures::Texture::GetImage (bvector<Byte>& image) const
             return SUCCESS;
 
         case DgnTextures::Format::PNG:  
-            status = ImageUtilities::ReadImageFromPngBuffer (image, imageInfo, &textureData.GetData().front(), textureData.GetData().size());
+            status = ImageUtilities::ReadImageFromPngBuffer(image, imageInfo, &textureData.GetData().front(), textureData.GetData().size());
             break;
 
         case DgnTextures::Format::JPEG:
@@ -234,13 +237,12 @@ BentleyStatus   DgnTextures::Texture::GetImage (bvector<Byte>& image) const
             jpegInfo.isBGR = false;
             jpegInfo.isTopDown = true;
             
-            status = ImageUtilities::ReadImageFromJpgBuffer (image, imageInfo, &textureData.GetData().front(), textureData.GetData().size(), jpegInfo);
+            status = ImageUtilities::ReadImageFromJpgBuffer(image, imageInfo, &textureData.GetData().front(), textureData.GetData().size(), jpegInfo);
             break;
             }
-
     
         default:
-            BeAssert (false);
+            BeAssert(false);
             return ERROR;
         }
 
@@ -249,7 +251,7 @@ BentleyStatus   DgnTextures::Texture::GetImage (bvector<Byte>& image) const
         imageInfo.height != textureData.GetHeight() ||
         !imageInfo.hasAlpha)
         {
-        BeAssert (false);
+        BeAssert(false);
         return ERROR;
         }
     return SUCCESS;

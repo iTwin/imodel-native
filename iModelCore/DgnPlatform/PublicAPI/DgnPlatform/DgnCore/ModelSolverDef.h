@@ -114,7 +114,10 @@ struct ModelSolverDef
 
     void Solve(DgnModelR);
 
+    DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
+
     public:
+
     //! @private
     DGNPLATFORM_EXPORT ModelSolverDef();
 

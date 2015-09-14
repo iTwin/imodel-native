@@ -178,6 +178,9 @@
     <ClCompile Include="Published\ComponentModelTest.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\PerformanceElementsTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
     <ClCompile Include="NonPublished\ElementMaterial_tests.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
@@ -228,7 +231,7 @@
     <ClInclude Include="Published\AnnotationTestFixture.h">
       <Filter>Published</Filter>
     </ClInclude>
-    <ClInclude Include="Performance\ElementInsertPerformance.h">
+    <ClInclude Include="Performance\PerformanceElements.h">
       <Filter>Performance</Filter>
     </ClInclude>
   </ItemGroup>

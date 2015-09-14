@@ -1093,19 +1093,21 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,CodeAuthorityId=6,CodeNameSpace=7};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
+    DgnElement::Code code(stmt->GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt->GetValueText(Column::Code), stmt->GetValueText(Column::CodeNameSpace));
+
     return LoadElement(DgnElement::CreateParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
                     stmt->GetValueId<DgnCategoryId>(Column::CategoryId), 
                     stmt->GetValueText(Column::Label), 
-                    DgnElement::Code(stmt->GetValueText(Column::Code)), 
+                    code,
                     elementId, 
                     stmt->GetValueId<DgnElementId>(Column::ParentId)),
                     makePersistent);
@@ -1200,34 +1202,28 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
         return nullptr;
         }
 
-    Utf8PrintfString ecSql("INSERT INTO %s.%s (ECInstanceId,", elementClass->GetSchema().GetName().c_str(), elementClass->GetName().c_str());
-    Utf8String values(":ECInstanceId,");
-
-    int propCount = 0;
-    for (ECPropertyCP ecProperty : elementClass->GetProperties (true))
-        {
-        if (ecProperty->GetName() == "LastMod") // TEMPORARY - Carole, just don't include LastMod in properties list in your refactoring.
-            continue;
-
-        if (propCount != 0)
-            {
-            ecSql.append(",");
-            values.append(",");
-            }
-        ecSql.append("[").append(ecProperty->GetName()).append("]");
-        values.append(":").append(ecProperty->GetName());
-        propCount++;
-        }
-    ecSql.append(") VALUES (").append(values).append(")");
-    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql);
+    bvector<Utf8String> insertParams;
+    element._GetInsertParams(insertParams);
+    Utf8String ecSql = ECSqlInsertBuilder::BuildECSqlForClass(*elementClass, insertParams);
+    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql.c_str());
     if (!statement.IsValid())
+        return nullptr;
+
+    if (DgnDbStatus::Success != (stat=element._BindInsertParams(*statement)))
+        return nullptr;
+
+    if (ECSqlStepStatus::Error == statement->Step())
         {
-        BeAssert(false);
-        stat = DgnDbStatus::BadElement;
+        // SQLite doesn't tell us which constraint failed - check if it's the Code.
+        auto existingElemWithCode = QueryElementIdByCode(element.m_code);
+        if (existingElemWithCode.IsValid())
+            stat = DgnDbStatus::DuplicateCode;
+        else
+            stat = DgnDbStatus::WriteError;
         return nullptr;
         }
 
-    if (DgnDbStatus::Success != (stat=element._InsertInDb(*statement)))
+    if (DgnDbStatus::Success != (stat = element._InsertSecondary()))
         return nullptr;
 
     DgnElementPtr newElement = element.CopyForEdit();
@@ -1410,8 +1406,25 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code const& code) const
     {
-    CachedStatementPtr statement=GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? AND CodeAuthorityId=? LIMIT 1"); // find first if code not unique
-    statement->BindText(1, code.GetValue(), Statement::MakeCopy::No);
-    statement->BindId(2, code.GetAuthority());
+    return QueryElementIdByCode(code.GetAuthority(), code.GetValue(), code.GetNameSpace());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId DgnElements::QueryElementIdByCode(Utf8StringCR authority, Utf8StringCR value, Utf8StringCR nameSpace) const
+    {
+    return QueryElementIdByCode(GetDgnDb().Authorities().QueryAuthorityId(authority), value, nameSpace);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8StringCR value, Utf8StringCR nameSpace) const
+    {
+    CachedStatementPtr statement=GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? AND CodeAuthorityId=? AND CodeNameSpace=? LIMIT 1"); // find first if code not unique
+    statement->BindText(1, value, Statement::MakeCopy::No);
+    statement->BindId(2, authority);
+    statement->BindText(3, nameSpace, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }
