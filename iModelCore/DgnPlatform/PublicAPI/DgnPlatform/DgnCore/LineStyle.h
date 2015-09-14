@@ -301,6 +301,23 @@ public:
 };
 
 //__PUBLISH_SECTION_END__
+enum class LsCapMode
+{
+    //! 0 - Standard closed polygon (rectangle) strokes.
+    LCCAP_Closed            = 0,
+    //! 1 - No end cap. The stroke is displayed as two parallel lines.
+    LCCAP_Open              = 1,
+    //! 2 - The end of the stroke is extended by half the stroke width.
+    LCCAP_Extended          = 2,
+    //! >= 3 - cap stroked as an arc and the value indicates the number of vectors in the arc.
+    LCCAP_Hexagon           = 3,
+    //! 4 vectors in the arc
+    LCCAP_Octagon           = 4,
+    //! 5 vectors in the arc
+    LCCAP_Decagon           = 5,
+    LCCAP_Arc               = 30,
+};
+
 enum DwgShapeFlag
 {
     SHAPEFLAG_TextSymbol    = 0x0002,
@@ -736,13 +753,13 @@ public:
     DGNPLATFORM_EXPORT int                      GetStrokeNumber         () const;                       //!<  The index of the stroke to place this symbol.
     DGNPLATFORM_EXPORT void                     SetStrokeNumber         (int value);                    //!<  The index of the stroke to place this symbol.
 
-    DGNPLATFORM_EXPORT LsCacheSymbolComponentP       GetSymbolComponentP     () const;                       //!<  A pointer into the geometry; GetSymbolComponentCP is preferred.
-    DGNPLATFORM_EXPORT LsCacheSymbolComponentCP      GetSymbolComponentCP    () const;                       //!<  A pointer into the geometry.
+    DGNPLATFORM_EXPORT LsSymbolComponentP       GetSymbolComponentP     () const;                       //!<  A pointer into the geometry; GetSymbolComponentCP is preferred.
+    DGNPLATFORM_EXPORT LsSymbolComponentCP      GetSymbolComponentCP    () const;                       //!<  A pointer into the geometry.
 
     //! Update the symbol component (geometry) in the SymbolReference.
     //! @param[in] symbolComponent The new symbol component to use
     //! @see GetSymbolComponentCP()
-    DGNPLATFORM_EXPORT void                     SetSymbolComponent      (LsCacheSymbolComponentR symbolComponent);
+    DGNPLATFORM_EXPORT void                     SetSymbolComponent      (LsSymbolComponentR symbolComponent);
     };
 
 //__PUBLISH_SECTION_END__
@@ -843,24 +860,6 @@ struct          LsStroke
         LCWIDTH_Full            = 0x03,
     };
 
-    //! Returned from LsStroke::GetCapMode()
-    enum CapMode
-    {
-        //! 0 - Standard closed polygon (rectangle) strokes.
-        LCCAP_Closed            = 0,
-        //! 1 - No end cap. The stroke is displayed as two parallel lines.
-        LCCAP_Open              = 1,
-        //! 2 - The end of the stroke is extended by half the stroke width.
-        LCCAP_Extended          = 2,
-        //! >= 3 - cap stroked as an arc and the value indicates the number of vectors in the arc.
-        LCCAP_Hexagon           = 3,
-        //! 4 vectors in the arc
-        LCCAP_Octagon           = 4,
-        //! 5 vectors in the arc
-        LCCAP_Decagon           = 5,
-        LCCAP_Arc               = 30,
-    };
-
 //__PUBLISH_SECTION_END__
     friend struct LsStrokePatternComponent;
 private:
@@ -882,7 +881,7 @@ private:
                                       // 4 = octagon      5 = decagon
                                       // and so on, (n vectors in cap - up to 255)
 
-    void        Init (double length, double orgWidth, double endWidth, WidthMode widthMode, CapMode capMode)
+    void        Init (double length, double orgWidth, double endWidth, WidthMode widthMode, LsCapMode capMode)
                     {
                      m_length     = length;
                      m_orgWidth   = orgWidth;
@@ -897,6 +896,7 @@ public:
     void        SetWidthMode        (int newMode) {m_widthMode &= ~0x03; m_widthMode |= newMode;}
     void        SetWidth            (double width){m_orgWidth = width; m_endWidth = width;}
     void        SetCapMode          (int mode)    {m_capMode = (Byte)mode;}
+    void        SetCapMode          (LsCapMode mode)    {m_capMode = (Byte)mode;}
 
     bool        HasWidth            () const {return IsDash() && (0 != GetWidthMode());}
     // WIP_LINESTYLE *** (LCWIDTH_FULL == GetWidthMode()) => warning: comparison between 'enum Dgn::LineCodeWidth' and 'enum Dgn::LsStroke::WidthMode'
@@ -914,7 +914,7 @@ public:
          STROKE_Stretchable  = 0x20,
     };
 
-                LsStroke (double length, double startWidth, double endWidth, WidthMode widthMode, CapMode capMode);
+                LsStroke (double length, double startWidth, double endWidth, WidthMode widthMode, LsCapMode capMode);
     explicit    LsStroke (LsStroke const&);
 
 //__PUBLISH_SECTION_START__
@@ -922,30 +922,41 @@ private:
     explicit                   LsStroke ();
 
 public:
-    DGNPLATFORM_EXPORT void                     SetIsDash           (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsDash              () const;   //  Stroke Type Dash vs. Stroke Type Gap
+    DGNPLATFORM_EXPORT void                     SetIsDash           (bool isDash);      //!<  Stroke Type Dash vs. Stroke Type Gap
+    DGNPLATFORM_EXPORT bool                     IsDash              () const;           //!<  Stroke Type Dash vs. Stroke Type Gap
     DGNPLATFORM_EXPORT void                     SetIsDashFirst      (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsDashFirst         () const;   //  Computed from IsDash and invert at flags, should have explicit InvertAt
+    DGNPLATFORM_EXPORT bool                     IsDashFirst         () const;           //!<  Computed from IsDash and invert at flags, should have explicit InvertAt
     DGNPLATFORM_EXPORT void                     SetIsDashLast       (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsDashLast          () const;   //      ""
-    DGNPLATFORM_EXPORT void                     SetIsStretchable    (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsStretchable       () const;   //  Length Fixed or Length Variable
-    DGNPLATFORM_EXPORT void                     SetIsRigid          (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsRigid             () const;   //  LCSTROKE_RAY is true, corresponds to Corners-ByPass, IsRigid is false if Corners-Break
+    DGNPLATFORM_EXPORT bool                     IsDashLast          () const;           //      ""
+    DGNPLATFORM_EXPORT void                     SetIsStretchable    (bool isOn);        //!<  If the dash or gap is fixed or stretchable to fit the length of the segment.
+    DGNPLATFORM_EXPORT bool                     IsStretchable       () const;           //!<  If the dash or gap is fixed or stretchable to fit the length of the segment.
+    DGNPLATFORM_EXPORT void                     SetIsRigid          (bool isOn);        //!<  Rigid means to continue past a corner to complete the current stroke.  False means to break at the corner.
+    DGNPLATFORM_EXPORT bool                     IsRigid             () const;           //!<  Rigid means to continue past a corner to complete the current stroke.  False means to break at the corner.
 
-    //!  There is no SetLength method.  Length is set via LsStrokePatternComponent::InsertStroke
+
+    //! Returns the length of the stroke.
+    //! @return  Length of the stroke
+    //! remarks There is no SetLength method.  Length is set via LsCacheStrokePatternComponent::AppendStroke
     DGNPLATFORM_EXPORT double                   GetLength ()        const;
 
-    //!  There is no SetStartWidth method.  Start width is set via LsStrokePatternComponent::InsertStroke
+    //! Returns the width in Master Units at the start of the stroke.  Only applies for dashes.
+    //! @return  Start width.
+    //! remarks There is no SetStartWidth method.  Start width is set via LsCacheStrokePatternComponent::AppendStroke
     DGNPLATFORM_EXPORT double                   GetStartWidth ()    const;
 
-    //!  There is no SetEndWidth method.  End width is set via LsStrokePatternComponent::InsertStroke
+    //! Returns the width in Master Units at the end of the stroke.  Only applies for dashes.
+    //! @return  End width.
+    //! remarks There is no SetEndWidth method.  End width is set via LsCacheStrokePatternComponent::AppendStroke
     DGNPLATFORM_EXPORT double                   GetEndWidth ()      const;
 
-    //!  There is no SetCapMode method.  Cap mode is set via LsStrokePatternComponent::InsertStroke
-    DGNPLATFORM_EXPORT CapMode                  GetCapMode ()        const;
-    //!  There is no SetWidthMode method.  Width mode is set via LsStrokePatternComponent::InsertStroke
+    //! Returns the way that the ends of a dash are handled.
+    //! @return  Cap mode.
+    //! remarks There is no SetCapMode method.  Cap mode is set via LsCacheStrokePatternComponent::AppendStroke
+    DGNPLATFORM_EXPORT LsCapMode                GetCapMode ()        const;
 
+    //! Returns the way that the widths of a dash are handled.
+    //! @return  Width mode.
+    //! remarks There is no SetWidthMode method.  Width mode is set via LsCacheStrokePatternComponent::AppendStroke
     DGNPLATFORM_EXPORT WidthMode                GetWidthMode ()     const;
 };
 
@@ -1028,8 +1039,8 @@ public:
 
     size_t          GetStrokeCount          () const {return  m_nStrokes;}
     double          _CalcRepetitions         (LineStyleSymbCP) const;
-    LsStrokeP       InsertStroke            (LsStrokeCR stroke);
-    void            InsertStroke            (double length, bool isDash);
+    LsStrokeP       AppendStroke            (LsStrokeCR stroke);
+    void            AppendStroke            (double length, bool isDash);
     void            DeleteStroke            (size_t index);
     void            GetStroke               (LsStroke* pStroke, size_t index);
     LsStrokeP       GetStrokePtr            (size_t index) {return &m_strokes[index];}
@@ -1076,27 +1087,103 @@ public:
         PHASEMODE_Center    = 2,  //!<    Centered, no phase value
     };
 
+    //! Get the number of strokes in this Stroke Component.
+    //! @return The number of strokes.
     DGNPLATFORM_EXPORT size_t                   GetNumberStrokes    () const;
-    //! Returns a pointer to an embedded LsStroke.
+
+    //! Returns a pointer to an embedded LsStroke.  GetStrokeCP() is preferred in most cases.
+    //! @param[in] index Index of the stroke.
+    //! @return A pointer to the stroke or NULL if the index is out of range.
     DGNPLATFORM_EXPORT LsStrokeP                GetStrokeP          (size_t index);
-    //! Returns a pointer to an embedded LsStroke.
+
+    //! Returns a constant pointer to an embedded LsStroke.
+    //! @param[in] index Index of the stroke.
+    //! @return A pointer to the stroke or NULL if the index is out of range.
     DGNPLATFORM_EXPORT LsStrokeCP               GetStrokeCP         (size_t index) const;
+
+    //! Determine if the Stroke Component has an iteration limit.
+    //! The entire Stroke Pattern will be repeated no more than the limit on an element or segment.
+    //! @return True if there is an iteration limit.
     DGNPLATFORM_EXPORT bool                     HasIterationLimit   () const;
+
+    //! Get the number of iterations for this style.
+    //! The entire Stroke Pattern will be repeated no more than the limit on an element or segment.
+    //! @return The value store in the iteration limit.  This value is NOT used if the HasIterationLimit() flag is not set.
+    //! @see SetIterationMode() SetIterationLimit()
     DGNPLATFORM_EXPORT int                      GetIterationLimit   () const;
+
+    //! Get the phase distance for this Stroke Component.  Phase is the distance in the units of this linestyle
+    //! to skip before starting the pattern.
+    //! @return The phase distance stored in the Stroke Component.  This is only valid if GetPhaseMode() is PHASEMODE_Fixed.
+    //! @see SetDistancePhase()
     DGNPLATFORM_EXPORT double                   GetDistancePhase    () const;
+
+    //! Get the fractional phase distance for this Stroke Component.  Phase is the fraction of the first dash to skip before
+    //! displaying the line style.
+    //! @return The phase distance stored in the Stroke Component.  This is only valid if GetPhaseMode() is PHASEMODE_Fraction.
+    //! @see SetFractionalPhase()
     DGNPLATFORM_EXPORT double                   GetFractionalPhase  () const;
+
+    //! Get the phase for the Stroke Component.  Phase describes how to adjust the pattern before starting.  Often this is used
+    //! to set a fraction of 0.5 causing half the dash to appear at the start.  Used with stretchable gaps and corner mode this
+    //! will avoid linestyles having a gap at a corner.  Centered phasing means that only a whole
+    //! number of patterns are displayed, and then solid leaders are added at the start and end.  This typically looks worse.
+    //! @return The phase distance stored in the Stroke Component.  This is only valid if GetPhaseMode() is PHASEMODE_Fraction.
+    //! @see SetPhaseMode()
     DGNPLATFORM_EXPORT PhaseMode                GetPhaseMode        () const;
+
+    //! Determine if this Stroke Component is set for single-segment.  In this mode it will stop the pattern and restart
+    //! as it goes around corners.  If this is not set then the pattern will continue around corners.
+    //! @return The whether the pattern is in single-segment mode
+    //! @see SetSegmentMode()
     DGNPLATFORM_EXPORT bool                     IsSingleSegment     () const;
-    DGNPLATFORM_EXPORT LsStrokeP                InsertStroke        (double length, double startWidth, double endWidth, LsStroke::WidthMode widthMode, LsStroke::CapMode capMode);
-    //  Iteration information
+
+    //! Add another stroke to the Stroke Pattern.
+    //! @param[in] length Length of the stroke or gap.
+    //! @param[in] startWidth Width at the start of the stroke; use 0 for none.
+    //! @param[in] endWidth Width at the end of the stroke; use 0 for none.
+    //! @param[in] widthMode How to apply the width.
+    //! @param[in] capMode The way that endcaps are handled for the stroke.
+    //! remarks To add a gap you need to call LsStroke::SetIsDash() on the returned stroke.
+    //! @return A pointer to the stroke or NULL if the Stroke Component already contains 32 strokes.
+    DGNPLATFORM_EXPORT LsStrokeP                AppendStroke        (double length, double startWidth, double endWidth, LsStroke::WidthMode widthMode, LsCapMode capMode);
+
+    //! Set whether the pattern will have a set number of iterations.
+    //! @param[in] limited True to limit the number of iterations, false for unlimited.
+    //! @return True if the value was changed, false if limited=true and there is no stretchable gaps or dashes.  In this case the limit will not be set.
+    //! remarks If the iteration limit is zero, this method will set it to one.
+    //! @see GetIterationLimit() SetIterationLimit()
     DGNPLATFORM_EXPORT bool                     SetIterationMode    (bool limited);
-    DGNPLATFORM_EXPORT void                     SetIterationLimit   (int);
-    DGNPLATFORM_EXPORT void                     SetSegmentMode      (bool);
-    //  Phase Mode
-    DGNPLATFORM_EXPORT void                     SetPhaseMode        (int mode);
-    DGNPLATFORM_EXPORT void                     SetDistancePhase    (double);
+
+    //! Set the number of iterations for the pattern.  Calling this method with a non-zero numIterations will also set the iteration mode to limited.
+    //! @param[in] numIterations The number of iterations for this pattern.
+    //! @see GetIterationLimit() SetIterationMode()
+    DGNPLATFORM_EXPORT void                     SetIterationLimit   (int numIterations);
+
+    //! Set the Stroke Component to be single-segment (restart the pattern at corners) or to continue around corners.
+    //! @param[in] isSingleSegment The new value for the segment mode.
+    //! @see IsSingleSegment()
+    DGNPLATFORM_EXPORT void                     SetSegmentMode      (bool isSingleSegment);
+
+    //! Set the Stroke Component phase mode.
+    //! mode[in] mode The new phase mode for this pattern.
+    //! @see GetPhaseMode()
+    DGNPLATFORM_EXPORT void                     SetPhaseMode        (PhaseMode mode);
+
+    //! Set the distance to skip into the pattern before starting to draw.  This value only applies if the phase mode is PHASEMODE_Fixed.
+    //! mode[in] distance The new phase distance for this pattern.
+    //! @see GetDistancePhase()
+    DGNPLATFORM_EXPORT void                     SetDistancePhase    (double distance);
+
+    //! Set phasing to be centered.  This value only applies if the phase mode is PHASEMODE_Center.
+    //! mode[in] distance The new phase distance for this pattern.
+    //! @see GetDistancePhase()
     DGNPLATFORM_EXPORT void                     SetCenterPhaseMode  ();
-    DGNPLATFORM_EXPORT void                     SetFractionalPhase  (double);
+
+    //! Set the fraction of the first stroke to skip into the pattern before starting to draw.  This value only applies if the phase mode is PHASEMODE_Fraction.
+    //! mode[in] fraction The new phase fraction for this pattern.
+    //! @see GetFractionalPhase()
+    DGNPLATFORM_EXPORT void                     SetFractionalPhase  (double fraction);
  };
 
 //=======================================================================================

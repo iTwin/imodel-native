@@ -150,7 +150,7 @@ enum CapOptions
 +---------------+---------------+---------------+---------------+---------------+------*/
                 LsStroke::LsStroke ()
     {                
-    Init (0.0, 0, 0, LCWIDTH_None, LCCAP_Closed); 
+    Init (0.0, 0, 0, LCWIDTH_None, LsCapMode::LCCAP_Closed); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -162,7 +162,7 @@ double          length,
 double          startWidth, 
 double          endWidth, 
 WidthMode       widthMode, 
-CapMode         capMode
+LsCapMode       capMode
 )
     {
     Init (length, startWidth, endWidth, widthMode, capMode);
@@ -173,7 +173,7 @@ CapMode         capMode
 +---------------+---------------+---------------+---------------+---------------+------*/
                 LsStroke::LsStroke (LsStroke const &source)
     {
-    Init (source.m_length, source.m_orgWidth, source.m_endWidth, (WidthMode)source.m_widthMode, (CapMode)source.m_capMode);
+    Init (source.m_length, source.m_orgWidth, source.m_endWidth, (WidthMode)source.m_widthMode, (LsCapMode)source.m_capMode);
     m_strokeMode = source.m_strokeMode;  
     }
 
@@ -1077,7 +1077,7 @@ LsStrokePatternComponent::PhaseMode LsStrokePatternComponent::GetPhaseMode () co
 * @return       false if the mode is invalid
 * @bsimethod                                                    JimBartlett     01/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsStrokePatternComponent::SetPhaseMode (int mode)
+void            LsStrokePatternComponent::SetPhaseMode (LsStrokePatternComponent::PhaseMode mode)
     {
     m_options.phaseMode = mode;
     }
@@ -1293,11 +1293,11 @@ void            LsStrokePatternComponent::SetCosmetic (bool cosmetic)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     12/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsStrokePatternComponent::InsertStroke (double length, bool isDash)
+void            LsStrokePatternComponent::AppendStroke (double length, bool isDash)
     {
     BeAssert (length >= 0.0);
 
-    LsStroke  stroke (length, 0.0, 0.0, LsStroke::LCWIDTH_None, LsStroke::LCCAP_Closed);
+    LsStroke  stroke (length, 0.0, 0.0, LsStroke::LCWIDTH_None, LsCapMode::LCCAP_Closed);
 
     if (isDash)
         {
@@ -1305,7 +1305,7 @@ void            LsStrokePatternComponent::InsertStroke (double length, bool isDa
         stroke.m_widthMode  = LsStroke::LCWIDTH_Full;
         }
 
-    InsertStroke (stroke);
+    AppendStroke (stroke);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1314,7 +1314,7 @@ void            LsStrokePatternComponent::InsertStroke (double length, bool isDa
 * @param        index   Stroke index or -1 to append
 * @bsimethod                                                    JimBartlett     12/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsStrokeP       LsStrokePatternComponent::InsertStroke (LsStrokeCR stroke)
+LsStrokeP       LsStrokePatternComponent::AppendStroke (LsStrokeCR stroke)
     {
     if (m_nStrokes >= 32)
         return NULL;
@@ -1328,10 +1328,10 @@ LsStrokeP       LsStrokePatternComponent::InsertStroke (LsStrokeCR stroke)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     12/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsStrokeP       LsStrokePatternComponent::InsertStroke (double length, double startWidth, double endWidth, LsStroke::WidthMode widthMode, LsStroke::CapMode capMode)
+LsStrokeP       LsStrokePatternComponent::AppendStroke (double length, double startWidth, double endWidth, LsStroke::WidthMode widthMode, LsCapMode capMode)
     {
     LsStroke    stroke (length, startWidth, endWidth, widthMode, capMode);
-    return InsertStroke (stroke);
+    return AppendStroke (stroke);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1845,7 +1845,7 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
         return;
         }
 
-    int     capMode   = pStroke->GetCapMode();
+    int     capMode   = (int)pStroke->GetCapMode();
 
     if (capMode > CAP_Extended)
         capMode = CAP_Arc;

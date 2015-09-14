@@ -134,7 +134,7 @@ BentleyStatus       LsStrokePatternComponent::CreateFromRsrc (V10LineCode const*
     if (pRsc==NULL || pRsc->m_nStrokes <= 0)
         {
         // create a default solid stroke
-        InsertStroke (fc_hugeVal, true);
+        AppendStroke (fc_hugeVal, true);
         }
     else
         {
@@ -149,7 +149,7 @@ BentleyStatus       LsStrokePatternComponent::CreateFromRsrc (V10LineCode const*
         for (;pData < pEnd; pData++, pStroke++)
             {
             pStroke->Init (pData->m_length, pData->m_width, pData->m_endWidth,
-                                (LsStroke::WidthMode)pData->m_widthMode, (LsStroke::CapMode)pData->m_capMode);
+                                (LsStroke::WidthMode)pData->m_widthMode, (LsCapMode)pData->m_capMode);
             pStroke->SetIsDash (pData->m_strokeMode & LCSTROKE_DASH);
             pStroke->SetIsRigid (TO_BOOL (pData->m_strokeMode & LCSTROKE_RAY));
             pStroke->SetIsStretchable (TO_BOOL(pData->m_strokeMode & LCSTROKE_SCALE));
@@ -256,8 +256,8 @@ LsComponentPtr LsStrokePatternComponent::_GetForTextureGeneration() const
     for (size_t i = 0; i < retval->m_nStrokes; ++i)
         {
         LsStroke& stroke(*(retval->m_strokes + i));
-        if (stroke.GetCapMode() != LsStroke::LCCAP_Open)
-            stroke.SetCapMode(LsStroke::LCCAP_Closed);
+        if (stroke.GetCapMode() != LsCapMode::LCCAP_Open)
+            stroke.SetCapMode(LsCapMode::LCCAP_Closed);
 
         stroke.SetIsStretchable(false);
         //  end conditions are not enabled so it should not be necessary to mess with dash-first, etc.
@@ -285,7 +285,7 @@ LsOkayForTextureGeneration LsStrokePatternComponent::_IsOkayForTextureGeneration
         {
         LsStroke const& stroke(*(m_strokes+i));
         
-        if (stroke.IsStretchable() || (stroke.GetCapMode() != LsStroke::LCCAP_Closed && stroke.GetCapMode() != LsStroke::LCCAP_Open))
+        if (stroke.IsStretchable() || (stroke.GetCapMode() != LsCapMode::LCCAP_Closed && stroke.GetCapMode() != LsCapMode::LCCAP_Open))
             UpdateLsOkayForTextureGeneration(result, LsOkayForTextureGeneration::ChangeRequired);
         }
 
