@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRuleSet.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -89,13 +89,13 @@ struct PresentationRuleSet : public RefCountedBase
             );
 
         //! Reads PresentationRuleSet from XmlString.
-        ECOBJECTS_EXPORT static PresentationRuleSetPtr  ReadFromXmlString (WCharCP xmlString);
+        ECOBJECTS_EXPORT static PresentationRuleSetPtr  ReadFromXmlString (Utf8CP xmlString);
 
         //! Reads PresentationRuleSet from XmlFile.
         ECOBJECTS_EXPORT static PresentationRuleSetPtr  ReadFromXmlFile (WCharCP xmlFilePath);
 
         //! Writes PresentationRuleSet to XmlString.
-        ECOBJECTS_EXPORT WString                        WriteToXmlString ();
+        ECOBJECTS_EXPORT Utf8String                     WriteToXmlString ();
 
         //! Writes PresentationRuleSet to XmlFile.
         ECOBJECTS_EXPORT bool                           WriteToXmlFile (WCharCP xmlFilePath);

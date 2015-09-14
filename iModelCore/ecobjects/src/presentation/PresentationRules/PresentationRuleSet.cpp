@@ -190,13 +190,13 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (WCharCP xmlString)
+PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (Utf8CP xmlString)
     {
     LOG.debugv (L"About to read PrsentationRuleSet from string.");
 
     BeXmlStatus xmlStatus;
-    size_t stringSize = wcslen (xmlString) * sizeof(WChar);
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString, stringSize / sizeof (WChar));
+    size_t stringSize = strlen (xmlString) * sizeof(char);
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString, stringSize / sizeof (char));
     
     if (BEXML_Success != xmlStatus)
         {
@@ -238,12 +238,12 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (WCharCP xmlFilePath
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString PresentationRuleSet::WriteToXmlString ()
+Utf8String PresentationRuleSet::WriteToXmlString ()
     {
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty ();        
     WriteXml (*xmlDom.get());
 
-    WString presentationRuleSetXml = L"";
+    Utf8String presentationRuleSetXml;
     xmlDom->ToString (presentationRuleSetXml, BeXmlDom::TO_STRING_OPTION_Default);
 
     return presentationRuleSetXml;

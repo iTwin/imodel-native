@@ -2,7 +2,7 @@
 |
 |     $Source: tests/NonPublished/PresentationRulesTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -143,33 +143,33 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetCreation)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PresentationRulesTests, TestPresentationRuleSetLoadingFromXml)
     {
-    WCharP ruleSetXmlString = L"<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                              L"  <PresentationRuleSet"
-                              L"    RuleSetId=\"Items\""
-                              L"    VersionMajor=\"5\""
-                              L"    VersionMinor=\"3\""
-                              L"    SupportedSchemas=\"E:DgnFileSchema,DgnModelSchema,BaseElementSchema\""
-                              L"    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                              L"    xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\">"
-                              L"    <RootNodeRule>"
-                              L"      <AllInstances GroupByClass='true' GroupByLabel='true' />"
-                              L"    </RootNodeRule>"
-                              L"    <RootNodeRule Condition='TestCondition' Priority='12' OnlyIfNotHandled='true'>"
-                              L"      <AllInstances GroupByClass='true' GroupByLabel='true' />"
-                              L"    </RootNodeRule>"
-                              L"    <ChildNodeRule>"
-                              L"      <AllRelatedInstances GroupByClass='true' GroupByLabel='true' />"
-                              L"    </ChildNodeRule>"
-                              L"    <ChildNodeRule Condition='ParentNode.IsSearchNode' Priority='58' OnlyIfNotHandled='true'>"
-                              L"      <SearchResultInstances GroupByClass='true' GroupByLabel='true' />"
-                              L"    </ChildNodeRule>"
-                              L"    <ContentRule>"
-                              L"    </ContentRule>"
-                              L"    <ContentRule Condition='ParentNode.IsClassNode' Priority='97' OnlyIfNotHandled='true'>"
-                              L"    </ContentRule>"
-                              L"    <ImageIdOverride ImageId='NewImageId1'/>"
-                              L"    <ImageIdOverride Condition='ParentNode.IsClassGroupingNode' ImageId='NewImageId2' Priority='0'/>"
-                              L"  </PresentationRuleSet>";
+    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                              "  <PresentationRuleSet"
+                              "    RuleSetId=\"Items\""
+                              "    VersionMajor=\"5\""
+                              "    VersionMinor=\"3\""
+                              "    SupportedSchemas=\"E:DgnFileSchema,DgnModelSchema,BaseElementSchema\""
+                              "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
+                              "    xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\">"
+                              "    <RootNodeRule>"
+                              "      <AllInstances GroupByClass='true' GroupByLabel='true' />"
+                              "    </RootNodeRule>"
+                              "    <RootNodeRule Condition='TestCondition' Priority='12' OnlyIfNotHandled='true'>"
+                              "      <AllInstances GroupByClass='true' GroupByLabel='true' />"
+                              "    </RootNodeRule>"
+                              "    <ChildNodeRule>"
+                              "      <AllRelatedInstances GroupByClass='true' GroupByLabel='true' />"
+                              "    </ChildNodeRule>"
+                              "    <ChildNodeRule Condition='ParentNode.IsSearchNode' Priority='58' OnlyIfNotHandled='true'>"
+                              "      <SearchResultInstances GroupByClass='true' GroupByLabel='true' />"
+                              "    </ChildNodeRule>"
+                              "    <ContentRule>"
+                              "    </ContentRule>"
+                              "    <ContentRule Condition='ParentNode.IsClassNode' Priority='97' OnlyIfNotHandled='true'>"
+                              "    </ContentRule>"
+                              "    <ImageIdOverride ImageId='NewImageId1'/>"
+                              "    <ImageIdOverride Condition='ParentNode.IsClassGroupingNode' ImageId='NewImageId2' Priority='0'/>"
+                              "  </PresentationRuleSet>";
 
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromXmlString (ruleSetXmlString);
     
@@ -261,7 +261,7 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetSavingToXml)
     ruleSet->GetGroupingRules ().push_back (groupingRule);
 
     //Serialize RuleSet to string and deserialize from the same string.
-    WString serializedRuleSet = ruleSet->WriteToXmlString ();
+    Utf8String serializedRuleSet = ruleSet->WriteToXmlString ();
     PresentationRuleSetPtr loadedRuleSet = PresentationRuleSet::ReadFromXmlString (serializedRuleSet.c_str ());
 
     //Compare two PresentationRuleSets to check whether it serialized and loaded corectly.
