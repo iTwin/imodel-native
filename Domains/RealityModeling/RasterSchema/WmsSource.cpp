@@ -147,7 +147,7 @@ struct WmsTileDataPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         return SUCCESS;
         }
     };
-BeAtomic<bool> WmsTileDataPrepareAndCleanupHandler::s_isPrepared;
+BeAtomic<bool> WmsTileDataPrepareAndCleanupHandler::s_isPrepared = false;
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
@@ -460,7 +460,7 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
     //     Maybe one table per server?  and use TileId or hash the url ?
     //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
     RefCountedPtr<WmsTileData> pWmsTileData;
-    if(RealityDataCacheResult::Success == T_HOST.GetRealityDataAdmin().GetCache().Get<WmsTileData>(pWmsTileData, tileUrl.c_str(), *pOptions))
+    if(RealityDataCacheResult::Success != T_HOST.GetRealityDataAdmin().GetCache().Get<WmsTileData>(pWmsTileData, tileUrl.c_str(), *pOptions))
         return NULL;
 
     BeAssert(pWmsTileData.IsValid());
