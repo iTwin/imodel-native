@@ -1582,7 +1582,7 @@ RealityDataCache& DgnPlatformLib::Host::RealityDataAdmin::GetCache()
     {
     if (m_cache.IsNull())
         {
-        m_cache = RealityDataCache::Create();
+        m_cache = RealityDataCache::Create(100);
 
         m_cache->RegisterSource(*HttpRealityDataSource::Create(8));
 

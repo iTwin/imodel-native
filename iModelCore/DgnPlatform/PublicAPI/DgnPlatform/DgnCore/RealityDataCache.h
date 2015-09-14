@@ -374,7 +374,7 @@ struct IRealityDataStoragePersistHandler : RefCountedBase
 //! interface instead of this one.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct IRealityDataStorageBase : RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE IRealityDataStorageBase : RefCountedBase
 {
     friend struct RealityDataCache;
     
@@ -513,7 +513,7 @@ struct IRealityDataSourceRequestHandler : RefCountedBase
 //! interface instead of this one.
 // @bsiclass                                        Grigas.Petraitis            10/2014
 //=======================================================================================
-struct IRealityDataSourceBase : RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE IRealityDataSourceBase : RefCountedBase
 {   
     friend struct RealityDataCache;
     friend struct CombinedRealityDataSourceBase;
@@ -653,7 +653,7 @@ struct CombinedRealityDataSource : CombinedRealityDataSourceBase
 private:
     CombinedRealityDataSource() {}
     template<class Source> void RegisterSources(Source* source) {RegisterSource(*source);}
-    template<class Source, class... Sources> void RegisterSources(Source* source, Sources*... sources)
+    template<class Source> void RegisterSources(Source* source, Sources*... sources)
         {
         if (nullptr != source)
             {

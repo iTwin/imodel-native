@@ -1182,7 +1182,7 @@ IProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR conte
         ImageUtilities::RgbImageInfo expectedImageInfo;
         CreateUrl (url, expectedImageInfo, tileid);
         RefCountedPtr<TiledRaster> realityData;
-        if (RealityDataCacheResult::Success == T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(realityData, url.c_str(), *TiledRaster::RequestOptions::Create(expectedImageInfo, true)))
+        if (RealityDataCacheResult::Success == T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(realityData, url.c_str(), *TiledRaster::RequestOptions::Create(expectedImageInfo)))
             {
             BeAssert(realityData.IsValid());
             //  The image is available from the cache. Great! Draw it.
@@ -1210,13 +1210,11 @@ IProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR conte
 
         // See if the image has arrived in the cache.
         RefCountedPtr<TiledRaster> realityData;
-        T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(realityData, url.c_str(), *TiledRaster::RequestOptions::Create(true));
-
-        if (context.CheckStop())
-            return Completion::Aborted;
-
-        if (realityData.IsValid())
+        if (RealityDataCacheResult::Success == T_HOST.GetRealityDataAdmin().GetCache().Get<TiledRaster>(realityData, url.c_str(), *TiledRaster::RequestOptions::Create()))
             {
+            if (context.CheckStop())
+                return Completion::Aborted;
+
             //  Yes, we now have the image. Draw it and remove it from the list of missing tiles.
             m_helper.DrawAndCacheTile (context, tileid, url, *realityData);
             iMissing = m_missingTilesPending.erase (iMissing); 
@@ -1645,7 +1643,7 @@ struct TiledRasterPrepareAndCleanupHandler : BeSQLiteRealityDataStorage::Databas
         return SUCCESS;
         }
     };
-BeAtomic<bool> TiledRasterPrepareAndCleanupHandler::s_isPrepared = false;
+BeAtomic<bool> TiledRasterPrepareAndCleanupHandler::s_isPrepared;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               03/2015
@@ -1677,6 +1675,12 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
     BeAssert(nullptr != dynamic_cast<RequestOptions const*>(&requestOptions));
     RequestOptions const& options = static_cast<RequestOptions const&>(requestOptions);
     
+    if (nullptr == options.GetExpectedImageInfo())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     m_url.AssignOrClear(url);
     m_creationDate = DateTime::GetCurrentTime();
 
@@ -1685,7 +1689,6 @@ BentleyStatus TiledRaster::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
         return ERROR;
 
     m_contentType = contentTypeIter->second.c_str();
-    BeAssert(nullptr != options.GetExpectedImageInfo());
     m_rasterInfo = *options.GetExpectedImageInfo();
     m_data = body;
 

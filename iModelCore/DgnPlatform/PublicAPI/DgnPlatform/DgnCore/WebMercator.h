@@ -119,12 +119,12 @@ struct TiledRaster : IRealityData<TiledRaster, BeSQLiteRealityDataStorage, HttpR
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
     private:
         ImageUtilities::RgbImageInfo const* m_expectedImageInfo;
-        RequestOptions(bool allowExpired) : m_expectedImageInfo(nullptr), RealityDataCacheOptions(allowExpired, false) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
-        RequestOptions(ImageUtilities::RgbImageInfo const& expectedImageInfo, bool allowExpired) : m_expectedImageInfo(new ImageUtilities::RgbImageInfo(expectedImageInfo)), RealityDataCacheOptions(allowExpired, true) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
+        RequestOptions() : m_expectedImageInfo(nullptr), RealityDataCacheOptions(false, false) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
+        RequestOptions(ImageUtilities::RgbImageInfo const& expectedImageInfo) : m_expectedImageInfo(new ImageUtilities::RgbImageInfo(expectedImageInfo)), RealityDataCacheOptions(true, true) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
     public:
         ~RequestOptions() {DELETE_AND_CLEAR(m_expectedImageInfo);}
-        static RefCountedPtr<RequestOptions> Create(bool allowExpired = true) {return new RequestOptions(allowExpired);}
-        static RefCountedPtr<RequestOptions> Create(ImageUtilities::RgbImageInfo const& expectedImageInfo, bool allowExpired = true) {return new RequestOptions(expectedImageInfo, allowExpired);}
+        static RefCountedPtr<RequestOptions> Create() {return new RequestOptions();}
+        static RefCountedPtr<RequestOptions> Create(ImageUtilities::RgbImageInfo const& expectedImageInfo) {return new RequestOptions(expectedImageInfo);}
         ImageUtilities::RgbImageInfo const* GetExpectedImageInfo() const {return m_expectedImageInfo;}
     };
 

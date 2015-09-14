@@ -123,7 +123,7 @@ HttpRequestStatus HttpHandler::Request(HttpResponsePtr& response, HttpRequest co
 
     bmap<Utf8String, Utf8String> responseHeader;
     bvector<Byte> responseBody;
-    curl_easy_setopt(curl.Get(), CURLOPT_URL, request.GetUrl());
+    curl_easy_setopt(curl.Get(), CURLOPT_URL, request.GetUrl().c_str());
     curl_easy_setopt(curl.Get(), CURLOPT_WRITEFUNCTION, &HttpHandler::HttpBodyParser);
     curl_easy_setopt(curl.Get(), CURLOPT_WRITEDATA, &responseBody);
     curl_easy_setopt(curl.Get(), CURLOPT_HEADERFUNCTION, &HttpHandler::HttpHeaderParser);
