@@ -36,49 +36,46 @@
   <ItemGroup>
     <Reference Include="Bentley.EC.AbstractUI3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>External\Assemblies\Bentley.EC.AbstractUI3.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.EC.AbstractUI3\Bentley.EC.AbstractUI3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.EC.Persistence3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>External\Assemblies\Bentley.EC.Persistence3.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.EC.Persistence3\Bentley.EC.Persistence3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.EC.PluginBuilder3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>External\Assemblies\Bentley.EC.PluginBuilder3.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.EC.PluginBuilder3\Bentley.EC.PluginBuilder3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.EC.Presentation3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>External\Assemblies\Bentley.EC.Presentation3.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.EC.Presentation3\Bentley.EC.Presentation3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.ECObjects3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>External\Assemblies\Bentley.ECObjects3.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.ECObjects3\Bentley.ECObjects3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.ECSystem3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>External\Assemblies\Bentley.ECSystem3.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.ECSystem3\Bentley.ECSystem3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.Exceptions, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>External\Assemblies\Bentley.Exceptions.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\build\PlatformTech\Bentley.Exceptions\Bentley.Exceptions.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.General.1.0, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>External\Assemblies\Bentley.General.1.0.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\build\PlatformTech\Bentley.General\Bentley.General.1.0.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.logging-2.0, Version=2.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>External\Assemblies\Bentley.logging-2.0.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\build\LoggingSdk\Bentley.logging-2.0\Bentley.logging-2.0.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.Platform, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>External\Assemblies\Bentley.Platform.dll</HintPath>
+      <HintPath>..\..\..\out\Winx64\build\PlatformTech\Bentley.Platform\Bentley.Platform.dll</HintPath>
     </Reference>
-    <Reference Include="EntityFramework">
-      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
-    </Reference>
-    <Reference Include="EntityFramework.SqlServer">
-      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    <Reference Include="BentleyWMSPackageNet">
+      <HintPath>..\..\..\out\Winx64\build\RealityModFramework\BentleyWMSPackageNet\BentleyWMSPackageNet.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -104,7 +101,9 @@
     <Compile Include="Source\Helpers\DBGeometryHelpers.cs" />
     <Compile Include="Source\Helpers\ECToSQLMap.cs" />
     <Compile Include="Source\Helpers\SchemaHelper.cs" />
+    <Compile Include="Source\IndexConstants.cs" />
     <Compile Include="Source\IndexPolicyHandler.cs" />
+    <Compile Include="Source\JTokenExtension.cs" />
     <Compile Include="Source\QueryProviders\SqlQueryProvider.cs" />
     <Compile Include="Source\Helpers\TableDescriptor.cs" />
     <Compile Include="Source\IndexECPlugin.cs" />
@@ -142,12 +141,6 @@
     <Content Include="External\ECSchemaStubv3.xml">
       <SubType>Designer</SubType>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\BentleyWMSPackageNet\BentleyWMSPackageNet.vcxproj">
-      <Project>{9c073450-904c-4260-91d8-0b0c0158c865}</Project>
-      <Name>BentleyWMSPackageNet</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

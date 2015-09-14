@@ -29,17 +29,11 @@ using IndexECPlugin.Source.QueryProviders;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Data.SqlClient;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Net;
 using System.Runtime.InteropServices;
-using System.Security.Principal;
-using System.Text;
 using System.Xml;
 
 namespace Bentley.ECPluginExamples
@@ -446,7 +440,14 @@ namespace Bentley.ECPluginExamples
 
             //TODO: Implement a package creation procedure that isn't hard coded for a particular schema... Probably impossible.
             
-            string coordinateSystem = instance.GetPropertyValue("CoordinateSystem").StringValue;
+            string coordinateSystem = null;
+
+            var csPropValue = instance.GetPropertyValue("CoordinateSystem");
+
+            if ((csPropValue != null) && (!csPropValue.IsNull))
+            {
+                coordinateSystem = instance.GetPropertyValue("CoordinateSystem").StringValue;
+            }
 
             IECArrayValue requestedEntitiesECArray = instance.GetPropertyValue("RequestedEntities") as IECArrayValue;
             if(requestedEntitiesECArray == null)
@@ -455,13 +456,112 @@ namespace Bentley.ECPluginExamples
             }
 
             //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
-            List<RequestedEntity> requestedEntities = new List<RequestedEntity>();
+            List<RequestedEntity> dbRequestedEntities = new List<RequestedEntity>();
+            List<RequestedEntity> usgsRequestedEntities = new List<RequestedEntity>();
             for(int i = 0; i < requestedEntitiesECArray.Count; i++)
             {
-                requestedEntities.Add(ECStructToRequestedEntity(requestedEntitiesECArray[i] as IECStructValue));
+
+                var requestedEntity = ECStructToRequestedEntity(requestedEntitiesECArray[i] as IECStructValue);
+
+                if (requestedEntity.ID.Length != IndexConstants.USGSIdLenght)
+                {
+                    dbRequestedEntities.Add(requestedEntity);
+                }
+                else
+                {
+                    usgsRequestedEntities.Add(requestedEntity);
+                }
             }
+
+            List<WmsMapInfoNet> wmsMapInfoList = IndexPackager(sender, connection, queryModule, coordinateSystem, dbRequestedEntities);
+
+            List<UsgsSourceNet> usgsSourceList = UsgsPackager(sender, connection, queryModule, usgsRequestedEntities);
+
+            // Create package bounding box (region of interest).
+            List<double> selectedRegion = new List<double>();
+
+            string selectedRegionStr = instance.GetPropertyValue("Polygon").StringValue;
+
+            selectedRegion = selectedRegionStr.Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries).Select(str => Convert.ToDouble(str)).ToList();
+
+            // Create package.
+            string name = Guid.NewGuid().ToString();
+            try
+            {
+                RealityDataPackageNet.Create (m_packagesLocation, name, selectedRegion, wmsMapInfoList, usgsSourceList);
+            }
+            catch (Exception e)
+            {
+                throw new UserFriendlyException("There was a problem with the processing of the order.", e);
+            }
+            instance.InstanceId = name + ".xrdp";
+        }
+
+        private List<UsgsSourceNet> UsgsPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
+        {
+            List<UsgsSourceNet> usgsSourceNetList = new List<UsgsSourceNet>();
+
+            if(usgsRequestedEntities.Count == 0)
+            {
+                return usgsSourceNetList;
+            }
+
+            IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
+            IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
+
+            ECQuery query = new ECQuery(dataSourceClass);
+            query.SelectClause.SelectAllProperties = false;
+            query.SelectClause.SelectedProperties = new List<IECProperty>();
+            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "Metadata"));
+            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "MainURL"));
+            query.SelectClause.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
+
+            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
+
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+
+            var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
+
+            query = new ECQuery(metadataClass);
+            query.SelectClause.SelectAllProperties = false;
+            query.SelectClause.SelectedProperties = new List<IECProperty>();
+            query.SelectClause.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
+
+            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
+
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
+
+            var queriedMetadatas = ExecuteQuery(queryModule, connection, query, null);
+
+            foreach(var entity in queriedSpatialEntities)
+            {
+                string metadata = entity.GetPropertyValue("Metadata").StringValue;
+                string url = entity.GetPropertyValue("MainURL").StringValue;
+                string type = entity.GetPropertyValue("DataSourceType").StringValue;
+                string copyright = queriedMetadatas.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Legal").StringValue;
+
+                usgsSourceNetList.Add(UsgsSourceNet.Create(copyright, url, type, "", new List<string>(), metadata));
+            }
+
+            return usgsSourceNetList;
+        }
+
+        private List<WmsMapInfoNet> IndexPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, string coordinateSystem, List<RequestedEntity> dbRequestedEntities)
+        {
+            List<WmsMapInfoNet> wmsMapInfoList = new List<WmsMapInfoNet>();
+
+            if(dbRequestedEntities.Count == 0)
+            {
+                return wmsMapInfoList;
+            }
+
+            if(coordinateSystem == null)
+            {
+                throw new Bentley.Exceptions.InvalidInputException("Please enter a coordinate system when requesting this type of data.");
+            }
+
             IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
-            
+
             IECRelationshipClass dataSourceRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToSpatialDataSource") as IECRelationshipClass;
             IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
             RelatedInstanceSelectCriteria dataSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, dataSourceClass), true);
@@ -475,9 +575,11 @@ namespace Bentley.ECPluginExamples
             query.SelectClause.SelectedProperties = new List<IECProperty>();
             query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Id"));
             query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Footprint"));
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(requestedEntities.Select(e => e.ID.ToString()).ToArray()));
+            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(dbRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
             query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
             //query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
+
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
             var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
 
@@ -492,7 +594,7 @@ namespace Bentley.ECPluginExamples
                 //query.SelectClause.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
                 //query.WhereClause = new WhereCriteria(new RelatedCriterion();
 
-                int entityId = spatialEntity.GetPropertyValue("Id").IntValue;
+                string entityId = spatialEntity.GetPropertyValue("Id").StringValue;
 
                 IECRelationshipInstance firstRel = spatialEntity.GetRelationshipInstances().First();
                 IECInstance firstSpatialDataSource = firstRel.Target;
@@ -506,6 +608,8 @@ namespace Bentley.ECPluginExamples
                 query.SelectClause.SelectedProperties = new List<IECProperty>();
                 query.SelectClause.SelectedProperties.Add(wmsSourceClass.First(prop => prop.Name == "Layers"));
                 query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(firstSpatialDataSource.InstanceId));
+
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
                 var queriedWMSSourceClass = ExecuteQuery(queryModule, connection, query, null);
 
@@ -523,6 +627,8 @@ namespace Bentley.ECPluginExamples
                 query.SelectClause.SelectedProperties = new List<IECProperty>();
                 query.WhereClause = new WhereCriteria(new RelatedCriterion(new QueryRelatedClassSpecifier(ServerRelClass, RelatedInstanceDirection.Forward, dataSourceClass), new WhereCriteria(new ECInstanceIdExpression(firstSpatialDataSource.InstanceId))));
 
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
+
                 var queriedServer = ExecuteQuery(queryModule, connection, query, null);
 
                 //**************************************************************
@@ -534,22 +640,25 @@ namespace Bentley.ECPluginExamples
                 query = new ECQuery(wmsServerClass);
                 query.SelectClause.SelectAllProperties = false;
                 query.SelectClause.SelectedProperties = new List<IECProperty>();
+                query.SelectClause.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "Legal"));
                 query.SelectClause.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "GetMapURL"));
                 query.SelectClause.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "GetMapURLQuery"));
                 query.SelectClause.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "Version"));
                 query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(queriedServer.First().InstanceId));
 
+                query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
+
                 var queriedWMSServer = ExecuteQuery(queryModule, connection, query, null);
 
                 PolygonModel model;
                 try
-                    {
+                {
                     model = JsonConvert.DeserializeObject<PolygonModel>(polygonString);
-                    }
+                }
                 catch (JsonSerializationException)
-                    {
+                {
                     throw new UserFriendlyException("The polygon format is not valid.");
-                    }
+                }
 
                 MapInfo info = new MapInfo
                 {
@@ -558,146 +667,26 @@ namespace Bentley.ECPluginExamples
                     Version = queriedWMSServer.First().GetPropertyValue("Version").StringValue,
                     Layers = queriedWMSSourceClass.First().GetPropertyValue("Layers").StringValue,
                     CoordinateSystem = coordinateSystem,
-                    SelectedStyle = requestedEntities.First(e => e.ID == entityId).SelectedStyle,
-                    SelectedFormat = requestedEntities.First(e => e.ID == entityId).SelectedFormat,
-                    Legal = requestedEntities.First(e => e.ID == entityId).Legal,
+                    SelectedStyle = dbRequestedEntities.First(e => e.ID == entityId).SelectedStyle,
+                    SelectedFormat = dbRequestedEntities.First(e => e.ID == entityId).SelectedFormat,
+                    Legal = queriedWMSServer.First().GetPropertyValue("Legal").StringValue,
                     Footprint = model.points
                 };
 
                 mapInfoList.Add(info);
             }
 
-
-            //bool continueQueries = true;
-            //bool firstTime = true;
-
-            //List<RequestedEntity> oldParentList = null;
-
-            //while (continueQueries)
-            //{
-            //    continueQueries = false;
-            //    var queriedSpatialEntities = ExecuteQuery(null, connection, query, null);
-
-
-            //    List<RequestedEntity> newParentList = new List<RequestedEntity>();
-
-            //    foreach (var queriedInstance in queriedSpatialEntities)
-            //    {
-            //        RequestedEntity queriedEntity;
-            //        if (firstTime)
-            //        {
-            //            //We have to get the infos given in the request
-            //            queriedEntity = requestedEntities.First(e => e.ID == queriedInstance.GetPropertyValue("ID").IntValue);
-            //        }
-            //        else
-            //        {
-            //            //We have to copy the infos (except the ID) from the parent
-            //            queriedEntity = new RequestedEntity();
-            //            queriedEntity.ID = queriedInstance.GetPropertyValue("ID").IntValue;
-            //            var parentEntity = oldParentList.First(e => e.ID == queriedInstance.GetPropertyValue("ParentGroupId").IntValue);
-
-            //            queriedEntity.SelectedFormat = parentEntity.SelectedFormat;
-            //            queriedEntity.SelectedStyle = parentEntity.SelectedStyle;
-            //        }
-
-            //        if(queriedInstance.GetAsString("IsGroup").ToLower() == "false")
-            //        {   
-            //            bentleyFileInfoList.Add(queriedEntity);
-            //        }
-            //        else
-            //        {
-            //            //There are parents in the IDs that were given. We will need to get all the children of these.
-            //            newParentList.Add(queriedEntity);
-            //            continueQueries = true;
-            //        }
-            //    }
-
-            //    if(continueQueries)
-            //    {
-            //        query = new ECQuery(spatialEntityClass);
-            //        query.SelectClause.SelectAllProperties = false;
-            //        query.SelectClause.SelectedProperties = new List<IECProperty>();
-            //        query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "IsGroup"));
-            //        query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "ID"));
-            //        query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "ParentGroupId"));
-            //        query.WhereClause = new WhereCriteria();
-            //        for(int i = 0; i < newParentList.Count; i++)
-            //        {
-            //            query.WhereClause.Add(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.First(prop => prop.Name == "ParentGroupId"), newParentList[i].ID));
-            //            if(i > 0)
-            //            {
-            //                query.WhereClause.SetLogicalOperatorBefore(i, LogicalOperator.OR);
-            //            }
-            //        }
-            //    }
-            //    oldParentList = newParentList;
-            //    firstTime = false;
-            //}
-
-            //if(bentleyFileInfoList.Count == 0)
-            //{
-            //    throw new UserFriendlyException("The package requested is empty. The request was aborted");
-            //}
-
-            //IECClass bentleyFileInfoClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "BentleyFileInfo");
-            ////Now, we have all the IDs of the bentleyFileInfos. We can query the locations from these and create the archive
-            //query = new ECQuery(bentleyFileInfoClass);
-            //query.SelectClause.SelectAllProperties = false;
-            //query.SelectClause.SelectedProperties = new List<IECProperty>();
-            //query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "SpatialEntityId"));
-            //query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "URL"));
-            //query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "Version"));
-            //query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "Layers"));
-            //query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "Footprint"));
-            //query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(bentleyFileInfoList.Select(e => e.ID.ToString()).ToArray()));
-
-
-
-            //var queriedBentleyFileInfos = ExecuteQuery(null, connection, query, null);
-
-            //List<MapInfo> mapInfoList = new List<MapInfo>();
-
-            //string polygonString;
-            //foreach (var queriedBentleyFileInfo in queriedBentleyFileInfos)
-            //{
-            //    int entityId = queriedBentleyFileInfo.GetPropertyValue("SpatialEntityId").IntValue;
-
-            //    polygonString = queriedBentleyFileInfo.GetPropertyValue("Footprint").StringValue;
-            //    PolygonModel model;
-            //    try
-            //        {
-            //        model = JsonConvert.DeserializeObject<PolygonModel>(polygonString);
-            //        }
-            //    catch (JsonSerializationException)
-            //        {
-            //        throw new UserFriendlyException("The polygon format is not valid.");
-            //        }
-
-            //    MapInfo info = new MapInfo
-            //    {
-            //        GetMapURL = queriedBentleyFileInfo.GetPropertyValue("URL").StringValue,
-            //        Version = queriedBentleyFileInfo.GetPropertyValue("Version").StringValue,
-            //        Layers = queriedBentleyFileInfo.GetPropertyValue("Layers").StringValue,
-            //        CoordinateSystem = coordinateSystem,
-            //        SelectedStyle = bentleyFileInfoList.First(e => e.ID == entityId).SelectedStyle,
-            //        SelectedFormat = bentleyFileInfoList.First(e => e.ID == entityId).SelectedFormat,
-            //        Footprint = model.points
-            //    };
-
-            //    mapInfoList.Add(info);
-            //}
-
             // Create WmsSource.
-            List<WmsMapInfoNet> wmsMapInfoList = new List<WmsMapInfoNet> ();
-            foreach(var mapInfo in mapInfoList)
-                {
+            
+            foreach (var mapInfo in mapInfoList)
+            {
                 // Extract min/max values for bbox.
-                IEnumerator<double[]> pointsIt = mapInfo.Footprint.GetEnumerator ();
+                IEnumerator<double[]> pointsIt = mapInfo.Footprint.GetEnumerator();
                 double minX = 90.0; double maxX = -90.0;
                 double minY = 180.0; double maxY = -180.0;
                 double temp = 0.0;
                 while (pointsIt.MoveNext())
-                    {
+                {
                     //x
                     temp = pointsIt.Current[0];
                     if (minX > temp)
@@ -711,22 +700,22 @@ namespace Bentley.ECPluginExamples
                         minY = temp;
                     if (maxY < temp)
                         maxY = temp;
-                    }
+                }
 
                 //&&JFC Workaround for the moment (until we add a csType column in the database). 
                 // We suppose CRS for version 1.3, SRS for 1.1.1 and below.
                 string csType = "CRS";
-                if ( !mapInfo.Version.Equals ("1.3.0") )
+                if (!mapInfo.Version.Equals("1.3.0"))
                     csType = "SRS";
 
                 // We need to remove extra characters at the end of the vendor specific since 
                 // this part is at the end of the GetMap query that will be created later.
                 string vendorSpecific = mapInfo.GetMapURLQuery;
-                if ( vendorSpecific.EndsWith ("&") )
-                    vendorSpecific = vendorSpecific.TrimEnd ('&');
+                if (vendorSpecific.EndsWith("&"))
+                    vendorSpecific = vendorSpecific.TrimEnd('&');
 
                 wmsMapInfoList.Add(WmsMapInfoNet.Create(mapInfo.Legal,                      // Copyright
-                                                        mapInfo.GetMapURL.TrimEnd ('?'),    // Url
+                                                        mapInfo.GetMapURL.TrimEnd('?'),    // Url
                                                         minX, minY, maxX, maxY,             // Bbox min/max values
                                                         mapInfo.Version,                    // Version
                                                         mapInfo.Layers,                     // Layers (comma-separated list)
@@ -737,27 +726,9 @@ namespace Bentley.ECPluginExamples
                                                         mapInfo.SelectedFormat,             // Format
                                                         vendorSpecific,                     // Vendor Specific
                                                         true));                             // Transparency
-                }
-
-            // Create package bounding box (region of interest).
-            List<double> selectedRegion = new List<double>();
-
-            string selectedRegionStr = instance.GetPropertyValue("Polygon").StringValue;
-
-            selectedRegion = selectedRegionStr.Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries).Select(str => Convert.ToDouble(str)).ToList();
-
-            // Create package.
-            string name = Guid.NewGuid().ToString();
-            try
-            {
-                RealityDataPackageNet.Create (m_packagesLocation, name, selectedRegion, wmsMapInfoList, null);
 
             }
-            catch (Exception e)
-            {
-                throw new UserFriendlyException("There was a problem with the processing of the order.", e);
-            }
-            instance.InstanceId = name + ".xrdp";
+            return wmsMapInfoList;
         }
 
         private RequestedEntity ECStructToRequestedEntity(IECStructValue structValue)
@@ -769,10 +740,9 @@ namespace Bentley.ECPluginExamples
 
             return new RequestedEntity
             {
-                ID = structValue.GetPropertyValue("ID").IntValue,
+                ID = structValue.GetPropertyValue("ID").StringValue,
                 SelectedFormat = structValue.GetPropertyValue("SelectedFormat").StringValue,
                 SelectedStyle = structValue.GetPropertyValue("SelectedStyle").StringValue,
-                Legal = structValue.GetPropertyValue("Legal").StringValue
             };
 
         }
@@ -815,10 +785,10 @@ namespace Bentley.ECPluginExamples
                                                                 bool includeValues,
                                                                 IExtendedParameters extendedParameters)
         {
-            Console.WriteLine("Entering GetConnectionFormat");
+            //Console.WriteLine("Entering GetConnectionFormat");
             return new List<ConnectionFormatFieldInfo>
                 {
-                //new ConnectionFormatFieldInfo() {ID = "User", DisplayName = "User", IsRequired = true },    
+                new ConnectionFormatFieldInfo() {ID = "username", DisplayName = "username", IsRequired = true },    
                 //new ConnectionFormatFieldInfo() {ID = "Password", DisplayName = "Password", IsRequired = true, Masked = true },
             //    //new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.DomainsKey, DisplayName = "Domain", IsRequired = false, IsAdvanced = true }, unused
             //    new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.DefaultScopeKey, DisplayName = "DefaultScope", IsRequired = false, IsAdvanced = false },
@@ -832,12 +802,19 @@ namespace Bentley.ECPluginExamples
                                     RepositoryConnection connection,
                                     IExtendedParameters extendedParameters)
         {
-            Console.WriteLine("Entering OpenConnection");
+            //Console.WriteLine("Entering OpenConnection");
             //Here, we could use the connectionInfo to open a connection
             //Example :
             //string username = connection.ConnectionInfo.GetField("User").Value;
             //string password = connection.ConnectionInfo.GetField("Password").Value;
             //... Whatever you need to do with username and password ...
+
+            string username = connection.ConnectionInfo.GetField("username").Value;
+
+            if (username != "Test")
+            {
+                throw new Bentley.ECSystem.Repository.AccessDeniedException("Invalid username");
+            }
             
         }
 
@@ -845,7 +822,7 @@ namespace Bentley.ECPluginExamples
                                      RepositoryConnection connection,
                                      IExtendedParameters extendedParameters)
         {
-            Console.WriteLine("Entering CloseConnection");
+            //Console.WriteLine("Entering CloseConnection");
         }
 
     }

@@ -167,6 +167,8 @@
         </ECProperty>
         
         <ECProperty propertyName="ParentDatasetIdStr" typeName="string" />
+        
+        <ECProperty propertyName="Classification" typeName="int" />
     </ECClass>
     
     <ECClass typeName="SpatialEntity" isDomainClass="true" baseClass="SpatialEntityBase">
@@ -452,6 +454,9 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <!--This property follows this format : FileExample1.abc|FileExample2.def|...
+        The pipe character is used as a delimiter between each file name, since many characters are valid characters for file names. 
+        For the same reason, do not include superfluous white spaces between each file.-->
         <ECProperty propertyName="SisterFiles" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -459,6 +464,9 @@
                 </DBColumn>
             </ECCustomAttributes>
         </ECProperty>
+        
+        <ECProperty propertyName="Metadata" typeName="string" />
+        
         
         <!--<ECProperty propertyName="ServerId" typeName="int">
             <ECCustomAttributes>
@@ -1147,7 +1155,6 @@
         <ECProperty propertyName="ID" typeName="string" />
         <ECProperty propertyName="SelectedFormat" typeName="string" />
         <ECProperty propertyName="SelectedStyle" typeName="string" />
-        <ECProperty propertyName="Legal" typeName="string" />
     </ECClass>
    
     
