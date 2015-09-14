@@ -17,6 +17,7 @@ Classes for working with %DgnElements in memory.
 BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 #include <Bentley/BeAssert.h>
+#include "DgnAuthority.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -177,35 +178,7 @@ public:
     friend struct dgn_TxnTable::Element;
     friend struct MultiAspect;
 
-    //! A Code is a two-part identifier: [DgnAuthorityId authority, Utf8String value].
-    //! The Code for a DgnElement is assigned by some external authority, according to some scheme meaningful to that authority.
-    //! DgnElements must always have a valid DgnElement::Code (a valid DgnAuthorityId and a unique, non-NULL value) to be inserted in a DgnDb.
-    struct Code
-    {
-    private:
-        DgnAuthorityId  m_authority;
-        Utf8String      m_value;
-
-        friend struct DgnAuthority;
-        friend struct DgnElements;
-        friend struct DgnModel;
-        Code(DgnAuthorityId authorityId, Utf8StringCR value) : m_authority(authorityId), m_value(value) { }
-    public:
-        //! Constructs an empty, invalid code
-        Code() { }
-
-        //! Determine whether this Code is valid
-        bool IsValid() const {return m_authority.IsValid() && !m_value.empty();}
-        //! Determine if two Codes are equivalent
-        bool operator==(Code const& other) const {return m_authority==other.m_authority && m_value==other.m_value;}
-
-        //! Get the value for this Code
-        Utf8StringCR GetValue() const {return m_value;}
-        Utf8CP GetValueCP() const {return m_value.c_str();}
-        //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
-        DgnAuthorityId GetAuthority() const {return m_authority;}
-        void RelocateToDestinationDb(DgnImportContext&);
-    };
+    typedef DgnAuthority::Code Code;
 
     //! Parameters for creating new DgnElements
     struct CreateParams
@@ -1454,10 +1427,10 @@ public:
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnElement::Code const& code) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnAuthorityId codeAuthorityId, Utf8StringCR codeValue) const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnAuthorityId codeAuthorityId, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8StringCR codeAuthorityName, Utf8StringCR codeValue) const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8StringCR codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
