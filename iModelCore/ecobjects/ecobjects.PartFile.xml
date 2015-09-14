@@ -106,7 +106,7 @@
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery/ECObjectsTest_NonPublished.exe</Files>
         </Bindings>
     </Part>
-
+<!--
     <Part Name="ECObjectsScenarioTests" BentleyBuildMakeFile="test\scenarioTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <SubPart PartName="PublishedApi"/>
@@ -121,8 +121,7 @@
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_NonPublishedScenario.exe</Files>
         </Bindings>
     </Part>
-
-
+-->
     <Part Name="ECObjectsPerformanceTests" BentleyBuildMakeFile="test\PerformanceTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
       <SubPart PartName="ECObjectsTestsDependencies"/>
       <SubPart PartName="PublishedApi"/>
@@ -135,8 +134,8 @@
         <SubPart PartName="ECObjectsPublishedTests" />
         <SubPart PartName="ECObjectsNonPublishedTests" />
         <SubPart PartName="ECObjectsPerformanceTests" />
-        <SubPart PartName="ECObjectsScenarioTests" />
-        <SubPart PartName="ECObjectsNonPublishedScenarioTests" />
+    <!--    <SubPart PartName="ECObjectsScenarioTests" />
+        <SubPart PartName="ECObjectsNonPublishedScenarioTests" />-->
     </Part>
 
     <Part Name="RunECObjectsTests" BentleyBuildMakeFile="test/ECObjectsNativeTest.run.mke" ExcludePlatforms="Android*,Linux*,iOS*">
