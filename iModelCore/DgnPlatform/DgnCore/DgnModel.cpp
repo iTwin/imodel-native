@@ -24,7 +24,7 @@ DgnModelId DgnModels::QueryModelId(Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT Name,Descr,Type,ECClassId,Space,Visibility FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Name,Descr,Type,ECClassId,Visibility FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -37,8 +37,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_description.AssignOrClear(stmt.GetValueText(1));
         out->m_modelType =(DgnModelType) stmt.GetValueInt(2);
         out->m_classId = DgnClassId(stmt.GetValueInt64(3));
-        out->m_space =(Model::CoordinateSpace) stmt.GetValueInt(4);
-        out->m_inGuiList = TO_BOOL(stmt.GetValueInt(5));
+        out->m_inGuiList = TO_BOOL(stmt.GetValueInt(4));
         }
 
     return SUCCESS;
@@ -144,7 +143,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,Name,Descr,Type,Space,Visibility,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Model);
+        Utf8String sqlString = "SELECT Id,Name,Descr,Type,Visibility,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -169,9 +168,8 @@ DgnModelId   DgnModels::Iterator::Entry::GetModelId() const {Verify(); return m_
 Utf8CP       DgnModels::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(1);}
 Utf8CP       DgnModels::Iterator::Entry::GetDescription() const {Verify(); return m_sql->GetValueText(2);}
 DgnModelType DgnModels::Iterator::Entry::GetModelType() const {Verify(); return (DgnModelType) m_sql->GetValueInt(3);}
-DgnModels::Model::CoordinateSpace DgnModels::Iterator::Entry::GetCoordinateSpace() const {Verify(); return (Model::CoordinateSpace) m_sql->GetValueInt(4);}
-bool         DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(5));}
-DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(6));}
+bool         DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(4));}
+DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(5));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/00
@@ -314,6 +312,18 @@ DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
 
     // if it is a geometric element, it must be a 2d element.
     return element.Is3d() ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ResourceModel::_OnInsertElement(DgnElementR el)
+    {
+    auto status = T_Super::_OnInsertElement(el);
+    if (DgnDbStatus::Success == status && nullptr != el.ToGeometricElement())
+        status = DgnDbStatus::WrongModel;
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -736,14 +746,13 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
     DbResult rc = m_dgndb.GetNextRepositoryBasedId(m_modelId, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
     BeAssert(rc == BE_SQLITE_OK);
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Space,Visibility) VALUES(?,?,?,?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Visibility) VALUES(?,?,?,?,?,?,?)");
     stmt.BindId(1, m_modelId);
     stmt.BindText(2, m_name.c_str(), Statement::MakeCopy::No);
     stmt.BindText(3, description, Statement::MakeCopy::No);
     stmt.BindInt(4, (int)_GetModelType());
     stmt.BindId(5, GetClassId());
-    stmt.BindInt(6,(int) _GetCoordinateSpace());
-    stmt.BindInt(7, inGuiList ? 1 : 0);
+    stmt.BindInt(6, inGuiList ? 1 : 0);
 
     rc = stmt.Step();
     if (BE_SQLITE_DONE != rc)
