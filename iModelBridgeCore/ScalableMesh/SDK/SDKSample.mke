@@ -1,0 +1,67 @@
+#----------------------------------------------------------------------
+#
+#     $Source: SDK/SDKSample.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+baseDir         = $(_MakeFilePath)../
+PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
+SolutionPolicyMki=$(baseDir)ScalableMesh.mki
+consoleAppUnicode = 1
+%include mdl.mki
+
+appName = ScalableMeshSDKSample
+baseDir = $(_MakeFilePath)
+
+o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
+always:
+    ~mkdir $(o)
+
+ScalableMeshDir = $(SrcRoot)ScalableMesh/
+
+CCompOpts + -DUNICODE
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)SDKSample.obj: $(baseDir)SDKSample.cpp ${MultiCompileDepends}
+
+$(o)Initialize.obj: $(baseDir)Initialize.cpp ${MultiCompileDepends}
+
+$(o)SDKSampleImporter.obj: $(baseDir)SDKSampleImporter.cpp  ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+
+EXE_DEST     = $(o)
+EXE_NAME     = $(appname)
+EXE_OBJS     = $(MultiCompileObjectList)
+LINKER_LIBRARIES  = $(ContextSubpartsLibs)BentleyAllocator.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
+
+LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)RmgrTools.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)RasterCore.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)PointCloud.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)BeXml.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)DgnView.lib
+
+EXE_TMP_DIR  = $(o)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+    ~linkfile "$(BuildContext)Delivery/TerrainModel.01.00.ecschema.xml=$(ContextSubpartsLibs)../Files/TerrainModel.01.00.ecschema.xml"
+    ~linkfile "$(BuildContext)Delivery/DTMElement_TemplateExtender_Schema.01.00.ecschema.xml=$(ContextSubpartsLibs)../Files/DTMElement_TemplateExtender_Schema.01.00.ecschema.xml"
+

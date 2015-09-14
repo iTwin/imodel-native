@@ -135,7 +135,7 @@ class CivilElementSourceCreator : public DGNElementSourceCreatorBase
 
     virtual UInt                    _GetElementHandlerID                   () const override
         {
-        DTMElementHandlerManager::InitializeDgnPlatform();
+        //DTMElementHandlerManager::InitializeDgnPlatform();
         return DTMElementHandler::GetElemHandlerId().GetId();
         }
 
