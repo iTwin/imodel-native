@@ -71,14 +71,14 @@ TEST_F (ValueAccessorTests, CreateFromIterator)
     ECValuesCollectionPtr m_collection = ECValuesCollection::Create (*m_instance);
     
     int count = 0;
-    for each(ECPropertyValueCR propertyValue in *m_collection)
+    for (ECPropertyValueCR propertyValue : *m_collection)
         {
         ECValue value1;
-        
-        ECValueAccessorCR m_accessor = propertyValue.GetValueAccessor();
+
+        ECValueAccessorCR m_accessor = propertyValue.GetValueAccessor ();
         m_instance->GetValueUsingAccessor (value1, m_accessor);
-        
-        EXPECT_STREQ (value1.GetUtf8CP(), "Some value 1");
+
+        EXPECT_STREQ (value1.GetUtf8CP (), "Some value 1");
         count++;
         }
     EXPECT_EQ (count, 1);
