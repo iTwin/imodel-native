@@ -179,6 +179,8 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts)));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    EXPECT_TRUE(m_db->GeomParts().QueryGeomPartId(geomPartPtr->GetCode()).IsValid());
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15

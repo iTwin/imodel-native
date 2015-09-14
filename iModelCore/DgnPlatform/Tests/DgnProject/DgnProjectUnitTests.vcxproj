@@ -42,6 +42,7 @@
     <ClCompile Include="NonPublished\ElementMaterial_tests.cpp" />
     <ClCompile Include="NonPublished\ElementProperties.cpp" />
     <ClCompile Include="NonPublished\EntityAndItem_Test.cpp" />
+    <ClCompile Include="NonPublished\Font_tests.cpp" />
     <ClCompile Include="NonPublished\MSElementDescr_Test.cpp" />
     <ClCompile Include="NonPublished\Polyface_Test.cpp" />
     <ClCompile Include="NonPublished\Raster_Test.cpp" />
