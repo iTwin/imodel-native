@@ -114,7 +114,9 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/IndexPolicyHandler.cs \
             $(baseDir)Source/IndexFileRetrievalController.cs \
             $(baseDir)Source/IndexNavigationModule.cs \
-            $(baseDir)Source/models.cs 
+            $(baseDir)Source/models.cs \
+            $(baseDir)Source/IndexConstants.cs \
+            $(baseDir)Source/JTokenExtension.cs
 
 #ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx
 #ASSEMBLY_RES_TO_ADD = LocalizableStrings

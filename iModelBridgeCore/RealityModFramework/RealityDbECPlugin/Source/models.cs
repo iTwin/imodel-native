@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -55,7 +56,7 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// TO BE DONE
         /// </summary>
-        public int ID { get; set; }
+        public string ID { get; set; }
         /// <summary>
         /// TO BE DONE
         /// </summary>
@@ -64,10 +65,6 @@ namespace IndexECPlugin.Source
         /// TO BE DONE
         /// </summary>
         public string SelectedStyle { get; set; }
-        /// <summary>
-        /// TO BE DONE
-        /// </summary>
-        public string Legal { get; set; }
 
         /// <summary>
         /// TO BE DONE
@@ -147,6 +144,11 @@ namespace IndexECPlugin.Source
         ///   
         /// </summary>
         public int Priority { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public String Type { get; set; }
     }
 
     /// <summary>
@@ -160,7 +162,12 @@ namespace IndexECPlugin.Source
         public string Dataset { get; set; }
 
         /// <summary>
-        ///   
+        /// 
+        /// </summary>
+        public string DatasetID { get; set; }
+
+        /// <summary>
+        /// 
         /// </summary>
         public string Format { get; set; }
 
@@ -188,11 +195,33 @@ namespace IndexECPlugin.Source
         }
     }
 
-    //public class USGSPayload
+    /// <summary>
+    /// 
+    /// </summary>
+    public class USGSRequestBundle
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public JToken jtoken { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string DatasetId { get; set; }
+    }
+
+    //internal enum ObjectType
     //{
-    //    public string Title { get; set; }
-    //    public string PreviewLink { get; set; }
-    //    public string DownloadLink { get; set; }
-    //    public string BoundingBox { get; set; }
+    //    None = 0,
+    //    Roadway,
+    //    Bridge,
+    //    Terrain,
+    //    Building,
+    //    WaterBody,
+    //    Property,
+    //    OffLimitZone,
+    //    Imagery,
+    //    PointCloud
     //}
 }
