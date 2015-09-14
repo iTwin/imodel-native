@@ -42,7 +42,16 @@
     <ClCompile Include="Published\DateTimeInfoCustomAttributeTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Published\AccessorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\InstanceLabelTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Published\InstanceTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ValueTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

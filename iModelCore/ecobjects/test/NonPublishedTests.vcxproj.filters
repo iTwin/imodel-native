@@ -54,6 +54,21 @@
     <ClCompile Include="NonPublished\PropertyOverrideTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\AccessorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ValueTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\CGSerializationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\SchemaTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\CompressInstanceTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">

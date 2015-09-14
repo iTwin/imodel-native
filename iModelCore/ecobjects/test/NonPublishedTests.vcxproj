@@ -63,9 +63,12 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="NonPublished\AccessorTests.cpp" />
     <ClCompile Include="NonPublished\AdhocPropertyTests.cpp" />
     <ClCompile Include="NonPublished\CalculatedPropertyTests.cpp" />
     <ClCompile Include="NonPublished\CGBinarySerializationTests.cpp" />
+    <ClCompile Include="NonPublished\CGSerializationTests.cpp" />
+    <ClCompile Include="NonPublished\CompressInstanceTests.cpp" />
     <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
     <ClCompile Include="NonPublished\ECSchemaUnitsManagerTests.cpp" />
     <ClCompile Include="NonPublished\MemoryLayoutTests.cpp" />
@@ -73,9 +76,11 @@
     <ClCompile Include="NonPublished\PresentationRulesTests.cpp" />
     <ClCompile Include="NonPublished\PropertyOverrideTests.cpp" />
     <ClCompile Include="NonPublished\SchemaLocalizationTests.cpp" />
+    <ClCompile Include="NonPublished\SchemaTests.cpp" />
     <ClCompile Include="NonPublished\StringEncodingTests.cpp" />
     <ClCompile Include="NonPublished\UnitsTestBase.cpp" />
     <ClCompile Include="NonPublished\UnitsTests.cpp" />
+    <ClCompile Include="NonPublished\ValueTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />

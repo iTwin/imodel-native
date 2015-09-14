@@ -63,9 +63,11 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Published\AccessorTests.cpp" />
     <ClCompile Include="Published\BuildInstanceAndSerializeToXML.cpp" />
     <ClCompile Include="Published\CustomAttributeTests.cpp" />
     <ClCompile Include="Published\ECRelationshipTests.cpp" />
+    <ClCompile Include="Published\InstanceLabelTests.cpp" />
     <ClCompile Include="Published\InstanceTests.cpp" />
     <ClCompile Include="Published\InstanceXMLTests.cpp" />
     <ClCompile Include="Published\MacroTests.cpp" />
@@ -73,6 +75,7 @@
     <ClCompile Include="Published\SchemaTests.cpp" />
     <ClCompile Include="Published\DateTimeInfoCustomAttributeTests.cpp" />
     <ClCompile Include="Published\SupplementalSchemaTests.cpp" />
+    <ClCompile Include="Published\ValueTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
