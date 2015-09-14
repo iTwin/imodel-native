@@ -1072,12 +1072,12 @@ TEST (DateTimeTests, ConversionTestsDSTEST)
     DateTimeTestDataset::CreateDstUSESTTestDataset (testDataset);
     DateTimeAsserter::Assert (testDataset);
     }
-#endif
 
 //***************************************************************************************
 //Test fixture which can only be run when the machine's time zone is CET
 //***************************************************************************************
 
+#if defined(CET_IS_SYSTEMTIMEZONE) 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
 //---------------------------------------------------------------------------------------
@@ -1095,3 +1095,7 @@ TEST (DateTimeTestsWhenCETIsSystemTimezone, ConversionTestsDSTCET)
     DateTimeTestDataset::CreateDstCETTestDataset (testDataset);
     DateTimeAsserter::Assert (testDataset);
     }
+
+#endif
+
+#endif

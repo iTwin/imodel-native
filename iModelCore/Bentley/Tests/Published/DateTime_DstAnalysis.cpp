@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/DateTime_DstAnalysis.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -11,6 +11,9 @@
 #include "DateTimeTestHelpers.h"
 
 USING_NAMESPACE_BENTLEY
+
+#if defined(BENTLEY_WIN32) && defined(CET_IS_SYSTEMTIMEZONE) 
+
 
 typedef bvector<DateTime> DateTimeList;
 
@@ -128,7 +131,6 @@ DateTimeList& testSeries
         }
     }
 
-#if defined(BENTLEY_WIN32) 
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12

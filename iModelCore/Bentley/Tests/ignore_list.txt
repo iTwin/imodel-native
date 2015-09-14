@@ -1,9 +1,6 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-
-DateTimeTestsWhenCETIsSystemTimezone.*  # these tests require the machine's current time zone to be set to Central European Time.
-DateTimeDstAnalysis.*                   # these tests log analysis results but don't test anything
 Performance*                            # Performance tests are always excluded from being run during a build.
 BeFileNameTests.BeFileNameUNCPathTest   # Testable UNC path is required to be available globally.
 BeFileNameTests.UNCPrefixedTest         # Testable UNC path is required to be available globally.
