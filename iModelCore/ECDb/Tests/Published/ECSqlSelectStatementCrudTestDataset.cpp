@@ -953,9 +953,6 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (ECDbTestProject& tes
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId IN (I-%d, I-%f)", (int) (123-psaIds[0].GetValue()), (double) (123-psaIds[1].GetValue()));
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsqlStr.c_str(), 3, 2);
-
     ecsqlStr.Sprintf("SELECT I, Dt, S FROM ecsql.PSA WHERE ECInstanceId ='%lld'", psaIds[0].GetValue());
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsqlStr.c_str(), IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 1);
 
