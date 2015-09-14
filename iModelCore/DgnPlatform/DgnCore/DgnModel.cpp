@@ -187,7 +187,6 @@ void DgnModel::ReleaseAllElements()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_properties(params.m_props), m_solver(params.m_solver)
     {
-    m_rangeIndex = nullptr;
     m_persistent = false;
     m_filled     = false;
     }
@@ -239,12 +238,19 @@ template<class T> void DgnModel::CallAppData(T const& caller) const
 struct EmptiedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnEmptied(model);}};
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    10/00
+* @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::EmptyModel()
+void GeometricModel::_EmptyModel()
     {
     ClearRangeIndex();
+    T_Super::_EmptyModel();
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    10/00
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_EmptyModel()
+    {
     if (!m_filled)
         return;
 
@@ -395,7 +401,7 @@ DgnDbStatus DgnModel::Update()
 * Allocate and initialize a range tree for this model.
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::AllocateRangeIndex() const
+void GeometricModel::AllocateRangeIndex() const
     {
     if (nullptr == m_rangeIndex)
         {
@@ -407,7 +413,7 @@ void DgnModel::AllocateRangeIndex() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::ClearRangeIndex()
+void GeometricModel::ClearRangeIndex()
     {
     DELETE_AND_CLEAR(m_rangeIndex);
     }
@@ -415,12 +421,12 @@ void DgnModel::ClearRangeIndex()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::AddToRangeIndex(DgnElementCR element)
+void GeometricModel::AddToRangeIndex(DgnElementCR element)
     {
     if (nullptr == m_rangeIndex)
         return;
 
-    GeometricElementCP geom = element._ToGeometricElement();
+    GeometricElementCP geom = element.ToGeometricElement();
     if (nullptr != m_rangeIndex && nullptr != geom && geom->HasGeometry())
         m_rangeIndex->AddGeomElement(*geom);
     }
@@ -428,12 +434,12 @@ void DgnModel::AddToRangeIndex(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::RemoveFromRangeIndex(DgnElementCR element)
+void GeometricModel::RemoveFromRangeIndex(DgnElementCR element)
     {
     if (nullptr==m_rangeIndex)
         return;
 
-    GeometricElementCP geom = element._ToGeometricElement();
+    GeometricElementCP geom = element.ToGeometricElement();
     if (nullptr != geom && geom->HasGeometry())
         m_rangeIndex->RemoveElement(DgnRangeTree::Entry(geom->CalculateRange3d(), *geom));
     }
@@ -441,12 +447,12 @@ void DgnModel::RemoveFromRangeIndex(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
+void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
     {
     if (nullptr==m_rangeIndex)
         return;
 
-    GeometricElementCP origGeom = original._ToGeometricElement();
+    GeometricElementCP origGeom = original.ToGeometricElement();
     if (nullptr == origGeom)
         return;
 
@@ -467,11 +473,18 @@ void DgnModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::RegisterElement(DgnElementCR element)
+void DgnModel::_RegisterElement(DgnElementCR element)
     {
     if (m_filled)
         m_elements.Add(element);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::_RegisterElement(DgnElementCR element)
+    {
+    T_Super::_RegisterElement(element);
     AddToRangeIndex(element);
     }
 
@@ -518,9 +531,17 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnDeletedElement(DgnElementCR element)
+void GeometricModel::_OnDeletedElement(DgnElementCR element)
     {
     RemoveFromRangeIndex(element);
+    T_Super::_OnDeletedElement(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnDeletedElement(DgnElementCR element)
+    {
     if (m_filled)
         m_elements.erase(element.GetElementId());
     }
@@ -528,9 +549,17 @@ void DgnModel::_OnDeletedElement(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnReversedAddElement(DgnElementCR element)
+void GeometricModel::_OnReversedAddElement(DgnElementCR element)
     {
     RemoveFromRangeIndex(element);
+    T_Super::_OnReversedAddElement(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnReversedAddElement(DgnElementCR element)
+    {
     if (m_filled)
         m_elements.erase(element.GetElementId());
     }
@@ -546,7 +575,7 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnUpdatedElement(DgnElementCR modified, DgnElementCR original)
+void GeometricModel::_OnUpdatedElement(DgnElementCR modified, DgnElementCR original)
     {
     UpdateRangeIndex(modified, original);
     }
@@ -554,7 +583,7 @@ void DgnModel::_OnUpdatedElement(DgnElementCR modified, DgnElementCR original)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original)
+void GeometricModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original)
     {
     UpdateRangeIndex(modified, original);
     }
@@ -562,7 +591,7 @@ void DgnModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementCR orig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRangeTreeP DgnModel::GetRangeIndexP(bool create) const
+DgnRangeTreeP GeometricModel::_GetRangeIndexP(bool create) const
     {
     if (nullptr == m_rangeIndex && create)
         AllocateRangeIndex();
@@ -851,7 +880,7 @@ QvCache* DgnModels::GetQvCache(bool createIfNecessary)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d DgnModel::_GetGlobalOrigin() const
+DPoint3d GeometricModel::_GetGlobalOrigin() const
     {
     return GetDgnDb().Units().GetGlobalOrigin();
     }
@@ -885,7 +914,7 @@ void DgnModel::_FillModel()
     Statement stmt(m_dgndb, "SELECT Id,ECClassId,CategoryId,Label,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
-    SetFilled();
+    _SetFilled();
 
     auto& elements = m_dgndb.Elements();
     BeDbMutexHolder _v(elements.m_mutex);
@@ -949,7 +978,7 @@ ModelHandlerP dgn_ModelHandler::Model::FindHandler(DgnDb const& db, DgnClassId h
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d DgnModel::_QueryModelRange() const
+AxisAlignedBox3d GeometricModel::_QueryModelRange() const
     {
     Statement stmt(m_dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " 
                            DGN_TABLE(DGN_CLASSNAME_Element)     " AS e," 
@@ -1193,7 +1222,12 @@ DgnElementPtr ComponentSolution::CreateSolutionInstanceElement(DgnModelR destina
     DgnClassId cmClassId = DgnClassId(GetDgnDb().Schemas().GetECClassId(schemaname.c_str(), classname.c_str()));
     DgnCategoryId cmCategoryId = GetDgnDb().Categories().QueryCategoryId(cm->GetElementCategoryName().c_str());
     
-    if (destinationModel.Is3d())
+    auto geomDestModel = destinationModel.ToGeometricModel();
+    BeAssert (nullptr != geomDestModel);
+    if (nullptr == geomDestModel)
+        return nullptr;
+
+    if (geomDestModel->Is3d())
         return PhysicalElement::Create(PhysicalElement::CreateParams(GetDgnDb(), destinationModel.GetModelId(), cmClassId, cmCategoryId, 
                                             Placement3d(origin, angles, ElementAlignedBox3d())));
 

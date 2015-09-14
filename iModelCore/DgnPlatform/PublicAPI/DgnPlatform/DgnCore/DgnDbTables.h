@@ -35,6 +35,7 @@
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_Material              "Material"
+#define DGN_CLASSNAME_MaterialModel         "MaterialModel"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
 #define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"

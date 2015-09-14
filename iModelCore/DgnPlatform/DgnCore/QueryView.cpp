@@ -492,8 +492,9 @@ void QueryViewController::_DrawView(ViewContextR context)
         for (DgnModelId modelId : GetViewedModels())
             {
             DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
-            if (model.IsValid())
-                model->AddGraphicsToScene(context);
+            auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
+            if (nullptr != geomModel)
+                geomModel->AddGraphicsToScene(context);
 
             if (context.CheckStop())
                 break;
@@ -592,8 +593,9 @@ void QueryViewController::_DrawView(ViewContextR context)
     for (DgnModelId modelId : GetViewedModels())
         {
         DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
-        if (model.IsValid())
-            model->AddGraphicsToScene(context);
+        auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
+        if (nullptr != geomModel)
+            geomModel->AddGraphicsToScene(context);
         }
 
     //  We count on progressive display to draw zero length strings and points that are excluded by LOD filtering in the occlusion step.

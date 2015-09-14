@@ -3718,7 +3718,11 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateGeomPart(DgnDbR db, bool
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementGeometryBuilderPtr ElementGeometryBuilder::Create(DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles)
     {
-    if (!categoryId.IsValid() || !model.Is3d())
+    if (!categoryId.IsValid())
+        return nullptr;
+
+    auto geomModel = model.ToGeometricModel();
+    if (nullptr == geomModel || !geomModel->Is3d())
         return nullptr;
 
     Placement3d placement;
@@ -3734,7 +3738,11 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::Create(DgnModelR model, DgnCat
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementGeometryBuilderPtr ElementGeometryBuilder::Create(DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle)
     {
-    if (!categoryId.IsValid() || model.Is3d())
+    if (!categoryId.IsValid())
+        return nullptr;
+    
+    auto geomModel = model.ToGeometricModel();
+    if (nullptr == geomModel || geomModel->Is3d())
         return nullptr;
 
     Placement2d placement;
@@ -3753,7 +3761,11 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateWorld(DgnModelR model, D
     if (!categoryId.IsValid())
         return nullptr;
 
-    return new ElementGeometryBuilder(model.GetDgnDb(), categoryId, model.Is3d());
+    auto geomModel = model.ToGeometricModel();
+    if (nullptr == geomModel)
+        return nullptr;
+
+    return new ElementGeometryBuilder(model.GetDgnDb(), categoryId, geomModel->Is3d());
     }
 
 /*---------------------------------------------------------------------------------**//**

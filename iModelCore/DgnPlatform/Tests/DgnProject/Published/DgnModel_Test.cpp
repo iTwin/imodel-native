@@ -135,7 +135,7 @@ TEST_F(DgnModelTests, GetRange)
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("RangeTest");
 
-    AxisAlignedBox3d range = m_model->QueryModelRange();
+    AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
     EXPECT_TRUE(range.IsValid());
     DPoint3d low; low.Init(-1.4011580427821895, 0.11538461538461531, -0.00050000000000000001);
     DPoint3d high; high.Init(-0.59795039550813156, 0.60280769230769227, 0.00050000000000000001);
@@ -153,7 +153,7 @@ TEST_F(DgnModelTests, GetRangeOfEmptyModel)
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("Default");
 
-    AxisAlignedBox3d thirdRange = m_model->QueryModelRange();
+    AxisAlignedBox3d thirdRange = m_model->ToGeometricModel()->QueryModelRange();
     EXPECT_FALSE(thirdRange.IsValid());
     }
 
