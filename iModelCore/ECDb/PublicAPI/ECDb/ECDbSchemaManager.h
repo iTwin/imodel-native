@@ -177,45 +177,6 @@ public:
 #endif
         };
 
-    //=======================================================================================
-    //! Allows clients of a schema import to be notified of error or warning messages.
-    //! @remarks ECDb cares for logging any error and warnings sent to listeners. So implementors
-    //! don't have to do that anymore.
-    //! @see ECDbSchemaManager::ImportECSchemas
-    // @bsiclass                                                Krischan.Eberle      04/2014
-    //+===============+===============+===============+===============+===============+======
-    struct IImportIssueListener
-        {
-    public:
-        //=======================================================================================
-        //! Severity of import issue
-        // @bsiclass                                                Krischan.Eberle      04/2014
-        //+===============+===============+===============+===============+===============+======
-        enum class Severity
-            {
-            Warning, //!< Import warning
-            Error //!< Import error
-            };
-       
-
-    private:
-        //! Fired by ECDb whenever an issue occurred during the schema import.
-        //! @param[in] severity Issue severity
-        //! @param[in] message Issue message
-        virtual void _OnIssueReported (Severity severity, Utf8CP message) const = 0;
-
-    public:
-        ECDB_EXPORT virtual ~IImportIssueListener ();
-
-    //__PUBLISH_SECTION_END__
-        //! Called by ECDb to report an issue to clients.
-        //! @param[in] severity Issue severity
-        //! @param[in] message Issue message
-        void Report (Severity severity, Utf8CP message, ...) const;
-    //__PUBLISH_SECTION_START__
-        };
-
-//__PUBLISH_SECTION_END__
 private:
     ECDb& m_ecdb;
     ECDbMap& m_map;
@@ -260,7 +221,7 @@ public:
     //!                     All schemas should be read from single ECSchemaReadContext.  if any dublicate schema is found in schemaCache the function will return error.
     //! @param[in] options Schema import options
     //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
-    ECDB_EXPORT BentleyStatus ImportECSchemas (ECN::ECSchemaCacheR schemaCache, ImportOptions const& options = ImportOptions (), IImportIssueListener const* issueListener = nullptr) const;
+    ECDB_EXPORT BentleyStatus ImportECSchemas (ECN::ECSchemaCacheR schemaCache, ImportOptions const& options = ImportOptions ()) const;
     
     //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
     //! @param[in] schemaName Name of the ECSchema to check for

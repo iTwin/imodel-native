@@ -10,6 +10,7 @@
 #include "ECDbProfileManager.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2013
 //+---------------+---------------+---------------+---------------+---------------+-
@@ -49,7 +50,8 @@ ECDb::Impl::Impl (ECDbR ecdb)
     m_indexIdSequence (ecdb, INDEXIDSEQUENCE_BELOCALKEY),
     m_constraintIdSequence (ecdb, CONSTRAINTIDSEQUENCE_BELOCALKEY),
     m_classmapIdSequence (ecdb, CLASSMAPIDSEQUENCE_BELOCALKEY),
-    m_propertypathIdSequence (ecdb, PROPERTYPATHIDSEQUENCE_BELOCALKEY)
+    m_propertypathIdSequence (ecdb, PROPERTYPATHIDSEQUENCE_BELOCALKEY),
+    m_issueListener (nullptr)
     {
     m_schemaManager = std::unique_ptr<ECDbSchemaManager> (new ECDbSchemaManager (ecdb, *m_ecdbMap));
     }
@@ -76,14 +78,6 @@ DbResult ECDb::Impl::Initialize (BeFileNameCR ecdbTempDir, BeFileNameCP hostAsse
         }
 
     return BE_SQLITE_OK;
-    }
-
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                09/2012
-//---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl::~Impl ()
-    {
     }
 
 //--------------------------------------------------------------------------------------
@@ -242,6 +236,45 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
 
     function = it->second;
     return true;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::Impl::AddIssueListener(IIssueListener const& issueListener)
+    {
+    if (m_issueListener != nullptr)
+        return ERROR;
+
+    m_issueListener = &issueListener;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::ReportIssue(IssueSeverity severity, Utf8CP message, ...) const
+    {
+    const NativeLogging::SEVERITY logSeverity = severity == IssueSeverity::Warning ? NativeLogging::LOG_WARNING : NativeLogging::LOG_ERROR;
+    const bool isLogSeverityEnabled = LOG.isSeverityEnabled(logSeverity);
+
+    if (m_issueListener != nullptr || isLogSeverityEnabled)
+        {
+        va_list args;
+        va_start(args, message);
+
+        Utf8String formattedMessage;
+        formattedMessage.VSprintf(message, args);
+
+        if (m_issueListener != nullptr)
+            m_issueListener->ReportIssue(severity, formattedMessage.c_str());
+
+        if (isLogSeverityEnabled)
+            LOG.message(logSeverity, formattedMessage.c_str());
+
+        va_end(args);
+        }
     }
 
 //---------------------------------------------------------------------------------------

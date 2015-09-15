@@ -154,6 +154,23 @@ ECN::IECClassLocaterR ECDb::GetClassLocater () const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                09/2015
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::AddIssueListener(IIssueListener const& issueListener)
+    {
+    return m_pimpl->AddIssueListener(issueListener);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                09/2015
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::RemoveIssueListener()
+    {
+    m_pimpl->RemoveIssueListener();
+    }
+
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::ClearECDbCache() const
@@ -168,6 +185,14 @@ ECDb::Impl& ECDb::GetECDbImplR () const
     {
     BeAssert (m_pimpl != nullptr);
     return *m_pimpl;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   09/2015
+//---------------------------------------------------------------------------------------
+void ECDb::IIssueListener::ReportIssue(IssueSeverity severity, Utf8CP message) const
+    {
+    _OnIssueReported(severity, message);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

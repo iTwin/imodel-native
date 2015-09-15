@@ -70,6 +70,8 @@ private:
 
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
 
+    IIssueListener const* m_issueListener;
+
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl (ECDbR ecdb);
     static DbResult Initialize (BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
@@ -80,6 +82,9 @@ private:
 
     BentleyStatus OnAddFunction(DbFunction&) const;
     void OnRemoveFunction(DbFunction&) const;
+
+    BentleyStatus AddIssueListener(IIssueListener const& issueListener);
+    void RemoveIssueListener() { m_issueListener = nullptr; }
 
     void ClearECDbCache() const;
 
@@ -93,7 +98,7 @@ private:
     std::vector<BeRepositoryBasedIdSequence const*> GetSequences () const;
 
 public:
-    ~Impl ();
+    ~Impl () {}
 
     ECDbMap const& GetECDbMap () const;
 
@@ -110,6 +115,8 @@ public:
     BeRepositoryBasedIdSequence& GetPropertyMapIdSequence () { return m_propertypathIdSequence; }
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
+
+    void ReportIssue(IssueSeverity, Utf8CP message, ...) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

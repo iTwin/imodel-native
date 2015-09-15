@@ -123,7 +123,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return MapStatus::Error;
         }
 
-    if (SUCCESS != Save(schemaImportContext))
+    if (SUCCESS != Save())
         {
         ClearCache();
         m_schemaImportContext = nullptr;
@@ -132,7 +132,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
 
     m_lightweightCache.Reset();
 
-    if (SUCCESS != m_ecdbSqlManager.GetDbSchema().CreateOrUpdateIndices(schemaImportContext))
+    if (SUCCESS != m_ecdbSqlManager.GetDbSchema().CreateOrUpdateIndices())
         {
         ClearCache();
         m_schemaImportContext = nullptr;
@@ -657,7 +657,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
             {
             if (GetSQLManager ().IsTableChanged (*table))
                 {
-                if (table->GetPersistenceManager ().CreateOrUpdate (GetECDbR (), *GetSchemaImportContext ()) != BentleyStatus::SUCCESS)
+                if (table->GetPersistenceManager ().CreateOrUpdate (GetECDbR ()) != BentleyStatus::SUCCESS)
                     return ERROR;
                 nUpdated++;
                 }
@@ -666,7 +666,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
             }
         else
             {
-            if (table->GetPersistenceManager().Create(GetECDbR(), *GetSchemaImportContext()) != BentleyStatus::SUCCESS)
+            if (table->GetPersistenceManager().Create(GetECDbR()) != BentleyStatus::SUCCESS)
                 return ERROR;
 
             nCreated++;
@@ -793,7 +793,7 @@ void ECDbMap::ClearCache()
 * Save map
 * @bsimethod                                 Affan Khan                          08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbMap::Save(SchemaImportContext const& context)
+BentleyStatus ECDbMap::Save()
     {
     BeMutexHolder lock(m_criticalSection);
     StopWatch stopWatch(true);
@@ -808,7 +808,7 @@ BentleyStatus ECDbMap::Save(SchemaImportContext const& context)
             i++;
             if (SUCCESS != classMap->Save (doneList))
                 {
-                context.GetIssueListener ().Report(ECDbSchemaManager::IImportIssueListener::Severity::Error, "Failed to save ECDbMap for ECClass %s: %s", ecClass.GetFullName(), GetECDbR().GetLastError());
+                m_ecdb.GetECDbImplR().ReportIssue (ECDb::IssueSeverity::Error, "Failed to save ECDbMap for ECClass %s: %s", ecClass.GetFullName(), GetECDbR().GetLastError());
                 return ERROR;
                 }
             }

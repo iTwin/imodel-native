@@ -31,6 +31,45 @@ struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db
 public:
     struct Impl;
 
+    //=======================================================================================
+    //! Severity of an ECDb issue
+    // @bsiclass                                                Krischan.Eberle      09/2015
+    //+===============+===============+===============+===============+===============+======
+    enum class IssueSeverity
+        {
+        Warning, //!< Warning
+        Error //!< Error
+        };
+
+    //=======================================================================================
+    //! Allows clients to be notified of error or warning messages.
+    //! @remarks ECDb cares for logging any error and warnings sent to listeners via BentleyApi::NativeLogging. 
+    //! So implementors
+    //! don't have to do that anymore.
+    // @bsiclass                                                Krischan.Eberle      09/2015
+    //+===============+===============+===============+===============+===============+======
+    struct IIssueListener
+        {
+    private:
+        //! Fired by ECDb whenever an issue occurred during the schema import.
+        //! @param[in] severity Issue severity
+        //! @param[in] message Issue message
+        virtual void _OnIssueReported(IssueSeverity severity, Utf8CP message) const = 0;
+
+    protected:
+        IIssueListener() {}
+
+    public:
+        virtual ~IIssueListener() {}
+
+#if !defined (DOCUMENTATION_GENERATOR)
+        //! Called by ECDb to report an issue to clients.
+        //! @param[in] severity Issue severity
+        //! @param[in] message Issue message
+        void ReportIssue(IssueSeverity severity, Utf8CP message) const;
+#endif
+        };
+
 private:
     Impl* m_pimpl;
 
@@ -81,6 +120,14 @@ public:
     //! Gets the ECClass locator for ECClasses whose schemas are stored in this ECDb file.
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
+
+    //! Adds a listener that listens to issues reported by this ECDb object.
+    //! @remarks Only one listener can be added at a time.
+    //! @param[in] issueListener Issue listener. The listener must remain valid as
+    //! while this ECDb is valid, or until it is removed via RemoveIssueListener.
+    //! @return SUCCESS or ERROR if another lister was already added before.
+    ECDB_EXPORT BentleyStatus AddIssueListener(IIssueListener const& issueListener);
+    ECDB_EXPORT void RemoveIssueListener();
 
     //! Clears the ECDb cache
     ECDB_EXPORT void ClearECDbCache() const;
