@@ -2358,10 +2358,10 @@ public:
                                                           uint32_t versionMajor, uint32_t versionMinor);
 
     //! Generate a schema version string given the major and minor version values.
-    //! @param[in]  versionMajor    The major version number
+    //! @param[in] versionMajor    The major version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
-    ECOBJECTS_EXPORT static Utf8String      FormatSchemaVersion (uint32_t& versionMajor, uint32_t& versionMinor);
+    ECOBJECTS_EXPORT static Utf8String      FormatSchemaVersion (uint32_t versionMajor, uint32_t versionMinor);
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
