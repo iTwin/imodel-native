@@ -44,7 +44,7 @@ public:
         CaseInsensitiveClassNames, //!< Names of ECClasses within one ECSchema must be case insensitive, i.e. must not only differ by case
         CaseInsensitivePropertyNames, //!< Names of ECProperties within one ECClass must be case insensitive, i.e. must not only differ by case
         NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
-        RelationshipConstraintIsNotARelationshipClass,
+        ValidRelationshipConstraints,
         ConsistentClassHierarchy
         };
 
@@ -246,7 +246,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      07/2015
 //+===============+===============+===============+===============+===============+======
-struct RelationshipConstraintIsNotARelationshipClassRule : ECSchemaValidationRule
+struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
     {
     private:
         //=======================================================================================
@@ -255,7 +255,17 @@ struct RelationshipConstraintIsNotARelationshipClassRule : ECSchemaValidationRul
         struct Error : ECSchemaValidationRule::Error
             {
             private:
-                std::vector<std::pair<ECN::ECRelationshipClassCP, ECN::ECRelationshipClassCP>> m_inconsistencies;
+                struct Inconsistency
+                    {
+                    ECN::ECRelationshipClassCP m_relationshipClass;
+                    bool m_isAbstract;
+                    ECN::ECRelationshipClassCP m_relationshipClassAsConstraintClass;
+
+                    Inconsistency(ECN::ECRelationshipClassCR relClass, bool isAbstract, ECN::ECRelationshipClassCP relationshipClassAsConstraintClass)
+                        : m_relationshipClass(&relClass),  m_isAbstract (isAbstract), m_relationshipClassAsConstraintClass(relationshipClassAsConstraintClass) {}
+                    };
+
+                std::vector<Inconsistency> m_inconsistencies;
 
                 virtual Utf8String _ToString() const override;
 
@@ -263,7 +273,7 @@ struct RelationshipConstraintIsNotARelationshipClassRule : ECSchemaValidationRul
                 explicit Error(Type ruleType) : ECSchemaValidationRule::Error(ruleType) {}
                 ~Error() {}
 
-                void AddInconsistency(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipClassCR relClassAsConstraint) { m_inconsistencies.push_back({&relClass, &relClassAsConstraint});}
+                void AddInconsistency(ECN::ECRelationshipClassCR relClass, bool isAbstract, ECN::ECRelationshipClassCP relClassAsConstraint = nullptr) { m_inconsistencies.push_back(Inconsistency (relClass, isAbstract, relClassAsConstraint));}
                 bool HasInconsistencies() const { return !m_inconsistencies.empty(); }
             };
 
@@ -272,11 +282,12 @@ struct RelationshipConstraintIsNotARelationshipClassRule : ECSchemaValidationRul
         virtual bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
         virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
 
-        bool ValidateConstraint(ECN::ECRelationshipClassCR, ECN::ECRelationshipConstraintCR) const;
+        bool ValidateRelationshipClass(ECN::ECRelationshipClassCR) const;
+        bool ValidateConstraint(ECN::ECRelationshipClassCR, bool isAbstractRelClass, ECN::ECRelationshipConstraintCR) const;
 
     public:
-        RelationshipConstraintIsNotARelationshipClassRule();
-        ~RelationshipConstraintIsNotARelationshipClassRule() {}
+        ValidRelationshipConstraintsRule();
+        ~ValidRelationshipConstraintsRule() {}
     };
 
 //=======================================================================================

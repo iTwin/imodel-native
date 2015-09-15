@@ -25,7 +25,7 @@ public:
     static ECSqlTestDataset CastTests (int rowCountPerClass);
     static ECSqlTestDataset CommonGeometryTests (int rowCountPerClass);
     static ECSqlTestDataset DateTimeTests (int rowCountPerClass);
-    static ECSqlTestDataset ECInstanceIdTests (int rowCountPerClass);
+    static ECSqlTestDataset ECInstanceIdTests (ECDbTestProject& testProject, int rowCountPerClass);
     static ECSqlTestDataset FromTests (int rowCountPerClass);
     static ECSqlTestDataset FunctionTests (int rowCountPerClass);
     static ECSqlTestDataset GroupByTests (int rowCountPerClass);
@@ -40,7 +40,8 @@ public:
     static ECSqlTestDataset PointTests (int rowCountPerClass);
     static ECSqlTestDataset PolymorphicTests (int rowCountPerClass);
     static ECSqlTestDataset PrimitiveTests (int rowCountPerClass);
-    static ECSqlTestDataset SourceTargetConstraintTests (int rowCountPerClass);
+    static ECSqlTestDataset SelectClauseTests(int rowCountPerClass);
+    static ECSqlTestDataset SourceTargetConstraintTests(int rowCountPerClass);
     static ECSqlTestDataset StructTests (int rowCountPerClass);
     static ECSqlTestDataset SubqueryTests (int rowCountPerClass);
     static ECSqlTestDataset UnionTests(int rowCountPerClass);

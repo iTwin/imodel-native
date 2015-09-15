@@ -290,7 +290,7 @@ typedef bpair<ECN::ECClassCP, ECRelationshipPathVector> ECRelationshipPathVector
 //======================================================================================
 // @bsiclass                                             Ramanujam.Raman      01 / 2014
 //===============+===============+===============+===============+===============+======
-struct ECRelatedItemsDisplaySpecificationsCache : public BeSQLite::DbAppData
+struct ECRelatedItemsDisplaySpecificationsCache : public BeSQLite::Db::AppData
 {
 private:
     ECDbCR m_ecDb;
@@ -298,9 +298,7 @@ private:
 
     ECRelatedItemsDisplaySpecificationsCache (ECDbCR ecDb) : m_ecDb (ecDb) {}
 
-    virtual void _OnCleanup (BeSQLite::DbR host) override {delete this;}
-
-    static BeSQLite::DbAppData::Key const& GetKey() {static BeSQLite::DbAppData::Key s_key; return s_key;}
+    static BeSQLite::Db::AppData::Key const& GetKey() {static BeSQLite::Db::AppData::Key s_key; return s_key;}
 
     static ECN::ECClassCP GetRelatedSpecificationsClass (ECDbCR ecDb);
 
