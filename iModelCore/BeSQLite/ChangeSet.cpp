@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/ChangeSet.h>
-#include <BeSQLite/SQLiteAPI.h>
+#include "SQLite/sqlite3.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE

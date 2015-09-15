@@ -69,6 +69,8 @@
 
 //#define SQLITE_ENABLE_SQLLOG 1
 
+#define SQLITE_ENABLE_JSON1
+
 #include "sqlite3-1.c"
 #include "sqlite3-2.c"
 #include "sqlite3-3.c"
@@ -77,6 +79,7 @@
 #include "sqlite3-6.c"
 #include "zipvfs.c"
 #include "closure.c"
+#include "json1.c"
 
 #if defined (SQLITE_ENABLE_SQLLOG)
 #include "test_sqllog.c"

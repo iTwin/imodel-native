@@ -9,9 +9,6 @@
 
 #include "BeSQLitePerformanceTests.h"
 #include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
-#ifdef WIP_PUBLISHED_API
-#include <BeSQLite/SQLiteAPI.h> //only needed for test to directly work with SQLite
-#endif
 
 #include <vector>
 

@@ -392,8 +392,6 @@ template <typename Derived, uint32_t s_invalidValue> struct BeUInt32Id
 
 END_BENTLEY_NAMESPACE
 
-BEGIN_BENTLEY_SQLITE_NAMESPACE
-
 #if !defined (DOCUMENTATION_GENERATOR)
 typedef struct sqlite3_blob* SqlDbBlobP;
 typedef struct sqlite3* SqlDbP;
@@ -403,6 +401,8 @@ typedef struct sqlite3_session* SqlSessionP;
 typedef struct sqlite3_changeset_iter* SqlChangesetIterP;
 typedef struct Mem* SqlValueP;
 #endif
+
+BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/11
