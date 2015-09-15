@@ -324,5 +324,6 @@ void PerformanceTestFixture::OpenTestDb(ECDbR testDb, Db::OpenMode openMode, Def
     DbResult stat = testDb.OpenBeSQLiteDb(m_testDbPath.GetNameUtf8().c_str(), Db::OpenParams(openMode, defaultTransactionMode));
     ASSERT_EQ(BE_SQLITE_OK, stat);// << L"Opening DgnDb file with mode '" << openMode << L"' failed.";
 }
+
 END_ECDBUNITTESTS_NAMESPACE
 

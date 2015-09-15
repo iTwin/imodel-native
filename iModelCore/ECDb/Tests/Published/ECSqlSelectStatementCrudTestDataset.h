@@ -40,7 +40,8 @@ public:
     static ECSqlTestDataset PointTests (int rowCountPerClass);
     static ECSqlTestDataset PolymorphicTests (int rowCountPerClass);
     static ECSqlTestDataset PrimitiveTests (int rowCountPerClass);
-    static ECSqlTestDataset SourceTargetConstraintTests (int rowCountPerClass);
+    static ECSqlTestDataset SelectClauseTests(int rowCountPerClass);
+    static ECSqlTestDataset SourceTargetConstraintTests(int rowCountPerClass);
     static ECSqlTestDataset StructTests (int rowCountPerClass);
     static ECSqlTestDataset SubqueryTests (int rowCountPerClass);
     static ECSqlTestDataset UnionTests(int rowCountPerClass);

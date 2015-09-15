@@ -25,61 +25,54 @@ int startColumnIndex
 )
     {
     BeAssert (derivedProperty != nullptr && derivedProperty->IsComplete ());
-    auto valueExp = derivedProperty->GetExpression();
 
-    auto selectPreparedState = ctx.GetECSqlStatementR ().GetPreparedStatementP <ECSqlSelectPreparedStatement> ();
+    ECSqlSelectPreparedStatement* selectPreparedState = ctx.GetECSqlStatementR ().GetPreparedStatementP <ECSqlSelectPreparedStatement> ();
+
+    ValueExp const* valueExp = derivedProperty->GetExpression();
+    PropertyNameExp const* propNameExp = nullptr;
+    if (valueExp->GetType() == Exp::Type::PropertyName)
+        propNameExp = static_cast<PropertyNameExp const*>(valueExp);
+
+    ECPropertyCP generatedProperty = nullptr;
+    ECSqlStatus stat = selectPreparedState->GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, *derivedProperty, propNameExp, selectPreparedState->GetECDb());
+    if (ECSqlStatus::Success != stat)
+        return stat;
 
     ECSqlColumnInfo ecsqlColumnInfo;
-    PropertyNameExp const* propertyNameExp = nullptr;
-    if (valueExp->GetType() == Exp::Type::PropertyName)
-        propertyNameExp = static_cast<PropertyNameExp const*>(valueExp);          
-
-    const bool isPropertyNameExp = propertyNameExp != nullptr;
-    //if a column alias was specified always create a dynamic property for it, even if expression is a property name expression
-    if (isPropertyNameExp && derivedProperty->GetColumnAlias ().empty () && !propertyNameExp->IsPropertyRef ())
-        ecsqlColumnInfo = CreateECSqlColumnInfoFromPropertyNameExp (ctx, *propertyNameExp);
+    if (generatedProperty != nullptr)
+        ecsqlColumnInfo = CreateECSqlColumnInfoFromGeneratedProperty(ctx, *generatedProperty);
     else
-        {
-        ECPropertyCP generatedProperty = nullptr;
-        auto stat = selectPreparedState->GetDynamicSelectClauseECClassR ().AddProperty (generatedProperty, *derivedProperty, selectPreparedState->GetECDb ());
-        if (stat != ECSqlStatus::Success)
-            {
-            BeAssert (false && "");
-            return ctx.SetError (ECSqlStatus::ProgrammerError, "Could not create dynamic ECProperty for computed select clause item.");
-            }
-
-        ecsqlColumnInfo = CreateECSqlColumnInfoFromGeneratedProperty (ctx, *generatedProperty);
-        }
+        ecsqlColumnInfo = CreateECSqlColumnInfoFromPropertyNameExp(ctx, *propNameExp);
     
     auto const& valueTypeInfo = valueExp->GetTypeInfo ();
     BeAssert (valueTypeInfo.GetKind () != ECSqlTypeInfo::Kind::Unset);
 
     unique_ptr<ECSqlField> field = nullptr;
-    ECSqlStatus stat = ECSqlStatus::Success;
+    stat = ECSqlStatus::Success;
     switch (valueTypeInfo.GetKind ())
         {
         case ECSqlTypeInfo::Kind::Primitive:
         case ECSqlTypeInfo::Kind::Null:
-            stat = CreatePrimitiveField (field, startColumnIndex, ctx, move (ecsqlColumnInfo), propertyNameExp, valueTypeInfo.GetPrimitiveType ());
+            stat = CreatePrimitiveField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), propNameExp, valueTypeInfo.GetPrimitiveType());
             break;
 
         case ECSqlTypeInfo::Kind::Struct:
-            stat =  CreateStructField (field, startColumnIndex, ctx, move (ecsqlColumnInfo), propertyNameExp);
+            stat = CreateStructField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), propNameExp);
             break;
 
         case ECSqlTypeInfo::Kind::PrimitiveArray:
-            stat =  CreatePrimitiveArrayField(field, startColumnIndex, ctx, move (ecsqlColumnInfo), propertyNameExp, valueTypeInfo.GetPrimitiveType ());
+            stat = CreatePrimitiveArrayField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), propNameExp, valueTypeInfo.GetPrimitiveType());
             break;
 
         case ECSqlTypeInfo::Kind::StructArray:
             {
-            if (!isPropertyNameExp)
+            if (propNameExp == nullptr)
                 {
                 BeAssert(false && "Operations with struct array properties not supported in the select clause. This should have been caught by the parser already.");
                 return ctx.SetError(ECSqlStatus::InvalidECSql, "Operations with struct array properties not supported in the select clause.");
                 }
 
-            stat = CreateStructArrayField(field, startColumnIndex, ctx, move (ecsqlColumnInfo), propertyNameExp->GetPropertyMap ());
+            stat = CreateStructArrayField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), propNameExp->GetPropertyMap());
             break;
             }
 

@@ -70,7 +70,7 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindDateTime(DateTimeCR value);
 
-//__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     //! Binds a %DateTime value expressed as Julian Day to the parameter
     //! @param[in] julianDayTicks DateTime value as Julian Day
     //! @param[in] metadata DateTime metadata. Pass nullptr if no metadata exist for the ticks
@@ -85,7 +85,7 @@ public:
     //! @see BentleyApi::DateTime::ToJulianDay
     ECDB_EXPORT ECSqlStatus BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata);
 
-//__PUBLISH_SECTION_START__
+#endif
 
     //! Binds a double value to the parameter
     //! @param[in] value Value to bind
@@ -97,7 +97,7 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindGeometry(IGeometryCR value);
 
-//__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     //! Binds a Bentley Geometry FlatBuffer blob to the parameter
     //! @param[in] value Value to bind
     //! @param[in] blobSize Size of the BLOB in bytes
@@ -106,7 +106,7 @@ public:
     //!            the statement's bindings are cleared.
     //! @return ECSqlStatus::Success or error codes
     ECSqlStatus BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy);
-//__PUBLISH_SECTION_START__
+#endif
 
     //! Binds a 32-bit integer value to the parameter
     //! @param[in] value Value to bind
@@ -167,9 +167,7 @@ struct IECSqlStructBinder : NonCopyableClass
     {
 private:
     virtual IECSqlBinder& _GetMember(Utf8CP structMemberPropertyName) = 0;
-    //__PUBLISH_SECTION_END__
     virtual IECSqlBinder& _GetMember(ECN::ECPropertyId structMemberPropertyId) = 0;
-    //__PUBLISH_SECTION_START__
 
 public:
     ECDB_EXPORT virtual ~IECSqlStructBinder() {}
@@ -179,9 +177,9 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT IECSqlBinder& GetMember(Utf8CP structMemberPropertyName);
 
-    //__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     IECSqlBinder& GetMember(ECN::ECPropertyId structMemberPropertyId);
-    //__PUBLISH_SECTION_START__
+#endif
     };
 
 //=======================================================================================

@@ -81,11 +81,3 @@ enum class ResolveSchema
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
-//__PUBLISH_SECTION_END__
-
-ECDB_TYPEDEFS(ECDbMap);
-
-ECDB_TYPEDEFS_PTR(ECDbSchemaWriter);
-ECDB_TYPEDEFS_PTR(ECDbSchemaReader);
-
-#define USING_NAMESPACE_BENTLEY_EC using namespace BentleyApi::ECN;

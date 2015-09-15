@@ -410,10 +410,7 @@ public:
     ECDB_EXPORT Utf8String GetLastStatusMessage() const;
     //! @}
 
-
-
-//__PUBLISH_SECTION_END__
-
+#if !defined (DOCUMENTATION_GENERATOR)
     //! Gets the ECSQL statement string
     //! @remarks Results in an error if the ECSqlStatement has not been prepared yet
     //! @return ECSQL statement string
@@ -430,7 +427,7 @@ public:
     //! @remarks Only call this for a prepared statement!
     //! @return ECDb handle used to prepare this statement or nullptr if statement is not prepared.
     ECDbCP GetECDb() const;
-//__PUBLISH_SECTION_START__
+#endif
     };
 
 typedef ECSqlStatement const& ECSqlStatementCR;
@@ -530,8 +527,7 @@ public:
     ECDB_EXPORT void Log() const;
     };
 
-//__PUBLISH_SECTION_END__
-
+#if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
 //! Unpublished helper that parses an ECSQL and formats the result to a string.
 //=======================================================================================
@@ -546,6 +542,6 @@ public:
     ECDB_EXPORT static bool ParseAndFormatECSqlExpTree(Utf8StringR expTree, Utf8StringR expTreeToECSql, Utf8StringR error, Utf8CP ecsql, ECDbR db);
     };
 
-//__PUBLISH_SECTION_START__
+#endif
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

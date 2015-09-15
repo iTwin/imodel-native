@@ -32,8 +32,6 @@ private:
     mutable Utf8String m_relationshipClassAlias; // Used only in ECSql generation
     mutable Utf8String m_relatedClassAlias; // Used only in ECSql generation
 
-//__PUBLISH_SECTION_END__
-
     void Init (ECN::ECRelationshipClassCR relationshipClass, ECN::ECClassCR relatedClass, ECN::ECRelatedInstanceDirection direction);
     
     Utf8StringCR GetRelatedClassAlias() const {return m_relatedClassAlias;}
@@ -43,8 +41,9 @@ private:
     void SetRelationshipClassAlias (Utf8StringCR relationshipClassAlias) const {m_relationshipClassAlias = relationshipClassAlias;}
 
 public:
-    ECRelatedClassSpecifier() : m_direction (ECN::ECRelatedInstanceDirection::Forward) {}
+#if !defined (DOCUMENTATION_GENERATOR)
 
+    ECRelatedClassSpecifier();
     ECRelatedClassSpecifier (ECN::ECRelationshipClassCR relationshipClass, ECN::ECClassCR relatedClass, ECN::ECRelatedInstanceDirection direction);
 
     //! @param [in] defaultSchema The schema containing the partly qualified classes in the path. Can be set to nullptr if all the class names 
@@ -53,10 +52,7 @@ public:
     BentleyStatus InitFromString(Utf8StringCR relatedClassString, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema);
 
     Utf8String ToString () const;
-
-    //__PUBLISH_SECTION_START__
-
-public:
+#endif
     //! Get the related class
     ECN::ECClassCP GetRelatedClass() const {return m_relatedClass;}
 
@@ -109,9 +105,6 @@ private:
     bvector<ECRelatedClassSpecifier> m_relatedClassSpecifiers;
     mutable Utf8String m_rootClassAlias; // Used only in ECSql generation
 
-//__PUBLISH_SECTION_END__
-
-private:
     void Clear();
 
     void CopyFrom (ECRelationshipPath const& other);
@@ -121,12 +114,11 @@ private:
     void SetupAliases() const;
 
 public:
+#if !defined (DOCUMENTATION_GENERATOR)
     //! Validates the specified relationship path
     bool Validate() const;
+#endif
 
-//__PUBLISH_SECTION_START__
-
-public:
     //! Constructs an empty relationship path
     ECRelationshipPath() {}
 
@@ -276,7 +268,8 @@ public:
     ECDB_EXPORT BentleyStatus ReplaceAnyClassAtEnd(ECN::ECClassCR replacementClass, End end);
 };
 
-//__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -321,11 +314,10 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
+#endif
 
-//__PUBLISH_SECTION_START__
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
 #endif
-//__PUBLISH_SECTION_END__
 

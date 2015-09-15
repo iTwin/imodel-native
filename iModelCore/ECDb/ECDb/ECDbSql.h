@@ -297,7 +297,7 @@ public:
     const std::vector<ECDbSqlIndex const*> GetIndexes () const;
     std::vector<ECDbSqlIndex*> GetIndexesR ();
 
-    BentleyStatus CreateOrUpdateIndices(SchemaImportContext const&) const;
+    BentleyStatus CreateOrUpdateIndices() const;
 
     const std::vector<ECDbSqlTable const*> GetTables () const;
     const std::vector<ECDbSqlTable*> GetTablesR ();
@@ -331,9 +331,9 @@ public:
         ~PersistenceManager (){}
 
         ECDbSqlIndex const& GetIndex () const { return m_index; }
-        BentleyStatus Create(ECDbR ecdb, SchemaImportContext const&) const;
-        BentleyStatus Drop(ECDbR ecdb, SchemaImportContext const&) const;
-        bool Exists (ECDbR ecdb) const;
+        BentleyStatus Create(ECDbR) const;
+        BentleyStatus Drop(ECDbR) const;
+        bool Exists (ECDbR) const;
         };
 
 private:
@@ -621,15 +621,15 @@ struct ECDbSqlTable : NonCopyableClass
     private:
         ECDbSqlTable& m_table;
 
-        BentleyStatus CreateTriggers(ECDbR, SchemaImportContext const&, bool failIfExists) const;
+        BentleyStatus CreateTriggers(ECDbR, bool failIfExists) const;
 
     public:
         explicit PersistenceManager (ECDbSqlTable& table) :m_table (table) {}
         ~PersistenceManager (){}
 
-        BentleyStatus Create(ECDbR ecdb, SchemaImportContext const&) const;
-        BentleyStatus CreateOrUpdate(ECDbR ecdb, SchemaImportContext const&) const;
-        BentleyStatus Drop(ECDbR ecdb, SchemaImportContext const&) const;
+        BentleyStatus Create(ECDbR ecdb) const;
+        BentleyStatus CreateOrUpdate(ECDbR ecdb) const;
+        BentleyStatus Drop(ECDbR ecdb) const;
         bool Exist (ECDbR ecdb) const;
         };
 
@@ -757,8 +757,8 @@ public:
     static Utf8String GetDropTableDDL (ECDbSqlTable const& table) { return "DROP TABLE [" + table.GetName () + "]"; }
     static Utf8String GetDropIndexDDL (ECDbSqlIndex const& index) { return "DROP INDEX [" + index.GetName () + "]"; }
 
-    static BentleyStatus AddColumns(ECDbR, SchemaImportContext const&, ECDbSqlTable const&, std::vector<Utf8CP> const& newColumns);
-    static BentleyStatus CopyRows(DbR, SchemaImportContext const&, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
+    static BentleyStatus AddColumns(ECDbR, ECDbSqlTable const&, std::vector<Utf8CP> const& newColumns);
+    static BentleyStatus CopyRows(ECDbR, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
     };
 
 
