@@ -124,25 +124,21 @@ TEST_F (ValueAccessorTests, GetAccessString)
 //This Vancouver change to use a ClassLayout/PropertyLayout scheme doesn’t lend itself to
 //anyone just modifying a class on the fly as might have been easily done in the managed
 //heavyweight ECInstance.
-TEST_F (ValueAccessorTests, DISABLED_GetDefaultStandaloneEnablerBug)
+TEST_F (ValueAccessorTests, GetDefaultStandaloneEnabler)
     {
-#ifdef WHEN_ITS_NO_LONGER_DISABLED
-    // The test doesn't compiled. But it's disabled, so I'm just commenting it out...
     CreateSchema();
     
     PrimitiveECPropertyP prop;
     EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, "Prop1"), ECOBJECTS_STATUS_Success);
     EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetClassLayout().GetPropertyCount(), 2);
-             //ecClass->GetDefaultStandaloneEnabler() locks the item count and other properties
     
     EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, "Prop2"), ECOBJECTS_STATUS_Success);
     EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetClassLayout().GetPropertyCount(), 3);
     
     EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, "Prop2"), ECOBJECTS_STATUS_Success);
-    WCharCP propertyName;
+    Utf8CP propertyName;
     EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetAccessString  (propertyName,  propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_STREQ (propertyName, "Prop2");
-#endif
     }
     
 /*---------------------------------------------------------------------------------**//**

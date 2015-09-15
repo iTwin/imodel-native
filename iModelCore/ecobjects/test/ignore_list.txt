@@ -16,15 +16,14 @@ UnitsTest.Conversions   # Takes WAY too long to run every time
 
 SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file that isn't extracted on non-Windows
 
-CGBinarySerializationTests.WriterTest # notified Earlin and Carole
+CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 
 PropertyTests.SetReadOnlyAndSetValue               # Was set DISABLED. Need to investigate what is wrong
 PropertyTests.SetReadOnlyAndChangeValue            # Was set DISABLED. Need to investigate what is wrong
 ValueTests.ValueReadOnly                           # Was set DISABLED. Need to investigate what is wrong
-ValueAccessorTests.GetDefaultStandaloneEnablerBug # Was set DISABLED. Need to investigate what is wrong
-ECRelationshipTests.DumpToString                  # Was set DISABLED. Hardcoded values need to be investigated.
+ECRelationshipTests.DumpToString                   # Was set DISABLED. Hardcoded values need to be investigated.
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-ValueTests.StringToIGeometry
+ValueTests.StringToIGeometry					   # Defect 276743
