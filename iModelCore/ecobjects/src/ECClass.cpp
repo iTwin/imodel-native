@@ -37,8 +37,8 @@ ECClass::ECClass (ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::~ECClass ()
     {
-    RemoveBaseClasses ();
     RemoveDerivedClasses ();
+    RemoveBaseClasses ();
 
     m_propertyList.clear();
     
@@ -996,7 +996,7 @@ ECObjectsStatus ECClass::RemoveBaseClass (ECClassCR baseClass)
         
     if (!baseClassRemoved)
         {
-        LOG.warningv(L"Class '%s' is not a base class of class '%s'", baseClass.GetName().c_str(), GetName().c_str());
+        LOG.warningv("Class '%s' is not a base class of class '%s'", baseClass.GetName().c_str(), GetName().c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
         
