@@ -8,7 +8,7 @@
 #include <ECDb/ECDbApi.h>
 #include <cmath> // for std::pow
 
-using namespace BentleyApi::ECN;
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

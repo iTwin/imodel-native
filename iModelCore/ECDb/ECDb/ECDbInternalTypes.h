@@ -27,8 +27,6 @@ ECDB_TYPEDEFS_PTR(RelationshipClassLinkTableMap);
 ECDB_TYPEDEFS_PTR(ClassIndexInfo);
 ECDB_TYPEDEFS_PTR(StandardKeySpecification);
 
-#define USING_NAMESPACE_BENTLEY_EC using namespace BentleyApi::ECN;
-
 //#define ENABLE_TRIGGER_DEBUGGING
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE

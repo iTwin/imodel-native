@@ -12,8 +12,6 @@
 
 #include <UnitTests/BackDoor/ECDb/ECDbTests.h>
 
-#define USING_NAMESPACE_BENTLEY_EC using namespace BentleyApi::ECN;
-
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 typedef bmap<ECInstanceId, ECN::IECInstancePtr> ECInstanceMap;
