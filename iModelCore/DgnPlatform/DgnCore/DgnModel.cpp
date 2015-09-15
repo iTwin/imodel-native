@@ -746,7 +746,7 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
     DbResult rc = m_dgndb.GetNextRepositoryBasedId(m_modelId, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
     BeAssert(rc == BE_SQLITE_OK);
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Visibility) VALUES(?,?,?,?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Visibility) VALUES(?,?,?,?,?,?)");
     stmt.BindId(1, m_modelId);
     stmt.BindText(2, m_name.c_str(), Statement::MakeCopy::No);
     stmt.BindText(3, description, Statement::MakeCopy::No);
