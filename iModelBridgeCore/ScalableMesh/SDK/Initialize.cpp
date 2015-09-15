@@ -258,10 +258,15 @@ void InitializeSDK(DgnPlatformLib::Host& host)
         RscFileManager::StaticInitialize(L"not-used");
         static SampleHost smHost;
         ((SampleAdmin&)smHost.GetScalableMeshAdmin()).SetActiveModelRef(model);
-
         InitMonikerFactories();
         Bentley::DgnPlatform::Raster::RasterCoreLib::Initialize(*new AppRasterCoreLibHost());
-        BeAssert(Bentley::DgnPlatform::Raster::RasterCoreLib::IsInitialized());
-
+        BeAssert(Bentley::DgnPlatform::Raster::RasterCoreLib::IsInitialized()); 
         }
+
+void CloseSDK()
+    {
+    file->SetAbandonChangesFlag();
+    file->ProcessChanges(DgnPlatform::DgnSaveReason::ApplInitiated);
+    file = nullptr;
+    }
     }

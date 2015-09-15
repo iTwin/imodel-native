@@ -17,6 +17,7 @@
 #include <PointCloud\PointCloud.h>
 #include <PointCloud\PointCloudDisplayHandler.h>
 #include <RasterCore/RasterCoreLib.h>
+#include <DgnGeoCoord\DgnGeoCoord.h>
 #include <BeXml/BeXml.h>
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -36,7 +37,6 @@ namespace ScalableMeshSDKSample
             virtual HUDManager* _GetHUDManager() override { return nullptr; }
         };
 
-
     struct ScalableMeshSDKSample : DgnViewLib::Host
         {
         protected:
@@ -46,7 +46,7 @@ namespace ScalableMeshSDKSample
         virtual IViewManager& _SupplyViewManager() override { return *new SampleViewManager(); }
         virtual DgnPlatformLib::Host::RasterAttachmentAdmin&  _SupplyRasterAttachmentAdmin() { return Bentley::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin(); }
         virtual DgnPlatformLib::Host::PointCloudAdmin&    _SupplyPointCloudAdmin() { return *new Bentley::DgnPlatform::PointCloudDisplayAdmin(); }
-
+        virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() { return *GeoCoordinates::DgnGeoCoordinationAdmin::Create(NULL, *m_acsManager); }
 
             BeFileName          m_inputFileName;
             IScalableMeshPtr                m_sMesh;

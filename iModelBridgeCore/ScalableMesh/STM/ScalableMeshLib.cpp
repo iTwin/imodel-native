@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 #include <ScalableMesh\ScalableMeshLib.h>
-
+#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -33,7 +33,8 @@ void RegisterPODImportPlugin();
 void ScalableMeshLib::Host::Initialize()
     {
     BeAssert (NULL == m_scalableTerrainModelAdmin);   
-    m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();        
+    m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
+    Bentley::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
     }
     
 /*---------------------------------------------------------------------------------**//**

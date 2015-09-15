@@ -63,7 +63,7 @@
         <ProductDirectory Name="PCLAssemblies" Path="Dlls"/>
         <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
         <ProductDirectory Name="AdobeAssemblies" Deliver="false"/>
-        <ProductDirectory Name="PdfLibinitNativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="PdfLibinitNativeAssemblies" Path="Dlls"/>
         <ProductDirectory Name="MdlsysAsneededSmartsolid" Path="Dlls"/>
         <ProductDirectory Name="AdobeResource" Deliver="false"/>
         <ProductDirectory Name="CSMapMergeModules" Deliver="false"/>
