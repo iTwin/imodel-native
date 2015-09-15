@@ -53,31 +53,12 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare (NativeSqlBuilder::List& nativ
 
     if (!NeedsPreparation (currentScope, propMap))
             return ECSqlStatus::Success;
-    //a 
+
     const auto currentScopeECSqlType = currentScope.GetECSqlType ();
-    // bb as P
     //in SQLite table aliases are only allowed for SELECT statements
     auto classIdentifier = currentScopeECSqlType == ECSqlType::Select ? exp->GetClassRefExp ()->GetId ().c_str () : nullptr;
-    //auto classNameExpr =  dynamic_cast<ClassNameExp const*>(exp->GetClassRefExp ());
-
-    //if (classNameExpr == nullptr)
-    //    {
-    //    BeAssert (false && "Case is only handled for ClassRefExpr of type ClassNameExpr ");
-    //    return ECSqlStatus::NotYetSupported;
-    //    }
-    if (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V0)
-        {
-        auto propNameNativeSqlSnippets = exp->GetPropertyMap ().ToNativeSql (classIdentifier, currentScopeECSqlType, exp->HasParentheses ());
-        nativeSqlSnippets.insert (nativeSqlSnippets.end (), propNameNativeSqlSnippets.begin (), propNameNativeSqlSnippets.end ());
-        }
-    else if (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V1)
-        {
-        RenderPropertyMap (nativeSqlSnippets, propMap);
-        }
-    else
-        {
-        return ECSqlStatus::ProgrammerError;
-        }
+    auto propNameNativeSqlSnippets = exp->GetPropertyMap ().ToNativeSql (classIdentifier, currentScopeECSqlType, exp->HasParentheses ());
+    nativeSqlSnippets.insert (nativeSqlSnippets.end (), propNameNativeSqlSnippets.begin (), propNameNativeSqlSnippets.end ());
 
     return ECSqlStatus::Success;
     }
@@ -137,25 +118,10 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
                 {
                 if (!propertyRef->IsPrepared ())
                     {
-                    if (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V0)
-                        {
-                        auto snippets = propertyName->GetPropertyMap ().ToNativeSql (nullptr, ECSqlType::Select, false);
-                        auto r = propertyRef->Prepare (snippets);
-                        if (!r)
-                            return ECSqlStatus::ProgrammerError;
-                        }
-                    else if (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V1)
-                        {
-                        NativeSqlBuilder::List snippets;
-                        RenderPropertyMap (snippets, propertyName->GetPropertyMap ());
-                        auto r = propertyRef->Prepare (snippets);
-                        if (!r)
-                            return ECSqlStatus::ProgrammerError;
-                        }
-                    else
-                        {
+                    auto snippets = propertyName->GetPropertyMap ().ToNativeSql (nullptr, ECSqlType::Select, false);
+                    auto r = propertyRef->Prepare (snippets);
+                    if (!r)
                         return ECSqlStatus::ProgrammerError;
-                        }
                     }
                 }
             else
