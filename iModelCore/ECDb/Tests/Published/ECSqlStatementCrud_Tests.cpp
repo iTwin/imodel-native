@@ -204,6 +204,15 @@ TEST_F (ECSqlSelectTestFixture, PrimitiveTests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectTestFixture, SelectClauseTests)
+    {
+    auto dataset = ECSqlSelectTestDataset::SelectClauseTests(PerClassRowCount);
+    RunTest(dataset);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/13
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlSelectTestFixture, SourceTargetConstraintTests)
