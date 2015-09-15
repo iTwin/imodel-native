@@ -21,9 +21,6 @@ CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 PropertyTests.SetReadOnlyAndSetValue               # Defect 290587
 PropertyTests.SetReadOnlyAndChangeValue            # Defect 290587
 ValueTests.ValueReadOnly                           # Defect 290587
-ECRelationshipTests.DumpToString                   # Was set DISABLED. Hardcoded values need to be investigated.
 
-#----------------------------------------------------------------------------------------
-# *** Broken in 06; need to be re-visited ***
-#----------------------------------------------------------------------------------------
 ValueTests.StringToIGeometry					   # Defect 276743
+
