@@ -808,6 +808,7 @@ public:
     //! @}
 
     bool Is3d() const {return nullptr != _ToElement3d();} //!< Determine whether this element is 3d or not
+    bool IsGeometricElement() const {return nullptr != ToGeometricElement();}
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}//!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
     Hilited IsHilited() const {return (Hilited) m_flags.m_hilited;} //!< Get the current Hilited state of this element

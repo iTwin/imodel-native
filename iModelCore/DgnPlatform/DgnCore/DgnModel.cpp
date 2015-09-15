@@ -311,7 +311,19 @@ DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
         return status;
 
     // if it is a geometric element, it must be a 2d element.
-    return element.Is3d() ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
+    return element.IsGeometricElement() && element.Is3d() ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel3d::_OnInsertElement(DgnElementR element)
+    {
+    auto status = T_Super::_OnInsertElement(element);
+    if (DgnDbStatus::Success == status && element.IsGeometricElement() && !element.Is3d())
+        status = DgnDbStatus::Mismatch2d3d;
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -746,13 +758,18 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
     DbResult rc = m_dgndb.GetNextRepositoryBasedId(m_modelId, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
     BeAssert(rc == BE_SQLITE_OK);
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Visibility) VALUES(?,?,?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Visibility,Space) VALUES(?,?,?,?,?,?,?)");
     stmt.BindId(1, m_modelId);
     stmt.BindText(2, m_name.c_str(), Statement::MakeCopy::No);
     stmt.BindText(3, description, Statement::MakeCopy::No);
     stmt.BindInt(4, (int)_GetModelType());
     stmt.BindId(5, GetClassId());
     stmt.BindInt(6, inGuiList ? 1 : 0);
+    auto geomModel = ToGeometricModel();
+    if (nullptr != geomModel)
+        stmt.BindInt(7, (int)geomModel->GetCoordinateSpace());
+    else
+        stmt.BindNull(7);
 
     rc = stmt.Step();
     if (BE_SQLITE_DONE != rc)
