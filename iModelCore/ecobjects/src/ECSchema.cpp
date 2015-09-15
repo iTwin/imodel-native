@@ -816,7 +816,7 @@ ECObjectsStatus ECSchema::ParseSchemaFullName (Utf8StringR schemaName, uint32_t&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECSchema::FormatSchemaVersion (uint32_t& versionMajor, uint32_t& versionMinor)
+Utf8String ECSchema::FormatSchemaVersion (uint32_t versionMajor, uint32_t versionMinor)
     {
     Utf8Char versionString[80];
     BeStringUtilities::Snprintf (versionString, "%02d.%02d", versionMajor, versionMinor);
