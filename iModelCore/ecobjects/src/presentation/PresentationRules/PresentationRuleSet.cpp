@@ -243,7 +243,7 @@ Utf8String PresentationRuleSet::WriteToXmlString ()
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty ();        
     WriteXml (*xmlDom.get());
 
-    Utf8String presentationRuleSetXml = "";
+    Utf8String presentationRuleSetXml;
     xmlDom->ToString (presentationRuleSetXml, BeXmlDom::TO_STRING_OPTION_Default);
 
     return presentationRuleSetXml;

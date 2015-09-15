@@ -143,7 +143,7 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetCreation)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PresentationRulesTests, TestPresentationRuleSetLoadingFromXml)
     {
-    Utf8P ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
                               "  <PresentationRuleSet"
                               "    RuleSetId=\"Items\""
                               "    VersionMajor=\"5\""
