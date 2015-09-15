@@ -650,73 +650,73 @@ TEST_F (DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
 //---------------------------------------------------------------------------------------
 TEST(DgnProject, DuplicateElementId)
     {
-    // TFS#289237 stems from platform re-using a deleted element ID.
-    // Before the patch, DgnFile only read/cached the highest element ID when asked for it.
-    // Thus, if the first thing you did was delete the element with the highest ID, you could end up adding a new elenent with the same ID, and various chaos ensues.
-    // This test is meant to verify the fix that the highest ID is read when the file is opened, instead of later when adding elements.
+    // // TFS#289237 stems from platform re-using a deleted element ID.
+    // // Before the patch, DgnFile only read/cached the highest element ID when asked for it.
+    // // Thus, if the first thing you did was delete the element with the highest ID, you could end up adding a new elenent with the same ID, and various chaos ensues.
+    // // This test is meant to verify the fix that the highest ID is read when the file is opened, instead of later when adding elements.
 
-    ScopedDgnHost host;
+    // ScopedDgnHost host;
     
-    // We're going to write to the file; make a copy.
-    BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"DgnProject.DuplicateElementId.dgndb", __FILE__));
+    // // We're going to write to the file; make a copy.
+    // BeFileName dbPath;
+    // ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"DgnProject.DuplicateElementId.dgndb", __FILE__));
     
-    DgnModelId modelId;
-    ElementId firstAddId;
+    // DgnModelId modelId;
+    // ElementId firstAddId;
 
-    // Open the file.
-        {
-        DgnFileStatus openStatus;
-        DgnProjectPtr db = DgnProject::OpenProject (&openStatus, dbPath, DgnProject::OpenParams(DgnProject::OPEN_ReadWrite));
-        ASSERT_TRUE(DGNFILE_STATUS_Success == openStatus);
-        ASSERT_TRUE(db.IsValid());
+    // // Open the file.
+    //     {
+    //     DgnFileStatus openStatus;
+    //     DgnProjectPtr db = DgnProject::OpenProject (&openStatus, dbPath, DgnProject::OpenParams(DgnProject::OPEN_ReadWrite));
+    //     ASSERT_TRUE(DGNFILE_STATUS_Success == openStatus);
+    //     ASSERT_TRUE(db.IsValid());
 
-        // Find a model to work with.
-        DgnModels::Iterator modelIter = db->Models().MakePhysicalIterator();
-        ASSERT_TRUE(modelIter.begin() != modelIter.end());
+    //     // Find a model to work with.
+    //     DgnModels::Iterator modelIter = db->Models().MakePhysicalIterator();
+    //     ASSERT_TRUE(modelIter.begin() != modelIter.end());
         
-        modelId = modelIter.begin().GetModelId();
-        ASSERT_TRUE(modelId.IsValid());
+    //     modelId = modelIter.begin().GetModelId();
+    //     ASSERT_TRUE(modelId.IsValid());
         
-        DgnModelP model = db->Models().GetModelById(modelId);
-        ASSERT_TRUE(nullptr != model);
-        ASSERT_TRUE(SUCCESS == model->FillSections(DgnModelSections::All));
+    //     DgnModelP model = db->Models().GetModelById(modelId);
+    //     ASSERT_TRUE(nullptr != model);
+    //     ASSERT_TRUE(SUCCESS == model->FillSections(DgnModelSections::All));
 
-        // Add an element, and remember its ID.
-        EditElementHandle eeh;
-        ExtendedElementHandler::InitializeElement(eeh, nullptr /*template*/, model, model->Is3d() /*is3d*/, false /*isComplexHeader*/);
-        ASSERT_TRUE(eeh.IsValid());
+    //     // Add an element, and remember its ID.
+    //     EditElementHandle eeh;
+    //     ExtendedElementHandler::InitializeElement(eeh, nullptr /*template*/, model, model->Is3d() /*is3d*/, false /*isComplexHeader*/);
+    //     ASSERT_TRUE(eeh.IsValid());
         
-        ASSERT_TRUE(SUCCESS == eeh.AddToModel());
+    //     ASSERT_TRUE(SUCCESS == eeh.AddToModel());
         
-        firstAddId = eeh.GetElementId();
-        ASSERT_TRUE(firstAddId.IsValid());
-        }
+    //     firstAddId = eeh.GetElementId();
+    //     ASSERT_TRUE(firstAddId.IsValid());
+    //     }
 
-    // Re-open, delete the added element, and add another. Verify the ID was not re-used.
-        {
-        DgnFileStatus openStatus;
-        DgnProjectPtr db = DgnProject::OpenProject (&openStatus, dbPath, DgnProject::OpenParams(DgnProject::OPEN_ReadWrite));
-        ASSERT_TRUE(DGNFILE_STATUS_Success == openStatus);
-        ASSERT_TRUE(db.IsValid());
+    // // Re-open, delete the added element, and add another. Verify the ID was not re-used.
+    //     {
+    //     DgnFileStatus openStatus;
+    //     DgnProjectPtr db = DgnProject::OpenProject (&openStatus, dbPath, DgnProject::OpenParams(DgnProject::OPEN_ReadWrite));
+    //     ASSERT_TRUE(DGNFILE_STATUS_Success == openStatus);
+    //     ASSERT_TRUE(db.IsValid());
 
-        DgnModelP model = db->Models().GetModelById(modelId);
-        ASSERT_TRUE(nullptr != model);
-        ASSERT_TRUE(SUCCESS == model->FillSections(DgnModelSections::All));
+    //     DgnModelP model = db->Models().GetModelById(modelId);
+    //     ASSERT_TRUE(nullptr != model);
+    //     ASSERT_TRUE(SUCCESS == model->FillSections(DgnModelSections::All));
 
-        PersistentElementRefP firstAddElRef = model->FindElementById(firstAddId);
-        ASSERT_TRUE(nullptr != firstAddElRef);
+    //     PersistentElementRefP firstAddElRef = model->FindElementById(firstAddId);
+    //     ASSERT_TRUE(nullptr != firstAddElRef);
 
-        EditElementHandle eeh(firstAddElRef);
-        ASSERT_TRUE(SUCCESS == eeh.DeleteFromModel());
+    //     EditElementHandle eeh(firstAddElRef);
+    //     ASSERT_TRUE(SUCCESS == eeh.DeleteFromModel());
 
-        EditElementHandle eeh2;
-        ExtendedElementHandler::InitializeElement(eeh2, nullptr /*template*/, model, model->Is3d() /*is3d*/, false /*isComplexHeader*/);
-        ASSERT_TRUE(eeh2.IsValid());
+    //     EditElementHandle eeh2;
+    //     ExtendedElementHandler::InitializeElement(eeh2, nullptr /*template*/, model, model->Is3d() /*is3d*/, false /*isComplexHeader*/);
+    //     ASSERT_TRUE(eeh2.IsValid());
         
-        ASSERT_TRUE(SUCCESS == eeh2.AddToModel());
-        ElementId secondAddId = eeh2.GetElementId();
-        ASSERT_TRUE(secondAddId.IsValid());
-        ASSERT_TRUE(secondAddId > firstAddId);
-        }
+    //     ASSERT_TRUE(SUCCESS == eeh2.AddToModel());
+    //     ElementId secondAddId = eeh2.GetElementId();
+    //     ASSERT_TRUE(secondAddId.IsValid());
+    //     ASSERT_TRUE(secondAddId > firstAddId);
+    //     }
     }
