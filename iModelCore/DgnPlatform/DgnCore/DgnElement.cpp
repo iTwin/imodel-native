@@ -1962,10 +1962,67 @@ DgnDbStatus InstanceBackedItem::_LoadProperties(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+struct CachedECInstanceUpdaters : Db::AppData
+{
+    static Key s_key;
+    bmap<DgnClassId, ECInstanceUpdater*> m_cache;
+
+    ~CachedECInstanceUpdaters()
+        {
+        DeleteAll();
+        }
+
+    void DeleteAll()
+        {
+        for (auto e : m_cache)
+            delete e.second;    
+          
+        m_cache.clear();
+        }
+
+    static CachedECInstanceUpdaters& Get(DgnDbR db)
+        {
+        auto ad = dynamic_cast<CachedECInstanceUpdaters*>(db.FindAppData(s_key));
+        if (nullptr == ad)
+            db.AddAppData(s_key, (ad = new CachedECInstanceUpdaters));
+        return *ad;
+        }
+
+    void TrimCache()
+        {
+        if (m_cache.size() < 10)
+            return;
+
+        DeleteAll();
+        }
+
+    ECInstanceUpdater& GetECInstanceUpdater0(DgnDbR db, ECN::ECClassCR ecClass)
+        {
+        DgnClassId clsid(ecClass.GetId());
+        auto i = m_cache.find(clsid);
+        if (i != m_cache.end())
+            return *i->second;
+        TrimCache();
+        ECInstanceUpdater* newUpdater = new ECInstanceUpdater(db, ecClass);
+        m_cache[clsid] = newUpdater;
+        return *newUpdater;
+        }
+
+    static ECInstanceUpdater& GetECInstanceUpdater(DgnDbR db, ECN::ECClassCR ecClass)
+        {
+        return Get(db).GetECInstanceUpdater0(db, ecClass);
+        }
+};
+
+CachedECInstanceUpdaters::Key CachedECInstanceUpdaters::s_key;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus InstanceBackedItem::_UpdateProperties(DgnElementCR el)
     {
     SetInstanceId(BeSQLite::EC::ECInstanceId(el.GetElementId().GetValue()));
-    ECInstanceUpdater updater(el.GetDgnDb(), *m_instance);
+    ECInstanceUpdater& updater = CachedECInstanceUpdaters::GetECInstanceUpdater(el.GetDgnDb(), m_instance->GetClass());
     return (BSISUCCESS != updater.Update(*m_instance))? DgnDbStatus::WriteError: DgnDbStatus::Success;
     }
 
