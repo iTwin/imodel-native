@@ -82,14 +82,14 @@ public:
         //! @return Array index or negative number if entry is a property
         ECDB_EXPORT int GetArrayIndex () const;
 
-        //__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
         //! Sets the array index in this entry, if this entry is of the Kind::ArrayIndex
         //! kind.
         //! @param[in] newArrayIndex Array index to set
         //! @return ::SUCCESS in case of success, ::ERROR if the entry was no
         //! array index entry.
         BentleyStatus SetArrayIndex (int newArrayIndex);
-        //__PUBLISH_SECTION_START__
+#endif
         };
 
     typedef Entry const* EntryCP;
@@ -110,10 +110,8 @@ public:
     private:
         Impl* m_pimpl;
 
-        //__PUBLISH_SECTION_END__
         Impl const& GetPimpl () const;
         Impl& GetPimplR () const;
-        //__PUBLISH_SECTION_START__
     public:
     #if !defined (DOCUMENTATION_GENERATOR)
         explicit const_iterator (Impl* impl);
@@ -176,7 +174,7 @@ public:
     //! @return Property path as string.
     ECDB_EXPORT Utf8String ToString (FormatOptions option = FormatOptions::Default) const;
 
-    //__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     //! Appends a property entry to the end of this path.
     void AddEntry (ECN::ECPropertyCR ecProperty);
     //! Appends an array index entry to the end of this path.
@@ -187,7 +185,7 @@ public:
     //! @param[in] newArrayIndex Array index to set
     //! @return ::SUCCESS if this entry is an array index entry. ::ERROR if this entry is no array index entry
     BentleyStatus SetLeafArrayIndex (int newArrayIndex);
-    //__PUBLISH_SECTION_START__
+#endif
     };
 
 typedef ECSqlPropertyPath const& ECSqlPropertyPathCR;
@@ -209,13 +207,14 @@ private:
     ECSqlPropertyPath m_propertyPath;
     ECN::ECClassCP m_rootClass;
     Utf8String m_rootClassAlias;
-//__PUBLISH_SECTION_END__
 
     ECSqlColumnInfo (ECN::ECTypeDescriptor const& dataType, ECN::ECPropertyCP ecProperty, bool isGeneratedProperty, ECSqlPropertyPath&& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias);
 
     static ECN::ECTypeDescriptor DetermineDataType (ECN::ECPropertyCR ecProperty);
 
 public:
+#if !defined (DOCUMENTATION_GENERATOR)
+
     //! Initializes a new empty ECSqlColumnInfo object
     ECSqlColumnInfo ();
     static ECSqlColumnInfo CreateTopLevel (bool isGeneratedProperty, ECSqlPropertyPath&& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias);
@@ -230,10 +229,7 @@ public:
     ECSqlColumnInfo& operator= (ECSqlColumnInfo&&);
 
     ECSqlPropertyPath& GetPropertyPathR ();
-
-    // constructors are hidden from published API -> make it abstract in the published API
-    //__PUBLISH_CLASS_VIRTUAL__
-    //__PUBLISH_SECTION_START__
+#endif
 public:
     //! Gets the data type of the column represented by this info object.
     //! @return Column data type

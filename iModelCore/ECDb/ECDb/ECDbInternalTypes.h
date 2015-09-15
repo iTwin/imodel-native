@@ -12,6 +12,10 @@
 #include <Bentley/BeAssert.h>
 #include "ECDbLogger.h"
 
+ECDB_TYPEDEFS(ECDbMap);
+
+ECDB_TYPEDEFS_PTR(ECDbSchemaWriter);
+ECDB_TYPEDEFS_PTR(ECDbSchemaReader);
 ECDB_TYPEDEFS_PTR (ClassMap);
 ECDB_TYPEDEFS_PTR (PropertyMap);
 ECDB_TYPEDEFS_PTR(PropertyMapToInLineStruct);
@@ -22,6 +26,8 @@ ECDB_TYPEDEFS_PTR(RelationshipClassEndTableMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassLinkTableMap);
 ECDB_TYPEDEFS_PTR(ClassIndexInfo);
 ECDB_TYPEDEFS_PTR(StandardKeySpecification);
+
+#define USING_NAMESPACE_BENTLEY_EC using namespace BentleyApi::ECN;
 
 //#define ENABLE_TRIGGER_DEBUGGING
 

@@ -8,7 +8,7 @@
 #include <ECDb/ECDbApi.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
-USING_NAMESPACE_BENTLEY_EC
+using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

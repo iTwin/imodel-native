@@ -85,9 +85,9 @@ public:
     //! Clears the ECDb cache
     ECDB_EXPORT void ClearECDbCache() const;
 
-    //__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetECDbImplR() const;
-    //__PUBLISH_SECTION_START__
+#endif
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

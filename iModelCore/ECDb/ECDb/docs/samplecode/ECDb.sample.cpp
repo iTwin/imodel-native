@@ -10,7 +10,7 @@
 #include <ECDb/ECDbApi.h>
 //__PUBLISH_EXTRACT_END__
 
-USING_NAMESPACE_BENTLEY_EC
+using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

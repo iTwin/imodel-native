@@ -264,8 +264,8 @@ private:
     //! @return text representation of this builder
     virtual Utf8String _ToString () const = 0;
 
-//__PUBLISH_SECTION_END__
-protected:
+#if !defined (DOCUMENTATION_GENERATOR)
+ protected:
     //! Initializes a new instance of the ECSqlBuilder class.
     //! @remarks Derived classes *must* call this constructor in
     //!          order to ensure that the type is correctly set in the instance.
@@ -277,7 +277,7 @@ protected:
     ECSqlBuilder (ECSqlBuilder&& rhs);
     ECSqlBuilderR operator= (ECSqlBuilder&& rhs);
 
-//__PUBLISH_SECTION_START__
+#endif
 
  public:
     virtual ~ECSqlBuilder () {}
@@ -305,8 +305,7 @@ protected:
     //! @return ECSQL class snippet
     ECDB_EXPORT static Utf8String ToECSqlSnippet (ECN::ECClassCR ecClass);
 
-//__PUBLISH_SECTION_END__
-
+#if !defined (DOCUMENTATION_GENERATOR)
     //! Clones this builder.
     //! @remarks The caller is responsible for freeing the clone.
     //! @return Clone of this builder. The caller is responsible for freeing the clone.
@@ -315,8 +314,7 @@ protected:
     //! Gets the statement type of this builder.
     //! @return Statement type
     StatementType GetType () const;
-
-//__PUBLISH_SECTION_START__
+#endif
     };
 
 
@@ -455,7 +453,7 @@ public:
     //! @return this builder instance
     ECDB_EXPORT ECSqlSelectBuilderR Limit (Utf8CP limitClause, Utf8CP offsetClause = nullptr);
 
-//__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     SelectClause const& GetSelectClause () const {return m_select;}
     ClassClause const& GetFromClause () const {return m_from;}
     ClassClause const& GetJoinClause () const { return m_join; }
@@ -463,7 +461,7 @@ public:
     WhereClause const& GetWhereClause () const { return m_where; }
     Utf8StringCR GetOrderByClause () const {return m_orderBy;}
     LimitClause const& GetLimitClause () const {return m_limit;}
-//__PUBLISH_SECTION_START__
+#endif
     };
 
 
@@ -536,12 +534,12 @@ public:
     //! @return The ECSql string to be used with an ECSqlStatement
     ECDB_EXPORT static Utf8String BuildECSqlForClass(ECN::ECClassCR targetClass, bvector<Utf8String>& insertParams);
 
-//__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     ClassClause const& GetTargetClass () const;
     bvector<Utf8String> const& GetTargetPropertiesClause () const;
     bvector<Utf8String> const& GetValuesClause () const;
     bool TryFindECInstanceIdProperty (int& propertyIndex) const;
-//__PUBLISH_SECTION_START__
+#endif
     };
 
 //**************** ECSqlUpdateBuilder **************************************************
@@ -613,11 +611,11 @@ public:
     //! @return this builder instance
     ECDB_EXPORT ECSqlUpdateBuilderR Where (Utf8CP whereClause);
 
-//__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     ClassClause const& GetTargetClass () const;
     SetClause const& GetSetClause () const;
     WhereClause const& GetWhereClause () const;
-//__PUBLISH_SECTION_START__
+#endif
     };
 
 //**************** ECSqlDeleteBuilder **************************************************
@@ -668,10 +666,10 @@ public:
     //! @return this builder instance
     ECDB_EXPORT ECSqlDeleteBuilderR Where (Utf8CP whereClause);
 
-//__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     ClassClause const& GetTargetClass () const;
     WhereClause const& GetWhereClause () const;
-//__PUBLISH_SECTION_START__
+#endif
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
