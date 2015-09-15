@@ -11,7 +11,7 @@
 #include <WebServices/Cache/WebServicesCache.h>
 #include <ECObjects/ECObjectsAPI.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

@@ -10,7 +10,7 @@
 #include <WebServices/Cache/Util/ECExpressionHelper.h>
 #include <WebServices/Cache/Util/ECCustomAttributeHelper.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
