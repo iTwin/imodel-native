@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Bentley.OGC.WMS;
+using RealityPlatformWMSCapabilities;
 using System.Net;
 using System.Xml;
 using System.IO;
 using System.Diagnostics;
 using Bentley.RealityPlatform.RealityCrawlerDB;
 using System.Data.Entity.Spatial;
+
+using System.Data.Entity.Validation;
 
 namespace Bentley.RealityPlatform.RealityCrawler
     {
@@ -54,7 +56,8 @@ namespace Bentley.RealityPlatform.RealityCrawler
 
         #region Private Members
         private Boolean m_validWMSServer = true;
-        private WMSCapabilities m_capabilities;
+        private WMSCapabilitiesNet m_capabilities;
+        private String m_xmlContent;
         #endregion
 
         #region Constructor
@@ -148,10 +151,10 @@ namespace Bentley.RealityPlatform.RealityCrawler
                 using ( RealityCrawlerDBContainer context = new RealityCrawlerDBContainer () )
                     {
                     String currentServerURL;
-                     if (String.IsNullOrWhiteSpace(m_capabilities.GetCapabilitiesUrl))
+                     if (String.IsNullOrWhiteSpace(m_capabilities.GetCapabilityGroup ().GetRequest ().GetCapabilities ().GetDcpType ().GetHttpGet ().GetHref ()))
                         currentServerURL = ServerURL.AbsoluteUri;
                     else
-                        currentServerURL = m_capabilities.GetCapabilitiesUrl;
+                         currentServerURL = m_capabilities.GetCapabilityGroup ().GetRequest ().GetCapabilities ().GetDcpType ().GetHttpGet ().GetHref ();
 
                     Server wmsServer = context.ServerSet.FirstOrDefault (Server => Server.URL.Equals (currentServerURL));
                     if ( wmsServer == null )
@@ -178,39 +181,53 @@ namespace Bentley.RealityPlatform.RealityCrawler
             wmsServer.LastCheck = DateTime.UtcNow; // ToDo: manage offline server
             wmsServer.LastTimeOnline = DateTime.UtcNow; // ToDo: manage offline server
             wmsServer.State = State;
-            if (String.IsNullOrWhiteSpace(m_capabilities.GetCapabilitiesUrl))
+            if ( String.IsNullOrWhiteSpace (m_capabilities.GetCapabilityGroup ().GetRequest ().GetCapabilities ().GetDcpType ().GetHttpGet ().GetHref ()) )
                 wmsServer.URL = ServerURL.AbsoluteUri; // ToDo: Determine which URL should be saved
             else
-                wmsServer.URL = m_capabilities.GetCapabilitiesUrl; // ToDo: Determine which URL should be saved
+                wmsServer.URL = m_capabilities.GetCapabilityGroup ().GetRequest ().GetCapabilities ().GetDcpType ().GetHttpGet ().GetHref (); // ToDo: Determine which URL should be saved
 
-            wmsServer.Name = m_capabilities.Title;
-            wmsServer.Legal = "AccessConstraints: " + m_capabilities.AccessConstraints + ", Fees: " + m_capabilities.Fees;
+            wmsServer.Name = m_capabilities.GetServiceGroup ().GetTitle ();
+            wmsServer.Legal = "AccessConstraints: " + m_capabilities.GetServiceGroup ().GetAccessConstraints () + ", Fees: " + m_capabilities.GetServiceGroup ().GetFees ();
             wmsServer.Type = ServerType.WMS;
             if (OldServerId > 0)
                 wmsServer.OldServerId = OldServerId;
 
             // Get the first coordinate system found if default one are not found.
-            if ( m_capabilities.RootLayer != null)
-                {                
-                if ( m_capabilities.RootLayer.CoordinateSystems.Count > 0 )
+            if ( m_capabilities.GetCapabilityGroup ().GetLayerList ().Count > 0 )
+                {
+                wmsServer.CoordinateSystem = m_capabilities.GetCapabilityGroup ().GetLayerList ().First<WMSLayerNet>().GetCRSList ().First<String> ();
+                foreach ( String DefaultCS in DefaultCSArray )
                     {
-                    wmsServer.CoordinateSystem = m_capabilities.RootLayer.CoordinateSystems.First<String> ();
-                    foreach ( String DefaultCS in DefaultCSArray )
+                    if ( m_capabilities.GetCapabilityGroup ().GetLayerList ().First<WMSLayerNet> ().GetCRSList ().Contains (DefaultCS) )
                         {
-                        if ( m_capabilities.RootLayer.CoordinateSystems.Contains (DefaultCS) )
-                            {
-                            wmsServer.CoordinateSystem = DefaultCS;
-                            break;
-                            }
+                        wmsServer.CoordinateSystem = DefaultCS;
+                        break;
                         }
                     }
                 }
 
             SaveExtendedProperties (context, wmsServer);
 
-            context.ServerSet.Add (wmsServer);   
-                        
-            context.SaveChanges ();                     
+            context.ServerSet.Add (wmsServer);
+            
+            try
+                {
+                context.SaveChanges ();
+                }
+            catch ( DbEntityValidationException e )
+                {
+                foreach ( var eve in e.EntityValidationErrors )
+                    {
+                    Debug.WriteLine ("Entity of type \"{0}\" in state \"{1}\" has the following validation errors:",
+                        eve.Entry.Entity.GetType ().Name, eve.Entry.State);
+                    foreach ( var ve in eve.ValidationErrors )
+                        {
+                        Debug.WriteLine ("- Property: \"{0}\", Error: \"{1}\"",
+                            ve.PropertyName, ve.ErrorMessage);
+                        }
+                    }
+                throw;
+                }
                     
             // Setback the Change detection state.
             context.Configuration.AutoDetectChangesEnabled = true;
@@ -225,7 +242,7 @@ namespace Bentley.RealityPlatform.RealityCrawler
                 {
                 using ( RealityCrawlerDBContainer context = new RealityCrawlerDBContainer () )
                     {
-                    Server wmsServer = context.ServerSet.FirstOrDefault (Server => Server.URL.Equals (m_capabilities.GetCapabilitiesUrl));
+                    Server wmsServer = context.ServerSet.FirstOrDefault (Server => Server.URL.Equals (m_capabilities.GetCapabilityGroup ().GetRequest ().GetCapabilities ().GetDcpType ().GetHttpGet ().GetHref ()));
                     if ( wmsServer != null )
                         UpdateStatus (wmsServer.ServerId);
                     else
@@ -252,6 +269,7 @@ namespace Bentley.RealityPlatform.RealityCrawler
         private void SetServerURL(String url)
             {
                 String StrURL = url.Split ('?')[0] + "?";
+                StrURL = StrURL.Replace("&","");
                 String[] QueryArray = url.Split ('?').Length > 1 ? url.Split ('?')[1].Split ('&') : null;
                 foreach ( String Query in QueryArray )
                     {
@@ -290,7 +308,12 @@ namespace Bentley.RealityPlatform.RealityCrawler
                 //Get the Response Stream from the URL 
                 System.IO.Stream responseStream = response.GetResponseStream ();
 
-                m_capabilities = new WMSCapabilities (responseStream);
+                // Store the stream in a String
+                Encoding encode = Encoding.GetEncoding ("utf-8");
+                StreamReader readStream = new StreamReader (responseStream, encode);
+                m_xmlContent = readStream.ReadToEnd ();
+
+                m_capabilities = new WMSCapabilitiesNet (m_xmlContent);
 
                 // Set the Response Time
                 Latency = timeTaken.TotalMilliseconds;
@@ -344,27 +367,78 @@ namespace Bentley.RealityPlatform.RealityCrawler
                     if ( this.isValid () )
                         {
                         if ( ServerToUpdate.ServerExtendedProperties != null)
-                            {                            
-                            if ( ServerToUpdate.ServerExtendedProperties.GetCapabilitiesData.Equals (m_capabilities.XML) )
+                            {
+                            if ( ServerToUpdate.ServerExtendedProperties.GetCapabilitiesData.Equals (m_xmlContent) )
                                 {
                                 ServerToUpdate.Online = true;
                                 ServerToUpdate.LastCheck = DateTime.UtcNow;
                                 ServerToUpdate.LastTimeOnline = DateTime.UtcNow;
                                 ServerToUpdate.Latency = Latency;
 
-                                context.SaveChanges ();
+                                try
+                                    {
+                                    context.SaveChanges ();
+                                    }
+                                catch ( DbEntityValidationException e )
+                                    {
+                                    foreach ( var eve in e.EntityValidationErrors )
+                                        {
+                                        Debug.WriteLine ("Entity of type \"{0}\" in state \"{1}\" has the following validation errors:",
+                                            eve.Entry.Entity.GetType ().Name, eve.Entry.State);
+                                        foreach ( var ve in eve.ValidationErrors )
+                                            {
+                                            Debug.WriteLine ("- Property: \"{0}\", Error: \"{1}\"",
+                                                ve.PropertyName, ve.ErrorMessage);
+                                            }
+                                        }
+                                    throw;
+                                    }
                                 }
                             else
                                 {
                                 ServerToUpdate.State = ServerState.Old;
-                                context.SaveChanges ();
+                                try
+                                    {
+                                    context.SaveChanges ();
+                                    }
+                                catch ( DbEntityValidationException e )
+                                    {
+                                    foreach ( var eve in e.EntityValidationErrors )
+                                        {
+                                        Debug.WriteLine ("Entity of type \"{0}\" in state \"{1}\" has the following validation errors:",
+                                            eve.Entry.Entity.GetType ().Name, eve.Entry.State);
+                                        foreach ( var ve in eve.ValidationErrors )
+                                            {
+                                            Debug.WriteLine ("- Property: \"{0}\", Error: \"{1}\"",
+                                                ve.PropertyName, ve.ErrorMessage);
+                                            }
+                                        }
+                                    throw;
+                                    }
                                 this.Save (context, ServerState.Modify, ServerId);
                                 }
                             }
                         else
                             {
                             ServerToUpdate.State = ServerState.Old;
-                            context.SaveChanges ();
+                            try
+                                {
+                                context.SaveChanges ();
+                                }
+                            catch ( DbEntityValidationException e )
+                                {
+                                foreach ( var eve in e.EntityValidationErrors )
+                                    {
+                                    Debug.WriteLine ("Entity of type \"{0}\" in state \"{1}\" has the following validation errors:",
+                                        eve.Entry.Entity.GetType ().Name, eve.Entry.State);
+                                    foreach ( var ve in eve.ValidationErrors )
+                                        {
+                                        Debug.WriteLine ("- Property: \"{0}\", Error: \"{1}\"",
+                                            ve.PropertyName, ve.ErrorMessage);
+                                        }
+                                    }
+                                throw;
+                                }
                             this.Save (context, ServerState.Modify, ServerId);
                             }
                         }
@@ -376,7 +450,24 @@ namespace Bentley.RealityPlatform.RealityCrawler
                         ServerToUpdate.Online = false;
                         ServerToUpdate.LastCheck = DateTime.UtcNow;
 
-                        context.SaveChanges ();
+                        try
+                            {
+                            context.SaveChanges ();
+                            }
+                        catch ( DbEntityValidationException e )
+                            {
+                            foreach ( var eve in e.EntityValidationErrors )
+                                {
+                                Debug.WriteLine ("Entity of type \"{0}\" in state \"{1}\" has the following validation errors:",
+                                    eve.Entry.Entity.GetType ().Name, eve.Entry.State);
+                                foreach ( var ve in eve.ValidationErrors )
+                                    {
+                                    Debug.WriteLine ("- Property: \"{0}\", Error: \"{1}\"",
+                                        ve.PropertyName, ve.ErrorMessage);
+                                    }
+                                }
+                            throw;
+                            }
 
                         // Setback the Change detection state.
                         context.Configuration.AutoDetectChangesEnabled = true;
@@ -393,38 +484,60 @@ namespace Bentley.RealityPlatform.RealityCrawler
         private void SaveExtendedProperties (RealityCrawlerDBContainer context, Server wmsServer)
             {
             WMSServerExtendedProperties extendedProperties = new WMSServerExtendedProperties ();
-            extendedProperties.Name = m_capabilities.Name;
-            extendedProperties.Title = m_capabilities.Title;
-            extendedProperties.Description = m_capabilities.Abstract;
-            extendedProperties.Version = m_capabilities.Version;
-            extendedProperties.ContactPerson = m_capabilities.ContactInformation.ContactPersonPrimary.ContactPerson;
-            extendedProperties.ContactOrganization = m_capabilities.ContactInformation.ContactPersonPrimary.ContactOrganization;
-            extendedProperties.ContactPosition = m_capabilities.ContactInformation.ContactPosition;
-            extendedProperties.ContactAddressType = m_capabilities.ContactInformation.ContactAddress.AddressType;
-            extendedProperties.ContactAddress = m_capabilities.ContactInformation.ContactAddress.Address;
-            extendedProperties.ContactCity = m_capabilities.ContactInformation.ContactAddress.City;
-            extendedProperties.ContactStateOrProvince = m_capabilities.ContactInformation.ContactAddress.StateOrProvince;
-            extendedProperties.ContactPostCode = m_capabilities.ContactInformation.ContactAddress.PostCode;
-            extendedProperties.ContactCountry = m_capabilities.ContactInformation.ContactAddress.Country;
-            extendedProperties.ContactVoiceTelephone = m_capabilities.ContactInformation.ContactVoiceTelephone;
-            extendedProperties.ContactFacsimileTelephone = m_capabilities.ContactInformation.ContactFacsimileTelephone;
-            extendedProperties.ContactElectronicMailAddress = m_capabilities.ContactInformation.ContactElectronicMailAddress;
-            extendedProperties.Fees = m_capabilities.Fees;
-            extendedProperties.AccessConstraints = m_capabilities.AccessConstraints;
-            extendedProperties.GetCapabilitiesData = m_capabilities.XML;
-            extendedProperties.Server = wmsServer;
-            extendedProperties.GetMapURL = m_capabilities.GetMapUrl.Split ('?')[0];
-            extendedProperties.GetMapURLQuery = m_capabilities.GetMapUrl.Split ('?').Length > 1 ? m_capabilities.GetMapUrl.Split ('?')[1] : "";
-            
-            // Save all the supported format in one string separated by ','.
-            foreach ( String Format in m_capabilities.SupportedFormats )
-                {
-                extendedProperties.SupportedFormats += Format + ",";
-                }
-            extendedProperties.SupportedFormats = extendedProperties.SupportedFormats.TrimEnd (',');
 
-            // Save all the layers in the databases.
-            extendedProperties.LayerNumber = SaveLayers (context, m_capabilities.RootLayer, extendedProperties);
+            extendedProperties.Version = m_capabilities.GetVersion ();
+            if ( m_capabilities.GetServiceGroup () != null )
+                {
+                extendedProperties.Name = m_capabilities.GetServiceGroup ().GetName ();
+                extendedProperties.Title = m_capabilities.GetServiceGroup ().GetTitle ();
+                extendedProperties.Description = m_capabilities.GetServiceGroup ().GetAbstract ();
+                if ( m_capabilities.GetServiceGroup ().GetContactInformation () != null )
+                    {
+                    if ( m_capabilities.GetServiceGroup ().GetContactInformation ().GetPerson () != null )
+                        {
+                        extendedProperties.ContactPerson = m_capabilities.GetServiceGroup ().GetContactInformation ().GetPerson ().GetName ();
+                        extendedProperties.ContactOrganization = m_capabilities.GetServiceGroup ().GetContactInformation ().GetPerson ().GetOrganization ();
+                        }
+                    extendedProperties.ContactPosition = m_capabilities.GetServiceGroup ().GetContactInformation ().GetPosition ();
+                    if ( m_capabilities.GetServiceGroup ().GetContactInformation ().GetAddress () != null )
+                        {
+                        extendedProperties.ContactAddressType = m_capabilities.GetServiceGroup ().GetContactInformation ().GetAddress ().GetTypeNet ();
+                        extendedProperties.ContactAddress = m_capabilities.GetServiceGroup ().GetContactInformation ().GetAddress ().GetAddress ();
+                        extendedProperties.ContactCity = m_capabilities.GetServiceGroup ().GetContactInformation ().GetAddress ().GetCity ();
+                        extendedProperties.ContactStateOrProvince = m_capabilities.GetServiceGroup ().GetContactInformation ().GetAddress ().GetStateOrProvince ();
+                        extendedProperties.ContactPostCode = m_capabilities.GetServiceGroup ().GetContactInformation ().GetAddress ().GetPostCode ();
+                        extendedProperties.ContactCountry = m_capabilities.GetServiceGroup ().GetContactInformation ().GetAddress ().GetCountry ();
+                        }
+                    extendedProperties.ContactVoiceTelephone = m_capabilities.GetServiceGroup ().GetContactInformation ().GetVoiceTelephone ();
+                    extendedProperties.ContactFacsimileTelephone = m_capabilities.GetServiceGroup ().GetContactInformation ().GetFacsimileTelephone ();
+                    extendedProperties.ContactElectronicMailAddress = m_capabilities.GetServiceGroup ().GetContactInformation ().GetEmailAddress ();
+                    }
+                extendedProperties.Fees = m_capabilities.GetServiceGroup ().GetFees ();
+                extendedProperties.AccessConstraints = m_capabilities.GetServiceGroup ().GetAccessConstraints ();
+                }
+            extendedProperties.GetCapabilitiesData = m_xmlContent;
+            extendedProperties.Server = wmsServer;
+            if ( m_capabilities.GetCapabilityGroup () != null )
+                {
+                extendedProperties.GetMapURL = m_capabilities.GetCapabilityGroup ().GetRequest ().GetMap ().GetDcpType ().GetHttpGet ().GetHref ().Split ('?')[0];
+                extendedProperties.GetMapURLQuery = m_capabilities.GetCapabilityGroup ().GetRequest ().GetMap ().GetDcpType ().GetHttpGet ().GetHref ().Split ('?').Length > 1 ? m_capabilities.GetCapabilityGroup ().GetRequest ().GetMap ().GetDcpType ().GetHttpGet ().GetHref ().Split ('?')[1] : "";
+
+                // Save all the supported format in one string separated by ','.
+                foreach ( String Format in m_capabilities.GetCapabilityGroup ().GetRequest ().GetMap ().GetFormatList () )
+                    {
+                    extendedProperties.SupportedFormats += Format + ",";
+                    }
+                extendedProperties.SupportedFormats = extendedProperties.SupportedFormats.TrimEnd (',');
+
+                // Save all the layers in the databases.
+                //extendedProperties.LayerNumber = SaveLayers (context, m_capabilities.RootLayer, extendedProperties);
+
+                int currtentLayerCount = 0;
+                foreach ( WMSLayerNet Layer in m_capabilities.GetCapabilityGroup ().GetLayerList () )
+                    {
+                    currtentLayerCount = SaveLayers (context, Layer, extendedProperties, null, currtentLayerCount);
+                    }
+                }
 
             context.WMSServerExtendedPropertiesSet.Add (extendedProperties);
             }
@@ -435,9 +548,44 @@ namespace Bentley.RealityPlatform.RealityCrawler
         /// <param name="context">The current database context.</param>
         /// <param name="Layer">Root WMSLayer to add to the database.</param>
         /// <param name="extendedProperties">Parent WMSServerExtendedProperties of the layer.</param>
-        private int SaveLayers (RealityCrawlerDBContainer context, WMSLayer Layer, WMSServerExtendedProperties extendedProperties)
+        private int SaveLayers (RealityCrawlerDBContainer context, WMSLayerNet Layer, WMSServerExtendedProperties extendedProperties)
             {
             return SaveLayers (context, Layer, extendedProperties, null, 0);
+            }
+
+        /// <summary>
+        /// Sort the coordinates and generate a lonlat geometry.
+        /// </summary>
+        /// <param name="Xmin">West longitude.</param>
+        /// <param name="Xmax">East longitude.</param>
+        /// <param name="Ymin">South latitude.</param>
+        /// <param name="Ymax">North latitude.</param>
+        /// <returns>A LonLat DbGeometry</returns>
+        private DbGeometry FilterBoundingBox (double Xmin, double Xmax, double Ymin, double Ymax)
+            {
+            if(Xmin > Xmax)
+                Swap (ref Xmin, ref Xmax);
+
+            if (Ymin > Ymax)
+                Swap (ref Ymin, ref Ymax);
+
+            // This method will on detect that the latitude and longitude have been inverted if the longitude is outside -90 and 90. 
+            // If the longitude is in the interval of -90 and 90 there no way to know if the latitude and longitude had been inverted.
+            // Note: Latitude horizontal line between -90 and 90 (ex. Equator).
+            //       Longitude vertical line between -180 and 180 (ex. Greenwich).
+            if ( Ymin > 90 || Ymin < -90 || Ymax > 90 || Ymax < -90 )
+                {
+                Swap (ref Xmin, ref Ymin);
+                Swap (ref Xmax, ref Ymax);
+                }
+
+            return DbGeometry.PolygonFromText ("POLYGON((" +
+                    Xmax.ToString () + " " + Ymax.ToString () + "," +
+                    Xmax.ToString () + " " + Ymin.ToString () + "," +
+                    Xmin.ToString () + " " + Ymin.ToString () + "," +
+                    Xmin.ToString () + " " + Ymax.ToString () + "," +
+                    Xmax.ToString () + " " + Ymax.ToString () +
+                    "))", 4326);
             }
 
         /// <summary>
@@ -447,39 +595,48 @@ namespace Bentley.RealityPlatform.RealityCrawler
         /// <param name="Layer">WMSLayer to add to the database.</param>
         /// <param name="extendedProperties">Parent WMSServerExtendedProperties of the layer.</param>
         /// <param name="ParentLayer">Parent layer of the current layer need to keep the hierachy.</param>
-        private int SaveLayers (RealityCrawlerDBContainer context, WMSLayer Layer, WMSServerExtendedProperties extendedProperties, WMSServerData ParentLayer, int LayersCount)
+        private int SaveLayers (RealityCrawlerDBContainer context, WMSLayerNet Layer, WMSServerExtendedProperties extendedProperties, WMSServerData ParentLayer, int LayersCount)
             {
             try
                 {
                 var layerData = new WMSServerData ();
-                layerData.Name = Layer.Name;
-                layerData.Title = Layer.Title;
-                layerData.Description = Layer.Fullname;
-                layerData.BoundingBox = DbGeometry.PolygonFromText ("POLYGON((" +
-                    Layer.LatLonBoundingBox.XMax.ToString () + " " + Layer.LatLonBoundingBox.YMax.ToString () + "," +
-                    Layer.LatLonBoundingBox.XMax.ToString () + " " + Layer.LatLonBoundingBox.YMin.ToString () + "," +
-                    Layer.LatLonBoundingBox.XMin.ToString () + " " + Layer.LatLonBoundingBox.YMin.ToString () + "," +
-                    Layer.LatLonBoundingBox.XMin.ToString () + " " + Layer.LatLonBoundingBox.YMax.ToString () + "," +
-                    Layer.LatLonBoundingBox.XMax.ToString () + " " + Layer.LatLonBoundingBox.YMax.ToString () +
-                    "))", 4326);
+                layerData.Name = Layer.GetName ();
+                layerData.Title = Layer.GetTitle ();
+                layerData.Description = Layer.GetAbstract ();
+                if ( Layer.GetGeoBBox () != null )
+                    {
+                    layerData.BoundingBox = FilterBoundingBox (
+                        Layer.GetGeoBBox ().GetWestBoundLong (), 
+                        Layer.GetGeoBBox ().GetEastBoundLong (), 
+                        Layer.GetGeoBBox ().GetSouthBoundLat (), 
+                        Layer.GetGeoBBox ().GetNorthBoundLat ());
+                    }
+                else if ( Layer.GetLatLonBBox () != null )
+                    {
+                    layerData.BoundingBox = FilterBoundingBox (
+                        Layer.GetLatLonBBox ().GetMinX (), 
+                        Layer.GetLatLonBBox ().GetMaxX (), 
+                        Layer.GetLatLonBBox ().GetMinY (), 
+                        Layer.GetLatLonBBox ().GetMaxY ());
+                    }                
+                else if ( !ParentLayer.BoundingBox.IsEmpty )
+                    layerData.BoundingBox = ParentLayer.BoundingBox;
+                else
+                    layerData.BoundingBox = FilterBoundingBox (0, 0, 0, 0);                
 
                 // Save all the availiable coordinate systems for the layer in one string separated by ','.
-                if ( Layer.CoordinateSystems.Count > 0 )
+                if ( Layer.GetCRSList ().Count > 0 )
                     {
-                    foreach ( String cs in Layer.CoordinateSystems )
+                    foreach ( String cs in Layer.GetCRSList () )
                         {
                         layerData.CoordinateSystems += cs + ",";
                         }
                     layerData.CoordinateSystems = layerData.CoordinateSystems.TrimEnd (',');
                     }
 
-                if ( Layer.Styles.Count > 0 )
+                if ( Layer.GetStyle() != null)
                     {
-                    foreach ( WMSStyle Style in Layer.Styles )
-                        {
-                        layerData.Style += Style.Name + ",";
-                        }
-                    layerData.Style = layerData.Style.TrimEnd (',');
+                    layerData.Style = Layer.GetStyle ().GetName ();
                     }
 
                 layerData.WMSServerExtendedProperties = extendedProperties;
@@ -488,7 +645,7 @@ namespace Bentley.RealityPlatform.RealityCrawler
                     layerData.WMSDataParent = ParentLayer;
 
                 int currtentLayerCount = LayersCount;
-                foreach ( WMSLayer ChildLayer in Layer.ChildLayers )
+                foreach ( WMSLayerNet ChildLayer in Layer.GetLayerList () )
                     {
                     currtentLayerCount = SaveLayers (context, ChildLayer, extendedProperties, layerData, currtentLayerCount);
                     }
@@ -522,7 +679,24 @@ namespace Bentley.RealityPlatform.RealityCrawler
                         context.WMSServerExtendedPropertiesSet.Remove (ModifiedServer.ServerExtendedProperties);
                     }
                 context.ServerSet.RemoveRange (ModifyedServers);
-                context.SaveChanges ();
+                try
+                    {
+                    context.SaveChanges ();
+                    }
+                catch ( DbEntityValidationException e )
+                    {
+                    foreach ( var eve in e.EntityValidationErrors )
+                        {
+                        Debug.WriteLine ("Entity of type \"{0}\" in state \"{1}\" has the following validation errors:",
+                            eve.Entry.Entity.GetType ().Name, eve.Entry.State);
+                        foreach ( var ve in eve.ValidationErrors )
+                            {
+                            Debug.WriteLine ("- Property: \"{0}\", Error: \"{1}\"",
+                                ve.PropertyName, ve.ErrorMessage);
+                            }
+                        }
+                    throw;
+                    }
                 int ServerURLToUpdateOrderNo = 1; // Used only to display info to the user.
                 foreach ( KeyValuePair<int, string> kvp in ServerURLToUpdate )
                     {
@@ -546,7 +720,7 @@ namespace Bentley.RealityPlatform.RealityCrawler
                 {
                 return GenerateCrawledServerList(context, false);
                 }
-            }
+            }        
 
         #endregion
         #region Private Static Methods
@@ -564,6 +738,19 @@ namespace Bentley.RealityPlatform.RealityCrawler
             else
                 ServerURL = context.ServerSet.Where (Server => Server.Type == ServerType.WMS).Where (Server => Server.State != ServerState.Modify).ToDictionary (Server => Server.ServerId, Server => Server.URL.Split('?')[0]);
             return ServerURL;
+            }
+
+        /// <summary>
+        /// Swap the content of the var1 and var2.
+        /// </summary>
+        /// <typeparam name="T">Type of the vars.</typeparam>
+        /// <param name="var1">First var to be swapped.</param>
+        /// <param name="var2">Second var to be swapped.</param>
+        private static void Swap<T> (ref T var1, ref T var2)
+            {
+            T temp = var1;
+            var1 = var2;
+            var2 = temp;
             }
         #endregion
         #endregion

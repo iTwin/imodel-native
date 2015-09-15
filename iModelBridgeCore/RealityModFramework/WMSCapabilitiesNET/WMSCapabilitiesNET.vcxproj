@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7F21237C-F0C4-4172-8F18-FCC1239260BC}</ProjectGuid>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <Keyword>ManagedCProj</Keyword>
+    <RootNamespace>WMSCapabilitiesNET</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CLRSupport>true</CLRSupport>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CLRSupport>true</CLRSupport>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>D:\Sources\dgndb06\RealityModFramework\PublicApi;D:\Sources\dgndb06\BentleyApi\PublicAPI;D:\Sources\dgndb06\Bentley\PublicAPI;D:\Sources\dgndb06\libsrc\libxml2\include;D:\Sources\dgndb06\RealityModFramework\PublicApi\RealityPlatform;D:\Sources\dgndb06\libsrc\libxml2\BeXml\PublicApi;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Output\dgndb06\Winx64\BuildContexts\RealityModFramework\SubParts\Libs;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>D:\Sources\dgndb06\RealityModFramework\PublicApi;D:\Sources\dgndb06\BentleyApi\PublicAPI;D:\Sources\dgndb06\Bentley\PublicAPI;D:\Sources\dgndb06\libsrc\libxml2\include;D:\Sources\dgndb06\RealityModFramework\PublicApi\RealityPlatform;D:\Sources\dgndb06\libsrc\libxml2\BeXml\PublicApi;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Output\dgndb06\Winx64\BuildContexts\RealityModFramework\SubParts\Libs;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <FloatingPointModel>Precise</FloatingPointModel>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Bentley.lib;BentleyAllocator.lib;RealityPlatform.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Output\dgndb06\Winx64\BuildContexts\RealityModFramework\SubParts\Libs;D:\Output\dgndb06\Winx64\BuildContexts\RealityModFramework\Delivery;D:\Output\dgndb06\Winx64\BuildContexts\Bentley\SubParts\Libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;NDEBUG;BENTLEY_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Bentley.lib;BentleyAllocator.lib;RealityPlatform.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Output\dgndb06\Winx64\BuildContexts\RealityModFramework\SubParts\Libs;D:\Output\dgndb06\Winx64\BuildContexts\RealityModFramework\Delivery;D:\Output\dgndb06\Winx64\BuildContexts\Bentley\SubParts\Libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy D:\Output\dgndb06\Winx64\build\GeoCoord\build\BaseGeoCoord\BaseGeoCoordG.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BeCurl\BeCurl.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BeIcu4c\BeIcu4c.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BeLibxml2\BeLibxml2.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BentleyAllocator\BentleyAllocator.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\Bentley\BentleyG.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\GeomLibs\delivery\basegeom\bin\BentleyGeomG.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BeOpenSSL\BeOpenSSL.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BeXml\BeXml_dll\BeXmlG.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\ImagePP\ImagePP\ImagePPG.dll $(TargetDir)
+copy D:\Sources\dgndb06\bin\ErdasEcwJpeg2000\V5_0\winx64\VC110\bin $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.pdb $(TargetDir)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="WMSCapabilitiesNET.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AssemblyInfo.cpp" />
+    <ClCompile Include="WMSCapabilitiesNET.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

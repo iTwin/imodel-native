@@ -27,24 +27,25 @@
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\x64\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Abot, Version=1.5.0.95, Culture=neutral, processorArchitecture=MSIL">
@@ -95,6 +96,9 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="WMSCapabilitiesNET">
+      <HintPath>x64\Debug\WMSCapabilitiesNET.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="RealityCrawlerDB.Context.cs">
@@ -128,10 +132,6 @@
     <Compile Include="ServerType.cs">
       <DependentUpon>RealityCrawlerDB.tt</DependentUpon>
     </Compile>
-    <Compile Include="WMSBoundingBox.cs" />
-    <Compile Include="WMSCapabilities.cs" />
-    <Compile Include="WMSCapabilitiesParser.cs" />
-    <Compile Include="WMSLayer.cs" />
     <Compile Include="ServerWMS.cs" />
     <Compile Include="WMSServerData.cs">
       <DependentUpon>RealityCrawlerDB.tt</DependentUpon>
@@ -139,7 +139,6 @@
     <Compile Include="WMSServerExtendedProperties.cs">
       <DependentUpon>RealityCrawlerDB.tt</DependentUpon>
     </Compile>
-    <Compile Include="WMSStyle.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
@@ -201,6 +200,22 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="packages\AutoMapper.3.3.1\tools\AutoMapper.targets" Condition="Exists('packages\AutoMapper.3.3.1\tools\AutoMapper.targets')" />
+  <PropertyGroup>
+    <PostBuildEvent>copy D:\Output\dgndb06\Winx64\build\GeoCoord\build\BaseGeoCoord\BaseGeoCoordG.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BeCurl\BeCurl.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BeIcu4c\BeIcu4c.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BeLibxml2\BeLibxml2.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BentleyAllocator\BentleyAllocator.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\Bentley\BentleyG.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\GeomLibs\delivery\basegeom\bin\BentleyGeomG.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BeOpenSSL\BeOpenSSL.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BeSQLite\BeSQLiteG.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\BeXml\BeXml_dll\BeXmlG.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\ImagePP\ImagePP\ImagePPG.dll $(TargetDir)
+copy D:\Sources\dgndb06\bin\ErdasEcwJpeg2000\V5_0\winx64\VC110\bin $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.dll $(TargetDir)
+copy D:\Output\dgndb06\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.pdb $(TargetDir)</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

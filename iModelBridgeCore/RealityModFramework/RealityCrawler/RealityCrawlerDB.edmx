@@ -172,7 +172,7 @@
             <PropertyRef Name="WMSId" />
           </Key>
           <Property Name="WMSId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="Name" Type="String" Nullable="false" />
+          <Property Name="Name" Type="String" Nullable="false" FixedLength="false" MaxLength="Max" Unicode="true" />
           <Property Name="Title" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="Description" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="LayerNumber" Type="Int32" Nullable="true" DefaultValue="0" />

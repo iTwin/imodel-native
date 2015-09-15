@@ -73,6 +73,11 @@ ASSEMBLY_REFERENCE           = $(packages)log4net.2.0.3/lib/net40-full/log4net.d
 always:
 	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
+ASSEMBLY_REFERENCE           = $(ContextSubPartsAssembliesDir)WMSCapabilitiesNET.dll
+%include csrefapnd.mki
+always:
+	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+
 #-----------------------------------------------------------------------
 #   Compile C# Modules
 #-----------------------------------------------------------------------
@@ -112,14 +117,9 @@ ASSEMBLY_COPYRIGHT      = $(Bentley_Copyright)
 		$(prodSrc)Server.cs \
 		$(prodSrc)ServerState.cs \
 		$(prodSrc)ServerType.cs \
-		$(prodSrc)WMSBoundingBox.cs \
-		$(prodSrc)WMSCapabilities.cs \
-		$(prodSrc)WMSCapabilitiesParser.cs \
-		$(prodSrc)WMSLayer.cs \
 		$(prodSrc)ServerWMS.cs \
 		$(prodSrc)WMSServerData.cs \
 		$(prodSrc)WMSServerExtendedProperties.cs \
-		$(prodSrc)WMSStyle.cs 
 
 ASSEMBLY_EDMX_FILE_TO_BUILD = $(prodSrc)RealityCrawlerDB.edmx
 %include $(_MakeFilePath)../mki/assemblyEdmxAppend.mki

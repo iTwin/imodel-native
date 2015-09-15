@@ -22,6 +22,7 @@
 
     <Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
         <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="WMSCapabilitiesNET"/>
     </Part>
 
     <Part Name="RealityDataHandlerTester" BentleyBuildMakeFile="RealityPlatform\Tests\RealityDataHandlerTester\RealityDataHandlerTester.mke" OnlyPlatforms="x86,x64">
@@ -113,6 +114,16 @@
         <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/BentleyWMSPackageNet$(shlibext)</Assemblies>
+        </Bindings>
+
+    </Part>
+
+    <Part Name="WMSCapabilitiesNET" BentleyBuildMakeFile="WMSCapabilitiesNET\WMSCapabilitiesNET.mke">
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/WMSCapabilitiesNET$(shlibext)</Assemblies>
         </Bindings>
 
     </Part>
