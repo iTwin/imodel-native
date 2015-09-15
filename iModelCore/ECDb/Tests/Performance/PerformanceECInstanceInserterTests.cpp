@@ -576,6 +576,9 @@ TEST (Performance_ECSQLVersusECInstanceInserter, StructArrayProperty)
 
 
 //==================================================================================================================================================
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
 struct TestParamters
     {
     public:
@@ -655,6 +658,10 @@ struct TestParamters
             return m_toStr.c_str();
             }
     };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
 struct TestResult
     {
     private:
@@ -706,6 +713,10 @@ struct TestResult
             return fullResult;
             }
     };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
 void SetupDeleteTest(DbR db, int64_t& globalInstanceCount, TestParamters const& param)
     {
 
@@ -754,53 +765,50 @@ void SetupDeleteTest(DbR db, int64_t& globalInstanceCount, TestParamters const& 
             }
         }
 
-
-    auto joinStrFunc = [] (std::vector<Utf8String> const& strList, Utf8CP delimiter = ", ")
+#define DELIMITER ", "
+    auto joinStrFunc = [] (std::vector<Utf8String> const& strList )
         {
         Utf8String out;
         for (auto& str : strList)
             {
             out.append(str);
             if (&str != &strList.back())
-                out.append(delimiter);
+                out.append(DELIMITER);
             }
 
         return out;
         };
 
-    auto joinIntFunc = [] (std::set<int64_t> const& intList, Utf8CP delimiter = ", ")
+    auto joinIntFunc = [] (std::set<int64_t> const& intList)
         {
         Utf8String out;
         for (auto& n : intList)
             {
             out.append(Utf8PrintfString("%lld", n).c_str());
             if (n != *intList.rbegin())
-                out.append(delimiter);
+                out.append(DELIMITER);
             }
 
         return out;
         };
-    auto repeatFunc = [] (Utf8CP token, size_t times, Utf8CP delimiter = ", ")
+    auto repeatFunc = [] (Utf8CP token, size_t times)
         {
         Utf8String out;
         for (size_t i = 0; i < times; i++)
             {
             out.append(token);
             if (i != (times - 1))
-                out.append(delimiter);
+                out.append(DELIMITER);
             }
 
         return out;
         };
     auto bindData = [] (Statement& stmt, std::vector<Utf8String> columns, int startingIndex)
         {
-        Utf8String out;
         for (size_t  i = 0; i < columns.size(); i++)
             {
             stmt.BindText(startingIndex++, "(asdfa987a9idsf#@#$SAdfasdfkajlaksjdf", Statement::MakeCopy::No);
             }
-
-        return out;
         };
     Utf8String createTableSql_Primary = "CREATE TABLE PrimaryTbl (Id INTEGER PRIMARY KEY, ClassId INTEGER NOT NULL";
     if (!primaryColumns.empty())
@@ -898,6 +906,10 @@ void SetupDeleteTest(DbR db, int64_t& globalInstanceCount, TestParamters const& 
     globalInstanceCount = globalInstanceId;
 
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
 void ExecuteDeleteTest(TestParamters const& param, TestResult& r1, TestResult& r2)
     {
     int64_t globalInstanceCount = 0;
@@ -933,7 +945,9 @@ void ExecuteDeleteTest(TestParamters const& param, TestResult& r1, TestResult& r
     test2.Cancel();
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST(Performance_TriggerVsCascadeDelete, V1)
     {
     Db db;
@@ -1006,6 +1020,9 @@ TEST(Performance_TriggerVsCascadeDelete, V1)
     LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST(Performance_TriggerVsCascadeDelete, V2)
     {
     Db db;
@@ -1078,6 +1095,9 @@ TEST(Performance_TriggerVsCascadeDelete, V2)
     LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST(Performance_TriggerVsCascadeDelete, V3)
     {
     Db db;
@@ -1150,7 +1170,9 @@ TEST(Performance_TriggerVsCascadeDelete, V3)
     LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST(Performance_TriggerVsCascadeDelete, V4)
     {
     Db db;
