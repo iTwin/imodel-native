@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthorityId DgnAuthorities::QueryAuthorityId (Utf8StringCR name) const
+DgnAuthorityId DgnAuthorities::QueryAuthorityId (Utf8CP name) const
     {
     Statement stmt (m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Authority) " WHERE Name=?");
     stmt.BindText (1, name, Statement::MakeCopy::No);
@@ -36,7 +36,7 @@ DgnAuthorityId DgnImportContext::RemapAuthorityId(DgnAuthorityId source)
         return source;
         }
 
-    dest = m_destDb.Authorities().QueryAuthorityId(sourceAuthority->GetName());
+    dest = m_destDb.Authorities().QueryAuthorityId(sourceAuthority->GetName().c_str());
     if (!dest.IsValid())
         {
         DgnAuthorityPtr destAuthority = DgnAuthority::Import(nullptr, *sourceAuthority, *this);
@@ -101,7 +101,7 @@ DgnAuthorityPtr DgnAuthority::_CloneForImport(DgnDbStatus* outResult, DgnImportC
     {
     DgnDbStatus ALLOW_NULL_OUTPUT (status, outResult);
 
-    if (importer.GetDestinationDb().Authorities().QueryAuthorityId(GetName()).IsValid())
+    if (importer.GetDestinationDb().Authorities().QueryAuthorityId(GetName().c_str()).IsValid())
         {
         status = DgnDbStatus::DuplicateName;
         return nullptr;
@@ -241,7 +241,7 @@ DgnAuthorityCPtr DgnAuthorities::GetAuthority(DgnAuthorityId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthorityCPtr DgnAuthorities::GetAuthority(Utf8StringCR name)
+DgnAuthorityCPtr DgnAuthorities::GetAuthority(Utf8CP name)
     {
     // good chance it's already loaded - check there before running a query
     auto found = std::find_if(m_loadedAuthorities.begin(), m_loadedAuthorities.end(), [&name](DgnAuthorityPtr const& arg) { return arg->GetName().Equals(name); });
@@ -341,7 +341,7 @@ RefCountedPtr<NamespaceAuthority> NamespaceAuthority::CreateNamespaceAuthority(U
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code NamespaceAuthority::CreateCode(Utf8StringCR authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace)
+DgnAuthority::Code NamespaceAuthority::CreateCode(Utf8CP authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace)
     {
     auto auth = dgndb.Authorities().Get<NamespaceAuthority>(authorityName);
     BeDataAssert(auth.IsValid());

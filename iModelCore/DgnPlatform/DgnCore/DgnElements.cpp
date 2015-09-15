@@ -1412,7 +1412,7 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code const& code) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::QueryElementIdByCode(Utf8StringCR authority, Utf8StringCR value, Utf8StringCR nameSpace) const
+DgnElementId DgnElements::QueryElementIdByCode(Utf8CP authority, Utf8StringCR value, Utf8StringCR nameSpace) const
     {
     return QueryElementIdByCode(GetDgnDb().Authorities().QueryAuthorityId(authority), value, nameSpace);
     }
