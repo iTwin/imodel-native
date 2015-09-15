@@ -709,7 +709,7 @@ struct TestResult
                 return str;
 
             Utf8String fullResult;
-            fullResult.Sprintf("[Name: %s]\n PARAM  : %s \n RESULT : %s", m_name, param->ToString(), str.c_str());
+            fullResult.Sprintf("[Name: %s]\n PARAM  : %s \n RESULT : %s", m_name.c_str(), param->ToString(), str.c_str());
             return fullResult;
             }
     };
