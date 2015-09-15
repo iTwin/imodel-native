@@ -18,9 +18,9 @@ SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file
 
 CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 
-PropertyTests.SetReadOnlyAndSetValue               # Was set DISABLED. Need to investigate what is wrong
-PropertyTests.SetReadOnlyAndChangeValue            # Was set DISABLED. Need to investigate what is wrong
-ValueTests.ValueReadOnly                           # Was set DISABLED. Need to investigate what is wrong
+PropertyTests.SetReadOnlyAndSetValue               # Defect 290587
+PropertyTests.SetReadOnlyAndChangeValue            # Defect 290587
+ValueTests.ValueReadOnly                           # Defect 290587
 ECRelationshipTests.DumpToString                   # Was set DISABLED. Hardcoded values need to be investigated.
 
 #----------------------------------------------------------------------------------------

@@ -457,13 +457,12 @@ TEST_F (PropertyTests, SetReadOnlyAndSetValue)
     m_ecClass->GetPropertyP ("PropertyString")->SetIsReadOnly (true);
     CreateInstance ();
 
-    ECValue getValue;
-    EXPECT_TRUE (getValue.IsReadOnly ());
+    EXPECT_TRUE (m_ecClass->GetPropertyP ("PropertyString")->GetIsReadOnly ());
 
-    EXPECT_EQ (m_instance->SetValue ("PropertyString", ECValue ("Some value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
+    EXPECT_EQ (ECOBJECTS_STATUS_UnableToSetReadOnlyInstance, m_instance->SetValue ("PropertyString", ECValue ("Some value")));
+    ECValue getValue;
     EXPECT_EQ (m_instance->GetValue (getValue, "PropertyString"), ECOBJECTS_STATUS_Success);
     EXPECT_STREQ (getValue.GetUtf8CP (), "Some value");
-    EXPECT_TRUE (m_ecClass->GetPropertyP ("PropertyString")->GetIsReadOnly ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -476,13 +475,12 @@ TEST_F (PropertyTests, SetReadOnlyAndChangeValue)
     m_ecClass->GetPropertyP ("PropertyString")->SetIsReadOnly (true);
     CreateInstance ();
 
-    ECValue getValue;
-    EXPECT_TRUE (getValue.IsReadOnly ());
+    EXPECT_TRUE (m_ecClass->GetPropertyP ("PropertyString")->GetIsReadOnly ());
 
-    EXPECT_EQ (m_instance->ChangeValue ("PropertyString", ECValue ("Other value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
+    EXPECT_EQ (ECOBJECTS_STATUS_UnableToSetReadOnlyInstance, m_instance->ChangeValue ("PropertyString", ECValue ("Other value")));
+    ECValue getValue;
     EXPECT_EQ (m_instance->GetValue (getValue, "PropertyString"), ECOBJECTS_STATUS_Success);
     EXPECT_STREQ (getValue.GetUtf8CP (), "Other value");
-    EXPECT_TRUE (m_ecClass->GetPropertyP ("PropertyString")->GetIsReadOnly ());
     }
 
 /*---------------------------------------------------------------------------------**//**
