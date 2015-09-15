@@ -614,6 +614,18 @@ struct TestParamters
             :m_noOfTargetClasses(-1), m_noOfTargetTables(-1), m_noOfColumnsInPrimaryTable(-1), m_noOfColumnsInSecondaryTable(-1), m_cascadeMethod(CascadeMethod::None), m_noOfInstances(-1)
             {
             }
+        Utf8String GetFileName() const
+            {
+            Utf8String str;
+            str.Sprintf("Perf_%s_%d_%d_%d.db",
+                m_cascadeMethod == CascadeMethod::ForiegnKey ? "ForiegnKey" : "Trigger",
+                m_noOfTargetTables,
+                m_noOfTargetClasses,
+                m_noOfInstances
+                );
+
+            return str;
+            }
         TestParamters& operator = (TestParamters const& rhs)
             {
             if (&rhs != this)
@@ -696,8 +708,21 @@ struct TestResult
     };
 void SetupDeleteTest(DbR db, int64_t& globalInstanceCount, TestParamters const& param)
     {
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:")) << "Failed to create test db";
+
+    ECDbTestProject::Initialize();
+    Utf8String dbPath = ECDbTestProject::BuildECDbPath(param.GetFileName().c_str());
+    WString dbPathW;
+    BeStringUtilities::Utf8ToWChar(dbPathW, dbPath.c_str());
+    if (BeFileName::DoesPathExist(dbPathW.c_str()))
+        {
+        // Delete any previously created file
+        BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile(dbPathW.c_str());
+        ASSERT_TRUE(fileDeleteStatus == BeFileNameStatus::Success);
+        }
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(dbPath.c_str())) << "Failed to create test db";
     ASSERT_EQ(true, param.IsValid()) << "Paramter provided to test was invalid";
+
 
     std::vector<Utf8String> primaryColumns;
     std::vector<Utf8String> secondaryColumns;
