@@ -2,12 +2,12 @@
 |
 |  $Source: Tests/DgnProject/Performance/TestSchemaHelper.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestSchemaHelper.h"
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 

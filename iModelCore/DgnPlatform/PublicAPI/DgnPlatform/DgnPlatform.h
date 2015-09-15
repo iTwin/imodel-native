@@ -28,9 +28,6 @@
 
 #define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn;
 
-#define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
-#define USING_NAMESPACE_BENTLEY_EC          using namespace BentleyApi::ECN;
-
 #define GLOBAL_TYPEDEF1(_sName_,_name_,structunion) \
     structunion _sName_; \
     namespace BENTLEY_NAMESPACE_NAME {\
