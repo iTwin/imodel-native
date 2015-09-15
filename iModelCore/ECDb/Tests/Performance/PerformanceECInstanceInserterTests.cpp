@@ -883,7 +883,7 @@ void SetupDeleteTest(DbR db, int64_t& globalInstanceCount, TestParamters const& 
         auto const noOfInstancesPerClass = noOfInstancesPerTable / classIds.size();
         for (auto cid : classIds)
             {
-            for (auto i = 0; i < noOfInstancesPerClass; i++)
+            for (size_t i = 0; i < noOfInstancesPerClass; i++)
                 {
                 globalInstanceId++;
                 primaryInsertStmt.ClearBindings();
