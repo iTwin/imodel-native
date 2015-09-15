@@ -10,7 +10,7 @@
 
 #include <ECDb/ECDbApi.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 
 #include <WebServices/Cache/Persistence/DataSourceCacheCommon.h>

@@ -14,7 +14,7 @@
 #include <WebServices/Cache/Util/ECExpressionHelper.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 /*--------------------------------------------------------------------------------------+

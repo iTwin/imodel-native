@@ -13,7 +13,7 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /*--------------------------------------------------------------------------------------+
