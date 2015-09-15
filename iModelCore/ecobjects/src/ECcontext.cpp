@@ -8,7 +8,7 @@
 #include "ECObjectsPch.h"
 #include <ECObjects/ECContext.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 static BeFileName s_rootDirectory;
 

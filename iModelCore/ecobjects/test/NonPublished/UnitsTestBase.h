@@ -9,7 +9,7 @@
 
 #include <ECUnits/Units.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 /*====================================================================================**/

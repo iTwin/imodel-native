@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/UserSettingsGroup.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -11,7 +11,7 @@
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentationRules/PresentationRules.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013

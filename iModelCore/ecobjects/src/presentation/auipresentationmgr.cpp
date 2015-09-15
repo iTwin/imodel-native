@@ -9,7 +9,7 @@
 
 #include <EcPresentation/auipresentationapi.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012

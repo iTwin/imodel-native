@@ -8,7 +8,7 @@
 #include "ECObjectsPch.h"
 #include <ECObjects/PresentationMetadataHelper.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 static Utf8CP EDITOR_SCHEMA_NAME                = "EditorCustomAttributes";
 static Utf8CP EXTENDEDTYPE_CLASSNAME            = "ExtendType";
