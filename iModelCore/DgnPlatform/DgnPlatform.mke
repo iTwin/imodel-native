@@ -293,6 +293,8 @@ $(coreObjs)DgnLink$(oext): $(DgnCoreDir)DgnLink.cpp $(DgnCoreAPISrc)DgnDbTables.
 
 $(coreObjs)DgnBaseDomain$(oext): $(DgnCoreDir)DgnBaseDomain.cpp ${MultiCompileDepends}
 
+$(coreObjs)DgnCustomAttributeHelper$(oext) : $(DgnCoreDir)DgnCustomAttributeHelper.cpp ${MultiCompileDepends}
+
 $(coreObjs)DgnHandlers$(oext): $(DgnHandlersDir)DgnHandlers.cpp $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h ${MultiCompileDepends}
 
 $(coreObjs)HitDetail$(oext): $(DgnHandlersDir)HitDetail.cpp $(HandlerDepends) ${MultiCompileDepends}
@@ -306,6 +308,8 @@ $(coreObjs)ScopedDgnHost$(oext) : $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCom
 $(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAPISrc)NamedVolume.h ${MultiCompileDepends}
 
 $(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
+
+
 
 
 $(o)ECUtils$(oext) : $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
