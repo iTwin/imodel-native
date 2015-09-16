@@ -49,9 +49,6 @@
     <ClCompile Include="NonPublished\BeTextFile_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\CopyContext_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\DgnColors_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
@@ -62,9 +59,6 @@
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\DgnViews_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\ElementAgenda_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\Raster_Test.cpp">
@@ -103,23 +97,11 @@
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\MSElementDescr_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\RefImportTest.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="Published\DgnLink_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\NamedVolume_Test.cpp">
       <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\DgnLevelTable_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\EntityAndItem_Test.cpp">
-      <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\DgnSqlTest.cpp">
       <Filter>NonPublished</Filter>
@@ -185,6 +167,27 @@
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\Font_tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Category_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnAuthority_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnLight_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnMaterial_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnTexture_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ElementAspect_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\GeomStream_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
   </ItemGroup>

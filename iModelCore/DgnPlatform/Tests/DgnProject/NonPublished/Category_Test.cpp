@@ -522,7 +522,7 @@ TEST_F (CategoryTests, QueryByElementId)
     DgnCategoryId categoryId = m_db->Categories ().QueryCategoryId (code);
     EXPECT_TRUE(categoryId.IsValid());
 
-    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnElement::Code("Test1"));
+    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnElement::Code());
     GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*m_defaultModelP, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,

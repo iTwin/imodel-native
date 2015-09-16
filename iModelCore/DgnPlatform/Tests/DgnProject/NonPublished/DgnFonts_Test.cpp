@@ -1,0 +1,147 @@
+/*--------------------------------------------------------------------------------------+       22
+|
+|  $Source: Tests/DgnProject/NonPublished/DgnFonts_Test.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#include "../TestFixture/DgnDbTestFixtures.h"
+#include <DgnPlatform/DgnCore/DgnFontData.h>
+
+/*---------------------------------------------------------------------------------**//**
+* Test fixture for testing DgnFonts
+* @bsimethod                                                    Umar.Hayat      09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct FontTests : public DgnDbTestFixture
+{
+
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat     09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FontTests, CRUD_DbFontMapDirect)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"CRUD_DbFontMapDirect.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnFonts::DbFontMapDirect& map = m_db->Fonts().DbFontMap();
+
+    EXPECT_TRUE(0 == map.MakeIterator().QueryCount());
+
+    BeFileName shxFilepath;
+    DgnDbTestDgnManager::GetTestDataOut(shxFilepath, L"Fonts\\Cdm.shx", L"Cdm.shx", __FILE__);
+    DgnFontPtr shxFont = DgnFontPersistence::File::FromShxFile(shxFilepath);
+
+    BeFileName ttfFontPath;
+    DgnDbTestDgnManager::GetTestDataOut(ttfFontPath, L"Fonts\\Teleindicadores1.ttf", L"Teleindicadores1.ttf", __FILE__);
+    bvector<BeFileName> pathList;
+    pathList.push_back(ttfFontPath);
+    T_DgnFontPtrs ttfFontList = DgnFontPersistence::File::FromTrueTypeFiles(pathList, nullptr);
+    ASSERT_TRUE(1 == ttfFontList.size());
+    DgnFontPtr ttfFont = ttfFontList.at(0);
+    
+    // Insert
+    // 
+    DgnFontId fontId1;
+    EXPECT_TRUE ( SUCCESS == map.Insert(*shxFont, fontId1) );
+    EXPECT_TRUE(fontId1.IsValid());
+    DgnFontId fontId2;
+    EXPECT_TRUE(SUCCESS == map.Insert(*ttfFont, fontId2));
+    EXPECT_TRUE(fontId2.IsValid());
+
+    // ToDo: insert TTF and RSC as well
+    
+    // Insert Duplicate 
+    BeTest::SetFailOnAssert(false);
+    DgnFontId fontId3;
+    EXPECT_FALSE ( SUCCESS == map.Insert(*shxFont, fontId3) );
+    //EXPECT_FALSE (fontId3.IsValid());
+    BeTest::SetFailOnAssert(true);
+    
+    EXPECT_TRUE(2 == map.MakeIterator().QueryCount());
+    int count = 0;
+    for (auto iter : map.MakeIterator())
+    {
+        if (iter.GetId() == fontId1)
+        {
+            EXPECT_TRUE(shxFont->GetName() == iter.GetName());
+            EXPECT_TRUE(shxFont->GetType() == iter.GetType());
+        }
+        else if (iter.GetId() == fontId2)
+        {
+            EXPECT_TRUE(ttfFont->GetName() == iter.GetName());
+            EXPECT_TRUE(ttfFont->GetType() == iter.GetType());
+        }
+        else
+            EXPECT_TRUE(false) << "This font should not be here ";
+        count++;
+    }
+    EXPECT_TRUE(2 == count);
+
+    // Query
+    //
+    DgnFontPtr toFind = map.QueryById(fontId1);
+    EXPECT_TRUE(toFind.IsValid());
+    EXPECT_TRUE(shxFont->GetName() == toFind->GetName());
+    EXPECT_TRUE(shxFont->GetType() == toFind->GetType());
+
+    toFind = map.QueryByTypeAndName(DgnFontType::Shx, "Cdm");
+    EXPECT_TRUE(toFind.IsValid());
+
+    EXPECT_TRUE(map.ExistsById(fontId1));
+    EXPECT_TRUE(map.ExistsByTypeAndName(DgnFontType::Shx,"Cdm"));
+
+    DgnFontId idToFind = map.QueryIdByTypeAndName(DgnFontType::Shx, "Cdm");
+    EXPECT_TRUE(idToFind.IsValid());
+
+    // Update 
+    //
+    
+    //
+    //EXPECT_TRUE(SUCCESS == map.Update(*shxFont, fontId1));
+    //toFind = map.QueryById(fontId1);
+    //EXPECT_TRUE(toFind.IsValid());
+    //EXPECT_TRUE(shxFont->GetName() == toFind->GetName());
+    //EXPECT_TRUE(shxFont->GetType() == toFind->GetType());
+
+    // Delete
+    //
+    EXPECT_EQ(SUCCESS, map.Delete(fontId1));
+    EXPECT_FALSE(map.ExistsById(fontId1));
+    EXPECT_TRUE(1 == map.MakeIterator().QueryCount());
+
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat     09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FontTests, CRUD_DbFaceDataDirect)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"CRUD_DbFaceDataDirect.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnFonts::DbFaceDataDirect& faceData = m_db->Fonts().DbFaceData();
+
+    EXPECT_TRUE(0 == faceData.MakeIterator().QueryCount());
+
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat     09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FontTests, CRUD_DgnFontManager)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"CRUD_DgnFontManager.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnFontCR font = DgnFontManager::GetLastResortTrueTypeFont();
+    //font.IsResolved();
+    wprintf(L"%s \n", font.GetName().c_str());
+    DgnFontCR font2 = DgnFontManager::GetLastResortRscFont();
+    wprintf(L"%ls \n", font2.GetName().c_str());
+    DgnFontCR font3 = DgnFontManager::GetLastResortShxFont();
+    wprintf(L"%ls \n", font3.GetName().c_str());
+    DgnFontCR font4 = DgnFontManager::GetAnyLastResortFont();
+    wprintf(L"%ls \n", font4.GetName().c_str());
+    DgnFontCR font5 = DgnFontManager::GetDecoratorFont();
+    wprintf(L"%ls \n", font5.GetName().c_str());
+
+    }
+
