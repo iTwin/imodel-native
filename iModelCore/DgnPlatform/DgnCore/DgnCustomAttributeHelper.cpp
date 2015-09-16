@@ -7,10 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-//*****************************************************************
-//DgnCustomAttributeHelper
-//*****************************************************************
+#define DGN_CUSTOMATTRIBUTE_HANDLERINFO_NAME                            "HandlerInfo"
+#define DGN_CUSTOMATTRIBUTE_HANDLERINFO_REQUIREDFORMODIFICATION_NAME    "RequiredForModification"
+#define DGN_CUSTOMATTRIBUTE_HANDLERINFO_ALLOWDELETEIFMISSING_NAME       "AllowDeleteIfMissing"
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Robert.Schili   09 / 2015
@@ -18,18 +17,16 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //static
 bool DgnCustomAttributeHelper::TryGetHandlerInfo(bool& requiredForModification, bool& allowDeleteIfMissing, ECClassCR ecClass, bool includeInherited)
     {
-    IECInstancePtr customAttribute = includeInherited ? ecClass.GetCustomAttribute("HandlerInfo") : ecClass.GetCustomAttributeLocal("HandlerInfo");
+    IECInstancePtr customAttribute = includeInherited ? ecClass.GetCustomAttribute(DGN_CUSTOMATTRIBUTE_HANDLERINFO_NAME) : ecClass.GetCustomAttributeLocal(DGN_CUSTOMATTRIBUTE_HANDLERINFO_NAME);
     if (customAttribute == nullptr)
         return false;
 
     ECValue v;
-    ECObjectsStatus stat = customAttribute->GetValue(v, "RequiredForModification");
+    ECObjectsStatus stat = customAttribute->GetValue(v, DGN_CUSTOMATTRIBUTE_HANDLERINFO_REQUIREDFORMODIFICATION_NAME);
     requiredForModification = (ECOBJECTS_STATUS_Success == stat && !v.IsNull() && v.GetBoolean());
 
-    stat = customAttribute->GetValue(v, "AllowDeleteIfMissing");
+    stat = customAttribute->GetValue(v, DGN_CUSTOMATTRIBUTE_HANDLERINFO_ALLOWDELETEIFMISSING_NAME);
     allowDeleteIfMissing = (ECOBJECTS_STATUS_Success == stat && !v.IsNull() && v.GetBoolean());
 
     return true;
     }
-
-END_BENTLEY_DGNPLATFORM_NAMESPACE

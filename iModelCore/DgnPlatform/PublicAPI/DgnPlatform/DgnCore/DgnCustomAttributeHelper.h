@@ -15,14 +15,9 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================    
 //! DgnCustomAttributeHelper is a convenience API for the custom attributes defined
 //! in the dgn standard ECSchema
-//! @bsiclass
 //=======================================================================================    
-struct DgnCustomAttributeHelper
+struct DgnCustomAttributeHelper : NonCopyableClass
     {
-private:
-    DgnCustomAttributeHelper();
-    ~DgnCustomAttributeHelper();
-
 public:
     //! Tries to retrieve the HandlerInfo custom attribute from the specified ECClass.
     //! @param[out] requiredForModification Indicates whether a handler is required for instances of an ECClass to be modified.
