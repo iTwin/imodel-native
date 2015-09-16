@@ -18,7 +18,7 @@
 #include <DgnPlatform/Tools/KeyTree.h>
 
 //  These are both used to try different configurations while testing.  They must both be eliminated
-#define LINESTYLES_ENABLED 1
+#define LINESTYLES_ENABLED 0
 #define TRYING_DIRECT_LINESTYLES 0
 
 #define LSID_DEFAULT        0
@@ -300,24 +300,24 @@ public:
     explicit LsComponentId(uint32_t value) : m_id(value) {}
 };
 
-//__PUBLISH_SECTION_END__
 enum class LsCapMode
 {
     //! 0 - Standard closed polygon (rectangle) strokes.
-    LCCAP_Closed            = 0,
+    Closed            = 0,
     //! 1 - No end cap. The stroke is displayed as two parallel lines.
-    LCCAP_Open              = 1,
+    Open              = 1,
     //! 2 - The end of the stroke is extended by half the stroke width.
-    LCCAP_Extended          = 2,
+    Extended          = 2,
     //! >= 3 - cap stroked as an arc and the value indicates the number of vectors in the arc.
-    LCCAP_Hexagon           = 3,
+    Hexagon           = 3,
     //! 4 vectors in the arc
-    LCCAP_Octagon           = 4,
+    Octagon           = 4,
     //! 5 vectors in the arc
-    LCCAP_Decagon           = 5,
-    LCCAP_Arc               = 30,
+    LCCAP_Decagon     = 5,
+    Arc               = 30,
 };
 
+//__PUBLISH_SECTION_END__
 enum DwgShapeFlag
 {
     SHAPEFLAG_TextSymbol    = 0x0002,
@@ -489,7 +489,7 @@ public:
     virtual LsComponentPtr _GetForTextureGeneration() const = 0;
     virtual void _StartTextureGeneration() const = 0;
     virtual BentleyStatus _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const   { return BSIERROR; }
-    virtual BentleyStatus _GetRasterTextureWidth (double& width) const                                      { return BSIERROR; }
+    virtual BentleyStatus _GetTextureWidth (double& width) const                                      { return BSIERROR; }
 
     //  Defer until update supported
     DGNPLATFORM_EXPORT void SetDescription (Utf8StringCR descr) { m_descr = descr; }
@@ -544,7 +544,7 @@ private:
 
 protected:
     virtual BentleyStatus   _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const override;
-    virtual BentleyStatus   _GetRasterTextureWidth (double& width) const override;
+    virtual BentleyStatus   _GetTextureWidth (double& width) const override;
     virtual bool            _HasWidth () const override  { return 0 != (m_flags & FlagMask_TrueWidth); }
     virtual double          _GetMaxWidth (DgnModelP modelRef) const override  { return _HasWidth() ? m_trueWidth : 0.0; }
     virtual void _StartTextureGeneration() const override {}
@@ -1384,7 +1384,7 @@ public:
     DgnStyleId GetStyleId () { return m_styleId; }
 
     // Raster Images...
-    uintptr_t                           GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale);
+    uintptr_t                           GetTextureHandle (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale);
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;

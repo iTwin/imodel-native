@@ -358,7 +358,7 @@ void LsPointComponent::_StartTextureGeneration() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2015
 //---------------------------------------------------------------------------------------
-LsPointComponent::LsPointComponent(LsPointComponentCR source) : LsComponent(*this)
+LsPointComponent::LsPointComponent(LsPointComponentCR source) : LsComponent(source)
     {
     m_strokeComponent = source.m_strokeComponent;
     m_okayForTextureGeneration = source.m_okayForTextureGeneration;
@@ -419,9 +419,12 @@ LsOkayForTextureGeneration LsPointComponent::_IsOkayForTextureGeneration() const
     if (!m_strokeComponent.IsValid())
         return LsOkayForTextureGeneration::NotAllowed;
 
-    LsOkayForTextureGeneration result = m_strokeComponent->_IsOkayForTextureGeneration();
-    if (result == LsOkayForTextureGeneration::NotAllowed)
-        return result;
+    if (m_okayForTextureGeneration != LsOkayForTextureGeneration::Unknown)
+        return m_okayForTextureGeneration;
+
+    m_okayForTextureGeneration = m_strokeComponent->_IsOkayForTextureGeneration();
+    if (m_okayForTextureGeneration == LsOkayForTextureGeneration::NotAllowed)
+        return m_okayForTextureGeneration;
 
     //  For each stroke that has a symbol we want to decide if drawing the symbol will go outside the stroke.  If so
     //  and any symbol goes outside of the full pattern we shift the symbols to try to make each symbol fall into 
@@ -432,10 +435,10 @@ LsOkayForTextureGeneration LsPointComponent::_IsOkayForTextureGeneration() const
     for (LsSymbolReference const& symref : m_symbols)
         {
         if (symref.GetVertexMask() != 0)
-            return LsOkayForTextureGeneration::NotAllowed;
+            return m_okayForTextureGeneration = LsOkayForTextureGeneration::NotAllowed;
         }
 
-    return result;
+    return m_okayForTextureGeneration;
     }
 
 /*---------------------------------------------------------------------------------**//**

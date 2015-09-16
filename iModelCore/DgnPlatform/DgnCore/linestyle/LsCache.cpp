@@ -256,8 +256,8 @@ LsComponentPtr LsStrokePatternComponent::_GetForTextureGeneration() const
     for (size_t i = 0; i < retval->m_nStrokes; ++i)
         {
         LsStroke& stroke(*(retval->m_strokes + i));
-        if (stroke.GetCapMode() != LsCapMode::LCCAP_Open)
-            stroke.SetCapMode(LsCapMode::LCCAP_Closed);
+        if (stroke.GetCapMode() != LsCapMode::Open)
+            stroke.SetCapMode(LsCapMode::Closed);
 
         stroke.SetIsStretchable(false);
         //  end conditions are not enabled so it should not be necessary to mess with dash-first, etc.
@@ -272,24 +272,27 @@ LsComponentPtr LsStrokePatternComponent::_GetForTextureGeneration() const
 //---------------------------------------------------------------------------------------
 LsOkayForTextureGeneration LsStrokePatternComponent::_IsOkayForTextureGeneration() const 
     {
-    LsOkayForTextureGeneration  result = LsOkayForTextureGeneration::NoChangeRequired; 
+    if (m_okayForTextureGeneration != Dgn::LsOkayForTextureGeneration::Unknown)
+        return m_okayForTextureGeneration;
+
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired; 
 
     if (HasIterationLimit())
-        return LsOkayForTextureGeneration::NotAllowed;
+        return m_okayForTextureGeneration = LsOkayForTextureGeneration::NotAllowed;
 
     //  Need to verify that fixed with a distance != 0 is okay.
     if (GetPhaseMode() != LsStrokePatternComponent::PHASEMODE_Fixed)
-        result = LsOkayForTextureGeneration::ChangeRequired;
+        m_okayForTextureGeneration = LsOkayForTextureGeneration::ChangeRequired;
 
     for (size_t i = 0; i < m_nStrokes; ++i)
         {
         LsStroke const& stroke(*(m_strokes+i));
         
-        if (stroke.IsStretchable() || (stroke.GetCapMode() != LsCapMode::LCCAP_Closed && stroke.GetCapMode() != LsCapMode::LCCAP_Open))
-            UpdateLsOkayForTextureGeneration(result, LsOkayForTextureGeneration::ChangeRequired);
+        if (stroke.IsStretchable() || (stroke.GetCapMode() != LsCapMode::Closed && stroke.GetCapMode() != LsCapMode::Open))
+            UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, LsOkayForTextureGeneration::ChangeRequired);
         }
 
-    return result;
+    return m_okayForTextureGeneration;
     }
 
 //---------------------------------------------------------------------------------------
@@ -310,15 +313,15 @@ LsOkayForTextureGeneration LsCompoundComponent::_IsOkayForTextureGeneration() co
     if (m_okayForTextureGeneration != LsOkayForTextureGeneration::Unknown)
         return m_okayForTextureGeneration;
 
-    LsOkayForTextureGeneration  result = LsOkayForTextureGeneration::NoChangeRequired; 
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired; 
 
     for (LsOffsetComponent const & comp : m_components)
         {
-        if (comp.m_subComponent->_IsOkayForTextureGeneration() > result)
-            UpdateLsOkayForTextureGeneration(result, comp.m_subComponent->_IsOkayForTextureGeneration());
+        if (comp.m_subComponent->_IsOkayForTextureGeneration() > m_okayForTextureGeneration)
+            UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, comp.m_subComponent->_IsOkayForTextureGeneration());
         }
 
-    return result;
+    return m_okayForTextureGeneration;
     }
 
 //---------------------------------------------------------------------------------------

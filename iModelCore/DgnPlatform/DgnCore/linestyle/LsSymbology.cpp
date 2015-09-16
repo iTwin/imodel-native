@@ -551,7 +551,7 @@ DPoint3dCP          endTangent
 
     //  NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
     if (!context.Is3dView())
-        m_textureHandle = nameRec->GetRasterTexture (context, *this, false, scale);
+        m_textureHandle = nameRec->GetTextureHandle (context, *this, false, scale);
 
     return 0;
     }
@@ -655,7 +655,7 @@ void LineStyleSymb::ConvertLineStyleToTexture(ViewContextR context, bool force)
     LsDefinitionP lsDef = (LsDefinitionP)m_lStyle;
     BeAssert(nullptr != lsDef && dynamic_cast<LsDefinitionCP>(m_lStyle) == lsDef);
 
-    m_textureHandle = lsDef->GetRasterTexture (context, *this, force, m_scale);
+    m_textureHandle = lsDef->GetTextureHandle (context, *this, force, m_scale);
     }
 
 /*---------------------------------------------------------------------------------**//**

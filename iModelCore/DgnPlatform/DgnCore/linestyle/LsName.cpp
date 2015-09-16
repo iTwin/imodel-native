@@ -318,7 +318,13 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
     {
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
     BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
-    if (m_lsComp->_IsOkayForTextureGeneration() == LsOkayForTextureGeneration::NotAllowed)
+    m_lsComp->_StartTextureGeneration();
+
+    if (m_lsComp->_IsOkayForTextureGeneration() == Dgn::LsOkayForTextureGeneration::NotAllowed)
+        return 0;
+
+    LsComponentPtr  comp = m_lsComp->_GetForTextureGeneration();
+    if (comp.IsNull())
         return 0;
 
     ComponentToTextureStroker   stroker(viewContext, lineStyleSymb, *this);
@@ -330,7 +336,7 @@ intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale) 
+uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale) 
     {
     if (!m_lsComp.IsValid())
         {
@@ -383,7 +389,7 @@ uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyl
 
     if (0 != m_textureHandle &&
         m_lsComp.IsValid() &&
-        SUCCESS == m_lsComp->_GetRasterTextureWidth (rasterWidth))
+        SUCCESS == m_lsComp->_GetTextureWidth (rasterWidth))
         lineStyleSymb.SetWidth (rasterWidth * scale);
     
     return m_textureHandle;

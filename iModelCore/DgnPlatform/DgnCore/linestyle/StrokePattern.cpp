@@ -150,7 +150,7 @@ enum CapOptions
 +---------------+---------------+---------------+---------------+---------------+------*/
                 LsStroke::LsStroke ()
     {                
-    Init (0.0, 0, 0, LCWIDTH_None, LsCapMode::LCCAP_Closed); 
+    Init (0.0, 0, 0, LCWIDTH_None, LsCapMode::Closed); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1297,7 +1297,7 @@ void            LsStrokePatternComponent::AppendStroke (double length, bool isDa
     {
     BeAssert (length >= 0.0);
 
-    LsStroke  stroke (length, 0.0, 0.0, LsStroke::LCWIDTH_None, LsCapMode::LCCAP_Closed);
+    LsStroke  stroke (length, 0.0, 0.0, LsStroke::LCWIDTH_None, LsCapMode::Closed);
 
     if (isDash)
         {
@@ -1484,7 +1484,7 @@ StatusInt       StrokeGenerator::GenerateRigidStroke (double strokeLength, doubl
         The stroke went off the current segment, the segment has been incremented so that
         m_next should be the point past the stroke, and the stroke did not hit the end
         of the input data. To find the intersection point consider a sphere with it's
-        certer at lastGeneratedPoint, and a radius of strokeLength. Find the intersection
+        center at lastGeneratedPoint, and a radius of strokeLength. Find the intersection
         with the ray that starts at m_next point and shoots back toward the sphere
         (direction is opposite of segmentDirection). In this case the intersection
         always exists and will hit the right one first. See Graphics Gems Pg 388.
@@ -1837,7 +1837,7 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
         DPoint3dCP points = GetPointAt (0);
 
         // NEEDSWORK: According to Karin, it would be much more efficient to pass all the points in the centerline as a single array.  
-        //    Need to restructure Centerline to do store them seperately.
+        //    Need to restructure Centerline to do store them separately.
         if (1 == nPts || (2 == nPts && points->IsEqual (points[1])))
             output.DrawPointString3d (1, points, NULL);
         else
