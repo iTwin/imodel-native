@@ -64,8 +64,17 @@
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/Bentley"/>
         </Bindings>
     </Part>
- <Part Name="BentleyUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)Bentley/Tests/ -dBEGTEST_NAME=Bentley">
+    <Part Name="BentleyUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)Bentley/Tests/ -dBEGTEST_NAME=Bentley">
         <SubPart PartName="BentleyDll"/>
         <SubPart PartName="PublishedApi"        PartFile="Bentley"  Repository="Bentley" />
     </Part>
+    <Part Name="UnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke">
+        <SubPart PartName="BentleyDll"/>
+        <SubPart PartName="PublishedApi"        PartFile="Bentley"  Repository="Bentley" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables"  ProductSubDirectory="Bentley" SourceName="Delivery/UnitTests/Linkables"/>
+            <Files ProductDirectoryName="UnitTestsIgnoreList" ProductSubDirectory="Bentley">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
 </BuildContext>
