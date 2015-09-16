@@ -734,7 +734,7 @@ protected:
     //! Get the display label (for use in the GUI) for this DgnElement.
     //! The default implementation returns the label if set or the code if the label is not set.
     //! Override to generate the display label in a different way.
-    virtual Utf8String _GetDisplayLabel() const {return GetLabel() ? GetLabel() : GetCode().GetValue();}
+    virtual Utf8String _GetDisplayLabel() const {return !m_label.empty() ? GetLabel() : GetCode().GetValue();}
 
     //! Change the parent (owner) of this DgnElement.
     //! The default implementation sets the parent without doing any checking.
