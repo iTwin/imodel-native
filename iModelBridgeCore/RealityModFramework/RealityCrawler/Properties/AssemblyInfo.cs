@@ -1,4 +1,11 @@
-﻿using System.Reflection;
+﻿/*--------------------------------------------------------------------------------------+
+|
+|     $Source: RealityCrawler/Properties/AssemblyInfo.cs $
+| 
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 

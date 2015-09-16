@@ -1,6 +1,12 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: WMSCapabilitiesNET/WMSCapabilitiesNET.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 #include <RealityPlatform/WMSCapabilities.h>
-#include <RealityPlatform/WMSParser.h>
 
 using namespace System::Collections::Generic;
 
@@ -310,7 +316,6 @@ namespace RealityPlatformWMSCapabilities
     {
     public:
         WMSUrlNet(WMSParser::WMSUrlCP url);
-        //WMSUrlNet(WMSParser::WMSUrlPtr url); // ToDo: Debug overload
 
         //! Element.
         size_t GetHeight() { return m_height; }
@@ -412,7 +417,6 @@ namespace RealityPlatformWMSCapabilities
     public ref class WMSLayerNet
     {
     public:
-        //WMSLayerNet(WMSParser::WMSLayerPtr layer);
         WMSLayerNet(WMSParser::WMSLayerCP layer);
 
         // Attribute.
@@ -479,8 +483,6 @@ namespace RealityPlatformWMSCapabilities
         WMSStyleNet^ m_pStyle;
         List<WMSLayerNet^>^ m_pLayerList;
         WMSUrlNet^ m_pDataUrl;
-
-        // ToDo: not finish correct the GetDataListUrl in the cpp.
     };
 
     //=====================================================================================

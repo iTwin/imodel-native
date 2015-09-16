@@ -1,4 +1,11 @@
-﻿using System;
+﻿/*--------------------------------------------------------------------------------------+
+|
+|     $Source: RealityCrawler/SeedCreator.cs $
+| 
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

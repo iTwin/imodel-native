@@ -77,6 +77,19 @@ ASSEMBLY_REFERENCE           = $(ContextSubPartsAssembliesDir)WMSCapabilitiesNET
 %include csrefapnd.mki
 always:
 	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BaseGeoCoordG.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeCurl.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeIcu4c.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeLibxml2.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyAllocator.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyG.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BentleyGeomG.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeOpenSSL.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeSQLiteG.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/BeXmlG.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/ImagePPG.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/NCSEcw.dll $(o)
+	$(bcopyCmd) $(stdBcopyOpts) $(OutputRootDir)Product/RealityModFramework/RealityPlatform.dll $(o)
 
 #-----------------------------------------------------------------------
 #   Compile C# Modules

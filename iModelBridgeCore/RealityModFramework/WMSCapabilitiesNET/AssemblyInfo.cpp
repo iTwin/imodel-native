@@ -1,4 +1,10 @@
-//#include "stdafx.h"
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: WMSCapabilitiesNET/AssemblyInfo.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 
 using namespace System;
 using namespace System::Reflection;

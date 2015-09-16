@@ -1,6 +1,11 @@
-// This is the main DLL file.
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: WMSCapabilitiesNET/WMSCapabilitiesNET.cpp $
+| 
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 
-//#include "stdafx.h"
 #include "WMSCapabilitiesNET.h"
 #include <msclr\marshal_cppstd.h>
 #include <msclr\marshal.h>
@@ -55,19 +60,11 @@ WMSServiceNet::WMSServiceNet(WMSParser::WMSServiceCP service)
     m_maxWidth = service->GetMaxWidth();
     m_maxHeight = service->GetMaxHeight();
 
-    // Used to pach a bug from the C++ parser.
-    try
+    m_pKeywordList = gcnew List<String^>((UInt32)service->GetKeywordList().size());
+    for (size_t i = 0; i < service->GetKeywordList().size(); i++)
     {
-        m_pKeywordList = gcnew List<String^>((UInt32)service->GetKeywordList().size());
-        for (size_t i = 0; i < service->GetKeywordList().size(); i++)
-        {
-            System::String^ s = marshal_as<String^>(service->GetKeywordList()[i].c_str());
-            m_pKeywordList->Add(s);
-        }
-    }
-    catch (...)
-    {
-        m_pKeywordList = gcnew List<String^>(0);
+        System::String^ s = marshal_as<String^>(service->GetKeywordList()[i].c_str());
+        m_pKeywordList->Add(s);
     }
 
     service->GetOnlineResource() != 0 ? m_pOnlineResource = gcnew WMSOnlineResourceNet(service->GetOnlineResource()) : m_pOnlineResource = nullptr;
@@ -127,37 +124,19 @@ WMSCapabilityNet::WMSCapabilityNet(WMSParser::WMSCapabilityCP capability)
 {
     capability->GetRequest() != 0 ? m_pRequest = gcnew WMSRequestNet(capability->GetRequest()) : m_pRequest = nullptr;
 
-    // Used to pach a bug from the C++ parser.
-    try
+    m_pExceptionList = gcnew List<String^>((UInt32)capability->GetExceptionList().size());
+    for (size_t i = 0; i < capability->GetExceptionList().size(); i++)
     {
-        m_pExceptionList = gcnew List<String^>((UInt32)capability->GetExceptionList().size());
-        for (size_t i = 0; i < capability->GetExceptionList().size(); i++)
-        {
-            System::String^ s = marshal_as<String^>(capability->GetExceptionList()[i].c_str());
-            m_pExceptionList->Add(s);
-        }
-    }
-    catch (...)
-    {
-        m_pExceptionList = gcnew List<String^>(0);
+        System::String^ s = marshal_as<String^>(capability->GetExceptionList()[i].c_str());
+        m_pExceptionList->Add(s);
     }
 
-    // Used to pach a bug from the C++ parser.
-    try
+    m_pLayerList = gcnew List<WMSLayerNet^>((UInt32)capability->GetLayerList().size());
+    for (size_t i = 0; i < capability->GetLayerList().size(); i++)
     {
-        m_pLayerList = gcnew List<WMSLayerNet^>((UInt32)capability->GetLayerList().size());
-        for (size_t i = 0; i < capability->GetLayerList().size(); i++)
-        {
-            WMSLayerNet^ layer = gcnew WMSLayerNet(capability->GetLayerList()[i].get());
-            m_pLayerList->Add(layer);
-        }
+        WMSLayerNet^ layer = gcnew WMSLayerNet(capability->GetLayerList()[i].get());
+        m_pLayerList->Add(layer);
     }
-    catch (...)
-    {
-        m_pLayerList = gcnew List<WMSLayerNet^>(0);
-    }
-
-    //ToDo: finish to add content.
 }
 
 //-------------------------------------------------------------------------------------
@@ -175,19 +154,11 @@ WMSRequestNet::WMSRequestNet(WMSParser::WMSRequestCP request)
 //-------------------------------------------------------------------------------------
 WMSOperationTypeNet::WMSOperationTypeNet(WMSParser::WMSOperationTypeCP operationType)
 {
-    // Used to pach a bug from the C++ parser.
-    try
+    m_pFormatList = gcnew List<String^>((UInt32)operationType->GetFormatList().size());
+    for (size_t i = 0; i < operationType->GetFormatList().size(); i++)
     {
-        m_pFormatList = gcnew List<String^>((UInt32)operationType->GetFormatList().size());
-        for (size_t i = 0; i < operationType->GetFormatList().size(); i++)
-        {
-            System::String^ s = marshal_as<String^>(operationType->GetFormatList()[i].c_str());
-            m_pFormatList->Add(s);
-        }
-    }
-    catch (...)
-    {
-        m_pFormatList = gcnew List<String^>(0);
+        System::String^ s = marshal_as<String^>(operationType->GetFormatList()[i].c_str());
+        m_pFormatList->Add(s);
     }
 
     operationType->GetDcpType() != 0 ? m_pDcpType = gcnew WMSDCPTypeNet(operationType->GetDcpType()) : m_pDcpType = nullptr;
@@ -222,67 +193,35 @@ WMSLayerNet::WMSLayerNet(WMSParser::WMSLayerCP layer)
     m_minScaleDenom = layer->GetMinScaleDenom();
     m_maxScaleDenom = layer->GetMaxScaleDenom();
 
-    // Used to pach a bug from the C++ parser.
-    try
+    m_pKeywordList = gcnew List<String^>((UInt32)layer->GetKeywordList().size());
+    for (size_t i = 0; i < layer->GetKeywordList().size(); i++)
     {
-        m_pKeywordList = gcnew List<String^>((UInt32)layer->GetKeywordList().size());
-        for (size_t i = 0; i < layer->GetKeywordList().size(); i++)
-        {
-            System::String^ s = marshal_as<String^>(layer->GetKeywordList()[i].c_str());
-            m_pKeywordList->Add(s);
-        }
-    }
-    catch (...)
-    {
-        m_pKeywordList = gcnew List<String^>(0);
+        System::String^ s = marshal_as<String^>(layer->GetKeywordList()[i].c_str());
+        m_pKeywordList->Add(s);
     }
 
-    // Used to pach a bug from the C++ parser.
-    try
+    m_pCRSList = gcnew List<String^>((UInt32)layer->GetCRSList().size());
+    for (size_t i = 0; i < layer->GetCRSList().size(); i++)
     {
-        m_pCRSList = gcnew List<String^>((UInt32)layer->GetCRSList().size());
-        for (size_t i = 0; i < layer->GetCRSList().size(); i++)
-        {
-            System::String^ s = marshal_as<String^>(layer->GetCRSList()[i].c_str());
-            m_pCRSList->Add(s);
-        }
-    }
-    catch (...)
-    {
-        m_pCRSList = gcnew List<String^>(0);
+        System::String^ s = marshal_as<String^>(layer->GetCRSList()[i].c_str());
+        m_pCRSList->Add(s);
     }
 
     layer->GetGeoBBox() != 0 ? m_pGeoBBox = gcnew WMSGeoBoundingBoxNet(layer->GetGeoBBox()) : m_pGeoBBox = nullptr;
     layer->GetLatLonBBox() != 0 ? m_pLatLonBBox = gcnew WMSLatLonBoundingBoxNet(layer->GetLatLonBBox()) : m_pLatLonBBox = nullptr;
 
-    // Used to pach a bug from the C++ parser.
-    try
+    m_pBBoxList = gcnew List<WMSBoundingBoxNet^>((UInt32)layer->GetBBox().size());
+    for (size_t i = 0; i < layer->GetBBox().size(); i++)
     {
-        m_pBBoxList = gcnew List<WMSBoundingBoxNet^>((UInt32)layer->GetBBox().size());
-        for (size_t i = 0; i < layer->GetBBox().size(); i++)
-        {
-            WMSBoundingBoxNet^ bBox = gcnew WMSBoundingBoxNet(layer->GetBBox()[i].get());
-            m_pBBoxList->Add(bBox);
-        }
-    }
-    catch (...)
-    {
-        m_pBBoxList = gcnew List<WMSBoundingBoxNet^>(0);
+        WMSBoundingBoxNet^ bBox = gcnew WMSBoundingBoxNet(layer->GetBBox()[i].get());
+        m_pBBoxList->Add(bBox);
     }
 
-    // Used to pach a bug from the C++ parser.
-    try
+    m_pDimensionList = gcnew List<WMSDimensionNet^>((UInt32)layer->GetDimensionList().size());
+    for (size_t i = 0; i < layer->GetDimensionList().size(); i++)
     {
-        m_pDimensionList = gcnew List<WMSDimensionNet^>((UInt32)layer->GetDimensionList().size());
-        for (size_t i = 0; i < layer->GetDimensionList().size(); i++)
-        {
-            WMSDimensionNet^ dimension = gcnew WMSDimensionNet(layer->GetDimensionList()[i].get());
-            m_pDimensionList->Add(dimension);
-        }
-    }
-    catch (...)
-    {
-        m_pDimensionList = gcnew List<WMSDimensionNet^>(0);
+        WMSDimensionNet^ dimension = gcnew WMSDimensionNet(layer->GetDimensionList()[i].get());
+        m_pDimensionList->Add(dimension);
     }
 
     layer->GetAttribution() != 0 ? m_pAttribution = gcnew WMSAttributionNet(layer->GetAttribution()) : m_pAttribution = nullptr;
@@ -291,43 +230,25 @@ WMSLayerNet::WMSLayerNet(WMSParser::WMSLayerCP layer)
 
     layer->GetIdentifier() != 0 ? m_pIdentifier = gcnew WMSIdentifierNet(layer->GetIdentifier()) : m_pIdentifier = nullptr;
 
-    // Used to pach a bug from the C++ parser.
-    try
+    m_pMetadataUrlList = gcnew List<WMSUrlNet^>((UInt32)layer->GetMetadataUrlList().size());
+    for (size_t i = 0; i < layer->GetMetadataUrlList().size(); i++)
     {
-        m_pMetadataUrlList = gcnew List<WMSUrlNet^>((UInt32)layer->GetMetadataUrlList().size());
-        for (size_t i = 0; i < layer->GetMetadataUrlList().size(); i++)
-        {
-            WMSUrlNet^ metadataUrl = gcnew WMSUrlNet(layer->GetMetadataUrlList()[i].get());
-            m_pMetadataUrlList->Add(metadataUrl);
-        }
-    }
-    catch (...)
-    {
-        m_pMetadataUrlList = gcnew List<WMSUrlNet^>(0);
+        WMSUrlNet^ metadataUrl = gcnew WMSUrlNet(layer->GetMetadataUrlList()[i].get());
+        m_pMetadataUrlList->Add(metadataUrl);
     }
 
     layer->GetFeatureListUrl() != 0 ? m_pFeatureListUrl = gcnew WMSUrlNet(layer->GetFeatureListUrl()) : m_pFeatureListUrl = nullptr;
 
     layer->GetStyle() != 0 ? m_pStyle = gcnew WMSStyleNet(layer->GetStyle()) : m_pStyle = nullptr;
 
-    // Used to pach a bug from the C++ parser.
-    try
+    m_pLayerList = gcnew List<WMSLayerNet^>((UInt32)layer->GetLayerList().size());
+    for (size_t i = 0; i < layer->GetLayerList().size(); i++)
     {
-        m_pLayerList = gcnew List<WMSLayerNet^>((UInt32)layer->GetLayerList().size());
-        for (size_t i = 0; i < layer->GetLayerList().size(); i++)
-        {
-            WMSLayerNet^ subLayer = gcnew WMSLayerNet(layer->GetLayerList()[i].get());
-            m_pLayerList->Add(subLayer);
-        }
-    }
-    catch (...)
-    {
-        m_pLayerList = gcnew List<WMSLayerNet^>(0);
+        WMSLayerNet^ subLayer = gcnew WMSLayerNet(layer->GetLayerList()[i].get());
+        m_pLayerList->Add(subLayer);
     }
 
-    //ToDo: Use GetDataListUrl istead of GetFeatureListUrl.
-    // layer->GetDataListUrl() != 0 ? m_pDataUrl = gcnew WMSUrlNet(layer->GetDataListUrl()):m_pDataUrl = nullptr;
-    layer->GetFeatureListUrl() != 0 ? m_pDataUrl = gcnew WMSUrlNet(layer->GetFeatureListUrl()) : m_pDataUrl = nullptr;
+    layer->GetDataUrl() != 0 ? m_pDataUrl = gcnew WMSUrlNet(layer->GetDataUrl()):m_pDataUrl = nullptr;
 }
 
 
@@ -405,19 +326,11 @@ WMSUrlNet::WMSUrlNet(WMSParser::WMSUrlCP url)
     m_type = marshal_as<String^>(url->GetType().c_str());
     m_name = marshal_as<String^>(url->GetName().c_str());
 
-    // Used to pach a bug from the C++ parser.
-    try
+    m_pFormatList = gcnew List<String^>((UInt32)url->GetFormatList().size());
+    for (size_t i = 0; i < url->GetFormatList().size(); i++)
     {
-        m_pFormatList = gcnew List<String^>((UInt32)url->GetFormatList().size());
-        for (size_t i = 0; i < url->GetFormatList().size(); i++)
-        {
-            System::String^ s = marshal_as<String^>(url->GetFormatList()[i].c_str());
-            m_pFormatList->Add(s);
-        }
-    }
-    catch (...)
-    {
-        m_pFormatList = gcnew List<String^>(0);
+        System::String^ s = marshal_as<String^>(url->GetFormatList()[i].c_str());
+        m_pFormatList->Add(s);
     }
 
     url->GetOnlineResource() != 0 ? m_pOnlineRes = gcnew WMSOnlineResourceNet(url->GetOnlineResource()) : m_pOnlineRes = nullptr;
