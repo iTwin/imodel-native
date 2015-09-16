@@ -221,3 +221,19 @@ TEST(StatementTests, ClearBinding)
     stat1.Finalize();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(StatementTests, SillyJsonTest)
+    {
+    initBeSQLiteLib();
+    Db db;
+    createDB(L"json.db", db);
+    EXPECT_EQ (BE_SQLITE_OK, db.ExecuteSql("INSERT INTO linestyles (lsId, lsName) values (20, json('{\"X\":123}'))"));
+
+    Statement stmt;
+    EXPECT_EQ (BE_SQLITE_OK, stmt.Prepare(db, "SELECT count(*) FROM linestyles WHERE 1 = json_valid(lsName)"));
+    EXPECT_EQ (BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ (1, stmt.GetValueInt(0));
+    }
+
