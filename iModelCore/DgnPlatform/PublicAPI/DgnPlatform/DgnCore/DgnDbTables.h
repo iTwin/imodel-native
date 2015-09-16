@@ -42,6 +42,7 @@
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
 #define DGN_CLASSNAME_PhysicalView          "PhysicalView"
 #define DGN_CLASSNAME_PlanarPhysicalModel   "PlanarPhysicalModel"
+#define DGN_CLASSNAME_ResourceModel         "ResourceModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
@@ -691,12 +692,6 @@ public:
     //! An object that holds a row from the DgnModel table.
     struct Model
     {
-        enum class CoordinateSpace
-        {
-            Local   = 0,    // the model has a local coordinate system
-            World   = 1,    // the model is in the physical (world) coordinate system.
-        };
-
         friend struct DgnModels;
 
     private:
@@ -705,21 +700,18 @@ public:
         Utf8String   m_name;
         Utf8String   m_description;
         DgnModelType m_modelType;
-        CoordinateSpace  m_space;
         bool         m_inGuiList;
 
     public:
         Model()
             {
             m_modelType = DgnModelType::Physical;
-            m_space = CoordinateSpace::Local;
             m_inGuiList = true;
             };
 
-        Model(Utf8CP name, DgnModelType modelType, CoordinateSpace space, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_name(name)
+        Model(Utf8CP name, DgnModelType modelType, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_name(name)
             {
             m_modelType = modelType;
-            m_space = space;
             m_inGuiList = true;
             }
 
@@ -731,7 +723,6 @@ public:
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModelType(DgnClassId classId, DgnModelType val) {m_classId = classId; m_modelType = val;}
-        void SetCoordinateSpace(CoordinateSpace val) {m_space = val;}
 
         DgnModelId GetId() const {return m_id;}
         Utf8CP GetNameCP() const {return m_name.c_str();}
@@ -739,7 +730,6 @@ public:
         Utf8CP GetDescription() const {return m_description.c_str();}
         DgnModelType GetModelType() const {return m_modelType;}
         DgnClassId GetClassId() const {return m_classId;}
-        CoordinateSpace GetCoordinateSpace() const {return m_space;}
         bool InGuiList() const {return m_inGuiList;}
         bool Is3d() const {return m_modelType==DgnModelType::Physical;}
 
@@ -764,7 +754,6 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
             DGNPLATFORM_EXPORT DgnModelType GetModelType() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
-            DGNPLATFORM_EXPORT Model::CoordinateSpace GetCoordinateSpace() const;
             DGNPLATFORM_EXPORT bool InGuiList() const;
 
             bool Is3d() const {return GetModelType()==DgnModelType::Physical;}
@@ -1131,26 +1120,40 @@ private:
     friend struct DgnDb;
     explicit DgnAuthorities(DgnDbR db) : DgnDbTable(db) {}
 
+    typedef bvector<DgnAuthorityPtr> LoadedAuthorities;
+
+    LoadedAuthorities   m_loadedAuthorities;
+    BeSQLite::BeDbMutex m_mutex;
+
+    DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
 public:
     //! Look up the ID of the authority with the specified name.
-    DGNPLATFORM_EXPORT DgnAuthorityId QueryAuthorityId(Utf8StringCR name) const;
+    DGNPLATFORM_EXPORT DgnAuthorityId QueryAuthorityId(Utf8CP name) const;
 
-    //! Load an authority by ID
+    //! Look up an authority by ID. The authority will be loaded from the database if necessary.
     //! @param[in] authorityId The ID of the authority to load
-    //! @param[out] status     Optional return status of the operation
     //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded
-    DGNPLATFORM_EXPORT DgnAuthorityPtr LoadAuthority(DgnAuthorityId authorityId, DgnDbStatus* status = nullptr);
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(DgnAuthorityId authorityId);
 
+    //! Look up an authority by name. The authority will be loaded from the database if necessary.
+    //! @param[in] name The name of the authority to load
+    //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetAuthority(Utf8CP name);
+
+    //! Look up an authority of a particular type by ID. The authority will be loaded from the database if necessary.
+    //! @param[in] authorityId The ID of the authority to load
+    //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded or is not of the desired type.
+    template<typename T> RefCountedCPtr<T> Get(DgnAuthorityId authorityId) { return dynamic_cast<T const*>(GetAuthority(authorityId).get()); }
+
+    //! Look up an authority of a particular type by name. The authority will be loaded from the database if necessary.
+    //! @param[in] name The name of the authority to load
+    //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded or is not of the desired type.
+    template<typename T> RefCountedCPtr<T> Get(Utf8CP name) { return dynamic_cast<T const*>(GetAuthority(name).get()); }
     //! Add a new Authority to the table.
     //! @param[in]  authority The new entry to add.
     //! @return The result of the insert operation.
     //! @remarks If successful, this method will assign a valid DgnAuthorityId to the supplied authority
     DGNPLATFORM_EXPORT DgnDbStatus Insert(DgnAuthorityR authority);
-
-    //! Update an existing authority in the DgnDb
-    //! @param[in]  authority   The modified authority
-    //! @return The result of the update operation
-    DGNPLATFORM_EXPORT DgnDbStatus Update(DgnAuthorityR authority);
 };
 
 //=======================================================================================

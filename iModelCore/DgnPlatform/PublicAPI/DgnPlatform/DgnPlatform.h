@@ -28,9 +28,6 @@
 
 #define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn;
 
-#define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
-#define USING_NAMESPACE_BENTLEY_EC          using namespace BentleyApi::ECN;
-
 #define GLOBAL_TYPEDEF1(_sName_,_name_,structunion) \
     structunion _sName_; \
     namespace BENTLEY_NAMESPACE_NAME {\
@@ -76,6 +73,7 @@ DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutResult)
 DGNPLATFORM_TYPEDEFS (DgnMarkupProject)
 DGNPLATFORM_TYPEDEFS (DgnModel)
+DGNPLATFORM_TYPEDEFS (DgnImportContext)
 DGNPLATFORM_TYPEDEFS (DgnAuthority)
 DGNPLATFORM_TYPEDEFS (DgnResourceURI)
 DGNPLATFORM_TYPEDEFS (DgnGlyph)
@@ -426,7 +424,7 @@ struct BoundingBox3d : DRange3d
 };
 
 //=======================================================================================
-//! A BoundingBox3d that is aligned with the axes of a DgnModels::Model::CoordinateSpace.
+//! A BoundingBox3d that is aligned with the axes of a CoordinateSpace.
 // @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
 struct AxisAlignedBox3d : BoundingBox3d
@@ -477,7 +475,7 @@ struct BoundingBox2d : DRange2d
 };
 
 //=======================================================================================
-//! A BoundingBox2d that is aligned with the axes of a DgnModels::Model::CoordinateSpace.
+//! A BoundingBox2d that is aligned with the axes of a CoordinateSpace.
 // @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
 struct AxisAlignedBox2d : BoundingBox2d

@@ -135,7 +135,7 @@ TEST_F(DgnModelTests, GetRange)
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("RangeTest");
 
-    AxisAlignedBox3d range = m_model->QueryModelRange();
+    AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
     EXPECT_TRUE(range.IsValid());
     DPoint3d low; low.Init(-1.4011580427821895, 0.11538461538461531, -0.00050000000000000001);
     DPoint3d high; high.Init(-0.59795039550813156, 0.60280769230769227, 0.00050000000000000001);
@@ -153,7 +153,7 @@ TEST_F(DgnModelTests, GetRangeOfEmptyModel)
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("Default");
 
-    AxisAlignedBox3d thirdRange = m_model->QueryModelRange();
+    AxisAlignedBox3d thirdRange = m_model->ToGeometricModel()->QueryModelRange();
     EXPECT_FALSE(thirdRange.IsValid());
     }
 
@@ -570,7 +570,7 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
         ASSERT_TRUE( el.IsValid() );
         DgnAuthorityId said = el->GetCode().GetAuthority();
         ASSERT_TRUE( said == sourceAuthorityId );
-        auto sourceAuthority = db->Authorities().LoadAuthority(sourceAuthorityId);
+        auto sourceAuthority = db->Authorities().GetAuthority(sourceAuthorityId);
         ASSERT_STREQ( sourceAuthority->GetName().c_str(), "TestAuthority" );
         }
 
@@ -594,7 +594,7 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
         DgnAuthorityId daid = el->GetCode().GetAuthority();
         ASSERT_TRUE( daid.IsValid() );
         ASSERT_NE( daid , sourceAuthorityId ) << "Authority ID should have been remapped";
-        auto destAuthority = db2->Authorities().LoadAuthority(daid);
+        auto destAuthority = db2->Authorities().GetAuthority(daid);
         ASSERT_STREQ( destAuthority->GetName().c_str(), "TestAuthority" );
         db2->SaveChanges();
         }
@@ -781,7 +781,6 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Model1", entry.GetName ());
             EXPECT_STREQ ("Test Model 1", entry.GetDescription ());
             EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
-            EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
             EXPECT_EQ (true, entry.InGuiList ());
             }
         else if (entry.GetModelId () == m2id)
@@ -790,7 +789,6 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Model2", entry.GetName ());
             EXPECT_STREQ ("Test Model 2", entry.GetDescription ());
             EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
-            EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
             EXPECT_EQ (true, entry.InGuiList ());
             }
         else if (entry.GetModelId () == m3id)
@@ -799,7 +797,6 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Model3", entry.GetName ());
             EXPECT_STREQ ("Test Model 3", entry.GetDescription ());
             EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
-            EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
             EXPECT_EQ (true, entry.InGuiList ());
             }
         i++;

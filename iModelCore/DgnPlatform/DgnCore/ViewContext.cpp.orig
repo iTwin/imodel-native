@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/ViewContext.cpp $
+|     $Source: DgnCore/ViewContext.cpp.orig $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -1307,7 +1307,7 @@ StatusInt ViewContext::VisitHit(HitDetailCR hit)
 +---------------+---------------+---------------+---------------+---------------+------*/
 QvElem* ViewContext::CreateCacheElem(IStrokeForCache& stroker, QvCache* qvCache, double pixelSize, ICachedDrawP cachedDraw)
     {
-    BeAssert(!m_creatingCacheElem || nullptr != cachedDraw);
+    //  BeAssert(!m_creatingCacheElem || nullptr != cachedDraw);
 
     if (nullptr == cachedDraw)
         cachedDraw = m_ICachedDraw;

@@ -342,6 +342,105 @@ void            LsPointComponent::_ClearPostProcess ()
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+void LsPointComponent::_StartTextureGeneration() const
+    {
+    m_okayForTextureGeneration = Dgn::LsOkayForTextureGeneration::Unknown;
+    if (m_strokeComponent.IsValid())
+        m_strokeComponent->_StartTextureGeneration();
+
+    for (LsSymbolReference const& symref : m_symbols)
+        symref.m_symbol->_StartTextureGeneration();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsPointComponent::LsPointComponent(LsPointComponentCR source) : LsComponent(source)
+    {
+    m_strokeComponent = source.m_strokeComponent;
+    m_okayForTextureGeneration = source.m_okayForTextureGeneration;
+    m_postProcessed = false;
+    for (LsSymbolReference const& ref: m_symbols)
+        m_symbols.push_back(ref);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr LsPointComponent::_GetForTextureGeneration() const
+    {
+    if (m_okayForTextureGeneration == Dgn::LsOkayForTextureGeneration::NoChangeRequired)
+        return const_cast<LsPointComponentP>(this);
+
+    BeAssert(m_okayForTextureGeneration != Dgn::LsOkayForTextureGeneration::NotAllowed);  //  the caller must check for this
+
+    LsPointComponentP retval = new LsPointComponent(*this);
+    retval->m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired;
+
+    LsComponentPtr strokeComp = m_strokeComponent->_GetForTextureGeneration();
+    retval->m_strokeComponent = dynamic_cast<LsStrokePatternComponentP>(strokeComp.get());
+
+    for (LsSymbolReference& symbref : retval->m_symbols)
+        {
+        symbref.m_parent = const_cast<LsPointComponentP>(this);
+        LsComponentPtr symbol = symbref.m_symbol->_GetForTextureGeneration();
+        symbref.m_symbol = dynamic_cast<LsSymbolComponentP>(symbol.get());
+        if (symbref.GetVertexMask() != LsSymbolReference::VERTEX_None)
+            {
+            BeAssert(symbref.GetVertexMask() == LsSymbolReference::VERTEX_None); //  otherwise it should set m_okayForTextureGeneration to NotAllowed
+            continue;
+            }
+
+        LsStrokeP stroke = m_strokeComponent->GetStrokePtr(symbref.GetStrokeNumber());
+        double length = stroke->GetLength();
+        printf("length = %f\n", length);
+        if (symbref.GetRotationMode() != LsSymbolReference::ROTATE_Relative)
+            {
+            symbref.SetRotationMode(LsSymbolReference::ROTATE_Relative);
+            symbref.SetAngle(0.0);
+            }
+
+        DRange3d  range;
+        // NEEDSWORK -- linestyles -- don't rely on range from symbol when deciding if symbol will fit in stroke.
+        symbref.m_symbol->_GetRange(range);
+        }
+
+    return retval;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsOkayForTextureGeneration LsPointComponent::_IsOkayForTextureGeneration() const
+    {
+    if (!m_strokeComponent.IsValid())
+        return LsOkayForTextureGeneration::NotAllowed;
+
+    if (m_okayForTextureGeneration != LsOkayForTextureGeneration::Unknown)
+        return m_okayForTextureGeneration;
+
+    m_okayForTextureGeneration = m_strokeComponent->_IsOkayForTextureGeneration();
+    if (m_okayForTextureGeneration == LsOkayForTextureGeneration::NotAllowed)
+        return m_okayForTextureGeneration;
+
+    //  For each stroke that has a symbol we want to decide if drawing the symbol will go outside the stroke.  If so
+    //  and any symbol goes outside of the full pattern we shift the symbols to try to make each symbol fall into 
+    //  its stroke.
+    //
+    //  If any symbol has a vertex mask then the LsPointComponent is not allowed.
+    //
+    for (LsSymbolReference const& symref : m_symbols)
+        {
+        if (symref.GetVertexMask() != 0)
+            return m_okayForTextureGeneration = LsOkayForTextureGeneration::NotAllowed;
+        }
+
+    return m_okayForTextureGeneration;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -377,16 +476,6 @@ LsComponentP    other
 
     LsStrokePatternComponentCP stroke = GetStrokeComponentCP();
     return  stroke ? stroke->_ContainsComponent(other) : false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-bool LsPointComponent::_SupportsConvertToRaster() const
-    {
-    //  Vertex symbols are ignored when converted to raster so maybe this should ignore
-    //  anything that has vertex symbols.
-    return HasStrokeSymbol();
     }
 
 /*---------------------------------------------------------------------------------**//**
