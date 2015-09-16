@@ -422,10 +422,6 @@ void DgnChangeSummaryTestFixture::CreateSampleBuilding(WCharCP fileName)
     OpenDgnDb(fileName);
     InsertFloor(5);
     CloseDgnDb();
-
-    OpenDgnDb(fileName);
-    UpdateFloorItem(2);
-    CloseDgnDb();
     }
 
 //---------------------------------------------------------------------------------------

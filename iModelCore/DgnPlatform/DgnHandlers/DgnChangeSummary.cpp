@@ -8,11 +8,6 @@
 #include    <DgnPlatformInternal.h>
 #include    <DgnPlatform/DgnHandlers/DgnChangeSummary.h>
 
-USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_LOGGING
-USING_NAMESPACE_BENTLEY_SQLITE_EC 
-USING_NAMESPACE_EC
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //---------------------------------------------------------------------------------------
