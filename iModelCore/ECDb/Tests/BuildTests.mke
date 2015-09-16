@@ -1,0 +1,38 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/BuildTests.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+thisDir = $(_MakeFilePath)
+
+tempInclude = $(OutputRootDir)build/ECDb/UnitTests/include/
+cIncs + -I$(tempInclude)
+
+$(tempInclude)PerformanceTestingHelper : $(BuildContext)SubParts/BeSQLiteUnitTestInclude
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+# Compile and Link the unit tests
+BEGTEST_NAME=ECDb
+BEGTEST_INPUT=$(thisDir)
+BEGTEST_OUTPUT=$(OutputRootDir)build/ECDb/UnitTests/
+%include $(SrcBsiCommon)sharedmki/BuildPlatformUnitTests.mki
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Linkables : ${BEGTEST_OUTPUT}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(thisDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+%if defined (CREATE_STATIC_LIBRARIES)
+    ProductRoot = $(OutputRootDir)../Product/
+%else
+    ProductRoot = $(OutputRootDir)Product/
+%endif
+
+$(BuildContext)Delivery/UnitTests/Documents : $(ProductRoot)BeTestDocuments/DgnDb
+    $(LinkFirstDepToFirstTargetAsDirectory)
