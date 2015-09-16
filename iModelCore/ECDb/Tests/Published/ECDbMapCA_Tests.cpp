@@ -1279,6 +1279,96 @@ TEST_F (SchemaImportTestFixture, MismatchDataTypesInExistingTable)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (SchemaImportTestFixture, AmbiguousQuery)
+    {
+    TestItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Struct' isDomainClass='True' isStruct='True'>"
+        "        <ECProperty propertyName='P1' typeName='string' />"
+        "        <ECProperty propertyName='P2' typeName='int' />"
+        "    </ECClass>"
+        "    <ECClass typeName='TestClass' isDomainClass='True'>"
+        "        <ECProperty propertyName='P1' typeName='string'/>"
+        "         <ECStructProperty propertyName = 'TestClass' typeName = 'Struct'/>"
+        "    </ECClass>"
+        "</ECSchema>", true, "");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport (db, asserted, testItem, "AmbiguousQuery.ecdb");
+    ASSERT_FALSE (asserted);
+
+    ECN::ECSchemaCP schema = db.Schemas ().GetECSchema ("TestSchema");
+
+    ECClassCP TestClass = schema->GetClassCP ("TestClass");
+    ASSERT_TRUE (TestClass != nullptr);
+
+    ECN::StandaloneECInstancePtr Instance1 = TestClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ECN::StandaloneECInstancePtr Instance2 = TestClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+
+    Instance1->SetValue ("P1", ECValue ("Harvey"));
+    Instance1->SetValue ("TestClass.P1", ECValue ("val1"));
+    Instance1->SetValue ("TestClass.P2", ECValue (123));
+
+    Instance2->SetValue ("P1", ECValue ("Mike"));
+    Instance2->SetValue ("TestClass.P1", ECValue ("val2"));
+    Instance2->SetValue ("TestClass.P2", ECValue (345));
+
+    //Inserting values of TestClass
+    ECInstanceInserter inserter (db, *TestClass);
+    ASSERT_TRUE (inserter.IsValid ());
+
+    auto stat = inserter.Insert (*Instance1, true);
+    ASSERT_TRUE (stat == SUCCESS);
+
+    stat = inserter.Insert (*Instance2, true);
+    ASSERT_TRUE (stat == SUCCESS);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "SELECT P1 FROM ts.TestClass"));
+    Utf8String ExpectedValueOfP1 = "Harvey-Mike-";
+    Utf8String ActualValueOfP1;
+
+    while (stmt.Step () == ECSqlStepStatus::HasRow)
+        {
+        ActualValueOfP1.append (stmt.GetValueText (0));
+        ActualValueOfP1.append ("-");
+        }
+
+    ASSERT_EQ (ExpectedValueOfP1, ActualValueOfP1);
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "SELECT TestClass.TestClass.P1 FROM ts.TestClass"));
+    Utf8String ExpectedValueOfStructP1 = "val1-val2-";
+    Utf8String ActualValueOfStructP1;
+
+    while (stmt.Step () == ECSqlStepStatus::HasRow)
+        {
+        ActualValueOfStructP1.append (stmt.GetValueText (0));
+        ActualValueOfStructP1.append ("-");
+        }
+
+    ASSERT_EQ (ExpectedValueOfStructP1, ActualValueOfStructP1);
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "SELECT TestClass.P2 FROM ts.TestClass"));
+    int ActualValueOfStructP2 = 468;
+    int ExpectedValueOfStructP2 = 0;
+
+    while (stmt.Step () == ECSqlStepStatus::HasRow)
+        {
+        ExpectedValueOfStructP2 += stmt.GetValueInt (0);
+        }
+
+    ASSERT_EQ (ExpectedValueOfStructP2, ActualValueOfStructP2);
+    stmt.Finalize ();
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (SchemaImportTestFixture, InvalidPrimaryKeyInExistingTable)
