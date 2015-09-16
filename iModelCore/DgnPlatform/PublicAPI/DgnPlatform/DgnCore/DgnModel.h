@@ -731,7 +731,7 @@ public:
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Paul.Connelly   09/15
 //=======================================================================================
-struct ResourceModel : DgnModel
+struct EXPORT_VTABLE_ATTRIBUTE ResourceModel : DgnModel
 {
     DEFINE_T_SUPER(DgnModel);
 protected:
