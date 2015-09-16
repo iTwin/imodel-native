@@ -18,9 +18,6 @@ SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file
 
 CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 
-PropertyTests.SetReadOnlyAndSetValue               # Defect 290587
-PropertyTests.SetReadOnlyAndChangeValue            # Defect 290587
-ValueTests.ValueReadOnly                           # Defect 290587
 ECRelationshipTests.DumpToString
 
 ValueTests.StringToIGeometry					   # Defect 276743

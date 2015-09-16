@@ -90,7 +90,8 @@ TEST_F(ValueTests, ValueReadOnly)
     EXPECT_TRUE(base->GetPropertyP ("readOnlyProp")->GetIsReadOnly());
     
     IECInstancePtr instance = base->GetDefaultStandaloneEnabler()->CreateInstance();
-    EXPECT_EQ (instance->SetValue ("readOnlyProp", ECValue("Some value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
+    //since the instance has no value initially, it can be set.This was done so that instances could be deserialized even if they had readonly property.This is the same as in the managed API.
+    EXPECT_EQ (instance->SetValue ("readOnlyProp", ECValue ("Some value")), ECOBJECTS_STATUS_Success);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

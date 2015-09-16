@@ -459,7 +459,8 @@ TEST_F (PropertyTests, SetReadOnlyAndSetValue)
 
     EXPECT_TRUE (m_ecClass->GetPropertyP ("PropertyString")->GetIsReadOnly ());
 
-    EXPECT_EQ (ECOBJECTS_STATUS_UnableToSetReadOnlyInstance, m_instance->SetValue ("PropertyString", ECValue ("Some value")));
+    //since the instance has no value initially, it can be set.This was done so that instances could be deserialized even if they had readonly property.This is the same as in the managed API.
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, m_instance->SetValue ("PropertyString", ECValue ("Some value")));
     ECValue getValue;
     EXPECT_EQ (m_instance->GetValue (getValue, "PropertyString"), ECOBJECTS_STATUS_Success);
     EXPECT_STREQ (getValue.GetUtf8CP (), "Some value");
@@ -477,8 +478,29 @@ TEST_F (PropertyTests, SetReadOnlyAndChangeValue)
 
     EXPECT_TRUE (m_ecClass->GetPropertyP ("PropertyString")->GetIsReadOnly ());
 
-    EXPECT_EQ (ECOBJECTS_STATUS_UnableToSetReadOnlyInstance, m_instance->ChangeValue ("PropertyString", ECValue ("Other value")));
+    //since the instance has no value initially, it can be set.This was done so that instances could be deserialized even if they had readonly property.This is the same as in the managed API.
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, m_instance->ChangeValue ("PropertyString", ECValue ("Other value")));
     ECValue getValue;
+    EXPECT_EQ (m_instance->GetValue (getValue, "PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_STREQ (getValue.GetUtf8CP (), "Other value");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Muhammad Hassan    02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (PropertyTests, SetAndChangePropertyValue)
+    {
+    CreateSchema ();
+    CreateProperty ("PropertyString", PRIMITIVETYPE_String);
+    CreateInstance ();
+
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, m_instance->SetValue ("PropertyString", ECValue ("init value")));
+    ECValue getValue;
+    EXPECT_EQ (m_instance->GetValue (getValue, "PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_STREQ (getValue.GetUtf8CP (), "init value");
+
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, m_instance->ChangeValue ("PropertyString", ECValue ("Other value")));
+    
     EXPECT_EQ (m_instance->GetValue (getValue, "PropertyString"), ECOBJECTS_STATUS_Success);
     EXPECT_STREQ (getValue.GetUtf8CP (), "Other value");
     }
