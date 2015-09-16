@@ -44,7 +44,7 @@ cd bld
 bash ..\configure
 
 rem Process the source
-make
+make sqlite3.c
 make sqlite3-all.c
 
 rem Copy to bentley source tree
