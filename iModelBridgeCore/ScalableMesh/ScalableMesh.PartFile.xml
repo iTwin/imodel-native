@@ -82,8 +82,8 @@
        <ProductDirectory Name="TerrainModelElementHandler" Path="Dlls" />
     </ProductDirectoryList>
     
-      <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMeshSDK" SaveProduct="true" >    
-    <SubPart PartName="ScalableMeshImporterSample"/>  
+      <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMesh" SaveProduct="true" >    
+        <SubPart PartName="ScalableMeshImporterSample"/>  
         <SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />          
     <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />
