@@ -12,9 +12,9 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
 struct IECSqlPrimitiveValue;
-//__PUBLISH_SECTION_START__
+#endif
 
 struct IECSqlStructValue;
 struct IECSqlArrayValue;
@@ -32,9 +32,7 @@ private:
 
     virtual bool _IsNull() const = 0;
 
-    //__PUBLISH_SECTION_END__
     virtual IECSqlPrimitiveValue const& _GetPrimitive() const = 0;
-    //__PUBLISH_SECTION_START__
     virtual IECSqlStructValue const& _GetStruct() const = 0;
     virtual IECSqlArrayValue const& _GetArray() const = 0;
 
@@ -74,7 +72,7 @@ public:
     //! @see @ref ECDbCodeSampleECSqlStatementAndDateTimeProperties
     ECDB_EXPORT DateTime GetDateTime() const;
 
-//__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     //! Gets the value as DateTime Julian Day ticks in hecto-nanoseconds.
     //! @param[out] metadata DateTime metadata.
     //! @return Julian Day ticks in hecto-nanoseconds
@@ -86,8 +84,7 @@ public:
     //! @return Julian Day
     //! @see BentleyApi::DateTime::FromJulianDay
     ECDB_EXPORT double GetDateTimeJulianDays(DateTime::Info& metadata) const;
-
-//__PUBLISH_SECTION_START__
+#endif
 
     //! Gets the value as a double
     //! @return Double value
@@ -135,14 +132,14 @@ public:
     //! - column data type is not Point3D
     ECDB_EXPORT DPoint3d GetPoint3D () const;
 
-    //__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     //! Gets the value as a Bentley Geometry Flatbuffer blob.
     //! @return Bentley Geometry Flatbuffer blob
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not Geometry
     void const* GetGeometryBlob(int* blobSize = nullptr) const;
-    //__PUBLISH_SECTION_START__
+#endif
 
     //! Gets the value as an IGeometry value.
     //! @return Column value as IGeometry

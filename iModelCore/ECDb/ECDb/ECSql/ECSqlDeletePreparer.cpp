@@ -124,9 +124,12 @@ ClassNameExp const& classNameExp
             {
             if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted)
                 {
-                auto& partition = storageDesc.GetHorizontalPartitions ().at (storageDesc.GetNonVirtualHorizontalPartitionIndices ().at (0));
-                deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped (classIdColumn->GetName ().c_str ());
-                partition.AppendECClassIdFilterSql (deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
+                auto& partition = storageDesc.GetHorizontalPartitions ().at (storageDesc.GetNonVirtualHorizontalPartitionIndices ().at (0));               
+                if (partition.NeedsClassIdFilter()) 
+                    {
+                    deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet.AppendEscaped(classIdColumn->GetName().c_str());
+                    partition.AppendECClassIdFilterSql(deleteSqlSnippets.m_systemWhereClauseNativeSqlSnippet);
+                    }
                 }
             }
         }

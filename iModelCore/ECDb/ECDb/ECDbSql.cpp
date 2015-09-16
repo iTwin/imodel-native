@@ -469,12 +469,12 @@ const std::vector<ECDbSqlIndex const*> ECDbSqlTable::GetIndexes () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::PersistenceManager::CreateOrUpdate(ECDbR ecdb, SchemaImportContext const& context) const
+BentleyStatus ECDbSqlTable::PersistenceManager::CreateOrUpdate(ECDbR ecdb) const
     {
     auto name = m_table.GetName().c_str();
     auto type = DbMetaDataHelper::GetObjectType(ecdb, name);
     if (type == DbMetaDataHelper::ObjectType::None)
-        return Create(ecdb, context);
+        return Create(ecdb);
 
     if (m_table.GetPersistenceType() == PersistenceType::Virtual)
         return ERROR;
@@ -487,11 +487,11 @@ BentleyStatus ECDbSqlTable::PersistenceManager::CreateOrUpdate(ECDbR ecdb, Schem
         auto r = ecdb.ExecuteSql(sql.c_str());
         if (r != BE_SQLITE_OK)
             {
-            context.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error, "Failed to drop view '%s'", name);
+            ecdb.GetECDbImplR().ReportIssue (ECDb::IssueSeverity::Error, "Failed to drop view '%s'", name);
             return ERROR;
             }
 
-        return Create(ecdb, context);
+        return Create(ecdb);
         }
 
     BeAssert(type == DbMetaDataHelper::ObjectType::Table);
@@ -538,16 +538,16 @@ BentleyStatus ECDbSqlTable::PersistenceManager::CreateOrUpdate(ECDbR ecdb, Schem
             }
         }
 
-    if (SUCCESS != DDLGenerator::AddColumns(ecdb, context, m_table, newColumns))
+    if (SUCCESS != DDLGenerator::AddColumns(ecdb, m_table, newColumns))
         return ERROR;
 
-    return CreateTriggers(ecdb, context, false);
+    return CreateTriggers(ecdb, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::PersistenceManager::Create(ECDbR ecdb, SchemaImportContext const& context) const
+BentleyStatus ECDbSqlTable::PersistenceManager::Create(ECDbR ecdb) const
     {
     if (!m_table.IsValid())
         {
@@ -558,18 +558,18 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Create(ECDbR ecdb, SchemaImportC
     auto sql = DDLGenerator::GetCreateTableDDL(m_table, DDLGenerator::CreateOption::Create);
     if (ecdb.ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
         {
-        context.GetIssueListener().Report(ECDbSchemaManager::IImportIssueListener::Severity::Error, "Failed to create table %s: %s",
+        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to create table %s: %s",
                                           m_table.GetName().c_str(), ecdb.GetLastError());
         return ERROR;
         }
 
-    return CreateTriggers(ecdb, context, true);
+    return CreateTriggers(ecdb, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::PersistenceManager::CreateTriggers(ECDbR ecdb, SchemaImportContext const& context, bool failIfExists) const
+BentleyStatus ECDbSqlTable::PersistenceManager::CreateTriggers(ECDbR ecdb, bool failIfExists) const
     {
     for (ECDbSqlTrigger const* trigger : m_table.GetTriggers())
         {
@@ -577,7 +577,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::CreateTriggers(ECDbR ecdb, Schem
             {
             if (failIfExists)
                 {
-                context.GetIssueListener ().Report(ECDbSchemaManager::IImportIssueListener::Severity::Error, "Trigger %s already exists on table %s.", trigger->GetName().c_str(), m_table.GetName().c_str());
+                ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Trigger %s already exists on table %s.", trigger->GetName().c_str(), m_table.GetName().c_str());
                 return ERROR;
                 }
 
@@ -594,7 +594,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::CreateTriggers(ECDbR ecdb, Schem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::PersistenceManager::Drop(ECDbR ecdb, SchemaImportContext const& context) const
+BentleyStatus ECDbSqlTable::PersistenceManager::Drop(ECDbR ecdb) const
     {
     if (!m_table.IsValid())
         {
@@ -604,7 +604,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Drop(ECDbR ecdb, SchemaImportCon
 
     for (ECDbSqlIndex const* index : m_table.GetIndexes())
         {
-        if (index->GetPersistenceManager().Drop(ecdb, context) != BentleyStatus::SUCCESS)
+        if (index->GetPersistenceManager().Drop(ecdb) != BentleyStatus::SUCCESS)
             {
             BeAssert (false && "Failed to drop index");
             return ERROR;
@@ -614,7 +614,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Drop(ECDbR ecdb, SchemaImportCon
     Utf8String sql = DDLGenerator::GetDropTableDDL (m_table);
     if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
         {
-        context.GetIssueListener().Report(ECDbSchemaManager::IImportIssueListener::Severity::Error, "Failed to drop table %s: %s",
+        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to drop table %s: %s",
                                           m_table.GetName().c_str(), ecdb.GetLastError());
         return ERROR;
         }
@@ -861,7 +861,7 @@ std::vector<ECDbSqlIndex*> ECDbSqlDb::GetIndexesR ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  08/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlDb::CreateOrUpdateIndices(SchemaImportContext const& context) const
+BentleyStatus ECDbSqlDb::CreateOrUpdateIndices() const
     {
     ECDbR ecdb = m_sqlManager.GetECDbR();
     for (ECDbSqlIndex const* index : GetIndexes())
@@ -869,11 +869,11 @@ BentleyStatus ECDbSqlDb::CreateOrUpdateIndices(SchemaImportContext const& contex
         ECDbSqlIndex::PersistenceManager const& persManager = index->GetPersistenceManager();
         if (persManager.Exists(ecdb))
             {
-            if (SUCCESS != persManager.Drop(ecdb, context))
+            if (SUCCESS != persManager.Drop(ecdb))
                 return ERROR;
             }
 
-        if (SUCCESS != persManager.Create(ecdb, context))
+        if (SUCCESS != persManager.Create(ecdb))
             return ERROR;
         }
 
@@ -1304,7 +1304,7 @@ Utf8String ECDbSqlIndex::GenerateWhereClause(ECDbCR ecdb) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb, SchemaImportContext const& context) const
+BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb) const
     {
     if (!GetIndex().IsValid())
         {
@@ -1315,7 +1315,7 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb, SchemaImportC
     auto sql = DDLGenerator::GetCreateIndexDDL(ecdb, GetIndex());
     if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
         {
-        context.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error, "Failed to create index %s on table %s. Error: %s", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str(),
+        ecdb.GetECDbImplR().ReportIssue (ECDb::IssueSeverity::Error, "Failed to create index %s on table %s. Error: %s", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str(),
                    ecdb.GetLastError());
         BeAssert(false && "Failed to create index");
         return BentleyStatus::ERROR;
@@ -1327,12 +1327,12 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb, SchemaImportC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlIndex::PersistenceManager::Drop(ECDbR ecdb, SchemaImportContext const& context) const
+BentleyStatus ECDbSqlIndex::PersistenceManager::Drop(ECDbR ecdb) const
     {
     Utf8String sql = DDLGenerator::GetDropIndexDDL (GetIndex ());
     if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
         {
-        context.GetIssueListener().Report(ECDbSchemaManager::IImportIssueListener::Severity::Error, "Failed to drop index %s on table %s. Error: %s", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str(),
+        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to drop index %s on table %s. Error: %s", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str(),
                                           ecdb.GetLastError());
 
         BeAssert (false && "Failed to create index");
@@ -1418,7 +1418,7 @@ Utf8String DDLGenerator::GetCreateIndexDDL(ECDbCR ecdb, ECDbSqlIndex const& inde
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DDLGenerator::CopyRows(DbR db, SchemaImportContext const& context, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns)
+BentleyStatus DDLGenerator::CopyRows(ECDbR ecdb, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns)
     {
     Utf8String sourceColumnList;
     for (auto& column : sourceColumns)
@@ -1442,10 +1442,10 @@ BentleyStatus DDLGenerator::CopyRows(DbR db, SchemaImportContext const& context,
 
     Utf8String sql;
     sql.Sprintf ("INSERT INTO [%s] (%s) SELECT %s FROM %s", targetTable, targetColumnList.c_str (), sourceColumnList.c_str (), sourceTable);
-    if (BE_SQLITE_OK != db.ExecuteSql(sql.c_str()))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
         {
-        context.GetIssueListener().Report(ECDbSchemaManager::IImportIssueListener::Severity::Error, "Failed to copy rows from %s to %s: Error message: %s",
-                                          sourceTable, targetTable, db.GetLastError());
+        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to copy rows from %s to %s: Error message: %s",
+                                          sourceTable, targetTable, ecdb.GetLastError());
         return ERROR;
         }
 
@@ -1459,7 +1459,7 @@ BentleyStatus DDLGenerator::CopyRows(DbR db, SchemaImportContext const& context,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DDLGenerator::AddColumns(ECDbR db, SchemaImportContext const& context, ECDbSqlTable const& table, std::vector<Utf8CP> const& newColumns)
+BentleyStatus DDLGenerator::AddColumns(ECDbR ecdb, ECDbSqlTable const& table, std::vector<Utf8CP> const& newColumns)
     {
     if (newColumns.empty ())
         return SUCCESS;
@@ -1478,10 +1478,10 @@ BentleyStatus DDLGenerator::AddColumns(ECDbR db, SchemaImportContext const& cont
             }
 
         alterDDL.append (GetColumnDDL (*column));
-        DbResult r = db.ExecuteSql (alterDDL.c_str ());
+        DbResult r = ecdb.ExecuteSql (alterDDL.c_str ());
         if (r != BE_SQLITE_OK)
             {
-            context.GetIssueListener ().Report(ECDbSchemaManager::IImportIssueListener::Severity::Error, "Failed to add new column (%s). Error message: %s", alterDDLTemplate.c_str(), db.GetLastError ());
+            ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to add new column (%s). Error message: %s", alterDDLTemplate.c_str(), ecdb.GetLastError ());
             return ERROR;
             }
         }

@@ -9,6 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "SelectStatementExp.h"
+#include "ECSqlPrepareContext.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -25,14 +26,15 @@ private:
 
     ECN::ECSchemaPtr m_schema;
     ECN::ECClassP m_class;
+    bmap<Utf8String, DerivedPropertyExp const*> m_selectClauseNames;
 
     ECSqlStatus Initialize ();
 
-    ECSqlStatus AddReferenceToStructSchema (ECN::ECSchemaCR structSchema) const;
+    ECSqlStatus AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, Utf8CP propName, DerivedPropertyExp const& selectClauseItemExp, ECDbCR);
+    ECSqlStatus AddReferenceToStructSchema(ECN::ECSchemaCR structSchema) const;
     ECN::ECClassR GetClassR () const;
     ECN::ECSchemaR GetSchemaR () const;
     ECSqlStatus SetBackReferenceToPropertyPath(ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
-
 
 public:
     DynamicSelectClauseECClass ();
@@ -41,10 +43,9 @@ public:
     DynamicSelectClauseECClass (DynamicSelectClauseECClass&& rhs);
     DynamicSelectClauseECClass& operator= (DynamicSelectClauseECClass&& rhs);
 
-    ECSqlStatus AddProperty (ECN::ECPropertyCP& generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
+    ECSqlStatus GeneratePropertyIfRequired(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp, ECDbCR);
     bool IsGeneratedProperty (ECN::ECPropertyCR selectClauseProperty) const;
-    static BentleyStatus ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR edb);
-
+    static BentleyStatus ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

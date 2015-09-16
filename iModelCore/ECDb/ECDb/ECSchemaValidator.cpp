@@ -18,7 +18,7 @@ bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::E
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
     validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitiveClassNamesRule (supportLegacySchemas))));
-    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new RelationshipConstraintIsNotARelationshipClassRule())));
+    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipConstraintsRule())));
     validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new ConsistentClassHierarchyRule())));
 
     bool valid = true;
@@ -454,8 +454,8 @@ Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-RelationshipConstraintIsNotARelationshipClassRule::RelationshipConstraintIsNotARelationshipClassRule()
-    : ECSchemaValidationRule(Type::RelationshipConstraintIsNotARelationshipClass), m_error(nullptr)
+ValidRelationshipConstraintsRule::ValidRelationshipConstraintsRule()
+    : ECSchemaValidationRule(Type::ValidRelationshipConstraints), m_error(nullptr)
     {
     m_error = std::unique_ptr<Error>(new Error(GetType()));
     }
@@ -463,27 +463,35 @@ RelationshipConstraintIsNotARelationshipClassRule::RelationshipConstraintIsNotAR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool RelationshipConstraintIsNotARelationshipClassRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
+bool ValidRelationshipConstraintsRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
     {
     ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
     if (relClass == nullptr)
         return true;
 
-    return ValidateConstraint(*relClass, relClass->GetSource()) && ValidateConstraint(*relClass, relClass->GetTarget());
+    const bool isAbstract = !relClass->GetIsDomainClass() && !relClass->GetIsStruct() && !relClass->GetIsCustomAttributeClass();
+    return ValidateConstraint(*relClass, isAbstract, relClass->GetSource()) && ValidateConstraint(*relClass, isAbstract, relClass->GetTarget());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool RelationshipConstraintIsNotARelationshipClassRule::ValidateConstraint(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipConstraintCR constraint) const
+bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipClassCR relClass, bool isAbstractRelClass, ECN::ECRelationshipConstraintCR constraint) const
     {
+    if (isAbstractRelClass != constraint.GetClasses().empty())
+        {
+        //if rel is abstract, constraint must not have classes. if rel is not abstract, constraint must have classes
+        m_error->AddInconsistency(relClass, isAbstractRelClass);
+        return false;
+        }
+
     bool valid = true;
     for (ECN::ECClassCP constraintClass : constraint.GetClasses())
         {
         ECRelationshipClassCP relClassAsConstraint = constraintClass->GetRelationshipClassCP();
         if (relClassAsConstraint != nullptr)
             {
-            m_error->AddInconsistency(relClass, *relClassAsConstraint);
+            m_error->AddInconsistency(relClass, isAbstractRelClass, relClassAsConstraint);
             valid = false;
             }
         }
@@ -495,7 +503,7 @@ bool RelationshipConstraintIsNotARelationshipClassRule::ValidateConstraint(ECN::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> RelationshipConstraintIsNotARelationshipClassRule::_GetError() const
+std::unique_ptr<ECSchemaValidationRule::Error> ValidRelationshipConstraintsRule::_GetError() const
     {
     if (!m_error->HasInconsistencies())
         return nullptr;
@@ -511,19 +519,31 @@ std::unique_ptr<ECSchemaValidationRule::Error> RelationshipConstraintIsNotARelat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-Utf8String RelationshipConstraintIsNotARelationshipClassRule::Error::_ToString() const
+Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
     {
     if (!HasInconsistencies())
         return "";
 
-    Utf8String str("Found ECRelationshipClasses that have ECRelationshipClasses as constraint classes. This is not supported. Conflicting ECRelationshipClasses: ");
+    Utf8String str("Found ECRelationshipClasses with invalid constraint definitions. Conflicting ECRelationshipClasses: ");
     bool isFirstItem = true;
-    for (std::pair<ECRelationshipClassCP, ECRelationshipClassCP> const& inconsistency : m_inconsistencies)
+    for (Inconsistency const& inconsistency : m_inconsistencies)
         {
         if (!isFirstItem)
             str.append("; ");
 
-        str.append("(Relationship: ").append(Utf8String(inconsistency.first->GetFullName())).append(" , Constraint: ").append(inconsistency.second->GetFullName()).append(")");
+        str.append("Relationship ").append(Utf8String(inconsistency.m_relationshipClass->GetFullName()));
+        
+        if (inconsistency.m_relationshipClassAsConstraintClass == nullptr)
+            {
+            if (inconsistency.m_isAbstract)
+                str.append(" is abstract and therefore constraints must not be defined (as they are not inherited anyways).");
+            else
+                str.append(": at least one constraint definition is not complete.");
+
+            }
+        else
+            str.append(": The relationship class ").append(inconsistency.m_relationshipClassAsConstraintClass->GetFullName()).append(" is specified as constraint class which is not supported.");
+
         isFirstItem = false;
         }
 

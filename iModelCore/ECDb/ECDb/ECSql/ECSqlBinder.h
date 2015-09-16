@@ -122,6 +122,7 @@ private:
 
 public:
     static ECSqlStatus Validate (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& expected, uint32_t actualArrayLength);
+    static ECSqlStatus ValidateMaximum(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& expected, uint32_t actualArrayLength);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

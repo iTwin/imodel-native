@@ -11,7 +11,7 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
@@ -54,9 +54,11 @@ public:
 typedef bvector<ECSchemaKey> ECSchemaKeys;
 typedef bvector<ECClassKey> ECClassKeys;
 
+struct ECDbMap;
+struct ECDbSchemaReader;
+struct ECDbSchemaWriter;
 struct SchemaImportContext;
-
-//__PUBLISH_SECTION_START__
+#endif
 
 typedef bvector<ECN::ECSchemaCP> ECSchemaList;
 
@@ -167,67 +169,28 @@ public:
         //!     Any existing references to ECSchemas, ECClasses, or ECSqlStatements become invalid.  
         ECDB_EXPORT bool UpdateExistingSchemas () const;
 
-        //__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
         //only to be used by publisher scenarios which have to support v8i legacy ECSchemas which do not comply to the current ECSchema design
         //standards
         ECDB_EXPORT void SetSupportLegacySchemas ();
         ECDB_EXPORT bool SupportLegacySchemas () const;
-        //__PUBLISH_SECTION_START__
+#endif
         };
 
-    //=======================================================================================
-    //! Allows clients of a schema import to be notified of error or warning messages.
-    //! @remarks ECDb cares for logging any error and warnings sent to listeners. So implementors
-    //! don't have to do that anymore.
-    //! @see ECDbSchemaManager::ImportECSchemas
-    // @bsiclass                                                Krischan.Eberle      04/2014
-    //+===============+===============+===============+===============+===============+======
-    struct IImportIssueListener
-        {
-    public:
-        //=======================================================================================
-        //! Severity of import issue
-        // @bsiclass                                                Krischan.Eberle      04/2014
-        //+===============+===============+===============+===============+===============+======
-        enum class Severity
-            {
-            Warning, //!< Import warning
-            Error //!< Import error
-            };
-       
-
-    private:
-        //! Fired by ECDb whenever an issue occurred during the schema import.
-        //! @param[in] severity Issue severity
-        //! @param[in] message Issue message
-        virtual void _OnIssueReported (Severity severity, Utf8CP message) const = 0;
-
-    public:
-        ECDB_EXPORT virtual ~IImportIssueListener ();
-
-    //__PUBLISH_SECTION_END__
-        //! Called by ECDb to report an issue to clients.
-        //! @param[in] severity Issue severity
-        //! @param[in] message Issue message
-        void Report (Severity severity, Utf8CP message, ...) const;
-    //__PUBLISH_SECTION_START__
-        };
-
-//__PUBLISH_SECTION_END__
 private:
-    ECDbR                 m_ecdb;
-    ECDbMapR              m_map;
-    ECDbSchemaReaderPtr   m_ecReader;
-    ECDbSchemaWriterPtr   m_ecImporter;
+    ECDb& m_ecdb;
+    ECDbMap& m_map;
+    RefCountedPtr<ECDbSchemaReader> m_ecReader;
+    RefCountedPtr<ECDbSchemaWriter> m_ecImporter;
     mutable BeMutex m_criticalSection;
 
     BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECDiffPtr>&  diffs, bvector<ECN::ECSchemaP> const& schemas, ImportOptions const& options, bool addToReaderCache = false) const;
     void GetSupplementalSchemas (bvector<ECN::ECSchemaP>& supplementalSchemas, bvector<ECN::ECSchemaP> const& schemas, ECN::SchemaKeyCR primarySchemaKey) const;
-    BentleyStatus ImportECSchema (SchemaImportContext const& context, ECN::ECSchemaCR ecSchema, bool addToReaderCache = false) const;
-    BentleyStatus UpdateECSchema (SchemaImportContext const& context, ECN::ECDiffPtr& diff, ECN::ECSchemaCR ecSchema) const;
+    BentleyStatus ImportECSchema (ECN::ECSchemaCR ecSchema, bool addToReaderCache = false) const;
+    BentleyStatus UpdateECSchema (ECN::ECDiffPtr& diff, ECN::ECSchemaCR ecSchema) const;
     //! The list excludes ECSchemas that have already been imported into the ECDb file
     void BuildDependencyOrderedSchemaList (bvector<ECN::ECSchemaP>& schemas, ECN::ECSchemaP schema) const;
-    static void ReportUpdateError (SchemaImportContext const& context, ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason);
+    void ReportUpdateError (ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason) const;
     static bool ContainsDuplicateSchemas(bvector<ECN::ECSchemaP> const& schema);
     
     ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId schemaId, bool ensureAllClassesLoaded) const;
@@ -242,13 +205,11 @@ private:
     virtual ECN::ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className) override;
 
 public:
-    ECDbSchemaManager (ECDbR ecdb, ECDbMapR map);
+#if !defined (DOCUMENTATION_GENERATOR)
+    ECDbSchemaManager (ECDb&, ECDbMap&);
     virtual ~ECDbSchemaManager ();
+#endif
 
-// constructors are hidden from published API -> make it abstract in the published API
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
     //! Imports all @ref ECN::ECSchema "ECSchemas" contained by the @p schemaCache and all
     //! their referenced @ref ECN::ECSchema "ECSchemas" into the @ref ECDbFile "ECDb file".
     //! After importing the schemas, any pointers to the existing schemas should be discarded and
@@ -259,9 +220,8 @@ public:
     //!                     (the method detects that they are already imported, and simply skips them)
     //!                     All schemas should be read from single ECSchemaReadContext.  if any dublicate schema is found in schemaCache the function will return error.
     //! @param[in] options Schema import options
-    //! @param[in] issueListener Object through which ECDb reports any schema import issues back to the caller. Pass nullptr if not needed (issues get still logged)
     //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
-    ECDB_EXPORT BentleyStatus ImportECSchemas (ECN::ECSchemaCacheR schemaCache, ImportOptions const& options = ImportOptions (), IImportIssueListener const* issueListener = nullptr) const;
+    ECDB_EXPORT BentleyStatus ImportECSchemas (ECN::ECSchemaCacheR schemaCache, ImportOptions const& options = ImportOptions ()) const;
     
     //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
     //! @param[in] schemaName Name of the ECSchema to check for
@@ -282,15 +242,13 @@ public:
     //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR
     ECDB_EXPORT BentleyStatus GetECSchemas (ECSchemaList& schemas, bool ensureAllClassesLoaded = true) const;
 
-//__PUBLISH_SECTION_END__
-
+#if !defined (DOCUMENTATION_GENERATOR)
     //replace following and it should return DbECSchemaKeys
     // Keys base functions
     ECDB_EXPORT BentleyStatus GetECSchemaKeys (ECSchemaKeys& keys) const;
     ECDB_EXPORT BentleyStatus GetECClassKeys (ECClassKeys& keys, Utf8CP schemaName) const;
+#endif
 
-
-//__PUBLISH_SECTION_START__
     //! Gets the ECClass for the specified name.
     //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
     //! @param[in] className Name of the class to be retrieved
@@ -330,12 +288,7 @@ public:
     //! @see ECN::ECClass::GetDerivedECClasses
     ECDB_EXPORT ECN::ECDerivedClassesList const& GetDerivedECClasses (ECN::ECClassCR baseECClass) const;
 
-//__PUBLISH_SECTION_END__
-    
-    //! Return true if the given @p ecPropertyId is a key property in an ECN::ECRelationshipConstraint 
-    //! @param[in] ecPropertyId The Id of the ECProperty to check
-    bool IsRelationshipConstraintKeyProperty (ECN::ECPropertyId ecPropertyId) const;
-
+#if !defined (DOCUMENTATION_GENERATOR)    
     //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted
     //! and therefore doesn't have the persistent ECClassId set. Generally, we would prefer that the primary ECSchema had
     //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
@@ -359,12 +312,9 @@ public:
 
     void ClearCache () const;
     ECDbCR GetECDb () const;
-    //__PUBLISH_SECTION_START__
+#endif
     };
 
 typedef ECDbSchemaManager const& ECDbSchemaManagerCR;
-//__PUBLISH_SECTION_END__
-typedef ECDbSchemaManager* ECDbSchemaManagerP;
-//__PUBLISH_SECTION_START__
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

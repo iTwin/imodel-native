@@ -37,7 +37,7 @@ void PrimitiveArrayToColumnECSqlBinder::_SetSqliteIndex(int ecsqlParameterCompon
 //---------------------------------------------------------------------------------------
 IECSqlBinder& PrimitiveArrayToColumnECSqlBinder::_AddArrayElement()
     {
-    const auto stat = ArrayConstraintValidator::Validate(GetStatusContext(), GetTypeInfo(), GetCurrentArrayLength() + 1);
+    const auto stat = ArrayConstraintValidator::ValidateMaximum(GetStatusContext(), GetTypeInfo(), GetCurrentArrayLength() + 1);
     if (stat != ECSqlStatus::Success)
         return GetNoopBinder(stat);
 

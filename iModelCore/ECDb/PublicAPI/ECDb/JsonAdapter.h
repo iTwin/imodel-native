@@ -76,8 +76,8 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct JsonECSqlSelectAdapter : NonCopyableClass
     {
-    //__PUBLISH_SECTION_END__
-public:
+#if !defined (DOCUMENTATION_GENERATOR)
+ public:
     struct PropertyTreeNode;
     typedef PropertyTreeNode* PropertyTreeNodeP;
     typedef const PropertyTreeNode* PropertyTreeNodeCP;
@@ -134,7 +134,7 @@ public:
             void AddChildNodes (PropertyTreeNodeR parentNode, bvector<ECN::ECClassCP>& rootClasses, IECSqlValue const& ecSqlValue);
         };
 
-   //__PUBLISH_SECTION_START__
+#endif
 
     //=======================================================================================
     //! Options to control the format of the JSON returned by methods in the JsonECSqlSelectAdapter.
@@ -143,9 +143,9 @@ public:
     //+===============+===============+===============+===============+===============+======
     struct FormatOptions
         {
-        //__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
         friend struct JsonECSqlSelectAdapter;
-        //__PUBLISH_SECTION_START__
+#endif
         private:
             ECValueFormat m_format;
             ECPropertyFormatterPtr m_propertyFormatter;
@@ -166,8 +166,6 @@ public:
 private:
     ECSqlStatementCR m_ecsqlStatement;
     FormatOptions m_formatOptions;
-
-    //__PUBLISH_SECTION_END__
 
     static bool PrioritySortPredicate (const ECN::IECInstancePtr& priorityCA1, const ECN::IECInstancePtr& priorityCA2);
     static bool PropertySortPredicate (PropertyTreeNodeCP propertyNode1, PropertyTreeNodeCP propertyNode2);
@@ -216,8 +214,6 @@ private:
     void JsonFromClassLabel (JsonValueR jsonValue, ECN::ECClassCR ecClass) const;
     void JsonFromInstanceLabel (JsonValueR jsonValue, ECN::ECClassCR ecClass) const;
     bool JsonFromInstanceId (JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const;
-
-    //__PUBLISH_SECTION_START__
 
 public:
 

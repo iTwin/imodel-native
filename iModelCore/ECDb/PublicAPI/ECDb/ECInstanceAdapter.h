@@ -36,7 +36,6 @@ private:
     int m_ecClassIdColumnIndex;
     bool m_isSingleClassSelectClause;
 
-    //__PUBLISH_SECTION_END__
     bool Initialize ();
     void CreateColumnHandlers ();
     //column handlers
@@ -52,7 +51,6 @@ private:
     ECN::IECInstancePtr FindRelationshipEndpoint (int64_t endpointInstanceId, int64_t endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
     ECN::IECInstancePtr FindRelationshipEndpoint (int64_t endpointInstanceId, ECN::ECClassCP endpointClass) const;
 
-    //__PUBLISH_SECTION_START__
 public:
     //! Creates a new instance of the adapter
     //! @param[in] ecSqlStatement Prepared statement
@@ -204,9 +202,9 @@ private:
     mutable ECSqlStatement m_statement;
     bool m_isValid;
 
-    //__PUBLISH_SECTION_END__
+#if !defined (DOCUMENTATION_GENERATOR)
     void Initialize();
-    //__PUBLISH_SECTION_START__
+#endif
 
 public:
     //! Instantiates a new ECInstanceDeleter.

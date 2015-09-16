@@ -75,6 +75,7 @@ struct ECInstanceFinder
                         );
         };
 
+#if !defined (DOCUMENTATION_GENERATOR)
     //======================================================================================
     // @bsiclass                                                 Ramanujam.Raman      03/2013
     //+===============+===============+===============+===============+===============+======
@@ -87,11 +88,9 @@ struct ECInstanceFinder
             RelatedDirection m_relatedDirection;
             std::shared_ptr<ECSqlStatement> m_cachedStatement;
 
-//__PUBLISH_SECTION_END__
             void CopyFrom (const QueryableRelationship& copyFrom);
             void InitializeRelatedDirection();
             ECSqlStatus PrepareECSqlStatement (ECDbCR ecDb);
-//__PUBLISH_SECTION_START__
         public:
             QueryableRelationship 
                 (
@@ -118,11 +117,10 @@ struct ECInstanceFinder
     typedef bvector<QueryableRelationship>& QueryableRelationshipVectorR;
     typedef const bvector<QueryableRelationship>& QueryableRelationshipVectorCR;
     typedef bmap<ECN::ECClassId, QueryableRelationshipVector> QueryableRelationshipsByClass;
-
+#endif
 private:
     QueryableRelationshipsByClass m_queryableRelationshipsByClass;
 
-//__PUBLISH_SECTION_END__
     static void FindEndClasses (bset<ECN::ECClassId>& endClassIds, ECN::ECClassId relationshipClassId, ECN::ECRelationshipEnd relationshipEnd, ECDbCR ecDb);
     static DbResult FindRelationshipsOnEnd (QueryableRelationshipVector& queryableRelationships, ECN::ECClassId thisEndClassId, ECDbCR ecDb);
     DbResult GetRelationshipsOnEnd (QueryableRelationshipVectorP &queryableRelationships, ECN::ECClassId thisEndClassId);
@@ -135,8 +133,6 @@ private:
         uint8_t& currentDepth
         );
     static void DumpInstanceKeyMap (const ECInstanceKeyMultiMap& instanceKeyMultiMap, ECDbCR ecDb);
-
-//__PUBLISH_SECTION_START__
 
 private:
     ECDbCR m_ecDb;

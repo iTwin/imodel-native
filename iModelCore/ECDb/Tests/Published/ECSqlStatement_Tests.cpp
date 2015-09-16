@@ -1778,46 +1778,88 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindDateTimeArray_Insert)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlTestFixture, ECSqlStatement_BindPrimArrayWithOutOfBoundsLength)
+TEST_F(ECSqlTestFixture, ECSqlStatement_BindPrimArrayWithOutOfBoundsLength)
     {
     const auto perClassRowCount = 10;
     // Create and populate a sample project
-    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
+    auto& ecdb = SetUp("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
 
     ECSqlStatement statement;
-    auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.ABounded (Prim_Array_Bounded) VALUES(?)");
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    auto stat = statement.Prepare(ecdb, "INSERT INTO ecsql.ABounded (Prim_Array_Bounded) VALUES(?)");
+    ASSERT_EQ((int) ECSqlStatus::Success, (int) stat);
 
     auto bindArrayValues = [&statement] (int count)
         {
-        statement.Reset ();
-        statement.ClearBindings ();
+        statement.Reset();
+        statement.ClearBindings();
 
-        auto& arrayBinder = statement.BindArray (1, 5);
+        auto& arrayBinder = statement.BindArray(1, 5);
         for (int i = 0; i < count; i++)
             {
-            auto& elementBinder = arrayBinder.AddArrayElement ();
-            elementBinder.BindInt (i);
+            auto& elementBinder = arrayBinder.AddArrayElement();
+            elementBinder.BindInt(i);
             }
 
-        return statement.Step ();
+        return statement.Step();
         };
 
     //first: array size to bind. second: Expected to succeed
-    const std::vector<std::pair<int, bool>> testArrayCounts = { { 0, false }, { 2, false }, { 5, true }, { 7, true }, { 10, true }, 
-            { 20, true } }; //Bug in ECObjects: ignores maxoccurs and always interprets it as unbounded.
+    const std::vector<std::pair<int, bool>> testArrayCounts = {{ 0, false }, { 2, false }, { 5, true }, { 7, true }, { 10, true },
+            { 20, true }}; //Bug in ECObjects: ignores maxoccurs and always interprets it as unbounded.
 
-    //TODO: Currently minoccurs/maxoccurs are disabled in ECDb because of legacy data support.
-    //Once this changes, we need to uncomment the respective code again.
     for (auto const& testArrayCountItem : testArrayCounts)
         {
-        int testArrayCount = testArrayCountItem.first;
-        //bool expectedToSucceed = testArrayCountItem.second;
-        auto stepStat = bindArrayValues (testArrayCount);
-        //if (expectedToSucceed)
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10. Error message: " << statement.GetLastStatusMessage ();
-        //else
-        //    ASSERT_EQ ((int) ECSqlStepStatus::Error, (int) stepStat) << "Binding array of length " << testArrayCount << " is expected to fail for array parameter with minOccurs=5 and maxOccurs=10";
+        const int testArrayCount = testArrayCountItem.first;
+        const bool expectedToSucceed = testArrayCountItem.second;
+        const ECSqlStepStatus stepStat = bindArrayValues(testArrayCount);
+        if (expectedToSucceed)
+            ASSERT_EQ(ECSqlStepStatus::Done, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10. Error message: " << statement.GetLastStatusMessage();
+        else
+            ASSERT_EQ(ECSqlStepStatus::Error, stepStat) << "Binding array of length " << testArrayCount << " is expected to fail for array parameter with minOccurs=5 and maxOccurs=10";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 03/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, ECSqlStatement_BindStructArrayWithOutOfBoundsLength)
+    {
+    const int perClassRowCount = 10;
+    // Create and populate a sample project
+    ECDbR ecdb = SetUp("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
+
+    ECSqlStatement statement;
+    ECSqlStatus stat = statement.Prepare(ecdb, "INSERT INTO ecsql.ABounded (PStruct_Array_Bounded) VALUES(?)");
+    ASSERT_EQ((int) ECSqlStatus::Success, (int) stat);
+
+    auto bindArrayValues = [&statement] (int count)
+        {
+        statement.Reset();
+        statement.ClearBindings();
+
+        IECSqlArrayBinder& arrayBinder = statement.BindArray(1, 5);
+        for (int i = 0; i < count; i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            elementBinder.BindStruct().GetMember("i").BindInt(i);
+            }
+
+        return statement.Step();
+        };
+
+    //first: array size to bind. second: Expected to succeed
+    const std::vector<std::pair<int, bool>> testArrayCounts = {{0, false}, {2, false}, {5, true}, {7, true}, {10, true},
+    {20, true}}; //Bug in ECObjects: ignores maxoccurs and always interprets it as unbounded.
+
+    for (auto const& testArrayCountItem : testArrayCounts)
+        {
+        const int testArrayCount = testArrayCountItem.first;
+        const bool expectedToSucceed = testArrayCountItem.second;
+        const ECSqlStepStatus stepStat = bindArrayValues(testArrayCount);
+        if (expectedToSucceed)
+            ASSERT_EQ(ECSqlStepStatus::Done, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10. Error message: " << statement.GetLastStatusMessage();
+        else
+            ASSERT_EQ(ECSqlStepStatus::Error, stepStat) << "Binding array of length " << testArrayCount << " is expected to fail for array parameter with minOccurs=5 and maxOccurs=10";
         }
     }
 

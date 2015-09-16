@@ -573,4 +573,677 @@ TEST (Performance_ECSQLVersusECInstanceInserter, StructArrayProperty)
 {
     RunPerformanceComparisonTest("SA", 1000, TEST_DETAILS);
 }
+
+
+//==================================================================================================================================================
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+struct TestParamters
+    {
+    public:
+        enum class CascadeMethod
+            {
+            ForiegnKey, Trigger, None
+            };
+    private:
+        int m_noOfTargetClasses = 100;
+        int m_noOfTargetTables = 100;
+        int m_noOfColumnsInPrimaryTable = 5;
+        int m_noOfColumnsInSecondaryTable = 4;
+        int m_noOfInstances = 4;
+
+        CascadeMethod  m_cascadeMethod = CascadeMethod::ForiegnKey;
+        Utf8String m_toStr;
+    public:
+        TestParamters(int noOfTargetClasses, int noOfTargetTables, int noOfColumnsInPrimaryTable, int noOfColumnsInSecondaryTable, CascadeMethod cascadeMethod, int noOfInstances)
+            :m_noOfTargetClasses(noOfTargetClasses), m_noOfTargetTables(noOfTargetTables), m_noOfColumnsInPrimaryTable(noOfColumnsInPrimaryTable), m_noOfColumnsInSecondaryTable(noOfColumnsInSecondaryTable), m_cascadeMethod(cascadeMethod), m_noOfInstances(noOfInstances)
+            {
+
+            m_toStr.Sprintf("Method = %s, NoOfTargetTables = %d, NoOfTargetClasses = %d, NoOfColumnsInPrimary = %d , NoOfColumnsInSecondary =%d , NoOfInstances = %d",
+                m_cascadeMethod == CascadeMethod::ForiegnKey ? "ForiegnKey" : "Trigger",
+                m_noOfTargetTables,
+                m_noOfTargetClasses,
+                m_noOfColumnsInPrimaryTable,
+                m_noOfColumnsInSecondaryTable,
+                m_noOfInstances
+                );
+            }
+        TestParamters(TestParamters const& rhs)
+            :m_noOfTargetClasses(rhs.m_noOfTargetClasses), m_noOfTargetTables(rhs.m_noOfTargetTables), m_noOfColumnsInPrimaryTable(rhs.m_noOfColumnsInPrimaryTable), m_noOfColumnsInSecondaryTable(rhs.m_noOfColumnsInSecondaryTable), m_cascadeMethod(rhs.m_cascadeMethod), m_toStr(rhs.m_toStr), m_noOfInstances(rhs.m_noOfInstances)
+            {
+            }
+        TestParamters()
+            :m_noOfTargetClasses(-1), m_noOfTargetTables(-1), m_noOfColumnsInPrimaryTable(-1), m_noOfColumnsInSecondaryTable(-1), m_cascadeMethod(CascadeMethod::None), m_noOfInstances(-1)
+            {
+            }
+        Utf8String GetFileName() const
+            {
+            Utf8String str;
+            str.Sprintf("Perf_%s_%d_%d_%d.db",
+                m_cascadeMethod == CascadeMethod::ForiegnKey ? "ForiegnKey" : "Trigger",
+                m_noOfTargetTables,
+                m_noOfTargetClasses,
+                m_noOfInstances
+                );
+
+            return str;
+            }
+        TestParamters& operator = (TestParamters const& rhs)
+            {
+            if (&rhs != this)
+                {
+                m_noOfTargetClasses = rhs.m_noOfTargetClasses;
+                m_noOfTargetTables = rhs.m_noOfTargetTables;
+                m_noOfColumnsInPrimaryTable = rhs.m_noOfColumnsInPrimaryTable;
+                m_noOfColumnsInSecondaryTable = rhs.m_noOfColumnsInSecondaryTable;
+                m_cascadeMethod = rhs.m_cascadeMethod;
+                m_toStr = rhs.m_toStr;
+                m_noOfInstances = rhs.m_noOfInstances;
+                }
+            return *this;
+            }
+        bool IsValid() const
+            {
+            return m_noOfTargetClasses > 0 && m_cascadeMethod != CascadeMethod::None && m_noOfColumnsInPrimaryTable > 0 && m_noOfColumnsInSecondaryTable > 0 && m_noOfTargetTables > 0;
+            }
+        int GetNumberOfTargetClasses() const { return m_noOfTargetClasses; }
+        int GetNumberOfTargetTables() const { return m_noOfTargetTables; }
+        int GetNumberOfColumnsInPrimaryTable() const { return m_noOfColumnsInPrimaryTable; }
+        int GetNumberOfColumnsInSecondaryTable() const { return m_noOfColumnsInSecondaryTable; }
+        CascadeMethod GetCascadeMethod() const { return m_cascadeMethod; }
+        int GetNumberOfInstances() const { return m_noOfInstances; }
+        Utf8CP ToString() const
+            {
+            return m_toStr.c_str();
+            }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+struct TestResult
+    {
+    private:
+        mutable StopWatch m_stopWatch;
+        int m_noOfUnitDeletion;
+        Utf8String m_name;
+    public:
+        TestResult(Utf8CP name = "")
+            :m_noOfUnitDeletion(0), m_stopWatch(false), m_name(name)
+            {
+            }
+
+        void Begin()
+            {
+            m_stopWatch.Start();
+            }
+
+        void End()
+            {
+            m_stopWatch.Stop();
+            }
+        void RecordUnitDeletion()
+            {
+            m_noOfUnitDeletion++;
+            }
+        void Reset(Utf8CP name)
+            {
+            m_stopWatch.Init(false);
+            m_noOfUnitDeletion = 0;
+            m_name = name;
+            }
+        Utf8String ToString(TestParamters const *param = nullptr) const
+            {
+            Utf8String str;
+            double totalTimeInSec = m_stopWatch.GetElapsedSeconds();
+            //double timeInMS = totalTimeInSec * 1000;
+            //double timeInMSDeletion = timeInMS / m_noOfUnitDeletion;
+            //str.Sprintf("PARAM  = %s\n", m_testParam.ToString());
+
+            str.Sprintf("Time = %.4lf sec ",
+                totalTimeInSec
+                );
+
+            if (!param)
+                return str;
+
+            Utf8String fullResult;
+            fullResult.Sprintf("[Name: %s]\n PARAM  : %s \n RESULT : %s", m_name.c_str(), param->ToString(), str.c_str());
+            return fullResult;
+            }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void SetupDeleteTest(DbR db, int64_t& globalInstanceCount, TestParamters const& param)
+    {
+
+    ECDbTestProject::Initialize();
+    Utf8String dbPath = ECDbTestProject::BuildECDbPath(param.GetFileName().c_str());
+    WString dbPathW;
+    BeStringUtilities::Utf8ToWChar(dbPathW, dbPath.c_str());
+    if (BeFileName::DoesPathExist(dbPathW.c_str()))
+        {
+        // Delete any previously created file
+        BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile(dbPathW.c_str());
+        ASSERT_TRUE(fileDeleteStatus == BeFileNameStatus::Success);
+        }
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(dbPath.c_str())) << "Failed to create test db";
+    ASSERT_EQ(true, param.IsValid()) << "Paramter provided to test was invalid";
+
+
+    std::vector<Utf8String> primaryColumns;
+    std::vector<Utf8String> secondaryColumns;
+    std::map<Utf8String, std::set<int64_t>> secondaryTables;
+    std::map<int64_t, Utf8String> secondaryTablesRev;
+    for (int i = 1; i <= param.GetNumberOfColumnsInPrimaryTable(); i++)
+        {
+        primaryColumns.push_back(Utf8PrintfString("PCOL%03d", i));
+        }
+    for (int i = 1; i <= param.GetNumberOfColumnsInSecondaryTable(); i++)
+        {
+        secondaryColumns.push_back(Utf8PrintfString("SCOL%03d", i));
+        }
+
+    auto classPerTable = static_cast<int>(ceil((double)param.GetNumberOfTargetClasses() / param.GetNumberOfTargetTables()));
+    ASSERT_TRUE(classPerTable > 0) << "Classes per table must be greater then zero";
+    auto const seedClassId = 1;
+    auto currentClassId = seedClassId;
+    for (int i = 1; i <= param.GetNumberOfTargetTables(); i++)
+        {
+        Utf8String tableName;
+        tableName.Sprintf("SecondaryTbl%03d", i);
+        auto& classSet = secondaryTables[tableName];
+        auto ubound = currentClassId + classPerTable;
+        for (; currentClassId < ubound; currentClassId++)
+            {
+            classSet.insert(currentClassId);
+            secondaryTablesRev[currentClassId] = tableName;
+            }
+        }
+
+#define DELIMITER ", "
+    auto joinStrFunc = [] (std::vector<Utf8String> const& strList )
+        {
+        Utf8String out;
+        for (auto& str : strList)
+            {
+            out.append(str);
+            if (&str != &strList.back())
+                out.append(DELIMITER);
+            }
+
+        return out;
+        };
+
+    auto joinIntFunc = [] (std::set<int64_t> const& intList)
+        {
+        Utf8String out;
+        for (auto& n : intList)
+            {
+            out.append(Utf8PrintfString("%lld", n).c_str());
+            if (n != *intList.rbegin())
+                out.append(DELIMITER);
+            }
+
+        return out;
+        };
+    auto repeatFunc = [] (Utf8CP token, size_t times)
+        {
+        Utf8String out;
+        for (size_t i = 0; i < times; i++)
+            {
+            out.append(token);
+            if (i != (times - 1))
+                out.append(DELIMITER);
+            }
+
+        return out;
+        };
+    auto bindData = [] (Statement& stmt, std::vector<Utf8String> columns, int startingIndex)
+        {
+        for (size_t  i = 0; i < columns.size(); i++)
+            {
+            stmt.BindText(startingIndex++, "(asdfa987a9idsf#@#$SAdfasdfkajlaksjdf", Statement::MakeCopy::No);
+            }
+        };
+    Utf8String createTableSql_Primary = "CREATE TABLE PrimaryTbl (Id INTEGER PRIMARY KEY, ClassId INTEGER NOT NULL";
+    if (!primaryColumns.empty())
+        createTableSql_Primary.append(",").append(joinStrFunc(primaryColumns));
+
+    createTableSql_Primary.append(");");
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.ExecuteSql(createTableSql_Primary.c_str())) << "FAILED " << createTableSql_Primary.c_str();
+
+    auto dataColumns = joinStrFunc(secondaryColumns);
+    for (auto const& secondaryPair : secondaryTables)
+        {
+        Utf8String createTableSql_Secondary = "CREATE TABLE ";
+        createTableSql_Secondary.append(secondaryPair.first);
+        createTableSql_Secondary.append("(");
+        createTableSql_Secondary.append("Id INTEGER PRIMARY KEY ");
+        if (param.GetCascadeMethod() == TestParamters::CascadeMethod::ForiegnKey)
+            {
+            createTableSql_Secondary.append("REFERENCES PrimaryTbl(Id) ON DELETE CASCADE");
+            }
+
+        createTableSql_Secondary.append(", ClassId INTEGER NOT NULL");
+        if (!secondaryColumns.empty())
+            createTableSql_Secondary.append(",").append(dataColumns);
+
+        createTableSql_Secondary.append(");");
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, db.ExecuteSql(createTableSql_Secondary.c_str())) << "FAILED " << createTableSql_Secondary.c_str();
+
+        if (param.GetCascadeMethod() == TestParamters::CascadeMethod::Trigger)
+            {
+            Utf8String trigger = "CREATE TRIGGER OnDelete";
+            trigger.append(secondaryPair.first);
+            trigger.append(" AFTER DELETE ON PrimaryTbl WHEN OLD.ClassId  IN (").append(joinIntFunc(secondaryPair.second)).append(")");
+            trigger.append("BEGIN ");
+            trigger.append(" DELETE FROM ").append(secondaryPair.first).append(" WHERE OLD.Id = Id; ");
+            trigger.append(" END");
+            ASSERT_EQ(DbResult::BE_SQLITE_OK, db.ExecuteSql(trigger.c_str())) << "FAILED " << trigger.c_str();
+            }
+        }
+
+    Utf8String primaryInsert = "INSERT INTO PrimaryTbl(Id, ClassId";
+    if (!primaryColumns.empty())
+        primaryInsert.append(",").append(joinStrFunc(primaryColumns));
+
+    primaryInsert.append(") VALUES (?, ?");
+    if (!primaryColumns.empty())
+        primaryInsert.append(",").append(repeatFunc("?", primaryColumns.size()));
+
+    primaryInsert.append(");");
+
+
+    Utf8String secondaryInsertTemplate = "INSERT INTO %s(Id, ClassId";
+    if (!secondaryColumns.empty())
+        secondaryInsertTemplate.append(",").append(joinStrFunc(secondaryColumns));
+
+    secondaryInsertTemplate.append(") VALUES (?, ?");
+    if (!secondaryColumns.empty())
+        secondaryInsertTemplate.append(",").append(repeatFunc("?", secondaryColumns.size()));
+
+    secondaryInsertTemplate.append(");");
+
+    auto const noOfInstancesPerTable = param.GetNumberOfInstances() / param.GetNumberOfTargetTables();
+    int64_t globalInstanceId = 0;
+    Statement primaryInsertStmt;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, primaryInsertStmt.Prepare(db, primaryInsert.c_str()));
+    for (auto const& secondaryPair : secondaryTables)
+        {
+        auto& table = secondaryPair.first;
+        auto& classIds = secondaryPair.second;
+        Statement secondaryInsertStmt;
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, secondaryInsertStmt.Prepare(db, SqlPrintfString(secondaryInsertTemplate.c_str(), table.c_str()).GetUtf8CP()));
+        auto const noOfInstancesPerClass = noOfInstancesPerTable / classIds.size();
+        for (auto cid : classIds)
+            {
+            for (size_t i = 0; i < noOfInstancesPerClass; i++)
+                {
+                globalInstanceId++;
+                primaryInsertStmt.ClearBindings();
+                primaryInsertStmt.Reset();
+                primaryInsertStmt.BindInt64(1, globalInstanceId);
+                primaryInsertStmt.BindInt64(2, cid);
+                bindData(primaryInsertStmt, primaryColumns, 3);
+                ASSERT_EQ(DbResult::BE_SQLITE_DONE, primaryInsertStmt.Step());
+
+                secondaryInsertStmt.ClearBindings();
+                secondaryInsertStmt.Reset();
+                secondaryInsertStmt.BindInt64(1, globalInstanceId);
+                secondaryInsertStmt.BindInt64(2, cid);
+                bindData(primaryInsertStmt, secondaryColumns, 3);
+                ASSERT_EQ(DbResult::BE_SQLITE_DONE, secondaryInsertStmt.Step());
+                }
+            }
+        }
+
+    globalInstanceCount = globalInstanceId;
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void ExecuteDeleteTest(TestParamters const& param, TestResult& r1, TestResult& r2)
+    {
+    int64_t globalInstanceCount = 0;
+    Db db;
+    SetupDeleteTest(db, globalInstanceCount, param);
+    r1.Reset("*** Truncate Table ***");
+    r2.Reset("*** Delete By Id one record at a time ***");
+
+    Savepoint test1(db, "test1");
+    Statement deleteAllStmt;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, deleteAllStmt.Prepare(db, "DELETE FROM PrimaryTbl"));
+    r1.Begin();
+    r1.RecordUnitDeletion();
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, deleteAllStmt.Step());
+    r1.End();
+    test1.Cancel();
+
+
+    Savepoint test2(db, "test2");
+    r2.Begin();
+    Statement deleteSingleStmt;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, deleteSingleStmt.Prepare(db, "DELETE FROM PrimaryTbl WHERE Id = ?"));
+    for (int64_t i = 1; i < globalInstanceCount; i++)
+        {
+        deleteSingleStmt.Reset();
+        deleteSingleStmt.ClearBindings();
+        deleteSingleStmt.BindInt64(1, i);
+        ASSERT_EQ(DbResult::BE_SQLITE_DONE, deleteSingleStmt.Step());
+        r2.RecordUnitDeletion();
+        }
+
+    r2.End();
+    test2.Cancel();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(Performance_TriggerVsCascadeDelete, V1)
+    {
+    Db db;
+    BeFileName temporaryDir;
+    BeTest::GetHost().GetOutputRoot(temporaryDir);
+    BeSQLiteLib::Initialize(temporaryDir);
+    
+    
+    TestResult r1, r2;
+    int noOfClasses = 200;
+    int noOfColumnInPrimary = 5;
+    int noOfColumnInSecondary = 5;
+    int noOfInstances = 50000;
+
+    LOG.info("*** Number Of Classes = 500 ***");
+    LOG.info("*** With 10 Tables ***");
+    TestParamters fkParam  = TestParamters(noOfClasses, 10, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);   
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    TestParamters trParam = TestParamters(noOfClasses, 10, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 50 Tables ***");
+    fkParam = TestParamters(noOfClasses, 50, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 50, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+
+    LOG.info("*** With 100 Tables ***");
+    fkParam = TestParamters(noOfClasses, 100, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 100, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 100 Tables ***");
+    fkParam = TestParamters(noOfClasses, 150, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 150, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 200 Tables ***");
+    fkParam = TestParamters(noOfClasses, 200, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 200, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(Performance_TriggerVsCascadeDelete, V2)
+    {
+    Db db;
+    BeFileName temporaryDir;
+    BeTest::GetHost().GetOutputRoot(temporaryDir);
+    BeSQLiteLib::Initialize(temporaryDir);
+
+
+    TestResult r1, r2;
+    int noOfClasses = 500;
+    int noOfColumnInPrimary = 5;
+    int noOfColumnInSecondary = 5;
+    int noOfInstances = 50000;
+
+    LOG.info("*** Number Of Classes = 500 ***");
+    LOG.info("*** With 10 Tables ***");
+    TestParamters fkParam = TestParamters(noOfClasses, 10, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    TestParamters trParam = TestParamters(noOfClasses, 10, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 50 Tables ***");
+    fkParam = TestParamters(noOfClasses, 50, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 50, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+
+    LOG.info("*** With 100 Tables ***");
+    fkParam = TestParamters(noOfClasses, 100, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 100, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 100 Tables ***");
+    fkParam = TestParamters(noOfClasses, 150, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 150, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 200 Tables ***");
+    fkParam = TestParamters(noOfClasses, 200, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 200, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(Performance_TriggerVsCascadeDelete, V3)
+    {
+    Db db;
+    BeFileName temporaryDir;
+    BeTest::GetHost().GetOutputRoot(temporaryDir);
+    BeSQLiteLib::Initialize(temporaryDir);
+
+
+    TestResult r1, r2;
+    int noOfClasses = 700;
+    int noOfColumnInPrimary = 5;
+    int noOfColumnInSecondary = 5;
+    int noOfInstances = 50000;
+
+    LOG.info("*** Number Of Classes = 700 ***");
+    LOG.info("*** With 10 Tables ***");
+    TestParamters fkParam = TestParamters(noOfClasses, 10, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    TestParamters trParam = TestParamters(noOfClasses, 10, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 50 Tables ***");
+    fkParam = TestParamters(noOfClasses, 50, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 50, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+
+    LOG.info("*** With 100 Tables ***");
+    fkParam = TestParamters(noOfClasses, 100, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 100, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 100 Tables ***");
+    fkParam = TestParamters(noOfClasses, 150, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 150, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 200 Tables ***");
+    fkParam = TestParamters(noOfClasses, 200, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 200, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                         09/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(Performance_TriggerVsCascadeDelete, V4)
+    {
+    Db db;
+    BeFileName temporaryDir;
+    BeTest::GetHost().GetOutputRoot(temporaryDir);
+    BeSQLiteLib::Initialize(temporaryDir);
+
+
+    TestResult r1, r2;
+    int noOfClasses = 1000;
+    int noOfColumnInPrimary = 5;
+    int noOfColumnInSecondary = 5;
+    int noOfInstances = 50000;
+
+    LOG.info("*** Number Of Classes = 500 ***");
+    LOG.info("*** With 10 Tables ***");
+    TestParamters fkParam = TestParamters(noOfClasses, 10, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    TestParamters trParam = TestParamters(noOfClasses, 10, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 50 Tables ***");
+    fkParam = TestParamters(noOfClasses, 50, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 50, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+
+    LOG.info("*** With 100 Tables ***");
+    fkParam = TestParamters(noOfClasses, 100, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 100, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 100 Tables ***");
+    fkParam = TestParamters(noOfClasses, 150, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 150, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+
+    LOG.info("*** With 200 Tables ***");
+    fkParam = TestParamters(noOfClasses, 200, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::ForiegnKey, noOfInstances);
+    ExecuteDeleteTest(fkParam, r1, r2);
+    LOG.infov("FK> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("FK> OnByOn  : %s", r2.ToString().c_str());
+
+    trParam = TestParamters(noOfClasses, 200, noOfColumnInPrimary, noOfColumnInSecondary, TestParamters::CascadeMethod::Trigger, noOfInstances);
+    ExecuteDeleteTest(trParam, r1, r2);
+    LOG.infov("TR> Truncate: %s", r1.ToString().c_str());
+    LOG.infov("TR> OnByOn  : %s", r2.ToString().c_str());
+    }
+
+
 END_ECDBUNITTESTS_NAMESPACE

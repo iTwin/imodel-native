@@ -14,14 +14,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // SchemaImportContext
 //*************************************************************************************
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2014
-//---------------------------------------------------------------------------------------
-SchemaImportContext::SchemaImportContext (ECDbSchemaManager::IImportIssueListener const* importIssueListener)
-: m_importIssueListener (importIssueListener != nullptr ? *importIssueListener : NoopImportIssueListener::Singleton ())
-    {}
-
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
 UserECDbMapStrategy const* SchemaImportContext::GetUserStrategy(ECClassCR ecclass, ECDbClassMap const* classMapCA) const
@@ -101,14 +93,5 @@ bool SchemaImportContext::TryGetClassIdToIndex(ECClassId& classId, ECDbSqlIndex 
     return true;
     }
     */
-//*************************************************************************************
-// NoopImportIssueListener
-//*************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    04/2014
-//---------------------------------------------------------------------------------------
-//static member initialization
-NoopImportIssueListener NoopImportIssueListener::s_singleton;
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

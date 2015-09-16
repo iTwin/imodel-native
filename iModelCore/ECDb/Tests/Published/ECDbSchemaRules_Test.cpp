@@ -137,6 +137,57 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_SchemaNamespacePrefix)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Instantiability)
+    {
+    ECDbTestProject::Initialize();
+
+    TestItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                      "<ECClass typeName='AbstractClass' isDomainClass='False' isStruct='False' isCustomAttributeClass='False' >"
+                      "    <ECProperty propertyName='Name' typeName='string' />"
+                      "</ECClass>"
+                      "<ECClass typeName='DomainClass' isDomainClass='True' isStruct='False' isCustomAttributeClass='False' >"
+                      "    <ECProperty propertyName='Name' typeName='string' />"
+                      "</ECClass>"
+                      "<ECClass typeName='Struct' isDomainClass='False' isStruct='True' isCustomAttributeClass='False' >"
+                      "    <ECProperty propertyName='Name' typeName='string' />"
+                      "</ECClass>"
+                      "<ECRelationshipClass typeName = 'AbstractRel' isDomainClass = 'False' isStruct='False' isCustomAttributeClass='False' />"
+                      "</ECSchema>",
+                      true, "");
+
+        
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "ecdbschemarules.ecdb");
+    ASSERT_FALSE(asserted);
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "INSERT INTO ts.AbstractClass (Name) VALUES('bla')")) << "INSERT with abstract class should fail";
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.DomainClass (Name) VALUES('bla')")) << "INSERT with domain class should succeed";
+    ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "INSERT with domain class should succeed";
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "INSERT INTO ts.AbstractRel1 (SourceECInstanceId, TargetECInstanceId) VALUES(1,2)")) << "INSERT with abstract relationship should fail";
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "INSERT INTO ts.AbstractRel2 (SourceECInstanceId, TargetECInstanceId) VALUES(1,2)")) << "INSERT with abstract relationship should fail";
+    }
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  09/15
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaImportTestFixture, ECDbSchemaRules_PropertyOfSameTypeAsClass)
     {
     ECDbTestProject::Initialize();
@@ -209,88 +260,228 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Relationship)
 
     std::vector <TestItem> testItems {
         TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "  <ECClass typeName='A'>"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='B'>"
+        "    <ECProperty propertyName='Id' typeName='string' />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName='Rel1' isDomainClass='True' isStruct='True'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='A'/>"
+        "    </Source>"
+        "    <Target cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='B'/>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>",
+        true, "Will fail in the future as in a ECRelationshipClass isStruct should not be set to true."),
+
+        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                 "  <ECClass typeName='A'>"
+                 "    <ECProperty propertyName='Name' typeName='string' />"
+                 "  </ECClass>"
+                "  <ECClass typeName='B'>"
+                "    <ECProperty propertyName='Id' typeName='string' />"
+                "  </ECClass>"
+                "  <ECRelationshipClass typeName='Rel1' isDomainClass='True' isCustomAttributeClass='True'>"
+                "    <Source cardinality='(0,1)' polymorphic='True'>"
+                "      <Class class='A'/>"
+                "    </Source>"
+                "    <Target cardinality='(0,1)' polymorphic='True'>"
+                "      <Class class='B'/>"
+                "    </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>",
+                 true, "Will fail in the future as in a ECRelationshipClass isCustomAttributeClass must not be set to true."),
+
+        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                 "  <ECClass typeName='A'>"
+                 "    <ECProperty propertyName='Name' typeName='string' />"
+                 "  </ECClass>"
+                 "  <ECClass typeName='B'>"
+                 "    <ECProperty propertyName='Id' typeName='string' />"
+                 "  </ECClass>"
+                 "  <ECRelationshipClass typeName='Rel1' isDomainClass='True'>"
+                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='A'/>"
+                 "    </Source>"
+                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='B'/>"
+                 "    </Target>"
+                 "  </ECRelationshipClass>"
+                 "  <ECRelationshipClass typeName='Rel2' isDomainClass='True'>"
+                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='A'/>"
+                 "    </Source>"
+                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='Rel1'/>"
+                 "    </Target>"
+                 "  </ECRelationshipClass>"
+                 "</ECSchema>",
+                 false, "RelationshipClass constraint must not specify a relationship class."),
+
+        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                 "  <ECClass typeName='A'>"
+                 "    <ECProperty propertyName='Name' typeName='string' />"
+                 "  </ECClass>"
+                 "  <ECClass typeName='B'>"
+                 "    <ECProperty propertyName='Id' typeName='string' />"
+                 "  </ECClass>"
+                 "  <ECRelationshipClass typeName='Rel1' isDomainClass='True'>"
+                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='A'/>"
+                 "    </Source>"
+                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='B'/>"
+                 "    </Target>"
+                 "  </ECRelationshipClass>"
+                 "  <ECRelationshipClass typeName='Rel2' isDomainClass='True'>"
+                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='Rel1'/>"
+                 "    </Source>"
+                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='B'/>"
+                 "    </Target>"
+                 "  </ECRelationshipClass>"
+                 "</ECSchema>",
+                 false, "RelationshipClass constraint must not specify a relationship class."),
+
+        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                 "  <ECClass typeName='A'>"
+                 "    <ECProperty propertyName='Name' typeName='string' />"
+                 "  </ECClass>"
+                 "  <ECClass typeName='B'>"
+                 "    <ECProperty propertyName='Id' typeName='string' />"
+                 "  </ECClass>"
+                 "  <ECRelationshipClass typeName='Rel1' isDomainClass='True'>"
+                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='A'/>"
+                 "    </Source>"
+                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='B'/>"
+                 "    </Target>"
+                 "  </ECRelationshipClass>"
+                 "  <ECRelationshipClass typeName='Rel2' isDomainClass='True'>"
+                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='A'/>"
+                 "      <Class class='Rel1'/>"
+                 "    </Source>"
+                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "      <Class class='B'/>"
+                 "    </Target>"
+                 "  </ECRelationshipClass>"
+                 "</ECSchema>",
+                 false, "RelationshipClass constraint must not specify a relationship class."),
+
+        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                    "  <ECClass typeName='A'>"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECClass>"
+                    "  <ECClass typeName='B'>"
+                    "    <ECProperty propertyName='Id' typeName='string' />"
+                    "  </ECClass>"
+                    "  <ECRelationshipClass typeName='Rel' isDomainClass='True'>"
+                    "    <Source cardinality='(0,1)' polymorphic='True'>"
+                    "    </Source>"
+                    "    <Target cardinality='(0,1)' polymorphic='True'>"
+                    "      <Class class='B'/>"
+                    "    </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    false, "RelationshipClass constraint must always specify at least one class."),
+
+        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                    "  <ECClass typeName='A'>"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECClass>"
+                    "  <ECClass typeName='B'>"
+                    "    <ECProperty propertyName='Id' typeName='string' />"
+                    "  </ECClass>"
+                    "  <ECRelationshipClass typeName='Rel' isDomainClass='True'>"
+                    "    <Source polymorphic='True'>"
+                    "      <Class class='A'/>"
+                    "    </Source>"
+                    "    <Target cardinality='(0,1)' polymorphic='True'>"
+                    "      <Class class='B'/>"
+                    "    </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    true, "Succeeds right now, but will fail in the future as cardinality should always be specified in RelationshipClass constraint."),
+
+        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                    "  <ECClass typeName='A'>"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECClass>"
+                    "  <ECClass typeName='B'>"
+                    "    <ECProperty propertyName='Id' typeName='string' />"
+                    "  </ECClass>"
+                    "  <ECRelationshipClass typeName='Rel' isDomainClass='True'>"
+                    "    <Target cardinality='(0,1)' polymorphic='True'>"
+                    "      <Class class='B'/>"
+                    "    </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    false, "RelationshipClass constraint must not be left out."),
+
+        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "  <ECRelationshipClass typeName='Rel' isDomainClass='False' isStruct='False' isCustomAttribute='False' />"
+                "</ECSchema>",
+                true, "For abstract relationship class no constraints must be specified."),
+
+        TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                 "  <ECClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECClass>"
-                 "  <ECClass typeName='B'>"
-                 "    <ECProperty propertyName='Id' typeName='string' />"
-                 "  </ECClass>"
-                 "  <ECRelationshipClass typeName='Rel1' isDomainClass='True'>"
+                "  <ECClass typeName='B'>"
+                "    <ECProperty propertyName='Id' typeName='string' />"
+                "  </ECClass>"
+                "  <ECRelationshipClass typeName='Rel' isDomainClass='False' isStruct='False' isCustomAttribute='False'>"
                  "    <Source cardinality='(0,1)' polymorphic='True'>"
                  "      <Class class='A'/>"
                  "    </Source>"
                  "    <Target cardinality='(0,1)' polymorphic='True'>"
-                 "      <Class class='B'/>"
-                 "    </Target>"
-                 "  </ECRelationshipClass>"
-                 "  <ECRelationshipClass typeName='Rel2' isDomainClass='True'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
-                 "      <Class class='A'/>"
-                 "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
-                 "      <Class class='Rel1'/>"
-                 "    </Target>"
-                 "  </ECRelationshipClass>"
-                 "</ECSchema>",
-                 false, "RelationshipClass constraint must not specify a relationship class."),
+                "      <Class class='B'/>"
+                "    </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>",
+                false, "For abstract relationship class no constraints must be specified."),
 
         TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                 "  <ECClass typeName='A'>"
-                 "    <ECProperty propertyName='Name' typeName='string' />"
-                 "  </ECClass>"
-                 "  <ECClass typeName='B'>"
-                 "    <ECProperty propertyName='Id' typeName='string' />"
-                 "  </ECClass>"
-                 "  <ECRelationshipClass typeName='Rel1' isDomainClass='True'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
-                 "      <Class class='A'/>"
-                 "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
-                 "      <Class class='B'/>"
-                 "    </Target>"
-                 "  </ECRelationshipClass>"
-                 "  <ECRelationshipClass typeName='Rel2' isDomainClass='True'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
-                 "      <Class class='Rel1'/>"
-                 "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
-                 "      <Class class='B'/>"
-                 "    </Target>"
-                 "  </ECRelationshipClass>"
-                 "</ECSchema>",
-                 false, "RelationshipClass constraint must not specify a relationship class."),
+                "  <ECClass typeName='A'>"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECClass>"
+                "  <ECClass typeName='B'>"
+                "    <ECProperty propertyName='Id' typeName='string' />"
+                "  </ECClass>"
+                "  <ECRelationshipClass typeName='Rel' isDomainClass='False' isStruct='False' isCustomAttribute='False'>"
+                "    <Source cardinality='(0,1)' polymorphic='True'>"
+                "      <Class class='A'/>"
+                "    </Source>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>",
+                false, "For abstract relationship class no constraints must be specified."),
 
         TestItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                 "  <ECClass typeName='A'>"
-                 "    <ECProperty propertyName='Name' typeName='string' />"
-                 "  </ECClass>"
-                 "  <ECClass typeName='B'>"
-                 "    <ECProperty propertyName='Id' typeName='string' />"
-                 "  </ECClass>"
-                 "  <ECRelationshipClass typeName='Rel1' isDomainClass='True'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
-                 "      <Class class='A'/>"
-                 "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
-                 "      <Class class='B'/>"
-                 "    </Target>"
-                 "  </ECRelationshipClass>"
-                 "  <ECRelationshipClass typeName='Rel2' isDomainClass='True'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
-                 "      <Class class='A'/>"
-                 "      <Class class='Rel1'/>"
-                 "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
-                 "      <Class class='B'/>"
-                 "    </Target>"
-                 "  </ECRelationshipClass>"
-                 "</ECSchema>",
-                 false, "RelationshipClass constraint must not specify a relationship class.")};
+                "  <ECClass typeName='A'>"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECClass>"
+                "  <ECClass typeName='B'>"
+                "    <ECProperty propertyName='Id' typeName='string' />"
+                "  </ECClass>"
+                "  <ECRelationshipClass typeName='Rel' isDomainClass='False' isStruct='False' isCustomAttribute='False'>"
+                "    <Target cardinality='(0,1)' polymorphic='True'>"
+                "      <Class class='B'/>"
+                "    </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>",
+                false, "For abstract relationship class no constraints must be specified.")};
 
     for (TestItem const& testItem : testItems)
         {
         AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
         }
+
     }
 
 //---------------------------------------------------------------------------------------

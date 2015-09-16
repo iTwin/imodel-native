@@ -16,19 +16,24 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECRelatedClassSpecifier::ECRelatedClassSpecifier() : m_direction(ECN::ECRelatedInstanceDirection::Forward) {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelatedClassSpecifier::ECRelatedClassSpecifier(ECN::ECRelationshipClassCR relationshipClass, ECN::ECClassCR relatedClass, ECN::ECRelatedInstanceDirection direction)
+    {
+    Init(relationshipClass, relatedClass, direction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
 void ECRelatedClassSpecifier::Init (ECRelationshipClassCR relationshipClass, ECClassCR relatedClass, ECRelatedInstanceDirection direction) 
     {
     m_relationshipClass = &relationshipClass;
     m_relatedClass = &relatedClass;
     m_direction = direction;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelatedClassSpecifier::ECRelatedClassSpecifier (ECN::ECRelationshipClassCR relationshipClass, ECN::ECClassCR relatedClass, ECN::ECRelatedInstanceDirection direction)
-    {
-    Init (relationshipClass, relatedClass, direction);
     }
 
 /*---------------------------------------------------------------------------------**//**

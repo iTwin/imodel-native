@@ -61,21 +61,20 @@ BentleyStatus ECDbSchemaManager::GetECSchemas (ECSchemaList& schemas, bool ensur
 BentleyStatus ECDbSchemaManager::ImportECSchemas 
 (
 ECSchemaCacheR cache, 
-ImportOptions const& options,
-IImportIssueListener const* userProvidedIssueListener
+ImportOptions const& options
 ) const
     {
-    SchemaImportContext context (userProvidedIssueListener);
+    SchemaImportContext context;
 
     if (m_ecdb.IsReadonly ())
         {
-        context.GetIssueListener ().Report (IImportIssueListener::Severity::Error, "Failed to import ECSchemas. ECDb file is read-only.");
+        m_ecdb.GetECDbImplR().ReportIssue (ECDb::IssueSeverity::Error, "Failed to import ECSchemas. ECDb file is read-only.");
         return ERROR;
         }
 
     if (cache.GetCount () == 0)
         {
-        context.GetIssueListener ().Report (IImportIssueListener::Severity::Error, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
+        m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
         return ERROR;
         }
 
@@ -91,7 +90,7 @@ IImportIssueListener const* userProvidedIssueListener
             {
             if (id == 0 || id != schema->GetId())
                 {
-                LOG.errorv("ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
+                m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
             }
@@ -112,17 +111,17 @@ IImportIssueListener const* userProvidedIssueListener
             std::vector<Utf8String> errorMessages;
             validationResult.ToString (errorMessages);
 
-            IImportIssueListener::Severity sev;
+            ECDb::IssueSeverity sev;
             if (options.SupportLegacySchemas ())
-                sev = IImportIssueListener::Severity::Warning;
+                sev = ECDb::IssueSeverity::Warning;
             else
                 {
-                sev = IImportIssueListener::Severity::Error;
-                context.GetIssueListener ().Report (sev, "Failed to import ECSchemas. Details: ");
+                sev = ECDb::IssueSeverity::Error;
+                m_ecdb.GetECDbImplR().ReportIssue(sev, "Failed to import ECSchemas. Details: ");
                 }
 
             for (Utf8StringCR errorMessage : errorMessages)
-                context.GetIssueListener ().Report (sev, errorMessage.c_str ());
+                m_ecdb.GetECDbImplR().ReportIssue(sev, errorMessage.c_str ());
             }
 
         if (!isValid)
@@ -256,9 +255,9 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 
             //Go a head and attempt to update ECSchema
             if (isSupplemental (*schema))
-                stat = UpdateECSchema (context, diff, *schema);
+                stat = UpdateECSchema (diff, *schema);
             else
-                stat = UpdateECSchema (context, diff, *schema);
+                stat = UpdateECSchema (diff, *schema);
 
             if (SUCCESS == stat && diff != nullptr && diff->GetStatus () == DIFFSTATUS_Success && !diff->IsEmpty ())
                 diffs.push_back (diff);
@@ -266,9 +265,9 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
         else
             {
             if (isSupplemental (*schema))
-                stat = ImportECSchema (context, *schema, addToReaderCache);
+                stat = ImportECSchema (*schema, addToReaderCache);
             else
-                stat = ImportECSchema (context, *schema, addToReaderCache);
+                stat = ImportECSchema (*schema, addToReaderCache);
             }
         if (SUCCESS != stat)
             return stat;
@@ -283,11 +282,11 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::ImportECSchema (SchemaImportContext const& context, ECSchemaCR ecSchema, bool addToReaderCache) const
+BentleyStatus ECDbSchemaManager::ImportECSchema (ECSchemaCR ecSchema, bool addToReaderCache) const
     {
     if (SUCCESS != m_ecImporter->Import (ecSchema))
         {
-        context.GetIssueListener ().Report (IImportIssueListener::Severity::Error,
+        m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error,
                                             "Failed to import ECSchema '%s'. Please see log for details.",
                                             Utf8String (ecSchema.GetFullSchemaName ()).c_str ());
 
@@ -303,13 +302,13 @@ BentleyStatus ECDbSchemaManager::ImportECSchema (SchemaImportContext const& cont
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& context, ECDiffPtr& diff, ECSchemaCR ecSchema) const
+BentleyStatus ECDbSchemaManager::UpdateECSchema (ECDiffPtr& diff, ECSchemaCR ecSchema) const
     {
     Utf8String schemaName (ecSchema.GetName ().c_str ());
     auto existingSchema = GetECSchema (schemaName.c_str (), true);
     if (existingSchema == nullptr)
         {
-        context.GetIssueListener ().Report (IImportIssueListener::Severity::Error,
+        m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error,
             "Failed to update ECSchema '%s'. ECSchema does not exist in the ECDb file.",
             schemaName.c_str ());
         return ERROR;
@@ -321,7 +320,7 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& cont
         if (ecSchema.IsStandardSchema ())
             return BentleyStatus::SUCCESS; 
 
-        ReportUpdateError (context, ecSchema, *existingSchema, "Version mismatch: Major version must be equal, minor version must be greater or equal than version of existing schema.");
+        ReportUpdateError (ecSchema, *existingSchema, "Version mismatch: Major version must be equal, minor version must be greater or equal than version of existing schema.");
         return ERROR;
         }
 
@@ -331,14 +330,14 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& cont
         reason.Sprintf ("Namespace prefixes differ: New prefix: %s - existing prefix : %s.",
             Utf8String (ecSchema.GetNamespacePrefix ()).c_str (), Utf8String (existingSchema->GetNamespacePrefix ()).c_str ());
 
-        ReportUpdateError (context, ecSchema, *existingSchema, reason.c_str ());
+        ReportUpdateError (ecSchema, *existingSchema, reason.c_str ());
         return ERROR;
         }
 
     diff = ECDiff::Diff (*existingSchema, ecSchema);
     if (diff->GetStatus () != DIFFSTATUS_Success)
         {
-        ReportUpdateError (context, ecSchema, *existingSchema, "Could not compute the difference between the new and the existing version.");
+        ReportUpdateError (ecSchema, *existingSchema, "Could not compute the difference between the new and the existing version.");
         return ERROR;
         }
 
@@ -668,22 +667,20 @@ BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   04/2014
 //---------------------------------------------------------------------------------------
-//static
-void ECDbSchemaManager::ReportUpdateError (SchemaImportContext const& context, ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason)
+void ECDbSchemaManager::ReportUpdateError(ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason) const
     {
-    auto newVersionMajor = newSchema.GetVersionMajor ();
-    auto newVersionMinor = newSchema.GetVersionMinor ();
-    auto existingVersionMajor = existingSchema.GetVersionMajor ();
-    auto existingVersionMinor = existingSchema.GetVersionMinor ();
+    const uint32_t newVersionMajor = newSchema.GetVersionMajor();
+    const uint32_t newVersionMinor = newSchema.GetVersionMinor();
+    const uint32_t existingVersionMajor = existingSchema.GetVersionMajor();
+    const uint32_t existingVersionMinor = existingSchema.GetVersionMinor();
 
-    Utf8String str ("Failed to update ECSchema '");
-    str.append (Utf8String (newSchema.GetName ()));
-    str.append ("' from version ").append (Utf8String (ECSchema::FormatSchemaVersion (existingVersionMajor, existingVersionMinor)));
-    str.append (" to ").append (Utf8String (ECSchema::FormatSchemaVersion (newVersionMajor, newVersionMinor)));
-    str.append (". ").append (reason);
-    
-    context.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
-            str.c_str ());
+    Utf8String str("Failed to update ECSchema '");
+    str.append(Utf8String(newSchema.GetName()));
+    str.append("' from version ").append(Utf8String(ECSchema::FormatSchemaVersion(existingVersionMajor, existingVersionMinor)));
+    str.append(" to ").append(Utf8String(ECSchema::FormatSchemaVersion(newVersionMajor, newVersionMinor)));
+    str.append(". ").append(reason);
+
+    m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, str.c_str());
     }
 
 
@@ -713,33 +710,6 @@ bool ECDbSchemaManager::ImportOptions::UpdateExistingSchemas () const { return m
 void ECDbSchemaManager::ImportOptions::SetSupportLegacySchemas () { m_supportLegacySchemas = true; }
 bool ECDbSchemaManager::ImportOptions::SupportLegacySchemas () const { return m_supportLegacySchemas; }
 
-//*********************************************************************************
-// ECDbSchemaManager::IImportIssueListener
-//*********************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   04/2014
-//---------------------------------------------------------------------------------------
-ECDbSchemaManager::IImportIssueListener::~IImportIssueListener () {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   04/2014
-//---------------------------------------------------------------------------------------
-void ECDbSchemaManager::IImportIssueListener::Report (ECDbSchemaManager::IImportIssueListener::Severity severity, Utf8CP message, ...) const
-    {
-    va_list args;
-    va_start (args, message);
-
-    Utf8String formattedMessage;
-    formattedMessage.VSprintf (message, args);
-    _OnIssueReported (severity, formattedMessage.c_str ());
-
-    const auto logSeverity = severity == Severity::Warning ? NativeLogging::LOG_WARNING : NativeLogging::LOG_ERROR;
-    if (LOG.isSeverityEnabled (logSeverity))
-        LOG.message (logSeverity, formattedMessage.c_str ());
-
-    va_end (args);
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
