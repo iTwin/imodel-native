@@ -307,6 +307,8 @@ $(coreObjs)ScopedDgnHost$(oext) : $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCom
 
 $(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAPISrc)NamedVolume.h ${MultiCompileDepends}
 
+$(coreObjs)DgnChangeSummary$(oext) : $(DgnHandlersDir)DgnChangeSummary.cpp $(DgnHandlersAPISrc)DgnChangeSummary.h ${MultiCompileDepends}
+
 $(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
 
 
