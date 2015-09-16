@@ -2,7 +2,7 @@
 |
 |     $Source: src/nonport/FileUtilities.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (_WIN32) // WIP_NONPORT
@@ -14,7 +14,7 @@
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeAssert.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 #if defined (_WIN32) // WIP_NONPORT
 

@@ -10,7 +10,7 @@
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentationRules/PresentationRules.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              dmitrijus.tiazlovas                   11/2012

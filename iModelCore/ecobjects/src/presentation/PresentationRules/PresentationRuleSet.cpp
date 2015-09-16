@@ -11,7 +11,7 @@
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentationRules/PresentationRules.h>
 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -243,7 +243,7 @@ Utf8String PresentationRuleSet::WriteToXmlString ()
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty ();        
     WriteXml (*xmlDom.get());
 
-    Utf8String presentationRuleSetXml = "";
+    Utf8String presentationRuleSetXml;
     xmlDom->ToString (presentationRuleSetXml, BeXmlDom::TO_STRING_OPTION_Default);
 
     return presentationRuleSetXml;
