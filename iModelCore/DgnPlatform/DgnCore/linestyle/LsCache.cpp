@@ -61,6 +61,15 @@ static LsComponent* cacheLoadComponent(LsLocationCR location)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+void LsComponent::UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&current, LsOkayForTextureGeneration const&newValue)
+    {
+    if (newValue > current)
+        current = newValue;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
 void LsComponent::GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLite::PropertySpec spec)
@@ -125,7 +134,7 @@ BentleyStatus       LsStrokePatternComponent::CreateFromRsrc (V10LineCode const*
     if (pRsc==NULL || pRsc->m_nStrokes <= 0)
         {
         // create a default solid stroke
-        InsertStroke (fc_hugeVal, true);
+        AppendStroke (fc_hugeVal, true);
         }
     else
         {
@@ -140,7 +149,7 @@ BentleyStatus       LsStrokePatternComponent::CreateFromRsrc (V10LineCode const*
         for (;pData < pEnd; pData++, pStroke++)
             {
             pStroke->Init (pData->m_length, pData->m_width, pData->m_endWidth,
-                                (LsStroke::WidthMode)pData->m_widthMode, (LsStroke::CapMode)pData->m_capMode);
+                                (LsStroke::WidthMode)pData->m_widthMode, (LsCapMode)pData->m_capMode);
             pStroke->SetIsDash (pData->m_strokeMode & LCSTROKE_DASH);
             pStroke->SetIsRigid (TO_BOOL (pData->m_strokeMode & LCSTROKE_RAY));
             pStroke->SetIsStretchable (TO_BOOL(pData->m_strokeMode & LCSTROKE_SCALE));
@@ -225,6 +234,122 @@ LsComponentReader*    reader
     strokeComp->Init (lcRsc);
 
     return  strokeComp;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsComponentPtr LsStrokePatternComponent::_GetForTextureGeneration() const
+    {
+    LsOkayForTextureGeneration isOkay = _IsOkayForTextureGeneration();
+    BeAssert(LsOkayForTextureGeneration::NotAllowed != isOkay);   //  The caller should have tested for this.
+
+    if (isOkay == LsOkayForTextureGeneration::NoChangeRequired)
+        return const_cast<LsStrokePatternComponentP>(this);
+
+    LsStrokePatternComponentP retval = new LsStrokePatternComponent(this);
+
+    if (GetPhaseMode() != LsStrokePatternComponent::PHASEMODE_Fixed)
+        retval->SetDistancePhase(0.0);
+
+
+    for (size_t i = 0; i < retval->m_nStrokes; ++i)
+        {
+        LsStroke& stroke(*(retval->m_strokes + i));
+        if (stroke.GetCapMode() != LsCapMode::Open)
+            stroke.SetCapMode(LsCapMode::Closed);
+
+        stroke.SetIsStretchable(false);
+        //  end conditions are not enabled so it should not be necessary to mess with dash-first, etc.
+        //  Since we draw exactly one iteration for generating the texture, corner mode (IsRigid) should not be important.
+        }
+
+    return retval;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsOkayForTextureGeneration LsStrokePatternComponent::_IsOkayForTextureGeneration() const 
+    {
+    if (m_okayForTextureGeneration != Dgn::LsOkayForTextureGeneration::Unknown)
+        return m_okayForTextureGeneration;
+
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired; 
+
+    if (HasIterationLimit())
+        return m_okayForTextureGeneration = LsOkayForTextureGeneration::NotAllowed;
+
+    //  Need to verify that fixed with a distance != 0 is okay.
+    if (GetPhaseMode() != LsStrokePatternComponent::PHASEMODE_Fixed)
+        m_okayForTextureGeneration = LsOkayForTextureGeneration::ChangeRequired;
+
+    for (size_t i = 0; i < m_nStrokes; ++i)
+        {
+        LsStroke const& stroke(*(m_strokes+i));
+        
+        if (stroke.IsStretchable() || (stroke.GetCapMode() != LsCapMode::Closed && stroke.GetCapMode() != LsCapMode::Open))
+            UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, LsOkayForTextureGeneration::ChangeRequired);
+        }
+
+    return m_okayForTextureGeneration;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+void LsCompoundComponent::_StartTextureGeneration() const
+    {
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown; 
+    for (LsOffsetComponent const & comp : m_components)
+        comp.m_subComponent->_StartTextureGeneration();
+    }
+  
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsOkayForTextureGeneration LsCompoundComponent::_IsOkayForTextureGeneration() const 
+    {
+    if (m_okayForTextureGeneration != LsOkayForTextureGeneration::Unknown)
+        return m_okayForTextureGeneration;
+
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired; 
+
+    for (LsOffsetComponent const & comp : m_components)
+        {
+        if (comp.m_subComponent->_IsOkayForTextureGeneration() > m_okayForTextureGeneration)
+            UpdateLsOkayForTextureGeneration(m_okayForTextureGeneration, comp.m_subComponent->_IsOkayForTextureGeneration());
+        }
+
+    return m_okayForTextureGeneration;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+ LsComponentPtr LsCompoundComponent::_GetForTextureGeneration() const
+    {
+    _IsOkayForTextureGeneration();
+    BeAssert(LsOkayForTextureGeneration::NotAllowed != m_okayForTextureGeneration); //  The caller should have checked this.
+    if (LsOkayForTextureGeneration::NoChangeRequired == m_okayForTextureGeneration)
+        return const_cast<LsCompoundComponentP>(this);
+
+    LsCompoundComponentP retval = new LsCompoundComponent(*this);
+    for (LsOffsetComponent& comp : retval->m_components)
+        comp.m_subComponent = comp.m_subComponent->_GetForTextureGeneration();
+
+    m_okayForTextureGeneration = LsOkayForTextureGeneration::NoChangeRequired;
+    return retval;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2015
+//---------------------------------------------------------------------------------------
+LsCompoundComponent::LsCompoundComponent(LsCompoundComponentCR source) : LsComponent(&source), m_postProcessed(false)
+    {
+    m_size = source.m_size;
+    for (LsOffsetComponent const& child: source.m_components)
+        m_components.push_back(child);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -539,20 +664,6 @@ LsRasterImageComponent* LsRasterImageComponent::LoadRasterImage  (LsComponentRea
     LsRasterImageComponent* rasterImage = new LsRasterImageComponent (rasterImageResource, reader->GetSource());
 
     return  rasterImage;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-bool LsCompoundComponent::_SupportsConvertToRaster() const
-    {
-    for (size_t compNum = 0; compNum < GetNumComponents(); compNum++)
-        {
-        if (!GetComponentCP (compNum)->_SupportsConvertToRaster ())
-            return  false;
-        }
-
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
