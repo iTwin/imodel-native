@@ -12,7 +12,7 @@
 #endif
 
 #include "BeSQLitePerformanceTests.h"
-#include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
+#include "include/PerformanceTestingHelpers.h"
 #include <Bentley/bvector.h>
 #include <Bentley/WString.h>
 

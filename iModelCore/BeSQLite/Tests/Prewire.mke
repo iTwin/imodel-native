@@ -1,0 +1,13 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/Prewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+thisDir = $(_MakeFilePath)
+
+$(BuildContext)Delivery/BeSQLiteUnitTestInclude : $(thisDir)Performance/include
+    $(LinkFirstDepToFirstTargetAsDirectory)

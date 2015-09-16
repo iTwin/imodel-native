@@ -8,7 +8,7 @@
 //#ifdef WIP_DOES_NOT_BUILD_ON_ANDROID_OR_IOS
 
 #include "BeSQLitePerformanceTests.h"
-#include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
+#include "include/PerformanceTestingHelpers.h"
 #ifdef WIP_PUBLISHED_API
 #include <BeSQLite/SQLiteAPI.h> //only needed for test to directly work with SQLite
 #endif

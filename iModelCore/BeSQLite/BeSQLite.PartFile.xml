@@ -40,4 +40,19 @@
         <SubPart    PartName="PublishedApi"         PartFile="BeSQLite"     Repository="BeSQLite" />
     </Part>
 
+    <Part Name="PerformanceTestingHelper" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <Bindings>
+            <Directory Required="false" SubPartDirectory="BeSQLiteUnitTestInclude" SourceName="Delivery/BeSQLiteUnitTestInclude"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke">
+        <SubPart    PartName="BeSQLite"             PartFile="BeSQLite"     Repository="BeSQLite" />
+        <SubPart    PartName="PublishedApi"         PartFile="BeSQLite"     Repository="BeSQLite" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables"  ProductSubDirectory="BeSQLite" SourceName="Delivery/UnitTests/Linkables"/>
+            <Files ProductDirectoryName="UnitTestsIgnoreList" ProductSubDirectory="BeSQLite">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
 </BuildContext>

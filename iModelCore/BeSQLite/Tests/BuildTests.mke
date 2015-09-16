@@ -1,0 +1,33 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/BuildTests.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+thisDir = $(_MakeFilePath)
+
+# Compile and Link the unit tests
+BEGTEST_OUTPUT=$(OutputRootDir)build/BeSQLite/UnitTests/
+
+BEGTEST_NAME  = NonPublishedBeSQLiteUnitTests
+BEGTEST_INPUT = $(thisDir)/NonPublished/
+%include $(SrcBsiCommon)sharedmki/CompileUnitTests.mki
+
+BEGTEST_NAME  = PublishedBeSQLiteUnitTests
+BEGTEST_INPUT = $(thisDir)/Published/
+BEGTEST_API   = $(BuildContext)SubParts/PublishedApi/BeSQLite/
+%include $(SrcBsiCommon)sharedmki/CompileUnitTests.mki
+
+BEGTEST_NAME  = PerformanceBeSQLiteUnitTests
+BEGTEST_INPUT = $(thisDir)/Performance/
+%include $(SrcBsiCommon)sharedmki/CompileUnitTests.mki
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Linkables : ${BEGTEST_OUTPUT}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(thisDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
