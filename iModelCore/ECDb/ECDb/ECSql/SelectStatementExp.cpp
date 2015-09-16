@@ -895,5 +895,159 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
     return FinalizeParseStatus::Completed;
     }
 
+
+//****************************** SelectStatementExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SelectStatementExp::_ToECSql() const
+    {
+    if (IsCompound())
+        {
+        return GetCurrent().ToECSql() + " " + OPToString(m_operator) + (m_isAll ? " ALL " : " ") + GetNext()->ToECSql();
+        }
+
+    return  GetCurrent().ToECSql();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SelectStatementExp::_ToString() const  { return "SelectStatementExp"; }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+DerivedPropertyExp const* SelectStatementExp::_FindProperty(Utf8CP propertyName) const
+    {
+    return GetCurrent().FindProperty(propertyName);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SelectClauseExp const* SelectStatementExp::_GetSelection() const  { return  GetCurrent().GetSelection(); }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs)
+    :m_isAll(false), m_operator(Operator::None)
+    {
+    BeAssert(lhs != nullptr);
+    AddChild(std::move(lhs));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SelectStatementExp::IsTopLevel() const { return GetChildrenCount() == 1; }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, Operator op, bool isAll, std::unique_ptr<SelectStatementExp> rhs)
+    :m_isAll(isAll), m_operator(op)
+    {
+    BeAssert(lhs != nullptr);
+    BeAssert(rhs != nullptr);
+    BeAssert(op != Operator::None);
+
+    AddChild(std::move(lhs));
+    AddChild(std::move(rhs));
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SingleSelectStatementExp const& SelectStatementExp::GetCurrent() const { return *GetChild<SingleSelectStatementExp>(0); }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SelectStatementExp const* SelectStatementExp::GetNext() const
+    {
+    if (IsCompound())
+        return GetChild<SelectStatementExp>(1);
+
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SelectStatementExp const* SelectStatementExp::GetPrevious() const
+    {
+    auto parent = GetParent();
+    if (parent == nullptr)
+        return nullptr;
+
+    if (parent->GetType() != Exp::Type::Select)
+        return nullptr;
+
+    return static_cast<SelectStatementExp const*>(parent);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SelectStatementExp::IsAll()const { return m_isAll; }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SelectStatementExp::Operator SelectStatementExp::GetOP() const { return m_operator; }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SingleSelectStatementExp const& SelectStatementExp::GetLast() const
+    {
+    auto current = this;
+    while (current->GetNext() != nullptr)
+        {
+        current = GetNext();
+        }
+
+    return current->GetCurrent();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SingleSelectStatementExp const& SelectStatementExp::GetFirst() const
+    {
+    auto current = this;
+    while (current->GetPrevious() != nullptr)
+        {
+        current = GetPrevious();
+        }
+
+    return current->GetCurrent();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SelectStatementExp::IsCompound() const { return m_operator != Operator::None; }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8CP SelectStatementExp::OPToString(Operator op)
+    {
+    switch (op)
+        {
+        case Operator::Union:
+            return "UNION";
+        case Operator::Intersect:
+            return "INTERSECT";
+        case Operator::Except:
+            return "EXCEPT";
+        default:
+            BeAssert(false && "Programmer error");
+            return nullptr;
+        }
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
