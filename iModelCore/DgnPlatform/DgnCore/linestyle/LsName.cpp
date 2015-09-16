@@ -223,7 +223,7 @@ private:
     ViewContextR        m_viewContext;
     LsComponentPtr      m_component;
     LineStyleSymbR      m_lineStyleSymb;
-    LsDefinitionR       m_lsDef;
+    //LsDefinitionR       m_lsDef;
     DPoint3d            m_points[2];
     double              m_multiplier;
     double              m_length;
@@ -236,7 +236,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsDefinitionR lsDef) : m_viewContext(viewContext), m_lineStyleSymb(lineStyleSymb), m_lsDef(lsDef), m_haveRange(false)
+ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsDefinitionR lsDef) : m_viewContext(viewContext), m_lineStyleSymb(lineStyleSymb), /*m_lsDef(lsDef),*/ m_haveRange(false)
     {
     LsComponentCP    topComponent = lsDef.GetComponentCP (nullptr);
     BeAssert(topComponent->_IsOkayForTextureGeneration() != LsOkayForTextureGeneration::NotAllowed && topComponent->_IsOkayForTextureGeneration() != LsOkayForTextureGeneration::Unknown);
