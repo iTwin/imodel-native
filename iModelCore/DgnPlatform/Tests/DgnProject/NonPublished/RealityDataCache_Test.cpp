@@ -25,7 +25,7 @@ TEST (ThreadSafeQueue, Push_Pop)
     ThreadSafeQueue<int> queue;
     
     for (int i = 0; i < itemsCount; i++)
-        queue.Push (i);
+        queue.PushBack (i);
 
     for (int i = 0; i < itemsCount; i++)
         {
@@ -37,7 +37,7 @@ TEST (ThreadSafeQueue, Push_Pop)
     for (int i = 0; i < itemsCount; i++)
         {
         int result;
-        queue.Push (i);
+        queue.PushBack (i);
         ASSERT_TRUE (queue.Pop (result));
         ASSERT_EQ (result, i);
         }
@@ -49,8 +49,8 @@ TEST (ThreadSafeQueue, Push_Pop)
 TEST (ThreadSafeQueue, Clear)
     {
     ThreadSafeQueue<int> queue;
-    queue.Push (1);
-    queue.Push (2);
+    queue.PushBack (1);
+    queue.PushBack (2);
     queue.Clear ();
 
     int num;
@@ -192,11 +192,12 @@ TEST (RealityDataWorkerThread, Terminate)
 TEST (RealityDataThreadPool, QueueWork_1_Item)
     {
     BeConditionVariable cv;
-    auto pool = RealityDataThreadPool::Create (1, 1);
+    auto pool = RealityDataThreadPool::Create (1, 1, SchedulingMethod::FIFO);
     WorkItemsCountPredicate predicate (1);
     pool->QueueWork (*TestWork::Create (cv));
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
     ASSERT_EQ (1, TestWork::s_nCalls);                  // work item executed
+    pool->Terminate();
     }
 
 //---------------------------------------------------------------------------------------
@@ -207,13 +208,14 @@ TEST (RealityDataThreadPool, QueueWork_Many_Items)
     static int workItemsCount = 1000;
 
     BeConditionVariable cv;
-    auto pool = RealityDataThreadPool::Create (1, 1);
+    auto pool = RealityDataThreadPool::Create (1, 1, SchedulingMethod::FIFO);
     WorkItemsCountPredicate predicate (workItemsCount);
     for (int i = 0; i < workItemsCount; i++)
         pool->QueueWork (*TestWork::Create (cv));
 
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
     ASSERT_EQ (workItemsCount, TestWork::s_nCalls);     // all work items executed
+    pool->Terminate();
     }
 
 //---------------------------------------------------------------------------------------
@@ -224,9 +226,9 @@ TEST (RealityDataThreadPool, Queueing)
     static int workItemsCount = 5;
 
     BeConditionVariable cv;
-    auto pool = RealityDataThreadPool::Create (1, 1);
+    auto pool = RealityDataThreadPool::Create (1, 1, SchedulingMethod::FIFO);
     WorkItemsCountPredicate predicate (workItemsCount);
-    
+
     BeAtomic<bool> block(true);
     pool->QueueWork (*TestWork::Create (cv, [&block] ()
         {
@@ -244,6 +246,7 @@ TEST (RealityDataThreadPool, Queueing)
 
     ASSERT_TRUE (cv.WaitOnCondition (&predicate, 5000));// no timeout
     ASSERT_EQ (workItemsCount, TestWork::s_nCalls);     // all work items executed
+    pool->Terminate();
     }
 
 //---------------------------------------------------------------------------------------
@@ -289,7 +292,7 @@ TEST (RealityDataThreadPool, SpawnsThreads)
 
     BeAtomic<bool> block(true);
     BeConditionVariable cv;
-    auto pool = RealityDataThreadPool::Create (10, 10);
+    auto pool = RealityDataThreadPool::Create (10, 10, SchedulingMethod::FIFO);
     WorkItemsCountPredicate predicate (workItemsCount);
 
     for (int i = 0; i < workItemsCount; i++)
@@ -309,6 +312,7 @@ TEST (RealityDataThreadPool, SpawnsThreads)
     ASSERT_EQ (workItemsCount, TestWork::s_threadIds.size ());
     ASSERT_EQ (maxThreads, CountUniqueItems (TestWork::s_threadIds));
     AssertNoItemsMatch (TestWork::s_threadIds, BeThreadUtilities::GetCurrentThreadId ());
+    pool->Terminate();
     }
 
 //---------------------------------------------------------------------------------------
@@ -321,7 +325,7 @@ TEST (RealityDataThreadPool, TerminatesSpawnedThreads)
     static int maxIdleThreads = 0;
 
     BeConditionVariable cv;
-    auto pool = RealityDataThreadPool::Create (maxThreads, maxIdleThreads);
+    auto pool = RealityDataThreadPool::Create (maxThreads, maxIdleThreads, SchedulingMethod::FIFO);
     WorkItemsCountPredicate predicate (workItemsCount);
 
     BeAtomic<bool> block(true);
@@ -336,4 +340,5 @@ TEST (RealityDataThreadPool, TerminatesSpawnedThreads)
 
     pool->WaitUntilAllThreadsIdle ();
     ASSERT_EQ (maxIdleThreads, pool->GetThreadsCount ());               // only maxIdleThreads are left active
+    pool->Terminate();
     }

@@ -22,7 +22,6 @@ protected:
     DgnModelPtr m_testModel;
     DgnCategoryId m_testCategoryId;
     DgnElementId m_testElementId;
-    uint32_t m_uniqueCodeAutoIncrement;
 
     void CreateDgnDb();
     void OpenDgnDb();
@@ -42,10 +41,8 @@ protected:
 
     bool ChangeSummaryHasInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
     BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
-
-    DgnElement::Code MakeElementCode (Utf8CP text) { return DgnElement::Code (Utf8PrintfString("%s - %u", text, ++m_uniqueCodeAutoIncrement)); }
 public:
-    ChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true), m_uniqueCodeAutoIncrement(0) {}
+    ChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true) {}
     virtual ~ChangeSummaryTestFixture() {m_testDb->SaveChanges();}
     virtual void SetUp() override {}
     virtual void TearDown() override {}
@@ -147,7 +144,6 @@ void ChangeSummaryTestFixture::InsertElement()
     BeAssert(m_testCategoryId.IsValid());
 
     PhysicalElementPtr testElement = PhysicalElement::Create(*physicalTestModel, m_testCategoryId);
-    testElement->SetCode(MakeElementCode("ChangeSetTestElementCode"));
     testElement->SetLabel("ChangeSetTestElementLabel");
 
     DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
@@ -172,7 +168,6 @@ void ChangeSummaryTestFixture::ModifyElement()
     RefCountedPtr<PhysicalElement> testElement = m_testDb->Elements().GetForEdit<PhysicalElement>(m_testElementId);
     BeAssert(testElement.IsValid());
 
-    testElement->SetCode(MakeElementCode("ModifiedElementCode"));
     testElement->SetLabel("ModifiedElementLabel");
 
     DgnDbStatus dbStatus;
@@ -1483,8 +1478,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     ASSERT_EQ(parentElementId.GetValueUnchecked(), value.GetValueInt64());
     ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("ParentId").GetValueInt64());
 
-    ASSERT_EQ(5, relInstance.MakeValueIterator(*m_testDb).QueryCount());
-    ASSERT_EQ(3, instance.MakeValueIterator(*m_testDb).QueryCount());
+    ASSERT_EQ(5, relInstance.MakeValueIterator(changeSummary).QueryCount());
+    ASSERT_EQ(3, instance.MakeValueIterator(changeSummary).QueryCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1513,9 +1508,11 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 
     // Query changed elements directly using ECSQL
     ECSqlStatement stmt;
-    Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el WHERE IsChangedInstance(el.GetECClassId(), el.ECInstanceId)";
+    Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
     ECSqlStatus status = stmt.Prepare(*m_testDb, ecsql);
     ASSERT_TRUE(status == ECSqlStatus::Success);
+    
+    stmt.BindInt64(1, (int64_t) &changeSummary);
 
     bset<DgnElementId> changedElements;
     ECSqlStepStatus stepStatus;
@@ -1528,9 +1525,11 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 
     // Query elements changed due to changes to related geometry using ECSQL
     stmt.Finalize();
-    ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE IsChangedInstance(elg.GetECClassId(), elg.ECInstanceId)";
+    ecsql = "SELECT el.ECInstanceId FROM dgn.GeometricElement el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE IsChangedInstance(?, elg.GetECClassId(), elg.ECInstanceId)";
     status = stmt.Prepare(*m_testDb, ecsql);
     ASSERT_TRUE(status == ECSqlStatus::Success);
+
+    stmt.BindInt64(1, (int64_t) &changeSummary);
 
     changedElements.empty();
     while ((stepStatus = stmt.Step()) == ECSqlStepStatus::HasRow)
@@ -1586,9 +1585,11 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     ASSERT_TRUE(status == DgnDbStatus::Success);
 
     ECSqlStatement stmt;
-    Utf8CP ecsql = "SELECT COUNT(*) FROM dgn.Element el WHERE IsChangedInstance(el.GetECClassId(), el.ECInstanceId)";
+    Utf8CP ecsql = "SELECT COUNT(*) FROM dgn.Element el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
     ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecsql);
     ASSERT_TRUE(ecSqlStatus == ECSqlStatus::Success);
+
+    stmt.BindInt64(1, (int64_t) &changeSummary);
 
     ECSqlStepStatus ecSqlStepStatus = stmt.Step();
     ASSERT_TRUE(ecSqlStepStatus == ECSqlStepStatus::HasRow);

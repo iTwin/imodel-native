@@ -103,6 +103,14 @@ enum class LsComponentType
     RasterImage     = 7,
 };
 
+enum class LsOkayForTextureGeneration
+{
+    Unknown                 = -1,  //  Only used as component's cached value
+    NoChangeRequired        = 0,
+    ChangeRequired          = 1,
+    NotAllowed              = 2,
+};
+
 #pragma pack(push)
 #pragma pack(1)
 //  LineStyle definitions are kept in dgnPrj_Style entries with Type === DgnStyleType::Line (3)
@@ -292,6 +300,23 @@ public:
     explicit LsComponentId(uint32_t value) : m_id(value) {}
 };
 
+enum class LsCapMode
+{
+    //! 0 - Standard closed polygon (rectangle) strokes.
+    Closed            = 0,
+    //! 1 - No end cap. The stroke is displayed as two parallel lines.
+    Open              = 1,
+    //! 2 - The end of the stroke is extended by half the stroke width.
+    Extended          = 2,
+    //! >= 3 - cap stroked as an arc and the value indicates the number of vectors in the arc.
+    Hexagon           = 3,
+    //! 4 vectors in the arc
+    Octagon           = 4,
+    //! 5 vectors in the arc
+    LCCAP_Decagon     = 5,
+    Arc               = 30,
+};
+
 //__PUBLISH_SECTION_END__
 enum DwgShapeFlag
 {
@@ -422,6 +447,7 @@ protected:
     // Should only be used for setting descr in resource definition
     void      CopyDescription (Utf8CP buffer);
     static void GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLite::PropertySpec spec);
+    static void UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&current, LsOkayForTextureGeneration const&newValue);
 
 public:
     LsComponent (DgnDbR, LsComponentType componentType, LsComponentId componentId);
@@ -445,7 +471,6 @@ public:
     virtual bool        _IsAffectedByWidth (bool currentStatusOnly) const {return false;}
     virtual bool        _ContainsComponent (LsComponentP other) const {return other == this;}
     virtual bool        _HasUniformFullWidth (double *pWidth) const  {if (pWidth) *pWidth=0.0; return false;}
-    virtual bool        _SupportsConvertToRaster() const { return true; }
     virtual double      _CalcRepetitions (LineStyleSymbCP) const;
 
     virtual bool        _IsContinuous           () const override  {return false;}
@@ -460,8 +485,11 @@ public:
     virtual StatusInt   _StrokeBSplineCurve     (ViewContextP context, LineStyleSymbP lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
     virtual StatusInt   _DoStroke               (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const {return SUCCESS;}
     virtual void        _LoadFinished           () { m_isDirty = false; }
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const = 0;
+    virtual LsComponentPtr _GetForTextureGeneration() const = 0;
+    virtual void _StartTextureGeneration() const = 0;
     virtual BentleyStatus _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const   { return BSIERROR; }
-    virtual BentleyStatus _GetRasterTextureWidth (double& width) const                                      { return BSIERROR; }
+    virtual BentleyStatus _GetTextureWidth (double& width) const                                      { return BSIERROR; }
 
     //  Defer until update supported
     DGNPLATFORM_EXPORT void SetDescription (Utf8StringCR descr) { m_descr = descr; }
@@ -516,9 +544,12 @@ private:
 
 protected:
     virtual BentleyStatus   _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const override;
-    virtual BentleyStatus   _GetRasterTextureWidth (double& width) const override;
+    virtual BentleyStatus   _GetTextureWidth (double& width) const override;
     virtual bool            _HasWidth () const override  { return 0 != (m_flags & FlagMask_TrueWidth); }
     virtual double          _GetMaxWidth (DgnModelP modelRef) const override  { return _HasWidth() ? m_trueWidth : 0.0; }
+    virtual void _StartTextureGeneration() const override {}
+    virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsRasterImageComponentP>(this); }
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
 
 public:
     static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
@@ -590,6 +621,9 @@ public:
     BentleyStatus       CreateFromComponent (LsPointSymbolComponentCP lpsComp);
 
     static BentleyStatus CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId id);
+    virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsSymbolComponentP>(this); }
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
+    virtual void _StartTextureGeneration() const override {}
 
 //__PUBLISH_SECTION_START__
 public:
@@ -677,34 +711,54 @@ public:
         VERTEX_Any          = (VERTEX_LineOrigin | VERTEX_LineEnd | VERTEX_Each)
         };
 
-    DGNPLATFORM_EXPORT bool                     GetNoPartial            () const;
-    DGNPLATFORM_EXPORT void                     SetNoPartial            (bool value);
-    DGNPLATFORM_EXPORT bool                     GetClipPartial          () const;
-    DGNPLATFORM_EXPORT void                     SetClipPartial          (bool value);
-    DGNPLATFORM_EXPORT bool                     GetStretchable          () const;
-    DGNPLATFORM_EXPORT void                     SetStretchable          (bool value);
     DGNPLATFORM_EXPORT bool                     GetDgnDb              () const;
     DGNPLATFORM_EXPORT void                     SetDgnDb              (bool value);
-    DGNPLATFORM_EXPORT bool                     GetUseColor             () const;
-    DGNPLATFORM_EXPORT void                     SetUseColor             (bool value);
-    DGNPLATFORM_EXPORT bool                     GetUseWeight            () const;
-    DGNPLATFORM_EXPORT void                     SetUseWeight            (bool value);
-    DGNPLATFORM_EXPORT StrokeJustification      GetJustification        () const;
-    DGNPLATFORM_EXPORT void                     SetJustification        (StrokeJustification value);
-    DGNPLATFORM_EXPORT RotationMode             GetRotationMode         () const;
-    DGNPLATFORM_EXPORT void                     SetRotationMode         (RotationMode value);
-    DGNPLATFORM_EXPORT VertexMask               GetVertexMask           () const;
-    DGNPLATFORM_EXPORT void                     SetVertexMask           (VertexMask value);
-    DGNPLATFORM_EXPORT double                   GetXOffset              () const;
-    DGNPLATFORM_EXPORT void                     SetXOffset              (double value);
-    DGNPLATFORM_EXPORT double                   GetYOffset              () const;
-    DGNPLATFORM_EXPORT void                     SetYOffset              (double value);
-    DGNPLATFORM_EXPORT double                   GetAngle                () const;
-    DGNPLATFORM_EXPORT void                     SetAngle                (double value);
-    DGNPLATFORM_EXPORT int                      GetStrokeNumber         () const;
-    DGNPLATFORM_EXPORT void                     SetStrokeNumber         (int value);
-    DGNPLATFORM_EXPORT LsSymbolComponentP       GetSymbolComponentP     () const;
-    DGNPLATFORM_EXPORT LsSymbolComponentCP      GetSymbolComponentCP    () const;
+
+    DGNPLATFORM_EXPORT bool                     GetNoPartial            () const;                       //!<  Whether to draw a partial symbol at the end of a segment; false means do not draw.
+    DGNPLATFORM_EXPORT void                     SetNoPartial            (bool value);                   //!<  Whether to draw a partial symbol at the end of a segment; false means do not draw.
+
+    DGNPLATFORM_EXPORT bool                     GetClipPartial          () const;                       //!<  Clip symbol to the end of a segment.
+    DGNPLATFORM_EXPORT void                     SetClipPartial          (bool value);                   //!<  Clip symbol to the end of a segment.
+
+    DGNPLATFORM_EXPORT bool                     GetStretchable          () const;                       //!<  Allow the symbol to be stretched if the stroke is stretched.
+    DGNPLATFORM_EXPORT void                     SetStretchable          (bool value);                   //!<  Allow the symbol to be stretched if the stroke is stretched.
+
+    DGNPLATFORM_EXPORT bool                     GetProject              () const;                       //!<  Allow the symbol to display past the end of a segment.
+    DGNPLATFORM_EXPORT void                     SetProject              (bool value);                   //!<  Allow the symbol to display past the end of a segment.
+
+    DGNPLATFORM_EXPORT bool                     GetUseElementColor      () const;                       //!<  Use the color from the symbol.
+    DGNPLATFORM_EXPORT void                     SetUseElementColor      (bool value);                   //!<  Use the color from the symbol.
+
+    DGNPLATFORM_EXPORT bool                     GetUseElementWeight     () const;                       //!<  Use the weight from the symbol.
+    DGNPLATFORM_EXPORT void                     SetUseElementWeight     (bool value);                   //!<  Use the weight from the symbol.
+
+    DGNPLATFORM_EXPORT StrokeJustification      GetJustification        () const;                       //!<  The justification of the symbol relative to its placement point.
+    DGNPLATFORM_EXPORT void                     SetJustification        (StrokeJustification value);    //!<  The justification of the symbol relative to its placement point.
+
+    DGNPLATFORM_EXPORT RotationMode             GetRotationMode         () const;                       //!<  What the rotation angle is relative to - element, global, or adjusted to be readable.
+    DGNPLATFORM_EXPORT void                     SetRotationMode         (RotationMode value);           //!<  What the rotation angle is relative to - element, global, or adjusted to be readable.
+
+    DGNPLATFORM_EXPORT VertexMask               GetVertexMask           () const;                       //!<  Which vertices (if any) to place the symbol at, as opposed to a stroke number.
+    DGNPLATFORM_EXPORT void                     SetVertexMask           (VertexMask value);             //!<  Which vertices (if any) to place the symbol at, as opposed to a stroke number.
+
+    DGNPLATFORM_EXPORT double                   GetXOffset              () const;                       //!<  An offset from the stored origin of the symbol to the placement origin, in symbol coordinates.
+    DGNPLATFORM_EXPORT void                     SetXOffset              (double value);                 //!<  An offset from the stored origin of the symbol to the placement origin, in symbol coordinates.
+
+    DGNPLATFORM_EXPORT double                   GetYOffset              () const;                       //!<  An offset from the stored origin of the symbol to the placement origin, in symbol coordinates.
+    DGNPLATFORM_EXPORT void                     SetYOffset              (double value);                 //!<  An offset from the stored origin of the symbol to the placement origin, in symbol coordinates.
+
+    DGNPLATFORM_EXPORT double                   GetAngle                () const;                       //!<  A rotation angle for the symbol around the placement origin.
+    DGNPLATFORM_EXPORT void                     SetAngle                (double value);                 //!<  A rotation angle for the symbol around the placement origin.
+
+    DGNPLATFORM_EXPORT int                      GetStrokeNumber         () const;                       //!<  The index of the stroke to place this symbol.
+    DGNPLATFORM_EXPORT void                     SetStrokeNumber         (int value);                    //!<  The index of the stroke to place this symbol.
+
+    DGNPLATFORM_EXPORT LsSymbolComponentP       GetSymbolComponentP     () const;                       //!<  A pointer into the geometry; GetSymbolComponentCP is preferred.
+    DGNPLATFORM_EXPORT LsSymbolComponentCP      GetSymbolComponentCP    () const;                       //!<  A pointer into the geometry.
+
+    //! Update the symbol component (geometry) in the SymbolReference.
+    //! @param[in] symbolComponent The new symbol component to use
+    //! @see GetSymbolComponentCP()
     DGNPLATFORM_EXPORT void                     SetSymbolComponent      (LsSymbolComponentR symbolComponent);
     };
 
@@ -740,8 +794,10 @@ private:
     T_ComponentsCollection m_components;
     DPoint2d            m_size;
     bool                m_postProcessed;
+    mutable LsOkayForTextureGeneration m_okayForTextureGeneration;
 
                     LsCompoundComponent         (LsLocationCP pLocation);
+                    LsCompoundComponent         (LsCompoundComponentCR source);
 protected:
     virtual         ~LsCompoundComponent        ();
 
@@ -762,11 +818,13 @@ public:
     virtual bool    _IsAffectedByWidth           (bool currentStatusOnly) const override;
     virtual bool    _IsBySegment                 () const override;
     virtual bool    _HasLineCodes                () const override;
-    virtual bool    _SupportsConvertToRaster    () const override;
     virtual bool    _ContainsComponent           (LsComponentP other) const override;
     void            Free                        (bool    sub);
     virtual StatusInt _DoStroke                 (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
     bool            _HasUniformFullWidth         (double *pWidth)   const;
+    virtual void _StartTextureGeneration() const override;
+    virtual LsComponentPtr _GetForTextureGeneration() const override;
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -802,24 +860,6 @@ struct          LsStroke
         LCWIDTH_Full            = 0x03,
     };
 
-    //! Returned from LsStroke::GetCapMode()
-    enum CapMode
-    {
-        //! 0 - Standard closed polygon (rectangle) strokes.
-        LCCAP_Closed            = 0,
-        //! 1 - No end cap. The stroke is displayed as two parallel lines.
-        LCCAP_Open              = 1,
-        //! 2 - The end of the stroke is extended by half the stroke width.
-        LCCAP_Extended          = 2,
-        //! >= 3 - cap stroked as an arc and the value indicates the number of vectors in the arc.
-        LCCAP_Hexagon           = 3,
-        //! 4 vectors in the arc
-        LCCAP_Octagon           = 4,
-        //! 5 vectors in the arc
-        LCCAP_Decagon           = 5,
-        LCCAP_Arc               = 30,
-    };
-
 //__PUBLISH_SECTION_END__
     friend struct LsStrokePatternComponent;
 private:
@@ -827,21 +867,21 @@ private:
     double          m_orgWidth;       // Stroke origin width
     double          m_endWidth;       // Stroke end width
 
-    Byte m_strokeMode;     // bit 0: dash, first rep | gap    dash
+    Byte m_strokeMode;                // bit 0: dash, first rep | gap    dash
                                       // bit 1: dash, int. rep  | gap    dash
                                       // bit 2: dash, last rep  | gap    dash
                                       // bit 4: rigid           | on     off
                                       // bit 5: stretchable     | on     off
 
-    Byte m_widthMode;      // bit 0: left half       | off    on
+    Byte m_widthMode;                 // bit 0: left half       | off    on
                                       // bit 1: right half      | off    on
 
-    Byte m_capMode;        // 0 = closed       1 = open
+    Byte m_capMode;                   // 0 = closed       1 = open
                                       // 2 = extended     3 = hexagon
                                       // 4 = octagon      5 = decagon
                                       // and so on, (n vectors in cap - up to 255)
 
-    void        Init (double length, double orgWidth, double endWidth, WidthMode widthMode, CapMode capMode)
+    void        Init (double length, double orgWidth, double endWidth, WidthMode widthMode, LsCapMode capMode)
                     {
                      m_length     = length;
                      m_orgWidth   = orgWidth;
@@ -856,6 +896,7 @@ public:
     void        SetWidthMode        (int newMode) {m_widthMode &= ~0x03; m_widthMode |= newMode;}
     void        SetWidth            (double width){m_orgWidth = width; m_endWidth = width;}
     void        SetCapMode          (int mode)    {m_capMode = (Byte)mode;}
+    void        SetCapMode          (LsCapMode mode)    {m_capMode = (Byte)mode;}
 
     bool        HasWidth            () const {return IsDash() && (0 != GetWidthMode());}
     // WIP_LINESTYLE *** (LCWIDTH_FULL == GetWidthMode()) => warning: comparison between 'enum Dgn::LineCodeWidth' and 'enum Dgn::LsStroke::WidthMode'
@@ -873,7 +914,7 @@ public:
          STROKE_Stretchable  = 0x20,
     };
 
-                LsStroke (double length, double startWidth, double endWidth, WidthMode widthMode, CapMode capMode);
+                LsStroke (double length, double startWidth, double endWidth, WidthMode widthMode, LsCapMode capMode);
     explicit    LsStroke (LsStroke const&);
 
 //__PUBLISH_SECTION_START__
@@ -881,30 +922,41 @@ private:
     explicit                   LsStroke ();
 
 public:
-    DGNPLATFORM_EXPORT void                     SetIsDash           (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsDash              () const;   //  Stroke Type Dash vs. Stroke Type Gap
+    DGNPLATFORM_EXPORT void                     SetIsDash           (bool isDash);      //!<  Stroke Type Dash vs. Stroke Type Gap
+    DGNPLATFORM_EXPORT bool                     IsDash              () const;           //!<  Stroke Type Dash vs. Stroke Type Gap
     DGNPLATFORM_EXPORT void                     SetIsDashFirst      (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsDashFirst         () const;   //  Computed from IsDash and invert at flags, should have explicit InvertAt
+    DGNPLATFORM_EXPORT bool                     IsDashFirst         () const;           //!<  Computed from IsDash and invert at flags, should have explicit InvertAt
     DGNPLATFORM_EXPORT void                     SetIsDashLast       (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsDashLast          () const;   //      ""
-    DGNPLATFORM_EXPORT void                     SetIsStretchable    (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsStretchable       () const;   //  Length Fixed or Length Variable
-    DGNPLATFORM_EXPORT void                     SetIsRigid          (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsRigid             () const;   //  LCSTROKE_RAY is true, corresponds to Corners-ByPass, IsRigid is false if Corners-Break
+    DGNPLATFORM_EXPORT bool                     IsDashLast          () const;           //      ""
+    DGNPLATFORM_EXPORT void                     SetIsStretchable    (bool isOn);        //!<  If the dash or gap is fixed or stretchable to fit the length of the segment.
+    DGNPLATFORM_EXPORT bool                     IsStretchable       () const;           //!<  If the dash or gap is fixed or stretchable to fit the length of the segment.
+    DGNPLATFORM_EXPORT void                     SetIsRigid          (bool isOn);        //!<  Rigid means to continue past a corner to complete the current stroke.  False means to break at the corner.
+    DGNPLATFORM_EXPORT bool                     IsRigid             () const;           //!<  Rigid means to continue past a corner to complete the current stroke.  False means to break at the corner.
 
-    //!  There is no SetLength method.  Length is set via LsStrokePatternComponent::InsertStroke
+
+    //! Returns the length of the stroke.
+    //! @return  Length of the stroke
+    //! remarks There is no SetLength method.  Length is set via LsCacheStrokePatternComponent::AppendStroke
     DGNPLATFORM_EXPORT double                   GetLength ()        const;
 
-    //!  There is no SetStartWidth method.  Start width is set via LsStrokePatternComponent::InsertStroke
+    //! Returns the width in Master Units at the start of the stroke.  Only applies for dashes.
+    //! @return  Start width.
+    //! remarks There is no SetStartWidth method.  Start width is set via LsCacheStrokePatternComponent::AppendStroke
     DGNPLATFORM_EXPORT double                   GetStartWidth ()    const;
 
-    //!  There is no SetEndWidth method.  End width is set via LsStrokePatternComponent::InsertStroke
+    //! Returns the width in Master Units at the end of the stroke.  Only applies for dashes.
+    //! @return  End width.
+    //! remarks There is no SetEndWidth method.  End width is set via LsCacheStrokePatternComponent::AppendStroke
     DGNPLATFORM_EXPORT double                   GetEndWidth ()      const;
 
-    //!  There is no SetCapMode method.  Cap mode is set via LsStrokePatternComponent::InsertStroke
-    DGNPLATFORM_EXPORT CapMode                  GetCapMode ()        const;
-    //!  There is no SetWidthMode method.  Width mode is set via LsStrokePatternComponent::InsertStroke
+    //! Returns the way that the ends of a dash are handled.
+    //! @return  Cap mode.
+    //! remarks There is no SetCapMode method.  Cap mode is set via LsCacheStrokePatternComponent::AppendStroke
+    DGNPLATFORM_EXPORT LsCapMode                GetCapMode ()        const;
 
+    //! Returns the way that the widths of a dash are handled.
+    //! @return  Width mode.
+    //! remarks There is no SetWidthMode method.  Width mode is set via LsCacheStrokePatternComponent::AppendStroke
     DGNPLATFORM_EXPORT WidthMode                GetWidthMode ()     const;
 };
 
@@ -940,7 +992,7 @@ protected:
     DPoint3dCP      m_startTangent;
     DPoint3dCP      m_endTangent;
     int             m_nIterate;
-
+    mutable LsOkayForTextureGeneration m_okayForTextureGeneration;
     struct {
         uint32_t   phaseMode:2;
         uint32_t   iterationLimit:1;
@@ -986,10 +1038,9 @@ public:
 
 
     size_t          GetStrokeCount          () const {return  m_nStrokes;}
-    virtual bool    _SupportsConvertToRaster () const override;
     double          _CalcRepetitions         (LineStyleSymbCP) const;
-    LsStrokeP       InsertStroke            (LsStrokeCR stroke);
-    void            InsertStroke            (double length, bool isDash);
+    LsStrokeP       AppendStroke            (LsStrokeCR stroke);
+    void            AppendStroke            (double length, bool isDash);
     void            DeleteStroke            (size_t index);
     void            GetStroke               (LsStroke* pStroke, size_t index);
     LsStrokeP       GetStrokePtr            (size_t index) {return &m_strokes[index];}
@@ -1023,6 +1074,9 @@ public:
     double          GetLength               (double*) const;
     virtual double  _GetMaxWidth             (DgnModelP modelRef) const override;
     bool            RequiresLength          () const;
+    virtual void _StartTextureGeneration() const override { m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown; }
+    virtual LsComponentPtr _GetForTextureGeneration() const override;
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
                                                               
 //__PUBLISH_SECTION_START__
 public:
@@ -1033,27 +1087,103 @@ public:
         PHASEMODE_Center    = 2,  //!<    Centered, no phase value
     };
 
+    //! Get the number of strokes in this Stroke Component.
+    //! @return The number of strokes.
     DGNPLATFORM_EXPORT size_t                   GetNumberStrokes    () const;
-    //! Returns a pointer to an embedded LsStroke.
+
+    //! Returns a pointer to an embedded LsStroke.  GetStrokeCP() is preferred in most cases.
+    //! @param[in] index Index of the stroke.
+    //! @return A pointer to the stroke or NULL if the index is out of range.
     DGNPLATFORM_EXPORT LsStrokeP                GetStrokeP          (size_t index);
-    //! Returns a pointer to an embedded LsStroke.
+
+    //! Returns a constant pointer to an embedded LsStroke.
+    //! @param[in] index Index of the stroke.
+    //! @return A pointer to the stroke or NULL if the index is out of range.
     DGNPLATFORM_EXPORT LsStrokeCP               GetStrokeCP         (size_t index) const;
+
+    //! Determine if the Stroke Component has an iteration limit.
+    //! The entire Stroke Pattern will be repeated no more than the limit on an element or segment.
+    //! @return True if there is an iteration limit.
     DGNPLATFORM_EXPORT bool                     HasIterationLimit   () const;
+
+    //! Get the number of iterations for this style.
+    //! The entire Stroke Pattern will be repeated no more than the limit on an element or segment.
+    //! @return The value store in the iteration limit.  This value is NOT used if the HasIterationLimit() flag is not set.
+    //! @see SetIterationMode() SetIterationLimit()
     DGNPLATFORM_EXPORT int                      GetIterationLimit   () const;
+
+    //! Get the phase distance for this Stroke Component.  Phase is the distance in the units of this linestyle
+    //! to skip before starting the pattern.
+    //! @return The phase distance stored in the Stroke Component.  This is only valid if GetPhaseMode() is PHASEMODE_Fixed.
+    //! @see SetDistancePhase()
     DGNPLATFORM_EXPORT double                   GetDistancePhase    () const;
+
+    //! Get the fractional phase distance for this Stroke Component.  Phase is the fraction of the first dash to skip before
+    //! displaying the line style.
+    //! @return The phase distance stored in the Stroke Component.  This is only valid if GetPhaseMode() is PHASEMODE_Fraction.
+    //! @see SetFractionalPhase()
     DGNPLATFORM_EXPORT double                   GetFractionalPhase  () const;
+
+    //! Get the phase for the Stroke Component.  Phase describes how to adjust the pattern before starting.  Often this is used
+    //! to set a fraction of 0.5 causing half the dash to appear at the start.  Used with stretchable gaps and corner mode this
+    //! will avoid linestyles having a gap at a corner.  Centered phasing means that only a whole
+    //! number of patterns are displayed, and then solid leaders are added at the start and end.  This typically looks worse.
+    //! @return The phase distance stored in the Stroke Component.  This is only valid if GetPhaseMode() is PHASEMODE_Fraction.
+    //! @see SetPhaseMode()
     DGNPLATFORM_EXPORT PhaseMode                GetPhaseMode        () const;
+
+    //! Determine if this Stroke Component is set for single-segment.  In this mode it will stop the pattern and restart
+    //! as it goes around corners.  If this is not set then the pattern will continue around corners.
+    //! @return The whether the pattern is in single-segment mode
+    //! @see SetSegmentMode()
     DGNPLATFORM_EXPORT bool                     IsSingleSegment     () const;
-    DGNPLATFORM_EXPORT LsStrokeP                InsertStroke        (double length, double startWidth, double endWidth, LsStroke::WidthMode widthMode, LsStroke::CapMode capMode);
-    //  Iteration information
+
+    //! Add another stroke to the Stroke Pattern.
+    //! @param[in] length Length of the stroke or gap.
+    //! @param[in] startWidth Width at the start of the stroke; use 0 for none.
+    //! @param[in] endWidth Width at the end of the stroke; use 0 for none.
+    //! @param[in] widthMode How to apply the width.
+    //! @param[in] capMode The way that endcaps are handled for the stroke.
+    //! remarks To add a gap you need to call LsStroke::SetIsDash() on the returned stroke.
+    //! @return A pointer to the stroke or NULL if the Stroke Component already contains 32 strokes.
+    DGNPLATFORM_EXPORT LsStrokeP                AppendStroke        (double length, double startWidth, double endWidth, LsStroke::WidthMode widthMode, LsCapMode capMode);
+
+    //! Set whether the pattern will have a set number of iterations.
+    //! @param[in] limited True to limit the number of iterations, false for unlimited.
+    //! @return True if the value was changed, false if limited=true and there is no stretchable gaps or dashes.  In this case the limit will not be set.
+    //! remarks If the iteration limit is zero, this method will set it to one.
+    //! @see GetIterationLimit() SetIterationLimit()
     DGNPLATFORM_EXPORT bool                     SetIterationMode    (bool limited);
-    DGNPLATFORM_EXPORT void                     SetIterationLimit   (int);
-    DGNPLATFORM_EXPORT void                     SetSegmentMode      (bool);
-    //  Phase Mode
-    DGNPLATFORM_EXPORT void                     SetPhaseMode        (int mode);
-    DGNPLATFORM_EXPORT void                     SetDistancePhase    (double);
+
+    //! Set the number of iterations for the pattern.  Calling this method with a non-zero numIterations will also set the iteration mode to limited.
+    //! @param[in] numIterations The number of iterations for this pattern.
+    //! @see GetIterationLimit() SetIterationMode()
+    DGNPLATFORM_EXPORT void                     SetIterationLimit   (int numIterations);
+
+    //! Set the Stroke Component to be single-segment (restart the pattern at corners) or to continue around corners.
+    //! @param[in] isSingleSegment The new value for the segment mode.
+    //! @see IsSingleSegment()
+    DGNPLATFORM_EXPORT void                     SetSegmentMode      (bool isSingleSegment);
+
+    //! Set the Stroke Component phase mode.
+    //! mode[in] mode The new phase mode for this pattern.
+    //! @see GetPhaseMode()
+    DGNPLATFORM_EXPORT void                     SetPhaseMode        (PhaseMode mode);
+
+    //! Set the distance to skip into the pattern before starting to draw.  This value only applies if the phase mode is PHASEMODE_Fixed.
+    //! mode[in] distance The new phase distance for this pattern.
+    //! @see GetDistancePhase()
+    DGNPLATFORM_EXPORT void                     SetDistancePhase    (double distance);
+
+    //! Set phasing to be centered.  This value only applies if the phase mode is PHASEMODE_Center.
+    //! mode[in] distance The new phase distance for this pattern.
+    //! @see GetDistancePhase()
     DGNPLATFORM_EXPORT void                     SetCenterPhaseMode  ();
-    DGNPLATFORM_EXPORT void                     SetFractionalPhase  (double);
+
+    //! Set the fraction of the first stroke to skip into the pattern before starting to draw.  This value only applies if the phase mode is PHASEMODE_Fraction.
+    //! mode[in] fraction The new phase fraction for this pattern.
+    //! @see GetFractionalPhase()
+    DGNPLATFORM_EXPORT void                     SetFractionalPhase  (double fraction);
  };
 
 //=======================================================================================
@@ -1075,12 +1205,14 @@ struct          LsPointComponent : public LsComponent
     LsStrokePatternComponentPtr m_strokeComponent;
     T_SymbolsCollection     m_symbols;
     bool                    m_postProcessed;
+    mutable LsOkayForTextureGeneration m_okayForTextureGeneration;
 
 private:
     virtual bool                    _ProcessSymbol           (ViewContextP, Centerline const*, LineStyleSymbCP, LsStrokeCP, int strokeIndex, int endCondition) const override;
 
     LsSymbolReferenceP              GetSymbolReferenceP     (T_SymbolsCollectionConstIter iter) const;
     LsPointComponent    (LsLocationCP pLocation);
+    LsPointComponent    (LsPointComponentCR source);
 
 protected:
     ~LsPointComponent   ();
@@ -1095,10 +1227,12 @@ public:
     static LsPointComponentPtr      Create                  (LsLocation&location) { LsPointComponentP retval = new LsPointComponent (&location); retval->m_isDirty = true; return retval; }
     virtual double                  _GetMaxWidth             (DgnModelP modelRef)  const override;
     //  T_SymbolsCollectionConstIter    GetSymbols ()           const   {return m_symbols.begin ();}
-    virtual bool                    _SupportsConvertToRaster    () const override;
     virtual bool                    _ContainsComponent       (LsComponentP other) const override;
     void                            Free                    (bool    sub);
     bool                            HasStrokeSymbol         () const;
+    virtual LsComponentPtr _GetForTextureGeneration() const override;
+    virtual void _StartTextureGeneration() const override;
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
 
     static BentleyStatus   CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId id);
 
@@ -1155,6 +1289,8 @@ public:
     virtual bool        _HasLineCodes                    () const override {return IsHardwareStyle();}
     virtual StatusInt   _DoStroke                       (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
     static LsInternalComponentPtr CreateInternalComponent   (LsLocation&location);
+    virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsInternalComponentP>(this); }
+    virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
 
 //__PUBLISH_SECTION_START__
 public:
@@ -1210,13 +1346,13 @@ private:
     bool                m_componentLoadPostProcessed;
 
     // For raster styles...
-    mutable bool        m_rasterInitialized;
-    mutable uintptr_t   m_rasterTexture;
+    mutable bool        m_textureInitialized;
+    mutable uintptr_t   m_textureHandle;
 
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle (LsComponentType componentType, LsComponentId componentID);
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
-    intptr_t            GenerateRasterTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb);
+    intptr_t            GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb);
 
 public:
     DGNPLATFORM_EXPORT static double GetUnitDef (Json::Value& lsDefinition);
@@ -1248,7 +1384,7 @@ public:
     DgnStyleId GetStyleId () { return m_styleId; }
 
     // Raster Images...
-    uintptr_t                           GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale);
+    uintptr_t                           GetTextureHandle (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale);
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;

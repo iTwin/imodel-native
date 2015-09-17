@@ -72,10 +72,10 @@ struct ModelSolverDef
         bvector<Parameter> m_parameters;
         public:
         ParameterSet() {;}
-        explicit ParameterSet(Json::Value const&);
+        DGNPLATFORM_EXPORT explicit ParameterSet(Json::Value const&);
         explicit ParameterSet(bvector<Parameter> const& p) : m_parameters(p) {;}
 
-        Json::Value ToJson() const;
+        DGNPLATFORM_EXPORT Json::Value ToJson() const;
 
         //! Get a parameter by name
         DGNPLATFORM_EXPORT Parameter const* GetParameter(Utf8StringCR pname) const;
@@ -114,7 +114,10 @@ struct ModelSolverDef
 
     void Solve(DgnModelR);
 
+    DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
+
     public:
+
     //! @private
     DGNPLATFORM_EXPORT ModelSolverDef();
 

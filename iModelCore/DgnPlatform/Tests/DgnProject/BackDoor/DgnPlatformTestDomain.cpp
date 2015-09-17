@@ -28,7 +28,7 @@ bool TestElementDrivesElementHandler::s_shouldFail;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el)
+DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el, GenerateReason)
     {
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(el);
     
@@ -52,7 +52,7 @@ DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
     {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), nullptr, DgnElement::Code(elementCode)));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), nullptr/*, DgnElement::Code(elementCode)*/));
     return testElement;
     }
 

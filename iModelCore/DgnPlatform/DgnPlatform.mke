@@ -43,7 +43,7 @@ VewControllerDepends = $(DgnCoreAPISrc)ViewController.h $(DgnCoreAPISrc)ViewCont
 HandlerDepends  =   $(DgnCoreAPISrc)ElementHandler.h \
                     $(contextDepends)
 
-RealityDataHandlerDepends = $(DgnCoreAPISrc)DgnViewport.h $(DgnCoreAPISrc)RealityDataCache.h
+RealityDataHandlerDepends = $(DgnCoreAPISrc)DgnViewport.h $(DgnCoreAPISrc)HttpHandler.h $(DgnCoreAPISrc)RealityDataCache.h
 
 WebMercatorDepends = $(DgnCoreAPISrc)WebMercator.h $(DgnCoreAPISrc)DgnDbTables.h
 
@@ -171,6 +171,8 @@ $(coreObjs)DgnElements$(oext): $(DgnCoreDir)DgnElements.cpp $(DgnCoreAPISrc)DgnD
 
 $(coreObjs)DgnViewport$(oext):    $(DgnCoreDir)DgnViewport.cpp $(contextDepends) ${MultiCompileDepends}
 
+$(coreObjs)HttpHandler$(oext) : $(DgnCoreDir)HttpHandler.cpp $(DgnCoreAPISrc)HttpHandler.h ${MultiCompileDepends}
+
 $(coreObjs)RealityDataCache$(oext) : $(DgnCoreDir)RealityDataCache.cpp $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)WebMercator$(oext):    $(DgnCoreDir)WebMercator.cpp $(contextDepends) $(WebMercatorDepends) $(RealityDataHandlerDepends) ${MultiCompileDepends}
@@ -271,6 +273,8 @@ $(coreObjs)DgnCategories$(oext) : $(DgnCoreDir)DgnCategories.cpp $(DgnCoreAPISrc
 
 $(coreObjs)DgnMaterial$(oext) : $(DgnCoreDir)DgnMaterial.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
+$(coreObjs)DgnLight$(oext) : $(DgnCoreDir)DgnLight.cpp $(DgnCoreAPISrc)DgnDbTables.h $(DgnCoreAPISrc)DgnLight.h ${MultiCompileDepends}
+
 $(coreObjs)DgnTexture$(oext) : $(DgnCoreDir)DgnTexture.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)DgnAuthority$(oext) : $(DgnCoreDir)DgnAuthority.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
@@ -293,6 +297,8 @@ $(coreObjs)DgnLink$(oext): $(DgnCoreDir)DgnLink.cpp $(DgnCoreAPISrc)DgnDbTables.
 
 $(coreObjs)DgnBaseDomain$(oext): $(DgnCoreDir)DgnBaseDomain.cpp ${MultiCompileDepends}
 
+$(coreObjs)DgnCustomAttributeHelper$(oext) : $(DgnCoreDir)DgnCustomAttributeHelper.cpp ${MultiCompileDepends}
+
 $(coreObjs)DgnHandlers$(oext): $(DgnHandlersDir)DgnHandlers.cpp $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h ${MultiCompileDepends}
 
 $(coreObjs)HitDetail$(oext): $(DgnHandlersDir)HitDetail.cpp $(HandlerDepends) ${MultiCompileDepends}
@@ -305,7 +311,11 @@ $(coreObjs)ScopedDgnHost$(oext) : $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCom
 
 $(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAPISrc)NamedVolume.h ${MultiCompileDepends}
 
+$(coreObjs)DgnChangeSummary$(oext) : $(DgnHandlersDir)DgnChangeSummary.cpp $(DgnHandlersAPISrc)DgnChangeSummary.h ${MultiCompileDepends}
+
 $(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
+
+
 
 
 $(o)ECUtils$(oext) : $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}

@@ -16,6 +16,7 @@
 #include "ClipPrimitive.h"
 #include "ClipVector.h"
 #include "ColorUtil.h"
+#include "DgnCustomAttributeHelper.h"
 #include "ElementHandler.h"
 #include "ElementGeometry.h"
 #include "ElementGraphics.h"
@@ -31,6 +32,7 @@
 #include "LineStyle.h"
 #include "DgnElementDependency.h"
 #include "DgnDb.h"
+#include "DgnAuthority.h"
 #include "NotificationManager.h"
 #include "ScanCriteria.h"
 #include "SolidKernel.h"
@@ -42,6 +44,7 @@
 #include "GeomPart.h"
 #include "Annotations/TextAnnotation.h"
 #include "DgnFont.h"
+#include "RenderMaterial.h"
 
 //__PUBLISH_SECTION_END__
 #include "SnapContext.h"

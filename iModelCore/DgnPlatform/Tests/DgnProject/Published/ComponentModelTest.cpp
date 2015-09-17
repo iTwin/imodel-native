@@ -12,6 +12,7 @@
 #include <DgnPlatform/DgnCore/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeNumerical.h>
+#include <Logging/bentleylogging.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -376,6 +377,7 @@ void ComponentModelTest::GenerateCMSchema()
     schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(m_componentDb->Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
     ASSERT_EQ( DgnDbStatus::Success , ComponentModel::AddAllToECSchema(*schema, *m_componentDb) );
     ASSERT_EQ( ECN::SCHEMA_WRITE_STATUS_Success , schema->WriteToXmlFile(m_componentSchemaFileName) );
+    m_componentDb->SaveChanges(); // AddAllToECSchema modifies the component models, so we must save the changes
     CloseComponentDb();
     }
 
@@ -444,9 +446,6 @@ void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_SolveAndCapture(ComponentSolution::SolutionId& solutionId, Utf8CP componentName, Json::Value const& parmsToChange, bool solutionAlreadyExists)
     {
-    //  -------------------------------------------------------
-    //  ComponentModel - Solve for the given parameter values
-    //  -------------------------------------------------------
     // *** WIP_COMPONENT_MODEL -- get txn mark
 
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
@@ -462,10 +461,27 @@ void ComponentModelTest::Client_SolveAndCapture(ComponentSolution::SolutionId& s
         sparam->SetValue(ecv);
         }
 
+    //  -------------------------------------------------------
+    //  See if solution already exsits. If so, return it without calling Solve. This will be the common pattern.
+    //  -------------------------------------------------------
+    ComponentSolution solutions(*m_clientDb);
+
+    solutionId = componentModel->ComputeSolutionId(newParameterValues);
+    ComponentSolution::Solution existingSln;
+    if (DgnDbStatus::Success == solutions.Query(existingSln, solutionId)) // see if this solution is already cached.
+        {
+        ASSERT_TRUE( solutionAlreadyExists ); // make sure the caller expects the solution to already exist
+        return;
+        }
+
+    //  -------------------------------------------------------
+    //  Solution does not exist. Solve for the given parameter values
+    //  -------------------------------------------------------
+    ASSERT_TRUE( !solutionAlreadyExists ); // make sure the caller expected to have to solve for a new solution
     ASSERT_EQ( DgnDbStatus::Success , componentModel->Solve(newParameterValues) );
 
     //  -------------------------------------------------------
-    //  ComponentModel - Capture (or look up) the solution geometry
+    //  Capture the solution geometry
     //  -------------------------------------------------------
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
@@ -473,15 +489,8 @@ void ComponentModelTest::Client_SolveAndCapture(ComponentSolution::SolutionId& s
     RefCountedPtr<ComponentModel> cmCopy = m_clientDb->Models().Get<ComponentModel>(ccId);
     ASSERT_TRUE( cmCopy.IsValid() ) << "We should have imported the CM and created a cmCopy in a previous step";
 
-    ComponentSolution solutions(*m_clientDb);
-
-    ComponentSolution::SolutionId existingSid = componentModel->ComputeSolutionId(newParameterValues);
-
     solutionId = solutions.CaptureSolution(*componentModel);
     ASSERT_TRUE( solutionId.IsValid() );
-
-    if (solutionAlreadyExists)
-        ASSERT_EQ( solutionId, existingSid );
 
     // *** WIP_COMPONENT_MODEL -- roll back to mark
     }
@@ -500,17 +509,19 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
     YawPitchRollAngles placementAngles = YawPitchRollAngles::FromDegrees(4,5,6);
 
     ComponentSolution solutions(*m_clientDb);
-    PhysicalElementPtr instance = solutions.CreateSolutionInstanceElement(*targetModel, solutionId, placementOrigin, placementAngles)->ToPhysicalElementP();
-    ASSERT_TRUE( instance.IsValid() );
+    DgnElementPtr instanceDgnElement = solutions.CreateSolutionInstanceElement(*targetModel, solutionId, placementOrigin, placementAngles);
+    ASSERT_TRUE( instanceDgnElement.IsValid() );
+    PhysicalElementPtr instanceElement = instanceDgnElement->ToPhysicalElementP();
+    ASSERT_TRUE( instanceElement.IsValid() );
     
     ECN::IECInstancePtr props;
-    ASSERT_EQ( DgnDbStatus::Success , solutions.CreateSolutionInstanceItem(*instance, props, TEST_JS_NAMESPACE, solutionId) );
+    ASSERT_EQ( DgnDbStatus::Success , solutions.CreateSolutionInstanceItem(*instanceElement, props, solutionId) );
     
-    DgnElementCPtr newEl = instance->Insert();
+    DgnElementCPtr newEl = instanceElement->Insert();
     ASSERT_TRUE( newEl.IsValid() );
     ASSERT_TRUE( newEl->ToPhysicalElement() != nullptr );
 
-    ieid = instance->GetElementId();
+    ieid = instanceElement->GetElementId();
 
     ASSERT_TRUE( newEl->GetElementId() == ieid );
 
@@ -626,6 +637,14 @@ void ComponentModelTest::SimulateClient()
     Client_CheckComponentInstance(w3, 2, wsln3["X"].asDouble(), wsln3["Y"].asDouble(), wsln3["Z"].asDouble());
     Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
 
+    //  new instance of new solution should not affect existing instances of other solutions
+    if (true)
+        {
+        DgnElementId w1_second_time;
+        Client_SolveAndPlaceInstance(w1_second_time, "Instances", TEST_WIDGET_COMPONENT_NAME, wsln1, true);
+        Client_CheckComponentInstance(w1_second_time, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+        }
+
     // Just for a little variety, close the client Db and re-open it
     CloseClientDb();
 
@@ -681,4 +700,120 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
     SimulateDeveloper();
     SimulateClient();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+static void insertBoxElement(DgnElementId& eid, PhysicalModelR physicalTestModel, DgnCategoryId testCategoryId)
+    {
+    BeAssert(testCategoryId.IsValid());
+
+    PhysicalElementPtr testElement = PhysicalElement::Create(physicalTestModel, testCategoryId);
+    testElement->SetLabel("ChangeSetTestElementLabel");
+
+    DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
+    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
+    ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
+    BeAssert(testGeomPtr.IsValid());
+
+    DPoint3d centerOfBlock = DPoint3d::From(0, 0, 0);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(physicalTestModel, testCategoryId, centerOfBlock, YawPitchRollAngles());
+    builder->Append(*testGeomPtr);
+    BentleyStatus status = builder->SetGeomStreamAndPlacement(*testElement);
+    BeAssert(status == SUCCESS);
+
+    eid = physicalTestModel.GetDgnDb().Elements().Insert(*testElement)->GetElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* count to be used by all placement performance tests
++---------------+---------------+---------------+---------------+---------------+------*/
+static const int ninstances = 1000;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComponentModelTest, Performance_PlaceInstances)
+    {
+    // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
+    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component.idgndb");
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceInstances.idgndb");
+    BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
+    m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
+
+    // Create component models (in component db)
+    Developer_CreateCMs();
+
+    OpenClientDb(Db::OpenMode::ReadWrite);
+
+    // Import schema
+    GenerateCMSchema(); // Note: either the component developer or the client could generate the ECSchema.
+    ASSERT_EQ( DgnDbStatus::Success , ComponentModel::ImportSchema(*m_clientDb, m_componentSchemaFileName) );
+    m_clientDb->SaveChanges();
+
+    //  Create the target model in the client.
+    Client_CreateTargetModel("Instances");
+    PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, "Instances");
+
+    //  Import the CM
+    Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
+
+    //  Cache a solution
+    Json::Value wsln1(Json::objectValue);
+    wsln1["X"] = 10;
+    wsln1["Y"] = 11;
+    wsln1["Z"] = 12;
+    DgnElementId w1;
+    ComponentSolution::SolutionId solutionId;
+    Client_SolveAndCapture(solutionId, TEST_WIDGET_COMPONENT_NAME, wsln1, false);
+
+    //  Place instances of this solution
+    StopWatch timer("place components");
+    timer.Start();
+    for (int i=0; i<ninstances; ++i)
+        {
+        DPoint3d placementOrigin = DPoint3d::From(1,2,3);
+        YawPitchRollAngles placementAngles = YawPitchRollAngles::FromDegrees(4,5,6);
+
+        ComponentSolution solutions(*m_clientDb);
+        DgnElementPtr instanceDgnElement = solutions.CreateSolutionInstanceElement(*targetModel, solutionId, placementOrigin, placementAngles);
+    
+        ECN::IECInstancePtr props;
+        ASSERT_EQ( DgnDbStatus::Success , solutions.CreateSolutionInstanceItem(*instanceDgnElement, props, solutionId) );
+    
+        ASSERT_TRUE( instanceDgnElement->Insert().IsValid() );
+        }
+    timer.Stop();
+    NativeLogging::LoggingManager::GetLogger("Performance")->infov("place instances of %d solutions: %lf seconds (%lf instances / second)", ninstances, timer.GetElapsedSeconds(), ninstances/timer.GetElapsedSeconds());
+
+    m_clientDb->SaveChanges();
+    // 1,298,432 ComponentModelTest_Performance_PlaceInstances.idgndb
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ComponentModelTest, Performance_PlaceElements)
+    {
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Performance_PlaceElements.idgndb");
+    OpenClientDb(Db::OpenMode::ReadWrite);
+    Client_CreateTargetModel("Instances");
+    PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, "Instances");
+    DgnCategoryId someCat = m_clientDb->Categories().MakeIterator().begin().GetCategoryId();
+    StopWatch timer("place components");
+    timer.Start();
+    for (int i=0; i<ninstances; ++i)
+        {
+        DgnElementId eid;
+        insertBoxElement(eid, *targetModel, someCat);
+        insertBoxElement(eid, *targetModel, someCat);   // (place Widget component creates an instance of two boxes, so we place two boxes here, to make it comparable)
+        }
+    timer.Stop();
+    NativeLogging::LoggingManager::GetLogger("Performance")->infov("place %d plain physical elements: %lf seconds (%lf instances / second)", ninstances, timer.GetElapsedSeconds(), ninstances/timer.GetElapsedSeconds());
+    
+    m_clientDb->SaveChanges();
+
+    // 1,781,760 ComponentModelTest_Performance_PlaceElements.idgndb
+    }
+
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT

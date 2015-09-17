@@ -42,6 +42,8 @@ static void importDgnSchema(DgnDbR db, bool updateExisting)
     BeAssert(status == SUCCESS);
     }
 
+#define GEOM_IN_PHYSICAL_SPACE_CLAUSE " 1 = (SELECT Model.Space FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Geom INNER JOIN " DGN_TABLE(DGN_CLASSNAME_Element) " Elm ON Elm.Id=new.ElementId INNER JOIN " DGN_TABLE(DGN_CLASSNAME_Model) " Model ON Model.Id=Elm.ModelId) "
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -72,27 +74,35 @@ DbResult DgnDb::CreateDgnDbTables()
 
     // Every DgnDb has a "local" authority for element codes
         {
-        Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name) VALUES (1,'Local')"); // WIP: use Authority API when it exists
+        Json::Value authorityProps(Json::objectValue);
+        authorityProps["uri"] = "";
+        Utf8String authorityJson = Json::FastWriter::ToString(authorityProps);
+
+        Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name,ECClassId,Props) VALUES (1,'Local',?,?)"); // WIP: use Authority API when it exists
+        statement.BindId(1, Domains().GetClassId(dgn_AuthorityHandler::Local::GetHandler()));
+        statement.BindText(2, authorityJson, Statement::MakeCopy::No);
+
         DbResult result = statement.Step();
         BeAssert(BE_SQLITE_DONE == result);
         UNUSED_VARIABLE(result);
         }
 
+    
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom)
                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.ElementId;END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
-               " WHEN new.Placement IS NOT NULL " 
+               " WHEN new.Placement IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
                "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT DGN_placement_aabb(NEW.Placement) as bb);END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
-                " WHEN OLD.Placement IS NOT NULL AND NEW.Placement IS NULL" 
+                " WHEN OLD.Placement IS NOT NULL AND NEW.Placement IS NULL"
                 " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=OLD.ElementId;END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
-               " WHEN new.Placement IS NOT NULL " 
+               " WHEN new.Placement IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
                "BEGIN INSERT INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT DGN_placement_aabb(NEW.Placement) as bb);END");
