@@ -219,10 +219,6 @@ HRFMrSIDCreator::HRFMrSIDCreator()
     {
     //MrSID capabilities instance member initialization
     m_pCapabilities = 0;
-
-    m_pLabel = 0;
-    m_pExtensions = 0;
-    m_pSupportedPixelTypeList = 0;
     }
 
 //-----------------------------------------------------------------------------

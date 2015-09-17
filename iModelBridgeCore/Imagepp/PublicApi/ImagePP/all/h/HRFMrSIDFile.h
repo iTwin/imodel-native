@@ -90,9 +90,7 @@ public:
 
     virtual void                          Save();
 
-    // IRasterFile
     void Close();
-    void Open(LPCWSTR pi_pFileName, unsigned int pi_AsReadOnly);
 
     bool                               HasLookAheadByExtent    (uint32_t                   pi_Page) const;
 
@@ -183,11 +181,6 @@ struct HRFMrSIDCreator : public HRFRasterFileCreator
                                              uint64_t             pi_Offset = 0) const;
 private:
     HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFMrSIDCreator)
-
-    // members
-    LPWSTR            m_pLabel;
-    LPWSTR            m_pExtensions;
-    unsigned int*   m_pSupportedPixelTypeList;
 
     // Disabled methodes
     HRFMrSIDCreator();
