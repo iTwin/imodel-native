@@ -11,22 +11,6 @@
 namespace ECDbBackdoor = BentleyApi::BeSQLite::EC::Tests::Backdoor;
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  07/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-void* ECDbBackdoor::ECDb::GetSqliteDb (BeSQLite::EC::ECDbCR ecdb)
-    {
-    return ecdb.GetSqlDb ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  08/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-BeSQLite::EC::ECSqlStatus ECDbBackdoor::ECDb::ECSqlStatement::BindDateTime (BeSQLite::EC::ECSqlStatement& stmt, int parameterIndex, uint64_t julianDayTicksHns, DateTime::Info const* metadata)
-    {
-    return stmt.GetBinder (parameterIndex).BindDateTime (julianDayTicksHns, metadata);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  07/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbBackdoor::ECObjects::ECValue::SetAllowsPointersIntoInstanceMemory (ECN::ECValueR value, bool allow)

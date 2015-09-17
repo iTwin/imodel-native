@@ -69,7 +69,7 @@ public:
         {
     private:
         mutable ECDbIssue m_issue;
-        virtual void _OnIssueReported(BeSQLite::EC::ECDb::IssueSeverity severity, Utf8CP message) const override;
+        virtual void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override;
 
     public:
         ECDbIssueListener() : BeSQLite::EC::ECDb::IIssueListener() {}
