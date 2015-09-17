@@ -68,12 +68,26 @@
         <SubPart PartName="BentleyDll"/>
         <SubPart PartName="PublishedApi"        PartFile="Bentley"  Repository="Bentley" />
     </Part>
-    <Part Name="UnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke">
+
+    <Part Name="UnitTestsBase" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="BentleyDll"/>
-        <SubPart PartName="PublishedApi"        PartFile="Bentley"  Repository="Bentley" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTestsLinkables"  ProductSubDirectory="Bentley" SourceName="Delivery/UnitTests/Linkables"/>
-            <Files ProductDirectoryName="UnitTestsIgnoreList" ProductSubDirectory="Bentley">Delivery/UnitTests/ignore_list.txt</Files>
+            <Files ProductDirectoryName="UnitTestsIgnoreList" ProductSubDirectory="Bentley"> Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTestsNonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="UnitTestsBase" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables" ProductSubDirectory="Bentley/NonPublished" SourceName="Delivery/UnitTests/Linkables/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTestsPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="UnitTestsBase" />
+        <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables" ProductSubDirectory="Bentley/Published" SourceName="Delivery/UnitTests/Linkables/Published"/>
         </Bindings>
     </Part>
 

@@ -7,23 +7,25 @@
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
-thisDir = $(_MakeFilePath)
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+baseDir = $(_MakeFilePath)
 
 # Compile and Link the unit tests
+BEGTEST_NAME  = $(TestDir)Bentley
+BEGTEST_INPUT = $(baseDir)$(TestDir)/
+BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/Bentley/UnitTests/
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
-BEGTEST_NAME  = NonPublishedBentleyUnitTests
-BEGTEST_INPUT = $(thisDir)/NonPublished/
-%include $(SrcBsiCommon)sharedmki/CompileUnitTests.mki
+%ifdef UsePublishedApi
+    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/Bentley/
+%endif
 
-BEGTEST_NAME  = PublishedBentleyUnitTests
-BEGTEST_INPUT = $(thisDir)/Published/
-BEGTEST_API   = $(BuildContext)SubParts/PublishedApi/Bentley/
-%include $(SrcBsiCommon)sharedmki/CompileUnitTests.mki
+%include $(SrcBsiCommon)sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver 
-$(BuildContext)Delivery/UnitTests/Linkables : ${BEGTEST_OUTPUT}
+$(BuildContext)Delivery/UnitTests/Linkables/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)
-
-$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(thisDir)ignore_list.txt
-    $(LinkFirstDepToFirstTarget)
