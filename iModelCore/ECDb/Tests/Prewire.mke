@@ -11,12 +11,3 @@ thisDir = $(_makeFilePath)
 
 $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
-
-%if defined (CREATE_STATIC_LIBRARIES)
-    ProductRoot = $(OutputRootDir)../Product/
-%else
-    ProductRoot = $(OutputRootDir)Product/
-%endif
-
-$(BuildContext)Delivery/UnitTests/Documents : $(ProductRoot)BeTestDocuments/DgnDb
-    $(LinkFirstDepToFirstTargetAsDirectory)

@@ -93,40 +93,39 @@
     </Part>
 
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
-        <SubProduct ProductName="BeTestDocuments"            PartFile="BeGTest"      Repository="BeGTest" />
+        <SubPart PartName="UnitTests-Documents" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="ECDb"/>
         <SubPart PartName="Zlib"                             PartFile="Zlib"         Repository="Libsrc-Compress" />
         <Bindings>
-            <Files     ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="ECDb"> Delivery/UnitTests/ignore_list.txt</Files>
-            <Directory ProductDirectoryName="UnitTests-Documents-DgnDb" SourceName="Delivery/UnitTests/Documents"/>
+            <Files ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="ECDb"> Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
     <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor -dIsBackDoor">
-        <SubPart    PartName="PrewireForUnitTests" />
+        <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
         </Bindings>
     </Part>
 
     <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-        <SubPart    PartName="PrewireForUnitTests" />
+        <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
     <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
-        <SubPart    PartName="PrewireForUnitTests" />
-        <SubPart    PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
         </Bindings>
     </Part>
 
     <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
-        <SubPart    PartName="BackdoorForUnitTests" />
-        <SubPart    PartName="PublishedApi" />
+        <SubPart PartName="BackdoorForUnitTests" />
+        <SubPart PartName="PublishedApi" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
