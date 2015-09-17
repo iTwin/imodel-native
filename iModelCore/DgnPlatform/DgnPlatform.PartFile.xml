@@ -439,41 +439,6 @@
     </Part>
 
 
-    <!-- ******************* MobileDgn Unit Tests ********************* -->
-
-    <!-- 1. Define a product that contains the tests (this is the "material" out of which the test runners will be built) -->
-    <Product Name="MobileDgnTests-Material">
-        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
-        <Directories DirectoryListName="BeGTest-Material" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="UnitTests-Published"          Repository="Bentley" PartFile="Bentley"/>
-        <SubPart PartName="UnitTests-NonPublished"       Repository="Bentley" PartFile="Bentley"/>
-        <SubPart PartName="UnitTests-StructsTest"        Repository="GeomLibs" PartFile="GeomLibs"/>
-        <SubPart PartName="UnitTests-CurvePrimitiveTest" Repository="GeomLibs" PartFile="GeomLibs"/>
-        <SubPart PartName="UnitTests-bezierTest"         Repository="GeomLibs" PartFile="GeomLibs"/>
-        <SubPart PartName="UnitTests-PolyfaceTest"       Repository="GeomLibs" PartFile="GeomLibs"/>
-        <SubPart PartName="UnitTests-Published"          Repository="BeSQLite" PartFile="BeSQLite"/>
-        <SubPart PartName="UnitTests-NonPublished"       Repository="BeSQLite" PartFile="BeSQLite"/>
-        <SubPart PartName="UnitTests-Published"          Repository="ECDb" PartFile="ECDb"/>
-        <SubPart PartName="UnitTests-NonPublished"       Repository="ECDb" PartFile="ECDb"/>
-        <SubPart PartName="UnitTests-Published"          Repository="DgnPlatform" PartFile="DgnPlatform"/>
-        <SubPart PartName="UnitTests-NonPublished"       Repository="DgnPlatform" PartFile="DgnPlatform"/>
-    </Product>
-
-    <!-- 2. Define a product that is based on test material and wraps it in a gtest runner program -->
-    <Product Name="MobileDgnTests-GtestRunner">
-        <Directories DirectoryListName="Gtest-GtestRunner" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="MobileDgnTests-GtestRunnerExe"/>
-    </Product>
-
-    <Part Name="MobileDgnTests-GtestRunnerExe" BentleyBuildMakeFile="../begtest/buildGtest.mke" BentleyBuildMakeOptions="-dBEGTEST_NAME=MobileDgnTests -dBEGTEST_MATERIAL_PRODUCT_DIR=MobileDgnTests-Material">
-        <SubProduct ProductName="MobileDgnTests-Material"/>
-        <SubPart PartName="GTest-ExeSupport" Repository="BeGTest" PartFile="BeGTest"/>
-        <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/BuildGtest/Assemblies/*</Files>
-            <Directory ProductDirectoryName="Gtest-DgnPlatformAssetsDirectory" SourceName="Delivery/BuildGtest/DgnPlatformAssetsDirectory" />
-        </Bindings>
-    </Part>
-
     <!-- ******************* MobileDgn Performance Tests ********************* -->
 
     <!-- 1. define a product that contains the tests (this is the "material" out of which the test runners will be built) -->
