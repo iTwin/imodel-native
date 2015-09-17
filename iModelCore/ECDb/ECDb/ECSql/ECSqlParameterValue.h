@@ -13,7 +13,6 @@
 #include "IECSqlPrimitiveBinder.h"
 #include "IECSqlPrimitiveValue.h"
 #include "ECSqlTypeInfo.h"
-#include "ECSqlStatusContext.h"
 #include "ECSqlStatementNoopImpls.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE

@@ -487,13 +487,91 @@ bool ECDbMapAnalyser::Class::RequireView () const
     return GetNoneVirtualStorages ().size () > 1 && !m_classMap.GetMapStrategy ().IsNotMapped ();
     }
 
+//=====================================ECDbMapAnalyser::Relationship::EndInfo===========
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+ECDbMapAnalyser::Relationship::EndInfo::EndInfo(Utf8CP accessString, ECDbSqlColumn const& column)
+    :m_accessString(accessString), m_column(&column)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+ECDbMapAnalyser::Relationship::EndInfo::EndInfo(PropertyMapCR map)
+    : m_accessString(map.GetPropertyAccessString())
+    {
+    auto firstColumn = map.GetFirstColumn();
+    BeAssert(firstColumn != nullptr);
+    m_column = firstColumn;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+ECDbMapAnalyser::Relationship::EndInfo::EndInfo(PropertyMapCR map, Storage const& storage, ECDbKnownColumns columnType)
+    :m_accessString(map.GetPropertyAccessString())
+    {
+    auto firstColumn = storage.GetTable().GetFilteredColumnFirst(columnType);
+    BeAssert(firstColumn != nullptr);
+    m_column = firstColumn;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+ECDbMapAnalyser::Relationship::EndInfo::EndInfo(EndInfo const&& rhs)
+    :m_accessString(rhs.m_accessString), m_column(rhs.m_column)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+ECDbMapAnalyser::Relationship::EndInfo::EndInfo()
+    : m_accessString(nullptr), m_column(nullptr)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+ECDbMapAnalyser::Relationship::EndInfo& ECDbMapAnalyser::Relationship::EndInfo::operator = (EndInfo const&& rhs)
+    {
+    if (this != &rhs)
+        {
+        m_accessString = std::move(m_accessString);
+        m_column = std::move(m_column);
+        }
+
+    return *this;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+Utf8CP ECDbMapAnalyser::Relationship::EndInfo::GetAccessString() const 
+    { 
+    BeAssert(m_accessString != nullptr); return m_accessString; 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+ECDbSqlColumn const& ECDbMapAnalyser::Relationship::EndInfo::GetColumn() const
+    {
+    BeAssert(m_column != nullptr); return *m_column;
+    }
+
 //=====================================ECDbMapAnalyser::Relationship::EndPoint===========
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Relationship::EndPoint::EndPoint (RelationshipClassMapCR map, EndType type)
-    :m_ecid (nullptr), m_classId (nullptr), m_type (type)
+ECDbMapAnalyser::Relationship::EndPoint::EndPoint (Relationship const& parent, EndType type)
+    :m_ecid (nullptr), m_classId (nullptr), m_type (type),m_parent(parent)
     {
+    auto const& map = parent.GetRelationshipClassMap();
     auto direction = map.GetRelationshipClass ().GetStrengthDirection ();
     if (direction == ECRelatedInstanceDirection::Forward)
         {
@@ -519,6 +597,46 @@ ECDbMapAnalyser::Relationship::EndPoint::EndPoint (RelationshipClassMapCR map, E
             m_classId = map.GetSourceECClassIdPropMap ();
             }
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+bool ECDbMapAnalyser::Relationship::EndPoint::Contains(Class const& constraintClass) const
+    {
+    return m_classes.find(const_cast<Class*>(&constraintClass)) != m_classes.end();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+ECDbMapAnalyser::Relationship::EndInfo ECDbMapAnalyser::Relationship::EndPoint::GetResolvedInstanceId(Storage const& forStorage) const
+    {
+    if (m_parent.IsLinkTable())
+        return EndInfo(*GetInstanceId());
+
+    if (this == &(const_cast<Relationship&>(m_parent).ForeignEnd()))
+        {
+        return EndInfo(*GetInstanceId());
+        }
+
+    return EndInfo(*GetInstanceId(), forStorage, ECDbKnownColumns::ECInstanceId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         09/2015
+//---------------------------------------------------------------------------------------
+ECDbMapAnalyser::Relationship::EndInfo ECDbMapAnalyser::Relationship::EndPoint::GetResolvedClassId(Storage const& forStorage) const
+    {
+    if (m_parent.IsLinkTable())
+        return EndInfo(*GetClassId());
+
+    if (this == &(const_cast<Relationship&>(m_parent).ForeignEnd()))
+        {
+        return EndInfo(*GetClassId());
+        }
+
+    return EndInfo(*GetInstanceId(), forStorage, ECDbKnownColumns::ECClassId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -558,7 +676,7 @@ ECDbMapAnalyser::Relationship::EndType ECDbMapAnalyser::Relationship::EndPoint::
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
 ECDbMapAnalyser::Relationship::Relationship (RelationshipClassMapCR classMap, Storage& storage, Class* parent)
-    :Class (classMap, storage, parent), m_from (classMap, EndType::From), m_to (classMap, EndType::To), m_onDeleteAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_onUpdateAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified)
+    :Class (classMap, storage, parent), m_from (*this, EndType::From), m_to (*this, EndType::To), m_onDeleteAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_onUpdateAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified)
     {
     ECDbForeignKeyRelationshipMap foreignKeyRelMap;
     ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap (foreignKeyRelMap, GetRelationshipClassMap ().GetRelationshipClass ());
@@ -1695,7 +1813,7 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
 
                 builder.GetOnBuilder ().Append (toStorage->GetTable ().GetName ().c_str ());
                 auto& body = builder.GetBodyBuilder ();
-                body.Append ("--1").Append (relationship->GetRelationshipClassMap ().GetRelationshipClass ().GetFullName ()).AppendEOL ();
+                body.Append ("--10").Append (relationship->GetRelationshipClassMap ().GetRelationshipClass ().GetFullName ()).AppendEOL ();
                 for (auto fromStorage : relationship->From ().GetStorages ())
                     {
                     body.Append ("UPDATE ")
@@ -1712,7 +1830,7 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
                         }
 
                     body.Append (" WHERE OLD.")
-                        .AppendEscaped (relationship->From ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ())
+                        .AppendEscaped (relationship->To ().GetResolvedInstanceId (*toStorage).GetColumn().GetName ().c_str ())
                         .Append (" = ")
                         .AppendEscaped (relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ());
                     body.Append (";").AppendEOL ();
@@ -1732,7 +1850,7 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
 
                 builder.GetOnBuilder ().Append (foreignEnd->GetTable ().GetName ().c_str ());
                 auto& body = builder.GetBodyBuilder ();
-                body.Append ("--1").Append (relationship->GetRelationshipClassMap ().GetRelationshipClass ().GetFullName ()).AppendEOL ();
+                body.Append ("--11").Append (relationship->GetRelationshipClassMap ().GetRelationshipClass ().GetFullName ()).AppendEOL ();
                 for (auto primaryEnd : relationship->PrimaryEnd ().GetStorages ())
                     {
                     body.Append ("UPDATE ")

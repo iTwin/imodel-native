@@ -2464,7 +2464,12 @@ ECSqlStatus ECSqlParser::parse_select_statement (std::unique_ptr<SelectStatement
         if (stat != ECSqlStatus::Success)
             return stat;
 
-        SelectStatementExp::Operator op = SelectStatementExp::Operator::None;
+        if (!single_select->IsCoreSelect())
+            {
+            GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "SELECT statement in UNION must not contain ORDER BY or LIMIT clause. Instead put the ORDER BY or LIMIT clause after the UNION statement. %s", single_select->ToECSql().c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
+
         stat = parse_compound_select_op(op, parseNode->getChild(1));
         if (stat != ECSqlStatus::Success)
             return stat;
