@@ -39,5 +39,5 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 %endif
 
 # Deliver 
-$(BuildContext)Delivery/UnitTests/Linkables/$(TestDir) : ${o}
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)
