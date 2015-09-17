@@ -266,7 +266,8 @@ TEST_F (ECRelationshipTests, InheritedEnablerIterator)
         }
 
     for (int i = 0; i < sizeof(props) / sizeof(props[0]); i++)
-        EXPECT_STREQ (props[i], NULL);
+        EXPECT_TRUE(nullptr == props[i]);
+        // EXPECT_STREQ (props[i], NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
