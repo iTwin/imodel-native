@@ -941,11 +941,6 @@ SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp>
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool SelectStatementExp::IsTopLevel() const { return GetChildrenCount() == 1; }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
 SelectStatementExp::SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, Operator op, bool isAll, std::unique_ptr<SelectStatementExp> rhs)
     :m_isAll(isAll), m_operator(op)
     {
@@ -1000,7 +995,7 @@ SelectStatementExp::Operator SelectStatementExp::GetOP() const { return m_operat
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-SingleSelectStatementExp const& SelectStatementExp::GetLast() const
+SelectStatementExp const& SelectStatementExp::GetLast() const
     {
     auto current = this;
     while (current->GetNext() != nullptr)
@@ -1008,13 +1003,13 @@ SingleSelectStatementExp const& SelectStatementExp::GetLast() const
         current = GetNext();
         }
 
-    return current->GetCurrent();
+    return *current;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-SingleSelectStatementExp const& SelectStatementExp::GetFirst() const
+SelectStatementExp const& SelectStatementExp::GetFirst() const
     {
     auto current = this;
     while (current->GetPrevious() != nullptr)
@@ -1022,7 +1017,7 @@ SingleSelectStatementExp const& SelectStatementExp::GetFirst() const
         current = GetPrevious();
         }
 
-    return current->GetCurrent();
+    return *current;
     }
 
 //-----------------------------------------------------------------------------------------

@@ -330,7 +330,11 @@ public :
 
         return GetChild<LimitOffsetExp> (static_cast<size_t> (m_limitOffsetClauseIndex));
         }
-
+    
+    bool IsCoreSelect() const
+        {
+        return GetLimitOffset() == nullptr && GetOptOrderBy() == nullptr;
+        }
     SqlSetQuantifier GetSelectionType() const {return m_selectionType;}
     };
 
@@ -380,15 +384,15 @@ struct SelectStatementExp : QueryExp
 
     public:
         SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs);
-        bool IsTopLevel() const;
         SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, Operator op, bool isAll, std::unique_ptr<SelectStatementExp> rhs);
+        virtual ~SelectStatementExp(){}
         SingleSelectStatementExp const& GetCurrent() const;
         SelectStatementExp const* GetNext() const;
         SelectStatementExp const* GetPrevious() const;
+        SelectStatementExp const& GetLast() const;
+        SelectStatementExp const& GetFirst() const;
         bool IsAll()const;
         Operator GetOP() const;
-        SingleSelectStatementExp const& GetLast() const;
-        SingleSelectStatementExp const& GetFirst() const;
         bool IsCompound() const;
         static Utf8CP OPToString(Operator op);
     };
