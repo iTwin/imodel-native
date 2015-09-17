@@ -70,7 +70,7 @@ struct FromExp : Exp
     {
 DEFINE_EXPR_TYPE(FromClause) 
 private:
-    void FindRangeClassRefs(RangeClassRefList&, ClassRefExp const*) const;
+    void FindRangeClassRefs(RangeClassRefList&, ClassRefExp const&) const;
 
     virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
@@ -80,7 +80,7 @@ private:
 public:
     FromExp () : Exp () {}
 
-    ECSqlStatus TryAddClassRef(ECSqlParseContext&, ClassRefExp*);
+    ECSqlStatus TryAddClassRef(ECSqlParseContext&, std::unique_ptr<ClassRefExp>);
 
     std::unique_ptr<RangeClassRefList> FindRangeClassRefExpressions () const;
 

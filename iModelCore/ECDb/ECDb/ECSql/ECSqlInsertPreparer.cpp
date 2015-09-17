@@ -417,7 +417,7 @@ InsertStatementExp const& exp,
 IClassMap const& classMap
 )
     {
-    auto status = ECSqlExpPreparer::PrepareClassRefExp(insertSqlSnippets.m_classNameNativeSqlSnippet, ctx, exp.GetClassNameExp());
+    auto status = ECSqlExpPreparer::PrepareClassRefExp(insertSqlSnippets.m_classNameNativeSqlSnippet, ctx, *exp.GetClassNameExp());
     if (status != ECSqlStatus::Success)
         return status;
 

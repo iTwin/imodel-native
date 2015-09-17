@@ -48,7 +48,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     
     // UPDATE clause
     nativeSqlBuilder.Append ("UPDATE ");
-    auto status = ECSqlExpPreparer::PrepareClassRefExp (nativeSqlBuilder, ctx, classNameExp);
+    auto status = ECSqlExpPreparer::PrepareClassRefExp (nativeSqlBuilder, ctx, *classNameExp);
     if (status != ECSqlStatus::Success)
         return status;
 

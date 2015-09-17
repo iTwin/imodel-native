@@ -49,8 +49,8 @@ public:
     virtual ~JoinExp () {}
 
     ECSqlJoinType GetJoinType() const {return m_joinType;}
-    ClassRefExp const* GetFromClassRef() const { return GetChild<ClassRefExp> (m_nFromClassRefIndex); }
-    ClassRefExp const* GetToClassRef() const { return GetChild<ClassRefExp> (m_nToClassRefIndex);}
+    ClassRefExp const& GetFromClassRef() const { return *GetChild<ClassRefExp> (m_nFromClassRefIndex); }
+    ClassRefExp const& GetToClassRef() const { return *GetChild<ClassRefExp> (m_nToClassRefIndex);}
 
     FromExp const* FindFromExpression() const;
     };
@@ -75,7 +75,7 @@ struct CrossJoinExp: JoinExp
     {
 DEFINE_EXPR_TYPE(CrossJoin) 
 private:
-    virtual Utf8String _ToECSql() const override { return GetFromClassRef()->ToECSql() + " CROSS JOIN " + GetToClassRef()->ToECSql(); }
+    virtual Utf8String _ToECSql() const override { return GetFromClassRef().ToECSql() + " CROSS JOIN " + GetToClassRef().ToECSql(); }
     virtual Utf8String _ToString() const override { return "CrossJoin"; }
 public:
     CrossJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to)
@@ -185,7 +185,7 @@ public:
         m_relationshipClassIndex = AddChild (move (relationship));
         }
 
-    ClassNameExp const* GetRelationshipClass() const { return GetChild<ClassNameExp> (m_relationshipClassIndex);}
+    ClassNameExp const& GetRelationshipClass() const { return *GetChild<ClassNameExp> (m_relationshipClassIndex);}
 
     ResolvedEndPoint const&  GetResolvedFromEndPoint() const { return m_resolvedFrom;}
     ResolvedEndPoint const&  GetResolvedToEndPoint() const { return m_resolvedTo;}

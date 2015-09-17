@@ -1085,7 +1085,7 @@ ECSqlStatus ECSqlParser::parse_from_clause (unique_ptr<FromExp>& exp, OSQLParseN
         if (stat != ECSqlStatus::Success)
             return stat;
 
-        stat = from_clause->TryAddClassRef(*m_context, classRefExp.get());
+        stat = from_clause->TryAddClassRef(*m_context, move(classRefExp));
         if (stat != ECSqlStatus::Success)
             return stat;
         }
@@ -1575,10 +1575,7 @@ ECSqlStatus ECSqlParser::parse_opt_where_clause (unique_ptr<WhereExp>& exp, OSQL
     exp = nullptr;
 
     if (SQL_ISRULE(parseNode, opt_where_clause))
-        {
-        BeAssert(false && "Need to check whether this code path returns the right result");
-        return ECSqlStatus::Success;
-        }
+        return ECSqlStatus::Success; //this rule is hit if no where clause was given. So just return in that case
 
     if (!SQL_ISRULE(parseNode, where_clause))
         {

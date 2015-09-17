@@ -177,29 +177,29 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs) const
     {
     for(auto classRef : GetChildren ())
-        FindRangeClassRefs (classRefs, static_cast<ClassRefExp const*> (classRef));
+        FindRangeClassRefs (classRefs, *static_cast<ClassRefExp const*> (classRef));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const* classRef) const
+void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const& classRef) const
     {
-    switch(classRef->GetType())
+    switch(classRef.GetType())
         {
         case Type::ClassName:
         case Type::SubqueryRef:
-            classRefs.push_back(static_cast<RangeClassRefExp const*>(classRef)); break;
+            classRefs.push_back(static_cast<RangeClassRefExp const*>(&classRef)); break;
         case Type::QualifiedJoin:
         case Type::NaturalJoin:
         case Type::CrossJoin:
         case Type::RelationshipJoin:
             {
-            auto join = static_cast<JoinExp const*>(classRef);
-            FindRangeClassRefs(classRefs, join->GetFromClassRef());
-            FindRangeClassRefs(classRefs, join->GetToClassRef());
-            if (classRef->GetType() == Type::RelationshipJoin)
-                FindRangeClassRefs(classRefs, static_cast<RelationshipJoinExp const*>(join)->GetRelationshipClass());
+            JoinExp const& join = static_cast<JoinExp const&>(classRef);
+            FindRangeClassRefs(classRefs, join.GetFromClassRef());
+            FindRangeClassRefs(classRefs, join.GetToClassRef());
+            if (classRef.GetType() == Type::RelationshipJoin)
+                FindRangeClassRefs(classRefs, static_cast<RelationshipJoinExp const&>(join).GetRelationshipClass());
             break;
             }
         default:
@@ -210,9 +210,9 @@ void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, ClassRefExp* classRef)
+ECSqlStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<ClassRefExp> classRefExp)
     {
-    if (classRef == nullptr)
+    if (classRefExp == nullptr)
         {
         BeAssert (false);
         return ECSqlStatus::ProgrammerError;
@@ -223,17 +223,21 @@ ECSqlStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, ClassRefExp* classRe
 
     RangeClassRefList newRangeClassRefs;
 
-    FindRangeClassRefs (newRangeClassRefs, classRef);
+    FindRangeClassRefs (newRangeClassRefs, *classRefExp);
     for (auto newRangeCRef : newRangeClassRefs)
+        {
         for (auto existingRangeCRef : existingRangeClassRefs)
+            {
             if (existingRangeCRef->GetId().Equals(newRangeCRef->GetId()))
                 {
                 //e.g. SELECT * FROM FOO a, GOO a
-                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef->GetId().c_str ());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef->GetId().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
+            }
+        }
 
-    AddChild (std::unique_ptr<ClassRefExp>(classRef));
+    AddChild (move(classRefExp));
     return ECSqlStatus::Success;
     }
 

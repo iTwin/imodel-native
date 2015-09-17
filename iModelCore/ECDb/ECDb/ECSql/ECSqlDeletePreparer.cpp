@@ -95,7 +95,7 @@ DeleteStatementExp const& exp,
 ClassNameExp const& classNameExp
 )
     {
-    auto status = ECSqlExpPreparer::PrepareClassRefExp (deleteSqlSnippets.m_classNameNativeSqlSnippet, ctx, &classNameExp);
+    auto status = ECSqlExpPreparer::PrepareClassRefExp (deleteSqlSnippets.m_classNameNativeSqlSnippet, ctx, classNameExp);
     if (status != ECSqlStatus::Success)
         return status;
 

@@ -405,16 +405,16 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp (NativeSqlBuilder::List& nativeSqlS
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassNameExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassNameExp const& exp)
     {
     const auto currentScopeECSqlType = ctx.GetCurrentScope().GetECSqlType();
-    auto const& classMap = exp->GetInfo().GetMap();
+    auto const& classMap = exp.GetInfo().GetMap();
     if (ctx.IsPrimaryStatement())
         {
-        auto policy = ECDbPolicyManager::GetClassPolicy(classMap, IsValidInECSqlPolicyAssertion::Get(currentScopeECSqlType, exp->IsPolymorphic()));
+        auto policy = ECDbPolicyManager::GetClassPolicy(classMap, IsValidInECSqlPolicyAssertion::Get(currentScopeECSqlType, exp.IsPolymorphic()));
         if (!policy.IsSupported())
             {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass '%s': %s", exp->GetId().c_str(), policy.GetNotSupportedMessage());
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass '%s': %s", exp.GetId().c_str(), policy.GetNotSupportedMessage());
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -422,13 +422,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     if (currentScopeECSqlType == ECSqlType::Select)
         {
         NativeSqlBuilder classViewSql;
-        if (classMap.GetDbView ().Generate (classViewSql, exp->IsPolymorphic (), ctx) != SUCCESS)
+        if (classMap.GetDbView ().Generate (classViewSql, exp.IsPolymorphic (), ctx) != SUCCESS)
             {
             BeAssert (false && "Class view generation failed during preparation of class name expression.");
             return ECSqlStatus::ProgrammerError;
             }
 
-        classViewSql.AppendSpace ().AppendEscaped (exp->GetId ().c_str ());
+        classViewSql.AppendSpace ().AppendEscaped (exp.GetId ().c_str ());
         nativeSqlSnippets.push_back (move (classViewSql));
 
         return ECSqlStatus::Success;
@@ -438,13 +438,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     if (currentScopeECSqlType == ECSqlType::Insert)
         {
         //don't compute storage description for INSERT as it is slow, and not needed for INSERT (which is always non-polymorphic)
-        BeAssert(!exp->IsPolymorphic());
+        BeAssert(!exp.IsPolymorphic());
         table = &classMap.GetTable();
         }
     else
         {
         std::vector<size_t> nonVirtualPartitionIndices = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitionIndices();
-        if (!exp->IsPolymorphic() || nonVirtualPartitionIndices.empty())
+        if (!exp.IsPolymorphic() || nonVirtualPartitionIndices.empty())
             {
             table = &classMap.GetTable ();
             }
@@ -496,7 +496,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp (NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, ClassRefExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp (NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, ClassRefExp const& exp)
     {
     NativeSqlBuilder::List singleItemSnippetList;
     auto stat = PrepareClassRefExp (singleItemSnippetList, ctx, exp);
@@ -517,22 +517,22 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp (NativeSqlBuilder& nativeSqlSni
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassRefExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassRefExp const& exp)
     {
-    switch(exp->GetType ())
+    switch(exp.GetType ())
         {
         case Exp::Type::ClassName:
-            return PrepareClassNameExp (nativeSqlSnippets, ctx, static_cast<ClassNameExp const*>(exp));
+            return PrepareClassNameExp (nativeSqlSnippets, ctx, static_cast<ClassNameExp const&>(exp));
         case Exp::Type::SubqueryRef:
-            return PrepareSubqueryRefExp (ctx, static_cast<SubqueryRefExp const*>(exp));
+            return PrepareSubqueryRefExp (ctx, static_cast<SubqueryRefExp const*>(&exp));
         case Exp::Type::CrossJoin:
-            return PrepareCrossJoinExp (ctx, static_cast<CrossJoinExp const*>(exp));
+            return PrepareCrossJoinExp (ctx, static_cast<CrossJoinExp const&>(exp));
         case Exp::Type::NaturalJoin:
-            return PrepareNaturalJoinExp (ctx, static_cast<NaturalJoinExp const*>(exp));
+            return PrepareNaturalJoinExp (ctx, static_cast<NaturalJoinExp const&>(exp));
         case Exp::Type::QualifiedJoin:
-            return PrepareQualifiedJoinExp (ctx, static_cast<QualifiedJoinExp const*>(exp));
+            return PrepareQualifiedJoinExp (ctx, static_cast<QualifiedJoinExp const&>(exp));
         case Exp::Type::RelationshipJoin:
-            return PrepareRelationshipJoinExp (ctx, static_cast<RelationshipJoinExp const*>(exp));
+            return PrepareRelationshipJoinExp (ctx, static_cast<RelationshipJoinExp const&>(exp));
         }
 
     BeAssert (false && "Unhandled ClassRef expression case");
@@ -657,7 +657,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullConstantValueExp (NativeSqlBuilder::Lis
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp (ECSqlPrepareContext& ctx, CrossJoinExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp (ECSqlPrepareContext& ctx, CrossJoinExp const& exp)
     {
     ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cross join expression not yet supported.");
     return ECSqlStatus::Success;
@@ -741,7 +741,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFromExp (ECSqlPrepareContext& ctx, FromExp 
         if (!isFirstItem)
             sqlGenerator.AppendComma ();
 
-        auto status = PrepareClassRefExp (sqlGenerator, ctx, static_cast<ClassRefExp const*> (classRefExp));
+        auto status = PrepareClassRefExp (sqlGenerator, ctx, *static_cast<ClassRefExp const*> (classRefExp));
         if (status != ECSqlStatus::Success)
             return status;
 
@@ -914,7 +914,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLimitOffsetExp (ECSqlPrepareContext& ctx, L
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareNaturalJoinExp (ECSqlPrepareContext& ctx, NaturalJoinExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareNaturalJoinExp (ECSqlPrepareContext& ctx, NaturalJoinExp const& exp)
     {
     ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Natural join expression not yet supported.");
     return ECSqlStatus::InvalidECSql;
@@ -1084,10 +1084,10 @@ ECSqlStatus ECSqlExpPreparer::PreparePropertyNameListExp(NativeSqlBuilder::List&
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp (ECSqlPrepareContext& ctx, QualifiedJoinExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp (ECSqlPrepareContext& ctx, QualifiedJoinExp const& exp)
     {
     auto& sqlBuilder = ctx.GetSqlBuilderR();
-    auto r = PrepareClassRefExp (sqlBuilder, ctx, exp->GetFromClassRef ());
+    auto r = PrepareClassRefExp (sqlBuilder, ctx, exp.GetFromClassRef ());
     if (r != ECSqlStatus::Success)
         return r;
 
@@ -1095,7 +1095,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp (ECSqlPrepareContext& ctx,
     //https://www.sqlite.org/omitted.html
     //RIGHT and FULL OUTER JOIN	 	 LEFT OUTER JOIN is implemented, but not RIGHT OUTER JOIN or FULL OUTER JOIN.
     //
-    switch(exp->GetJoinType())
+    switch(exp.GetJoinType())
         {
         case ECSqlJoinType::InnerJoin:
             {
@@ -1122,13 +1122,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp (ECSqlPrepareContext& ctx,
 
         };
 
-    r = PrepareClassRefExp (sqlBuilder, ctx, exp->GetToClassRef ());
+    r = PrepareClassRefExp (sqlBuilder, ctx, exp.GetToClassRef ());
     if (r != ECSqlStatus::Success)
         return r;
 
-    if (exp->GetJoinSpec()->GetType() ==Exp::Type::JoinCondition)
+    if (exp.GetJoinSpec()->GetType() ==Exp::Type::JoinCondition)
         {
-        auto joinCondition = static_cast<JoinConditionExp const*>(exp->GetJoinSpec());
+        auto joinCondition = static_cast<JoinConditionExp const*>(exp.GetJoinSpec());
         sqlBuilder.Append(" ON ");
 
         NativeSqlBuilder::List sqlSnippets;
@@ -1146,7 +1146,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp (ECSqlPrepareContext& ctx,
             isFirstSnippet = false;
             }
         }
-    else if (exp->GetJoinSpec()->GetType() ==Exp::Type::NamedPropertiesJoin)
+    else if (exp.GetJoinSpec()->GetType() ==Exp::Type::NamedPropertiesJoin)
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "JOIN <class/subquery> USING (property,...) is not supported yet.");
         return ECSqlStatus::InvalidECSql;
@@ -1171,7 +1171,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQueryExp (NativeSqlBuilder::List& nativeSql
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& ctx, RelationshipJoinExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& ctx, RelationshipJoinExp const& exp)
     {
     // (from) INNER JOIN (to) ON (from.ECInstanceId = to.ECInstanceId)
     // (from) INNER JOIN (view) ON view.SourceECInstanceId = from.ECInstanceId INNER JOIN to ON view.TargetECInstanceId=to.ECInstanceId
@@ -1182,9 +1182,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     const auto ecsqlType = ctx.GetCurrentScope ().GetECSqlType ();
 
     ///Resolve direction of the relationship
-    auto& fromEP = exp->GetResolvedFromEndPoint();
-    auto& toEP = exp->GetResolvedToEndPoint();
-    auto direction = exp->GetDirection();
+    auto& fromEP = exp.GetResolvedFromEndPoint();
+    auto& toEP = exp.GetResolvedToEndPoint();
+    auto direction = exp.GetDirection();
 
     enum class TriState
         {
@@ -1217,7 +1217,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
                 {
                 if (direction != JoinDirection::Forward)
                     {
-                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid join direction REVERSE in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp->ToString().c_str());
+                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid join direction REVERSE in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }
                 }       
@@ -1230,7 +1230,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
                 {
                 if (direction != JoinDirection::Reverse)
                     {
-                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid join direction FORWARD in %s. Either specify REVERSE or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp->ToString().c_str());
+                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid join direction FORWARD in %s. Either specify REVERSE or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }
                 }
@@ -1254,11 +1254,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
         toRelatedKey = ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME;
         }
 
-    auto relationshipClassNameExp = exp->GetRelationshipClass();
+    auto const& relationshipClassNameExp = exp.GetRelationshipClass();
     auto ecInstanceIdKey = ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME;
 
     //Render previous sql part as is
-    r = PrepareClassRefExp (sql, ctx, exp->GetFromClassRef ());
+    r = PrepareClassRefExp (sql, ctx, exp.GetFromClassRef ());
     if (r != ECSqlStatus::Success)
         return r;
 
@@ -1272,7 +1272,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     //Generate view for relationship
     NativeSqlBuilder relationshipView;
 
-    if (relationshipClassNameExp->GetInfo ().GetMap ().GetDbView ().Generate (relationshipView, DEFAULT_POLYMORPHIC_QUERY, ctx) != SUCCESS)
+    if (relationshipClassNameExp.GetInfo ().GetMap ().GetDbView ().Generate (relationshipView, DEFAULT_POLYMORPHIC_QUERY, ctx) != SUCCESS)
         {
         BeAssert (false && "Generating class view during preparation of relationship class name expression failed.");
         return ECSqlStatus::ProgrammerError;
@@ -1280,7 +1280,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
 
     sql.Append(relationshipView);   
     sql.AppendSpace ();
-    sql.AppendEscaped (relationshipClassNameExp->GetId().c_str ());
+    sql.AppendEscaped (relationshipClassNameExp.GetId().c_str ());
 
     sql.Append (" ON ");
     auto fromECInstanceIdPropMap = fromEP.GetClassNameRef ()->GetInfo ().GetMap ().GetPropertyMap (ecInstanceIdKey);
@@ -1296,9 +1296,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
 
     sql.Append (" = ");
 
-    auto fromRelatedIdPropMap = relationshipClassNameExp->GetInfo ().GetMap ().GetPropertyMap (fromRelatedKey);
+    auto fromRelatedIdPropMap = relationshipClassNameExp.GetInfo ().GetMap ().GetPropertyMap (fromRelatedKey);
     PRECONDITION (fromRelatedIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
-    auto fromRelatedIdNativeSqlSnippets = fromRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType, false);
+    auto fromRelatedIdNativeSqlSnippets = fromRelatedIdPropMap->ToNativeSql (relationshipClassNameExp.GetId ().c_str (), ecsqlType, false);
     if (fromRelatedIdNativeSqlSnippets.size() > 1)
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
@@ -1309,7 +1309,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
 
     //RelationView To ToECClass
     sql.Append(" INNER JOIN ");
-    r = PrepareClassRefExp (sql, ctx, exp->GetToClassRef ());
+    r = PrepareClassRefExp (sql, ctx, exp.GetToClassRef ());
     if (r != ECSqlStatus::Success)
         return r;
 
@@ -1326,9 +1326,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     sql.Append (toECInstanceIdSqlSnippets);
 
     sql.Append(" = ");
-    auto toRelatedIdPropMap = relationshipClassNameExp->GetInfo ().GetMap ().GetPropertyMap (toRelatedKey);
+    auto toRelatedIdPropMap = relationshipClassNameExp.GetInfo ().GetMap ().GetPropertyMap (toRelatedKey);
     PRECONDITION (toRelatedIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
-    auto toRelatedIdSqlSnippets = toRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType, false);
+    auto toRelatedIdSqlSnippets = toRelatedIdPropMap->ToNativeSql (relationshipClassNameExp.GetId ().c_str (), ecsqlType, false);
     if (toRelatedIdSqlSnippets.size () > 1)
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");

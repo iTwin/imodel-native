@@ -51,7 +51,7 @@ FromExp const* JoinExp::FindFromExpression() const
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8String NaturalJoinExp::_ToECSql() const 
     {
-    return GetFromClassRef()->ToECSql() + " NATURAL " + ExpHelper::ToString(m_appliedJoinType)+ " " + GetToClassRef()->ToECSql();
+    return GetFromClassRef().ToECSql() + " NATURAL " + ExpHelper::ToString(m_appliedJoinType)+ " " + GetToClassRef().ToECSql();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ QualifiedJoinExp::QualifiedJoinExp (std::unique_ptr<ClassRefExp> from, std::uniq
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8String QualifiedJoinExp::_ToECSql() const 
     {
-    return GetFromClassRef()->ToECSql() + " " + ExpHelper::ToString(GetJoinType()) + " " + GetToClassRef()->ToECSql() + " "+ GetJoinSpec ()->ToECSql();
+    return GetFromClassRef().ToECSql() + " " + ExpHelper::ToString(GetJoinType()) + " " + GetToClassRef().ToECSql() + " "+ GetJoinSpec ()->ToECSql();
     }
 
 //*************************** RelationshipJoinExp ******************************************
@@ -110,13 +110,11 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
     fromExpression->FindRangeClassRefs(fromClassRefs);
     PRECONDITION(!fromClassRefs.empty(), ECSqlStatus::ProgrammerError);
 
-    PRECONDITION(GetRelationshipClass() != nullptr, ECSqlStatus::ProgrammerError);
-
-    auto relationshipClass = GetRelationshipClass()->GetInfo().GetMap().GetClass().GetRelationshipClassCP();
+    auto relationshipClass = GetRelationshipClass().GetInfo().GetMap().GetClass().GetRelationshipClassCP();
     PRECONDITION(relationshipClass != nullptr, ECSqlStatus::ProgrammerError);
 
     ResolvedEndPoint fromEP, toEP;
-    toEP.SetClassRef(static_cast<ClassNameExp const*> (GetToClassRef()));
+    toEP.SetClassRef(static_cast<ClassNameExp const*> (&GetToClassRef()));
     // Get flat list of relationship source and target classes. 
     // It also consider IsPolymorphic attribute on source and target constraint in ECSchema
     ECSqlParseContext::ClassListById sourceList, targetList;
@@ -170,7 +168,7 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
         if (classRef->GetType() != Exp::Type::ClassName)
             continue;
             
-        if (classRef == GetToClassRef() || classRef == GetRelationshipClass())
+        if (classRef == &GetToClassRef() || classRef == &GetRelationshipClass())
             continue; 
 
         auto fromClassNameExpression = static_cast<ClassNameExp const*> (classRef);
@@ -284,7 +282,7 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8String RelationshipJoinExp::_ToECSql() const 
     {
-    auto tmp = GetFromClassRef()->ToECSql() + " JOIN " + GetToClassRef()->ToECSql() + " USING " + GetRelationshipClass ()->ToECSql();
+    auto tmp = GetFromClassRef().ToECSql() + " JOIN " + GetToClassRef().ToECSql() + " USING " + GetRelationshipClass ().ToECSql();
     if (m_direction != JoinDirection::Implied)
         tmp += Utf8String(" ") + ExpHelper::ToString(m_direction);
 
