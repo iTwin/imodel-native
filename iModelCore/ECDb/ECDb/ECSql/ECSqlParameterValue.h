@@ -42,7 +42,7 @@ struct ECSqlParameterValue : public IECSqlBinder, public IECSqlValue
     {
 private:
     ECDbCR m_ecdb;
-    ECSqlTypeInfo const& m_typeInfo;
+    ECSqlTypeInfo m_typeInfo;
 
     virtual IECSqlPrimitiveBinder& _BindPrimitive() override;
     virtual IECSqlStructBinder& _BindStruct() override;
