@@ -383,7 +383,7 @@ ECSqlConsoleSession& ECSqlConsole::GetSession()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Krischan.Eberle     09/2015
 //---------------------------------------------------------------------------------------
-void ECSqlConsoleSession::ECDbIssueListener::_OnIssueReported(ECDb::IssueSeverity severity, Utf8CP message) const
+void ECSqlConsoleSession::ECDbIssueListener::_OnIssueReported(ECDbIssueSeverity severity, Utf8CP message) const
     {
     m_severity = severity;
     m_issue = message;

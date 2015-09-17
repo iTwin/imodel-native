@@ -30,17 +30,17 @@ public:
     struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
         {
     private:
-        mutable BeSQLite::EC::ECDb::IssueSeverity m_severity;
+        mutable BeSQLite::EC::ECDbIssueSeverity m_severity;
         mutable Utf8String m_issue;
         
-        virtual void _OnIssueReported(BeSQLite::EC::ECDb::IssueSeverity severity, Utf8CP message) const override;
+        virtual void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override;
 
     public:
         ECDbIssueListener() : BeSQLite::EC::ECDb::IIssueListener() {}
 
         void Reset() const { m_issue.clear(); }
         bool HasIssue() const { return !m_issue.empty(); }
-        BeSQLite::EC::ECDb::IssueSeverity GetSeverity() const { return m_severity; }
+        BeSQLite::EC::ECDbIssueSeverity GetSeverity() const { return m_severity; }
         Utf8CP GetIssue() const { return m_issue.c_str(); }
         };
 

@@ -69,7 +69,7 @@ int startColumnIndex
             if (propNameExp == nullptr)
                 {
                 BeAssert(false && "Operations with struct array properties not supported in the select clause. This should have been caught by the parser already.");
-                ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Operations with struct array properties not supported in the select clause.");
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Operations with struct array properties not supported in the select clause.");
                 return ECSqlStatus::InvalidECSql;
                 }
 

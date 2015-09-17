@@ -400,7 +400,7 @@ ECSqlColumnInfoCR PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValu
 //---------------------------------------------------------------------------------------
 IECSqlStructValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetStruct () const
     {
-    m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "GetStruct cannot be called for array element. Call GetPrimitive instead.");
+    m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "GetStruct cannot be called for array element. Call GetPrimitive instead.");
     return NoopECSqlValue::GetSingleton ().GetStruct ();
     }
 
@@ -409,7 +409,7 @@ IECSqlStructValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElem
 //---------------------------------------------------------------------------------------
 IECSqlArrayValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetArray () const
     {
-    m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "GetArray cannot be called for array element. Call GetPrimitive instead.");
+    m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "GetArray cannot be called for array element. Call GetPrimitive instead.");
     return NoopECSqlValue::GetSingleton ().GetArray ();
     }
 
@@ -428,7 +428,7 @@ bool PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::CanRead (P
     {
     if (requestedType != m_columnInfo.GetDataType ().GetPrimitiveType ())
         {
-        m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "For primitive array elements only the GetXXX method which directly matches the array element type can be called.");
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For primitive array elements only the GetXXX method which directly matches the array element type can be called.");
         return false;
         }
 

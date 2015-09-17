@@ -205,7 +205,7 @@ public:
 
     void AddArgument (std::unique_ptr<ValueExp> argument);
 
-    static ECN::PrimitiveType DetermineReturnType(ECDb::Impl&, Utf8CP functionName, int argCount);
+    static ECN::PrimitiveType DetermineReturnType(ECDbCR, Utf8CP functionName, int argCount);
     };
 
 

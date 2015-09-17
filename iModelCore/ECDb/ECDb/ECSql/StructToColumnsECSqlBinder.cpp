@@ -113,7 +113,7 @@ ECSqlStatus StructToColumnsECSqlBinder::_BindNull ()
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveBinder& StructToColumnsECSqlBinder::_BindPrimitive ()
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind primitive value to ECStruct parameter.");
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to ECStruct parameter.");
     return GetNoopBinder (ECSqlStatus::UserError).BindPrimitive ();
     }
 
@@ -130,7 +130,7 @@ IECSqlStructBinder& StructToColumnsECSqlBinder::_BindStruct ()
 //---------------------------------------------------------------------------------------
 IECSqlArrayBinder& StructToColumnsECSqlBinder::_BindArray (uint32_t initialCapacity)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind array to ECStruct parameter.");
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to ECStruct parameter.");
     return GetNoopBinder (ECSqlStatus::UserError).BindArray (initialCapacity);
     }
 
@@ -142,7 +142,7 @@ IECSqlBinder& StructToColumnsECSqlBinder::_GetMember (Utf8CP structMemberPropert
     auto memberProp = GetTypeInfo ().GetStructType ().GetPropertyP (structMemberPropertyName, true);
     if (memberProp == nullptr)
         {
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Cannot bind to struct member. Member %s does not exist.", structMemberPropertyName);
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot bind to struct member. Member %s does not exist.", structMemberPropertyName);
         BeAssert (false);
         return GetNoopBinder (ECSqlStatus::UserError);
         }
@@ -168,7 +168,7 @@ IECSqlBinder& StructToColumnsECSqlBinder::_GetMember (ECN::ECPropertyId structMe
                 }
             }
 
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Cannot bind to struct member. Member %s does not exist.", structMemberPropertyName);
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot bind to struct member. Member %s does not exist.", structMemberPropertyName);
         return GetNoopBinder (ECSqlStatus::UserError);
         }
     else

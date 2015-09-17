@@ -245,7 +245,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
     auto const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
     if (specialTokenMap.IsUnset(ECSqlSystemProperty::SourceECInstanceId) || specialTokenMap.IsUnset(ECSqlSystemProperty::TargetECInstanceId))
         {
-        ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "In an ECSQL INSERT statement against an ECRelationship class SourceECInstanceId and TargetECInstanceId must always be specified.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "In an ECSQL INSERT statement against an ECRelationship class SourceECInstanceId and TargetECInstanceId must always be specified.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -327,7 +327,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
         auto const& ecinstanceIdValueSnippets = nativeSqlSnippets.m_valuesNativeSqlSnippets[thisEndECInstanceIdIndexUnsigned];
         if (ecinstanceIdValueSnippets.size() != 1)
             {
-            ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Multi-value ECInstanceIds not supported.");
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported.");
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -362,7 +362,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
             ECInstanceId id;
             if (!ECInstanceIdHelper::FromString(id, ecinstanceidStr))
                 {
-                ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "'%s' is an invalid ECInstanceId value.", ecinstanceidStr);
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "'%s' is an invalid ECInstanceId value.", ecinstanceidStr);
                 return ECSqlStatus::InvalidECSql;
                 }
 
@@ -554,7 +554,7 @@ ECN::ECRelationshipEnd constraintEnd
         //retrievedConstraintClassId < 0 means user specified parameter for it
         if (!isParameter && !constraintMap.ClassIdMatchesConstraint(retrievedConstraintClassId))
             {
-            ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Invalid value %lld for property %s. None of the respective constraint's ECClasses match that ECClassId.",
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid value %lld for property %s. None of the respective constraint's ECClasses match that ECClassId.",
                                                      retrievedConstraintClassId, constraintClassIdPropName.c_str());
             return ECSqlStatus::InvalidECSql;
             }
@@ -571,7 +571,7 @@ ECN::ECRelationshipEnd constraintEnd
     //user did not specify constraint class id in ECSQL -> try to find it which checks whether user should have specified one (because of ambiguity)
     if (!constraintMap.TryGetSingleClassIdFromConstraint(retrievedConstraintClassId))
         {
-        ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "%s can only be omitted from an ECSQL INSERT statement if the constraint consists of only one ECClass (counting subclasses, too, in case of polymorphic constraints) and that ECClass is not 'AnyClass'.",
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "%s can only be omitted from an ECSQL INSERT statement if the constraint consists of only one ECClass (counting subclasses, too, in case of polymorphic constraints) and that ECClass is not 'AnyClass'.",
                                                  constraintClassIdPropName.c_str());
         return ECSqlStatus::InvalidECSql;
         }
@@ -606,7 +606,7 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
         auto const& typeInfo = constraintECClassIdConstantValueExp->GetTypeInfo();
         if (!typeInfo.IsExactNumeric())
             {
-            ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Value of %s must be an integral number (which is not NULL).", constraintClassIdPropertyName);
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Value of %s must be an integral number (which is not NULL).", constraintClassIdPropertyName);
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -622,7 +622,7 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
         }
 
 
-    ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "In an ECSQL INSERT statement only literal values or parameters are allowed for the %s property.", constraintClassIdPropertyName);
+    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "In an ECSQL INSERT statement only literal values or parameters are allowed for the %s property.", constraintClassIdPropertyName);
     return ECSqlStatus::InvalidECSql;
     }
 
@@ -808,7 +808,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
         }
     else
         {
-        ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "ECInstanceId in an ECSQL INSERT statement can only be NULL, a literal or a parameter.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECInstanceId in an ECSQL INSERT statement can only be NULL, a literal or a parameter.");
         return ECInstanceIdMode::Invalid;
         }
 

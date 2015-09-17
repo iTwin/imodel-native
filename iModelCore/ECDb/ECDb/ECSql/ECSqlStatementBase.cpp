@@ -35,13 +35,13 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
     {
     if (IsPrepared())
         {
-        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "ECSQL statement has already been prepared.");
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL statement has already been prepared.");
         return ECSqlStatus::UserError;
         }
 
     if (Utf8String::IsNullOrEmpty(ecsql))
         {
-        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "ECSQL string is empty.");
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL string is empty.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -256,7 +256,7 @@ ECSqlStatus ECSqlStatementBase::FailIfWrongType (ECSqlType expectedType, Utf8CP 
 
     if (GetPreparedStatementP()->GetType() != expectedType)
         {
-        GetECDb()->GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, errorMessage);
+        GetECDb()->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, errorMessage);
         return ECSqlStatus::UserError;
         }
 

@@ -39,7 +39,7 @@ Exp::FinalizeParseStatus BetweenRangeValueExp::_FinalizeParsing(ECSqlParseContex
             ECSqlTypeInfo const& typeInfo = operand->GetTypeInfo();
             if (!typeInfo.IsPrimitive() || typeInfo.IsGeometry() || typeInfo.IsPoint())
                 {
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid BETWEEN expression '%s'. Operands must be of numeric, date/timestamp, or string type.", ToECSql().c_str());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid BETWEEN expression '%s'. Operands must be of numeric, date/timestamp, or string type.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
             }
@@ -84,7 +84,7 @@ Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx
 
                         default:
                             BeAssert(false && "Adjust BinaryValueExp::_FinalizeParsing for new value of BinarySqlOperator enum.");
-                            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Adjust BinaryValueExp::_FinalizeParsing for new value of BinarySqlOperator enum.");
+                            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Adjust BinaryValueExp::_FinalizeParsing for new value of BinarySqlOperator enum.");
                             return FinalizeParseStatus::Error;
                     }
 
@@ -106,24 +106,24 @@ Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx
 
                     if (!typeInfo.IsPrimitive())
                         {
-                        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Expecting a primitive value expression as operand. '%s'", ToECSql().c_str());
+                        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting a primitive value expression as operand. '%s'", ToECSql().c_str());
                         return FinalizeParseStatus::Error;
                         }
 
                     ECSqlTypeInfo const& expectedType = GetTypeInfo();
                     if (expectedType.IsExactNumeric() && !typeInfo.IsExactNumeric())
                         {
-                        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Expecting an integral value expression as operand. '%s'", ToECSql().c_str());
+                        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting an integral value expression as operand. '%s'", ToECSql().c_str());
                         return FinalizeParseStatus::Error;
                         }
                     else if (expectedType.IsNumeric() && !typeInfo.IsNumeric())
                         {
-                        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Expecting a numeric value expression as operand. '%s'", ToECSql().c_str());
+                        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting a numeric value expression as operand. '%s'", ToECSql().c_str());
                         return FinalizeParseStatus::Error;
                         }
                     else if (expectedType.GetPrimitiveType() == PRIMITIVETYPE_String && typeInfo.GetPrimitiveType() != PRIMITIVETYPE_String)
                         {
-                        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Expecting value expression of type String as operand. '%s'", ToECSql().c_str());
+                        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expecting value expression of type String as operand. '%s'", ToECSql().c_str());
                         return FinalizeParseStatus::Error;
                         }
                     }
@@ -178,14 +178,14 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
         //if operands are parameters set the target exp in those expressions
         if (castOperand->IsParameterExp())
             {
-            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Parameters are not supported in a CAST expression ('%s').", ToECSql().c_str());
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Parameters are not supported in a CAST expression ('%s').", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
 
         ECN::PrimitiveType targetType;
         if (ExpHelper::ToPrimitiveType(targetType, m_castTargetType) != ECSqlStatus::Success)
             {
-            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid CAST target type '%s'.", m_castTargetType.c_str());
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid CAST target type '%s'.", m_castTargetType.c_str());
             return FinalizeParseStatus::Error;
             }
 
@@ -200,7 +200,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
     if (!castOperandTypeInfo.IsPrimitive())
         {
-        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "CAST expects operand to be a primitive value expression or the null constant.");
+        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "CAST expects operand to be a primitive value expression or the null constant.");
         return FinalizeParseStatus::Error;
         }
 
@@ -213,7 +213,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
             {
             if (!typeInfo->IsNumeric() && !typeInfo->IsBoolean() && !typeInfo->IsBinary() && !typeInfo->IsString())
                 {
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Casting from '%s' to '%s' is not supported", ExpHelper::ToString(castOperandTypeInfo.GetPrimitiveType()), ExpHelper::ToString(expectedTypeInfo.GetPrimitiveType()));
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Casting from '%s' to '%s' is not supported", ExpHelper::ToString(castOperandTypeInfo.GetPrimitiveType()), ExpHelper::ToString(expectedTypeInfo.GetPrimitiveType()));
                 return FinalizeParseStatus::Error;
                 }
             }
@@ -333,7 +333,7 @@ ECSqlStatus ConstantValueExp::ResolveDataType (ECSqlParseContext& ctx)
             DateTime dt;
             if (SUCCESS != DateTime::FromString(dt, m_value.c_str()))
                 {
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid format for DATE/TIMESTAMP in expression '%s'.", ToECSql().c_str());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid format for DATE/TIMESTAMP in expression '%s'.", ToECSql().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
 
@@ -437,12 +437,12 @@ Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing(ECSqlParseContex
             const auto matchCount = matchingClassRefExpList.size ();
             if (matchCount == 0)
                 {
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Undefined Class alias '%s' in expression '%s'.", GetClassAlias (), ToECSql ().c_str ());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Undefined Class alias '%s' in expression '%s'.", GetClassAlias (), ToECSql ().c_str ());
                 return FinalizeParseStatus::Error;
                 }
             else if (matchCount > 1)
                 {
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Class alias '%s' used in expression '%s' is ambiguous.", GetClassAlias (), ToECSql ().c_str ());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Class alias '%s' used in expression '%s' is ambiguous.", GetClassAlias (), ToECSql ().c_str ());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -453,12 +453,12 @@ Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing(ECSqlParseContex
             const auto classRefCount = rangeClassRefList.size ();
             if (classRefCount == 0)
                 {
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "No class reference found for '%s' in ECSQL statement.", ToECSql ().c_str ());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "No class reference found for '%s' in ECSQL statement.", ToECSql ().c_str ());
                 return FinalizeParseStatus::Error;
                 }
             else if (classRefCount > 1)
                 {
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Ambiguous call to '%s'. Class alias is missing.", ToECSql ().c_str ());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Ambiguous call to '%s'. Class alias is missing.", ToECSql ().c_str ());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -468,17 +468,17 @@ Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing(ECSqlParseContex
         if (m_classRefExp == nullptr)
             {
             BeAssert (m_classRefExp != nullptr && "Resolved class reference expression is nullptr");
-            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Resolved class reference expression is nullptr");
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Resolved class reference expression is nullptr");
             return FinalizeParseStatus::Error;
             }
 
         if (m_classRefExp->GetType () != Exp::Type::ClassName)
             {
-            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "%s only supported for simple class references. Subqueries are not yet supported.", ToECSql ().c_str ());
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "%s only supported for simple class references. Subqueries are not yet supported.", ToECSql ().c_str ());
             return FinalizeParseStatus::Error;
             }
 
-        SetTypeInfo (ECSqlTypeInfo (FunctionCallExp::DetermineReturnType (ctx.GetECDbImpl(), NAME, 0)));
+        SetTypeInfo (ECSqlTypeInfo (FunctionCallExp::DetermineReturnType (ctx.GetECDb(), NAME, 0)));
         }
 
     return FinalizeParseStatus::Completed;
@@ -521,7 +521,7 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
         {
             case Exp::FinalizeParseMode::BeforeFinalizingChildren:
                 {
-                const ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDbImpl(), GetFunctionName(), (int) GetChildrenCount());
+                const ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDb(), GetFunctionName(), (int) GetChildrenCount());
                 SetTypeInfo(ECSqlTypeInfo(returnType));
                 return FinalizeParseStatus::NotCompleted;
                 }
@@ -539,7 +539,7 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
                     ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
                     if (typeKind != ECSqlTypeInfo::Kind::Primitive && typeKind != ECSqlTypeInfo::Kind::Null)
                         {
-                        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Function '%s' can only be called with primitive arguments. Argument #%d is not primitive.",
+                        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function '%s' can only be called with primitive arguments. Argument #%d is not primitive.",
                                      m_functionName.c_str(), i + 1);
                         return FinalizeParseStatus::Error;
                         }
@@ -576,10 +576,10 @@ void FunctionCallExp::AddArgument (std::unique_ptr<ValueExp> argument)
 // @bsimethod                                    Krischan.Eberle                    03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDb::Impl& ecdb, Utf8CP functionName, int argCount)
+ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8CP functionName, int argCount)
     {
     DbFunction* func = nullptr;
-    const bool isCustomFunction = ecdb.TryGetSqlFunction(func, functionName, argCount);
+    const bool isCustomFunction = ecdb.GetECDbImplR().TryGetSqlFunction(func, functionName, argCount);
     if (isCustomFunction)
         {
         switch (func->GetReturnType())
@@ -806,11 +806,11 @@ Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing(ECSqlParseContext&
     //all standard set functions require 1 arg
     if (childCount != 1)
         {
-        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid function call '%s'. Function %s expects 1 argument.", ToECSql().c_str(), functionName);
+        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid function call '%s'. Function %s expects 1 argument.", ToECSql().c_str(), functionName);
         return FinalizeParseStatus::Error;
         }
 
-    ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDbImpl(), functionName, childCount);
+    ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDb(), functionName, childCount);
     SetTypeInfo(ECSqlTypeInfo(returnType));
 
     //check arg type for all functions except COUNT (which can take any arg)
@@ -825,7 +825,7 @@ Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing(ECSqlParseContext&
             {
             if (!argTypeInfo.IsPrimitive() || argTypeInfo.GetPrimitiveType() != ECN::PRIMITIVETYPE_Boolean)
                 {
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid function call '%s'. Function %s expects boolean argument", ToECSql().c_str(), functionName);
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid function call '%s'. Function %s expects boolean argument", ToECSql().c_str(), functionName);
                 return FinalizeParseStatus::Error;
                 }
             }
@@ -833,7 +833,7 @@ Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing(ECSqlParseContext&
             {
             if (!argTypeInfo.IsNumeric())
                 {
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid function call '%s'. Function %s expects numeric argument", ToECSql().c_str(), functionName);
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid function call '%s'. Function %s expects numeric argument", ToECSql().c_str(), functionName);
                 return FinalizeParseStatus::Error;
                 }
             }
@@ -914,13 +914,13 @@ Exp::FinalizeParseStatus FoldFunctionCallExp::_FinalizeParsing(ECSqlParseContext
     Utf8CP functionName = GetFunctionName();
     const int childCount = (int) GetChildren().size();
     
-    ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDbImpl(), functionName, childCount);
+    ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDb(), functionName, childCount);
     SetTypeInfo(ECSqlTypeInfo(returnType));
 
     ECSqlTypeInfo const& typeInfo = GetChild<ValueExp> (0)->GetTypeInfo ();
     if (!typeInfo.IsPrimitive () || typeInfo.GetPrimitiveType () != PRIMITIVETYPE_String)
         {
-        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid function call '%s'. Function %s expects string argument", ToECSql ().c_str (), functionName);
+        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid function call '%s'. Function %s expects string argument", ToECSql ().c_str (), functionName);
         return FinalizeParseStatus::Error;
         }
 
@@ -972,7 +972,7 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
                     break;
 
                 default:
-                    ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid unary operator in expression %s.", ToECSql().c_str());
+                    ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid unary operator in expression %s.", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
             }
 
@@ -992,7 +992,7 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
             {
             if (!operandTypeInfo.IsNumeric())
                 {
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid type in expression %s: Unary operator expects a numeric type expression", ToECSql().c_str());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid type in expression %s: Unary operator expects a numeric type expression", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -1002,7 +1002,7 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
             {
             if (!operandTypeInfo.IsExactNumeric ())
                 {
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid type in expression %s: Unary operator expects an integral type expression", ToECSql().c_str());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid type in expression %s: Unary operator expects an integral type expression", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -1011,7 +1011,7 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
 
         default:
             {
-            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid unary operator in expression %s.", ToECSql().c_str());
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid unary operator in expression %s.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }

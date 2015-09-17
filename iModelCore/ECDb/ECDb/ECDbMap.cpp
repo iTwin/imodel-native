@@ -808,7 +808,7 @@ BentleyStatus ECDbMap::Save()
             i++;
             if (SUCCESS != classMap->Save (doneList))
                 {
-                m_ecdb.GetECDbImplR().ReportIssue (ECDb::IssueSeverity::Error, "Failed to save ECDbMap for ECClass %s: %s", ecClass.GetFullName(), GetECDbR().GetLastError());
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report (ECDbIssueSeverity::Error, "Failed to save ECDbMap for ECClass %s: %s", ecClass.GetFullName(), m_ecdb.GetLastError());
                 return ERROR;
                 }
             }

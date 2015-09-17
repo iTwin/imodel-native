@@ -48,14 +48,14 @@ public:
 struct ECDbIssue
     {
 private:
-    BeSQLite::EC::ECDb::IssueSeverity m_severity;
+    BeSQLite::EC::ECDbIssueSeverity m_severity;
     Utf8String m_issue;
 
 public:
-    explicit ECDbIssue(BeSQLite::EC::ECDb::IssueSeverity severity = BeSQLite::EC::ECDb::IssueSeverity::Error, Utf8CP issue = nullptr) : m_severity(severity), m_issue(issue) {}
+    explicit ECDbIssue(BeSQLite::EC::ECDbIssueSeverity severity = BeSQLite::EC::ECDbIssueSeverity::Error, Utf8CP issue = nullptr) : m_severity(severity), m_issue(issue) {}
 
     bool IsIssue() const { return !m_issue.empty(); }
-    BeSQLite::EC::ECDb::IssueSeverity GetSeverity() const { return m_severity; }
+    BeSQLite::EC::ECDbIssueSeverity GetSeverity() const { return m_severity; }
     Utf8CP GetMessage() const { return m_issue.c_str(); }
     };
 

@@ -29,7 +29,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_OnBeforeStep()
     if ((IsEnsureConstraints()) && m_bindValueIsNull)
         {
         Utf8CP propName = SystemPropertyToString();
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Constraint violation. No value bound to %s parameter. %s cannot be NULL.", propName, propName);
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Constraint violation. No value bound to %s parameter. %s cannot be NULL.", propName, propName);
         return ECSqlStatus::UserError;
         }
 
@@ -52,7 +52,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindNull()
     {
     if (IsEnsureConstraints())
         {
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Constraint violation. Cannot bind NULL to %s parameter.", SystemPropertyToString());
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Constraint violation. Cannot bind NULL to %s parameter.", SystemPropertyToString());
         return ECSqlStatus::UserError;
         }
 
@@ -79,7 +79,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindPoint2D (DPoint2dCR value)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind Point3D value to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point3D value to %s parameter.", SystemPropertyToString());
     return ECSqlStatus::UserError;
     }
 
@@ -88,7 +88,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindPoint2D (DPoint2dCR value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindPoint3D (DPoint3dCR value)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind Point3D value to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point3D value to %s parameter.", SystemPropertyToString());
     return ECSqlStatus::UserError;
     }
 
@@ -97,7 +97,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindPoint3D (DPoint3dCR value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindBoolean(bool value)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind boolean value to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind boolean value to %s parameter.", SystemPropertyToString());
     return ECSqlStatus::UserError;
     }
 
@@ -106,7 +106,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind Blob value to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Blob value to %s parameter.", SystemPropertyToString());
     return ECSqlStatus::UserError;
     }
 
@@ -115,7 +115,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindBinary(const void* value, int binary
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch.Cannot bind DateTime value to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch.Cannot bind DateTime value to %s parameter.", SystemPropertyToString());
     return ECSqlStatus::UserError;
     }
 
@@ -124,7 +124,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime(double julianDay, DateTime:
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to %s parameter.", SystemPropertyToString());
                                          return ECSqlStatus::UserError;
     }
 
@@ -133,7 +133,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime(uint64_t julianDayHns, Date
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindDouble(double value)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind double value to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind double value to %s parameter.", SystemPropertyToString());
     return ECSqlStatus::UserError;
     }
 
@@ -142,7 +142,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindDouble(double value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind IGeometry value to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind IGeometry value to %s parameter.", SystemPropertyToString());
     return ECSqlStatus::UserError;
     }
 
@@ -151,7 +151,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindGeometryBlob(const void* value, int 
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindInt(int value)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind 32 bit integer value to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind 32 bit integer value to %s parameter.", SystemPropertyToString());
     return ECSqlStatus::UserError;
     }
 
@@ -195,7 +195,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::Mak
     if (m_systemProperty != ECSqlSystemProperty::ECInstanceId && m_systemProperty != ECSqlSystemProperty::ParentECInstanceId &&
         m_systemProperty != ECSqlSystemProperty::SourceECInstanceId && m_systemProperty != ECSqlSystemProperty::TargetECInstanceId)
         {
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind string value to %s parameter.", SystemPropertyToString());
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind string value to %s parameter.", SystemPropertyToString());
         return ECSqlStatus::UserError;
         }
 
@@ -219,7 +219,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::Mak
         ECInstanceId id;
         if (!ECInstanceIdHelper::FromString(id, value))
             {
-            GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Binding string value to %s parameter failed. Value cannot be converted to an ECInstanceId.", SystemPropertyToString());
+            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Binding string value to %s parameter failed. Value cannot be converted to an ECInstanceId.", SystemPropertyToString());
             return ECSqlStatus::UserError;
             }
 
@@ -243,7 +243,7 @@ IECSqlPrimitiveBinder& SystemPropertyECSqlBinder::_BindPrimitive()
 //---------------------------------------------------------------------------------------
 IECSqlStructBinder& SystemPropertyECSqlBinder::_BindStruct()
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to %s parameter.", SystemPropertyToString());
     return GetNoopBinder(ECSqlStatus::UserError).BindStruct();
     }
 
@@ -252,7 +252,7 @@ IECSqlStructBinder& SystemPropertyECSqlBinder::_BindStruct()
 //---------------------------------------------------------------------------------------
 IECSqlArrayBinder& SystemPropertyECSqlBinder::_BindArray(uint32_t initialCapacity)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind array to %s parameter.", SystemPropertyToString());
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to %s parameter.", SystemPropertyToString());
     return GetNoopBinder(ECSqlStatus::UserError).BindArray(initialCapacity);
     }
 
@@ -268,7 +268,7 @@ ECSqlStatus SystemPropertyECSqlBinder::FailIfConstraintClassIdViolation(ECN::ECC
     const auto relationshipEnd = m_systemProperty == ECSqlSystemProperty::SourceECClassId ? ECN::ECRelationshipEnd_Source : ECN::ECRelationshipEnd_Target;
     if (!m_constraints->GetConstraintMap(relationshipEnd).ClassIdMatchesConstraint(constraintClassId))
         {
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Constraint violation. ECClassId %lld not valid as value for %s parameter.",
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Constraint violation. ECClassId %lld not valid as value for %s parameter.",
                                              constraintClassId, SystemPropertyToString());
         return ECSqlStatus::UserError;
         }

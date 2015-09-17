@@ -163,7 +163,7 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
         if (classExp->GetId ().EqualsI (classExpComparand->GetId ()))
             {
-            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp->ToECSql ().c_str ());
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp->ToECSql ().c_str ());
             return FinalizeParseStatus::Error;
             }
         }
@@ -229,7 +229,7 @@ ECSqlStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, ClassRefExp* classRe
             if (existingRangeCRef->GetId().Equals(newRangeCRef->GetId()))
                 {
                 //e.g. SELECT * FROM FOO a, GOO a
-                ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef->GetId().c_str ());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef->GetId().c_str ());
                 return ECSqlStatus::InvalidECSql;
                 }
 
@@ -324,7 +324,7 @@ Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, Fi
         ECSqlTypeInfo const& typeInfo = groupingValueExp->GetTypeInfo();
         if (expType == Exp::Type::Parameter || expType == Exp::Type::ConstantValue || !typeInfo.IsPrimitive() || typeInfo.IsPoint())
             {
-            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid expression '%s' in GROUP BY: Parameters, constants, points, structs and arrays are not supported.", ToECSql().c_str());
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid expression '%s' in GROUP BY: Parameters, constants, points, structs and arrays are not supported.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -414,13 +414,13 @@ LimitOffsetExp::FinalizeParseStatus LimitOffsetExp::_FinalizeParsing(ECSqlParseC
                 {
                 if (!IsValidChildExp(*GetLimitExp()))
                     {
-                    ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                    ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
                     }
 
                 if (HasOffset() && !IsValidChildExp(*GetOffsetExp()))
                     {
-                    ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                    ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
                     }
 
@@ -509,7 +509,7 @@ OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing(ECSqlParseC
     auto const& typeInfo = GetSortExpression ()->GetTypeInfo ();
     if (!typeInfo.IsPrimitive () || typeInfo.IsPoint () || typeInfo.IsGeometry ())
         {
-        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid expression '%s' in ORDER BY: Points, Geometries, structs and arrays are not supported.", ToECSql().c_str());
+        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid expression '%s' in ORDER BY: Points, Geometries, structs and arrays are not supported.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
@@ -652,7 +652,7 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
         const auto stat = ReplaceAsteriskExpressions (*rangeClassRefList);
         if (stat != ECSqlStatus::Success)
             {
-            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Asterisk replacement in select clause failed unexpectedly.");
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Asterisk replacement in select clause failed unexpectedly.");
             return FinalizeParseStatus::Error;
             }
         }
@@ -917,7 +917,7 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
 
     if (selectClauseExp->GetChildren ().size() != 1)
         {
-        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Subquery must return exactly one column %s.", ToECSql().c_str());
+        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Subquery must return exactly one column %s.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 

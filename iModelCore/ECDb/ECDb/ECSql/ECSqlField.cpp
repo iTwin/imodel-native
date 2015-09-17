@@ -112,7 +112,7 @@ ECSqlStatus ECSqlField::ReportError (ECSqlStatus status, Utf8CP errorMessage) co
     {
     ECDbCP ecdb = m_ecsqlStatement.GetECDb();
     if (ecdb != nullptr)
-        ecdb->GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, errorMessage);
+        ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, errorMessage);
 
     return status;
     }

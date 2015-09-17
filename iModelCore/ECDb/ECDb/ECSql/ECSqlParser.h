@@ -49,14 +49,14 @@ public:
     bool IsEndClassOfRelationship(ECN::ECClassCR searchClass, ECN::ECRelationshipEnd searchEnd, ECN::ECRelationshipClassCR relationshipClass);
     Utf8String GenerateAlias();
 
-
     int TrackECSqlParameter(ParameterExp& parameterExp);
 
+    IssueReporter const& GetIssueReporter() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
     ECDbSchemaManagerCR Schemas() const { return m_ecdb.Schemas(); }
-    ECDb::Impl& GetECDbImpl() const { return m_ecdb.GetECDbImplR(); }
+    ECDbCR GetECDb() const { return m_ecdb; }
     };
 
-typedef std::shared_ptr<Exp> ECSqlParseTreePtr;
+typedef std::unique_ptr<Exp> ECSqlParseTreePtr;
 typedef Exp const& ECSqlParseTreeCR;
 
 //=======================================================================================
@@ -192,7 +192,7 @@ private:
 
     static bool IsPredicate(connectivity::OSQLParseNode const* parseNode);
 
-    ECDb::Impl& GetECDbImpl() const { BeAssert(m_context != nullptr); return m_context->GetECDbImpl(); }
+    IssueReporter const& GetIssueReporter() const { BeAssert(m_context != nullptr); return m_context->GetIssueReporter(); }
 
 public:
     ECSqlParser() : m_context (nullptr) {}

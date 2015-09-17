@@ -848,7 +848,7 @@ ECDbTestSchemaManager const& ECDbTestProject::GetTestSchemaManager () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Krischan.Eberle     09/2015
 //---------------------------------------------------------------------------------------
-void ECDbTestProject::ECDbIssueListener::_OnIssueReported(ECDb::IssueSeverity severity, Utf8CP message) const
+void ECDbTestProject::ECDbIssueListener::_OnIssueReported(ECDbIssueSeverity severity, Utf8CP message) const
     {
     m_issue = ECDbIssue(severity, message);
     }

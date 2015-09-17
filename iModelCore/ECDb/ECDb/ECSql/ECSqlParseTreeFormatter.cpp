@@ -24,7 +24,7 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree (Utf8Str
     if (n == nullptr)
         {
         if (!error.empty())
-            ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, error.c_str());
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, error.c_str());
 
         return ERROR;
         }
@@ -43,7 +43,7 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Utf8StringR ex
     if (Utf8String::IsNullOrEmpty(ecsql))
         return ERROR;
 
-    std::shared_ptr<Exp> exp = nullptr;
+    std::unique_ptr<Exp> exp = nullptr;
     ECSqlParser parser;
     if (ECSqlStatus::Success != parser.Parse(exp, ecdb, ecsql, IClassMap::View::DomainClass))
         return ERROR;

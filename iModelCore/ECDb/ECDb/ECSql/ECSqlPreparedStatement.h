@@ -52,6 +52,8 @@ protected:
     bool IsNoopInSqlite () const { return m_isNoopInSqlite; }
     bool IsNothingToUpdate() const { return m_isNothingToUpdate; }
 
+    IssueReporter const& GetIssueReporter() const { return m_ecdb->GetECDbImplR().GetIssueReporter(); }
+
 public:
     virtual ~ECSqlPreparedStatement () {}
 

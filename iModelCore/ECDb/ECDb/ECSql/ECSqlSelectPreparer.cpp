@@ -138,7 +138,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
     auto rhs = exp.GetNext ()->GetSelection ();
     if (rhs->GetChildrenCount () != lhs->GetChildrenCount ())
         {
-        ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type");
         return ECSqlStatus::UserError;
         }
 
@@ -149,7 +149,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
 
         if (!rhsP->GetExpression ()->GetTypeInfo ().Equals (lhsP->GetExpression ()->GetTypeInfo ()))
             {
-            ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type of expression %s in UNION/EXCEPT/INTERSECT is not same as respective expression %s", lhsP->ToECSql().c_str(), rhs->ToECSql().c_str());
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type of expression %s in UNION/EXCEPT/INTERSECT is not same as respective expression %s", lhsP->ToECSql().c_str(), rhs->ToECSql().c_str());
             return ECSqlStatus::UserError;
             }
         }

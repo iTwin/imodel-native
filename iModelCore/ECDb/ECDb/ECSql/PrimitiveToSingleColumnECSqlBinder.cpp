@@ -105,14 +105,14 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(double julianDay, 
 
     if (metadata != nullptr && metadata->GetKind() == DateTime::Kind::Local)
         {
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "ECDb does not support to bind local date times.");
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECDb does not support to bind local date times.");
         return ECSqlStatus::UserError;
         }
 
     ECSqlTypeInfo const& parameterTypeInfo = GetTypeInfo();
     if (!parameterTypeInfo.DateTimeInfoMatches(metadata))
         {
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Metadata of DateTime value to bind doesn't match the metadata on the corresponding ECProperty.");
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Metadata of DateTime value to bind doesn't match the metadata on the corresponding ECProperty.");
         return ECSqlStatus::UserError;
         }
     
@@ -228,7 +228,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt64(int64_t value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint2D (DPoint2dCR value)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Point2D value can only be bound to parameter of same type.");
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point2D value can only be bound to parameter of same type.");
     return ECSqlStatus::UserError;
     }
 
@@ -237,7 +237,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint2D (DPoint2dCR value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint3D (DPoint3dCR value)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Point3D value can only be bound to parameter of same type.");
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point3D value can only be bound to parameter of same type.");
     return ECSqlStatus::UserError;
     }
 
@@ -277,7 +277,7 @@ IECSqlPrimitiveBinder& PrimitiveToSingleColumnECSqlBinder::_BindPrimitive()
 //---------------------------------------------------------------------------------------
 IECSqlStructBinder& PrimitiveToSingleColumnECSqlBinder::_BindStruct()
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to primitive type parameter.");
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to primitive type parameter.");
     return GetNoopBinder(ECSqlStatus::UserError).BindStruct();
     }
 
@@ -286,7 +286,7 @@ IECSqlStructBinder& PrimitiveToSingleColumnECSqlBinder::_BindStruct()
 //---------------------------------------------------------------------------------------
 IECSqlArrayBinder& PrimitiveToSingleColumnECSqlBinder::_BindArray(uint32_t initialCapacity)
     {
-    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind array to primitive parameter.");
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to primitive parameter.");
     return GetNoopBinder(ECSqlStatus::UserError).BindArray(initialCapacity);
     }
 
@@ -304,7 +304,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType reque
                 {
                 if (requestedType != fieldDataType)
                     {
-                    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch: only BindDateTime can be called for a column of the DateTime type.");
+                    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch: only BindDateTime can be called for a column of the DateTime type.");
                     return ECSqlStatus::UserError;
                     }
                 else
@@ -314,7 +314,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType reque
                 {
                 if (requestedType != fieldDataType)
                     {
-                    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch: only BindGeometry can be called for a column of the IGeometry type.");
+                    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch: only BindGeometry can be called for a column of the IGeometry type.");
                     return ECSqlStatus::UserError;
                     }
                 else
@@ -331,7 +331,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType reque
                 {
                 if (requestedType != fieldDataType)
                     {
-                    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch: BindDateTime cannot be called for a column which is not of the DateTime type.");
+                    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch: BindDateTime cannot be called for a column which is not of the DateTime type.");
                     return ECSqlStatus::UserError;
                     }
                 else
@@ -341,7 +341,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType reque
                 {
                 if (requestedType != fieldDataType)
                     {
-                    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch: BindGeometry cannot be called for a column which is not of the IGeometry type.");
+                    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch: BindGeometry cannot be called for a column which is not of the IGeometry type.");
                     return ECSqlStatus::UserError;
                     }
                 else

@@ -51,7 +51,6 @@ protected:
     Statement& GetSqliteStatementR() const;
     ECSqlStatementBase& GetECSqlStatementR() const { return m_ecsqlStatement; }
     ECDbCR GetECDb() const;
-
     static Statement::MakeCopy ToBeSQliteBindMakeCopy (IECSqlBinder::MakeCopy makeCopy);
 
 public:

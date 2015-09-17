@@ -31,7 +31,7 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
 
     if (GetType() != ECSqlType::Select && ecdb.IsReadonly())
         {
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "ECDb file is opened read-only. For data-modifying ECSQL statements write access is needed.");
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECDb file is opened read-only. For data-modifying ECSQL statements write access is needed.");
         return ECSqlStatus::UserError;
         }
 
@@ -57,7 +57,7 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
             ECSqlStatus stat = ECSqlStatus::Success;
             Utf8String errorMessage;
             errorMessage.Sprintf("Preparing the SQLite statement '%s' failed with error code", nativeSql.c_str());
-            GetECDb().GetECDbImplR().ReportSqliteIssue(stat, ECDb::IssueSeverity::Error, nativeSqlStat, errorMessage.c_str());
+            GetIssueReporter().ReportSqliteIssue(stat, ECDbIssueSeverity::Error, nativeSqlStat, errorMessage.c_str());
             return stat;
             }
         }
@@ -77,7 +77,7 @@ IECSqlBinder& ECSqlPreparedStatement::GetBinder(int parameterIndex)
         return *binder;
 
     if (stat == ECSqlStatus::IndexOutOfBounds)
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Parameter index %d passed to ECSqlStatement binding API is out of bounds.", parameterIndex);
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Parameter index %d passed to ECSqlStatement binding API is out of bounds.", parameterIndex);
 
     return NoopECSqlBinderFactory::GetBinder(stat);
     }
@@ -89,7 +89,7 @@ int ECSqlPreparedStatement::GetParameterIndex(Utf8CP parameterName) const
     {
     int index = GetParameterMap().GetIndexForName(parameterName);
     if (index <= 0)
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "No parameter index found for parameter name :%s.", parameterName);
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "No parameter index found for parameter name :%s.", parameterName);
 
     return index;
     }
@@ -108,7 +108,7 @@ ECSqlStatus ECSqlPreparedStatement::ClearBindings()
     if (nativeSqlStat != BE_SQLITE_OK)
         {
         ECSqlStatus stat = ECSqlStatus::Success;
-        GetECDb().GetECDbImplR().ReportSqliteIssue(stat, ECDb::IssueSeverity::Error, nativeSqlStat);
+        GetIssueReporter().ReportSqliteIssue(stat, ECDbIssueSeverity::Error, nativeSqlStat);
         return stat;
         }
 
@@ -134,7 +134,7 @@ ECSqlStepStatus ECSqlPreparedStatement::DoStep()
         default:
             {
             ECSqlStatus stat;
-            GetECDb().GetECDbImplR().ReportSqliteIssue(stat, ECDb::IssueSeverity::Error, nativeSqlStatus);
+            GetIssueReporter().ReportSqliteIssue(stat, ECDbIssueSeverity::Error, nativeSqlStatus);
             return ECSqlStepStatus::Error;
             }
         };
@@ -157,7 +157,7 @@ ECSqlStatus ECSqlPreparedStatement::DoReset()
     if (nativeSqlStat != BE_SQLITE_OK)
         {
         ECSqlStatus stat = ECSqlStatus::Success;
-        GetECDb().GetECDbImplR().ReportSqliteIssue(stat, ECDb::IssueSeverity::Error, nativeSqlStat);
+        GetIssueReporter().ReportSqliteIssue(stat, ECDbIssueSeverity::Error, nativeSqlStat);
         return stat;
         }
 
@@ -242,7 +242,7 @@ IECSqlValue const& ECSqlSelectPreparedStatement::GetValue(int columnIndex) const
     {
     if (columnIndex < 0 || columnIndex >= static_cast<int> (m_fields.size()))
         {
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Column index '%d' is out of bounds.", columnIndex);
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Column index '%d' is out of bounds.", columnIndex);
         return NoopECSqlValue::GetSingleton();
         }
 
@@ -338,7 +338,7 @@ ECSqlStepStatus ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             {
             //this can only happen in a specific case with inserting an end table relationship, as there inserting really
             //means to update a row in the end table.
-            GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Could not insert the ECRelationship. Either the source or target constraint's ECInstanceId does not exist or the source or target constraint's cardinality is violated.");
+            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not insert the ECRelationship. Either the source or target constraint's ECInstanceId does not exist or the source or target constraint's cardinality is violated.");
             return ECSqlStepStatus::Error;
             }
 
@@ -371,13 +371,13 @@ ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertSta
     if (dbStat != BE_SQLITE_OK)
         {
         ECSqlStatus stat = ECSqlStatus::Success;
-        GetECDb().GetECDbImplR().ReportSqliteIssue(stat, ECDb::IssueSeverity::Error, dbStat, "ECSqlStatement::Step failed: Could not generate an ECInstanceId.");
+        GetIssueReporter().ReportSqliteIssue(stat, ECDbIssueSeverity::Error, dbStat, "ECSqlStatement::Step failed: Could not generate an ECInstanceId.");
         return stat;
         }
 
     const ECSqlStatus stat = ecinstanceidBinder->BindId(generatedECInstanceId);
     if (stat != ECSqlStatus::Success)
-        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "ECSqlStatement::Step failed: Could not bind the generated ECInstanceId.");
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSqlStatement::Step failed: Could not bind the generated ECInstanceId.");
 
     return stat;
     }

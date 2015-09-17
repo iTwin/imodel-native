@@ -32,14 +32,14 @@ ECSqlStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb, 
     OSQLParseNode* ecsqlParseTreeRaw = ecsqlParser.parseTree (error, ecsql);
     if (ecsqlParseTreeRaw == nullptr || !error.empty())
         {
-        GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, error.c_str ());
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, error.c_str ());
         return ECSqlStatus::InvalidECSql;
         }
 
     if (!ecsqlParseTreeRaw->isRule())
         {
         BeAssert (false && "ECSQL grammar has changed, but parser wasn't adopted.");
-        GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "ECSQL grammar has changed, but parser wasn't adopted.");
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL grammar has changed, but parser wasn't adopted.");
         return ECSqlStatus::ProgrammerError;
         }
 
@@ -50,7 +50,7 @@ ECSqlStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb, 
         {
         std::unique_ptr<InsertStatementExp> exp = nullptr;
         stat = parse_insert_statement(exp, ecsqlParseTreeRaw);
-        ecsqlParseTree.reset(exp.get());
+        ecsqlParseTree = move(exp);
         break;
         }
 
@@ -58,7 +58,7 @@ ECSqlStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb, 
         {
         std::unique_ptr<UpdateStatementExp> exp = nullptr;
         stat = parse_update_statement_searched(exp, ecsqlParseTreeRaw);
-        ecsqlParseTree.reset(exp.get());
+        ecsqlParseTree = move(exp);
         break;
         }
 
@@ -66,7 +66,7 @@ ECSqlStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb, 
         {
         std::unique_ptr<DeleteStatementExp> exp = nullptr;
         stat = parse_delete_statement_searched(exp, ecsqlParseTreeRaw);
-        ecsqlParseTree.reset(exp.get());
+        ecsqlParseTree = move(exp);
         break;
         }
 
@@ -74,17 +74,17 @@ ECSqlStatus ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECDbCR ecdb, 
         {
         std::unique_ptr<SelectStatementExp> exp = nullptr;
         stat = parse_select_statement(exp, ecsqlParseTreeRaw);
-        ecsqlParseTree.reset(exp.get());
+        ecsqlParseTree = move(exp);
         break;
         }
 
         case OSQLParseNode::manipulative_statement:
-            GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Manipulative statements are not supported.");
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Manipulative statements are not supported.");
             return ECSqlStatus::InvalidECSql;
 
         default:
             BeAssert (false && "Not a valid statement");
-            GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Not a valid statement");
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Not a valid statement");
             return ECSqlStatus::ProgrammerError;
         };
 
@@ -158,7 +158,7 @@ ECSqlStatus ECSqlParser::parse_single_select_statement(unique_ptr<SingleSelectSt
 
     if (selectClauseExp == nullptr || fromExp == nullptr)
         {
-        GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "ECSQL without select clause or from clause is invalid.");
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL without select clause or from clause is invalid.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -196,7 +196,7 @@ ECSqlStatus ECSqlParser::parse_selection (unique_ptr<SelectClauseExp>& exp, OSQL
     if (!SQL_ISRULE(parseNode, scalar_exp_commalist))
         {
         BeAssert (false && "Wrong grammar");
-        GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Wrong grammar");
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Wrong grammar");
         return ECSqlStatus::ProgrammerError;
         }
 
@@ -227,7 +227,7 @@ ECSqlStatus ECSqlParser::parse_derived_column (unique_ptr<DerivedPropertyExp>& e
     if (!SQL_ISRULE(parseNode, derived_column ))
         {
         BeAssert (false && "Wrong grammar");
-        GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Wrong grammar");
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Wrong grammar");
         return ECSqlStatus::ProgrammerError;
         }
 
@@ -291,7 +291,7 @@ ECSqlStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateState
 
     if (classRefExp->GetType () != Exp::Type::ClassName)
         {
-        GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "ECSQL UPDATE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL UPDATE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -352,7 +352,7 @@ ECSqlStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateState
 
     if (classRefExp->GetType () != Exp::Type::ClassName)
         {
-        GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "ECSQL DELETE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL DELETE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -461,7 +461,7 @@ ECSqlStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateState
             default:
                 {
                 BeAssert (false && "Wrong grammar. Only LOWER or UPPER are valid function names for fold rule.");
-                GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Wrong grammar. Only LOWER or UPPER are valid function names for fold rule.");
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "Wrong grammar. Only LOWER or UPPER are valid function names for fold rule.");
                 return ECSqlStatus::InvalidECSql;
                 }
         }
@@ -563,7 +563,7 @@ ECSqlStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateState
         if (!paramTokenValue.Equals ("?"))
             {
             BeAssert (paramTokenValue.Equals ("?") && "Invalid grammar. Only : or ? allowed as parameter tokens");
-            GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid grammar. Only : or ? allowed as parameter tokens");
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid grammar. Only : or ? allowed as parameter tokens");
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -689,7 +689,7 @@ ECSqlStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateState
     if (Utf8String::IsNullOrEmpty (knownFunctionName))
         {
         const auto tokenId = functionNameNode->getTokenID ();
-        GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Function with token ID %d not yet supported.", tokenId);
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function with token ID %d not yet supported.", tokenId);
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -758,7 +758,7 @@ ECSqlStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateState
             case SQL_TOKEN_SOME: function = SetFunctionCallExp::Function::Some; break;
             default:
                 {
-                GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Unsupported standard SQL function with token ID %d", functionNameNode->getTokenID());
+                GetIssueReporter().Report(ECDbIssueSeverity::Error, "Unsupported standard SQL function with token ID %d", functionNameNode->getTokenID());
                 return ECSqlStatus::InvalidECSql;
                 }
         }
@@ -1056,7 +1056,7 @@ ECSqlStatus ECSqlParser::parse_datetime_value_fct(unique_ptr<ValueExp>& exp, OSQ
         if (type->getTokenID() == SQL_TOKEN_CURRENT_TIMESTAMP)
             return ConstantValueExp::Create (exp, *m_context, "CURRENT_TIMESTAMP", ECSqlTypeInfo (ECN::PRIMITIVETYPE_DateTime));
 
-        GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Unrecognized keyword '%s'.", parseNode->getTokenValue().c_str());
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Unrecognized keyword '%s'.", parseNode->getTokenValue().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -1872,7 +1872,7 @@ ECSqlStatus ECSqlParser::parse_in_predicate (unique_ptr<BooleanExp>& exp, OSQLPa
     if (SQL_ISRULE (firstChildNode, in_predicate_part_2))
         {
         BeAssert (false);
-        GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "IN predicate without left-hand side property not supported.");
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "IN predicate without left-hand side property not supported.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -2112,7 +2112,7 @@ ECSqlStatus ECSqlParser::parse_row_value_constructor_commalist(unique_ptr<ValueE
         {
         if (parseNode->count() == 4 /*SQL_TOKEN_IS sql_not SQL_TOKEN_DISTINCT SQL_TOKEN_FROM*/)
             {
-            GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error,"'IS [NOT] DISTINCT FROM' operator not supported in ECSQL.");
+            GetIssueReporter().Report(ECDbIssueSeverity::Error,"'IS [NOT] DISTINCT FROM' operator not supported in ECSQL.");
             return ECSqlStatus::InvalidECSql;
             }
         if (parseNode->count() == 2 /*SQL_TOKEN_IS sql_not*/)
@@ -2466,10 +2466,11 @@ ECSqlStatus ECSqlParser::parse_select_statement (std::unique_ptr<SelectStatement
 
         if (!single_select->IsCoreSelect())
             {
-            GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "SELECT statement in UNION must not contain ORDER BY or LIMIT clause. Instead put the ORDER BY or LIMIT clause after the UNION statement. %s", single_select->ToECSql().c_str());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "SELECT statement in UNION must not contain ORDER BY or LIMIT clause: %s", single_select->ToECSql().c_str());
             return ECSqlStatus::InvalidECSql;
             }
 
+        SelectStatementExp::Operator op = SelectStatementExp::Operator::None;
         stat = parse_compound_select_op(op, parseNode->getChild(1));
         if (stat != ECSqlStatus::Success)
             return stat;
@@ -2702,9 +2703,9 @@ ECSqlStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>& c
     if (resolvedClass == nullptr)
         {
         if (schemaNameOrPrefix.empty())
-            GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "ECClass '%s' does not exist. Try using fully qualified class name: <schema name>.<class name>.", className.c_str());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECClass '%s' does not exist. Try using fully qualified class name: <schema name>.<class name>.", className.c_str());
         else
-            GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix.c_str(), className.c_str());
+            GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix.c_str(), className.c_str());
 
         return ECSqlStatus::InvalidECSql;
         }
@@ -2717,14 +2718,14 @@ ECSqlStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>& c
         return ECSqlStatus::Success;
         }
 
-    auto map = GetECDbImpl().GetECDbMap().GetClassMap(*resolvedClass);
+    IClassMap const* map = m_ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*resolvedClass);
     if (map == nullptr)
         return ECSqlStatus::ProgrammerError;
 
     auto policy = ECDbPolicyManager::GetClassPolicy(*map, IsValidInECSqlPolicyAssertion::Get());
     if (!policy.IsSupported())
         {
-        GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Invalid ECClass '%s': %s", className.c_str(), policy.GetNotSupportedMessage());
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass '%s': %s", className.c_str(), policy.GetNotSupportedMessage());
         return ECSqlStatus::InvalidECSql;
         }
 

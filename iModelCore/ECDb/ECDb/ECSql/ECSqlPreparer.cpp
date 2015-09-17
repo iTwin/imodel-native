@@ -85,7 +85,7 @@ ECSqlStatus ECSqlPreparer::Prepare (Utf8StringR nativeSql, ECSqlPrepareContext& 
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp (ECSqlPrepareContext& ctx, AllOrAnyExp const* exp)
     {
-    ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "ALL or ANY expression not yet supported.");
+    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ALL or ANY expression not yet supported.");
     return ECSqlStatus::InvalidECSql;
     }
 
@@ -109,7 +109,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBetweenRangeValueExp (NativeSqlBuilder::Lis
     if (tokenCount != upperBoundSqlTokens.size ())
         {
         BeAssert (false && "Type mismatch between lower bound operand and upper bound operand in BETWEEN expression.");
-        ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch between lower bound operand and upper bound operand in BETWEEN expression.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch between lower bound operand and upper bound operand in BETWEEN expression.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -414,7 +414,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         auto policy = ECDbPolicyManager::GetClassPolicy(classMap, IsValidInECSqlPolicyAssertion::Get(currentScopeECSqlType, exp->IsPolymorphic()));
         if (!policy.IsSupported())
             {
-            ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Invalid ECClass '%s': %s", exp->GetId().c_str(), policy.GetNotSupportedMessage());
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass '%s': %s", exp->GetId().c_str(), policy.GetNotSupportedMessage());
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -659,7 +659,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullConstantValueExp (NativeSqlBuilder::Lis
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp (ECSqlPrepareContext& ctx, CrossJoinExp const* exp)
     {
-    ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Cross join expression not yet supported.");
+    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cross join expression not yet supported.");
     return ECSqlStatus::Success;
     }
 
@@ -761,7 +761,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
     BeAssert (classRefExp != nullptr && "ECClassIdFunctionExp::GetClassRefExp is expected to never return null during preparation.");
     if (classRefExp->GetType() != Exp::Type::ClassName)
         {
-        ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "%s only supported for simple class references. Subqueries are not yet supported.", classRefExp->ToECSql().c_str());
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "%s only supported for simple class references. Subqueries are not yet supported.", classRefExp->ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -867,7 +867,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp (NativeSqlBuilder::List& na
 
         if (escapeExpSqlSnippets.size() != 1)
             {
-            ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Invalid type in LIKE ESCAPE expression. ESCAPE only works with a string value.");
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid type in LIKE ESCAPE expression. ESCAPE only works with a string value.");
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -916,7 +916,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLimitOffsetExp (ECSqlPrepareContext& ctx, L
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareNaturalJoinExp (ECSqlPrepareContext& ctx, NaturalJoinExp const* exp)
     {
-    ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Natural join expression not yet supported.");
+    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Natural join expression not yet supported.");
     return ECSqlStatus::InvalidECSql;
     }
 
@@ -1069,7 +1069,7 @@ ECSqlStatus ECSqlExpPreparer::PreparePropertyNameListExp(NativeSqlBuilder::List&
 
         if (nativeSqlSnippets.size() > 1)
             {
-            ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Property Name Expression '%s' with invalid type in Property Name List Expression '%s'. Only Property Name Expressions with numeric, string or blob types are supported.",
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Property Name Expression '%s' with invalid type in Property Name List Expression '%s'. Only Property Name Expressions with numeric, string or blob types are supported.",
                                    propNameExp->ToECSql().c_str(), exp->ToECSql().c_str());
             return ECSqlStatus::InvalidECSql;
             }
@@ -1109,14 +1109,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp (ECSqlPrepareContext& ctx,
             }
         case ECSqlJoinType::RightOuterJoin:
             {
-            ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "'RIGHT OUTER JOIN' is currently not supported");
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "'RIGHT OUTER JOIN' is currently not supported");
             return ECSqlStatus::InvalidECSql;
             }
         case ECSqlJoinType::FullOuterJoin:
             {
             //ECSQL_TODO: way around full outer join 
             //http://stackoverflow.com/questions/1923259/full-outer-join-with-sqlite
-            ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "'FULL OUTER JOIN' is currently not supported");
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "'FULL OUTER JOIN' is currently not supported");
             return ECSqlStatus::InvalidECSql;
         };
 
@@ -1148,7 +1148,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp (ECSqlPrepareContext& ctx,
         }
     else if (exp->GetJoinSpec()->GetType() ==Exp::Type::NamedPropertiesJoin)
         {
-        ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "JOIN <class/subquery> USING (property,...) is not supported yet.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "JOIN <class/subquery> USING (property,...) is not supported yet.");
         return ECSqlStatus::InvalidECSql;
         }
     
@@ -1163,7 +1163,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp (ECSqlPrepareContext& ctx,
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareQueryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, QueryExp const* exp)
     {
-    ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Query expression not yet supported.");
+    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Query expression not yet supported.");
     return ECSqlStatus::InvalidECSql;
     }
 
@@ -1217,7 +1217,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
                 {
                 if (direction != JoinDirection::Forward)
                     {
-                    ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Invalid join direction REVERSE in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp->ToString().c_str());
+                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid join direction REVERSE in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp->ToString().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }
                 }       
@@ -1230,7 +1230,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
                 {
                 if (direction != JoinDirection::Reverse)
                     {
-                    ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Invalid join direction FORWARD in %s. Either specify REVERSE or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp->ToString().c_str());
+                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid join direction FORWARD in %s. Either specify REVERSE or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp->ToString().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }
                 }
@@ -1288,7 +1288,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     auto fromECInstanceIdNativeSqlSnippets = fromECInstanceIdPropMap->ToNativeSql (fromEP.GetClassNameRef ()->GetId ().c_str (), ecsqlType, false);
     if (fromECInstanceIdNativeSqlSnippets.size() > 1)
         {
-        ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -1301,7 +1301,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     auto fromRelatedIdNativeSqlSnippets = fromRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType, false);
     if (fromRelatedIdNativeSqlSnippets.size() > 1)
         {
-        ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -1319,7 +1319,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     auto toECInstanceIdSqlSnippets = toECInstanceIdPropMap->ToNativeSql (toEP.GetClassNameRef ()->GetId ().c_str (), ecsqlType, false);
     if (toECInstanceIdSqlSnippets.size () > 1)
         {
-        ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -1331,7 +1331,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     auto toRelatedIdSqlSnippets = toRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType, false);
     if (toRelatedIdSqlSnippets.size () > 1)
         {
-        ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -1557,7 +1557,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryRefExp (ECSqlPrepareContext& ctx, S
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(ECSqlPrepareContext& ctx, SubqueryTestExp const* exp)
     {
-    ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "SubqueryTest expression not supported.");
+    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "SubqueryTest expression not supported.");
     return ECSqlStatus::InvalidECSql;
     }
 

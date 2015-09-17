@@ -12,6 +12,33 @@
 #include "BeRepositoryBasedIdSequence.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      09/2015
+//+===============+===============+===============+===============+===============+======
+struct IssueReporter : NonCopyableClass
+    {
+private:
+    mutable BeMutex m_mutex;
+    ECDbCR m_ecdb;
+    ECDb::IIssueListener const* m_issueListener;
+
+public:
+    explicit IssueReporter(ECDbCR ecdb) : m_ecdb(ecdb), m_issueListener(nullptr) {}
+    ~IssueReporter() {}
+
+    BentleyStatus AddListener(ECDb::IIssueListener const& listener);
+    void RemoveListener();
+
+    bool IsSeverityEnabled(ECDbIssueSeverity severity) const;
+
+    void Report(ECDbIssueSeverity, Utf8CP message, ...) const;
+    void ReportSqliteIssue(ECSqlStatus& mappedECSqlStatus, ECDbIssueSeverity, DbResult, Utf8CP messageHeader = nullptr) const;
+
+    static NativeLogging::SEVERITY ToLogSeverity(ECDbIssueSeverity sev) { return sev == ECDbIssueSeverity::Warning ? NativeLogging::LOG_WARNING : NativeLogging::LOG_ERROR; }
+    static ECSqlStatus ToECSqlStatus(DbResult sqliteStatus);
+    };
+
 //=======================================================================================
 //! ECDb::Impl is the private implementation of ECDb hidden from the public headers
 //! (PIMPL idiom)
@@ -70,7 +97,7 @@ private:
 
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
 
-    IIssueListener const* m_issueListener;
+    IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl (ECDbR ecdb);
@@ -83,8 +110,8 @@ private:
     BentleyStatus OnAddFunction(DbFunction&) const;
     void OnRemoveFunction(DbFunction&) const;
 
-    BentleyStatus AddIssueListener(IIssueListener const& issueListener);
-    void RemoveIssueListener() { m_issueListener = nullptr; }
+    BentleyStatus AddIssueListener(IIssueListener const& issueListener) { return m_issueReporter.AddListener(issueListener); }
+    void RemoveIssueListener() { m_issueReporter.RemoveListener(); }
 
     void ClearECDbCache() const;
 
@@ -97,7 +124,6 @@ private:
     //other private methods
     std::vector<BeRepositoryBasedIdSequence const*> GetSequences () const;
 
-    static NativeLogging::SEVERITY ToLogSeverity(IssueSeverity sev) { return sev == IssueSeverity::Warning ? NativeLogging::LOG_WARNING : NativeLogging::LOG_ERROR; }
         
 public:
     ~Impl () {}
@@ -118,9 +144,7 @@ public:
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
 
-    bool IsSeverityEnabled(IssueSeverity severity) const;
-    void ReportIssue(IssueSeverity, Utf8CP message, ...) const;
-    void ReportSqliteIssue(ECSqlStatus& mappedECSqlStatus, IssueSeverity, DbResult, Utf8CP messageHeader = nullptr) const;
+    IssueReporter const& GetIssueReporter() const { return m_issueReporter; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
