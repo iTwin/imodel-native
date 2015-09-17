@@ -53,14 +53,14 @@ always:
 cDefs        + -DCREATE_STATIC_LIBRARIES=1
 CCompPDBName = $(progName)
 
-$(obj)BeGTestExe$(oext)   : $(baseDir)BeGTestExe.cpp $(BuildContext)PublicAPI/Bentley/BeTest.h
+$(o)BeGTestExe$(oext)   : $(baseDir)BeGTestExe.cpp $(BuildContext)PublicAPI/Bentley/BeTest.h
 
 # -----------------------------------------------------
 # Link begtest.exe. This EXE incorporates the unittest .objs into itself (so that their static C++ constructors will be called).
 # -----------------------------------------------------
 
 #   Link the unit tests themselves
-LOCAL_GUNITTEST_OBJS + $(obj)BeGTestExe$(oext) $[@wildcard $(materialProduct)Linkables/*$(oext)]
+LOCAL_GUNITTEST_OBJS + $(o)BeGTestExe$(oext) $[@wildcard $(materialProduct)Linkables/*$(oext)]
 
 #   Satisfy the link requirements of the unit tests
 GUNITTEST_LIBS       + $[@wildcard $(materialProduct)Libs/*$(libext)]
