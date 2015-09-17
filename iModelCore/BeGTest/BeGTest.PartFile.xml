@@ -238,4 +238,71 @@
         <SubProduct ProductName="BeGTestTested" />
     </Part>
 
+    <!-- *********************************************************************************************** -->
+    <!-- ProductDirectory that can be used by any material product based on mobiledgn -->
+    <!-- *********************************************************************************************** -->
+    <ProductDirectoryList ListName="BeGTest-MaterialProductDir">
+        <ProductDirectory Name="BentleyNativeAssemblies"            Path="Assemblies"/>
+        <ProductDirectory Name="LoggingNativeAssemblies"            Path="Assemblies"/>
+        <ProductDirectory Name="GeomNativeAssemblies"               Path="Assemblies"/>
+        <ProductDirectory Name="BeOpenSSLAssemblies"                Path="Assemblies"/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Path="Assemblies"/>
+        <ProductDirectory Name="BeCurlAssemblies"                   Path="Assemblies"/>
+        <ProductDirectory Name="ECObjectsNativeAssemblies"          Path="Assemblies"/>
+        <ProductDirectory Name="GeoCoordNativeAssemblies"           Path="Assemblies"/>
+        <ProductDirectory Name="Libs"                               Path="Libs"/>
+        <ProductDirectory Name="BentleyLibs"                        Path="Libs"/>
+        <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
+        <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
+        <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
+        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/BeTestDocuments/DgnDb"/>
+        <ProductDirectory Name="ECSchemas"                          Path="Assets"/>
+        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang"/>
+        <ProductDirectory Name="DgnPlatformFont"                    Path="Assets/fonts"/>
+        <ProductDirectory Name="DgnPlatformLastResortFonts"         Path="Assets"/>
+        <ProductDirectory Name="BeIcu4cData"                        Path="Assets"/>
+        <ProductDirectory Name="GeoCoordData"                       Path="Assets/DgnGeoCoord"/>
+        <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord"/>
+
+        <ProductDirectory Name="RmgrToolsNativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="PublicAPI" Deliver="false"/>
+        <ProductDirectory Name="VendorAPI" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+        <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
+    </ProductDirectoryList>
+
+
+    <!-- *********************************************************************************************** -->
+    <!-- Subpart needed by all gtest-based test-runner EXE parts -->
+    <!-- *********************************************************************************************** -->
+    <Part Name="Gtest-ExeSupport" ExcludePlatforms="Android*,iOS*">
+        <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
+        <SubPart PartName="google_gmock_lib"    PartFile="gmock"        Repository="util-gmock" />
+        <SubPart PartName="LoggingNative"       PartFile="LoggingSDK"   Repository="loggingsdk" />
+        <SubPart PartName="BeSQLite"            PartFile="BeSQLite"     Repository="BeSQLite" />
+        <SubPart PartName="Base"/>
+    </Part>
+
+    <!-- *********************************************************************************************** -->
+    <!-- ProductDirectory used by all gtest-based test-runner products -->
+    <!-- *********************************************************************************************** -->
+    <ProductDirectoryList ListName="Gtest-ProductDir">
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="BentleyNativeAssemblies" Path=""/>
+        <ProductDirectory Name="LoggingNativeAssemblies" Path=""/>
+        <ProductDirectory Name="Gtest-DgnPlatformAssetsDirectory" Path="DgnPlatformAssetsDirectory"/>
+
+        <!-- 
+        <ProductDirectory Name="UnitTests-Objects" Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList" Deliver="false"/>
+        -->
+        <ProductDirectory Name="Libs" Deliver="false"/>
+        <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="PublicAPI" Deliver="false"/>
+        <ProductDirectory Name="VendorAPI" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+    </ProductDirectoryList>
+
 </BuildContext>
