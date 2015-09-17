@@ -263,6 +263,8 @@ void ECDbTestProject::CreateEmpty (Utf8CP ecdbFileName)
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDbTestProject::Open (Utf8CP ecdbFilePath, ECDb::OpenParams openParams)
     {
+    m_ecdb->RemoveIssueListener();
+    m_ecdb->AddIssueListener(m_issueListener);
     return m_ecdb->OpenBeSQLiteDb (ecdbFilePath, openParams);
     }
 

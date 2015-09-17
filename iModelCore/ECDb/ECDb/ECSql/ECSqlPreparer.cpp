@@ -1113,15 +1113,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp (ECSqlPrepareContext& ctx,
             return ECSqlStatus::InvalidECSql;
             }
         case ECSqlJoinType::FullOuterJoin:
-            {
-            //ECSQL_TODO: way around full outer join 
-            //http://stackoverflow.com/questions/1923259/full-outer-join-with-sqlite
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "'FULL OUTER JOIN' is currently not supported");
-            return ECSqlStatus::InvalidECSql;
-        };
-
-        };
-
+        {
+        //ECSQL_TODO: way around full outer join 
+        //http://stackoverflow.com/questions/1923259/full-outer-join-with-sqlite
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "'FULL OUTER JOIN' is currently not supported");
+        return ECSqlStatus::InvalidECSql;
+        }
+        }
+    
     r = PrepareClassRefExp (sqlBuilder, ctx, exp.GetToClassRef ());
     if (r != ECSqlStatus::Success)
         return r;
@@ -1145,6 +1144,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp (ECSqlPrepareContext& ctx,
             sqlBuilder.Append (sqlSnippet, true);
             isFirstSnippet = false;
             }
+
+        return ECSqlStatus::Success;
         }
     else if (exp.GetJoinSpec()->GetType() ==Exp::Type::NamedPropertiesJoin)
         {
