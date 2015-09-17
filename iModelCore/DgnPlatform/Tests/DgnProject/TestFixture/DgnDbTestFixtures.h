@@ -12,7 +12,7 @@
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <ECDb/ECDbApi.h>
-#include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
+#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM

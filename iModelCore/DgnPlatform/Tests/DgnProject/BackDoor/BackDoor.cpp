@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <UnitTests/BackDoor/DgnProject/BackDoor.h>
+#include "PublicAPI/BackDoor/DgnProject/BackDoor.h"
 #include <DgnPlatform/DgnCore/RealityDataCache.h>
 #include <Logging/bentleylogging.h>
 

@@ -119,6 +119,62 @@
         <SubPart    PartName="PublishedApi"                     PartFile="DgnPlatform"  Repository="DgnPlatform"/>
     </Part>
 
+    <!-- Allow dependent tests to #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h> -->
+    <Part Name="DgnPlatformUnitTestHelpers" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTestsBase" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
+        <SubPart PartName="DgnPlatformDLL"/>
+        <SubPart PartName="DgnPlatformUnitTestHelpers"/>
+        <Bindings>
+            <Files     ProductDirectoryName="UnitTestsIgnoreList"   ProductSubDirectory="DgnPlatform">              Delivery/UnitTests/ignore_list.txt</Files>
+            <Directory ProductDirectoryName="UnitTestsAssets"       ProductSubDirectory="Script"        SourceName="Delivery/UnitTests/assets/DgnProject/Script" />
+            <Files     ProductDirectoryName="UnitTestsIgnoreList"   ProductSubDirectory="ECSchemas">                Delivery/UnitTests/assets/DgnProject/ECSchemas/*.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor -dIsBackDoor">
+        <SubPart PartName="UnitTestsBase" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables"    ProductSubDirectory="DgnPlatform/Backdoor" SourceName="Delivery/UnitTests/Linkables/Backdoor"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="TestFixtureForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestFixture">
+        <SubPart PartName="UnitTestsBase" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables"    ProductSubDirectory="DgnPlatform/TestFixture" SourceName="Delivery/UnitTests/Linkables/TestFixture"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTestsNonPublished" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="UnitTestsBase" />
+        <SubPart PartName="TestFixtureForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables"    ProductSubDirectory="DgnPlatform/NonPublished" SourceName="Delivery/UnitTests/Linkables/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTestsPerformance" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+        <SubPart PartName="UnitTestsBase" />
+        <SubPart PartName="TestFixtureForUnitTests" />
+        <SubPart PartName="PerformanceTestingHelpers" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables"    ProductSubDirectory="DgnPlatform/Performance" SourceName="Delivery/UnitTests/Linkables/Performance"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTestsPublished" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="BackdoorForUnitTests" />
+        <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables"    ProductSubDirectory="DgnPlatform/Published" SourceName="Delivery/UnitTests/Linkables/Published"/>
+        </Bindings>
+    </Part>
+
     <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
     <ProductDirectoryList ListName="DgnPlatform">
         <ProductDirectory Name="PublicAPI"           Deliver="false"/>
@@ -380,6 +436,90 @@
         <SubPart PartName="PlatformUnitTests-No-View" PartFile="BeGTest" Repository="BeGTest"  />
         <!-- Build the test runner and, if possible, run the tests -->
         <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"  Repository="BeGTest" />
+    </Part>
+
+
+    <!-- *********************************************************************************************** -->
+    <!-- a temporary part and product that shows how to gather test material into a test material product -->
+    <ProductDirectoryList ListName="SwwTestsMaterialProductDir">
+        <ProductDirectory Name="BentleyNativeAssemblies"            Path="Assemblies"/>
+        <ProductDirectory Name="LoggingNativeAssemblies"            Path="Assemblies"/>
+        <ProductDirectory Name="GeomNativeAssemblies"               Path="Assemblies"/>
+        <ProductDirectory Name="BeOpenSSLAssemblies"                Path="Assemblies"/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Path="Assemblies"/>
+        <ProductDirectory Name="BeCurlAssemblies"                   Path="Assemblies"/>
+        <ProductDirectory Name="ECObjectsNativeAssemblies"          Path="Assemblies"/>
+        <ProductDirectory Name="GeoCoordNativeAssemblies"           Path="Assemblies"/>
+        <ProductDirectory Name="Libs"                               Path="Libs"/>
+        <ProductDirectory Name="BentleyLibs"                        Path="Libs"/>
+        <ProductDirectory Name="UnitTestsLinkables"                 Path="Linkables"/>
+        <ProductDirectory Name="UnitTestsAssets"                    Path="Assets"/>
+        <ProductDirectory Name="UnitTestsIgnoreList"                Path="Assets/Ignore"/>
+        <ProductDirectory Name="UnitTestsDocumentsDgnDb"            Path="Assets/BeTestDocuments/DgnDb"/>
+        <ProductDirectory Name="ECSchemas"                          Path="Assets"/>
+        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang"/>
+        <ProductDirectory Name="DgnPlatformFont"                    Path="Assets/fonts"/>
+        <ProductDirectory Name="DgnPlatformLastResortFonts"         Path="Assets"/>
+        <ProductDirectory Name="BeIcu4cData"                        Path="Assets"/>
+        <ProductDirectory Name="GeoCoordData"                       Path="Assets/DgnGeoCoord"/>
+        <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord"/>
+
+        <ProductDirectory Name="RmgrToolsNativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="PublicAPI" Deliver="false"/>
+        <ProductDirectory Name="VendorAPI" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+        <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
+    </ProductDirectoryList>
+
+    <Product Name="SwwTestsMaterialProduct">
+        <Directories DirectoryListName="SwwTestsMaterialProductDir"/>
+        <SubPart PartName="UnitTestsPublished" Repository="Bentley" PartFile="Bentley"/>
+        <SubPart PartName="UnitTestsNonPublished" Repository="Bentley" PartFile="Bentley"/>
+        <SubPart PartName="UnitTestsPublished" Repository="BeSQLite" PartFile="BeSQLite"/>
+        <SubPart PartName="UnitTestsNonPublished" Repository="BeSQLite" PartFile="BeSQLite"/>
+        <SubPart PartName="UnitTestsPerformance" Repository="BeSQLite" PartFile="BeSQLite"/>
+        <SubPart PartName="UnitTestsPublished" Repository="ECDb" PartFile="ECDb"/>
+        <SubPart PartName="UnitTestsNonPublished" Repository="ECDb" PartFile="ECDb"/>
+        <SubPart PartName="UnitTestsPerformance" Repository="ECDb" PartFile="ECDb"/>
+        <SubPart PartName="UnitTestsPublished" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="UnitTestsNonPublished" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="UnitTestsPerformance" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+    </Product>
+
+    <!-- *********************************************************************************************** -->
+    <!-- a temporary part and product that shows how to generate a gtest program from a test material product -->
+    <ProductDirectoryList ListName="SwwTestsGtestProductDir">
+        <ProductDirectory Name="GtestNativeAssemblies" Path=""/>
+        <ProductDirectory Name="BentleyNativeAssemblies" Path=""/>
+        <ProductDirectory Name="LoggingNativeAssemblies" Path=""/>
+        <ProductDirectory Name="GtestDgnPlatformAssetsDirectory" Path="DgnPlatformAssetsDirectory"/>
+
+        <ProductDirectory Name="UnitTestsLinkables" Deliver="false"/>
+        <ProductDirectory Name="UnitTestsIgnoreList" Deliver="false"/>
+        <ProductDirectory Name="Libs" Deliver="false"/>
+        <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="PublicAPI" Deliver="false"/>
+        <ProductDirectory Name="VendorAPI" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+    </ProductDirectoryList>
+
+    <Product Name="SwwTestsGtestProduct">
+        <Directories DirectoryListName="SwwTestsGtestProductDir"/>
+        <SubPart PartName="SwwTestsGtest"/>
+    </Product>
+
+    <Part Name="SwwTestsGtest" BentleyBuildMakeFile="../begtest/buildGtest.mke" BentleyBuildMakeOptions="-dBEGTEST_NAME=SwwTests -dBEGTEST_MATERIAL_PRODUCT_DIR=SwwTestsMaterialProduct">
+        <SubProduct ProductName="SwwTestsMaterialProduct"/>
+        <SubPart PartName="google_gtest_lib"                PartFile="gtest"            Repository="util-gtest" />
+        <SubPart PartName="google_gmock_lib"                PartFile="gmock"            Repository="util-gmock" />
+        <SubPart PartName="LoggingNative"                   PartFile="LoggingSDK"       Repository="loggingsdk" />
+        <SubPart PartName="BeSQLite"                        PartFile="BeSQLite"         Repository="BeSQLite" />
+        <Bindings>
+            <Files ProductDirectoryName="GtestNativeAssemblies">Delivery/BuildGtest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="GtestDgnPlatformAssetsDirectory" SourceName="Delivery/BuildGtest/DgnPlatformAssetsDirectory" />
+        </Bindings>
     </Part>
 
 </BuildContext>

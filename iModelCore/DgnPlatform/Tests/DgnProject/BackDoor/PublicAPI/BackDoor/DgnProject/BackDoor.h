@@ -16,7 +16,7 @@
 #include <Bentley/Bentley.h>
 //#include <Bentley/CatchNonPortable.h>
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
+#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <Bentley/BeTest.h>
 
 #define BEGIN_DGNDB_UNIT_TESTS_NAMESPACE BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE namespace DgnDbUnitTests {

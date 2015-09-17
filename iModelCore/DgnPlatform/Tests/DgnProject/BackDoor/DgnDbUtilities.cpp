@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTest.h>
-#include <UnitTests/BackDoor/DgnProject/DgnDbUtilities.h>
+#include "PublicAPI/BackDoor/DgnProject/DgnDbUtilities.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
