@@ -40,18 +40,39 @@
         <SubPart    PartName="PublishedApi"         PartFile="BeSQLite"     Repository="BeSQLite" />
     </Part>
 
-    <Part Name="PerformanceTestingHelper" BentleyBuildMakeFile="Tests/Prewire.mke">
+    <!-- Allow dependent tests to #include <UnitTests/BackDoor/PerformanceTestingHelper/PerformanceTestingHelpers.h> -->
+    <Part Name="PerformanceTestingHelpers" BentleyBuildMakeFile="Tests/Prewire.mke">
         <Bindings>
-            <Directory Required="false" SubPartDirectory="BeSQLiteUnitTestInclude" SourceName="Delivery/BeSQLiteUnitTestInclude"/>
+            <Files Required="false" SubPartDirectory="UnitTests/include/UnitTests/BackDoor/PerformanceTestingHelper">Delivery/UnitTests/PerformanceTestingHelpers.h</Files>
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke">
-        <SubPart    PartName="BeSQLite"             PartFile="BeSQLite"     Repository="BeSQLite" />
-        <SubPart    PartName="PublishedApi"         PartFile="BeSQLite"     Repository="BeSQLite" />
+    <Part Name="UnitTestsBase" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <SubPart PartName="BeSQLite"/>
         <Bindings>
-            <Directory ProductDirectoryName="UnitTestsLinkables"  ProductSubDirectory="BeSQLite" SourceName="Delivery/UnitTests/Linkables"/>
             <Files ProductDirectoryName="UnitTestsIgnoreList" ProductSubDirectory="BeSQLite">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTestsNonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="UnitTestsBase" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables" ProductSubDirectory="BeSQLite/NonPublished" SourceName="Delivery/UnitTests/Linkables/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTestsPerformance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+        <SubPart PartName="UnitTestsBase" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables" ProductSubDirectory="BeSQLite/Performance" SourceName="Delivery/UnitTests/Linkables/Performance"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTestsPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="UnitTestsBase" />
+        <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTestsLinkables"    ProductSubDirectory="BeSQLite/Published" SourceName="Delivery/UnitTests/Linkables/Published"/>
         </Bindings>
     </Part>
 
