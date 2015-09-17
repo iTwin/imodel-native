@@ -10,7 +10,7 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
 #include <BeSQLite/BeSQLite.h>
-#include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
+#include <UnitTests/BackDoor/PerformanceTestingHelper/PerformanceTestingHelpers.h>
 
 #include "PerformanceTests.h"
 

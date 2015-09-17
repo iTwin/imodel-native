@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <UnitTests/BackDoor/ECDb/Backdoor.h>
+#include "PublicAPI/BackDoor/ECDb/Backdoor.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 
 namespace ECDbBackdoor = BentleyApi::BeSQLite::EC::Tests::Backdoor;
