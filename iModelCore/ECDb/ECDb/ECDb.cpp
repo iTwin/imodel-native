@@ -195,4 +195,5 @@ void ECDb::IIssueListener::ReportIssue(IssueSeverity severity, Utf8CP message) c
     _OnIssueReported(severity, message);
     }
 
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -253,6 +253,8 @@ void ECDbTestProject::CreateEmpty (Utf8CP ecdbFileName)
     DbResult stat = m_ecdb->CreateNewDb (ecdbFilePathUtf8.c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
 
+    m_ecdb->AddIssueListener(m_issueListener);
+
     LOG.debugv("Created test ECDb file '%s'", ecdbFilePathUtf8.c_str ());
     }
 
@@ -843,6 +845,29 @@ ECDbTestSchemaManager const& ECDbTestProject::GetTestSchemaManager () const
     return m_testSchemaManager;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle     09/2015
+//---------------------------------------------------------------------------------------
+void ECDbTestProject::ECDbIssueListener::_OnIssueReported(ECDb::IssueSeverity severity, Utf8CP message) const
+    {
+    m_issue = ECDbIssue(severity, message);
+    }
+
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle     09/2015
+//---------------------------------------------------------------------------------------
+ECDbIssue ECDbTestProject::ECDbIssueListener::GetIssue() const
+    {
+    if (!m_issue.IsIssue())
+        return m_issue;
+
+    ECDbIssue copy(m_issue);
+    //reset cached issue before returning
+    m_issue = ECDbIssue();
+    return std::move(copy);
+    }
 
 //*************** ECDbTestUtility **********************************************************
 

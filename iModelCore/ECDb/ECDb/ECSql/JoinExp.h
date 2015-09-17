@@ -175,8 +175,8 @@ private:
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override;
-    ECSqlStatus ResolveRelationshipEnds (ECSqlParseContext& ctx);
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    ECSqlStatus ResolveRelationshipEnds (ECSqlParseContext&);
+    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext&, FinalizeParseMode mode) override;
 
 public:
     RelationshipJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<ClassRefExp> relationship, JoinDirection direction)
@@ -240,6 +240,8 @@ public:
 
     void Append(Utf8StringCR propertyName) { m_properties.push_back(propertyName); }
     };
+
+struct BooleanExp;
 
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013

@@ -26,11 +26,11 @@ private:
     struct ArrayElementBinder : IECSqlBinder, IECSqlPrimitiveBinder
         {
     private:
+        ECDbCR m_ecdb;
         uint32_t m_arrayElementIndex;
         uint32_t m_arrayPropertyIndex;
         IECInstanceP m_instance;
         ECSqlTypeInfo const& m_arrayTypeInfo;
-        ECSqlStatusContext& m_statusContext;
 
         virtual IECSqlPrimitiveBinder& _BindPrimitive() override;
         virtual IECSqlStructBinder& _BindStruct() override;
@@ -53,7 +53,7 @@ private:
         ECSqlStatus SetValue(ECValueCR value);
 
     public:
-        ArrayElementBinder(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& arrayTypeInfo, uint32_t arrayPropertyIndex);
+        ArrayElementBinder(ECDbCR, ECSqlTypeInfo const& arrayTypeInfo, uint32_t arrayPropertyIndex);
         ~ArrayElementBinder() {}
         void Initialize(uint32_t arrayElementIndex, IECInstanceR instance);
         };

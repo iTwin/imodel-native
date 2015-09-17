@@ -38,7 +38,7 @@ void ECSqlStatementCrudAsserter::AssertPrepare (ECSqlTestItem const& testItem, E
     auto stat = PrepareStatement (statement, ecsql, !expectedToSucceed);
 
     if (expectedToSucceed)
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Preparation failed unexpectedly. " << statement.GetLastStatusMessage ().c_str ();
+        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Preparation failed unexpectedly. " << GetTestProject().GetLastIssue().GetMessage();
 
     if (stat != ECSqlStatus::Success)
         {
@@ -49,7 +49,7 @@ void ECSqlStatementCrudAsserter::AssertPrepare (ECSqlTestItem const& testItem, E
     stat = BindParameters (statement, testItem.GetParameterValues (), !expectedToSucceed);
     
     if (expectedToSucceed)
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Binding parameters failed unexpectedly. " << statement.GetLastStatusMessage ().c_str ();
+        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Binding parameters failed unexpectedly. " << GetTestProject().GetLastIssue().GetMessage();
     else
         {
         Utf8CP assertMessage = nullptr;
@@ -254,7 +254,7 @@ void ECSqlSelectStatementCrudAsserter::_Assert (Utf8StringR statementErrorMessag
         {
         AssertPrepare (testItem, statement, *expectedResultForPrepare);
         if (!expectedResultForPrepare->IsExpectedToSucceed ())
-            statementErrorMessage = statement.GetLastStatusMessage ();
+            statementErrorMessage = GetTestProject().GetLastIssue().GetMessage();
 
         expectedResultOfLastStep = expectedResultForPrepare;
         }
@@ -263,7 +263,7 @@ void ECSqlSelectStatementCrudAsserter::_Assert (Utf8StringR statementErrorMessag
         {
         AssertStep (testItem, statement, *expectedResultForResultCount);
         if (!expectedResultForResultCount->IsExpectedToSucceed ())
-            statementErrorMessage = statement.GetLastStatusMessage ();
+            statementErrorMessage = GetTestProject().GetLastIssue().GetMessage();
         expectedResultOfLastStep = expectedResultForResultCount;
         }
     }
@@ -282,7 +282,7 @@ void ECSqlSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem
     //If step failed, assert that this was as expected.
     if (stat != ECSqlStepStatus::HasRow && stat != ECSqlStepStatus::Done)
         {
-        ASSERT_FALSE (expectedToSucceed) << "Step should have failed for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << statement.GetLastStatusMessage ().c_str ();
+        ASSERT_FALSE (expectedToSucceed) << "Step should have failed for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << GetTestProject().GetLastIssue().GetMessage();
         return;
         }
 
@@ -300,7 +300,7 @@ void ECSqlSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem
         stat = statement.Step ();
         }
 
-    ASSERT_NE (static_cast<int> (ECSqlStepStatus::Error), static_cast<int> (stat)) << "Step failed for ECSQL '" << ecsql << "'. Error message: " << statement.GetLastStatusMessage ().c_str ();
+    ASSERT_NE (static_cast<int> (ECSqlStepStatus::Error), static_cast<int> (stat)) << "Step failed for ECSQL '" << ecsql << "'. Error message: " << GetTestProject().GetLastIssue().GetMessage();
 
     if (expectedResult.HasExpectedRowCount ())
         {
@@ -339,14 +339,12 @@ void ECSqlSelectStatementCrudAsserter::AssertCurrentCell (ECSqlTestItem const& t
     else if (dataType.IsStruct ())
         {
         auto const& structValue = ecsqlValue.GetStruct ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (statement.GetLastStatus ())) << "IECSqlValue::GetStruct () unexpectedly caused an error.";
         for (int i = 0; i < structValue.GetMemberCount (); i++)
             AssertCurrentCell (testItem, statement, structValue.GetValue (i), &dataType);
         }
     else // array
         {
         auto const& arrayValue = ecsqlValue.GetArray ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (statement.GetLastStatus ())) << "IECSqlValue::GetArray () unexpectedly caused an error.";
         AssertArrayCell (testItem, statement, arrayValue, dataType);
         }
     }
@@ -380,9 +378,9 @@ void ECSqlSelectStatementCrudAsserter::AssertCurrentCell (ECSqlTestItem const& t
         assertMessage.append (" for a ").append (DataTypeToString (columnDataType)).append (" column.");
 
         if (expectedToSucceed)
-            ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << assertMessage.c_str ();
+            ASSERT_FALSE (GetTestProject().GetLastIssue().IsIssue()) << assertMessage.c_str ();
         else
-            ASSERT_EQ ((int) ECSqlStatus::UserError, (int) statement.GetLastStatus ()) << assertMessage.c_str ();
+            ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << assertMessage.c_str();
         }
     }
 
@@ -396,7 +394,7 @@ void ECSqlSelectStatementCrudAsserter::AssertArrayCell (ECSqlTestItem const& tes
         AssertCurrentCell (testItem, statement, *arrayElement, &arrayType);
         }
 
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (statement.GetLastStatus ()));
+    ASSERT_FALSE (GetTestProject().GetLastIssue().IsIssue());
     }
 
 //---------------------------------------------------------------------------------------
@@ -405,7 +403,7 @@ void ECSqlSelectStatementCrudAsserter::AssertArrayCell (ECSqlTestItem const& tes
 void ECSqlSelectStatementCrudAsserter::AssertColumnInfo (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& value, ECTypeDescriptor const* parentDataType) const
     {
     auto const& columnInfo = value.GetColumnInfo ();
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (statement.GetLastStatus ())) << "IECSqlValue::GetColumnInfo unexpectedly caused an error.";
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "IECSqlValue::GetColumnInfo unexpectedly caused an error.";
 
     auto prop = columnInfo.GetProperty ();
     auto const& propPath = columnInfo.GetPropertyPath ();
@@ -631,7 +629,7 @@ void ECSqlNonSelectStatementCrudAsserter::_Assert (Utf8StringR statementErrorMes
         {
         AssertPrepare (testItem, statement, *expectedResultForPrepare);
         if (!expectedResultForPrepare->IsExpectedToSucceed ())
-            statementErrorMessage = statement.GetLastStatusMessage ();
+            statementErrorMessage = GetTestProject().GetLastIssue().GetMessage();
 
         expectedResultOfLastStep = expectedResultForPrepare;
         }
@@ -640,7 +638,7 @@ void ECSqlNonSelectStatementCrudAsserter::_Assert (Utf8StringR statementErrorMes
         {
         AssertStep (testItem, statement, *expectedResultForAffectedRows);
         if (!expectedResultForAffectedRows->IsExpectedToSucceed ())
-            statementErrorMessage = statement.GetLastStatusMessage ();
+            statementErrorMessage = GetTestProject().GetLastIssue().GetMessage();
         expectedResultOfLastStep = expectedResultForAffectedRows;
         }
     }
@@ -661,13 +659,12 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
 
         if (expectedToSucceed)
             {
-            ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stat) << "Step (ECInstanceKey&) should have succeeded for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << statement.GetLastStatusMessage ().c_str ();
+            ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stat) << "Step (ECInstanceKey&) should have succeeded for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << GetTestProject().GetLastIssue().GetMessage();
             ASSERT_TRUE (ecInstanceKey.IsValid ());
             }
         else
             {
-            ASSERT_EQ ((int) ECSqlStepStatus::Error, (int) stat) << "Step (ECInstanceKey&) should have failed for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << statement.GetLastStatusMessage ().c_str ();
-            ASSERT_NE ((int) ECSqlStatus::Success, (int) statement.GetLastStatus());
+            ASSERT_EQ ((int) ECSqlStepStatus::Error, (int) stat) << "Step (ECInstanceKey&) should have failed for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << GetTestProject().GetLastIssue().GetMessage();
             }
 
         return;
@@ -678,7 +675,7 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
     ECSqlStepStatus stepStat = Step(statement, !expectedToSucceed);
     if (expectedToSucceed)
         {
-        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stepStat) << "Step should have succeeded for ECSQL '" << ecsql << "'. Actual return code was: " << (int) stepStat << " Error message: " << statement.GetLastStatusMessage().c_str();
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stepStat) << "Step should have succeeded for ECSQL '" << ecsql << "'. Actual return code was: " << (int) stepStat << " Error message: " << GetTestProject().GetLastIssue().GetMessage();
         //TODO ROWAFFECTE
         //int expectedRowsAffected = expectedResult.GetExpectedAffectedRowCount ();
         //int actualRowsAffected = statement.GetDefaultEventHandler()->GetInstancesAffectedCount();
@@ -686,8 +683,7 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
         }
     else
         {
-        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stepStat) << "Step should have failed for ECSQL '" << ecsql << "'. Actual return code was: " << (int) stepStat << " Error message: " << statement.GetLastStatusMessage().c_str();
-        ASSERT_NE ((int) ECSqlStatus::Success, (int) statement.GetLastStatus());
+        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stepStat) << "Step should have failed for ECSQL '" << ecsql << "'. Actual return code was: " << (int) stepStat << " Error message: " << GetTestProject().GetLastIssue().GetMessage();
         }
     }
 

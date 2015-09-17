@@ -9,8 +9,8 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "ClassRefExp.h"
-#include "PropertyNameExp.h"
 #include "JoinExp.h"
+#include "PropertyNameExp.h"
 #include "WhereExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -70,9 +70,9 @@ struct FromExp : Exp
     {
 DEFINE_EXPR_TYPE(FromClause) 
 private:
-    void FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const* classRef) const;
+    void FindRangeClassRefs(RangeClassRefList&, ClassRefExp const*) const;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "FromClause"; }
@@ -80,7 +80,7 @@ private:
 public:
     FromExp () : Exp () {}
 
-    ECSqlStatus TryAddClassRef(ECSqlParseContext&ctx, ClassRefExp* classRef);
+    ECSqlStatus TryAddClassRef(ECSqlParseContext&, ClassRefExp*);
 
     std::unique_ptr<RangeClassRefList> FindRangeClassRefExpressions () const;
 
@@ -89,8 +89,10 @@ public:
     //For subquery it return "" if subquery has no alias
     //+---------------+---------------+---------------+---------------+---------------+------
     RangeClassRefExp const* FindRangeClassRefById (Utf8StringCR id) const;
-    void FindRangeClassRefs(RangeClassRefList& classRefs) const;
+    void FindRangeClassRefs(RangeClassRefList&) const;
     };
+
+struct ValueExpListExp;
 
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      04/2015
@@ -101,12 +103,12 @@ struct GroupByExp : Exp
 private:
     size_t m_groupingValueListExpIndex;
 
-    virtual Exp::FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual Exp::FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "GroupBy"; }
     
 public:
-    explicit GroupByExp(std::unique_ptr<ValueExpListExp> groupingValueListExpIndex);
+    explicit GroupByExp(std::unique_ptr<ValueExpListExp>);
     ~GroupByExp() {}
 
     ValueExpListExp const* GetGroupingValueListExp() const;
@@ -144,9 +146,9 @@ private:
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "LimitOffset"; }
 
-    virtual Exp::FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-    virtual bool _TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const override;
-    static bool IsValidChildExp(ValueExp const& exp);
+    virtual Exp::FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
+    static bool IsValidChildExp(ValueExp const&);
 public:
     explicit LimitOffsetExp (std::unique_ptr<ValueExp> limit, std::unique_ptr<ValueExp> offset = nullptr);
     ~LimitOffsetExp () {}
@@ -173,7 +175,7 @@ public:
 private:
     SortDirection m_direction;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override;
 
@@ -225,10 +227,10 @@ struct SelectClauseExp : Exp
     {
 DEFINE_EXPR_TYPE(Selection) 
 private:
-    ECSqlStatus ReplaceAsteriskExpression (ECSqlParseContext& ctx, DerivedPropertyExp const& asteriskExp, RangeClassRefList const& rangeClassRefs);
-    ECSqlStatus ReplaceAsteriskExpressions (ECSqlParseContext& ctx, RangeClassRefList const& rangeClassRefs);
+    ECSqlStatus ReplaceAsteriskExpression (DerivedPropertyExp const& asteriskExp, RangeClassRefList const&);
+    ECSqlStatus ReplaceAsteriskExpressions (RangeClassRefList const&);
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "Selection (aka SelectClause)"; }
@@ -277,7 +279,7 @@ private:
     int m_limitOffsetClauseIndex;
 
     std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override;
@@ -462,33 +464,13 @@ struct SubqueryRefExp : RangeClassRefExp
     DEFINE_EXPR_TYPE(SubqueryRef) 
 private:
     virtual Utf8StringCR _GetId() const override { return GetAlias(); }
-    virtual bool _ContainProperty(Utf8CP propertyName) const override
-        {
-        return GetSubquery ()->GetQuery()->FindProperty(propertyName) != nullptr;
-        }
-
-    virtual ECSqlStatus _CreatePropertyNameExpList (ECSqlParseContext& ctx, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
-
-    virtual Utf8String _ToECSql() const override
-        {
-        return  (!IsPolymorphic() ? "ONLY " : "") + GetSubquery()->ToString() + (GetAlias().empty() ? "" : " AS " + GetAlias());
-        }
-
-    virtual Utf8String _ToString () const override
-        {
-        Utf8String str ("SubqueryRef [");
-        str.append (GetId ().c_str ()).append ("]");
-        return str;
-        }
+    virtual bool _ContainProperty(Utf8CP propertyName) const override { return GetSubquery ()->GetQuery()->FindProperty(propertyName) != nullptr; }
+    virtual ECSqlStatus _CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
+    virtual Utf8String _ToECSql() const override;
+    virtual Utf8String _ToString () const override;
 
 public:
-    SubqueryRefExp(SubqueryExp* subquery, Utf8StringCR alias, bool isPolymorphic)
-        : RangeClassRefExp (isPolymorphic)
-        {
-        SetAlias(alias);
-        AddChild (std::unique_ptr<Exp> (subquery));
-        }
-
+    SubqueryRefExp(std::unique_ptr<SubqueryExp>, Utf8StringCR alias, bool isPolymorphic);
     SubqueryExp const* GetSubquery() const { return GetChild<SubqueryExp> (0);}
     };
 
@@ -549,7 +531,7 @@ struct SubqueryValueExp : ValueExp
     DEFINE_EXPR_TYPE(SubqueryValue)
 
 private:
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override { ecsql.append(GetQuery()->ToECSql()); }
     virtual Utf8String _ToString() const override { return "SubqueryValue"; }
 

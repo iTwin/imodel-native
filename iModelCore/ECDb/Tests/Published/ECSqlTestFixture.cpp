@@ -118,12 +118,10 @@ void ECSqlTestFixture::BindFromJson (BentleyStatus& succeeded, ECSqlStatement co
                 else //struct
                     {
                     IECSqlStructBinder& structBinder = binder.BindStruct ();
-                    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
                     for (Utf8StringCR memberName : jsonValue.getMemberNames ())
                         {
                         Json::Value const& member = jsonValue[memberName.c_str ()];
                         auto& memberBinder = structBinder.GetMember (memberName.c_str ());
-                        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
 
                         BindFromJson (succeeded, statement, member, memberBinder);
                         if (succeeded != SUCCESS)
@@ -136,11 +134,9 @@ void ECSqlTestFixture::BindFromJson (BentleyStatus& succeeded, ECSqlStatement co
             case Json::arrayValue:
                 {
                 IECSqlArrayBinder& arrayBinder = binder.BindArray ((uint32_t) jsonValue.size ());
-                ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
                 for (JsonValueCR arrayElement : jsonValue)
                     {
                     IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement ();
-                    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
                     BindFromJson (succeeded, statement, arrayElement, arrayElementBinder);
                     if (succeeded != SUCCESS)
                         return;
@@ -237,12 +233,10 @@ void ECSqlTestFixture::VerifyECSqlValue (ECSqlStatement const& statement, JsonVa
             {
             ASSERT_TRUE (typeInfo.IsStruct ());
             IECSqlStructValue const& actualStructValue = actualValue.GetStruct ();
-            ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
             const int structMemberCount = actualStructValue.GetMemberCount ();
             for (int i = 0; i < structMemberCount; i++)
                 {
                 auto const& actualMemberValue = actualStructValue.GetValue (i);
-                ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
                 Utf8String memberName (actualMemberValue.GetColumnInfo ().GetProperty ()->GetName ());
                 Json::Value expectedMemberValue = expectedValue.get (memberName, Json::Value (Json::nullValue));
                 VerifyECSqlValue (statement, expectedMemberValue, actualMemberValue);
@@ -254,7 +248,6 @@ void ECSqlTestFixture::VerifyECSqlValue (ECSqlStatement const& statement, JsonVa
 
     ASSERT_EQ (Json::ValueType::arrayValue, expectedType);
     IECSqlArrayValue const& actualArrayValue = actualValue.GetArray ();
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
     int actualArrayLength = 0;
     for (IECSqlValue const* actualArrayElement : actualArrayValue)
         {

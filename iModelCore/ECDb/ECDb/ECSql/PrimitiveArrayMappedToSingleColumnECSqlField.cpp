@@ -19,18 +19,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
 PrimitiveArrayMappedToSingleColumnECSqlField::PrimitiveArrayMappedToSingleColumnECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int sqliteColumnIndex, ECClassCR primitiveArraySystemClass)
-: ECSqlField (ecsqlStatement, move (ecsqlColumnInfo)), m_primitiveArraySystemClass (primitiveArraySystemClass), m_sqliteColumnIndex (sqliteColumnIndex), m_arrayElement (ecsqlStatement.GetStatusContextR ())
+: ECSqlField (ecsqlStatement, move (ecsqlColumnInfo)), m_primitiveArraySystemClass (primitiveArraySystemClass), m_sqliteColumnIndex (sqliteColumnIndex), m_arrayElement(*ecsqlStatement.GetECDb())
     {
     m_arrayElement.Init (m_ecsqlColumnInfo);
-    Reset (GetStatusContextR ());
+    Reset ();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init(ECSqlStatusContext& statusContext)
+ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init()
     {
-    Reset(statusContext);
+    Reset();
 
     Byte* arrayBlob = (Byte*) GetSqliteStatement().GetValueBlob(m_sqliteColumnIndex);
     int arrayBlobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
@@ -42,7 +42,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init(ECSqlStatusConte
     if (!enabler)
         {
         BeAssert(false && "ECEnabler for primitive array ECDb_System class is nullptr.");
-        return SetError(ECSqlStatus::ProgrammerError, "ECEnabler for primitive array ECDb_System class is nullptr.");
+        return ReportError(ECSqlStatus::ProgrammerError, "ECEnabler for primitive array ECDb_System class is nullptr.");
         }
 
     bool isEmptyArray = arrayBlob == nullptr;
@@ -51,7 +51,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init(ECSqlStatusConte
         if (!ECDBuffer::IsCompatibleVersion(nullptr, arrayBlob))
             {
             BeAssert(false && "BLOB is from a future version that thinks it is not compatible with us");
-            return SetError(ECSqlStatus::ProgrammerError, "BLOB is from a future version that thinks it is not compatible with us");
+            return ReportError(ECSqlStatus::ProgrammerError, "BLOB is from a future version that thinks it is not compatible with us");
             }
 
         //Initialize ECInstance from blob
@@ -59,7 +59,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init(ECSqlStatusConte
         if (!m_arrayValueECInstance.IsValid())
             {
             BeAssert(false && "Shared ECInstance created from array BLOB is nullptr.");
-            return SetError(ECSqlStatus::ProgrammerError, "Shared ECInstance created from array BLOB is nullptr.");
+            return ReportError(ECSqlStatus::ProgrammerError, "Shared ECInstance created from array BLOB is nullptr.");
             }
         }
     else
@@ -73,7 +73,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init(ECSqlStatusConte
     if (m_arrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::ECOBJECTS_STATUS_Success)
         {
         BeAssert(false && "Could not retrieve array information from array ECInstance.");
-        return SetError(ECSqlStatus::ProgrammerError, "Could not retrieve array information from array ECInstance.");
+        return ReportError(ECSqlStatus::ProgrammerError, "Could not retrieve array information from array ECInstance.");
         }
 
     m_arrayInfo = arrayMetaInfo.GetArrayInfo();
@@ -83,7 +83,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init(ECSqlStatusConte
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
         DateTimeInfo dateTimeInfo;
         if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECOBJECTS_STATUS_Success)
-            return SetError(ECSqlStatus::UserError, "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
+            return ReportError(ECSqlStatus::UserError, "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
 
         m_datetimeMetadata = dateTimeInfo.GetInfo(true);
         }
@@ -94,7 +94,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init(ECSqlStatusConte
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Reset (ECSqlStatusContext& statusContext)
+ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Reset ()
     {
     DoReset ();
     return ECSqlStatus::Success;
@@ -114,8 +114,6 @@ void PrimitiveArrayMappedToSingleColumnECSqlField::DoReset () const
 //---------------------------------------------------------------------------------------
 bool PrimitiveArrayMappedToSingleColumnECSqlField::_IsNull () const
     {
-    ResetStatus ();
-
     return false; //arrays are always considered to be not-null (seems to be EC contract)
     }
 
@@ -164,7 +162,6 @@ IECSqlValue const* PrimitiveArrayMappedToSingleColumnECSqlField::_GetCurrent () 
 //---------------------------------------------------------------------------------------
 int PrimitiveArrayMappedToSingleColumnECSqlField::_GetArrayLength () const
     {
-    ResetStatus ();
     return m_arrayInfo.GetCount ();
     }
 
@@ -174,7 +171,7 @@ int PrimitiveArrayMappedToSingleColumnECSqlField::_GetArrayLength () const
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& PrimitiveArrayMappedToSingleColumnECSqlField::_GetPrimitive () const
     {
-    SetError (ECSqlStatus::UserError, "GetPrimitive cannot be called for array value. Call GetArray instead.");
+    ReportError (ECSqlStatus::UserError, "GetPrimitive cannot be called for array value. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton ().GetPrimitive ();
     }
 
@@ -183,7 +180,7 @@ IECSqlPrimitiveValue const& PrimitiveArrayMappedToSingleColumnECSqlField::_GetPr
 //---------------------------------------------------------------------------------------
 IECSqlStructValue const& PrimitiveArrayMappedToSingleColumnECSqlField::_GetStruct () const
     {
-    SetError (ECSqlStatus::UserError, "GetStruct cannot be called for array value. Call GetArray instead.");
+    ReportError (ECSqlStatus::UserError, "GetStruct cannot be called for array value. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton ().GetStruct ();
     }
 
@@ -196,15 +193,7 @@ IECInstanceCP PrimitiveArrayMappedToSingleColumnECSqlField::GetArrayValueECInsta
     }
 
 
-//*********************** PrimitiveArrayMappedToSingleColumnECSqlField::Reader *******************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      07/2013
-//---------------------------------------------------------------------------------------
-PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::ArrayElementValue (ECSqlStatusContext& statusContext)
-    :  m_statusContext (statusContext)
-    {}
-
+//*********************** PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue *******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
@@ -411,7 +400,7 @@ ECSqlColumnInfoCR PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValu
 //---------------------------------------------------------------------------------------
 IECSqlStructValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetStruct () const
     {
-    m_statusContext.SetError (ECSqlStatus::UserError, "GetStruct cannot be called for array element. Call GetPrimitive instead.");
+    m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "GetStruct cannot be called for array element. Call GetPrimitive instead.");
     return NoopECSqlValue::GetSingleton ().GetStruct ();
     }
 
@@ -420,7 +409,7 @@ IECSqlStructValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElem
 //---------------------------------------------------------------------------------------
 IECSqlArrayValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetArray () const
     {
-    m_statusContext.SetError (ECSqlStatus::UserError, "GetArray cannot be called for array element. Call GetPrimitive instead.");
+    m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "GetArray cannot be called for array element. Call GetPrimitive instead.");
     return NoopECSqlValue::GetSingleton ().GetArray ();
     }
 
@@ -429,7 +418,6 @@ IECSqlArrayValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayEleme
 //---------------------------------------------------------------------------------------
 void PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::Reset ()
     {
-    ResetStatus ();
     m_value.Clear ();
     }
 
@@ -440,20 +428,11 @@ bool PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::CanRead (P
     {
     if (requestedType != m_columnInfo.GetDataType ().GetPrimitiveType ())
         {
-        m_statusContext.SetError (ECSqlStatus::UserError, "For primitive array elements only the GetXXX method which directly matches the array element type can be called.");
+        m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "For primitive array elements only the GetXXX method which directly matches the array element type can be called.");
         return false;
         }
 
-    ResetStatus ();
     return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-void PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::ResetStatus () const
-    {
-    m_statusContext.Reset ();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -66,7 +66,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
     if (!IsPropertyRef() && !m_propertyPath.IsResolved ())
         {
         BeAssert (false && "PropertyNameExp property path is expected to be resolved at end of parsing.");
-        ctx.SetError (ECSqlStatus::ProgrammerError, "PropertyNameExp property path is expected to be resolved at end of parsing.");
+        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "PropertyNameExp property path is expected to be resolved at end of parsing.");
         return FinalizeParseStatus::Error;
         }
 
@@ -144,17 +144,21 @@ ECSqlStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     if (aliasClassRefExpMatches.empty() && propNameClassRefExpMatches.empty())
         {
         if (classAliasMatches > 0)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "ECProperty '%s' not found in ECClass with alias '%s'.", secondPropPathEntry, firstPropPathEntry);
+            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "ECProperty '%s' not found in ECClass with alias '%s'.", secondPropPathEntry, firstPropPathEntry);
+        else
+            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "ECProperty expression '%s' does not match with any of the ECClasses in the ECSQL statement.", m_propertyPath.ToString().c_str());
 
-        return ctx.SetError(ECSqlStatus::InvalidECSql, "ECProperty expression '%s' does not match with any of the ECClasses in the ECSQL statement.", m_propertyPath.ToString().c_str());
+        return ECSqlStatus::InvalidECSql;
         }
 
     if (aliasClassRefExpMatches.size() > 1)
         {
         if (classAliasMatches > 1)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "ECProperty expression '%s' in ECSQL statement is ambiguous. Duplicate definition of class alias.", m_propertyPath.ToString().c_str());
+            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "ECProperty expression '%s' in ECSQL statement is ambiguous. Duplicate definition of class alias.", m_propertyPath.ToString().c_str());
         else
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Duplicate ECProperty '%s' in ECClass with alias '%s'.", secondPropPathEntry, firstPropPathEntry);
+            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Duplicate ECProperty '%s' in ECClass with alias '%s'.", secondPropPathEntry, firstPropPathEntry);
+
+        return ECSqlStatus::InvalidECSql;
         }
 
     BeAssert(aliasClassRefExpMatches.size() <= 1);
@@ -186,7 +190,10 @@ ECSqlStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     if (verifyPropNameClassRefs)
         {
         if (propNameClassRefExpMatches.size() > 1)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "ECProperty expression '%s' in ECSQL statement is ambiguous. Class alias might be missing.", m_propertyPath.ToString().c_str());
+            {
+            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "ECProperty expression '%s' in ECSQL statement is ambiguous. Class alias might be missing.", m_propertyPath.ToString().c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
 
         classRefExp = propNameClassRefExpMatches[0];
         error.clear();
@@ -194,10 +201,12 @@ ECSqlStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         }
 
     if (!error.empty())
-        return ctx.SetError(ECSqlStatus::InvalidECSql, error.c_str());
+        {
+        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, error.c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
 
     SetClassRefExp(*classRefExp);
-
     return ECSqlStatus::Success;
     }
 

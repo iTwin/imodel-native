@@ -17,6 +17,23 @@ using namespace std;
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8CP const Exp::ASTERISK_TOKEN = "*";
 
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    08/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+Exp::FinalizeParseStatus Exp::_FinalizeParsing(ECSqlParseContext&, FinalizeParseMode)
+    {
+    return FinalizeParseStatus::Completed;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    08/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool Exp::_TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const
+    {
+    return false;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -55,7 +72,7 @@ ECSqlStatus Exp::FinalizeParsing (ECSqlParseContext& ctx)
     //So _FinalizeParsing is called two times on each Exp.
     if (!IsComplete ())
         {
-        auto stat = _FinalizeParsing (ctx, FinalizeParseMode::BeforeFinalizingChildren);
+        FinalizeParseStatus stat = _FinalizeParsing (ctx, FinalizeParseMode::BeforeFinalizingChildren);
         switch (stat)
             {
             case FinalizeParseStatus::Completed:
@@ -63,7 +80,7 @@ ECSqlStatus Exp::FinalizeParsing (ECSqlParseContext& ctx)
                 break;
 
             case FinalizeParseStatus::Error:
-                return ctx.GetStatus ();
+                return ECSqlStatus::InvalidECSql;
             }
         }
 
@@ -76,19 +93,16 @@ ECSqlStatus Exp::FinalizeParsing (ECSqlParseContext& ctx)
 
     if (!IsComplete ())
         {
-        auto stat = _FinalizeParsing(ctx, FinalizeParseMode::AfterFinalizingChildren);
+        FinalizeParseStatus stat = _FinalizeParsing(ctx, FinalizeParseMode::AfterFinalizingChildren);
+        if (stat == FinalizeParseStatus::Error)
+            return ECSqlStatus::InvalidECSql;
+
         BeAssert (IsParameterExp() || stat != FinalizeParseStatus::NotCompleted && "Every expression except for parameter exps is expected to be either completed or return an error from finalize parsing.");
         if (stat == FinalizeParseStatus::Completed)
             SetIsComplete ();
-
-        if (stat == FinalizeParseStatus::Error && ctx.GetStatus () == ECSqlStatus::Success)
-            {
-            BeAssert (false && "FinalizeParsing returned error, but did not set that error in the status context.");
-            ctx.SetError (ECSqlStatus::ProgrammerError, "FinalizeParsing of expression '%s' returned error, but did not set that error in the status context.", ToECSql ().c_str ());
-            }
         }
 
-    return ctx.GetStatus ();
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------

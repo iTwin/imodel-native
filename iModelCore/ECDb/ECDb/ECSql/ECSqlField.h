@@ -8,7 +8,6 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include <ECDb/IECSqlValue.h>
-#include "ECSqlStatusContext.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -30,8 +29,8 @@ private:
 
     virtual ECSqlColumnInfoCR _GetColumnInfo () const override;
 
-    virtual ECSqlStatus _Reset (ECSqlStatusContext& statusContext);
-    virtual ECSqlStatus _Init (ECSqlStatusContext& statusContext);
+    virtual ECSqlStatus _Reset ();
+    virtual ECSqlStatus _Init ();
 
     static Collection s_emptyChildCollection;
 
@@ -39,10 +38,7 @@ protected:
     ECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo);
 
 
-    ECSqlStatus SetError (ECSqlStatus status, Utf8CP errorMessage) const;
-    void ResetStatus () const;
-    ECSqlStatusContext& GetStatusContextR () const;
-
+    ECSqlStatus ReportError (ECSqlStatus status, Utf8CP errorMessage) const;
     ECSqlStatementBase& GetECSqlStatementR () const;
     Statement& GetSqliteStatement () const;
 
@@ -51,8 +47,8 @@ public:
 
     virtual Collection const& GetChildren () const {return s_emptyChildCollection;}
 
-    ECSqlStatus Init (ECSqlStatusContext& statusContext);
-    ECSqlStatus Reset (ECSqlStatusContext& statusContext);
+    ECSqlStatus Init ();
+    ECSqlStatus Reset ();
     };
 
 //=======================================================================================

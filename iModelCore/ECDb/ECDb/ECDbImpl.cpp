@@ -251,12 +251,21 @@ BentleyStatus ECDb::Impl::AddIssueListener(IIssueListener const& issueListener)
     return SUCCESS;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDb::Impl::IsSeverityEnabled(IssueSeverity severity) const
+    {
+    return m_issueListener != nullptr || LOG.isSeverityEnabled(ToLogSeverity(severity));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::ReportIssue(IssueSeverity severity, Utf8CP message, ...) const
     {
-    const NativeLogging::SEVERITY logSeverity = severity == IssueSeverity::Warning ? NativeLogging::LOG_WARNING : NativeLogging::LOG_ERROR;
+    const NativeLogging::SEVERITY logSeverity = ToLogSeverity(severity);
     const bool isLogSeverityEnabled = LOG.isSeverityEnabled(logSeverity);
 
     if (m_issueListener != nullptr || isLogSeverityEnabled)
@@ -274,6 +283,56 @@ void ECDb::Impl::ReportIssue(IssueSeverity severity, Utf8CP message, ...) const
             LOG.message(logSeverity, formattedMessage.c_str());
 
         va_end(args);
+        }
+    }
+
+ECSqlStatus MapSqliteStatus(DbResult sqliteStatus)
+    {
+    if (BE_SQLITE_OK == sqliteStatus)
+        return ECSqlStatus::Success;
+
+    if (BE_SQLITE_CONSTRAINT_BASE == (sqliteStatus & BE_SQLITE_CONSTRAINT_BASE))
+        return ECSqlStatus::ConstraintViolation;
+
+    switch (sqliteStatus)
+        {
+            case BE_SQLITE_RANGE:
+                return ECSqlStatus::IndexOutOfBounds;
+
+                //These are considered programmer errors. We might refine this while seeing situations where a SQLite failure
+                //is not an internal programmer error
+            case BE_SQLITE_INTERNAL:
+            case BE_SQLITE_MISMATCH:
+            case BE_SQLITE_MISUSE:
+            case BE_SQLITE_NOLFS:
+            case BE_SQLITE_SCHEMA:
+                //these should never show up here as they are handled by the Step logic
+            case BE_SQLITE_DONE:
+            case BE_SQLITE_ROW:
+                return ECSqlStatus::ProgrammerError;
+
+            default:
+                return ECSqlStatus::InvalidECSql;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  12/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::ReportSqliteIssue(ECSqlStatus& mappedECSqlStatus, IssueSeverity sev, DbResult sqliteStat, Utf8CP messageHeader) const
+    {
+    mappedECSqlStatus = MapSqliteStatus(sqliteStat);
+
+    if (IsSeverityEnabled(sev))
+        {
+        Utf8String errorMessage;
+        BeAssert(mappedECSqlStatus != ECSqlStatus::Success && "ECSqlStatusContext::SetError should not be called in case of success.");
+
+        errorMessage.append(Utf8String::IsNullOrEmpty(messageHeader) ? "SQLite error" : messageHeader);
+        errorMessage.append(" ").append(ECDb::InterpretDbResult(sqliteStat));
+        errorMessage.append(": ").append(m_ecdb.GetLastError());
+
+        ReportIssue(sev, errorMessage.c_str());
         }
     }
 
@@ -300,5 +359,6 @@ DbResult ECDb::Impl::ResetSequences (BeRepositoryId* repoId)
 
     return BE_SQLITE_OK;
     }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

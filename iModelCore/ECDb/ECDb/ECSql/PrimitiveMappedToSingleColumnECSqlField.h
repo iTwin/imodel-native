@@ -23,7 +23,7 @@ private:
     bool CanGetValue(ECN::PrimitiveType requestedType) const;
     bool CanGetValue(ECN::PrimitiveType testType, ECN::PrimitiveType requestedType, Utf8CP typeName, Utf8CP getValueMethodName) const;
 
-    virtual ECSqlStatus _Init(ECSqlStatusContext& statusContext) override;
+    virtual ECSqlStatus _Init() override;
 
     virtual bool _IsNull() const override;
 

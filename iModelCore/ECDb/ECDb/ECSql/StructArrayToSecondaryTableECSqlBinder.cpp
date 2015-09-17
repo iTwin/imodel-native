@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructArrayToSecondaryTableECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -18,7 +18,7 @@ StructArrayToSecondaryTableECSqlBinder::StructArrayToSecondaryTableECSqlBinder (
 : ECSqlBinder (ecsqlStatement, typeInfo, 0, true, true), IECSqlArrayBinder ()
     {
     BeAssert (GetTypeInfo ().GetKind () == ECSqlTypeInfo::Kind::StructArray);
-    m_value = ECSqlParameterValueFactory::CreateArray (GetStatusContext (), typeInfo);
+    m_value = ECSqlParameterValueFactory::CreateArray (*ecsqlStatement.GetECDb(), typeInfo);
     }
 
 //---------------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ void StructArrayToSecondaryTableECSqlBinder::_OnClearBindings ()
 ECSqlStatus StructArrayToSecondaryTableECSqlBinder::_OnBeforeStep ()
     {
     //GetArrayLength is cheap on ECSqlParameterValue
-    return ArrayConstraintValidator::Validate (GetStatusContext (), GetTypeInfo (), m_value->GetArray ().GetArrayLength ());
+    return ArrayConstraintValidator::Validate (GetECDb(), GetTypeInfo (), m_value->GetArray ().GetArrayLength ());
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

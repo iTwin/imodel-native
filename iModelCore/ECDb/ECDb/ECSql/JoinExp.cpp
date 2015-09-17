@@ -140,7 +140,10 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
     if (toEP.GetLocation() == ClassLocation::NotResolved)
         {
         if (sourceContainsAnyClass && targetContainsAnyClass)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "'%s' class is not related to by the relationship '%s' as both relationship endpoint contain 'AnyClass'.", toECClass.GetFullName(), relationshipClass->GetFullName());
+            {
+            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "'%s' class is not related to by the relationship '%s' as both relationship endpoint contain 'AnyClass'.", toECClass.GetFullName(), relationshipClass->GetFullName());
+            return ECSqlStatus::InvalidECSql;
+            }
 
         if (sourceContainsAnyClass)
             {
@@ -153,7 +156,10 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
             toEP.SetAnyClass (true);
             }
         else
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
+            {
+            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
+            return ECSqlStatus::InvalidECSql;
+            }
         }
 
     bmap<ECClassId,ClassNameExp const*> fromClassExistsInSourceList;
@@ -193,15 +199,24 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
     //ECSQL_TODO: If possible remove child class from 'from class list'. If parent is added do not add child to it. 
 
     if (fromClassExistsInSourceList.empty() && fromClassExistsInTargetList.empty())
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", relationshipClass->GetFullName());
+        {
+        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", relationshipClass->GetFullName());
+        return ECSqlStatus::InvalidECSql;
+        }
 
     if (fromClassExistsInSourceList.size() > 1 || fromClassExistsInTargetList.size() > 1)
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
+        {
+        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
+        return ECSqlStatus::InvalidECSql;
+        }
         
     if (fromClassExistsInSourceList.size() == 1 && fromClassExistsInTargetList.size() == 1)
         {
         if (fromClassExistsInSourceList.begin()->first != fromClassExistsInTargetList.begin()->first)
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
+            {
+            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
+            return ECSqlStatus::InvalidECSql;
+            }
         }
 
     if (!fromClassExistsInSourceList.empty())
@@ -240,14 +255,23 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
         {
         //Rule: In self-join direction must be provided
         if (GetDirection() == JoinDirection::Implied)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "FORWARD or REVERSE must be specified for joins where source and target cannot be identified unambiguously, e.g. joins between the same class.");
+            {
+            ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "FORWARD or REVERSE must be specified for joins where source and target cannot be identified unambiguously, e.g. joins between the same class.");
+            return ECSqlStatus::InvalidECSql;
+            }
         }
 
     if (fromEP.GetLocation() == ClassLocation::NotResolved || fromEP.GetClassNameRef() == nullptr)
-        return ctx.SetError(ECSqlStatus::ProgrammerError, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
+        {
+        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
+        return ECSqlStatus::InvalidECSql;
+        }
 
     if (toEP.GetLocation() == ClassLocation::NotResolved || toEP.GetClassNameRef() == nullptr)
-        return ctx.SetError(ECSqlStatus::ProgrammerError, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
+        {
+        ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
+        return ECSqlStatus::InvalidECSql;
+        }
 
     m_resolvedFrom = fromEP;
     m_resolvedTo = toEP;

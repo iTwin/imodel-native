@@ -125,7 +125,7 @@ Exp::FinalizeParseStatus AssignmentExp::_FinalizeParsing(ECSqlParseContext& ctx,
                 ValueExp const* valueExp = GetValueExp();
                 if (!valueExp->IsParameterExp() && !GetPropertyNameExp()->GetTypeInfo().Matches(valueExp->GetTypeInfo(), &errorMessage))
                     {
-                    ctx.SetError(ECSqlStatus::InvalidECSql, "Type mismatch in SET clause of UPDATE statement: %s", errorMessage.c_str());
+                    ctx.GetECDbImpl().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch in SET clause of UPDATE statement: %s", errorMessage.c_str());
                     return FinalizeParseStatus::Error;
                     }
 

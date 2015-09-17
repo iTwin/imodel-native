@@ -15,12 +15,14 @@ using namespace std;
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 //******************** ECSqlConsoleSession ***********************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
 ECSqlConsoleSession::ECSqlConsoleSession ()
     : m_outputFormat (OutputFormat::Table)
     {
+    m_ecdb.AddIssueListener(m_issueListener);
     }
 
 //---------------------------------------------------------------------------------------
@@ -378,5 +380,11 @@ ECSqlConsoleSession& ECSqlConsole::GetSession()
     return s_session;
     }
 
-
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle     09/2015
+//---------------------------------------------------------------------------------------
+void ECSqlConsoleSession::ECDbIssueListener::_OnIssueReported(ECDb::IssueSeverity severity, Utf8CP message) const
+    {
+    m_severity = severity;
+    m_issue = message;
+    }

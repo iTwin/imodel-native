@@ -42,23 +42,19 @@ public:
 
     //! Gets the metadata of this value
     //! @return ECSQL column metadata.
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     ECDB_EXPORT ECSqlColumnInfoCR GetColumnInfo() const;
 
     //! Indicates whether the value is %NULL or not.
     //! @return true if column value is %NULL, false otherwise
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     ECDB_EXPORT bool IsNull() const;
 
     //! Gets value as a binary / blob
     //! @param[out] binarySize the size of the blob in bytes.
     //! @return The binary value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     ECDB_EXPORT void const* GetBinary(int* binarySize = nullptr) const;
 
     //! Gets the value as a boolean value.
     //! @return Value as boolean
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
@@ -66,7 +62,6 @@ public:
 
     //! Gets the value as a DateTime value.
     //! @return DateTime value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not DateTime
     //! @see @ref ECDbCodeSampleECSqlStatementAndDateTimeProperties
@@ -88,7 +83,6 @@ public:
 
     //! Gets the value as a double
     //! @return Double value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
@@ -96,7 +90,6 @@ public:
 
     //! Gets the value as an integer
     //! @return Integer value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
@@ -104,7 +97,6 @@ public:
 
     //! Gets the value as Int64
     //! @return Int64 value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
@@ -112,7 +104,6 @@ public:
 
     //! Gets the value as UTF-8 encoded string
     //! @return UTF-8 encoded string value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
@@ -120,14 +111,12 @@ public:
 
     //! Gets the value as Point2D
     //! @return Point2D value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not Point2D
     ECDB_EXPORT DPoint2d GetPoint2D () const;
 
     //! Gets the value as Point3D
     //! @return Point3D value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not Point3D
     ECDB_EXPORT DPoint3d GetPoint3D () const;
@@ -135,7 +124,6 @@ public:
 #if !defined (DOCUMENTATION_GENERATOR)
     //! Gets the value as a Bentley Geometry Flatbuffer blob.
     //! @return Bentley Geometry Flatbuffer blob
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not Geometry
     void const* GetGeometryBlob(int* blobSize = nullptr) const;
@@ -143,7 +131,6 @@ public:
 
     //! Gets the value as an IGeometry value.
     //! @return Column value as IGeometry
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not IGeometry
     ECDB_EXPORT IGeometryPtr GetGeometry() const;
@@ -152,7 +139,6 @@ public:
     //! @remarks As @ref ECInstanceId "ECInstanceIds" are BeInt64Ids, you can use
     //! this method to get ECInstanceId values.
     //! @return BeInt64Id value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data does not hold a BeInt64Id
     template <class TBeInt64Id>
@@ -160,14 +146,12 @@ public:
 
     //! Used to access the value if it is a struct value
     //! @return Struct value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not an ECStruct
     ECDB_EXPORT IECSqlStructValue const& GetStruct() const;
 
     //! Used to access the value if it is an array value
     //! @return Array value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not an array
     ECDB_EXPORT IECSqlArrayValue const& GetArray() const;

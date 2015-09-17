@@ -1295,14 +1295,12 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Prepare)
         statement.GetValueInt (0);
         //WIP: Error handling for unstepped statements not done yet. Once done uncomment below line
         //and remove the other one
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
-        //ASSERT_EQ ((int) ECSqlStatus::UserError, (int) statement.GetLastStatus ());
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
         statement.GetValueArray (1);
         //WIP: Error handling for unstepped statements not done yet. Once done uncomment below line
         //and remove the other one
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
-        //ASSERT_EQ ((int) ECSqlStatus::UserError, (int) statement.GetLastStatus ());
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
         }
     }
 
@@ -1318,7 +1316,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_ECInstanceIdColumnInfo)
     auto ecsql = "SELECT c1.ECInstanceId, c2.ECInstanceId FROM ecsql.PSA c1, ecsql.P c2 LIMIT 1";
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, ecsql);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
     ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) statement.Step ());
     auto const& value1 = statement.GetValue (0);
@@ -1351,33 +1349,31 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayInsert)
     auto ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(?, ?)";
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, ecsql);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     
     statement.BindInt64 (1, 1000);
     //add three array elements
     const int count = 3;
     auto& arrayBinder = statement.BindArray (2, (uint32_t) count);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "BindArray failed: " << statement.GetLastStatusMessage ();
+    ASSERT_FALSE (GetTestProject().GetLastIssue().IsIssue()) << "BindArray failed: ";
     for (int i = 0; i < count; i++)
         {        
         auto& structBinder = arrayBinder.AddArrayElement ().BindStruct ();
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "AddArrayElement failed: " << statement.GetLastStatusMessage ();
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "AddArrayElement failed: ";
         auto stat = structBinder.GetMember ("d").BindDouble (i * PI);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember ("i").BindInt (i * 2);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember ("l").BindInt64 (i * 3);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        //stat = structBinder.GetMember ("l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
-        //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember ("p2d").BindPoint2D (DPoint2d::From (i, i + 1));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember ("p3d").BindPoint3D (DPoint3d::From (i, i + 1, i + 2));
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         }
 
     auto stepStatus = statement.Step ();
-    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1391,33 +1387,31 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayUpdate)
     auto ecsql = "UPDATE  ONLY ecsql.PSA SET L = ?,  PStruct_Array = ? WHERE I = ?";
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, ecsql);
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     statement.BindInt (3, 123);
     statement.BindInt64 (1, 1000);
     //add three array elements
     const uint32_t arraySize = 3;
     auto& arrayBinder = statement.BindArray (2, arraySize);
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)statement.GetLastStatus ()) << "BindArray failed: " << statement.GetLastStatusMessage ();
+    ASSERT_FALSE (GetTestProject().GetLastIssue().IsIssue()) << "BindArray failed: ";
     for (int i = 0; i < arraySize; i++)
         {
         auto& structBinder = arrayBinder.AddArrayElement ().BindStruct ();
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)statement.GetLastStatus ()) << "AddArrayElement failed: " << statement.GetLastStatusMessage ();
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "AddArrayElement failed: ";
         auto stat = structBinder.GetMember ("d").BindDouble (i * PI);
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember ("i").BindInt (i * 2);
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember ("l").BindInt64 (i * 3);
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        //stat = structBinder.GetMember ("l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
-        //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember ("p2d").BindPoint2D (DPoint2d::From (i, i + 1));
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember ("p3d").BindPoint3D (DPoint3d::From (i, i + 1, i + 2));
-        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         }
 
     auto stepStatus = statement.Step ();
-    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     }
 
 void setProductsValues (StandaloneECInstancePtr instance, int ProductId, Utf8CP ProductName, double price)
@@ -1518,12 +1512,12 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayDelete)
     auto ecsql = "DELETE FROM  ONLY ecsql.PSA WHERE I = ?";
     ECSqlStatement statement;
     auto stat = statement.Prepare (ecdb, ecsql);
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
     statement.BindInt (1, 123);
 
     auto stepStatus = statement.Step ();
-    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1713,7 +1707,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindPrimitiveArray)
             for (IECSqlValue const* arrayElement : intArray)
                 {
                 int actualArrayElement = arrayElement->GetInt ();
-                ASSERT_EQ ((int)ECSqlStatus::Success, (int)statement.GetLastStatus ());
+                ASSERT_FALSE (GetTestProject().GetLastIssue().IsIssue());
                 ASSERT_EQ (expectedIntArray[expectedIndex], actualArrayElement);
                 expectedIndex++;
                 }
@@ -1723,7 +1717,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindPrimitiveArray)
             for (IECSqlValue const* arrayElement : stringArray)
                 {
                 auto actualArrayElement = arrayElement->GetText ();
-                ASSERT_EQ ((int)ECSqlStatus::Success, (int)statement.GetLastStatus ());
+                ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
                 ASSERT_STREQ (expectedStringArray[expectedIndex].c_str (), actualArrayElement);
                 expectedIndex++;
                 }
@@ -1748,24 +1742,24 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindDateTimeArray_Insert)
         DateTime (DateTime::Kind::Local, 2014, 07, 07, 12, 0) };
 
     auto& arrayBinderDt = statement.BindArray (1, 3);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
     for (DateTimeCR testDate : testDates)
         {
         auto& elementBinder = arrayBinderDt.AddArrayElement ();
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
         auto expectedStat = testDate.GetInfo ().GetKind () == DateTime::Kind::Local ? ECSqlStatus::UserError : ECSqlStatus::Success;
         ASSERT_EQ ((int) expectedStat, (int) elementBinder.BindDateTime (testDate));
         }
 
     auto& arrayBinderDtUtc = statement.BindArray (2, 3);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
     for (DateTimeCR testDate : testDates)
         {
         auto& elementBinder = arrayBinderDtUtc.AddArrayElement ();
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
         auto expectedStat = testDate.GetInfo ().GetKind () == DateTime::Kind::Utc ? ECSqlStatus::Success : ECSqlStatus::UserError;
         ASSERT_EQ ((int) expectedStat, (int) elementBinder.BindDateTime (testDate));
@@ -1813,7 +1807,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BindPrimArrayWithOutOfBoundsLength)
         const bool expectedToSucceed = testArrayCountItem.second;
         const ECSqlStepStatus stepStat = bindArrayValues(testArrayCount);
         if (expectedToSucceed)
-            ASSERT_EQ(ECSqlStepStatus::Done, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10. Error message: " << statement.GetLastStatusMessage();
+            ASSERT_EQ(ECSqlStepStatus::Done, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10. Error message: " << GetTestProject().GetLastIssue().GetMessage();
         else
             ASSERT_EQ(ECSqlStepStatus::Error, stepStat) << "Binding array of length " << testArrayCount << " is expected to fail for array parameter with minOccurs=5 and maxOccurs=10";
         }
@@ -1857,7 +1851,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BindStructArrayWithOutOfBoundsLength)
         const bool expectedToSucceed = testArrayCountItem.second;
         const ECSqlStepStatus stepStat = bindArrayValues(testArrayCount);
         if (expectedToSucceed)
-            ASSERT_EQ(ECSqlStepStatus::Done, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10. Error message: " << statement.GetLastStatusMessage();
+            ASSERT_EQ(ECSqlStepStatus::Done, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10. Error message: " << GetTestProject().GetLastIssue().GetMessage();
         else
             ASSERT_EQ(ECSqlStepStatus::Error, stepStat) << "Binding array of length " << testArrayCount << " is expected to fail for array parameter with minOccurs=5 and maxOccurs=10";
         }
@@ -1880,10 +1874,10 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_InsertWithStructBinding)
 
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, insertECSql);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL '" << insertECSql << "' failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL '" << insertECSql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
         auto& binder = statement.GetBinder (structParameterIndex);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
         BentleyStatus bindStatus = SUCCESS;
         BindFromJson (bindStatus, statement, expectedStructValue, binder);
@@ -1897,14 +1891,14 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_InsertWithStructBinding)
 
         statement.Finalize ();
         stat = statement.Prepare (ecdb, verifySelectECSql);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of verification ECSQL '" << verifySelectECSql << "' failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of verification ECSQL '" << verifySelectECSql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
         statement.BindId (1, ecInstanceKey.GetECInstanceId ());
 
         stepStat = statement.Step ();
         ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) stepStat);
 
         IECSqlValue const& structValue = statement.GetValue (structValueIndex);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
         VerifyECSqlValue (statement, expectedStructValue, structValue);
         };
 
@@ -2017,16 +2011,16 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
 
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, insertECSql);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL '" << insertECSql << "' failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL '" << insertECSql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
         IECSqlBinder& structBinder = statement.GetBinder (structParameterIndex);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
         BentleyStatus bindStatus = SUCCESS;
         BindFromJson (bindStatus, statement, structValue, structBinder);
 
         auto stepStat = statement.Step (ecInstanceKey);
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStat) << "Execution of ECSQL '" << insertECSql << "' failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStat) << "Execution of ECSQL '" << insertECSql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
         };
 
       auto testFunction = [this, &ecdb] (Utf8CP updateECSql, int structParameterIndex, Utf8CP structValueJson, int ecInstanceIdParameterIndex, ECInstanceKey ecInstanceKey, Utf8CP verifySelectECSql, int structValueIndex)
@@ -2037,34 +2031,30 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
 
         ECSqlStatement statement;
         auto stat = statement.Prepare (ecdb, updateECSql);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL '" << updateECSql << "' failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL '" << updateECSql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
         stat = statement.BindId (ecInstanceIdParameterIndex, ecInstanceKey.GetECInstanceId ());
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Binding ECInstanceId to ECSQL '" << updateECSql << "' failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Binding ECInstanceId to ECSQL '" << updateECSql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
         auto& binder = statement.GetBinder (structParameterIndex);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
         BentleyStatus bindStatus = SUCCESS;
         BindFromJson (bindStatus, statement, expectedStructValue, binder);
-        //TODO_ROWAFFECTED
-        //statement.EnableDefaultEventHandler ();
         auto stepStat = statement.Step ();
 
         ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStat);
-        //TODO ROWAFFECTED
-        //ASSERT_EQ(1, statement.GetDefaultEventHandler ()->GetInstancesAffectedCount());
 
         statement.Finalize ();
         stat = statement.Prepare (ecdb, verifySelectECSql);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of verification ECSQL '" << verifySelectECSql << "' failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of verification ECSQL '" << verifySelectECSql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
         statement.BindId (1, ecInstanceKey.GetECInstanceId ());
 
         stepStat = statement.Step ();
         ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) stepStat);
 
         IECSqlValue const& structValue = statement.GetValue (structValueIndex);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
         VerifyECSqlValue (statement, expectedStructValue, structValue);
         };
 
@@ -2197,10 +2187,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
 
         {
         ECSqlStatement statement;
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ?, S FROM ecsql.PSA LIMIT 1")) << statement.GetLastStatusMessage().c_str();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ?, S FROM ecsql.PSA LIMIT 1")) << GetTestProject().GetLastIssue().GetMessage();
 
         BeRepositoryBasedId expectedId(BeRepositoryId(3), 444);
-        ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId)) << statement.GetLastStatusMessage().c_str();
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId)) << GetTestProject().GetLastIssue().GetMessage();
 
         ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
         ASSERT_EQ(expectedId.GetValue(), statement.GetValueId<ECInstanceId>(0).GetValueUnchecked());
@@ -2215,10 +2205,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
 
         {
         ECSqlStatement statement;
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT -?, S FROM ecsql.PSA LIMIT 1")) << statement.GetLastStatusMessage().c_str();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT -?, S FROM ecsql.PSA LIMIT 1")) << GetTestProject().GetLastIssue().GetMessage();
 
         BeRepositoryBasedId expectedId(BeRepositoryId(3), 444);
-        ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId)) << statement.GetLastStatusMessage().c_str();
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId)) << GetTestProject().GetLastIssue().GetMessage();
 
         ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
         ASSERT_EQ((-1)*expectedId.GetValue(), statement.GetValueId<ECInstanceId>(0).GetValueUnchecked());
@@ -2233,10 +2223,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
 
         {
         ECSqlStatement statement;
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT -? AS MyId, S FROM ecsql.PSA LIMIT 1")) << statement.GetLastStatusMessage().c_str();
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT -? AS MyId, S FROM ecsql.PSA LIMIT 1")) << GetTestProject().GetLastIssue().GetMessage();
 
         int64_t expectedId = -123456LL;
-        ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(1, expectedId)) << statement.GetLastStatusMessage().c_str();
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindInt64(1, expectedId)) << GetTestProject().GetLastIssue().GetMessage();
 
         ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
         ASSERT_EQ((-1)*expectedId, statement.GetValueInt64(0));
@@ -2414,18 +2404,18 @@ TEST_F (ECSqlTestFixture, ColumnInfoForPrimitiveArrays)
 
     //Top level column
     auto const& topLevelColumnInfo = stmt.GetColumnInfo (0);
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
     AssertColumnInfo ("Dt_Array", false, "Dt_Array", "PSA", "c", topLevelColumnInfo);
     auto const& topLevelArrayValue = stmt.GetValueArray (0);
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
     //out of bounds test
     BeTest::SetFailOnAssert (false);
         {
         stmt.GetColumnInfo (-1);
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after ECSqlStatement::GetColumnInfo (-1)";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo (-1) is expected to fail";
         stmt.GetColumnInfo (2);
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after ECSqlStatement::GetColumnInfo with too large index";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo is expected to fail with too large index";
         }
     BeTest::SetFailOnAssert (true);
 
@@ -2434,7 +2424,7 @@ TEST_F (ECSqlTestFixture, ColumnInfoForPrimitiveArrays)
     for (IECSqlValue const* arrayElement : topLevelArrayValue)
         {
         auto const& arrayElementColumnInfo = arrayElement->GetColumnInfo ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "Primitive array element IECSqlValue::GetColumnInfo failed.";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "Primitive array element IECSqlValue::GetColumnInfo failed.";
         Utf8String expectedPropPath;
         expectedPropPath.Sprintf ("Dt_Array[%d]", arrayIndex);
         AssertColumnInfo (nullptr, false, expectedPropPath.c_str (), "PSA", "c", arrayElementColumnInfo);
@@ -2461,58 +2451,58 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructs)
 
     //Top level column
     auto const& topLevelColumnInfo = stmt.GetColumnInfo (0);
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
     AssertColumnInfo ("SAStructProp", false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
 
     //out of bounds test
     BeTest::SetFailOnAssert (false);
         {
         stmt.GetColumnInfo (-1);
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after ECSqlStatement::GetColumnInfo (-1)";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo (-1)";
         stmt.GetColumnInfo (2);
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after ECSqlStatement::GetColumnInfo with too large index";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo with too large index";
         }
     BeTest::SetFailOnAssert (true);
 
     //SAStructProp.PStructProp level
     auto const& topLevelStructValue = stmt.GetValueStruct (0);
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
-    auto const& nestedStructPropColumnInfo = topLevelStructValue.GetValue (0).GetColumnInfo (); //0 refers to first member in SAStructProp which is PStructProp
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "Struct IECSqlValue::GetColumnInfo ()";
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
+    auto const& nestedStructPropColumnInfo = topLevelStructValue.GetValue(0).GetColumnInfo(); //0 refers to first member in SAStructProp which is PStructProp
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "Struct IECSqlValue::GetColumnInfo ()";
     AssertColumnInfo ("PStructProp", false, "SAStructProp.PStructProp", "SA", nullptr, nestedStructPropColumnInfo);
     auto const& nestedStructValue = topLevelStructValue.GetValue (0).GetStruct ();
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "Struct IECSqlValue::GetStruct ()";;
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "Struct IECSqlValue::GetStruct ()";;
 
     //out of bounds test
     BeTest::SetFailOnAssert (false);
         {
         topLevelStructValue.GetValue (-1);
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after GetValue (-1) for struct value.";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "GetValue (-1) for struct value.";
         topLevelStructValue.GetValue (topLevelStructValue.GetMemberCount ());
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after GetValue with too large index for struct value";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "GetValue with too large index for struct value";
         }
     BeTest::SetFailOnAssert (true);
 
     //SAStructProp.PStructProp.XXX level
     auto const& firstStructMemberColumnInfo = nestedStructValue.GetValue (0).GetColumnInfo ();
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
     AssertColumnInfo ("b", false, "SAStructProp.PStructProp.b", "SA", nullptr, firstStructMemberColumnInfo);
 
     auto const& secondStructMemberColumnInfo = nestedStructValue.GetValue (1).GetColumnInfo ();
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
     AssertColumnInfo ("bi", false, "SAStructProp.PStructProp.bi", "SA", nullptr, secondStructMemberColumnInfo);
 
     auto const& eighthStructMemberColumnInfo = nestedStructValue.GetValue (8).GetColumnInfo ();
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
     AssertColumnInfo ("p2d", false, "SAStructProp.PStructProp.p2d", "SA", nullptr, eighthStructMemberColumnInfo);
 
     //out of bounds test
     BeTest::SetFailOnAssert (false);
         {
         nestedStructValue.GetValue (-1).GetColumnInfo ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after GetValue (-1) for struct value on second nesting level.";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "GetValue (-1) for struct value on second nesting level.";
         nestedStructValue.GetValue (nestedStructValue.GetMemberCount ());
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after GetValue with too large index for struct value on second nesting level.";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "GetValue with too large index for struct value on second nesting level.";
         }
     BeTest::SetFailOnAssert (true);
     }
@@ -2535,36 +2525,36 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructArrays)
 
     //Top level column
     auto const& topLevelColumnInfo = stmt.GetColumnInfo (0);
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
-    AssertColumnInfo ("SAStructProp", false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
+    AssertColumnInfo("SAStructProp", false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
     auto const& topLevelStructValue = stmt.GetValueStruct (0);
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
-    
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
+
     //out of bounds test
     BeTest::SetFailOnAssert (false);
         {
         stmt.GetColumnInfo (-1);
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after ECSqlStatement::GetColumnInfo (-1)";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo (-1)";
         stmt.GetColumnInfo (2);
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after ECSqlStatement::GetColumnInfo with too large index";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "ECSqlStatement::GetColumnInfo with too large index";
         }
     BeTest::SetFailOnAssert (true);
 
     //SAStructProp.PStruct_Array level
     int columnIndex = 1;
     auto const& pstructArrayColumnInfo = topLevelStructValue.GetValue (columnIndex).GetColumnInfo ();
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
-    AssertColumnInfo ("PStruct_Array", false, "SAStructProp.PStruct_Array", "SA", nullptr, pstructArrayColumnInfo);
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
+    AssertColumnInfo("PStruct_Array", false, "SAStructProp.PStruct_Array", "SA", nullptr, pstructArrayColumnInfo);
     auto const& pstructArrayValue = topLevelStructValue.GetValue (columnIndex).GetArray ();
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
     //out of bounds test
     BeTest::SetFailOnAssert (false);
         {
         topLevelStructValue.GetValue (-1).GetColumnInfo ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after GetValue (-1).GetColumnInfo () for struct value";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "GetValue (-1).GetColumnInfo () for struct value";
         topLevelStructValue.GetValue (topLevelStructValue.GetMemberCount ()).GetColumnInfo ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after GetValue (N).GetColumnInfo with N being too large index for struct value";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "GetValue (N).GetColumnInfo with N being too large index for struct value";
         }
     BeTest::SetFailOnAssert (true);
 
@@ -2576,14 +2566,14 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructArrays)
         IECSqlStructValue const& pstructArrayElement = arrayElement->GetStruct ();
         //first struct member
         auto const& arrayElementFirstColumnInfo = pstructArrayElement.GetValue (0).GetColumnInfo ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
         expectedPropPath.Sprintf ("SAStructProp.PStruct_Array[%d].b", arrayIndex);
         AssertColumnInfo ("b", false, expectedPropPath.c_str (), "SA", nullptr, arrayElementFirstColumnInfo);
 
         //second struct member
         auto const& arrayElementSecondColumnInfo = pstructArrayElement.GetValue (1).GetColumnInfo ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
         expectedPropPath.Sprintf ("SAStructProp.PStruct_Array[%d].bi", arrayIndex);
         AssertColumnInfo ("bi", false, expectedPropPath.c_str (), "SA", nullptr, arrayElementSecondColumnInfo);
 
@@ -2591,9 +2581,9 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructArrays)
         BeTest::SetFailOnAssert (false);
             {
             pstructArrayElement.GetValue (-1).GetColumnInfo ();
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after GetValue (-1).GetColumnInfo () for struct array value";
+            ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "GetValue (-1).GetColumnInfo () for struct array value";
             pstructArrayElement.GetValue (pstructArrayElement.GetMemberCount ()).GetColumnInfo ();
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::IndexOutOfBounds), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after GetValue (N).GetColumnInfo with N being too large index for struct array value";
+            ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "GetValue (N).GetColumnInfo with N being too large index for struct array value";
             }
         BeTest::SetFailOnAssert (true);
 
@@ -2663,7 +2653,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_MultipleInsertsWithoutReprepare)
 
     ECInstanceKey firstECInstanceKey;
     auto stepStat = statement.Step (firstECInstanceKey);
-    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStat) << statement.GetLastStatusMessage ().c_str ();
+    ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStat) << GetTestProject().GetLastIssue().GetMessage();
 
     stat = statement.Reset ();
     ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
@@ -2803,93 +2793,87 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Finalize)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  08/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlTestFixture, ECSqlStatement_LastStatus)
+TEST_F (ECSqlTestFixture, ECSqlStatement_IssueListener)
     {
     const auto perClassRowCount = 10;
     // Create and populate a sample project
     auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ()) << "GetLastStatus on a new ECSqlStatement is expected to return ECSqlStatus::Success.";
-        ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage on a new ECSqlStatement is expected to return empty string.";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "new ECSqlStatement";
 
         auto stat = stmt.Prepare (ecdb, "SELECT * FROM ecsql.P WHERE I = ?");
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation for a valid ECSQL failed.";
-        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ()) << "GetLastStatus after successful call to Prepare is expected to return ECSqlStatus::Success.";
-        ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to Prepare is expected to return empty string.";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "After successful call to Prepare.";
 
         BeTest::SetFailOnAssert (false);
         stat = stmt.BindPoint2D (1, DPoint2d::From (1.0, 1.0));
+        ASSERT_EQ(ECSqlStatus::UserError, stat) << "Cannot bind points to int parameter";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "Cannot bind points to int parameter";
         BeTest::SetFailOnAssert (true);
-        ASSERT_EQ (stat, stmt.GetLastStatus ());
-        ASSERT_EQ (ECSqlStatus::UserError, stat) << "Cannot bind points to int parameter";
 
         stat = stmt.BindInt (1, 123);
-        ASSERT_EQ (stat, stmt.GetLastStatus ());
-        ASSERT_EQ (ECSqlStatus::Success, stat);
+        ASSERT_EQ(ECSqlStatus::Success, stat);
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
         BeTest::SetFailOnAssert (false);
         stat = stmt.BindDouble (2, 3.14);
         BeTest::SetFailOnAssert (true);
-        ASSERT_EQ (stat, stmt.GetLastStatus ());
         ASSERT_EQ (ECSqlStatus::IndexOutOfBounds, stat) << "Index out of bounds error expected.";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "Index out of bounds error expected.";
 
         while (stmt.Step () == ECSqlStepStatus::HasRow)
             {
-            ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ()) << "GetLastStatus after successful call to Step is expected to return ECSqlStatus::Success.";
-            ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to Step is expected to return empty string.";
+            ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "After successful call to Step";
 
             stmt.GetColumnInfo (0);
-            ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ());
+            ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
             
             BeTest::SetFailOnAssert (false);
             stmt.GetColumnInfo (-1);
             BeTest::SetFailOnAssert (true);
-            ASSERT_EQ (ECSqlStatus::IndexOutOfBounds, stmt.GetLastStatus ());
+            ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue());
             stmt.GetColumnInfo (0);
-            ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ());
+            ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
             BeTest::SetFailOnAssert (false);
             stmt.GetColumnInfo (100);
             BeTest::SetFailOnAssert (true);
-            ASSERT_EQ(ECSqlStatus::IndexOutOfBounds, stmt.GetLastStatus());
+            ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue());
             stmt.GetColumnInfo (0);
-            ASSERT_EQ(ECSqlStatus::Success, stmt.GetLastStatus());
+            ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
             BeTest::SetFailOnAssert (false);
             stmt.GetValueInt (-1);
             BeTest::SetFailOnAssert (true);
-            ASSERT_EQ(ECSqlStatus::IndexOutOfBounds, stmt.GetLastStatus());
+            ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue());
             stmt.GetValueInt (0);
-            ASSERT_EQ(ECSqlStatus::Success, stmt.GetLastStatus());
+            ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
             BeTest::SetFailOnAssert (false);
             stmt.GetValueInt (100);
             BeTest::SetFailOnAssert (true);
-            ASSERT_EQ(ECSqlStatus::IndexOutOfBounds, stmt.GetLastStatus());
+            ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue());
             stmt.GetValueDouble (1);
-            ASSERT_EQ(ECSqlStatus::Success, stmt.GetLastStatus());
+            ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
             BeTest::SetFailOnAssert (false);
             stmt.GetValuePoint2D (1);
             BeTest::SetFailOnAssert (true);
-            ASSERT_EQ(ECSqlStatus::UserError, stmt.GetLastStatus());
+            ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue());
             }
 
-        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus()) << "GetLastStatus after successful call to Step is expected to return ECSqlStatus::Success.";
-        ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to Step is expected to return empty string.";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue());
 
         stat = stmt.ClearBindings ();
         ASSERT_EQ (ECSqlStatus::Success, stat) << "ECSqlStatement::Reset failed unexpectedly.";
-        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus ()) << "GetLastStatus after successful call to ClearBindings is expected to return ECSqlStatus::Success.";
-        ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to ClearBindings is expected to return empty string.";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "After successful call to ClearBindings";
 
         stat = stmt.Reset ();
         ASSERT_EQ (ECSqlStatus::Success, stat) << "ECSqlStatement::Reset failed unexpectedly.";
-        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus()) << "GetLastStatus after successful call to Reset is expected to return ECSqlStatus::Success.";
-        ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "ECSqlStatement::GetLastStatusMessage after successful call to Reset is expected to return empty string.";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "After successful call to Reset";
 
         stmt.Finalize ();
-        ASSERT_EQ (ECSqlStatus::Success, stmt.GetLastStatus()) << "GetLastStatus after successful call to Finalize is expected to return ECSqlStatus::Success.";
-        ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "ECSqlStatement::GetLastStatusMessage after call to Finalize is expected to return empty string.";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "After successful call to Finalize";
         }
 
         {
@@ -2897,40 +2881,36 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_LastStatus)
         auto stat = stmt.Prepare (ecdb, "SELECT * FROM blablabla");
         ASSERT_EQ (static_cast<int> (ECSqlStatus::InvalidECSql), static_cast<int> (stat)) << "Preparation for an invalid ECSQL succeeded unexpectedly.";
         
-        auto actualLastStatusMessage = stmt.GetLastStatusMessage ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::InvalidECSql), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after preparing invalid ECSQL.";
+        ECDbIssue lastIssue = GetTestProject().GetLastIssue();
+        ASSERT_TRUE(lastIssue.IsIssue()) << "After preparing invalid ECSQL.";
+        Utf8String actualLastStatusMessage = lastIssue.GetMessage();
         ASSERT_STREQ (actualLastStatusMessage.c_str (), "Invalid ECSQL 'SELECT * FROM blablabla': ECClass 'blablabla' does not exist. Try using fully qualified class name: <schema name>.<class name>.");
 
         stmt.Finalize ();
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after call to Finalize is expected to return ECSqlStatus::Success.";
-        ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after call to Finalize is expected to return empty string.";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "After successful call to Finalize";
 
         //now reprepare with valid ECSQL
         stat = stmt.Prepare (ecdb, "SELECT * FROM ecsql.P");
         ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Preparation for a valid ECSQL failed.";
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after successful call to Prepare is expected to return ECSqlStatus::Success.";
-        ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to Prepare is expected to return empty string.";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "After successful call to Prepare";
 
         while (stmt.Step () == ECSqlStepStatus::HasRow)
             {
-            ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after successful call to Step is expected to return ECSqlStatus::Success.";
-            ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to Step is expected to return empty string.";
+            ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "After successful call to Step";
             }
 
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "GetLastStatus after successful call to Step is expected to return ECSqlStatus::Success.";
-        ASSERT_TRUE (stmt.GetLastStatusMessage ().empty ()) << "GetLastStatusMessage after successful call to Step is expected to return empty string.";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "After successful call to Step";
         }
 
         {
         BeRepositoryBasedId id(BeRepositoryId(111), 111); //an id not used in the current file
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (?)");
-        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation failed unexpectedly: " << stmt.GetLastStatusMessage().c_str();
+        ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation failed unexpectedly: " << GetTestProject().GetLastIssue().GetMessage();
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
 
         ECInstanceKey newKey;
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step(newKey)) << "Step failed unexpectedly: " << stmt.GetLastStatusMessage().c_str();
-        ASSERT_EQ(ECSqlStatus::Success, stmt.GetLastStatus()) << "Unexpected ECSqlStatement::GetLastStatus after successful Step";
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step(newKey)) << "Step failed unexpectedly: " << GetTestProject().GetLastIssue().GetMessage();
         ASSERT_EQ(id.GetValue(), newKey.GetECInstanceId().GetValue());
         stmt.Reset();
         stmt.ClearBindings();
@@ -2938,7 +2918,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_LastStatus)
         //reuse same id again to provoke constraint violation
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
         ASSERT_EQ(ECSqlStepStatus::Error, stmt.Step(newKey)) << "Step succeeded unexpectedly although it should not because a row with the same ECInstanceId already exists.";
-        ASSERT_EQ(ECSqlStatus::ConstraintViolation, stmt.GetLastStatus()) << "Unexpected ECSqlStatement::GetLastStatus after insert of row with same ECInstanceId";
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << "After insert of row with same ECInstanceId";
         }
     }
 
@@ -2974,7 +2954,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
         auto ecsql = "INSERT INTO ecsql.PASpatial (Geometry, B, Geometry_Array) VALUES(?, True, ?)";
 
         ECSqlStatement statement;
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindGeometry (1, *expectedGeomSingle));
 
@@ -2982,7 +2962,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
         for (auto& geom : expectedGeoms)
             {
             auto& arrayElementBinder = arrayBinder.AddArrayElement ();
-            ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
+            ASSERT_FALSE (GetTestProject().GetLastIssue().IsIssue()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
             ASSERT_EQ ((int) ECSqlStatus::Success, (int) arrayElementBinder.BindGeometry (*geom));
             }
 
@@ -2993,16 +2973,16 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
         auto ecsql = "INSERT INTO ecsql.SSpatial (PASpatialProp.Geometry, PASpatialProp.Geometry_Array) VALUES(?,?)";
 
         ECSqlStatement statement;
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
         
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindGeometry (1, *expectedGeomSingle));
 
         IECSqlArrayBinder& arrayBinder = statement.BindArray (2, 3);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "ECSqlStatement::BindArray is expected to succeed";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "ECSqlStatement::BindArray is expected to succeed";
         for (auto& geom : expectedGeoms)
             {
             auto& arrayElementBinder = arrayBinder.AddArrayElement ();
-            ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
+            ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
             ASSERT_EQ ((int) ECSqlStatus::Success, (int) arrayElementBinder.BindGeometry (*geom));
             }
 
@@ -3013,19 +2993,19 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
         auto ecsql = "INSERT INTO ecsql.SSpatial (PASpatialProp) VALUES(?)";
 
         ECSqlStatement statement;
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
         IECSqlStructBinder& structBinder = statement.BindStruct (1);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "ECSqlStatement::BindStruct is expected to succeed";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "ECSqlStatement::BindStruct is expected to succeed";
 
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) structBinder.GetMember ("Geometry").BindGeometry (*expectedGeomSingle));
 
         IECSqlArrayBinder& arrayBinder = structBinder.GetMember ("Geometry_Array").BindArray (3);
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "IECSqlBinder::BindArray is expected to succeed";
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "IECSqlBinder::BindArray is expected to succeed";
         for (auto& geom : expectedGeoms)
             {
             auto& arrayElementBinder = arrayBinder.AddArrayElement ();
-            ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
+            ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
             ASSERT_EQ ((int) ECSqlStatus::Success, (int) arrayElementBinder.BindGeometry (*geom));
             }
 
@@ -3037,7 +3017,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
 
     //now verify the inserts
     ECSqlStatement statement;
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, "SELECT B, Geometry_Array, Geometry FROM ecsql.PASpatial")) << "Preparation failed: " << statement.GetLastStatusMessage ();
+    ASSERT_EQ((int) ECSqlStatus::Success, (int) statement.Prepare(ecdb, "SELECT B, Geometry_Array, Geometry FROM ecsql.PASpatial")) << "Preparation failed: " << GetTestProject().GetLastIssue().GetMessage();
     int rowCount = 0;
     while (statement.Step () == ECSqlStepStatus::HasRow)
         {
@@ -3064,7 +3044,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
     ASSERT_EQ (1, rowCount);
 
     statement.Finalize ();
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, "SELECT PASpatialProp.Geometry_Array, PASpatialProp.Geometry FROM ecsql.SSpatial")) << "Preparation failed: " << statement.GetLastStatusMessage ();
+    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, "SELECT PASpatialProp.Geometry_Array, PASpatialProp.Geometry FROM ecsql.SSpatial")) << "Preparation failed: " << GetTestProject().GetLastIssue().GetMessage();
     rowCount = 0;
     while (statement.Step () == ECSqlStepStatus::HasRow)
         {
@@ -3089,7 +3069,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
     ASSERT_EQ (2, rowCount);
 
     statement.Finalize ();
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, "SELECT PASpatialProp FROM ecsql.SSpatial")) << "Preparation failed: " << statement.GetLastStatusMessage ();
+    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, "SELECT PASpatialProp FROM ecsql.SSpatial")) << "Preparation failed: " << GetTestProject().GetLastIssue().GetMessage();
     rowCount = 0;
     while (statement.Step () == ECSqlStepStatus::HasRow)
         {
@@ -3149,7 +3129,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_GetGeometryWithInvalidBlobFormat)
         ASSERT_FALSE(ecsqlStmt.IsValueNull(0)) << "Geometry column is not expected to be null.";
 
         ASSERT_TRUE(ecsqlStmt.GetValueGeometry(0) == nullptr) << "Invalid geom blob format expected so that nullptr is returned.";
-        ASSERT_EQ(ECSqlStatus::UserError, ecsqlStmt.GetLastStatus());
+        ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue());
         }
 
     ASSERT_EQ(1, rowCount);
@@ -3166,38 +3146,39 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayInsert)
     auto ecsql = "INSERT INTO ecsql.SA (SAStructProp) VALUES(?)";
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     IECSqlStructBinder& saStructBinder = statement.BindStruct(1); //SAStructProp
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "AddArrayElement failed: " << statement.GetLastStatusMessage();
+    ECDbIssue lastIssue = GetTestProject().GetLastIssue();
+    ASSERT_FALSE(lastIssue.IsIssue()) << "AddArrayElement failed: " << lastIssue.GetMessage();
     IECSqlStructBinder& pStructBinder = saStructBinder.GetMember("PStructProp").BindStruct();
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
     stat = pStructBinder.GetMember("i").BindInt(99);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
 
     //add three array elements
     const int count = 3;
     auto& arrayBinder = saStructBinder.GetMember("PStruct_Array").BindArray((uint32_t)count);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "BindArray failed: " << statement.GetLastStatusMessage();
+    lastIssue = GetTestProject().GetLastIssue();
+    ASSERT_FALSE(lastIssue.IsIssue()) << "BindArray failed: " << lastIssue.GetMessage();
     for (int i = 0; i < count; i++)
         {
         auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "AddArrayElement failed: " << statement.GetLastStatusMessage();
+        lastIssue = GetTestProject().GetLastIssue();
+        ASSERT_FALSE(lastIssue.IsIssue()) << "AddArrayElement failed: " << lastIssue.GetMessage();
         stat = structBinder.GetMember("d").BindDouble(i * PI);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("i").BindInt(i * 2);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("l").BindInt64(i * 3);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        //stat = structBinder.GetMember ("l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
-        //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         }
 
     auto stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     statement.Finalize();
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare(ecdb, "SELECT SAStructProp.PStruct_Array FROM ecsql.SA");
@@ -3220,32 +3201,30 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructArrayInsertWithParametersLongAndAr
     auto ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(123, ?)";
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
    //add three array elements
     const int count = 3;
     auto& arrayBinder = statement.BindArray(1, (uint32_t)count);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "BindArray failed: " << statement.GetLastStatusMessage();
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "BindArray failed: ";
     for (int i = 0; i < count; i++)
         {
         auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "AddArrayElement failed: " << statement.GetLastStatusMessage();
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "AddArrayElement failed: ";
         auto stat = structBinder.GetMember("d").BindDouble(i * PI);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("i").BindInt(i * 2);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("l").BindInt64(i * 3);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        //stat = structBinder.GetMember (L"l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
-        //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         }
 
     auto stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     statement.Finalize();
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ecsql.PSA");
@@ -3272,12 +3251,12 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_InsertWithMixParametersIntAndInt)
     auto ecsql = "INSERT INTO ecsql.Sub1 (I,Sub1I) VALUES(123, ?)";
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
     statement.BindInt(1, 333);
 
     auto stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     statement.Finalize();
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ecsql.PSA");
@@ -3305,13 +3284,13 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_InsertWithMixParameters)
     auto ecsql = "INSERT INTO ecsql.P (B,D,I,L,S) VALUES(1, ?,?,123,?)";
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
     statement.BindDouble(1, 2.22);
     statement.BindInt(2, 123);
     statement.BindText(3, "Test Test",IECSqlBinder::MakeCopy::Yes);
     auto stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     statement.Finalize();
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ecsql.PSA");
@@ -3345,32 +3324,30 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayInsertWit
     auto ecsql = "INSERT INTO ecsql.SA (SAStructProp.PStruct_Array) VALUES(?)";
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
     //add three array elements
     const int count = 3;
     auto& arrayBinder = statement.BindArray(1,(uint32_t)count);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "BindArray failed: " << statement.GetLastStatusMessage();
+    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "BindArray failed: ";
     for (int i = 0; i < count; i++)
         {
         auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "AddArrayElement failed: " << statement.GetLastStatusMessage();
+        ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "AddArrayElement failed: ";
         stat = structBinder.GetMember("d").BindDouble(i * PI);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("i").BindInt(i * 2);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("l").BindInt64(i * 3);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        //stat = structBinder.GetMember (L"l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
-        //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         }
 
     auto stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     statement.Finalize();
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare(ecdb, "SELECT SAStructProp.PStruct_Array FROM ecsql.SA");
@@ -3407,9 +3384,9 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructUpdateWithDotoperator)
 
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     auto stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     statement.Finalize();
         {
         auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SAStruct");
@@ -3426,9 +3403,9 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructUpdateWithDotoperator)
     statement.Finalize();
     ecsql = "UPDATE  ONLY ecsql.SAStruct SET PStructProp.i = 3 ";
     stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     statement.Finalize();
 
     auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SAStruct");
@@ -3454,32 +3431,28 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWit
     auto ecsql = "INSERT INTO ecsql.SA (SAStructProp.PStruct_Array) VALUES(?)";
     ECSqlStatement insertStatement;
     auto stat = insertStatement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << insertStatement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
 
     //add three array elements
     int count = 3;
     auto& arrayBinder = insertStatement.BindArray(1, (uint32_t)count);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)insertStatement.GetLastStatus()) << "BindArray failed: " << insertStatement.GetLastStatusMessage();
     for (int i = 0; i < count; i++)
         {
         auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)insertStatement.GetLastStatus()) << "AddArrayElement failed: " << insertStatement.GetLastStatusMessage();
         stat = structBinder.GetMember("d").BindDouble(i * PI);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << insertStatement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("i").BindInt(i * 2);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << insertStatement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("l").BindInt64(i * 3);
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << insertStatement.GetLastStatusMessage();
-        //stat = structBinder.GetMember (L"l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
-        //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << insertStatement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << insertStatement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         }
 
     auto stepStatus = insertStatement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << insertStatement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
     ECSqlStatement selectStatement;
     auto prepareStatus = selectStatement.Prepare(ecdb, "SELECT SAStructProp.PStruct_Array FROM ecsql.SA");
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
@@ -3495,27 +3468,23 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWit
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     count = 3;
     auto& updateArrayBinder = updateStatement.BindArray(1, (uint32_t)count);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)updateStatement.GetLastStatus()) << "BindArray failed: " << updateStatement.GetLastStatusMessage();
     for (int i = 0; i < count; i++)
         {
         auto& structBinder = updateArrayBinder.AddArrayElement().BindStruct();
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)updateStatement.GetLastStatus()) << "AddArrayElement failed: " << updateStatement.GetLastStatusMessage();
         stat = structBinder.GetMember("d").BindDouble(-count );
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << updateStatement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("i").BindInt(-count );
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << updateStatement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("l").BindInt64(-count );
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << updateStatement.GetLastStatusMessage();
-        //stat = structBinder.GetMember (L"l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
-        //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << updateStatement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
-        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << updateStatement.GetLastStatusMessage();
+        ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << GetTestProject().GetLastIssue().GetMessage();
         }
 
     stepStatus = updateStatement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << updateStatement.GetLastStatusMessage();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << GetTestProject().GetLastIssue().GetMessage();
    
     ECSqlStatement statement;
     prepareStatus = statement.Prepare(ecdb, "SELECT SAStructProp.PStruct_Array FROM ecsql.SA");

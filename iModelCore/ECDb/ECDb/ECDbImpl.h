@@ -97,6 +97,8 @@ private:
     //other private methods
     std::vector<BeRepositoryBasedIdSequence const*> GetSequences () const;
 
+    static NativeLogging::SEVERITY ToLogSeverity(IssueSeverity sev) { return sev == IssueSeverity::Warning ? NativeLogging::LOG_WARNING : NativeLogging::LOG_ERROR; }
+        
 public:
     ~Impl () {}
 
@@ -116,7 +118,9 @@ public:
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
 
+    bool IsSeverityEnabled(IssueSeverity severity) const;
     void ReportIssue(IssueSeverity, Utf8CP message, ...) const;
+    void ReportSqliteIssue(ECSqlStatus& mappedECSqlStatus, IssueSeverity, DbResult, Utf8CP messageHeader = nullptr) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

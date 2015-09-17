@@ -24,7 +24,7 @@ DEFINE_EXPR_TYPE (AssignmentList)
 private:
     SystemPropertyExpIndexMap m_specialTokenExpIndexMap;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "AssignmentListExp"; }
 
@@ -46,7 +46,7 @@ DEFINE_EXPR_TYPE(PropertyNameList)
 private:
     SystemPropertyExpIndexMap m_specialTokenExpIndexMap;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "PropertyNameList"; }
 
@@ -71,7 +71,7 @@ public:
     DEFINE_EXPR_TYPE(ValueExpList)
 
 private:
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString () const override { return "ValueExpList"; }
 

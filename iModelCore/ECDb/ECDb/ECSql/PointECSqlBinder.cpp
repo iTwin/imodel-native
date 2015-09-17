@@ -39,25 +39,25 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindNull()
         {
         auto es = eh->BindNull();
         if (es != ECSqlStatus::Success)
-            return GetStatusContext().SetError(es, "OnBindEventHandler Failed");
+            return es;
         }
 
     auto sqliteStat = GetSqliteStatementR ().BindNull(m_xSqliteIndex);
     if (sqliteStat != BE_SQLITE_OK)
-        return SetError(sqliteStat, "ECSqlStatement::BindNull against Point2D or Point3D property.");
+        return ReportError(sqliteStat, "ECSqlStatement::BindNull against Point2D or Point3D property.");
 
     sqliteStat = GetSqliteStatementR ().BindNull(m_ySqliteIndex);
     if (sqliteStat != BE_SQLITE_OK)
-        return SetError(sqliteStat, "ECSqlStatement::BindNull against Point2D or Point3D property.");
+        return ReportError(sqliteStat, "ECSqlStatement::BindNull against Point2D or Point3D property.");
 
     if (IsPoint3D ())
         {
         sqliteStat = GetSqliteStatementR ().BindNull(m_ySqliteIndex);
         if (sqliteStat != BE_SQLITE_OK)
-            return SetError(sqliteStat, "ECSqlStatement::BindNull against Point2D or Point3D property.");
+            return ReportError(sqliteStat, "ECSqlStatement::BindNull against Point2D or Point3D property.");
         }
 
-    return ResetStatus();
+    return ECSqlStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -65,27 +65,28 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindPoint2D (DPoint2dCR value)
     {
-    ResetStatus();
-
-    if (IsPoint3D ())
-        return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind Point2D value to Point3D parameter.");
+    if (IsPoint3D())
+        {
+        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind Point2D value to Point3D parameter.");
+        return ECSqlStatus::UserError;
+        }
 
     if (auto eh = GetOnBindEventHandler())
         {
         auto es = eh->BindPoint2D (value);
         if (es != ECSqlStatus::Success)
-            return GetStatusContext().SetError(es, "OnBindEventHandler Failed");
+            return es;
         }
 
     auto sqliteStat = GetSqliteStatementR ().BindDouble(m_xSqliteIndex, value.x);
     if (sqliteStat != BE_SQLITE_OK)
-        return SetError(sqliteStat, "ECSqlStatement::BindPoint2D.");
+        return ReportError(sqliteStat, "ECSqlStatement::BindPoint2D.");
 
     sqliteStat = GetSqliteStatementR ().BindDouble(m_ySqliteIndex, value.y);
     if (sqliteStat != BE_SQLITE_OK)
-        return SetError(sqliteStat, "ECSqlStatement::BindPoint2D.");
+        return ReportError(sqliteStat, "ECSqlStatement::BindPoint2D.");
 
-    return ResetStatus();
+    return ECSqlStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -93,29 +94,32 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindPoint2D (DPoint2dCR value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindPoint3D (DPoint3dCR value)
     {
-    if (!IsPoint3D ())
-        return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind Point3D value to Point2D parameter.");
+    if (!IsPoint3D())
+        {
+        GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind Point3D value to Point2D parameter.");
+        return ECSqlStatus::UserError;
+        }
 
     if (auto eh = GetOnBindEventHandler())
         {
         auto es = eh->BindPoint3D (value);
         if (es != ECSqlStatus::Success)
-            return GetStatusContext().SetError(es, "OnBindEventHandler Failed");
+            return es;
         }
 
     auto sqliteStat = GetSqliteStatementR ().BindDouble(m_xSqliteIndex, value.x);
     if (sqliteStat != BE_SQLITE_OK)
-        return SetError(sqliteStat, "ECSqlStatement::BindPoint3D.");
+        return ReportError(sqliteStat, "ECSqlStatement::BindPoint3D.");
 
     sqliteStat = GetSqliteStatementR ().BindDouble(m_ySqliteIndex, value.y);
     if (sqliteStat != BE_SQLITE_OK)
-        return SetError(sqliteStat, "ECSqlStatement::BindPoint3D.");
+        return ReportError(sqliteStat, "ECSqlStatement::BindPoint3D.");
 
     sqliteStat = GetSqliteStatementR ().BindDouble(m_zSqliteIndex, value.z);
     if (sqliteStat != BE_SQLITE_OK)
-        return SetError(sqliteStat, "ECSqlStatement::BindPoint3D.");
+        return ReportError(sqliteStat, "ECSqlStatement::BindPoint3D.");
 
-    return ResetStatus();
+    return ECSqlStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -123,7 +127,8 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindPoint3D (DPoint3dCR value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindBoolean(bool value)
     {
-    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind boolean value to Point2D / Point3D parameter.");
+    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind boolean value to Point2D / Point3D parameter.");
+    return ECSqlStatus::UserError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -131,7 +136,8 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
-    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind Blob value to Point2D / Point3D parameter.");
+    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind Blob value to Point2D / Point3D parameter.");
+    return ECSqlStatus::UserError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -139,7 +145,8 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindBinary(const void* value, int binary
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
     {
-    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind DateTime value to Point2D / Point3D parameter.");
+    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to Point2D / Point3D parameter.");
+    return ECSqlStatus::UserError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -147,7 +154,8 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindDateTime(uint64_t julianDayHns, Date
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
     {
-    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind DateTime value to Point2D / Point3D parameter.");
+    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to Point2D / Point3D parameter.");
+    return ECSqlStatus::UserError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -155,7 +163,8 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindDateTime(double julianDay, DateTime:
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindDouble(double value)
     {
-    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind double value to Point2D / Point3D parameter.");
+    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind double value to Point2D / Point3D parameter.");
+    return ECSqlStatus::UserError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -163,7 +172,8 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindDouble(double value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
     {
-    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind IGeometry value to Point2D / Point3D parameter.");
+    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind IGeometry value to Point2D / Point3D parameter.");
+    return ECSqlStatus::UserError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -171,7 +181,8 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindGeometryBlob(const void* value, int 
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindInt(int value)
     {
-    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind integer value to Point2D / Point3D parameter.");
+    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind integer value to Point2D / Point3D parameter.");
+    return ECSqlStatus::UserError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -179,7 +190,8 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindInt(int value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindInt64(int64_t value)
     {
-    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind int64_t value to Point2D / Point3D parameter.");
+    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind int64_t value to Point2D / Point3D parameter.");
+    return ECSqlStatus::UserError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -187,7 +199,8 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindInt64(int64_t value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount)
     {
-    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind string value to Point2D / Point3D parameter.");
+    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind string value to Point2D / Point3D parameter.");
+    return ECSqlStatus::UserError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -203,8 +216,8 @@ IECSqlPrimitiveBinder& PointToColumnsECSqlBinder::_BindPrimitive()
 //---------------------------------------------------------------------------------------
 IECSqlStructBinder& PointToColumnsECSqlBinder::_BindStruct()
     {
-    const auto stat = GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind ECStruct to Point2D / Point3D parameter.");
-    return GetNoopBinder(stat).BindStruct();
+    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to Point2D / Point3D parameter.");
+    return GetNoopBinder(ECSqlStatus::UserError).BindStruct();
     }
 
 //---------------------------------------------------------------------------------------
@@ -212,8 +225,8 @@ IECSqlStructBinder& PointToColumnsECSqlBinder::_BindStruct()
 //---------------------------------------------------------------------------------------
 IECSqlArrayBinder& PointToColumnsECSqlBinder::_BindArray(uint32_t initialCapacity)
     {
-    const auto stat = GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind array to Point2D / Point3D parameter.");
-    return GetNoopBinder(stat).BindArray(initialCapacity);
+    GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Type mismatch. Cannot bind array to Point2D / Point3D parameter.");
+    return GetNoopBinder(ECSqlStatus::UserError).BindArray(initialCapacity);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

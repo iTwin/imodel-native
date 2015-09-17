@@ -51,7 +51,7 @@ private:
     ECSqlStatus ResolveColumnRef (ECSqlParseContext&);
     BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath& propPath);
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
     void SetClassRefExp (RangeClassRefExp const& classRefExp);
     void SetPropertyRef (DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp);
     virtual void _DoToECSql(Utf8StringR ecsql) const override;

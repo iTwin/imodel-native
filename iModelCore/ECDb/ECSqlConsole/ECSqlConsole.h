@@ -26,8 +26,27 @@ enum class OutputFormat
 //---------------------------------------------------------------------------------------
 struct ECSqlConsoleSession : NonCopyableClass
     {
+public:
+    struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
+        {
+    private:
+        mutable BeSQLite::EC::ECDb::IssueSeverity m_severity;
+        mutable Utf8String m_issue;
+        
+        virtual void _OnIssueReported(BeSQLite::EC::ECDb::IssueSeverity severity, Utf8CP message) const override;
+
+    public:
+        ECDbIssueListener() : BeSQLite::EC::ECDb::IIssueListener() {}
+
+        void Reset() const { m_issue.clear(); }
+        bool HasIssue() const { return !m_issue.empty(); }
+        BeSQLite::EC::ECDb::IssueSeverity GetSeverity() const { return m_severity; }
+        Utf8CP GetIssue() const { return m_issue.c_str(); }
+        };
+
 private:
     BeSQLite::EC::ECDb m_ecdb;
+    ECDbIssueListener m_issueListener;
     OutputFormat m_outputFormat;
     std::vector<Utf8String> m_commandHistory;
 
@@ -42,6 +61,8 @@ public:
 
     OutputFormat GetOutputFormat () const {return m_outputFormat;}
     void SetOutputFormat (OutputFormat newFormat) {m_outputFormat = newFormat;}
+
+    ECDbIssueListener const& GetIssues() const { return m_issueListener; }
 
     void AddToHistory (Utf8CP command);
     std::vector<Utf8String> const& GetCommandHistory () const {return m_commandHistory;}

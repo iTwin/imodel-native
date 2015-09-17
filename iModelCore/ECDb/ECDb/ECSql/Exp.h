@@ -85,7 +85,7 @@ public:
     bool IsResolved() const;
 
     BentleyStatus TryGetQualifiedPath(Utf8StringR qualifiedPath) const;
-    static BentleyStatus TryParseQualifiedPath(PropertyPath& resolvedPropertyPath, Utf8StringCR qualifedPath, ECDbCR ecdb);
+    static BentleyStatus TryParseQualifiedPath(PropertyPath& resolvedPropertyPath, Utf8StringCR qualifiedPath, ECDbCR ecdb);
 
     Utf8String ToString(bool includeArrayIndexes = true) const;
     };
@@ -287,8 +287,8 @@ private:
     mutable Exp::Collection m_children;
     bool m_isComplete;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) { return FinalizeParseStatus::Completed; }
-    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const { return false; }
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode);
+    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const;
     virtual Utf8String _ToECSql() const = 0;
     virtual Utf8String _ToString () const = 0;
 
@@ -315,7 +315,7 @@ public:
     virtual ~Exp () {}
 
     ECSqlStatus FinalizeParsing (ECSqlParseContext&);
-    bool TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const;
+    bool TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const;
 
     bool IsComplete () const {return m_isComplete;}
 

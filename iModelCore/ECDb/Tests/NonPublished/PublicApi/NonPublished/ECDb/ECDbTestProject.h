@@ -42,14 +42,46 @@ public:
     BentleyStatus ImportTestSchema (WCharCP testSchemaFileName);
     };
 
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      09/2015
+//+===============+===============+===============+===============+===============+======
+struct ECDbIssue
+    {
+private:
+    BeSQLite::EC::ECDb::IssueSeverity m_severity;
+    Utf8String m_issue;
+
+public:
+    explicit ECDbIssue(BeSQLite::EC::ECDb::IssueSeverity severity = BeSQLite::EC::ECDb::IssueSeverity::Error, Utf8CP issue = nullptr) : m_severity(severity), m_issue(issue) {}
+
+    bool IsIssue() const { return !m_issue.empty(); }
+    BeSQLite::EC::ECDb::IssueSeverity GetSeverity() const { return m_severity; }
+    Utf8CP GetMessage() const { return m_issue.c_str(); }
+    };
+
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      04/2012
 +===============+===============+===============+===============+===============+======*/
 struct ECDbTestProject
 {
+public:
+    struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
+        {
+    private:
+        mutable ECDbIssue m_issue;
+        virtual void _OnIssueReported(BeSQLite::EC::ECDb::IssueSeverity severity, Utf8CP message) const override;
+
+    public:
+        ECDbIssueListener() : BeSQLite::EC::ECDb::IIssueListener() {}
+
+        //Can only be called once for a given issue. A second call will report whatever issue has occurred (or not) since the first call
+        ECDbIssue GetIssue() const;
+        };
+
 typedef void (*PopulatePrimitiveValueCallback)(ECN::ECValueR value, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecproperty);
 private:
     BeSQLite::EC::ECDb*    m_ecdb;
+    ECDbIssueListener      m_issueListener;
     WCharCP                m_testSchemaFileName;
     ECDbTestSchemaManager  m_testSchemaManager;
     ECInstanceMap          m_ecInstances;
@@ -86,6 +118,8 @@ public:
     ECDbTestSchemaManager const& GetTestSchemaManager () const;
     BeSQLite::EC::ECDbR    GetECDb ();
     BeSQLite::EC::ECDbCR   GetECDbCR () const;
+    //Can only be called once for a given issue. A second call will report whatever issue has occurred (or not) since the first call
+    ECDbIssue GetLastIssue() const { return m_issueListener.GetIssue(); }
     ECInstanceMapCR        GetImportedECInstances() const   {return m_ecInstances;}
     BentleyStatus          GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP className);
     static ECN::IECInstancePtr  CreateArbitraryECInstance(ECN::ECClassCR ecClass, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);

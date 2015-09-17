@@ -13,15 +13,6 @@ using namespace std;
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************ECSqlStepTask::Collection********************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Affan.Khan         02/2014
-//---------------------------------------------------------------------------------------
-ECSqlStepTask::Collection::Collection()
-
-    {    
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         07/2014
 //---------------------------------------------------------------------------------------
@@ -152,10 +143,9 @@ ECSqlStepStatus ECSqlStepTask::Collection::Execute(ExecutionCategory category, E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-UpdateStructArrayStepTask::UpdateStructArrayStepTask(ECSqlStatusContext& statusContext, unique_ptr<InsertStructArrayStepTask>& insertStepTask, unique_ptr<DeleteStructArrayStepTask>& deleteStepTask)
-    :ParametericStepTask(ExecutionCategory::ExecuteBeforeParentStep, statusContext, insertStepTask->GetPropertyMap(), insertStepTask->GetClassMap()), m_insertStepTask(std::move(insertStepTask)), m_deleteStepTask(std::move(deleteStepTask))
-    {
-    }
+UpdateStructArrayStepTask::UpdateStructArrayStepTask(unique_ptr<InsertStructArrayStepTask>& insertStepTask, unique_ptr<DeleteStructArrayStepTask>& deleteStepTask)
+    :ParametericStepTask(ExecutionCategory::ExecuteBeforeParentStep, insertStepTask->GetPropertyMap(), insertStepTask->GetClassMap()), m_insertStepTask(std::move(insertStepTask)), m_deleteStepTask(std::move(deleteStepTask))
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
@@ -186,7 +176,7 @@ ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create(unique_ptr<UpdateStr
     if (status != ECSqlStepTaskCreateStatus::Success)
         return status;
 
-    updateStepTask = unique_ptr<UpdateStructArrayStepTask> (new UpdateStructArrayStepTask(preparedContext.GetECSqlStatementR().GetStatusContextR(), insertStepTask, deleteStepTask));
+    updateStepTask = unique_ptr<UpdateStructArrayStepTask> (new UpdateStructArrayStepTask(insertStepTask, deleteStepTask));
     return ECSqlStepTaskCreateStatus::Success;
     }
 
@@ -196,8 +186,8 @@ ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create(unique_ptr<UpdateStr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-InsertStructArrayStepTask::InsertStructArrayStepTask(ECSqlStatusContext& statusContext, PropertyMapToTableCR property, IClassMap const& classMap)
-: ParametericStepTask(ExecutionCategory::ExecuteAfterParentStep, statusContext, property, classMap), m_insertStmt(new EmbeddedECSqlStatement()), m_parameterValue(nullptr), m_propertyPathId(0)
+InsertStructArrayStepTask::InsertStructArrayStepTask(PropertyMapToTableCR property, IClassMap const& classMap)
+: ParametericStepTask(ExecutionCategory::ExecuteAfterParentStep, property, classMap), m_insertStmt(new EmbeddedECSqlStatement()), m_parameterValue(nullptr), m_propertyPathId(0)
     {}
 
 
@@ -323,7 +313,7 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create(unique_ptr<InsertStr
         }
 
 
-    auto aInsertStepTask = unique_ptr<InsertStructArrayStepTask> (new InsertStructArrayStepTask(preparedContext.GetECSqlStatementR ().GetStatusContextR (), *structArrayPropertyMap, classMap));
+    auto aInsertStepTask = unique_ptr<InsertStructArrayStepTask> (new InsertStructArrayStepTask(*structArrayPropertyMap, classMap));
     aInsertStepTask->GetStatement().Initialize(preparedContext, propertyMap->GetProperty().GetAsArrayProperty(), nullptr);
     auto ecsqlStatus = aInsertStepTask->GetStatement().Prepare(ecdb, builder.ToString().c_str());
     if (ecsqlStatus != ECSqlStatus::Success)
@@ -342,10 +332,9 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create(unique_ptr<InsertStr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-DeleteStructArrayStepTask::DeleteStructArrayStepTask(ECSqlStatusContext& statusContext, PropertyMapToTableCR property, IClassMap const& classMap)
-: ECSqlPropertyStepTask(ExecutionCategory::ExecuteBeforeParentStep, statusContext, property, classMap), m_deleteStmt(new EmbeddedECSqlStatement())
-    {
-    }
+DeleteStructArrayStepTask::DeleteStructArrayStepTask(PropertyMapToTableCR property, IClassMap const& classMap)
+: ECSqlPropertyStepTask(ExecutionCategory::ExecuteBeforeParentStep, property, classMap), m_deleteStmt(new EmbeddedECSqlStatement())
+    {}
 
 
 //---------------------------------------------------------------------------------------
@@ -398,7 +387,7 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create(unique_ptr<DeleteStr
     Utf8String ecsql; 
     ecsql.Sprintf("DELETE FROM ONLY [%s].[%s] WHERE " ECDB_COL_ParentECInstanceId " = ? AND " ECDB_COL_ECPropertyPathId " = %llu AND " ECDB_COL_ECArrayIndex " IS NOT NULL", schemaName.c_str(), structName.c_str(), persistenceECPropertyId);
 
-    unique_ptr<DeleteStructArrayStepTask>  aDeleteStepTask = unique_ptr<DeleteStructArrayStepTask> (new DeleteStructArrayStepTask(preparedContext.GetECSqlStatementR ().GetStatusContextR (), *structArrayPropertyMap, classMap));
+    unique_ptr<DeleteStructArrayStepTask>  aDeleteStepTask = unique_ptr<DeleteStructArrayStepTask> (new DeleteStructArrayStepTask(*structArrayPropertyMap, classMap));
     aDeleteStepTask->GetStatement().Initialize(preparedContext, propertyMap->GetProperty().GetAsArrayProperty(), nullptr);
     auto ecsqlStatus = aDeleteStepTask->GetStatement().Prepare(ecdb, ecsql.c_str());
     if (ecsqlStatus != ECSqlStatus::Success)

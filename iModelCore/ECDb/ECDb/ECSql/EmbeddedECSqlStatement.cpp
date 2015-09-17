@@ -12,29 +12,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      02/2014
 //---------------------------------------------------------------------------------------
-EmbeddedECSqlStatement::EmbeddedECSqlStatement ()
-    : ECSqlStatementBase ()
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      02/2014
-//---------------------------------------------------------------------------------------
-EmbeddedECSqlStatement::~EmbeddedECSqlStatement ()
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      02/2014
-//---------------------------------------------------------------------------------------
 void EmbeddedECSqlStatement::Initialize (ECSqlPrepareContext& parentPrepareContext, ArrayECPropertyCP arrayProperty, ECSqlColumnInfo const* parentColumnInfo)
     {
     m_parentStatement = &parentPrepareContext.GetECSqlStatementR ();
     m_arrayProperty = arrayProperty;
     m_parentPrepareContext = &parentPrepareContext;
     m_parentColumnInfo = parentColumnInfo;
-
-    Initialize (GetParentStatement ().GetStatusContextR ());
     }
 
 

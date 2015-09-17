@@ -205,15 +205,15 @@ struct ECSqlCommand : public ConsoleCommand, NonCopyableClass
 private:
     virtual Utf8String _GetName () const override;
     virtual Utf8String _GetUsage () const override;
-    virtual void _Run (ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
+    virtual void _Run (ECSqlConsoleSession&, std::vector<Utf8String> const& args) const override;
 
-    void ExecuteSelect (ECSqlConsoleSession& session, BeSQLite::EC::ECSqlStatement& statement) const;
-    void ExecuteInsert (BeSQLite::EC::ECSqlStatement& statement) const;
-    void ExecuteUpdateOrDelete (BeSQLite::EC::ECSqlStatement& statement) const;
+    void ExecuteSelect (ECSqlConsoleSession&, BeSQLite::EC::ECSqlStatement&) const;
+    void ExecuteInsert (ECSqlConsoleSession&, BeSQLite::EC::ECSqlStatement&) const;
+    void ExecuteUpdateOrDelete (ECSqlConsoleSession&, BeSQLite::EC::ECSqlStatement&) const;
 
-    static Utf8String PrimitiveToString (BeSQLite::EC::IECSqlValue const& value, ECN::PrimitiveType type);
-    static Utf8String PrimitiveToString (BeSQLite::EC::IECSqlValue const& value);
-    static Utf8String ArrayToString (BeSQLite::EC::IECSqlValue const& arrayValue, ECN::ECPropertyCP property);
+    static Utf8String PrimitiveToString (BeSQLite::EC::IECSqlValue const&, ECN::PrimitiveType);
+    static Utf8String PrimitiveToString (BeSQLite::EC::IECSqlValue const&);
+    static Utf8String ArrayToString (BeSQLite::EC::IECSqlValue const& arrayValue, ECN::ECPropertyCP);
     static Utf8String StructToString (BeSQLite::EC::IECSqlValue const& structValue);
 
 public:

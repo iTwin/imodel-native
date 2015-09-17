@@ -14,44 +14,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlStatementBase::ECSqlStatementBase () 
-: m_preparedStatement (nullptr), m_statusContext (nullptr)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        10/13
-//---------------------------------------------------------------------------------------
-ECSqlStatementBase::~ECSqlStatementBase ()
-    { 
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        07/14
-//---------------------------------------------------------------------------------------
-void ECSqlStatementBase::Initialize (ECSqlStatusContext& statusContext)
-    {
-    m_statusContext = &statusContext;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        10/13
-//---------------------------------------------------------------------------------------
 void ECSqlStatementBase::Finalize ()
     {
-    Finalize (true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        10/13
-//---------------------------------------------------------------------------------------
-void ECSqlStatementBase::Finalize (bool resetStatus)
-    {
     m_preparedStatement = nullptr;
-
-    if (resetStatus)
-        GetStatusContextR ().Reset ();
-
     BeAssert (!IsPrepared ());
     }
 
@@ -68,44 +33,38 @@ ECSqlStatus ECSqlStatementBase::Prepare (ECDbCR ecdb, Utf8CP ecsql)
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
     {
-    auto& statusContext = GetStatusContextR ();
+    if (IsPrepared())
+        {
+        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "ECSQL statement has already been prepared.");
+        return ECSqlStatus::UserError;
+        }
 
-    if (IsPrepared ())
-        return statusContext.SetError (ECSqlStatus::UserError, "ECSQL statement has already been prepared.");
-
-    if (Utf8String::IsNullOrEmpty (ecsql))
-        return statusContext.SetError (ECSqlStatus::InvalidECSql, "ECSQL string is empty.");
+    if (Utf8String::IsNullOrEmpty(ecsql))
+        {
+        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "ECSQL string is empty.");
+        return ECSqlStatus::InvalidECSql;
+        }
 
     auto prepareContext = _InitializePrepare (ecdb, ecsql);
-    BeAssert (statusContext.IsSuccess ());
 
     //Step 1: parse the ECSQL
-    auto ecsqlParseTree = ParseECSql (ecdb, ecsql, prepareContext.GetClassMapViewMode ());
-    if (ecsqlParseTree == nullptr)
+    ECSqlParseTreePtr ecsqlParseTree = nullptr;
+    ECSqlParser parser;
+    ECSqlStatus stat = parser.Parse(ecsqlParseTree, ecdb, ecsql, prepareContext.GetClassMapViewMode());
+    if (ECSqlStatus::Success != stat)
         {
-        Finalize (false); //false: do not reset status
-        return statusContext.GetStatus (); 
+        Finalize ();
+        return stat;
         }
 
     //Step 2: translate into SQLite SQL and prepare SQLite statement
     auto& preparedStatement = CreatePreparedStatement (ecdb, *ecsqlParseTree);
-    auto stat = preparedStatement.Prepare (prepareContext, *ecsqlParseTree, ecsql);
+    stat = preparedStatement.Prepare (prepareContext, *ecsqlParseTree, ecsql);
     if (stat != ECSqlStatus::Success)
-        Finalize (false); //false: do not reset status
+        Finalize ();
     
     return stat;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        12/13
-//---------------------------------------------------------------------------------------
-ECSqlParseTreePtr ECSqlStatementBase::ParseECSql (ECDbCR ecdb, Utf8CP ecsql, IClassMap::View classView)
-    {
-    ECSqlParseTreePtr ecsqlParseTree = nullptr;
-    ECSqlParser::Parse (ecsqlParseTree, GetStatusContextR (), ecdb, ecsql, classView);
-    return ecsqlParseTree;
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
@@ -236,22 +195,6 @@ IECSqlValue const& ECSqlStatementBase::GetValue (int columnIndex) const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        10/13
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatementBase::GetLastStatus () const
-    {
-    return GetStatusContextR ().GetStatus ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        10/13
-//---------------------------------------------------------------------------------------
-Utf8String ECSqlStatementBase::GetLastStatusMessage () const
-    {
-    return GetStatusContextR ().ToString ();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        06/14
 //---------------------------------------------------------------------------------------
 Utf8CP ECSqlStatementBase::GetECSql () const
@@ -293,10 +236,13 @@ ECDbCP ECSqlStatementBase::GetECDb () const
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatementBase::FailIfNotPrepared (Utf8CP errorMessage) const
     {
-    if (!IsPrepared ())
-        return GetStatusContextR ().SetError (ECSqlStatus::UserError, errorMessage);
+    if (!IsPrepared())
+        {
+        LOG.error(errorMessage);
+        return ECSqlStatus::UserError;
+        }
 
-    return GetStatusContextR ().Reset ();
+    return ECSqlStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -308,19 +254,13 @@ ECSqlStatus ECSqlStatementBase::FailIfWrongType (ECSqlType expectedType, Utf8CP 
     if (stat != ECSqlStatus::Success)
         return stat;
 
-    if (GetPreparedStatementP ()->GetType () != expectedType)
-        return GetStatusContextR ().SetError (ECSqlStatus::UserError, errorMessage);
+    if (GetPreparedStatementP()->GetType() != expectedType)
+        {
+        GetECDb()->GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, errorMessage);
+        return ECSqlStatus::UserError;
+        }
 
     return ECSqlStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        07/14
-//---------------------------------------------------------------------------------------
-ECSqlStatusContext& ECSqlStatementBase::GetStatusContextR () const
-    {
-    BeAssert (m_statusContext != nullptr);
-    return *m_statusContext;
     }
 
 //---------------------------------------------------------------------------------------
@@ -331,19 +271,19 @@ ECSqlPreparedStatement& ECSqlStatementBase::CreatePreparedStatement (ECDbCR ecdb
     switch (parseTree.GetType ())
         {
         case Exp::Type::Select:
-            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlSelectPreparedStatement (ecdb, GetStatusContextR ()));
+            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlSelectPreparedStatement (ecdb));
             break;
 
         case Exp::Type::Insert:
-            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlInsertPreparedStatement (ecdb, GetStatusContextR ()));
+            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlInsertPreparedStatement (ecdb));
             break;
 
         case Exp::Type::Update:
-            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlUpdatePreparedStatement (ecdb, GetStatusContextR ()));
+            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlUpdatePreparedStatement (ecdb));
             break;
 
         case Exp::Type::Delete:
-            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlDeletePreparedStatement (ecdb, GetStatusContextR ()));
+            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlDeletePreparedStatement (ecdb));
             break;
 
         default:

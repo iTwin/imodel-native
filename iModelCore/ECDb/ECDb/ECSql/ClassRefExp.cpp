@@ -19,7 +19,7 @@ using namespace std;
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ClassNameExp::_CreatePropertyNameExpList (ECSqlParseContext& ctx, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const 
+ECSqlStatus ClassNameExp::_CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const 
     {
     BeAssert (m_info != nullptr);
     auto& classMap = m_info->GetMap();
@@ -38,9 +38,9 @@ ECSqlStatus ClassNameExp::_CreatePropertyNameExpList (ECSqlParseContext& ctx, st
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus RangeClassRefExp::CreatePropertyNameExpList (ECSqlParseContext& ctx, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const
+ECSqlStatus RangeClassRefExp::CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const
     {
-    return _CreatePropertyNameExpList (ctx, addDelegate);
+    return _CreatePropertyNameExpList (addDelegate);
     }
 
 //-----------------------------------------------------------------------------------------

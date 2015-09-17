@@ -69,7 +69,8 @@ int startColumnIndex
             if (propNameExp == nullptr)
                 {
                 BeAssert(false && "Operations with struct array properties not supported in the select clause. This should have been caught by the parser already.");
-                return ctx.SetError(ECSqlStatus::InvalidECSql, "Operations with struct array properties not supported in the select clause.");
+                ctx.GetECDb().GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Operations with struct array properties not supported in the select clause.");
+                return ECSqlStatus::InvalidECSql;
                 }
 
             stat = CreateStructArrayField(field, startColumnIndex, ctx, move(ecsqlColumnInfo), propNameExp->GetPropertyMap());
@@ -157,18 +158,22 @@ PropertyNameExp const* propertyName
         auto& propertyMap = propertyName->GetPropertyMap();
         if(auto structPropertyMap = dynamic_cast<PropertyMapToInLineStructCP>(&propertyMap))
             return CreateStructMemberFields (field, sqlColumnIndex, ctx, *structPropertyMap, move (ecsqlColumnInfo));
-        else
-            return ctx.SetError(ECSqlStatus::ProgrammerError, "For struct properties we only support inline mapping %s", Utf8String (propertyMap.GetPropertyAccessString()).c_str ());
+
+        BeAssert (false && "For struct properties we only support inline mapping %s");
+        return ECSqlStatus::ProgrammerError;
         }
     if (propertyName->GetClassRefExp ()->GetType () == Exp::Type::SubqueryRef)
         {        
         auto& propertyMap = propertyName->GetPropertyMap ();
         if (auto structPropertyMap = dynamic_cast<PropertyMapToInLineStructCP>(&propertyMap))
             return CreateStructMemberFields (field, sqlColumnIndex, ctx, *structPropertyMap, move (ecsqlColumnInfo));
-        else
-            return ctx.SetError (ECSqlStatus::ProgrammerError, "For struct properties we only support inline mapping %s", Utf8String (propertyMap.GetPropertyAccessString ()).c_str ());
+        
+        BeAssert(false && "For struct properties we only support inline mapping %s");
+        return ECSqlStatus::ProgrammerError;
         }
-    return ctx.SetError(ECSqlStatus::InvalidECSql, "Nested SELECTs are not supported yet.");
+
+    BeAssert(false);
+    return ECSqlStatus::ProgrammerError;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -209,13 +214,13 @@ PropertyMapCR propertyMap
     if (!arrayProperty)
         {
         BeAssert(false && "Expecting array property");
-        return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting array property");
+        return ECSqlStatus::ProgrammerError;
         }
 
     if (arrayProperty->GetKind() != ARRAYKIND_Struct)
         {
         BeAssert(false && "Expecting struct array property");
-        return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting struct array property");
+        return ECSqlStatus::ProgrammerError;
         }
 
     auto structType = arrayProperty->GetStructElementType();
@@ -341,7 +346,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
         if (childField == nullptr)
             {
             BeAssert (false && "No ECSqlField instantiated");
-            return ctx.SetError (ECSqlStatus::ProgrammerError, "No ECSqlField instantiated");
+            return ECSqlStatus::ProgrammerError;
             }
 
         newStructField->AppendField(move (childField));
@@ -396,7 +401,5 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromGeneratedProperty (E
 
     return ECSqlColumnInfo::CreateTopLevel (true, move (propertyPath), generatedProperty.GetClass (), nullptr);
     }
-
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

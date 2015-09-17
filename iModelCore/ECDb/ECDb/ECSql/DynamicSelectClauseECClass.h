@@ -32,8 +32,8 @@ private:
 
     ECSqlStatus AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, Utf8CP propName, DerivedPropertyExp const& selectClauseItemExp, ECDbCR);
     ECSqlStatus AddReferenceToStructSchema(ECN::ECSchemaCR structSchema) const;
-    ECN::ECClassR GetClassR () const;
-    ECN::ECSchemaR GetSchemaR () const;
+    ECN::ECClassR GetClassR() const { return *m_class; }
+    ECN::ECSchemaR GetSchemaR() const { return *m_schema; }
     ECSqlStatus SetBackReferenceToPropertyPath(ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
 
 public:

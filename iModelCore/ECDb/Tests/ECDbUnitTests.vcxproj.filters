@@ -136,9 +136,6 @@
     <ClCompile Include="Performance\DbLogHelper.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlStatementEvents_Tests.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECDbSchemaManager_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>

@@ -95,6 +95,7 @@ Utf8String ConsoleCommand::GetUsage() const
 //---------------------------------------------------------------------------------------
 void ConsoleCommand::Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
+    session.GetIssues().Reset();
     return _Run(session, args);
     }
 
@@ -579,7 +580,12 @@ void ImportCommand::RunImportSchema(ECSqlConsoleSession& session, BeFileNameCR e
     if (status != SUCCESS)
         {
         savepoint.Cancel();
-        Console::WriteErrorLine("Failed to import %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+
+        if (session.GetIssues().HasIssue())
+            Console::WriteErrorLine("Failed to import %s '%s': %s", schemaStr, ecschemaPath.GetNameUtf8().c_str(), session.GetIssues().GetIssue());
+        else
+            Console::WriteErrorLine("Failed to import %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
+
         return;
         }
 
@@ -928,11 +934,16 @@ void MetadataCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
             ecsql.append(" ");
         }
 
+
     ECSqlStatement stmt;
     ECSqlStatus status = stmt.Prepare(session.GetECDbR (), ecsql.c_str());
     if (status != ECSqlStatus::Success)
         {
-        Console::WriteErrorLine("Failed to prepare ECSQL statement. %s", stmt.GetLastStatusMessage().c_str());
+        if (session.GetIssues().HasIssue())
+            Console::WriteErrorLine("Failed to prepare ECSQL statement. %s", session.GetIssues().GetIssue());
+        else
+            Console::WriteErrorLine("Failed to prepare ECSQL statement.");
+
         return;
         }
 
@@ -1002,7 +1013,11 @@ void SqlCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& ar
     auto stat = stmt.Prepare(session.GetECDbR (), ecsql.c_str());
     if (stat != ECSqlStatus::Success)
         {
-        Console::WriteErrorLine("Failed to parse ECSQL: %s\r\n", stmt.GetLastStatusMessage().c_str());
+        if (session.GetIssues().HasIssue())
+            Console::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+        else
+            Console::WriteErrorLine("Failed to parse ECSQL.");
+
         return;
         }
 
@@ -1060,11 +1075,14 @@ void ParseCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& 
 
         auto ecsql = ConcatArgs(2, args);
 
-        Utf8String parseTree, error;
-        ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(parseTree, error, ecsql.c_str());
-        if (!error.empty())
+        Utf8String parseTree;
+        if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(parseTree, session.GetECDb(), ecsql.c_str()))
             {
-            Console::WriteErrorLine("Failed to parse ECSQL: %s\r\n", error);
+            if (session.GetIssues().HasIssue())
+                Console::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+            else
+                Console::WriteErrorLine("Failed to parse ECSQL.");
+
             return;
             }
 
@@ -1074,11 +1092,13 @@ void ParseCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& 
     else
         {
         auto ecsql = ConcatArgs(1, args);
-        Utf8String expTree, ecsqlFromExpTree, error;
-        ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(expTree, ecsqlFromExpTree, error, ecsql.c_str(), session.GetECDbR ());
-        if (!error.empty())
+        Utf8String expTree, ecsqlFromExpTree;
+        if (SUCCESS != ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(expTree, ecsqlFromExpTree, session.GetECDbR(), ecsql.c_str()))
             {
-            Console::WriteErrorLine("Failed to parse ECSQL: %s\r\n", error);
+            if (session.GetIssues().HasIssue())
+                Console::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());
+            else
+                Console::WriteErrorLine("Failed to parse ECSQL.");
             return;
             }
 

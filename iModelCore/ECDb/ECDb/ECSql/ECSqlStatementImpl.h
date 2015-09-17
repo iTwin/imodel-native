@@ -41,7 +41,6 @@ private:
         };
 
     static NativeLogging::ILogger* s_prepareDiagnosticsLogger;
-    mutable ECSqlStatusContext m_currentStatusContext;
 
     virtual ECSqlStatus _Prepare (ECDbCR ecdb, Utf8CP ecsql) override;
     virtual ECSqlPrepareContext _InitializePrepare (ECDbCR ecdb, Utf8CP ecsql) override;
@@ -49,9 +48,8 @@ private:
     static NativeLogging::ILogger& GetPrepareDiagnosticsLogger ();
 
 public:
-    Impl ();
-
-    ~Impl ();
+    Impl () : ECSqlStatementBase() {}
+    ~Impl () {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -77,28 +77,25 @@ Statement& ECSqlBinder::GetSqliteStatementR () const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      08/2013
+// @bsimethod                                                Krischan.Eberle      09/2015
 //---------------------------------------------------------------------------------------
-ECSqlStatusContext& ECSqlBinder::GetStatusContext () const
+ECDbCR ECSqlBinder::GetECDb() const
     {
-    return m_ecsqlStatement.GetStatusContextR ();
+    BeAssert(m_ecsqlStatement.GetECDb() != nullptr); 
+    return *m_ecsqlStatement.GetECDb();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlBinder::SetError (DbResult sqliteStat, Utf8CP errorMessageHeader) const
+ECSqlStatus ECSqlBinder::ReportError (DbResult sqliteStat, Utf8CP errorMessageHeader) const
     {
     BeAssert (m_ecsqlStatement.IsPrepared ());
-    return GetStatusContext ().SetError (&m_ecsqlStatement.GetPreparedStatementP ()->GetECDb (), sqliteStat, errorMessageHeader);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      01/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlBinder::ResetStatus () const
-    {
-    return GetStatusContext ().Reset ();
+    ECDbCP ecdb = m_ecsqlStatement.GetECDb();
+    BeAssert(ecdb != nullptr);
+    ECSqlStatus stat = ECSqlStatus::Success;
+    ecdb->GetECDbImplR().ReportSqliteIssue(stat, ECDb::IssueSeverity::Error, sqliteStat, errorMessageHeader);
+    return stat;
     }
 
 //---------------------------------------------------------------------------------------
@@ -262,24 +259,30 @@ void ECSqlParameterMap::OnClearBindings ()
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
 //static
-ECSqlStatus ArrayConstraintValidator::Validate (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& expected, uint32_t actualArrayLength)
+ECSqlStatus ArrayConstraintValidator::Validate (ECDbCR ecdb, ECSqlTypeInfo const& expected, uint32_t actualArrayLength)
     {
     const uint32_t expectedMinOccurs = expected.GetArrayMinOccurs ();
     if (actualArrayLength < expectedMinOccurs)
-        return statusContext.SetError (ECSqlStatus::UserError, "Array to be bound to the array parameter must at least have %d element(s) as defined in the respective ECProperty.", expectedMinOccurs);
+        {
+        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Array to be bound to the array parameter must at least have %d element(s) as defined in the respective ECProperty.", expectedMinOccurs);
+        return ECSqlStatus::UserError;
+        }
 
-    return ValidateMaximum(statusContext, expected, actualArrayLength);
+    return ValidateMaximum(ecdb, expected, actualArrayLength);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2015
 //---------------------------------------------------------------------------------------
 //static
-ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& expected, uint32_t actualArrayLength)
+ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECDbCR ecdb, ECSqlTypeInfo const& expected, uint32_t actualArrayLength)
     {
     const uint32_t expectedMaxOccurs = expected.GetArrayMaxOccurs();
     if (actualArrayLength > expectedMaxOccurs)
-        return statusContext.SetError(ECSqlStatus::UserError, "Array to be bound to the array parameter must at most have %d element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
+        {
+        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Array to be bound to the array parameter must at most have %d element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
+        return ECSqlStatus::UserError;
+        }
 
     return ECSqlStatus::Success;
     }
