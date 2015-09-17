@@ -541,8 +541,8 @@ ECDbMapAnalyser::Relationship::EndInfo& ECDbMapAnalyser::Relationship::EndInfo::
     {
     if (this != &rhs)
         {
-        m_accessString = std::move(m_accessString);
-        m_column = std::move(m_column);
+        m_accessString = std::move(rhs.m_accessString);
+        m_column = std::move(rhs.m_column);
         }
 
     return *this;
