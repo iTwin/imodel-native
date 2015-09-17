@@ -250,6 +250,9 @@
         <ProductDirectory Name="BeCurlAssemblies"                   Path="Assemblies"/>
         <ProductDirectory Name="ECObjectsNativeAssemblies"          Path="Assemblies"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies"           Path="Assemblies"/>
+        <ProductDirectory Name="PPNativeAssemblies"                 Path="Assemblies"/>
+        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Path="Assemblies"/>
+        <ProductDirectory Name="SmartSolidAssemblies"               Path="Assemblies"/>
         <ProductDirectory Name="Libs"                               Path="Libs"/>
         <ProductDirectory Name="BentleyLibs"                        Path="Libs"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
@@ -265,6 +268,7 @@
         <ProductDirectory Name="GeoCoordData"                       Path="Assets/DgnGeoCoord"/>
         <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord"/>
 
+        <ProductDirectory Name="DgnViewDecorators" Deliver="false"/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies" Deliver="false"/>
         <ProductDirectory Name="PublicAPI" Deliver="false"/>
         <ProductDirectory Name="VendorAPI" Deliver="false" />
