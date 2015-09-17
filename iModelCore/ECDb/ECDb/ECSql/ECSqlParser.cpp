@@ -2173,6 +2173,12 @@ std::unique_ptr<SelectStatementExp> ECSqlParser::parse_select_statement (ECSqlPa
         if (single_select == nullptr)
             return nullptr;
 
+        if (!single_select->IsCoreSelect())
+            {
+            ctx.SetError(ECSqlStatus::UserError, "SELECT in UNION must not containt ORDER BY OR LIMIT caluse. If one is used it should be in the end  of UNION statement. -> %s", single_select->ToECSql().c_str());
+            return nullptr;
+            }
+
         SelectStatementExp::Operator op = parse_compound_select_op (ctx, parseNode->getChild (1));
         bool all = parse_all (ctx, parseNode->getChild (2));
         auto compound_select = parse_select_statement (ctx, parseNode->getChild (3));

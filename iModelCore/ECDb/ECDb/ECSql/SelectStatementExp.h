@@ -330,7 +330,11 @@ public :
 
         return GetChild<LimitOffsetExp> (static_cast<size_t> (m_limitOffsetClauseIndex));
         }
-
+    
+    bool IsCoreSelect() const
+        {
+        return GetLimitOffset() == nullptr && GetOptOrderBy() == nullptr;
+        }
     SqlSetQuantifier GetSelectionType() const {return m_selectionType;}
     };
 
@@ -360,7 +364,7 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct SelectStatementExp : QueryExp
     {
-    DEFINE_EXPR_TYPE (Select)
+    DEFINE_EXPR_TYPE(Select)
     enum class Operator
         {
         None, //TopLevel/First
@@ -369,85 +373,28 @@ struct SelectStatementExp : QueryExp
         Except
         };
 
-private:
-    Operator m_operator;
-    bool m_isAll;
+    private:
+        Operator m_operator;
+        bool m_isAll;
 
-    virtual Utf8String _ToECSql() const override
-        {
-        if (IsCompound())
-            {
-            return GetCurrent().ToECSql() + " " + OPToString(m_operator) + (m_isAll ? " ALL " : " ") + GetNext()->ToECSql();
-            }
+        virtual Utf8String _ToECSql() const override;
+        virtual Utf8String _ToString() const override;
+        virtual DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override;
+        virtual SelectClauseExp const* _GetSelection() const override;
 
-        return  GetCurrent().ToECSql();
-        }
-    virtual Utf8String _ToString () const override { return "SelectStatementExp"; }
-
-    virtual DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override
-        {
-        return GetCurrent().FindProperty (propertyName);
-        }
-    virtual SelectClauseExp const* _GetSelection () const override { return  GetCurrent ().GetSelection (); }
-
-public:
-    SelectStatementExp (std::unique_ptr<SingleSelectStatementExp> lhs)
-        :m_isAll (false), m_operator (Operator::None)
-        {
-        BeAssert (lhs != nullptr);
-        AddChild (std::move (lhs));
-        }
-
-    SelectStatementExp (std::unique_ptr<SingleSelectStatementExp> lhs, Operator op, bool isAll, std::unique_ptr<SelectStatementExp> rhs)
-        :m_isAll (isAll), m_operator (op)
-        {
-        BeAssert (lhs != nullptr);
-        BeAssert (rhs != nullptr);
-        BeAssert (op != Operator::None);
-
-        AddChild (std::move (lhs));
-        AddChild (std::move (rhs));
-        }
-    SingleSelectStatementExp const& GetCurrent () const { return *GetChild<SingleSelectStatementExp> (0); }
-    SelectStatementExp const* GetNext () const 
-        { 
-        if (IsCompound ())
-            return GetChild<SelectStatementExp> (1);
-
-        return nullptr;
-        }
-    bool IsAll ()const { return m_isAll; }
-    Operator GetOP () const { return m_operator; }
-    const std::vector<SingleSelectStatementExp const*> GetStatements () const
-        {
-        std::vector<SingleSelectStatementExp const*> statements;
-        auto current = this;
-        while (current != nullptr)
-            {
-            statements.push_back (&GetCurrent ());
-            current = GetNext ();
-            }
-
-        return statements;
-        }
-
-    bool IsCompound () const { return m_operator != Operator::None; }
-        
-    static Utf8CP OPToString (Operator op)
-        {
-        switch (op)
-            {
-            case Operator::Union:
-                return "UNION";
-            case Operator::Intersect:
-                return "INTERSECT";
-            case Operator::Except:
-                return "EXCEPT";
-            default:
-                BeAssert (false && "Programmer error");
-                return nullptr;
-            }
-        }
+    public:
+        SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs);
+        SelectStatementExp(std::unique_ptr<SingleSelectStatementExp> lhs, Operator op, bool isAll, std::unique_ptr<SelectStatementExp> rhs);
+        virtual ~SelectStatementExp(){}
+        SingleSelectStatementExp const& GetCurrent() const;
+        SelectStatementExp const* GetNext() const;
+        SelectStatementExp const* GetPrevious() const;
+        SelectStatementExp const& GetLast() const;
+        SelectStatementExp const& GetFirst() const;
+        bool IsAll()const;
+        Operator GetOP() const;
+        bool IsCompound() const;
+        static Utf8CP OPToString(Operator op);
     };
 
 
