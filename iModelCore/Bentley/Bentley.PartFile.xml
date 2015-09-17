@@ -69,25 +69,25 @@
         <SubPart PartName="PublishedApi"        PartFile="Bentley"  Repository="Bentley" />
     </Part>
 
-    <Part Name="UnitTestsBase" BentleyBuildMakeFile="Tests/Prewire.mke">
+    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="BentleyDll"/>
         <Bindings>
-            <Files ProductDirectoryName="UnitTestsIgnoreList" ProductSubDirectory="Bentley"> Delivery/UnitTests/ignore_list.txt</Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Bentley"> Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
-    <Part Name="UnitTestsNonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-        <SubPart PartName="UnitTestsBase" />
+    <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTestsLinkables" ProductSubDirectory="Bentley/NonPublished" SourceName="Delivery/UnitTests/Linkables/NonPublished"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
-    <Part Name="UnitTestsPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
-        <SubPart PartName="UnitTestsBase" />
+    <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="PublishedApi" />
         <Bindings>
-            <Directory ProductDirectoryName="UnitTestsLinkables" ProductSubDirectory="Bentley/Published" SourceName="Delivery/UnitTests/Linkables/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
     </Part>
 
