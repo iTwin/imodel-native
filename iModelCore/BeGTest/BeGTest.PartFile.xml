@@ -241,7 +241,7 @@
     <!-- *********************************************************************************************** -->
     <!-- ProductDirectory that can be used by any material product based on mobiledgn -->
     <!-- *********************************************************************************************** -->
-    <ProductDirectoryList ListName="BeGTest-MaterialProductDir">
+    <ProductDirectoryList ListName="BeGTest-Material">
         <ProductDirectory Name="BentleyNativeAssemblies"            Path="Assemblies"/>
         <ProductDirectory Name="LoggingNativeAssemblies"            Path="Assemblies"/>
         <ProductDirectory Name="GeomNativeAssemblies"               Path="Assemblies"/>
@@ -261,6 +261,7 @@
         <ProductDirectory Name="DgnPlatformFont"                    Path="Assets/fonts"/>
         <ProductDirectory Name="DgnPlatformLastResortFonts"         Path="Assets"/>
         <ProductDirectory Name="BeIcu4cData"                        Path="Assets"/>
+        <ProductDirectory Name="BeIcu4cData"                        Path="Assets" LibType="static"/>
         <ProductDirectory Name="GeoCoordData"                       Path="Assets/DgnGeoCoord"/>
         <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord"/>
 
@@ -287,7 +288,7 @@
     <!-- *********************************************************************************************** -->
     <!-- ProductDirectory used by all gtest-based test-runner products -->
     <!-- *********************************************************************************************** -->
-    <ProductDirectoryList ListName="Gtest-ProductDir">
+    <ProductDirectoryList ListName="Gtest-GtestRunner">
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
         <ProductDirectory Name="BentleyNativeAssemblies" Path=""/>
         <ProductDirectory Name="LoggingNativeAssemblies" Path=""/>

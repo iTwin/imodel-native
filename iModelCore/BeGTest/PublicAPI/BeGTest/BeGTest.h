@@ -1,1 +1,1 @@
-/* */
+//__BENTLEY_INTERNAL_ONLY__

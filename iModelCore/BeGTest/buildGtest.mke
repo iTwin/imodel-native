@@ -93,9 +93,9 @@ always:
 # -----------------------------------------------------
 # Create the sqlang database for the unit tests
 # -----------------------------------------------------
-SQLANG_OutputDb     = $(o)DgnPlatformAssetsDirectory/sqlang/BeGTest_en-US.sqlang.db3 
-SQLANG_DeliveryDir  = $(tmp)
-%include CreateSQLangDb.mki
+#SQLANG_OutputDb     = $(o)DgnPlatformAssetsDirectory/sqlang/BeGTest_en-US.sqlang.db3 
+#SQLANG_DeliveryDir  = $(tmp)
+#%include CreateSQLangDb.mki
 
 # ---------------------------------------------------------------------------------------------------
 # Link files into the Delivery directory with the names and locations that BeGTestExe.cpp expects.
