@@ -10,7 +10,7 @@ PolicyFile = $(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki
 
 baseDir = $(_makeFilePath)
 
-$(BuildContext)Delivery/UnitTests/assets/DgnProject/ECSchemas : $(baseDir)ECSchemas
+$(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
@@ -44,5 +44,5 @@ $(dgnScriptGen)GeomJsApi.js : $(tsSourceFiles)
 
 %endif
 
-$(BuildContext)Delivery/UnitTests/assets/DgnProject/Script : $(ScriptOutDir)
+$(BuildContext)Delivery/UnitTests/Script : $(ScriptOutDir)
     $(LinkFirstDepToFirstTargetAsDirectory)

@@ -131,8 +131,8 @@
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
         <Bindings>
             <Files     ProductDirectoryName="UnitTestsIgnoreList"   ProductSubDirectory="DgnPlatform">              Delivery/UnitTests/ignore_list.txt</Files>
-            <Directory ProductDirectoryName="UnitTestsAssets"       ProductSubDirectory="Script"        SourceName="Delivery/UnitTests/assets/DgnProject/Script" />
-            <Files     ProductDirectoryName="UnitTestsIgnoreList"   ProductSubDirectory="ECSchemas">                Delivery/UnitTests/assets/DgnProject/ECSchemas/*.xml</Files>
+            <Directory ProductDirectoryName="UnitTestsAssets"       ProductSubDirectory="Script"        SourceName="Delivery/UnitTests/Script" />
+            <Files     ProductDirectoryName="UnitTestsAssets"       ProductSubDirectory="ECSchemas">                Delivery/UnitTests/ECSchemas/*.xml</Files>
         </Bindings>
     </Part>
 
