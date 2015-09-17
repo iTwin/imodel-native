@@ -444,7 +444,7 @@
     <!-- 1. Define a product that contains the tests (this is the "material" out of which the test runners will be built) -->
     <Product Name="MobileDgnTests-Material">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
-        <Directories DirectoryListName="BeGTest-MaterialProductDir" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="BeGTest-Material" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="UnitTests-Published"          Repository="Bentley" PartFile="Bentley"/>
         <SubPart PartName="UnitTests-NonPublished"       Repository="Bentley" PartFile="Bentley"/>
         <SubPart PartName="UnitTests-StructsTest"        Repository="GeomLibs" PartFile="GeomLibs"/>
@@ -461,7 +461,7 @@
 
     <!-- 2. Define a product that is based on test material and wraps it in a gtest runner program -->
     <Product Name="MobileDgnTests-GtestRunner">
-        <Directories DirectoryListName="Gtest-ProductDir" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="Gtest-GtestRunner" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="MobileDgnTests-GtestRunnerExe"/>
     </Product>
 
@@ -479,7 +479,7 @@
     <!-- 1. define a product that contains the tests (this is the "material" out of which the test runners will be built) -->
     <Product Name="MobileDgnPerformanceTests-Material">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
-        <Directories DirectoryListName="BeGTest-MaterialProductDir" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="BeGTest-Material" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="UnitTests-Performance"        Repository="BeSQLite" PartFile="BeSQLite"/>
         <SubPart PartName="UnitTests-Performance"        Repository="ECDb" PartFile="ECDb"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>
@@ -487,7 +487,7 @@
 
     <!-- 2. define a product that is based on test material and wraps it in a gtest runner program -->
     <Product Name="MobileDgnPerformanceTests-GtestRunner">
-        <Directories DirectoryListName="Gtest-ProductDir" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="Gtest-GtestRunner" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="MobileDgnPerformanceTests-GtestRunnerExe"/>
     </Product>
 
