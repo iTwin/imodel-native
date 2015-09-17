@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlCrudAsserter.cpp $
+|     $Source: Tests/Published/ECSqlCrudAsserter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlCrudAsserter.h"
@@ -13,20 +13,6 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 NativeLogging::ILogger* ECSqlCrudAsserter::s_logger = nullptr;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlCrudAsserter::ECSqlCrudAsserter (ECDbTestProject& testProject)
-    : m_testProject (testProject)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlCrudAsserter::~ECSqlCrudAsserter ()
-    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13

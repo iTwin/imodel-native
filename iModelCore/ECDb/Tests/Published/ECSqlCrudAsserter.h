@@ -44,12 +44,12 @@ private:
 
 protected:
 
-    ECDbTestProject& GetTestProject () const;
+    ECDbTestProject& GetTestProject() const { return m_testProject; }
     ECDbR GetDgnDb () const;
 
 public:
-    explicit ECSqlCrudAsserter (ECDbTestProject& testProject);
-    virtual ~ECSqlCrudAsserter ();
+    explicit ECSqlCrudAsserter (ECDbTestProject& testProject) : m_testProject(testProject) {}
+    virtual ~ECSqlCrudAsserter () {}
 
     void Assert (ECSqlTestItem const& testItem) const;
     Utf8CP GetTargetOperationName () const;
