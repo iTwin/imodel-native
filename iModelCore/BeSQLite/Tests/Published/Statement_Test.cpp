@@ -222,9 +222,12 @@ TEST(StatementTests, ClearBinding)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Provisional test to ensure sql json functions automatically made available when
+* a new DB connection is created, and superficially test a couple of them.
+* NEEDSWORK: More comprehensive tests of the json stuff.
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(StatementTests, SillyJsonTest)
+TEST(StatementTests, VerifyJsonExtensionEnabled)
     {
     initBeSQLiteLib();
     Db db;
