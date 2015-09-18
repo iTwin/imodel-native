@@ -61,6 +61,11 @@ struct BeGTestHost : RefCounted<BeTest::Host>
     BeGTestHost (char const* progDir)
         {
         m_programPath = BeFileName (BeFileName::DevAndDir, WString(progDir, true).c_str());
+        if ( m_programPath.IsEmpty() ) // We get progdir from argv[0] , if we execute it from CWD argv[0] is blank. in which case BeFileName is not able to resolve full path. So creating path ".\" 
+            {
+            m_programPath.AppendString(L".");
+            m_programPath.AppendSeparator();
+            }
         m_programPath.BeGetFullPathName ();
         }
 
@@ -224,7 +229,6 @@ struct GtestFailureHandler : BeTest::IFailureHandler
 extern "C"
 int main (int argc, char **argv)
     {
-    
     auto hostPtr = BeGTestHost::Create(argv[0]);
 
     //  Make sure output directies exist
