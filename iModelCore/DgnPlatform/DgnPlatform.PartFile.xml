@@ -449,23 +449,25 @@
     <!-- ******************* MobileDgn Performance Tests ********************* -->
 
     <!-- 1. define a product that contains the tests (this is the "material" out of which the test runners will be built) -->
-    <Product Name="MobileDgnPerformanceTests-Material">
+    <Product Name="DgnPlatformPerformanceTests-Material">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
         <Directories DirectoryListName="BeGTest-Material" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="UnitTests-Performance"        Repository="BeSQLite" PartFile="BeSQLite"/>
         <SubPart PartName="UnitTests-Performance"        Repository="ECDb" PartFile="ECDb"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->
+        <SubPart PartName="DgnPlatformSqlang"            Repository="DgnPlatform" PartFile="DgnPlatform"/>
     </Product>
 
     <!-- 2. define a product that is based on test material and wraps it in a gtest runner program -->
-    <Product Name="MobileDgnPerformanceTests-GtestRunner">
+    <Product Name="DgnPlatformPerformanceTests-GtestRunner">
         <Directories DirectoryListName="Gtest-GtestRunner" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="MobileDgnPerformanceTests-GtestRunnerExe"/>
+        <SubPart PartName="DgnPlatformPerformanceTests-GtestRunnerExe"/>
     </Product>
 
-    <Part Name="MobileDgnPerformanceTests-GtestRunnerExe" BentleyBuildMakeFile="../begtest/buildGtest.mke" BentleyBuildMakeOptions="-dBEGTEST_NAME=MobileDgnPerformanceTests -dBEGTEST_MATERIAL_PRODUCT_DIR=MobileDgnPerformanceTests-Material">
-        <SubProduct ProductName="MobileDgnPerformanceTests-Material"/>
-        <SubPart PartName="GTest-ExeSupport" Repository="BeGTest" PartFile="BeGTest"/>
+    <Part Name="DgnPlatformPerformanceTests-GtestRunnerExe" BentleyBuildMakeFile="$(buildcontext)/SubParts/Gtest-Tools/buildGtest.mke" BentleyBuildMakeOptions="-dBEGTEST_NAME=DgnPlatformPerformanceTests -dBEGTEST_MATERIAL_PRODUCT_DIR=DgnPlatformPerformanceTests-Material -dBEGTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3">
+        <SubProduct ProductName="DgnPlatformPerformanceTests-Material"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/BuildGtest/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-DgnPlatformAssetsDirectory" SourceName="Delivery/BuildGtest/DgnPlatformAssetsDirectory" />
