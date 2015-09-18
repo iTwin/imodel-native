@@ -450,17 +450,19 @@ bvector<ECSchemaP>& localizationSchemas
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
     for (ECSchemaP supplemental : supplementalSchemaList)
         {
-        if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(supplemental))
-            {
-            localizationSchemas.push_back(supplemental);
-            continue;
-            }
-
         SupplementalSchemaMetaDataPtr metaData;
         if (!SupplementalSchemaMetaData::TryGetFromSchema(metaData, *supplemental))
             return SUPPLEMENTED_SCHEMA_STATUS_Metadata_Missing;
         if (!metaData.IsValid())
             return SUPPLEMENTED_SCHEMA_STATUS_Metadata_Missing;
+        if (!metaData->IsForPrimarySchema(primarySchema.GetName(), primarySchema.GetVersionMajor(), primarySchema.GetVersionMinor()))
+            continue;
+
+        if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(supplemental))
+            {
+            localizationSchemas.push_back(supplemental);
+            continue;
+            }
 
         m_supplementalSchemaNamesAndPurposes[supplemental->GetFullSchemaName()] = metaData->GetSupplementalSchemaPurpose();
         uint32_t precedence = metaData->GetSupplementalSchemaPrecedence();
