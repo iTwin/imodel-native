@@ -49,15 +49,6 @@
     @note If the ECInstanceId is specified explicitly in the ECSQL INSERT statement, the caller is responsible to deal with possible primary key or other
     constraint violations.
 
-    @section ECSqlStatementErrorReporting ECSqlStatement Error Reporting
-
-    ECSqlStatement provides @ref BentleyApi::BeSQLite::EC::ECSqlStatement::GetLastStatus "GetLastStatus" and 
-    @ref BentleyApi::BeSQLite::EC::ECSqlStatement::GetLastStatusMessage "GetLastStatusMessage"
-    to retrieve the status of the last call to this ECSqlStatement instance. This is in particular
-    useful for those methods which do not return a status itself, like all value reading methods,
-    e.g. @ref BentleyApi::BeSQLite::EC::ECSqlStatement::GetValueInt "GetValueInt" or 
-    @ref BentleyApi::BeSQLite::EC::ECSqlStatement::GetValueText "GetValueText".
-
     @section ECSqlStatementDiagnostics ECSqlStatement Diagnostics
 
     ### ECSQL Preparation Diagnostics

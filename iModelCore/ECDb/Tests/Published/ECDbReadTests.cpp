@@ -260,7 +260,7 @@ TEST(ECDbInstances, LimitOffset)
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, selectBuilder.ToString ().c_str ());
 
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL failed: " << statement.GetLastStatusMessage().c_str();
+    ASSERT_EQ((int) ECSqlStatus::Success, (int) stat) << "Preparation of ECSQL " << selectBuilder.ToString() << " failed";
     int pageSizeIndex = statement.GetParameterIndex ("pageSize");
     ASSERT_TRUE (pageSizeIndex >= 0);
     int pageNumberIndex = statement.GetParameterIndex ("pageNumber");

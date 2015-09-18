@@ -26,7 +26,7 @@ private:
 
     std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString () const override { return "Update"; }
 
@@ -49,7 +49,7 @@ private:
     size_t m_propNameExpIndex;
     size_t m_valueExpIndex;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
     virtual Utf8String _ToECSql() const override;

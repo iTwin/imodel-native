@@ -24,7 +24,6 @@ private:
     ECSqlPrepareContext* m_parentPrepareContext;
     ECSqlColumnInfo const* m_parentColumnInfo;
 
-    using ECSqlStatementBase::Initialize;
     virtual ECSqlPrepareContext _InitializePrepare(ECDbCR ecdb, Utf8CP ecsql) override;
 
     ECSqlStatementBase& GetParentStatement () const;
@@ -33,8 +32,8 @@ private:
     ECSqlColumnInfo const* GetParentColumnInfo () const;
         
 public:
-    EmbeddedECSqlStatement ();
-    ~EmbeddedECSqlStatement ();
+    EmbeddedECSqlStatement () : ECSqlStatementBase() {}
+    ~EmbeddedECSqlStatement () {}
 
     void Initialize (ECSqlPrepareContext& parentPrepareContext, ArrayECPropertyCP arrayProperty = nullptr, ECSqlColumnInfo const* parentColumnInfo = nullptr);
     bool HasColumnInfo () const { return m_parentColumnInfo != nullptr; }

@@ -19,42 +19,41 @@ struct PrimitiveArrayMappedToSingleColumnECSqlField : public ECSqlField, public 
 private:
     struct ArrayElementValue : public IECSqlValue, IECSqlPrimitiveValue
         {
-    private:
-        ECN::ECValue m_value;
-        ECSqlColumnInfo m_columnInfo;
-        ECSqlStatusContext& m_statusContext;
+        private:
+            ECDbCR m_ecdb;
+            ECN::ECValue m_value;
+            ECSqlColumnInfo m_columnInfo;
 
-    private:
-        //IECSqlValue
-        virtual bool _IsNull () const override;
-        virtual ECSqlColumnInfoCR _GetColumnInfo () const override;
-        virtual IECSqlPrimitiveValue const& _GetPrimitive () const override { return *this; }
-        virtual IECSqlStructValue const& _GetStruct () const override;
-        virtual IECSqlArrayValue const& _GetArray () const override;
+        private:
+            //IECSqlValue
+            virtual bool _IsNull() const override;
+            virtual ECSqlColumnInfoCR _GetColumnInfo() const override;
+            virtual IECSqlPrimitiveValue const& _GetPrimitive() const override { return *this; }
+            virtual IECSqlStructValue const& _GetStruct() const override;
+            virtual IECSqlArrayValue const& _GetArray() const override;
 
-        //IECSqlPrimitiveValue
-        virtual void const* _GetBinary (int* binarySize) const override;
-        virtual bool _GetBoolean () const override;
-        virtual uint64_t _GetDateTimeJulianDaysHns (DateTime::Info& metadata) const override;
-        virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
-        virtual double _GetDouble() const override;
-        virtual int _GetInt () const override;
-        virtual int64_t _GetInt64 () const override;
-        virtual Utf8CP _GetText () const override;
-        virtual DPoint2d _GetPoint2D () const override;
-        virtual DPoint3d _GetPoint3D () const override;
-        virtual IGeometryPtr _GetGeometry() const override;
-        virtual void const* _GetGeometryBlob(int* blobSize) const override;
+            //IECSqlPrimitiveValue
+            virtual void const* _GetBinary(int* binarySize) const override;
+            virtual bool _GetBoolean() const override;
+            virtual uint64_t _GetDateTimeJulianDaysHns(DateTime::Info& metadata) const override;
+            virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
+            virtual double _GetDouble() const override;
+            virtual int _GetInt() const override;
+            virtual int64_t _GetInt64() const override;
+            virtual Utf8CP _GetText() const override;
+            virtual DPoint2d _GetPoint2D() const override;
+            virtual DPoint3d _GetPoint3D() const override;
+            virtual IGeometryPtr _GetGeometry() const override;
+            virtual void const* _GetGeometryBlob(int* blobSize) const override;
 
-        bool CanRead (ECN::PrimitiveType requestedType) const;
-        void ResetStatus () const;
+            bool CanRead(ECN::PrimitiveType requestedType) const;
 
-    public:
-        explicit ArrayElementValue (ECSqlStatusContext& statusContext);
-        void Init (ECSqlColumnInfoCR parentColumnInfo);
+        public:
+            explicit ArrayElementValue(ECDbCR ecdb) : m_ecdb(ecdb) {}
+            void Init(ECSqlColumnInfoCR parentColumnInfo);
 
-        BentleyStatus SetValue (ECN::IECInstanceCR instance, uint32_t arrayIndex, DateTime::Info const& dateTimeMetadata);
-        void Reset ();
+            BentleyStatus SetValue(ECN::IECInstanceCR instance, uint32_t arrayIndex, DateTime::Info const& dateTimeMetadata);
+            void Reset();
         };
 
 private:
@@ -65,30 +64,30 @@ private:
     DateTime::Info m_datetimeMetadata;
 
     mutable int m_currentArrayIndex;
-    mutable ArrayElementValue m_arrayElement; 
+    mutable ArrayElementValue m_arrayElement;
 
     //IECSqlValue
-    virtual bool _IsNull () const override;
-    virtual IECSqlPrimitiveValue const& _GetPrimitive () const override;
-    virtual IECSqlStructValue const& _GetStruct () const override;
-    virtual IECSqlArrayValue const& _GetArray () const override { return *this; }
+    virtual bool _IsNull() const override;
+    virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
+    virtual IECSqlStructValue const& _GetStruct() const override;
+    virtual IECSqlArrayValue const& _GetArray() const override { return *this; }
 
     //IECSqlArrayValue
-    virtual void _MoveNext (bool onInitializingIterator) const override;
-    virtual bool _IsAtEnd () const override;
-    virtual IECSqlValue const* _GetCurrent () const override;
-    virtual int _GetArrayLength () const override;
+    virtual void _MoveNext(bool onInitializingIterator) const override;
+    virtual bool _IsAtEnd() const override;
+    virtual IECSqlValue const* _GetCurrent() const override;
+    virtual int _GetArrayLength() const override;
 
     //ECSqlField
-    virtual ECSqlStatus _Reset (ECSqlStatusContext& statusContext) override;
-    virtual ECSqlStatus _Init (ECSqlStatusContext& statusContext) override;
-    
-    void DoReset () const;
-    ECN::IECInstanceCP GetArrayValueECInstance () const;
+    virtual ECSqlStatus _Reset() override;
+    virtual ECSqlStatus _Init() override;
+
+    void DoReset() const;
+    ECN::IECInstanceCP GetArrayValueECInstance() const;
 
 public:
     PrimitiveArrayMappedToSingleColumnECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int sqliteColumnIndex, ECN::ECClassCR primitiveArraySystemClass);
-    ~PrimitiveArrayMappedToSingleColumnECSqlField () {}
+    ~PrimitiveArrayMappedToSingleColumnECSqlField() {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

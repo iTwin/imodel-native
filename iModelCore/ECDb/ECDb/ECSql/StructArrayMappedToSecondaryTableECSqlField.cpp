@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructArrayMappedToSecondaryTableECSqlField.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -21,7 +21,7 @@ StructArrayMappedToSecondaryTableECSqlField::StructArrayMappedToSecondaryTableEC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayMappedToSecondaryTableECSqlField::_Reset (ECSqlStatusContext& statusContext)
+ECSqlStatus StructArrayMappedToSecondaryTableECSqlField::_Reset ()
     {
     return m_reader.Reset(true);        
     }
@@ -29,9 +29,9 @@ ECSqlStatus StructArrayMappedToSecondaryTableECSqlField::_Reset (ECSqlStatusCont
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayMappedToSecondaryTableECSqlField::_Init (ECSqlStatusContext& statusContext)
+ECSqlStatus StructArrayMappedToSecondaryTableECSqlField::_Init ()
     {
-    _Reset (statusContext);
+    _Reset ();
     return m_binder.Execute (GetECSqlStatementR(), GetSecondaryECSqlStatement(), IECSqlBinder::MakeCopy::Yes);
     }
 
@@ -40,7 +40,6 @@ ECSqlStatus StructArrayMappedToSecondaryTableECSqlField::_Init (ECSqlStatusConte
 //---------------------------------------------------------------------------------------
 bool StructArrayMappedToSecondaryTableECSqlField::_IsNull () const 
     {
-    ResetStatus ();
     return false; // struct arrays are always considered to be not null
     }
 
@@ -49,7 +48,7 @@ bool StructArrayMappedToSecondaryTableECSqlField::_IsNull () const
 //---------------------------------------------------------------------------------------
 IECSqlStructValue const& StructArrayMappedToSecondaryTableECSqlField::_GetStruct () const
     {
-    SetError (ECSqlStatus::UserError, "GetStruct cannot be called for array column. Call GetArray instead.");
+    ReportError (ECSqlStatus::UserError, "GetStruct cannot be called for array column. Call GetArray instead.");
     BeAssert (false && "GetStruct cannot be called for array column. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton ().GetStruct ();
     }
@@ -59,7 +58,6 @@ IECSqlStructValue const& StructArrayMappedToSecondaryTableECSqlField::_GetStruct
 //---------------------------------------------------------------------------------------
 IECSqlArrayValue const& StructArrayMappedToSecondaryTableECSqlField::_GetArray () const
     { 
-    ResetStatus ();
     return *this;
     }
 
@@ -68,7 +66,7 @@ IECSqlArrayValue const& StructArrayMappedToSecondaryTableECSqlField::_GetArray (
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& StructArrayMappedToSecondaryTableECSqlField::_GetPrimitive () const
     {
-    SetError (ECSqlStatus::UserError, "GetPrimitive cannot be called for array column. Call GetArray instead.");
+    ReportError (ECSqlStatus::UserError, "GetPrimitive cannot be called for array column. Call GetArray instead.");
     BeAssert (false && "GetPrimitive cannot be called for array column. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton ().GetPrimitive ();
     }
@@ -78,7 +76,6 @@ IECSqlPrimitiveValue const& StructArrayMappedToSecondaryTableECSqlField::_GetPri
 //---------------------------------------------------------------------------------------
 int StructArrayMappedToSecondaryTableECSqlField::_GetArrayLength () const
     {
-    ResetStatus ();
     return m_reader.GetArrayLength ();
     }
 
@@ -149,7 +146,6 @@ void StructArrayMappedToSecondaryTableECSqlField::Reader::SetHiddenMemberStartIn
 //---------------------------------------------------------------------------------------
 ECSqlColumnInfoCR StructArrayMappedToSecondaryTableECSqlField::Reader::_GetColumnInfo () const
     {
-    m_parentField->ResetStatus ();
     return m_arrayColumnInfo;
     }
 
@@ -158,8 +154,6 @@ ECSqlColumnInfoCR StructArrayMappedToSecondaryTableECSqlField::Reader::_GetColum
 //---------------------------------------------------------------------------------------
 bool StructArrayMappedToSecondaryTableECSqlField::Reader::_IsNull () const
     {
-    m_parentField->ResetStatus ();
-
     int memberCount = _GetMemberCount ();
     for (int i = 0; i < memberCount; i++)
         {
@@ -175,7 +169,7 @@ bool StructArrayMappedToSecondaryTableECSqlField::Reader::_IsNull () const
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& StructArrayMappedToSecondaryTableECSqlField::Reader::_GetPrimitive () const
     {
-    m_parentField->SetError (ECSqlStatus::UserError, "GetPrimitive cannot be called for struct array element. Call GetStruct instead.");
+    m_parentField->ReportError (ECSqlStatus::UserError, "GetPrimitive cannot be called for struct array element. Call GetStruct instead.");
     return NoopECSqlValue::GetSingleton ().GetPrimitive ();
     }
 
@@ -184,7 +178,6 @@ IECSqlPrimitiveValue const& StructArrayMappedToSecondaryTableECSqlField::Reader:
 //---------------------------------------------------------------------------------------
 IECSqlStructValue const& StructArrayMappedToSecondaryTableECSqlField::Reader::_GetStruct () const
     {
-    m_parentField->ResetStatus ();
     return *this;
     }
 
@@ -193,7 +186,7 @@ IECSqlStructValue const& StructArrayMappedToSecondaryTableECSqlField::Reader::_G
 //---------------------------------------------------------------------------------------
 IECSqlArrayValue const& StructArrayMappedToSecondaryTableECSqlField::Reader::_GetArray () const
     {
-    m_parentField->SetError (ECSqlStatus::UserError, "GetArray cannot be called for struct array element. Call GetStruct instead.");
+    m_parentField->ReportError (ECSqlStatus::UserError, "GetArray cannot be called for struct array element. Call GetStruct instead.");
     return NoopECSqlValue::GetSingleton ().GetArray ();
     }
 

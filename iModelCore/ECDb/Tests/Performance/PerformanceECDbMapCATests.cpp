@@ -90,7 +90,7 @@ void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
                 ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(parameterIndex, ("UpdatedValue"), IECSqlBinder::MakeCopy::No));
                 }
 
-            ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (1, (int64_t)(instanceId++)));
+            ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (propertyCount + 1, (int64_t)(instanceId++)));
             ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "step failed for " << updateSql;
             stmt.Reset ();
             stmt.ClearBindings ();
@@ -228,12 +228,13 @@ void PerformanceECDbMapCATestFixture::CreateClassHierarchy(ECSchemaR testSchema,
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSubclasses)
+TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_SharedTable_SharedColumnsForSubClasses)
     {
-    m_instancesPerClass = 100000;
-    m_propertiesPerClass = 100;
+    m_instancesPerClass = 1000;
+    m_propertiesPerClass = 5;
+    size_t hierarchyLevel = 7;
     ECDbTestProject test;
-    ECDbR ecdb = test.Create ("CRUDOperationWithSharedColumns.ecdb");
+    ECDbR ecdb = test.Create ("CRUDPerformance_SharedTable_SharedColumnsForSubClasses.ecdb");
 
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
@@ -253,7 +254,7 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSub
     CreatePrimitiveProperties (*baseClass);
 
     //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
-    CreateClassHierarchy (*testSchema, 7, *baseClass);
+    CreateClassHierarchy (*testSchema, hierarchyLevel, *baseClass);
 
     auto ca = ecdbmapSchema->GetClassCP ("ClassMap");
     EXPECT_TRUE (ca != nullptr);
@@ -281,12 +282,13 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSub
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithOutSharedColumnsForSubClasses)
+TEST_F(PerformanceECDbMapCATestFixture, CRUDPerformance_SharedTableForSubClasses)
     {
-    m_instancesPerClass = 100000;
-    m_propertiesPerClass = 100;
+    m_instancesPerClass = 1000;
+    m_propertiesPerClass = 5;
+    size_t hierarchyLevel = 7;
     ECDbTestProject test;
-    ECDbR ecdb = test.Create ("CRUDOperationWithOutSharedColumnsForSubClasses.ecdb");
+    ECDbR ecdb = test.Create ("CRUDPerformance_SharedTableForSubClasses.ecdb");
 
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
@@ -306,7 +308,7 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithOutSharedColumnsFor
     CreatePrimitiveProperties (*baseClass);
 
     //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
-    CreateClassHierarchy (*testSchema, 7, *baseClass);
+    CreateClassHierarchy (*testSchema, hierarchyLevel, *baseClass);
 
     auto ca = ecdbmapSchema->GetClassCP ("ClassMap");
     EXPECT_TRUE (ca != nullptr);
@@ -331,6 +333,46 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithOutSharedColumnsFor
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_DefaultClasses)
+    {
+    m_instancesPerClass = 1000;
+    m_propertiesPerClass = 5;
+    size_t hierarchyLevel = 7;
+    ECDbTestProject test;
+    ECDbR ecdb = test.Create ("CRUDPerformance_DefaultClasses.ecdb");
+
+    ECSchemaPtr testSchema;
+    ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
+    ASSERT_TRUE (testSchema.IsValid ());
+    testSchema->SetNamespacePrefix ("ts");
+
+    auto readContext = ECSchemaReadContext::CreateContext ();
+    readContext->AddSchema (*testSchema);
+
+    ECClassP baseClass;
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, "BaseClass"));
+    CreatePrimitiveProperties (*baseClass);
+
+    //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
+    CreateClassHierarchy (*testSchema, hierarchyLevel, *baseClass);
+
+    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
+
+    GenerateECSqlCRUDTestStatements (*testSchema);
+    InsertInstances (ecdb);
+    ReadInstances (ecdb);
+    UpdateInstances (ecdb);
+    DeleteInstances (ecdb);
+
+    LOGTODB (TEST_DETAILS, m_insertTime, "Insert time");
+    LOGTODB (TEST_DETAILS, m_selectTime, "Select time");
+    LOGTODB (TEST_DETAILS, m_updateTime, "Update time");
+    LOGTODB (TEST_DETAILS, m_deleteTime, "Delete time");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceECDbMapCATestFixture::GenerateSqlCRUDTestStatements (ECSchemaR ecSchema, ECClassR ecClass, Utf8StringR insertSql, Utf8StringR selectSql, Utf8StringR updateSql, Utf8StringR deleteSql)
@@ -348,7 +390,7 @@ void PerformanceECDbMapCATestFixture::GenerateSqlCRUDTestStatements (ECSchemaR e
     selectSql.append (className).append (" WHERE ECInstanceId = ? ");
 
     //use view here to make sure referential integrity is ensured. Otherwise it is not comparable to ECSQL.
-    deleteSql = Utf8String ("DELETE FROM VC_ts_");
+    deleteSql = Utf8String ("DELETE FROM ts_");
     deleteSql.append (className).append (" WHERE ECInstanceId = ? ");
 
     bool isFirstItem = true;
@@ -428,6 +470,8 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, insertSql.c_str ())) << "Statement Prepare failed for " << insertSql.c_str ();
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, (int64_t)(i+1)));
+
         for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
             {
             ASSERT_EQ (BE_SQLITE_OK, stmt.BindText (parameterIndex, "Init Value", BeSQLite::Statement::MakeCopy::No));
@@ -444,7 +488,6 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
 
     //Update Instance using Sql Query.
     timer.Start ();
-    int instanceCount = 1;
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, updateSql.c_str ())) << "Statement Prepare failed for " << updateSql.c_str ();
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
@@ -453,8 +496,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
             ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.BindText(parameterIndex, "UpdatedValue", BeSQLite::Statement::MakeCopy::No));
             }
 
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt (propertyCount + 1, instanceCount));
-        instanceCount++;
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (propertyCount + 1, (int64_t)(i + 1)));
         ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ()) << "step failed for " << updateSql.c_str ();
         ASSERT_EQ(1, ecdb.GetModifiedRowCount());
         stmt.Reset ();
@@ -466,13 +508,11 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     LOG.infov("Scenario - UPDATE - 1 class [%d properties each] , %d instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_updateTime);
 
     //Read Instance using Sql Query.
-    instanceCount = 1;
     timer.Start ();
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, selectSql.c_str ())) << "Statement Prepare failed for " << selectSql.c_str ();
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt (1, instanceCount));
-        instanceCount++;
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, (int64_t)(i + 1)));
         ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ()) << "step failed for " << selectSql.c_str ();
         stmt.Reset ();
         stmt.ClearBindings ();
@@ -483,13 +523,11 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     LOG.infov("Scenario - Read - 1 class [%d properties each] , %d Instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_selectTime);
 
     //Delete Instance using Sql Query.
-    instanceCount = 1;
     timer.Start ();
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, deleteSql.c_str ())) << "Statement Prepare failed for " << deleteSql.c_str ();
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
-        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt (1, instanceCount));
-        instanceCount++;
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, (int64_t)(i + 1)));
         ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ()) << "step failed for " << deleteSql.c_str ();
         stmt.Reset ();
         stmt.ClearBindings ();
@@ -497,7 +535,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     timer.Stop ();
     m_deleteTime = timer.GetElapsedSeconds ();
     LOG.infov("Scenario - DELETE - 1 class [%d properties each] , %d instances per class took - %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_deleteTime);
-
+    
     LOGTODB(TEST_DETAILS, m_insertTime, "Sql Insert time");
     LOGTODB(TEST_DETAILS, m_selectTime, "Sql Select time");
     LOGTODB(TEST_DETAILS, m_updateTime, "Sql Update time");

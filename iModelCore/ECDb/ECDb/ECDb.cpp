@@ -190,9 +190,10 @@ ECDb::Impl& ECDb::GetECDbImplR () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   09/2015
 //---------------------------------------------------------------------------------------
-void ECDb::IIssueListener::ReportIssue(IssueSeverity severity, Utf8CP message) const
+void ECDb::IIssueListener::ReportIssue(ECDbIssueSeverity severity, Utf8CP message) const
     {
     _OnIssueReported(severity, message);
     }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

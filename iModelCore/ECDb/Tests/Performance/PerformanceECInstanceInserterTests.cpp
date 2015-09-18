@@ -260,7 +260,7 @@ private:
                 const uint64_t jdHns = DateTime::CommonEraTicksToJulianDay(ceTicks);
 
                 DateTime::Info const* actualMetadata = hasMetadata ? &metadata : nullptr;
-                ecsqlStat = Backdoor::ECDb::ECSqlStatement::BindDateTime(stmt, parameterIndex, jdHns, actualMetadata);
+                ecsqlStat = stmt.GetBinder(parameterIndex).BindDateTime(jdHns, actualMetadata);
                 break;
             }
 
@@ -709,7 +709,7 @@ struct TestResult
                 return str;
 
             Utf8String fullResult;
-            fullResult.Sprintf("[Name: %s]\n PARAM  : %s \n RESULT : %s", m_name, param->ToString(), str.c_str());
+            fullResult.Sprintf("[Name: %s]\n PARAM  : %s \n RESULT : %s", m_name.c_str(), param->ToString(), str.c_str());
             return fullResult;
             }
     };
@@ -883,7 +883,7 @@ void SetupDeleteTest(DbR db, int64_t& globalInstanceCount, TestParamters const& 
         auto const noOfInstancesPerClass = noOfInstancesPerTable / classIds.size();
         for (auto cid : classIds)
             {
-            for (auto i = 0; i < noOfInstancesPerClass; i++)
+            for (size_t i = 0; i < noOfInstancesPerClass; i++)
                 {
                 globalInstanceId++;
                 primaryInsertStmt.ClearBindings();

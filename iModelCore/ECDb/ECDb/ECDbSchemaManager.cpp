@@ -68,13 +68,13 @@ ImportOptions const& options
 
     if (m_ecdb.IsReadonly ())
         {
-        m_ecdb.GetECDbImplR().ReportIssue (ECDb::IssueSeverity::Error, "Failed to import ECSchemas. ECDb file is read-only.");
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. ECDb file is read-only.");
         return ERROR;
         }
 
     if (cache.GetCount () == 0)
         {
-        m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas. List of ECSchemas to import is empty.");
         return ERROR;
         }
 
@@ -90,7 +90,7 @@ ImportOptions const& options
             {
             if (id == 0 || id != schema->GetId())
                 {
-                m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
             }
@@ -111,17 +111,17 @@ ImportOptions const& options
             std::vector<Utf8String> errorMessages;
             validationResult.ToString (errorMessages);
 
-            ECDb::IssueSeverity sev;
+            ECDbIssueSeverity sev;
             if (options.SupportLegacySchemas ())
-                sev = ECDb::IssueSeverity::Warning;
+                sev = ECDbIssueSeverity::Warning;
             else
                 {
-                sev = ECDb::IssueSeverity::Error;
-                m_ecdb.GetECDbImplR().ReportIssue(sev, "Failed to import ECSchemas. Details: ");
+                sev = ECDbIssueSeverity::Error;
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(sev, "Failed to import ECSchemas. Details: ");
                 }
 
             for (Utf8StringCR errorMessage : errorMessages)
-                m_ecdb.GetECDbImplR().ReportIssue(sev, errorMessage.c_str ());
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(sev, errorMessage.c_str ());
             }
 
         if (!isValid)
@@ -286,7 +286,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchema (ECSchemaCR ecSchema, bool addTo
     {
     if (SUCCESS != m_ecImporter->Import (ecSchema))
         {
-        m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error,
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                             "Failed to import ECSchema '%s'. Please see log for details.",
                                             Utf8String (ecSchema.GetFullSchemaName ()).c_str ());
 
@@ -308,7 +308,7 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (ECDiffPtr& diff, ECSchemaCR ecS
     auto existingSchema = GetECSchema (schemaName.c_str (), true);
     if (existingSchema == nullptr)
         {
-        m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error,
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
             "Failed to update ECSchema '%s'. ECSchema does not exist in the ECDb file.",
             schemaName.c_str ());
         return ERROR;
@@ -680,7 +680,7 @@ void ECDbSchemaManager::ReportUpdateError(ECN::ECSchemaCR newSchema, ECN::ECSche
     str.append(" to ").append(Utf8String(ECSchema::FormatSchemaVersion(newVersionMajor, newVersionMinor)));
     str.append(". ").append(reason);
 
-    m_ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, str.c_str());
+    m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, str.c_str());
     }
 
 

@@ -13,7 +13,6 @@
 #include "IECSqlPrimitiveBinder.h"
 #include "IECSqlPrimitiveValue.h"
 #include "ECSqlTypeInfo.h"
-#include "ECSqlStatusContext.h"
 #include "ECSqlStatementNoopImpls.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -30,10 +29,10 @@ private:
     ~ECSqlParameterValueFactory();
 
 public:
-    static std::unique_ptr<ECSqlParameterValue> Create(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
-    static std::unique_ptr<ECSqlParameterValue> CreateStruct(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
-    static std::unique_ptr<ECSqlParameterValue> CreatePrimitive(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
-    static std::unique_ptr<ArrayECSqlParameterValue> CreateArray(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    static std::unique_ptr<ECSqlParameterValue> Create(ECDbCR, ECSqlTypeInfo const&);
+    static std::unique_ptr<ECSqlParameterValue> CreateStruct(ECDbCR, ECSqlTypeInfo const&);
+    static std::unique_ptr<ECSqlParameterValue> CreatePrimitive(ECDbCR, ECSqlTypeInfo const&);
+    static std::unique_ptr<ArrayECSqlParameterValue> CreateArray(ECDbCR, ECSqlTypeInfo const&);
     };
 
 //=======================================================================================
@@ -42,8 +41,8 @@ public:
 struct ECSqlParameterValue : public IECSqlBinder, public IECSqlValue
     {
 private:
+    ECDbCR m_ecdb;
     ECSqlTypeInfo m_typeInfo;
-    ECSqlStatusContext& m_statusContext;
 
     virtual IECSqlPrimitiveBinder& _BindPrimitive() override;
     virtual IECSqlStructBinder& _BindStruct() override;
@@ -57,14 +56,13 @@ private:
 
     virtual void _Clear() = 0;
 
-    static ECSqlStatus BindTo(ECSqlStatusContext& statusContext, ECSqlParameterValue const& from, IECSqlBinder& to);
+    static ECSqlStatus BindTo(ECSqlParameterValue const& from, IECSqlBinder& to);
 
 protected:
-    ECSqlParameterValue(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    ECSqlParameterValue(ECDbCR, ECSqlTypeInfo const& typeInfo);
 
     ECSqlTypeInfo const& GetTypeInfo() const { return m_typeInfo; }
-    ECSqlStatusContext& GetStatusContext() const { return m_statusContext; }
-    ECSqlStatus ResetStatus() const;
+    ECDbCR GetECDb() const { return m_ecdb; }
 
 public:
     virtual ~ECSqlParameterValue() {}
@@ -122,10 +120,8 @@ private:
 
     bool CanBindValue(ECN::PrimitiveType actualType) const;
 
-    static ECSqlStatus ToECSqlStatus(BentleyStatus bStat);
-
 public:
-    PrimitiveECSqlParameterValue(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    PrimitiveECSqlParameterValue(ECDbCR, ECSqlTypeInfo const& typeInfo);
     virtual ~PrimitiveECSqlParameterValue() {}
     };
 
@@ -153,7 +149,7 @@ private:
     void DoClear();
 
 public:
-    StructECSqlParameterValue(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    StructECSqlParameterValue(ECDbCR, ECSqlTypeInfo const& typeInfo);
     virtual ~StructECSqlParameterValue() {}
 
     IECSqlValue const& GetValue(ECN::ECPropertyId structMemberPropertyId) const;
@@ -241,7 +237,7 @@ private:
     void DoClear();
 
 public:
-    ArrayECSqlParameterValue(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    ArrayECSqlParameterValue(ECDbCR, ECSqlTypeInfo const& typeInfo);
     virtual ~ArrayECSqlParameterValue() {}
     };
 

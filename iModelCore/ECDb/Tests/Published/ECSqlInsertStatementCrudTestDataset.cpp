@@ -378,7 +378,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::MiscTests (ECDbTestProject& testProject
         {
         auto& ecdb = testProject.GetECDb ();
         Savepoint savepoint (ecdb, "Inserting test instances");
-        pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
+        pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
         if (!pECInstanceId.IsValid ())
             {
             savepoint.Cancel ();
@@ -874,17 +874,17 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests (ECDbT
         {
         auto& ecdb = testProject.GetECDb ();
         Savepoint savepoint (ecdb, "Inserting test instances", true);
-        psaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
-        pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
-        p2ECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (200, 'Test instance for relationship tests')");
-        thBaseECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.THBase (S) VALUES ('Test instance for relationship tests')");
-        th3ECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.TH3 (S3) VALUES ('Test instance for relationship tests')");
+        psaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
+        pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
+        p2ECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.P (I, S) VALUES (200, 'Test instance for relationship tests')");
+        thBaseECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.THBase (S) VALUES ('Test instance for relationship tests')");
+        th3ECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.TH3 (S3) VALUES ('Test instance for relationship tests')");
 
         Utf8String testRelationshipECSql;
         testRelationshipECSql.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld)",
             psaECInstanceId.GetValue (), p2ECInstanceId.GetValue ());
 
-        auto relECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, testRelationshipECSql.c_str ());
+        auto relECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, testRelationshipECSql.c_str ());
 
         if (!psaECInstanceId.IsValid () || !pECInstanceId.IsValid () || !p2ECInstanceId.IsValid () || 
             !thBaseECInstanceId.IsValid () || !th3ECInstanceId.IsValid () || !relECInstanceId.IsValid ())
@@ -1352,10 +1352,10 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithAnyClassConstraintTests
         {
         auto& ecdb = testProject.GetECDb ();
         Savepoint savepoint (ecdb, "Inserting test instances", true);
-        psaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
-        pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
-        saECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.SA (SAStructProp.PStructProp.s) VALUES ('Test instance for relationship tests')");
-        th4ECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.TH4 (S4) VALUES ('Test instance for relationship tests')");
+        psaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
+        pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
+        saECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.SA (SAStructProp.PStructProp.s) VALUES ('Test instance for relationship tests')");
+        th4ECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.TH4 (S4) VALUES ('Test instance for relationship tests')");
 
         if (!psaECInstanceId.IsValid () || !pECInstanceId.IsValid () || !saECInstanceId.IsValid () || !th4ECInstanceId.IsValid ())
             {
@@ -1568,10 +1568,10 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests (ECDbTe
         {
         auto& ecdb = testProject.GetECDb ();
         Savepoint savepoint (ecdb, "Inserting test instances", true);
-        psaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
-        pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
-        thBaseECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.THBase (S) VALUES ('Test instance for relationship tests')");
-        th3ECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.TH3 (S3) VALUES ('Test instance for relationship tests')");
+        psaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
+        pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
+        thBaseECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.THBase (S) VALUES ('Test instance for relationship tests')");
+        th3ECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.TH3 (S3) VALUES ('Test instance for relationship tests')");
 
         if (!psaECInstanceId.IsValid () || !pECInstanceId.IsValid () || !thBaseECInstanceId.IsValid () || !th3ECInstanceId.IsValid ())
             {
@@ -1797,7 +1797,5 @@ ECSqlTestDataset ECSqlInsertTestDataset::StructTests ()
 
     return dataset;
     }
-
-
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -186,35 +186,6 @@ void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount (s
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                       08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECSqlPrepareContext::IsSuccess () const
-    {
-    return m_ecsqlStatement.GetStatusContextR ().IsSuccess ();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                       08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlPrepareContext::GetStatus () const
-    {
-    return m_ecsqlStatement.GetStatusContextR ().GetStatus ();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                       07/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ECSqlPrepareContext::SetError (ECSqlStatus status, Utf8CP fmt, ...)
-    {
-    va_list args;
-    va_start(args, fmt);
-    m_ecsqlStatement.GetStatusContextR ().SetErrorV (status, fmt, args);
-    va_end(args);
-
-    return status;
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 

@@ -202,7 +202,10 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         {
         DerivedPropertyExp const* otherSelectClauseItem = it->second;
         if (!columnAlias.empty() || !otherSelectClauseItem->GetColumnAlias().empty())
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Alias '%s' used in the select clause is ambiguous.", propName.c_str());
+            {
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Alias '%s' used in the select clause is ambiguous.", propName.c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
 
         isDuplicateName = true;
         }
@@ -222,8 +225,11 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
                 suffixNr++;
 
                 if (suffixNr > 1000) //arbitrary threshold to avoid end-less loop
-                    return ctx.SetError(ECSqlStatus::InvalidECSql, "Could not generate a unique select clause item name for the item '%s'. Try to avoid duplicate select clause items.",
-                                        selectClauseItemExp.ToECSql().c_str());
+                    {
+                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not generate a unique select clause item name for the item '%s'. Try to avoid duplicate select clause items.",
+                                                             selectClauseItemExp.ToECSql().c_str());
+                    return ECSqlStatus::InvalidECSql;
+                    }
 
                 } while (m_selectClauseNames.find(uniquePropName) != m_selectClauseNames.end());
 
@@ -327,22 +333,5 @@ ECSqlStatus DynamicSelectClauseECClass::AddReferenceToStructSchema (ECSchemaCR s
     auto stat = GetSchemaR ().AddReferencedSchema (const_cast<ECSchemaR> (structSchema));
     return stat == ECOBJECTS_STATUS_Success ? ECSqlStatus::Success : ECSqlStatus::ProgrammerError;
     }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECClassR DynamicSelectClauseECClass::GetClassR() const
-    {
-    return *m_class;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSchemaR DynamicSelectClauseECClass::GetSchemaR() const
-    {
-    return *m_schema;
-    }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

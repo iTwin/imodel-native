@@ -20,16 +20,6 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 namespace Backdoor
     {
-    namespace ECDb
-        {
-        void* GetSqliteDb (BeSQLite::EC::ECDbCR);
-
-        namespace ECSqlStatement
-            {
-            BeSQLite::EC::ECSqlStatus BindDateTime (BeSQLite::EC::ECSqlStatement&, int parameterIndex, uint64_t julianDayTicksHns, DateTime::Info const* metadata);
-            }
-        }
-
     namespace ECObjects
         {
         namespace ECValue

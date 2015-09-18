@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructMappedToColumnsECSqlField.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -24,7 +24,6 @@ StructMappedToColumnsECSqlField::StructMappedToColumnsECSqlField (ECSqlStatement
 //---------------------------------------------------------------------------------------
 bool StructMappedToColumnsECSqlField::_IsNull () const 
     {
-    ResetStatus ();
     for (auto& field : m_structFields)
         {
         if (!field->IsNull ())
@@ -47,7 +46,7 @@ IECSqlStructValue const& StructMappedToColumnsECSqlField::_GetStruct () const
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& StructMappedToColumnsECSqlField::_GetPrimitive () const
     {
-    SetError (ECSqlStatus::UserError, "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
+    ReportError (ECSqlStatus::UserError, "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
     BeAssert (false && "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
     return NoopECSqlValue::GetSingleton ().GetPrimitive ();
     }
@@ -57,7 +56,7 @@ IECSqlPrimitiveValue const& StructMappedToColumnsECSqlField::_GetPrimitive () co
 //---------------------------------------------------------------------------------------
 IECSqlArrayValue const& StructMappedToColumnsECSqlField::_GetArray () const
     { 
-    SetError (ECSqlStatus::UserError, "GetArray cannot be called for a struct column. Call GetStruct instead.");
+    ReportError (ECSqlStatus::UserError, "GetArray cannot be called for a struct column. Call GetStruct instead.");
     BeAssert (false && "GetArray cannot be called for a struct column. Call GetStruct instead.");
     return NoopECSqlValue::GetSingleton ().GetArray ();
     }
@@ -78,8 +77,6 @@ IECSqlValue const& StructMappedToColumnsECSqlField::_GetValue (int columnIndex) 
 //---------------------------------------------------------------------------------------
 int StructMappedToColumnsECSqlField::_GetMemberCount () const
     {
-    ResetStatus ();
-
     return static_cast<int>(m_structFields.size());
     }
 
@@ -111,10 +108,8 @@ bool StructMappedToColumnsECSqlField::CanRead (int columnindex) const
         {
         Utf8String errorMessage;
         errorMessage.Sprintf ("Column index '%d' passed to IECSqlStructValue::GetValue is out of bounds.", columnindex);
-        SetError (ECSqlStatus::IndexOutOfBounds, errorMessage.c_str ());
+        ReportError (ECSqlStatus::IndexOutOfBounds, errorMessage.c_str ());
         }
-    else
-        ResetStatus ();
 
     return canRead;
     }
