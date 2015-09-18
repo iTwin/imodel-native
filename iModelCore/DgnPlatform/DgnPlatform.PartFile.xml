@@ -463,7 +463,7 @@
         <SubPart PartName="TestsUpThroughDgnPlatform-GtestRunnerExe"/>
     </Product>
 
-    <Part Name="TestsUpThroughDgnPlatform-GtestRunnerExe" BentleyBuildMakeFile="$(buildcontext)/SubParts/Gtest-Tools/buildGtest.mke" BentleyBuildMakeOptions="-dBEGTEST_NAME=TestsUpThroughDgnPlatform -dBEGTEST_TEST_PRODUCT_DIR=TestsUpThroughDgnPlatform -dBEGTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3">
+    <Part Name="TestsUpThroughDgnPlatform-GtestRunnerExe" BentleyBuildMakeFile="$(buildcontext)/SubParts/Gtest-Tools/buildGtest.mke" BentleyBuildMakeOptions="-dBEGTEST_NAME=TestsUpThroughDgnPlatform -dBEGTEST_TEST_PRODUCT_DIR=TestsUpThroughDgnPlatform -dBEGTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="TestsUpThroughDgnPlatform"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
