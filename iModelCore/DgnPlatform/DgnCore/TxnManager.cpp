@@ -862,7 +862,7 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
     BeAssert(&changeSummary.GetDb() == &m_dgndb);
 
     TxnId endTxnId = GetCurrentTxnId();
-    if (!startTxnId.IsValid() || startTxnId > endTxnId)
+    if (!startTxnId.IsValid() || startTxnId >= endTxnId)
         {
         BeAssert(false && "Invalid starting transaction");
         return DgnDbStatus::BadArg;
@@ -878,7 +878,7 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
     
     TxnId nextTxnId;
     ChangeGroup changeGroup;
-    for (TxnId currTxnId = startTxnId; currTxnId <= endTxnId; currTxnId = QueryNextTxnId(currTxnId))
+    for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId))
         {
         BeAssert(currTxnId.IsValid());
 
