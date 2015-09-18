@@ -260,6 +260,10 @@
         <ProductDirectory Name="PPNativeAssemblies"                 Path="Assemblies"/>
         <ProductDirectory Name="MdlsysAsneededSmartsolid"           Path="Assemblies"/>
         <ProductDirectory Name="SmartSolidAssemblies"               Path="Assemblies"/>
+        <ProductDirectory Name="BePortableUiAssemblies"             Path="Assemblies"/>
+        <ProductDirectory Name="CordovaLibs"                        Path="Assemblies"/>
+        <ProductDirectory Name="MobileDgnNativeAssemblies"          Path="Assemblies"/>
+        
         <ProductDirectory Name="Libs"                               Path="Libs"/>
         <ProductDirectory Name="BentleyLibs"                        Path="Libs"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
@@ -267,6 +271,7 @@
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
         <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/BeTestDocuments/DgnDb"/>
         <ProductDirectory Name="ECSchemas"                          Path="Assets"/>
+        <ProductDirectory Name="DgnPlatformSqlang"                  Path="Assets/sqlang"/>
         <ProductDirectory Name="sqlang"                             Path="Assets/sqlang/platform"/>
         <ProductDirectory Name="DgnPlatformFont"                    Path="Assets/fonts"/>
         <ProductDirectory Name="DgnPlatformLastResortFonts"         Path="Assets"/>
@@ -275,6 +280,14 @@
         <ProductDirectory Name="GeoCoordData"                       Path="Assets/DgnGeoCoord"/>
         <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord"/>
 
+        <ProductDirectory Name="http"                               Path="Assets/http"/>
+
+        <ProductDirectory Name="MobileDgnJavaScript"                Path="Assets/js/"/>
+        <ProductDirectory Name="MobileDgnJavaScriptViewGroups"      Path="Assets/js/ViewGroups"/>
+        <ProductDirectory Name="MobileDgnJavaScriptIcons"           Path="Assets/js/resources/icons"/>
+        <ProductDirectory Name="StdThemes"                          Path="Assets/std-themes"/>
+
+        <ProductDirectory Name="MobileDgnSdkIncludeDirectory" Deliver="false"/>
         <ProductDirectory Name="DgnViewDecorators" Deliver="false"/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies" Deliver="false"/>
         <ProductDirectory Name="PublicAPI" Deliver="false"/>
