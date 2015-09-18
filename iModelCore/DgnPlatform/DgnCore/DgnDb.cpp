@@ -88,8 +88,9 @@ DbResult DgnDb::_OnDbOpened()
         return rc;
 
     Txns(); // make sure txnmanager is allocated
-
     m_units.Load();
+    m_elements.RecordHighestElementId();
+
     return Domains().OnDbOpened();
     }
 
