@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeFileName_test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -1488,6 +1488,7 @@ TEST (BeFileNameTests, TrailingSeparatorBehavior)
 //---------------------------------------------------------------------------------------
 // @betest                                      Shaun.Sewall                    11/13
 //---------------------------------------------------------------------------------------
+#ifdef WIP_NEEDS_WORK // *** SubStation_NoFence.i.idgndb is not a symlink in the new test builder framework ***
 TEST (BeFileNameTests, GetFileSizeForSymbolicLink)
     {
 #if defined (BENTLEY_WIN32)
@@ -1515,6 +1516,7 @@ TEST (BeFileNameTests, GetFileSizeForSymbolicLink)
 
 #endif
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  09/13
