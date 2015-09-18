@@ -861,10 +861,11 @@ class DgnPlatformTestRunner:
         if forcedIndex > 0:
             cmd2 += " " + str (forcedIndex)
 
+        Log("\ncmd='{0}'".format(cmd))
         Log ("\n***** Executing [" + cmd + " | " + cmd2 + "] *****\n")
         sys.stdout.flush ()
          
-        exe = subprocess.Popen (cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        exe = subprocess.Popen (cmd.split(' '), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         utility = subprocess.Popen (cmd2, shell=True, stdin=exe.stdout)
 
         errors = exe.wait()
