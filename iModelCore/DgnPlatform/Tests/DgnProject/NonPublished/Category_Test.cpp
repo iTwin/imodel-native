@@ -6,59 +6,17 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "DgnHandlersTests.h"
-#include <Bentley/BeTimeUtilities.h>
-#include <ECDb/ECSqlBuilder.h>
+#include "../TestFixture/DgnDbTestFixtures.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
-struct CategoryTests : public ::testing::Test
+struct CategoryTests : public DgnDbTestFixture
     {
-    public:
-        ScopedDgnHost m_host;
-        DgnDbPtr      m_db;
-        DgnModelId    m_defaultModelId;
-        DgnCategoryId m_defaultCategoryId;
-        BeFileName schemaFile1;
 
-        CategoryTests ();
-        ~CategoryTests ();
-        void CloseDb ()
-            {
-            m_db->CloseDb ();
-            }
-
-        void Setup_Project (WCharCP projFile, WCharCP testFile, Db::OpenMode mode);
     };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Maha Nasir      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-CategoryTests::CategoryTests ()
-    {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Maha Nasir      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-CategoryTests::~CategoryTests ()
-    {}
-
-/*---------------------------------------------------------------------------------**//**
-* set up method that opens an existing .dgndb project file after copying it to out
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CategoryTests::Setup_Project (WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
-    {
-    BeFileName outFileName;
-    ASSERT_EQ (SUCCESS, DgnDbTestDgnManager::GetTestDataOut (outFileName, projFile, testFile, __FILE__));
-    DbResult result;
-    m_db = DgnDb::OpenDgnDb (&result, outFileName, DgnDb::OpenParams (mode));
-    ASSERT_TRUE (m_db.IsValid ());
-    ASSERT_TRUE (result == BE_SQLITE_OK);
-    }
 
 //=======================================================================================
 //! Test for inserting categories and checking their properties
@@ -66,7 +24,7 @@ void CategoryTests::Setup_Project (WCharCP projFile, WCharCP testFile, Db::OpenM
 //=======================================================================================
 TEST_F (CategoryTests, InsertCategory)
     {
-    Setup_Project (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
     //Category properties.
     Utf8CP cat_code = "Test Category";
@@ -125,16 +83,25 @@ TEST_F (CategoryTests, InsertCategory)
 
     DgnCategories::Category category3 (cat3_code, DgnCategories::Scope::Analytical, cat3_desc, cat3_label, DgnCategories::Rank::User);
     BeSQLite::DbResult insert_cat3 = m_db->Categories ().Insert (category3, appearence);
-    EXPECT_EQ (BE_SQLITE_OK, insert_cat3);
+    EXPECT_EQ(BE_SQLITE_OK, insert_cat3);
+
+    //Inserts Category 4
+    Utf8CP cat4_code = "Test Category 4";
+    Utf8CP cat4_desc = "This is test category 4.";
+    Utf8CP cat4_label = "TestCategory4";
+
+    DgnCategories::Category category4(cat4_code, DgnCategories::Scope::Annotation, cat4_desc, cat4_label, DgnCategories::Rank::User);
+    BeSQLite::DbResult insert_cat4 = m_db->Categories().Insert(category4, appearence);
+    EXPECT_EQ(BE_SQLITE_OK, insert_cat4);
 
     DgnCategoryId highest_id = m_db->Categories ().QueryHighestId ();
-    EXPECT_EQ (4, highest_id.GetValue ());
+    EXPECT_EQ (5, highest_id.GetValue ());
 
     //Iterator for categories.
     DgnCategories& cat = m_db->Categories ();
     DgnCategories::Iterator iter = cat.MakeIterator ();
 
-    EXPECT_EQ (4, iter.QueryCount ());
+    EXPECT_EQ (5, iter.QueryCount ());
     DgnCategories::Iterator::Entry entry = iter.begin ();
     int i = 0;
     for (auto const& entry : iter)
@@ -166,9 +133,19 @@ TEST_F (CategoryTests, InsertCategory)
             EXPECT_EQ (DgnCategories::Rank::User, entry.GetRank ());
             EXPECT_EQ (DgnCategories::Scope::Analytical, entry.GetScope ());
             }
+        else if (entry.GetCategoryId ().GetValue () == 5)
+            {
+            EXPECT_TRUE (entry.GetCategoryId ().IsValid ());
+            EXPECT_STREQ ("Test Category 4", entry.GetCode ());
+            EXPECT_STREQ ("This is test category 4.", entry.GetDescription ());
+            EXPECT_STREQ ("TestCategory4", entry.GetLabel ());
+            EXPECT_EQ (DgnCategories::Rank::User, entry.GetRank ());
+            EXPECT_EQ(DgnCategories::Scope::Annotation, entry.GetScope());
+            }
         i++;
         }
     iter.end ();
+    EXPECT_TRUE(5 == i);
     }
 
 //=======================================================================================
@@ -177,7 +154,7 @@ TEST_F (CategoryTests, InsertCategory)
 //=======================================================================================
 TEST_F (CategoryTests, DeleteCategory)
     {
-    Setup_Project (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
     Utf8CP code = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -221,7 +198,7 @@ TEST_F (CategoryTests, DeleteCategory)
 //=======================================================================================
 TEST_F (CategoryTests, UpdateCategory)
     {
-    Setup_Project (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
     //Category properties.
     Utf8CP code = "TestCategory";
@@ -275,7 +252,7 @@ TEST_F (CategoryTests, UpdateCategory)
 //=======================================================================================
 TEST_F (CategoryTests, InsertSubCategory)
     {
-    Setup_Project (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
     Utf8CP code = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -401,7 +378,7 @@ TEST_F (CategoryTests, InsertSubCategory)
 //=======================================================================================
 TEST_F (CategoryTests, DeleteSubCategory)
     {
-    Setup_Project (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
     Utf8CP code = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -459,7 +436,7 @@ TEST_F (CategoryTests, DeleteSubCategory)
 //=======================================================================================
 TEST_F (CategoryTests, UpdateSubCategory)
     {
-    Setup_Project (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
     Utf8CP code = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -506,4 +483,63 @@ TEST_F (CategoryTests, UpdateSubCategory)
     EXPECT_STREQ ("UpdatedSubCategory", Updated_subcategory.GetCode ());
     EXPECT_STREQ ("This is the updated sub category.", Updated_subcategory.GetDescription ());
     EXPECT_STREQ ("UpdatedSubCategory", Updated_subcategory.GetLabel ());
+    }
+//=======================================================================================
+//! Test for Quering a category.using elementID
+// @bsiclass                                                     Umar.Hayat      09/15
+//=======================================================================================
+TEST_F (CategoryTests, QueryByElementId)
+    {
+    SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
+
+    //Category properties.
+    Utf8CP code = "TestCategory";
+    Utf8CP desc = "This is a test category.";
+    Utf8CP label = "TestCategory";
+
+    DgnCategories::Category category (code, DgnCategories::Scope::Physical, desc, label, DgnCategories::Rank::Domain);
+    category.SetCode (code);
+    category.SetDescription (desc);
+    category.SetLabel (label);
+    category.SetRank (DgnCategories::Rank::Domain);
+    category.SetScope (DgnCategories::Scope::Physical);
+
+    //Appearence properties.
+    uint32_t weight = 10;
+    double trans = 0.5;
+    uint32_t dp = 1;
+
+    DgnCategories::SubCategory::Appearance appearence;
+    appearence.SetInvisible (false);
+    appearence.SetColor (ColorDef::DarkRed ());
+    appearence.SetWeight (weight);  
+    appearence.SetTransparency (trans);
+    appearence.SetDisplayPriority (dp);
+
+    //Inserts a category
+    BeSQLite::DbResult insert = m_db->Categories ().Insert (category, appearence);
+    EXPECT_EQ (BE_SQLITE_OK, insert);
+    DgnCategoryId categoryId = m_db->Categories ().QueryCategoryId (code);
+    EXPECT_TRUE(categoryId.IsValid());
+
+    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnElement::Code());
+    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*m_defaultModelP, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
+        0, 0, 2,
+        0, 3, 0,
+        0.0, Angle::TwoPi());
+    ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
+    EXPECT_TRUE(builder->Append(*ellipse));
+
+    EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
+    auto elem = m_db->Elements().Insert(*el);
+    EXPECT_TRUE(elem.IsValid());
+
+    // Search category by element Id
+    DgnCategoryId tofind = m_db->Categories().QueryCategoryId(el->GetElementId());
+    EXPECT_TRUE(tofind.IsValid());
+    EXPECT_TRUE(tofind == categoryId);
+
+
     }

@@ -476,7 +476,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
-        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done, stmt.Step()) << stmt.GetLastStatusMessage().c_str() << "\r\nTranslated SQL: " << sql;
+        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done, stmt.Step()) << "\r\nTranslated SQL: " << sql;
         }
 
     //  Move Robot1 up, so that it touches Obstacle1 but not Obstacle2

@@ -183,7 +183,6 @@ private:
 
 protected:
     DgnModelType _GetModelType() const override {return DgnModelType::Sheet;}
-    bool _Is3d() const override {return false;}
     void _ToPropertiesJson(Json::Value&) const override;
     void _FromPropertiesJson(Json::Value const&) override;
 
@@ -422,7 +421,6 @@ private:
 
 protected:
     virtual DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
-    virtual bool _Is3d() const override {return true;}
 
     static PhysicalRedlineModelPtr Create(DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel);
 

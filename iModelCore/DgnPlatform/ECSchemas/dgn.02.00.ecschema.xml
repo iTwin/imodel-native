@@ -56,6 +56,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Inputs" typeName="string" description="comma-separated list of input parameter names. These are bound by name to the item's properties." />
     </ECClass>
 
+    <ECClass typeName="HandlerInfo" description="Specifies handler information for an ECClass" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="RequiredForModification" typeName="boolean" description="Indicates whether a handler is required for instances of an ECClass to be modified." />
+        <ECProperty propertyName="AllowDeleteIfMissing" typeName="boolean" description="Indicates whether instances of an ECClass can be deleted if a handler is missing." />
+    </ECClass>
+
     <ECClass typeName="ElementRTree" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -95,17 +100,20 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
         <ECProperty propertyName="Type" typeName="int" />
-        <ECProperty propertyName="Space" typeName="int" />
         <ECProperty propertyName="Props" typeName="string" />
         <ECProperty propertyName="Solver" typeName="string" />
         <ECProperty propertyName="Visibility" typeName="int" />
         <ECProperty propertyName="DependencyIndex" typeName="int" />
     </ECClass>
-    <ECClass typeName="Model3d" isDomainClass="True">
+    <ECClass typeName="GeometricModel" isDomainClass="True">
         <BaseClass>Model</BaseClass>
+        <ECProperty propertyName="Space" typeName="int" />
+    </ECClass>
+    <ECClass typeName="Model3d" isDomainClass="True">
+        <BaseClass>GeometricModel</BaseClass>
     </ECClass>
     <ECClass typeName="Model2d" isDomainClass="True">
-        <BaseClass>Model</BaseClass>
+        <BaseClass>GeometricModel</BaseClass>
     </ECClass>
     <ECClass typeName="PhysicalModel" isDomainClass="True">
         <BaseClass>Model3d</BaseClass>
@@ -130,6 +138,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
     <ECClass typeName="ComponentModel" isDomainClass="True">
         <BaseClass>Model3d</BaseClass>
+    </ECClass>
+    <ECClass typeName="ResourceModel" isDomainClass="True">
+        <BaseClass>Model</BaseClass>
     </ECClass>
 
     <ECClass typeName="WebMercatorModel" isDomainClass="True" >
@@ -421,7 +432,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <!-- Foreign key relationship: ElementIsInCategory.CategoryId -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
