@@ -444,10 +444,10 @@
         <Directories DirectoryListName="MobileDgnTestsProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="UnitTests-Published"          Repository="Bentley"   PartFile="Bentley"/>
         <SubPart PartName="UnitTests-NonPublished"       Repository="Bentley"   PartFile="Bentley"/>
-        <SubPart PartName="UnitTests-StructsTest"        Repository="GeomLibs"  PartFile="GeomLibs"/>
-        <SubPart PartName="UnitTests-CurvePrimitiveTest" Repository="GeomLibs"  PartFile="GeomLibs"/>
-        <SubPart PartName="UnitTests-bezierTest"         Repository="GeomLibs"  PartFile="GeomLibs"/>
-        <SubPart PartName="UnitTests-PolyfaceTest"       Repository="GeomLibs"  PartFile="GeomLibs"/>
+        <SubPart PartName="UnitTests-StructsTest"        Repository="GeomLibs"  PartFile="geomlibs"/>
+        <SubPart PartName="UnitTests-CurvePrimitiveTest" Repository="GeomLibs"  PartFile="geomlibs"/>
+        <SubPart PartName="UnitTests-bezierTest"         Repository="GeomLibs"  PartFile="geomlibs"/>
+        <SubPart PartName="UnitTests-PolyfaceTest"       Repository="GeomLibs"  PartFile="geomlibs"/>
         <SubPart PartName="UnitTests-Published"          Repository="BeSQLite"  PartFile="BeSQLite"/>
         <SubPart PartName="UnitTests-NonPublished"       Repository="BeSQLite"  PartFile="BeSQLite"/>
         <SubPart PartName="UnitTests-Published"          Repository="ECDb"      PartFile="ECDb"/>
