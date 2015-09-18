@@ -88,6 +88,7 @@ DbResult DgnDb::_OnDbOpened()
         return rc;
 
     Txns(); // make sure txnmanager is allocated
+    Fonts().Update(); // ensure the font ID cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
 
     m_units.Load();
     return Domains().OnDbOpened();
