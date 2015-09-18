@@ -67,31 +67,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECDbUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECDB/Tests/ -dBEGTEST_NAME=ECDb -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECDB/Tests/dependencies.mki">
-        <!-- Get GTest API directory -->
-        <SubPart PartName="google_gtest_lib"                 PartFile="gtest"        Repository="util-gtest" />
-        <!-- Get the tested API -->
-        <SubPart PartName="ECDb"                             PartFile="ECDb"        Repository="ECDb" />
-        <!-- Depends on/links with the following libraries  -->
-        <SubPart PartName="Zlib"                             PartFile="Zlib"         Repository="Libsrc-Compress" />
-        <!-- Get the test documents -->
-        <SubProduct ProductName="BeTestDocuments"               PartFile="BeGTest"      Repository="BeGTest" />
-    </Part>
-
-    <!-- TRICKY: Documents are only actually published for x64,x86 but we must do other processing for other platforms and other cases so no platforms can be excluded! -->
-    <Part Name="UnitTests_Documents" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishDocuments.mke" BMakeOptions="-dUNIT_TESTS_NAME=ECDbUnitTests -dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnPlatformTest/DgnDbUnitTests/ -dUNIT_TESTS_DOCUMENTS_PREBUILTS_SUBDIR=DgnDb -dUNIT_TESTS_PUBLISH_CONFIG=${SrcRoot}/ECDb/Tests/UnitTestPublisherConfiguration.xml">
-        <!--<SubPart PartName="LinkDgnDbPublisherIntoToolContext" PartFile="BeGTest" Repository="BeGTest" LibType="Dynamic"/>-->
-        <SubPart PartName="DgnDbUnitTestsData"/>
-        <Bindings>
-            <Directory SourceName="Delivery/UnitTests/Documents" SubPartDirectory="Documents/DgnDb" ProductDirectoryName="UnitTests_Documents_DgnDb" />
-            <!-- Note: for BTest, use pre-published documents -->
-        </Bindings>
-    </Part>
-
-    <Part Name="DgnDbUnitTestsData" OnlyPlatforms="x64,x86">
-        <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
-    </Part>
-
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="UnitTests-Documents" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="ECDb"/>
