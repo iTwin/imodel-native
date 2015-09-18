@@ -30,11 +30,11 @@ TEST_F(FontTests, CRUD_DbFontMapDirect)
     EXPECT_TRUE(0 == map.MakeIterator().QueryCount());
 
     BeFileName shxFilepath;
-    DgnDbTestDgnManager::GetTestDataOut(shxFilepath, L"Fonts\\Cdm.shx", L"Cdm.shx", __FILE__);
+    ASSERT_TRUE( SUCCESS == DgnDbTestDgnManager::GetTestDataOut(shxFilepath, L"Fonts\\Cdm.shx", L"Cdm.shx", __FILE__) )<<"Unable to test file";
     DgnFontPtr shxFont = DgnFontPersistence::File::FromShxFile(shxFilepath);
 
     BeFileName ttfFontPath;
-    DgnDbTestDgnManager::GetTestDataOut(ttfFontPath, L"Fonts\\Teleindicadores1.ttf", L"Teleindicadores1.ttf", __FILE__);
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(ttfFontPath, L"Fonts\\Teleindicadores1.ttf", L"Teleindicadores1.ttf", __FILE__)) << "Unable to test file";
     bvector<BeFileName> pathList;
     pathList.push_back(ttfFontPath);
     T_DgnFontPtrs ttfFontList = DgnFontPersistence::File::FromTrueTypeFiles(pathList, nullptr);
@@ -171,3 +171,16 @@ TEST_F(FontTests, CreateMissingFont)
     EXPECT_TRUE(!font3->IsResolved());
 
     }
+#if defined (BENTLEY_WIN32) // Windows Desktop-only
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat     09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FontTests, RegistryFonts)
+    {
+    DgnFontPtr font = DgnFontPersistence::OS::FromGlobalTrueTypeRegistry("Arial");
+    EXPECT_TRUE(font.IsValid());
+    EXPECT_TRUE(font->GetType() == DgnFontType::TrueType);
+    EXPECT_TRUE(font->GetName() == "Arial" );
+    EXPECT_TRUE(font->IsResolved());
+    }
+#endif
