@@ -14,6 +14,9 @@
 #include <ECObjects/ECValue.h>
 #include <Bentley/BeTimeUtilities.h>
 
+#define EXPECT_STATUS(STATUS, EXPR) EXPECT_EQ (ECOBJECTS_STATUS_ ## STATUS , (EXPR))
+#define EXPECT_SUCCESS(EXPR) EXPECT_STATUS(Success, (EXPR))
+
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
 #define FIXED_COUNT_ARRAYS_ARE_SUPPORTED 0
@@ -2671,6 +2674,107 @@ TEST_F (MemoryLayoutTests, GeometrySetGet)
     ECObjectsStatus status = instance->SetValue ("MyGeometry", v);
     ASSERT_EQ(ECOBJECTS_STATUS_Success,status);
 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* TFS#290587: When you modify a property (e.g. by changing its read-only flag, type, etc)
+* its containing ECClass's cached ClassLayout should be updated to reflect the change.
+* @bsistruct                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DefaultStandaloneEnablerTests : ECTestFixture
+{
+    ECSchemaPtr m_schema;
+    ECClassP    m_class;
+
+    DefaultStandaloneEnablerTests() : m_class(nullptr)
+        {
+        ECSchema::CreateSchema(m_schema, "TestSchema", 1, 0);
+        m_schema->CreateClass(m_class, "TestClass");
+        }
+
+    ECClassP CreateStructClass(Utf8StringCR structName, Utf8StringCR propName)
+        {
+        ECClassP structClass;
+        m_schema->CreateClass(structClass, structName);
+        structClass->SetIsStruct(true);
+        PrimitiveECPropertyP prop;
+        structClass->CreatePrimitiveProperty(prop, propName);
+        return structClass;
+        }
+
+    StandaloneECInstancePtr CreateInstance() const { return m_class->GetDefaultStandaloneEnabler()->CreateInstance(); }
+
+    StandaloneECInstancePtr CreateInstanceWithArray(Utf8CP arrayAccessString) const
+        {
+        auto instance = CreateInstance();
+        EXPECT_SUCCESS(instance->AddArrayElements(arrayAccessString, 1));
+        return instance;
+        }
+
+    template<typename T> ECObjectsStatus SetValue(Utf8CP accessString, T const& value, uint32_t arrayIndex = -1) const
+        {
+        ECValue v(value);
+        auto instance = -1 == arrayIndex ? CreateInstance() : CreateInstanceWithArray(accessString);
+        return -1 == arrayIndex ? instance->SetValue(accessString, v) : instance->SetValue(accessString, v, arrayIndex);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultStandaloneEnablerTests, ReadOnly)
+    {
+    PrimitiveECPropertyP prop;
+    m_class->CreatePrimitiveProperty(prop, "Prop");
+    EXPECT_SUCCESS(SetValue("Prop", "abc"));
+    prop->SetIsReadOnly(true);
+        {
+        // An initial SetValue() will succeed, because the property is null
+        auto instance = CreateInstance();
+        EXPECT_SUCCESS(instance->SetValue("Prop", ECValue("def", false)));
+        // Setting a non-null read-only property will fail
+        EXPECT_STATUS(UnableToSetReadOnlyProperty, instance->SetValue("Prop", ECValue("uvw", false)));
+        }
+
+    prop->SetIsReadOnly(false);
+        {
+        auto instance = CreateInstance();
+        EXPECT_SUCCESS(instance->SetValue("Prop", ECValue("xyz", false)));  // set from null
+        EXPECT_SUCCESS(instance->SetValue("Prop", ECValue("abc", false)));  // set from non-null
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultStandaloneEnablerTests, Type)
+    {
+    PrimitiveECPropertyP primProp;
+    m_class->CreatePrimitiveProperty(primProp, "Prim");
+    EXPECT_SUCCESS(SetValue("Prim", "abc"));
+    primProp->SetType(PRIMITIVETYPE_Integer);
+    EXPECT_STATUS(DataTypeMismatch, SetValue("Prim", "def"));
+    EXPECT_SUCCESS(SetValue("Prim", 123));
+
+    ECClassP oldStruct = CreateStructClass("OldStruct", "Old");
+    StructECPropertyP structProp;
+    m_class->CreateStructProperty(structProp, "Struct", *oldStruct);
+    EXPECT_SUCCESS(SetValue("Struct.Old", "abc"));
+    structProp->SetType(*CreateStructClass("NewStruct", "New"));
+    EXPECT_STATUS(PropertyNotFound, SetValue("Struct.Old", "def"));
+    EXPECT_SUCCESS(SetValue("Struct.New", "xyz"));
+
+    ArrayECPropertyP arrayProp;
+    m_class->CreateArrayProperty(arrayProp, "Array", PRIMITIVETYPE_String);
+    EXPECT_SUCCESS(SetValue("Array", "abc", 0));
+    arrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Integer);
+    EXPECT_STATUS(DataTypeMismatch, SetValue("Array", "def", 0));
+    EXPECT_SUCCESS(SetValue("Array", 123, 0));
+    arrayProp->SetStructElementType(oldStruct);
+
+    // expected assertion => failed test...
+    DISABLE_ASSERTS
+    EXPECT_STATUS(DataTypeNotSupported, SetValue("Array", 456, 0));
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -161,7 +161,12 @@ bool ECProperty::GetIsReadOnly () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetIsReadOnly (bool readOnly)
     {        
-    m_readOnly = readOnly;
+    if (m_readOnly != readOnly)
+        {
+        m_readOnly = readOnly;
+        InvalidateClassLayout();
+        }
+
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -238,7 +243,7 @@ bool                    ECProperty::SetCalculatedPropertySpecification (IECInsta
     bool wasCalculated = IsCalculated();
     bool set = _SetCalculatedPropertySpecification (spec);
     if (set && wasCalculated != IsCalculated())
-        m_class.InvalidateDefaultStandaloneEnabler();  // PropertyLayout has flag indicating property is calculated
+        InvalidateClassLayout();
     
     return set;
     }
@@ -436,8 +441,13 @@ PrimitiveType PrimitiveECProperty::GetType () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
     {        
-    m_primitiveType = primitiveType;        
-    SetCachedTypeAdapter (NULL);
+    if (m_primitiveType != primitiveType)
+        {
+        m_primitiveType = primitiveType;        
+        SetCachedTypeAdapter (NULL);
+        InvalidateClassLayout();
+        }
+
     return ECOBJECTS_STATUS_Success;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -662,8 +672,13 @@ ECObjectsStatus StructECProperty::SetType (ECClassCR structType)
             return ECOBJECTS_STATUS_SchemaNotFound;
         }
     
-    m_structType = &structType;
-    SetCachedTypeAdapter (NULL);
+    if (m_structType != &structType)
+        {
+        m_structType = &structType;
+        SetCachedTypeAdapter (NULL);
+        InvalidateClassLayout();
+        }
+
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -839,6 +854,7 @@ ECObjectsStatus ArrayECProperty::SetPrimitiveElementType (PrimitiveType primitiv
 
     SetCachedTypeAdapter (NULL);
     SetCachedMemberTypeAdapter (NULL);
+    InvalidateClassLayout();
  
     return ECOBJECTS_STATUS_Success;
     }
@@ -877,6 +893,7 @@ ECObjectsStatus ArrayECProperty::SetStructElementType (ECClassCP structType)
  
     SetCachedTypeAdapter (NULL);
     SetCachedMemberTypeAdapter (NULL);
+    InvalidateClassLayout();
 
     return ECOBJECTS_STATUS_Success;
     }
@@ -895,7 +912,12 @@ uint32_t ArrayECProperty::GetMinOccurs () const
 ECObjectsStatus ArrayECProperty::SetMinOccurs (uint32_t minOccurs)
     {
     PRECONDITION (minOccurs <= m_maxOccurs, ECOBJECTS_STATUS_PreconditionViolated);
-    m_minOccurs = minOccurs;
+    if (m_minOccurs != minOccurs)
+        {
+        m_minOccurs = minOccurs;
+        InvalidateClassLayout();
+        }
+
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -934,7 +956,11 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (uint32_t maxOccurs)
     // of ECD buffer.
     // ###TODO: should we allocate space for maxOccurs elements when initializing ECD buffer? Test code expects this, but does real code?
     PRECONDITION (maxOccurs >= m_minOccurs, ECOBJECTS_STATUS_PreconditionViolated);
-    m_maxOccurs = maxOccurs;
+    if (m_maxOccurs != maxOccurs)
+        {
+        m_maxOccurs = maxOccurs;
+        InvalidateClassLayout();
+        }
 
     return ECOBJECTS_STATUS_Success;
     }
@@ -1042,6 +1068,16 @@ IECTypeAdapter* ArrayECProperty::GetMemberTypeAdapter() const
         return GetCachedMemberTypeAdapter();
 
     return NULL != s_typeAdapterFactory ? &s_typeAdapterFactory->GetForArrayMember (*this) : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECProperty::InvalidateClassLayout()
+    {
+    // TFS#290587: When a property is modified in a way that affects the ClassLayout, must
+    // invalidate the containing class's default standalone enabler
+    m_class.InvalidateDefaultStandaloneEnabler();
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

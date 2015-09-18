@@ -632,6 +632,8 @@ protected:
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const { return NULL; }
     virtual bool                                _IsCalculated() const { return false; }
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) { return false; }
+
+    void                                InvalidateClassLayout();
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
     IECTypeAdapter*                     GetCachedTypeAdapter() const { return m_cachedTypeAdapter; }
@@ -954,7 +956,7 @@ struct ECClass : IECCustomAttributeContainer
 friend struct ECSchema;
 friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
-friend bool ECProperty::SetCalculatedPropertySpecification (IECInstanceP);
+friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() when property is modified
 
 //__PUBLISH_SECTION_START__
 
