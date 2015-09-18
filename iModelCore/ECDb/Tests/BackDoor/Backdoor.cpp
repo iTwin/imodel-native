@@ -11,6 +11,8 @@
 namespace ECDbBackdoor = BentleyApi::BeSQLite::EC::Tests::Backdoor;
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
+void ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Muhammad.Zaighum                  05/13
 //+---------------+---------------+---------------+---------------+---------------+------

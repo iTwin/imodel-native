@@ -10,6 +10,7 @@
 using namespace BentleyApi::ECN;
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+extern void ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad.Zaighum                  05/13
