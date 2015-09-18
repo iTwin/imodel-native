@@ -38,7 +38,7 @@ protected:
         return *m_db;
         }
 
-    void Compare(DgnAuthorityId id, Utf8StringCR name, Utf8StringCR uri)
+    void Compare(DgnAuthorityId id, Utf8CP name, Utf8StringCR uri)
         {
         DgnAuthorityCPtr auth = GetDb().Authorities().GetAuthority(id);
         ASSERT_TRUE(auth.IsValid());
