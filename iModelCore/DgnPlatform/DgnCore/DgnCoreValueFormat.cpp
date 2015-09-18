@@ -1136,14 +1136,15 @@ void            PointFormatter::InitModelSettings(DgnModelCR model, bool addGlob
     {
     m_distanceFormatter = DistanceFormatter::Create(model);
 
-    if (addGlobalOrigin)
+    auto geomModel = model.ToGeometricModel();
+    if (addGlobalOrigin && nullptr != geomModel)
         {
         // Create a un-rotated, un-scaled, rectangular ACS at the model's global origin.
         m_acs = IACSManager::GetManager().CreateACS ();
-        m_acs->SetOrigin(model.GetGlobalOrigin());
+        m_acs->SetOrigin(geomModel->GetGlobalOrigin());
         }
 
-    m_is3d = model.Is3d();
+    m_is3d = nullptr != geomModel && geomModel->Is3d();
     }
 
 /*---------------------------------------------------------------------------------**//**

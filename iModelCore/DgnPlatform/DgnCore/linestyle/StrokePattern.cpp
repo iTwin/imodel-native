@@ -150,7 +150,7 @@ enum CapOptions
 +---------------+---------------+---------------+---------------+---------------+------*/
                 LsStroke::LsStroke ()
     {                
-    Init (0.0, 0, 0, LCWIDTH_None, LCCAP_Closed); 
+    Init (0.0, 0, 0, LCWIDTH_None, LsCapMode::Closed); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -162,7 +162,7 @@ double          length,
 double          startWidth, 
 double          endWidth, 
 WidthMode       widthMode, 
-CapMode         capMode
+LsCapMode       capMode
 )
     {
     Init (length, startWidth, endWidth, widthMode, capMode);
@@ -173,7 +173,7 @@ CapMode         capMode
 +---------------+---------------+---------------+---------------+---------------+------*/
                 LsStroke::LsStroke (LsStroke const &source)
     {
-    Init (source.m_length, source.m_orgWidth, source.m_endWidth, (WidthMode)source.m_widthMode, (CapMode)source.m_capMode);
+    Init (source.m_length, source.m_orgWidth, source.m_endWidth, (WidthMode)source.m_widthMode, (LsCapMode)source.m_capMode);
     m_strokeMode = source.m_strokeMode;  
     }
 
@@ -1077,7 +1077,7 @@ LsStrokePatternComponent::PhaseMode LsStrokePatternComponent::GetPhaseMode () co
 * @return       false if the mode is invalid
 * @bsimethod                                                    JimBartlett     01/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsStrokePatternComponent::SetPhaseMode (int mode)
+void            LsStrokePatternComponent::SetPhaseMode (LsStrokePatternComponent::PhaseMode mode)
     {
     m_options.phaseMode = mode;
     }
@@ -1095,6 +1095,7 @@ double          LsStrokePatternComponent::GetDistancePhase () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsStrokePatternComponent::SetDistancePhase (double newPhase)
     {
+    SetPhaseMode (PHASEMODE_Fixed);
     m_phaseShift = newPhase;
     }
 
@@ -1262,14 +1263,6 @@ bool            LsStrokePatternComponent::_IsContinuousOrSingleDash () const
             (m_nStrokes == 1 && m_strokes[0].IsDash() ));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-bool LsStrokePatternComponent::_SupportsConvertToRaster () const
-    {
-    return true;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1300,11 +1293,11 @@ void            LsStrokePatternComponent::SetCosmetic (bool cosmetic)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     12/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsStrokePatternComponent::InsertStroke (double length, bool isDash)
+void            LsStrokePatternComponent::AppendStroke (double length, bool isDash)
     {
     BeAssert (length >= 0.0);
 
-    LsStroke  stroke (length, 0.0, 0.0, LsStroke::LCWIDTH_None, LsStroke::LCCAP_Closed);
+    LsStroke  stroke (length, 0.0, 0.0, LsStroke::LCWIDTH_None, LsCapMode::Closed);
 
     if (isDash)
         {
@@ -1312,7 +1305,7 @@ void            LsStrokePatternComponent::InsertStroke (double length, bool isDa
         stroke.m_widthMode  = LsStroke::LCWIDTH_Full;
         }
 
-    InsertStroke (stroke);
+    AppendStroke (stroke);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1321,7 +1314,7 @@ void            LsStrokePatternComponent::InsertStroke (double length, bool isDa
 * @param        index   Stroke index or -1 to append
 * @bsimethod                                                    JimBartlett     12/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsStrokeP       LsStrokePatternComponent::InsertStroke (LsStrokeCR stroke)
+LsStrokeP       LsStrokePatternComponent::AppendStroke (LsStrokeCR stroke)
     {
     if (m_nStrokes >= 32)
         return NULL;
@@ -1335,10 +1328,10 @@ LsStrokeP       LsStrokePatternComponent::InsertStroke (LsStrokeCR stroke)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     12/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsStrokeP       LsStrokePatternComponent::InsertStroke (double length, double startWidth, double endWidth, LsStroke::WidthMode widthMode, LsStroke::CapMode capMode)
+LsStrokeP       LsStrokePatternComponent::AppendStroke (double length, double startWidth, double endWidth, LsStroke::WidthMode widthMode, LsCapMode capMode)
     {
     LsStroke    stroke (length, startWidth, endWidth, widthMode, capMode);
-    return InsertStroke (stroke);
+    return AppendStroke (stroke);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1491,7 +1484,7 @@ StatusInt       StrokeGenerator::GenerateRigidStroke (double strokeLength, doubl
         The stroke went off the current segment, the segment has been incremented so that
         m_next should be the point past the stroke, and the stroke did not hit the end
         of the input data. To find the intersection point consider a sphere with it's
-        certer at lastGeneratedPoint, and a radius of strokeLength. Find the intersection
+        center at lastGeneratedPoint, and a radius of strokeLength. Find the intersection
         with the ray that starts at m_next point and shoots back toward the sphere
         (direction is opposite of segmentDirection). In this case the intersection
         always exists and will hit the right one first. See Graphics Gems Pg 388.
@@ -1844,7 +1837,7 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
         DPoint3dCP points = GetPointAt (0);
 
         // NEEDSWORK: According to Karin, it would be much more efficient to pass all the points in the centerline as a single array.  
-        //    Need to restructure Centerline to do store them seperately.
+        //    Need to restructure Centerline to do store them separately.
         if (1 == nPts || (2 == nPts && points->IsEqual (points[1])))
             output.DrawPointString3d (1, points, NULL);
         else
@@ -1852,7 +1845,7 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
         return;
         }
 
-    int     capMode   = pStroke->GetCapMode();
+    int     capMode   = (int)pStroke->GetCapMode();
 
     if (capMode > CAP_Extended)
         capMode = CAP_Arc;

@@ -183,6 +183,7 @@ public:
     //! Parameters for creating new DgnElements
     struct CreateParams
     {
+    public:
         DgnDbR          m_dgndb;
         DgnModelId      m_modelId;
         DgnClassId      m_classId;
@@ -191,6 +192,10 @@ public:
         Utf8CP          m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
+
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
+                     DgnElementId parent=DgnElementId()) : CreateParams(db, modelId, classId, DgnCategoryId(), label, code, id, parent) { }
+
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
                      DgnElementId parent=DgnElementId()) :
                      m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
@@ -734,7 +739,7 @@ protected:
     //! Get the display label (for use in the GUI) for this DgnElement.
     //! The default implementation returns the label if set or the code if the label is not set.
     //! Override to generate the display label in a different way.
-    virtual Utf8String _GetDisplayLabel() const {return GetLabel() ? GetLabel() : GetCode().GetValue();}
+    virtual Utf8String _GetDisplayLabel() const {return !m_label.empty() ? GetLabel() : GetCode().GetValue();}
 
     //! Change the parent (owner) of this DgnElement.
     //! The default implementation sets the parent without doing any checking.
@@ -803,6 +808,7 @@ public:
     //! @}
 
     bool Is3d() const {return nullptr != _ToElement3d();} //!< Determine whether this element is 3d or not
+    bool IsGeometricElement() const {return nullptr != ToGeometricElement();}
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}//!< Determine whether this element is the same type (has the same DgnClassId) as another element.
 
     Hilited IsHilited() const {return (Hilited) m_flags.m_hilited;} //!< Get the current Hilited state of this element
@@ -1113,6 +1119,15 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 {
     DEFINE_T_SUPER(DgnElement);
 
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(GeometricElement::T_Super::CreateParams);
+
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
+                     DgnElementId parent=DgnElementId()) : T_Super(db, modelId, classId, category, label, code, id, parent) {} 
+
+        CreateParams(T_Super const& params) : T_Super(params) { }
+    };
 protected:
     GeomStream m_geom;
 
@@ -1157,9 +1172,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
 {
     DEFINE_T_SUPER(GeometricElement);
 
-    struct CreateParams : DgnElement::CreateParams
+    struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(DgnElement::CreateParams);
+    DEFINE_T_SUPER(DgnElement3d::T_Super::CreateParams);
 
     Placement3dCR m_placement;
     CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
@@ -1221,11 +1236,12 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
 {
     DEFINE_T_SUPER(GeometricElement);
-    struct CreateParams : DgnElement::CreateParams
+    struct CreateParams : T_Super::CreateParams
     {
-    DEFINE_T_SUPER(DgnElement::CreateParams);
+    DEFINE_T_SUPER(DgnElement2d::T_Super::CreateParams);
 
     Placement2dCR m_placement;
+
     CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
         T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
 
@@ -1430,7 +1446,7 @@ public:
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnAuthorityId codeAuthorityId, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8StringCR codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,

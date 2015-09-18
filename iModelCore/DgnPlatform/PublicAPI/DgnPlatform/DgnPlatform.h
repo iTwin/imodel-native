@@ -424,7 +424,7 @@ struct BoundingBox3d : DRange3d
 };
 
 //=======================================================================================
-//! A BoundingBox3d that is aligned with the axes of a DgnModels::Model::CoordinateSpace.
+//! A BoundingBox3d that is aligned with the axes of a CoordinateSpace.
 // @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
 struct AxisAlignedBox3d : BoundingBox3d
@@ -475,7 +475,7 @@ struct BoundingBox2d : DRange2d
 };
 
 //=======================================================================================
-//! A BoundingBox2d that is aligned with the axes of a DgnModels::Model::CoordinateSpace.
+//! A BoundingBox2d that is aligned with the axes of a CoordinateSpace.
 // @bsiclass                                                    Keith.Bentley   03/14
 //=======================================================================================
 struct AxisAlignedBox2d : BoundingBox2d

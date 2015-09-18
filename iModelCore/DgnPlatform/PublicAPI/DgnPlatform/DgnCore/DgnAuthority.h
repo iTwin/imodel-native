@@ -148,7 +148,7 @@ struct EXPORT_VTABLE_ATTRIBUTE NamespaceAuthority : DgnAuthority
     DGNPLATFORM_EXPORT DgnAuthority::Code CreateCode(Utf8StringCR value, Utf8StringCR nameSpace = "") const { return T_Super::CreateCode(value, nameSpace); }
 
     DGNPLATFORM_EXPORT static RefCountedPtr<NamespaceAuthority> CreateNamespaceAuthority(Utf8CP name, DgnDbR dgndb, Utf8CP uri = nullptr);
-    DGNPLATFORM_EXPORT static DgnAuthority::Code CreateCode(Utf8StringCR authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace="");
+    DGNPLATFORM_EXPORT static DgnAuthority::Code CreateCode(Utf8CP authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace="");
 };
 
 #define AUTHORITYHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
