@@ -26,6 +26,7 @@
          To avoid that we run the publishing twice this part cares for it and symlinks the same published API once under the name of BeSQLite and
          once under the name of ECDb-->
     <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
+        <SubPart PartName="PublicAPI" />
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi"  SubPartDirectory="PublishedApi/BeSQLite"/>
         </Bindings>
