@@ -92,8 +92,8 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
 
     m_snappyTo.Init();
     ChangesBlobHeader header(changeset.GetSize());
-    m_snappyTo.Write((ByteCP) &header, sizeof(header));
-    m_snappyTo.Write((ByteCP) changeset.GetData(), changeset.GetSize());
+    m_snappyTo.Write((Byte const*) &header, sizeof(header));
+    m_snappyTo.Write((Byte const*) changeset.GetData(), changeset.GetSize());
 
     uint32_t zipSize = m_snappyTo.GetCompressedSize();
     if (0 < zipSize)

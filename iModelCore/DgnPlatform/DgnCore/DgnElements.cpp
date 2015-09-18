@@ -1149,35 +1149,13 @@ bool DgnElements::IsElementIdUsed(DgnElementId id) const
     }
 
 /*---------------------------------------------------------------------------------**//**
- DgnElementIds are 64 bits, divided into two 32 bit parts {high:low}. The high 32 bits are reserved for the
- repositoryId of the creator and the low 32 bits hold the identifier of the element. This scheme is
- designed to allow multiple users on different computers to create new elements without
- generating conflicting ids, since the repositoryId is intended to be unqiue for every copy of the project.
- We are allowed to make DgnElementIds in the range of [{repositoryid:1},{repositoryid+1:0}). So, find the highest currently
- used id in that range and add 1. If none, use the first id. If the highest possible id is already in use, search for an
- available id randomly.
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId DgnElements::MakeNewElementId()
     {
-    m_dgndb.GetNextRepositoryBasedId(m_highestElementId, DGN_TABLE(DGN_CLASSNAME_Element), "Id");
-
-    // see if the next id is the highest possible Id for our repositoryId. If not, use it. Otherwise try random ids until we find one that's
-    // not currently in use.
-    BeRepositoryBasedId lastId(m_dgndb.GetRepositoryId().GetNextRepositoryId(), 0);
-    if (m_highestElementId.GetValueUnchecked() < lastId.GetValueUnchecked()-100) // reserve a few ids for special meaning
-        return m_highestElementId;
-
-    // highest id already used, try looking for a random available id
-    DgnElementId val;
-    do
-        {
-        val.CreateRandom(m_dgndb.GetRepositoryId());
-        } while (IsElementIdUsed(val));
-
-    return val;
+    m_highestElementId.SetNextAvailable(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Element), "Id");
+    return m_highestElementId;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15

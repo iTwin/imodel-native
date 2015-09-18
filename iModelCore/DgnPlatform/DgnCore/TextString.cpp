@@ -579,7 +579,7 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, ByteCP buffer, size_t numBytes, DgnDbCR db)
+BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, Byte const* buffer, size_t numBytes, DgnDbCR db)
     {
     FB::TextString const* fbText = GetRoot<FB::TextString>(buffer);
     return DecodeFromFlatBuf(text, *fbText, db);

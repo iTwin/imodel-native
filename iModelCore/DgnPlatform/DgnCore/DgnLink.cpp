@@ -363,7 +363,7 @@ BentleyStatus DgnLinks::InsertOnElement(DgnElementKey elementKey, DgnLinkR link)
     Utf8String data = Json::FastWriter::ToString(link.m_data);
 
     DgnLinkId nextId;
-    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetNextRepositoryBasedId(nextId, DGN_TABLE(DGN_CLASSNAME_Link), "Id"), ERROR);
+    nextId.SetNextAvailable(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Link), "Id");
 
     Statement insert;
     insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Link) " (Id,Type,DisplayLabel,Data) VALUES (?,?,?,?)");
@@ -388,7 +388,7 @@ BentleyStatus DgnLinks::InsertOnElement(DgnElementKey elementKey, DgnLinkId link
     PRECONDITION(linkId.IsValid(), ERROR);
 
     DgnLinkId nextId;
-    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetNextRepositoryBasedId(nextId, DGN_TABLE(DGN_RELNAME_ElementHasLinks), "Id"), ERROR);
+    nextId.SetNextAvailable(m_dgndb, DGN_TABLE(DGN_RELNAME_ElementHasLinks), "Id");
 
     Statement insert;
     insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_RELNAME_ElementHasLinks) " (Id,ElementId,LinkId) VALUES (?,?,?)");
