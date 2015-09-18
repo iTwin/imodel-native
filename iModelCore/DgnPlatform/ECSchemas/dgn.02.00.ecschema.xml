@@ -682,6 +682,12 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="TextAnnotation" typeName="binary"/>
     </ECClass>
 
+    <ECClass typeName="MaterialElement" isDomainClass="True">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
+        <ECProperty propertyName="Value" displayLabel="" typeName="string" />
+    </ECClass>
+
     <ECClass typeName="Material" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">

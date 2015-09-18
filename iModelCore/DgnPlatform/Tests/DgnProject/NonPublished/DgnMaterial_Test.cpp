@@ -198,3 +198,35 @@ TEST_F(DgnMaterialsTest, Materials)
     auto idfound = materials.QueryMaterialId(material2.GetName(), material2.GetPalette());
     EXPECT_TRUE(idfound == materialId2);
     }
+
+#include <DgnPlatform/DgnCore/MaterialElement.h>
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct MaterialTest : public ::testing::Test
+{
+private:
+    ScopedDgnHost   m_host;
+    DgnDbPtr        m_db;
+protected:
+    void SetupProject()
+        {
+        BeFileName filename = DgnDbTestManager::GetOutputFilePath(L"materials.idgndb");
+        BeFileName::BeDeleteFile(filename);
+
+        CreateDgnDbParams params;
+        params.SetOverwriteExisting(false);
+        DbResult status;
+        m_db = DgnDb::CreateDgnDb(&status, filename, params);
+        ASSERT_TRUE(m_db != nullptr);
+        ASSERT_EQ(BE_SQLITE_OK, status) << status;
+        }
+
+    DgnModelId CreateModel(Utf8CP name)
+        {
+
+        }
+};
+
+
