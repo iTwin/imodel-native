@@ -386,22 +386,6 @@ IECSqlValue const& ECSqlStatement::GetValue (int columnIndex) const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      10/2013
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::GetLastStatus () const
-    {
-    return m_pimpl->GetLastStatus ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      07/2013
-//---------------------------------------------------------------------------------------
-Utf8String ECSqlStatement::GetLastStatusMessage () const
-    {
-    return m_pimpl->GetLastStatusMessage ();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2014
 //---------------------------------------------------------------------------------------
 Utf8CP ECSqlStatement::GetECSql () const

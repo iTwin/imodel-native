@@ -248,27 +248,6 @@
         Certifications[1].Level: Primitive type
 
 
-    @section ECDbCodeSampleECSqlStatementGetValueErrorHandling Detecting errors when getting values from an ECSQL SELECT statement
-
-    This sample shows how errors can be detected when retrieving values from an ECSQL SELECT statement as those methods are designed to
-    make for concise client code which directly return the column values. They therefore do not return an error status directly.
-
-    @note The same approach is used for all methods of ECSqlStatement that do not return an error code. This, in particular,
-    applies to the binding API, e.g. @ref BentleyApi::BeSQLite::EC::ECSqlStatement::BindArray "ECSqlStatement::BindArray" or 
-    @ref BentleyApi::BeSQLite::EC::ECSqlStatement::BindStruct "ECSqlStatement::BindStruct"
-
-    @see @ref ECSqlStatementErrorReporting "ECSqlStatement Error Reporting"
-    @see BentleyApi::BeSQLite::EC::IECSqlValue
-    @see @ref ECDbCodeSampleECSqlStatementBindingStructs
-    @see @ref ECDbCodeSampleECSqlStatementBindingArrays
-
-    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementGetValueErrorHandling,Example]
-    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementGetValueErrorHandling.sampleCode
-    $SAMPLECODE_END
-
-    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
-    definition of the ECClasses and ECProperties used in the ECSQL statement.
-
     @section ECDbCodeSampleInsertECInstance Insert an instance
 
     This sample shows how to insert an instance into an @ref ECDbFile "ECDb file".

@@ -191,9 +191,6 @@ public:
     void PushScope (ExpCR exp) { m_scopes.Push (exp); }
     void PopScope () {m_scopes.Pop();}
 
-    bool IsSuccess () const;
-    ECSqlStatus GetStatus () const;
-    ECSqlStatus SetError (ECSqlStatus status, Utf8CP fmt, ...);
     bool IsEmbeddedStatement () const { return m_parentCtx != nullptr; }
     bool IsPrimaryStatement () const { return !IsEmbeddedStatement (); }
     static Utf8String CreateECInstanceIdSelectionQuery (ECSqlPrepareContext& ctx, ClassNameExp const& classNameExpr, WhereExp const* whereExp);

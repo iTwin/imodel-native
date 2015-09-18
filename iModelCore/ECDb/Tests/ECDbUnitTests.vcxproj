@@ -64,7 +64,6 @@
     <ClCompile Include="Published\ECSqlExpectedResultImpls.cpp" />
     <ClCompile Include="Published\ECSqlBuilder_Tests.cpp" />
     <ClCompile Include="Published\ECSqlStatementCrudAsserter.cpp" />
-    <ClCompile Include="Published\ECSqlStatementEvents_Tests.cpp" />
     <ClCompile Include="Published\ECSqlStatement_FunctionTests.cpp" />
     <ClCompile Include="Published\ECSqlStatement_Tests.cpp" />
     <ClCompile Include="Published\ECSqlTestDataset.cpp" />

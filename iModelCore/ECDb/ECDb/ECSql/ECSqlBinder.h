@@ -8,7 +8,6 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include "ECSqlStatusContext.h"
 #include <ECDb/IECSqlBinder.h>
 #include "ECSqlBinderFactory.h"
 #include "ECSqlStatementNoopImpls.h"
@@ -43,16 +42,15 @@ protected:
     //Part of initialization. Must only called in constructor.
     void SetMappedSqlParameterCount (int mappedSqlParameterCount) { m_mappedSqlParameterCount = mappedSqlParameterCount; }
         
-    ECSqlStatus SetError (DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
-    Statement& GetSqliteStatementR () const;
-    ECSqlStatusContext& GetStatusContext () const;
-    ECSqlStatus ResetStatus () const;
-    ECSqlStatementBase& GetECSqlStatementR () const { return m_ecsqlStatement; }
-
     std::function<void (ECInstanceId const& bindValue)> GetOnBindRepositoryBasedIdEventHandler () const { return m_onBindRepositoyBasedIdEventHandler; }
     static NoopECSqlBinder& GetNoopBinder (ECSqlStatus status);
     IECSqlBinder* GetOnBindEventHandler () { return m_onBindEventHandler; }
 
+    ECSqlStatus ReportError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
+
+    Statement& GetSqliteStatementR() const;
+    ECSqlStatementBase& GetECSqlStatementR() const { return m_ecsqlStatement; }
+    ECDbCR GetECDb() const;
     static Statement::MakeCopy ToBeSQliteBindMakeCopy (IECSqlBinder::MakeCopy makeCopy);
 
 public:
@@ -83,10 +81,9 @@ private:
     bool Contains (int& ecsqlParameterIndex, Utf8CP ecsqlParameterName) const;
 
 public:
-    ECSqlParameterMap ()
-        {}
-
+    ECSqlParameterMap () {}
     ~ECSqlParameterMap() {}
+
     size_t Count () const { return m_binders.size(); }
     //! @remarks only named parameters hav an identity. Therefore each unnamed parameters has its own binder
     bool TryGetBinder (ECSqlBinder*& binder, Utf8CP ecsqlParameterName) const;
@@ -121,8 +118,8 @@ private:
     ~ArrayConstraintValidator ();
 
 public:
-    static ECSqlStatus Validate (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& expected, uint32_t actualArrayLength);
-    static ECSqlStatus ValidateMaximum(ECSqlStatusContext& statusContext, ECSqlTypeInfo const& expected, uint32_t actualArrayLength);
+    static ECSqlStatus Validate (ECDbCR, ECSqlTypeInfo const& expected, uint32_t actualArrayLength);
+    static ECSqlStatus ValidateMaximum(ECDbCR, ECSqlTypeInfo const& expected, uint32_t actualArrayLength);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -50,7 +50,6 @@
     <ClCompile Include="ECSql\ECRelationshipPath.cpp" />
     <ClCompile Include="ECSql\ECInstanceAdapterHelper.cpp" />
     <ClCompile Include="ECSql\ECSqlDeletePreparer.cpp" />
-    <ClCompile Include="ECSql\ECSqlEventManager.cpp" />
     <ClCompile Include="ECSql\ECSqlInsertPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlParameterValue.cpp" />
     <ClCompile Include="ECSql\ECSqlPropertyNameExpPreparer.cpp" />
@@ -66,13 +65,11 @@
     <ClCompile Include="ECSql\ECSqlField.cpp" />
     <ClCompile Include="ECSql\ECSqlBinder.cpp" />
     <ClCompile Include="ECSql\ECSqlBinderFactory.cpp" />
-    <ClCompile Include="ECSql\ECSqlParseContext.cpp" />
     <ClCompile Include="ECSql\ECSqlParser.cpp" />
     <ClCompile Include="ECSql\ECSqlPrepareContext.cpp" />
     <ClCompile Include="ECSql\ECSqlPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementCache.cpp" />
-    <ClCompile Include="ECSql\ECSqlStatusContext.cpp" />
     <ClCompile Include="ECSql\ECSqlStepTask.cpp" />
     <ClCompile Include="ECSql\ECSqlTypeInfo.cpp" />
     <ClCompile Include="ECSql\ECSqlUpdatePreparer.cpp" />
@@ -167,7 +164,6 @@
     <ClInclude Include="ECSql\DeleteStatementExp.h" />
     <ClInclude Include="ECSql\ECInstanceAdapterHelper.h" />
     <ClInclude Include="ECSql\ECSqlDeletePreparer.h" />
-    <ClInclude Include="ECSql\ECSqlEventManager.h" />
     <ClInclude Include="ECSql\ECSqlInsertPreparer.h" />
     <ClInclude Include="ECSql\ECSqlParameterValue.h" />
     <ClInclude Include="ECSql\ECSqlPropertyNameExpPreparer.h" />
@@ -178,13 +174,11 @@
     <ClInclude Include="ECSql\DynamicSelectClauseECClass.h" />
     <ClInclude Include="ECSql\ECSqlFieldFactory.h" />
     <ClInclude Include="ECSql\ECSqlBinderFactory.h" />
-    <ClInclude Include="ECSql\ECSqlParseContext.h" />
     <ClInclude Include="ECSql\ECSqlParser.h" />
     <ClInclude Include="ECSql\ECSqlPrepareContext.h" />
     <ClInclude Include="ECSql\ECSqlPreparer.h" />
     <ClInclude Include="ECSql\ECSqlField.h" />
     <ClInclude Include="ECSql\ECSqlPreparedStatement.h" />
-    <ClInclude Include="ECSql\ECSqlStatusContext.h" />
     <ClInclude Include="ECSql\ECSqlStepTask.h" />
     <ClInclude Include="ECSql\ECSqlTypeInfo.h" />
     <ClInclude Include="ECSql\ECSqlUpdatePreparer.h" />

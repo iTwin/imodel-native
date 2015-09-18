@@ -25,7 +25,7 @@ private:
     ~ExpHelper ();
 
 public:
-    static ECSqlStatus ToPrimitiveType (ECN::PrimitiveType& primitiveType, Utf8StringCR type);
+    static BentleyStatus ToPrimitiveType (ECN::PrimitiveType& primitiveType, Utf8StringCR type);
     static Utf8CP ToString(ECN::PrimitiveType type);
     static Utf8CP ToString(SqlCompareListType type);
     static Utf8CP ToString(JoinDirection direction);

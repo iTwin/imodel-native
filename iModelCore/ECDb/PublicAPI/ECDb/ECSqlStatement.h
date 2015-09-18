@@ -236,7 +236,6 @@ public:
     //! Gets the metadata about the specified ECSQL column in the result set.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return ECSQL column metadata.
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - @p columnIndex is out of bounds
     ECDB_EXPORT ECSqlColumnInfoCR GetColumnInfo(int columnIndex) const;
@@ -249,7 +248,6 @@ public:
     //! Indicates whether the value for the column at the given index in the result set is %NULL or not.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return true if column value is %NULL, false otherwise
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - @p columnIndex is out of bounds
     ECDB_EXPORT bool IsValueNull(int columnIndex) const;
@@ -258,7 +256,6 @@ public:
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @param[out] binarySize the size of the blob in bytes.
     //! @return The binary value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not binary
     //! - @p columnIndex is out of bounds
@@ -267,7 +264,6 @@ public:
     //! Gets the value of the specific column as a boolean value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return Column value as boolean
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
@@ -277,7 +273,6 @@ public:
     //! Gets the DateTime value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return DateTime value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not DateTime
     //! - @p columnIndex is out of bounds
@@ -287,7 +282,6 @@ public:
     //! Gets the value of the specific column as a double value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return Column value as double
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
@@ -297,7 +291,6 @@ public:
     //! Gets the value of the specific column as an IGeometry value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return Column value as IGeometry
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not IGeometry
     //! - @p columnIndex is out of bounds
@@ -306,7 +299,6 @@ public:
     //! Gets the value of the specific column as an integer value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return Column value as integer
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
@@ -316,7 +308,6 @@ public:
     //! Gets the value of the specific column as an Int64 value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return Column value as Int64
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
@@ -326,7 +317,6 @@ public:
     //! Gets the Point2D value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return Point2D column value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not Point2D
     //! - @p columnIndex is out of bounds
@@ -335,7 +325,6 @@ public:
     //! Gets the Point3D value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return Point3D column value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not Point3D
     //! - @p columnIndex is out of bounds
@@ -344,7 +333,6 @@ public:
     //! Gets the value of the specific column as a string value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return Column value as string
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
@@ -356,7 +344,6 @@ public:
     //! this method to get ECInstanceId values.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return BeInt64Id value
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data does not hold a BeInt64Id
     template <class TBeInt64Id>
@@ -368,7 +355,6 @@ public:
     //! Gets the array value of the specified column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
     //! @return Array reader for the column
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not an array
     //! - @p columnIndex is out of bounds
@@ -376,7 +362,6 @@ public:
 
     //! Gets the struct value of the specified column.
     //! @return Struct value for the column
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not an ECStruct
     //! - @p columnIndex is out of bounds
@@ -386,41 +371,21 @@ public:
     //! @remarks This is the generic way of getting the value of a specified column in the result set. 
     //! All other GetValueXXX methods are convenience methods around GetValue.
     //! @return Value for the column
-    //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - @p columnIndex is out of bounds
     ECDB_EXPORT IECSqlValue const& GetValue(int columnIndex) const;
 
     //! @}
 
-    //! @name Get status of last operation
-    //! @{
-
-    //! Gets the status returned from the last call to a method of ECSqlStatement.
-    //! If the last call to ECSqlStatement was successful, ECSqlStatus::Success will be returned.
-    //! @return Status from last call to ECSqlStatement
-    //! @see @ref ECSqlStatementErrorReporting
-    ECDB_EXPORT ECSqlStatus GetLastStatus() const;
-
-    //! Gets the status message for the status returned from the last call to a method of ECSqlStatement.
-    //! If the last call to ECSqlStatement was successful, i.e. return ECSqlStatus::Success, the status message
-    //! will correspond to the successful call (and will therefore usually be empty). 
-    //! @return Status message from last call to ECSqlStatement
-    //! @see @ref ECSqlStatementErrorReporting
-    ECDB_EXPORT Utf8String GetLastStatusMessage() const;
-    //! @}
-
 #if !defined (DOCUMENTATION_GENERATOR)
     //! Gets the ECSQL statement string
     //! @remarks Results in an error if the ECSqlStatement has not been prepared yet
     //! @return ECSQL statement string
-    //! @see @ref ECSqlStatementErrorReporting
     ECDB_EXPORT Utf8CP GetECSql() const;
 
     //! Gets the SQLite SQL statement to which this ECSQL statement was translated to internally.
     //! @remarks Results in an error if the ECSqlStatement has not been prepared yet
     //! @return SQLite SQL statement
-    //! @see @ref ECSqlStatementErrorReporting
     ECDB_EXPORT Utf8CP GetNativeSql() const;
 
     //! Gets the ECDb handle which was used to prepare this statement.
@@ -538,8 +503,8 @@ private:
     ~ECSqlParseTreeFormatter();
 
 public:
-    ECDB_EXPORT static bool ParseAndFormatECSqlParseNodeTree(Utf8StringR parseNodeTree, Utf8StringR error, Utf8CP ecsql);
-    ECDB_EXPORT static bool ParseAndFormatECSqlExpTree(Utf8StringR expTree, Utf8StringR expTreeToECSql, Utf8StringR error, Utf8CP ecsql, ECDbR db);
+    ECDB_EXPORT static BentleyStatus ParseAndFormatECSqlParseNodeTree(Utf8StringR parseNodeTree, ECDbCR, Utf8CP ecsql);
+    ECDB_EXPORT static BentleyStatus ParseAndFormatECSqlExpTree(Utf8StringR expTree, Utf8StringR expTreeToECSql, ECDbCR, Utf8CP ecsql);
     };
 
 #endif

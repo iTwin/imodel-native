@@ -36,20 +36,20 @@ private:
 
     ECDbTestProject& m_testProject;
 
-    virtual void _Assert (Utf8StringR statementErrorMessage, ECSqlTestItem const& testItem) const = 0;
+    virtual void _Assert (ECSqlTestItem const& testItem) const = 0;
     virtual Utf8CP _GetTargetOperationName () const = 0;
 
-    void LogECSqlSupport (ECSqlTestItem const& testItem, Utf8CP statementErrorMessage) const;
+    void LogECSqlSupport (ECSqlTestItem const& testItem) const;
     static BentleyApi::NativeLogging::ILogger& GetLogger ();
 
 protected:
 
-    ECDbTestProject& GetTestProject () const;
+    ECDbTestProject& GetTestProject() const { return m_testProject; }
     ECDbR GetDgnDb () const;
 
 public:
-    explicit ECSqlCrudAsserter (ECDbTestProject& testProject);
-    virtual ~ECSqlCrudAsserter ();
+    explicit ECSqlCrudAsserter (ECDbTestProject& testProject) : m_testProject(testProject) {}
+    virtual ~ECSqlCrudAsserter () {}
 
     void Assert (ECSqlTestItem const& testItem) const;
     Utf8CP GetTargetOperationName () const;

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlStatementCrudAsserter.h $
+|     $Source: Tests/Published/ECSqlStatementCrudAsserter.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -29,8 +29,8 @@ protected:
     static ECSqlStatus BindIGeometryParameter (ECSqlStatement& statement, int parameterIndex, IGeometryCP geomParameter);
 
 public:
-    explicit ECSqlStatementCrudAsserter (ECDbTestProject& testProject);
-    virtual ~ECSqlStatementCrudAsserter ();
+    explicit ECSqlStatementCrudAsserter (ECDbTestProject& testProject) : ECSqlCrudAsserter(testProject) {}
+    virtual ~ECSqlStatementCrudAsserter () {}
     };
 
 //=======================================================================================  
@@ -43,7 +43,7 @@ private:
     typedef std::pair<ECN::ECTypeDescriptor, std::function<void ()>> GetValueCall;
     typedef std::vector<GetValueCall> GetValueCallList;
 
-    virtual void _Assert (Utf8StringR statementErrorMessage, ECSqlTestItem const& testItem) const override;
+    virtual void _Assert (ECSqlTestItem const& testItem) const override;
 
     void AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, ResultCountECSqlExpectedResult const& expectedResult) const;
 
@@ -62,8 +62,8 @@ private:
     static Utf8String DataTypeToString (ECN::ECTypeDescriptor const& dataType);
 
 public:
-    explicit ECSqlSelectStatementCrudAsserter (ECDbTestProject& testProject);
-    ~ECSqlSelectStatementCrudAsserter ();
+    explicit ECSqlSelectStatementCrudAsserter (ECDbTestProject& testProject) : ECSqlStatementCrudAsserter(testProject) {}
+    ~ECSqlSelectStatementCrudAsserter () {}
     };
 
 //=======================================================================================  
@@ -73,7 +73,7 @@ public:
 struct ECSqlNonSelectStatementCrudAsserter : public ECSqlStatementCrudAsserter
     {
 private:
-    virtual void _Assert (Utf8StringR statementErrorMessage, ECSqlTestItem const& testItem) const override;
+    virtual void _Assert (ECSqlTestItem const& testItem) const override;
 
     void AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, AffectedRowsECSqlExpectedResult const& expectedResult) const;
 
@@ -81,8 +81,8 @@ private:
     ECSqlStepStatus Step (ECSqlStatement& statement, bool disableBeAsserts) const;
 
 public:
-    explicit ECSqlNonSelectStatementCrudAsserter (ECDbTestProject& testProject);
-    ~ECSqlNonSelectStatementCrudAsserter ();
+    explicit ECSqlNonSelectStatementCrudAsserter (ECDbTestProject& testProject) : ECSqlStatementCrudAsserter(testProject) {}
+    ~ECSqlNonSelectStatementCrudAsserter () {}
     };
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -42,11 +42,60 @@ public:
     BentleyStatus ImportTestSchema (WCharCP testSchemaFileName);
     };
 
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      09/2015
+//+===============+===============+===============+===============+===============+======
+struct ECDbIssue
+    {
+private:
+    BeSQLite::EC::ECDbIssueSeverity m_severity;
+    Utf8String m_issue;
+
+public:
+    explicit ECDbIssue(BeSQLite::EC::ECDbIssueSeverity severity = BeSQLite::EC::ECDbIssueSeverity::Error, Utf8CP issue = nullptr) : m_severity(severity), m_issue(issue) {}
+
+    bool IsIssue() const { return !m_issue.empty(); }
+    BeSQLite::EC::ECDbIssueSeverity GetSeverity() const { return m_severity; }
+    Utf8CP GetMessage() const { return m_issue.c_str(); }
+    };
+
+//=======================================================================================
+//!On construction registers itself with the ECDb, so that it starts listening right away.
+//!On destruction unregisters itself. This allows for a fine-grained listening restricted
+//!to the scope of the object
+//!Example:
+//! {
+//! ECDbIssueListener issueListener(ecdb);
+//! int val = statement.GetValueInt(1);
+//! if (issueListener.GetIssue().IsIssue())
+//!   return ERROR;
+//! }
+// @bsiclass                          Krischan.Eberle      09/2015
+//+===============+===============+===============+===============+===============+======
+struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
+    {
+private:
+    ECDbR m_ecdb;
+    mutable ECDbIssue m_issue;
+    virtual void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override;
+
+public:
+    explicit ECDbIssueListener(ECDbR ecdb) : BeSQLite::EC::ECDb::IIssueListener(), m_ecdb(ecdb) { m_ecdb.AddIssueListener(*this); }
+    ~ECDbIssueListener() { m_ecdb.RemoveIssueListener(); }
+
+    //Can only be called once for a given issue. A second call will report whatever issue has occurred (or not) since the first call
+    ECDbIssue GetIssue() const;
+
+    void Reset() { m_issue = ECDbIssue(); }
+    };
+
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      04/2012
 +===============+===============+===============+===============+===============+======*/
 struct ECDbTestProject
 {
+public:
+
 typedef void (*PopulatePrimitiveValueCallback)(ECN::ECValueR value, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecproperty);
 private:
     BeSQLite::EC::ECDb*    m_ecdb;

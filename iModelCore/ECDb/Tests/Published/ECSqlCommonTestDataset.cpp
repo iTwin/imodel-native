@@ -403,12 +403,12 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (
     {
     auto& ecdb = testProject.GetECDb ();
     Savepoint savepoint (ecdb, "Inserting test instances");
-    psaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
-    pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
+    psaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
+    pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
 
     Utf8String ecsql;
     ecsql.Sprintf ("INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld)", psaECInstanceId.GetValue(), pECInstanceId.GetValue());
-    psaHasPECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, ecsql.c_str ());
+    psaHasPECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, ecsql.c_str ());
     if (!psaECInstanceId.IsValid () || !pECInstanceId.IsValid () || !psaHasPECInstanceId.IsValid ())
         {
         savepoint.Cancel ();
@@ -470,12 +470,12 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests 
     {
     auto& ecdb = testProject.GetECDb ();
     Savepoint savepoint (ecdb, "Inserting test instances");
-    psaECInstanceId1 = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
-    psaECInstanceId2 = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (200, 'Second test instance for relationship tests')");
+    psaECInstanceId1 = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
+    psaECInstanceId2 = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSA (I, S) VALUES (200, 'Second test instance for relationship tests')");
 
     Utf8String ecsql;
     ecsql.Sprintf ("INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId) VALUES (%lld, %lld)", psaECInstanceId1.GetValue(), psaECInstanceId2.GetValue());
-    psaHasPsaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, ecsql.c_str ());
+    psaHasPsaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, ecsql.c_str ());
     if (!psaECInstanceId1.IsValid () || !psaECInstanceId2.IsValid () || !psaHasPsaECInstanceId.IsValid ())
         {
         savepoint.Cancel ();
@@ -537,7 +537,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
     {
     auto& ecdb = testProject.GetECDb ();
     Savepoint savepoint (ecdb, "Inserting test instances");
-    ecInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId, B, D) VALUES (100, 200, False, 3.14)");
+    ecInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId, B, D) VALUES (100, 200, False, 3.14)");
     if (!ecInstanceId.IsValid ())
         {
         savepoint.Cancel ();
@@ -610,15 +610,15 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraint
     {
     auto& ecdb = testProject.GetECDb ();
     Savepoint savepoint (ecdb, "Inserting test instances");
-    pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'test instance')");
+    pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, "INSERT INTO ecsql.P (I, S) VALUES (100, 'test instance')");
 
     Utf8String ecsql;
     ecsql.Sprintf ("INSERT INTO ecsql.PSAHasAnyClass_0N (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (%lld, 200, %lld)", psaECInstanceId.GetValue(), pClassId);
-    psaHasAnyClassECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, ecsql.c_str ());
+    psaHasAnyClassECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, ecsql.c_str ());
 
     //this is an end-table mapping. Therefore the source ecinstanceid must match the end table's row
     ecsql.Sprintf ("INSERT INTO ecsql.AnyClassHasP_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (%lld, %lld, %lld)", psaECInstanceId.GetValue(), psaClassId, pECInstanceId.GetValue());
-    anyClassHasPECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, ecsql.c_str ());
+    anyClassHasPECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (testProject, ecsql.c_str ());
 
     if (!pECInstanceId.IsValid () || !psaHasAnyClassECInstanceId.IsValid () || !anyClassHasPECInstanceId.IsValid ())
         {

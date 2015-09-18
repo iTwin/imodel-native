@@ -72,9 +72,9 @@ private:
     size_t m_leftOperandExpIndex;
     size_t m_rightOperandExpIndex;
 
-    FinalizeParseStatus CanCompareTypes (ECSqlParseContext& ctx, ComputedExp const& lhs, ComputedExp const& rhs) const;
+    FinalizeParseStatus CanCompareTypes (ECSqlParseContext&, ComputedExp const& lhs, ComputedExp const& rhs) const;
 
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext&, FinalizeParseMode mode) override;
     virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
@@ -118,7 +118,7 @@ struct UnaryPredicateExp : BooleanExp
 private:
     size_t m_booleanValueExpIndex;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override { return "UnaryPredicate"; }
 

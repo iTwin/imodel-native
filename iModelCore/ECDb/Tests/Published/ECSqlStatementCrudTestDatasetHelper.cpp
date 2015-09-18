@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlStatementCrudTestDatasetHelper.cpp $
+|     $Source: Tests/Published/ECSqlStatementCrudTestDatasetHelper.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementCrudTestDatasetHelper.h"
@@ -86,13 +86,13 @@ ECSqlTestItem& ECSqlStatementCrudTestDatasetHelper::AddStepFailingNonSelect (ECS
 // @bsimethod                                     Krischan.Eberle                  12/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECInstanceId ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ECDbR ecdb, Utf8CP ecsql)
+ECInstanceId ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ECDbTestProject& testProject, Utf8CP ecsql)
     {
     ECSqlStatement stmt;
-    auto stat = stmt.Prepare (ecdb, ecsql);
+    auto stat = stmt.Prepare (testProject.GetECDbCR(), ecsql);
     if (stat != ECSqlStatus::Success)
         {
-        EXPECT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Inserting test instance with '" << ecsql << "' failed. Preparation failed: " << stmt.GetLastStatusMessage ().c_str ();
+        EXPECT_EQ(ECSqlStatus::Success, stat) << "Inserting test instance with '" << ecsql << "' failed. Preparation failed";
         return ECInstanceId ();
         }
 
@@ -100,7 +100,7 @@ ECInstanceId ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ECDbR ecdb
     auto stepStat = stmt.Step (newECInstanceKey);
     if (stepStat != ECSqlStepStatus::Done)
         {
-        EXPECT_EQ ((int)ECSqlStepStatus::Done, (int)stat) << "Inserting test instance with '" << ecsql << "' failed. Step failed: " << stmt.GetLastStatusMessage ().c_str ();
+        EXPECT_EQ ((int)ECSqlStepStatus::Done, (int)stat) << "Inserting test instance with '" << ecsql << "' failed. Step failed";
         return ECInstanceId ();
         }
     else

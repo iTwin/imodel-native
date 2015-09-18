@@ -24,7 +24,7 @@ private:
 
     std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString () const override { return "Delete"; }
 

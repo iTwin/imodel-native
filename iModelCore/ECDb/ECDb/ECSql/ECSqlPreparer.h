@@ -49,12 +49,12 @@ public:
     static ECSqlStatus PrepareBooleanExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanExp const& exp);
     static ECSqlStatus PrepareBooleanFactorExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BooleanFactorExp const* exp);
     static ECSqlStatus PrepareCastExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, CastExp const* exp);
-    static ECSqlStatus PrepareClassNameExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassNameExp const* exp);
-    static ECSqlStatus PrepareClassRefExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassRefExp const* exp);
-    static ECSqlStatus PrepareClassRefExp (NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, ClassRefExp const* exp);
+    static ECSqlStatus PrepareClassNameExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassNameExp const&);
+    static ECSqlStatus PrepareClassRefExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ClassRefExp const&);
+    static ECSqlStatus PrepareClassRefExp (NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, ClassRefExp const&);
     static ECSqlStatus PrepareComputedExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ComputedExp const* exp);
     static ECSqlStatus PrepareConstantValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ConstantValueExp const* exp);
-    static ECSqlStatus PrepareCrossJoinExp (ECSqlPrepareContext& ctx, CrossJoinExp const* exp);
+    static ECSqlStatus PrepareCrossJoinExp (ECSqlPrepareContext& ctx, CrossJoinExp const&);
     static ECSqlStatus PrepareDerivedPropertyExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, DerivedPropertyExp const* exp);
     static ECSqlStatus PrepareFromExp (ECSqlPrepareContext& ctx, FromExp const* exp);
     static ECSqlStatus PrepareFunctionCallExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const* exp);
@@ -62,8 +62,8 @@ public:
     static ECSqlStatus PrepareGroupByExp (ECSqlPrepareContext& ctx, GroupByExp const* exp);
     static ECSqlStatus PrepareHavingExp (ECSqlPrepareContext& ctx, HavingExp const* exp);
     static ECSqlStatus PrepareLikeRhsValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, LikeRhsValueExp const* exp);
-    static ECSqlStatus PrepareLimitOffsetExp (ECSqlPrepareContext& ctx, LimitOffsetExp const* exp);
-    static ECSqlStatus PrepareNaturalJoinExp (ECSqlPrepareContext& ctx, NaturalJoinExp const* exp);
+    static ECSqlStatus PrepareLimitOffsetExp (ECSqlPrepareContext& ctx, LimitOffsetExp const*);
+    static ECSqlStatus PrepareNaturalJoinExp (ECSqlPrepareContext& ctx, NaturalJoinExp const&);
     static ECSqlStatus PrepareNullConstantValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ConstantValueExp const* exp, size_t targetExpNativeSqlSnippetCount);
     static ECSqlStatus PrepareOrderByExp (ECSqlPrepareContext& ctx, OrderByExp const* exp);
     static ECSqlStatus PrepareParameterExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ParameterExp const* exp, bool targetIsVirtual, bool enforceConstraints);
@@ -71,12 +71,12 @@ public:
     //! Prepares the PropertyNameListExp if each PropertyNameExp in the list will be prepared into a single SQL snippet.
     //! Returns an error otherwise
     static ECSqlStatus PreparePropertyNameListExp(NativeSqlBuilder::List& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, PropertyNameListExp const* exp);
-    static ECSqlStatus PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, QualifiedJoinExp const* exp);
+    static ECSqlStatus PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, QualifiedJoinExp const&);
     static ECSqlStatus PrepareQueryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, QueryExp const* exp);
-    static ECSqlStatus PrepareRelationshipJoinExp (ECSqlPrepareContext& ctx, RelationshipJoinExp const* exp);
+    static ECSqlStatus PrepareRelationshipJoinExp (ECSqlPrepareContext& ctx, RelationshipJoinExp const&);
     static ECSqlStatus PrepareSelectClauseExp (ECSqlPrepareContext& ctx, SelectClauseExp const* exp);
-    static ECSqlStatus PrepareSubqueryExp (ECSqlPrepareContext& ctx, SubqueryExp const* exp);
-    static ECSqlStatus PrepareSubqueryRefExp (ECSqlPrepareContext& ctx, SubqueryRefExp const* exp);
+    static ECSqlStatus PrepareSubqueryExp (ECSqlPrepareContext& ctx, SubqueryExp const*);
+    static ECSqlStatus PrepareSubqueryRefExp (ECSqlPrepareContext& ctx, SubqueryRefExp const*);
     static ECSqlStatus PrepareSubqueryTestExp (ECSqlPrepareContext& ctx, SubqueryTestExp const* exp);
     static ECSqlStatus PrepareSubqueryValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryValueExp const* exp);
     static ECSqlStatus PrepareUnaryPredicateExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, UnaryPredicateExp const* exp);

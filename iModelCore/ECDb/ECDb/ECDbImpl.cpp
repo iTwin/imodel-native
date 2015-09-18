@@ -38,22 +38,22 @@ Utf8CP const ECDb::Impl::PROPERTYPATHIDSEQUENCE_BELOCALKEY = "ec_propertypathids
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl::Impl (ECDbR ecdb)
-    : m_ecdb(ecdb), m_schemaManager (nullptr),
-    m_ecdbMap (std::unique_ptr<ECDbMap> (new ECDbMap (ecdb))),
-    m_ecInstanceIdSequence (ecdb, ECINSTANCEIDSEQUENCE_BELOCALKEY),
-    m_ecSchemaIdSequence (ecdb, ECSCHEMAIDSEQUENCE_BELOCALKEY),
-    m_ecClassIdSequence (ecdb, ECCLASSIDSEQUENCE_BELOCALKEY),
-    m_ecPropertyIdSequence (ecdb, ECPROPERTYIDSEQUENCE_BELOCALKEY),
-    m_tableIdSequence (ecdb, TABLEIDSEQUENCE_BELOCALKEY),
-    m_columnIdSequence (ecdb, COLUMNIDSEQUENCE_BELOCALKEY),
-    m_indexIdSequence (ecdb, INDEXIDSEQUENCE_BELOCALKEY),
-    m_constraintIdSequence (ecdb, CONSTRAINTIDSEQUENCE_BELOCALKEY),
-    m_classmapIdSequence (ecdb, CLASSMAPIDSEQUENCE_BELOCALKEY),
-    m_propertypathIdSequence (ecdb, PROPERTYPATHIDSEQUENCE_BELOCALKEY),
-    m_issueListener (nullptr)
+ECDb::Impl::Impl(ECDbR ecdb)
+    : m_ecdb(ecdb), m_schemaManager(nullptr),
+    m_ecdbMap(std::unique_ptr<ECDbMap>(new ECDbMap(ecdb))),
+    m_ecInstanceIdSequence(ecdb, ECINSTANCEIDSEQUENCE_BELOCALKEY),
+    m_ecSchemaIdSequence(ecdb, ECSCHEMAIDSEQUENCE_BELOCALKEY),
+    m_ecClassIdSequence(ecdb, ECCLASSIDSEQUENCE_BELOCALKEY),
+    m_ecPropertyIdSequence(ecdb, ECPROPERTYIDSEQUENCE_BELOCALKEY),
+    m_tableIdSequence(ecdb, TABLEIDSEQUENCE_BELOCALKEY),
+    m_columnIdSequence(ecdb, COLUMNIDSEQUENCE_BELOCALKEY),
+    m_indexIdSequence(ecdb, INDEXIDSEQUENCE_BELOCALKEY),
+    m_constraintIdSequence(ecdb, CONSTRAINTIDSEQUENCE_BELOCALKEY),
+    m_classmapIdSequence(ecdb, CLASSMAPIDSEQUENCE_BELOCALKEY),
+    m_propertypathIdSequence(ecdb, PROPERTYPATHIDSEQUENCE_BELOCALKEY),
+    m_issueReporter(ecdb)
     {
-    m_schemaManager = std::unique_ptr<ECDbSchemaManager> (new ECDbSchemaManager (ecdb, *m_ecdbMap));
+    m_schemaManager = std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb, *m_ecdbMap));
     }
 
 //--------------------------------------------------------------------------------------
@@ -238,45 +238,6 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
     return true;
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::AddIssueListener(IIssueListener const& issueListener)
-    {
-    if (m_issueListener != nullptr)
-        return ERROR;
-
-    m_issueListener = &issueListener;
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::ReportIssue(IssueSeverity severity, Utf8CP message, ...) const
-    {
-    const NativeLogging::SEVERITY logSeverity = severity == IssueSeverity::Warning ? NativeLogging::LOG_WARNING : NativeLogging::LOG_ERROR;
-    const bool isLogSeverityEnabled = LOG.isSeverityEnabled(logSeverity);
-
-    if (m_issueListener != nullptr || isLogSeverityEnabled)
-        {
-        va_list args;
-        va_start(args, message);
-
-        Utf8String formattedMessage;
-        formattedMessage.VSprintf(message, args);
-
-        if (m_issueListener != nullptr)
-            m_issueListener->ReportIssue(severity, formattedMessage.c_str());
-
-        if (isLogSeverityEnabled)
-            LOG.message(logSeverity, formattedMessage.c_str());
-
-        va_end(args);
-        }
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan       06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -299,6 +260,122 @@ DbResult ECDb::Impl::ResetSequences (BeRepositoryId* repoId)
         }
 
     return BE_SQLITE_OK;
+    }
+
+
+//******************************************
+// IssueReporter
+//******************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus IssueReporter::AddListener(ECDb::IIssueListener const& issueListener)
+    {
+    BeMutexHolder lock(m_mutex);
+
+    if (m_issueListener != nullptr)
+        return ERROR;
+
+    m_issueListener = &issueListener;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void IssueReporter::RemoveListener()
+    {
+    BeMutexHolder lock(m_mutex);
+    m_issueListener = nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool IssueReporter::IsSeverityEnabled(ECDbIssueSeverity severity) const
+    {
+    return m_issueListener != nullptr || LOG.isSeverityEnabled(ToLogSeverity(severity));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void IssueReporter::Report(ECDbIssueSeverity severity, Utf8CP message, ...) const
+    {
+    if (Utf8String::IsNullOrEmpty(message))
+        return;
+
+    const NativeLogging::SEVERITY logSeverity = ToLogSeverity(severity);
+    const bool isLogSeverityEnabled = LOG.isSeverityEnabled(logSeverity);
+
+    BeMutexHolder lock(m_mutex);
+
+    if (m_issueListener != nullptr || isLogSeverityEnabled)
+        {
+        va_list args;
+        va_start(args, message);
+
+        Utf8String formattedMessage;
+        formattedMessage.VSprintf(message, args);
+
+        if (m_issueListener != nullptr)
+            m_issueListener->ReportIssue(severity, formattedMessage.c_str());
+
+        if (isLogSeverityEnabled)
+            LOG.message(logSeverity, formattedMessage.c_str());
+
+        va_end(args);
+        }
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  12/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+void IssueReporter::ReportSqliteIssue(ECSqlStatus& mappedECSqlStatus, ECDbIssueSeverity sev, DbResult sqliteStat, Utf8CP messageHeader) const
+    {
+    mappedECSqlStatus = ToECSqlStatus(sqliteStat);
+
+    if (IsSeverityEnabled(sev))
+        {
+        BeAssert(mappedECSqlStatus != ECSqlStatus::Success && "ECSqlStatusContext::SetError should not be called in case of success.");
+        Report(sev, "%s %s: %s", Utf8String::IsNullOrEmpty(messageHeader) ? "SQLite error" : messageHeader,
+               ECDb::InterpretDbResult(sqliteStat), m_ecdb.GetLastError());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus IssueReporter::ToECSqlStatus(DbResult sqliteStatus)
+    {
+    if (BE_SQLITE_OK == sqliteStatus)
+        return ECSqlStatus::Success;
+
+    if (BE_SQLITE_CONSTRAINT_BASE == (sqliteStatus & BE_SQLITE_CONSTRAINT_BASE))
+        return ECSqlStatus::ConstraintViolation;
+
+    switch (sqliteStatus)
+        {
+            case BE_SQLITE_RANGE:
+                return ECSqlStatus::IndexOutOfBounds;
+
+                //These are considered programmer errors. We might refine this while seeing situations where a SQLite failure
+                //is not an internal programmer error
+            case BE_SQLITE_INTERNAL:
+            case BE_SQLITE_MISMATCH:
+            case BE_SQLITE_MISUSE:
+            case BE_SQLITE_NOLFS:
+            case BE_SQLITE_SCHEMA:
+                //these should never show up here as they are handled by the Step logic
+            case BE_SQLITE_DONE:
+            case BE_SQLITE_ROW:
+                return ECSqlStatus::ProgrammerError;
+
+            default:
+                return ECSqlStatus::InvalidECSql;
+        }
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

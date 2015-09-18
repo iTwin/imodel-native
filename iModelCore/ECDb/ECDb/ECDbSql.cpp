@@ -487,7 +487,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::CreateOrUpdate(ECDbR ecdb) const
         auto r = ecdb.ExecuteSql(sql.c_str());
         if (r != BE_SQLITE_OK)
             {
-            ecdb.GetECDbImplR().ReportIssue (ECDb::IssueSeverity::Error, "Failed to drop view '%s'", name);
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to drop view '%s'", name);
             return ERROR;
             }
 
@@ -558,7 +558,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Create(ECDbR ecdb) const
     auto sql = DDLGenerator::GetCreateTableDDL(m_table, DDLGenerator::CreateOption::Create);
     if (ecdb.ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
         {
-        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to create table %s: %s",
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create table %s: %s",
                                           m_table.GetName().c_str(), ecdb.GetLastError());
         return ERROR;
         }
@@ -577,7 +577,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::CreateTriggers(ECDbR ecdb, bool 
             {
             if (failIfExists)
                 {
-                ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Trigger %s already exists on table %s.", trigger->GetName().c_str(), m_table.GetName().c_str());
+                ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Trigger %s already exists on table %s.", trigger->GetName().c_str(), m_table.GetName().c_str());
                 return ERROR;
                 }
 
@@ -614,7 +614,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Drop(ECDbR ecdb) const
     Utf8String sql = DDLGenerator::GetDropTableDDL (m_table);
     if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
         {
-        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to drop table %s: %s",
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to drop table %s: %s",
                                           m_table.GetName().c_str(), ecdb.GetLastError());
         return ERROR;
         }
@@ -1315,7 +1315,7 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb) const
     auto sql = DDLGenerator::GetCreateIndexDDL(ecdb, GetIndex());
     if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
         {
-        ecdb.GetECDbImplR().ReportIssue (ECDb::IssueSeverity::Error, "Failed to create index %s on table %s. Error: %s", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str(),
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create index %s on table %s. Error: %s", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str(),
                    ecdb.GetLastError());
         BeAssert(false && "Failed to create index");
         return BentleyStatus::ERROR;
@@ -1332,7 +1332,7 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Drop(ECDbR ecdb) const
     Utf8String sql = DDLGenerator::GetDropIndexDDL (GetIndex ());
     if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
         {
-        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to drop index %s on table %s. Error: %s", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str(),
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to drop index %s on table %s. Error: %s", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str(),
                                           ecdb.GetLastError());
 
         BeAssert (false && "Failed to create index");
@@ -1444,7 +1444,7 @@ BentleyStatus DDLGenerator::CopyRows(ECDbR ecdb, Utf8CP sourceTable, bvector<Utf
     sql.Sprintf ("INSERT INTO [%s] (%s) SELECT %s FROM %s", targetTable, targetColumnList.c_str (), sourceColumnList.c_str (), sourceTable);
     if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
         {
-        ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to copy rows from %s to %s: Error message: %s",
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to copy rows from %s to %s: Error message: %s",
                                           sourceTable, targetTable, ecdb.GetLastError());
         return ERROR;
         }
@@ -1481,7 +1481,7 @@ BentleyStatus DDLGenerator::AddColumns(ECDbR ecdb, ECDbSqlTable const& table, st
         DbResult r = ecdb.ExecuteSql (alterDDL.c_str ());
         if (r != BE_SQLITE_OK)
             {
-            ecdb.GetECDbImplR().ReportIssue(ECDb::IssueSeverity::Error, "Failed to add new column (%s). Error message: %s", alterDDLTemplate.c_str(), ecdb.GetLastError ());
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to add new column (%s). Error message: %s", alterDDLTemplate.c_str(), ecdb.GetLastError ());
             return ERROR;
             }
         }

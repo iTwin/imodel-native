@@ -117,7 +117,7 @@ TEST(ECSqlRangeTreeTests, SimpleQuery)
         "rt.MinX>=-81.08 AND rt.MaxX <=-80.58 AND rt.MinY>=35.00 AND rt.MaxY<=35.44";
 
     ECSqlStatement stmt;
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql)) << stmt.GetLastStatusMessage();
+    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql));
 
     int rowCount = 0;
     while (stmt.Step() == ECSqlStepStatus::HasRow)
@@ -190,7 +190,7 @@ TEST(ECSqlRangeTreeTests, MatchQuery)
         "rt.ECInstanceId MATCH BBOX2D(-81.08,35.00,-80.58,35.44)";
 
     ECSqlStatement stmt;
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql)) << stmt.GetLastStatusMessage();
+    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql));
 
     int rowCount = 0;
     while (stmt.Step() == ECSqlStepStatus::HasRow)
@@ -222,7 +222,7 @@ TEST(ECSqlRangeTreeTests, MatchQueryWithParameters)
         "rt.ECInstanceId MATCH BBOX2D(?,?,?,?)";
 
     ECSqlStatement stmt;
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql)) << stmt.GetLastStatusMessage();
+    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql));
 
     stmt.BindDouble(1, -81.08);
     stmt.BindDouble(2, 35.00);

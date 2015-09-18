@@ -25,24 +25,30 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     ClassNameExp const* classNameExp = exp.GetClassNameExp ();
 
     Exp::SystemPropertyExpIndexMap const& specialTokenExpIndexMap = exp.GetAssignmentListExp()->GetSpecialTokenExpIndexMap();
-    if (!specialTokenExpIndexMap.IsUnset (ECSqlSystemProperty::ECInstanceId))
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "ECInstanceId is not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify auto-generated ECInstanceIds.");
+    if (!specialTokenExpIndexMap.IsUnset(ECSqlSystemProperty::ECInstanceId))
+        {
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECInstanceId is not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify auto-generated ECInstanceIds.");
+        return ECSqlStatus::InvalidECSql;
+        }
 
     IClassMap const& classMap = classNameExp->GetInfo ().GetMap ();
     if (classMap.IsRelationshipClassMap ())
         {
-        if (!specialTokenExpIndexMap.IsUnset (ECSqlSystemProperty::SourceECInstanceId) ||
-            !specialTokenExpIndexMap.IsUnset (ECSqlSystemProperty::SourceECClassId) ||
-            !specialTokenExpIndexMap.IsUnset (ECSqlSystemProperty::TargetECInstanceId) ||
-            !specialTokenExpIndexMap.IsUnset (ECSqlSystemProperty::TargetECClassId))
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "SourceECInstanceId, TargetECInstanceId, SourceECClassId, or TargetECClassId are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.");
+        if (!specialTokenExpIndexMap.IsUnset(ECSqlSystemProperty::SourceECInstanceId) ||
+            !specialTokenExpIndexMap.IsUnset(ECSqlSystemProperty::SourceECClassId) ||
+            !specialTokenExpIndexMap.IsUnset(ECSqlSystemProperty::TargetECInstanceId) ||
+            !specialTokenExpIndexMap.IsUnset(ECSqlSystemProperty::TargetECClassId))
+            {
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "SourceECInstanceId, TargetECInstanceId, SourceECClassId, or TargetECClassId are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.");
+            return ECSqlStatus::InvalidECSql;
+            }
         }
 
     NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR ();
     
     // UPDATE clause
     nativeSqlBuilder.Append ("UPDATE ");
-    auto status = ECSqlExpPreparer::PrepareClassRefExp (nativeSqlBuilder, ctx, classNameExp);
+    auto status = ECSqlExpPreparer::PrepareClassRefExp (nativeSqlBuilder, ctx, *classNameExp);
     if (status != ECSqlStatus::Success)
         return status;
 
@@ -150,7 +156,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
             if (stat != ECSqlStatus::Success)
                 {
                 BeAssert(false && "PrepareStepTask Failed for Struct");
-                return ctx.SetError(ECSqlStatus::ProgrammerError, "PrepareStepTask Failed for Struct ");
+                return ECSqlStatus::ProgrammerError;
                 }
 
             }
@@ -161,9 +167,8 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
             if (stat != ECSqlStatus::Success)
                 {
                 BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ECSqlStatus::ProgrammerError;
                 }
-
             }
 
         ecsqlParameterIndex++;
@@ -207,7 +212,10 @@ ECSqlStatus ECSqlUpdatePreparer::StructArrayPrepareStepTask(const AssignmentExp*
     if (status != ECSqlStepTaskCreateStatus::NothingToDo)
         {
         if (status != ECSqlStepTaskCreateStatus::Success)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Failed to create insert step tasks for struct array properties");
+            {
+            BeAssert(false && "SubqueryTest expression not supported.");
+            return ECSqlStatus::ProgrammerError;
+            }
         }
 
     if (stepTaskType == StepTaskType::Update)
@@ -216,7 +224,7 @@ ECSqlStatus ECSqlUpdatePreparer::StructArrayPrepareStepTask(const AssignmentExp*
         if (structArrayBinder == nullptr)
             {
             BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-            return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+            return ECSqlStatus::ProgrammerError;
             }
 
         auto& parameterValue = structArrayBinder->GetParameterValue();
@@ -241,7 +249,7 @@ ECSqlStatus ECSqlUpdatePreparer::StructPrepareStepTask(const AssignmentExp* assi
             if ((StructPrepareStepTask(assignementExp, classMap, *childPropertyMap, &propertyBinder, noneSelectPreparedStmt, ctx, exp)) != ECSqlStatus::Success)
                 {
                 BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ECSqlStatus::ProgrammerError;
                 }
             }
 
@@ -250,7 +258,7 @@ ECSqlStatus ECSqlUpdatePreparer::StructPrepareStepTask(const AssignmentExp* assi
             if (StructArrayPrepareStepTask(assignementExp, classMap, *childPropertyMap, &propertyBinder, noneSelectPreparedStmt, ctx, exp) != ECSqlStatus::Success)
                 {
                 BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ECSqlStatus::ProgrammerError;
                 }
             }
         }
@@ -300,8 +308,11 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp (NativeSqlBuilder::Lis
                 return stat;
                 }
 
-            if (sqlSnippetCount != rhsNativeSqlSnippets.size ())
-                return ctx.SetError (ECSqlStatus::ProgrammerError, "LHS and RHS SQLite SQL snippet count differs for the ECSQL UPDATE assignment '%s'", assignmentExp->ToECSql ().c_str ());
+            if (sqlSnippetCount != rhsNativeSqlSnippets.size())
+                {
+                BeAssert(false && "LHS and RHS SQLite SQL snippet count differs for the ECSQL UPDATE assignment");
+                return ECSqlStatus::ProgrammerError;
+                }
 
             for (size_t i = 0; i < sqlSnippetCount; i++)
                 {

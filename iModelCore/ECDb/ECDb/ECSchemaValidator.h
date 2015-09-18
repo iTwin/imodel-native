@@ -301,6 +301,7 @@ private:
         Regular,
         Abstract,
         Struct,
+        CustomAttribute,
         Relationship
         };
 

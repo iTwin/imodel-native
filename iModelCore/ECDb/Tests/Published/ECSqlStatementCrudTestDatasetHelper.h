@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlStatementCrudTestDatasetHelper.h $
+|     $Source: Tests/Published/ECSqlStatementCrudTestDatasetHelper.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,7 +30,7 @@ public:
     static ECSqlTestItem& AddStepFailingNonSelect (ECSqlTestDataset& dataset, Utf8CP ecsql, IECSqlExpectedResult::Category failureCategory, Utf8CP description = nullptr, bool rollbackAfterwards = false);
 
     //Helpers
-    static ECInstanceId InsertTestInstance (ECDbR ecdb, Utf8CP ecsql);
+    static ECInstanceId InsertTestInstance (ECDbTestProject&, Utf8CP ecsql);
     static ECN::ECClassId GetClassId (ECDbTestSchemaManager const& schemaManager, Utf8CP schemaName, Utf8CP className);
     };
 

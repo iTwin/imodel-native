@@ -15,7 +15,6 @@
 #include "ECSqlPrepareContext.h"
 #include "ECSqlField.h"
 #include "ECSqlBinder.h"
-#include "ECSqlStatusContext.h"
 #include "DynamicSelectClauseECClass.h"
 #include "ECSqlStepTask.h"
 
@@ -38,34 +37,28 @@ private:
     bool m_isNothingToUpdate;
     ECSqlParameterMap m_parameterMap;
     std::vector<ECN::ECSchemaPtr> m_keepAliveSchemas; //Hold on to dependent ECSchema just in case some process flush original ECSchema
-    ECSqlStatusContext& m_statusContext;
 
     virtual ECSqlStatus _Reset () = 0;
 
 protected:
-    ECSqlPreparedStatement (ECSqlType statementType, ECDbCR ecdb, ECSqlStatusContext& statusContext);
+    ECSqlPreparedStatement (ECSqlType statementType, ECDbCR ecdb);
 
     ECSqlStepStatus DoStep ();
     ECSqlStatus DoReset ();
 
     ECSqlParameterMap const& GetParameterMap () const { return m_parameterMap; }
-    ECSqlStatus ResetStatus () const;
-    ECSqlStatusContext& GetStatusContextR () const { return m_statusContext; }
-
     void PrepareBinders ();
 
     bool IsNoopInSqlite () const { return m_isNoopInSqlite; }
     bool IsNothingToUpdate() const { return m_isNothingToUpdate; }
 
+    IssueReporter const& GetIssueReporter() const { return m_ecdb->GetECDbImplR().GetIssueReporter(); }
+
 public:
     virtual ~ECSqlPreparedStatement () {}
 
-
-
     ECSqlType GetType () const { return m_type; }
-
     ECSqlStatus Prepare (ECSqlPrepareContext& prepareContext, ECSqlParseTreeCR ecsqlParseTree, Utf8CP ecsql);
-
     IECSqlBinder& GetBinder (int parameterIndex);
     int GetParameterIndex (Utf8CP parameterName) const;
 
@@ -100,10 +93,7 @@ private:
     ECSqlStatus InitFields () const;
 
 public:
-    ECSqlSelectPreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext)
-        : ECSqlPreparedStatement (ECSqlType::Select, ecdb, statusContext)
-        {}
-
+    explicit ECSqlSelectPreparedStatement (ECDbCR ecdb) : ECSqlPreparedStatement (ECSqlType::Select, ecdb) {}
     ~ECSqlSelectPreparedStatement () {}
 
     ECSqlStepStatus Step ();
@@ -128,10 +118,7 @@ private:
     ECSqlStepTask::Collection m_stepTasks;
 
 protected:
-    ECSqlNonSelectPreparedStatement (ECSqlType statementType, ECDbCR ecdb, ECSqlStatusContext& statusContext)
-        :ECSqlPreparedStatement (statementType, ecdb, statusContext), m_stepTasks ()
-        {}
-
+    ECSqlNonSelectPreparedStatement (ECSqlType statementType, ECDbCR ecdb) :ECSqlPreparedStatement (statementType, ecdb), m_stepTasks ()  {}
 
     virtual ECSqlStatus _Reset () override;
 
@@ -191,8 +178,7 @@ private:
   
 
 public:
-    ECSqlInsertPreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext);
-
+    explicit ECSqlInsertPreparedStatement (ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Insert, ecdb) {}
     ~ECSqlInsertPreparedStatement () {}
 
     ECSqlStepStatus Step (ECInstanceKey& instanceKey);
@@ -213,7 +199,7 @@ struct ECSqlUpdatePreparedStatement : public ECSqlNonSelectPreparedStatement
 private:
 
 public:
-    ECSqlUpdatePreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext);
+    explicit ECSqlUpdatePreparedStatement (ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Update, ecdb) {}
     ~ECSqlUpdatePreparedStatement () {}
 
     ECSqlStepStatus Step ();
@@ -227,11 +213,8 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECSqlDeletePreparedStatement : public ECSqlNonSelectPreparedStatement
     {
-private:
-   
-
 public:
-    ECSqlDeletePreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext);
+    explicit ECSqlDeletePreparedStatement (ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Delete, ecdb) {}
     ~ECSqlDeletePreparedStatement () {}
 
     ECSqlStepStatus Step ();

@@ -7,14 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-
-#include "ECSqlStatusContext.h"
 #include <ECDb/IECSqlBinder.h>
 #include "ECSqlParameterValue.h"
 #include <ECDb/ECInstanceId.h>
 #include <ECDb/ECSqlStatement.h>
-
-
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -65,13 +61,12 @@ public:
     struct Collection
         {
     private:
-;
         std::map<Utf8CP, std::unique_ptr<ECSqlStepTask>, CompareUtf8> m_stepTasks;
         std::unique_ptr<EmbeddedECSqlStatement> m_selector;
         ECSqlStepStatus Execute (ExecutionCategory category, ECInstanceId const& instanceId);
 
     public:
-        explicit Collection ();
+        Collection () {}
         virtual ~Collection (){}
         ECSqlStepStatus ExecuteBeforeStepTaskList ();
         ECSqlStepStatus ExecuteAfterStepTaskList (ECInstanceId const& instanceId);
@@ -85,23 +80,16 @@ public:
         bool HasAnyTask () const { return !m_stepTasks.empty (); }
         void Clear ();
         void ResetSelector ();
-
-
         };
 
 private:
     ExecutionCategory m_category;
-    ECSqlStatusContext& m_statusContext;
     Utf8String m_name;
 
     virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) = 0;
 
 protected:
-    ECSqlStepTask (ExecutionCategory category, ECSqlStatusContext& statusContext, Utf8CP name)
-        : m_category(category), m_statusContext(statusContext), m_name(name)
-        {}
-
-    ECSqlStatusContext& GetStatusContext () { return m_statusContext; }
+    ECSqlStepTask (ExecutionCategory category, Utf8CP name) : m_category(category), m_name(name) {}
 
 public:
     virtual ~ECSqlStepTask () {};
@@ -109,10 +97,7 @@ public:
     Utf8StringCR GetName () const { return m_name; }
     ExecutionCategory GetExecutionCategory () const { return m_category; }
 
-    ECSqlStepStatus Execute (ECInstanceId const& instanceId)
-        {
-        return _Execute (instanceId);
-        }
+    ECSqlStepStatus Execute (ECInstanceId const& instanceId) { return _Execute (instanceId); }
     };
 
 
@@ -149,10 +134,8 @@ private:
     IClassMap const& m_classMap;
 
 protected:
-    ECSqlPropertyStepTask (ExecutionCategory category, ECSqlStatusContext& statusContext, PropertyMapToTableCR property, IClassMap const& classMap)
-        :ECSqlStepTask (category, statusContext, property.GetPropertyAccessString ()), m_property (property), m_classMap (classMap)
-        {
-        }
+    ECSqlPropertyStepTask (ExecutionCategory category, PropertyMapToTableCR property, IClassMap const& classMap)
+        :ECSqlStepTask (category, property.GetPropertyAccessString ()), m_property (property), m_classMap (classMap) {}
 
 public:
     virtual ~ECSqlPropertyStepTask (){}
@@ -174,22 +157,14 @@ private:
     virtual ECSqlParameterValue* _GetParameter () = 0;
 
 protected:
-    ParametericStepTask (ExecutionCategory category, ECSqlStatusContext& statusContext, PropertyMapToTableCR property, IClassMap const& classMap)
-        :ECSqlPropertyStepTask (category, statusContext, property, classMap)
-        {}
+    ParametericStepTask (ExecutionCategory category, PropertyMapToTableCR property, IClassMap const& classMap)
+        :ECSqlPropertyStepTask (category, property, classMap) {}
 
 public:
     virtual ~ParametericStepTask (){}
 
-    void SetParameterSource (ECSqlParameterValue& parameterSource)
-        {
-        _SetParameterSource (parameterSource);
-        }
-
-    ECSqlParameterValue* GetParameter ()
-        {
-        return  _GetParameter ();
-        }
+    void SetParameterSource (ECSqlParameterValue& parameterSource) { _SetParameterSource (parameterSource); }
+    ECSqlParameterValue* GetParameter () { return  _GetParameter (); }
     };
 
 //=======================================================================================
@@ -209,17 +184,11 @@ private:
     ECSqlParameterValue* m_parameterValue;
     ECPropertyId m_propertyPathId;
 private:
-    InsertStructArrayStepTask (ECSqlStatusContext& statusContext, PropertyMapToTableCR property, IClassMap const& classMap);
+    InsertStructArrayStepTask (PropertyMapToTableCR property, IClassMap const& classMap);
     virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) override;
 
-    virtual void _SetParameterSource (ECSqlParameterValue& parameterSource) override
-        {
-        m_parameterValue = &parameterSource;
-        }
-    virtual ECSqlParameterValue* _GetParameter () override
-        {
-        return m_parameterValue;
-        }
+    virtual void _SetParameterSource (ECSqlParameterValue& parameterSource) override { m_parameterValue = &parameterSource; }
+    virtual ECSqlParameterValue* _GetParameter () override { return m_parameterValue; }
 
 public:
     virtual ~InsertStructArrayStepTask (){}
@@ -239,7 +208,7 @@ private:
     std::unique_ptr<EmbeddedECSqlStatement> m_deleteStmt;
 
 private:
-    DeleteStructArrayStepTask (ECSqlStatusContext& statusContext, PropertyMapToTableCR property, IClassMap const& classMap);
+    DeleteStructArrayStepTask (PropertyMapToTableCR property, IClassMap const& classMap);
     virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) override;
 
     public:
@@ -260,21 +229,14 @@ private:
     std::unique_ptr<DeleteStructArrayStepTask> m_deleteStepTask;
 
 private:
-    UpdateStructArrayStepTask (ECSqlStatusContext& statusContext, std::unique_ptr<InsertStructArrayStepTask>& insertStepTask, std::unique_ptr<DeleteStructArrayStepTask>& deleteStepTask);
+    UpdateStructArrayStepTask (std::unique_ptr<InsertStructArrayStepTask>& insertStepTask, std::unique_ptr<DeleteStructArrayStepTask>& deleteStepTask);
     virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) override;
-    virtual void _SetParameterSource (ECSqlParameterValue& parameterSource) override
-        {
-        m_insertStepTask->SetParameterSource (parameterSource);
-        }
-    virtual ECSqlParameterValue* _GetParameter () override
-        {
-        return m_insertStepTask->GetParameter ();
-        }
+    virtual void _SetParameterSource (ECSqlParameterValue& parameterSource) override { m_insertStepTask->SetParameterSource (parameterSource); }
+    virtual ECSqlParameterValue* _GetParameter () override { return m_insertStepTask->GetParameter (); }
 public:
     ~UpdateStructArrayStepTask (){};
 
     static ECSqlStepTaskCreateStatus Create (std::unique_ptr<UpdateStructArrayStepTask>& updateStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property);
     };
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

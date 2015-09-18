@@ -163,7 +163,7 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
         if (classExp->GetId ().EqualsI (classExpComparand->GetId ()))
             {
-            ctx.SetError(ECSqlStatus::InvalidECSql, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp->ToECSql ().c_str ());
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp->ToECSql ().c_str ());
             return FinalizeParseStatus::Error;
             }
         }
@@ -177,29 +177,29 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs) const
     {
     for(auto classRef : GetChildren ())
-        FindRangeClassRefs (classRefs, static_cast<ClassRefExp const*> (classRef));
+        FindRangeClassRefs (classRefs, *static_cast<ClassRefExp const*> (classRef));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const* classRef) const
+void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const& classRef) const
     {
-    switch(classRef->GetType())
+    switch(classRef.GetType())
         {
         case Type::ClassName:
         case Type::SubqueryRef:
-            classRefs.push_back(static_cast<RangeClassRefExp const*>(classRef)); break;
+            classRefs.push_back(static_cast<RangeClassRefExp const*>(&classRef)); break;
         case Type::QualifiedJoin:
         case Type::NaturalJoin:
         case Type::CrossJoin:
         case Type::RelationshipJoin:
             {
-            auto join = static_cast<JoinExp const*>(classRef);
-            FindRangeClassRefs(classRefs, join->GetFromClassRef());
-            FindRangeClassRefs(classRefs, join->GetToClassRef());
-            if (classRef->GetType() == Type::RelationshipJoin)
-                FindRangeClassRefs(classRefs, static_cast<RelationshipJoinExp const*>(join)->GetRelationshipClass());
+            JoinExp const& join = static_cast<JoinExp const&>(classRef);
+            FindRangeClassRefs(classRefs, join.GetFromClassRef());
+            FindRangeClassRefs(classRefs, join.GetToClassRef());
+            if (classRef.GetType() == Type::RelationshipJoin)
+                FindRangeClassRefs(classRefs, static_cast<RelationshipJoinExp const&>(join).GetRelationshipClass());
             break;
             }
         default:
@@ -210,12 +210,12 @@ void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus FromExp::TryAddClassRef(ECSqlParseContext&ctx, ClassRefExp* classRef)
+BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<ClassRefExp> classRefExp)
     {
-    if (classRef == nullptr)
+    if (classRefExp == nullptr)
         {
         BeAssert (false);
-        return ctx.SetError (ECSqlStatus::ProgrammerError, "classRef is not expected to be nullptr");
+        return ERROR;
         }
 
     RangeClassRefList existingRangeClassRefs;
@@ -223,17 +223,22 @@ ECSqlStatus FromExp::TryAddClassRef(ECSqlParseContext&ctx, ClassRefExp* classRef
 
     RangeClassRefList newRangeClassRefs;
 
-    FindRangeClassRefs (newRangeClassRefs, classRef);
+    FindRangeClassRefs (newRangeClassRefs, *classRefExp);
     for (auto newRangeCRef : newRangeClassRefs)
+        {
         for (auto existingRangeCRef : existingRangeClassRefs)
+            {
             if (existingRangeCRef->GetId().Equals(newRangeCRef->GetId()))
                 {
                 //e.g. SELECT * FROM FOO a, GOO a
-                return ctx.SetError (ECSqlStatus::InvalidECSql, "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef->GetId().c_str ());
+                ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef->GetId().c_str());
+                return ERROR;
                 }
+            }
+        }
 
-    AddChild (std::unique_ptr<ClassRefExp>(classRef));
-    return ECSqlStatus::Success;
+    AddChild (move(classRefExp));
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -323,7 +328,7 @@ Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, Fi
         ECSqlTypeInfo const& typeInfo = groupingValueExp->GetTypeInfo();
         if (expType == Exp::Type::Parameter || expType == Exp::Type::ConstantValue || !typeInfo.IsPrimitive() || typeInfo.IsPoint())
             {
-            ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid expression '%s' in GROUP BY: Parameters, constants, points, structs and arrays are not supported.", ToECSql().c_str());
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid expression '%s' in GROUP BY: Parameters, constants, points, structs and arrays are not supported.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -413,13 +418,13 @@ LimitOffsetExp::FinalizeParseStatus LimitOffsetExp::_FinalizeParsing(ECSqlParseC
                 {
                 if (!IsValidChildExp(*GetLimitExp()))
                     {
-                    ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                    ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
                     }
 
                 if (HasOffset() && !IsValidChildExp(*GetOffsetExp()))
                     {
-                    ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                    ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
                     }
 
@@ -508,7 +513,7 @@ OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing(ECSqlParseC
     auto const& typeInfo = GetSortExpression ()->GetTypeInfo ();
     if (!typeInfo.IsPrimitive () || typeInfo.IsPoint () || typeInfo.IsGeometry ())
         {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid expression '%s' in ORDER BY: Points, Geometries, structs and arrays are not supported.", ToECSql().c_str()); 
+        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid expression '%s' in ORDER BY: Points, Geometries, structs and arrays are not supported.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
@@ -565,7 +570,7 @@ void OrderBySpecExp::AppendSortDirection (Utf8String& str, bool addLeadingBlank)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlStatus SelectClauseExp::ReplaceAsteriskExpressions (ECSqlParseContext& ctx, RangeClassRefList const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions (RangeClassRefList const& rangeClassRefs)
     {
     vector<DerivedPropertyExp const*> propertyNameExpList;
     for(auto childExp : GetChildren())
@@ -580,8 +585,8 @@ ECSqlStatus SelectClauseExp::ReplaceAsteriskExpressions (ECSqlParseContext& ctx,
         PropertyNameExp const* innerExp = static_cast<PropertyNameExp const*>(propertyNameExp->GetExpression());
         if (Exp::IsAsteriskToken (innerExp->GetPropertyName ()))
             {
-            auto stat = ReplaceAsteriskExpression (ctx, *propertyNameExp, rangeClassRefs);
-            if (stat != ECSqlStatus::Success)
+            auto stat = ReplaceAsteriskExpression (*propertyNameExp, rangeClassRefs);
+            if (stat != SUCCESS)
                 return stat;
 
             continue;
@@ -601,8 +606,8 @@ ECSqlStatus SelectClauseExp::ReplaceAsteriskExpressions (ECSqlParseContext& ctx,
                     {
                     RangeClassRefList classRefList;
                     classRefList.push_back (classRef);
-                    auto stat = ReplaceAsteriskExpression (ctx, *propertyNameExp, classRefList);
-                    if (stat != ECSqlStatus::Success)
+                    auto stat = ReplaceAsteriskExpression (*propertyNameExp, classRefList);
+                    if (stat != SUCCESS)
                         return stat;
 
                     break;
@@ -611,13 +616,13 @@ ECSqlStatus SelectClauseExp::ReplaceAsteriskExpressions (ECSqlParseContext& ctx,
             }
         }
 
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlStatus SelectClauseExp::ReplaceAsteriskExpression (ECSqlParseContext& ctx, DerivedPropertyExp const& asteriskExp, RangeClassRefList const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpression (DerivedPropertyExp const& asteriskExp, RangeClassRefList const& rangeClassRefs)
     {
     vector<unique_ptr<Exp>> derivedPropExpList;
     auto addDelegate = [&derivedPropExpList] (unique_ptr<PropertyNameExp>& propNameExp)
@@ -626,15 +631,15 @@ ECSqlStatus SelectClauseExp::ReplaceAsteriskExpression (ECSqlParseContext& ctx, 
         };
 
     for (auto classRef : rangeClassRefs)
-        classRef->CreatePropertyNameExpList (ctx, addDelegate);
+        classRef->CreatePropertyNameExpList (addDelegate);
 
     if (!GetChildrenR ().Replace (asteriskExp, derivedPropExpList))
         {
         BeAssert (false && "SelectClauseExp::ReplaceAsteriskExpression did not find an asterisk expression unexpectedly.");
-        return ECSqlStatus::ProgrammerError;
+        return ERROR;
         }
 
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -648,10 +653,10 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
         BeAssert (finalizeParseArgs != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
         RangeClassRefList const* rangeClassRefList = static_cast<RangeClassRefList const*> (finalizeParseArgs);
         BeAssert (rangeClassRefList != nullptr);
-        const auto stat = ReplaceAsteriskExpressions (ctx, *rangeClassRefList);
-        if (stat != ECSqlStatus::Success)
+        const auto stat = ReplaceAsteriskExpressions (*rangeClassRefList);
+        if (stat != SUCCESS)
             {
-            ctx.SetError (stat, "Asterisk replacement in select clause failed unexpectedly.");
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Asterisk replacement in select clause failed unexpectedly.");
             return FinalizeParseStatus::Error;
             }
         }
@@ -816,10 +821,21 @@ Utf8String SubqueryExp::_ToECSql() const
 
 
 //****************************** SubqueryRefExp *****************************************
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus SubqueryRefExp::_CreatePropertyNameExpList (ECSqlParseContext& ctx, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const 
+SubqueryRefExp::SubqueryRefExp(unique_ptr<SubqueryExp> subquery, Utf8StringCR alias, bool isPolymorphic)
+    : RangeClassRefExp(isPolymorphic)
+    {
+    SetAlias(alias);
+    AddChild(move(subquery));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SubqueryRefExp::_CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const 
     {
     for(auto expr : GetSubquery ()->GetSelection()->GetChildren ())
         {
@@ -829,7 +845,26 @@ ECSqlStatus SubqueryRefExp::_CreatePropertyNameExpList (ECSqlParseContext& ctx, 
         addDelegate (propertyNameExp);
         }
 
-    return ECSqlStatus::Success;
+    return SUCCESS;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SubqueryRefExp::_ToECSql() const
+    {
+    return  (!IsPolymorphic() ? "ONLY " : "") + GetSubquery()->ToString() + (GetAlias().empty() ? "" : " AS " + GetAlias());
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String SubqueryRefExp::_ToString() const
+    {
+    Utf8String str("SubqueryRef [");
+    str.append(GetId().c_str()).append("]");
+    return str;
     }
 
 
@@ -886,7 +921,7 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
 
     if (selectClauseExp->GetChildren ().size() != 1)
         {
-        ctx.SetError(ECSqlStatus::InvalidECSql, "Subquery must return exactly one column %s.", ToECSql().c_str());
+        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Subquery must return exactly one column %s.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 

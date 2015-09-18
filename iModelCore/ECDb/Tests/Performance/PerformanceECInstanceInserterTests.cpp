@@ -260,7 +260,7 @@ private:
                 const uint64_t jdHns = DateTime::CommonEraTicksToJulianDay(ceTicks);
 
                 DateTime::Info const* actualMetadata = hasMetadata ? &metadata : nullptr;
-                ecsqlStat = Backdoor::ECDb::ECSqlStatement::BindDateTime(stmt, parameterIndex, jdHns, actualMetadata);
+                ecsqlStat = stmt.GetBinder(parameterIndex).BindDateTime(jdHns, actualMetadata);
                 break;
             }
 
