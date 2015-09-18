@@ -1396,13 +1396,13 @@ struct DgnElements : DgnDbTable
     };
 
 private:
-    DgnElementId                m_highestElementId;
-    struct ElemIdTree*          m_tree;
-    HeapZone                    m_heapZone;
-    BeSQLite::StatementCache    m_stmts;
-    BeSQLite::SnappyFromBlob    m_snappyFrom;
-    BeSQLite::SnappyToBlob      m_snappyTo;
-    DgnElementIdSet             m_selectionSet;
+    DgnElementId  m_nextAvailableId;
+    struct ElemIdTree* m_tree;
+    HeapZone m_heapZone;
+    BeSQLite::StatementCache m_stmts;
+    BeSQLite::SnappyFromBlob m_snappyFrom;
+    BeSQLite::SnappyToBlob m_snappyTo;
+    DgnElementIdSet m_selectionSet;
     mutable BeSQLite::BeDbMutex m_mutex;
 
     void OnReclaimed(DgnElementCR);
@@ -1414,8 +1414,7 @@ private:
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
-    bool IsElementIdUsed(DgnElementId id) const;
-    DgnElementId MakeNewElementId();
+    DgnElementId GetNextId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
     DgnDbStatus PerformDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);

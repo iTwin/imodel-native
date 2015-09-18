@@ -1141,20 +1141,11 @@ DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnElements::IsElementIdUsed(DgnElementId id) const
+DgnElementId DgnElements::GetNextId()
     {
-    CachedStatementPtr stmt = GetStatement("SELECT 1 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-    stmt->BindInt64(1, id.GetValueUnchecked());
-    return BE_SQLITE_ROW == stmt->Step();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::MakeNewElementId()
-    {
-    m_highestElementId.SetNextAvailable(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Element), "Id");
-    return m_highestElementId;
+    DgnElementId id = m_nextAvailableId;
+    m_nextAvailableId.ToNextAvailable(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Element), "Id");
+    return id;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1162,7 +1153,7 @@ DgnElementId DgnElements::MakeNewElementId()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
     {
-    element.m_elementId = MakeNewElementId(); 
+    element.m_elementId = GetNextId(); 
 
     if (DgnDbStatus::Success != (stat = element._OnInsert()))
         return nullptr;

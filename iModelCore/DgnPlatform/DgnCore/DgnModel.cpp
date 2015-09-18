@@ -756,7 +756,7 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
         return DgnDbStatus::DuplicateName;
 
     m_modelId.Invalidate();
-    m_modelId.SetNextAvailable(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
+    m_modelId.ToNextAvailable(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
     Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Visibility,Space) VALUES(?,?,?,?,?,?,?)");
     stmt.BindId(1, m_modelId);
