@@ -132,8 +132,8 @@ DRange2d DgnTrueTypeGlyph::_GetExactRange() const
 // WinGDI.h
 struct FIXED
 {
-    unsigned short fract;
-    short value;
+    uint16_t fract;
+    int16_t value;
 };
     
 // WinGDI.h
@@ -146,16 +146,16 @@ struct POINTFX
 // WinGDI.h
 struct TTPOLYGONHEADER
 {
-    unsigned long cb;
-    unsigned long dwType;
+    uint32_t cb;
+    uint32_t dwType;
     POINTFX pfxStart;
 };
 
 // WinGDI.h
 struct TTPOLYCURVE
 {
-    unsigned short wType;
-    unsigned short cpfx;
+    uint16_t wType;
+    uint16_t cpfx;
     POINTFX apfx[1];
 };
     
