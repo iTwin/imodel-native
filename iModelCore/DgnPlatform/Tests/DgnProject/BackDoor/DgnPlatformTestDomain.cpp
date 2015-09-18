@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
-#include <UnitTests/BackDoor/DgnProject/DgnPlatformTestDomain.h>
+#include "PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include <DgnPlatform/DgnCore/GeomPart.h>
 #include <DgnPlatform/DgnCore/ElementGeometry.h>
 

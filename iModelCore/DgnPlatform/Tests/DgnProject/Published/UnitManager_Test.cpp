@@ -2,12 +2,12 @@
 |
 |  $Source: Tests/DgnProject/Published/UnitManager_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTest.h>
-#include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
+#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
