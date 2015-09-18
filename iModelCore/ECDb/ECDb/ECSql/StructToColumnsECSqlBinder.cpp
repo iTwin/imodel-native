@@ -113,8 +113,8 @@ ECSqlStatus StructToColumnsECSqlBinder::_BindNull ()
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveBinder& StructToColumnsECSqlBinder::_BindPrimitive ()
     {
-    const auto stat = GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind primitive value to ECStruct parameter.");
-    return GetNoopBinder (stat).BindPrimitive ();
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to ECStruct parameter.");
+    return GetNoopBinder (ECSqlStatus::UserError).BindPrimitive ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -122,7 +122,6 @@ IECSqlPrimitiveBinder& StructToColumnsECSqlBinder::_BindPrimitive ()
 //---------------------------------------------------------------------------------------
 IECSqlStructBinder& StructToColumnsECSqlBinder::_BindStruct ()
     {
-    ResetStatus ();
     return *this;
     }
 
@@ -131,8 +130,8 @@ IECSqlStructBinder& StructToColumnsECSqlBinder::_BindStruct ()
 //---------------------------------------------------------------------------------------
 IECSqlArrayBinder& StructToColumnsECSqlBinder::_BindArray (uint32_t initialCapacity)
     {
-    const auto stat = GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind array to ECStruct parameter.");
-    return GetNoopBinder (stat).BindArray (initialCapacity);
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to ECStruct parameter.");
+    return GetNoopBinder (ECSqlStatus::UserError).BindArray (initialCapacity);
     }
 
 //---------------------------------------------------------------------------------------
@@ -143,9 +142,9 @@ IECSqlBinder& StructToColumnsECSqlBinder::_GetMember (Utf8CP structMemberPropert
     auto memberProp = GetTypeInfo ().GetStructType ().GetPropertyP (structMemberPropertyName, true);
     if (memberProp == nullptr)
         {
-        const auto stat = GetStatusContext ().SetError (ECSqlStatus::UserError, "Cannot bind to struct member. Member %s does not exist.", Utf8String (structMemberPropertyName).c_str ());
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot bind to struct member. Member %s does not exist.", structMemberPropertyName);
         BeAssert (false);
-        return GetNoopBinder (stat);
+        return GetNoopBinder (ECSqlStatus::UserError);
         }
 
     return _GetMember (memberProp->GetId ());
@@ -169,14 +168,11 @@ IECSqlBinder& StructToColumnsECSqlBinder::_GetMember (ECN::ECPropertyId structMe
                 }
             }
 
-        const auto stat = GetStatusContext ().SetError (ECSqlStatus::UserError, "Cannot bind to struct member. Member %s does not exist.", Utf8String (structMemberPropertyName).c_str ());
-        return GetNoopBinder (stat);
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot bind to struct member. Member %s does not exist.", structMemberPropertyName);
+        return GetNoopBinder (ECSqlStatus::UserError);
         }
     else
-        {
-        ResetStatus ();
         return *it->second;
-        }
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

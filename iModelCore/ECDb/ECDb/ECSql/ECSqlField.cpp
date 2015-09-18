@@ -12,7 +12,6 @@ using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
@@ -30,15 +29,15 @@ ECSqlField::ECSqlField (ECSqlStatementBase& owner, ECSqlColumnInfo&& ecsqlColumn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::Init (ECSqlStatusContext& statusContext) 
+ECSqlStatus ECSqlField::Init () 
     {
-    auto stat = _Init (statusContext);
+    auto stat = _Init ();
     if (stat != ECSqlStatus::Success)
         return stat;
 
     for (unique_ptr<ECSqlField> const& child : GetChildren ())
         {
-        stat = child->Init (statusContext);
+        stat = child->Init ();
         if (stat != ECSqlStatus::Success)
             return stat;
         }
@@ -49,7 +48,7 @@ ECSqlStatus ECSqlField::Init (ECSqlStatusContext& statusContext)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::_Init (ECSqlStatusContext& statusContext) 
+ECSqlStatus ECSqlField::_Init () 
     {
     return ECSqlStatus::Success;
     }
@@ -59,22 +58,21 @@ ECSqlStatus ECSqlField::_Init (ECSqlStatusContext& statusContext)
 //---------------------------------------------------------------------------------------
 ECSqlColumnInfoCR ECSqlField::_GetColumnInfo () const
     {
-    ResetStatus ();
     return m_ecsqlColumnInfo;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::Reset (ECSqlStatusContext& statusContext) 
+ECSqlStatus ECSqlField::Reset () 
     {
-    auto stat = _Reset (statusContext);
+    auto stat = _Reset ();
     if (stat != ECSqlStatus::Success)
         return stat;
 
     for (unique_ptr<ECSqlField> const& child : GetChildren ())
         {
-        stat = child->Reset (statusContext);
+        stat = child->Reset ();
         if (stat != ECSqlStatus::Success)
             return stat;
         }
@@ -84,8 +82,8 @@ ECSqlStatus ECSqlField::Reset (ECSqlStatusContext& statusContext)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
-//----------------------y-----------------------------------------------------------------
-ECSqlStatus ECSqlField::_Reset (ECSqlStatusContext& statusContext) 
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlField::_Reset () 
     {
     return ECSqlStatus::Success;
     }
@@ -110,27 +108,14 @@ Statement& ECSqlField::GetSqliteStatement () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlField::SetError (ECSqlStatus status, Utf8CP errorMessage) const
+ECSqlStatus ECSqlField::ReportError (ECSqlStatus status, Utf8CP errorMessage) const
     {
-    return GetStatusContextR ().SetError (status, errorMessage);
-    }
+    ECDbCP ecdb = m_ecsqlStatement.GetECDb();
+    if (ecdb != nullptr)
+        ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, errorMessage);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-void ECSqlField::ResetStatus () const
-    {
-    GetStatusContextR ().Reset ();
+    return status;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatusContext& ECSqlField::GetStatusContextR () const
-    {
-    return GetECSqlStatementR ().GetStatusContextR ();
-    }
-
 
 
 //****************** ECSqlPrimitiveBinder ***************************

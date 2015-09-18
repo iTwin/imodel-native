@@ -80,7 +80,6 @@ ECSqlTypeInfo const& typeInfo
 
                     default:
                         BeAssert (false && "Could not create parameter mapping for the given parameter exp.");
-                        ecsqlStatement.GetStatusContextR ().SetError (ECSqlStatus::ProgrammerError, "Could not create parameter mapping for the given parameter exp.");
                         return nullptr;
                 }
             break;

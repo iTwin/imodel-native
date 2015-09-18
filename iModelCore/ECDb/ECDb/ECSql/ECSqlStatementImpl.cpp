@@ -20,21 +20,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullptr;
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                             Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatement::Impl::Impl ()
-: ECSqlStatementBase ()
-    {
-    Initialize (m_currentStatusContext);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                             Krischan.Eberle      10/2013
-//---------------------------------------------------------------------------------------
-ECSqlStatement::Impl::~Impl ()
-    {}
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatement::Impl::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
@@ -48,10 +33,6 @@ ECSqlStatus ECSqlStatement::Impl::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
 //---------------------------------------------------------------------------------------
 ECSqlPrepareContext ECSqlStatement::Impl::_InitializePrepare (ECDbCR ecdb, Utf8CP ecsql)
     {
-    //re-establish a status context with the ECSQL string, so that the ECSQL gets output in error messages, too.
-    m_currentStatusContext = ECSqlStatusContext (ecsql);
-    BeAssert (GetStatusContextR ().IsSuccess ());
-
     return ECSqlPrepareContext(ecdb, *this);
     }
 

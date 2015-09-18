@@ -170,9 +170,6 @@
     <ClInclude Include="ECSql\ECSqlStatementNoopImpls.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\ECSqlParseContext.h">
-      <Filter>ECSql\ECSqlParser</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\ComputedExp.h">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClInclude>
@@ -208,9 +205,6 @@
     </ClInclude>
     <ClInclude Include="ECDbSystemSchemaHelper.h">
       <Filter>ECDbProfile</Filter>
-    </ClInclude>
-    <ClInclude Include="ECSql\ECSqlStatusContext.h">
-      <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\ECSqlStatementBase.h">
       <Filter>ECSql\ECSqlStatement</Filter>
@@ -345,9 +339,6 @@
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
-    </ClInclude>
-    <ClInclude Include="ECSql\ECSqlEventManager.h">
-      <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\JsonReaderImpl.h">
       <Filter>ECSql\Adapters</Filter>
@@ -548,9 +539,6 @@
     <ClCompile Include="ECSql\ECSqlStatementNoopImpls.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\ECSqlParseContext.cpp">
-      <Filter>ECSql\ECSqlParser</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\ComputedExp.cpp">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClCompile>
@@ -592,9 +580,6 @@
     </ClCompile>
     <ClCompile Include="ECDbSystemSchemaHelper.cpp">
       <Filter>ECDbProfile</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECSqlStatusContext.cpp">
-      <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlFieldFactory.cpp">
       <Filter>ECSql\Fields</Filter>
@@ -744,9 +729,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\ECJsonUtility.cpp">
       <Filter>ECSql\Adapters</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECSqlEventManager.cpp">
-      <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECInstanceAdapterHelper.cpp">
       <Filter>ECSql\Adapters</Filter>

@@ -611,7 +611,10 @@ ConsistentClassHierarchyRule::ClassKind ConsistentClassHierarchyRule::DetermineC
     if (ecclass.GetIsStruct())
         return ClassKind::Struct;
 
-    if (!ecclass.GetIsDomainClass() && !ecclass.GetIsCustomAttributeClass())
+    if (ecclass.GetIsCustomAttributeClass())
+        return ClassKind::CustomAttribute;
+
+    if (!ecclass.GetIsDomainClass())
         return ClassKind::Abstract;
 
     return ClassKind::Regular;
@@ -669,6 +672,10 @@ Utf8String ConsistentClassHierarchyRule::Error::InvalidClass::ToString() const
 
             case ClassKind::Struct:
                 kindStr = "Struct";
+                break;
+
+            case ClassKind::CustomAttribute:
+                kindStr = "CustomAttribute";
                 break;
 
             case ClassKind::Relationship:

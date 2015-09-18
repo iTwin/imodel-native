@@ -113,7 +113,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareStepTask(ECSqlPrepareContext& ctx, Inser
         if (ecsqlParameterMap.TryGetBinder(binder, ecsqlParameterIndex) != ECSqlStatus::Success)
             {
             BeAssert(false && "Failed to find binder for given value expression");
-            return ctx.SetError(ECSqlStatus::ProgrammerError, "Failed to find binder for given value expression PROPERTY=%s BINDER_INDEX=%d", propNameExp->GetPropertyName(), ecsqlParameterIndex);
+            return ECSqlStatus::ProgrammerError;
             }
 
         if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Struct)
@@ -138,7 +138,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareStepTask(ECSqlPrepareContext& ctx, Inser
             else
                 {
                 BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ECSqlStatus::ProgrammerError;
                 }
             }
 
@@ -162,7 +162,7 @@ ECSqlStatus ECSqlInsertPreparer::SetupBindStructParameter(ECSqlBinder* binder, P
             if (SetupBindStructParameter(&propertyBinder, *childPropertyMap, noneSelectPreparedStmt, ctx, exp) != ECSqlStatus::Success)
                 {
                 BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ECSqlStatus::ProgrammerError;
                 }
             }
 
@@ -172,13 +172,13 @@ ECSqlStatus ECSqlInsertPreparer::SetupBindStructParameter(ECSqlBinder* binder, P
             if (structArrayBinder == nullptr)
                 {
                 BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ECSqlStatus::ProgrammerError;
                 }
 
             if (SetupBindStructArrayParameter(structArrayBinder, *childPropertyMap, noneSelectPreparedStmt, ctx, exp) != ECSqlStatus::Success)
                 {
                 BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ECSqlStatus::ProgrammerError;
                 }
             }
         }
@@ -199,7 +199,10 @@ ECSqlStatus ECSqlInsertPreparer::SetupBindStructArrayParameter(StructArrayToSeco
     if (status != ECSqlStepTaskCreateStatus::NothingToDo)
         {
         if (status != ECSqlStepTaskCreateStatus::Success)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Failed to create insert step tasks for struct array properties");
+            {
+            BeAssert(false && "Failed to create insert step tasks for struct array properties");
+            return ECSqlStatus::ProgrammerError;
+            }
         }
 
     auto& parameterValue = structArrayBinder->GetParameterValue();
@@ -241,7 +244,10 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
 
     auto const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
     if (specialTokenMap.IsUnset(ECSqlSystemProperty::SourceECInstanceId) || specialTokenMap.IsUnset(ECSqlSystemProperty::TargetECInstanceId))
-        return ctx.SetError(ECSqlStatus::InvalidECSql, "In an ECSQL INSERT statement against an ECRelationship class SourceECInstanceId and TargetECInstanceId must always be specified.");
+        {
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "In an ECSQL INSERT statement against an ECRelationship class SourceECInstanceId and TargetECInstanceId must always be specified.");
+        return ECSqlStatus::InvalidECSql;
+        }
 
     //Validate and if need be determine SourceECClassId and TargetECClassId
     ECClassId sourceECClassId = ECClass::UNSET_ECCLASSID; //remains unset if is parametrized
@@ -320,7 +326,10 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
 
         auto const& ecinstanceIdValueSnippets = nativeSqlSnippets.m_valuesNativeSqlSnippets[thisEndECInstanceIdIndexUnsigned];
         if (ecinstanceIdValueSnippets.size() != 1)
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not supported.");
+            {
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported.");
+            return ECSqlStatus::InvalidECSql;
+            }
 
         nativeSqlSnippets.m_pkValuesNativeSqlSnippets.insert(nativeSqlSnippets.m_pkValuesNativeSqlSnippets.end(), ecinstanceIdValueSnippets.begin(), ecinstanceIdValueSnippets.end());
         expIndexSkipList.push_back(thisEndECInstanceIdIndexUnsigned);
@@ -336,7 +345,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
             if (stat != ECSqlStatus::Success)
                 {
                 BeAssert(false && "Could not find this end constraint ECInstanceId parameter binder.");
-                return ctx.SetError(ECSqlStatus::ProgrammerError, "Could not find this end constraint  ECInstanceId parameter binder.");
+                return ECSqlStatus::ProgrammerError;
                 }
 
             BeAssert(thisEndECInstanceIdBinder != nullptr);
@@ -352,7 +361,10 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
             Utf8CP ecinstanceidStr = ecinstanceIdValueSnippet.ToString();
             ECInstanceId id;
             if (!ECInstanceIdHelper::FromString(id, ecinstanceidStr))
-                return ctx.SetError(ECSqlStatus::InvalidECSql, "'%s' is an invalid ECInstanceId value.", ecinstanceidStr);
+                {
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "'%s' is an invalid ECInstanceId value.", ecinstanceidStr);
+                return ECSqlStatus::InvalidECSql;
+                }
 
             BeAssert(id.IsValid());
             preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, id));
@@ -405,7 +417,7 @@ InsertStatementExp const& exp,
 IClassMap const& classMap
 )
     {
-    auto status = ECSqlExpPreparer::PrepareClassRefExp(insertSqlSnippets.m_classNameNativeSqlSnippet, ctx, exp.GetClassNameExp());
+    auto status = ECSqlExpPreparer::PrepareClassRefExp(insertSqlSnippets.m_classNameNativeSqlSnippet, ctx, *exp.GetClassNameExp());
     if (status != ECSqlStatus::Success)
         return status;
 
@@ -421,14 +433,13 @@ IClassMap const& classMap
     if (insertSqlSnippets.m_propertyNamesNativeSqlSnippets.size() != insertSqlSnippets.m_valuesNativeSqlSnippets.size())
         {
         BeAssert(false && "Error preparing insert statement. Number of property name items does not match number of value items. This should have been caught by parser already.");
-        return ctx.SetError(ECSqlStatus::ProgrammerError, "Error preparing insert statement. Number of property name items does not match number of value items. This should have been caught by parser already.");
+        return ECSqlStatus::ProgrammerError;
         }
 
     insertSqlSnippets.m_ecinstanceIdMode = ValidateUserProvidedECInstanceId(insertSqlSnippets.m_ecinstanceIdExpIndex, ctx, exp, classMap);
-    if (!ctx.IsSuccess())
-        return ctx.GetStatus();
+    if (insertSqlSnippets.m_ecinstanceIdMode == ECInstanceIdMode::Invalid)
+        return ECSqlStatus::InvalidECSql;
 
-    BeAssert(insertSqlSnippets.m_ecinstanceIdMode != ECInstanceIdMode::Invalid);
     return ECSqlStatus::Success;
     }
 
@@ -457,7 +468,6 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             PropertyMapCP ecInstanceIdPropMap = nullptr;
             if (!classMap.GetPropertyMaps().TryGetPropertyMap(ecInstanceIdPropMap, PropertyMapECInstanceId::PROPERTYACCESSSTRING))
                 {
-                ctx.SetError(ECSqlStatus::ProgrammerError, "ECInstanceId property map is always expected to exist for domain classes.");
                 BeAssert(false && "ECInstanceId property map is always expected to exist for domain classes.");
                 return;
                 }
@@ -482,7 +492,6 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         auto ecinstanceidBinder = preparedECSqlStatement->GetParameterMapR ().AddInternalBinder(ecinstanceidBinderIndex, ecsqlStmt, ECSqlTypeInfo(PRIMITIVETYPE_Long));
         if (ecinstanceidBinder == nullptr)
             {
-            ctx.SetError(ECSqlStatus::ProgrammerError, "Failed to create internal ECInstanceId parameter binder.");
             BeAssert(false && "Failed to create internal ECInstanceId parameter binder.");
             return;
             }
@@ -544,8 +553,11 @@ ECN::ECRelationshipEnd constraintEnd
 
         //retrievedConstraintClassId < 0 means user specified parameter for it
         if (!isParameter && !constraintMap.ClassIdMatchesConstraint(retrievedConstraintClassId))
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid value %lld for property %s. None of the respective constraint's ECClasses match that ECClassId.", 
-                            retrievedConstraintClassId, constraintClassIdPropName.c_str());
+            {
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid value %lld for property %s. None of the respective constraint's ECClasses match that ECClassId.",
+                                                     retrievedConstraintClassId, constraintClassIdPropName.c_str());
+            return ECSqlStatus::InvalidECSql;
+            }
 
         return ECSqlStatus::Success;
         }
@@ -558,8 +570,11 @@ ECN::ECRelationshipEnd constraintEnd
 
     //user did not specify constraint class id in ECSQL -> try to find it which checks whether user should have specified one (because of ambiguity)
     if (!constraintMap.TryGetSingleClassIdFromConstraint(retrievedConstraintClassId))
-        return ctx.SetError(ECSqlStatus::InvalidECSql, "%s can only be omitted from an ECSQL INSERT statement if the constraint consists of only one ECClass (counting subclasses, too, in case of polymorphic constraints) and that ECClass is not 'AnyClass'.", 
-                            constraintClassIdPropName.c_str());
+        {
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "%s can only be omitted from an ECSQL INSERT statement if the constraint consists of only one ECClass (counting subclasses, too, in case of polymorphic constraints) and that ECClass is not 'AnyClass'.",
+                                                 constraintClassIdPropName.c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
  
     return ECSqlStatus::Success;
     }
@@ -590,7 +605,10 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
         auto constraintECClassIdConstantValueExp = static_cast<ConstantValueExp const*> (constraintECClassIdValueExp);
         auto const& typeInfo = constraintECClassIdConstantValueExp->GetTypeInfo();
         if (!typeInfo.IsExactNumeric())
-            return ctx.SetError(ECSqlStatus::InvalidECSql, "Value of %s must be an integral number (which is not NULL).", constraintClassIdPropertyName);
+            {
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Value of %s must be an integral number (which is not NULL).", constraintClassIdPropertyName);
+            return ECSqlStatus::InvalidECSql;
+            }
 
         constraintClassId = constraintECClassIdConstantValueExp->GetValueAsInt64();
         isParameter = false;
@@ -604,7 +622,8 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
         }
 
 
-    return ctx.SetError(ECSqlStatus::InvalidECSql, "In an ECSQL INSERT statement only literal values or parameters are allowed for the %s property.", constraintClassIdPropertyName);
+    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "In an ECSQL INSERT statement only literal values or parameters are allowed for the %s property.", constraintClassIdPropertyName);
+    return ECSqlStatus::InvalidECSql;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -762,7 +781,6 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
         auto stat = preparedStatement->GetParameterMapR ().TryGetBinder(ecinstanceidBinder, paramExp->GetParameterIndex());
         if (stat != ECSqlStatus::Success)
             {
-            ctx.SetError(ECSqlStatus::ProgrammerError, "Could not find ECInstanceId parameter binder.");
             BeAssert(false && "Could not find ECInstanceId parameter binder.");
             return ECInstanceIdMode::Invalid;
             }
@@ -790,7 +808,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
         }
     else
         {
-        ctx.SetError(ECSqlStatus::InvalidECSql, "ECInstanceId in an ECSQL INSERT statement can only be NULL, a literal or a parameter.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECInstanceId in an ECSQL INSERT statement can only be NULL, a literal or a parameter.");
         return ECInstanceIdMode::Invalid;
         }
 

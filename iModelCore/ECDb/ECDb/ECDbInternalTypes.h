@@ -33,6 +33,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define LOG (ECDbLogger::Get())
 
+
 //=======================================================================================
 //! ECSQL statement types
 // @bsienum                                                Krischan.Eberle      12/2013

@@ -17,6 +17,16 @@ struct ECDbSchemaManager;
 struct ECSqlScalarFunction;
 
 //=======================================================================================
+//! Severity of an ECDb issue
+// @bsiclass                                                Krischan.Eberle      09/2015
+//+===============+===============+===============+===============+===============+======
+enum class ECDbIssueSeverity
+    {
+    Warning, //!< Warning
+    Error //!< Error
+    };
+
+//=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
 //! 
 //! It is used to create, open, close @ref ECDbFile "ECDb files" (see ECDb::CreateNewDb, ECDb::OpenBeSQLiteDb,
@@ -32,16 +42,6 @@ public:
     struct Impl;
 
     //=======================================================================================
-    //! Severity of an ECDb issue
-    // @bsiclass                                                Krischan.Eberle      09/2015
-    //+===============+===============+===============+===============+===============+======
-    enum class IssueSeverity
-        {
-        Warning, //!< Warning
-        Error //!< Error
-        };
-
-    //=======================================================================================
     //! Allows clients to be notified of error or warning messages.
     //! @remarks ECDb cares for logging any error and warnings sent to listeners via BentleyApi::NativeLogging. 
     //! So implementors
@@ -54,7 +54,7 @@ public:
         //! Fired by ECDb whenever an issue occurred during the schema import.
         //! @param[in] severity Issue severity
         //! @param[in] message Issue message
-        virtual void _OnIssueReported(IssueSeverity severity, Utf8CP message) const = 0;
+        virtual void _OnIssueReported(ECDbIssueSeverity severity, Utf8CP message) const = 0;
 
     protected:
         IIssueListener() {}
@@ -66,7 +66,7 @@ public:
         //! Called by ECDb to report an issue to clients.
         //! @param[in] severity Issue severity
         //! @param[in] message Issue message
-        void ReportIssue(IssueSeverity severity, Utf8CP message) const;
+        void ReportIssue(ECDbIssueSeverity severity, Utf8CP message) const;
 #endif
         };
 

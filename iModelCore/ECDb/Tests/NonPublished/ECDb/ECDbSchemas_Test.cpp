@@ -532,15 +532,10 @@ TEST(ECDbSchemas, LoadECSchemas)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                       10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AssertParseECSql (Utf8CP ecsql)
+void AssertParseECSql (ECDbCR ecdb, Utf8CP ecsql)
     {
-    Utf8String parseTree, error;
-    ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree (parseTree, error, ecsql);
-    if (!error.empty())
-        {
-        ASSERT_TRUE(FALSE) << "Failed to parse ECSQL:" << error;
-        return;
-        }
+    Utf8String parseTree;
+    ASSERT_EQ(SUCCESS, ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(parseTree, ecdb, ecsql)) << "Failed to parse ECSQL";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -548,15 +543,16 @@ void AssertParseECSql (Utf8CP ecsql)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ECSqlParseTest, ForAndroid)
     {
-    AssertParseECSql ("SELECT '''' FROM stco.Hardware");
-    AssertParseECSql ("SELECT 'aa', '''', b FROM stco.Hardware WHERE Name = 'a''b'");
-    AssertParseECSql ("SELECT _Aa, _bC, _123, Abc, a123, a_123, a_b, _a_b_c FROM stco.Hardware WHERE Name = 'Fusion'");
-    AssertParseECSql ("SELECT * FROM stco.Hardware WHERE Name = 'Fusion'");
-    AssertParseECSql ("SELECT [Foo].[Name] FROM stco.[Hardware] [Foo]");
-    AssertParseECSql ("SELECT [Foo].[Name] FROM stco.[Hardware] [Foo] WHERE [Name] = 'HelloWorld'");
-    AssertParseECSql ("Select EQUIP_NO From only appdw.Equipment where EQUIP_NO = '50E-101A' ");
-    AssertParseECSql ("INSERT INTO [V8TagsetDefinitions].[STRUCTURE_IL1] ([VarFixedStartZ], [DeviceID1], [ObjectType], [PlaceMethod], [CopyConstrDrwToProj]) VALUES ('?', '-E1-1', 'SGL', '1', 'Y')");
-    AssertParseECSql ("INSERT INTO [V8TagsetDefinitions].[grid__x0024__0__x0024__CB_1] ([CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457],[CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454]) VALUES ('', '1.1', '', '', '', '2.2', '', '', '', '2.5', '', '', '', '2.5', '', '', '', '2.1', '', '', '', 'E.3', '', '', '', 'B.4', '', '', '', 'D.4', '', '')");
+    ECDb ecdb; // only needed for issue listener, doesn't need to represent a file on disk
+    AssertParseECSql (ecdb, "SELECT '''' FROM stco.Hardware");
+    AssertParseECSql (ecdb, "SELECT 'aa', '''', b FROM stco.Hardware WHERE Name = 'a''b'");
+    AssertParseECSql (ecdb, "SELECT _Aa, _bC, _123, Abc, a123, a_123, a_b, _a_b_c FROM stco.Hardware WHERE Name = 'Fusion'");
+    AssertParseECSql (ecdb, "SELECT * FROM stco.Hardware WHERE Name = 'Fusion'");
+    AssertParseECSql (ecdb, "SELECT [Foo].[Name] FROM stco.[Hardware] [Foo]");
+    AssertParseECSql (ecdb, "SELECT [Foo].[Name] FROM stco.[Hardware] [Foo] WHERE [Name] = 'HelloWorld'");
+    AssertParseECSql (ecdb, "Select EQUIP_NO From only appdw.Equipment where EQUIP_NO = '50E-101A' ");
+    AssertParseECSql (ecdb, "INSERT INTO [V8TagsetDefinitions].[STRUCTURE_IL1] ([VarFixedStartZ], [DeviceID1], [ObjectType], [PlaceMethod], [CopyConstrDrwToProj]) VALUES ('?', '-E1-1', 'SGL', '1', 'Y')");
+    AssertParseECSql (ecdb, "INSERT INTO [V8TagsetDefinitions].[grid__x0024__0__x0024__CB_1] ([CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457],[CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454]) VALUES ('', '1.1', '', '', '', '2.2', '', '', '', '2.5', '', '', '', '2.5', '', '', '', '2.1', '', '', '', 'E.3', '', '', '', 'B.4', '', '', '', 'D.4', '', '')");
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructArrayMappedToSecondaryTableECSqlField.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -68,8 +68,8 @@ private:
     virtual int _GetArrayLength () const override;
 
     //ECSqlField
-    virtual ECSqlStatus _Reset (ECSqlStatusContext& statusContext) override;
-    virtual ECSqlStatus _Init (ECSqlStatusContext& statusContext) override;
+    virtual ECSqlStatus _Reset () override;
+    virtual ECSqlStatus _Init () override;
 
 public:
     StructArrayMappedToSecondaryTableECSqlField (ECSqlPrepareContext& parentPrepareContext, ArrayECPropertyCR arrayProperty, ECSqlColumnInfo&& parentColumnInfo);

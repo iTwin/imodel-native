@@ -35,27 +35,31 @@ Utf8String ECSqlCommand::_GetUsage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ECSqlCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String> const& args) const
+void ECSqlCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    if (!session.HasECDb (true))
+    if (!session.HasECDb(true))
         return;
 
     //for ECSQL command the arg vector contains a single arg which contains the original command line.
-    Utf8CP ecsql = args[0].c_str ();
+    Utf8CP ecsql = args[0].c_str();
     ECSqlStatement stmt;
-    ECSqlStatus status = stmt.Prepare (session.GetECDbR (), ecsql);
+    ECSqlStatus status = stmt.Prepare(session.GetECDbR(), ecsql);
     if (status != ECSqlStatus::Success)
         {
-        Console::WriteErrorLine ("Failed to prepare ECSQL statement. %s", stmt.GetLastStatusMessage ().c_str ());
+        if (session.GetIssues().HasIssue())
+            Console::WriteErrorLine("Failed to prepare ECSQL statement. %s", session.GetIssues().GetIssue());
+        else
+            Console::WriteErrorLine("Failed to prepare ECSQL statement.");
+
         return;
         }
 
     if (strnicmp(ecsql, "SELECT", 6) == 0)
         ExecuteSelect(session, stmt);
     else if (strnicmp(ecsql, "INSERT INTO", 11) == 0)
-        ExecuteInsert (stmt);
-    else 
-        ExecuteUpdateOrDelete (stmt);
+        ExecuteInsert(session, stmt);
+    else
+        ExecuteUpdateOrDelete(session, stmt);
     }
 
 //---------------------------------------------------------------------------------------
@@ -104,14 +108,18 @@ void ECSqlCommand::ExecuteSelect (ECSqlConsoleSession& session, ECSqlStatement& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     11/2013
 //---------------------------------------------------------------------------------------
-void ECSqlCommand::ExecuteInsert (ECSqlStatement& statement) const
+void ECSqlCommand::ExecuteInsert (ECSqlConsoleSession& session, ECSqlStatement& statement) const
     {
     ECInstanceKey generatedECInstanceKey;
     auto stepStat = statement.Step (generatedECInstanceKey);
 
     if (stepStat != ECSqlStepStatus::Done)
         {
-        Console::WriteErrorLine("Failed to execute ECSQL statement: %s", statement.GetLastStatusMessage ().c_str ());
+        if (session.GetIssues().HasIssue())
+            Console::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());
+        else
+            Console::WriteErrorLine("Failed to execute ECSQL statement.");
+
         return;
         }
 
@@ -121,13 +129,17 @@ void ECSqlCommand::ExecuteInsert (ECSqlStatement& statement) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     11/2013
 //---------------------------------------------------------------------------------------
-void ECSqlCommand::ExecuteUpdateOrDelete (ECSqlStatement& statement) const
+void ECSqlCommand::ExecuteUpdateOrDelete (ECSqlConsoleSession& session, ECSqlStatement& statement) const
     {
     ECSqlStepStatus stepStat = statement.Step ();
 
     if (stepStat != ECSqlStepStatus::Done)
         {
-        Console::WriteErrorLine("Failed to execute ECSQL statement: %s", statement.GetLastStatusMessage ().c_str ());
+        if (session.GetIssues().HasIssue())
+            Console::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());
+        else
+            Console::WriteErrorLine("Failed to execute ECSQL statement.");
+
         return;
         }
     }

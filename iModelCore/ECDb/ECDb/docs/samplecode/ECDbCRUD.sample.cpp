@@ -481,9 +481,6 @@ BentleyStatus ECDb_ECSqlStatementBindingStructs ()
         return ERROR;
 
     IECSqlStructBinder& addressBinder = statement.BindStruct (3);
-    //For methods not returning a status, ECSqlStatement::GetLastStatus can be called.
-    if (statement.GetLastStatus () != ECSqlStatus::Success)
-        return ERROR;
 
     stat = addressBinder.GetMember ("Street").BindText ("2000 Main Street", IECSqlBinder::MakeCopy::Yes);
     if (stat != ECSqlStatus::Success)
@@ -529,18 +526,11 @@ BentleyStatus ECDb_ECSqlStatementBindingPrimArrays ()
     // Note: bind parameter indices are 1-based!
     IECSqlArrayBinder& phoneNumbersBinder = statement.BindArray (1, //parameter index
                                                                 3); //initial array capacity
-    //For methods not returning a status, ECSqlStatement::GetLastStatus can be called.
-    if (statement.GetLastStatus () != ECSqlStatus::Success)
-        return ERROR;
 
     std::vector<Utf8String> phoneNumbers = { "+1 (610) 726-4312", "+1 (610) 726-4444", "+1 (610) 726-4112" };
     for (Utf8StringCR phoneNumber : phoneNumbers)
         {
         IECSqlBinder& phoneNumberBinder = phoneNumbersBinder.AddArrayElement ();
-        //For methods not returning a status, ECSqlStatement::GetLastStatus can be called.
-        if (statement.GetLastStatus () != ECSqlStatus::Success)
-            return ERROR;
-
         ECSqlStatus stat = phoneNumberBinder.BindText (phoneNumber.c_str (), IECSqlBinder::MakeCopy::Yes);
         if (stat != ECSqlStatus::Success)
             return ERROR;
@@ -658,98 +648,6 @@ BentleyStatus ECDb_ECSqlColumnInfoOnNestedLevels ()
 
             printf ("\n");
             }
-        }
-
-    //__PUBLISH_EXTRACT_END__
-    return SUCCESS;
-    }
-
-void DoSomething (ECSqlColumnInfoCR);
-void DoSomething (Utf8CP);
-void DoSomething (IECSqlStructValue const&);
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   03/13
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb_ECSqlStatementGetValueErrorHandling ()
-    {
-    ECDb ecdb;
-
-    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlStatementGetValueErrorHandling.sampleCode
-    Utf8CP ecsql = "SELECT FirstName, Address FROM stco.Employee";
-    ECSqlStatement statement;
-    statement.Prepare (ecdb, ecsql);
-
-    //define a lambda for the error checking to keep the sample code more concise
-    auto checkErrorLambda = [&statement] ()
-        {
-        ECSqlStatus stat = statement.GetLastStatus ();
-        if (stat != ECSqlStatus::Success)
-            {
-            printf ("Error when retrieving value from ECSqlStatement: %s\n", statement.GetLastStatusMessage ().c_str ());
-            return false;
-            }
-
-        return true;
-        };
-
-    while (statement.Step () == ECSqlStepStatus::HasRow)
-        {
-        //valid call
-        ECSqlColumnInfoCR validColumnInfo = statement.GetColumnInfo (0);
-        if (!checkErrorLambda ())
-            return ERROR;
-        else
-            DoSomething (validColumnInfo);
-
-        //invalid call: column index too large
-        ECSqlColumnInfoCR invalidColumnInfo = statement.GetColumnInfo (10);
-        if (!checkErrorLambda ())
-            return ERROR;
-        else
-            DoSomething (invalidColumnInfo);
-
-        //valid call
-        Utf8CP validStringVal = statement.GetValueText (0);
-        if (!checkErrorLambda ())
-            return ERROR;
-        else
-            DoSomething (validStringVal);
-
-        //invalid call: GetValueText with too large column index:
-        Utf8CP invalidStringVal = statement.GetValueText (10);
-        if (!checkErrorLambda ())
-            return ERROR;
-        else
-            DoSomething (invalidStringVal);
-
-        //invalid call: GetValueText with too large column index:
-        invalidStringVal = statement.GetValueText (10);
-        if (!checkErrorLambda ())
-            return ERROR;
-        else
-            DoSomething (invalidStringVal);
-
-        //invalid call: GetValueText on struct property:
-        invalidStringVal = statement.GetValueText (1);
-        if (!checkErrorLambda ())
-            return ERROR;
-        else
-            DoSomething (invalidStringVal);
-
-        //valid call
-        IECSqlStructValue const& validStructValue = statement.GetValueStruct (1);
-        if (!checkErrorLambda ())
-            return ERROR;
-        else
-            DoSomething (validStructValue);
-
-        //invalid call: GetStructReader on string property
-        IECSqlStructValue const& invalidStructValue = statement.GetValueStruct (0);
-        if (!checkErrorLambda ())
-            return ERROR;
-        else
-            DoSomething (invalidStructValue);
         }
 
     //__PUBLISH_EXTRACT_END__

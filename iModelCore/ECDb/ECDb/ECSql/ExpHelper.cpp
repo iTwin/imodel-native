@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
-ECSqlStatus ExpHelper::ToPrimitiveType (PrimitiveType& primitiveType, Utf8StringCR type)  
+BentleyStatus ExpHelper::ToPrimitiveType (PrimitiveType& primitiveType, Utf8StringCR type)  
     {
     if (type.EqualsI("int") || type.EqualsI("integer") || type.EqualsI("int32"))
         primitiveType = PRIMITIVETYPE_Integer;
@@ -37,9 +37,9 @@ ECSqlStatus ExpHelper::ToPrimitiveType (PrimitiveType& primitiveType, Utf8String
     else if (type.EqualsI("geometry"))
         primitiveType = PRIMITIVETYPE_IGeometry;
     else
-        return ECSqlStatus::InvalidECSql;
+        return ERROR;
 
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 //=======================================================================================

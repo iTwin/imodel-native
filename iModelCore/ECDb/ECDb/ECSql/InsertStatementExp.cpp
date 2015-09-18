@@ -16,18 +16,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-InsertStatementExp::InsertStatementExp (unique_ptr<ClassNameExp> classNameExp, unique_ptr<PropertyNameListExp> propertyNameListExp, unique_ptr<ValueExpListExp> valuesExp)
+InsertStatementExp::InsertStatementExp (unique_ptr<ClassNameExp>& classNameExp, unique_ptr<PropertyNameListExp>& propertyNameListExp, unique_ptr<ValueExpListExp>& valuesExp)
     : Exp (), m_isOriginalPropertyNameListUnset (propertyNameListExp == nullptr || propertyNameListExp->GetChildrenCount() == 0)
     {
     m_classNameExpIndex = AddChild (move(classNameExp));
     
     if (propertyNameListExp == nullptr)
         {
-        propertyNameListExp = unique_ptr<PropertyNameListExp> (new PropertyNameListExp ());
+        propertyNameListExp = unique_ptr<PropertyNameListExp> (new PropertyNameListExp());
         }
 
-    m_propertyNameListExpIndex = AddChild (move (propertyNameListExp));
-    m_valuesExpIndex = AddChild (move (valuesExp));
+    m_propertyNameListExpIndex = AddChild (move(propertyNameListExp));
+    m_valuesExpIndex = AddChild (move(valuesExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
                             propNameListExp->AddPropertyNameExp(propNameExp);
                         };
 
-                    if (ECSqlStatus::Success != classNameExp->CreatePropertyNameExpList(ctx, addDelegate))
+                    if (SUCCESS != classNameExp->CreatePropertyNameExpList(addDelegate))
                         return FinalizeParseStatus::Error;
 
                     }
@@ -112,7 +112,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
     ValueExpListExp const* valuesExp = GetValuesExp();
     if (valuesExp->GetChildrenCount() != expectedValueCount)
         {
-        ctx.SetError(ECSqlStatus::InvalidECSql, "Mismatching number of items in VALUES clause.");
+        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Mismatching number of items in VALUES clause.");
         return FinalizeParseStatus::Error;
         }
 
@@ -123,7 +123,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
             {
                 case Exp::Type::PropertyName:
                 case Exp::Type::SetFunctionCall:
-                    ctx.SetError(ECSqlStatus::InvalidECSql, "Expression '%s' is not allowed in the VALUES clause of the INSERT statement.", valueExp->ToECSql().c_str());
+                    ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Expression '%s' is not allowed in the VALUES clause of the INSERT statement.", valueExp->ToECSql().c_str());
                     return FinalizeParseStatus::Error;
 
                 case Exp::Type::Parameter:
@@ -137,7 +137,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
         Utf8String errorMessage;
         if (!propertyNameExp->GetTypeInfo().Matches(valueExp->GetTypeInfo(), &errorMessage))
             {
-            ctx.SetError(ECSqlStatus::InvalidECSql, "Type mismatch in INSERT statement: %s", errorMessage.c_str());
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch in INSERT statement: %s", errorMessage.c_str());
             return FinalizeParseStatus::Error;
             }
 

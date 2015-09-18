@@ -26,10 +26,10 @@ private:
 
     std::unique_ptr<RangeClassRefList> m_finalizeParsingArgCache;
 
-    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-    virtual bool _TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const override;
+    virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
+    virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
-    FinalizeParseStatus Validate (ECSqlParseContext& ctx) const;
+    FinalizeParseStatus Validate (ECSqlParseContext&) const;
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override { return "Insert"; }
@@ -39,8 +39,8 @@ private:
     bool IsOriginalPropertyNameListUnset () const {return m_isOriginalPropertyNameListUnset;}
 
 public :
-    InsertStatementExp (std::unique_ptr<ClassNameExp> classNameExp, std::unique_ptr<PropertyNameListExp> propertyNameListExp,
-                         std::unique_ptr<ValueExpListExp> valuesExp);
+    InsertStatementExp (std::unique_ptr<ClassNameExp>& classNameExp, std::unique_ptr<PropertyNameListExp>& propertyNameListExp,
+                         std::unique_ptr<ValueExpListExp>& valuesExp);
 
     ClassNameExp const* GetClassNameExp () const;
     PropertyNameListExp const* GetPropertyNameListExp () const;
