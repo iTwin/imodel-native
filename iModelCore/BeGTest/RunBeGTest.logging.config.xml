@@ -4,7 +4,7 @@
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
 
     <appender name="FileAppender" class="org.apache.log4j.FileAppender">
-        <param name="file" value="${LOCALAPPDATA}\\Bentley\\Logs\\BeGTest.log" /> <!-- NB: If you change the name of the output log file, you must also change it in RunBeGTest.mke -->
+        <param name="file" value="${LOCALAPPDATA}\\Bentley\\Logs\\BeGTeststdout.log" /> <!-- NB: If you change the name of the output log file, you must also change it in RunBeGTest.mke -->
         <param name="append" value="false" />
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %-40.40c - %m%n"/>

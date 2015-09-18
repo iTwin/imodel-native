@@ -26,7 +26,7 @@ progNameExe  = $(progName)$(exeext)
 o            = $(OutputRootDir)build/BeGTest/
 runDir       = $(OutputRootDir)build/BeGTest/run/
 
-materialProduct = $(OutputRootDir)Product/${BEGTEST_MATERIAL_PRODUCT_DIR}/
+materialProduct = $(OutputRootDir)Product/${BEGTEST_TEST_PRODUCT_DIR}/
 
 %ifdef BMAKE_DELETE_ALL_TARGETS    
 always:

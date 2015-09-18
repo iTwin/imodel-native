@@ -54,9 +54,10 @@
     </Part>
 
     <!-- *********************************************************************************************** -->
-    <!-- ProductDirectory that can be used by any unit test material product based on mobiledgn -->
+    <!-- This ProductDirectory can be used by any portable unit test product based on mobiledgn. -->
+    <!-- This is also an example of how to layout the directory structure for any BeGTest product. -->
     <!-- *********************************************************************************************** -->
-    <ProductDirectoryList ListName="BeGTest-Material">
+    <ProductDirectoryList ListName="MobileDgnTestsProduct">
         <ProductDirectory Name="BentleyNativeAssemblies"            Path="Assemblies"/>
         <ProductDirectory Name="LoggingNativeAssemblies"            Path="Assemblies"/>
         <ProductDirectory Name="GeomNativeAssemblies"               Path="Assemblies"/>
@@ -71,7 +72,7 @@
         <ProductDirectory Name="BePortableUiAssemblies"             Path="Assemblies"/>
         <ProductDirectory Name="CordovaLibs"                        Path="Assemblies"/>
         <ProductDirectory Name="MobileDgnNativeAssemblies"          Path="Assemblies"/>
-        
+
         <ProductDirectory Name="Libs"                               Path="Libs"/>
         <ProductDirectory Name="BentleyLibs"                        Path="Libs"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
@@ -104,7 +105,6 @@
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
         <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
     </ProductDirectoryList>
-
 
     <!-- *********************************************************************************************** -->
     <!-- This part should be used by any part that wants to build and/or run a gtest EXE -->

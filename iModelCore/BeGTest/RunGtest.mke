@@ -7,21 +7,17 @@
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-%ifndef TestRunnerExeFileName
-    %error Define TestRunnerExeFileName to identify the test runner executable that should be run
+%ifndef BEGTEST_EXE
+    %error Define BEGTEST_EXE to identify the test runner executable that should be run
 %endif
 
-%ifndef TestOutputDir
-    %error Define TestOutputDir to the directory where logs, etc. should go
-%endif
-
-%ifndef TestRunnerLoggingConfigFileName
-    TestRunnerLoggingConfigFileName=$[@realpath $[@dir $(TestRunnerExeFileName)]logging.config.xml]
-    %warn TestRunnerLoggingConfigFileName defaults to $(TestRunnerLoggingConfigFileName)
+%ifndef BEGTEST_OUTPUT_DIR
+    %error Define BEGTEST_OUTPUT_DIR to the directory where logs, etc. should go
 %endif
 
 BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
-LogDir=$[@realpath ${TestOutputDir}/logs/]
+runDir=$[@realpath ${BEGTEST_OUTPUT_DIR}]/run/
+LogDir=$(runDir)/logs/
 LogFile=$(LogDir)BeGTeststdout.log
 
 # NB: If you change the name of the output log file, you must also change it in RunBeGTest.logging.config.xml
@@ -29,17 +25,18 @@ LogFile=$(LogDir)BeGTeststdout.log
 %message .
 
 %if !defined (BEGTEST_LOGGING_CONFIG)
+    BEGTEST_LOGGING_CONFIG=$[@realpath $[@dir $(BEGTEST_EXE)]logging.config.xml]
+    %message BEGTEST_LOGGING_CONFIG not set, using default: $(BEGTEST_LOGGING_CONFIG)
+
 always:
-    ~@putenv BEGTEST_LOGGING_CONFIG=$(TestRunnerLoggingConfigFileName)
-    
-%message BEGTEST_LOGGING_CONFIG not set, using default: $(TestRunnerLoggingConfigFileName)
+    ~@putenv BEGTEST_LOGGING_CONFIG=$(BEGTEST_LOGGING_CONFIG)
 %else    
-%message Using your environment's BEGTEST_LOGGING_CONFIG=$(BEGTEST_LOGGING_CONFIG)
-%message !!! If you don't turn on Console logging, you won't get interleaved output at $(LogDir)PublishedTestResults.txt !!!
+    %message Using your environment's BEGTEST_LOGGING_CONFIG=$(BEGTEST_LOGGING_CONFIG)
+    %message !!! If you don't turn on Console logging, you won't get interleaved output at $(LogDir)PublishedTestResults.txt !!!
 %endif
 
 %message .
-%message See $(LogDir)PublishedTestResults.txt for logging output, interleaved with test output. 
+%message See $(LogDir)TestTestResults.txt for logging output, interleaved with test output. 
 %message .
 
 %if $(TARGET_PLATFORM)=="Windows"
@@ -62,13 +59,19 @@ always:
 %endif
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
+always:
+    $(rmdirRecursiveCmd) $(runDir)
+
     %return
 %endif
 
 always:
-    !~@mkdir ${TestOutputDir}
+    !~@mkdir ${BEGTEST_OUTPUT_DIR}
+    !~@mkdir ${runDir}
+    !~@mkdir ${runDir}/Output
+    !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
-    $(RunPrefix) $(_MakeFilePath)RunTests.py --exename="$(TestRunnerExeFileName)" --gtest_output="xml:$(LogDir)TestResults.xml" --truncate_output --output_dir=$(TestOutputDir) --log_file=$(LogFile)
+    $(RunPrefix) $(_MakeFilePath)RunTests.py --exename="$(BEGTEST_EXE)" --gtest_output="xml:$(LogDir)TestResults.xml" --truncate_output --output_dir=$(BEGTEST_OUTPUT_DIR) --log_file=$(LogFile)
     %if !defined (NO_BREAK)
        $(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
     %else
