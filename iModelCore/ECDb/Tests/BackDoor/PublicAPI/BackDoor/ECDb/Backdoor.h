@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <UnitTests/BackDoor/ECDb/ECDbTests.h>
+#include "ECDbTests.h"
 #include <Geom/GeomApi.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
