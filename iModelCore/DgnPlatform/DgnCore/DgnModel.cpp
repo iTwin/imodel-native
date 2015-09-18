@@ -183,7 +183,7 @@ void DgnModel::ReleaseAllElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_properties(params.m_props), m_solver(params.m_solver)
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_properties(params.m_props)
     {
     m_persistent = false;
     m_filled     = false;
@@ -272,7 +272,7 @@ DgnModel::~DgnModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnValidate()
+void GeometricModel::_OnValidate()
     {
     m_solver.Solve(*this);
     }
@@ -343,6 +343,15 @@ DgnDbStatus ResourceModel::_OnInsertElement(DgnElementR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ReadProperties()
     {
+    _ReadProperties();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::_ReadProperties()
+    {
+    // NB: Intentionally not invoking superclass implementation to avoid redundant sql
     Statement stmt(m_dgndb, "SELECT Props,Solver FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, m_modelId);
 
@@ -364,6 +373,31 @@ void DgnModel::ReadProperties()
 
     if (!stmt.IsColumnNull(1))
         m_solver.FromJson(stmt.GetValueText(1));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_ReadProperties()
+    {
+    Statement stmt(m_dgndb, "SELECT Props FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    stmt.BindId(1, m_modelId);
+
+    DbResult  result = stmt.Step();
+    if (BE_SQLITE_ROW != result)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    Json::Value  propsJson(Json::objectValue);
+    if (!Json::Reader::Parse(stmt.GetValueText(0), propsJson))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    _FromPropertiesJson(propsJson);
     }
 
 struct UpdatedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnUpdated(model);}};
@@ -391,7 +425,7 @@ DgnDbStatus DgnModel::_OnUpdate()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/12
+* @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::Update()
     {
@@ -399,6 +433,20 @@ DgnDbStatus DgnModel::Update()
     if (stat != DgnDbStatus::Success)
         return stat;
 
+    stat = _Update();
+
+    if (DgnDbStatus::Success == stat)
+        _OnUpdated();
+
+    return stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricModel::_Update()
+    {
+    // NB: Intentionally not invoking superclass implementation to avoid redundant sql
     Json::Value propJson(Json::objectValue);
     _ToPropertiesJson(propJson);
     Utf8String val = Json::FastWriter::ToString(propJson);
@@ -411,12 +459,23 @@ DgnDbStatus DgnModel::Update()
         stmt.BindNull(2);
     stmt.BindId(3, m_modelId);
 
-    auto rc=stmt.Step();
-    if (rc!= BE_SQLITE_DONE)
-        return DgnDbStatus::WriteError;
+    return stmt.Step() == BE_SQLITE_DONE ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+    }
 
-    _OnUpdated();
-    return DgnDbStatus::Success;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_Update()
+    {
+    Json::Value propJson(Json::objectValue);
+    _ToPropertiesJson(propJson);
+    Utf8String val = Json::FastWriter::ToString(propJson);
+
+    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Props=? WHERE Id=?");
+    stmt.BindText(1, val, Statement::MakeCopy::No);
+    stmt.BindId(2, m_modelId);
+
+    return stmt.Step() == BE_SQLITE_DONE ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -794,8 +853,17 @@ void DgnModel::_InitFrom(DgnModelCR other)
     Json::Value props;
     other._ToPropertiesJson(props);
     _FromPropertiesJson(props);
+    }
 
-    m_solver = other.m_solver;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::_InitFrom(DgnModelCR other)
+    {
+    T_Super::_InitFrom(other);
+    auto geom = other.ToGeometricModel();
+    if (nullptr != geom)
+        m_solver = geom->m_solver;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -820,7 +888,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetName().c_str(), DgnModel::Properties(), ModelSolverDef(), modelId);
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetName().c_str(), DgnModel::Properties(), modelId);
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
@@ -1383,7 +1451,7 @@ void DgnModel::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& importer) const
     {
-    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetModelName(), GetProperties(), GetSolver());
+    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetModelName(), GetProperties());
     if (importer.IsBetweenDbs())
         {
         // Caller probably wants to preserve these when copying between Dbs. We *never* preserve them when copying within a Db.
@@ -1430,9 +1498,20 @@ DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& impor
 
     model->_InitFrom(*this);
 
-    model->m_solver.RelocateToDestinationDb(importer);
-
     return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr GeometricModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const
+    {
+    auto clone = T_Super::_CloneForImport(stat, importer);
+    auto geom = clone.IsValid() ? clone->ToGeometricModelP() : nullptr;
+    if (nullptr != geom)
+        geom->m_solver.RelocateToDestinationDb(importer);
+
+    return clone;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1717,7 +1796,7 @@ bool ComponentModel::IsValid() const
         return false;
     if (m_itemECBaseClassName.empty())
         return false;
-    if (!m_solver.IsValid())
+    if (!GetSolver().IsValid())
         return false;
     return true;
     }
@@ -1821,7 +1900,7 @@ DgnDbStatus ComponentModel::GenerateECClass(ECN::ECSchemaR schema)
     Utf8String paramsList;  
     Utf8CP paramsListSep = "";
 
-    for (auto const& parm: m_solver.GetParameters())
+    for (auto const& parm: GetSolver().GetParameters())
         {
         Utf8String parmname = parm.GetName();
         ECN::ECValue parmvalue = parm.GetValue();
@@ -1944,7 +2023,7 @@ void ComponentModel::_FromPropertiesJson(Json::Value const& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& newParameters)
     {
-    m_solver.GetParametersR().SetValues(newParameters);
+    GetSolver().GetParametersR().SetValues(newParameters);
 
     auto status = Update();
     if (DgnDbStatus::Success != status)

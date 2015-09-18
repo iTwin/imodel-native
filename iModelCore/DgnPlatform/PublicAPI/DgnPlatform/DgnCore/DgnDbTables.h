@@ -30,7 +30,6 @@
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
-#define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
 #define DGN_CLASSNAME_Light                 "Light"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"

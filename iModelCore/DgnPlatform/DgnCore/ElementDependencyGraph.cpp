@@ -1036,10 +1036,10 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers()
         if (m_txnMgr.HasFatalErrors())
             break;
 
-        DgnModelPtr model = GetDgnDb().Models().GetModel(mid);
+        DgnModelPtr model = GetDgnDb().Models().Get<GeometricModel>(mid);
         if (model.IsValid())
             {
-            model->_OnValidate();
+            model->OnValidate();
 
             if (m_txnMgr.HasFatalErrors())
                 break;
