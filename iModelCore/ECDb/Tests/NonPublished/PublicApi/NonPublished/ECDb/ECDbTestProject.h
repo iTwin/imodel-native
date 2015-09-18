@@ -59,29 +59,46 @@ public:
     Utf8CP GetMessage() const { return m_issue.c_str(); }
     };
 
+//=======================================================================================
+//!On construction registers itself with the ECDb, so that it starts listening right away.
+//!On destruction unregisters itself. This allows for a fine-grained listening restricted
+//!to the scope of the object
+//!Example:
+//! {
+//! ECDbIssueListener issueListener(ecdb);
+//! int val = statement.GetValueInt(1);
+//! if (issueListener.GetIssue().IsIssue())
+//!   return ERROR;
+//! }
+// @bsiclass                          Krischan.Eberle      09/2015
+//+===============+===============+===============+===============+===============+======
+struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
+    {
+private:
+    ECDbR m_ecdb;
+    mutable ECDbIssue m_issue;
+    virtual void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override;
+
+public:
+    explicit ECDbIssueListener(ECDbR ecdb) : BeSQLite::EC::ECDb::IIssueListener(), m_ecdb(ecdb) { m_ecdb.AddIssueListener(*this); }
+    ~ECDbIssueListener() { m_ecdb.RemoveIssueListener(); }
+
+    //Can only be called once for a given issue. A second call will report whatever issue has occurred (or not) since the first call
+    ECDbIssue GetIssue() const;
+
+    void Reset() { m_issue = ECDbIssue(); }
+    };
+
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      04/2012
 +===============+===============+===============+===============+===============+======*/
 struct ECDbTestProject
 {
 public:
-    struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
-        {
-    private:
-        mutable ECDbIssue m_issue;
-        virtual void _OnIssueReported(BeSQLite::EC::ECDbIssueSeverity severity, Utf8CP message) const override;
-
-    public:
-        ECDbIssueListener() : BeSQLite::EC::ECDb::IIssueListener() {}
-
-        //Can only be called once for a given issue. A second call will report whatever issue has occurred (or not) since the first call
-        ECDbIssue GetIssue() const;
-        };
 
 typedef void (*PopulatePrimitiveValueCallback)(ECN::ECValueR value, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecproperty);
 private:
     BeSQLite::EC::ECDb*    m_ecdb;
-    ECDbIssueListener      m_issueListener;
     WCharCP                m_testSchemaFileName;
     ECDbTestSchemaManager  m_testSchemaManager;
     ECInstanceMap          m_ecInstances;
@@ -118,8 +135,6 @@ public:
     ECDbTestSchemaManager const& GetTestSchemaManager () const;
     BeSQLite::EC::ECDbR    GetECDb ();
     BeSQLite::EC::ECDbCR   GetECDbCR () const;
-    //Can only be called once for a given issue. A second call will report whatever issue has occurred (or not) since the first call
-    ECDbIssue GetLastIssue() const { return m_issueListener.GetIssue(); }
     ECInstanceMapCR        GetImportedECInstances() const   {return m_ecInstances;}
     BentleyStatus          GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP className);
     static ECN::IECInstancePtr  CreateArbitraryECInstance(ECN::ECClassCR ecClass, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);

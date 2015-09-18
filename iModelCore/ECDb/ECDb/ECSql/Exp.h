@@ -19,7 +19,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-
 //WIP_ECSQL: PropertyPath below should be replaced by ECSqlPropertyPath, PropertyNamePath, and ECSqlPropertyPathBuilder
 typedef bvector<bpair<Utf8String, int>> PropertyNamePath;
 

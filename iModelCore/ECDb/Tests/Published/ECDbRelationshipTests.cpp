@@ -156,8 +156,7 @@ void ValidateReadingRelationship (ECDbTestProject& testProject, Utf8CP relations
 
     SqlPrintfString ecSql ("SELECT rel.* FROM %s.%s rel WHERE rel.ECInstanceId=?", Utf8String(relationshipClass->GetSchema().GetName()).c_str(), Utf8String(relationshipClass->GetName()).c_str());
     ECSqlStatement statement;
-    ECSqlStatus prepareStatus = statement.Prepare (testProject.GetECDb(), ecSql.GetUtf8CP());
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) prepareStatus) << testProject.GetLastIssue().GetMessage();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (testProject.GetECDb(), ecSql.GetUtf8CP())) << ecSql.GetUtf8CP();
     statement.BindId(1, InstanceToId(importedRelInstance));
 
     ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());

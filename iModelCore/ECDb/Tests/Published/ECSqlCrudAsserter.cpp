@@ -19,15 +19,14 @@ NativeLogging::ILogger* ECSqlCrudAsserter::s_logger = nullptr;
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlCrudAsserter::Assert (ECSqlTestItem const& testItem) const
     {
-    Utf8String statementErrorMessage;
-    _Assert (statementErrorMessage, testItem);
-    LogECSqlSupport (testItem, statementErrorMessage.c_str ());
+    _Assert (testItem);
+    LogECSqlSupport (testItem);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlCrudAsserter::LogECSqlSupport (ECSqlTestItem const& testItem, Utf8CP statementErrorMessage) const
+void ECSqlCrudAsserter::LogECSqlSupport (ECSqlTestItem const& testItem) const
     {
     if (GetLogger ().isSeverityEnabled (NativeLogging::LOG_DEBUG))
         {
@@ -45,10 +44,6 @@ void ECSqlCrudAsserter::LogECSqlSupport (ECSqlTestItem const& testItem, Utf8CP s
             logMessage.append (description).append (" ");
 
         logMessage.append (testItem.GetECSql ().c_str ());
-
-        if (!Utf8String::IsNullOrEmpty (statementErrorMessage))
-            logMessage.append (" - ").append (statementErrorMessage);
-        
         GetLogger ().debug (logMessage.c_str ());
         }
     }

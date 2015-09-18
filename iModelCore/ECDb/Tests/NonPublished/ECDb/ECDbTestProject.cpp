@@ -12,6 +12,29 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle     09/2015
+//---------------------------------------------------------------------------------------
+void ECDbIssueListener::_OnIssueReported(ECDbIssueSeverity severity, Utf8CP message) const
+    {
+    m_issue = ECDbIssue(severity, message);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle     09/2015
+//---------------------------------------------------------------------------------------
+ECDbIssue ECDbIssueListener::GetIssue() const
+    {
+    if (!m_issue.IsIssue())
+        return m_issue;
+
+    ECDbIssue copy(m_issue);
+    //reset cached issue before returning
+    m_issue = ECDbIssue();
+    return std::move(copy);
+    }
+
+
 //********************* ECDbTestSchemaManager ********************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
@@ -253,8 +276,6 @@ void ECDbTestProject::CreateEmpty (Utf8CP ecdbFileName)
     DbResult stat = m_ecdb->CreateNewDb (ecdbFilePathUtf8.c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
 
-    m_ecdb->AddIssueListener(m_issueListener);
-
     LOG.debugv("Created test ECDb file '%s'", ecdbFilePathUtf8.c_str ());
     }
 
@@ -264,7 +285,6 @@ void ECDbTestProject::CreateEmpty (Utf8CP ecdbFileName)
 DbResult ECDbTestProject::Open (Utf8CP ecdbFilePath, ECDb::OpenParams openParams)
     {
     m_ecdb->RemoveIssueListener();
-    m_ecdb->AddIssueListener(m_issueListener);
     return m_ecdb->OpenBeSQLiteDb (ecdbFilePath, openParams);
     }
 
@@ -845,30 +865,6 @@ BentleyStatus ECDbTestProject::GetInstances (bvector<IECInstancePtr>& instances,
 ECDbTestSchemaManager const& ECDbTestProject::GetTestSchemaManager () const
     {
     return m_testSchemaManager;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                             Krischan.Eberle     09/2015
-//---------------------------------------------------------------------------------------
-void ECDbTestProject::ECDbIssueListener::_OnIssueReported(ECDbIssueSeverity severity, Utf8CP message) const
-    {
-    m_issue = ECDbIssue(severity, message);
-    }
-
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                             Krischan.Eberle     09/2015
-//---------------------------------------------------------------------------------------
-ECDbIssue ECDbTestProject::ECDbIssueListener::GetIssue() const
-    {
-    if (!m_issue.IsIssue())
-        return m_issue;
-
-    ECDbIssue copy(m_issue);
-    //reset cached issue before returning
-    m_issue = ECDbIssue();
-    return std::move(copy);
     }
 
 //*************** ECDbTestUtility **********************************************************

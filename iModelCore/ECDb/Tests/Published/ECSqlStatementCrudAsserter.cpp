@@ -16,20 +16,6 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatementCrudAsserter::ECSqlStatementCrudAsserter (ECDbTestProject& testProject)
-    : ECSqlCrudAsserter (testProject)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatementCrudAsserter::~ECSqlStatementCrudAsserter ()
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  04/13
-//+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlStatementCrudAsserter::AssertPrepare (ECSqlTestItem const& testItem, ECSqlStatement& statement, PrepareECSqlExpectedResult const& expectedResult) const
     {
     const auto expectedToSucceed = expectedResult.IsExpectedToSucceed ();
@@ -38,7 +24,7 @@ void ECSqlStatementCrudAsserter::AssertPrepare (ECSqlTestItem const& testItem, E
     auto stat = PrepareStatement (statement, ecsql, !expectedToSucceed);
 
     if (expectedToSucceed)
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Preparation failed unexpectedly. " << GetTestProject().GetLastIssue().GetMessage();
+        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Preparation failed unexpectedly.";
 
     if (stat != ECSqlStatus::Success)
         {
@@ -49,7 +35,7 @@ void ECSqlStatementCrudAsserter::AssertPrepare (ECSqlTestItem const& testItem, E
     stat = BindParameters (statement, testItem.GetParameterValues (), !expectedToSucceed);
     
     if (expectedToSucceed)
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Binding parameters failed unexpectedly. " << GetTestProject().GetLastIssue().GetMessage();
+        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Binding parameters failed unexpectedly.";
     else
         {
         Utf8CP assertMessage = nullptr;
@@ -225,23 +211,9 @@ Utf8CP ECSqlStatementCrudAsserter::_GetTargetOperationName () const
 
 //*************** ECSqlSelectStatementCrudAsserter ***************************
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  11/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlSelectStatementCrudAsserter::ECSqlSelectStatementCrudAsserter (ECDbTestProject& testProject)
-    : ECSqlStatementCrudAsserter (testProject)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  11/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlSelectStatementCrudAsserter::~ECSqlSelectStatementCrudAsserter ()
-    {}
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlSelectStatementCrudAsserter::_Assert (Utf8StringR statementErrorMessage, ECSqlTestItem const& testItem) const
+void ECSqlSelectStatementCrudAsserter::_Assert (ECSqlTestItem const& testItem) const
     {
     PrepareECSqlExpectedResult const* expectedResultForPrepare = nullptr;
     ResultCountECSqlExpectedResult const* expectedResultForResultCount = nullptr;
@@ -253,17 +225,12 @@ void ECSqlSelectStatementCrudAsserter::_Assert (Utf8StringR statementErrorMessag
     if (assertPrepare)
         {
         AssertPrepare (testItem, statement, *expectedResultForPrepare);
-        if (!expectedResultForPrepare->IsExpectedToSucceed ())
-            statementErrorMessage = GetTestProject().GetLastIssue().GetMessage();
-
         expectedResultOfLastStep = expectedResultForPrepare;
         }
 
     if (assertStepSelect)
         {
         AssertStep (testItem, statement, *expectedResultForResultCount);
-        if (!expectedResultForResultCount->IsExpectedToSucceed ())
-            statementErrorMessage = GetTestProject().GetLastIssue().GetMessage();
         expectedResultOfLastStep = expectedResultForResultCount;
         }
     }
@@ -282,7 +249,7 @@ void ECSqlSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem
     //If step failed, assert that this was as expected.
     if (stat != ECSqlStepStatus::HasRow && stat != ECSqlStepStatus::Done)
         {
-        ASSERT_FALSE (expectedToSucceed) << "Step should have failed for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << GetTestProject().GetLastIssue().GetMessage();
+        ASSERT_FALSE (expectedToSucceed) << "Step should have failed for ECSQL '" << ecsql << "'";
         return;
         }
 
@@ -300,7 +267,7 @@ void ECSqlSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem
         stat = statement.Step ();
         }
 
-    ASSERT_NE (static_cast<int> (ECSqlStepStatus::Error), static_cast<int> (stat)) << "Step failed for ECSQL '" << ecsql << "'. Error message: " << GetTestProject().GetLastIssue().GetMessage();
+    ASSERT_NE (static_cast<int> (ECSqlStepStatus::Error), static_cast<int> (stat)) << "Step failed for ECSQL '" << ecsql;
 
     if (expectedResult.HasExpectedRowCount ())
         {
@@ -368,19 +335,23 @@ void ECSqlSelectStatementCrudAsserter::AssertCurrentCell (ECSqlTestItem const& t
         if (!expectedToSucceed)
             BeTest::SetFailOnAssert (false);
 
-        //do the actual call to IECSqlValue::GetXXX
-        getValueCall ();
+        ECDbIssueListener issueListener(GetTestProject().GetECDb());
 
+        //do the actual call to IECSqlValue::GetXXX
+        getValueCall();
+        
         if (!expectedToSucceed)
             BeTest::SetFailOnAssert (true);
+
+        ECDbIssue issue = issueListener.GetIssue();
 
         Utf8String assertMessage (GetValueCallToString (getValueDataType));
         assertMessage.append (" for a ").append (DataTypeToString (columnDataType)).append (" column.");
 
         if (expectedToSucceed)
-            ASSERT_FALSE (GetTestProject().GetLastIssue().IsIssue()) << assertMessage.c_str ();
+            ASSERT_FALSE (issue.IsIssue()) << assertMessage.c_str ();
         else
-            ASSERT_TRUE(GetTestProject().GetLastIssue().IsIssue()) << assertMessage.c_str();
+            ASSERT_TRUE(issue.IsIssue()) << assertMessage.c_str();
         }
     }
 
@@ -393,8 +364,6 @@ void ECSqlSelectStatementCrudAsserter::AssertArrayCell (ECSqlTestItem const& tes
         {
         AssertCurrentCell (testItem, statement, *arrayElement, &arrayType);
         }
-
-    ASSERT_FALSE (GetTestProject().GetLastIssue().IsIssue());
     }
 
 //---------------------------------------------------------------------------------------
@@ -402,8 +371,9 @@ void ECSqlSelectStatementCrudAsserter::AssertArrayCell (ECSqlTestItem const& tes
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlSelectStatementCrudAsserter::AssertColumnInfo (ECSqlTestItem const& testItem, ECSqlStatement const& statement, IECSqlValue const& value, ECTypeDescriptor const* parentDataType) const
     {
+    ECDbIssueListener issueListener(GetTestProject().GetECDb());
     auto const& columnInfo = value.GetColumnInfo ();
-    ASSERT_FALSE(GetTestProject().GetLastIssue().IsIssue()) << "IECSqlValue::GetColumnInfo unexpectedly caused an error.";
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlValue::GetColumnInfo unexpectedly caused an error.";
 
     auto prop = columnInfo.GetProperty ();
     auto const& propPath = columnInfo.GetPropertyPath ();
@@ -438,7 +408,6 @@ void ECSqlSelectStatementCrudAsserter::AssertColumnInfo (ECSqlTestItem const& te
 ECSqlStepStatus ECSqlSelectStatementCrudAsserter::Step (ECSqlStatement& statement, bool disableBeAsserts) const
     {
     DisableBeAsserts d (disableBeAsserts);
-
     return statement.Step ();
     }
 
@@ -596,49 +565,24 @@ Utf8String ECSqlSelectStatementCrudAsserter::DataTypeToString (ECTypeDescriptor 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  11/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlNonSelectStatementCrudAsserter::ECSqlNonSelectStatementCrudAsserter (ECDbTestProject& testProject)
-    : ECSqlStatementCrudAsserter (testProject)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  11/13
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlNonSelectStatementCrudAsserter::~ECSqlNonSelectStatementCrudAsserter ()
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  11/13
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlNonSelectStatementCrudAsserter::_Assert (Utf8StringR statementErrorMessage, ECSqlTestItem const& testItem) const
+void ECSqlNonSelectStatementCrudAsserter::_Assert (ECSqlTestItem const& testItem) const
     {
     PrepareECSqlExpectedResult const* expectedResultForPrepare = nullptr;
     AffectedRowsECSqlExpectedResult const* expectedResultForAffectedRows = nullptr;
     const auto assertPrepare = testItem.GetExpectedResults ().TryGet<PrepareECSqlExpectedResult> (expectedResultForPrepare, IECSqlExpectedResult::Type::Prepare);
     const auto assertStepNonSelect = testItem.GetExpectedResults ().TryGet<AffectedRowsECSqlExpectedResult> (expectedResultForAffectedRows, IECSqlExpectedResult::Type::AffectedRowCount);
 
-
-    auto ecsql = testItem.GetECSql ().c_str ();
-    LOG.info("----------------------------------------------------------------------");
-
-    LOG.infov("[EXECUTING ECSQL] %s", ecsql);
-
     IECSqlExpectedResult const* expectedResultOfLastStep = nullptr;
     ECSqlStatement statement;
     if (assertPrepare)
         {
         AssertPrepare (testItem, statement, *expectedResultForPrepare);
-        if (!expectedResultForPrepare->IsExpectedToSucceed ())
-            statementErrorMessage = GetTestProject().GetLastIssue().GetMessage();
-
         expectedResultOfLastStep = expectedResultForPrepare;
         }
 
     if (assertStepNonSelect)
         {
         AssertStep (testItem, statement, *expectedResultForAffectedRows);
-        if (!expectedResultForAffectedRows->IsExpectedToSucceed ())
-            statementErrorMessage = GetTestProject().GetLastIssue().GetMessage();
         expectedResultOfLastStep = expectedResultForAffectedRows;
         }
     }
@@ -659,13 +603,11 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
 
         if (expectedToSucceed)
             {
-            ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stat) << "Step (ECInstanceKey&) should have succeeded for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << GetTestProject().GetLastIssue().GetMessage();
+            ASSERT_EQ (ECSqlStepStatus::Done, stat) << "Step (ECInstanceKey&) should have succeeded for ECSQL '" << ecsql << "'";
             ASSERT_TRUE (ecInstanceKey.IsValid ());
             }
         else
-            {
-            ASSERT_EQ ((int) ECSqlStepStatus::Error, (int) stat) << "Step (ECInstanceKey&) should have failed for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << GetTestProject().GetLastIssue().GetMessage();
-            }
+            ASSERT_EQ(ECSqlStepStatus::Error, stat) << "Step (ECInstanceKey&) should have failed for ECSQL '" << ecsql << "'.";
 
         return;
         }
@@ -674,17 +616,9 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
     //statement.EnableDefaultEventHandler ();
     ECSqlStepStatus stepStat = Step(statement, !expectedToSucceed);
     if (expectedToSucceed)
-        {
-        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stepStat) << "Step should have succeeded for ECSQL '" << ecsql << "'. Actual return code was: " << (int) stepStat << " Error message: " << GetTestProject().GetLastIssue().GetMessage();
-        //TODO ROWAFFECTE
-        //int expectedRowsAffected = expectedResult.GetExpectedAffectedRowCount ();
-        //int actualRowsAffected = statement.GetDefaultEventHandler()->GetInstancesAffectedCount();
-        //ASSERT_EQ (expectedRowsAffected, actualRowsAffected) << "Step returned Unexpected number of rows affected for ECSQL '" << ecsql << "'.";
-        }
+        ASSERT_EQ(ECSqlStepStatus::Done, stepStat) << "Step should have succeeded for ECSQL '" << ecsql << "'.";
     else
-        {
-        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stepStat) << "Step should have failed for ECSQL '" << ecsql << "'. Actual return code was: " << (int) stepStat << " Error message: " << GetTestProject().GetLastIssue().GetMessage();
-        }
+        ASSERT_EQ(ECSqlStepStatus::Error, stepStat) << "Step should have failed for ECSQL '" << ecsql << "'.";
     }
 
 //---------------------------------------------------------------------------------------

@@ -36,10 +36,10 @@ private:
 
     ECDbTestProject& m_testProject;
 
-    virtual void _Assert (Utf8StringR statementErrorMessage, ECSqlTestItem const& testItem) const = 0;
+    virtual void _Assert (ECSqlTestItem const& testItem) const = 0;
     virtual Utf8CP _GetTargetOperationName () const = 0;
 
-    void LogECSqlSupport (ECSqlTestItem const& testItem, Utf8CP statementErrorMessage) const;
+    void LogECSqlSupport (ECSqlTestItem const& testItem) const;
     static BentleyApi::NativeLogging::ILogger& GetLogger ();
 
 protected:

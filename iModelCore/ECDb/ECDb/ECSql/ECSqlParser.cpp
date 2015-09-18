@@ -398,7 +398,7 @@ ECSqlStatus ECSqlParser::parse_update_statement_searched (unique_ptr<UpdateState
 
     const size_t childCount = parseNode->count ();
     if (childCount == 0) 
-        return ECSqlStatus::InvalidECSql; //User never provided a insert column name list clause 
+        return ECSqlStatus::Success; //User never provided a insert column name list clause (no error)
 
     BeAssert (childCount == 3);
     //first and third nodes are ( and ). Second node is the the list node
