@@ -301,8 +301,6 @@ TEST_F (ECSqlSelectTests, UnionTests)
     ECDbR ecdb = testProject.Create ("ECSqlStatementTests.ecdb", L"ECSqlStatementTests.01.00.ecschema.xml", false);
     InsertInstancesForECSqlTestSchema (ecdb);
     int rowCount;
-    Utf8String ExpectedColumnValues;
-    Utf8String ActualColumnValues;
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM (SELECT ContactName, Address, City, PostalCode, Country FROM ECST.Supplier UNION ALL SELECT ContactName, Address, City, PostalCode, Country FROM ECST.Customer)"));
     ASSERT_EQ (stmt.Step (), ECSqlStepStatus::HasRow);
@@ -313,45 +311,45 @@ TEST_F (ECSqlSelectTests, UnionTests)
     //Select Statement containing Union All Clause and also Order By clause
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ContactName, Address, City, PostalCode, Country FROM ECST.Supplier UNION ALL SELECT ContactName, Address, City, PostalCode, Country FROM ECST.Customer ORDER BY PostalCode"));
     rowCount = 0;
-    ExpectedColumnValues = "Brathion-SPIELMANN-Lannistor-Brathion-Adm-Snow-";
-    ActualColumnValues;
+    Utf8CP expectedContactNames = "Brathion-SPIELMANN-Lannistor-Brathion-Adm-Snow-";
+    Utf8String actualContactNames;
     while (stmt.Step () != ECSqlStepStatus::Done)
         {
-        ActualColumnValues.append (stmt.GetValueText (0));
-        ActualColumnValues.append ("-");
+        actualContactNames.append (stmt.GetValueText (0));
+        actualContactNames.append ("-");
         rowCount++;
         }
-    ASSERT_EQ (ActualColumnValues, ExpectedColumnValues) << "Expected ContactNames OrderBy ECInstanceId Doesn't match Original ContactNames";
+    ASSERT_STREQ(expectedContactNames, actualContactNames.c_str()) << stmt.GetECSql();
     ASSERT_EQ (6, rowCount);
     stmt.Finalize ();
 
     //Select Statement using UNION Clause, so we should get only distinct results
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT City FROM ECST.Supplier UNION SELECT City FROM ECST.Customer ORDER BY City"));
     rowCount = 0;
-    Utf8String ExpectedCityValues = "AUSTIN-CA-MD-NC-SAN JOSE-";
-    Utf8String ActualCityValues;
+    Utf8CP expectedCityNames = "AUSTIN-CA-MD-NC-SAN JOSE-";
+    Utf8String actualCityNames;
     while (stmt.Step () != ECSqlStepStatus::Done)
         {
-        ActualCityValues.append (stmt.GetValueText (0));
-        ActualCityValues.append ("-");
+        actualCityNames.append (stmt.GetValueText (0));
+        actualCityNames.append ("-");
         rowCount++;
         }
-    ASSERT_EQ (ActualCityValues, ExpectedCityValues) << "Expected city Names Doesn't match Actual values";
+    ASSERT_STREQ(expectedCityNames, actualCityNames.c_str()) << stmt.GetECSql();
     ASSERT_EQ (5, rowCount);
     stmt.Finalize ();
 
     //Select Statement Using UNION ALL Clause so we should get even Duplicate Results
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT City FROM ECST.Supplier UNION ALL SELECT City FROM ECST.Customer ORDER BY City"));
     rowCount = 0;
-    ExpectedCityValues = "AUSTIN-CA-MD-NC-SAN JOSE-SAN JOSE-";
-    ActualCityValues = "";
+    expectedCityNames = "AUSTIN-CA-MD-NC-SAN JOSE-SAN JOSE-";
+    actualCityNames.clear();
     while (stmt.Step () != ECSqlStepStatus::Done)
         {
-        ActualCityValues.append (stmt.GetValueText (0));
-        ActualCityValues.append ("-");
+        actualCityNames.append (stmt.GetValueText (0));
+        actualCityNames.append ("-");
         rowCount++;
         }
-    ASSERT_EQ (ActualCityValues, ExpectedCityValues) << "Expected city Names Doesn't match Actual Names";
+    ASSERT_STREQ (expectedCityNames, actualCityNames.c_str()) << stmt.GetECSql();
     ASSERT_EQ (6, rowCount);
     stmt.Finalize ();
 

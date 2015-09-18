@@ -2199,9 +2199,12 @@ BentleyStatus ECSqlParser::parse_all(bool& isAll, OSQLParseNode const* parseNode
     {
     if (parseNode->getNodeType() == SQL_NODE_KEYWORD)
         isAll = parseNode->getTokenID() == SQL_TOKEN_ALL;
+    else
+        {
+        //if ALL wasn't specified, it is a rule node (and no keyword node)
+        isAll = false;
+        }
 
-    //if ALL wasn't specified, it is an rule node (and no keyword node)
-    isAll = false;
     return SUCCESS;
     }
 
@@ -2440,14 +2443,11 @@ BentleyStatus ECSqlParser::parse_select_statement (std::unique_ptr<SelectStateme
         return ERROR;
         }
 
-    BentleyStatus stat = SUCCESS;
-
     if (parseNode->count () == 1)
         {
         unique_ptr<SingleSelectStatementExp> single_select = nullptr;
-        stat = parse_single_select_statement(single_select, parseNode->getChild(0));
-        if (stat != SUCCESS)
-            return stat;
+        if (SUCCESS != parse_single_select_statement(single_select, parseNode->getChild(0)))
+            return ERROR;
 
         exp = std::unique_ptr<SelectStatementExp> (new SelectStatementExp (std::move (single_select)));
         return SUCCESS;
@@ -2455,9 +2455,8 @@ BentleyStatus ECSqlParser::parse_select_statement (std::unique_ptr<SelectStateme
     else if (parseNode->count () == 4)
         {
         unique_ptr<SingleSelectStatementExp> single_select = nullptr;
-        stat = parse_single_select_statement (single_select, parseNode->getChild (0));
-        if (stat != SUCCESS)
-            return stat;
+        if (SUCCESS != parse_single_select_statement (single_select, parseNode->getChild (0)))
+            return ERROR;
 
         if (!single_select->IsCoreSelect())
             {
@@ -2466,19 +2465,16 @@ BentleyStatus ECSqlParser::parse_select_statement (std::unique_ptr<SelectStateme
             }
 
         SelectStatementExp::Operator op = SelectStatementExp::Operator::None;
-        stat = parse_compound_select_op(op, parseNode->getChild(1));
-        if (stat != SUCCESS)
-            return stat;
+        if (SUCCESS != parse_compound_select_op(op, parseNode->getChild(1)))
+            return ERROR;
 
         bool isAll = false;
-        stat = parse_all(isAll, parseNode->getChild(2));
-        if (stat != SUCCESS)
-            return stat;
+        if (SUCCESS !=parse_all(isAll, parseNode->getChild(2)))
+            return ERROR;
 
         unique_ptr<SelectStatementExp> compound_select = nullptr;
-        stat = parse_select_statement(compound_select, parseNode->getChild(3));
-        if (stat != SUCCESS)
-            return stat;
+        if (SUCCESS != parse_select_statement(compound_select, parseNode->getChild(3)))
+            return ERROR;
 
         exp = std::unique_ptr<SelectStatementExp> (new SelectStatementExp (std::move (single_select), op, isAll, std::move (compound_select)));
         return SUCCESS;
