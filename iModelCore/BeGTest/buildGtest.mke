@@ -8,7 +8,6 @@
 #
 # Builds a test runner based on gtest
 #
-PolicyFile=$(_MakeFilePath)AssertBeGTestPolicy.mki
 %include mdl.mki
 
 %ifndef BEGTEST_NAME
@@ -46,6 +45,17 @@ always:
     !~@mkdir $(runDir)Output
     !~@mkdir $(runDir)Temp
     !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcBsiCommon)PublicSDK
+
+%ifndef BEGTEST_FRAMEWORK_SQLANG
+    BEGTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3
+%endif
+
+always:
+    > $(o)BEGTEST_FRAMEWORK_SQLANG_DEF.h
+\#define BEGTEST_FRAMEWORK_SQLANG L"$(BEGTEST_FRAMEWORK_SQLANG)"
+    <
+
+cIncs + -I$(o)
 
 # -----------------------------------------------------
 # Compile BeGTestExe.cpp. It contains "main"
@@ -89,13 +99,6 @@ GTEST_MAIN_IS_SUPPLIED = 1
 always:
   chmod +x $(o)$(progName)
 %endif
-
-# -----------------------------------------------------
-# Create the sqlang database for the unit tests
-# -----------------------------------------------------
-#SQLANG_OutputDb     = $(o)DgnPlatformAssetsDirectory/sqlang/BeGTest_en-US.sqlang.db3 
-#SQLANG_DeliveryDir  = $(tmp)
-#%include CreateSQLangDb.mki
 
 # ---------------------------------------------------------------------------------------------------
 # Link files into the Delivery directory with the names and locations that BeGTestExe.cpp expects.

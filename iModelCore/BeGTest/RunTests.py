@@ -220,7 +220,7 @@ class GtestStdoutResultParser ():
         result = ""
 
         if len (self.m_listOfFailingTestNames) > 0 or len (self.m_listOfHaltingTests) > 0:
-            result += "{0}:\n".format (TestGroupNameMap[testType])
+            result += "Tests:\n"
         for item in self.m_listOfFailingTestNames: 
             result += " Error (Failed Test): {0}\n".format (item)
 
@@ -421,71 +421,6 @@ DEBUGGER_VS11 = 1
 DEBUGGER_VS12 = 2
 DEBUGGER_VS14 = 3
 
-TEST_None = 0
-TEST_Published = 1
-TEST_NonPublished = 2
-TEST_Scenario = 3
-TEST_DgnView = 4
-TEST_All = 5
-TEST_Scenario_Host = 6
-TEST_Regression = 7
-TEST_Performance = 8
-TEST_BentleyPublished = 9
-
-TestGroups = {}
-TestGroupNameMap = {TEST_Published:         "Published", 
-                    TEST_NonPublished:      "NonPublished",
-                    TEST_Scenario:          "Scenario",
-                    TEST_DgnView:           "DgnView",
-                    TEST_Regression:        "Regression", 
-                    TEST_Performance:       "Performance",
-                    TEST_BentleyPublished:  "BentleyPublished" }
-
-TestCommandName = {TEST_Published:          "", 
-                    TEST_NonPublished:      "--run_non_published",
-                    TEST_Scenario:          "--run_scenario",
-                    TEST_DgnView:           "--run_dgnview",
-                    TEST_Regression:        "--run_regression", 
-                    TEST_Performance:       "--run_performance",
-                    TEST_BentleyPublished:  "--run_bentley_published" }
-
-TestHostMap  = {TEST_Published:             "DgnPlatformTestHost.dll", 
-                    TEST_NonPublished:      "DgnPlatformTestHost.dll",
-                    TEST_Scenario:          "DgnPlatformTestHost.dll",
-                    TEST_DgnView:           "DgnViewTestHost.dll",
-                    TEST_Scenario_Host:     "DgnPlatformHostCertif.dll",
-                    TEST_Regression:        "DgnPlatformTestHost.dll",
-                    TEST_Performance:       "DgnPlatformTestHost.dll",
-                    TEST_BentleyPublished:  "NoHost" }
-
-TestRunnerMap  = {TEST_Published:           "TestRunnerPagalloc.exe", 
-                    TEST_NonPublished:      "TestRunnerPagalloc.exe",
-                    TEST_Scenario:          "TestRunnerPagalloc.exe",
-                    TEST_DgnView:           "TestRunnerPagalloc.exe",
-                    TEST_Scenario_Host:     "TestRunnerPagalloc.exe",
-                    TEST_Regression:        "TestRunnerPagalloc.exe",
-                    TEST_Performance:       "TestRunnerPagalloc.exe",
-                    TEST_BentleyPublished:  "TestRunner.exe" }
-
-TestDllMap = {TEST_Published:               "DgnPlatformTest_Published.dll", 
-                    TEST_NonPublished:      "DgnPlatformTest_NonPublished.dll",
-                    TEST_Scenario:          "DgnPlatformTest_Scenario.dll",
-                    TEST_DgnView:           "DgnViewTest_SmokeTest.dll",
-                    TEST_Scenario_Host:     "DgnPlatformTest_Scenario.dll",
-                    TEST_Regression:        "DgnPlatformTest_Regression.dll",
-                    TEST_Performance:       "DgnPlatformTest_Performance.dll",
-                    TEST_BentleyPublished:  "BentleyLibTest_Published.dll"}
-
-# Define which Product directory will the dll be in.
-TestProductMap   = {TEST_Published:         "BeGTest", 
-                    TEST_NonPublished:      "BeGTest",
-                    TEST_Scenario:          "BeGTest",
-                    TEST_DgnView:           "DgnViewTest",
-                    TEST_Scenario_Host:     "DgnPlatformTestCert",
-                    TEST_Regression:        "BeGTest",
-                    TEST_Performance:       "BeGTest",
-                    TEST_BentleyPublished:  "BentleyLibTests" }
-
 #-----------------------------------------------------------------------------#
 #                                               Kevin.Nyman         8/09
 #-------+---------+---------+---------+---------+---------+---------+---------#
@@ -495,11 +430,12 @@ class DgnPlatformTestRunner:
     #                                           Kevin.Nyman         8/09
     #---+---------+---------+---------+---------+---------+---------+---------#
     def __init__ (self, args):
+        self.m_exeName = "";
         self.m_isRunningCoverage = False
         self.m_isMakingCoverageReport = False
         self.m_isRunningFromBentleyBuild = False
         self.m_dumpLeakingTests = False 
-        self.m_testRunningType  = TEST_Published
+        self.m_testRunningType  = ""
         self.m_isRunningDevTests = False # run published and non published tests.
         self.m_hasDumpedErrorSummaryHeader = False
         self.m_isRunningFirebugTests = False # run published, nonpublished, performance, regression
@@ -528,6 +464,10 @@ class DgnPlatformTestRunner:
             arg = args[i] 
             upper = arg.upper ()
 
+            if 0 == upper.find("--EXENAME"):
+                self.m_exeName = arg.split("=")[1]
+                continue;
+
             if upper.startswith("-A"):
                 if 2 == len(upper):
                     i += 1
@@ -545,34 +485,6 @@ class DgnPlatformTestRunner:
             if "--HELP" == upper:
                 self.PrintHelp ()
                 # Do not continue, this should get to BeGTest.exe
-
-            if "--RUN_DGNVIEW" == upper:
-                self.m_testRunningType = TEST_DgnView 
-                continue 
-
-            if "--RUN_NON_PUBLISHED" == upper:
-                self.m_testRunningType = TEST_NonPublished 
-                continue 
-
-            if "--RUN_SCENARIO" == upper:
-                self.m_testRunningType = TEST_Scenario 
-                continue 
-
-            if "--RUN_SCENARIO_HOST" == upper:
-                self.m_testRunningType = TEST_Scenario_Host 
-                continue
-
-            if "--RUN_REGRESSION" == upper:
-                self.m_testRunningType = TEST_Regression
-                continue
-
-            if "--RUN_PERFORMANCE" == upper:
-                self.m_testRunningType = TEST_Performance 
-                continue
-
-            if "--RUN_BENTLEY_PUBLISHED" == upper:
-                self.m_testRunningType = TEST_BentleyPublished
-                continue
 
             if "--DUMP_LEAKING_TESTS" == upper:
                 self.m_dumpLeakingTests = True
@@ -669,6 +581,14 @@ class DgnPlatformTestRunner:
     def VerifyArgs (self):
         error = False
 
+        if not self.m_exeName:
+            PrintError ("You must specify the name of the test runner executable using the -exename= argument") 
+            error = True 
+
+        if not self.m_outputDir:
+            PrintError ("You must specify the name of the output directory using the --output_dir= argument") 
+            error = True 
+
         if not self.m_arch:
             PrintError ("Could not resolve architecture from environment or command line. Set via -a/--architecture or DEFAULT_TARGET_PROCESSOR_ARCHITECTURE.")
             error = True 
@@ -688,39 +608,14 @@ class DgnPlatformTestRunner:
     #-------------------------------------------------------------------------#
     #                                           Kevin.Nyman         8/09
     #---+---------+---------+---------+---------+---------+---------+---------#
-    def GetTargetProcessorDir (self):
-        if self.m_arch.upper() == 'X86' or self.m_arch.upper() == 'X64':
-            return 'Win'+self.m_arch
-
-        return self.m_arch
-
-    #-------------------------------------------------------------------------#
-    #                                           Kevin.Nyman         8/09
-    #---+---------+---------+---------+---------+---------+---------+---------#
     def GetExeLocation (self):
-        outRoot = os.getenv ("OutRoot")
-        
-        # This is a hack because symlinks wreck havoc when running on Linux... some shells and apps resolve, some resolve partially, some don't... sucks, but this is the most reliable way.
-        # See associated code in RunBeGTest.mke
-        if (sys.platform.startswith('linux') or sys.platform.startswith('darwin')):
-            dllLocation = os.path.join (outRoot, self.GetTargetProcessorDir(), "ProductCopy", TestProductMap[self.m_testRunningType], "bin")
-        else:
-            dllLocation = os.path.join (outRoot, self.GetTargetProcessorDir(), "Product", TestProductMap[self.m_testRunningType], "bin")
-        
-        if not os.path.exists (dllLocation):
-            PrintError ("Could not find " + dllLocation + ".")
-            Exit (1) 
-        return dllLocation 
+        return os.path.dirname(self.m_exeName)
 
     #-------------------------------------------------------------------------#
     #                                           Kevin.Nyman         8/09
     #---+---------+---------+---------+---------+---------+---------+---------#
     def GetExeName (self):
-        result = "BeGTest"
-        if os.name == 'nt':
-            result += ".exe"
-
-        return result
+        return os.path.basename(self.m_exeName)
 
     #-------------------------------------------------------------------------#
     #                                           Kevin.Nyman         8/09
@@ -733,12 +628,8 @@ class DgnPlatformTestRunner:
         Log (" It also can be used to locate output tmp files for using the output trimmer to only show")
         Log (" failing tests." )
         Log ("")
-        Log (" --run_published(default)                                    : run published tests")
-        Log (" --run_non_published                                         : run non-published tests")
-        Log (" --run_regression                                            : run regression tests")
-        Log (" --run_performance                                           : run performance tests")
-        Log (" --run_scenario                                              : run scenario tests")
-        Log ("" )
+        Log (" -exename:                                                   : Required: The filename (including the full path) of the test runner program to run.")
+        Log (" -output_dir:                                                : Required: The directory where test runner output such as logs can be written.")
         Log (" --print_non_finishing_tests                                 : prints list of tests that were available that didn't complete (either filtered out, or test crashed before they finished).")
         Log ("")
         Log (" --vs11                                                      : runs vs11 to debug the process")
@@ -751,22 +642,9 @@ class DgnPlatformTestRunner:
         Log ("------------")
 
     #-------------------------------------------------------------------------#
-    #                                           Kevin.Nyman         05/10
-    #---+---------+---------+---------+---------+---------+---------+---------#
-    def GetBuildLocation (self):
-        if len (self.m_outputDir) > 0:
-            return self.m_outputDir
-        outRoot = os.getenv ("OutRoot")
-        outputFolder = os.path.join (outRoot, self.GetTargetProcessorDir(), "build", "BeGTest") 
-        return outputFolder
-
-    #-------------------------------------------------------------------------#
     #                                           Kevin.Nyman         10/09
     #---+---------+---------+---------+---------+---------+---------+---------#
     def GetLogsDir (self):
-        if len (self.m_outputDir) == 0:
-            return self.MakeTmpDirIfNecessary ()
-
         outDir = os.path.join (self.m_outputDir, "run", "logs")
         if not os.path.exists (outDir):
             os.makedirs (outDir)
@@ -937,17 +815,6 @@ class DgnPlatformTestRunner:
         return cmd
 
     #-------------------------------------------------------------------------#
-    #                                           Kevin.Nyman         10/09
-    #---+---------+---------+---------+---------+---------+---------+---------#
-    def MakeTmpDirIfNecessary (self):
-        tmpDir = os.getenv ('tmp')
-        outDir = os.path.join (tmpDir, "BeGTest") 
-
-        if not os.path.exists (outDir):
-            os.system ("mkdir " + outDir)
-        return outDir
-
-    #-------------------------------------------------------------------------#
     # Print list of available tests to an output file. 
     #                                           Kevin.Nyman         10/09
     #---+---------+---------+---------+---------+---------+---------+---------#
@@ -1079,8 +946,7 @@ class DgnPlatformTestRunner:
     #                                           Kevin.Nyman         03/10
     #---+---------+---------+---------+---------+---------+---------+---------#
     def GenerateFilenameForTarget (self, filename, testType):
-        result = TestGroupNameMap [testType]
-        return result + filename
+        return "Tests" + filename
 
     #-------------------------------------------------------------------------#
     #                                           Kevin.Nyman         03/10

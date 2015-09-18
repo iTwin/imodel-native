@@ -1,18 +1,28 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: RunBeGTest.mke $
+#     $Source: RunGtest.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-
-PolicyFile = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 %include mdl.mki
 
+%ifndef TestRunnerExeFileName
+    %error Define TestRunnerExeFileName to identify the test runner executable that should be run
+%endif
+
+%ifndef TestOutputDir
+    %error Define TestOutputDir to the directory where logs, etc. should go
+%endif
+
+%ifndef TestRunnerLoggingConfigFileName
+    TestRunnerLoggingConfigFileName=$[@realpath $[@dir $(TestRunnerExeFileName)]logging.config.xml]
+    %warn TestRunnerLoggingConfigFileName defaults to $(TestRunnerLoggingConfigFileName)
+%endif
+
 BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
-LogDir=$(OutputRootDir)build/BeGTest/run/logs/
+LogDir=$[@realpath ${TestOutputDir}/logs/]
 LogFile=$(LogDir)BeGTeststdout.log
-OutputDir=$(OutputRootDir)build/BeGTest/
 
 # NB: If you change the name of the output log file, you must also change it in RunBeGTest.logging.config.xml
 
@@ -20,9 +30,9 @@ OutputDir=$(OutputRootDir)build/BeGTest/
 
 %if !defined (BEGTEST_LOGGING_CONFIG)
 always:
-    ~@putenv BEGTEST_LOGGING_CONFIG=$(_MakeFilePath)RunBeGTest.logging.config.xml
+    ~@putenv BEGTEST_LOGGING_CONFIG=$(TestRunnerLoggingConfigFileName)
     
-%message BEGTEST_LOGGING_CONFIG not set, using default: $(BEGTEST_LOGGING_CONFIG)
+%message BEGTEST_LOGGING_CONFIG not set, using default: $(TestRunnerLoggingConfigFileName)
 %else    
 %message Using your environment's BEGTEST_LOGGING_CONFIG=$(BEGTEST_LOGGING_CONFIG)
 %message !!! If you don't turn on Console logging, you won't get interleaved output at $(LogDir)PublishedTestResults.txt !!!
@@ -56,9 +66,9 @@ always:
 %endif
 
 always:
+    !~@mkdir ${TestOutputDir}
     !~@mkdir ${LogDir}
-    !~@mkdir ${OutputDir}
-    $(RunPrefix) $(_MakeFilePath)RunTests.py --gtest_output="xml:$(LogDir)TestResults.xml" --truncate_output --output_dir=$(OutputDir) --log_file=$(LogFile)
+    $(RunPrefix) $(_MakeFilePath)RunTests.py --exename="$(TestRunnerExeFileName)" --gtest_output="xml:$(LogDir)TestResults.xml" --truncate_output --output_dir=$(TestOutputDir) --log_file=$(LogFile)
     %if !defined (NO_BREAK)
        $(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
     %else

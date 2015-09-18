@@ -2,12 +2,19 @@
 #
 #     $Source: prewire.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 PolicyFile = $(InternalSystemPolicy)
 
 %include mdl.mki
 
+srcDir = $(_MakeFilePath)
+
 always:
     @CreateSymLinks.py  -d"$(BuildContext)PublicAPI/BeGTest=$(srcDir)PublicAPI/BeGTest"
+    @CreateSymLinks.py  -f"$(BuildContext)Delivery/buildGtest.mke=$(srcDir)buildGtest.mke"
+    @CreateSymLinks.py  -f"$(BuildContext)Delivery/RunGtest.mke=$(srcDir)RunGtest.mke"
+    @CreateSymLinks.py  -f"$(BuildContext)Delivery/RunTests.py=$(srcDir)RunTests.py"
+    @CreateSymLinks.py  -f"$(BuildContext)Delivery/BeGTestExe.cpp=$(srcDir)BeGTestExe.cpp"
+    @CreateSymLinks.py  -f"$(BuildContext)Delivery/logging.config.xml=$(srcDir)logging.config.xml"

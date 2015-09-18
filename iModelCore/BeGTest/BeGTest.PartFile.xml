@@ -4,130 +4,10 @@
               xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
               >
 
-    <!-- ********************************************************************************************** -->
-    <!-- BeGtest
-                This produces a test runner that is a very thin wrapper around gtest. It currently
-                builds and runs on Windows, Linues, and MacOS.
-    -->
-    <!-- ********************************************************************************************** -->
-
-    <Product Name="BeGTest">
-        <SubPart PartName="BeGTestExe" />
-        <Directories DirectoryListName="BeGTestDirList" />
-    </Product>
-
-    <Product Name="BeGTestTested">
-        <SubProduct ProductName="BeGTest" />
-        <SubPart PartName="RunBeGTest" />
-        <SubPart PartName="DisplayIgnoreList" />
-        <Directories DirectoryListName="BeGTestDirList" />
-    </Product>
-
-    <Product Name="BeGTestPerformanceTested">
-        <SubProduct ProductName="BeGTest" />
-        <SubPart PartName="RunBeGTestPerformance" />
-        <Directories DirectoryListName="BeGTestDirList" />
-    </Product>
-
-    <Part Name="RunBeGTest" BentleyBuildMakeFile="RunBeGTest.mke" ExcludePlatforms="Android*,iOS*">
-        <SubProduct ProductName="BeGTest" />
+    <Part Name="Base">
     </Part>
-
-    <Part Name="DisplayIgnoreList" BentleyBuildMakeFile="DisplayIgnoreList.mke">
-        <SubPart PartName="RunBeGTest" />
-    </Part>
-
-    <Part Name="RunBeGTestPerformance" BentleyBuildMakeFile="RunBeGTest.mke" BMakeOptions="+dGTEST_FILTER=--gtest_filter=Performance*" ExcludePlatforms="Android*,iOS*">
-    </Part>
-
-    <Part Name="BeGTestExe" BentleyBuildMakeFile="BeGTestExe.mke"  BMakeOptions="+dUSE_GTEST +dBUILD_BEGTEST_GTEST_EXE" ExcludePlatforms="Android*,iOS*">
-        <SubPart PartName="google_gtest_lib"                PartFile="gtest"            Repository="util-gtest" />
-        <SubPart PartName="google_gmock_lib"                PartFile="gmock"            Repository="util-gmock" />
-        <SubPart PartName="LoggingNative"                   PartFile="LoggingSDK"       Repository="loggingsdk" />
-        <SubPart PartName="BeSQLite"            PartFile="BeSQLite"     Repository="BeSQLite" />
-        <SubPart PartName="Base"/>
-        <Bindings>
-            <Directory ProductDirectoryName="BeGTestFiles" SourceName="Delivery"/>
-        </Bindings>
-    </Part>
-
-    <Part Name="Base" BentleyBuildMakeFile="prewire.mke">
-        <Bindings>
-            <PublicAPI Domain="BeGTest" />
-        </Bindings>
-    </Part>
-
-    <ProductDirectoryList ListName="BeGTestDirList" >
-        <ProductDirectory Name="BeGTestFiles"                       Path="bin" />
-
-        <!-- ***NEEDS WORK: We say that we don't deliver anything. But, in fact, BeGTestExe.mke symlinks all this stuff into the "bin" directory. 
-                We can probably take that logic out of BeGTestExe.mke and put it here. -->
-        <ProductDirectory Name="LoggingNativeAssemblies"            Deliver="false" />
-        <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Deliver="false" />
-        <ProductDirectory Name="BentleyNativeAssemblies"            Deliver="false" />
-        <ProductDirectory Name="Libs"                               Deliver="false" />
-        <ProductDirectory Name="Libs"                               Deliver="false"  LibType="static"/>
-        <ProductDirectory Name="PublicAPI"                          Deliver="false" />
-        <ProductDirectory Name="VendorAPI"                          Deliver="false" />
-        <ProductDirectory Name="VendorNotices"                      Deliver="false" />
-        <ProductDirectory Name="VendorNotices"                      Deliver="false"  LibType="static"/>
-        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false" />
-        <ProductDirectory Name="PPNativeAssemblies"                 Deliver="false" />
-        <ProductDirectory Name="MobileDgnSdkIncludeDirectory"       Deliver="false" />
-        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Deliver="false" />
-        <ProductDirectory Name="GeomNativeAssemblies"               Deliver="false" />
-        <ProductDirectory Name="ECSchemas"                          Deliver="false" />
-        <ProductDirectory Name="ECObjectsNativeAssemblies"          Deliver="false" />
-        <ProductDirectory Name="ECObjectsTestSeedData"              Deliver="false" />
-        <ProductDirectory Name="ECObjectsTestExe"                   Deliver="false" />
-        <ProductDirectory Name="BeOpenSSLAssemblies"                Deliver="false" />
-        <ProductDirectory Name="BeCurlAssemblies"                   Deliver="false" />
-        <ProductDirectory Name="RmgrToolsNativeAssemblies"          Deliver="false" />
-        <ProductDirectory Name="DgnPlatformLastResortFonts"         Deliver="false" />
-        <ProductDirectory Name="DgnPlatformFont"                    Deliver="false" />
-        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false" />
-        <ProductDirectory Name="SmartSolidAssemblies"               Deliver="false" />
-        <ProductDirectory Name="ECSchemas"                          Deliver="false" />
-        <ProductDirectory Name="GeoCoordNativeAssemblies"           Deliver="false" />
-        <ProductDirectory Name="sqlang"                             Deliver="false" />
-        <ProductDirectory Name="CordovaLibs"                        Deliver="false" />
-        <ProductDirectory Name="StdThemes"                          Deliver="false" />
-        <ProductDirectory Name="MobileDgnJavaScript"                Deliver="false" />
-        <ProductDirectory Name="MobileDgnJavaScriptIcons"           Deliver="false" />
-        <ProductDirectory Name="MobileDgnNativeAssemblies"          Deliver="false" />
-        <ProductDirectory Name="WSClientAssemblies"                 Deliver="false" />
-
-    </ProductDirectoryList>
 
     <!-- ********************************************************************************************** -->
-    <!-- BeGTestStaticLib
-                This produces a static library that includes all of the unit tests as well as
-                the libraries they require. This all-in-one static library is used by some test
-                runners such as BeTestiOS to simplify their link statements.
-    -->
-    <!-- ********************************************************************************************** -->
-
-    <Part Name="BeGTestStaticLib" BentleyBuildMakeFile="BeGTestStaticLib.mke">
-        <Bindings>
-            <Libs Required="false" ProductDirectoryName="BeGTestStaticLib">Delivery/$(stlibprefix)BeGTestStatic$(stlibext)</Libs>
-        </Bindings>
-    </Part>
-
-  <!-- ********************************************************************************************** -->
-  <!-- UnitTestsDll
-                This produces a DLL that includes all of the unit tests. This is used to deliver
-		the unit tests to test runners on platforms such as BeTestWinRT to simplify their link statements.
-    -->
-  <!-- ********************************************************************************************** -->
-
-  <Part Name="UnitTestsDll" BentleyBuildMakeFile="UnitTestsDll.mke">
-    <Bindings>
-      <Libs ProductDirectoryName="UnitTestsLib" Required="false">Delivery/$(libprefix)UnitTests$(libext)</Libs>
-      <Assemblies ProductDirectoryName="UnitTestsDll">Delivery/$(shlibprefix)UnitTests$(shlibext)</Assemblies>
-    </Bindings>
-  </Part>
-
-  <!-- ********************************************************************************************** -->
     <!-- BeTestDocuments                                                                                -->
     <!-- ********************************************************************************************** -->
 
@@ -135,8 +15,23 @@
         <Directories DirectoryListName="BeTestDocumentsDirList" />
         <SubPart PartName="DgnV8Converter"/>
         <SubPart PartName="LinkDgnDbPublisherIntoToolContext" LibType="Dynamic"/>
-        <SubPart PartName="UnitTests_Documents" LibType="Static"    PartFile="ECDb" Repository="ECDb" />
+        <SubPart PartName="UnitTests_Documents" LibType="Static" />
     </Product>
+
+    <!-- TRICKY: Documents are only actually converted for x64,x86. For other platforms, we get documents from LKGs. -->
+    <!-- We must do other processing for other platforms and other cases. Therefore, no platforms can be excluded! -->
+    <!-- *** NEEDS WORK: Why are we using UnitTestPublisherConfiguration.xml? Shouldn't we be using UnitTestDgnV8ConverterConfiguration.xml? Or, why do we have two config files? There's only one converter! -->
+    <Part Name="UnitTests_Documents" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishDocuments.mke" BMakeOptions="-dUNIT_TESTS_NAME=ECDbUnitTests -dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnPlatformTest/DgnDbUnitTests/ -dUNIT_TESTS_DOCUMENTS_PREBUILTS_SUBDIR=DgnDb -dUNIT_TESTS_PUBLISH_CONFIG=${SrcRoot}/BeGTest/UnitTestPublisherConfiguration.xml">
+        <!--<SubPart PartName="LinkDgnDbPublisherIntoToolContext" PartFile="BeGTest" Repository="BeGTest" LibType="Dynamic"/>-->
+        <SubPart PartName="DgnDbUnitTestsData"/>
+        <Bindings>
+            <Directory SourceName="Delivery/UnitTests/Documents" SubPartDirectory="Documents/DgnDb" ProductDirectoryName="UnitTests_Documents_DgnDb" />
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnDbUnitTestsData" OnlyPlatforms="x64,x86">
+        <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
+    </Part>
 
     <Part Name="DgnV8Converter" OnlyPlatforms="x64,x86">
         <SubProduct ProductName="DgnV8Converter" PartFile="DgnDbSync" Repository="DgnDbSync"/>
@@ -158,95 +53,8 @@
         </Bindings>
     </Part>
 
-    <!-- ********************************************************************************************** -->
-    <!-- Common unit tests part for all platforms                                                     -->
-    <!-- ********************************************************************************************** -->
-
-    <Part Name="PlatformUnitTests">
-        <SubPart PartName="PlatformUnitTests-Windows" />
-        <SubPart PartName="PlatformUnitTests-Static" />
-    </Part>
-
-    <Part Name="PlatformUnitTests-Windows" OnlyPlatforms="x86,x64,WinRT*,Linux*,MacOS*">
-        <SubPart    PartName="PlatformUnitTests-Windows-No-View" />
-        <SubPart    PartName="MobileDgnUnitTests"       PartFile="MobileDgn"            Repository="MobileDgn" />
-    </Part>
-
-    <Part Name="PlatformUnitTests-Static" ExcludePlatforms="x86,x64,WinRT*,Linux*,MacOS*">
-        <SubPart    PartName="PlatformUnitTests-Static-No-View" />
-        <SubPart    PartName="MobileDgnUnitTests"       PartFile="MobileDgn"            Repository="MobileDgn"              LibType="Static" />
-    </Part>
-
-    <Part Name="PlatformUnitTests-No-View">
-        <SubPart PartName="PlatformUnitTests-Windows-No-View" />
-        <SubPart PartName="PlatformUnitTests-Static-No-View" />
-    </Part>
-
-    <Part Name="PlatformUnitTests-Windows-No-View" OnlyPlatforms="x86,x64,WinRT*,Linux*,MacOS*">
-        <SubPart    PartName="BentleyUnitTests"         PartFile="Bentley"              Repository="Bentley" />
-        <SubPart    PartName="ECObjectsUnitTests"       PartFile="ecobjects"            Repository="ecobjects" />
-        <SubPart    PartName="GeomLibsUnitTests"        PartFile="geomlibs"             Repository="GeomLibs" />
-        <SubPart    PartName="BeSQLiteUnitTests"        PartFile="BeSQLite"             Repository="BeSQLite" />
-        <SubPart    PartName="ECDbUnitTests"            PartFile="ECDb"                 Repository="ECDb" />
-        <SubPart    PartName="DgnProjectUnitTests"      PartFile="DgnPlatform"          Repository="DgnPlatform" />
-        <SubPart    PartName="DgnDisplayUnitTests"      PartFile="DgnDisplay"           Repository="DgnDisplay" />
-        <SubPart    PartName="PlanningUnitTests"        PartFile="Planning"             Repository="DgnDomains-Planning"/>
-        <SubPart    PartName="WSClientUnitTests"        PartFile="WSClient"             Repository="WSClient" />
-        <SubPart    PartName="ConstructionSchemaUnitTests"  PartFile="ConstructionSchema"   Repository="ConstructionSchema" />
-    </Part>
-
-    <Part Name="PlatformUnitTests-Static-No-View" ExcludePlatforms="x86,x64,WinRT*,Linux*,MacOS*">
-        <SubPart    PartName="BentleyUnitTests"         PartFile="Bentley"              Repository="Bentley"                LibType="Static" />
-        <SubPart    PartName="ECObjectsUnitTests"       PartFile="ecobjects"            Repository="ecobjects"              LibType="Static" />
-        <SubPart    PartName="GeomLibsUnitTests"        PartFile="geomlibs"             Repository="GeomLibs"               LibType="Static" />
-        <SubPart    PartName="BeSQLiteUnitTests"        PartFile="BeSQLite"             Repository="BeSQLite"               LibType="Static" />
-        <SubPart    PartName="ECDbUnitTests"            PartFile="ECDb"                 Repository="ECDb"                   LibType="Static" />
-        <SubPart    PartName="DgnProjectUnitTests"      PartFile="DgnPlatform"          Repository="DgnPlatform"            LibType="Static" />
-        <SubPart    PartName="DgnDisplayUnitTests"      PartFile="DgnDisplay"           Repository="DgnDisplay"             LibType="Static" />
-        <SubPart    PartName="PlanningUnitTests"        PartFile="Planning"             Repository="DgnDomains-Planning"    LibType="Static" />
-        <SubPart    PartName="WSClientUnitTests"        PartFile="WSClient"             Repository="WSClient"               LibType="Static" />
-        <SubPart    PartName="ConstructionSchemaUnitTests"  PartFile="ConstructionSchema"   Repository="ConstructionSchema"     LibType="Static" />
-    </Part>
-
-    <!-- ********************************************************************************************** -->
-    <!-- Common test builder part for all platforms                                                     -->
-    <!-- ********************************************************************************************** -->
-
-    <Part Name="BeGTestCommon">
-        <SubPart PartName="BeGTest-Windows" />
-        <SubPart PartName="BeGTest-Android" />
-        <SubPart PartName="BeGTest-iOS" />
-        <SubPart PartName="BeGTest-WinRT" />
-        <SubPart PartName="BeGTest-Linux" />
-        <SubPart PartName="BeGTest-MacOS" />
-    </Part>
-
-    <Part Name="BeGTest-Windows" OnlyPlatforms="x86,x64">
-        <SubProduct ProductName="BeGTestTested" />
-    </Part>
-
-    <Part Name="BeGTest-Android" OnlyPlatforms="Android*">
-        <SubProduct ProductName="BeTestAndroid" PartFile="BeTestAndroid" Repository="BeTestAndroid" />
-    </Part>
-
-    <Part Name="BeGTest-iOS" OnlyPlatforms="iOS*">
-        <SubProduct ProductName="BeTestiOS" PartFile="BeTestiOS" Repository="BeTestiOS" />
-    </Part>
-
-    <Part Name="BeGTest-WinRT" OnlyPlatforms="WinRT*">
-        <SubProduct ProductName="BeTestWinRT" PartFile="BeTestWinRT" Repository="BeTestWinRT" />
-    </Part>
-
-    <Part Name="BeGTest-Linux" OnlyPlatforms="Linux*">
-        <SubProduct ProductName="BeGTestTested" />
-    </Part>
-
-    <Part Name="BeGTest-MacOS" OnlyPlatforms="MacOS*">
-        <SubProduct ProductName="BeGTestTested" />
-    </Part>
-
     <!-- *********************************************************************************************** -->
-    <!-- ProductDirectory that can be used by any material product based on mobiledgn -->
+    <!-- ProductDirectory that can be used by any unit test material product based on mobiledgn -->
     <!-- *********************************************************************************************** -->
     <ProductDirectoryList ListName="BeGTest-Material">
         <ProductDirectory Name="BentleyNativeAssemblies"            Path="Assemblies"/>
@@ -299,18 +107,25 @@
 
 
     <!-- *********************************************************************************************** -->
-    <!-- Subpart needed by all gtest-based test-runner EXE parts -->
+    <!-- This part should be used by any part that wants to build and/or run a gtest EXE -->
     <!-- *********************************************************************************************** -->
-    <Part Name="Gtest-ExeSupport" ExcludePlatforms="Android*,iOS*">
+    <Part Name="Gtest-Tools" BentleyBuildMakeFile="prewire.mke" ExcludePlatforms="Android*,iOS*">
         <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib"    PartFile="gmock"        Repository="util-gmock" />
         <SubPart PartName="LoggingNative"       PartFile="LoggingSDK"   Repository="loggingsdk" />
         <SubPart PartName="BeSQLite"            PartFile="BeSQLite"     Repository="BeSQLite" />
-        <SubPart PartName="Base"/>
+        <Bindings>
+            <PublicAPI Domain="BeGTest" />
+            <Files Required="false" SubPartDirectory="Gtest-Tools">Delivery/buildGtest.mke</Files>
+            <Files Required="false" SubPartDirectory="Gtest-Tools">Delivery/BeGTestExe.cpp</Files>
+            <Files Required="false" SubPartDirectory="Gtest-Tools">Delivery/logging.config.xml</Files>
+            <Files Required="false" SubPartDirectory="Gtest-Tools">Delivery/RunGtest.mke</Files>
+            <Files Required="false" SubPartDirectory="Gtest-Tools">Delivery/RunTests.py</Files>
+        </Bindings>
     </Part>
 
     <!-- *********************************************************************************************** -->
-    <!-- ProductDirectory used by all gtest-based test-runner products -->
+    <!-- ProductDirectory used by all gtest EXE products -->
     <!-- *********************************************************************************************** -->
     <ProductDirectoryList ListName="Gtest-GtestRunner">
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
