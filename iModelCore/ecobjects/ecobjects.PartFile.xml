@@ -132,8 +132,8 @@
 
     <!-- NuGet automatic packages generation -->
     <Part Name="ECObjectsPackage" BMakeFile="install\NuGetPacking.mke" >
-        <SubPart PartName="ECObjectsNative" />
         <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="ECObjectsNative" />
         <Bindings>
             <Files ProductDirectoryName="ECObjectsNuGet">Install\ecobjects.nupkg</Files>
         </Bindings>
