@@ -1148,33 +1148,6 @@ bool DgnElements::IsElementIdUsed(DgnElementId id) const
     return BE_SQLITE_ROW == stmt->Step();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     09/2015
-//---------------------------------------------------------------------------------------
-void DgnElements::RecordHighestElementId()
-    {
-    // The point of this method is to be called early when a DgnDb is opened to record the highest-ever used element ID.
-    // If the first thing an application does is delete an element before inserting one, the ID could be re-used unless we record it first.
-    
-    // This borrows from Db::GetNextRepositoryBasedId, but I don't want to call it directly and unnecessarily eat an ID every time you open the file.
-    
-    Statement select;
-    if (DbResult::BE_SQLITE_OK != select.Prepare(m_dgndb, "SELECT max(Id) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id<?"))
-        { BeAssert(false); return; }
-
-    BeRepositoryBasedId lastId(m_dgndb.GetRepositoryId().GetNextRepositoryId(), 0);
-    select.BindInt64(1, lastId.GetValueUnchecked());
-
-    if (BE_SQLITE_ROW != select.Step())
-        { BeAssert(false); return; }
-    
-    m_highestElementId = DgnElementId(select.GetValueInt64(0));
-    
-    DgnElementId firstId(m_dgndb.GetRepositoryId(), 1);
-    if (m_highestElementId.GetValueUnchecked() < firstId.GetValue())
-        m_highestElementId = firstId;
-    }
-
 /*---------------------------------------------------------------------------------**//**
  DgnElementIds are 64 bits, divided into two 32 bit parts {high:low}. The high 32 bits are reserved for the
  repositoryId of the creator and the low 32 bits hold the identifier of the element. This scheme is
