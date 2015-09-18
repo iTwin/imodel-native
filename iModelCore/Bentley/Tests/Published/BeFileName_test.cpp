@@ -1488,7 +1488,8 @@ TEST (BeFileNameTests, TrailingSeparatorBehavior)
 //---------------------------------------------------------------------------------------
 // @betest                                      Shaun.Sewall                    11/13
 //---------------------------------------------------------------------------------------
-#ifdef WIP_NEEDS_WORK // *** SubStation_NoFence.i.idgndb is not a symlink in the new test builder framework ***
+#ifdef WIP_NEEDS_WORK // *** Bentley unit tests must not depend on BeTestDocuments
+                      // *** Also, SubStation_NoFence.i.idgndb is not a symlink in the new test builder framework ***
 TEST (BeFileNameTests, GetFileSizeForSymbolicLink)
     {
 #if defined (BENTLEY_WIN32)

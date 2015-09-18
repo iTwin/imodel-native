@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeFileIterator_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -12,6 +12,8 @@
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson  05/2013
 //---------------------------------------------------------------------------------------
+#ifdef WIP_NEEDS_WORK // *** Bentley unit tests must not depend on BeTestDocuments
+#endif
 TEST (BeFileListIterator, Test1)
     {
     BeFileName docs;
@@ -62,6 +64,8 @@ static size_t countV8InDir (BeFileNameCR dir)
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson  05/2013
 //---------------------------------------------------------------------------------------
+#ifdef WIP_NEEDS_WORK // *** Bentley unit tests must not depend on BeTestDocuments
+#endif
 TEST (BeDirectoryIterator, Test1)
     {
     BeFileName docs;
