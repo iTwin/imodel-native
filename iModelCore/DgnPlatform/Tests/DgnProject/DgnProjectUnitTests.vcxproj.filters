@@ -166,9 +166,6 @@
     <ClCompile Include="NonPublished\ElementMaterial_tests.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\Font_tests.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\Category_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
@@ -188,6 +185,9 @@
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\GeomStream_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnFonts_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
   </ItemGroup>

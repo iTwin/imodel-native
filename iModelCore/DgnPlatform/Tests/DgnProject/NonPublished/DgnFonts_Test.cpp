@@ -50,7 +50,7 @@ TEST_F(FontTests, CRUD_DbFontMapDirect)
     EXPECT_TRUE(SUCCESS == map.Insert(*ttfFont, fontId2));
     EXPECT_TRUE(fontId2.IsValid());
 
-    // ToDo: insert TTF and RSC as well
+    // ToDo: insert RSC as well
     
     // Insert Duplicate 
     BeTest::SetFailOnAssert(false);
@@ -127,21 +127,47 @@ TEST_F(FontTests, CRUD_DbFaceDataDirect)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat     09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(FontTests, CRUD_DgnFontManager)
+TEST_F(FontTests, DgnFontManager)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"CRUD_DgnFontManager.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"DgnFontManager.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnFontCR font = DgnFontManager::GetLastResortTrueTypeFont();
-    //font.IsResolved();
-    wprintf(L"%s \n", font.GetName().c_str());
+    EXPECT_TRUE(font.IsResolved());
+    EXPECT_TRUE(DgnFontType::TrueType == font.GetType());
     DgnFontCR font2 = DgnFontManager::GetLastResortRscFont();
-    wprintf(L"%ls \n", font2.GetName().c_str());
+    EXPECT_TRUE(font2.IsResolved());
+    EXPECT_TRUE(DgnFontType::Rsc == font2.GetType());
     DgnFontCR font3 = DgnFontManager::GetLastResortShxFont();
-    wprintf(L"%ls \n", font3.GetName().c_str());
+    EXPECT_TRUE(font3.IsResolved());
+    EXPECT_TRUE(DgnFontType::Shx == font3.GetType());
     DgnFontCR font4 = DgnFontManager::GetAnyLastResortFont();
-    wprintf(L"%ls \n", font4.GetName().c_str());
+    EXPECT_TRUE(font4.IsResolved());
     DgnFontCR font5 = DgnFontManager::GetDecoratorFont();
-    wprintf(L"%ls \n", font5.GetName().c_str());
+    EXPECT_TRUE(font5.IsResolved());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat     09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FontTests, CreateMissingFont)
+    {
+    DgnFontPtr font = DgnFontPersistence::Missing::CreateMissingFont(DgnFontType::TrueType, "MissingTTF");
+    EXPECT_TRUE(font.IsValid());
+    EXPECT_TRUE(font->GetType() == DgnFontType::TrueType);
+    EXPECT_TRUE(font->GetName() == "MissingTTF" );
+    EXPECT_TRUE(!font->IsResolved());
+
+
+    DgnFontPtr font2 = DgnFontPersistence::Missing::CreateMissingFont(DgnFontType::Shx, "MissingShx");
+    EXPECT_TRUE(font2.IsValid());
+    EXPECT_TRUE(font2->GetType() == DgnFontType::Shx);
+    EXPECT_TRUE(font2->GetName() == "MissingShx");
+    EXPECT_TRUE(!font2->IsResolved());
+
+
+    DgnFontPtr font3 = DgnFontPersistence::Missing::CreateMissingFont(DgnFontType::Rsc, "MissingRsc");
+    EXPECT_TRUE(font3.IsValid());
+    EXPECT_TRUE(font3->GetType() == DgnFontType::Rsc);
+    EXPECT_TRUE(font3->GetName() == "MissingRsc");
+    EXPECT_TRUE(!font3->IsResolved());
 
     }
-

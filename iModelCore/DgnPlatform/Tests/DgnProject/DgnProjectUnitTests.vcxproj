@@ -29,6 +29,7 @@
     <ClCompile Include="NonPublished\Category_Test.cpp" />
     <ClCompile Include="NonPublished\DgnAuthority_Test.cpp" />
     <ClCompile Include="NonPublished\DgnColors_Test.cpp" />
+    <ClCompile Include="NonPublished\DgnFonts_Test.cpp" />
     <ClCompile Include="NonPublished\DgnLight_Test.cpp" />
     <ClCompile Include="NonPublished\DgnMaterial_Test.cpp" />
     <ClCompile Include="NonPublished\DgnProject_Test.cpp" />
@@ -44,7 +45,6 @@
     <ClCompile Include="NonPublished\ElementGeomPart_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementMaterial_tests.cpp" />
     <ClCompile Include="NonPublished\ElementProperties.cpp" />
-    <ClCompile Include="NonPublished\Font_tests.cpp" />
     <ClCompile Include="NonPublished\GeomStream_Test.cpp" />
     <ClCompile Include="NonPublished\Polyface_Test.cpp" />
     <ClCompile Include="NonPublished\Raster_Test.cpp" />
