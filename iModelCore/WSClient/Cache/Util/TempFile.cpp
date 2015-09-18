@@ -22,7 +22,7 @@ TempFile::TempFile(BeFileNameCR tempDir, Utf8StringCR fileName)
     BeFileName directory;
     directory
         .AppendToPath(tempDir)
-        .AppendToPath(BeFileName(BeGuid().ToString()))
+        .AppendToPath(BeFileName(BeSQLite::BeGuid().ToString()))
         .AppendSeparator();
 
     m_filePath
