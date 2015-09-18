@@ -206,7 +206,7 @@ void ValidateReadingRelated (ECDbTestProject& testProject, Utf8CP relationshipNa
     // Prepare and execute ECSqlStatement
     ECSqlStatement statement;
     ECSqlStatus prepareStatus = statement.Prepare (testProject.GetECDb(), ecSql.GetUtf8CP());
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) prepareStatus) << testProject.GetLastIssue().GetMessage();
+    ASSERT_EQ ((int) ECSqlStatus::Success, (int) prepareStatus) << ecSql.GetUtf8CP();
     statement.BindId(1, relSourceECInstanceId);
     ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
 
@@ -516,24 +516,24 @@ TEST(ECDbRelationships, ECRelationshipContraintKeyProperties)
     auto ecsql = "INSERT INTO ecsqltestKeys.P (I) VALUES(123)";
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stat) << "Preparation of '" << ecsql << "' failed: " << testProj.GetLastIssue().GetMessage();
+    ASSERT_EQ((int) ECSqlStatus::Success, (int) stat) << "Preparation of '" << ecsql << "' failed";
     ECInstanceKey instanceKey;
     auto stepStatus = statement.Step(instanceKey);
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << testProj.GetLastIssue().GetMessage();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
 
     ecsql = "INSERT INTO ecsqltestKeys.PSA (I) VALUES(?)";
     stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << testProj.GetLastIssue().GetMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
     statement.BindId(1, instanceKey.GetECInstanceId());
 
     stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << testProj.GetLastIssue().GetMessage();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
 
     ecsql = "SELECT * FROM ecsqltestKeys.PSAHasPKey_N1 ";
     stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << testProj.GetLastIssue().GetMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
     ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
     ASSERT_TRUE(ECSqlStepStatus::Done == statement.Step());
     statement.Finalize();
@@ -552,7 +552,7 @@ TEST(ECDbRelationships, ECRelationshipContraintKeyProperties)
 
     ecsql = "SELECT * FROM ecsqltestKeys.PSAHasPKey_N1 ";
     stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << testProj.GetLastIssue().GetMessage();
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
     ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
     ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
     ASSERT_TRUE(ECSqlStepStatus::Done == statement.Step());

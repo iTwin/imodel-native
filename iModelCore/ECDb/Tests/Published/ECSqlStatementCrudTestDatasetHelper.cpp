@@ -92,7 +92,7 @@ ECInstanceId ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ECDbTestPr
     auto stat = stmt.Prepare (testProject.GetECDbCR(), ecsql);
     if (stat != ECSqlStatus::Success)
         {
-        EXPECT_EQ((int) ECSqlStatus::Success, (int) stat) << "Inserting test instance with '" << ecsql << "' failed. Preparation failed: " << testProject.GetLastIssue().GetMessage();
+        EXPECT_EQ(ECSqlStatus::Success, stat) << "Inserting test instance with '" << ecsql << "' failed. Preparation failed";
         return ECInstanceId ();
         }
 
@@ -100,7 +100,7 @@ ECInstanceId ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ECDbTestPr
     auto stepStat = stmt.Step (newECInstanceKey);
     if (stepStat != ECSqlStepStatus::Done)
         {
-        EXPECT_EQ ((int)ECSqlStepStatus::Done, (int)stat) << "Inserting test instance with '" << ecsql << "' failed. Step failed: " << testProject.GetLastIssue().GetMessage();
+        EXPECT_EQ ((int)ECSqlStepStatus::Done, (int)stat) << "Inserting test instance with '" << ecsql << "' failed. Step failed";
         return ECInstanceId ();
         }
     else
