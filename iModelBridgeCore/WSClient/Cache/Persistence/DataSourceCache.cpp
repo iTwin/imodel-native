@@ -73,7 +73,7 @@ const ECDb::CreateParams& params
     {
     BeFileName::CreateNewDirectory(cacheFilePath.GetDirectoryName());
 
-    DbResult status = m_db.CreateNewDb(cacheFilePath, BeDbGuid(), params);
+    DbResult status = m_db.CreateNewDb(cacheFilePath, BeSQLite::BeGuid(), params);
     if (BE_SQLITE_OK != status)
         {
         LOG.error("Failed to create new ECDb");
