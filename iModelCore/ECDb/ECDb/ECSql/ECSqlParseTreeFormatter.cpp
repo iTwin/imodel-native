@@ -45,7 +45,7 @@ BentleyStatus ECSqlParseTreeFormatter::ParseAndFormatECSqlExpTree(Utf8StringR ex
 
     std::unique_ptr<Exp> exp = nullptr;
     ECSqlParser parser;
-    if (ECSqlStatus::Success != parser.Parse(exp, ecdb, ecsql, IClassMap::View::DomainClass))
+    if (SUCCESS != parser.Parse(exp, ecdb, ecsql, IClassMap::View::DomainClass))
         return ERROR;
 
     if (exp != nullptr)

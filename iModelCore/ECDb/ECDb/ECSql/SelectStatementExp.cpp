@@ -210,12 +210,12 @@ void FromExp::FindRangeClassRefs(RangeClassRefList& classRefs, ClassRefExp const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<ClassRefExp> classRefExp)
+BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<ClassRefExp> classRefExp)
     {
     if (classRefExp == nullptr)
         {
         BeAssert (false);
-        return ECSqlStatus::ProgrammerError;
+        return ERROR;
         }
 
     RangeClassRefList existingRangeClassRefs;
@@ -232,13 +232,13 @@ ECSqlStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Clas
                 {
                 //e.g. SELECT * FROM FOO a, GOO a
                 ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef->GetId().c_str());
-                return ECSqlStatus::InvalidECSql;
+                return ERROR;
                 }
             }
         }
 
     AddChild (move(classRefExp));
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -570,7 +570,7 @@ void OrderBySpecExp::AppendSortDirection (Utf8String& str, bool addLeadingBlank)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlStatus SelectClauseExp::ReplaceAsteriskExpressions (RangeClassRefList const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions (RangeClassRefList const& rangeClassRefs)
     {
     vector<DerivedPropertyExp const*> propertyNameExpList;
     for(auto childExp : GetChildren())
@@ -586,7 +586,7 @@ ECSqlStatus SelectClauseExp::ReplaceAsteriskExpressions (RangeClassRefList const
         if (Exp::IsAsteriskToken (innerExp->GetPropertyName ()))
             {
             auto stat = ReplaceAsteriskExpression (*propertyNameExp, rangeClassRefs);
-            if (stat != ECSqlStatus::Success)
+            if (stat != SUCCESS)
                 return stat;
 
             continue;
@@ -607,7 +607,7 @@ ECSqlStatus SelectClauseExp::ReplaceAsteriskExpressions (RangeClassRefList const
                     RangeClassRefList classRefList;
                     classRefList.push_back (classRef);
                     auto stat = ReplaceAsteriskExpression (*propertyNameExp, classRefList);
-                    if (stat != ECSqlStatus::Success)
+                    if (stat != SUCCESS)
                         return stat;
 
                     break;
@@ -616,13 +616,13 @@ ECSqlStatus SelectClauseExp::ReplaceAsteriskExpressions (RangeClassRefList const
             }
         }
 
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlStatus SelectClauseExp::ReplaceAsteriskExpression (DerivedPropertyExp const& asteriskExp, RangeClassRefList const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpression (DerivedPropertyExp const& asteriskExp, RangeClassRefList const& rangeClassRefs)
     {
     vector<unique_ptr<Exp>> derivedPropExpList;
     auto addDelegate = [&derivedPropExpList] (unique_ptr<PropertyNameExp>& propNameExp)
@@ -636,10 +636,10 @@ ECSqlStatus SelectClauseExp::ReplaceAsteriskExpression (DerivedPropertyExp const
     if (!GetChildrenR ().Replace (asteriskExp, derivedPropExpList))
         {
         BeAssert (false && "SelectClauseExp::ReplaceAsteriskExpression did not find an asterisk expression unexpectedly.");
-        return ECSqlStatus::ProgrammerError;
+        return ERROR;
         }
 
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -654,7 +654,7 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
         RangeClassRefList const* rangeClassRefList = static_cast<RangeClassRefList const*> (finalizeParseArgs);
         BeAssert (rangeClassRefList != nullptr);
         const auto stat = ReplaceAsteriskExpressions (*rangeClassRefList);
-        if (stat != ECSqlStatus::Success)
+        if (stat != SUCCESS)
             {
             ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Asterisk replacement in select clause failed unexpectedly.");
             return FinalizeParseStatus::Error;
@@ -835,7 +835,7 @@ SubqueryRefExp::SubqueryRefExp(unique_ptr<SubqueryExp> subquery, Utf8StringCR al
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus SubqueryRefExp::_CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const 
+BentleyStatus SubqueryRefExp::_CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const 
     {
     for(auto expr : GetSubquery ()->GetSelection()->GetChildren ())
         {
@@ -845,7 +845,7 @@ ECSqlStatus SubqueryRefExp::_CreatePropertyNameExpList (std::function<void (std:
         addDelegate (propertyNameExp);
         }
 
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 

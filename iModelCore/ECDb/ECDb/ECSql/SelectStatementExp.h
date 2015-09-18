@@ -80,7 +80,7 @@ private:
 public:
     FromExp () : Exp () {}
 
-    ECSqlStatus TryAddClassRef(ECSqlParseContext&, std::unique_ptr<ClassRefExp>);
+    BentleyStatus TryAddClassRef(ECSqlParseContext&, std::unique_ptr<ClassRefExp>);
 
     std::unique_ptr<RangeClassRefList> FindRangeClassRefExpressions () const;
 
@@ -227,8 +227,8 @@ struct SelectClauseExp : Exp
     {
 DEFINE_EXPR_TYPE(Selection) 
 private:
-    ECSqlStatus ReplaceAsteriskExpression (DerivedPropertyExp const& asteriskExp, RangeClassRefList const&);
-    ECSqlStatus ReplaceAsteriskExpressions (RangeClassRefList const&);
+    BentleyStatus ReplaceAsteriskExpression (DerivedPropertyExp const& asteriskExp, RangeClassRefList const&);
+    BentleyStatus ReplaceAsteriskExpressions (RangeClassRefList const&);
 
     virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
@@ -412,7 +412,7 @@ struct SubqueryRefExp : RangeClassRefExp
 private:
     virtual Utf8StringCR _GetId() const override { return GetAlias(); }
     virtual bool _ContainProperty(Utf8CP propertyName) const override { return GetSubquery ()->GetQuery()->FindProperty(propertyName) != nullptr; }
-    virtual ECSqlStatus _CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
+    virtual BentleyStatus _CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString () const override;
 

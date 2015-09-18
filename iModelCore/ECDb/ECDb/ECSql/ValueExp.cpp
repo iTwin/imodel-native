@@ -183,7 +183,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
             }
 
         ECN::PrimitiveType targetType;
-        if (ExpHelper::ToPrimitiveType(targetType, m_castTargetType) != ECSqlStatus::Success)
+        if (ExpHelper::ToPrimitiveType(targetType, m_castTargetType) != SUCCESS)
             {
             ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid CAST target type '%s'.", m_castTargetType.c_str());
             return FinalizeParseStatus::Error;
@@ -262,13 +262,13 @@ Utf8CP const  ConstantValueExp::CURRENT_TIMESTAMP = "CURRENT_TIMESTAMP";
 // @bsimethod                                    Krischan.Eberle                   09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
- ECSqlStatus ConstantValueExp::Create (unique_ptr<ValueExp>& exp, ECSqlParseContext& ctx, Utf8CP value, ECSqlTypeInfo typeInfo)
+ BentleyStatus ConstantValueExp::Create (unique_ptr<ValueExp>& exp, ECSqlParseContext& ctx, Utf8CP value, ECSqlTypeInfo typeInfo)
     {
     exp = nullptr;
 
     unique_ptr<ConstantValueExp> valueExp = unique_ptr<ConstantValueExp> (new ConstantValueExp (value, typeInfo));
-    ECSqlStatus stat = valueExp->ResolveDataType(ctx);
-    if (stat == ECSqlStatus::Success)
+    BentleyStatus stat = valueExp->ResolveDataType(ctx);
+    if (stat == SUCCESS)
         exp = move(valueExp);
 
     return stat;
@@ -318,7 +318,7 @@ bool ConstantValueExp::GetValueAsBoolean () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ConstantValueExp::ResolveDataType (ECSqlParseContext& ctx)
+BentleyStatus ConstantValueExp::ResolveDataType (ECSqlParseContext& ctx)
     {
     if (GetTypeInfo ().GetPrimitiveType () == PRIMITIVETYPE_DateTime)
         {
@@ -334,7 +334,7 @@ ECSqlStatus ConstantValueExp::ResolveDataType (ECSqlParseContext& ctx)
             if (SUCCESS != DateTime::FromString(dt, m_value.c_str()))
                 {
                 ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid format for DATE/TIMESTAMP in expression '%s'.", ToECSql().c_str());
-                return ECSqlStatus::InvalidECSql;
+                return ERROR;
                 }
 
             dtInfo = dt.GetInfo ();
@@ -344,7 +344,7 @@ ECSqlStatus ConstantValueExp::ResolveDataType (ECSqlParseContext& ctx)
         SetTypeInfo (ECSqlTypeInfo (PRIMITIVETYPE_DateTime, &dtMetadata));
         }
 
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 

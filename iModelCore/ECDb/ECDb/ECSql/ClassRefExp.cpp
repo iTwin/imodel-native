@@ -15,11 +15,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std;
 
 //****************************** ClassNameExp *****************************************
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus ClassNameExp::_CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const 
+BentleyStatus ClassNameExp::_CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const 
     {
     BeAssert (m_info != nullptr);
     auto& classMap = m_info->GetMap();
@@ -30,7 +29,7 @@ ECSqlStatus ClassNameExp::_CreatePropertyNameExpList (std::function<void (std::u
         addDelegate (newExp);
         }
 
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 
@@ -38,7 +37,7 @@ ECSqlStatus ClassNameExp::_CreatePropertyNameExpList (std::function<void (std::u
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus RangeClassRefExp::CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const
+BentleyStatus RangeClassRefExp::CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const
     {
     return _CreatePropertyNameExpList (addDelegate);
     }

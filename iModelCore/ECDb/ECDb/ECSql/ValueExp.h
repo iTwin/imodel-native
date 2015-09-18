@@ -131,13 +131,13 @@ private:
 
     ConstantValueExp (Utf8CP value, ECSqlTypeInfo type);
 
-    ECSqlStatus ResolveDataType (ECSqlParseContext&);
+    BentleyStatus ResolveDataType (ECSqlParseContext&);
 
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString () const override;
 
 public:
-    static ECSqlStatus Create (std::unique_ptr<ValueExp>&, ECSqlParseContext&, Utf8CP value, ECSqlTypeInfo type);
+    static BentleyStatus Create (std::unique_ptr<ValueExp>&, ECSqlParseContext&, Utf8CP value, ECSqlTypeInfo type);
 
     Utf8StringCR GetValue () const;
     int64_t GetValueAsInt64() const;

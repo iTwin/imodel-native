@@ -56,7 +56,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        if (ResolveColumnRef (ctx) != ECSqlStatus::Success)
+        if (ResolveColumnRef (ctx) != SUCCESS)
             return FinalizeParseStatus::Error;
         else
             return FinalizeParseStatus::NotCompleted;
@@ -80,7 +80,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
 
       
         auto stat = const_cast<DerivedPropertyExp&>(derivedProperty).FinalizeParsing (ctx);
-        if (stat != ECSqlStatus::Success)
+        if (stat != SUCCESS)
             return FinalizeParseStatus::Error;
 
         SetTypeInfo (derivedProperty.GetExpression()->GetTypeInfo ());
@@ -103,10 +103,10 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
+BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     {
     if (GetClassRefExp() != nullptr)
-        return ECSqlStatus::Success;
+        return SUCCESS;
 
     void const* finalizeParseArgs = ctx.GetFinalizeParseArg();
     BeAssert(finalizeParseArgs != nullptr && "PropertyNameExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
@@ -148,7 +148,7 @@ ECSqlStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         else
             ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECProperty expression '%s' does not match with any of the ECClasses in the ECSQL statement.", m_propertyPath.ToString().c_str());
 
-        return ECSqlStatus::InvalidECSql;
+        return ERROR;
         }
 
     if (aliasClassRefExpMatches.size() > 1)
@@ -158,7 +158,7 @@ ECSqlStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         else
             ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "Duplicate ECProperty '%s' in ECClass with alias '%s'.", secondPropPathEntry, firstPropPathEntry);
 
-        return ECSqlStatus::InvalidECSql;
+        return ERROR;
         }
 
     BeAssert(aliasClassRefExpMatches.size() <= 1);
@@ -192,7 +192,7 @@ ECSqlStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         if (propNameClassRefExpMatches.size() > 1)
             {
             ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECProperty expression '%s' in ECSQL statement is ambiguous. Class alias might be missing.", m_propertyPath.ToString().c_str());
-            return ECSqlStatus::InvalidECSql;
+            return ERROR;
             }
 
         classRefExp = propNameClassRefExpMatches[0];
@@ -203,11 +203,11 @@ ECSqlStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     if (!error.empty())
         {
         ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, error.c_str());
-        return ECSqlStatus::InvalidECSql;
+        return ERROR;
         }
 
     SetClassRefExp(*classRefExp);
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------

@@ -175,7 +175,7 @@ private:
 
     virtual Utf8String _ToECSql() const override;
     virtual Utf8String _ToString() const override;
-    ECSqlStatus ResolveRelationshipEnds (ECSqlParseContext&);
+    BentleyStatus ResolveRelationshipEnds (ECSqlParseContext&);
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext&, FinalizeParseMode mode) override;
 
 public:

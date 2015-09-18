@@ -66,7 +66,7 @@ size_t Exp::AddChild (unique_ptr<Exp> child)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlStatus Exp::FinalizeParsing (ECSqlParseContext& ctx)
+BentleyStatus Exp::FinalizeParsing (ECSqlParseContext& ctx)
     {
     //some expressions need to finalize themselves before its children and some after their children.
     //So _FinalizeParsing is called two times on each Exp.
@@ -80,29 +80,28 @@ ECSqlStatus Exp::FinalizeParsing (ECSqlParseContext& ctx)
                 break;
 
             case FinalizeParseStatus::Error:
-                return ECSqlStatus::InvalidECSql;
+                return ERROR;
             }
         }
 
     for (auto child : GetChildrenR ())
         {
-        auto stat = child->FinalizeParsing (ctx);
-        if (stat != ECSqlStatus::Success)
-            return stat;
+        if (SUCCESS != child->FinalizeParsing(ctx))
+            return ERROR;
         }
 
     if (!IsComplete ())
         {
         FinalizeParseStatus stat = _FinalizeParsing(ctx, FinalizeParseMode::AfterFinalizingChildren);
         if (stat == FinalizeParseStatus::Error)
-            return ECSqlStatus::InvalidECSql;
+            return ERROR;
 
         BeAssert (IsParameterExp() || stat != FinalizeParseStatus::NotCompleted && "Every expression except for parameter exps is expected to be either completed or return an error from finalize parsing.");
         if (stat == FinalizeParseStatus::Completed)
             SetIsComplete ();
         }
 
-    return ECSqlStatus::Success;
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------

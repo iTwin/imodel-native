@@ -55,7 +55,7 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
                             propNameListExp->AddPropertyNameExp(propNameExp);
                         };
 
-                    if (ECSqlStatus::Success != classNameExp->CreatePropertyNameExpList(addDelegate))
+                    if (SUCCESS != classNameExp->CreatePropertyNameExpList(addDelegate))
                         return FinalizeParseStatus::Error;
 
                     }

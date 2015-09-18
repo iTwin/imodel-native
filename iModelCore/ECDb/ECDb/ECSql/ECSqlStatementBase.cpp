@@ -45,21 +45,20 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
         return ECSqlStatus::InvalidECSql;
         }
 
-    auto prepareContext = _InitializePrepare (ecdb, ecsql);
+    ECSqlPrepareContext prepareContext = _InitializePrepare (ecdb, ecsql);
 
     //Step 1: parse the ECSQL
     ECSqlParseTreePtr ecsqlParseTree = nullptr;
     ECSqlParser parser;
-    ECSqlStatus stat = parser.Parse(ecsqlParseTree, ecdb, ecsql, prepareContext.GetClassMapViewMode());
-    if (ECSqlStatus::Success != stat)
+    if (SUCCESS != parser.Parse(ecsqlParseTree, ecdb, ecsql, prepareContext.GetClassMapViewMode()))
         {
         Finalize ();
-        return stat;
+        return ECSqlStatus::InvalidECSql;
         }
 
     //Step 2: translate into SQLite SQL and prepare SQLite statement
-    auto& preparedStatement = CreatePreparedStatement (ecdb, *ecsqlParseTree);
-    stat = preparedStatement.Prepare (prepareContext, *ecsqlParseTree, ecsql);
+    ECSqlPreparedStatement& preparedStatement = CreatePreparedStatement (ecdb, *ecsqlParseTree);
+    ECSqlStatus stat = preparedStatement.Prepare (prepareContext, *ecsqlParseTree, ecsql);
     if (stat != ECSqlStatus::Success)
         Finalize ();
     
@@ -79,7 +78,7 @@ bool ECSqlStatementBase::IsPrepared () const
 //---------------------------------------------------------------------------------------
 IECSqlBinder& ECSqlStatementBase::GetBinder (int parameterIndex) const 
     {
-    auto stat = FailIfNotPrepared ("Cannot call binding API on an unprepared ECSqlStatement.");
+    ECSqlStatus stat = FailIfNotPrepared ("Cannot call binding API on an unprepared ECSqlStatement.");
     if (stat != ECSqlStatus::Success)
         return NoopECSqlBinderFactory::GetBinder (stat);
 
@@ -93,7 +92,7 @@ IECSqlBinder& ECSqlStatementBase::GetBinder (int parameterIndex) const
 //---------------------------------------------------------------------------------------
 int ECSqlStatementBase::GetParameterIndex (Utf8CP parameterName) const 
     {
-    auto stat = FailIfNotPrepared ("Cannot call binding API on an unprepared ECSqlStatement.");
+    ECSqlStatus stat = FailIfNotPrepared ("Cannot call binding API on an unprepared ECSqlStatement.");
     if (stat != ECSqlStatus::Success)
         return -1;
 
@@ -106,7 +105,7 @@ int ECSqlStatementBase::GetParameterIndex (Utf8CP parameterName) const
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatementBase::ClearBindings ()
     {
-    auto stat = FailIfNotPrepared ("Cannot call ClearBindings on an unprepared ECSqlStatement.");
+    ECSqlStatus stat = FailIfNotPrepared ("Cannot call ClearBindings on an unprepared ECSqlStatement.");
     if (stat != ECSqlStatus::Success)
         return stat;
 
@@ -164,7 +163,7 @@ ECSqlStepStatus ECSqlStatementBase::Step (ECInstanceKey& ecInstanceKey)
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatementBase::Reset ()
     {
-    auto stat = FailIfNotPrepared ("Cannot call Reset on an unprepared ECSqlStatement.");
+    ECSqlStatus stat = FailIfNotPrepared ("Cannot call Reset on an unprepared ECSqlStatement.");
     if (stat != ECSqlStatus::Success)
         return stat;
 
@@ -199,7 +198,7 @@ IECSqlValue const& ECSqlStatementBase::GetValue (int columnIndex) const
 //---------------------------------------------------------------------------------------
 Utf8CP ECSqlStatementBase::GetECSql () const
     {
-    auto stat = FailIfNotPrepared ("Cannot call GetECSql on an unprepared ECSqlStatement.");
+    ECSqlStatus stat = FailIfNotPrepared ("Cannot call GetECSql on an unprepared ECSqlStatement.");
     if (stat != ECSqlStatus::Success)
         return nullptr;
 
@@ -211,7 +210,7 @@ Utf8CP ECSqlStatementBase::GetECSql () const
 //---------------------------------------------------------------------------------------
 Utf8CP ECSqlStatementBase::GetNativeSql() const
     {
-    auto stat = FailIfNotPrepared ("Cannot call GetNativeSql on an unprepared ECSqlStatement.");
+    ECSqlStatus stat = FailIfNotPrepared ("Cannot call GetNativeSql on an unprepared ECSqlStatement.");
     if (stat != ECSqlStatus::Success)
         return nullptr;
 
@@ -223,7 +222,7 @@ Utf8CP ECSqlStatementBase::GetNativeSql() const
 //---------------------------------------------------------------------------------------
 ECDbCP ECSqlStatementBase::GetECDb () const
     {
-    auto stat = FailIfNotPrepared ("Cannot call GetECDb on an unprepared ECSqlStatement.");
+    ECSqlStatus stat = FailIfNotPrepared ("Cannot call GetECDb on an unprepared ECSqlStatement.");
     if (stat != ECSqlStatus::Success)
         return nullptr;
 
@@ -250,7 +249,7 @@ ECSqlStatus ECSqlStatementBase::FailIfNotPrepared (Utf8CP errorMessage) const
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatementBase::FailIfWrongType (ECSqlType expectedType, Utf8CP errorMessage) const
     {
-    auto stat = FailIfNotPrepared (errorMessage);
+    ECSqlStatus stat = FailIfNotPrepared (errorMessage);
     if (stat != ECSqlStatus::Success)
         return stat;
 

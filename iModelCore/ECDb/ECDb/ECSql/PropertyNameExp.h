@@ -48,7 +48,7 @@ private:
     Utf8String m_classAlias;
     RangeClassRefExp const* m_classRefExp;
 
-    ECSqlStatus ResolveColumnRef (ECSqlParseContext&);
+    BentleyStatus ResolveColumnRef (ECSqlParseContext&);
     BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath& propPath);
 
     virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;

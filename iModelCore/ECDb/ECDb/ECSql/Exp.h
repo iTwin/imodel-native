@@ -313,7 +313,7 @@ protected:
 public:
     virtual ~Exp () {}
 
-    ECSqlStatus FinalizeParsing (ECSqlParseContext&);
+    BentleyStatus FinalizeParsing (ECSqlParseContext&);
     bool TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const;
 
     bool IsComplete () const {return m_isComplete;}

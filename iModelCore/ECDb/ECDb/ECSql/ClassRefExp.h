@@ -43,7 +43,7 @@ private:
     bool m_isPolymorphic;
     virtual Utf8StringCR _GetId() const = 0;
     virtual bool _ContainProperty(Utf8CP propertyName) const = 0;
-    virtual ECSqlStatus _CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const = 0;
+    virtual BentleyStatus _CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const = 0;
 
 protected:
     RangeClassRefExp () : ClassRefExp (), m_isPolymorphic(true) {}
@@ -56,7 +56,7 @@ public:
     Utf8StringCR GetAlias() const { return m_alias;}
     bool IsPolymorphic() const { return m_isPolymorphic;}
 
-    ECSqlStatus CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const;
+    BentleyStatus CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const;
 
     bool ContainProperty(Utf8CP propertyName) const;
     
@@ -110,7 +110,7 @@ private:
         return propertyMap != nullptr;
         }
 
-    virtual ECSqlStatus _CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
+    virtual BentleyStatus _CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
 
     virtual Utf8String _ToECSql() const override
         {
