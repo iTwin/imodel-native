@@ -12,7 +12,7 @@
     <!-- ********************************************************************************************** -->
 
     <Part Name="UnitTests-Documents" BentleyBuildMakeFile="DeliverBeTestDocuments.mke">
-        <SubProduct ProductName="BeTestDocuments" Repository="ECDb" PartFile="ECDb"/>
+        <SubProduct ProductName="BeTestDocuments" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Documents-DgnDb" SourceName="Delivery/UnitTests/Documents"/>
         </Bindings>
