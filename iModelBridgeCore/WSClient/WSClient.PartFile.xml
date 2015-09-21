@@ -87,6 +87,7 @@
     </Part>
 
     <Part Name="WebServicesCache-Bindings" ExcludePlatforms="Android*">
+        <SubPart PartName="WebServicesCache-Library" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache$(shlibext)</Assemblies>
