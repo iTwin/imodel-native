@@ -21,13 +21,13 @@ struct CreateIModelParams : BeSQLite::Db::CreateParams
 public:
     Utf8String m_description;
     Utf8String m_client;
-    BeDbGuid   m_guid;
+    BeSQLite::BeGuid   m_guid;
     uint32_t   m_chunkSize;
     bool       m_overwriteExisting;
 
-    //! @param[in] guid The BeProjectGuid to store in the newly created .imodel database. If invalid (the default), a new BeDbGuid is created.
+    //! @param[in] guid The BeProjectGuid to store in the newly created .imodel database. If invalid (the default), a new BeSQLite::BeGuid is created.
     //! The new BeProjectGuid can be obtained via GetGuid.
-    CreateIModelParams(BeDbGuid guid=BeDbGuid()) : m_guid(guid), m_overwriteExisting(false), m_chunkSize(1024 * 1024) {}
+    CreateIModelParams(BeSQLite::BeGuid guid=BeSQLite::BeGuid()) : m_guid(guid), m_overwriteExisting(false), m_chunkSize(1024 * 1024) {}
 
     //! Determine whether to overwrite an existing file in DgnDb::CreateDgnDb. The default is to fail if a file by the supplied name
     //! already exists.
@@ -39,7 +39,7 @@ public:
 
     //! Get the BeProjectGuid to be stored in the newly created DgnDb. This is only necessary if you don't supply a valid BeProjectGuid
     //! to the ctor.
-    BeDbGuid GetGuid() const {return m_guid;}
+    BeSQLite::BeGuid GetGuid() const {return m_guid;}
 };
 
 //=======================================================================================

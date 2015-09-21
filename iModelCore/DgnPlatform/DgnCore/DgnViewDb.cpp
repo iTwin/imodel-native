@@ -13,7 +13,7 @@
 DbResult DgnViews::Insert(View& entry)
     {
     entry.m_viewId.Invalidate();
-    m_dgndb.GetNextRepositoryBasedId(entry.m_viewId, DGN_TABLE(DGN_CLASSNAME_View), "Id");
+    entry.m_viewId.ToNextAvailable(m_dgndb, DGN_TABLE(DGN_CLASSNAME_View), "Id");
 
     ViewHandlerP handler = ViewHandler::FindHandler(m_dgndb, entry.m_classId);
     if (nullptr == handler)

@@ -532,7 +532,7 @@ static BentleyStatus metadataToJsonBlob(bvector<Byte>& metadataBlob, DgnShxFont:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
-static BentleyStatus metadataFromJsonBlob(DgnShxFont::Metadata& metadata, ByteCP metadataBlob, size_t metadataBlobSize)
+static BentleyStatus metadataFromJsonBlob(DgnShxFont::Metadata& metadata, Byte const* metadataBlob, size_t metadataBlobSize)
     {
     Json::Reader reader;
     Json::Value json;
@@ -561,7 +561,7 @@ static BentleyStatus metadataFromJsonBlob(DgnShxFont::Metadata& metadata, ByteCP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
-DgnFontPtr DgnFontPersistence::Db::DgnShxFontFromDb(DgnFonts& dbFonts, DgnFontId id, Utf8CP name, ByteCP metadata, size_t metadataSize)
+DgnFontPtr DgnFontPersistence::Db::DgnShxFontFromDb(DgnFonts& dbFonts, DgnFontId id, Utf8CP name, Byte const* metadata, size_t metadataSize)
     {
     DgnShxFontP font = new DgnShxFont(name, new DgnShxDbFontData(dbFonts.DbFaceData(), name));
     

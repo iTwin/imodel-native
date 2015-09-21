@@ -1141,50 +1141,19 @@ DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnElements::IsElementIdUsed(DgnElementId id) const
+DgnElementId DgnElements::GetNextId()
     {
-    CachedStatementPtr stmt = GetStatement("SELECT 1 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-    stmt->BindInt64(1, id.GetValueUnchecked());
-    return BE_SQLITE_ROW == stmt->Step();
+    DgnElementId id = m_nextAvailableId;
+    m_nextAvailableId.ToNextAvailable(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Element), "Id");
+    return id;
     }
-
-/*---------------------------------------------------------------------------------**//**
- DgnElementIds are 64 bits, divided into two 32 bit parts {high:low}. The high 32 bits are reserved for the
- repositoryId of the creator and the low 32 bits hold the identifier of the element. This scheme is
- designed to allow multiple users on different computers to create new elements without
- generating conflicting ids, since the repositoryId is intended to be unqiue for every copy of the project.
- We are allowed to make DgnElementIds in the range of [{repositoryid:1},{repositoryid+1:0}). So, find the highest currently
- used id in that range and add 1. If none, use the first id. If the highest possible id is already in use, search for an
- available id randomly.
-* @bsimethod                                    Keith.Bentley                   06/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::MakeNewElementId()
-    {
-    m_dgndb.GetNextRepositoryBasedId(m_highestElementId, DGN_TABLE(DGN_CLASSNAME_Element), "Id");
-
-    // see if the next id is the highest possible Id for our repositoryId. If not, use it. Otherwise try random ids until we find one that's
-    // not currently in use.
-    BeRepositoryBasedId lastId(m_dgndb.GetRepositoryId().GetNextRepositoryId(), 0);
-    if (m_highestElementId.GetValueUnchecked() < lastId.GetValueUnchecked()-100) // reserve a few ids for special meaning
-        return m_highestElementId;
-
-    // highest id already used, try looking for a random available id
-    DgnElementId val;
-    do
-        {
-        val.CreateRandom(m_dgndb.GetRepositoryId());
-        } while (IsElementIdUsed(val));
-
-    return val;
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
     {
-    element.m_elementId = MakeNewElementId(); 
+    element.m_elementId = GetNextId(); 
 
     if (DgnDbStatus::Success != (stat = element._OnInsert()))
         return nullptr;

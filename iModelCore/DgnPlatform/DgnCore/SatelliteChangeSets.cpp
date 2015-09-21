@@ -671,11 +671,11 @@ BentleyStatus SatelliteChangeSets::AttachToDb(Db& targetProject, BeFileNameCR db
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeDbGuid SatelliteChangeSets::GetTargetDbGuid()
+BeSQLite::BeGuid SatelliteChangeSets::GetTargetDbGuid()
     {
     Utf8String projectGuidStr;
     QueryProperty(projectGuidStr, Property::DgnDbGuid());
-    BeDbGuid guid;
+    BeSQLite::BeGuid guid;
     guid.FromString(projectGuidStr.c_str());
     return guid;
     }

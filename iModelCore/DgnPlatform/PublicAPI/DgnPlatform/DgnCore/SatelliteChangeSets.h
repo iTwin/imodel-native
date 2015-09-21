@@ -148,7 +148,7 @@ public:
     //! @{
     DGNPLATFORM_EXPORT uint64_t GetFirstSequenceNumber();
     DGNPLATFORM_EXPORT uint64_t GetLastSequenceNumber();
-    DGNPLATFORM_EXPORT BeDbGuid GetTargetDbGuid();
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetTargetDbGuid();
     DGNPLATFORM_EXPORT BentleyStatus SetExpirationDate(DateTime const& dt);
     DGNPLATFORM_EXPORT void GetExpirationDate(DateTime& expiration);
     //! @}
