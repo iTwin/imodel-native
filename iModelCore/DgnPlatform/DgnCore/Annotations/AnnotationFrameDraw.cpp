@@ -30,7 +30,7 @@ void AnnotationFrameDraw::CopyFrom(AnnotationFrameDrawCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setStrokeSymbology(ViewContextR context, ElementColor color, uint32_t weight)
+static void setStrokeSymbology(ViewContextR context, AnnotationColorType colorType, ColorDef colorValue, uint32_t weight)
     {
     ElemDisplayParamsR displayParams = context.GetCurrentDisplayParams();
 
@@ -39,8 +39,13 @@ static void setStrokeSymbology(ViewContextR context, ElementColor color, uint32_
     displayParams.SetWeight(weight);
     displayParams.SetFillDisplay(FillDisplay::Never);
 
-    if (!color.IsByCategory())
-        displayParams.SetLineColor(*color.GetColorCP());
+    switch (colorType)
+        {
+        case AnnotationColorType::ByCategory: /* don't override */break;
+        case AnnotationColorType::RGBA: displayParams.SetLineColor(colorValue); break;
+        case AnnotationColorType::ViewBackground: BeAssert(false) /* unsupported */; break;
+        default: BeAssert(false) /* unknown */; break;
+        }
 
     context.CookDisplayParams();
     }
@@ -48,7 +53,7 @@ static void setStrokeSymbology(ViewContextR context, ElementColor color, uint32_
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setFillSymbology(ViewContextR context, ElementColor color, double transparency)
+static void setFillSymbology(ViewContextR context, AnnotationColorType colorType, ColorDef colorValue, double transparency)
     {
     ElemDisplayParamsR displayParams = context.GetCurrentDisplayParams();
 
@@ -57,8 +62,13 @@ static void setFillSymbology(ViewContextR context, ElementColor color, double tr
     displayParams.SetTransparency(transparency);
     displayParams.SetFillDisplay(FillDisplay::Blanking);
 
-    if (!color.IsByCategory())
-        displayParams.SetFillColor(*color.GetColorCP());
+    switch (colorType)
+        {
+        case AnnotationColorType::ByCategory: /* don't override */break;
+        case AnnotationColorType::RGBA: displayParams.SetFillColor(colorValue); break;
+        case AnnotationColorType::ViewBackground: displayParams.SetFillColorToViewBackground(); break;
+        default: BeAssert(false) /* unknown */; break;
+        }
 
     context.CookDisplayParams();
     }
@@ -85,14 +95,14 @@ BentleyStatus AnnotationFrameDraw::Draw(ViewContextR context) const
     
     if (frameStyle->IsStrokeEnabled())
         {
-        setStrokeSymbology(context, frameStyle->GetStrokeColor(), frameStyle->GetStrokeWeight());
+        setStrokeSymbology(context, frameStyle->GetStrokeColorType(), frameStyle->GetStrokeColorValue(), frameStyle->GetStrokeWeight());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
         output.DrawCurveVector(*frameGeometry, false);
         }
 
     if (frameStyle->IsFillEnabled())
         {
-        setFillSymbology(context, frameStyle->GetFillColor(), frameStyle->GetFillTransparency());
+        setFillSymbology(context, frameStyle->GetFillColorType(), frameStyle->GetFillColorValue(), frameStyle->GetFillTransparency());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
         output.DrawCurveVector(*frameGeometry, true);
         }
