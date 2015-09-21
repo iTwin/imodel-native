@@ -1807,7 +1807,7 @@ TEST(ECDbSchemaManager, SupplementSchemaWithGreaterMinorVersionPrimarySchema)
     {
         i++;
     }
-    ASSERT_EQ(1, i) << "the number of custom attributes on the Class Base do not match the original";
+    ASSERT_EQ(0, i) << "the number of custom attributes on the Class Base do not match the original";
 }
 
 //---------------------------------------------------------------------------------------
