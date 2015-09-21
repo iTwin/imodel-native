@@ -36,7 +36,7 @@ always:
 %endif
 
 %message .
-%message See $(LogDir)TestTestResults.txt for logging output, interleaved with test output. 
+%message See $(LogDir)TestsTestResults.txt for logging output, interleaved with test output. 
 %message .
 
 %if $(TARGET_PLATFORM)=="Windows"
