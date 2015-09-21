@@ -68,7 +68,7 @@
     </Part>
 
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
-        <SubPart PartName="UnitTests-Documents" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="UnitTests-Documents-DgnDb" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="ECDb"/>
         <SubPart PartName="Zlib"                             PartFile="Zlib"         Repository="Libsrc-Compress" />
         <Bindings>
