@@ -72,7 +72,10 @@
 
     <Part Name="Jpeg12BitsLib" BentleyBuildMakeFile="ext/jpeg/jpeg.mke" BMakeOptions="+dJPEGLIB_SUPPORT_12BITS"> </Part>
     
-    <Part Name="MatrixFromTiePtsLib" BentleyBuildMakeFile="ext/MatrixFromTiePts/MatrixFromTiePts.mke"> </Part>
+    <Part Name="MatrixFromTiePtsLib" BentleyBuildMakeFile="ext/MatrixFromTiePts/MatrixFromTiePts.mke"> 
+        <SubPart PartName="PublicApi" />
+        <SubPart PartName="BentleyDll"                      PartFile="Bentley"              Repository="Bentley" />
+    </Part>
    
     <!-- //////////////////////////////  Imagepp Part ////////////////////////////////////// -->
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
