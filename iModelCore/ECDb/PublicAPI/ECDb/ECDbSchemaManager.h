@@ -185,7 +185,6 @@ private:
     mutable BeMutex m_criticalSection;
 
     BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECDiffPtr>&  diffs, bvector<ECN::ECSchemaP> const& schemas, ImportOptions const& options, bool addToReaderCache = false) const;
-    void GetSupplementalSchemas (bvector<ECN::ECSchemaP>& supplementalSchemas, bvector<ECN::ECSchemaP> const& schemas, ECN::SchemaKeyCR primarySchemaKey) const;
     BentleyStatus ImportECSchema (ECN::ECSchemaCR ecSchema, bool addToReaderCache = false) const;
     BentleyStatus UpdateECSchema (ECN::ECDiffPtr& diff, ECN::ECSchemaCR ecSchema) const;
     //! The list excludes ECSchemas that have already been imported into the ECDb file

@@ -177,14 +177,6 @@ bool ECDbSchemaManager::ContainsDuplicateSchemas(bvector<ECSchemaP> const& schem
  
     return false;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Casey.Mullen      12/2012
-//---------------------------------------------------------------------------------------
-bool isSupplemental (ECSchemaCR schema)
-    {
-    SupplementalSchemaMetaDataPtr metaData;
-    return (SupplementalSchemaMetaData::TryGetFromSchema(metaData, schema) && metaData.IsValid());
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
@@ -192,85 +184,73 @@ bool isSupplemental (ECSchemaCR schema)
 BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECDiffPtr>&  diffs, bvector<ECSchemaP> const& schemas, ImportOptions const& options, bool addToReaderCache) const
     {
     //1. Only import supplemental schema if doSupplement = True AND saveSupplementals = TRUE
-    bvector<ECSchemaP> schemasToImport;
-    for (auto primarySchema : schemas)
+    bvector<ECSchemaP> primarySchemas;
+    bvector<ECSchemaP> suppSchemas;
+    for (ECSchemaP schema : schemas)
         {
-        if (isSupplemental (*primarySchema))
-            continue; // It's not really a primarySchema
+        if (schema->IsSupplementalSchema())
+            suppSchemas.push_back(schema);
+        else 
+            primarySchemas.push_back(schema);
+        }
 
-        if (options.DoSupplementation ())
+    if (!suppSchemas.empty() && options.DoSupplementation())
+        {
+        for (ECSchemaP primarySchema : primarySchemas)
             {
-            if (primarySchema->IsSupplemented ())
-                LOG.warningv ("Attempted to supplement ECSchema %s that is already supplemented.", primarySchema->GetFullSchemaName ().c_str ());
-            else
+            if (primarySchema->IsSupplemented())
+                continue;
+
+            SupplementedSchemaBuilder builder;
+            SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchema, suppSchemas, false /*dont create ca copy while supplementing*/);
+            if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
                 {
-                bvector<ECSchemaP> supplementalSchemas;
-                GetSupplementalSchemas (supplementalSchemas, schemas, primarySchema->GetSchemaKey ());
-                if (supplementalSchemas.size () > 0)
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
+                return ERROR;
+                }
+
+            //All consolidated customattribute must be reference. But Supplemental Provenance in BSCA is not
+            //This bug could also be fixed in SupplementSchema builder but its much safer to do it here for now.
+            if (primarySchema->GetSupplementalInfo().IsValid())
+                {
+                auto provenance = primarySchema->GetCustomAttribute("SupplementalProvenance");
+                if (provenance.IsValid())
                     {
-                    SupplementedSchemaBuilder builder;
-                    SupplementedSchemaStatus status = builder.UpdateSchema (*primarySchema, supplementalSchemas, false /*dont create ca copy while supplementing*/);
-                    if (status != SUPPLEMENTED_SCHEMA_STATUS_Success)
+                    auto& bsca = provenance->GetClass().GetSchema();
+                    if (!ECSchema::IsSchemaReferenced(*primarySchema, bsca))
                         {
-                        //TODO: print detail error in log. We cannot revert so we will import what we got
-                        LOG.warningv ("Failed to supplement %s.", primarySchema->GetFullSchemaName ().c_str ());
-                        }
-                    }
-                //All consolidated customattribute must be reference. But Supplemental Provenance in BSCA is not
-                //This bug could also be fixed in SupplementSchema builder but its much safer to do it here for now.
-                if (primarySchema->GetSupplementalInfo ().IsValid ())
-                    {
-                    auto provenance = primarySchema->GetCustomAttribute ("SupplementalProvenance");
-                    if (provenance.IsValid ())
-                        {
-                        auto& bsca = provenance->GetClass ().GetSchema ();
-                        if (!ECSchema::IsSchemaReferenced (*primarySchema, bsca))
-                            {
-                            primarySchema->AddReferencedSchema (const_cast<ECSchemaR>(bsca));
-                            }
+                        primarySchema->AddReferencedSchema(const_cast<ECSchemaR>(bsca));
                         }
                     }
                 }
             }
-
-        schemasToImport.push_back (primarySchema);
         }
 
     // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
     bvector<ECSchemaP> dependencyOrderedSchemas;
-    for (ECSchemaP schema : schemasToImport)
+    for (ECSchemaP schema : primarySchemas)
         BuildDependencyOrderedSchemaList (dependencyOrderedSchemas, schema);
-    schemasToImport.clear (); // Just make sure no one tries to use it anymore
+    
+    primarySchemas.clear (); // Just make sure no one tries to use it anymore
 
     for (ECSchemaP schema : dependencyOrderedSchemas)
         {
-        BentleyStatus stat = SUCCESS;
-        Utf8String schemaName (schema->GetName ().c_str ());
-
         ECDiffPtr diff;
-        if (0 != ECDbSchemaPersistence::GetECSchemaId (m_ecdb, schemaName.c_str ()))
+        if (0 != ECDbSchemaPersistence::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
             {
-            if (!options.UpdateExistingSchemas ())
+            if (!options.UpdateExistingSchemas())
                 continue;
 
             //Go a head and attempt to update ECSchema
-            if (isSupplemental (*schema))
-                stat = UpdateECSchema (diff, *schema);
-            else
-                stat = UpdateECSchema (diff, *schema);
+            if (SUCCESS != UpdateECSchema(diff, *schema))
+                return ERROR;
 
-            if (SUCCESS == stat && diff != nullptr && diff->GetStatus () == DIFFSTATUS_Success && !diff->IsEmpty ())
-                diffs.push_back (diff);
+            if (diff != nullptr && diff->GetStatus() == DIFFSTATUS_Success && !diff->IsEmpty())
+                diffs.push_back(diff);
             }
         else
-            {
-            if (isSupplemental (*schema))
-                stat = ImportECSchema (*schema, addToReaderCache);
-            else
-                stat = ImportECSchema (*schema, addToReaderCache);
-            }
-        if (SUCCESS != stat)
-            return stat;
+            if (SUCCESS != ImportECSchema(*schema, addToReaderCache))
+                return ERROR;
         }
 
     if (!diffs.empty ())
@@ -304,13 +284,12 @@ BentleyStatus ECDbSchemaManager::ImportECSchema (ECSchemaCR ecSchema, bool addTo
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaManager::UpdateECSchema (ECDiffPtr& diff, ECSchemaCR ecSchema) const
     {
-    Utf8String schemaName (ecSchema.GetName ().c_str ());
-    auto existingSchema = GetECSchema (schemaName.c_str (), true);
+    auto existingSchema = GetECSchema (ecSchema.GetName().c_str (), true);
     if (existingSchema == nullptr)
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
             "Failed to update ECSchema '%s'. ECSchema does not exist in the ECDb file.",
-            schemaName.c_str ());
+                                                        ecSchema.GetName().c_str ());
         return ERROR;
         }
 
@@ -345,40 +324,10 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (ECDiffPtr& diff, ECSchemaCR ecS
         return SUCCESS; //nothing to update
 
     LOG.errorv("The ECSchema '%s' cannot be updated. Updating ECSchemas is not yet supported in this version of ECDb.",
-               schemaName.c_str());
+               ecSchema.GetName().c_str());
     return ERROR;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                   Affan.Khan        12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbSchemaManager::GetSupplementalSchemas (bvector<ECSchemaP>& supplementalSchemas, bvector<ECSchemaP> const& schemas, SchemaKeyCR primarySchemaKey) const
-    {
-    supplementalSchemas.clear();
-    SupplementalSchemaMetaDataPtr metaData;
-    std::map<Utf8String, ECSchemaP> supplementalSchemaMap;
-    for (ECSchemaPtr const& schema : schemas)
-        {
-        if (SupplementalSchemaMetaData::TryGetFromSchema(metaData, *schema) && metaData.IsValid())
-        if (metaData->IsForPrimarySchema (primarySchemaKey.m_schemaName, primarySchemaKey.m_versionMajor, primarySchemaKey.m_versionMinor, SCHEMAMATCHTYPE_LatestCompatible))
-            {
-            auto itor = supplementalSchemaMap.find (schema->GetName ());
-            if (itor != supplementalSchemaMap.end ())
-                {
-                if (itor->second->GetSchemaKey ().LessThan (schema->GetSchemaKey (), SCHEMAMATCHTYPE_Exact))
-                    {
-                    supplementalSchemaMap[schema->GetName ()] = schema.get();
-                    }
-                }
-            else
-                supplementalSchemaMap[schema->GetName ()] = schema.get ();
-
-            }
-        }
-
-    for (auto& key : supplementalSchemaMap)
-        supplementalSchemas.push_back (key.second);
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
@@ -675,9 +624,9 @@ void ECDbSchemaManager::ReportUpdateError(ECN::ECSchemaCR newSchema, ECN::ECSche
     const uint32_t existingVersionMinor = existingSchema.GetVersionMinor();
 
     Utf8String str("Failed to update ECSchema '");
-    str.append(Utf8String(newSchema.GetName()));
-    str.append("' from version ").append(Utf8String(ECSchema::FormatSchemaVersion(existingVersionMajor, existingVersionMinor)));
-    str.append(" to ").append(Utf8String(ECSchema::FormatSchemaVersion(newVersionMajor, newVersionMinor)));
+    str.append(newSchema.GetName());
+    str.append("' from version ").append(ECSchema::FormatSchemaVersion(existingVersionMajor, existingVersionMinor));
+    str.append(" to ").append(ECSchema::FormatSchemaVersion(newVersionMajor, newVersionMinor));
     str.append(". ").append(reason);
 
     m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, str.c_str());
