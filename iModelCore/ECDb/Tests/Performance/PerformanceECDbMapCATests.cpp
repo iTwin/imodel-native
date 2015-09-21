@@ -23,6 +23,7 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
 
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, selectSql);
+        LOG.infov ("Generated Select Sql:  %s \n Actual Select ECSql:  %s", stmt.GetNativeSql (), selectSql);
         ASSERT_EQ (ECSqlStatus::Success, stat) << "preparation failed for " << selectSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
@@ -52,6 +53,7 @@ void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
 
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare (ecdb, deleteSql);
+        LOG.infov ("Generated Delect Sql:  %s \n Actual Delete ECSql:  %s", stmt.GetNativeSql (), deleteSql);
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation Failed for " << deleteSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
@@ -82,6 +84,7 @@ void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
 
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare(ecdb, updateSql);
+        LOG.infov ("Generated Update Sql:  %s \n Actual Update ECSql:  %s", stmt.GetNativeSql (), updateSql);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "preparation failed for " << updateSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
@@ -116,6 +119,7 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
 
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, insertSql);
+        LOG.infov ("Generated Insert Sql:  %s \n Actual Insert ECSql:  %s", stmt.GetNativeSql (), insertSql);
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation failed for " << insertSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
@@ -422,8 +426,8 @@ void PerformanceECDbMapCATestFixture::GenerateSqlCRUDTestStatements (ECSchemaR e
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     {
-    m_instancesPerClass = 100000;
-    m_propertiesPerClass = 100;
+    m_instancesPerClass = 1000000;
+    m_propertiesPerClass = 150;
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("ECSqlStatementPerformanceTest.ecdb");
 
@@ -468,6 +472,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     BeSQLite::Statement stmt;
     StopWatch timer (true);
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, insertSql.c_str ())) << "Statement Prepare failed for " << insertSql.c_str ();
+    LOG.infov ("Insert Sql Statement:  %s", insertSql.c_str ());
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
         ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, (int64_t)(i+1)));
@@ -489,6 +494,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     //Update Instance using Sql Query.
     timer.Start ();
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, updateSql.c_str ())) << "Statement Prepare failed for " << updateSql.c_str ();
+    LOG.infov ("Update Sql Statement:  %s", updateSql.c_str ());
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
         for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
@@ -510,6 +516,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     //Read Instance using Sql Query.
     timer.Start ();
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, selectSql.c_str ())) << "Statement Prepare failed for " << selectSql.c_str ();
+    LOG.infov ("Select Sql Statement:  %s", selectSql.c_str ());
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
         ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, (int64_t)(i + 1)));
@@ -525,6 +532,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     //Delete Instance using Sql Query.
     timer.Start ();
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, deleteSql.c_str ())) << "Statement Prepare failed for " << deleteSql.c_str ();
+    LOG.infov ("Delete Sql Statement:  %s", deleteSql.c_str ());
     for (size_t i = 0; i < m_instancesPerClass; i++)
         {
         ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, (int64_t)(i + 1)));
