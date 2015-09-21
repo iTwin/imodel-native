@@ -13,7 +13,7 @@
     
     <Part Name="IModelExtractorExe" BentleyBuildMakeFile="IModelExtractor/IModelExtractor.mke">
         <SubPart PartName="BeSQLite" PartFile="BeSQLite"/>
-        <SubPart PartName="BentleyAllocatorStaticLib" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="BentleyAllocator" PartFile="Bentley" Repository="Bentley" LibType="Static"/>
         <Bindings>
             <Files ProductDirectoryName="IModelExeDir">Delivery/imodel.exe</Files>
         </Bindings>
