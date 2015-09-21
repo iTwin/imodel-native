@@ -24,7 +24,8 @@ bool AnnotationTextStylePropertyBag::_IsIntegerProperty(T_Key key) const
     {
     switch ((AnnotationTextStyleProperty)key)
         {
-        case AnnotationTextStyleProperty::Color:
+        case AnnotationTextStyleProperty::ColorType:
+        case AnnotationTextStyleProperty::ColorValue:
         case AnnotationTextStyleProperty::FontId:
         case AnnotationTextStyleProperty::IsBold:
         case AnnotationTextStyleProperty::IsItalic:
@@ -133,9 +134,13 @@ static void setRealValue(AnnotationTextStylePropertyBagR data, AnnotationTextSty
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_COLOR_VALUE = ElementColor().ToInt64();
-ElementColor AnnotationTextStyle::GetColor() const { return ElementColor(getIntegerValue(m_data, AnnotationTextStyleProperty::Color, DEFAULT_COLOR_VALUE)); }
-void AnnotationTextStyle::SetColor(ElementColor value) { setIntegerValue(m_data, AnnotationTextStyleProperty::Color, DEFAULT_COLOR_VALUE, value.ToInt64()); }
+static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_COLOR_TYPE_VALUE = (AnnotationTextStylePropertyBag::T_Integer)AnnotationColorType::ByCategory;
+AnnotationColorType AnnotationTextStyle::GetColorType() const { return (AnnotationColorType)getIntegerValue(m_data, AnnotationTextStyleProperty::ColorType, DEFAULT_COLOR_TYPE_VALUE); }
+void AnnotationTextStyle::SetColorType(AnnotationColorType value) { setIntegerValue(m_data, AnnotationTextStyleProperty::ColorType, DEFAULT_COLOR_TYPE_VALUE, (AnnotationTextStylePropertyBag::T_Integer)value); }
+
+static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_COLOR_VALUE_VALUE = 0;
+ColorDef AnnotationTextStyle::GetColorValue() const { return ColorDef((uint32_t)getIntegerValue(m_data, AnnotationTextStyleProperty::ColorValue, DEFAULT_COLOR_VALUE_VALUE)); }
+void AnnotationTextStyle::SetColorValue(ColorDef value) { setIntegerValue(m_data, AnnotationTextStyleProperty::ColorValue, DEFAULT_COLOR_VALUE_VALUE, value.GetValue()); }
 
 static const int64_t DEFAULT_FONTID_VALUE = 0; // See definition of BeServerIssuedId, of which DgnFontId is a sub-class.
 DgnFontId AnnotationTextStyle::GetFontId() const { return DgnFontId((uint64_t)getIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE)); }
@@ -259,7 +264,8 @@ decltype(declval<FB::AnnotationTextStyleSetter>().realValue()) defaultValue
 //---------------------------------------------------------------------------------------
 BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(FB::AnnotationTextStyleSetters& setters, AnnotationTextStylePropertyBagCR data)
     {
-    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::Color, FB::AnnotationTextStyleProperty_Color, DEFAULT_COLOR_VALUE);
+    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::ColorType, FB::AnnotationTextStyleProperty_ColorType, DEFAULT_COLOR_VALUE_VALUE);
+    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::ColorValue, FB::AnnotationTextStyleProperty_ColorValue, DEFAULT_COLOR_TYPE_VALUE);
     appendIntegerSetter(setters, data, AnnotationTextStyleProperty::FontId, FB::AnnotationTextStyleProperty_FontId, DEFAULT_FONTID_VALUE);
     appendRealSetter(setters, data, AnnotationTextStyleProperty::Height, FB::AnnotationTextStyleProperty_Height, DEFAULT_HEIGHT_VALUE);
     appendRealSetter(setters, data, AnnotationTextStyleProperty::LineSpacingFactor, FB::AnnotationTextStyleProperty_LineSpacingFactor, DEFAULT_LINESPACINGFACTOR_VALUE);
@@ -342,7 +348,8 @@ BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextSt
         {
         switch (setter.key())
             {
-            case FB::AnnotationTextStyleProperty_Color: data.SetIntegerProperty(AnnotationTextStyleProperty::Color, setter.integerValue()); break;
+            case FB::AnnotationTextStyleProperty_ColorType: data.SetIntegerProperty(AnnotationTextStyleProperty::ColorType, setter.integerValue()); break;
+            case FB::AnnotationTextStyleProperty_ColorValue: data.SetIntegerProperty(AnnotationTextStyleProperty::ColorValue, setter.integerValue()); break;
             case FB::AnnotationTextStyleProperty_FontId: data.SetIntegerProperty(AnnotationTextStyleProperty::FontId, setter.integerValue()); break;
             case FB::AnnotationTextStyleProperty_Height: data.SetRealProperty(AnnotationTextStyleProperty::Height, setter.realValue()); break;
             case FB::AnnotationTextStyleProperty_LineSpacingFactor: data.SetRealProperty(AnnotationTextStyleProperty::LineSpacingFactor, setter.realValue()); break;

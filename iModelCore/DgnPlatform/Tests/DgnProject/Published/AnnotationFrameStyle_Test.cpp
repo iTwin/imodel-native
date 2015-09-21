@@ -39,13 +39,13 @@ TEST(BasicAnnotationFrameStyleTest, PropertyBagTypes)
 
     data->SetRealProperty(AnnotationFrameStyleProperty::CloudBulgeFactor, 2.0);
     data->SetRealProperty(AnnotationFrameStyleProperty::CloudDiameterFactor, 2.0);
-    data->SetIntegerProperty(AnnotationFrameStyleProperty::FillColor, 2);
+    data->SetIntegerProperty(AnnotationFrameStyleProperty::FillColorValue, 2);
     data->SetRealProperty(AnnotationFrameStyleProperty::FillTransparency, 2.0);
     data->SetRealProperty(AnnotationFrameStyleProperty::HorizontalPadding, 2.0);
     data->SetIntegerProperty(AnnotationFrameStyleProperty::IsFillEnabled, 1);
     data->SetIntegerProperty(AnnotationFrameStyleProperty::IsStrokeCloud, 1);
     data->SetIntegerProperty(AnnotationFrameStyleProperty::IsStrokeEnabled, 0);
-    data->SetIntegerProperty(AnnotationFrameStyleProperty::StrokeColor, 3);
+    data->SetIntegerProperty(AnnotationFrameStyleProperty::StrokeColorValue, 3);
     data->SetIntegerProperty(AnnotationFrameStyleProperty::StrokeWeight, 2);
     data->SetIntegerProperty(AnnotationFrameStyleProperty::Type, (int64_t)AnnotationFrameType::Box);
     data->SetRealProperty(AnnotationFrameStyleProperty::VerticalPadding, 2.0);
@@ -56,13 +56,13 @@ TEST(BasicAnnotationFrameStyleTest, PropertyBagTypes)
     Utf8String description = "MyDescription";                                                   STYLE_PTR->SetDescription(description.c_str());\
     double cloudBulgeFactor = 2.1;                                                              STYLE_PTR->SetCloudBulgeFactor(cloudBulgeFactor);\
     double cloudDiameterFactor = 2.1;                                                           STYLE_PTR->SetCloudDiameterFactor(cloudDiameterFactor);\
-    ElementColor fillColor(ColorDef(0xff, 0x00, 0x00));                                         STYLE_PTR->SetFillColor(fillColor);\
+    ColorDef fillColor(0xff, 0x00, 0x00);                                                       STYLE_PTR->SetFillColorValue(fillColor);\
     double fillTransparency = 2.1;                                                              STYLE_PTR->SetFillTransparency(fillTransparency);\
     double horizontalPadding = 2.1;                                                             STYLE_PTR->SetHorizontalPadding(horizontalPadding);\
     bool isFillEnabled =true;                                                                   STYLE_PTR->SetIsFillEnabled(isFillEnabled);\
     bool isStrokeCloud =false;                                                                  STYLE_PTR->SetIsStrokeCloud(isStrokeCloud);\
     bool isStrokeEnabled =false;                                                                STYLE_PTR->SetIsStrokeEnabled(isStrokeEnabled);\
-    ElementColor strokeColor(ColorDef(0xff, 0x00, 0x00));                                       STYLE_PTR->SetStrokeColor(strokeColor);\
+    ColorDef strokeColor(0xff, 0x00, 0x00);                                                     STYLE_PTR->SetStrokeColorValue(strokeColor);\
     uint32_t strokeWeight=3;                                                                    STYLE_PTR->SetStrokeWeight(strokeWeight); \
     AnnotationFrameType type = AnnotationFrameType::Circle;                                     STYLE_PTR->SetType(type); \
     double verticalPadding = 2.1;                                                               STYLE_PTR->SetVerticalPadding(verticalPadding);
@@ -72,13 +72,13 @@ TEST(BasicAnnotationFrameStyleTest, PropertyBagTypes)
     EXPECT_TRUE(description.Equals(STYLE_PTR->GetDescription()));\
     EXPECT_TRUE(cloudBulgeFactor == STYLE_PTR->GetCloudBulgeFactor());\
     EXPECT_TRUE(cloudDiameterFactor == STYLE_PTR->GetCloudDiameterFactor());\
-    EXPECT_TRUE(fillColor == STYLE_PTR->GetFillColor());\
+    EXPECT_TRUE(fillColor == STYLE_PTR->GetFillColorValue());\
     EXPECT_TRUE(fillTransparency == STYLE_PTR->GetFillTransparency());\
     EXPECT_TRUE(horizontalPadding == STYLE_PTR->GetHorizontalPadding());\
     EXPECT_TRUE(isFillEnabled == STYLE_PTR->IsFillEnabled());\
     EXPECT_TRUE(isStrokeCloud == STYLE_PTR->IsStrokeCloud());\
     EXPECT_TRUE(isStrokeEnabled == STYLE_PTR->IsStrokeCloud());\
-    EXPECT_TRUE(strokeColor == STYLE_PTR->GetStrokeColor());\
+    EXPECT_TRUE(strokeColor == STYLE_PTR->GetStrokeColorValue());\
     EXPECT_TRUE(strokeWeight == STYLE_PTR->GetStrokeWeight());\
     EXPECT_TRUE(type == STYLE_PTR->GetType());\
     EXPECT_TRUE(verticalPadding == STYLE_PTR->GetVerticalPadding());
@@ -106,7 +106,7 @@ TEST_F(AnnotationFrameStyleTest, DefaultsAndAccessors)
     // Defaults
     EXPECT_TRUE(style->GetName().empty());
     EXPECT_TRUE(style->GetDescription().empty());
-    EXPECT_TRUE(style->GetFillColor().IsByCategory());
+    EXPECT_TRUE(0 == style->GetFillColorValue().GetValue());
     EXPECT_TRUE(AnnotationFrameType::InvisibleBox == style->GetType());
     EXPECT_TRUE(0 == style->GetStrokeWeight());
 
@@ -190,9 +190,9 @@ TEST_F(AnnotationFrameStyleTest, TableReadWrite)
     ASSERT_TRUE(mutatedStyle.IsValid());
 
     name = "DifferentName"; mutatedStyle->SetName(name.c_str());
-    fillColor = ElementColor(ColorDef(0x00, 0x00, 0xff)); mutatedStyle->SetFillColor(fillColor);
+    fillColor = ColorDef(0x00, 0x00, 0xff); mutatedStyle->SetFillColorValue(fillColor);
     strokeWeight = 5; mutatedStyle->SetStrokeWeight(strokeWeight);
-    strokeColor = ElementColor(ColorDef(0xff, 0xff, 0xf0)); mutatedStyle->SetStrokeColor(strokeColor);
+    strokeColor = ColorDef(0xff, 0xff, 0xf0); mutatedStyle->SetStrokeColorValue(strokeColor);
     isStrokeEnabled = true; mutatedStyle->SetIsStrokeEnabled(isStrokeEnabled);
     isStrokeCloud = true; mutatedStyle->SetIsStrokeCloud(isStrokeCloud);
 
@@ -320,9 +320,9 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
         ASSERT_TRUE(mutatedStyle.IsValid());
 
         name = "DifferentName"; mutatedStyle->SetName(name.c_str());
-        fillColor = ElementColor(ColorDef(0x00, 0x00, 0xff)); mutatedStyle->SetFillColor(fillColor);
+        fillColor = ColorDef(0x00, 0x00, 0xff); mutatedStyle->SetFillColorValue(fillColor);
         strokeWeight = 5; mutatedStyle->SetStrokeWeight(strokeWeight);
-        strokeColor = ElementColor(ColorDef(0xff, 0xff, 0xf0)); mutatedStyle->SetStrokeColor(strokeColor);
+        strokeColor = ColorDef(0xff, 0xff, 0xf0); mutatedStyle->SetStrokeColorValue(strokeColor);
         isStrokeEnabled = true; mutatedStyle->SetIsStrokeEnabled(isStrokeEnabled);
         isStrokeCloud = true; mutatedStyle->SetIsStrokeCloud(isStrokeCloud);
 
