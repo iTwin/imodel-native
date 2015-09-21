@@ -21,7 +21,7 @@ using Bentley.ECSystem.Extensibility;
 using Bentley.ECSystem.Repository;
 using Bentley.ECSystem.Session;
 using Bentley.Exceptions;
-using BentleyRealityDataPackage;
+using RealityDataPackageWrapper;
 using IndexECPlugin.Source;
 using IndexECPlugin.Source.FileRetrievalControllers;
 using IndexECPlugin.Source.Helpers;
@@ -473,7 +473,7 @@ namespace Bentley.ECPluginExamples
                 }
             }
 
-            List<WmsMapInfoNet> wmsMapInfoList = IndexPackager(sender, connection, queryModule, coordinateSystem, dbRequestedEntities);
+            List<WmsSourceNet> wmsSourceList = IndexPackager(sender, connection, queryModule, coordinateSystem, dbRequestedEntities);
 
             List<UsgsSourceNet> usgsSourceList = UsgsPackager(sender, connection, queryModule, usgsRequestedEntities);
 
@@ -484,11 +484,34 @@ namespace Bentley.ECPluginExamples
 
             selectedRegion = selectedRegionStr.Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries).Select(str => Convert.ToDouble(str)).ToList();
 
-            // Create package.
+            // Create data group and package.
             string name = Guid.NewGuid().ToString();
             try
             {
-                RealityDataPackageNet.Create (m_packagesLocation, name, selectedRegion, wmsMapInfoList, usgsSourceList);
+                // Create imagery group.
+                ImageryGroupNet imgGroup = ImageryGroupNet.Create ();
+                foreach (WmsSourceNet wmsSource in wmsSourceList)
+                    {
+                    imgGroup.AddData (wmsSource);
+                    }
+                foreach (UsgsSourceNet usgsSource in usgsSourceList)
+                    {
+                    imgGroup.AddData (usgsSource);
+                    }
+
+                // Create model group.
+                ModelGroupNet modelGroup = ModelGroupNet.Create ();
+
+                // Create pinned group.
+                PinnedGroupNet pinnedGroup = PinnedGroupNet.Create ();
+
+                // Create terrain group.
+                TerrainGroupNet terrainGroup = TerrainGroupNet.Create ();
+
+                // Create package.
+                string description = "";
+                string copyright = "";
+                RealityDataPackageNet.Create (m_packagesLocation, name, description, copyright, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
             }
             catch (Exception e)
             {
@@ -546,9 +569,9 @@ namespace Bentley.ECPluginExamples
             return usgsSourceNetList;
         }
 
-        private List<WmsMapInfoNet> IndexPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, string coordinateSystem, List<RequestedEntity> dbRequestedEntities)
+        private List<WmsSourceNet> IndexPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, string coordinateSystem, List<RequestedEntity> dbRequestedEntities)
         {
-            List<WmsMapInfoNet> wmsMapInfoList = new List<WmsMapInfoNet>();
+            List<WmsSourceNet> wmsMapInfoList = new List<WmsSourceNet>();
 
             if(dbRequestedEntities.Count == 0)
             {
@@ -714,18 +737,18 @@ namespace Bentley.ECPluginExamples
                 if (vendorSpecific.EndsWith("&"))
                     vendorSpecific = vendorSpecific.TrimEnd('&');
 
-                wmsMapInfoList.Add(WmsMapInfoNet.Create(mapInfo.Legal,                      // Copyright
-                                                        mapInfo.GetMapURL.TrimEnd('?'),    // Url
-                                                        minX, minY, maxX, maxY,             // Bbox min/max values
-                                                        mapInfo.Version,                    // Version
-                                                        mapInfo.Layers,                     // Layers (comma-separated list)
-                                                        csType,                             // Coordinate System Type
-                                                        mapInfo.CoordinateSystem,           // Coordinate System Label
-                                                        10, 10,                             // MetaWidth and MetaHeight
-                                                        mapInfo.SelectedStyle,              // Styles (comma-separated list)
-                                                        mapInfo.SelectedFormat,             // Format
-                                                        vendorSpecific,                     // Vendor Specific
-                                                        true));                             // Transparency
+                wmsMapInfoList.Add(WmsSourceNet.Create(mapInfo.Legal,                      // Copyright
+                                                       mapInfo.GetMapURL.TrimEnd('?'),    // Url
+                                                       minX, minY, maxX, maxY,             // Bbox min/max values
+                                                       mapInfo.Version,                    // Version
+                                                       mapInfo.Layers,                     // Layers (comma-separated list)
+                                                       csType,                             // Coordinate System Type
+                                                       mapInfo.CoordinateSystem,           // Coordinate System Label
+                                                       10, 10,                             // MetaWidth and MetaHeight
+                                                       mapInfo.SelectedStyle,              // Styles (comma-separated list)
+                                                       mapInfo.SelectedFormat,             // Format
+                                                       vendorSpecific,                     // Vendor Specific
+                                                       true));                             // Transparency
 
             }
             return wmsMapInfoList;
