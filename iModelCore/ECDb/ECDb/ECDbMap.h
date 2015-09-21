@@ -122,7 +122,7 @@ private:
     BentleyStatus               Save();
     //! Create a table to persist ECInstances of the given ECClass in the Db
     BentleyStatus               CreateOrUpdateRequiredTables();
-    BentleyStatus               EvaluateDMLPolicyForEachClass();
+
 public:
     explicit ECDbMap(ECDbR ecdb);
     ~ECDbMap() {}
