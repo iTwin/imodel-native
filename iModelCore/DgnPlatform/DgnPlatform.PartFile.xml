@@ -113,7 +113,7 @@
     <!-- ********************************************************************************************** -->
 
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
-        <SubPart PartName="UnitTests-Documents" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="UnitTests-Documents-DgnDb" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
         <Bindings>

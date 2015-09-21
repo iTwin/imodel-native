@@ -53,14 +53,14 @@ class AnnotationTextBlockTest : public AnnotationTestFixture
     EXPECT_TRUE(2.5 == OBJ_PTR->GetStyleOverrides().GetRealProperty(AnnotationTextStyleProperty::WidthFactor));
 
 #define SET_STYLE_OVERRIDES_2(OBJ_PTR)\
-    OBJ_PTR->GetStyleOverridesR().SetIntegerProperty(AnnotationTextStyleProperty::Color, 41);\
+    OBJ_PTR->GetStyleOverridesR().SetIntegerProperty(AnnotationTextStyleProperty::ColorValue, 41);\
     OBJ_PTR->GetStyleOverridesR().SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, 0);\
     OBJ_PTR->GetStyleOverridesR().SetRealProperty(AnnotationTextStyleProperty::WidthFactor, 3.0);\
     EXPECT_TRUE(3 == OBJ_PTR->GetStyleOverrides().ComputePropertyCount());
 
 #define VERIFY_STYLE_OVERRIDES_2(OBJ_PTR)\
     EXPECT_TRUE(3 == OBJ_PTR->GetStyleOverrides().ComputePropertyCount());\
-    EXPECT_TRUE(41 == OBJ_PTR->GetStyleOverrides().GetIntegerProperty(AnnotationTextStyleProperty::Color));\
+    EXPECT_TRUE(41 == OBJ_PTR->GetStyleOverrides().GetIntegerProperty(AnnotationTextStyleProperty::ColorValue));\
     EXPECT_TRUE(0 == OBJ_PTR->GetStyleOverrides().GetIntegerProperty(AnnotationTextStyleProperty::IsItalic));\
     EXPECT_TRUE(3.0 == OBJ_PTR->GetStyleOverrides().GetRealProperty(AnnotationTextStyleProperty::WidthFactor));
 

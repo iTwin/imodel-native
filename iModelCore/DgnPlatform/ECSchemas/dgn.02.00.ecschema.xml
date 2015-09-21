@@ -669,14 +669,17 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
     </ECClass>
 
+    <ECClass typeName="TextAnnotationItem" isDomainClass="True">
+        <BaseClass>ElementItem</BaseClass>
+        <ECProperty propertyName="TextAnnotation" typeName="binary"/>
+    </ECClass>
     <ECClass typeName="TextAnnotationElement" isDomainClass="True">
         <BaseClass>DrawingElement</BaseClass>
     </ECClass>
-    <ECClass typeName="TextAnnotationDataAspect" isDomainClass="True">
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECProperty propertyName="TextAnnotation" typeName="binary"/>
+    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
+        <BaseClass>PhysicalElement</BaseClass>
     </ECClass>
-
+    
     <ECClass typeName="Material" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
