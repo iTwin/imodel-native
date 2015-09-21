@@ -11,14 +11,6 @@
     <!-- BeTestDocuments                                                                                -->
     <!-- ********************************************************************************************** -->
 
-    <!-- TRICKY 
-        Unit tests depend on documents as follows:
-        1. Unit test parts depend on UnitTests-Documents.
-        2. UnitTests-Documents depends on BeTestDocuments (which is in ECDb).
-        3. BeTestDocuments depends on GetBeTestDocuments.
-        The reason to have this chain of dependencies is that "BeTestDocuments" is an LKG in some builds. 
-        We only execute the GetBeTestDocuments part on platforms where we can run the converter.
-        -->
     <Part Name="UnitTests-Documents" BentleyBuildMakeFile="DeliverBeTestDocuments.mke">
         <SubProduct ProductName="BeTestDocuments" Repository="ECDb" PartFile="ECDb"/>
         <Bindings>
@@ -26,23 +18,25 @@
         </Bindings>
     </Part>
 
-    <!-- TRICKY: Even though documents are only actually converted for x64,x86, we must do other processing for other platforms and other cases. Therefore, no platforms can be excluded! -->
-    <Part Name="GetBeTestDocuments" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishDocuments.mke" BMakeOptions="-dUNIT_TESTS_NAME=ECDbUnitTests -dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnPlatformTest/DgnDbUnitTests/ -dUNIT_TESTS_DOCUMENTS_PREBUILTS_SUBDIR=DgnDb -dUNIT_TESTS_PUBLISH_CONFIG=${SrcRoot}/BeGTest/UnitTestPublisherConfiguration.xml">
-        <!-- *** NEEDS WORK: Why are we using UnitTestPublisherConfiguration.xml? Shouldn't we be using UnitTestDgnV8ConverterConfiguration.xml? Or, why do we have two config files? There's only one converter! -->
-        <SubPart PartName="LinkToDgnDbUnitTestsData"/>
-        <SubPart PartName="LinkDgnV8ConverterIntoToolContext"/>
-        <Bindings>
-            <Directory SourceName="Delivery/UnitTests/Documents" SubPartDirectory="Documents/DgnDb" ProductDirectoryName="UnitTests_Documents_DgnDb" />
-        </Bindings>
-    </Part>
+    <Product Name="BeTestDocuments" PrgOutputDir="MobileDgnSdk">
+        <Directories DirectoryListName="BeTestDocumentsDirList" />
+        <SubPart PartName="DgnV8Converter"/>
+        <SubPart PartName="LinkDgnDbPublisherIntoToolContext" LibType="Dynamic"/>
+        <SubPart PartName="UnitTests_Documents" LibType="Static"    PartFile="ECDb" Repository="ECDb" />
+    </Product>
 
-    <Part Name="LinkToDgnDbUnitTestsData" OnlyPlatforms="x64,x86">
-        <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
-    </Part>
-
-    <Part Name="LinkDgnV8ConverterIntoToolContext" BentleyBuildMakeFile="LinkDgnDbPublisherIntoToolContext.mke" OnlyPlatforms="x64,x86">
+    <Part Name="DgnV8Converter" OnlyPlatforms="x64,x86">
         <SubProduct ProductName="DgnV8Converter" PartFile="DgnDbSync" Repository="DgnDbSync"/>
     </Part>
+
+    <Part Name="LinkDgnDbPublisherIntoToolContext" BentleyBuildMakeFile="LinkDgnDbPublisherIntoToolContext.mke" OnlyPlatforms="x64,x86">
+        <SubPart PartName="DgnV8Converter" LibType="Dynamic"/>
+    </Part>
+
+    <ProductDirectoryList ListName="BeTestDocumentsDirList">
+        <ProductDirectory Name="UnitTests_Documents_DgnDb"          Path="DgnDb" Deliver="true"/>
+        <ProductDirectory Name="UnitTests_Documents_DgnDb"          Path="DgnDb" Deliver="true" LibType="Static"/>
+    </ProductDirectoryList>
 
     <!-- *********************************************************************************************** -->
     <!-- This ProductDirectory can be used by any portable unit test product based on mobiledgn. -->
