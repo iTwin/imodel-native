@@ -85,14 +85,14 @@ struct DgnFontPersistence : NonCopyableClass
     struct Db
     {
     private:
-        static DgnFontPtr DgnTrueTypeFontFromDb(struct DgnFonts&, DgnFontId, Utf8CP name, ByteCP metadata, size_t metadataSize);
-        static DgnFontPtr DgnRscFontFromDb(struct DgnFonts&, DgnFontId, Utf8CP name, ByteCP metadata, size_t metadataSize);
-        static DgnFontPtr DgnShxFontFromDb(struct DgnFonts&, DgnFontId, Utf8CP name, ByteCP metadata, size_t metadataSize);
+        static DgnFontPtr DgnTrueTypeFontFromDb(struct DgnFonts&, DgnFontId, Utf8CP name, Byte const* metadata, size_t metadataSize);
+        static DgnFontPtr DgnRscFontFromDb(struct DgnFonts&, DgnFontId, Utf8CP name, Byte const* metadata, size_t metadataSize);
+        static DgnFontPtr DgnShxFontFromDb(struct DgnFonts&, DgnFontId, Utf8CP name, Byte const* metadata, size_t metadataSize);
         static BentleyStatus DgnRscFontMetadataToDb(bvector<Byte>&, DgnRscFontCR);
         static BentleyStatus DgnShxFontMetadataToDb(bvector<Byte>&, DgnShxFontCR);
 
     public:
-        DGNPLATFORM_EXPORT static DgnFontPtr FromDb(struct DgnFonts&, DgnFontId, DgnFontType, Utf8CP name, ByteCP metadata, size_t metadataSize);
+        DGNPLATFORM_EXPORT static DgnFontPtr FromDb(struct DgnFonts&, DgnFontId, DgnFontType, Utf8CP name, Byte const* metadata, size_t metadataSize);
         DGNPLATFORM_EXPORT static BentleyStatus MetadataToDb(bvector<Byte>&, DgnFontCR);
         DGNPLATFORM_EXPORT static BentleyStatus Embed(DgnFonts::DbFaceDataDirect&, DgnFontCR);
     };

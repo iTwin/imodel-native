@@ -1078,7 +1078,7 @@ struct DgnFonts : NonCopyableClass
         DGNPLATFORM_EXPORT BentleyStatus QueryById(bvector<Byte>&, DataId);
         DGNPLATFORM_EXPORT BentleyStatus QueryByFace(bvector<Byte>&, FaceSubId&, FaceKeyCR);
         DGNPLATFORM_EXPORT bool Exists(FaceKeyCR);
-        DGNPLATFORM_EXPORT BentleyStatus Insert(ByteCP, size_t dataSize, T_FaceMapCR);
+        DGNPLATFORM_EXPORT BentleyStatus Insert(Byte const*, size_t dataSize, T_FaceMapCR);
         DGNPLATFORM_EXPORT BentleyStatus Delete(FaceKeyCR);
         Iterator MakeIterator() const { return Iterator(m_dbFonts); }
     };

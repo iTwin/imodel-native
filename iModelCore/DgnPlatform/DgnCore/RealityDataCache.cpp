@@ -393,7 +393,7 @@ void BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
         if (BeSQLite::BE_SQLITE_OK != (result = m_database.OpenBeSQLiteDb(m_filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes))))
             {
             Db::CreateParams createParams(Db::PageSize::PAGESIZE_32K, Db::Encoding::Utf8, false, DefaultTxn::Yes);
-            if (BeSQLite::BE_SQLITE_OK != (result = m_database.CreateNewDb(m_filename.c_str(), BeDbGuid(), createParams)))
+            if (BeSQLite::BE_SQLITE_OK != (result = m_database.CreateNewDb(m_filename.c_str(), BeSQLite::BeGuid(), createParams)))
                 {
                 m_databaseCS.Leave();
                 RDCLOG(LOG_ERROR, "%s: %s", m_filename.c_str(), BeSQLite::Db::InterpretDbResult(result));

@@ -593,7 +593,7 @@ DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8C
     if (0 < GetSize())
         {
         GeomBlobHeader header(*this);
-        snappy.Write((ByteCP) &header, sizeof(header));
+        snappy.Write((Byte const*) &header, sizeof(header));
         snappy.Write(GetData(), GetSize());
         }
 

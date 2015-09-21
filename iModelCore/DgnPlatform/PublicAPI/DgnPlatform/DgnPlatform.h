@@ -307,11 +307,12 @@ typedef struct dgn_ModelHandler::Model* ModelHandlerP;
 typedef struct dgn_ModelHandler::Model& ModelHandlerR;
 typedef struct dgn_AuthorityHandler::Authority* AuthorityHandlerP;
 typedef struct dgn_AuthorityHandler::Authority& AuthorityHandlerR;
+typedef Byte const* ByteCP;
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-struct BeRepositoryBasedIdSet : bset<BeRepositoryBasedId>
+struct BeRepositoryBasedIdSet : bset<BeSQLite::BeRepositoryBasedId>
 {
     DGNPLATFORM_EXPORT void FromJson(Json::Value const& in);
     DGNPLATFORM_EXPORT void ToJson(Json::Value& out) const;
@@ -331,7 +332,7 @@ private:
         return Contains(IdType(vals[0].GetValueInt64()));
         }
 public:
-    IdSet(){static_assert(sizeof(IdType)==sizeof(BeRepositoryBasedId),"IdSets may only contain BeRepositoryBasedId");}
+    IdSet(){static_assert(sizeof(IdType)==sizeof(BeSQLite::BeRepositoryBasedId),"IdSets may only contain BeRepositoryBasedId");}
 
     typedef BentleyApi::bset<IdType> T_SetType;
     typedef typename T_SetType::const_iterator const_iterator;
@@ -363,7 +364,7 @@ typedef IdSet<DgnCategoryId> DgnCategoryIdSet;  //!< IdSet with DgnCategoryId me
 //=======================================================================================
 //! A DgnClassId is the local id for an ECClass in a DgnDb.
 //=======================================================================================
-struct DgnClassId : BeInt64Id
+struct DgnClassId : BeSQLite::BeInt64Id
 {
     DgnClassId() {Invalidate();}
     explicit DgnClassId(int64_t val) : BeInt64Id(val) {}

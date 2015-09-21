@@ -86,7 +86,6 @@ DbResult DgnDb::CreateDgnDbTables()
         BeAssert(BE_SQLITE_DONE == result);
         UNUSED_VARIABLE(result);
         }
-
     
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom)
                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.ElementId;END");
