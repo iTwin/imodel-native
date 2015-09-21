@@ -733,10 +733,16 @@ public:
     //! @see sqlite3_bind_int64
     BE_SQLITE_EXPORT DbResult BindInt64(int paramNum, int64_t value);
 
+    //! Bind a UInt64 value to a parameter of this (previously prepared) Statement
+    //! @param[in] paramNum the SQL parameter number to bind.
+    //! @param[in] value the value to bind.
+    //! @see sqlite3_bind_int64
+    DbResult BindUInt64(int paramNum, uint64_t value) {return BindInt64(paramNum, (int64_t) value);}
+
     //! Bind a BeRepositoryBasedId value to a parameter of this (previously prepared) Statement. Binds NULL if the id is not valid.
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
-    DbResult BindId(int paramNum, BeInt64Id value) {return value.IsValid() ? BindInt64(paramNum,(int64_t) value.GetValue()) : BindNull(paramNum);}
+    DbResult BindId(int paramNum, BeInt64Id value) {return value.IsValid() ? BindUInt64(paramNum,value.GetValue()) : BindNull(paramNum);}
 
     //! Bind a double value to a parameter of this (previously prepared) Statement
     //! @param[in] paramNum the SQL parameter number to bind.
@@ -840,7 +846,11 @@ public:
     //! @param[in] col The column of interest
     //! @see sqlite3_column_int64
     BE_SQLITE_EXPORT int64_t GetValueInt64(int col);
-    uint64_t GetValueUInt64(int col) {return (uint64_t)GetValueInt64(col);}
+
+    //! Get a UInt64 value from a column returned from Step
+    //! @param[in] col The column of interest
+    //! @see sqlite3_column_int64
+    uint64_t GetValueUInt64(int col) {return (uint64_t) GetValueInt64(col);}
 
     //! Get a double value from a column returned from Step
     //! @param[in] col The column of interest
