@@ -25,7 +25,7 @@ private:
     Db& m_db;
     Utf8String const m_repositoryLocalValueName;
     mutable size_t m_repositoryLocalValueIndex;
-    DbResult GetNextInt64Value (int64_t& nextValue) const;
+    DbResult GetNextInt64Value (uint64_t& nextValue) const;
 
 public:
     BeRepositoryBasedIdSequence (Db& db, Utf8CP repositoryLocalValueName);
@@ -38,12 +38,12 @@ public:
     template <typename TBeRepositoryBasedId>
     DbResult GetNextValue (TBeRepositoryBasedId& nextValue) const
         {
-        int64_t nextValueInt = -1LL;
+        uint64_t nextValueInt = 0LL;
         DbResult stat = GetNextInt64Value (nextValueInt);
         if (stat != BE_SQLITE_OK)
             return stat;
 
-        nextValue = TBeRepositoryBasedId (nextValueInt);
+        nextValue = TBeRepositoryBasedId(nextValueInt);
         return BE_SQLITE_OK;
         }
     };

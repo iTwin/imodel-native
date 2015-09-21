@@ -313,6 +313,7 @@ public:
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
     ECDB_EXPORT int64_t GetValueInt64(int columnIndex) const;
+    uint64_t GetValueUInt64(int columnIndex) const {return (uint64_t) GetValueInt64(columnIndex);}
 
     //! Gets the Point2D value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -346,10 +347,9 @@ public:
     //! @return BeInt64Id value
     //! @note Possible errors:
     //! - column data does not hold a BeInt64Id
-    template <class TBeInt64Id>
-    TBeInt64Id GetValueId(int columnIndex) const
+    template <class TBeInt64Id> TBeInt64Id GetValueId(int columnIndex) const
         {
-        return TBeInt64Id(GetValueInt64(columnIndex));
+        return TBeInt64Id(GetValueUInt64(columnIndex));
         }
 
     //! Gets the array value of the specified column.

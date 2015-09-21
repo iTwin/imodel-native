@@ -64,12 +64,12 @@ DbResult BeRepositoryBasedIdSequence::Reset (BeRepositoryId repositoryId) const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult BeRepositoryBasedIdSequence::GetNextInt64Value (int64_t& nextValue) const
+DbResult BeRepositoryBasedIdSequence::GetNextInt64Value (uint64_t& nextValue) const
     {
     if (m_db.IsReadonly ())
         return BE_SQLITE_READONLY;
 
-    int64_t deserializedLastValue = -1LL;
+    uint64_t deserializedLastValue = 0LL;
     DbResult stat = m_db.GetRLVCache().IncrementValue (deserializedLastValue, m_repositoryLocalValueIndex);
     if (stat != BE_SQLITE_OK)
         {
