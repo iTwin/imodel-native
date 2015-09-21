@@ -146,4 +146,19 @@
         <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
     </ProductDirectoryList>
 
+    <!-- The BeTestDocuments product doesn't really have anything to do with ECDb. It is here for historical reasons. -->
+    <!-- *** ********************************************************** *** -->
+    <!-- *** WARNING: Numerous BuildStrategies that point to this part! *** -->
+    <!-- *** ********************************************************** *** -->
+    <!-- If you move this part, you must fix up the BuildStrategies that point to it. -->
+    <Product Name="BeTestDocuments" PrgOutputDir="MobileDgnSdk">
+        <Directories DirectoryListName="BeTestDocumentsDirList"/>
+        <SubPart PartName="GetBeTestDocuments" Repository="BeGTest" PartFile="BeGTest" />
+    </Product>
+
+    <ProductDirectoryList ListName="BeTestDocumentsDirList">
+        <ProductDirectory Name="UnitTests_Documents_DgnDb"          Path="DgnDb" Deliver="true"/>
+        <ProductDirectory Name="UnitTests_Documents_DgnDb"          Path="DgnDb" Deliver="true" LibType="Static"/>
+    </ProductDirectoryList>
+
 </BuildContext>
