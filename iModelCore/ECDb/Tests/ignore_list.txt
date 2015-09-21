@@ -22,4 +22,7 @@ ECDbSchemas.Verify_TFS_14829_A
 #TFS268976 will address this (Affan)
 SchemaImportTestFixture.MismatchDataTypesInExistingTable
 
-ECDbSchemaManager.SupplementSchemaWithLatestSupplementalSchema		#Notified Carole
+ECDbSchemaManager.SupplementSchemaWithLatestSupplementalSchema		#Notified Hassan
+ECDbSchemaManager.SupplementSchemaWithLessMinorVersionPrimarySchema		#Notified Hassan
+ECDbSchemaManager.SupplementSchemaWithGreaterMinorVersionPrimarySchema		#Notified Hassan
+
