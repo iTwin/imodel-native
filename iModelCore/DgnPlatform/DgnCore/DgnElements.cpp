@@ -1171,28 +1171,7 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
         return nullptr;
         }
 
-    bvector<Utf8String> insertParams;
-    element._GetInsertParams(insertParams);
-    Utf8String ecSql = ECSqlInsertBuilder::BuildECSqlForClass(*elementClass, insertParams);
-    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement(ecSql.c_str());
-    if (!statement.IsValid())
-        return nullptr;
-
-    if (DgnDbStatus::Success != (stat=element._BindInsertParams(*statement)))
-        return nullptr;
-
-    if (ECSqlStepStatus::Error == statement->Step())
-        {
-        // SQLite doesn't tell us which constraint failed - check if it's the Code.
-        auto existingElemWithCode = QueryElementIdByCode(element.m_code);
-        if (existingElemWithCode.IsValid())
-            stat = DgnDbStatus::DuplicateCode;
-        else
-            stat = DgnDbStatus::WriteError;
-        return nullptr;
-        }
-
-    if (DgnDbStatus::Success != (stat = element._InsertSecondary()))
+    if (DgnDbStatus::Success != (stat = element._InsertInDb()))
         return nullptr;
 
     DgnElementPtr newElement = element.CopyForEdit();
