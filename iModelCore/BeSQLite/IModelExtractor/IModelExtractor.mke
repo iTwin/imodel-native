@@ -36,7 +36,7 @@ EXE_OBJS            = $(MultiCompileObjectList)
 EXE_LOPT1           = -entry:wmainCRTStartup
 
 LINKER_LIBRARIES    = $(BuildContext)SubParts/Libs/Bentley.lib
-LINKER_LIBRARIES    + $(BuildContext)SubParts/Libs/BentleyAllocatorStaticLib.lib
+LINKER_LIBRARIES    + $(BuildContext)SubParts/Libs/BentleyAllocator.lib
 LINKER_LIBRARIES    + $(BuildContext)SubParts/Libs/BeSQLite.lib $(BuildContext)SubParts/Libs/BeZlib$(libext)
 LINKER_LIBRARIES    + $(BuildContext)SubParts/Libs/BeIcu4c.lib
 LINKER_LIBRARIES    + $(CLibs)
