@@ -1638,34 +1638,33 @@ TEST(ECDbSchemaManager, TestGetClassResolver)
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 // A primary schema should be supplemented with the latest available supplemental schema
-TEST(ECDbSchemaManager, supplementSchemaWithLatestSupplementalSchema)
+TEST(ECDbSchemaManager, SupplementSchemaWithLatestSupplementalSchema)
 {
-
     ECDbTestProject::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
 
     ECSchemaReadContextPtr context = nullptr;
+    ECSchemaCachePtr schemacache = ECSchemaCache::Create ();
 
     ECSchemaPtr schemaptr;
     ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.70.ecschema.xml", nullptr);
     ASSERT_TRUE(schemaptr != NULL);
+    schemacache->AddSchema (*schemaptr);
+
     ECSchemaPtr supple;
     ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.10.ecschema.xml", nullptr);
     ASSERT_TRUE(supple != NULL);
-    ECSchemaPtr supple1;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple1, context, L"BasicSchema_Supplemental_Localization.01.60.ecschema.xml", nullptr);
-    ASSERT_TRUE(supple1 != NULL);
-    ECSchemaPtr supple2;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple2, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
-    ASSERT_TRUE(supple2 != NULL);
+    schemacache->AddSchema (*supple);
 
-    ECSchemaCachePtr schemacache = ECSchemaCache::Create();
-    schemacache->AddSchema(*schemaptr);
-    schemacache->AddSchema(*supple);
-    schemacache->AddSchema(*supple1);
-    schemacache->AddSchema(*supple2);
+    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
+    ASSERT_TRUE(supple != NULL);
+    schemacache->AddSchema (*supple);
+
+    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.60.ecschema.xml", nullptr);
+    ASSERT_TRUE(supple != NULL);
+    schemacache->AddSchema (*supple);
 
     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
     ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
@@ -1674,7 +1673,7 @@ TEST(ECDbSchemaManager, supplementSchemaWithLatestSupplementalSchema)
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
     ASSERT_TRUE(ecclassBase != NULL);
     //get custom attributes from base class (false)
-    ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(true);
+    ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(false);
     int i = 0;
     for (IECInstancePtr instance : iterator1)
     {
@@ -1686,27 +1685,30 @@ TEST(ECDbSchemaManager, supplementSchemaWithLatestSupplementalSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-//supplement schema with a supplemental schema whose primary schema's major version is greater then the major version of current primary schema.
-TEST(ECDbSchemaManager, supplementSchemaWithGreaterMajorVersionPrimary)
+//supplemental schema whose primary schema's major version is greater then the major version of current primary schema.
+TEST(ECDbSchemaManager, SupplementSchemaWithGreaterMajorVersionPrimary)
 {
-
     ECDbTestProject::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
 
     ECSchemaReadContextPtr context = nullptr;
+    ECSchemaCachePtr schemacache = ECSchemaCache::Create ();
 
     ECSchemaPtr schemaptr;
     ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.70.ecschema.xml", nullptr);
     ASSERT_TRUE(schemaptr != NULL);
-    ECSchemaPtr supple;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.02.10.ecschema.xml", nullptr);
-    ASSERT_TRUE(supple != NULL);
+    schemacache->AddSchema (*schemaptr);
 
-    ECSchemaCachePtr schemacache = ECSchemaCache::Create();
-    schemacache->AddSchema(*schemaptr);
-    schemacache->AddSchema(*supple);
+    ECSchemaPtr supple;
+    ECDbTestUtility::ReadECSchemaFromDisk (supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
+    ASSERT_TRUE (supple != NULL);
+    schemacache->AddSchema (*supple);
+
+    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.02.10.ecschema.xml", nullptr);
+    ASSERT_TRUE (supple != NULL);
+    schemacache->AddSchema (*supple);
 
     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
     ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
@@ -1715,39 +1717,38 @@ TEST(ECDbSchemaManager, supplementSchemaWithGreaterMajorVersionPrimary)
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
     ASSERT_TRUE(ecclassBase != NULL);
     //get custom attributes from base class (false)
-    ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(true);
+    ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(false);
     int i = 0;
     for (IECInstancePtr instance : iterator1)
     {
         i++;
     }
-    EXPECT_EQ(0, i) << "the number of custom attributes on the Class Base do not match the original";
+    EXPECT_EQ(3, i) << "the number of custom attributes on the Class Base do not match the original";
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-// supplement current primary schema with a supplemental schema whose primary schema's minor version is less then the current schema.
-TEST(ECDbSchemaManager, supplementSchemaWithLessMinorVersionPrimarySchema)
+//supplement current primary schema with a supplemental schema whose primary schema's minor version is less then the current schema.
+TEST(ECDbSchemaManager, SupplementSchemaWithLessMinorVersionPrimarySchema)
 {
-
     ECDbTestProject::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
 
     ECSchemaReadContextPtr context = nullptr;
+    ECSchemaCachePtr schemacache = ECSchemaCache::Create ();
 
     ECSchemaPtr schemaptr;
     ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.70.ecschema.xml", nullptr);
     ASSERT_TRUE(schemaptr != NULL);
+    schemacache->AddSchema (*schemaptr);
+
     ECSchemaPtr supple;
     ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.69.ecschema.xml", nullptr);
     ASSERT_TRUE(supple != NULL);
-
-    ECSchemaCachePtr schemacache = ECSchemaCache::Create();
-    schemacache->AddSchema(*schemaptr);
-    schemacache->AddSchema(*supple);
+    schemacache->AddSchema (*supple);
 
     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
     ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
@@ -1756,7 +1757,7 @@ TEST(ECDbSchemaManager, supplementSchemaWithLessMinorVersionPrimarySchema)
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
     ASSERT_TRUE(ecclassBase != NULL);
     //get custom attributes from base class (false)
-    ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(true);
+    ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes (false);
     int i = 0;
     for (IECInstancePtr instance : iterator1)
     {
@@ -1768,31 +1769,31 @@ TEST(ECDbSchemaManager, supplementSchemaWithLessMinorVersionPrimarySchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-// suppelement schema with a supplemental schema whose primary schema's minor version is greater then the current.
-TEST(ECDbSchemaManager, supplementSchemaWithGreaterMinorVersionPrimarySchema)
+//suppelement schema with a supplemental schema whose primary schema's minor version is greater then the current.
+TEST(ECDbSchemaManager, SupplementSchemaWithGreaterMinorVersionPrimarySchema)
 {
-
     ECDbTestProject::Initialize();
     ECDb testecdb;
     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
 
     ECSchemaReadContextPtr context = nullptr;
+    ECSchemaCachePtr schemacache = ECSchemaCache::Create ();
 
     ECSchemaPtr schemaptr;
     ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.69.ecschema.xml", nullptr);
     ASSERT_TRUE(schemaptr != NULL);
+    schemacache->AddSchema (*schemaptr);
+
     ECSchemaPtr supple;
     ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.69.ecschema.xml", nullptr);
     ASSERT_TRUE(supple != NULL);
-    ECSchemaPtr supple1;
-    ECDbTestUtility::ReadECSchemaFromDisk(supple1, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
-    ASSERT_TRUE(supple1 != NULL);
+    schemacache->AddSchema (*supple);
 
-    ECSchemaCachePtr schemacache = ECSchemaCache::Create();
-    schemacache->AddSchema(*schemaptr);
-    schemacache->AddSchema(*supple);
-    schemacache->AddSchema(*supple1);
+    //This one will be ignored as it is not targeting the primary schema's exact version
+    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
+    ASSERT_TRUE(supple != NULL);
+    schemacache->AddSchema (*supple);
 
     ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(*schemacache, ECDbSchemaManager::ImportOptions(true, false))) << "couldn't import the schema";
     ECSchemaCP basicSupplSchema = testecdb. Schemas ().GetECSchema ("BasicSchema", true);
@@ -1801,13 +1802,12 @@ TEST(ECDbSchemaManager, supplementSchemaWithGreaterMinorVersionPrimarySchema)
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
     ASSERT_TRUE(ecclassBase != NULL);
     //get custom attributes from base class (false)
-    ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(true);
     int i = 0;
-    for (IECInstancePtr instance : iterator1)
+    for (IECInstancePtr instance : ecclassBase->GetCustomAttributes(false))
     {
         i++;
     }
-    EXPECT_EQ(3, i) << "the number of custom attributes on the Class Base do not match the original";
+    ASSERT_EQ(1, i) << "the number of custom attributes on the Class Base do not match the original";
 }
 
 //---------------------------------------------------------------------------------------

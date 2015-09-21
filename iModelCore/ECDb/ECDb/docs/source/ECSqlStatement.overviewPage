@@ -22,10 +22,10 @@
     or JSON objects.
 
     For clients that do need to work with the data in a more aggregated way (e.g. @ref BentleyApi::ECN::IECInstance "IECInstances", JSON), @b adapters are provided.
-    (see @ref BentleyApi::BeSQLite::EC::ECInstanceECSqlSelectAdapter "ECInstanceECSqlSelectAdapter", 
+    (see @ref BentleyApi::BeSQLite::EC::ECInstanceECSqlSelectAdapter "ECInstanceECSqlSelectAdapter",
     @ref BentleyApi::BeSQLite::EC::ECInstanceInserter "ECInstanceInserter", @ref BentleyApi::BeSQLite::EC::ECInstanceUpdater "ECInstanceUpdater",
     @ref BentleyApi::BeSQLite::EC::ECInstanceDeleter "ECInstanceDeleter" for @ref BentleyApi::ECN::IECInstance "IECInstances" and
-    see @ref BentleyApi::BeSQLite::EC::JsonECSqlSelectAdapter "JsonECSqlSelectAdapter", 
+    see @ref BentleyApi::BeSQLite::EC::JsonECSqlSelectAdapter "JsonECSqlSelectAdapter",
     @ref BentleyApi::BeSQLite::EC::JsonInserter "JsonInserter", @ref BentleyApi::BeSQLite::EC::JsonUpdater "JsonUpdater",
     @ref BentleyApi::BeSQLite::EC::JsonDeleter "JsonDeleter" for JSON).
 
@@ -42,7 +42,7 @@
 
     @e Details
     @li If not specified in the ECSQL INSERT statement, %ECDb generates the ECInstanceId automatically. In that case, the ECInstanceId
-    is a @ref BentleyApi::BeRepositoryBasedId "repository based id" and is incremented sequentially (which is the most efficient way to store primary keys in an @ref ECDbFile "ECDb file").
+    is a @ref BentleyApi::BeSQLite::BeRepositoryBasedId "repository based id" and is incremented sequentially (which is the most efficient way to store primary keys in an @ref ECDbFile "ECDb file").
     @li The columns in the @ref ECDbFile "ECDb file" holding the %ECInstanceId are equivalent to SQLite's system column @p rowid.
     @li In the @ref ECDbGroup "ECDb API" the ECInstanceId is represented by the type @ref BentleyApi::BeSQLite::EC::ECInstanceId "ECInstanceId".
 
@@ -83,6 +83,6 @@
     </logger>
     ...
     @endcode
-            
+
     */
 

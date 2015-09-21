@@ -107,7 +107,7 @@ TEST(ECDbProfile, FailIfAlreadyCreated)
     //create the Db again with SetFailIfDbExist set to false i.e. force re-creation
     BeSQLite::Db::CreateParams params;
     params.SetFailIfDbExist(false);
-    stat = ecdb.CreateNewDb(ecdbFilePathUtf8.c_str(), BeDbGuid(), params);
+    stat = ecdb.CreateNewDb(ecdbFilePathUtf8.c_str(), BeSQLite::BeGuid(), params);
     EXPECT_EQ(BE_SQLITE_ERROR, stat);
 }
 
