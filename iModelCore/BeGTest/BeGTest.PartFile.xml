@@ -11,18 +11,26 @@
     <!-- BeTestDocuments                                                                                -->
     <!-- ********************************************************************************************** -->
 
-    <Part Name="GetBeTestDocuments">
-        <SubPart PartName="DependOnDgnV8Converter"/>
-        <SubPart PartName="LinkDgnV8ConverterIntoToolContext" LibType="Dynamic"/>
-        <SubPart PartName="ConvertTestDocuments" LibType="Static" />
+    <!-- TRICKY 
+        Unit tests depend on documents as follows:
+        1. Unit test parts depend on UnitTests-Documents.
+        2. UnitTests-Documents depends on BeTestDocuments (which is in ECDb).
+        3. BeTestDocuments depends on GetBeTestDocuments.
+        The reason to have this chain of dependencies is that "BeTestDocuments" is an LKG in some builds. 
+        We only execute the GetBeTestDocuments part on platforms where we can run the converter.
+        -->
+    <Part Name="UnitTests-Documents" BentleyBuildMakeFile="DeliverBeTestDocuments.mke">
+        <SubProduct ProductName="BeTestDocuments" Repository="ECDb" PartFile="ECDb"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Documents-DgnDb" SourceName="Delivery/UnitTests/Documents"/>
+        </Bindings>
     </Part>
 
-    <!-- TRICKY: Documents are only actually converted for x64,x86. For other platforms, we get documents from LKGs. -->
-    <!-- We must do other processing for other platforms and other cases. Therefore, no platforms can be excluded! -->
-    <!-- *** NEEDS WORK: Why are we using UnitTestPublisherConfiguration.xml? Shouldn't we be using UnitTestDgnV8ConverterConfiguration.xml? Or, why do we have two config files? There's only one converter! -->
-    <Part Name="ConvertTestDocuments" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishDocuments.mke" BMakeOptions="-dUNIT_TESTS_NAME=ECDbUnitTests -dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnPlatformTest/DgnDbUnitTests/ -dUNIT_TESTS_DOCUMENTS_PREBUILTS_SUBDIR=DgnDb -dUNIT_TESTS_PUBLISH_CONFIG=${SrcRoot}/BeGTest/UnitTestPublisherConfiguration.xml">
-        <!--<SubPart PartName="LinkDgnV8ConverterIntoToolContext" PartFile="BeGTest" Repository="BeGTest" LibType="Dynamic"/>-->
+    <!-- TRICKY: Even though documents are only actually converted for x64,x86, we must do other processing for other platforms and other cases. Therefore, no platforms can be excluded! -->
+    <Part Name="GetBeTestDocuments" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishDocuments.mke" BMakeOptions="-dUNIT_TESTS_NAME=ECDbUnitTests -dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnPlatformTest/DgnDbUnitTests/ -dUNIT_TESTS_DOCUMENTS_PREBUILTS_SUBDIR=DgnDb -dUNIT_TESTS_PUBLISH_CONFIG=${SrcRoot}/BeGTest/UnitTestPublisherConfiguration.xml">
+        <!-- *** NEEDS WORK: Why are we using UnitTestPublisherConfiguration.xml? Shouldn't we be using UnitTestDgnV8ConverterConfiguration.xml? Or, why do we have two config files? There's only one converter! -->
         <SubPart PartName="LinkToDgnDbUnitTestsData"/>
+        <SubPart PartName="LinkDgnV8ConverterIntoToolContext"/>
         <Bindings>
             <Directory SourceName="Delivery/UnitTests/Documents" SubPartDirectory="Documents/DgnDb" ProductDirectoryName="UnitTests_Documents_DgnDb" />
         </Bindings>
@@ -32,19 +40,8 @@
         <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
     </Part>
 
-    <Part Name="DependOnDgnV8Converter" OnlyPlatforms="x64,x86">
+    <Part Name="LinkDgnV8ConverterIntoToolContext" BentleyBuildMakeFile="LinkDgnDbPublisherIntoToolContext.mke" OnlyPlatforms="x64,x86">
         <SubProduct ProductName="DgnV8Converter" PartFile="DgnDbSync" Repository="DgnDbSync"/>
-    </Part>
-
-    <Part Name="LinkDgnV8ConverterIntoToolContext" BentleyBuildMakeFile="LinkDgnV8ConverterIntoToolContext.mke" OnlyPlatforms="x64,x86">
-        <SubPart PartName="DgnV8Converter" LibType="Dynamic"/>
-    </Part>
-
-    <Part Name="UnitTests-Documents" BentleyBuildMakeFile="DeliverBeTestDocuments.mke">
-        <SubProduct ProductName="BeTestDocuments" Repository="ECDb" PartFile="ECDb"/>
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Documents-DgnDb" SourceName="Delivery/UnitTests/Documents"/>
-        </Bindings>
     </Part>
 
     <!-- *********************************************************************************************** -->
