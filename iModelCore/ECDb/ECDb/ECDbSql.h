@@ -861,7 +861,6 @@ struct ECDbClassMapInfo : NonCopyableClass
         ECN::ECClassId m_ecClassId;
         mutable ECDbClassMapInfo const* m_ecBaseClassMap;
         ECDbClassMapId m_ecBaseClassMapId;
-        uint16_t m_dmlPolicy;
         ECDbMapStrategy m_mapStrategy;
         std::vector<std::unique_ptr<ECDbPropertyMapInfo>> m_localPropertyMaps;
         std::vector<ECDbClassMapInfo*> m_childClassMaps;
@@ -872,8 +871,8 @@ struct ECDbClassMapInfo : NonCopyableClass
         void GetPropertyMaps (std::vector<ECDbPropertyMapInfo const*>& propertyMaps, bool onlyLocal) const;
 
     public:
-        ECDbClassMapInfo (ECDbMapStorage& map, ECDbClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, uint16_t dmlPolicy, ECDbClassMapId baseClassMap = 0LL)
-            :m_map (map), m_id (id), m_ecClassId (classId), m_mapStrategy (mapStrategy), m_ecBaseClassMap (nullptr), m_ecBaseClassMapId (baseClassMap), m_dmlPolicy (dmlPolicy)
+        ECDbClassMapInfo (ECDbMapStorage& map, ECDbClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, ECDbClassMapId baseClassMap = 0LL)
+            :m_map (map), m_id (id), m_ecClassId (classId), m_mapStrategy (mapStrategy), m_ecBaseClassMap (nullptr), m_ecBaseClassMapId (baseClassMap)
             {}
 
         ECDbMapStorage& GetMapStorageR () { return m_map; }
@@ -888,8 +887,6 @@ struct ECDbClassMapInfo : NonCopyableClass
         ECDbPropertyMapInfo const* FindPropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
         ECDbPropertyMapInfo* CreatePropertyMap (ECDbPropertyPath const& propertyPath, ECDbSqlColumn const& column);
         ECDbPropertyMapInfo* CreatePropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString, ECDbSqlColumn const& column);
-        //ECDbClassMapInfo* CreateDerivedClassMap (ECN::ECClassId classId, ECDbMapStrategy mapStrategy);
-        uint16_t GetDMLPolicy () const { return m_dmlPolicy; }
     };
 
 //======================================================================================
@@ -900,10 +897,10 @@ struct ECDbMapStorage
     private:
 
         const Utf8CP Sql_InsertPropertyPath = "INSERT OR REPLACE INTO ec_PropertyPath (Id, RootPropertyId, AccessString) VALUES (?,?,?)";
-        const Utf8CP Sql_InsertClassMap = "INSERT OR REPLACE INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, IsMapStrategyPolymorphic, DMLPolicy) VALUES (?,?,?,?,?,?,?)";
+        const Utf8CP Sql_InsertClassMap = "INSERT OR REPLACE INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, IsMapStrategyPolymorphic) VALUES (?,?,?,?,?,?)";
         const Utf8CP Sql_InsertPropertyMap = "INSERT OR REPLACE INTO ec_PropertyMap (ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)";
         const Utf8CP Sql_SelectPropertyPath = "SELECT Id, RootPropertyId, AccessString FROM ec_PropertyPath";
-        const Utf8CP Sql_SelectClassMap = "SELECT Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, IsMapStrategyPolymorphic, DMLPolicy FROM ec_ClassMap ORDER BY Id, ParentId";
+        const Utf8CP Sql_SelectClassMap = "SELECT Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, IsMapStrategyPolymorphic FROM ec_ClassMap ORDER BY Id, ParentId";
         const Utf8CP Sql_SelectPropertyMap = "SELECT PropertyPathId, T.Name TableName, C.Name ColumnName FROM ec_PropertyMap P INNER JOIN ec_Column C ON C.Id = P.ColumnId INNER JOIN ec_Table T ON T.Id = C.TableId WHERE P.ClassMapId = ?";
         enum class StatementType
             {
@@ -937,27 +934,17 @@ struct ECDbMapStorage
         DbResult ReadPropertyPaths ();
 
     public:
-        ECDbMapStorage (ECDbSQLManager& manager)
-            :m_manager (manager)
-            {
-            }
+        ECDbMapStorage (ECDbSQLManager& manager) :m_manager (manager) {}
         ECDbPropertyPath const * FindPropertyPath (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
         ECDbPropertyPath const* FindPropertyPath (ECDbPropertyPathId propertyPathId) const;
         ECDbClassMapInfo const* FindClassMap (ECDbClassMapId id) const;
         std::vector<ECDbClassMapInfo const*> const* FindClassMapsByClassId (ECN::ECClassId id) const;
 
         ECDbPropertyPath* CreatePropertyPath (ECN::ECPropertyId rootPropertyId, Utf8CP accessString);
-        ECDbClassMapInfo* CreateClassMap (ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, uint16_t dmlPolicy, ECDbClassMapId baseClassMapId = 0LL);
-        BentleyStatus UpdateDMLPolicy (ECDbClassMapId classMapId, uint16_t dmlPolicy);
+        ECDbClassMapInfo* CreateClassMap (ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = 0LL);
 
-        BentleyStatus Load ()
-            {
-            return Read () != BE_SQLITE_DONE ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
-            }
-        BentleyStatus Save ()
-            {
-            return InsertOrReplace () != BE_SQLITE_DONE ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
-            }
+        BentleyStatus Load () { return Read () != BE_SQLITE_DONE ? BentleyStatus::ERROR : BentleyStatus::SUCCESS; }
+        BentleyStatus Save () { return InsertOrReplace () != BE_SQLITE_DONE ? BentleyStatus::ERROR : BentleyStatus::SUCCESS; }
         void Reset ()
             {
             m_propertyPaths.clear ();
