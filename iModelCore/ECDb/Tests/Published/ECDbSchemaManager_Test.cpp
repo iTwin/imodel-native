@@ -1638,7 +1638,7 @@ TEST(ECDbSchemaManager, TestGetClassResolver)
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 // A primary schema should be supplemented with the latest available supplemental schema
-TEST(ECDbSchemaManager, supplementSchemaWithLatestSupplementalSchema)
+TEST(ECDbSchemaManager, SupplementSchemaWithLatestSupplementalSchema)
 {
 
     ECDbTestProject::Initialize();
@@ -1687,7 +1687,7 @@ TEST(ECDbSchemaManager, supplementSchemaWithLatestSupplementalSchema)
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //supplement schema with a supplemental schema whose primary schema's major version is greater then the major version of current primary schema.
-TEST(ECDbSchemaManager, supplementSchemaWithGreaterMajorVersionPrimary)
+TEST(ECDbSchemaManager, SupplementSchemaWithGreaterMajorVersionPrimary)
 {
 
     ECDbTestProject::Initialize();
@@ -1728,7 +1728,7 @@ TEST(ECDbSchemaManager, supplementSchemaWithGreaterMajorVersionPrimary)
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 // supplement current primary schema with a supplemental schema whose primary schema's minor version is less then the current schema.
-TEST(ECDbSchemaManager, supplementSchemaWithLessMinorVersionPrimarySchema)
+TEST(ECDbSchemaManager, SupplementSchemaWithLessMinorVersionPrimarySchema)
 {
 
     ECDbTestProject::Initialize();
@@ -1769,7 +1769,7 @@ TEST(ECDbSchemaManager, supplementSchemaWithLessMinorVersionPrimarySchema)
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 // suppelement schema with a supplemental schema whose primary schema's minor version is greater then the current.
-TEST(ECDbSchemaManager, supplementSchemaWithGreaterMinorVersionPrimarySchema)
+TEST(ECDbSchemaManager, SupplementSchemaWithGreaterMinorVersionPrimarySchema)
 {
 
     ECDbTestProject::Initialize();
@@ -1785,6 +1785,7 @@ TEST(ECDbSchemaManager, supplementSchemaWithGreaterMinorVersionPrimarySchema)
     ECSchemaPtr supple;
     ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.69.ecschema.xml", nullptr);
     ASSERT_TRUE(supple != NULL);
+    //This one will be ignored as it is not targeting the primary schema's exact version
     ECSchemaPtr supple1;
     ECDbTestUtility::ReadECSchemaFromDisk(supple1, context, L"BasicSchema_Supplemental_Localization.01.90.ecschema.xml", nullptr);
     ASSERT_TRUE(supple1 != NULL);
@@ -1801,13 +1802,12 @@ TEST(ECDbSchemaManager, supplementSchemaWithGreaterMinorVersionPrimarySchema)
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
     ASSERT_TRUE(ecclassBase != NULL);
     //get custom attributes from base class (false)
-    ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(true);
     int i = 0;
-    for (IECInstancePtr instance : iterator1)
+    for (IECInstancePtr instance : ecclassBase->GetCustomAttributes(true))
     {
         i++;
     }
-    EXPECT_EQ(3, i) << "the number of custom attributes on the Class Base do not match the original";
+    ASSERT_EQ(1, i) << "the number of custom attributes on the Class Base do not match the original";
 }
 
 //---------------------------------------------------------------------------------------
