@@ -51,6 +51,10 @@ struct BeGTestHost : RefCounted<BeTest::Host>
         path.AppendSeparator ();
         }
 
+    void _GetFrameworkSqlangFiles (BeFileName& path) override
+        {
+        }
+
     virtual void*  _InvokeP (const char *,void *) override {BeAssert(false); return nullptr;}
 
     static RefCountedPtr<BeGTestHost> Create (char const* progDir) {return new BeGTestHost (progDir);}
