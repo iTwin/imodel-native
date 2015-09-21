@@ -30,7 +30,7 @@ void AnnotationLeaderDraw::CopyFrom(AnnotationLeaderDrawCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setStrokeSymbology(ViewContextR context, ElementColor color, uint32_t weight)
+static void setStrokeSymbology(ViewContextR context, AnnotationColorType colorType, ColorDef colorValue, uint32_t weight)
     {
     ElemDisplayParamsR displayParams = context.GetCurrentDisplayParams();
 
@@ -39,8 +39,13 @@ static void setStrokeSymbology(ViewContextR context, ElementColor color, uint32_
     displayParams.SetWeight(weight);
     displayParams.SetFillDisplay(FillDisplay::Never);
 
-    if (!color.IsByCategory())
-        displayParams.SetLineColor(*color.GetColorCP());
+    switch (colorType)
+        {
+        case AnnotationColorType::ByCategory: /* don't override */break;
+        case AnnotationColorType::RGBA: displayParams.SetLineColor(colorValue); break;
+        case AnnotationColorType::ViewBackground: BeAssert(false) /* unsupported */; break;
+        default: BeAssert(false) /* unknown */; break;
+        }
 
     context.CookDisplayParams();
     }
@@ -48,7 +53,7 @@ static void setStrokeSymbology(ViewContextR context, ElementColor color, uint32_
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setFillSymbology(ViewContextR context, ElementColor color, double transparency)
+static void setFillSymbology(ViewContextR context, AnnotationColorType colorType, ColorDef colorValue, double transparency)
     {
     ElemDisplayParamsR displayParams = context.GetCurrentDisplayParams();
 
@@ -57,8 +62,13 @@ static void setFillSymbology(ViewContextR context, ElementColor color, double tr
     displayParams.SetTransparency(transparency);
     displayParams.SetFillDisplay(FillDisplay::Always);
 
-    if (!color.IsByCategory())
-        displayParams.SetFillColor(*color.GetColorCP());
+    switch (colorType)
+        {
+        case AnnotationColorType::ByCategory: /* don't override */break;
+        case AnnotationColorType::RGBA: displayParams.SetFillColor(colorValue); break;
+        case AnnotationColorType::ViewBackground: displayParams.SetFillColorToViewBackground(); break;
+        default: BeAssert(false) /* unknown */; break;
+        }
 
     context.CookDisplayParams();
     }
@@ -203,7 +213,7 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
         CurveVectorPtr effectiveLineGeometry = createEffectiveLineGeometry(m_leaderLayout->GetLineGeometry(), transformedTerminatorGeometry.get());
         if (effectiveLineGeometry.IsValid())
             {
-            setStrokeSymbology(context, leaderStyle->GetLineColor(), leaderStyle->GetLineWeight());
+            setStrokeSymbology(context, leaderStyle->GetLineColorType(), leaderStyle->GetLineColorValue(), leaderStyle->GetLineWeight());
             output.DrawCurveVector(*effectiveLineGeometry, false);
             }
         }
@@ -216,12 +226,12 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
 
         if (CurveVector::BOUNDARY_TYPE_Open == terminatorGeometry.GetBoundaryType())
             {
-            setStrokeSymbology(context, leaderStyle->GetTerminatorColor(), leaderStyle->GetTerminatorWeight());
+            setStrokeSymbology(context, leaderStyle->GetTerminatorColorType(), leaderStyle->GetTerminatorColorValue(), leaderStyle->GetTerminatorWeight());
             output.DrawCurveVector(terminatorGeometry, false);
             }
         else
             {
-            setFillSymbology(context, leaderStyle->GetTerminatorColor(), 0.0);
+            setFillSymbology(context, leaderStyle->GetTerminatorColorType(), leaderStyle->GetTerminatorColorValue(), 0.0);
             output.DrawCurveVector(terminatorGeometry, true);
             }
         
