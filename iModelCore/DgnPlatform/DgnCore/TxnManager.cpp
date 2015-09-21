@@ -92,8 +92,8 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
 
     m_snappyTo.Init();
     ChangesBlobHeader header(changeset.GetSize());
-    m_snappyTo.Write((ByteCP) &header, sizeof(header));
-    m_snappyTo.Write((ByteCP) changeset.GetData(), changeset.GetSize());
+    m_snappyTo.Write((Byte const*) &header, sizeof(header));
+    m_snappyTo.Write((Byte const*) changeset.GetData(), changeset.GetSize());
 
     uint32_t zipSize = m_snappyTo.GetCompressedSize();
     if (0 < zipSize)
@@ -170,8 +170,14 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
     TxnId last = stmt.GetValueInt64(0); // this is where we left off last session
     m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
 
+    if (m_dgndb.IsReadonly())
+        return;
+
+    // get the next available id now, before we perform any txns, so if we delete and then undo the last element we don't reuse its id
+    m_dgndb.Elements().GetNextId(); 
+
     // whenever we open a Briefcase for write access, enable tracking
-    if (!m_dgndb.IsReadonly() && m_dgndb.IsBriefcase())
+    if (m_dgndb.IsBriefcase())
         EnableTracking(true);
     }
 
