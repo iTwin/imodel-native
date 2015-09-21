@@ -246,7 +246,6 @@ protected:
     virtual void DGNPLATFORM_EXPORT _RegisterElement(DgnElementCR element);
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
-    virtual DgnModelType _GetModelType() const = 0; //!< @private
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;//!< @private
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
 
@@ -444,9 +443,6 @@ public:
 
     //! Get the name of this DgnModel
     Utf8CP GetModelName() const {return m_name.c_str();}
-
-    //! Get the type of this DgnModel
-    DgnModelType GetModelType() const {return _GetModelType();}
 
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
@@ -737,7 +733,6 @@ protected:
     DPoint3d _GetGlobalOrigin() const override {return DPoint3d::From(m_globalOrigin);}
     DgnModel2dCP _ToDgnModel2d() const override {return this;}
 
-    DgnModelType _GetModelType() const override {return DgnModelType::Drawing;} // ###TODO remove model type concept...
     CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
 
@@ -758,7 +753,6 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : DgnModel3d
 {
     DEFINE_T_SUPER(DgnModel3d)
 protected:
-    DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
     PhysicalModelCP _ToPhysicalModel() const override {return this;}
     CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::World;}
 
@@ -775,7 +769,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ResourceModel : DgnModel
 {
     DEFINE_T_SUPER(DgnModel);
 protected:
-    DgnModelType _GetModelType() const override {return DgnModelType::NonGeometric;}
     ResourceModelCP _ToResourceModel() const override {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
@@ -1025,7 +1018,6 @@ private:
     Utf8String m_elementECClassName;
     Utf8String m_elementCategoryName;
 
-    DgnModelType _GetModelType() const override {return DgnModelType::Component;}
     DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
     CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;//!< @private
@@ -1153,7 +1145,6 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModel : DgnModel2d
     DEFINE_T_SUPER(DgnModel2d)
 
 protected:
-    DgnModelType _GetModelType() const override {return DgnModelType::Drawing;}
     PlanarPhysicalModelCP _ToPlanarPhysicalModel() const override {return this;}
 public:
     explicit PlanarPhysicalModel(CreateParams const& params) : T_Super(params) {}
@@ -1217,7 +1208,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
 protected:
     DPoint2d m_size;
 
-    DgnModelType _GetModelType() const override {return DgnModelType::Sheet;}
     SheetModelCP _ToSheetModel() const override {return this;}
 
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;

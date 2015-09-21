@@ -1206,12 +1206,6 @@ void dgn_TxnTable::ModelDep::CheckDirection(ECInstanceId relid)
     DgnModels::Model root, dep;
     m_txnMgr.GetDgnDb().Models().QueryModelById(&root, rootModel);
     m_txnMgr.GetDgnDb().Models().QueryModelById(&dep, depModel);
-
-    if (root.GetModelType() > dep.GetModelType())
-        {
-        //  A Physical model cannot depend on a Drawing model
-        m_txnMgr.ReportError(*new DgnElementDependencyGraph::DirectionValidationError(""));
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

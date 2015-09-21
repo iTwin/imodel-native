@@ -99,7 +99,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
-        <ECProperty propertyName="Type" typeName="int" />
         <ECProperty propertyName="Props" typeName="string" />
         <ECProperty propertyName="Visibility" typeName="int" />
     </ECClass>

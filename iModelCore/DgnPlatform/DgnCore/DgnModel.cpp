@@ -24,7 +24,7 @@ DgnModelId DgnModels::QueryModelId(Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT Name,Descr,Type,ECClassId,Visibility FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Name,Descr,ECClassId,Visibility FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -35,9 +35,8 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_id = id;
         out->m_name.AssignOrClear(stmt.GetValueText(0));
         out->m_description.AssignOrClear(stmt.GetValueText(1));
-        out->m_modelType =(DgnModelType) stmt.GetValueInt(2);
-        out->m_classId = DgnClassId(stmt.GetValueInt64(3));
-        out->m_inGuiList = TO_BOOL(stmt.GetValueInt(4));
+        out->m_classId = DgnClassId(stmt.GetValueInt64(2));
+        out->m_inGuiList = TO_BOOL(stmt.GetValueInt(3));
         }
 
     return SUCCESS;
@@ -94,25 +93,23 @@ void DgnModels::ClearLoaded()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.Wilson                      03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModels::QueryModelDependencyIndexAndType(uint64_t& didx, DgnModelType& mtype, DgnModelId mid)
+BentleyStatus DgnModels::QueryModelDependencyIndex(uint64_t& didx, DgnModelId mid)
     {
-    auto i = m_modelDependencyIndexAndType.find(mid);
-    if (i != m_modelDependencyIndexAndType.end())
+    auto i = m_modelDependencyIndices.find(mid);
+    if (i != m_modelDependencyIndices.end())
         {
-        didx = i->second.first;
-        mtype = i->second.second;
+        didx = i->second;
         return BSISUCCESS;
         }
 
     CachedStatementPtr selectDependencyIndex;
-    GetDgnDb().GetCachedStatement(selectDependencyIndex, "SELECT DependencyIndex,Type FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    GetDgnDb().GetCachedStatement(selectDependencyIndex, "SELECT DependencyIndex FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     selectDependencyIndex->BindId(1, mid);
     if (selectDependencyIndex->Step() != BE_SQLITE_ROW)
         return BSIERROR;
 
     didx = selectDependencyIndex->GetValueInt64(0);
-    mtype =(DgnModelType)selectDependencyIndex->GetValueInt(1);
-    m_modelDependencyIndexAndType[mid] = make_bpair(didx, mtype);
+    m_modelDependencyIndices[mid] = didx;
     return BSISUCCESS;
     }
 
@@ -143,7 +140,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,Name,Descr,Type,Visibility,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Model);
+        Utf8String sqlString = "SELECT Id,Name,Descr,Visibility,ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -167,9 +164,8 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
 DgnModelId   DgnModels::Iterator::Entry::GetModelId() const {Verify(); return m_sql->GetValueId<DgnModelId>(0);}
 Utf8CP       DgnModels::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(1);}
 Utf8CP       DgnModels::Iterator::Entry::GetDescription() const {Verify(); return m_sql->GetValueText(2);}
-DgnModelType DgnModels::Iterator::Entry::GetModelType() const {Verify(); return (DgnModelType) m_sql->GetValueInt(3);}
-bool         DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(4));}
-DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(5));}
+bool         DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(3));}
+DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(4));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/00
@@ -817,18 +813,17 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
     DbResult rc = m_dgndb.GetNextRepositoryBasedId(m_modelId, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
     BeAssert(rc == BE_SQLITE_OK);
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Visibility,Space) VALUES(?,?,?,?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,ECClassId,Visibility,Space) VALUES(?,?,?,?,?,?)");
     stmt.BindId(1, m_modelId);
     stmt.BindText(2, m_name.c_str(), Statement::MakeCopy::No);
     stmt.BindText(3, description, Statement::MakeCopy::No);
-    stmt.BindInt(4, (int)_GetModelType());
-    stmt.BindId(5, GetClassId());
-    stmt.BindInt(6, inGuiList ? 1 : 0);
+    stmt.BindId(4, GetClassId());
+    stmt.BindInt(5, inGuiList ? 1 : 0);
     auto geomModel = ToGeometricModel();
     if (nullptr != geomModel)
-        stmt.BindInt(7, (int)geomModel->GetCoordinateSpace());
+        stmt.BindInt(6, (int)geomModel->GetCoordinateSpace());
     else
-        stmt.BindNull(7);
+        stmt.BindNull(6);
 
     rc = stmt.Step();
     if (BE_SQLITE_DONE != rc)
@@ -1950,10 +1945,8 @@ DgnDbStatus ComponentModel::AddAllToECSchema(ECN::ECSchemaR schema, DgnDbR db)
     {
     for (auto const& cm : db.Models().MakeIterator())
         {
-        if (cm.GetModelType() != DgnModelType::Component)
-            continue;
         ComponentModelPtr componentModel = db.Models().Get<ComponentModel>(cm.GetModelId());
-        if (DgnDbStatus::Success != componentModel->GenerateECClass(schema))
+        if (componentModel.IsValid() && DgnDbStatus::Success != componentModel->GenerateECClass(schema))
             return DgnDbStatus::WriteError;
         }
     return DgnDbStatus::Success;
