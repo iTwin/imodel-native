@@ -198,16 +198,6 @@ BentleyStatus BeGuid::FromString(Utf8CP uuid_str)
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BeRepositoryBasedId::CreateRandom(BeRepositoryId repo) 
-    {
-    uint32_t random;
-    sqlite3_randomness(sizeof(random), &random);
-    *this = BeRepositoryBasedId(repo,random);
-    }
-
 void        Statement::Finalize() {if (m_stmt){sqlite3_finalize(m_stmt);m_stmt=nullptr;}}
 DbResult    Statement::Step() {return m_stmt ? (DbResult) sqlite3_step(m_stmt) : BE_SQLITE_ERROR;}
 DbResult    Statement::Reset() {return (DbResult)sqlite3_reset(m_stmt);}
@@ -1199,7 +1189,7 @@ DbResult Db::SaveBeDbGuid()
 DbResult Db::SaveRepositoryId()
     {
     if (!m_dbFile->m_repositoryId.IsValid())
-        m_dbFile->m_repositoryId = BeRepositoryId((uint32_t) BeRepositoryId::SpecialValue::Master);
+        m_dbFile->m_repositoryId = BeRepositoryId(BeRepositoryId::Master());
 
     return m_dbFile->m_rlvCache.SaveValue(m_dbFile->m_repositoryIdRlvIndex, m_dbFile->m_repositoryId.GetValue());
     }
@@ -1250,27 +1240,37 @@ DbResult Db::ChangeRepositoryId(BeRepositoryId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeRepositoryBasedId::ToNextAvailable(Db& db, Utf8CP tableName, Utf8CP colName)
+BeRepositoryBasedId::BeRepositoryBasedId(Db& db, Utf8CP tableName, Utf8CP colName)
+    {
+    SqlPrintfString sql("SELECT max(%s) FROM %s WHERE %s>=? AND %s<?", colName, tableName, colName, colName);
+
+    Statement stmt;
+    stmt.Prepare(db, sql);
+
+    BeRepositoryId myRepo = db.GetRepositoryId();
+    BeRepositoryBasedId firstId(myRepo, 1);
+    BeRepositoryBasedId lastId(myRepo.GetNextRepositoryId(), 0);
+
+    stmt.BindInt64(1, firstId.GetValueUnchecked());
+    stmt.BindInt64(2, lastId.GetValueUnchecked());
+    stmt.Step();
+    m_id = stmt.IsColumnNull(0) ? firstId.GetValueUnchecked() : stmt.GetValueInt64(0)+1;
+    BeAssert(m_id < lastId.GetValueUnchecked());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeRepositoryBasedId::UseNext(Db& db)
     {
     if (!IsValid())
-        {
-        SqlPrintfString sql("SELECT max(%s) FROM %s WHERE %s>? AND %s<?", colName, tableName, colName, colName);
+        return;
 
-        Statement stmt;
-        stmt.Prepare(db, sql);
+    BeRepositoryId myRepo = db.GetRepositoryId();
+    BeAssert(myRepo == GetRepositoryId());
+    ++m_id;
 
-        BeRepositoryBasedId firstId(db.GetRepositoryId(), 0);
-        BeRepositoryBasedId lastId(db.GetRepositoryId().GetNextRepositoryId(), 0);
-
-        stmt.BindInt64(1, firstId.GetValueUnchecked());
-        stmt.BindInt64(2, lastId.GetValueUnchecked());
-        stmt.Step();
-        m_id = stmt.IsColumnNull(0) ? firstId.GetValueUnchecked() : stmt.GetValueInt64(0);
-        }
-
-    UseNext();
-
-    BeRepositoryBasedId lastId(db.GetRepositoryId().GetNextRepositoryId(), 0);
+    BeRepositoryBasedId lastId(myRepo.GetNextRepositoryId(), 0);
     if (m_id < lastId.GetValueUnchecked())
         return; // ok
 
@@ -1287,7 +1287,7 @@ DbResult Db::GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP
     //!!!  NOTE: THIS IS ALL BOGUS AND NEEDS TO BE REPLACED BY SOMETHING THAT ACTUALLY CONNECTS TO A SERVER !!!!
     //!!!  NOTE: THIS IS ALL BOGUS AND NEEDS TO BE REPLACED BY SOMETHING THAT ACTUALLY CONNECTS TO A SERVER !!!!
     if (value.IsValid())
-        value.UseNext();
+        value = BeServerIssuedId(value.GetValue() + 1);
     else
         {
         Utf8String sql(SqlPrintfString("SELECT max(%s) FROM %s", colName, tableName, colName));
@@ -1300,7 +1300,7 @@ DbResult Db::GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP
         if (result != BE_SQLITE_ROW)
             return  result;
 
-        value = BeServerIssuedId(stmt.GetValueInt64(0) + 1);
+        value = BeServerIssuedId(stmt.GetValueUInt64(0) + 1);
         }
 
     return  BE_SQLITE_OK;
@@ -1553,7 +1553,7 @@ void RepositoryLocalValueCache::Clear()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult RepositoryLocalValueCache::SaveValue(size_t rlvIndex, int64_t value)
+DbResult RepositoryLocalValueCache::SaveValue(size_t rlvIndex, uint64_t value)
     {
     if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
@@ -1565,7 +1565,7 @@ DbResult RepositoryLocalValueCache::SaveValue(size_t rlvIndex, int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult RepositoryLocalValueCache::QueryValue(int64_t& value, size_t rlvIndex)
+DbResult RepositoryLocalValueCache::QueryValue(uint64_t& value, size_t rlvIndex)
     {
     if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
@@ -1581,7 +1581,7 @@ DbResult RepositoryLocalValueCache::QueryValue(int64_t& value, size_t rlvIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult RepositoryLocalValueCache::IncrementValue(int64_t& newValue, size_t rlvIndex)
+DbResult RepositoryLocalValueCache::IncrementValue(uint64_t& newValue, size_t rlvIndex)
     {
     CachedRLV* cachedRlv = nullptr;
     if (!TryQuery(cachedRlv, rlvIndex))
@@ -2210,7 +2210,7 @@ DbResult Db::QueryDbIds()
     if (BE_SQLITE_ROW != rc)
         return  BE_SQLITE_ERROR_NoPropertyTable;
 
-    int64_t repoId;
+    uint64_t repoId;
     rc = m_dbFile->m_rlvCache.QueryValue(repoId, m_dbFile->m_repositoryIdRlvIndex);
     if (BE_SQLITE_OK != rc)
         return BE_SQLITE_ERROR_NoPropertyTable;
@@ -3584,9 +3584,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::GetNextEmbedFileId() const
         return BeRepositoryBasedId();
 
     BeAssert(m_db.TableExists(BEDB_TABLE_EmbeddedFile));
-    BeRepositoryBasedId id;
-    id.ToNextAvailable(m_db, BEDB_TABLE_EmbeddedFile, "Id");
-    return id;
+    return BeRepositoryBasedId(m_db, BEDB_TABLE_EmbeddedFile, "Id");
     }
 
 //---------------------------------------------------------------------------------------
@@ -3616,10 +3614,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::ImportWithoutCompressing(DbResult* stat
     if (stat != nullptr)
         *stat = rc;
 
-    if (rc == BE_SQLITE_OK)
-        return newId;
-    else
-        return BeRepositoryBasedId();
+    return rc == BE_SQLITE_OK ? newId : BeRepositoryBasedId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -3959,7 +3954,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::QueryFile(Utf8CP name, uint64_t* size, 
             }
         }
 
-    return BeRepositoryBasedId(stmt.GetValueInt64(2));
+    return BeRepositoryBasedId(stmt.GetValueUInt64(2));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4060,7 +4055,7 @@ DateTime DbEmbeddedFileTable::Iterator::Entry::GetLastModified() const
     return std::move(lastModified);
     }
 
-BeRepositoryBasedId DbEmbeddedFileTable::Iterator::Entry::GetId() const {return BeRepositoryBasedId(m_sql->GetValueInt64(3));}
+BeRepositoryBasedId DbEmbeddedFileTable::Iterator::Entry::GetId() const {return BeRepositoryBasedId(m_sql->GetValueUInt64(3));}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2012

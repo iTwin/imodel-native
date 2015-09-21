@@ -380,7 +380,7 @@ TEST (BeSQLiteDb, ChangeRepositoryId)
     EXPECT_EQ (1, rowCount) << L"be_local after a repository id change should only contain one row (the repo id).";
 
     //check value of repo id through API. As we opened file from scratch the old id cannot be in the cache anymore.
-    int64_t actualRepoId;
+    uint64_t actualRepoId;
     db.GetRLVCache().QueryValue(actualRepoId, repoIdIndex);
     EXPECT_EQ (expectedRepoId.GetValue(), (int32_t) actualRepoId) << L"QueryRepositoryLocalValue did not return the right value for repository id after repository id had been changed.";
     }
