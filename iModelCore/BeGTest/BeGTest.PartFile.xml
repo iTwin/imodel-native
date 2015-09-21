@@ -11,7 +11,10 @@
     <!-- BeTestDocuments                                                                                -->
     <!-- ********************************************************************************************** -->
 
-    <Part Name="UnitTests-Documents" BentleyBuildMakeFile="DeliverBeTestDocuments.mke">
+    <!-- Unit test parts in other repositories all depend on this part, UnitTests-Documents-DgnDb.
+         This part generates the documents or gets them from LKGs, depending on the buildstrategy,
+         and then it defines bindings for the resulting directory that BeGTest products will look for. -->
+    <Part Name="UnitTests-Documents-DgnDb" BentleyBuildMakeFile="DeliverBeTestDocuments.mke">
         <SubProduct ProductName="BeTestDocuments" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Documents-DgnDb" SourceName="Delivery/UnitTests/Documents"/>
