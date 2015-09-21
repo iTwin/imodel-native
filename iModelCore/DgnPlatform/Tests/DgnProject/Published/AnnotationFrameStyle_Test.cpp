@@ -83,7 +83,7 @@ TEST(BasicAnnotationFrameStyleTest, PropertyBagTypes)
     EXPECT_TRUE(type == STYLE_PTR->GetType());\
     EXPECT_TRUE(verticalPadding == STYLE_PTR->GetVerticalPadding());
 
-#define INVALIDSTYLEID DgnStyleId((int64_t)-1)
+#define INVALIDSTYLEID DgnStyleId((uint64_t)-1)
 
 //---------------------------------------------------------------------------------------
 // Creates a style and tests accessors.

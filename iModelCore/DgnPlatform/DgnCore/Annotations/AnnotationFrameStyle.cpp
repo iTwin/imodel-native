@@ -360,7 +360,7 @@ BentleyStatus AnnotationFrameStylePersistence::DecodeFromFlatBuf(AnnotationFrame
         return ERROR;
 
     if (fbStyle->has_id())
-        style.m_id = DgnStyleId(fbStyle->id());
+        style.m_id = DgnStyleId((uint64_t)fbStyle->id());
 
     if (fbStyle->has_name())
         style.m_name = fbStyle->name()->c_str();

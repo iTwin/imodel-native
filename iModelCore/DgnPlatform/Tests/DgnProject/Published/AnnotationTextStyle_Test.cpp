@@ -54,7 +54,7 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
     Utf8String name = "MyStyle";                                                                STYLE_PTR->SetName(name.c_str());\
     Utf8String description = "MyDescription";                                                   STYLE_PTR->SetDescription(description.c_str());\
     ElementColor color(ColorDef(0xff, 0x00, 0x00));                                             STYLE_PTR->SetColor(color);\
-    DgnFontId fontId((int64_t)21);                                                              STYLE_PTR->SetFontId(fontId);\
+    DgnFontId fontId((uint64_t)21);                                                              STYLE_PTR->SetFontId(fontId);\
     double height = 31.31;                                                                      STYLE_PTR->SetHeight(height);\
     bool isBold = true;                                                                         STYLE_PTR->SetIsBold(isBold);\
     bool isItalic = true;                                                                       STYLE_PTR->SetIsItalic(isItalic);\

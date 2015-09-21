@@ -1414,7 +1414,7 @@ private:
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
-    DgnElementId GetNextId();
+    void InitNextId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
     DgnDbStatus PerformDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);

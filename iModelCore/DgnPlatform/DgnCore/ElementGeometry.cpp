@@ -1515,7 +1515,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& en
         FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
 
         ElemDisplayParams faceParams;
-        DgnSubCategoryId  subCategoryId = DgnSubCategoryId(fbSymb->subCategoryId());
+        DgnSubCategoryId  subCategoryId = DgnSubCategoryId((uint64_t)fbSymb->subCategoryId());
 
         if (!categoryId.IsValid())
             categoryId = m_db.Categories().QueryCategoryId(subCategoryId);
@@ -1527,7 +1527,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ISolidKernelEntityPtr& en
             faceParams.SetLineColor(ColorDef(fbSymb->color()));
 
         if (fbSymb->useMaterial())
-            faceParams.SetMaterial(DgnMaterialId(fbSymb->materialId()));
+            faceParams.SetMaterial(DgnMaterialId((uint64_t)fbSymb->materialId()));
 
         faceParams.SetTransparency(fbSymb->transparency());
 
@@ -1570,7 +1570,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnSubCategoryId& subCate
 
     auto ppfb = flatbuffers::GetRoot<FB::BeginSubCategory>(egOp.m_data);
 
-    subCategory = DgnSubCategoryId(ppfb->subCategoryId());
+    subCategory = DgnSubCategoryId((uint64_t)ppfb->subCategoryId());
 
     DPoint3d            origin = *((DPoint3dCP) ppfb->origin());
     YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll());
@@ -1590,7 +1590,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, DgnGeomPartId& geomPart) 
 
     auto ppfb = flatbuffers::GetRoot<FB::GeomPart>(egOp.m_data);
 
-    geomPart = DgnGeomPartId(ppfb->geomPartId());
+    geomPart = DgnGeomPartId((uint64_t)ppfb->geomPartId());
 
     return true;
     }
@@ -1731,7 +1731,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElemDisplayParamsR elPara
             // NEEDSWORK_WIP_MATERIAL - Set geometry specific material settings of ElemDisplayParams...
             if (ppfb->useMaterial())
                 {
-                DgnMaterialId material(ppfb->materialId());
+                DgnMaterialId material((uint64_t)ppfb->materialId());
 
                 if (elParams.IsMaterialFromSubCategoryAppearance() || material != elParams.GetMaterial())
                     {
@@ -1746,7 +1746,7 @@ bool ElementGeomIO::Reader::Get(Operation const& egOp, ElemDisplayParamsR elPara
             {
             auto ppfb = flatbuffers::GetRoot<FB::LineStyle>(egOp.m_data);
 
-            DgnStyleId styleId(ppfb->lineStyleId());
+            DgnStyleId styleId((uint64_t)ppfb->lineStyleId());
             LineStyleInfoPtr    lsInfo = LineStyleInfo::Create(styleId, nullptr);
             elParams.SetLineStyle(lsInfo.get());
             changed = true;

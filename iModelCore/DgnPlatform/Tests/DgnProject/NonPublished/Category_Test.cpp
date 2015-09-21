@@ -286,7 +286,7 @@ TEST_F (CategoryTests, InsertSubCategory)
     Utf8CP sub_code = "Test SubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
     Utf8CP sub_label = "TestSubCategory";
-    int64_t sub = 3;
+    uint64_t sub = 3;
     DgnCategories::SubCategory subcategory (id, (DgnSubCategoryId)sub, sub_code, appearence, sub_desc, sub_label);
 
     //Inserts a subcategory
@@ -321,7 +321,7 @@ TEST_F (CategoryTests, InsertSubCategory)
     Utf8CP sub2_code = "Test SubCategory 2";
     Utf8CP sub2_desc = "This is a test subcategory 2";
     Utf8CP sub2_label = "TestSubCategory2";
-    int64_t sub2 = 4;
+    uint64_t sub2 = 4;
 
     DgnCategories::SubCategory subcategory2 (id, (DgnSubCategoryId)sub2, sub2_code, appearence, sub2_desc, sub2_label);
     BeSQLite::DbResult insert_sub2 = m_db->Categories ().InsertSubCategory (subcategory2);
@@ -331,7 +331,7 @@ TEST_F (CategoryTests, InsertSubCategory)
     Utf8CP sub3_code = "Test SubCategory 3";
     Utf8CP sub3_desc = "This is a test subcategory 3";
     Utf8CP sub3_label = "TestSubCategory3";
-    int64_t sub3 = 5;
+    uint64_t sub3 = 5;
 
     DgnCategories::SubCategory subcategory3 (id, (DgnSubCategoryId)sub3, sub3_code, appearence, sub3_desc, sub3_label);
     BeSQLite::DbResult insert_sub3 = m_db->Categories ().InsertSubCategory (subcategory3);
@@ -412,7 +412,7 @@ TEST_F (CategoryTests, DeleteSubCategory)
     Utf8CP sub_code = "TestSubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
     Utf8CP sub_label = "TestSubCategory";
-    int64_t sub = 3;
+    uint64_t sub = 3;
     DgnCategories::SubCategory subcategory (id, (DgnSubCategoryId)sub, sub_code, appearence, sub_desc, sub_label);
 
     //Inserts subcategory.
@@ -470,7 +470,7 @@ TEST_F (CategoryTests, UpdateSubCategory)
     Utf8CP u_code = "UpdatedSubCategory";
     Utf8CP u_desc = "This is the updated sub category.";
     Utf8CP u_label = "UpdatedSubCategory";
-    int64_t sub = 3;
+    uint64_t sub = 3;
 
     //Updates category.
     DgnCategories::SubCategory Updated_subcategory (id, (DgnSubCategoryId)sub, u_code, appearence, u_desc, u_label);
