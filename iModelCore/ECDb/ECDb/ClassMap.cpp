@@ -295,59 +295,6 @@ MapStatus ClassMap::Initialize(ClassMapInfo const& mapInfo)
     return _OnInitialized();
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::_EvaluateDMLPolicy()
-    {
-    DMLPolicy::Target selectTarget = DMLPolicy::Target::None;
-    DMLPolicy::Target insertTarget = DMLPolicy::Target::None;
-    DMLPolicy::Target updateTarget = DMLPolicy::Target::None;
-    DMLPolicy::Target deleteTarget = DMLPolicy::Target::None;
-
-    auto& storagePartitions = GetStorageDescription ();
-    auto& noneVirtualPartitions = storagePartitions.GetNonVirtualHorizontalPartitionIndices ();
-    //auto isPersisted = GetTable ().GetPersistenceType () == PersistenceType::Persisted;
-
-    //! Existing table should be treated as ReadOnly
-
-    if (GetMapStrategy ().GetStrategy () == ECDbMapStrategy::Strategy::ExistingTable)
-        {
-        selectTarget = DMLPolicy::Target::Table;
-        }
-    if (noneVirtualPartitions.size () == 0)
-        {
-        selectTarget = DMLPolicy::Target::View;
-        }
-    else if (noneVirtualPartitions.size () == 1)
-        {
-        HorizontalPartition const* partition = GetStorageDescription ().GetHorizontalPartition (noneVirtualPartitions[0]);
-        BeAssert (partition != nullptr);
-        if (partition->GetClassIds ().size () == 1)
-            {
-            selectTarget = DMLPolicy::Target::Table;
-            insertTarget = DMLPolicy::Target::Table;
-            updateTarget = DMLPolicy::Target::Table;
-            deleteTarget = DMLPolicy::Target::Table;
-            }
-        else
-            {
-            insertTarget = DMLPolicy::Target::Table;
-            selectTarget = DMLPolicy::Target::View;
-            updateTarget = DMLPolicy::Target::View;
-            deleteTarget = DMLPolicy::Target::View;
-            }
-        }
-
-    GetDMLPolicyR ().Set(DMLPolicy::Operation::Select, selectTarget);
-    GetDMLPolicyR ().Set(DMLPolicy::Operation::Insert, insertTarget);
-    GetDMLPolicyR ().Set(DMLPolicy::Operation::Update, updateTarget);
-    GetDMLPolicyR ().Set(DMLPolicy::Operation::Delete, deleteTarget);
-
-    return BentleyStatus::SUCCESS;
-
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
@@ -855,7 +802,7 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
             }
 
         
-        auto mapInfo = mapStorage.CreateClassMap(GetClass().GetId(), m_mapStrategy, GetDMLPolicy().ToInt(), baseClassMap == nullptr ? ECClass::UNSET_ECCLASSID : baseClassMap->GetId());
+        auto mapInfo = mapStorage.CreateClassMap(GetClass().GetId(), m_mapStrategy, baseClassMap == nullptr ? ECClass::UNSET_ECCLASSID : baseClassMap->GetId());
         for (auto propertyMap : GetPropertyMaps())
             {
             if (baseProperties.find(propertyMap) != baseProperties.end())
@@ -883,8 +830,6 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ECDbClassMap
         SetTable(const_cast<ECDbSqlTable*>(GetECDbMap().GetSQLManager().GetNullTable()));
     else
         SetTable(const_cast<ECDbSqlTable*>(&(pm.front()->GetColumn().GetTable())));
-
-    this->m_crudPolicy = DMLPolicy::FromInt(mapInfo.GetDMLPolicy());
 
     if (GetECInstanceIdPropertyMap() != nullptr)
         return BentleyStatus::ERROR;
