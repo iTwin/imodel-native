@@ -484,8 +484,7 @@ Db& db
         //resolved map strategy:
         "MapStrategy INTEGER NOT NULL,"
         "MapStrategyOptions INTEGER,"
-        "IsMapStrategyPolymorphic BOOL NOT NULL CHECK (IsMapStrategyPolymorphic IN (0, 1)),"
-        "DMLPolicy INTEGER"
+        "IsMapStrategyPolymorphic BOOL NOT NULL CHECK (IsMapStrategyPolymorphic IN (0, 1))"
         ");");
 
     if (stat != BE_SQLITE_OK)

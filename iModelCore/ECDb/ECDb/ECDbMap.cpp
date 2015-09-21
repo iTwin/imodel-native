@@ -139,10 +139,6 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return MapStatus::Error;
         }
 
-    //This has to evaluated after map is saved
-    if (SUCCESS != EvaluateDMLPolicyForEachClass ())
-        return MapStatus::Error;
-
     std::set<ClassMap const*> classMaps;
     for (auto& key : m_classMapDictionary)
         {
@@ -275,19 +271,6 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
     return MapStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Affan.Khan         7/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMap::EvaluateDMLPolicyForEachClass ()
-    {
-    for (auto key : m_classMapDictionary)
-        {
-        key.second->EvaluateDMLPolicy ();
-        GetSQLManagerR ().GetMapStorageR ().UpdateDMLPolicy (key.second->GetId (), key.second->GetDMLPolicy ().ToInt());
-        }
-
-    return BentleyStatus::SUCCESS;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Casey.Mullen        11/2011
 //+---------------+---------------+---------------+---------------+---------------+------
