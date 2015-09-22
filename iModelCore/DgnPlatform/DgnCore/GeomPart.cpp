@@ -131,7 +131,15 @@ BentleyStatus DbGeomPartsWriter::UpdateGeomPart(DgnGeomPartId geomPartId, GeomSt
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnGeomPartId DgnGeomParts::MakeNewGeomPartId()
     {
-    m_dgndb.GetNextRepositoryBasedId(m_highestGeomPartId, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Id");
+    if (!m_highestGeomPartId.IsValid())
+        {
+        m_highestGeomPartId = DgnGeomPartId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Id");
+        }
+    else
+        {
+        m_highestGeomPartId.UseNext(m_dgndb);
+        }
+
     return m_highestGeomPartId;
     }
 
@@ -177,7 +185,7 @@ BentleyStatus DgnGeomParts::InsertElementGeomUsesParts(DgnElementId elementId, D
     statementPtr->BindId(1, elementId);
     statementPtr->BindId(2, geomPartId);
 
-    if (ECSqlStepStatus::Done != statementPtr->Step())
+    if (BE_SQLITE_DONE != statementPtr->Step())
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
@@ -237,7 +245,7 @@ BentleyStatus DgnGeomParts::DeleteGeomPart(DgnGeomPartId geomPartId)
     if (ECSqlStatus::Success != statementPtr->BindId(1, geomPartId))
         return BentleyStatus::ERROR;
 
-    if (ECSqlStepStatus::Done != statementPtr->Step())
+    if (BE_SQLITE_DONE != statementPtr->Step())
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;

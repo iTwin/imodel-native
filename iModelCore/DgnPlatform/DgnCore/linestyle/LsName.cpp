@@ -19,6 +19,82 @@
 static DgnHost::Key s_allMapsKey;
 static DgnHost::Key s_systemLsFileInfoKey;
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct LineStyleRangeCollector : IElementGraphicsProcessor
+{
+private:
+
+IStrokeForCache&    m_stroker;
+DRange3d            m_range;
+ViewContextP        m_context;
+Transform           m_currentTransform;
+
+protected:
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+explicit LineStyleRangeCollector(IStrokeForCache& stroker) : m_stroker(stroker) 
+    {
+    m_range.Init();
+    m_currentTransform.InitIdentity();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
+virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
+virtual void _AnnounceContext(ViewContextR context) override {m_context = &context;}
+virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) override
+    {
+    DRange3d  range;
+
+    curves.GetRange(range, m_currentTransform);
+    m_range.Extend(range);
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+virtual void _OutputGraphics(ViewContextR context) override
+    {
+    m_stroker._StrokeForCache(context);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+void GetRange(DRange3dR range)
+    {
+    range = m_range;
+    }
+
+public:
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+static void Process(DRange3dR range, IStrokeForCache& stroker)
+    {
+    LineStyleRangeCollector  processor(stroker);
+
+    ElementGraphicsOutput::Process(processor, stroker._GetDgnDb());
+
+    processor.GetRange(range);
+    }
+
+}; // LineStyleRangeCollector
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -72,8 +148,8 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
     m_name = NULL;
     SetName (name);
 
-    m_rasterInitialized = false;
-    m_rasterTexture = 0;
+    m_textureInitialized = false;
+    m_textureHandle = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -145,22 +221,28 @@ struct          ComponentToTextureStroker : Dgn::IStrokeForCache
 {
 private:
     ViewContextR        m_viewContext;
+    LsComponentPtr      m_component;
     LineStyleSymbR      m_lineStyleSymb;
-    LsDefinitionR       m_lsDef;
+    //LsDefinitionR       m_lsDef;
     DPoint3d            m_points[2];
     double              m_multiplier;
     double              m_length;
     Transform           m_transformForTexture;
+    bool                m_haveRange;
+    DRange3d            m_range;
 
 public:
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsDefinitionR lsDef) : m_viewContext(viewContext), m_lineStyleSymb(lineStyleSymb), m_lsDef(lsDef) 
+ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsDefinitionR lsDef) : m_viewContext(viewContext), m_lineStyleSymb(lineStyleSymb), /*m_lsDef(lsDef),*/ m_haveRange(false)
     {
     LsComponentCP    topComponent = lsDef.GetComponentCP (nullptr);
-    m_length = topComponent->_GetLength() * lineStyleSymb.GetScale();
+    BeAssert(topComponent->_IsOkayForTextureGeneration() != LsOkayForTextureGeneration::NotAllowed && topComponent->_IsOkayForTextureGeneration() != LsOkayForTextureGeneration::Unknown);
+    m_component = topComponent->_GetForTextureGeneration();
+
+    m_length = m_component->_GetLength() * lineStyleSymb.GetScale();
     if (m_length <  mgds_fc_epsilon)
         m_length = 1.0;   //  Apparently nothing is length dependent.
 
@@ -176,21 +258,25 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 //---------------------------------------------------------------------------------------
 void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     {
+    if (!m_haveRange)
+        {
+        m_haveRange = true;  //  avoid infinite recursion
+        DRange3d range;
+        LineStyleRangeCollector::Process(range, *this);
+        m_range = range;
+        }
+
     ElemDisplayParams   savedParams(context.GetCurrentDisplayParams());
     ElemMatSymb         savedMatSymb (*context.GetElemMatSymb());
-
-    context.GetIDrawGeom().ActivateMatSymb(&savedMatSymb);
 
     //  Use the current symbology, activating it here.  We may also activate symbology when drawing 
     //  symbols. 
 
-    //  Compute size of one iteration and stroke a line for that size.
-    LsComponentCP    topComponent = m_lsDef.GetComponentCP (nullptr);
-
+    context.GetIDrawGeom().ActivateMatSymb(&savedMatSymb);
 
     context.PushTransform(m_transformForTexture);
 
-    topComponent->_StrokeLineString(&context, &m_lineStyleSymb, m_points, 2, false);
+    m_component->_StrokeLineString(&context, &m_lineStyleSymb, m_points, 2, false);
 
     context.PopTransformClip();
 
@@ -228,10 +314,19 @@ DgnDbR _GetDgnDb() const override { return m_viewContext.GetDgnDb(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-intptr_t  LsDefinition::GenerateRasterTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
+intptr_t  LsDefinition::GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
     {
     //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
     BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
+    m_lsComp->_StartTextureGeneration();
+
+    if (m_lsComp->_IsOkayForTextureGeneration() == Dgn::LsOkayForTextureGeneration::NotAllowed)
+        return 0;
+
+    LsComponentPtr  comp = m_lsComp->_GetForTextureGeneration();
+    if (comp.IsNull())
+        return 0;
+
     ComponentToTextureStroker   stroker(viewContext, lineStyleSymb, *this);
     
     viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, NULL, false, viewContext, false);
@@ -241,17 +336,17 @@ intptr_t  LsDefinition::GenerateRasterTexture(ViewContextR viewContext, LineStyl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale) 
+uintptr_t     LsDefinition::GetTextureHandle (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale) 
     {
     if (!m_lsComp.IsValid())
         {
-        BeAssert(0 == m_rasterTexture);
-        return m_rasterTexture;
+        BeAssert(0 == m_textureHandle);
+        return m_textureHandle;
         }
 
-    if (!m_rasterInitialized)
+    if (!m_textureInitialized)
         {
-        m_rasterInitialized = true;
+        m_textureInitialized = true;
         if (m_lsComp->GetComponentType() == LsComponentType::RasterImage)
             {
             uint8_t const* image;
@@ -270,11 +365,11 @@ uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyl
                     for (size_t outIndex=0; outIndex < imageBytes; inIndex +=4, outIndex++)
                         alpha[outIndex] = invert ? (255 - image[inIndex]) : image[inIndex];
 
-                    DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_rasterTexture = reinterpret_cast <uintptr_t> (this), imageSize, true, 5, &alpha.front());
+                    DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_textureHandle = reinterpret_cast <uintptr_t> (this), imageSize, true, 5, &alpha.front());
                     }
                 else
                     {
-                    DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_rasterTexture = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
+                    DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_textureHandle = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
                     }
                 }
             }
@@ -282,9 +377,9 @@ uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyl
             {
             //  Convert this type to raster on the fly if possible
 #if TRYING_DIRECT_LINESTYLES
-            m_rasterTexture = 0; 
+            m_textureHandle = 0; 
 #else
-            m_rasterTexture = GenerateRasterTexture(viewContext, lineStyleSymb);
+            m_textureHandle = GenerateTexture(viewContext, lineStyleSymb);
 #endif
             }
         }
@@ -292,12 +387,12 @@ uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyl
 
     double          rasterWidth;
 
-    if (0 != m_rasterTexture &&
+    if (0 != m_textureHandle &&
         m_lsComp.IsValid() &&
-        SUCCESS == m_lsComp->_GetRasterTextureWidth (rasterWidth))
+        SUCCESS == m_lsComp->_GetTextureWidth (rasterWidth))
         lineStyleSymb.SetWidth (rasterWidth * scale);
     
-    return m_rasterTexture;
+    return m_textureHandle;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,7 +520,7 @@ BentleyStatus       LsCache::Load ()
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        DgnStyleId  styleId ((int64_t)stmt.GetValueInt(0));
+        DgnStyleId  styleId (stmt.GetValueUInt64(0));
         Utf8String name(stmt.GetValueText(2));
         Utf8String  data ((Utf8CP)stmt.GetValueBlob(4));
 

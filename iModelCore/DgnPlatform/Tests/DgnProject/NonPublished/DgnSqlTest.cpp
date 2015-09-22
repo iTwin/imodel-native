@@ -9,7 +9,8 @@
 #include "DgnSqlTestDomain.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 
-USING_NAMESPACE_BENTLEY_SQLITE 
+USING_NAMESPACE_BENTLEY_SQLITE
+
 using namespace DgnSqlTestNamespace;
 
 /*---------------------------------------------------------------------------------**//**
@@ -253,9 +254,9 @@ TEST_F(SqlFunctionsTest, placement_angles)
                             DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_OBSTACLE_CLASS " AS o"
                             " WHERE (o.ECInstanceId=g.ECInstanceId) AND (o.SomeProperty = 'B') AND (DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(90.0,0,0)) < 1.0)");
     //__PUBLISH_EXTRACT_END__
-    ASSERT_EQ( EC::ECSqlStepStatus::HasRow , estmt.Step() );
+    ASSERT_EQ(BE_SQLITE_ROW , estmt.Step());
     ASSERT_EQ( elem2At90->GetElementId() , estmt.GetValueId<DgnElementId>(0) );
-    ASSERT_EQ( EC::ECSqlStepStatus::Done, estmt.Step() );
+    ASSERT_EQ(BE_SQLITE_DONE, estmt.Step());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -476,7 +477,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
-        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done, stmt.Step()) << stmt.GetLastStatusMessage().c_str() << "\r\nTranslated SQL: " << sql;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "\r\nTranslated SQL: " << sql;
         }
 
     //  Move Robot1 up, so that it touches Obstacle1 but not Obstacle2
@@ -504,13 +505,13 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
-        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow, stmt.Step() );
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step() );
 
         DgnElementId ofoundId = stmt.GetValueId<DgnElementId>(0);
         ASSERT_EQ( o1 , ofoundId );
         ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
 
-        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , stmt.Step() ) << L"Expected only 1 overlap";
+        ASSERT_EQ(BE_SQLITE_DONE , stmt.Step() ) << L"Expected only 1 overlap";
 
         //  Query for the other kind of obstacle
         stmt.Reset();
@@ -519,13 +520,13 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeOtherKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
-        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow, stmt.Step() );
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step() );
 
         ofoundId = stmt.GetValueId<DgnElementId>(0);
         ASSERT_EQ( o1a , ofoundId );
         ASSERT_STREQ( "SomeOtherKindOfObstacle", stmt.GetValueText(1) );
 
-        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , stmt.Step() ) << L"Expected only 1 overlap";
+        ASSERT_EQ(BE_SQLITE_DONE , stmt.Step() ) << L"Expected only 1 overlap";
 
         //  Query should fail if I specify an item that is not found on any kind of obstacle
         stmt.Reset();
@@ -534,7 +535,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "no kind of obstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
-        ASSERT_EQ(BeSQLite::EC::ECSqlStepStatus::Done, stmt.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
     //  Move Robot1 over, so that it touches Obstacle2 but not Obstacle1
@@ -561,13 +562,13 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
         stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow, stmt.Step() );
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step() );
 
         DgnElementId ofoundId = stmt.GetValueId<DgnElementId>(0);
         ASSERT_EQ( o2 , ofoundId );
         ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
 
-        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::Done , stmt.Step() ) << L"Expected only 1 overlap";
+        ASSERT_EQ(BE_SQLITE_DONE , stmt.Step() ) << L"Expected only 1 overlap";
         }
 
     //  Move Robot1 so that it touches both Obstacle1 and Obstacle1
@@ -593,7 +594,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
         stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-        while (BeSQLite::EC::ECSqlStepStatus::HasRow == stmt.Step())
+        while (BE_SQLITE_ROW == stmt.Step())
             {
             overlaps.insert(stmt.GetValueId<DgnElementId>(0));
             ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );

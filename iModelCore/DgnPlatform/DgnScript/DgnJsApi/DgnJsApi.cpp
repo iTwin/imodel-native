@@ -72,6 +72,17 @@ void JsElementGeometryBuilder::AppendBox(double x, double y, double z)
     }
 
 //---------------------------------------------------------------------------------------
+// *** TEMPORARY METHOD *** 
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+void JsElementGeometryBuilder::AppendSphere(double radius)
+    {
+    DgnSphereDetail sphere(DPoint3d::FromZero(), radius);
+    ISolidPrimitivePtr solid = ISolidPrimitive::CreateDgnSphere(sphere);
+    m_builder->Append(*solid);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
 JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)

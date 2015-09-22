@@ -30,7 +30,7 @@ void            LineStyleSymb::Init (ILineStyleCP lStyle)
     m_orgWidth    = m_endWidth  = m_phaseShift  = m_autoPhase = 0.0;
     m_maxCompress = 0.3;
     m_planeByRows.InitIdentity ();
-    m_rasterTexture = 0;
+    m_textureHandle = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -353,7 +353,7 @@ bool        cosmetic
 LineStyleSymb::LineStyleSymb ()
     {
     memset (&m_lStyle, 0, offsetof (LineStyleSymb, m_planeByRows) + sizeof (m_planeByRows) - offsetof (LineStyleSymb, m_lStyle));
-    m_rasterTexture = 0;
+    m_textureHandle = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -388,12 +388,15 @@ DPoint3dCP          endTangent
     if (nullptr == styleInfo || !s_allowLineStyles)
         return 0;
 
-#if defined(LINESTYLES_NEEDSWORK) //   -- unclear what will happen to the magic values.  For now, avoid any collision with them.
-    if (IS_LINECODE (styleInfo->GetStyleId().GetValueUnchecked()))
-#else
-    if (styleInfo->GetStyleId().GetValueUnchecked() == 0 || styleInfo->GetStyleId().GetValueUnchecked() == -1)
+    int64_t lsValue = styleInfo->GetStyleId().GetValueUnchecked();
+    if (lsValue == -1 || lsValue == 0)
+        return 0;
+
+#if defined(NOTNOW)
+    //  NEEDSWORK_LineStyles Current plan is to not support fixed line codes.
+    if (IS_LINECODE(lsValue))
+        return int32_t(lsValue);
 #endif
-          return 0; //  styleNo;
 
     LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb ());
     LsDefinitionP   nameRec = lsCache->GetLineStyleP(styleInfo->GetStyleId());
@@ -547,7 +550,8 @@ DPoint3dCP          endTangent
     SetScale (scale);
 
     //  NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
-    //  m_rasterTexture = nameRec->GetRasterTexture (context, *this, context.Is3dView(), scale);
+    if (!context.Is3dView())
+        m_textureHandle = nameRec->GetTextureHandle (context, *this, false, scale);
 
     return 0;
     }
@@ -639,19 +643,19 @@ bool                LineStyleSymb::HasIterationLimit()const {return m_options.it
 bool                LineStyleSymb::HasPlane()         const {return m_options.plane;}
 bool                LineStyleSymb::HasStartTangent()  const {return m_options.startTangentSet;}
 bool                LineStyleSymb::HasEndTangent()    const {return m_options.endTangentSet;}
-uintptr_t           LineStyleSymb::GetRasterTexture() const {return m_rasterTexture; }
+uintptr_t           LineStyleSymb::GetTextureHandle() const {return m_textureHandle; }
 void                LineStyleSymb::SetTotalLength (double length) {m_totalLength = length;}
 void                LineStyleSymb::SetLineStyle (ILineStyleCP lstyle) {m_lStyle = lstyle;}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-void LineStyleSymb::ConvertToRasterLineStyle(ViewContextR context, bool force)
+void LineStyleSymb::ConvertLineStyleToTexture(ViewContextR context, bool force)
     {
     LsDefinitionP lsDef = (LsDefinitionP)m_lStyle;
     BeAssert(nullptr != lsDef && dynamic_cast<LsDefinitionCP>(m_lStyle) == lsDef);
 
-    m_rasterTexture = lsDef->GetRasterTexture (context, *this, force, m_scale);
+    m_textureHandle = lsDef->GetTextureHandle (context, *this, force, m_scale);
     }
 
 /*---------------------------------------------------------------------------------**//**

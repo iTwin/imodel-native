@@ -13,6 +13,7 @@
 #include "DgnDomain.h"
 #include "DgnMaterial.h"
 #include "DgnTexture.h"
+#include "DgnLight.h"
 #include <Bentley/BeFileName.h>
 
 /** @addtogroup DgnDbGroup
@@ -52,12 +53,12 @@ public:
     Utf8String      m_description;
     Utf8String      m_client;
     BeFileName      m_seedDb;
-    BeDbGuid        m_guid;
+    BeSQLite::BeGuid m_guid;
 
     //! ctor for CreateDgnDbParams.
-    //! @param[in] guid The BeDbGuid to store in the newly created DgnDb. If not supplied, a new BeDbGuid is created.
-    //! @note The new BeDbGuid can be obtained via GetGuid.
-    CreateDgnDbParams(BeDbGuid guid=BeDbGuid()) : BeSQLite::Db::CreateParams(), m_guid(guid) {if (!m_guid.IsValid()) m_guid.Create(); }
+    //! @param[in] guid The BeSQLite::BeGuid to store in the newly created DgnDb. If not supplied, a new BeSQLite::BeGuid is created.
+    //! @note The new BeSQLite::BeGuid can be obtained via GetGuid.
+    CreateDgnDbParams(BeSQLite::BeGuid guid=BeSQLite::BeGuid()) : BeSQLite::Db::CreateParams(), m_guid(guid) {if (!m_guid.IsValid()) m_guid.Create(); }
 
     //! Set the value to be stored as the ProjectName property in the new DgnDb created using this CreateDgnDbParams/
     //! @note This value is stored as a property in the project. It does *not* refer to a file name.
@@ -77,9 +78,9 @@ public:
     //! for your needs.
     void SetSeedDb(BeFileNameCR seedDb) {m_seedDb = seedDb;}
 
-    //! Get the BeDbGuid to be stored in the newly created DgnDb. This is only necessary if you don't supply a valid BeDbGuid
+    //! Get the BeSQLite::BeGuid to be stored in the newly created DgnDb. This is only necessary if you don't supply a valid BeSQLite::BeGuid
     //! to the ctor.
-    BeDbGuid GetGuid() const {return m_guid;}
+    BeSQLite::BeGuid GetGuid() const {return m_guid;}
 
     //! Determine whether to overwrite an existing file in DgnDb::CreateDgnDb. The default is to fail if a file by the supplied name
     //! already exists.
@@ -140,6 +141,7 @@ protected:
     DgnLinks        m_links;
     DgnAuthorities  m_authorities;
     DgnTextures     m_textures;
+    DgnLights       m_lights;
     TxnManagerPtr   m_txnManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
 
@@ -197,6 +199,7 @@ public:
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
     DgnMaterials& Materials() const {return const_cast<DgnMaterials&>(m_materials);}     //!< The materials for this DgnDb
+    DgnLights& Lights() const {return const_cast<DgnLights&>(m_lights);}                 //!< The lights for this DgnDb
     DgnTextures& Textures() const { return const_cast<DgnTextures&>(m_textures); }       //!< The textures for this DgnDb.
     DgnAuthorities& Authorities() const { return const_cast<DgnAuthorities&>(m_authorities); }   //!< The authorities associated with this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.

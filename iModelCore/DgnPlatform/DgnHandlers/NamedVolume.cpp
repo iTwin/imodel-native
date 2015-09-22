@@ -16,7 +16,7 @@
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_SQLITE_EC 
-USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -57,12 +57,12 @@ StatusInt NamedVolume::Insert (DgnDbR project)
     ECSqlStatement statement;
     Utf8CP ecSql = "INSERT INTO dgn.NamedVolume (Name, Origin, Height, Shape) VALUES(?,?,?,?)";
     ECSqlStatus ecSqlStatus = statement.Prepare (project, ecSql);
-    if (!EXPECTED_CONDITION (ecSqlStatus == ECSqlStatus::Success))
+    if (!EXPECTED_CONDITION (ecSqlStatus.IsSuccess()))
         return ERROR;
 
     this->BindForInsertOrUpdate (statement);
-    ECSqlStepStatus stepStatus = statement.Step (m_ecKey);
-    return (stepStatus == ECSqlStepStatus::Done) ? SUCCESS : ERROR;
+    DbResult stepStatus = statement.Step (m_ecKey);
+    return (stepStatus == BE_SQLITE_DONE) ? SUCCESS : ERROR;
     }
 
 //--------------------------------------------------------------------------------------
@@ -74,11 +74,11 @@ unique_ptr<NamedVolume> NamedVolume::Read (Utf8StringCR name, DgnDbR project)
     ECSqlStatement statement;
     Utf8PrintfString ecSql ("SELECT Origin, Height, Shape FROM ONLY dgn.NamedVolume WHERE Name = '%s'", name.c_str());
     ECSqlStatus status = statement.Prepare (project, ecSql.c_str());
-    if (!EXPECTED_CONDITION (status == ECSqlStatus::Success))
+    if (!EXPECTED_CONDITION (status.IsSuccess()))
         return nullptr;
 
-    ECSqlStepStatus stepStatus = statement.Step();
-    if (!EXPECTED_CONDITION (stepStatus == ECSqlStepStatus::HasRow))
+    DbResult stepStatus = statement.Step();
+    if (!EXPECTED_CONDITION (stepStatus == BE_SQLITE_ROW))
         return nullptr;
 
     DPoint3d origin = statement.GetValuePoint3D (0);
@@ -103,11 +103,11 @@ bool NamedVolume::Exists (Utf8StringCR name, DgnDbR project)
     ECSqlStatement statement;
     Utf8PrintfString ecSql ("SELECT * FROM ONLY dgn.NamedVolume WHERE Name = '%s'", name.c_str());
     ECSqlStatus status = statement.Prepare (project, ecSql.c_str());
-    if (!EXPECTED_CONDITION (status == ECSqlStatus::Success))
+    if (!EXPECTED_CONDITION (status.IsSuccess()))
         return false;
 
-    ECSqlStepStatus stepStatus = statement.Step();
-    return (stepStatus == ECSqlStepStatus::HasRow);
+    DbResult stepStatus = statement.Step();
+    return (stepStatus == BE_SQLITE_ROW);
     }
 
 //--------------------------------------------------------------------------------------
@@ -120,14 +120,14 @@ StatusInt NamedVolume::Update (DgnDbR project)
     ECSqlStatement statement;
     Utf8CP ecSql = "UPDATE ONLY dgn.NamedVolume SET Name=?, Origin=?, Height=?, Shape=? WHERE ECInstanceId=?";
     ECSqlStatus ecSqlStatus = statement.Prepare (project, ecSql);
-    if (!EXPECTED_CONDITION (ecSqlStatus == ECSqlStatus::Success))
+    if (!EXPECTED_CONDITION (ecSqlStatus.IsSuccess()))
         return ERROR;
 
     this->BindForInsertOrUpdate (statement);
     statement.BindId (5, m_ecKey.GetECInstanceId());
 
-    ECSqlStepStatus stepStatus = statement.Step ();
-    return (stepStatus == ECSqlStepStatus::Done) ? SUCCESS : ERROR;
+    DbResult stepStatus = statement.Step ();
+    return (stepStatus == BE_SQLITE_DONE) ? SUCCESS : ERROR;
     }
 
 //--------------------------------------------------------------------------------------
@@ -139,13 +139,13 @@ StatusInt NamedVolume::Delete (Utf8StringCR name, DgnDbR project)
     ECSqlStatement statement;
     Utf8CP ecSql = "DELETE FROM ONLY dgn.NamedVolume WHERE NamedVolume.Name=?";
     ECSqlStatus ecSqlStatus = statement.Prepare (project, ecSql);
-    if (!EXPECTED_CONDITION (ecSqlStatus == ECSqlStatus::Success))
+    if (!EXPECTED_CONDITION (ecSqlStatus.IsSuccess()))
         return ERROR;
 
     statement.BindText (1, name.c_str(), IECSqlBinder::MakeCopy::No);
     
-    ECSqlStepStatus stepStatus = statement.Step ();
-    return (stepStatus == ECSqlStepStatus::Done) ? SUCCESS : ERROR;
+    DbResult stepStatus = statement.Step ();
+    return (stepStatus == BE_SQLITE_DONE) ? SUCCESS : ERROR;
     }
 
 //--------------------------------------------------------------------------------------

@@ -56,6 +56,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Inputs" typeName="string" description="comma-separated list of input parameter names. These are bound by name to the item's properties." />
     </ECClass>
 
+    <ECClass typeName="HandlerInfo" description="Specifies handler information for an ECClass" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="RequiredForModification" typeName="boolean" description="Indicates whether a handler is required for instances of an ECClass to be modified." />
+        <ECProperty propertyName="AllowDeleteIfMissing" typeName="boolean" description="Indicates whether instances of an ECClass can be deleted if a handler is missing." />
+    </ECClass>
+
     <ECClass typeName="ElementRTree" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -95,17 +100,20 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
         <ECProperty propertyName="Type" typeName="int" />
-        <ECProperty propertyName="Space" typeName="int" />
         <ECProperty propertyName="Props" typeName="string" />
         <ECProperty propertyName="Solver" typeName="string" />
         <ECProperty propertyName="Visibility" typeName="int" />
         <ECProperty propertyName="DependencyIndex" typeName="int" />
     </ECClass>
-    <ECClass typeName="Model3d" isDomainClass="True">
+    <ECClass typeName="GeometricModel" isDomainClass="True">
         <BaseClass>Model</BaseClass>
+        <ECProperty propertyName="Space" typeName="int" />
+    </ECClass>
+    <ECClass typeName="Model3d" isDomainClass="True">
+        <BaseClass>GeometricModel</BaseClass>
     </ECClass>
     <ECClass typeName="Model2d" isDomainClass="True">
-        <BaseClass>Model</BaseClass>
+        <BaseClass>GeometricModel</BaseClass>
     </ECClass>
     <ECClass typeName="PhysicalModel" isDomainClass="True">
         <BaseClass>Model3d</BaseClass>
@@ -131,23 +139,21 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="ComponentModel" isDomainClass="True">
         <BaseClass>Model3d</BaseClass>
     </ECClass>
-
+    <ECClass typeName="ResourceModel" isDomainClass="True">
+        <BaseClass>Model</BaseClass>
+    </ECClass>
     <ECClass typeName="WebMercatorModel" isDomainClass="True" >
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
-
     <ECClass typeName="StreetMapModel" isDomainClass="True" >
         <BaseClass>WebMercatorModel</BaseClass>
     </ECClass>
-
     <ECClass typeName="PointCloudBaseModel" isDomainClass="True" >
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
-
     <ECClass typeName="RasterBaseModel" isDomainClass="True" >
         <BaseClass>PhysicalModel</BaseClass>
     </ECClass>
-
     <ECClass typeName="Category" isDomainClass="True" >
         <ECCustomAttributes>
              <ClassMap xmlns="ECDbMap.01.00">
@@ -399,6 +405,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>CodeAuthorityId</string>
+                            <string>CodeNameSpace</string>
                             <string>Code</string>
                         </Properties>
                     </DbIndex>
@@ -420,7 +427,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <!-- Foreign key relationship: ElementIsInCategory.CategoryId -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
+                    <IsNullable>True</IsNullable>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
@@ -442,12 +449,21 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
+        <ECProperty propertyName="CodeNameSpace" typeName="string">
+            <!-- The namespace enclosing the "business key" for this element. -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                    <IsUnique>False</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="Code" typeName="string">
             <!-- The "business key" for this Element. Typically used to link this Element with a record in an external system (identified by CodeAuthorityId). -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
-                    <!-- Code by itself is not necessarily unique, but CodeAuthorityId + Code is unique.  -->
+                    <!-- Code by itself is not necessarily unique, but CodeAuthorityId+CodeNameSpace+Code is unique.  -->
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
             </ECCustomAttributes>
@@ -457,6 +473,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>True</IsNullable>
+                    <Collation>NoCase</Collation>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
@@ -489,18 +506,13 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>Element2d</BaseClass>
     </ECClass>
 
-    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
-        <BaseClass>PhysicalElement</BaseClass>
-        <ECProperty propertyName="TextAnnotationBlob" typeName="binary"/>
-    </ECClass>
-
     <!-- Abstract -->
     <ECClass typeName="ElementAspect" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
         <!-- An ElementAspect is related to an Element with a relationship of strength="embedding" (ElementAspect is deleted if the Element is deleted) -->
         <!-- Semantically, an ElementAspect can be considered part of the Element -->
-		<ECCustomAttributes>
+        <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-				<ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
     </ECClass>
@@ -657,6 +669,17 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
     </ECClass>
 
+    <ECClass typeName="TextAnnotationItem" isDomainClass="True">
+        <BaseClass>ElementItem</BaseClass>
+        <ECProperty propertyName="TextAnnotation" typeName="binary"/>
+    </ECClass>
+    <ECClass typeName="TextAnnotationElement" isDomainClass="True">
+        <BaseClass>DrawingElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
+        <BaseClass>PhysicalElement</BaseClass>
+    </ECClass>
+    
     <ECClass typeName="Material" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -763,6 +786,35 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
+    </ECClass>
+
+    <ECClass typeName="Light" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>OwnTable</Strategy>
+                </MapStrategy>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Name</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" displayLabel="Light" typeName="string" description="Name of light" >
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
+        <ECProperty propertyName="Value" displayLabel="" typeName="string" />
     </ECClass>
 
     <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">

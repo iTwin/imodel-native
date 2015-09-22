@@ -445,7 +445,7 @@ bool QueryViewController::_IsInSet(int nVals, DbValue const* vals) const
     BeAssert(nVals == 2);   // we need ModelId and Category
 
     // check that both the model is on and the category is on.
-    return m_viewedModels.Contains(DgnModelId(vals[0].GetValueInt64())) && m_viewedCategories.Contains(DgnCategoryId(vals[1].GetValueInt64()));
+    return m_viewedModels.Contains(DgnModelId(vals[0].GetValueUInt64())) && m_viewedCategories.Contains(DgnCategoryId(vals[1].GetValueUInt64()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -492,8 +492,9 @@ void QueryViewController::_DrawView(ViewContextR context)
         for (DgnModelId modelId : GetViewedModels())
             {
             DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
-            if (model.IsValid())
-                model->AddGraphicsToScene(context);
+            auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
+            if (nullptr != geomModel)
+                geomModel->AddGraphicsToScene(context);
 
             if (context.CheckStop())
                 break;
@@ -592,8 +593,9 @@ void QueryViewController::_DrawView(ViewContextR context)
     for (DgnModelId modelId : GetViewedModels())
         {
         DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
-        if (model.IsValid())
-            model->AddGraphicsToScene(context);
+        auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
+        if (nullptr != geomModel)
+            geomModel->AddGraphicsToScene(context);
         }
 
     //  We count on progressive display to draw zero length strings and points that are excluded by LOD filtering in the occlusion step.

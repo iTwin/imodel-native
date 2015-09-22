@@ -265,7 +265,7 @@ void ViewController::LoadCategories(JsonValueCR settings)
     for (Json::ArrayIndex i=0; i<facetJson.size(); ++i)
         {
         JsonValueCR val=facetJson[i];
-        DgnSubCategoryId subCategoryId(val[VIEW_SubCategoryId].asInt64());
+        DgnSubCategoryId subCategoryId(val[VIEW_SubCategoryId].asUInt64());
         if (subCategoryId.IsValid())
             OverrideSubCategory(subCategoryId, DgnCategories::SubCategory::Override(val));
         }
@@ -531,11 +531,10 @@ StandardView ViewController::IsStandardViewRotation(RotMatrixCR rMatrix, bool ch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController::GetStandardViewName(WStringR name, StandardView viewID)
+Utf8String ViewController::GetStandardViewName(StandardView viewID)
     {
-    name = L"";
     if (viewID < StandardView::Top || viewID > StandardView::RightIso)
-        return ERROR;
+        return "";
 
     L10N::StringId names[]={
         DgnCoreL10N::VIEWTITLE_MessageID_Top(),   
@@ -548,19 +547,21 @@ BentleyStatus ViewController::GetStandardViewName(WStringR name, StandardView vi
         DgnCoreL10N::VIEWTITLE_MessageID_RightIso(), 
         };
 
-    name = DgnCoreL10N::GetStringW(*(static_cast<int>(viewID) - 1 + names));
-    return  SUCCESS;
+    return DgnCoreL10N::GetString(*(static_cast<int>(viewID) - 1 + names));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController::GetStandardViewByName(RotMatrix* rotP, StandardView* standardIdP, WCharCP viewName)
+BentleyStatus ViewController::GetStandardViewByName(RotMatrix* rotP, StandardView* standardIdP, Utf8CP viewName)
     {
-    WString tName;
-    for (int i = static_cast<int>(StandardView::Top); SUCCESS == GetStandardViewName(tName,(StandardView)i); ++i)
+    for (int i = static_cast<int>(StandardView::Top); i <= (int) StandardView::RightIso; ++i)
         {
-        if (0 == BeStringUtilities::Wcsicmp(viewName, tName.c_str()))
+        Utf8String tname = GetStandardViewName((StandardView) i);
+        if (tname.empty())
+            return ERROR;
+
+        if (tname == viewName)
             {
             if (nullptr != rotP)
                 bsiRotMatrix_getStandardRotation(rotP, i);
@@ -1825,49 +1826,22 @@ void ViewController2d::_SaveToSettings(JsonValueR settings) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Show the surface normal or edge tangent for geometry under the cursor.
+* Show the surface normal for geometry under the cursor when snapping.
 * @bsimethod                                                    Brien.Bastings  07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hit)
     {
     if (!vp.Is3dView())
-        return; // Currently not worth drawing just the edge tangent in 2d...
+        return; // Not valuable in 2d...
+
+    if (hit.GetHitType() < HitDetailType::Snap)
+        return; // Don't display unless snapped...
+
+    if (!hit.GetGeomDetail().IsValidSurfaceHit())
+        return; // AccuSnap will flash edge/segment geometry...
 
     IViewDrawP  output = vp.GetIViewDraw();
     ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue());// Invert hilite color for good contrast...
-
-    if (!hit.GetGeomDetail().IsValidSurfaceHit())
-        {
-        if (hit.GetHitType() > HitDetailType::Hit)
-            return; // Don't display when snapped, AccuSnap will flash edge/segment geometry...
-
-        color.SetAlpha(100);
-        vp.SetSymbologyRgb(color, color, 5, 0);
-        output->DrawPointString3d(1, &hit.GetHitPoint(), nullptr);
-
-        if (nullptr == hit.GetGeomDetail().GetCurvePrimitive() || (hit.GetGeomDetail().GetGeomType() < HitGeomType::Segment))
-            return;
-
-        double      param = hit.GetGeomDetail().GetCloseParam();
-        DVec3d      tangent;
-        DPoint3d    pt;
-
-        if (!hit.GetGeomDetail().GetCurvePrimitive()->FractionToPoint(param, pt, tangent))
-            return;
-
-        double      size = (1.5 * aperture * vp.GetPixelSizeAtPoint(&pt));
-        DSegment3d  segment;
-
-        tangent.Normalize();
-        segment.point[0].SumOf(pt, tangent, size);
-        segment.point[1].SumOf(pt, tangent, -size);
-
-        color.SetAlpha(175);
-        vp.SetSymbologyRgb(color, color, 2, 0);
-        output->DrawLineString3d(2, segment.point, nullptr);
-        return;
-        }
-
     DPoint3d    pt = hit.GetHitPoint();
     double      radius = (2.0 * aperture) * vp.GetPixelSizeAtPoint(&pt);
     DVec3d      normal = hit.GetGeomDetail().GetSurfaceNormal();

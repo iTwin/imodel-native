@@ -742,7 +742,7 @@ ILineStyleCP ViewContext::_GetCurrLineStyle(LineStyleSymbP* symb)
     if (symb)
         *symb = &tSymb;
 
-    return 0 == tSymb.GetRasterTexture() ? tSymb.GetILineStyle() : nullptr;
+    return 0 == tSymb.GetTextureHandle() ? tSymb.GetILineStyle() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -932,13 +932,13 @@ void ViewContext::CookDisplayParams()
 
     //  NEEDSWORK_LINESTYLES
     //  If this is a 3d view and we have a line style then we want to convert the line style
-    //  to a raster line style.  We don't do it prior to this because the raster image
+    //  to a texture line style.  We don't do it prior to this because the raster image
     //  may use the current symbology.  This seems like a horrible place to do this,
     //  so we need to come up with something better.
     LineStyleSymb & lsSym = m_elemMatSymb.GetLineStyleSymbR();
-    if (lsSym.GetRasterTexture() == 0 && lsSym.GetILineStyle() != nullptr)
+    if (lsSym.GetTextureHandle() == 0 && lsSym.GetILineStyle() != nullptr && Is3dView())
         {
-        lsSym.ConvertToRasterLineStyle(*this, Is3dView());
+        lsSym.ConvertLineStyleToTexture(*this, true);
         }
 
     // Activate the matsymb in the IDrawGeom

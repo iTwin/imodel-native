@@ -38,9 +38,9 @@ protected:
         return *m_db;
         }
 
-    void Compare(DgnAuthorityId id, Utf8StringCR name, Utf8StringCR uri)
+    void Compare(DgnAuthorityId id, Utf8CP name, Utf8StringCR uri)
         {
-        DgnAuthorityPtr auth = GetDb().Authorities().LoadAuthority(id);
+        DgnAuthorityCPtr auth = GetDb().Authorities().GetAuthority(id);
         ASSERT_TRUE(auth.IsValid());
         EXPECT_EQ(auth->GetName(), name);
         EXPECT_STR_EQ(auth->GetUri(), uri);
@@ -74,7 +74,7 @@ TEST_F (DgnAuthoritiesTest, Authorities)
 
     // Every newly-created DgnDb contains exactly one "local" authority
     DgnAuthorities& auths = db.Authorities();
-    DgnAuthorityPtr localAuth = auths.LoadAuthority(DgnAuthority::LocalId());
+    DgnAuthorityCPtr localAuth = auths.GetAuthority(DgnAuthority::LocalId());
     ASSERT_TRUE (localAuth.IsValid());
     ASSERT_EQ (localAuth->GetAuthorityId(), DgnAuthority::LocalId());
     ASSERT_TRUE (localAuth->GetName().Equals ("Local")) << "Actual: " << localAuth->GetName().c_str();
@@ -94,12 +94,5 @@ TEST_F (DgnAuthoritiesTest, Authorities)
     auto badAuth = Create("Auth1", "This is a duplicate name", false);
     EXPECT_EQ(DgnDbStatus::DuplicateName, badAuth->Insert());
     EXPECT_FALSE(badAuth->GetAuthorityId().IsValid());
-
-    // Update the URI of an existing item
-    auto updatedAuth = auths.LoadAuthority(auth2Id);
-    ASSERT_TRUE(updatedAuth.IsValid());
-    updatedAuth->SetUri("updated URI");
-    EXPECT_EQ(DgnDbStatus::Success, updatedAuth->Update());
-    Compare(auth2Id, "Auth2", "updated URI");
     }
 
