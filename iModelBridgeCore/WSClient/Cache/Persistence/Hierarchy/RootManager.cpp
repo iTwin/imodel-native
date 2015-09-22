@@ -586,8 +586,8 @@ BentleyStatus RootManager::RemoveRoots(Utf8CP whereClause)
         return ERROR;
         }
 
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         if (SUCCESS != RemoveRoot(statement.GetValueId<ECInstanceId>(0)))
             {
@@ -595,7 +595,7 @@ BentleyStatus RootManager::RemoveRoots(Utf8CP whereClause)
             }
         }
 
-    if (ECSqlStepStatus::Done != status)
+    if (BE_SQLITE_DONE != status)
         {
         return ERROR;
         }

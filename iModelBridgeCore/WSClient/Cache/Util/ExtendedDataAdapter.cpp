@@ -74,8 +74,8 @@ ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR instanceKey)
     ECInstanceId extendedDataId;
     Utf8String content;
 
-    ECSqlStepStatus status;
-    if (ECSqlStepStatus::HasRow == (status = statement->Step()))
+    DbResult status;
+    if (BE_SQLITE_ROW == (status = statement->Step()))
         {
         extendedDataId = statement->GetValueId<ECInstanceId>(0);
         content = statement->GetValueText(1);
@@ -114,8 +114,8 @@ BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
         statement->BindText(1, content.c_str(), IECSqlBinder::MakeCopy::No);
         statement->BindId(2, data.m_extendedDataKey.GetECInstanceId());
 
-        ECSqlStepStatus status;
-        if (ECSqlStepStatus::Done != (status = statement->Step()))
+        DbResult status;
+        if (BE_SQLITE_DONE != (status = statement->Step()))
             {
             return ERROR;
             }
@@ -129,8 +129,8 @@ BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
 
     statement->BindText(1, content.c_str(), IECSqlBinder::MakeCopy::No);
 
-    ECSqlStepStatus status;
-    if (ECSqlStepStatus::Done != (status = statement->Step(data.m_extendedDataKey)))
+    DbResult status;
+    if (BE_SQLITE_DONE != (status = statement->Step(data.m_extendedDataKey)))
         {
         return ERROR;
         }

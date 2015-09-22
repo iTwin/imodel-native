@@ -74,8 +74,8 @@ RelationshipInfo RelationshipInfoManager::ReadInfo(ECRelationshipClassCR relatio
     ECInstanceId relationshipInstanceId;
     Json::Value infoJson;
 
-    ECSqlStepStatus status = statement->Step();
-    if (ECSqlStepStatus::HasRow == status)
+    DbResult status = statement->Step();
+    if (BE_SQLITE_ROW == status)
         {
         JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
         adapter.GetRowInstance(infoJson, m_cachedRelationshipInfoClass->GetId());
@@ -118,8 +118,8 @@ RelationshipInfo RelationshipInfoManager::FindInfo(ECInstanceKeyCR relationshipK
     statement->BindInt64(1, relationshipClass->GetId());
     statement->BindId(2, relationshipKey.GetECInstanceId());
 
-    ECSqlStepStatus status = statement->Step();
-    if (status != ECSqlStepStatus::HasRow)
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
         {
         return RelationshipInfo();
         }
@@ -166,8 +166,8 @@ ObjectId RelationshipInfoManager::ReadObjectId(ECInstanceKeyCR relationship)
     statement->BindInt64(1, relationship.GetECClassId());
     statement->BindId(2, relationship.GetECInstanceId());
 
-    ECSqlStepStatus status = statement->Step();
-    if (status != ECSqlStepStatus::HasRow)
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
         {
         return ObjectId();
         }
@@ -234,8 +234,8 @@ ECInstanceKeyR targetOut
 
     statement->BindId(1, relationship.GetECInstanceId());
 
-    ECSqlStepStatus status = statement->Step();
-    if (ECSqlStepStatus::HasRow != status)
+    DbResult status = statement->Step();
+    if (BE_SQLITE_ROW != status)
         {
         return ERROR;
         }
@@ -280,8 +280,8 @@ Utf8StringCR remoteId
 
     ECInstanceId infoId;
 
-    ECSqlStepStatus status = statement->Step();
-    if (ECSqlStepStatus::HasRow == status)
+    DbResult status = statement->Step();
+    if (BE_SQLITE_ROW == status)
         {
         infoId = statement->GetValueId<ECInstanceId>(0);
         }
@@ -327,8 +327,8 @@ ECInstanceKey RelationshipInfoManager::ReadRelationshipKeyByInfo(ECInstanceKeyCR
 
     statement->BindId(1, infoKey.GetECInstanceId());
 
-    ECSqlStepStatus status = statement->Step();
-    if (ECSqlStepStatus::HasRow != status)
+    DbResult status = statement->Step();
+    if (BE_SQLITE_ROW != status)
         {
         return ECInstanceKey();
         }
@@ -359,8 +359,8 @@ ECInstanceId RelationshipInfoManager::ReadInfoIdByRelationship(ECInstanceKeyCR r
     statement->BindInt64(1, relationshipDesc.GetECClassId());
     statement->BindId(2, relationshipDesc.GetECInstanceId());
 
-    ECSqlStepStatus status = statement->Step();
-    if (ECSqlStepStatus::HasRow != status)
+    DbResult status = statement->Step();
+    if (BE_SQLITE_ROW != status)
         {
         return ECInstanceId();
         }
@@ -404,8 +404,8 @@ bset<CachedRelationshipKey>& cachedRelationshipsOut
 
     statement->BindId(1, holder.GetECInstanceId());
 
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement->Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
         {
         ECInstanceKey relInfo(m_cachedRelationshipInfoClass->GetId(), statement->GetValueId<ECInstanceId>(0));
         ECInstanceKey relationship(statement->GetValueInt64(1), statement->GetValueId<ECInstanceId>(2));
@@ -418,7 +418,7 @@ bset<CachedRelationshipKey>& cachedRelationshipsOut
         cachedRelationshipsOut.insert({relInfo, relationship});
         }
 
-    return ECSqlStepStatus::Done == status ? SUCCESS : ERROR;
+    return BE_SQLITE_DONE == status ? SUCCESS : ERROR;
     }
 
 /*--------------------------------------------------------------------------------------+

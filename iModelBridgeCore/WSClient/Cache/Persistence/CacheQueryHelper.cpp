@@ -564,8 +564,8 @@ ICancellationTokenPtr cancellationToken
         return ERROR;
         }
 
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         if (cancellationToken && cancellationToken->IsCanceled())
             {
@@ -579,7 +579,7 @@ ICancellationTokenPtr cancellationToken
             }
         }
 
-    if (ECSqlStepStatus::Done != status)
+    if (BE_SQLITE_DONE != status)
         {
         return ERROR;
         }

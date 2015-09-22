@@ -36,8 +36,8 @@ ECInstanceKey NavigationBaseManager::FindNavigationBase()
         {
         return "SELECT ECInstanceId FROM " ECSql_NavigationBaseClass " LIMIT 1";
         });
-    ECSqlStepStatus status = statement->Step();
-    if (ECSqlStepStatus::HasRow != status)
+    DbResult status = statement->Step();
+    if (BE_SQLITE_ROW != status)
         {
         return ECInstanceKey();
         }
@@ -62,8 +62,8 @@ ECInstanceKey NavigationBaseManager::FindOrCreateNavigationBase()
         return ECInstanceKey();
         }
 
-    ECSqlStepStatus status = statement.Step(instanceKey);
-    if (ECSqlStepStatus::Done != status)
+    DbResult status = statement.Step(instanceKey);
+    if (BE_SQLITE_DONE != status)
         {
         return ECInstanceKey();
         }

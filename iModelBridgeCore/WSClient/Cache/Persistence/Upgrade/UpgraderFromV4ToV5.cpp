@@ -277,8 +277,8 @@ BentleyStatus UpgraderFromV4ToV5::ReadInstances(bvector<UpgradeInstance>& instan
         }
 
     JsonECSqlSelectAdapter adapter(statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         instancesOut.push_back(UpgradeInstance(ecClass->GetId()));
         if (!adapter.GetRowInstance(instancesOut.back().json, ecClass->GetId()))
@@ -287,7 +287,7 @@ BentleyStatus UpgraderFromV4ToV5::ReadInstances(bvector<UpgradeInstance>& instan
             }
         }
 
-    if (ECSqlStepStatus::Done != status)
+    if (BE_SQLITE_DONE != status)
         {
         return ERROR;
         }
