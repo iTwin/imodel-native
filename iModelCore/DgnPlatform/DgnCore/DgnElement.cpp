@@ -13,13 +13,12 @@ DgnElement::Item::Key  DgnElement::Item::s_key;
 
 #define DGN_ELEMENT_PROPNAME_ECINSTANCEID "ECInstanceId"
 #define DGN_ELEMENT_PROPNAME_MODELID "ModelId"
-#define DGN_ELEMENT_PROPNAME_CATEGORYID "CategoryId"
-#define DGN_ELEMENT_PROPNAME_LABEL "Label"
 #define DGN_ELEMENT_PROPNAME_CODE "Code"
 #define DGN_ELEMENT_PROPNAME_CODEAUTHORITYID "CodeAuthorityId"
 #define DGN_ELEMENT_PROPNAME_CODENAMESPACE "CodeNameSpace"
 #define DGN_ELEMENT_PROPNAME_PARENTID "ParentId"
 #define DGN_ELEMENT_PROPNAME_LASTMOD "LastMod"
+#define DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID "CategoryId"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
@@ -243,6 +242,14 @@ DgnDbStatus DgnElement::_OnInsert()
     return GetModel()->_OnInsertElement(*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement::_OnInsert()
+    {
+    return !m_categoryId.IsValid() ? DgnDbStatus::InvalidCategory : T_Super::_OnInsert();
+    }
+
 struct OnInsertedCaller
     {
     DgnElementCR m_newEl;
@@ -285,6 +292,14 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
         }
 
     return GetModel()->_OnUpdateElement(*this, original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement::_OnUpdate(DgnElementCR original)
+    {
+    return !m_categoryId.IsValid() ? DgnDbStatus::InvalidCategory : T_Super::_OnUpdate(original);
     }
 
 struct OnUpdatedCaller
@@ -375,9 +390,6 @@ void DgnElement::GetParamList(bvector<Utf8String>& paramList, bool isForUpdate)
         paramList.push_back(DGN_ELEMENT_PROPNAME_ECINSTANCEID);
         paramList.push_back(DGN_ELEMENT_PROPNAME_MODELID);
         }
-    paramList.push_back(DGN_ELEMENT_PROPNAME_CATEGORYID);
-    if (!m_label.empty())
-        paramList.push_back(DGN_ELEMENT_PROPNAME_LABEL);
     paramList.push_back(DGN_ELEMENT_PROPNAME_CODE);
     paramList.push_back(DGN_ELEMENT_PROPNAME_CODEAUTHORITYID);
     paramList.push_back(DGN_ELEMENT_PROPNAME_CODENAMESPACE);
@@ -393,16 +405,22 @@ void DgnElement::_GetInsertParams(bvector<Utf8String>& insertParams)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_GetInsertParams(bvector<Utf8String>& insertParams)
+    {
+    T_Super::_GetInsertParams(insertParams);
+    insertParams.push_back(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_BindInsertParams(ECSqlStatement& statement)
     {
     statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ECINSTANCEID), m_elementId);
     statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_MODELID), m_modelId);
-    statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CATEGORYID), m_categoryId);
 
-    if (!m_label.empty())
-        statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_LABEL), m_label.c_str(), IECSqlBinder::MakeCopy::No);
     BeAssert (m_code.IsValid());
 
     statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODE), m_code.GetValueCP(), IECSqlBinder::MakeCopy::No);
@@ -421,19 +439,32 @@ DgnDbStatus DgnElement::_InsertSecondary()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement::_BindInsertParams(ECSqlStatement& stmt)
+    {
+    auto status = T_Super::_BindInsertParams(stmt);
+    if (DgnDbStatus::Success == status)
+        stmt.BindId(stmt.GetParameterIndex(DGN_GEOMETRICELEMENT_PROPNAME_CATEGORYID), m_categoryId);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_UpdateInDb()
     {
-    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,CodeAuthorityId=5,CodeNameSpace=6,ElementId=7};
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,CodeAuthorityId=?,CodeNameSpace=? WHERE Id=?");
+    enum Column : int       {CategoryId=1,Code=2,ParentId=3,CodeAuthorityId=4,CodeNameSpace=5,ElementId=6};
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Code=?,ParentId=?,CodeAuthorityId=?,CodeNameSpace=? WHERE Id=?");
 
     // note: ECClassId and ModelId cannot be modified.
-    stmt->BindId(Column::CategoryId, m_categoryId);
 
-    if (!m_label.empty())
-        stmt->BindText(Column::Label, m_label.c_str(), Statement::MakeCopy::No);
-    
+    // NB: Placeholder...awaiting Carole's changes to update logic
+    auto geomEl = ToGeometricElement();
+    DgnCategoryId categoryId = nullptr != geomEl ? geomEl->GetCategoryId() : DgnCategoryId();
+    stmt->BindId(Column::CategoryId, categoryId);
+
     BeAssert (m_code.IsValid());
     stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
     stmt->BindId(Column::CodeAuthorityId, m_code.GetAuthority());
@@ -775,7 +806,6 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
 void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
     {
     m_modelId = importer.FindModelId(m_modelId);
-    m_categoryId = importer.RemapCategory(m_categoryId);
     m_classId = importer.RemapClassId(m_classId);
     }
 
@@ -820,7 +850,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
             }
         }
 
-    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), GetCategoryId(), nullptr, Code(), DgnElementId()));
+    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), Code(), DgnElementId()));
     if (!cloneElem.IsValid())
         {
         if (nullptr != stat)
@@ -878,9 +908,7 @@ void DgnElement::_CopyFrom(DgnElementCR other)
         return;
 
     // Copying between DgnDbs is allowed. Caller must do Id remapping.
-    m_categoryId = other.m_categoryId;
     m_code       = other.m_code;
-    m_label      = other.m_label;
     m_parentId   = other.m_parentId;
     }
 
@@ -899,7 +927,6 @@ void DgnElement::_RemapIds(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
     m_code.RelocateToDestinationDb(importer);
-    m_categoryId = importer.RemapCategory(m_categoryId);
     m_parentId   = importer.FindElementId(m_parentId);
     }
 
@@ -912,7 +939,10 @@ void GeometricElement::_CopyFrom(DgnElementCR other)
 
     GeometricElementCP otherGeom = other.ToGeometricElement();
     if (otherGeom)
+        {
         SaveGeomStream(&otherGeom->m_geom);
+        m_categoryId = otherGeom->GetCategoryId();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -922,6 +952,7 @@ void GeometricElement::_RemapIds(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
     T_Super::_RemapIds(importer);
+    m_categoryId = importer.RemapCategory(m_categoryId);
     ElementGeomIO::Import(m_geom, m_geom, importer);
     }
 
@@ -930,18 +961,14 @@ void GeometricElement::_RemapIds(DgnImportContext& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const
     {
-    CreateParams parms(importer.GetDestinationDb(), GetModelId(), GetElementClassId(), GetCategoryId());
+    CreateParams parms(importer.GetDestinationDb(), GetModelId(), GetElementClassId());
     DgnAuthorityCPtr authority = GetCode().IsValid() ? GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority()) : nullptr;
     if (authority.IsValid())
         parms.m_code = authority->CloneCodeForImport(*this, destModel, importer);
 
     if (importer.IsBetweenDbs())
-        {
-        // Caller probably wants to preserve these when copying between Dbs. We never preserve them when copying within a Db.
-        parms.m_label = GetLabel();
-
         parms.RelocateToDestinationDb(importer);
-        }
+
     return parms;
     }
 
@@ -1011,7 +1038,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
     {
-    DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(GetDgnDb(), m_modelId, m_classId, m_categoryId, GetLabel(), GetCode(), m_elementId, m_parentId));
+    DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(GetDgnDb(), m_modelId, m_classId, GetCode(), m_elementId, m_parentId));
     BeAssert (typeid(*newEl) == typeid(*this)); // this means the ClassId of the element does not match the type of the element. Caller should find out why.
     newEl->_CopyFrom(*this);
     return newEl;

@@ -187,21 +187,14 @@ public:
         DgnDbR          m_dgndb;
         DgnModelId      m_modelId;
         DgnClassId      m_classId;
-        DgnCategoryId   m_categoryId;
         Code            m_code;
-        Utf8CP          m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
 
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
-                     DgnElementId parent=DgnElementId()) : CreateParams(db, modelId, classId, DgnCategoryId(), label, code, id, parent) { }
-
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
-                     DgnElementId parent=DgnElementId()) :
-                     m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent) {}
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
+            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_id(id), m_parentId(parent) {}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
-        void SetLabel(Utf8CP label) {m_label = label;}  //!< Set the label for DgnElements created with this CreateParams
         void SetCode(Code code) {m_code = code;}      //!< Set the code for DgnElements created with this CreateParams
         void SetParentId(DgnElementId parent) {m_parentId=parent;} //!< Set the ParentId for DgnElements created with this CreateParams
     };
@@ -563,9 +556,7 @@ protected:
     DgnElementId    m_parentId;
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
-    DgnCategoryId   m_categoryId;
     Code            m_code;
-    Utf8String      m_label;
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -739,19 +730,13 @@ protected:
     //! Get the display label (for use in the GUI) for this DgnElement.
     //! The default implementation returns the label if set or the code if the label is not set.
     //! Override to generate the display label in a different way.
-    virtual Utf8String _GetDisplayLabel() const {return !m_label.empty() ? GetLabel() : GetCode().GetValue();}
+    virtual Utf8String _GetDisplayLabel() const {return GetCode().GetValue();}
 
     //! Change the parent (owner) of this DgnElement.
     //! The default implementation sets the parent without doing any checking.
     //! @return DgnDbStatus::Success if the parentId was changed, error status otherwise.
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
     virtual DgnDbStatus _SetParentId(DgnElementId parentId) {m_parentId = parentId; return DgnDbStatus::Success;}
-
-    //! Change the category of this DgnElement.
-    //! The default implementation sets the category without doing any checking.
-    //! Override to validate the category.
-    //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DgnDbStatus::Success;}
 
     //! Change the code of this DgnElement.
     //! The default implementation sets the code without doing any checking.
@@ -934,16 +919,6 @@ public:
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
     DgnDbStatus SetParentId(DgnElementId parentId) {return _SetParentId(parentId);}
 
-    //! Get the category of this DgnElement.
-    //! @see SetCategoryId
-    DgnCategoryId GetCategoryId() const {return m_categoryId;}
-
-    //! Set the category of this DgnElement.
-    //! @see GetCategoryId, _SetCategoryId
-    //! @return DgnDbStatus::Success if the category was set
-    //! @note This call can fail if a subclass overrides _SetCategoryId and rejects the category.
-    DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
-
     //! Get the code (business key) of this DgnElement.
     Code GetCode() const {return m_code;}
 
@@ -952,12 +927,6 @@ public:
     //! @return DgnDbStatus::Success if the code was set
     //! @note This call can fail if a subclass overrides _SetCode and rejects the code.
     DgnDbStatus SetCode(Code const& code) {return _SetCode(code);}
-
-    //! Get the optional label (user-friendly name) of this DgnElement.
-    Utf8CP GetLabel() const {return m_label.c_str();}
-
-    //! Set the label (user-friendly name) of this DgnElement.
-    void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
 
     //! Query the database for the last modified time of this DgnElement.
     DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
@@ -1123,13 +1092,26 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
     {
         DEFINE_T_SUPER(GeometricElement::T_Super::CreateParams);
 
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
-                     DgnElementId parent=DgnElementId()) : T_Super(db, modelId, classId, category, label, code, id, parent) {} 
+        DgnCategoryId m_categoryId;
 
-        CreateParams(T_Super const& params) : T_Super(params) { }
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId())
+            : T_Super(db, modelId, classId, code, id, parent), m_categoryId(category) { }
+
+        CreateParams(T_Super const& params, DgnCategoryId category = DgnCategoryId()) : T_Super(params), m_categoryId(category) { }
     };
 protected:
     GeomStream m_geom;
+    DgnCategoryId   m_categoryId;
+
+    //! Change the category of this DgnElement.
+    //! The default implementation sets the category without doing any checking.
+    //! Override to validate the category.
+    //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original) override;
 
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertSecondary() override;
@@ -1161,6 +1143,16 @@ public:
 
     //! Get a writable reference to the GeomStream for this GeometricElement.
     GeomStreamR GetGeomStreamR() {return m_geom;}
+
+    //! Get the category of this DgnElement.
+    //! @see SetCategoryId
+    DgnCategoryId GetCategoryId() const {return m_categoryId;}
+
+    //! Set the category of this DgnElement.
+    //! @see GetCategoryId, _SetCategoryId
+    //! @return DgnDbStatus::Success if the category was set
+    //! @note This call can fail if a subclass overrides _SetCategoryId and rejects the category.
+    DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
 };
 
 //=======================================================================================
@@ -1177,8 +1169,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
     DEFINE_T_SUPER(DgnElement3d::T_Super::CreateParams);
 
     Placement3dCR m_placement;
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(db, modelId, classId, category, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement3dCR placement=Placement3d()) : T_Super(params), m_placement(placement){}
     };
@@ -1242,8 +1234,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
 
     Placement2dCR m_placement;
 
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(db, modelId, classId, category, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement2dCR placement=Placement2d()) : T_Super(params), m_placement(placement){}
     };
@@ -1412,7 +1404,7 @@ private:
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
-    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, DgnCategoryId categoryId, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     DgnElementId GetNextId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);

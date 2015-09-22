@@ -999,8 +999,9 @@ void DgnModel::_FillModel()
     if (IsFilled())
         return;
 
-    enum Column : int {Id=0,ClassId=1,CategoryId=2,Label=3,Code=4,ParentId=5,CodeAuthorityId=6,CodeNameSpace=7};
-    Statement stmt(m_dgndb, "SELECT Id,ECClassId,CategoryId,Label,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    // NB: CategoryId belongs to GeometricElement, but we are selecting it here to avoid a redundant SELECT statement on the same row
+    enum Column : int {Id=0,ClassId=1,Code=2,ParentId=3,CodeAuthorityId=4,CodeNameSpace=5,CategoryId=6};
+    Statement stmt(m_dgndb, "SELECT Id,ECClassId,Code,ParentId,CodeAuthorityId,CodeNameSpace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     _SetFilled();
@@ -1020,11 +1021,11 @@ void DgnModel::_FillModel()
 
         elements.LoadElement(DgnElement::CreateParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
-            stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
-            stmt.GetValueText(Column::Label), 
             DgnElement::Code(stmt.GetValueId<DgnAuthorityId>(Column::CodeAuthorityId), stmt.GetValueText(Column::Code), stmt.GetValueText(Column::CodeNameSpace)), 
             id,
-            stmt.GetValueId<DgnElementId>(Column::ParentId)), true);
+            stmt.GetValueId<DgnElementId>(Column::ParentId)),
+            stmt.GetValueId<DgnCategoryId>(Column::CategoryId),
+            true);
         }
 
     CallAppData(FilledCaller());

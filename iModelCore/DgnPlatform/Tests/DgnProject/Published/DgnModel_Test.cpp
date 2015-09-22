@@ -452,9 +452,8 @@ TEST_F(DgnModelTests, ImportGroups)
         // Put a group into moddel1
         ElementGroupCPtr group;
             {
-            DgnCategoryId gcatid = db->Categories().QueryHighestId();
             DgnClassId gclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
-            DgnElementCPtr groupEl = ElementGroup::Create(ElementGroup::CreateParams(*db, model1->GetModelId(), gclassid, gcatid))->Insert();
+            DgnElementCPtr groupEl = ElementGroup::Create(ElementGroup::CreateParams(*db, model1->GetModelId(), gclassid))->Insert();
             group = dynamic_cast<ElementGroupCP>(groupEl.get());
             ASSERT_TRUE( group.IsValid() );
             }
@@ -464,7 +463,7 @@ TEST_F(DgnModelTests, ImportGroups)
             {
             DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
             DgnCategoryId mcatid = db->Categories().QueryHighestId();
-            auto member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d(), "member"))->Insert();
+            auto member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d()))->Insert();
             //auto member = PhysicalElement::Create(*model1, mcatid)->Insert();
             ASSERT_TRUE( member.IsValid() );
             ASSERT_EQ( DgnDbStatus::Success , group->InsertMember(*member) );

@@ -144,7 +144,6 @@ void ChangeSummaryTestFixture::InsertElement()
     BeAssert(m_testCategoryId.IsValid());
 
     PhysicalElementPtr testElement = PhysicalElement::Create(*physicalTestModel, m_testCategoryId);
-    testElement->SetLabel("ChangeSetTestElementLabel");
 
     DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
     DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
@@ -167,8 +166,6 @@ void ChangeSummaryTestFixture::ModifyElement()
     {
     RefCountedPtr<PhysicalElement> testElement = m_testDb->Elements().GetForEdit<PhysicalElement>(m_testElementId);
     BeAssert(testElement.IsValid());
-
-    testElement->SetLabel("ModifiedElementLabel");
 
     DgnDbStatus dbStatus;
     testElement->Update(&dbStatus);

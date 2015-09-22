@@ -295,14 +295,10 @@ void DgnChangeSummaryTestFixture::InsertFloor(int iFloor)
         {
         for (double centerY = -limY; centerY <= limY; centerY += blockSizeY)
             {
-            int iQuadrant = (centerX > 0) ? ((centerY > 0) ? 1 : 2) : ((centerY > 0) ? 4 : 3);
             DPoint3d center = DPoint3d::From(centerX, centerY, centerZ);
 
             PhysicalModelR physicalModel = *(dynamic_cast<PhysicalModelP> (m_testModel.get()));
             PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(physicalModel, m_testCategoryId);
-
-            Utf8String label = GetLabel(iFloor, iQuadrant);
-            physicalElementPtr->SetLabel(label.c_str());
             
             DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), blockSizeRange, true);
             ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);

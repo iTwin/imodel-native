@@ -58,10 +58,15 @@ protected:
     friend struct TestElementHandler;
 
     Utf8String m_testItemProperty;
+    Utf8String m_testElemProperty;
 
     virtual DgnDbStatus _InsertSecondary() override;
     virtual DgnDbStatus _UpdateInDb() override;
     virtual DgnDbStatus _DeleteInDb() const override;
+
+    virtual DgnDbStatus _LoadFromDb() override;
+    virtual void _GetInsertParams(bvector<Utf8String>& params) override;
+    virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
 
 public:
     TestElement(CreateParams const& params) : T_Super(params) {}
@@ -69,6 +74,8 @@ public:
     static TestElementPtr Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
     static ECN::ECClassCP GetTestElementECClass(DgnDbR db) { return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME); }
     void SetTestItemProperty(Utf8CP value) { m_testItemProperty.AssignOrClear(value); }
+    Utf8StringCR GetTestElementProperty() const { return m_testElemProperty; }
+    void SetTestElementProperty(Utf8StringCR value) { m_testElemProperty = value; }
 };
 
 //=======================================================================================

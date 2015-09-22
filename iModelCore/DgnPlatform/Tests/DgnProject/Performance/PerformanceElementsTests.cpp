@@ -445,7 +445,7 @@ PerformanceElement4bCPtr PerformanceElement4b::Update()
 //---------------+---------------+---------------+---------------+---------------+-------
 SimpleElementPtr SimpleElement::Create(Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category)
     {
-    SimpleElementPtr ptr = new SimpleElement(DgnElement::CreateParams(db, modelId, classId, category));
+    SimpleElementPtr ptr = new SimpleElement(DgnElement::CreateParams(db, modelId, classId));
     if (!ptr.IsValid())
         return nullptr;
     return ptr.get();
