@@ -48,11 +48,11 @@ TEST(ECDbInstances, DgnElement)
     SqlPrintfString ecSql ("SELECT * FROM %ls.%ls", schemaPrefix.c_str(), className.c_str());
     ECSqlStatement statement;
     ECSqlStatus prepareStatus = statement.Prepare (project, ecSql.GetUtf8CP());
-    ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
+    ASSERT_TRUE (prepareStatus.IsSucess());
 
     bset<DgnElementId> elementInstances;
     ECInstanceECSqlSelectAdapter adapter(statement);
-    while (statement.Step() == ECSqlStepStatus::HasRow)
+    while (statement.Step() == BE_SQLITE_ROW)
         {
         ECInstanceId id;
         bool status = adapter.GetInstanceId (id);
@@ -120,22 +120,22 @@ TEST(ECDbInstances, DgnElementByElementId)
         builder.Select (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY).From (*elementClass, false).Where (whereClause.c_str ());
         ECSqlStatement statement;
         auto stat = statement.Prepare (project, builder.ToString ().c_str ());
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ (ECSqlStatus::Success()().Get(), stat);
 
         FOR_EACH (DgnElementId expectedElementId, elements)
             {
             statement.Reset ();
             statement.ClearBindings ();
             stat = statement.BindInt64 (1, expectedElementId.GetValue());
-            ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+            ASSERT_EQ (ECSqlStatus::Success()().Get(), stat);
 
             auto stepStat = statement.Step();
-            ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) stepStat);
+            ASSERT_EQ ((int) BE_SQLITE_ROW, (int) stepStat);
             ECInstanceId actualElementId = statement.GetValueId<ECInstanceId> (0);
 
             EXPECT_EQ (expectedElementId.GetValue(), actualElementId.GetValue());
 
-            EXPECT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step ()) << "Query by a single ECInstanceId is expected to only return one row.";
+            EXPECT_EQ ((int) BE_SQLITE_DONE, (int) statement.Step ()) << "Query by a single ECInstanceId is expected to only return one row.";
             }
         }
 
@@ -167,10 +167,10 @@ TEST(ECDbInstances, DgnElementByElementId)
         builder.Select (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY).From (*elementClass, false).Where (whereClause.c_str ());
         ECSqlStatement statement;
         auto stat = statement.Prepare (project, builder.ToString ().c_str ());
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ ((int) ECSqlStatus::Success(), (int) stat);
 
         bset<DgnElementId> actualElementIds;
-        while (ECSqlStepStatus::HasRow == statement.Step ())
+        while (BE_SQLITE_ROW == statement.Step ())
             {
             ECInstanceId actualElementId = statement.GetValueId<ECInstanceId> (0);
             actualElementIds.insert (DgnElementId (actualElementId.GetValue ()));
@@ -352,9 +352,9 @@ TEST(ECDbInstances, JsonValueFormatting)
     Utf8String className = Utf8String (ecClass->GetName().c_str());
     SqlPrintfString ecSql ("SELECT * FROM %ls.%ls WHERE ECInstanceId=%lld", schemaPrefix.c_str(), className.c_str(), instanceId.GetValue());
     ECSqlStatus prepareStatus = statement.Prepare (project, ecSql.GetUtf8CP());
-    ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-    ECSqlStepStatus stepStatus = statement.Step();
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stepStatus);
+    ASSERT_TRUE (prepareStatus.IsSuccess());
+    DbResult stepStatus = statement.Step();
+    ASSERT_TRUE (BE_SQLITE_ROW == stepStatus);
 
     // Retrieve formatted JSON
     DgnECPropertyFormatterPtr propertyFormatter = DgnECPropertyFormatter::Create (ref->GetDgnModelP());
@@ -545,8 +545,8 @@ bool RetrieveStartupCompanyJson (Json::Value& jsonValue, DgnDbR project)
     BeTest::SetFailOnAssert (true);
     if (ECSqlStatus::Success != prepareStatus)
         return false;
-    ECSqlStepStatus stepStatus = statement.Step();
-    if (stepStatus != ECSqlStepStatus::HasRow)
+    DbResult stepStatus = statement.Step();
+    if (stepStatus != BE_SQLITE_ROW)
         return false;
 
     // Create Json
@@ -672,8 +672,8 @@ TEST (ECDbInstances, FieldEngineerStructArray)
     ECSqlStatement statement;
     ECSqlStatus prepareStatus = statement.Prepare (ecDb, "SELECT * FROM ONLY eBPWC.Document");
     ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-    ECSqlStepStatus stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow); 
+    DbResult stepStatus = statement.Step();
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW); 
 
     Json::Value afterImportJson;
     JsonECSqlSelectAdapter jsonAdapter (statement, JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::RawNativeValues));
@@ -706,7 +706,7 @@ TEST (ECDbInstances, FieldEngineerStructArray)
     prepareStatus = statement.Prepare (ecDb, "SELECT * FROM ONLY eBPWC.Document");
     ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
     stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow); 
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW); 
     JsonECSqlSelectAdapter jsonAdapter2 (statement, JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::RawNativeValues));
     status = jsonAdapter2.GetRowInstance(afterUpdateJson, documentClass->GetId());
     ASSERT_TRUE (status);

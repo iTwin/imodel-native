@@ -304,7 +304,7 @@ DgnAuthority::Code DgnAuthority::GenerateDefaultCode(DgnElementCR el)
     if (!elemId.IsValid())
         return DgnAuthority::Code();
 
-    Utf8PrintfString val("%u-%u", elemId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & elemId.GetValue()));
+    Utf8PrintfString val("%" PRIu32 "-%" PRIu64, elemId.GetRepositoryId().GetValue(), (uint64_t)(0xffffffffffLL & elemId.GetValue()));
     return DgnAuthority::Code(DgnAuthority::LocalId(), val, el.GetElementClass()->GetName());
     }
 

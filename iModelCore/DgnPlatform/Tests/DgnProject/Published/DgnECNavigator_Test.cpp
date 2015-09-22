@@ -157,9 +157,9 @@ void DgnECNavigatorTest::PlantElementInfo_InternalTest (DgnDbTestDgnManager& tdm
     Utf8PrintfString levelFromElement ("SELECT Level.Name FROM ONLY dgn.Level JOIN dgn.Element USING dgn.ElementIsOnLevel WHERE Element.ECInstanceId = %lld", shownElementId.GetValue());
     ECSqlStatement statement;
     ECSqlStatus prepareStatus = statement.Prepare (project, levelFromElement.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
-    ECSqlStepStatus stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
+    DbResult stepStatus = statement.Step();
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW);
     Utf8String levelName = statement.GetValueText(0);
     ASSERT_TRUE (levelName == "Equipment");
 
@@ -167,9 +167,9 @@ void DgnECNavigatorTest::PlantElementInfo_InternalTest (DgnDbTestDgnManager& tdm
     Utf8PrintfString modelFromElement ("SELECT Model.Name FROM ONLY dgn.Model JOIN dgn.Element USING dgn.ModelContainsElements WHERE Element.ECInstanceId = %lld", shownElementId.GetValue());
     statement.Finalize();
     prepareStatus = statement.Prepare (project, modelFromElement.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW);
     Utf8String modelName = statement.GetValueText(0);
     ASSERT_TRUE (modelName == "Default [EQPM01]");
 
@@ -180,9 +180,9 @@ void DgnECNavigatorTest::PlantElementInfo_InternalTest (DgnDbTestDgnManager& tdm
          WHERE El.ECInstanceId = %lld", shownElementId.GetValue());
     statement.Finalize();
     prepareStatus = statement.Prepare (project, instanceFromElement.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW);
 
     // Find primary instance for equipment - method 2 of 3
     instanceFromElement.Sprintf (
@@ -192,9 +192,9 @@ void DgnECNavigatorTest::PlantElementInfo_InternalTest (DgnDbTestDgnManager& tdm
          WHERE El.ECInstanceId = %lld", shownElementId.GetValue());
     statement.Finalize();
     prepareStatus = statement.Prepare (project, instanceFromElement.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW);
 
     // Find primary instance for equipment - method 3 of 3
     instanceFromElement.Sprintf (
@@ -204,9 +204,9 @@ void DgnECNavigatorTest::PlantElementInfo_InternalTest (DgnDbTestDgnManager& tdm
          WHERE Element.ECInstanceId = %lld", shownElementId.GetValue());
     statement.Finalize();
     prepareStatus = statement.Prepare (project, instanceFromElement.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -233,7 +233,7 @@ void DgnECNavigatorTest::DgnLinksElementInfo_InternalTest (DgnDbTestDgnManager& 
 
     ECSqlStatement statement;
     ECSqlStatus prepareStatus = statement.Prepare (project, instanceFromElement.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     int numDgnLinks = CountRows (statement);
     ASSERT_EQ (3, numDgnLinks);
 
@@ -245,7 +245,7 @@ void DgnECNavigatorTest::DgnLinksElementInfo_InternalTest (DgnDbTestDgnManager& 
 
     statement.Finalize();
     prepareStatus = statement.Prepare (project, instanceFromElement.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     numDgnLinks = CountRows (statement);
     ASSERT_EQ (3, numDgnLinks);
     }
@@ -268,7 +268,7 @@ void DgnECNavigatorTest::PlantFindSimilar_InternalTest (DgnDbTestDgnManager& tdm
 
     ECSqlStatement statement;
     ECSqlStatus prepareStatus = statement.Prepare (project, equipmentFromLevel);
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     int numEquipment = CountRows (statement);
     ASSERT_EQ (8, numEquipment);
 
@@ -280,7 +280,7 @@ void DgnECNavigatorTest::PlantFindSimilar_InternalTest (DgnDbTestDgnManager& tdm
         WHERE Level.Name = 'Equipment'";
     statement.Finalize();
     prepareStatus = statement.Prepare (project, equipmentFromLevel);
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     numEquipment = CountRows (statement);
     ASSERT_EQ (8, numEquipment);
 
@@ -292,7 +292,7 @@ void DgnECNavigatorTest::PlantFindSimilar_InternalTest (DgnDbTestDgnManager& tdm
         WHERE Model.Name = 'Default [EQPM01]'";
     statement.Finalize();
     prepareStatus = statement.Prepare (project, equipmentFromModel);
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     numEquipment = CountRows (statement);
     ASSERT_EQ (16, numEquipment);
 
@@ -304,7 +304,7 @@ void DgnECNavigatorTest::PlantFindSimilar_InternalTest (DgnDbTestDgnManager& tdm
         WHERE Model.Name = 'Default [EQPM01]'";
     statement.Finalize();
     prepareStatus = statement.Prepare (project, equipmentFromModel);
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     numEquipment = CountRows (statement);
     ASSERT_EQ (16, numEquipment);
     }
@@ -552,8 +552,8 @@ StatusInt DgnECNavigatorTest::FindInstancesIncludingChildren (ECInstanceKeyMulti
 
      // Seed the instance finder with instances from the statement
      ECInstanceKeyMultiMap seedInstanceKeyMap;
-     ECSqlStepStatus stepStatus;
-     while ((stepStatus = statement.Step()) == ECSqlStepStatus::HasRow)
+     DbResult stepStatus;
+     while ((stepStatus = statement.Step()) == BE_SQLITE_ROW)
          {
          ECClassId ecClassId = statement.GetValueInt64 (0);
          ECInstanceId ecInstanceId = statement.GetValueId<ECInstanceId> (1);
@@ -594,7 +594,7 @@ void DgnECNavigatorTest::PlantFindSimilar_ExternalTest (DgnDbTestDgnManager& tdm
     status = CreateFindSimilarQuery (ecSql, elementInfo, "ams.EQUIP_MEQP", "BUD_TYPE", "EQUIP_MEQP", project);
     ASSERT_TRUE (status == SUCCESS);
     prepareStatus = statement.Prepare (project, ecSql.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     status = FindInstancesIncludingChildren (instanceKeyMap, statement, project); // Note: This is only used for illustration - doesn't really gather new instances in this example.
     ASSERT_TRUE (status == SUCCESS);
     ASSERT_EQ (16, (int) instanceKeyMap.size());
@@ -607,7 +607,7 @@ void DgnECNavigatorTest::PlantFindSimilar_ExternalTest (DgnDbTestDgnManager& tdm
     status = CreateFindSimilarQuery (ecSql, elementInfo, "dgn.Level", "Name", selectedLevelName.c_str(), project);
     ASSERT_TRUE (status == SUCCESS);
     prepareStatus = statement.Prepare (project, ecSql.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     status = FindInstancesIncludingChildren (instanceKeyMap, statement, project); // Note: This is only used for illustration - doesn't really gather new instances in this example.
     ASSERT_TRUE (status == SUCCESS);
     ASSERT_EQ (8, (int) instanceKeyMap.size());
@@ -620,7 +620,7 @@ void DgnECNavigatorTest::PlantFindSimilar_ExternalTest (DgnDbTestDgnManager& tdm
     status = CreateFindSimilarQuery (ecSql, elementInfo, "dgn.Model", "Name", selectedModelName.c_str(), project);
     ASSERT_TRUE (status == SUCCESS);
     prepareStatus = statement.Prepare (project, ecSql.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     status = FindInstancesIncludingChildren (instanceKeyMap, statement, project); // Note: This is only used for illustration - doesn't really gather new instances in this example.
     ASSERT_TRUE (status == SUCCESS);
     ASSERT_EQ (16, (int) instanceKeyMap.size());
@@ -649,7 +649,7 @@ void DgnECNavigatorTest::PlantFindSimilarOnElementWithNoPrimaryInstance_External
 
     ECSqlStatement statement;
     ECSqlStatus prepareStatus = statement.Prepare (project, ecSql.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     int numOfElementsOnLevel1 = CountRows (statement);
     ASSERT_EQ (91, numOfElementsOnLevel1);
     }
@@ -672,7 +672,7 @@ void DgnECNavigatorTest::DgnLinksFindSimilar_InternalTest (DgnDbTestDgnManager& 
 
     ECSqlStatement statement;
     ECSqlStatus prepareStatus = statement.Prepare (project, elementFromLink);
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     int numElements = CountRows (statement);
     ASSERT_EQ (3, numElements);
     }
@@ -704,7 +704,7 @@ void DgnECNavigatorTest::DgnLinksFindSimilar_ExternalTest (DgnDbTestDgnManager& 
 
     ECSqlStatement statement;
     ECSqlStatus prepareStatus = statement.Prepare (project, ecSql.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     int numLinks = CountRows (statement);
     ASSERT_EQ (3, numLinks);
     }
@@ -762,7 +762,7 @@ void DgnECNavigatorTest::IfcFindSimilar_ExternalTest (DgnDbTestDgnManager& tdm)
     status = CreateFindSimilarQuery (ecSql, elementInfo, "IFC2x3.IfcWindow", "Tag", "427486", project);
     ASSERT_TRUE (status == SUCCESS);
     prepareStatus = statement.Prepare (project, ecSql.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     status = FindInstancesIncludingChildren (instanceKeyMap, statement, project); // Note: This is only used for illustration - doesn't really gather new instances in this example.
     ASSERT_TRUE (status == SUCCESS);
     ASSERT_EQ (1, (int) instanceKeyMap.size());
@@ -775,7 +775,7 @@ void DgnECNavigatorTest::IfcFindSimilar_ExternalTest (DgnDbTestDgnManager& tdm)
         "Manufacturer", "Revit", project);
     ASSERT_TRUE (status == SUCCESS);
     prepareStatus = statement.Prepare (project, ecSql.c_str());
-    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
+    ASSERT_TRUE (prepareStatus == ECSqlStatus::Success());
     status = FindInstancesIncludingChildren (instanceKeyMap, statement, project); // Note: This is only used for illustration - doesn't really gather new instances in this example.
     ASSERT_TRUE (status == SUCCESS);
     ASSERT_EQ (20, (int) instanceKeyMap.size());
