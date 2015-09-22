@@ -5,6 +5,10 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
+# ***
+# *** Need to clean up the test code -- then we can remove this 'NOSTRICT' setting
+# ***
+NO_DEFAULT_CLANG_WARNINGS=1
 %include mdl.mki
 
 %ifndef TestDir
