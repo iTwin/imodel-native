@@ -981,10 +981,7 @@ public:
 //=======================================================================================
 struct IPointCloudDrawParams
 {
-    enum VersionNumber
-    {
-        IPointCloudDrawParams_InitialVersion = 1
-    };
+    enum VersionNumber {IPointCloudDrawParams_InitialVersion = 1};
 
     // If IsThreadBound returns false, implement AddRef and Release using InterlockedIncrement
     virtual uint32_t AddRef() = 0;
