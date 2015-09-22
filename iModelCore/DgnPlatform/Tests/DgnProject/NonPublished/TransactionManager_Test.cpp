@@ -888,7 +888,7 @@ TEST_F(ElementDependencyGraph, FailureTest1)
 
     m_db->SaveChanges();
 
-    ASSERT_EQ( selectDepRel->Step(), ECSqlStepStatus::HasRow );
+    ASSERT_EQ( selectDepRel->Step(), BE_SQLITE_ROW );
     ASSERT_EQ( selectDepRel->GetValueInt((int)ElementDrivesElementColumn::Status),(int)DgnElementDependencyGraph::EdgeStatus::EDGESTATUS_Satisfied );
 
     TestElementDrivesElementHandlerShouldFail fail;
@@ -896,7 +896,7 @@ TEST_F(ElementDependencyGraph, FailureTest1)
     m_db->SaveChanges();
 
     selectDepRel->Reset();
-    ASSERT_EQ( selectDepRel->Step(), ECSqlStepStatus::HasRow );
+    ASSERT_EQ( selectDepRel->Step(), BE_SQLITE_ROW );
     ASSERT_EQ( selectDepRel->GetValueInt((int)ElementDrivesElementColumn::Status),(int)DgnElementDependencyGraph::EdgeStatus::EDGESTATUS_Failed );
     }
 
@@ -940,7 +940,7 @@ TEST_F(ElementDependencyGraph, CycleTest1)
         ECSqlStatement s;
         s.Prepare(*m_db, b.ToString().c_str());
         s.BindId(1, e2_e1.GetECInstanceId());
-        ASSERT_EQ( s.Step() , ECSqlStepStatus::Done );
+        ASSERT_EQ( s.Step() , BE_SQLITE_DONE );
         }
     }
 
@@ -978,7 +978,7 @@ TEST_F(ElementDependencyGraph, CycleTest2)
         // Verify that the txn was rolled back. If so, my insert of e2_e1 should have been cancelled, and e2_e1 should not exist.
         CachedECSqlStatementPtr getRelDep = GetSelectElementDrivesElementById();
         getRelDep->BindId(1, e4_e2.GetECInstanceId());
-        ASSERT_EQ( getRelDep->Step() , ECSqlStepStatus::Done );
+        ASSERT_EQ( getRelDep->Step() , BE_SQLITE_DONE );
         }
     }
 
@@ -1342,7 +1342,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
     ECSqlStatement s;
     s.Prepare(*m_db, b.ToString().c_str());
     s.BindId(1, e22_e1.GetECInstanceId());
-    ASSERT_EQ( s.Step() , ECSqlStepStatus::HasRow );
+    ASSERT_EQ( s.Step() , BE_SQLITE_ROW );
     ASSERT_EQ( s.GetValueInt(0) , 0 );
     }
 

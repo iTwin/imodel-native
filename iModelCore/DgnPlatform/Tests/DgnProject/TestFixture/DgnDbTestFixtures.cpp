@@ -67,7 +67,7 @@ DgnDbStatus TestElement::_InsertInDb()
     CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
     insertStmt->BindId(1, GetElementId());
     insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
-    if (ECSqlStepStatus::Done != insertStmt->Step())
+    if (BE_SQLITE_DONE != insertStmt->Step())
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
@@ -92,7 +92,7 @@ DgnDbStatus TestElement::_UpdateInDb()
         return DgnDbStatus::SQLiteError;
     if (upStmt->BindText(1, ECN::ECValue(m_testItemProperty.c_str()).GetUtf8CP(), BeSQLite::EC::IECSqlBinder::MakeCopy::No) != ECSqlStatus::Success)
         return DgnDbStatus::SQLiteError;
-    if (upStmt->Step() != BeSQLite::EC::ECSqlStepStatus::Done)
+    if (upStmt->Step() != BE_SQLITE_DONE)
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
@@ -115,7 +115,7 @@ DgnDbStatus TestElement::_DeleteInDb() const
         return DgnDbStatus::SQLiteError;
     if (delStmt->BindId(1, GetElementId()) != ECSqlStatus::Success)
         return DgnDbStatus::SQLiteError;
-    if (delStmt->Step() != BeSQLite::EC::ECSqlStepStatus::Done)
+    if (delStmt->Step() != BE_SQLITE_DONE)
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
@@ -196,7 +196,7 @@ bool DgnDbTestFixture::SelectElementItem(DgnElementId id)
         return false;
     if (selStmt->BindId(1, id) != ECSqlStatus::Success)
         return false;
-    if (selStmt->Step() != BeSQLite::EC::ECSqlStepStatus::HasRow)
+    if (selStmt->Step() != BE_SQLITE_ROW)
         return false;
 
     return true;

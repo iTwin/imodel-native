@@ -55,8 +55,8 @@ void DgnChangeSummary::FindChangedRelationshipEndIds(ECInstanceIdSet& endInstanc
                 BeAssert(stmt.IsValid());
                 stmt->BindId(1, relInstance.GetInstanceId());
 
-                ECSqlStepStatus stepStatus = stmt->Step();
-                BeAssert(stepStatus == ECSqlStepStatus::HasRow);
+                DbResult stepStatus = stmt->Step();
+                BeAssert(stepStatus == BE_SQLITE_ROW);
 
                 currentEndInstanceId = stmt->GetValueId<ECInstanceId>(0);
                 }
@@ -99,12 +99,12 @@ void DgnChangeSummary::FindRelatedInstanceIds(DgnElementIdSet& relatedElements, 
 
     stmt->BindInt64(1, (int64_t) &inInstances);
 
-    ECSqlStepStatus stepStatus;
-    while ((stepStatus = stmt->Step()) == ECSqlStepStatus::HasRow)
+    DbResult stepStatus;
+    while ((stepStatus = stmt->Step()) == BE_SQLITE_ROW)
         {
         relatedElements.insert(stmt->GetValueId<DgnElementId>(0));
         }
-    BeAssert(stepStatus == ECSqlStepStatus::Done);
+    BeAssert(stepStatus == BE_SQLITE_DONE);
     }
 
 //---------------------------------------------------------------------------------------

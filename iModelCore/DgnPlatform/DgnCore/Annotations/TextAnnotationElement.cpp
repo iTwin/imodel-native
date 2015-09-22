@@ -119,7 +119,7 @@ DgnDbStatus TextAnnotationItem::_UpdateProperties(DgnElementCR el)
 
     update->BindId(2, el.GetElementId());
 
-    if (ECSqlStepStatus::Done != update->Step())
+    if (BE_SQLITE_DONE != update->Step())
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
@@ -138,7 +138,7 @@ DgnDbStatus TextAnnotationItem::_LoadProperties(DgnElementCR el)
 
     select->BindId(1, el.GetElementId());
 
-    if ((ECSqlStepStatus::HasRow != select->Step()) || select->IsValueNull(0))
+    if ((BE_SQLITE_ROW != select->Step()) || select->IsValueNull(0))
         {
         m_annotation = nullptr;
         return DgnDbStatus::Success;
