@@ -72,7 +72,7 @@
         <SubPart PartName="ECDb"/>
         <SubPart PartName="Zlib"                             PartFile="Zlib"         Repository="Libsrc-Compress" />
         <Bindings>
-            <Files ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="ECDb" SubPartDirectory="UnitTests/ECDb"> Delivery/UnitTests/ignore_list.txt"</Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList"     ProductSubDirectory="ECDb" SubPartDirectory="UnitTests/ECDb"> Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
