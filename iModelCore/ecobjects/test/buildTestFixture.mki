@@ -17,8 +17,7 @@ GUNITTEST_NOEXEC = 1
 #----------------------------------------------------------------------
 BEGTEST_NAME=$(programName)
 BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
-o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
-%include $(SrcBsiCommon)sharedmki/DetectAndCompileUnitTests.mki
+%include $(SrcBsiCommon)sharedmki/BuildUnitTests.mke
 
 #----------------------------------------------------------------------
 #       Compile the main and testfixture 
