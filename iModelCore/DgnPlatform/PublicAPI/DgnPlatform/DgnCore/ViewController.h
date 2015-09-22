@@ -529,9 +529,8 @@ public:
     DGNPLATFORM_EXPORT static StandardView IsStandardViewRotation(RotMatrixCR rotation, bool check3D);
 
     //! Gets the name of a StandardView.
-    //! @param[out] viewName On SUCCESS, filled in with the name of the standard view.
     //! @param[in]  standardView The StandardView of interest
-    //! @return SUCCESS if viewName is valid.
+    //! @return the ViewName. 
     DGNPLATFORM_EXPORT static Utf8String GetStandardViewName(StandardView standardView);
 
     //! Get the RotMatrix for a standard view by name.

@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+       22
+/*--------------------------------------------------------------------------------------+
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementMaterial_tests.cpp $
 |
@@ -163,7 +163,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
     BeFileName textureImage;
     ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(textureImage, L"TextureImage.png", L"TextureImage.png", __FILE__));
 
-    ElemDisplayParams elemDisplayParams;
+    Render::ElemDisplayParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
     elemDisplayParams.SetMaterial(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), RenderMaterial::MapUnits::Relative));
     EXPECT_TRUE( builder->Append(elemDisplayParams));

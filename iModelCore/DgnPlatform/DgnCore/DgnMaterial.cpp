@@ -113,6 +113,7 @@ DgnMaterialId DgnMaterials::QueryMaterialId(Utf8StringCR name, Utf8StringCR pale
     return BE_SQLITE_ROW != stmt.Step() ? DgnMaterialId() : stmt.GetValueId<DgnMaterialId>(0);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -129,6 +130,7 @@ void DgnMaterials::AddRenderMaterial(DgnMaterialId id, Render::Material* materia
     {
     m_renderMaterials.Insert(id, material);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15

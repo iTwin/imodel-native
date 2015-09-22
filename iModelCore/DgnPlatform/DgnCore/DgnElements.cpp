@@ -187,7 +187,7 @@ inline DgnElementCP ElemIdRangeNode::Find(uint64_t key, bool setFreeEntryFlag) c
 // recently released elements.
 // @bsiclass                                                    Keith.Bentley   09/12
 //=======================================================================================
-struct ElemIdTree : public ElemIdParent
+struct ElemIdTree : ElemIdParent
 {
     FixedSizePool1     m_leafPool;          // pool for allocating leaf nodes
     FixedSizePool1     m_internalPool;      // pool for allocating internal nodes
