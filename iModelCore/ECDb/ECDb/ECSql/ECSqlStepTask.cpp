@@ -348,8 +348,8 @@ DbResult DeleteStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
     m_deleteStmt->ClearBindings();
     m_deleteStmt->GetBinder(PARAMETER_OWNERECINSTANCEID).BindId(instanceId);
 
-    auto status = m_deleteStmt->Step();
-    return status;
+    const DbResult status = m_deleteStmt->Step();
+    return status == BE_SQLITE_DONE ? BE_SQLITE_OK : status;
     }
 
 

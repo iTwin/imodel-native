@@ -3518,7 +3518,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructUpdateWithDotoperator)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                             Muhammad Hassan                         05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWithDotoperator)
+TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingStructArrayUpdateWithDotoperator)
     {
     const auto perClassRowCount = 0;
     // Create and populate a sample project
@@ -3547,7 +3547,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWit
         }
 
     auto stepStatus = insertStatement.Step();
-    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ(BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
     ECSqlStatement selectStatement;
     auto prepareStatus = selectStatement.Prepare(ecdb, "SELECT SAStructProp.PStruct_Array FROM ecsql.SA");
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
@@ -3579,7 +3579,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWit
         }
 
     stepStatus = updateStatement.Step();
-    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ(BE_SQLITE_DONE, stepStatus) << "Step for '" << ecsql << "' failed";
    
     ECSqlStatement statement;
     prepareStatus = statement.Prepare(ecdb, "SELECT SAStructProp.PStruct_Array FROM ecsql.SA");

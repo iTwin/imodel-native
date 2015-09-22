@@ -201,9 +201,9 @@ DbResult ECSqlSelectPreparedStatement::Step()
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlSelectPreparedStatement::_Reset()
     {
-    auto resetStatementStat = DoReset();
+    ECSqlStatus resetStatementStat = DoReset();
     //even if statement reset failed we still try to reset the fields to clean-up things as good as possible.
-    auto fieldResetStat = ResetFields();
+    ECSqlStatus fieldResetStat = ResetFields();
 
     if (resetStatementStat != ECSqlStatus::Success)
         return resetStatementStat;
@@ -219,7 +219,7 @@ ECSqlStatus ECSqlSelectPreparedStatement::_Reset()
 //---------------------------------------------------------------------------------------
 int ECSqlSelectPreparedStatement::GetColumnCount() const
     {
-    return static_cast<int> (GetFields().size());
+    return (int) (GetFields().size());
     }
 
 //---------------------------------------------------------------------------------------
@@ -227,13 +227,13 @@ int ECSqlSelectPreparedStatement::GetColumnCount() const
 //---------------------------------------------------------------------------------------
 IECSqlValue const& ECSqlSelectPreparedStatement::GetValue(int columnIndex) const
     {
-    if (columnIndex < 0 || columnIndex >= static_cast<int> (m_fields.size()))
+    if (columnIndex < 0 || columnIndex >= (int) (m_fields.size()))
         {
         GetIssueReporter().Report(ECDbIssueSeverity::Error, "Column index '%d' is out of bounds.", columnIndex);
         return NoopECSqlValue::GetSingleton();
         }
 
-    auto const& field = m_fields[columnIndex];
+    std::unique_ptr<ECSqlField> const& field = m_fields[columnIndex];
     return *field;
     }
 
@@ -244,7 +244,7 @@ ECSqlStatus ECSqlSelectPreparedStatement::ResetFields() const
     {
     for (std::unique_ptr<ECSqlField> const& field : m_fields)
         {
-        auto stat = field->Reset();
+        ECSqlStatus stat = field->Reset();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -259,7 +259,7 @@ ECSqlStatus ECSqlSelectPreparedStatement::InitFields() const
     {
     for (std::unique_ptr<ECSqlField> const& field : m_fields)
         {
-        auto stat = field->Init();
+        ECSqlStatus stat = field->Init();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -329,7 +329,6 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             return BE_SQLITE_ERROR;
             }
 
-
         instanceKey = ECInstanceKey(m_ecInstanceKeyInfo.GetECClassId(), ecinstanceidOfInsert);
 
         if (GetStepTasks().HasAnyTask())
@@ -341,9 +340,9 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
 
         return BE_SQLITE_DONE;
         }
-    else
-        //error status already set by child calls
-        return BE_SQLITE_ERROR;
+
+    //error status already set by child calls
+    return BE_SQLITE_ERROR;
     }
 
 
@@ -386,18 +385,17 @@ void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo(ECInstanceKeyInfo const&
 //---------------------------------------------------------------------------------------
 DbResult ECSqlUpdatePreparedStatement::Step()
     {
-    DbResult status = BE_SQLITE_DONE;
     if (!IsNoopInSqlite())
         {
-        status = GetStepTasks().ExecuteBeforeStepTaskList();
+        DbResult status = GetStepTasks().ExecuteBeforeStepTaskList();
         if (BE_SQLITE_OK != status)
             return status;
 
         if (!IsNothingToUpdate())
-            status = DoStep();
+            return DoStep();
         }
 
-    return status;
+    return BE_SQLITE_DONE;
     }
 
 //---------------------------------------------------------------------------------------
@@ -420,17 +418,16 @@ ECSqlStatus ECSqlNonSelectPreparedStatement::_Reset()
 //---------------------------------------------------------------------------------------
 DbResult ECSqlDeletePreparedStatement::Step()
     {
-    DbResult status = BE_SQLITE_DONE;
     if (!IsNoopInSqlite())
         {
-        status = GetStepTasks().ExecuteBeforeStepTaskList();
+        const DbResult status = GetStepTasks().ExecuteBeforeStepTaskList();
         if (BE_SQLITE_OK != status)
             return status;
 
-        status = DoStep();
+        return DoStep();
         }
 
-    return status;
+    return BE_SQLITE_DONE;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

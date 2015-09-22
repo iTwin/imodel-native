@@ -2808,8 +2808,7 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyRelationshipMap_EnforceReferen
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasManyGoo"));
 
     BeSQLite::Statement sqlStatment;
-    auto stat = sqlStatment.Prepare (ecdb, "SELECT ec_Column.Name FROM ec_Column JOIN ec_ForeignKey ON ec_ForeignKey.TableId = ec_Column.[TableId] JOIN ec_ForeignKeyColumn ON ec_ForeignKeyColumn.ColumnId = ec_Column.Id WHERE ec_ForeignKey.Id = 1");
-    ASSERT_EQ (stat, DbResult::BE_SQLITE_OK);
+    ASSERT_EQ(BE_SQLITE_OK, sqlStatment.Prepare (ecdb, "SELECT ec_Column.Name FROM ec_Column JOIN ec_ForeignKey ON ec_ForeignKey.TableId = ec_Column.[TableId] JOIN ec_ForeignKeyColumn ON ec_ForeignKeyColumn.ColumnId = ec_Column.Id WHERE ec_ForeignKey.Id = 1"));
     size_t rowCount = 0;
     while (sqlStatment.Step () != DbResult::BE_SQLITE_DONE)
         {

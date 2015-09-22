@@ -612,8 +612,6 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
         return;
         }
 
-    //rows affected test can be performed for update and delete
-    //statement.EnableDefaultEventHandler ();
     DbResult stepStat = Step(statement, !expectedToSucceed);
     if (expectedToSucceed)
         ASSERT_EQ(BE_SQLITE_DONE, stepStat) << "Step should have succeeded for ECSQL '" << ecsql << "'.";
