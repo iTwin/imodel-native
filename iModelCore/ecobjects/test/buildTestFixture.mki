@@ -17,8 +17,8 @@ GUNITTEST_NOEXEC = 1
 #----------------------------------------------------------------------
 BEGTEST_NAME=$(programName)
 BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
-BEGTEST_DEPENDENCIES=$(baseDir)SeedData.prewire.mke
-%include $(baseDir)/BuildUnitTests.mke
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+%include $(SrcBsiCommon)sharedmki/DetectAndCompileUnitTests.mki
 
 #----------------------------------------------------------------------
 #       Compile the main and testfixture 
