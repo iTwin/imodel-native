@@ -472,7 +472,7 @@ DgnDbStatus DgnElement::_InsertInDb()
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    if (ECSqlStepStatus::Error != statement->Step())
+    if (BE_SQLITE_DONE == statement->Step())
         return DgnDbStatus::Success;
 
     // SQLite doesn't tell us which constraint failed - check if it's the Code.
@@ -531,7 +531,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    return ECSqlStepStatus::Error == statement->Step() ? DgnDbStatus::WriteError : DgnDbStatus::Success;
+    return BE_SQLITE_DONE != statement->Step() ? DgnDbStatus::WriteError : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -892,24 +892,22 @@ void DgnElement::CopyForCloneFrom(DgnElementCR src)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params) const
+DgnElementPtr DgnElement::_Clone(DgnDbStatus* inStat, DgnElement::CreateParams const* params) const
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
+
     // Perform input params validation. Code must be different and element id should be invalid...
     if (nullptr != params)
         {
         if (params->m_id.IsValid())
             {
-            if (nullptr != stat)
-                *stat = DgnDbStatus::InvalidId;
-
+            stat = DgnDbStatus::InvalidId;
             return nullptr;
             }
             
         if (params->m_code == GetCode())
             {
-            if (nullptr != stat)
-                *stat = DgnDbStatus::InvalidName;
-
+            stat = DgnDbStatus::InvalidName;
             return nullptr;
             }
         }
@@ -917,25 +915,23 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
     DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), GetCategoryId(), nullptr, Code(), DgnElementId()));
     if (!cloneElem.IsValid())
         {
-        if (nullptr != stat)
-            *stat = DgnDbStatus::BadRequest;
-
+        stat = DgnDbStatus::BadRequest;
         return nullptr;
         }
 
     cloneElem->CopyForCloneFrom(*this);
 
-    if (nullptr != stat)
-        *stat = DgnDbStatus::Success;
-
+    stat = DgnDbStatus::Success;
     return cloneElem;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const
+DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* inStat, DgnModelR destModel, DgnImportContext& importer) const
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
+
     DgnElement::CreateParams params = GetCreateParamsForImport(destModel, importer);
     params.m_modelId = destModel.GetModelId();
 
@@ -943,9 +939,7 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* stat, DgnModelR destModel
 
     if (!cloneElem.IsValid())
         {
-        if (nullptr != stat)
-            *stat = DgnDbStatus::BadRequest;
-
+        stat = DgnDbStatus::BadRequest;
         return nullptr;
         }
 
@@ -957,9 +951,7 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* stat, DgnModelR destModel
         cloneElem->_AdjustPlacementForImport(importer);
         }
 
-    if (nullptr != stat)
-        *stat = DgnDbStatus::Success;
-
+    stat = DgnDbStatus::Success;
     return cloneElem;
     }
 
@@ -1232,7 +1224,7 @@ DgnDbStatus ElementGroup::InsertMember(DgnElementCR member) const
     statement->BindId(3, member.GetElementClassId());
     statement->BindId(4, member.GetElementId());
 
-    if (ECSqlStepStatus::Done != statement->Step())
+    if (BE_SQLITE_DONE != statement->Step())
         return DgnDbStatus::BadRequest;
 
     _OnMemberInserted(member); // notify subclass that member was inserted
@@ -1523,8 +1515,8 @@ DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, m_instanceId);
-    ECSqlStepStatus status = stmt->Step();
-    return (ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    BeSQLite::DbResult status = stmt->Step();
+    return (BeSQLite::BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1536,7 +1528,7 @@ DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el)
     stmt->BindId(1, el.GetElementId());
 
     ECInstanceKey key;
-    if (ECSqlStepStatus::Done != stmt->Step(key))
+    if (BeSQLite::BE_SQLITE_DONE != stmt->Step(key))
         return DgnDbStatus::WriteError;
 
     m_instanceId = key.GetECInstanceId();
@@ -1726,8 +1718,8 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ECInstanceId) VALUES(?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, GetAspectInstanceId(el));
-    ECSqlStepStatus status = stmt->Step();
-    return (ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    DbResult status = stmt->Step();
+    return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1738,8 +1730,8 @@ DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, GetAspectInstanceId(el));
-    ECSqlStepStatus status = stmt->Step();
-    return (ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    DbResult status = stmt->Step();
+    return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1749,8 +1741,8 @@ DgnDbStatus DgnElement::Item::_DeleteInstance(DgnElementCR el)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_ElementItem) " WHERE ECInstanceId=?");
     stmt->BindId(1, GetAspectInstanceId(el));
-    ECSqlStepStatus status = stmt->Step();
-    return (ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    DbResult status = stmt->Step();
+    return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1763,7 +1755,7 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
 
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, el.GetElementId());
-    if (ECSqlStepStatus::HasRow != stmt->Step())
+    if (BE_SQLITE_ROW != stmt->Step())
         return ECInstanceKey();
 
     // And we know the ID. See if such an instance actually exists.
@@ -1812,7 +1804,7 @@ DgnDbStatus DgnElement::Item::LoadPropertiesIntoInstance(IECInstancePtr& instanc
     b.Select("*").From(*ecclass).Where("ECInstanceId=?");
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(b.ToString().c_str());
     stmt->BindId(1, el.GetElementId());
-    if (ECSqlStepStatus::HasRow != stmt->Step())
+    if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
 
     ECInstanceECSqlSelectAdapter reader(*stmt);     // *** NEEDS WORK: Use a cached ECInstanceECSqlSelectAdapter!!!!!
@@ -1980,7 +1972,7 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawP
         if (xstatus != DgnDbStatus::Success)
             return xstatus;
 
-        return (0 == retval)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+        return (0 == retval) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
         }
 
     if (0 == BeStringUtilities::Stricmp("ComponentModel", egaType.GetUtf8CP()))
@@ -2035,7 +2027,7 @@ DgnDbStatus InstanceBackedItem::_LoadProperties(DgnElementCR el)
 
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("SELECT * FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE ECInstanceId=?");
     stmt->BindId(1, eid);
-    if (ECSqlStepStatus::HasRow != stmt->Step())
+    if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
 
     ECInstanceECSqlSelectAdapter reader(*stmt);
@@ -2113,5 +2105,5 @@ DgnDbStatus InstanceBackedItem::_UpdateProperties(DgnElementCR el)
     {
     SetInstanceId(ECInstanceId(el.GetElementId().GetValue()));
     ECInstanceUpdater& updater = CachedECInstanceUpdaters::GetECInstanceUpdater(el.GetDgnDb(), m_instance->GetClass());
-    return (BSISUCCESS != updater.Update(*m_instance))? DgnDbStatus::WriteError: DgnDbStatus::Success;
+    return (BSISUCCESS != updater.Update(*m_instance)) ? DgnDbStatus::WriteError : DgnDbStatus::Success;
     }

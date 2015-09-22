@@ -234,7 +234,7 @@ TEST_F(ElementItemTests, UniqueAspect_CRUD)
 
         BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ECInstanceId=?)");
         stmt->BindId(1, aspect->GetAspectInstanceId(*el));
-        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow , stmt->Step() );
+        ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "Initial Value" , stmt->GetValueText(0) );
         }
 
@@ -263,7 +263,7 @@ TEST_F(ElementItemTests, UniqueAspect_CRUD)
         // Verify that the aspect's property was changed in the Db
         BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ECInstanceId=?)");
         stmt->BindId(1, aspect->GetAspectInstanceId(*el));
-        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow , stmt->Step() );
+        ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "Changed Value" , stmt->GetValueText(0) );
         }
 
@@ -324,7 +324,7 @@ TEST_F(ElementItemTests, MultiAspect_CRUD)
         bool has2=false;
         int count=0;
 
-        while (BeSQLite::EC::ECSqlStepStatus::HasRow == stmt->Step())
+        while (BE_SQLITE_ROW == stmt->Step())
             {
             ++count;
             EC::ECInstanceId aspectId = stmt->GetValueId<EC::ECInstanceId>(0);
@@ -365,12 +365,12 @@ TEST_F(ElementItemTests, MultiAspect_CRUD)
         // Verify that the a1's property is unchanged and a2's property was changed in the Db
         BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE (ECInstanceId=?)");
         stmt->BindId(1, a1id);
-        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow , stmt->Step() );
+        ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "1" , stmt->GetValueText(0) );
         stmt->Reset();
         stmt->ClearBindings();
         stmt->BindId(1, a2id);
-        ASSERT_EQ( BeSQLite::EC::ECSqlStepStatus::HasRow , stmt->Step() );
+        ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "2 is Changed" , stmt->GetValueText(0) );
         }
 

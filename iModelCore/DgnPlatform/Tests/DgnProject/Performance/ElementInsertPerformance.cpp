@@ -242,7 +242,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
         stmt.BindInt64(15, s_int64Val);
         stmt.BindDouble(16, s_doubleVal);
 
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
         stmt.Reset();
         stmt.ClearBindings();
@@ -298,7 +298,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
         insertStmt->BindText(4, code.c_str(), IECSqlBinder::MakeCopy::No);
 
         ECInstanceKey newKey;
-        ASSERT_EQ(ECSqlStepStatus::Done, insertStmt->Step(newKey));
+        ASSERT_EQ(BE_SQLITE_DONE, insertStmt->Step(newKey));
         insertStmt->Reset();
         insertStmt->ClearBindings();
 
@@ -308,7 +308,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
             updateStmt->BindInt64(2, s_int64Val);
             updateStmt->BindDouble(3, s_doubleVal);
             updateStmt->BindId(4, newKey.GetECInstanceId());
-            ASSERT_EQ(ECSqlStepStatus::Done, updateStmt->Step());
+            ASSERT_EQ(BE_SQLITE_DONE, updateStmt->Step());
             updateStmt->Reset();
             updateStmt->ClearBindings();
             }
@@ -371,7 +371,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
         stmt.BindInt64(stmt.GetParameterIndex("p42"), s_int64Val);
         stmt.BindDouble(stmt.GetParameterIndex("p43"), s_doubleVal);
 
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
         stmt.Reset();
         stmt.ClearBindings();
