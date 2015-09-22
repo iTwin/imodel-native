@@ -1122,9 +1122,11 @@ protected:
     //! Override to validate the category.
     //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DgnDbStatus::Success;}
-    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8String>& insertParams) override;
+    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8CP>& insertParams) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original) override;
 
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
