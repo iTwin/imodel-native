@@ -356,7 +356,7 @@ void BeSQLiteRealityDataStorage::SelectDataWork::_DoWork()
 RealityDataStorageResult BeSQLiteRealityDataStorage::SelectDataWork::GetResult() const
     {
     SelectDataWorkHasResultPredicate predicate(m_hasResult);
-    auto result = m_resultCV.WaitOnCondition(&predicate, 1000);
+    auto result = m_resultCV.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
     BeAssert(result);
     return m_result;
     }

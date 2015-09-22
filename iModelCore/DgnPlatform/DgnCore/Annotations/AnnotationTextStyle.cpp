@@ -143,7 +143,7 @@ ColorDef AnnotationTextStyle::GetColorValue() const { return ColorDef((uint32_t)
 void AnnotationTextStyle::SetColorValue(ColorDef value) { setIntegerValue(m_data, AnnotationTextStyleProperty::ColorValue, DEFAULT_COLOR_VALUE_VALUE, value.GetValue()); }
 
 static const int64_t DEFAULT_FONTID_VALUE = 0; // See definition of BeServerIssuedId, of which DgnFontId is a sub-class.
-DgnFontId AnnotationTextStyle::GetFontId() const { return DgnFontId((int64_t)getIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE)); }
+DgnFontId AnnotationTextStyle::GetFontId() const { return DgnFontId((uint64_t)getIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE)); }
 void AnnotationTextStyle::SetFontId(DgnFontId value) { setIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE, value.GetValue()); }
 
 static const AnnotationTextStylePropertyBag::T_Real DEFAULT_HEIGHT_VALUE = 1.0;
@@ -383,7 +383,7 @@ BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextSt
         return ERROR;
 
     if (fbStyle->has_id())
-        style.m_id = DgnStyleId(fbStyle->id());
+        style.m_id = DgnStyleId((uint64_t)fbStyle->id());
 
     if (fbStyle->has_name())
         style.m_name = fbStyle->name()->c_str();

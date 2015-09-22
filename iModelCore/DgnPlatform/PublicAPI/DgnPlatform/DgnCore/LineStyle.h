@@ -276,7 +276,7 @@ struct V10Symbol : V10ComponentBase
 {
     SymbolRange m_range;
     double      m_scale;
-    int64_t     m_geomPartId;
+    uint64_t    m_geomPartId;
 
     uint32_t    m_lineColor;
     uint32_t    m_fillColor;

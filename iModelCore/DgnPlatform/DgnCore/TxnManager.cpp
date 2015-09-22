@@ -173,9 +173,6 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
     if (m_dgndb.IsReadonly())
         return;
 
-    // get the next available id now, before we perform any txns, so if we delete and then undo the last element we don't reuse its id
-    m_dgndb.Elements().GetNextId(); 
-
     // whenever we open a Briefcase for write access, enable tracking
     if (m_dgndb.IsBriefcase())
         EnableTracking(true);
@@ -983,7 +980,7 @@ void dgn_TxnTable::Model::AddChange(Changes::Change const& change, ChangeType ch
             return;
         }
 
-    DgnModelId modelId = DgnModelId(change.GetValue(0, stage).GetValueInt64());
+    DgnModelId modelId = DgnModelId(change.GetValue(0, stage).GetValueUInt64());
     BeAssert(modelId.IsValid());
     
     enum Column : int {ModelId=1,ChangeType=2};
@@ -1138,7 +1135,7 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
             return;
         }
 
-    DgnElementId elementId = DgnElementId(change.GetValue(0, stage).GetValueInt64());
+    DgnElementId elementId = DgnElementId(change.GetValue(0, stage).GetValueUInt64());
     DgnModelId modelId;
 
     if (ChangeType::Update == changeType)
@@ -1147,7 +1144,7 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
         modelId = m_txnMgr.GetDgnDb().Elements().QueryModelId(elementId);
         }
     else
-        modelId = DgnModelId(change.GetValue(2, stage).GetValueInt64());   // assumes DgnModelId is column 2
+        modelId = DgnModelId(change.GetValue(2, stage).GetValueUInt64());   // assumes DgnModelId is column 2
 
     AddElement(elementId, modelId, changeType);
     }

@@ -329,7 +329,7 @@ private:
     virtual bool _IsInSet(int nVals, BeSQLite::DbValue const* vals) const
         {
         BeAssert(nVals == 1);
-        return Contains(IdType(vals[0].GetValueInt64()));
+        return Contains(IdType(vals[0].GetValueUInt64()));
         }
 public:
     IdSet(){static_assert(sizeof(IdType)==sizeof(BeSQLite::BeRepositoryBasedId),"IdSets may only contain BeRepositoryBasedId");}

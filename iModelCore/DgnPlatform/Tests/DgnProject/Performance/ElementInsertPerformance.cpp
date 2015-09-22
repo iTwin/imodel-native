@@ -100,8 +100,8 @@ TEST_F(PerformanceElementItem, CRUD)
 }
 
 //static
-const DgnCategoryId PerformanceElementTestFixture::s_catId = DgnCategoryId((int64_t)123);
-const DgnAuthorityId PerformanceElementTestFixture::s_codeAuthorityId = DgnAuthorityId((int64_t) 1);
+const DgnCategoryId PerformanceElementTestFixture::s_catId = DgnCategoryId((uint64_t)123);
+const DgnAuthorityId PerformanceElementTestFixture::s_codeAuthorityId = DgnAuthorityId((uint64_t) 1);
 Utf8CP const PerformanceElementTestFixture::s_textVal = "bla bla";
 const double PerformanceElementTestFixture::s_doubleVal = -3.1415;
 Utf8CP const PerformanceElementTestFixture::s_testSchemaXml =
