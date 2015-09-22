@@ -25,14 +25,14 @@ BentleyStatus ECDb_ECSqlSelect ()
     Utf8CP ecsql = "SELECT FirstName, LastName, Birthday FROM stco.Employee WHERE LastName LIKE 'S%' ORDER BY LastName, FirstName";
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare (ecdb, ecsql);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         {
         // do error handling here...
         return ERROR;
         }
 
     // Execute statement and step over each row of the result set
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         // Property indices in result set are 0-based -> 0 refers to first property in result set
         Utf8CP firstName = statement.GetValueText (0);
@@ -72,14 +72,14 @@ BentleyStatus ECDb_ECSqlSelectBuilder ()
     // Prepare statement
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare (ecdb, ecsql.c_str ());
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         {
         // do error handling here...
         return ERROR;
         }
 
     // Execute statement and step over each row of the result set
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         // Property indices in result set are 0-based -> 0 refers to first property in result set
         Utf8CP firstName = statement.GetValueText (0);
@@ -107,7 +107,7 @@ BentleyStatus ECDb_ECSqlSelectStructProps ()
     ECSqlStatement statement;
     statement.Prepare (ecdb, ecsql);
 
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step ())
         {
         Utf8CP firstName = statement.GetValueText (0);
         //second item in select clause is a struct prop, so call GetStructReader
@@ -162,7 +162,7 @@ BentleyStatus ECDb_ECSqlSelectStructPropMembers ()
     ECSqlStatement statement;
     statement.Prepare (ecdb, ecsql);
 
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         Utf8CP firstName = statement.GetValueText (0);
 
@@ -194,7 +194,7 @@ BentleyStatus ECDb_ECSqlSelectPrimArrayProps ()
     ECSqlStatement statement;
     statement.Prepare (ecdb, ecsql);
 
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         Utf8CP firstName = statement.GetValueText (0);
         Utf8CP lastName = statement.GetValueText (1);
@@ -227,7 +227,7 @@ BentleyStatus ECDb_ECSqlSelectStructArrayProps ()
     ECSqlStatement statement;
     statement.Prepare (ecdb, ecsql);
 
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         Utf8CP firstName = statement.GetValueText (0);
         IECSqlArrayValue const& certStructArray = statement.GetValueArray (1);
@@ -289,7 +289,7 @@ BentleyStatus ECDb_ECSqlStatementAndDateTime ()
     ECSqlStatement statement;
     statement.Prepare (ecdb, ecsql);
 
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         DateTime birthday = statement.GetValueDateTime (0); //dt.GetInfo ().GetComponent () will amount to DateTime::Component::Date
         DateTime lastModified = statement.GetValueDateTime (1); //dt.GetInfo ().GetKind () will amount to DateTime::Kind::Utc
@@ -332,17 +332,17 @@ BentleyStatus ECDb_ECSqlSelectWithJoin ()
     statement.BindText (1, candidateEmployeeFirstName, IECSqlBinder::MakeCopy::No);
     statement.BindText (2, candidateEmployeeLastName, IECSqlBinder::MakeCopy::No);
     // Execute statement
-    ECSqlStepStatus stat = statement.Step ();
+    DbResult stat = statement.Step ();
     switch (stat)
         {
-        case ECSqlStepStatus::HasRow:
+        case BE_SQLITE_ROW:
             {
             // Note: GetValue parameter indices are 0-based!
             Utf8CP companyName = statement.GetValueText (0);
             printf ("%s %s works for company '%s'.\n", candidateEmployeeFirstName, candidateEmployeeLastName, companyName);
             break;
             }
-        case ECSqlStepStatus::Done:
+        case BE_SQLITE_DONE:
             printf ("No company found for which %s %s works.\n", candidateEmployeeFirstName, candidateEmployeeLastName);
             break;
 
@@ -359,7 +359,7 @@ BentleyStatus ECDb_ECSqlSelectWithJoin ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb_ECSqlStatementBindingPrimitives ()
+BentleyStatus ECDb_ECSqlStatementBindingPrimitives()
     {
     ECDb ecdb;
 
@@ -368,36 +368,38 @@ BentleyStatus ECDb_ECSqlStatementBindingPrimitives ()
     // Prepare statement
     Utf8CP ecsql = "INSERT INTO stco.Employee (FirstName, LastName, Birthday) VALUES (?, ?, ?)";
     ECSqlStatement statement;
-    statement.Prepare (ecdb, ecsql);
+    statement.Prepare(ecdb, ecsql);
 
     //*** #1 Insert first employee 
     // Bind values to parameters
     // Note: bind parameter indices are 1-based!
-    statement.BindText (1, "Joan", IECSqlBinder::MakeCopy::Yes);
-    statement.BindText (2, "Rieck", IECSqlBinder::MakeCopy::Yes);
-    statement.BindDateTime (3, DateTime (1965, 4, 12));
+    statement.BindText(1, "Joan", IECSqlBinder::MakeCopy::Yes);
+    statement.BindText(2, "Rieck", IECSqlBinder::MakeCopy::Yes);
+    statement.BindDateTime(3, DateTime(1965, 4, 12));
 
     // Execute statement
     ECInstanceKey ecInstanceKey;
-    ECSqlStepStatus stepStat = statement.Step (ecInstanceKey);
-    if (stepStat != ECSqlStepStatus::Done)
-        //INSERT statements are expected to return ECSqlStepStatus::Done if successful.
+    if (BE_SQLITE_DONE != statement.Step(ecInstanceKey))
+        {
+        //INSERT statements are expected to return BE_SQLITE_DONE if successful.
         return ERROR;
+        }
 
     //*** #2 Insert second employee 
-    statement.Reset (); //reset statement, so that it can be reused
-    statement.ClearBindings (); //clear previous bindings
+    statement.Reset(); //reset statement, so that it can be reused
+    statement.ClearBindings(); //clear previous bindings
 
     // Bind values to parameters
-    statement.BindText (1, "Bill", IECSqlBinder::MakeCopy::Yes);
-    statement.BindText (2, "Becker", IECSqlBinder::MakeCopy::Yes);
-    statement.BindDateTime (3, DateTime (1959, 1, 31));
+    statement.BindText(1, "Bill", IECSqlBinder::MakeCopy::Yes);
+    statement.BindText(2, "Becker", IECSqlBinder::MakeCopy::Yes);
+    statement.BindDateTime(3, DateTime(1959, 1, 31));
 
     // Execute statement
-    stepStat = statement.Step (ecInstanceKey);
-    if (stepStat != ECSqlStepStatus::Done)
-        //INSERT statements are expected to return ECSqlStepStatus::Done if successful.
+    if (BE_SQLITE_DONE != statement.Step(ecInstanceKey))
+        {
+        //INSERT statements are expected to return BE_SQLITE_DONE if successful.
         return ERROR;
+        }
 
     //__PUBLISH_EXTRACT_END__
     return SUCCESS;
@@ -427,7 +429,7 @@ BentleyStatus ECDb_ECSqlStatementBindingWithNamedParameters ()
     statement.BindInt (pageSizeParameterIndex, pageSize);
     statement.BindInt (pageNoParameterIndex, pageNumber);
 
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         //process first page
         }
@@ -440,7 +442,7 @@ BentleyStatus ECDb_ECSqlStatementBindingWithNamedParameters ()
     statement.BindInt (pageSizeParameterIndex, pageSize);
     statement.BindInt (pageNoParameterIndex, pageNumber);
 
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         //process second page
         }
@@ -467,41 +469,42 @@ BentleyStatus ECDb_ECSqlStatementBindingStructs ()
     Utf8CP ecsql = "INSERT INTO stco.Employee (FirstName, LastName, Address) VALUES (?, ?, ?)";
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare (ecdb, ecsql);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return ERROR;
 
     // Bind values to parameters
     // Note: bind parameter indices are 1-based!
     stat = statement.BindText (1, "Joan", IECSqlBinder::MakeCopy::Yes);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return ERROR;
     
     stat = statement.BindText (2, "Smith", IECSqlBinder::MakeCopy::Yes);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return ERROR;
 
     IECSqlStructBinder& addressBinder = statement.BindStruct (3);
 
     stat = addressBinder.GetMember ("Street").BindText ("2000 Main Street", IECSqlBinder::MakeCopy::Yes);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return ERROR;
 
     stat = addressBinder.GetMember ("Zip").BindInt (10014);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return ERROR;
 
     stat = addressBinder.GetMember ("City").BindText ("New York", IECSqlBinder::MakeCopy::Yes);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return ERROR;
 
     //Note: all other members of the struct Address which are not set through the binding API are set to DB NULL.
 
     // Execute statement
     ECInstanceKey ecInstanceKey;
-    ECSqlStepStatus stepStat = statement.Step (ecInstanceKey);
-    if (stepStat != ECSqlStepStatus::Done)
-        //INSERT statements are expected to return ECSqlStepStatus::Done if successful.
+    if (BE_SQLITE_DONE != statement.Step(ecInstanceKey))
+        {
+        //INSERT statements are expected to return BE_SQLITE_DONE if successful.
         return ERROR;
+        }
 
     //__PUBLISH_EXTRACT_END__
     return SUCCESS;
@@ -532,7 +535,7 @@ BentleyStatus ECDb_ECSqlStatementBindingPrimArrays ()
         {
         IECSqlBinder& phoneNumberBinder = phoneNumbersBinder.AddArrayElement ();
         ECSqlStatus stat = phoneNumberBinder.BindText (phoneNumber.c_str (), IECSqlBinder::MakeCopy::Yes);
-        if (stat != ECSqlStatus::Success)
+        if (!stat.IsSuccess())
             return ERROR;
         }
 
@@ -541,10 +544,11 @@ BentleyStatus ECDb_ECSqlStatementBindingPrimArrays ()
     statement.BindText (3, "Smith", IECSqlBinder::MakeCopy::Yes);
 
     // Execute statement
-    ECSqlStepStatus stepStat = statement.Step ();
-    if (stepStat != ECSqlStepStatus::Done)
-        //UPDATE statements are expected to return ECSqlStepStatus::Done if successful.
+    if (BE_SQLITE_DONE != statement.Step())
+        {
+        //UPDATE statements are expected to return BE_SQLITE_DONE if successful.
         return ERROR;
+        }
 
     //__PUBLISH_EXTRACT_END__
     return SUCCESS;
@@ -553,7 +557,7 @@ BentleyStatus ECDb_ECSqlStatementBindingPrimArrays ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb_ECSqlStatementBindingStructArrays ()
+BentleyStatus ECDb_ECSqlStatementBindingStructArrays()
     {
     ECDb ecdb;
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlStatementBindingStructArrays.sampleCode
@@ -564,31 +568,30 @@ BentleyStatus ECDb_ECSqlStatementBindingStructArrays ()
     // Prepare statement
     Utf8CP ecsql = "UPDATE ONLY stco.Employee SET Certifications = ? WHERE FirstName = ? AND LastName = ?";
     ECSqlStatement statement;
-    statement.Prepare (ecdb, ecsql);
+    statement.Prepare(ecdb, ecsql);
 
     // Bind values to parameters
     // Note: bind parameter indices are 1-based!
-    IECSqlArrayBinder& certificationsBinder = statement.BindArray (1, //parameter index
-                                                                2); //initial array capacity
+    IECSqlArrayBinder& certificationsBinder = statement.BindArray(1, //parameter index
+                                                                  2); //initial array capacity
 
-    //AddArrayElement gets a binder for the array element. As the array element is a struct, we need to call
-    //BindStruct (just as with other struct properties)
-    IECSqlStructBinder& firstCertBinder = certificationsBinder.AddArrayElement ().BindStruct ();
-    firstCertBinder.GetMember ("Name").BindText ("Certified Engineer Assoc.", IECSqlBinder::MakeCopy::Yes);
-    firstCertBinder.GetMember ("StartsOn").BindDateTime (DateTime (2014, 01, 28));
+      //AddArrayElement gets a binder for the array element. As the array element is a struct, we need to call
+      //BindStruct (just as with other struct properties)
+    IECSqlStructBinder& firstCertBinder = certificationsBinder.AddArrayElement().BindStruct();
+    firstCertBinder.GetMember("Name").BindText("Certified Engineer Assoc.", IECSqlBinder::MakeCopy::Yes);
+    firstCertBinder.GetMember("StartsOn").BindDateTime(DateTime(2014, 01, 28));
 
-    IECSqlStructBinder& secondCertBinder = certificationsBinder.AddArrayElement ().BindStruct ();
-    secondCertBinder.GetMember ("Name").BindText ("Professional Engineers", IECSqlBinder::MakeCopy::Yes);
-    secondCertBinder.GetMember ("StartsOn").BindDateTime (DateTime (2011, 05, 14));
+    IECSqlStructBinder& secondCertBinder = certificationsBinder.AddArrayElement().BindStruct();
+    secondCertBinder.GetMember("Name").BindText("Professional Engineers", IECSqlBinder::MakeCopy::Yes);
+    secondCertBinder.GetMember("StartsOn").BindDateTime(DateTime(2011, 05, 14));
 
     //now bind to parameter 2 and 3 (primitive binding) (skipping error handling for better readability)
-    statement.BindText (2, "Patty", IECSqlBinder::MakeCopy::Yes);
-    statement.BindText (3, "Rieck", IECSqlBinder::MakeCopy::Yes);
+    statement.BindText(2, "Patty", IECSqlBinder::MakeCopy::Yes);
+    statement.BindText(3, "Rieck", IECSqlBinder::MakeCopy::Yes);
 
     // Execute statement
-    ECSqlStepStatus stepStat = statement.Step ();
-    if (stepStat != ECSqlStepStatus::Done)
-        //UPDATE statements are expected to return ECSqlStepStatus::Done if successful.
+    if (BE_SQLITE_DONE != statement.Step())
+        //UPDATE statements are expected to return BE_SQLITE_DONE if successful.
         return ERROR;
 
 
@@ -625,7 +628,7 @@ BentleyStatus ECDb_ECSqlColumnInfoOnNestedLevels ()
             printf ("ECStruct array type\n");
         };
 
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         printf ("Top level\n");
         ECSqlColumnInfoCR firstNameColumnInfo = statement.GetColumnInfo (0);
@@ -670,7 +673,7 @@ BentleyStatus ECDb_ECSqlInsert ()
     // Prepare statement
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare (ecdb, ecsql);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         {
         // do error handling here...
         return ERROR;
@@ -685,9 +688,8 @@ BentleyStatus ECDb_ECSqlInsert ()
 
     // Execute statement
     ECInstanceKey newECInstanceKey;
-    ECSqlStepStatus stepStat = statement.Step (newECInstanceKey);
     // Note: For non-select statements BE_SQLITE_DONE indicates successful execution
-    if (stepStat != ECSqlStepStatus::Done)
+    if (BE_SQLITE_DONE != statement.Step(newECInstanceKey))
         {
         // do error handling here...
         return ERROR;
@@ -705,8 +707,7 @@ BentleyStatus ECDb_ECSqlInsert ()
     statement.BindDateTime (3, DateTime (1979, 12, 1));
 
     // Execute statement
-    stepStat = statement.Step (newECInstanceKey);
-    if (stepStat != ECSqlStepStatus::Done)
+    if (BE_SQLITE_DONE != statement.Step(newECInstanceKey))
         {
         // do error handling here...
         return ERROR;
@@ -740,7 +741,7 @@ BentleyStatus ECDb_ECSqlInsertRelation ()
     // Prepare statement
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare (ecdb, ecsql);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         {
         // do error handling here...
         return ERROR;
@@ -757,9 +758,8 @@ BentleyStatus ECDb_ECSqlInsertRelation ()
 
     // Execute statement
     ECInstanceKey newRelationshipECInstanceKey;
-    ECSqlStepStatus stepStat = statement.Step (newRelationshipECInstanceKey);
     // Note: For non-select statements BE_SQLITE_DONE indicates successful execution
-    if (stepStat != ECSqlStepStatus::Done)
+    if (BE_SQLITE_DONE != statement.Step (newRelationshipECInstanceKey))
         {
         // do error handling here...
         return ERROR;
@@ -777,8 +777,7 @@ BentleyStatus ECDb_ECSqlInsertRelation ()
     statement.BindInt64 (4, employeeClass->GetId ());
 
     // Execute statement
-    stepStat = statement.Step (newRelationshipECInstanceKey);
-    if (stepStat != ECSqlStepStatus::Done)
+    if (BE_SQLITE_DONE != statement.Step (newRelationshipECInstanceKey))
         {
         // do error handling here...
         return ERROR;
@@ -832,7 +831,7 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
     ECSqlStatement statement;
     statement.Prepare(ecdb, "SELECT Radius, (3.1415 * POW(Radius,2)) AS Area from stco.RoundTable");
 
-    while (statement.Step() == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         double radius = statement.GetValueDouble(0);
         double area = statement.GetValueDouble(1);
@@ -897,7 +896,7 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
     ECSqlStatement statement;
     statement.Prepare(ecdb, "SELECT Radius, (3.1415 * POW(Radius,2)) AS Area from stco.RoundTable");
 
-    while (statement.Step() == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         double radius = statement.GetValueDouble(0);
         double area = statement.GetValueDouble(1);

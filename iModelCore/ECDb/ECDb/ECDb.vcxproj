@@ -70,6 +70,7 @@
     <ClCompile Include="ECSql\ECSqlPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementCache.cpp" />
+    <ClCompile Include="ECSql\ECSqlStatus.cpp" />
     <ClCompile Include="ECSql\ECSqlStepTask.cpp" />
     <ClCompile Include="ECSql\ECSqlTypeInfo.cpp" />
     <ClCompile Include="ECSql\ECSqlUpdatePreparer.cpp" />
@@ -96,7 +97,6 @@
     <ClCompile Include="ECSql\Parser\SqlFlex.cpp" />
     <ClCompile Include="ECSql\Parser\SqlNode.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementImpl.cpp" />
-    <ClCompile Include="ECSql\ECSqlStatementScenarios.cpp" />
     <ClCompile Include="ECsql\PointMappedToColumnsECSqlField.cpp" />
     <ClCompile Include="ECSql\PointECSqlBinder.cpp" />
     <ClCompile Include="ECSql\PrimitiveArrayMappedToSingleColumnECSqlField.cpp" />
@@ -135,6 +135,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlBuilder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatement.h" />
+    <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatus.h" />
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlValue.h" />
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />

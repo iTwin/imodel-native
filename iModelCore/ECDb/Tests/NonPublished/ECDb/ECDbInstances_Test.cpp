@@ -135,7 +135,7 @@ TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     ECSqlStatement statement;
     ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (db, ecsql.c_str ()));
     ASSERT_EQ (ECSqlStatus::Success, statement.BindText (1, rootName.c_str (), IECSqlBinder::MakeCopy::No));
-    EXPECT_EQ (ECSqlStepStatus::Done, statement.Step ());
+    EXPECT_EQ (BE_SQLITE_DONE, statement.Step ());
 
     // Insert one instnace
     Json::Value rootInstance;
@@ -149,7 +149,7 @@ TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     statement.Reset ();
     statement.ClearBindings ();
     ASSERT_EQ (ECSqlStatus::Success, statement.BindText (1, rootName.c_str (), IECSqlBinder::MakeCopy::No));
-    EXPECT_EQ (ECSqlStepStatus::HasRow, statement.Step ());
+    EXPECT_EQ (BE_SQLITE_ROW, statement.Step ());
     EXPECT_EQ (ECInstanceId (1), statement.GetValueId <ECInstanceId> (0));
     }
 
@@ -247,16 +247,16 @@ TEST(ECDbInstances, QuoteTest)
 
     ECSqlStatement stmt1;
     ASSERT_TRUE (stmt1.Prepare (ecdb, "INSERT INTO stco.ClassWithPrimitiveProperties (stringProp) VALUES('''a''a''')") == ECSqlStatus::Success);
-    ASSERT_TRUE (stmt1.Step () == ECSqlStepStatus::Done);
+    ASSERT_TRUE (stmt1.Step () == BE_SQLITE_DONE);
     ECSqlStatement stmt2;
     ASSERT_TRUE (stmt2.Prepare (ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''a''a'''") == ECSqlStatus::Success);
-    ASSERT_TRUE (stmt2.Step () == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stmt2.Step () == BE_SQLITE_ROW);
      ECSqlStatement stmt3;
     ASSERT_TRUE (stmt3.Prepare (ecdb, "UPDATE ONLY stco.ClassWithPrimitiveProperties SET stringProp = '''g''''g'''") == ECSqlStatus::Success);
-    ASSERT_TRUE (stmt3.Step () == ECSqlStepStatus::Done);
+    ASSERT_TRUE (stmt3.Step () == BE_SQLITE_DONE);
      ECSqlStatement stmt4;
     ASSERT_TRUE (stmt4.Prepare (ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''g''''g'''") == ECSqlStatus::Success);
-    ASSERT_TRUE (stmt4.Step () == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stmt4.Step () == BE_SQLITE_ROW);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                          04/12
@@ -380,13 +380,13 @@ TEST(ECDbInstances, InsertECInstancesWithNullValues)
     
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, ecsql.c_str ());
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     stat = statement.BindId (1, instanceKey.GetECInstanceId ());
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     int rowCount = 0;
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (statement.Step () == BE_SQLITE_ROW)
         {
         ++rowCount;
         const int propCount = statement.GetColumnCount ();
@@ -429,17 +429,17 @@ TEST(ECDbInstances, ECInstanceAdapterGetECInstanceWithNullValues)
 
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, ecsql.c_str ());
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     stat = statement.BindId (1, instanceKey.GetECInstanceId ());
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     ECInstanceECSqlSelectAdapter dataAdapter (statement);
 
     ECValue value;
     int rowCount = 0;
-    ECSqlStepStatus result;
-    while ((result = statement.Step ()) == ECSqlStepStatus::HasRow)
+    DbResult result;
+    while ((result = statement.Step ()) == BE_SQLITE_ROW)
         {
         ++rowCount;
         IECInstancePtr instance = dataAdapter.GetInstance ();
@@ -625,7 +625,7 @@ TEST(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     ECSqlStatus status = ecStatement.Prepare (db, ecSql.GetUtf8CP());
     ASSERT_TRUE (ECSqlStatus::Success == status);
 
-    while (ecStatement.Step() == ECSqlStepStatus::HasRow)
+    while (ecStatement.Step() == BE_SQLITE_ROW)
         {
         IECSqlArrayValue const& arrayValue = ecStatement.GetValueArray (0);
         int arrayLength = arrayValue.GetArrayLength ();
@@ -690,7 +690,7 @@ TEST(ECDbInstances, UpdateArrayProperty)
     ASSERT_TRUE (ECSqlStatus::Success == status);
     ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
 
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == ecStatement.Step());
+    ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
     IECInstancePtr selectedInstance = dataAdapter.GetInstance();
     ASSERT_TRUE (selectedInstance.IsValid());
 
@@ -716,7 +716,7 @@ TEST(ECDbInstances, UpdateArrayProperty)
     ASSERT_TRUE (ECSqlStatus::Success == status2);
     ECInstanceECSqlSelectAdapter dataAdapter2 (ecStatement2);
 
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == ecStatement2.Step());
+    ASSERT_TRUE (BE_SQLITE_ROW == ecStatement2.Step());
     IECInstancePtr updatedInstance = dataAdapter2.GetInstance();
     ASSERT_TRUE (updatedInstance.IsValid());
 
@@ -750,8 +750,8 @@ TEST(ECDbInstances, UpdateECInstances)
         ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
 
         ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
-        ECSqlStepStatus stepStatus = ecStatement.Step();
-        ASSERT_TRUE(ECSqlStepStatus::HasRow == stepStatus);
+        DbResult stepStatus = ecStatement.Step();
+        ASSERT_TRUE(BE_SQLITE_ROW == stepStatus);
 
         // First, verify that we can read what we wrote
         IECInstancePtr selectedInstance = dataAdapter.GetInstance();
@@ -770,7 +770,7 @@ TEST(ECDbInstances, UpdateECInstances)
         ecStatement.Reset();
 
         stepStatus = ecStatement.Step();
-        ASSERT_TRUE(ECSqlStepStatus::HasRow == stepStatus);
+        ASSERT_TRUE(BE_SQLITE_ROW == stepStatus);
 
         int nColumns = ecStatement.GetColumnCount();
         LOG.infov("Getting values for '%s' (%lld) ECInstanceId=%lld", ecClass.GetFullName(), ecClass.GetId(), importedInstanceId.GetValue());
@@ -850,7 +850,7 @@ TEST(ECDbInstances, UpdateECInstances)
         // now read back the instance from db
         ecStatement.Reset();
         stepStatus = ecStatement.Step();
-        ASSERT_TRUE(ECSqlStepStatus::HasRow == stepStatus);
+        ASSERT_TRUE(BE_SQLITE_ROW == stepStatus);
 
         IECInstancePtr actual = dataAdapter.GetInstance();
         ASSERT_TRUE (actual.IsValid());
@@ -901,7 +901,7 @@ TEST(ECDbInstances, FindECInstances)
             ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
 
             rows = 0;
-            while (ecStatement.Step() == ECSqlStepStatus::HasRow)
+            while (ecStatement.Step() == BE_SQLITE_ROW)
                 {
                 resultInstance = dataAdapter.GetInstance();
                 ASSERT_TRUE (resultInstance.IsValid());
@@ -920,7 +920,7 @@ TEST(ECDbInstances, FindECInstances)
             ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
 
             rows = 0;
-            while (ecStatement.Step() == ECSqlStepStatus::HasRow)
+            while (ecStatement.Step() == BE_SQLITE_ROW)
                 {
                 resultInstance = dataAdapter.GetInstance();
                 ASSERT_TRUE (resultInstance.IsValid());
@@ -939,7 +939,7 @@ TEST(ECDbInstances, FindECInstances)
             ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
 
             rows = 0;
-            while (ecStatement.Step() == ECSqlStepStatus::HasRow)
+            while (ecStatement.Step() == BE_SQLITE_ROW)
                 {
                 resultInstance = dataAdapter.GetInstance();
                 ASSERT_TRUE (resultInstance.IsValid());
@@ -976,7 +976,7 @@ TEST(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     int rows = 0;
     ECValue v;
     IECInstancePtr resultInstance = nullptr;
-    while (ecStatement.Step() == ECSqlStepStatus::HasRow)
+    while (ecStatement.Step() == BE_SQLITE_ROW)
         {
         BeTest::SetFailOnAssert (false);
         resultInstance = dataAdapter.GetInstance();
@@ -993,7 +993,7 @@ TEST(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     rows = 0;
     ECClassCP ecClass = schema->GetClassP ("Bar");
     ASSERT_TRUE (ecClass != nullptr) << "ECDbTestSchemaManager::GetClassP returned null";
-    while (ecStatement.Step() == ECSqlStepStatus::HasRow)
+    while (ecStatement.Step() == BE_SQLITE_ROW)
         {
         resultInstance = dataAdapter.GetInstance(ecClass->GetId());
         ASSERT_TRUE (resultInstance.IsValid());
@@ -1029,7 +1029,7 @@ TEST(ECDbInstances, SelectClause)
         {
         // ECSQL should honor the order of the ecColumns from the select clause
         ASSERT_TRUE (ECSqlStatus::Success == ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
-        ASSERT_TRUE (ECSqlStepStatus::HasRow == ecStatement.Step());
+        ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
         jobTitle1  = ecStatement.GetValueText(0);
         managerId1 = ecStatement.GetValueInt(1);
         EXPECT_TRUE (ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));
@@ -1039,7 +1039,7 @@ TEST(ECDbInstances, SelectClause)
 
         {
         ASSERT_TRUE (ECSqlStatus::Success == ecStatement.Prepare (db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
-        ASSERT_TRUE (ECSqlStepStatus::HasRow == ecStatement.Step());
+        ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
         Utf8String jobTitle2  = ecStatement.GetValueText(0);
         int        managerId2 = ecStatement.GetValueInt(1);
         EXPECT_TRUE (ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));
@@ -1053,7 +1053,7 @@ TEST(ECDbInstances, SelectClause)
         {
         // ECSQL SelectAll (aka '*') should select in same order as ECProperties appear in the ECSchema
         ASSERT_TRUE (ECSqlStatus::Success == ecStatement.Prepare (db, "SELECT * FROM [StartupCompany].[Employee]"));
-        ASSERT_TRUE (ECSqlStepStatus::HasRow == ecStatement.Step());
+        ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
         EXPECT_TRUE (ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("ECInstanceId"));
         EXPECT_TRUE (ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("EmployeeID"));
         EXPECT_TRUE (ecStatement.GetColumnInfo(2).GetProperty()->GetName().Equals("FirstName" ));

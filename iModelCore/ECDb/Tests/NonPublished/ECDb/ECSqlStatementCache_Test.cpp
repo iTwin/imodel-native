@@ -31,14 +31,14 @@ TEST (ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
         ASSERT_TRUE (stmt->IsPrepared ());
         ASSERT_EQ (stmt->BindText (1, "Hello", IECSqlBinder::MakeCopy::No), ECSqlStatus::Success) << "Binding string value failed";
         ASSERT_EQ (stmt->BindInt (2, 1), ECSqlStatus::Success) << "Binding Integer Value failed";
-        ASSERT_TRUE (stmt->Step () == ECSqlStepStatus::Done);
+        ASSERT_TRUE (stmt->Step () == BE_SQLITE_DONE);
         }
 
     ASSERT_EQ (cache.Size (), 1);
 
         {
         CachedECSqlStatementPtr stmt = cache.GetPreparedStatement (ecdb, ecSqlSelect);
-        ASSERT_EQ (stmt->Step (), ECSqlStepStatus::HasRow);
+        ASSERT_EQ (stmt->Step (), BE_SQLITE_ROW);
         Utf8String formateName = stmt->GetValueText (0);
         ASSERT_EQ (formateName, "Hello");
         ASSERT_EQ (stmt->GetValueInt (1), 1);
@@ -50,7 +50,7 @@ TEST (ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
         CachedECSqlStatementPtr stmt = cache.GetPreparedStatement (ecdb, ecSqlInsert);
         ASSERT_EQ (stmt->BindText (1, "World", IECSqlBinder::MakeCopy::No), ECSqlStatus::Success) << "Binding string value failed";
         ASSERT_EQ (stmt->BindInt (2, 2), ECSqlStatus::Success) << "Binding Integer Value failed";
-        ASSERT_TRUE (stmt->Step () == ECSqlStepStatus::Done);
+        ASSERT_TRUE (stmt->Step () == BE_SQLITE_DONE);
         }
     //get existing cached statement so size of cache should remain the same i.e 2
     ASSERT_EQ (cache.Size (), 2) << "Cache is expected to have two ECSqlStatements";
@@ -59,7 +59,7 @@ TEST (ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
         {
         size_t rowCount = 0;
         CachedECSqlStatementPtr stmt = cache.GetPreparedStatement (ecdb, ecSqlSelect);
-        while (stmt->Step () != ECSqlStepStatus::Done)
+        while (stmt->Step () != BE_SQLITE_DONE)
             {
             rowCount++;
             }
@@ -253,15 +253,7 @@ TEST(ECSqlStatementCacheTests, DefaultEventHandlerAndCachedECSqlStatement)
         {
         CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, "UPDATE ONLY ecsql.PSA SET I=123");
         ASSERT_TRUE(stmt != nullptr);
-
-        //TODO_ROWAFFECTED
-        
-        //stmt->EnableDefaultEventHandler();
-        //ASSERT_TRUE(stmt->GetDefaultEventHandler() != nullptr);
-        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt->Step ());
-        //TODO_ROWAFFECTED
-
-        //ASSERT_EQ(rowsPerInstances, stmt->GetDefaultEventHandler ()->GetInstancesAffectedCount());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step ());
         }
     }
 

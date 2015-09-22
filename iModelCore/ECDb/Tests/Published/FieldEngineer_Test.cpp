@@ -279,7 +279,7 @@ ECInstanceId GetIdOfPerson (ECDbR ecDb, ECClassCR ecClass, Utf8CP firstName, Utf
 
     statement.BindText (1, firstName, IECSqlBinder::MakeCopy::No);
     statement.BindText (2, lastName, IECSqlBinder::MakeCopy::No);
-    if (ECSqlStepStatus::HasRow != statement.Step())
+    if (BE_SQLITE_ROW != statement.Step())
         return ECInstanceId ();
 
     return statement.GetValueId<ECInstanceId> (0);
@@ -296,7 +296,7 @@ int CountRows (ECDbR ecDb, Utf8CP ecSqlWithoutSelect)
     ecSql.append (ecSqlWithoutSelect);
     if (ECSqlStatus::Success != stmt.Prepare (ecDb, ecSql.c_str()))
         return -1;
-    if (ECSqlStepStatus::HasRow != stmt.Step())
+    if (BE_SQLITE_ROW != stmt.Step())
         return 0;
     return stmt.GetValueInt(0);
     }
@@ -370,8 +370,8 @@ TEST (FieldEngineer, Workflow)
     Utf8CP ecSqlWithoutSelect = "FROM sico.Employee WHERE LastName = 'Fish' AND FirstName = 'Gold'";
     ECSqlStatus prepareStatus = statement.Prepare (ecDb, BuildECSql ("SELECT *", ecSqlWithoutSelect).c_str());
     ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-    ECSqlStepStatus stepStatus = statement.Step();
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stepStatus);
+    DbResult stepStatus = statement.Step();
+    ASSERT_TRUE (BE_SQLITE_ROW == stepStatus);
 
     // Get (Adapt) results as JSON values
     JsonECSqlSelectAdapter jsonAdapter (statement, JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::RawNativeValues));
@@ -427,7 +427,7 @@ TEST (FieldEngineer, Workflow)
     prepareStatus = statement.Prepare (ecDb, BuildECSql ("SELECT *", ecSqlWithoutSelect).c_str());
     ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
     stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW);
     JsonECSqlSelectAdapter jsonAdapter2 (statement, JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::RawNativeValues));
     status = jsonAdapter2.GetRowInstance (currentObject);
     ASSERT_TRUE (status);
@@ -480,7 +480,7 @@ TEST (FieldEngineer, Workflow)
     statement.BindId (1, whiteSharkId);
     statement.BindId (2, lionSealId);
     stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW);
     ECInstanceId managerRelId = statement.GetValueId<ECInstanceId> (0);
     ASSERT_TRUE (managerRelId.IsValid ());
      
@@ -496,7 +496,7 @@ TEST (FieldEngineer, Workflow)
      prepareStatus = statement.Prepare (ecDb, BuildECSql ("SELECT *", ecSqlWithoutSelect).c_str());
      ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
      stepStatus = statement.Step();
-     ASSERT_TRUE (stepStatus == ECSqlStepStatus::Done); // Validate that there aren't any rows for relationship!!
+     ASSERT_TRUE (stepStatus == BE_SQLITE_DONE); // Validate that there aren't any rows for relationship!!
 
     /*
     * Retrieve specific relationship - Get SubContractorRelationship between "SubContractor" and "SalmonFish"
@@ -518,7 +518,7 @@ TEST (FieldEngineer, Workflow)
      statement.BindId (1, subContractorId);
      statement.BindId (2, salmonFishId);
      stepStatus = statement.Step();
-     ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow); 
+     ASSERT_TRUE (stepStatus == BE_SQLITE_ROW); 
      ECInstanceId subContractorRelId = statement.GetValueId<ECInstanceId> (0);
      ASSERT_TRUE (subContractorRelId.IsValid ());
 
@@ -534,7 +534,7 @@ TEST (FieldEngineer, Workflow)
     prepareStatus = statement.Prepare (ecDb, BuildECSql ("SELECT *", ecSqlWithoutSelect).c_str());
     ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
     stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::Done); // Validate that there aren't any rows for relationship!!
+    ASSERT_TRUE (stepStatus == BE_SQLITE_DONE); // Validate that there aren't any rows for relationship!!
 
     statement.Reset();
 
@@ -609,8 +609,8 @@ TEST (FieldEngineer, RelationshipIssue)
     ECSqlStatus prepareStatus = statement.Prepare (ecDb, "SELECT * FROM ONLY DSCJS.CachedFileInfoRelationship WHERE CachedFileInfoRelationship.ECInstanceId = ?");
     ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
     statement.BindId (1, InstanceToId (*cachedFileInfoRel));
-    ECSqlStepStatus stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow); 
+    DbResult stepStatus = statement.Step();
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW); 
 
     // Test retrieval of related instances
     statement.Finalize();
@@ -618,7 +618,7 @@ TEST (FieldEngineer, RelationshipIssue)
     ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
     statement.BindId (1, InstanceToId (*folder));
     stepStatus = statement.Step();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow); 
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW); 
 
     ecDb.SaveChanges();
     }
@@ -661,8 +661,8 @@ TEST (FieldEngineer, CircularReferences)
     ECSqlStatus prepareStatus = statement.Prepare (ecDb, "SELECT ECInstanceId FROM SimpleCompany.Manager WHERE FirstName = 'ImBig'"); 
     ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
     ECInstanceKeyMultiMap seedInstanceKeyMap;
-    ECSqlStepStatus stepStatus;
-    while ((stepStatus = statement.Step()) == ECSqlStepStatus::HasRow)
+    DbResult stepStatus;
+    while ((stepStatus = statement.Step()) == BE_SQLITE_ROW)
         {
         ECInstanceKeyMultiMapPair instanceEntry (managerClass->GetId(), statement.GetValueId<ECInstanceId> (0));
         seedInstanceKeyMap.insert (instanceEntry);
@@ -903,10 +903,10 @@ void RunDeleteReferentialIntegrityTestUsingECSql (bool withRelationsToCachedInfo
 
     ECSqlStatement stmt;
     auto preparedStatus = stmt.Prepare (ecdb, SqlPrintfString ("DELETE FROM ONLY [%s].[%s] WHERE ECInstanceId = ?", testSchemaName, testClassName).GetUtf8CP());
-    ASSERT_EQ ((int)preparedStatus, (int)ECSqlStatus::Success);
+    ASSERT_EQ (ECSqlStatus::Success, preparedStatus);
     stmt.BindId (1, testECInstanceKey.GetECInstanceId ());
     auto stepStatus = stmt.Step ();
-    ASSERT_EQ ((int)stepStatus, (int)ECSqlStepStatus::Done);
+    ASSERT_EQ (BE_SQLITE_DONE, stepStatus);
     timer.Stop ();
     //printf ("Detach from profiler\n");
     //getchar ();

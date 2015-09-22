@@ -72,10 +72,10 @@ struct ECInstanceUpdaterTests : ECInstanceAdaptersTestFixture
                 ECSqlStatus prepareStatus = statement.Prepare (db, ecSql.GetUtf8CP());
                 ECInstanceECSqlSelectAdapter dataAdapter (statement);
                 ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-                ECSqlStepStatus result;
+                DbResult result;
 
                 instance->GetAsMemoryECInstanceP()->MergePropertiesFromInstance(*updatedInstance);
-                while ((result = statement.Step()) == ECSqlStepStatus::HasRow)
+                while ((result = statement.Step()) == BE_SQLITE_ROW)
                     {
                     IECInstancePtr selectedInstance = dataAdapter.GetInstance ();
                     bool equal = ECDbTestUtility::CompareECInstances (*instance, *selectedInstance);
@@ -120,10 +120,10 @@ TEST_F (ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     auto tryGetLastMod = [] (DateTime& lastMod, ECDbR ecdb, ECInstanceId id)
         {
         ECSqlStatement stmt;
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "SELECT LastMod FROM ecsql.ClassWithLastModProp WHERE ECInstanceId=?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT LastMod FROM ecsql.ClassWithLastModProp WHERE ECInstanceId=?"));
 
         stmt.BindId (1, id);
-        ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) stmt.Step ());
+        ASSERT_EQ (BE_SQLITE_ROW, stmt.Step ());
         ASSERT_FALSE (stmt.IsValueNull (0));
 
         lastMod = stmt.GetValueDateTime (0);

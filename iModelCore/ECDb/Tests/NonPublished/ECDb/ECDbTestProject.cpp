@@ -843,12 +843,12 @@ BentleyStatus ECDbTestProject::GetInstances (bvector<IECInstancePtr>& instances,
     SqlPrintfString ecSql ("SELECT * FROM ONLY [%s].[%s]", ecClass->GetSchema().GetName().c_str(), className);
     ECSqlStatement ecStatement;
     ECSqlStatus status = ecStatement.Prepare (GetECDb(), ecSql.GetUtf8CP());
-    EXPECT_EQ ((int) ECSqlStatus::Success, (int) status) << "ECDbTestProject::GetInstances> Preparing ECSQL '" << ecSql.GetUtf8CP () << "' failed.";
+    EXPECT_EQ(ECSqlStatus::Success, status) << "ECDbTestProject::GetInstances> Preparing ECSQL '" << ecSql.GetUtf8CP () << "' failed.";
     if (status != ECSqlStatus::Success)
         return ERROR;
 
     ECInstanceECSqlSelectAdapter adapter (ecStatement);
-    while (ECSqlStepStatus::HasRow == ecStatement.Step())
+    while (BE_SQLITE_ROW == ecStatement.Step())
         {
         IECInstancePtr instance = adapter.GetInstance();
         BeAssert (instance.IsValid());
@@ -1519,7 +1519,7 @@ ECDbR ecdb
 
     bvector<IECInstancePtr> instances;
     ECInstanceECSqlSelectAdapter adapter (ecStatement);
-    while (ECSqlStepStatus::HasRow == ecStatement.Step())
+    while (BE_SQLITE_ROW == ecStatement.Step())
         {
         IECInstancePtr instance = adapter.GetInstance();
         BeAssert (instance.IsValid());

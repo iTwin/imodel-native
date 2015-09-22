@@ -33,10 +33,9 @@ public:
     bool IsSeverityEnabled(ECDbIssueSeverity severity) const;
 
     void Report(ECDbIssueSeverity, Utf8CP message, ...) const;
-    void ReportSqliteIssue(ECSqlStatus& mappedECSqlStatus, ECDbIssueSeverity, DbResult, Utf8CP messageHeader = nullptr) const;
+    void ReportSqliteIssue(ECDbIssueSeverity, DbResult, Utf8CP messageHeader = nullptr) const;
 
     static NativeLogging::SEVERITY ToLogSeverity(ECDbIssueSeverity sev) { return sev == ECDbIssueSeverity::Warning ? NativeLogging::LOG_WARNING : NativeLogging::LOG_ERROR; }
-    static ECSqlStatus ToECSqlStatus(DbResult sqliteStatus);
     };
 
 //=======================================================================================

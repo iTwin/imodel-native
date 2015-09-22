@@ -46,7 +46,7 @@ IECSqlStructValue const& StructMappedToColumnsECSqlField::_GetStruct () const
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& StructMappedToColumnsECSqlField::_GetPrimitive () const
     {
-    ReportError (ECSqlStatus::UserError, "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
+    ReportError (ECSqlStatus::Error, "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
     BeAssert (false && "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
     return NoopECSqlValue::GetSingleton ().GetPrimitive ();
     }
@@ -56,7 +56,7 @@ IECSqlPrimitiveValue const& StructMappedToColumnsECSqlField::_GetPrimitive () co
 //---------------------------------------------------------------------------------------
 IECSqlArrayValue const& StructMappedToColumnsECSqlField::_GetArray () const
     { 
-    ReportError (ECSqlStatus::UserError, "GetArray cannot be called for a struct column. Call GetStruct instead.");
+    ReportError (ECSqlStatus::Error, "GetArray cannot be called for a struct column. Call GetStruct instead.");
     BeAssert (false && "GetArray cannot be called for a struct column. Call GetStruct instead.");
     return NoopECSqlValue::GetSingleton ().GetArray ();
     }
@@ -108,7 +108,7 @@ bool StructMappedToColumnsECSqlField::CanRead (int columnindex) const
         {
         Utf8String errorMessage;
         errorMessage.Sprintf ("Column index '%d' passed to IECSqlStructValue::GetValue is out of bounds.", columnindex);
-        ReportError (ECSqlStatus::IndexOutOfBounds, errorMessage.c_str ());
+        ReportError (ECSqlStatus::Error, errorMessage.c_str ());
         }
 
     return canRead;

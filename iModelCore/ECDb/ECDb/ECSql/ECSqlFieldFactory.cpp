@@ -35,7 +35,7 @@ int startColumnIndex
 
     ECPropertyCP generatedProperty = nullptr;
     ECSqlStatus stat = selectPreparedState->GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, *derivedProperty, propNameExp, selectPreparedState->GetECDb());
-    if (ECSqlStatus::Success != stat)
+    if (!stat.IsSuccess())
         return stat;
 
     ECSqlColumnInfo ecsqlColumnInfo;
@@ -79,10 +79,10 @@ int startColumnIndex
 
         default:
             BeAssert (false && "Unhandled property type in value reader factory");
-            return ECSqlStatus::ProgrammerError;
+            return ECSqlStatus::Error;
         }
 
-    if (stat == ECSqlStatus::Success)
+    if (stat.IsSuccess())
         selectPreparedState->AddField (move (field));
 
     return stat;
@@ -149,18 +149,18 @@ ECSqlColumnInfo&& ecsqlColumnInfo,
 PropertyNameExp const* propertyName
 )
     {
-    PRECONDITION(propertyName != nullptr && "We donot expect computed expression in case of struct", ECSqlStatus::ProgrammerError);
+    PRECONDITION(propertyName != nullptr && "We donot expect computed expression in case of struct", ECSqlStatus::Error);
 
     if (propertyName->GetClassRefExp()->GetType() == Exp::Type::ClassName)
         {
         auto classNameExp = static_cast<ClassNameExp const*>(propertyName->GetClassRefExp());
-        PRECONDITION(classNameExp != nullptr, ECSqlStatus::ProgrammerError);
+        PRECONDITION(classNameExp != nullptr, ECSqlStatus::Error);
         auto& propertyMap = propertyName->GetPropertyMap();
         if(auto structPropertyMap = dynamic_cast<PropertyMapToInLineStructCP>(&propertyMap))
             return CreateStructMemberFields (field, sqlColumnIndex, ctx, *structPropertyMap, move (ecsqlColumnInfo));
 
         BeAssert (false && "For struct properties we only support inline mapping %s");
-        return ECSqlStatus::ProgrammerError;
+        return ECSqlStatus::Error;
         }
     if (propertyName->GetClassRefExp ()->GetType () == Exp::Type::SubqueryRef)
         {        
@@ -169,11 +169,11 @@ PropertyNameExp const* propertyName
             return CreateStructMemberFields (field, sqlColumnIndex, ctx, *structPropertyMap, move (ecsqlColumnInfo));
         
         BeAssert(false && "For struct properties we only support inline mapping %s");
-        return ECSqlStatus::ProgrammerError;
+        return ECSqlStatus::Error;
         }
 
     BeAssert(false);
-    return ECSqlStatus::ProgrammerError;
+    return ECSqlStatus::Error;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -214,13 +214,13 @@ PropertyMapCR propertyMap
     if (!arrayProperty)
         {
         BeAssert(false && "Expecting array property");
-        return ECSqlStatus::ProgrammerError;
+        return ECSqlStatus::Error;
         }
 
     if (arrayProperty->GetKind() != ARRAYKIND_Struct)
         {
         BeAssert(false && "Expecting struct array property");
-        return ECSqlStatus::ProgrammerError;
+        return ECSqlStatus::Error;
         }
 
     auto structType = arrayProperty->GetStructElementType();
@@ -264,7 +264,7 @@ PropertyMapCR propertyMap
     auto& secondaryECSqlStatement = structArrayField->GetSecondaryECSqlStatement();
     
     auto status = secondaryECSqlStatement.Prepare (ecdb, innerECSql.ToString ().c_str());
-    if (status != ECSqlStatus::Success)
+    if (!status.IsSuccess())
         return status;
 
     //Make sure we hide ECInstnaceId from user
@@ -314,7 +314,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
         if (auto childStructPropMap = dynamic_cast<PropertyMapToInLineStructCP>(childPropertyMap))
             {
             status = CreateStructMemberFields (childField, sqlColumnIndex, ctx, *childStructPropMap, move (childColumnInfo));
-            if ( status != ECSqlStatus::Success)
+            if ( !status.IsSuccess())
                 return status;
             }
         else
@@ -346,7 +346,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
         if (childField == nullptr)
             {
             BeAssert (false && "No ECSqlField instantiated");
-            return ECSqlStatus::ProgrammerError;
+            return ECSqlStatus::Error;
             }
 
         newStructField->AppendField(move (childField));

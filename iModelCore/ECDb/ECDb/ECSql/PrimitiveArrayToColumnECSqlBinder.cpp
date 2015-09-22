@@ -38,7 +38,7 @@ void PrimitiveArrayToColumnECSqlBinder::_SetSqliteIndex(int ecsqlParameterCompon
 IECSqlBinder& PrimitiveArrayToColumnECSqlBinder::_AddArrayElement()
     {
     const auto stat = ArrayConstraintValidator::ValidateMaximum(GetECDb(), GetTypeInfo(), GetCurrentArrayLength() + 1);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return GetNoopBinder(stat);
 
     m_currentArrayIndex++;
@@ -67,7 +67,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::_BindNull()
 IECSqlPrimitiveBinder& PrimitiveArrayToColumnECSqlBinder::_BindPrimitive()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to array parameter.");
-    return GetNoopBinder(ECSqlStatus::UserError).BindPrimitive();
+    return GetNoopBinder(ECSqlStatus::Error).BindPrimitive();
     }
 
 //---------------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ IECSqlPrimitiveBinder& PrimitiveArrayToColumnECSqlBinder::_BindPrimitive()
 IECSqlStructBinder& PrimitiveArrayToColumnECSqlBinder::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind struct value to array parameter.");
-    return GetNoopBinder(ECSqlStatus::UserError).BindStruct();
+    return GetNoopBinder(ECSqlStatus::Error).BindStruct();
     }
 
 //---------------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ IECSqlArrayBinder& PrimitiveArrayToColumnECSqlBinder::_BindArray(uint32_t initia
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::_OnBeforeStep()
     {
     const auto stat = ArrayConstraintValidator::Validate(GetECDb(), GetTypeInfo(), GetCurrentArrayLength());
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     PrimitiveToSingleColumnECSqlBinder blobBinder(GetECSqlStatementR (), ECSqlTypeInfo(PRIMITIVETYPE_Binary));
@@ -167,7 +167,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindNull()
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindBoolean(bool value)
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_Boolean);
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return status;
 
     return SetValue(ECValue(value));
@@ -179,7 +179,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindBoolean(
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) 
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_Binary);
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return status;
 
     ECValue v;
@@ -194,7 +194,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindBinary(c
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_IGeometry);
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return status;
 
     ECValue v;
@@ -217,19 +217,19 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_DateTime);
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return status;
 
     if (metadata != nullptr && metadata->GetKind() == DateTime::Kind::Local)
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECDb does not support to bind local date times.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     if (!m_arrayTypeInfo.DateTimeInfoMatches(metadata))
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Metadata of DateTime value to bind doesn't match the metadata on the corresponding ECProperty.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(julianDayHns);
@@ -248,7 +248,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDouble(double value)
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_Double);
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return status;
 
     return SetValue(ECValue(value));
@@ -260,7 +260,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDouble(d
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindInt(int value)
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_Integer);
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return status;
 
     return SetValue(ECValue(value));
@@ -272,7 +272,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindInt(int 
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindInt64(int64_t value)
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_Long);
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return status;
 
     return SetValue(ECValue(value));
@@ -284,7 +284,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindInt64(in
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindPoint2D (DPoint2dCR value)
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_Point2D);
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return status;
 
     return SetValue(ECValue(value));
@@ -296,7 +296,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindPoint2D 
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindPoint3D (DPoint3dCR value)
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_Point3D);
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return status;
 
     return SetValue(ECValue(value));
@@ -308,7 +308,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindPoint3D 
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) 
     {
     auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_String);
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return status;
 
     return SetValue(ECValue(value, makeCopy == IECSqlBinder::MakeCopy::Yes));
@@ -325,7 +325,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::VerifyType(Pr
         auto providedTypeName = ExpHelper::ToString(type);
 
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Primitive array element value type is incorrect. Expecting '%s' and user provided '%s' which does not match.", expectedTypeName, providedTypeName);
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;
@@ -342,7 +342,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::SetValue(ECVa
         }
 
     BeAssert(false && "Failed to set value of array element");
-    return ECSqlStatus::ProgrammerError;
+    return ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
@@ -359,7 +359,7 @@ IECSqlPrimitiveBinder& PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_B
 IECSqlStructBinder& PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindStruct()
     {
     m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind struct value to primitive array element");
-    return GetNoopBinder(ECSqlStatus::UserError).BindStruct();
+    return GetNoopBinder(ECSqlStatus::Error).BindStruct();
     }
 
 //---------------------------------------------------------------------------------------
@@ -368,7 +368,7 @@ IECSqlStructBinder& PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_Bind
 IECSqlArrayBinder& PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindArray(uint32_t initialCapacity)
     {
     m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array value to array element.");
-    return GetNoopBinder(ECSqlStatus::UserError).BindArray(initialCapacity);
+    return GetNoopBinder(ECSqlStatus::Error).BindArray(initialCapacity);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

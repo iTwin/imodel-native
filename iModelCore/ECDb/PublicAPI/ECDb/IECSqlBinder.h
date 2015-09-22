@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <ECDb/ECDbTypes.h>
+#include <ECDb/ECSqlStatus.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -141,7 +142,7 @@ public:
     //! this method to bind them to a parameter.
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECSqlStatus BindId(BeInt64Id value) { return value.IsValid() ? BindInt64(value.GetValue()) : BindNull(); }
+    ECSqlStatus BindId(BeInt64Id value) { return value.IsValid() ? BindInt64((int64_t) value.GetValue()) : BindNull(); }
 
     //! Gets a binder which is used to bind struct values
     //! @remarks In case of error, e.g. if the parameter is not a struct, a no-op binder will be returned. Calling methods on the no-op binder

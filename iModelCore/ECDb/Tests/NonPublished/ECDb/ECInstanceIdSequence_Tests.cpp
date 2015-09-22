@@ -482,11 +482,11 @@ TEST(ECInstanceIdSequenceTests, ChangeRepositoryIdTest)
     ecsqlBuilder.From(testClass).Select(ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY).Where(whereStr);
 
     ECSqlStatement statement;
-    auto ecsqlStat = statement.Prepare(ecdb, ecsqlBuilder.ToString().c_str());
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) ecsqlStat) << L"Preparing SQL to retrieve instance inserted before repo id change failed";
+    auto ecsqlStat = statement.Prepare (ecdb, ecsqlBuilder.ToString ().c_str ());
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStat) << L"Preparing SQL to retrieve instance inserted before repo id change failed";
 
     int rowCount = 0;
-    while (statement.Step() == ECSqlStepStatus::HasRow)
+    while (statement.Step () == BE_SQLITE_ROW)
         {
         rowCount++;
         ECInstanceId retrievedId = statement.GetValueId<ECInstanceId> (0);

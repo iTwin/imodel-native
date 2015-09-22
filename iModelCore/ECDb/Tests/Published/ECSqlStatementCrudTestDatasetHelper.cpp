@@ -97,10 +97,10 @@ ECInstanceId ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ECDbTestPr
         }
 
     ECInstanceKey newECInstanceKey;
-    auto stepStat = stmt.Step (newECInstanceKey);
-    if (stepStat != ECSqlStepStatus::Done)
+    DbResult stepStat = stmt.Step (newECInstanceKey);
+    if (stepStat != BE_SQLITE_DONE)
         {
-        EXPECT_EQ ((int)ECSqlStepStatus::Done, (int)stat) << "Inserting test instance with '" << ecsql << "' failed. Step failed";
+        EXPECT_EQ (BE_SQLITE_DONE, stepStat) << "Inserting test instance with '" << ecsql << "' failed. Step failed";
         return ECInstanceId ();
         }
     else

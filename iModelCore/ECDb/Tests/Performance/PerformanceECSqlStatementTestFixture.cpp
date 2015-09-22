@@ -115,7 +115,7 @@ void PerformanceECSqlStatementTestFixture::RunGetValueWithIsNullTest (GetValueAs
 
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, ecsqlBuilder.ToString ().c_str ());
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     int propertyIndex = asserter.GetPropertyIndex ();
     int rowCount = 0;
@@ -123,7 +123,7 @@ void PerformanceECSqlStatementTestFixture::RunGetValueWithIsNullTest (GetValueAs
     //PROFILEBREAK (L"Please attach a profiler to the test runner now, if you want. Then press any key to continue.");
 
     totalStopWatch.Start ();
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (statement.Step () == BE_SQLITE_ROW)
         {
         ++rowCount;
         bool isNull = statement.IsValueNull (propertyIndex);
@@ -162,12 +162,12 @@ void PerformanceECSqlStatementTestFixture::RunGetValueWithoutIsNullTest (GetValu
 
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, ecsqlBuilder.ToString ().c_str ());
-    ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     int rowCount = 0;
     // StopWatch totalStopWatch ("", true);
     totalStopWatch.Start ();
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (statement.Step () == BE_SQLITE_ROW)
         {
         ++rowCount;
         asserter.AssertGetValue (statement);

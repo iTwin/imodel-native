@@ -134,7 +134,7 @@ public:
 struct NoopECSqlBinderFactory : NonCopyableClass
     {
 private:
-    static std::map<ECSqlStatus, std::unique_ptr<NoopECSqlBinder>> s_flyweightBinderMap;
+    static std::map<ECSqlStatus::Status, std::unique_ptr<NoopECSqlBinder>> s_flyweightBinderMap;
     //static class
     NoopECSqlBinderFactory();
     ~NoopECSqlBinderFactory();

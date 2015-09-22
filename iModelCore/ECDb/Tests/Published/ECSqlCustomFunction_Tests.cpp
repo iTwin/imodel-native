@@ -173,12 +173,12 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_CallUnregisteredSqlFunction)
     Utf8CP ecsql = "SELECT I,POW(I,2) FROM ecsql.P";
 
     ECSqlStatement stmt;
-    ASSERT_EQ((int) ECSqlStatus::InvalidECSql, (int) stmt.Prepare(ecdb, ecsql)) << "ECSQL preparation expected to fail with unregistered custom ECSQL function";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, ecsql)) << "ECSQL preparation expected to fail with unregistered custom ECSQL function";
 
     PowSqlFunction func;
     ASSERT_EQ(0, ecdb.AddFunction(func));
 
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql)) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql)) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
     ASSERT_EQ(0, ecdb.RemoveFunction(func));
     }
 
@@ -194,8 +194,8 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericSqlFunction)
     //insert one more test row which has a NULL column
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (NULL)"));
-        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (NULL)"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         ecdb.SaveChanges();
         }
 
@@ -204,10 +204,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericSqlFunction)
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT I,POW(I,2) FROM ecsql.P WHERE I IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT I,POW(I,2) FROM ecsql.P WHERE I IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
 
         int rowCount = 0;
-        while (stmt.Step() == ECSqlStepStatus::HasRow)
+        while (stmt.Step() == BE_SQLITE_ROW)
             {
             rowCount++;
 
@@ -222,12 +222,12 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericSqlFunction)
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT I, POW(I,?) FROM ecsql.P WHERE I IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT I, POW(I,?) FROM ecsql.P WHERE I IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
 
         int exp = 3;
         stmt.BindInt(1, exp);
 
-        while (stmt.Step() == ECSqlStepStatus::HasRow)
+        while (stmt.Step() == BE_SQLITE_ROW)
             {
             int base = stmt.GetValueInt(0);
             int actualFuncResult = stmt.GetValueInt(1);
@@ -237,34 +237,34 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericSqlFunction)
 
         stmt.Reset();
         stmt.ClearBindings();
-        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step());
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
         }
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT POW(I,NULL) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT POW(I,NULL) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
 
-        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
         }
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT POW(NULL,2) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
-        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT POW(NULL,2) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
         }
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT POW(NULL,NULL) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT POW(NULL,NULL) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
 
-        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
         }
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT POW(I,2) FROM ecsql.P WHERE I IS NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT POW(I,2) FROM ecsql.P WHERE I IS NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
 
-        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
         }
     ASSERT_EQ(0, ecdb.RemoveFunction(func));
     }
@@ -283,9 +283,9 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StringSqlFunction)
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT TOBOOLSTR(1) FROM ecsql.P LIMIT 1")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT TOBOOLSTR(1) FROM ecsql.P LIMIT 1")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
 
-        ASSERT_EQ((int) ECSqlStepStatus::HasRow, (int) stmt.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
         IECSqlValue const& val = stmt.GetValue(0);
         ASSERT_STREQ("true", val.GetText());
@@ -305,8 +305,8 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
     //insert one more test row which has a NULL column
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (NULL)"));
-        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (NULL)"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         ecdb.SaveChanges();
         }
 
@@ -315,10 +315,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT L,INTEGERTOBLOB(L) FROM ecsql.P WHERE L IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT L,INTEGERTOBLOB(L) FROM ecsql.P WHERE L IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
 
         int rowCount = 0;
-        while (stmt.Step() == ECSqlStepStatus::HasRow)
+        while (stmt.Step() == BE_SQLITE_ROW)
             {
             rowCount++;
             int64_t expectedInt = stmt.GetValueInt64(0);
@@ -336,10 +336,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT L,INTEGERTOBLOB(L) FROM ecsql.P WHERE L IS NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT L,INTEGERTOBLOB(L) FROM ecsql.P WHERE L IS NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
 
         int rowCount = 0;
-        while (stmt.Step() == ECSqlStepStatus::HasRow)
+        while (stmt.Step() == BE_SQLITE_ROW)
             {
             rowCount++;
             int blobSize = -1;
@@ -364,20 +364,20 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
      const int perClassRowCount = 3;
      auto& ecdb = SetUp ("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
 
-     ASSERT_EQ ((int)ECSqlStatus::InvalidECSql, (int)stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P")) << "ECSql Preparetion expected to fail with unregistered ECSql function";
+     ASSERT_EQ (ECSqlStatus::InvalidECSql, stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P")) << "ECSql Preparetion expected to fail with unregistered ECSql function";
      stmt.Finalize ();
 
      ASSERT_EQ (0, ecdb.AddFunction (func));
 
-     ASSERT_EQ ((int)ECSqlStatus::Success, (int)stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P")) << "ECSql Preparetion expected to succeed after adding custom ECSql function to Db";
-     ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::HasRow);
+     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P")) << "ECSql Preparetion expected to succeed after adding custom ECSql function to Db";
+     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
      double actualSumOfSquares = stmt.GetValueDouble (0);
      stmt.Finalize ();
 
      ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT D FROM ecsql.P"));
      double expectedSumOfSquares = 0;
 
-     while (stmt.Step () != ECSqlStepStatus::Done)
+     while (stmt.Step () != BE_SQLITE_DONE)
          {
          expectedSumOfSquares += std::pow (stmt.GetValueDouble (0), 2);
          }
@@ -386,17 +386,17 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
      stmt.Finalize ();
 
      ASSERT_EQ (0, ecdb.RemoveFunction (func));
-     ASSERT_EQ ((int)ECSqlStatus::InvalidECSql, (int)stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P ")) << "ECSql Preparation expected to fail when custom ECSql function is removed from Db";
+     ASSERT_EQ (ECSqlStatus::InvalidECSql, stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P ")) << "ECSql Preparation expected to fail when custom ECSql function is removed from Db";
      stmt.Finalize ();
 
      //Adding Custom ECSql function to the Db is expected to Succeed once it was removed 
      ASSERT_EQ (0, ecdb.AddFunction (func));
 
-     ASSERT_EQ ((int)ECSqlStatus::InvalidECSql, (int)stmt.Prepare (ecdb, "SELECT SOS() FROM ecsql.P")) << "ECSql Prepration is expected to fail when no argument is passed to SOS";
+     ASSERT_EQ (ECSqlStatus::InvalidECSql, stmt.Prepare (ecdb, "SELECT SOS() FROM ecsql.P")) << "ECSql Prepration is expected to fail when no argument is passed to SOS";
      stmt.Finalize ();
 
-     ASSERT_EQ ((int)ECSqlStatus::Success, (int)stmt.Prepare (ecdb, "SELECT SOS(NUll) FROM ecsql.P")) << "ECSql Prepration is expected to succeed when NULL is passed to SOS";
-     ASSERT_TRUE (stmt.Step() == ECSqlStepStatus::Error)<< "Step is expected to fail if function is called with NULL argument";
+     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT SOS(NUll) FROM ecsql.P")) << "ECSql Prepration is expected to succeed when NULL is passed to SOS";
+     ASSERT_EQ (BE_SQLITE_ERROR, stmt.Step())<< "Step is expected to fail if function is called with NULL argument";
      }
 
 #ifdef NOT_NOW
@@ -449,11 +449,11 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_DateECSqlFunction)
     //insert test data
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "INSERT INTO ecsql.P (DtUtc, S) VALUES (?,?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P (DtUtc, S) VALUES (?,?)"));
         stmt.BindDateTime(1, dt);
         stmt.BindText(2, dtStr.c_str(), IECSqlBinder::MakeCopy::No);
 
-        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
         ecdb.SaveChanges();
         }
@@ -464,9 +464,9 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_DateECSqlFunction)
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT DtUtc, DATEFROMSTRING(S) FROM ecsql.P"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT DtUtc, DATEFROMSTRING(S) FROM ecsql.P"));
 
-        while (stmt.Step() == ECSqlStepStatus::HasRow)
+        while (stmt.Step() == BE_SQLITE_ROW)
             {
             DateTime expectedDt = stmt.GetValueDateTime(0);
             DateTime actualDt = stmt.GetValueDateTime(1);
@@ -549,10 +549,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_GeometryECSqlFunction)
     //insert test data
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "INSERT INTO ecsql.PASpatial (Geometry) VALUES (?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PASpatial (Geometry) VALUES (?)"));
         stmt.BindGeometry(1, *line);
         
-        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
         ecdb.SaveChanges();
         }
@@ -562,9 +562,9 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_GeometryECSqlFunction)
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT GETGEOMETRYTYPE(Geometry) FROM ecsql.PASpatial"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GETGEOMETRYTYPE(Geometry) FROM ecsql.PASpatial"));
 
-        while (stmt.Step() == ECSqlStepStatus::HasRow)
+        while (stmt.Step() == BE_SQLITE_ROW)
             {
             Utf8CP actualGeomTypeStr = stmt.GetValueText(0);
             ASSERT_STREQ(expectedGeomTypeStr, actualGeomTypeStr);
@@ -573,10 +573,10 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_GeometryECSqlFunction)
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT GETGEOMETRYTYPE(?) FROM ecsql.PASpatial LIMIT 1"));
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.BindGeometry (1, *line));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GETGEOMETRYTYPE(?) FROM ecsql.PASpatial LIMIT 1"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry (1, *line));
 
-        while (stmt.Step() == ECSqlStepStatus::HasRow)
+        while (stmt.Step() == BE_SQLITE_ROW)
             {
             Utf8CP actualGeomTypeStr = stmt.GetValueText(0);
             ASSERT_STREQ(expectedGeomTypeStr, actualGeomTypeStr);

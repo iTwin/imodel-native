@@ -111,7 +111,7 @@ ECSqlStatus ECInstanceFinder::QueryableRelationship::GetPreparedECSqlStatement (
         * prematurely optimize for that and stick to a single cached statement instead of a vector of them. 
         */
         ECSqlStatus status = PrepareECSqlStatement (ecDb);
-        if (status != ECSqlStatus::Success)
+        if (!status.IsSuccess())
             return status;
         cachedStatement = m_cachedStatement;
         return status;
@@ -149,7 +149,7 @@ ECSqlStatus ECInstanceFinder::QueryableRelationship::PrepareECSqlStatement (ECDb
 
     m_cachedStatement = std::make_shared<ECSqlStatement> (); 
     ECSqlStatus status = m_cachedStatement->Prepare (ecDb, relECSql.c_str());
-    if (status != ECSqlStatus::Success)
+    if (!status.IsSuccess())
         m_cachedStatement = nullptr;
 
     return status;
@@ -403,7 +403,7 @@ int findRelatedDirections
                 }
 
             status = queryableRelationship.GetPreparedECSqlStatement (statement, m_ecDb);
-            POSTCONDITION (status == ECSqlStatus::Success, ERROR);
+            POSTCONDITION (status.IsSuccess(), ERROR);
             BeAssert (statement != nullptr);
 
             ECClassId relationshipClassId = (ECClassId) queryableRelationship.GetRelationshipClass()->GetId();
@@ -418,8 +418,8 @@ int findRelatedDirections
                 statement->BindId (1, instanceId);
 
                 // Iterate through all relationship instances with "this end" as the seed instance
-                ECSqlStepStatus stepStatus = ECSqlStepStatus::Done;
-                while ((stepStatus = statement->Step()) == ECSqlStepStatus::HasRow)
+                DbResult stepStatus = BE_SQLITE_DONE;
+                while ((stepStatus = statement->Step()) == BE_SQLITE_ROW)
                     {
                     // Get relationship instance (key)
                     if (relationshipInstanceKeyMap != nullptr)
@@ -441,7 +441,7 @@ int findRelatedDirections
                             relatedInstanceKeyMap->insert (relatedInstanceEntry);
                         }
                     }
-                POSTCONDITION (stepStatus == ECSqlStepStatus::Done, ERROR);
+                POSTCONDITION (stepStatus == BE_SQLITE_DONE, ERROR);
                 instanceIdIter++;
                 }
             }

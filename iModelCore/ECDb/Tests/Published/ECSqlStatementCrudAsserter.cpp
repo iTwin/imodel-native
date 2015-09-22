@@ -24,7 +24,7 @@ void ECSqlStatementCrudAsserter::AssertPrepare (ECSqlTestItem const& testItem, E
     auto stat = PrepareStatement (statement, ecsql, !expectedToSucceed);
 
     if (expectedToSucceed)
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Preparation failed unexpectedly.";
+        ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation failed unexpectedly.";
 
     if (stat != ECSqlStatus::Success)
         {
@@ -35,7 +35,7 @@ void ECSqlStatementCrudAsserter::AssertPrepare (ECSqlTestItem const& testItem, E
     stat = BindParameters (statement, testItem.GetParameterValues (), !expectedToSucceed);
     
     if (expectedToSucceed)
-        ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat)) << "Binding parameters failed unexpectedly.";
+        ASSERT_EQ (ECSqlStatus::Success, stat) << "Binding parameters failed unexpectedly.";
     else
         {
         Utf8CP assertMessage = nullptr;
@@ -111,7 +111,7 @@ ECSqlStatus ECSqlStatementCrudAsserter::BindParameters (ECSqlStatement& statemen
             }
 
         if (!value.IsPrimitive ())
-            return ECSqlStatus::NotYetSupported;
+            return ECSqlStatus::Error;
 
         auto stat = ECSqlStatus::Success;
         switch (value.GetPrimitiveType ())
@@ -170,7 +170,7 @@ ECSqlStatus ECSqlStatementCrudAsserter::BindParameters (ECSqlStatement& statemen
                 }
             }
 
-        if (stat != ECSqlStatus::Success)
+        if (!stat.IsSuccess())
             return stat;
         }
 
@@ -247,7 +247,7 @@ void ECSqlSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem
     auto ecsql = testItem.GetECSql ().c_str ();
 
     //If step failed, assert that this was as expected.
-    if (stat != ECSqlStepStatus::HasRow && stat != ECSqlStepStatus::Done)
+    if (stat != BE_SQLITE_ROW && stat != BE_SQLITE_DONE)
         {
         ASSERT_FALSE (expectedToSucceed) << "Step should have failed for ECSQL '" << ecsql << "'";
         return;
@@ -259,7 +259,7 @@ void ECSqlSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem
     ASSERT_EQ (expectedToSucceed, expectedColumnCount == actualColumnCount) << "Unexpected result set column count for ECSQL '" << ecsql << "'. Expected column count: " << expectedColumnCount << " Actual column count: " << actualColumnCount;
 
     auto actualRowCount = 0;
-    while (stat == ECSqlStepStatus::HasRow)
+    while (stat == BE_SQLITE_ROW)
         {
         //first step already happened further up, so we have at least one row if we enter the while loop.
         actualRowCount++;
@@ -267,7 +267,7 @@ void ECSqlSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem
         stat = statement.Step ();
         }
 
-    ASSERT_NE (static_cast<int> (ECSqlStepStatus::Error), static_cast<int> (stat)) << "Step failed for ECSQL '" << ecsql;
+    ASSERT_NE (BE_SQLITE_ERROR, stat) << "Step failed for ECSQL '" << ecsql;
 
     if (expectedResult.HasExpectedRowCount ())
         {
@@ -405,7 +405,7 @@ void ECSqlSelectStatementCrudAsserter::AssertColumnInfo (ECSqlTestItem const& te
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStepStatus ECSqlSelectStatementCrudAsserter::Step (ECSqlStatement& statement, bool disableBeAsserts) const
+DbResult ECSqlSelectStatementCrudAsserter::Step (ECSqlStatement& statement, bool disableBeAsserts) const
     {
     DisableBeAsserts d (disableBeAsserts);
     return statement.Step ();
@@ -599,32 +599,30 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
     if (BeStringUtilities::Strnicmp ("INSERT INTO", ecsql, 11) == 0)
         {
         ECInstanceKey ecInstanceKey;
-        ECSqlStepStatus stat = Step (ecInstanceKey, statement, !expectedToSucceed);
+        DbResult stat = Step (ecInstanceKey, statement, !expectedToSucceed);
 
         if (expectedToSucceed)
             {
-            ASSERT_EQ (ECSqlStepStatus::Done, stat) << "Step (ECInstanceKey&) should have succeeded for ECSQL '" << ecsql << "'";
+            ASSERT_EQ (BE_SQLITE_DONE, stat) << "Step (ECInstanceKey&) should have succeeded for ECSQL '" << ecsql << "'";
             ASSERT_TRUE (ecInstanceKey.IsValid ());
             }
         else
-            ASSERT_EQ(ECSqlStepStatus::Error, stat) << "Step (ECInstanceKey&) should have failed for ECSQL '" << ecsql << "'.";
+            ASSERT_NE(BE_SQLITE_DONE, stat) << "Step (ECInstanceKey&) should have failed for ECSQL '" << ecsql << "'.";
 
         return;
         }
 
-    //rows affected test can be performed for update and delete
-    //statement.EnableDefaultEventHandler ();
-    ECSqlStepStatus stepStat = Step(statement, !expectedToSucceed);
+    DbResult stepStat = Step(statement, !expectedToSucceed);
     if (expectedToSucceed)
-        ASSERT_EQ(ECSqlStepStatus::Done, stepStat) << "Step should have succeeded for ECSQL '" << ecsql << "'.";
+        ASSERT_EQ(BE_SQLITE_DONE, stepStat) << "Step should have succeeded for ECSQL '" << ecsql << "'.";
     else
-        ASSERT_EQ(ECSqlStepStatus::Error, stepStat) << "Step should have failed for ECSQL '" << ecsql << "'.";
+        ASSERT_NE(BE_SQLITE_DONE, stepStat) << "Step should have failed for ECSQL '" << ecsql << "'.";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStepStatus ECSqlNonSelectStatementCrudAsserter::Step (ECInstanceKey& generatedECInstanceKey, ECSqlStatement& statement, bool disableBeAsserts) const
+DbResult ECSqlNonSelectStatementCrudAsserter::Step (ECInstanceKey& generatedECInstanceKey, ECSqlStatement& statement, bool disableBeAsserts) const
     {
     DisableBeAsserts d (disableBeAsserts);
 
@@ -634,7 +632,7 @@ ECSqlStepStatus ECSqlNonSelectStatementCrudAsserter::Step (ECInstanceKey& genera
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStepStatus ECSqlNonSelectStatementCrudAsserter::Step (ECSqlStatement& statement, bool disableBeAsserts) const
+DbResult ECSqlNonSelectStatementCrudAsserter::Step (ECSqlStatement& statement, bool disableBeAsserts) const
     {
     DisableBeAsserts d (disableBeAsserts);
 

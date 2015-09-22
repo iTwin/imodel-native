@@ -445,7 +445,7 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue (IECSqlBinder& binder,
                 }
         }
 
-    return stat == ECSqlStatus::Success ? SUCCESS : ERROR;
+    return stat.IsSuccess() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -530,7 +530,7 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue (IECSqlBinder& binder, ECI
 //static
 BentleyStatus ECInstanceAdapterHelper::BindECSqlSystemPropertyValue (IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, ECSqlSystemPropertyBindingInfo const& valueBindingInfo)
     {
-    ECSqlStatus stat = ECSqlStatus::Success;
+    ECSqlStatus stat;
 
     const auto systemPropertyKind = valueBindingInfo.GetKind ();
     if (systemPropertyKind == ECValueBindingInfo::SystemPropertyKind::ECInstanceId)
@@ -584,7 +584,7 @@ BentleyStatus ECInstanceAdapterHelper::BindECSqlSystemPropertyValue (IECSqlBinde
             }
         }
 
-    return stat == ECSqlStatus::Success ? SUCCESS : ERROR;
+    return stat.IsSuccess() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------

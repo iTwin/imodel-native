@@ -394,7 +394,6 @@
     <ClInclude Include="MapStrategy.h">
       <Filter>ECDbMap\Map</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="ECSql\SystemColumnPreparer.h">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClInclude>
@@ -421,6 +420,12 @@
     </ClInclude>
     <ClInclude Include="ECDbMapAnalyser.h">
       <Filter>ECDbMap\Map</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatus.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
+      <Filter>PublicApi</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -526,9 +531,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlParser.cpp">
       <Filter>ECSql\ECSqlParser</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECSqlStatementScenarios.cpp">
-      <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlStatement.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
@@ -777,6 +779,9 @@
     </ClCompile>
     <ClCompile Include="ECDbMapAnalyser.cpp">
       <Filter>ECDbMap\Map</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\ECSqlStatus.cpp">
+      <Filter>ECSql</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

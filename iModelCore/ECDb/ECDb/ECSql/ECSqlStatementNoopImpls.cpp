@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementNoopImpls.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************** NoopECSqlBinderFactory **************************
 //static member initialization
-std::map<ECSqlStatus, std::unique_ptr<NoopECSqlBinder>> NoopECSqlBinderFactory::s_flyweightBinderMap;
+std::map<ECSqlStatus::Status, std::unique_ptr<NoopECSqlBinder>> NoopECSqlBinderFactory::s_flyweightBinderMap;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
@@ -23,9 +23,8 @@ NoopECSqlBinder& NoopECSqlBinderFactory::GetBinder (ECSqlStatus status)
     {
     //insert returns a pair where the first element is an iterator pointing to the inserted / existing element in the map.
     //the second element indicates whether the pair was newly inserted or whether it already existed.
-    s_flyweightBinderMap[status] = std::unique_ptr<NoopECSqlBinder>(new NoopECSqlBinder(status));
-    //auto ret = s_flyweightBinderMap.insert (kvPair);
-    return *s_flyweightBinderMap[status];//*ret.first->second;
+    s_flyweightBinderMap[status.Get()] = std::unique_ptr<NoopECSqlBinder>(new NoopECSqlBinder(status));
+    return *s_flyweightBinderMap[status.Get()];
     }
 
 

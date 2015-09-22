@@ -48,10 +48,10 @@ struct PerformanceDevSummitTests : PerformanceTestFixture
 
             ECSqlStatement ecStatement;
             ecStatement.Prepare(m_testProject.GetECDb(), ecSql.c_str());
-            ECSqlStepStatus result;
-            ECSqlStepStatus countResult;
+            DbResult result;
+            DbResult countResult;
             size_t total = 0;
-            while ((result = ecStatement.Step()) == ECSqlStepStatus::HasRow)
+            while ((result = ecStatement.Step()) == BE_SQLITE_ROW)
                 {
                 Utf8CP ecClassName = ecStatement.GetValueText(0);
                 Utf8CP ecSchemaName = ecStatement.GetValueText(1);
@@ -59,7 +59,7 @@ struct PerformanceDevSummitTests : PerformanceTestFixture
                 Utf8String ecCountSql;
                 ecCountSql.Sprintf("SELECT count(*) FROM [%s].[%s] ", ecClassName, ecSchemaName);
                 ecCountQuery.Prepare(m_testProject.GetECDb(), ecSql.c_str());
-                while ((countResult = ecCountQuery.Step()) == ECSqlStepStatus::HasRow)
+                while ((countResult = ecCountQuery.Step()) == BE_SQLITE_ROW)
                     total += ecCountQuery.GetValueInt(0);
                 }
             countTimer.Stop ();
@@ -96,13 +96,13 @@ struct PerformanceDevSummitTests : PerformanceTestFixture
 
             ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
 
-            ECSqlStepStatus result;
+            DbResult result;
             if (useWhereClause)
                 ecStatement.BindDouble(1, 166.0);
 
             int counter = 0;
             overallTimer.Start();
-            while ((result = ecStatement.Step ()) == ECSqlStepStatus::HasRow)
+            while ((result = ecStatement.Step ()) == BE_SQLITE_ROW)
                 {
                 IECInstancePtr instance = dataAdapter.GetInstance ();
                 counter++;

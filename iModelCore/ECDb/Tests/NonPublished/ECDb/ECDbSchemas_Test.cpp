@@ -487,7 +487,7 @@ TEST (ECDbSchemas, UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes)
     auto prepareStatus = stmt.Prepare (ecDb, ecsql);
     ASSERT_TRUE(prepareStatus ==  ECSqlStatus::Success);
     auto stepStatus = stmt.Step ();
-    ASSERT_TRUE (stepStatus == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE (stepStatus == BE_SQLITE_ROW);
 }
 
 
@@ -2708,16 +2708,16 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
 
     ASSERT_EQ(ECSqlStatus::Success, stat);
     BentleyApi::DateTime dateTime1;
-    ASSERT_TRUE(statement.Step() == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE(statement.Step() == BE_SQLITE_ROW);
         {
         ASSERT_FALSE(statement.IsValueNull(0));
         dateTime1 = statement.GetValueDateTime(0);
         }
-    ASSERT_TRUE(statement.Step() == ECSqlStepStatus::Done);
+    ASSERT_TRUE(statement.Step() == BE_SQLITE_DONE);
     ECSqlStatement updateStatment;
     ecsql = "UPDATE ONLY adhoc.SimpleClass SET testprop = 23 WHERE ECInstanceId = 1";
     stat = updateStatment.Prepare(db, ecsql.c_str());
-    ASSERT_TRUE(updateStatment.Step() == ECSqlStepStatus::Done);
+    ASSERT_TRUE(updateStatment.Step() == BE_SQLITE_DONE);
     ecsql = "SELECT DateTimeProperty FROM ";
     ecsql.append(ECSqlBuilder::ToECSqlSnippet(*ecClass));
 
@@ -2726,12 +2726,12 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
     stat = statement2.Prepare(db, ecsql.c_str());
     BeThreadUtilities::BeSleep(100); // make sure the time is different by more than the resolution of the timestamp
 
-    ASSERT_TRUE(statement2.Step() == ECSqlStepStatus::HasRow);
+    ASSERT_TRUE(statement2.Step() == BE_SQLITE_ROW);
         {
         ASSERT_FALSE(statement2.IsValueNull(0));
         dateTime2 = statement2.GetValueDateTime(0);
         }
-    ASSERT_TRUE(statement2.Step() == ECSqlStepStatus::Done);
+    ASSERT_TRUE(statement2.Step() == BE_SQLITE_DONE);
     ASSERT_FALSE(dateTime1 == dateTime2);
     }
 END_ECDBUNITTESTS_NAMESPACE

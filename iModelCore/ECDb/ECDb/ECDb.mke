@@ -224,11 +224,13 @@ $(o)ECInstanceFinder$(oext):								$(baseDir)ECInstanceFinder.cpp            $(
 
 $(o)ViewGenerator$(oext):									$(baseDir)ViewGenerator.cpp                 $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ChangeSummary$(oext):								$(baseDir)ChangeSummary.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ChangeSummary$(oext):				    				$(baseDir)ChangeSummary.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InternalNode$(oext):									$(baseDir)ECSql/Parser/InternalNode.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DynamicSelectClauseECClass$(oext):						$(baseDir)ECSql/DynamicSelectClauseECClass.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlStatus$(oext):	                					$(baseDir)ECSql/ECSqlStatus.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)DynamicSelectClauseECClass$(oext):						$(baseDir)ECSql/DynamicSelectClauseECClass.cpp $(ECDbAllHeaders)${MultiCompileDepends}
 
 $(o)ECSqlParser$(oext):										$(baseDir)ECSql/ECSqlParser.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
 
