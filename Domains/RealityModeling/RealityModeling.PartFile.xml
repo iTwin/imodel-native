@@ -68,4 +68,28 @@
         </Bindings>
     </Part>    
 
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////   ThreeMx       /////////////////////////////////// -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+	    <Part Name="ThreeMxSchemaPublicAPI" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxSchema.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="ThreeMxSchema"/>
+            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/BentleyThreeMx*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    
+    <Part Name="ThreeMxSchema" BMakeFile="ThreeMxSchema/ThreeMxSchema.mke">
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="ThreeMxSchemaPublicAPI"/>
+        <Bindings>
+            <Assemblies ProductDirectoryName="ThreeMxAssemblies">Delivery/ThreeMxSchema.dll</Assemblies>
+            <Libs>delivery/$(shlibprefix)ThreeMxSchema$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+
 </BuildContext>

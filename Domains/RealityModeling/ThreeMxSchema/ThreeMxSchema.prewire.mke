@@ -1,0 +1,15 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: ThreeMxSchema/ThreeMxSchema.prewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+PolicyFile=$(SrcBsiCommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+
+$(BuildContext)PublicAPI/ThreeMxSchema : $(_MakeFilePath)../PublicAPI/ThreeMxSchema
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)ECSchemas/Domain/BentleyThreeMx.01.00.ecschema.xml : $(_MakeFilePath)BentleyThreeMx.01.00.ecschema.xml
+    $(LinkFirstDepToFirstTarget)

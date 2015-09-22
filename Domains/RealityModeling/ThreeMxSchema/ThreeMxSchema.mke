@@ -1,0 +1,126 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ThreeMxSchema/ThreeMxSchema.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+PolicyFile=$(SrcRoot)DgnDomains/RealityModeling/ThreeMxSchema/ThreeMxSchemaPolicy.mki
+SolutionPolicyMki=$(PolicyFile)
+
+%include mdl.mki
+%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+
+baseDir                         = $(_MakeFilePath)
+threeMxSchemaPublicApiSrc       = $(repositoryRoot)PublicAPI/ThreeMxSchema/
+threeMxSchemaSrc                = $(baseDir)
+mrMeshSrc                       = $(baseDir)MrMesh/
+threeMxReaderSrc                = $(baseDir)Reader/
+openCtmSrc                      = $(threeMxReaderSrc)openCtm/
+libLzmaSrc                       = $(openCtmSrc)LibLzma/
+
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   BENTLEY_LIBRARIES
+#--------------------------------------------------------------------------------------
+ContextLibPrefix = $(BuildContext)SubParts/Libs/$(libprefix)
+
+BENTLEY_LIBRARIES = $(ContextLibPrefix)DgnPlatform$(stlibext)
+BENTLEY_LIBRARIES + $(ContextLibPrefix)BentleyGeom$(stlibext)
+BENTLEY_LIBRARIES + $(ContextLibPrefix)BaseGeoCoord$(stlibext)
+BENTLEY_LIBRARIES + $(ContextLibPrefix)ECObjects$(stlibext)
+BENTLEY_LIBRARIES + $(ContextLibPrefix)BeSQLite$(stlibext)
+BENTLEY_LIBRARIES + $(ContextLibPrefix)BeSQLiteEC$(stlibext)
+BENTLEY_LIBRARIES + $(ContextLibPrefix)BeJsonCpp$(stlibext)
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+threeMxSchemaDepends         = $(_MakeFileSpec)   \
+                               $(threeMxReaderSrc)ThreeMxReader.h \
+                               $(threeMxSchemaPublicApiSrc)ThreeMxSchemaApi.h \
+                               $(threeMxSchemaPublicApiSrc)ThreeMxHandler.h             
+                                  
+%include MultiCppCompileRule.mki
+
+
+nameToDefine = OPENCTM_STATIC
+%include cdefapnd.mki
+
+
+# Keep this even if GCC_NO_PRE_COMPILED_HEADER is defined. When GCC_NO_PRE_COMPILED_HEADER
+# is defined this step alters the command line to make the line including <ThreeMxSchemaInternal.h>
+# work properly.
+   
+#----------------------------------------------------------------------
+#   ThreeMX Reader
+#----------------------------------------------------------------------
+$(o)openCtm$(oext)              : $(openCtmSrc)openCtm.c  $(openCtmSrc)openCtm.h ${threeMxSchemaDepends}  
+
+$(o)stream$(oext)               : $(openCtmSrc)stream.c   $(openCtmSrc)openCtm.h ${threeMxSchemaDepends}  
+
+$(o)compressMG1.obj             : $(openCtmSrc)compressMG1.c ${threeMxSchemaDepends}
+
+$(o)compressMG2.obj             : $(openCtmSrc)compressMG2.c ${threeMxSchemaDepends}
+
+$(o)compressRAW.obj             : $(openCtmSrc)compressRAW.c ${threeMxSchemaDepends}
+
+$(o)Alloc.obj                   : $(libLzmaSrc)Alloc.c ${threeMxSchemaDepends}
+
+$(o)LzmaDec.obj                 : $(libLzmaSrc)LzmaDec.c ${threeMxSchemaDepends}
+
+$(o)LzmaEnc.obj                 : $(libLzmaSrc)LzmaEnc.c ${threeMxSchemaDepends}
+
+$(o)LzFind.obj                  : $(libLzmaSrc)LzFind.c ${threeMxSchemaDepends}
+
+$(o)LzmaLib.obj                 : $(libLzmaSrc)LzmaLib.c ${threeMxSchemaDepends}
+
+$(o)ThreeMxReader$(oext)        : $(threeMxReaderSrc)ThreeMxReader.cpp ${threeMxSchemaDepends} 
+
+
+#----------------------------------------------------------------------
+#   MRMesh
+#----------------------------------------------------------------------
+$(o)MRMeshCache.obj             : $(mrMeshSrc)MrMeshCache.cpp ${threeMxSchemaDepends} 
+
+
+$(o)MRMeshNode.obj             : $(mrMeshSrc)MrMeshNode.cpp ${threeMxSchemaDepends} 
+
+
+#----------------------------------------------------------------------
+#   Schema
+#----------------------------------------------------------------------
+$(o)ThreeMxHandler$(oext)       : $(threeMxSchemaSrc)ThreeMxHandler.cpp             ${threeMxSchemaDepends} 
+
+
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList) 
+
+CCPchOpts =
+CPchOpts =
+
+#--------------------------------------------------------------------------------------
+#   Build the library                                                                                     
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(objs)
+DLM_OBJECT_DEST             = $(o)
+#DLM_OBJECT_PCH              = $(o)ThreeMxSchemaInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_NOMSBUILTINS            = 1
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(BENTLEY_LIBRARIES) $(SYSTEM_LIBRARIES)
+
+%include $(sharedMki)LinkLibrary.mki
+
