@@ -27,8 +27,8 @@ void BeRepositoryBasedIdSet::FromJson(Json::Value const& in)
     Utf8CP curr = str.c_str();
     while (true)
         {
-        int64_t startRange, endRange;
-        int converted = BE_STRING_UTILITIES_UTF8_SSCANF(curr, "%" SCNd64 "-%" SCNd64, &startRange, &endRange);
+        uint64_t startRange, endRange;
+        int converted = BE_STRING_UTILITIES_UTF8_SSCANF(curr, "%" SCNu64 "-%" SCNu64, &startRange, &endRange);
         if (0 == converted)
             return;
 
