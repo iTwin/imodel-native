@@ -117,9 +117,9 @@
         <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
         <Bindings>
-            <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform">              Delivery/UnitTests/ignore_list.txt</Files>
-            <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="Script"        SourceName="Delivery/UnitTests/Script" />
-            <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="ECSchemas">                Delivery/UnitTests/ECSchemas/*.xml</Files>
+            <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt"</Files>
+            <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="Script" SourceName="Delivery/UnitTests/Script" />
+            <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="ECSchemas"> Delivery/UnitTests/ECSchemas/*.xml</Files>
         </Bindings>
     </Part>
 
