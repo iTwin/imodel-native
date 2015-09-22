@@ -44,7 +44,7 @@
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="BeSQLite"/>
         <Bindings>
-            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BeSQLite">Delivery/UnitTests/ignore_list.txt</Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BeSQLite" SubPartDirectory="UnitTests/BeSQLite">Delivery/UnitTests/ignore_list.txt"</Files>
         </Bindings>
     </Part>
 
