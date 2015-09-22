@@ -472,7 +472,8 @@ DgnDbStatus DgnElement::_InsertInDb()
     if (DgnDbStatus::Success != (stat=_BindInsertParams(*statement)))
         return stat;
 
-    if (ECSqlStepStatus::Error == statement->Step())
+    //TODO: ECSQL now returns DbResult so that constraint error can be detected
+    if (BE_SQLITE_DONE != statement->Step())
         {
         // SQLite doesn't tell us which constraint failed - check if it's the Code.
         auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
@@ -535,7 +536,7 @@ DgnDbStatus DgnElement::_UpdateInDb()
     if (DgnDbStatus::Success != (stat=_BindUpdateParams(*statement)))
         return stat;
 
-    if (ECSqlStepStatus::Error == statement->Step())
+    if (BE_SQLITE_DONE != statement->Step())
         return DgnDbStatus::WriteError;
     return DgnDbStatus::Success;
     }
