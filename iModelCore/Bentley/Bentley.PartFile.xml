@@ -69,7 +69,7 @@
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="BentleyDll"/>
         <Bindings>
-            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Bentley" SubPartDirectory="UnitTests/Bentley"> Delivery/UnitTests/ignore_list.txt"</Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Bentley" SubPartDirectory="UnitTests/Bentley"> Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
