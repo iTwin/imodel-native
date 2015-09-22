@@ -196,7 +196,7 @@ ECClassCP DgnElement::GetElementClass() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::Code DgnElement::_GenerateDefaultCode()
     {
-    return DgnAuthority::GenerateDefaultCode (*this);
+    return DgnAuthority::GenerateDefaultCode(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -206,7 +206,7 @@ DateTime DgnElement::QueryTimeStamp() const
     {
     ECSqlStatement stmt;
     stmt.Prepare(GetDgnDb(), "SELECT " DGN_ELEMENT_PROPNAME_LASTMOD " FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE " DGN_ELEMENT_PROPNAME_ECINSTANCEID "=?");
-    stmt.BindId (1, m_elementId);
+    stmt.BindId(1, m_elementId);
     stmt.Step();
     return stmt.GetValueDateTime(0);
     }
@@ -390,7 +390,7 @@ void DgnElement::GetParamList(bvector<Utf8CP>& paramList, bool isForUpdate)
 //---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
     {
-    BeAssert (m_code.IsValid());
+    BeAssert(m_code.IsValid());
 
     if ((ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CATEGORYID), m_categoryId)) ||
         (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_CODE), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)) ||
@@ -1098,7 +1098,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 DgnElementPtr DgnElement::CopyForEdit() const
     {
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(GetDgnDb(), m_modelId, m_classId, m_categoryId, GetLabel(), GetCode(), m_elementId, m_parentId));
-    BeAssert (typeid(*newEl) == typeid(*this)); // this means the ClassId of the element does not match the type of the element. Caller should find out why.
+    BeAssert(typeid(*newEl) == typeid(*this)); // this means the ClassId of the element does not match the type of the element. Caller should find out why.
     newEl->_CopyFrom(*this);
     return newEl;
     }
