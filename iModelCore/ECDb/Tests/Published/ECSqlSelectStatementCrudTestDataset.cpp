@@ -971,7 +971,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (ECDbTestProject& tes
         {
         ecsql = "SELECT I, Dt FROM ecsql.PSA WHERE ECInstanceId = :id";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue (psaIds[0].GetValue())));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue ((int64_t)psaIds[0].GetValue())));
         }
 
         {
@@ -985,7 +985,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (ECDbTestProject& tes
         {
         ecsql = "SELECT I, Dt FROM ecsql.PSA WHERE ECInstanceId = ?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (psaIds[0].GetValue())));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ((int64_t)psaIds[0].GetValue())));
         }
 
         {

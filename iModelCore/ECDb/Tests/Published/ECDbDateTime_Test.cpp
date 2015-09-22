@@ -200,7 +200,7 @@ ECClassCP testClass
 
     ECInstanceKey instanceId;
     testProject.InsertECInstance (instanceId, testInstance);
-    EXPECT_GT (instanceId.GetECInstanceId ().GetValue (), 0LL) << "Inserting ECInstance with DateTime values failed.";
+    EXPECT_TRUE(instanceId.GetECInstanceId().GetValue() > 0LL) << "Inserting ECInstance with DateTime values failed.";
 
     return instanceId;
     }

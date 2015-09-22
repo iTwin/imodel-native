@@ -74,7 +74,7 @@ TEST(ECDbProfile, CreationTest)
         size_t sequenceIndex = 0;
         ASSERT_TRUE (ecdb.GetRLVCache().TryGetIndex (sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
 
-        int64_t lastECInstanceId = -1LL;
+        uint64_t lastECInstanceId = -1LL;
         EXPECT_EQ (BE_SQLITE_OK, ecdb.GetRLVCache().QueryValue(lastECInstanceId, sequenceIndex)) << L"ECInstanceId sequence not found in ECDb file which was newly created";
         }
     }
