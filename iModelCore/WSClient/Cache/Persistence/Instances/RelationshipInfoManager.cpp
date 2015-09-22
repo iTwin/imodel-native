@@ -290,7 +290,7 @@ Utf8StringCR remoteId
         IECInstancePtr infoECInstance = m_cachedRelationshipInfoClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
         infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_RelClassId, ECValue(relationship.GetECClassId()));
-        infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_RelInstanceId, ECValue(relationship.GetECInstanceId().GetValue()));
+        infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_RelInstanceId, ECValue((int64_t)relationship.GetECInstanceId().GetValue()));
         infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_RemoteId, ECValue(remoteId.c_str(), false));
 
         ECInstanceKey infoKey;
