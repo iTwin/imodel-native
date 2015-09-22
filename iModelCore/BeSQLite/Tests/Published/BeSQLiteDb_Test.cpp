@@ -557,7 +557,7 @@ TEST_F(BeSQLiteDbTests, RepositoryLocalValues)
     m_result = m_db.GetRLVCache().SaveValue(rlvIndex, val);
     EXPECT_EQ (BE_SQLITE_OK, m_result) << "SaveRepositoryLocalValue failed";
 
-    int64_t actualVal = -1LL;
+    uint64_t actualVal = -1LL;
     m_result = m_db.GetRLVCache().QueryValue(actualVal, rlvIndex);
     EXPECT_EQ (BE_SQLITE_OK, m_result);
     EXPECT_EQ (val, (int) actualVal);

@@ -28,7 +28,7 @@ Db& db,
 size_t repositoryLocalKeyIndex
 )
     {
-    int64_t newValue = 0LL;
+    uint64_t newValue = 0LL;
     /*auto stat = */db.GetRLVCache().IncrementValue (newValue, repositoryLocalKeyIndex);
     //ASSERT_EQ (BE_SQLITE_OK, stat) << L"IncrementRepositoryLocalValueInt64 failed.";
     }
