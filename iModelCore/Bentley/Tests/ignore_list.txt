@@ -15,5 +15,3 @@ BeFileNameTests.RemoveQuotesWithNoQuotes        # ???
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-BeStringUtilitiesTests.BeStringUtilStrlwr
-BeStringUtilitiesTests.BeStringUtilStrupr
