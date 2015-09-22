@@ -2332,7 +2332,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
     {
     const auto perClassRowCount = 10;
     // Create and populate a sample project
-    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::Readonly), perClassRowCount);
+    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
 
         {
         ECSqlStatement statement;
@@ -2350,9 +2350,8 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
         actualParamIndex = statement.GetParameterIndex ("garbage");
         EXPECT_EQ (-1, actualParamIndex);
 
-        auto stepStat = statement.Step ();
-        EXPECT_EQ ((int) BE_SQLITE_ROW, (int) stepStat);
-        }
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+       }
 
         {
         ECSqlStatement statement;
@@ -2369,8 +2368,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
         EXPECT_EQ (3, actualParamIndex);
         statement.BindInt64 (actualParamIndex, 123456789);
 
-        auto stepStat = statement.Step ();
-        EXPECT_EQ ((int) BE_SQLITE_ROW, (int) stepStat);
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
         }
 
         {
@@ -2386,9 +2384,36 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
 
         statement.BindInt64 (3, 123456789);
 
-        auto stepStat = statement.Step ();
-        EXPECT_EQ ((int) BE_SQLITE_ROW, (int) stepStat);
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
         }
+
+        {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, statement.Prepare(ecdb, "SELECT I, S FROM ecsql.PSA WHERE I = :value")) << "VALUE is a reserved word in the ECSQL grammar, so cannot be used without escaping, even in parameter names";
+        }
+
+        {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.PSA (L,S,I) VALUES (?,?,:[value])"));
+
+        int actualParamIndex = statement.GetParameterIndex("value");
+        ASSERT_EQ(3, actualParamIndex);
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(actualParamIndex, 300471));
+
+        ECInstanceKey newKey;
+        ASSERT_EQ (BE_SQLITE_DONE, statement.Step(newKey));
+
+        statement.Finalize();
+
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.PSA WHERE ECInstanceId = :[id]"));
+        actualParamIndex = statement.GetParameterIndex("id");
+        ASSERT_EQ(1, actualParamIndex);
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindId(actualParamIndex, newKey.GetECInstanceId()));
+
+        ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+        ASSERT_EQ(newKey.GetECInstanceId().GetValue(), statement.GetValueId<ECInstanceId>(0).GetValue());
+        }
+
     }
 
 //---------------------------------------------------------------------------------------
