@@ -542,7 +542,8 @@ public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
-    void GetParamList(bvector<Utf8String>& paramList, bool isForUpdate = false);
+    void GetParamList(bvector<Utf8CP>& paramList, bool isForUpdate = false);
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement, bool isForUpdate = false);
     template<class T> void CallAppData(T const& caller) const;
 
 protected:
@@ -588,10 +589,10 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
-    //! Called to get a list of parameters/properties that need to be inserted when inserting a new element in the table.
+    //! Called to get a list of parameters/properties that need to be added when inserting a new element in the table.
     //! @note If you override this method, you must call T_Super::_GetInsertParams in order to get the superclasses' properties.
     //! This call will be followed by a call to _BindInsertParams which will actually bind the parameter values to the statement.
-    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8String>& insertParams);
+    DGNPLATFORM_EXPORT virtual void _GetInsertParams(bvector<Utf8CP>& insertParams);
 
     //! Called to bind the element's property values to the ECSqlStatement when inserting
     //! a new element.  The parameters to bind were the ones that were added in the call
@@ -601,11 +602,10 @@ protected:
     //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
 
-    //! Called after a DgnElement was inserted into the database.  Override this
-    //! only if your derived class needs to insert into a secondary table that is dependent
-    //! on a foreign key from the initial insert.
-    //! @note If you override this method, you @em must call T_Super::_InsertSecondary() first.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertSecondary();
+    //! Override this method if your element needs to do additional Inserts into the database (for example,
+    //! insert a relationship between the element and something else).
+    //! @note If you override this method, you @em must call T_Super::_InsertInDb() first.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb();
 
     //! Called after a DgnElement was successfully inserted into the database.
     //! @note If you override this method, you @em must call T_Super::_OnInserted.
@@ -622,10 +622,24 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original);
 
+    //! Called to get a list of parameters/properties that need to be added when updating an element in the table.
+    //! @note If you override this method, you must call T_Super::_GetUpdateParams in order to get the superclasses' properties.
+    //! This call will be followed by a call to _BindUpdateParams which will actually bind the parameter values to the statement.
+    DGNPLATFORM_EXPORT virtual void _GetUpdateParams(bvector<Utf8CP>& updateParams);
+
+    //! Called to bind the element's property values to the ECSqlStatement when updating
+    //! an existing element.  The parameters to bind were the ones that were added in the call
+    //! to _GetUpdateParams.  
+    //! @note If you override this method, you should bind your subclass properties
+    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
+    //! Then you @em must call T_Super::_BindUpdateParams, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+
     //! Called to update a DgnElement in the DgnDb with new values. Override to update subclass properties.
     //! @note This method is called from DgnElements::Update, on the persistent element, after its values have been
-    //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement.
-    //! @note If you override this method, you @em must call T_Super::_UpdateInDb, forwarding its status.
+    //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement.  Only
+    //! override this method if your element needs to do additional work when updating the element, such as updating
+    //! a relationship.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
 
     //! Called after a DgnElement was successfully updated. The element will be in its post-updated state.
@@ -1132,7 +1146,7 @@ protected:
     GeomStream m_geom;
 
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertSecondary() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
@@ -1414,7 +1428,7 @@ private:
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
-    DgnElementId GetNextId();
+    void InitNextId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
     DgnDbStatus PerformDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);

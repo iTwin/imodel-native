@@ -12,8 +12,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnViews::Insert(View& entry)
     {
-    entry.m_viewId.Invalidate();
-    entry.m_viewId.ToNextAvailable(m_dgndb, DGN_TABLE(DGN_CLASSNAME_View), "Id");
+    entry.m_viewId = DgnViewId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_View), "Id");
 
     ViewHandlerP handler = ViewHandler::FindHandler(m_dgndb, entry.m_classId);
     if (nullptr == handler)

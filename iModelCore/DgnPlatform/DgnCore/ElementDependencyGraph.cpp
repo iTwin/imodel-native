@@ -223,8 +223,8 @@ Utf8String DgnElementDependencyGraph::FmtElementPath(Utf8CP epath)
         {
         if ('.' == *dot || 0 == *dot)
             {
-            int64_t id;
-            if (sscanf(start, "%" SCNd64, &id) == 1)
+            uint64_t id;
+            if (sscanf(start, "%" SCNu64, &id) == 1)
                 {
                 if (!path.empty())
                     path.append(".");

@@ -265,7 +265,7 @@ void ViewController::LoadCategories(JsonValueCR settings)
     for (Json::ArrayIndex i=0; i<facetJson.size(); ++i)
         {
         JsonValueCR val=facetJson[i];
-        DgnSubCategoryId subCategoryId(val[VIEW_SubCategoryId].asInt64());
+        DgnSubCategoryId subCategoryId(val[VIEW_SubCategoryId].asUInt64());
         if (subCategoryId.IsValid())
             OverrideSubCategory(subCategoryId, DgnCategories::SubCategory::Override(val));
         }

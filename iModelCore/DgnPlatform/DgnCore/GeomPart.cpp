@@ -131,7 +131,15 @@ BentleyStatus DbGeomPartsWriter::UpdateGeomPart(DgnGeomPartId geomPartId, GeomSt
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnGeomPartId DgnGeomParts::MakeNewGeomPartId()
     {
-    m_highestGeomPartId.ToNextAvailable(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Id");
+    if (!m_highestGeomPartId.IsValid())
+        {
+        m_highestGeomPartId = DgnGeomPartId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Id");
+        }
+    else
+        {
+        m_highestGeomPartId.UseNext(m_dgndb);
+        }
+
     return m_highestGeomPartId;
     }
 
