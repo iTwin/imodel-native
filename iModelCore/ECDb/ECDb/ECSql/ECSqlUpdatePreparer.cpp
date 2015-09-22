@@ -49,14 +49,14 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     // UPDATE clause
     nativeSqlBuilder.Append ("UPDATE ");
     auto status = ECSqlExpPreparer::PrepareClassRefExp (nativeSqlBuilder, ctx, *classNameExp);
-    if (status != ECSqlStatus::Success)
+    if (!status.IsSuccess())
         return status;
 
     //PropertyValueMap& propertyValueMap;
     // SET clause
     NativeSqlBuilder::ListOfLists assignmentListSnippetLists;
     status = PrepareAssignmentListExp (assignmentListSnippetLists, ctx, exp.GetAssignmentListExp ());
-    if (status != ECSqlStatus::Success)
+    if (!status.IsSuccess())
         return status;
 
     const std::vector<size_t> emptyIndexSkipList;
@@ -70,7 +70,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
         {
         nativeSqlBuilder.AppendSpace ();
         status = ECSqlExpPreparer::PrepareWhereExp(nativeSqlBuilder, ctx, whereClauseExp);
-        if (status != ECSqlStatus::Success)
+        if (!status.IsSuccess())
             return status;
 
         hasWhereClause = true;
@@ -81,7 +81,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     //status = SystemColumnPreparer::GetFor(classMap).GetWhereClause(ctx, systemWhereClause, classMap, ECSqlType::Update,
     //                classNameExp->IsPolymorphic (), nullptr); //SQLite UPDATE does not allow table aliases
 
-    //if (status != ECSqlStatus::Success)
+    //if (!status.IsSuccess())
     //    return status;
 
     auto& storageDesc = classMap.GetStorageDescription ();
@@ -153,10 +153,10 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
         if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Struct)
             {
             stat = StructPrepareStepTask(assignementExp, classMap, propNameExp->GetPropertyMap(), binder, noneSelectPreparedStmt, ctx, exp);
-            if (stat != ECSqlStatus::Success)
+            if (!stat.IsSuccess())
                 {
                 BeAssert(false && "PrepareStepTask Failed for Struct");
-                return ECSqlStatus::ProgrammerError;
+                return ECSqlStatus::Error;
                 }
 
             }
@@ -164,10 +164,10 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
         else if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::StructArray)
             {
             stat = StructArrayPrepareStepTask(assignementExp, classMap, propNameExp->GetPropertyMap(), binder, noneSelectPreparedStmt, ctx, exp);
-            if (stat != ECSqlStatus::Success)
+            if (!stat.IsSuccess())
                 {
                 BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ECSqlStatus::ProgrammerError;
+                return ECSqlStatus::Error;
                 }
             }
 
@@ -178,7 +178,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
     auto selectorStmt = noneSelectPreparedStmt->GetStepTasks().GetSelector(true);
     selectorStmt->Initialize(ctx, ctx.GetParentArrayProperty(), nullptr);
     auto stat = selectorStmt->Prepare(classMap.GetECDbMap().GetECDbR(), selectorQuery.c_str());
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         {
         BeAssert(false && "Fail to prepared statement for ECInstanceIdSelect. Possible case of struct array containing struct array");
         return stat;
@@ -191,7 +191,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
         auto& sink = selectorStmt->GetBinder(j);
         ECSqlBinder* source = nullptr;
         auto status = ecsqlParameterMap.TryGetBinder(source, j + parameterIndex);
-        if (status == ECSqlStatus::Success)
+        if (status.IsSuccess())
             source->SetOnBindEventHandler(sink);
         else
             return status;
@@ -214,7 +214,7 @@ ECSqlStatus ECSqlUpdatePreparer::StructArrayPrepareStepTask(const AssignmentExp*
         if (status != ECSqlStepTaskCreateStatus::Success)
             {
             BeAssert(false && "SubqueryTest expression not supported.");
-            return ECSqlStatus::ProgrammerError;
+            return ECSqlStatus::Error;
             }
         }
 
@@ -224,7 +224,7 @@ ECSqlStatus ECSqlUpdatePreparer::StructArrayPrepareStepTask(const AssignmentExp*
         if (structArrayBinder == nullptr)
             {
             BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-            return ECSqlStatus::ProgrammerError;
+            return ECSqlStatus::Error;
             }
 
         auto& parameterValue = structArrayBinder->GetParameterValue();
@@ -249,7 +249,7 @@ ECSqlStatus ECSqlUpdatePreparer::StructPrepareStepTask(const AssignmentExp* assi
             if ((StructPrepareStepTask(assignementExp, classMap, *childPropertyMap, &propertyBinder, noneSelectPreparedStmt, ctx, exp)) != ECSqlStatus::Success)
                 {
                 BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ECSqlStatus::ProgrammerError;
+                return ECSqlStatus::Error;
                 }
             }
 
@@ -258,7 +258,7 @@ ECSqlStatus ECSqlUpdatePreparer::StructPrepareStepTask(const AssignmentExp* assi
             if (StructArrayPrepareStepTask(assignementExp, classMap, *childPropertyMap, &propertyBinder, noneSelectPreparedStmt, ctx, exp) != ECSqlStatus::Success)
                 {
                 BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ECSqlStatus::ProgrammerError;
+                return ECSqlStatus::Error;
                 }
             }
         }
@@ -280,7 +280,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp (NativeSqlBuilder::Lis
         auto assignmentExp = static_cast<AssignmentExp const*> (childExp);
         NativeSqlBuilder::List nativeSqlSnippets;
         auto stat = ECSqlPropertyNameExpPreparer::Prepare (nativeSqlSnippets, ctx, assignmentExp->GetPropertyNameExp ());
-        if (stat != ECSqlStatus::Success)
+        if (!stat.IsSuccess())
             {
             ctx.PopScope ();
             return stat;
@@ -302,7 +302,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp (NativeSqlBuilder::Lis
             else
                 stat = ECSqlExpPreparer::PrepareValueExp (rhsNativeSqlSnippets, ctx, valueExp);
 
-            if (stat != ECSqlStatus::Success)
+            if (!stat.IsSuccess())
                 {
                 ctx.PopScope ();
                 return stat;
@@ -311,7 +311,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp (NativeSqlBuilder::Lis
             if (sqlSnippetCount != rhsNativeSqlSnippets.size())
                 {
                 BeAssert(false && "LHS and RHS SQLite SQL snippet count differs for the ECSQL UPDATE assignment");
-                return ECSqlStatus::ProgrammerError;
+                return ECSqlStatus::Error;
                 }
 
             for (size_t i = 0; i < sqlSnippetCount; i++)

@@ -29,7 +29,7 @@ BentleyStatus ECDb_ECInstanceECSqlSelectAdapter ()
     // Prepare statement
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare (ecdb, ecsql);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         {
         // do error handling here...
         return ERROR;
@@ -39,7 +39,7 @@ BentleyStatus ECDb_ECInstanceECSqlSelectAdapter ()
 
     ECInstanceECSqlSelectAdapter adapter (statement);
     // Execute statement and step over each row of the result set
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         pageOfECInstances.push_back (adapter.GetInstance ());
         }
@@ -69,7 +69,7 @@ BentleyStatus ECDb_JsonECSqlSelectAdapter ()
     // Prepare statement
     ECSqlStatement statement;
     ECSqlStatus stat = statement.Prepare (ecdb, ecsql);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         {
         // do error handling here...
         return ERROR;
@@ -80,7 +80,7 @@ BentleyStatus ECDb_JsonECSqlSelectAdapter ()
 
     JsonECSqlSelectAdapter adapter (statement);
     // Execute statement and step over each row of the result set
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         Json::Value currentRow;
         bool stat = adapter.GetRow (currentRow);

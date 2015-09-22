@@ -82,7 +82,7 @@ IECSqlPrimitiveBinder& ECSqlParameterValue::_BindPrimitive()
 IECSqlPrimitiveBinder& ECSqlParameterValue::BindPrimitive() const
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to non-primitive parameter.");
-    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::UserError).BindPrimitive();
+    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error).BindPrimitive();
     }
 
 //---------------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ IECSqlPrimitiveBinder& ECSqlParameterValue::BindPrimitive() const
 IECSqlStructBinder& ECSqlParameterValue::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind struct value to non-struct parameter.");
-    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::UserError).BindStruct();
+    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error).BindStruct();
     }
 
 //---------------------------------------------------------------------------------------
@@ -100,7 +100,7 @@ IECSqlStructBinder& ECSqlParameterValue::_BindStruct()
 IECSqlArrayBinder& ECSqlParameterValue::_BindArray(uint32_t initialCapacity)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array value to non-array parameter.");
-    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::UserError).BindArray(initialCapacity);
+    return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error).BindArray(initialCapacity);
     }
 
 //---------------------------------------------------------------------------------------
@@ -212,7 +212,7 @@ ECSqlStatus ECSqlParameterValue::BindTo(ECSqlParameterValue const& from, IECSqlB
                 default:
                     {
                     BeAssert(false && "Unhandled primitive type in ECSqlParameterValue::BindTo");
-                    return ECSqlStatus::ProgrammerError;
+                    return ECSqlStatus::Error;
                     }
             }
         }
@@ -230,7 +230,7 @@ ECSqlStatus ECSqlParameterValue::BindTo(ECSqlParameterValue const& from, IECSqlB
             BeAssert(dynamic_cast<ECSqlParameterValue const*> (&memberValue) != nullptr);
             auto const& memberValueAsParameterValue = static_cast<ECSqlParameterValue const&> (memberValue);
             auto stat = BindTo(memberValueAsParameterValue, toStructBinder.GetMember(memberPropId));
-            if (stat != ECSqlStatus::Success)
+            if (!stat.IsSuccess())
                 return stat;
             }
         }
@@ -245,7 +245,7 @@ ECSqlStatus ECSqlParameterValue::BindTo(ECSqlParameterValue const& from, IECSqlB
             auto fromArrayValueAsParameterValue = static_cast<ECSqlParameterValue const*> (fromArrayElement);
             auto& arrayElementBinder = toArrayBinder.AddArrayElement();
             auto stat = BindTo(*fromArrayValueAsParameterValue, arrayElementBinder);
-            if (stat != ECSqlStatus::Success)
+            if (!stat.IsSuccess())
                 return stat;
             }
         }
@@ -280,13 +280,13 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindBoolean(bool value)
     if (!CanBindValue(PRIMITIVETYPE_Boolean))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Boolean value can only be bound to boolean parameter values.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     if (SUCCESS != m_value.SetBoolean(value))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindBoolean");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
     
     return ECSqlStatus::Success;
@@ -300,13 +300,13 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindBinary(const void* value, int bin
     if (!CanBindValue(PRIMITIVETYPE_Binary))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Blob values can only be bound to Blob parameter values.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     if (SUCCESS != m_value.SetBinary((const Byte*) value, (size_t) binarySize, makeCopy == MakeCopy::Yes))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindBinary");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;
@@ -330,7 +330,7 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindDateTime(uint64_t julianDayHns, D
     if (!CanBindValue(PRIMITIVETYPE_DateTime))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Date time values can only be bound to date time parameter values.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(julianDayHns);
@@ -338,7 +338,7 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindDateTime(uint64_t julianDayHns, D
     if (SUCCESS != bstat)
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindDateTime");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;
@@ -352,13 +352,13 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindDouble(double value)
     if (!CanBindValue(PRIMITIVETYPE_Double))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Double values can only be bound to double parameter values.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
     
     if (SUCCESS != m_value.SetDouble(value))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindDouble");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;
@@ -373,13 +373,13 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindGeometryBlob(const void* value, i
     if (!CanBindValue(PRIMITIVETYPE_IGeometry))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. IGeometry values can only be bound to IGeometry parameter values.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     if (SUCCESS != m_value.SetBinary(static_cast<Byte const*>(value), blobSize, makeCopy == IECSqlBinder::MakeCopy::Yes))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindGeometry");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;
@@ -393,14 +393,14 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindInt(int value)
     if (!CanBindValue(PRIMITIVETYPE_Integer))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Integer values can only be bound to integer parameter values.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
 
     if (SUCCESS != m_value.SetInteger(value))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindInt");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;
@@ -414,13 +414,13 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindInt64(int64_t value)
     if (!CanBindValue(PRIMITIVETYPE_Long))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. int64_t values can only be bound to int64_t parameter values.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     if (SUCCESS != m_value.SetLong(value))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindInt64");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;
@@ -434,13 +434,13 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindPoint2D (DPoint2dCR value)
     if (!CanBindValue(PRIMITIVETYPE_Point2D))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point2D values can only be bound to Point2D parameter values.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     if (SUCCESS != m_value.SetPoint2D (value))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindPoint2D");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;
@@ -454,13 +454,13 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindPoint3D (DPoint3dCR value)
     if (!CanBindValue(PRIMITIVETYPE_Point3D))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point3D values can only be bound to Point3D parameter values.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     if (SUCCESS != m_value.SetPoint3D(value))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindPoint3D");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;
@@ -474,13 +474,13 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindText(Utf8CP value, IECSqlBinder::
     if (!CanBindValue(PRIMITIVETYPE_String))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. String values can only be bound to string parameter values.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     if (SUCCESS != m_value.SetUtf8CP(value, makeCopy == MakeCopy::Yes))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindText");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;
@@ -715,7 +715,7 @@ IECSqlBinder& StructECSqlParameterValue::_GetMember(ECN::ECPropertyId structMemb
 
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Struct member '%s.%s' does not exist",
                                                 GetTypeInfo().GetStructType().GetFullName(), structMemberPropertyName);
-        return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::UserError);
+        return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error);
         }
 
     return *it->second;
@@ -733,7 +733,7 @@ IECSqlBinder& StructECSqlParameterValue::_GetMember(Utf8CP structMemberPropertyN
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Struct member '%s.%s' does not exist",
             GetTypeInfo().GetStructType().GetFullName(),
             structMemberPropertyName);
-        return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::UserError);
+        return NoopECSqlBinderFactory::GetBinder(ECSqlStatus::Error);
         }
 
     return _GetMember(structMemberProp->GetId());
@@ -838,7 +838,7 @@ IECSqlBinder& ArrayECSqlParameterValue::_AddArrayElement()
     {
     auto const& typeInfo = GetTypeInfo();
     const auto stat = ArrayConstraintValidator::ValidateMaximum(GetECDb(), typeInfo, (uint32_t) m_arrayElementValues.Size() + 1);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return NoopECSqlBinderFactory::GetBinder(stat).AddArrayElement();
     
     IECSqlBinder* arrayElementP = nullptr;

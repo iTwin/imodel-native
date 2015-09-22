@@ -10,6 +10,7 @@
 #include "ECSqlStatementIterator.h"
 
 using namespace std;
+USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 
@@ -256,13 +257,13 @@ ECSqlStatus ECSqlStatementIterator::Iterate (ECSqlStatement& statement, IECSqlIt
     callback.OnRows (nullptr, IECSqlIteratorCallback::Event::Begin);
     const int columnCount = statement.GetColumnCount ();
     int rowId = 1;
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step ())
         {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
             {
             IECSqlValue const& ecsqlValue = statement.GetValue (columnIndex);
             auto stat = IterateCell (callback, ecsqlValue, rowId);
-            if (stat != ECSqlStatus::Success)
+            if (!stat.IsSuccess())
                 return stat;
             }
 

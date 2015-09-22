@@ -28,7 +28,7 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
             ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (1, (int64_t)(instanceId++)));
-            ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step()) << "step failed for " << selectSql;
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "step failed for " << selectSql;
             stmt.Reset ();
             stmt.ClearBindings ();
             }
@@ -58,7 +58,7 @@ void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
             ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (1, (int64_t)(instanceId++)));
-            ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "step failed for " << deleteSql;
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "step failed for " << deleteSql;
             stmt.Reset ();
             stmt.ClearBindings ();
             }
@@ -94,7 +94,7 @@ void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
                 }
 
             ASSERT_EQ (ECSqlStatus::Success, stmt.BindInt64 (propertyCount + 1, (int64_t)(instanceId++)));
-            ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "step failed for " << updateSql;
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "step failed for " << updateSql;
             stmt.Reset ();
             stmt.ClearBindings ();
             }
@@ -130,7 +130,7 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
                 ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(parameterIndex, "Init Value", IECSqlBinder::MakeCopy::No));
                 }
 
-            ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "Step failed for " << insertSql;
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Step failed for " << insertSql;
             stmt.Reset ();
             stmt.ClearBindings ();
             }

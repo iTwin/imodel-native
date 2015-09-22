@@ -1106,11 +1106,11 @@ TEST_F(SchemaImportTestFixture, AbstractClassWithPolymorphicAndNonPolymorphicSha
     ASSERT_EQ(s4.Prepare(db, "INSERT INTO tac.SharedTable (P1) VALUES('Hello')"), ECSqlStatus::InvalidECSql);
     //Noabstract classes
     ASSERT_EQ(s2.Prepare(db, "INSERT INTO tac.ChildDomainClassA (P1, P2) VALUES('Hello', 'World')"), ECSqlStatus::Success);
-    ASSERT_EQ(s2.Step(), ECSqlStepStatus::Done);
+    ASSERT_EQ(s2.Step(), BE_SQLITE_DONE);
     ASSERT_EQ(s3.Prepare(db, "INSERT INTO tac.ChildDomainClassB (P1, P3) VALUES('Hello', 'World')"), ECSqlStatus::Success);
-    ASSERT_EQ(s3.Step(), ECSqlStepStatus::Done);
+    ASSERT_EQ(s3.Step(), BE_SQLITE_DONE);
     ASSERT_EQ(s5.Prepare(db, "INSERT INTO tac.SharedTable1 (P2) VALUES('Hello')"), ECSqlStatus::Success);
-    ASSERT_EQ(s5.Step(), ECSqlStepStatus::Done);
+    ASSERT_EQ(s5.Step(), BE_SQLITE_DONE);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1208,37 +1208,37 @@ TEST_F (SchemaImportTestFixture, InstanceCRUD)
     //Inserts Instances.
     ECSqlStatement stmt, s1, s2, s3, s4;
     ASSERT_EQ (ECSqlStatus::Success, s1.Prepare (db, "INSERT INTO ts.Product (Product,Price) VALUES('Book',100)"));
-    ASSERT_EQ (ECSqlStepStatus::Done, s1.Step ());
+    ASSERT_EQ (BE_SQLITE_DONE, s1.Step ());
     ASSERT_EQ (ECSqlStatus::Success, s2.Prepare (db, "INSERT INTO ts.Product (Product,Price) VALUES('E-Reader',200)"));
-    ASSERT_EQ (ECSqlStepStatus::Done, s2.Step ());
+    ASSERT_EQ (BE_SQLITE_DONE, s2.Step ());
     ASSERT_EQ (ECSqlStatus::Success, s3.Prepare (db, "INSERT INTO ts.Product (Product,Price) VALUES('I-Pod',700)"));
-    ASSERT_EQ (ECSqlStepStatus::Done, s3.Step ());
+    ASSERT_EQ (BE_SQLITE_DONE, s3.Step ());
     ASSERT_EQ (ECSqlStatus::Success, s4.Prepare (db, "INSERT INTO ts.Product (Product,Price) VALUES('Goggles',500)"));
-    ASSERT_EQ (ECSqlStepStatus::Done, s4.Step ());
+    ASSERT_EQ (BE_SQLITE_DONE, s4.Step ());
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "SELECT COUNT(*) FROM ts.Product"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     ASSERT_EQ (4, stmt.GetValueInt (0));
     stmt.Finalize ();
 
     //Deletes the instance
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "DELETE FROM ts.Product WHERE Price=200"));
-    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_DONE == stmt.Step ());
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "SELECT COUNT(*) FROM ts.Product"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     ASSERT_EQ (3, stmt.GetValueInt (0));
     stmt.Finalize ();
 
     //Updates the instance
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "UPDATE ts.Product SET Product='Watch' WHERE Price=500"));
-    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_DONE == stmt.Step ());
     stmt.Finalize ();
 
     //Select the instance matching the query.
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "SELECT Product.Product FROM ts.Product WHERE Price=700"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     ASSERT_STREQ ("I-Pod", stmt.GetValueText (0));
     stmt.Finalize ();
     }
@@ -1332,7 +1332,7 @@ TEST_F (SchemaImportTestFixture, AmbiguousQuery)
     Utf8String ExpectedValueOfP1 = "Harvey-Mike-";
     Utf8String ActualValueOfP1;
 
-    while (stmt.Step () == ECSqlStepStatus::HasRow)
+    while (stmt.Step () == BE_SQLITE_ROW)
         {
         ActualValueOfP1.append (stmt.GetValueText (0));
         ActualValueOfP1.append ("-");
@@ -1345,7 +1345,7 @@ TEST_F (SchemaImportTestFixture, AmbiguousQuery)
     Utf8String ExpectedValueOfStructP1 = "val1-val2-";
     Utf8String ActualValueOfStructP1;
 
-    while (stmt.Step () == ECSqlStepStatus::HasRow)
+    while (stmt.Step () == BE_SQLITE_ROW)
         {
         ActualValueOfStructP1.append (stmt.GetValueText (0));
         ActualValueOfStructP1.append ("-");
@@ -1358,7 +1358,7 @@ TEST_F (SchemaImportTestFixture, AmbiguousQuery)
     int ActualValueOfStructP2 = 468;
     int ExpectedValueOfStructP2 = 0;
 
-    while (stmt.Step () == ECSqlStepStatus::HasRow)
+    while (stmt.Step () == BE_SQLITE_ROW)
         {
         ExpectedValueOfStructP2 += stmt.GetValueInt (0);
         }
@@ -1462,20 +1462,20 @@ TEST_F (SchemaImportTestFixture, SharedTableInstanceInsertionAndDeletion)
 
     //Inserts values in Class A,B and C.
     EXPECT_EQ (ECSqlStatus::Success, statment.Prepare (ecdb, "INSERT INTO t.ClassA(P1) VALUES ('Testval1')"));
-    EXPECT_TRUE (ECSqlStepStatus::Done == statment.Step ());
+    EXPECT_TRUE (BE_SQLITE_DONE == statment.Step ());
     statment.Finalize ();
 
     EXPECT_EQ (ECSqlStatus::Success, statment.Prepare (ecdb, "INSERT INTO t.ClassB(P2) VALUES ('Testval2')"));
-    EXPECT_TRUE (ECSqlStepStatus::Done == statment.Step ());
+    EXPECT_TRUE (BE_SQLITE_DONE == statment.Step ());
     statment.Finalize ();
 
     EXPECT_EQ (ECSqlStatus::Success, statment.Prepare (ecdb, "INSERT INTO t.ClassC(P3) VALUES ('Testval3')"));
-    EXPECT_TRUE (ECSqlStepStatus::Done == statment.Step ());
+    EXPECT_TRUE (BE_SQLITE_DONE == statment.Step ());
     statment.Finalize ();
 
     //Deletes the instance of ClassA.
     EXPECT_EQ (ECSqlStatus::Success, statment.Prepare (ecdb, "DELETE FROM t.ClassA"));
-    EXPECT_TRUE (ECSqlStepStatus::Done == statment.Step ());
+    EXPECT_TRUE (BE_SQLITE_DONE == statment.Step ());
     statment.Finalize ();
     
     BeSQLite::Statement stmt;
@@ -1485,7 +1485,7 @@ TEST_F (SchemaImportTestFixture, SharedTableInstanceInsertionAndDeletion)
 
     //Updates the instance of ClassB.
     EXPECT_EQ (ECSqlStatus::Success, statment.Prepare (ecdb, "UPDATE t.ClassB SET P2='UpdatedValue'"));
-    EXPECT_TRUE (ECSqlStepStatus::Done == statment.Step ());
+    EXPECT_TRUE (BE_SQLITE_DONE == statment.Step ());
     statment.Finalize ();
     }
 
@@ -1544,15 +1544,15 @@ TEST_F(SchemaImportTestFixture, PolymorphicSharedTable_SharedColumns)
     //verify ECSqlStatments
     ECSqlStatement s1, s2, s3, s4, s5;
     ASSERT_EQ(s1.Prepare(db, "INSERT INTO rc.BaseClass (P1) VALUES('HelloWorld')"), ECSqlStatus::Success);
-    ASSERT_EQ(s1.Step(), ECSqlStepStatus::Done);
+    ASSERT_EQ(s1.Step(), BE_SQLITE_DONE);
     ASSERT_EQ(s2.Prepare(db, "INSERT INTO rc.ChildDomainClassA (P1, P2) VALUES('ChildClassA', 10.002)"), ECSqlStatus::Success);
-    ASSERT_EQ(s2.Step(), ECSqlStepStatus::Done);
+    ASSERT_EQ(s2.Step(), BE_SQLITE_DONE);
     ASSERT_EQ(s3.Prepare(db, "INSERT INTO rc.ChildDomainClassB (P1, P3) VALUES('ChildClassB', 2)"), ECSqlStatus::Success);
-    ASSERT_EQ(s3.Step(), ECSqlStepStatus::Done);
+    ASSERT_EQ(s3.Step(), BE_SQLITE_DONE);
     ASSERT_EQ(s4.Prepare(db, "INSERT INTO rc.DerivedA (P1, P2, P4) VALUES('DerivedA', 11.003, 12.004)"), ECSqlStatus::Success);
-    ASSERT_EQ(s4.Step(), ECSqlStepStatus::Done);
+    ASSERT_EQ(s4.Step(), BE_SQLITE_DONE);
     ASSERT_EQ(s5.Prepare(db, "INSERT INTO rc.DerivedB (P1, P2, P5) VALUES('DerivedB', 11.003, 'DerivedB')"), ECSqlStatus::Success);
-    ASSERT_EQ(s5.Step(), ECSqlStepStatus::Done);
+    ASSERT_EQ(s5.Step(), BE_SQLITE_DONE);
 
     //verify No of Columns in BaseClass
     Statement statement;
@@ -1640,15 +1640,15 @@ TEST_F(SchemaImportTestFixture, PolymorphicSharedTable_SharedColumns_DisableShar
     //verify ECSqlStatments
     ECSqlStatement s1, s2, s3, s4, s5;
     ASSERT_EQ(ECSqlStatus::Success, s1.Prepare(db, "INSERT INTO rc.BaseClass (P1) VALUES('HelloWorld')"));
-    ASSERT_EQ(ECSqlStepStatus::Done, s1.Step());
+    ASSERT_EQ(BE_SQLITE_DONE, s1.Step());
     ASSERT_EQ(ECSqlStatus::Success, s2.Prepare(db, "INSERT INTO rc.ChildDomainClassA (P1, P2) VALUES('ChildClassA', 10.002)"));
-    ASSERT_EQ(ECSqlStepStatus::Done, s2.Step());
+    ASSERT_EQ(BE_SQLITE_DONE, s2.Step());
     ASSERT_EQ(ECSqlStatus::Success, s3.Prepare(db, "INSERT INTO rc.ChildDomainClassB (P1, P3) VALUES('ChildClassB', 2)"));
-    ASSERT_EQ(ECSqlStepStatus::Done, s3.Step());
+    ASSERT_EQ(BE_SQLITE_DONE, s3.Step());
     ASSERT_EQ(ECSqlStatus::Success, s4.Prepare(db, "INSERT INTO rc.DerivedA (P1, P2, P4) VALUES('DerivedA', 11.003, 12.004)"));
-    ASSERT_EQ(ECSqlStepStatus::Done, s4.Step());
+    ASSERT_EQ(BE_SQLITE_DONE, s4.Step());
     ASSERT_EQ(ECSqlStatus::Success, s5.Prepare(db, "INSERT INTO rc.DerivedB (P1, P2, P5) VALUES('DerivedB', 11.003, 'DerivedB')"));
-    ASSERT_EQ(ECSqlStepStatus::Done, s5.Step());
+    ASSERT_EQ(BE_SQLITE_DONE, s5.Step());
 
     //verify No of Columns in BaseClass
     const int expectedColCount = 6;
@@ -1730,13 +1730,13 @@ TEST_F(SchemaImportTestFixture, NotMappedWithinClassHierarchy)
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.SubSubSub (P1, P2, P3) VALUES(1,2,3)")) << "INSERT should be possible even if base class is not mapped";
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "INSERT should be possible even if base class is not mapped";
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "INSERT should be possible even if base class is not mapped";
         }
 
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT P1,P2,P3 FROM ts.SubSubSub")) << "SELECT should be possible even if base class is not mapped";
-        ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step()) << "SELECT should be possible even if base class is not mapped";
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "SELECT should be possible even if base class is not mapped";
         ASSERT_EQ(1, stmt.GetValueInt(0));
         ASSERT_EQ(2, stmt.GetValueInt(1));
         ASSERT_EQ(3, stmt.GetValueInt(2));
@@ -2111,7 +2111,7 @@ TEST_F (SchemaImportTestFixture, UserDefinedIndexTest)
         for (int id = 100; id <= 1000; id += 100)
             {
             ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, id));
-            ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
             stmt.Reset();
             stmt.ClearBindings();
             }
@@ -2121,46 +2121,46 @@ TEST_F (SchemaImportTestFixture, UserDefinedIndexTest)
         Utf8CP ecsql = "INSERT INTO ts.Base (Code) VALUES(?)";
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, ecsql));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "base:1", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
         stmt.Reset();
         stmt.ClearBindings();
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "base:2", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError();
         stmt.Finalize();
 
         ecsql = "INSERT INTO ts.Sub1 (Code,AId) VALUES(?,?)";
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, ecsql));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub1:1", IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 100));
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
         stmt.Reset();
         stmt.ClearBindings();
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub1:2", IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 200));
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError();
         stmt.Finalize();
 
         ecsql = "INSERT INTO ts.Sub1_1 (Code,AId,Cost) VALUES(?,?,9.99)";
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, ecsql));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub1_1:1", IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 300));
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
         stmt.Reset();
         stmt.ClearBindings();
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub1_1:2", IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 400));
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError();
         stmt.Finalize();
 
         //use same name for all Sub2 instances to test that the partial unique index on this column is excluding Sub2 rows.
         ecsql = "INSERT INTO ts.Sub2 (Code,Name) VALUES(?,'A sub2 instance')";
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, ecsql));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub2:1", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
         stmt.Reset();
         stmt.ClearBindings();
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub2:2", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError ();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError ();
         }
     }
 
@@ -2564,42 +2564,42 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
             }
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM t.Base"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     EXPECT_EQ (6, stmt.GetValueInt (0));
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM t.BaseOwnsBase"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     EXPECT_EQ (6, stmt.GetValueInt (0));
     stmt.Finalize ();
 
     //Deletes the instances of BaseOwnsBase class..
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM ONLY t.BaseOwnsBase"));
-    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_DONE == stmt.Step ());
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM t.BaseOwnsBase"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     EXPECT_EQ (4, stmt.GetValueInt (0));
     stmt.Finalize ();
 
     //Deletes the instances of BaseHasClassA class..
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM ONLY t.BaseHasClassA"));
-    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_DONE == stmt.Step ());
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM t.BaseOwnsBase"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     EXPECT_EQ (2, stmt.GetValueInt (0));
     stmt.Finalize ();
 
     //Deletes the instances of BaseHasClassB class..
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM ONLY t.BaseHasClassB"));
-    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_DONE == stmt.Step ());
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM t.BaseOwnsBase"));
-    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     EXPECT_EQ (0, stmt.GetValueInt (0));
     stmt.Finalize ();
     }
@@ -2624,24 +2624,24 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceB
     ECInstanceKey TPHKey1;
     ECInstanceKey TPHKey2;
     ASSERT_EQ (ECSqlStatus::Success, insertStatement.Prepare (ecdb, "INSERT INTO t.Base (P0) VALUES ('string1')"));
-    ASSERT_EQ (ECSqlStepStatus::Done, insertStatement.Step (TPHKey1));
+    ASSERT_EQ (BE_SQLITE_DONE, insertStatement.Step (TPHKey1));
     ASSERT_TRUE (TPHKey1.IsValid ());
     insertStatement.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, insertStatement.Prepare (ecdb, "INSERT INTO t.Base (P0) VALUES ('string2')"));
-    ASSERT_EQ (ECSqlStepStatus::Done, insertStatement.Step (TPHKey2));
+    ASSERT_EQ (BE_SQLITE_DONE, insertStatement.Step (TPHKey2));
     ASSERT_TRUE (TPHKey2.IsValid ());
     insertStatement.Finalize ();
 
     ECInstanceKey classAKey1;
     ECInstanceKey classAKey2;
     ASSERT_EQ (ECSqlStatus::Success, insertStatement.Prepare (ecdb, "INSERT INTO t.ClassA (P1) VALUES ('string1')"));
-    ASSERT_EQ (ECSqlStepStatus::Done, insertStatement.Step (classAKey1));
+    ASSERT_EQ (BE_SQLITE_DONE, insertStatement.Step (classAKey1));
     ASSERT_TRUE (classAKey1.IsValid ());
     insertStatement.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, insertStatement.Prepare (ecdb, "INSERT INTO t.ClassA (P1) VALUES ('string2')"));
-    ASSERT_EQ (ECSqlStepStatus::Done, insertStatement.Step (classAKey2));
+    ASSERT_EQ (BE_SQLITE_DONE, insertStatement.Step (classAKey2));
     ASSERT_TRUE (classAKey2.IsValid ());
     insertStatement.Finalize ();
 
@@ -2649,7 +2649,7 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceB
     ECSqlStatement selectStmt;
     ASSERT_EQ (ECSqlStatus::Success, selectStmt.Prepare (ecdb, "SELECT * FROM t.Base WHERE ECInstanceId = ?"));
     selectStmt.BindId (1, TPHKey1.GetECInstanceId ());
-    ASSERT_EQ (ECSqlStepStatus::HasRow, selectStmt.Step ());
+    ASSERT_EQ (BE_SQLITE_ROW, selectStmt.Step ());
     ECInstanceECSqlSelectAdapter TPHadapter (selectStmt);
     IECInstancePtr readInstance = TPHadapter.GetInstance ();
     ASSERT_TRUE (readInstance.IsValid ());
@@ -2661,7 +2661,7 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceB
     relationStmt.BindInt64 (2, TPHKey1.GetECClassId ());
     relationStmt.BindId (3, classAKey1.GetECInstanceId ());
     relationStmt.BindInt64 (4, classAKey1.GetECClassId ());
-    ASSERT_EQ (relationStmt.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (BE_SQLITE_DONE, relationStmt.Step ());
     relationStmt.Finalize ();
 
     //try to insert Duplicate relationship step() should return error
@@ -2670,13 +2670,13 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceB
     relationStmt.BindInt64 (2, TPHKey1.GetECClassId ());
     relationStmt.BindId (3, classAKey1.GetECInstanceId ());
     relationStmt.BindInt64 (4, classAKey1.GetECClassId ());
-    ASSERT_EQ (relationStmt.Step (), ECSqlStepStatus::Error);
+    ASSERT_TRUE ((BE_SQLITE_CONSTRAINT_BASE & relationStmt.Step ()) == BE_SQLITE_CONSTRAINT_BASE);
     relationStmt.Finalize ();
 
     //retrieve ECInstance from Db After Inserting Relationship Instance, based on ECInstanceId, verify ECInstance is valid
     ASSERT_EQ (ECSqlStatus::Success, selectStmt.Prepare (ecdb, "SELECT * FROM t.ClassA WHERE ECInstanceId = ?"));
     selectStmt.BindId (1, classAKey1.GetECInstanceId ());
-    ASSERT_EQ (ECSqlStepStatus::HasRow, selectStmt.Step ());
+    ASSERT_EQ (BE_SQLITE_ROW, selectStmt.Step ());
     ECInstanceECSqlSelectAdapter ClassAadapter (selectStmt);
     readInstance = ClassAadapter.GetInstance ();
     ASSERT_TRUE (readInstance.IsValid ());
@@ -2786,7 +2786,7 @@ protected:
         };
 
 private:
-    void VerifyRelationshipInsertionIntegrity(ECDbCR ecdb, Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<ECSqlStepStatus> const& expected, size_t& rowInserted) const;
+    void VerifyRelationshipInsertionIntegrity(ECDbCR ecdb, Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const;
     size_t GetRelationshipInstanceCount(ECDbCR ecdb, Utf8CP relationshipClass) const;
     ResolvedMapStrategy GetMapStrategy(ECDbR ecdb, ECClassId ClassId) const;
 
@@ -2880,7 +2880,7 @@ TEST_F(ReferentialIntegrityTestFixture, RelationshipTest_AllowDuplicateRelations
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbCR ecdb, Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<ECSqlStepStatus> const& expected, size_t& rowInserted) const
+void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbCR ecdb, Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const
     {
     ECSqlStatement stmt;
     auto sql = SqlPrintfString("INSERT INTO %s (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)", relationshipClass);
@@ -2892,13 +2892,13 @@ void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbC
         for (auto& gooKey : targetKeys)
             {
             stmt.Reset();
-            ASSERT_EQ(static_cast<int>(stmt.ClearBindings()), static_cast<int>(ECSqlStatus::Success));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
             stmt.BindId(1, fooKey.GetECInstanceId());
             stmt.BindInt64(2, fooKey.GetECClassId());
             stmt.BindId(3, gooKey.GetECInstanceId());
             stmt.BindInt64(4, gooKey.GetECClassId());
-            ASSERT_EQ(static_cast<int>(stmt.Step()), static_cast<int>(expected[n]));
-            if (expected[n] == ECSqlStepStatus::Done)
+            ASSERT_EQ(expected[n], stmt.Step());
+            if (expected[n] == BE_SQLITE_DONE)
                 rowInserted++;
 
             n = n + 1;
@@ -2915,7 +2915,7 @@ size_t ReferentialIntegrityTestFixture::GetRelationshipInstanceCount(ECDbCR ecdb
     auto sql = SqlPrintfString("SELECT COUNT(*) FROM ONLY ts.Foo JOIN ts.Goo USING %s", relationshipClass);
     if (stmt.Prepare(ecdb, sql.GetUtf8CP()) == ECSqlStatus::Success)
         {
-        if (stmt.Step() == ECSqlStepStatus::HasRow)
+        if (stmt.Step() == BE_SQLITE_ROW)
             return static_cast<size_t>(stmt.GetValueInt(0));
         }
 
@@ -3043,7 +3043,7 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
         ASSERT_EQ(fooStmt.Reset(), ECSqlStatus::Success);
         ASSERT_EQ(fooStmt.ClearBindings(), ECSqlStatus::Success);
         ASSERT_EQ(fooStmt.BindText(1, SqlPrintfString("foo_%d", i), IECSqlBinder::MakeCopy::Yes), ECSqlStatus::Success);
-        ASSERT_EQ(fooStmt.Step(out), ECSqlStepStatus::Done);
+        ASSERT_EQ(fooStmt.Step(out), BE_SQLITE_DONE);
         fooKeys.push_back(out);
         }
 
@@ -3055,35 +3055,35 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
         ASSERT_EQ(gooStmt.Reset(), ECSqlStatus::Success);
         ASSERT_EQ(gooStmt.ClearBindings(), ECSqlStatus::Success);
         ASSERT_EQ(gooStmt.BindText(1, SqlPrintfString("goo_%d", i), IECSqlBinder::MakeCopy::Yes), ECSqlStatus::Success);
-        ASSERT_EQ(gooStmt.Step(out), ECSqlStepStatus::Done);
+        ASSERT_EQ(gooStmt.Step(out), BE_SQLITE_DONE);
         gooKeys.push_back(out);
         }
 
     //Compute what are the right valid permutation
-    std::vector<ECSqlStepStatus> oneFooHasOneGooResult;
-    std::vector<ECSqlStepStatus> oneFooHasManyGooResult;
-    std::vector<ECSqlStepStatus> manyFooHasManyGooResult;
-    std::vector<ECSqlStepStatus> reinsertResultError;
-    std::vector<ECSqlStepStatus> reinsertResultDone;
+    std::vector<DbResult> oneFooHasOneGooResult;
+    std::vector<DbResult> oneFooHasManyGooResult;
+    std::vector<DbResult> manyFooHasManyGooResult;
+    std::vector<DbResult> reinsertResultError;
+    std::vector<DbResult> reinsertResultDone;
     for (auto f = 0; f < maxFooInstances; f++)
         {
         for (auto g = 0; g < maxGooInstances; g++)
             {
             //1:1 is not effected with AllowDuplicateRelationships
             if (f == g)
-                oneFooHasOneGooResult.push_back(ECSqlStepStatus::Done);
+                oneFooHasOneGooResult.push_back(BE_SQLITE_DONE);
             else
-                oneFooHasOneGooResult.push_back(ECSqlStepStatus::Error);
+                oneFooHasOneGooResult.push_back(BE_SQLITE_CONSTRAINT_BASE);
 
             //1:N is effected with AllowDuplicateRelationships
             if (f == 0)
-                oneFooHasManyGooResult.push_back(ECSqlStepStatus::Done);
+                oneFooHasManyGooResult.push_back(BE_SQLITE_DONE);
             else
-                oneFooHasManyGooResult.push_back(ECSqlStepStatus::Error);
+                oneFooHasManyGooResult.push_back(BE_SQLITE_CONSTRAINT_BASE);
 
-            manyFooHasManyGooResult.push_back(ECSqlStepStatus::Done);
-            reinsertResultError.push_back(ECSqlStepStatus::Error);
-            reinsertResultDone.push_back(ECSqlStepStatus::Done);
+            manyFooHasManyGooResult.push_back(BE_SQLITE_DONE);
+            reinsertResultError.push_back(BE_SQLITE_CONSTRAINT_BASE);
+            reinsertResultDone.push_back(BE_SQLITE_DONE);
             }
         }
 

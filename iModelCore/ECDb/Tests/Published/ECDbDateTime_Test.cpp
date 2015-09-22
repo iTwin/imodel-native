@@ -298,11 +298,11 @@ TEST(ECDbDateTime, ECSqlStatementGetValueDateTime)
     Utf8String ecsql = ecsqlBuilder.ToString ();
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, ecsql.c_str ());
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparing ECSQL '" << ecsql.c_str () << "' failed.";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparing ECSQL '" << ecsql.c_str () << "' failed.";
     statement.BindId (1, ecInstanceKey.GetECInstanceId ());
 
     auto stepStat = statement.Step ();
-    ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) stepStat) << "Executing ECSQL '" << ecsql.c_str () << "' didn't return the expected row.";
+    ASSERT_EQ ((int) BE_SQLITE_ROW, (int) stepStat) << "Executing ECSQL '" << ecsql.c_str () << "' didn't return the expected row.";
 
     const size_t nonArrayDataCount = nonArrayPropertyAccessStringList.size ();
     for (size_t i = 0; i < nonArrayDataCount; i++)
@@ -372,7 +372,7 @@ TEST(ECDbDateTime, ECSqlStatementGetValueDateTime)
 
     ASSERT_EQ (expectedStructArraySize, structArrayValue.GetArrayLength ()) << "Unexpected size of struct array as returned from IECSqlArrayReader::GetArrayLength";
 
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step ()) << "Only one row was expected to be returned from the test query " << ecsql.c_str ();
+    ASSERT_EQ ((int) BE_SQLITE_DONE, (int) statement.Step ()) << "Only one row was expected to be returned from the test query " << ecsql.c_str ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -420,14 +420,14 @@ TEST(Performance_ECDbDateTime, ECSqlStatementGetValueDateTime)
     Utf8String ecsql = ecsqlBuilder.ToString ();
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, ecsql.c_str ());
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparing ECSQL '" << ecsql.c_str () << "' failed.";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparing ECSQL '" << ecsql.c_str () << "' failed.";
 
     const int arrayPropertyIndex = expectedNonArrayPropertyCount + 2;
     const int structArrayPropertyIndex = arrayPropertyIndex + 1;
     
     int actualRowCount = 0;
     StopWatch timer (true);
-    while (ECSqlStepStatus::HasRow == statement.Step ())
+    while (BE_SQLITE_ROW == statement.Step ())
         {
         actualRowCount++;
         //*** check non-array props
@@ -519,10 +519,10 @@ TEST(ECDbDateTime, DateTimeStorageAccuracyTest)
 
     ECSqlStatement statement;
     auto stat = statement.Prepare (db, ecsqlBuilder.ToString ().c_str ());
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
     size_t rowCount = 0;
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (statement.Step () == BE_SQLITE_ROW)
         {
         ++rowCount;
         const ECInstanceId instanceId = statement.GetValueId<ECInstanceId> (0);

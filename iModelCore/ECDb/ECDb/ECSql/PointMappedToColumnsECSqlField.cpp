@@ -52,7 +52,7 @@ DPoint2d PointMappedToColumnsECSqlField::_GetPoint2D () const
     {
     if (IsPoint3D ())
         {
-        ReportError (ECSqlStatus::UserError, "GetValuePoint2D cannot be called for Point3D column. Call GetPoint3D instead.");
+        ReportError (ECSqlStatus::Error, "GetValuePoint2D cannot be called for Point3D column. Call GetPoint3D instead.");
         BeAssert (false && "GetValuePoint2D cannot be called for Point3D column. Call GetPoint3D instead.");
         return NoopECSqlValue::GetSingleton ().GetPoint2D ();
         }
@@ -69,7 +69,7 @@ DPoint3d PointMappedToColumnsECSqlField::_GetPoint3D () const
     {
     if (!IsPoint3D ())
         {
-        ReportError (ECSqlStatus::UserError, "GetValuePoint3D cannot be called for Point2D column. Call GetPoint2D instead.");
+        ReportError (ECSqlStatus::Error, "GetValuePoint3D cannot be called for Point2D column. Call GetPoint2D instead.");
         BeAssert (false && "GetValuePoint3D cannot be called for Point2D column. Call GetPoint2D instead.");
         return NoopECSqlValue::GetSingleton ().GetPoint3D ();
         }
@@ -87,7 +87,7 @@ DPoint3d PointMappedToColumnsECSqlField::_GetPoint3D () const
 //+---------------+---------------+---------------+---------------+---------------+--------
 void const* PointMappedToColumnsECSqlField::_GetBinary (int* binarySize) const
     {
-    ReportError (ECSqlStatus::UserError, "GetBinary cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError (ECSqlStatus::Error, "GetBinary cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetBinary cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetBinary (binarySize);
     }
@@ -97,7 +97,7 @@ void const* PointMappedToColumnsECSqlField::_GetBinary (int* binarySize) const
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool PointMappedToColumnsECSqlField::_GetBoolean () const
     {
-    ReportError (ECSqlStatus::UserError, "GetBoolean cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError (ECSqlStatus::Error, "GetBoolean cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetBoolean cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetBoolean ();
     }
@@ -107,7 +107,7 @@ bool PointMappedToColumnsECSqlField::_GetBoolean () const
 //+---------------+---------------+---------------+---------------+---------------+--------
 uint64_t PointMappedToColumnsECSqlField::_GetDateTimeJulianDaysHns (DateTime::Info& metadata) const
     {
-    ReportError (ECSqlStatus::UserError, "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError (ECSqlStatus::Error, "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetDateTimeJulianDaysHns (metadata);
     }
@@ -117,7 +117,7 @@ uint64_t PointMappedToColumnsECSqlField::_GetDateTimeJulianDaysHns (DateTime::In
 //+---------------+---------------+---------------+---------------+---------------+--------
 double PointMappedToColumnsECSqlField::_GetDateTimeJulianDays(DateTime::Info& metadata) const
     {
-    ReportError(ECSqlStatus::UserError, "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError(ECSqlStatus::Error, "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert(false && "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata);
     }
@@ -127,7 +127,7 @@ double PointMappedToColumnsECSqlField::_GetDateTimeJulianDays(DateTime::Info& me
 //+---------------+---------------+---------------+---------------+---------------+--------
 double PointMappedToColumnsECSqlField::_GetDouble () const
     {
-    ReportError (ECSqlStatus::UserError, "GetDouble cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError (ECSqlStatus::Error, "GetDouble cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetDouble cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetDouble ();
     }
@@ -137,7 +137,7 @@ double PointMappedToColumnsECSqlField::_GetDouble () const
 //+---------------+---------------+---------------+---------------+---------------+--------
 int PointMappedToColumnsECSqlField::_GetInt () const
     {
-    ReportError (ECSqlStatus::UserError, "GetInt cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError (ECSqlStatus::Error, "GetInt cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetInt cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetInt ();
     }
@@ -147,7 +147,7 @@ int PointMappedToColumnsECSqlField::_GetInt () const
 //+---------------+---------------+---------------+---------------+---------------+--------
 int64_t PointMappedToColumnsECSqlField::_GetInt64 () const
     {
-    ReportError (ECSqlStatus::UserError, "GetInt64 cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError (ECSqlStatus::Error, "GetInt64 cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetInt64 cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetInt64 ();
     }
@@ -157,7 +157,7 @@ int64_t PointMappedToColumnsECSqlField::_GetInt64 () const
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8CP PointMappedToColumnsECSqlField::_GetText () const 
     {
-    ReportError (ECSqlStatus::UserError, "GetText cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError (ECSqlStatus::Error, "GetText cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetText cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetText ();
     }
@@ -167,7 +167,7 @@ Utf8CP PointMappedToColumnsECSqlField::_GetText () const
 //+---------------+---------------+---------------+---------------+---------------+--------
 IGeometryPtr PointMappedToColumnsECSqlField::_GetGeometry() const
     {
-    ReportError(ECSqlStatus::UserError, "GetGeometry cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError(ECSqlStatus::Error, "GetGeometry cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert(false && "GetGeometry cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton().GetGeometry();
     }
@@ -177,7 +177,7 @@ IGeometryPtr PointMappedToColumnsECSqlField::_GetGeometry() const
 //+---------------+---------------+---------------+---------------+---------------+--------
 void const* PointMappedToColumnsECSqlField::_GetGeometryBlob (int* blobSize) const
     {
-    ReportError (ECSqlStatus::UserError, "GetGeometryBlob cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError (ECSqlStatus::Error, "GetGeometryBlob cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetGeometryBlob cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetGeometryBlob (blobSize);
     }
@@ -195,7 +195,7 @@ IECSqlPrimitiveValue const& PointMappedToColumnsECSqlField::_GetPrimitive () con
 //+---------------+---------------+---------------+---------------+---------------+--------
 IECSqlArrayValue const& PointMappedToColumnsECSqlField::_GetArray () const
     {
-    ReportError (ECSqlStatus::UserError, "GetArray cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError (ECSqlStatus::Error, "GetArray cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetArray cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetArray ();
     }
@@ -205,7 +205,7 @@ IECSqlArrayValue const& PointMappedToColumnsECSqlField::_GetArray () const
 //+---------------+---------------+---------------+---------------+---------------+--------
 IECSqlStructValue const& PointMappedToColumnsECSqlField::_GetStruct () const
     {
-    ReportError (ECSqlStatus::UserError, "GetStruct cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    ReportError (ECSqlStatus::Error, "GetStruct cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetStruct cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetStruct ();
     }

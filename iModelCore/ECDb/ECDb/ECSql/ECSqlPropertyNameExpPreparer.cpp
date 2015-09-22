@@ -102,7 +102,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
     if (derviedPropertyExp.GetName ().empty ())
         {
         BeAssert ("Nested expression must have a name/alias" && false);
-        return ECSqlStatus::ProgrammerError;
+        return ECSqlStatus::Error;
         }
 
     auto valueExp = derviedPropertyExp.GetExpression ();
@@ -121,7 +121,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
                     auto snippets = propertyName->GetPropertyMap ().ToNativeSql (nullptr, ECSqlType::Select, false);
                     auto r = propertyRef->Prepare (snippets);
                     if (!r)
-                        return ECSqlStatus::ProgrammerError;
+                        return ECSqlStatus::Error;
                     }
                 }
             else
@@ -129,14 +129,14 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
                 NativeSqlBuilder::List snippets;
                 ctx.PushScope (ctx.GetCurrentScope ().GetExp ());
                 auto stat = ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (snippets, ctx, *propertyName);
-                if (stat != ECSqlStatus::Success)
+                if (!stat.IsSuccess())
                     return stat;
 
                 ctx.PopScope ();
 
                 bool r = propertyRef->Prepare (snippets);
                 if (!r)
-                    return ECSqlStatus::ProgrammerError;
+                    return ECSqlStatus::Error;
                 }
 
             nativeSqlSnippets = propertyRef->GetOutSnippets ();
@@ -149,7 +149,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
                 alias = derviedPropertyExp.GetNestedAlias ();
 
             if (alias.empty ())
-                return ECSqlStatus::ProgrammerError;
+                return ECSqlStatus::Error;
 
             NativeSqlBuilder sqlSnippet;
             sqlSnippet.Append (alias.c_str ());
@@ -164,7 +164,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
                 alias = derviedPropertyExp.GetNestedAlias ();
            
             if (alias.empty ())
-                return ECSqlStatus::ProgrammerError;
+                return ECSqlStatus::Error;
 
             NativeSqlBuilder sqlSnippet;
             sqlSnippet.Append (alias.c_str ());

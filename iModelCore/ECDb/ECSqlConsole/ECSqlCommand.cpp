@@ -12,6 +12,7 @@
 #include "Console.h"
 #include "ECSqlStatementIterator.h"
 using namespace std;
+USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 //---------------------------------------------------------------------------------------
@@ -44,7 +45,7 @@ void ECSqlCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& 
     Utf8CP ecsql = args[0].c_str();
     ECSqlStatement stmt;
     ECSqlStatus status = stmt.Prepare(session.GetECDbR(), ecsql);
-    if (status != ECSqlStatus::Success)
+    if (!status.IsSuccess())
         {
         if (session.GetIssues().HasIssue())
             Console::WriteErrorLine("Failed to prepare ECSQL statement. %s", session.GetIssues().GetIssue());
@@ -86,7 +87,7 @@ void ECSqlCommand::ExecuteSelect (ECSqlConsoleSession& session, ECSqlStatement& 
         return;
         }
 
-    while (statement.Step () == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step ())
         {
         Utf8String out;            
         for(int i = 0; i < columnCount; i++)
@@ -111,9 +112,7 @@ void ECSqlCommand::ExecuteSelect (ECSqlConsoleSession& session, ECSqlStatement& 
 void ECSqlCommand::ExecuteInsert (ECSqlConsoleSession& session, ECSqlStatement& statement) const
     {
     ECInstanceKey generatedECInstanceKey;
-    auto stepStat = statement.Step (generatedECInstanceKey);
-
-    if (stepStat != ECSqlStepStatus::Done)
+    if (BE_SQLITE_DONE != statement.Step (generatedECInstanceKey))
         {
         if (session.GetIssues().HasIssue())
             Console::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());
@@ -131,9 +130,7 @@ void ECSqlCommand::ExecuteInsert (ECSqlConsoleSession& session, ECSqlStatement& 
 //---------------------------------------------------------------------------------------
 void ECSqlCommand::ExecuteUpdateOrDelete (ECSqlConsoleSession& session, ECSqlStatement& statement) const
     {
-    ECSqlStepStatus stepStat = statement.Step ();
-
-    if (stepStat != ECSqlStepStatus::Done)
+    if (BE_SQLITE_DONE != statement.Step ())
         {
         if (session.GetIssues().HasIssue())
             Console::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());

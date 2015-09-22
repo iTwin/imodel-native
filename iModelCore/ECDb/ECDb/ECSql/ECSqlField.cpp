@@ -32,13 +32,13 @@ ECSqlField::ECSqlField (ECSqlStatementBase& owner, ECSqlColumnInfo&& ecsqlColumn
 ECSqlStatus ECSqlField::Init () 
     {
     auto stat = _Init ();
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     for (unique_ptr<ECSqlField> const& child : GetChildren ())
         {
         stat = child->Init ();
-        if (stat != ECSqlStatus::Success)
+        if (!stat.IsSuccess())
             return stat;
         }
 
@@ -67,13 +67,13 @@ ECSqlColumnInfoCR ECSqlField::_GetColumnInfo () const
 ECSqlStatus ECSqlField::Reset () 
     {
     auto stat = _Reset ();
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     for (unique_ptr<ECSqlField> const& child : GetChildren ())
         {
         stat = child->Reset ();
-        if (stat != ECSqlStatus::Success)
+        if (!stat.IsSuccess())
             return stat;
         }
 
@@ -192,7 +192,7 @@ ECSqlPrimitiveBinder::StatementType ECSqlPrimitiveBinder::GetSourceStatementType
 ECSqlStatus ECSqlPrimitiveBinder::Execute(ECSqlStatementBase& sourceStmt, ECSqlStatementBase& targetStmt, IECSqlBinder::MakeCopy makeCopy)
     {
     if (!IsResolved())
-        return ECSqlStatus::ProgrammerError;
+        return ECSqlStatus::Error;
 
     BeAssert(sourceStmt.GetPreparedStatementP() != nullptr);
 

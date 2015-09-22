@@ -169,7 +169,7 @@ TEST_F(SchemaImportTestFixture, ECDbSchemaRules_Instantiability)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.DomainClass (Name) VALUES('bla')")) << "INSERT with domain class should succeed";
-    ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "INSERT with domain class should succeed";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "INSERT with domain class should succeed";
     }
 
     {

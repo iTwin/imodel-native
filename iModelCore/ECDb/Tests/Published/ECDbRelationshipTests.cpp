@@ -159,7 +159,7 @@ void ValidateReadingRelationship (ECDbTestProject& testProject, Utf8CP relations
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (testProject.GetECDb(), ecSql.GetUtf8CP())) << ecSql.GetUtf8CP();
     statement.BindId(1, InstanceToId(importedRelInstance));
 
-    ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
+    ASSERT_TRUE(BE_SQLITE_ROW == statement.Step());
     int64_t ecInstanceId = statement.GetValueInt64 (0);
     int64_t sourceECInstanceId = statement.GetValueInt64 (1);
     int64_t sourceECClassId = statement.GetValueInt64 (2);
@@ -206,9 +206,9 @@ void ValidateReadingRelated (ECDbTestProject& testProject, Utf8CP relationshipNa
     // Prepare and execute ECSqlStatement
     ECSqlStatement statement;
     ECSqlStatus prepareStatus = statement.Prepare (testProject.GetECDb(), ecSql.GetUtf8CP());
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) prepareStatus) << ecSql.GetUtf8CP();
+    ASSERT_EQ(ECSqlStatus::Success, prepareStatus) << ecSql.GetUtf8CP();
     statement.BindId(1, relSourceECInstanceId);
-    ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
+    ASSERT_TRUE(BE_SQLITE_ROW == statement.Step());
 
     // Get related instance
     ECInstanceECSqlSelectAdapter adapter (statement);
@@ -406,7 +406,7 @@ TEST(ECDbRelationships, AmbiguousJoin)
 
     auto stat = stmt.Prepare(ecdb, "SELECT * FROM TR.Laptop JOIN TR.Laptop USING TR.LaptopHasLaptop FORWARD");
    
-   ASSERT_NE(static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
+    ASSERT_NE(ECSqlStatus::Success, stat);
     stmt.Finalize();
     ecdb.CloseDb();
 }
@@ -440,13 +440,13 @@ TEST(ECDbRelationships, JoinTests)
     rel1 = CreateRelationship(*laptopHasRam, *laptopInstance, *ramInstance);
     InsertInstance(ecdb, *laptopHasRam, *rel1);
     auto stat = stmt.Prepare(ecdb, "SELECT a.OS FROM TR.Laptop a LEFT JOIN TR.LaptopHasRam b ON a.ECInstanceId=b.SourceECInstanceId LEFT JOIN TR.RAM c ON c.ECInstanceId=b.TargetECInstanceId");
-    ASSERT_EQ(static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
+    ASSERT_EQ(ECSqlStatus::Success, stat);
     auto stepStat = stmt.Step();
-    ASSERT_EQ(static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (stepStat));
+    ASSERT_EQ(BE_SQLITE_ROW, stepStat);
     Utf8CP val = stmt.GetValue(0).GetText();
     EXPECT_STREQ(val, "Linux");
     stepStat = stmt.Step();
-    ASSERT_EQ(static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (stepStat));
+    ASSERT_EQ(static_cast<int> (BE_SQLITE_ROW), static_cast<int> (stepStat));
     val = stmt.GetValue(0).GetText();
     EXPECT_STREQ(val, "Windows");
     stmt.Finalize();
@@ -454,7 +454,7 @@ TEST(ECDbRelationships, JoinTests)
     //test for right outer join
     //still not working support for right outer join work in progress
     auto prepareStat = stmt.Prepare(ecdb, "SELECT a.Size FROM TR.Laptop a RIGHT JOIN TR.LaptopHasRam b ON a.ECInstanceId=b.SourceECInstanceId RIGHT JOIN TR.RAM c ON c.ECInstanceId=b.TargetECInstanceId");
-    ASSERT_EQ(static_cast<int> (ECSqlStatus::InvalidECSql), static_cast<int> (prepareStat));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, prepareStat);
     stmt.Finalize();
     ecdb.CloseDb();
     }
@@ -516,26 +516,26 @@ TEST(ECDbRelationships, ECRelationshipContraintKeyProperties)
     auto ecsql = "INSERT INTO ecsqltestKeys.P (I) VALUES(123)";
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int) ECSqlStatus::Success, (int) stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
     ECInstanceKey instanceKey;
     auto stepStatus = statement.Step(instanceKey);
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
 
     ecsql = "INSERT INTO ecsqltestKeys.PSA (I) VALUES(?)";
     stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
     statement.BindId(1, instanceKey.GetECInstanceId());
 
     stepStatus = statement.Step();
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
 
     ecsql = "SELECT * FROM ecsqltestKeys.PSAHasPKey_N1 ";
     stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
-    ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
-    ASSERT_TRUE(ECSqlStepStatus::Done == statement.Step());
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_TRUE(BE_SQLITE_ROW == statement.Step());
+    ASSERT_TRUE(BE_SQLITE_DONE == statement.Step());
     statement.Finalize();
 
     ECClassCP pClass = ecdb.Schemas().GetECClass("ecsqltestKeys", "P",ResolveSchema::BySchemaNamespacePrefix);
@@ -552,10 +552,10 @@ TEST(ECDbRelationships, ECRelationshipContraintKeyProperties)
 
     ecsql = "SELECT * FROM ecsqltestKeys.PSAHasPKey_N1 ";
     stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed";
-    ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
-    ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
-    ASSERT_TRUE(ECSqlStepStatus::Done == statement.Step());
+    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_TRUE(BE_SQLITE_ROW == statement.Step());
+    ASSERT_TRUE(BE_SQLITE_ROW == statement.Step());
+    ASSERT_TRUE(BE_SQLITE_DONE == statement.Step());
     statement.Finalize();
 
     }

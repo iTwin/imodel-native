@@ -54,14 +54,14 @@ TEST(ECDbFileInfo, EmptyECDbHasFileInfoSchema)
     ASSERT_TRUE(ecdb.TableExists("be_EmbedFile")) << "Empty ECDb file is expected to contain the table 'be_EmbedFile'.";
 
     ECSqlStatement insertStmt;
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)insertStmt.Prepare(ecdb, "INSERT INTO ecdbf.ExternalFileInfo (Name, Size, LastModified) VALUES ('myexternalfile.pdf', 1024, DATE '2014-09-25')"));
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)insertStmt.Step());
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ecdbf.ExternalFileInfo (Name, Size, LastModified) VALUES ('myexternalfile.pdf', 1024, DATE '2014-09-25')"));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
 
     ECSqlStatement selStmt;
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)selStmt.Prepare(ecdb, "SELECT * FROM ecdbf.ExternalFileInfo"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT * FROM ecdbf.ExternalFileInfo"));
 
     int rowCount = 0;
-    while (selStmt.Step() == ECSqlStepStatus::HasRow)
+    while (selStmt.Step() == BE_SQLITE_ROW)
     {
         rowCount++;
     }
@@ -78,10 +78,10 @@ TEST(ECDbFileInfo, PolymorphicQueryRightAfterCreation)
     auto& ecdb = testProject.Create("ecdbfileinfo.ecdb");
 
     ECSqlStatement selStmt0;
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)selStmt0.Prepare(ecdb, "SELECT * FROM ecdbf.EmbeddedFileInfo"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt0.Prepare(ecdb, "SELECT * FROM ecdbf.EmbeddedFileInfo"));
 
     ECSqlStatement selStmt;
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)selStmt.Prepare(ecdb, "SELECT * FROM ecdbf.FileInfo"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT * FROM ecdbf.FileInfo"));
 }
 
 //---------------------------------------------------------------------------------------
@@ -125,10 +125,10 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
 
     //Insert Foo instance
     ECSqlStatement stmt;
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "INSERT INTO ts.Foo (Name) VALUES (?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Foo (Name) VALUES (?)"));
     stmt.BindText(1, "Foo1", IECSqlBinder::MakeCopy::Yes);
     ECInstanceKey fooKey;
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step(fooKey));
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stmt.Step(fooKey));
     stmt.Finalize();
 
     ECClassCP embeddedFileInfoClass = ecdb. Schemas ().GetECClass (ECDB_FILEINFO_SCHEMA_NAME, "EmbeddedFileInfo");
@@ -146,20 +146,20 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     ASSERT_TRUE(embeddedFileId.IsValid());
 
     //insert InstanceHasFileInfo relationship
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "INSERT INTO ecdbf.InstanceHasFileInfo (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?,?,?,?)"));
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.BindId(1, fooKey.GetECInstanceId()));
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.BindInt64(2, fooKey.GetECClassId()));
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.BindId(3, embeddedFileId));
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.BindInt64(4, embeddedFileInfoClass->GetId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecdbf.InstanceHasFileInfo (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, fooKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedFileId));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(4, embeddedFileInfoClass->GetId()));
 
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stmt.Step());
     stmt.Finalize();
     
     //RETRIEVE scenario
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "SELECT fi.Name, fi.LastModified, fi.ECInstanceId FROM ts.Foo f JOIN ecdbf.EmbeddedFileInfo fi USING ecdbf.InstanceHasFileInfo "
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT fi.Name, fi.LastModified, fi.ECInstanceId FROM ts.Foo f JOIN ecdbf.EmbeddedFileInfo fi USING ecdbf.InstanceHasFileInfo "
         "WHERE f.ECInstanceId = ?"));
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.BindId(1, fooKey.GetECInstanceId()));
-    ASSERT_EQ((int)ECSqlStepStatus::HasRow, (int)stmt.Step());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
+    ASSERT_EQ((int)BE_SQLITE_ROW, (int)stmt.Step());
     Utf8CP actualFileName = stmt.GetValueText(0);
     DateTime actualLastModified = stmt.GetValueDateTime(1);
     double actualLastModifiedJd = 0.0;
@@ -182,19 +182,19 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     //DELETE scenario
     //TODO_ROWAFFECTED
     //stmt.EnableDefaultEventHandler();
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "DELETE FROM ONLY ts.Foo WHERE ECInstanceId = ?"));
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.BindId(1, fooKey.GetECInstanceId()));
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ONLY ts.Foo WHERE ECInstanceId = ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKey.GetECInstanceId()));
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stmt.Step());
     //check referential integrity
     //TODO_ROWAFFECTED
     //ASSERT_EQ(3, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount()); //1 Foo, 1 EmbeddedFileInfo, 1 InstanceHasFileInfo
     stmt.Finalize();
  
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.InstanceHasFileInfo LIMIT 1"));
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.InstanceHasFileInfo LIMIT 1"));
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stmt.Step());
     stmt.Finalize();
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.FileInfo LIMIT 1"));
-    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.FileInfo LIMIT 1"));
+    ASSERT_EQ((int)BE_SQLITE_DONE, (int)stmt.Step());
 }
 
 //---------------------------------------------------------------------------------------

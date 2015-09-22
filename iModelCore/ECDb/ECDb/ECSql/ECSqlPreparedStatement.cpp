@@ -32,12 +32,12 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
     if (GetType() != ECSqlType::Select && ecdb.IsReadonly())
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECDb file is opened read-only. For data-modifying ECSQL statements write access is needed.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     Utf8String nativeSql;
     auto stat = ECSqlPreparer::Prepare(nativeSql, prepareContext, ecsqlParseTree);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     m_ecsql = Utf8String(ecsql);
@@ -54,11 +54,10 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
         const auto nativeSqlStat = GetSqliteStatementR().TryPrepare(ecdb, nativeSql.c_str());
         if (nativeSqlStat != BE_SQLITE_OK)
             {
-            ECSqlStatus stat = ECSqlStatus::Success;
             Utf8String errorMessage;
             errorMessage.Sprintf("Preparing the SQLite statement '%s' failed with error code", nativeSql.c_str());
-            GetIssueReporter().ReportSqliteIssue(stat, ECDbIssueSeverity::Error, nativeSqlStat, errorMessage.c_str());
-            return stat;
+            GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStat, errorMessage.c_str());
+            return ECSqlStatus(nativeSqlStat);
             }
         }
 
@@ -73,10 +72,10 @@ IECSqlBinder& ECSqlPreparedStatement::GetBinder(int parameterIndex)
     ECSqlBinder* binder = nullptr;
     const ECSqlStatus stat = GetParameterMap().TryGetBinder(binder, parameterIndex);
 
-    if (stat == ECSqlStatus::Success && !m_isNoopInSqlite)
+    if (stat.IsSuccess() && !m_isNoopInSqlite)
         return *binder;
 
-    if (stat == ECSqlStatus::IndexOutOfBounds)
+    if (stat == ECSqlStatus::Error)
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Parameter index %d passed to ECSqlStatement binding API is out of bounds.", parameterIndex);
 
     return NoopECSqlBinderFactory::GetBinder(stat);
@@ -107,9 +106,8 @@ ECSqlStatus ECSqlPreparedStatement::ClearBindings()
 
     if (nativeSqlStat != BE_SQLITE_OK)
         {
-        ECSqlStatus stat = ECSqlStatus::Success;
-        GetIssueReporter().ReportSqliteIssue(stat, ECDbIssueSeverity::Error, nativeSqlStat);
-        return stat;
+        GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStat);
+        return ECSqlStatus(nativeSqlStat);
         }
 
     return ECSqlStatus::Success;
@@ -118,26 +116,16 @@ ECSqlStatus ECSqlPreparedStatement::ClearBindings()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlPreparedStatement::DoStep()
+DbResult ECSqlPreparedStatement::DoStep()
     {
-    if (m_parameterMap.OnBeforeStep() != ECSqlStatus::Success)
-        return ECSqlStepStatus::Error;
+    if (!m_parameterMap.OnBeforeStep().IsSuccess())
+        return BE_SQLITE_ERROR;
     
     const DbResult nativeSqlStatus = GetSqliteStatementR ().Step();
-    switch (nativeSqlStatus)
-        {
-        case BE_SQLITE_ROW:
-            return ECSqlStepStatus::HasRow;
-        case BE_SQLITE_DONE:
-            return ECSqlStepStatus::Done;
+    if (BE_SQLITE_ROW != nativeSqlStatus && BE_SQLITE_DONE != nativeSqlStatus)
+        GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStatus);
 
-        default:
-            {
-            ECSqlStatus stat;
-            GetIssueReporter().ReportSqliteIssue(stat, ECDbIssueSeverity::Error, nativeSqlStatus);
-            return ECSqlStepStatus::Error;
-            }
-        };
+    return nativeSqlStatus;
     }
 
 //---------------------------------------------------------------------------------------
@@ -156,9 +144,8 @@ ECSqlStatus ECSqlPreparedStatement::DoReset()
     DbResult nativeSqlStat = GetSqliteStatementR ().Reset();
     if (nativeSqlStat != BE_SQLITE_OK)
         {
-        ECSqlStatus stat = ECSqlStatus::Success;
-        GetIssueReporter().ReportSqliteIssue(stat, ECDbIssueSeverity::Error, nativeSqlStat);
-        return stat;
+        GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStat);
+        return ECSqlStatus(nativeSqlStat);
         }
 
     return ECSqlStatus::Success;
@@ -197,13 +184,13 @@ void ECSqlPreparedStatement::AddKeepAliveSchema(ECN::ECSchemaCR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlSelectPreparedStatement::Step()
+DbResult ECSqlSelectPreparedStatement::Step()
     {
-    const auto stat = DoStep();
-    if (stat == ECSqlStepStatus::HasRow)
+    const DbResult stat = DoStep();
+    if (BE_SQLITE_ROW == stat)
         {
-        if (InitFields() != ECSqlStatus::Success)
-            return ECSqlStepStatus::Error;
+        if (!InitFields().IsSuccess())
+            return BE_SQLITE_ERROR;
         }
 
     return stat;
@@ -258,7 +245,7 @@ ECSqlStatus ECSqlSelectPreparedStatement::ResetFields() const
     for (std::unique_ptr<ECSqlField> const& field : m_fields)
         {
         auto stat = field->Reset();
-        if (stat != ECSqlStatus::Success)
+        if (!stat.IsSuccess())
             return stat;
         }
 
@@ -273,7 +260,7 @@ ECSqlStatus ECSqlSelectPreparedStatement::InitFields() const
     for (std::unique_ptr<ECSqlField> const& field : m_fields)
         {
         auto stat = field->Init();
-        if (stat != ECSqlStatus::Success)
+        if (!stat.IsSuccess())
             return stat;
         }
 
@@ -303,10 +290,10 @@ void ECSqlSelectPreparedStatement::AddField(std::unique_ptr<ECSqlField> field)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
+DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
     {
     if (IsNoopInSqlite())
-        return ECSqlStepStatus::Done;
+        return BE_SQLITE_DONE;
 
     ECInstanceId ecinstanceidOfInsert;
     //GetModifiedRowCount can be costly, so we want to avoid calling it when not needed.
@@ -322,7 +309,7 @@ ECSqlStepStatus ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
         {
         //user hasn't provided an ecinstanceid (neither literally nor through binding) -> auto generate it
         if (GenerateECInstanceIdAndBindToInsertStatement(ecinstanceidOfInsert) != ECSqlStatus::Success)
-            return ECSqlStepStatus::Error;
+            return BE_SQLITE_ERROR;
 
         checkModifiedRowCount = false;
         }
@@ -331,15 +318,15 @@ ECSqlStepStatus ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
     m_ecInstanceKeyInfo.ResetBoundECInstanceId();
 
     BeAssert(ecinstanceidOfInsert.IsValid());
-    auto stat = DoStep();
-    if (stat == ECSqlStepStatus::Done)
+    DbResult stat = DoStep();
+    if (BE_SQLITE_DONE == stat)
         {
         if (checkModifiedRowCount && GetECDb().GetModifiedRowCount() == 0)
             {
             //this can only happen in a specific case with inserting an end table relationship, as there inserting really
             //means to update a row in the end table.
             GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not insert the ECRelationship. Either the source or target constraint's ECInstanceId does not exist or the source or target constraint's cardinality is violated.");
-            return ECSqlStepStatus::Error;
+            return BE_SQLITE_ERROR;
             }
 
 
@@ -347,15 +334,16 @@ ECSqlStepStatus ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
 
         if (GetStepTasks().HasAnyTask())
             {
-            if (GetStepTasks().ExecuteAfterStepTaskList(ecinstanceidOfInsert) == ECSqlStepStatus::Error)
-                return ECSqlStepStatus::Error;
+            stat = GetStepTasks().ExecuteAfterStepTaskList(ecinstanceidOfInsert);
+            if (BE_SQLITE_OK != stat)
+                return stat;
             }
 
-        return ECSqlStepStatus::Done;
+        return BE_SQLITE_DONE;
         }
     else
         //error status already set by child calls
-        return ECSqlStepStatus::Error;
+        return BE_SQLITE_ERROR;
     }
 
 
@@ -370,13 +358,12 @@ ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertSta
     DbResult dbStat = GetECDb().GetECDbImplR ().GetECInstanceIdSequence().GetNextValue<ECInstanceId> (generatedECInstanceId);
     if (dbStat != BE_SQLITE_OK)
         {
-        ECSqlStatus stat = ECSqlStatus::Success;
-        GetIssueReporter().ReportSqliteIssue(stat, ECDbIssueSeverity::Error, dbStat, "ECSqlStatement::Step failed: Could not generate an ECInstanceId.");
-        return stat;
+        GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, dbStat, "ECSqlStatement::Step failed: Could not generate an ECInstanceId.");
+        return ECSqlStatus(dbStat);
         }
 
     const ECSqlStatus stat = ecinstanceidBinder->BindId(generatedECInstanceId);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSqlStatement::Step failed: Could not bind the generated ECInstanceId.");
 
     return stat;
@@ -397,13 +384,14 @@ void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo(ECInstanceKeyInfo const&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan             04/14
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlUpdatePreparedStatement::Step()
+DbResult ECSqlUpdatePreparedStatement::Step()
     {
-    ECSqlStepStatus status = ECSqlStepStatus::Done;
+    DbResult status = BE_SQLITE_DONE;
     if (!IsNoopInSqlite())
         {
-        if (GetStepTasks().ExecuteBeforeStepTaskList() == ECSqlStepStatus::Error)
-            return ECSqlStepStatus::Error;
+        status = GetStepTasks().ExecuteBeforeStepTaskList();
+        if (BE_SQLITE_OK != status)
+            return status;
 
         if (!IsNothingToUpdate())
             status = DoStep();
@@ -430,13 +418,14 @@ ECSqlStatus ECSqlNonSelectPreparedStatement::_Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan             04/14
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlDeletePreparedStatement::Step()
+DbResult ECSqlDeletePreparedStatement::Step()
     {
-    ECSqlStepStatus status = ECSqlStepStatus::Done;
+    DbResult status = BE_SQLITE_DONE;
     if (!IsNoopInSqlite())
         {
-        if (GetStepTasks().ExecuteBeforeStepTaskList() == ECSqlStepStatus::Error)
-            return ECSqlStepStatus::Error;
+        status = GetStepTasks().ExecuteBeforeStepTaskList();
+        if (BE_SQLITE_OK != status)
+            return status;
 
         status = DoStep();
         }

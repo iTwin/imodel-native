@@ -159,7 +159,7 @@ void ECInstanceInserter::Impl::Initialize ()
         }
 
     const auto stat = m_statement.Prepare (m_ecdb, builder.ToString ().c_str ());
-    m_isValid = stat == ECSqlStatus::Success;
+    m_isValid = stat.IsSuccess();
     }
 
 //---------------------------------------------------------------------------------------
@@ -262,13 +262,13 @@ BentleyStatus ECInstanceInserter::Impl::Insert (ECInstanceKey& newInstanceKey, I
         }
 
     //now execute statement
-    const ECSqlStepStatus stepStatus = m_statement.Step (newInstanceKey);
+    const DbResult stepStatus = m_statement.Step (newInstanceKey);
 
     //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
     m_statement.Reset();
     m_statement.ClearBindings();
 
-    return (stepStatus == ECSqlStepStatus::Done && newInstanceKey.IsValid ()) ? SUCCESS : ERROR;
+    return (BE_SQLITE_DONE == stepStatus && newInstanceKey.IsValid ()) ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------

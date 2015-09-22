@@ -38,16 +38,10 @@ public:
     ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId const& ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
 
     //! Compare this ECInstanceKey with another key for equality
-    bool operator == (ECInstanceKey const& other) const 
-        { 
-        return m_ecClassId == other.m_ecClassId && m_ecInstanceId == other.m_ecInstanceId; 
-        }
+    bool operator == (ECInstanceKey const& other) const { return m_ecClassId == other.m_ecClassId && m_ecInstanceId == other.m_ecInstanceId; }
     
     //! Compare this ECInstanceKey with another key for inequality
-    bool operator != (ECInstanceKey const& other) const
-        {
-        return m_ecClassId != other.m_ecClassId || m_ecInstanceId != other.m_ecInstanceId;
-        }
+    bool operator != (ECInstanceKey const& other) const { return !(*this == other); }
 
     //! Compare this ECInstanceKey with another key for ordering
     bool operator < (ECInstanceKey const& other) const
@@ -69,10 +63,7 @@ public:
     ECInstanceId GetECInstanceId() const { return m_ecInstanceId; }
     
     //! Test if this key is valid
-    bool IsValid() const 
-        { 
-        return (m_ecClassId > ECN::ECClass::UNSET_ECCLASSID && m_ecInstanceId.IsValid());
-        }
+    bool IsValid() const { return (m_ecClassId > ECN::ECClass::UNSET_ECCLASSID && m_ecInstanceId.IsValid()); }
     };
 
 typedef ECInstanceKey const& ECInstanceKeyCR;

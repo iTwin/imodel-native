@@ -45,7 +45,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindNull()
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBoolean(bool value)
     {
     const auto stat = CanBind(PRIMITIVETYPE_Boolean);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     if (auto eh = GetOnBindEventHandler())
@@ -68,7 +68,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBoolean(bool value)
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
     const auto stat = CanBind(PRIMITIVETYPE_Binary);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     if (auto eh = GetOnBindEventHandler())
@@ -100,20 +100,20 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(uint64_t julianDay
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_DateTime);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     if (metadata != nullptr && metadata->GetKind() == DateTime::Kind::Local)
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECDb does not support to bind local date times.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     ECSqlTypeInfo const& parameterTypeInfo = GetTypeInfo();
     if (!parameterTypeInfo.DateTimeInfoMatches(metadata))
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Metadata of DateTime value to bind doesn't match the metadata on the corresponding ECProperty.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
     
     if (IECSqlBinder* eh = GetOnBindEventHandler())
@@ -137,7 +137,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(double julianDay, 
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDouble(double value)
     {
     const auto stat = CanBind(PRIMITIVETYPE_Double);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     if (auto eh = GetOnBindEventHandler())
@@ -160,7 +160,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDouble(double value)
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
     {
     const auto stat = CanBind(PRIMITIVETYPE_IGeometry);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     if (auto eh = GetOnBindEventHandler())
@@ -183,7 +183,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindGeometryBlob(const void* va
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt(int value)
     {
     const auto stat = CanBind(PRIMITIVETYPE_Integer);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     if (auto eh = GetOnBindEventHandler())
@@ -206,7 +206,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt(int value)
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt64(int64_t value)
     {
     const auto stat = CanBind(PRIMITIVETYPE_Long);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     if (auto eh = GetOnBindEventHandler())
@@ -229,7 +229,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt64(int64_t value)
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint2D (DPoint2dCR value)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point2D value can only be bound to parameter of same type.");
-    return ECSqlStatus::UserError;
+    return ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
@@ -238,7 +238,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint2D (DPoint2dCR value)
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint3D (DPoint3dCR value)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point3D value can only be bound to parameter of same type.");
-    return ECSqlStatus::UserError;
+    return ECSqlStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
@@ -247,7 +247,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint3D (DPoint3dCR value)
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
     {
     const auto stat = CanBind(PRIMITIVETYPE_String);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     if (auto eh = GetOnBindEventHandler())
@@ -278,7 +278,7 @@ IECSqlPrimitiveBinder& PrimitiveToSingleColumnECSqlBinder::_BindPrimitive()
 IECSqlStructBinder& PrimitiveToSingleColumnECSqlBinder::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to primitive type parameter.");
-    return GetNoopBinder(ECSqlStatus::UserError).BindStruct();
+    return GetNoopBinder(ECSqlStatus::Error).BindStruct();
     }
 
 //---------------------------------------------------------------------------------------
@@ -287,7 +287,7 @@ IECSqlStructBinder& PrimitiveToSingleColumnECSqlBinder::_BindStruct()
 IECSqlArrayBinder& PrimitiveToSingleColumnECSqlBinder::_BindArray(uint32_t initialCapacity)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to primitive parameter.");
-    return GetNoopBinder(ECSqlStatus::UserError).BindArray(initialCapacity);
+    return GetNoopBinder(ECSqlStatus::Error).BindArray(initialCapacity);
     }
 
 //---------------------------------------------------------------------------------------
@@ -305,7 +305,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType reque
                 if (requestedType != fieldDataType)
                     {
                     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch: only BindDateTime can be called for a column of the DateTime type.");
-                    return ECSqlStatus::UserError;
+                    return ECSqlStatus::Error;
                     }
                 else
                     break;
@@ -315,7 +315,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType reque
                 if (requestedType != fieldDataType)
                     {
                     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch: only BindGeometry can be called for a column of the IGeometry type.");
-                    return ECSqlStatus::UserError;
+                    return ECSqlStatus::Error;
                     }
                 else
                     break;
@@ -332,7 +332,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType reque
                 if (requestedType != fieldDataType)
                     {
                     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch: BindDateTime cannot be called for a column which is not of the DateTime type.");
-                    return ECSqlStatus::UserError;
+                    return ECSqlStatus::Error;
                     }
                 else
                     break;
@@ -342,7 +342,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType reque
                 if (requestedType != fieldDataType)
                     {
                     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch: BindGeometry cannot be called for a column which is not of the IGeometry type.");
-                    return ECSqlStatus::UserError;
+                    return ECSqlStatus::Error;
                     }
                 else
                     break;

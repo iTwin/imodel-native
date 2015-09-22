@@ -48,7 +48,7 @@ bool StructArrayMappedToSecondaryTableECSqlField::_IsNull () const
 //---------------------------------------------------------------------------------------
 IECSqlStructValue const& StructArrayMappedToSecondaryTableECSqlField::_GetStruct () const
     {
-    ReportError (ECSqlStatus::UserError, "GetStruct cannot be called for array column. Call GetArray instead.");
+    ReportError (ECSqlStatus::Error, "GetStruct cannot be called for array column. Call GetArray instead.");
     BeAssert (false && "GetStruct cannot be called for array column. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton ().GetStruct ();
     }
@@ -66,7 +66,7 @@ IECSqlArrayValue const& StructArrayMappedToSecondaryTableECSqlField::_GetArray (
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& StructArrayMappedToSecondaryTableECSqlField::_GetPrimitive () const
     {
-    ReportError (ECSqlStatus::UserError, "GetPrimitive cannot be called for array column. Call GetArray instead.");
+    ReportError (ECSqlStatus::Error, "GetPrimitive cannot be called for array column. Call GetArray instead.");
     BeAssert (false && "GetPrimitive cannot be called for array column. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton ().GetPrimitive ();
     }
@@ -169,7 +169,7 @@ bool StructArrayMappedToSecondaryTableECSqlField::Reader::_IsNull () const
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveValue const& StructArrayMappedToSecondaryTableECSqlField::Reader::_GetPrimitive () const
     {
-    m_parentField->ReportError (ECSqlStatus::UserError, "GetPrimitive cannot be called for struct array element. Call GetStruct instead.");
+    m_parentField->ReportError (ECSqlStatus::Error, "GetPrimitive cannot be called for struct array element. Call GetStruct instead.");
     return NoopECSqlValue::GetSingleton ().GetPrimitive ();
     }
 
@@ -186,7 +186,7 @@ IECSqlStructValue const& StructArrayMappedToSecondaryTableECSqlField::Reader::_G
 //---------------------------------------------------------------------------------------
 IECSqlArrayValue const& StructArrayMappedToSecondaryTableECSqlField::Reader::_GetArray () const
     {
-    m_parentField->ReportError (ECSqlStatus::UserError, "GetArray cannot be called for struct array element. Call GetStruct instead.");
+    m_parentField->ReportError (ECSqlStatus::Error, "GetArray cannot be called for struct array element. Call GetStruct instead.");
     return NoopECSqlValue::GetSingleton ().GetArray ();
     }
 
@@ -220,8 +220,7 @@ void StructArrayMappedToSecondaryTableECSqlField::Reader::MoveNext (bool onIniti
 
     m_currentArrayIndex++;
 
-    auto status = m_secondaryECSqlStatement.Step ();
-    if (status != ECSqlStepStatus::HasRow)
+    if (BE_SQLITE_ROW != m_secondaryECSqlStatement.Step ())
         {
         m_arrayLength = m_currentArrayIndex;
         m_isAtEnd = true;
