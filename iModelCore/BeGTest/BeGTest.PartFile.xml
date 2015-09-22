@@ -4,7 +4,10 @@
               xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
               >
 
-    <Part Name="Base">
+    <Part Name="Base" BentleyBuildMakeFile="prewire.mke" >
+        <Bindings>
+            <PublicAPI Domain="BeGTest" />
+        </Bindings>
     </Part>
 
     <!-- ********************************************************************************************** -->
