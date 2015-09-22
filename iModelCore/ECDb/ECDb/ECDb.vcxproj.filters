@@ -394,7 +394,6 @@
     <ClInclude Include="MapStrategy.h">
       <Filter>ECDbMap\Map</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="ECSql\SystemColumnPreparer.h">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClInclude>
@@ -423,6 +422,9 @@
       <Filter>ECDbMap\Map</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatus.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
   </ItemGroup>
