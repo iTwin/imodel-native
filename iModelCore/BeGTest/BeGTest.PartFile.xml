@@ -50,54 +50,93 @@
     <!-- *********************************************************************************************** -->
     <ProductDirectoryList ListName="MobileDgnTestsProduct">
         <ProductDirectory Name="BentleyNativeAssemblies"            Path="Assemblies"/>
+        <ProductDirectory Name="BentleyNativeAssemblies"            Deliver="false" LibType="static"/>
         <ProductDirectory Name="LoggingNativeAssemblies"            Path="Assemblies"/>
+        <ProductDirectory Name="LoggingNativeAssemblies"            Deliver="false" LibType="static"/>
         <ProductDirectory Name="GeomNativeAssemblies"               Path="Assemblies"/>
+        <ProductDirectory Name="GeomNativeAssemblies"               Deliver="false" LibType="static"/>
         <ProductDirectory Name="BeOpenSSLAssemblies"                Path="Assemblies"/>
+        <ProductDirectory Name="BeOpenSSLAssemblies"                Deliver="false" LibType="static"/>
         <ProductDirectory Name="DgnPlatformNativeAssemblies"        Path="Assemblies"/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Deliver="false" LibType="static"/>
         <ProductDirectory Name="BeCurlAssemblies"                   Path="Assemblies"/>
+        <ProductDirectory Name="BeCurlAssemblies"                   Deliver="false" LibType="static"/>
         <ProductDirectory Name="ECObjectsNativeAssemblies"          Path="Assemblies"/>
+        <ProductDirectory Name="ECObjectsNativeAssemblies"          Deliver="false" LibType="static"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies"           Path="Assemblies"/>
+        <ProductDirectory Name="GeoCoordNativeAssemblies"           Deliver="false" LibType="static"/>
         <ProductDirectory Name="PPNativeAssemblies"                 Path="Assemblies"/>
+        <ProductDirectory Name="PPNativeAssemblies"                 Deliver="false" LibType="static"/>
         <ProductDirectory Name="MdlsysAsneededSmartsolid"           Path="Assemblies"/>
+        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false" LibType="static"/>
         <ProductDirectory Name="SmartSolidAssemblies"               Path="Assemblies"/>
+        <ProductDirectory Name="SmartSolidAssemblies"               Deliver="false" LibType="static"/>
         <ProductDirectory Name="BePortableUiAssemblies"             Path="Assemblies"/>
+        <ProductDirectory Name="BePortableUiAssemblies"             Deliver="false" LibType="static"/>
         <ProductDirectory Name="CordovaLibs"                        Path="Assemblies"/>
+        <ProductDirectory Name="CordovaLibs"                        Deliver="false" LibType="static"/>
         <ProductDirectory Name="MobileDgnNativeAssemblies"          Path="Assemblies"/>
+        <ProductDirectory Name="MobileDgnNativeAssemblies"          Deliver="false" LibType="static"/>
 
         <ProductDirectory Name="Libs"                               Path="Libs"/>
+        <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
         <ProductDirectory Name="BentleyLibs"                        Path="Libs"/>
+        <ProductDirectory Name="BentleyLibs"                        Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
+        <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
+        <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
+        <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
+        <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
         <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/BeTestDocuments/DgnDb"/>
+        <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/BeTestDocuments/DgnDb" LibType="static"/>
         <ProductDirectory Name="ECSchemas"                          Path="Assets"/>
+        <ProductDirectory Name="ECSchemas"                          Path="Assets" LibType="static"/>
         <ProductDirectory Name="DgnPlatformSqlang"                  Path="Assets/sqlang"/>
+        <ProductDirectory Name="DgnPlatformSqlang"                  Path="Assets/sqlang" LibType="static"/>
         <ProductDirectory Name="sqlang"                             Path="Assets/sqlang/platform"/>
+        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang/platform" LibType="static"/>
         <ProductDirectory Name="DgnPlatformFont"                    Path="Assets/fonts"/>
+        <ProductDirectory Name="DgnPlatformFont"                    Path="Assets/fonts" LibType="static"/>
         <ProductDirectory Name="DgnPlatformLastResortFonts"         Path="Assets"/>
+        <ProductDirectory Name="DgnPlatformLastResortFonts"         Path="Assets" LibType="static"/>
         <ProductDirectory Name="BeIcu4cData"                        Path="Assets"/>
         <ProductDirectory Name="BeIcu4cData"                        Path="Assets" LibType="static"/>
         <ProductDirectory Name="GeoCoordData"                       Path="Assets/DgnGeoCoord"/>
+        <ProductDirectory Name="GeoCoordData"                       Path="Assets/DgnGeoCoord" LibType="static"/>
         <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord"/>
+        <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord" LibType="static"/>
         <ProductDirectory Name="MobileDgnSdkSeedFiles"              Path="Assets/seed"/>
+        <ProductDirectory Name="MobileDgnSdkSeedFiles"              Path="Assets/seed" LibType="static"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData"/>
+        <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData" LibType="static"/>
 
+        <ProductDirectory Name="http"                               Path="Assets/http"/>
         <ProductDirectory Name="http"                               Path="Assets/http"/>
 
         <ProductDirectory Name="MobileDgnJavaScript"                Path="Assets/js/"/>
+        <ProductDirectory Name="MobileDgnJavaScript"                Path="Assets/js/" LibType="static"/>
         <ProductDirectory Name="MobileDgnJavaScriptViewGroups"      Path="Assets/js/ViewGroups"/>
+        <ProductDirectory Name="MobileDgnJavaScriptViewGroups"      Path="Assets/js/ViewGroups" LibType="static"/>
         <ProductDirectory Name="MobileDgnJavaScriptIcons"           Path="Assets/js/resources/icons"/>
+        <ProductDirectory Name="MobileDgnJavaScriptIcons"           Path="Assets/js/resources/icons" LibType="static"/>
         <ProductDirectory Name="StdThemes"                          Path="Assets/std-themes"/>
+        <ProductDirectory Name="StdThemes"                          Path="Assets/std-themes" LibType="static"/>
 
         <ProductDirectory Name="MobileDgnSdkIncludeDirectory" Deliver="false"/>
+        <ProductDirectory Name="MobileDgnSdkIncludeDirectory" Deliver="false" LibType="static"/>
         <ProductDirectory Name="DgnViewDecorators" Deliver="false"/>
+        <ProductDirectory Name="DgnViewDecorators" Deliver="false" LibType="static"/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies" Deliver="false" LibType="static"/>
         <ProductDirectory Name="PublicAPI" Deliver="false"/>
-        <ProductDirectory Name="VendorAPI" Deliver="false" />
+        <ProductDirectory Name="PublicAPI" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI" Deliver="false"/>
+        <ProductDirectory Name="VendorAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
-        <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
     </ProductDirectoryList>
 
     <!-- *********************************************************************************************** -->
