@@ -63,6 +63,7 @@
 
         <ProductDirectory Name="Libs"                               Path="Libs"/>
         <ProductDirectory Name="BentleyLibs"                        Path="Libs"/>
+        <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>

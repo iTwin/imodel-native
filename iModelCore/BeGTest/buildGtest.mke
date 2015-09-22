@@ -8,6 +8,10 @@
 #
 # Builds a test runner based on gtest
 #
+
+# the gtest compilands themselves contain warnings
+NO_DEFAULT_CLANG_WARNINGS=1
+
 %include mdl.mki
 
 %ifndef BEGTEST_NAME
@@ -65,12 +69,15 @@ CCompPDBName = $(progName)
 
 $(o)BeGTestExe$(oext)   : $(baseDir)BeGTestExe.cpp $(BuildContext)PublicAPI/Bentley/BeTest.h
 
+#GUnitTestDir = $(BuildContext)SubParts/google_gtest/
+#%include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
+
 # -----------------------------------------------------
 # Link begtest.exe. This EXE incorporates the unittest .objs into itself (so that their static C++ constructors will be called).
 # -----------------------------------------------------
 
 #   Link the unit tests themselves
-LOCAL_GUNITTEST_OBJS + $(o)BeGTestExe$(oext) $[@wildcard $(materialProduct)Objects/*$(oext)]
+LOCAL_GUNITTEST_OBJS + $(o)BeGTestExe$(oext) $[@wildcard $(materialProduct)Objects/*$(oext)] $[@wildcard $(materialProduct)Libs/*$(stlibext)]
 
 #   Satisfy the link requirements of the unit tests
 GUNITTEST_LIBS       + $[@wildcard $(materialProduct)Libs/*$(libext)]
