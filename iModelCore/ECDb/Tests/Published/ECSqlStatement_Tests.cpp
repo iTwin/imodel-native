@@ -3008,7 +3008,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IssueListener)
 
         //reuse same id again to provoke constraint violation
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step(newKey)) << "Step succeeded unexpectedly although it should not because a row with the same ECInstanceId already exists.";
+        ASSERT_EQ(BE_SQLITE_CONSTRAINT_PRIMARYKEY, stmt.Step(newKey)) << "Step succeeded unexpectedly although it should not because a row with the same ECInstanceId already exists.";
         ASSERT_TRUE(issueListener.GetIssue().IsIssue()) << "After insert of row with same ECInstanceId";
         }
     }

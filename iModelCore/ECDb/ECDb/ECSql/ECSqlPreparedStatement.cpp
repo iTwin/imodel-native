@@ -57,7 +57,9 @@ ECSqlStatus ECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext,
             Utf8String errorMessage;
             errorMessage.Sprintf("Preparing the SQLite statement '%s' failed with error code", nativeSql.c_str());
             GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, nativeSqlStat, errorMessage.c_str());
-            return ECSqlStatus(nativeSqlStat);
+            //even if this is a SQLite error, we want this to be an InvalidECSql error as the reason usually
+            //is a wrong ECSQL provided by the user.
+            return ECSqlStatus::InvalidECSql;
             }
         }
 

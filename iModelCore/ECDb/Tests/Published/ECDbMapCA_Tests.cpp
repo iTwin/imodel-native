@@ -2896,9 +2896,13 @@ void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbC
             stmt.BindInt64(2, fooKey.GetECClassId());
             stmt.BindId(3, gooKey.GetECInstanceId());
             stmt.BindInt64(4, gooKey.GetECClassId());
-            ASSERT_EQ(expected[n], stmt.Step());
-            if (expected[n] == BE_SQLITE_DONE)
+            if (expected[n] != BE_SQLITE_DONE)
+                ASSERT_NE(BE_SQLITE_DONE, stmt.Step());
+            else
+                {
+                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
                 rowInserted++;
+                }
 
             n = n + 1;
             }

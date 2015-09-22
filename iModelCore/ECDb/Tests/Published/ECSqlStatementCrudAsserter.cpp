@@ -607,7 +607,7 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
             ASSERT_TRUE (ecInstanceKey.IsValid ());
             }
         else
-            ASSERT_EQ(BE_SQLITE_ERROR, stat) << "Step (ECInstanceKey&) should have failed for ECSQL '" << ecsql << "'.";
+            ASSERT_NE(BE_SQLITE_DONE, stat) << "Step (ECInstanceKey&) should have failed for ECSQL '" << ecsql << "'.";
 
         return;
         }
@@ -616,7 +616,7 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
     if (expectedToSucceed)
         ASSERT_EQ(BE_SQLITE_DONE, stepStat) << "Step should have succeeded for ECSQL '" << ecsql << "'.";
     else
-        ASSERT_EQ(BE_SQLITE_ERROR, stepStat) << "Step should have failed for ECSQL '" << ecsql << "'.";
+        ASSERT_NE(BE_SQLITE_DONE, stepStat) << "Step should have failed for ECSQL '" << ecsql << "'.";
     }
 
 //---------------------------------------------------------------------------------------
