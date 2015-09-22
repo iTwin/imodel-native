@@ -92,7 +92,7 @@ SQLITE_PRIVATE Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, con
 }
 
 /*
-** Skip over any TK_COLLATE or TK_AS operators and any unlikely()
+** Skip over any TK_COLLATE operators and any unlikely()
 ** or likelihood() function at the root of an expression.
 */
 SQLITE_PRIVATE Expr *sqlite3ExprSkipCollate(Expr *pExpr){
@@ -103,7 +103,7 @@ SQLITE_PRIVATE Expr *sqlite3ExprSkipCollate(Expr *pExpr){
       assert( pExpr->op==TK_FUNCTION );
       pExpr = pExpr->x.pList->a[0].pExpr;
     }else{
-      assert( pExpr->op==TK_COLLATE || pExpr->op==TK_AS );
+      assert( pExpr->op==TK_COLLATE );
       pExpr = pExpr->pLeft;
     }
   }   
@@ -2433,6 +2433,28 @@ static void sqlite3ExprCachePinRegister(Parse *pParse, int iReg){
   }
 }
 
+/* Generate code that will load into register regOut a value that is
+** appropriate for the iIdxCol-th column of index pIdx.
+*/
+SQLITE_PRIVATE void sqlite3ExprCodeLoadIndexColumn(
+  Parse *pParse,  /* The parsing context */
+  Index *pIdx,    /* The index whose column is to be loaded */
+  int iTabCur,    /* Cursor pointing to a table row */
+  int iIdxCol,    /* The column of the index to be loaded */
+  int regOut      /* Store the index column value in this register */
+){
+  i16 iTabCol = pIdx->aiColumn[iIdxCol];
+  if( iTabCol>=(-1) ){
+    sqlite3ExprCodeGetColumnOfTable(pParse->pVdbe, pIdx->pTable, iTabCur,
+                                    iTabCol, regOut);
+    return;
+  }
+  assert( pIdx->aColExpr );
+  assert( pIdx->aColExpr->nExpr>iIdxCol );
+  pParse->iSelfTab = iTabCur;
+  sqlite3ExprCode(pParse, pIdx->aColExpr->a[iIdxCol].pExpr, regOut);
+}
+
 /*
 ** Generate code to extract the value of the iCol-th column of a table.
 */
@@ -2618,8 +2640,9 @@ SQLITE_PRIVATE int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target)
           inReg = pExpr->iColumn + pParse->ckBase;
           break;
         }else{
-          /* Deleting from a partial index */
-          iTab = pParse->iPartIdxTab;
+          /* Coding an expression that is part of an index where column names
+          ** in the index refer to the table to which the index belongs */
+          iTab = pParse->iSelfTab;
         }
       }
       inReg = sqlite3ExprCodeGetColumn(pParse, pExpr->pTab,
@@ -2677,10 +2700,6 @@ SQLITE_PRIVATE int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target)
     }
     case TK_REGISTER: {
       inReg = pExpr->iTable;
-      break;
-    }
-    case TK_AS: {
-      inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
       break;
     }
 #ifndef SQLITE_OMIT_CAST
@@ -3766,7 +3785,9 @@ SQLITE_PRIVATE int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
     return 2;
   }
   if( pA->op!=TK_COLUMN && ALWAYS(pA->op!=TK_AGG_COLUMN) && pA->u.zToken ){
-    if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
+    if( pA->op==TK_FUNCTION ){
+      if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;
+    }else if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return pA->op==TK_COLLATE ? 1 : 2;
     }
   }
@@ -6204,6 +6225,7 @@ static void analyzeOneTable(
       regKey = sqlite3GetTempRange(pParse, pPk->nKeyCol);
       for(j=0; j<pPk->nKeyCol; j++){
         k = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[j]);
+        assert( k>=0 && k<pTab->nCol );
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, k, regKey+j);
         VdbeComment((v, "%s", pTab->aCol[pPk->aiColumn[j]].zName));
       }
@@ -6253,12 +6275,10 @@ static void analyzeOneTable(
       ** be taken */
       VdbeCoverageNeverTaken(v);
 #ifdef SQLITE_ENABLE_STAT3
-      sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, 
-                                      pIdx->aiColumn[0], regSample);
+      sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iTabCur, 0, regSample);
 #else
       for(i=0; i<nCol; i++){
-        i16 iCol = pIdx->aiColumn[i];
-        sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, iCol, regCol+i);
+        sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iTabCur, i, regCol+i);
       }
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regCol, nCol, regSample);
 #endif
@@ -8120,12 +8140,14 @@ SQLITE_PRIVATE Table *sqlite3LocateTable(
   if( p==0 ){
     const char *zMsg = isView ? "no such view" : "no such table";
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    /* If zName is the not the name of a table in the schema created using
-    ** CREATE, then check to see if it is the name of an virtual table that
-    ** can be an eponymous virtual table. */
-    Module *pMod = (Module*)sqlite3HashFind(&pParse->db->aModule, zName);
-    if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
-      return pMod->pEpoTab;
+    if( sqlite3FindDbName(pParse->db, zDbase)<1 ){
+      /* If zName is the not the name of a table in the schema created using
+      ** CREATE, then check to see if it is the name of an virtual table that
+      ** can be an eponymous virtual table. */
+      Module *pMod = (Module*)sqlite3HashFind(&pParse->db->aModule, zName);
+      if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
+        return pMod->pEpoTab;
+      }
     }
 #endif
     if( zDbase ){
@@ -8135,7 +8157,7 @@ SQLITE_PRIVATE Table *sqlite3LocateTable(
     }
     pParse->checkSchema = 1;
   }
-#if SQLITE_USER_AUTHENICATION
+#if SQLITE_USER_AUTHENTICATION
   else if( pParse->db->auth.authLevel<UAUTH_User ){
     sqlite3ErrorMsg(pParse, "user not authenticated");
     p = 0;
@@ -8206,6 +8228,7 @@ static void freeIndex(sqlite3 *db, Index *p){
   sqlite3DeleteIndexSamples(db, p);
 #endif
   sqlite3ExprDelete(db, p->pPartIdxWhere);
+  sqlite3ExprListDelete(db, p->aColExpr);
   sqlite3DbFree(db, p->zColAff);
   if( p->isResized ) sqlite3DbFree(db, p->azColl);
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
@@ -8746,6 +8769,8 @@ SQLITE_PRIVATE void sqlite3StartTable(
     int j1;
     int fileFormat;
     int reg1, reg2, reg3;
+    /* nullRow[] is an OP_Record encoding of a row containing 5 NULLs */
+    static const char nullRow[] = { 6, 0, 0, 0, 0, 0 };
     sqlite3BeginWriteOperation(pParse, 1, iDb);
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -8790,7 +8815,7 @@ SQLITE_PRIVATE void sqlite3StartTable(
     }
     sqlite3OpenMasterTable(pParse, iDb);
     sqlite3VdbeAddOp2(v, OP_NewRowid, 0, reg1);
-    sqlite3VdbeAddOp2(v, OP_Null, 0, reg3);
+    sqlite3VdbeAddOp4(v, OP_Blob, 6, reg3, 0, nullRow, P4_STATIC);
     sqlite3VdbeAddOp3(v, OP_Insert, 0, reg3, reg1);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeAddOp0(v, OP_Close);
@@ -9072,7 +9097,8 @@ SQLITE_PRIVATE void sqlite3AddPrimaryKey(
     nTerm = pList->nExpr;
     for(i=0; i<nTerm; i++){
       Expr *pCExpr = sqlite3ExprSkipCollate(pList->a[i].pExpr);
-      if( pCExpr && pCExpr->op==TK_ID ){
+      assert( pCExpr!=0 );
+      if( pCExpr->op==TK_ID ){
         const char *zCName = pCExpr->u.zToken;
         for(iCol=0; iCol<pTab->nCol; iCol++){
           if( sqlite3StrICmp(zCName, pTab->aCol[iCol].zName)==0 ){
@@ -10612,6 +10638,30 @@ SQLITE_PRIVATE Index *sqlite3AllocateIndexObject(
 }
 
 /*
+** Backwards Compatibility Hack:
+** 
+** Historical versions of SQLite accepted strings as column names in
+** indexes and PRIMARY KEY constraints and in UNIQUE constraints.  Example:
+**
+**     CREATE TABLE xyz(a,b,c,d,e,PRIMARY KEY('a'),UNIQUE('b','c' COLLATE trim)
+**     CREATE INDEX abc ON xyz('c','d' DESC,'e' COLLATE nocase DESC);
+**
+** This is goofy.  But to preserve backwards compatibility we continue to
+** accept it.  This routine does the necessary conversion.  It converts
+** the expression given in its argument from a TK_STRING into a TK_ID
+** if the expression is just a TK_STRING with an optional COLLATE clause.
+** If the epxression is anything other than TK_STRING, the expression is
+** unchanged.
+*/
+static void sqlite3StringToId(Expr *p){
+  if( p->op==TK_STRING ){
+    p->op = TK_ID;
+  }else if( p->op==TK_COLLATE && p->pLeft->op==TK_STRING ){
+    p->pLeft->op = TK_ID;
+  }
+}
+
+/*
 ** Create a new index for an SQL table.  pName1.pName2 is the name of the index 
 ** and pTblList is the name of the table that is to be indexed.  Both will 
 ** be NULL for a primary key or an index that is created to satisfy a
@@ -10652,7 +10702,6 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
   int iDb;             /* Index of the database that is being written */
   Token *pName = 0;    /* Unqualified name of the index to create */
   struct ExprList_item *pListItem; /* For looping over pList */
-  const Column *pTabCol;           /* A column in the table */
   int nExtra = 0;                  /* Space allocated for zExtra[] */
   int nExtraCol;                   /* Number of extra columns needed */
   char *zExtra = 0;                /* Extra space after the Index object */
@@ -10824,7 +10873,8 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
   */
   for(i=0; i<pList->nExpr; i++){
     Expr *pExpr = pList->a[i].pExpr;
-    if( pExpr && pExpr->op==TK_COLLATE ){
+    assert( pExpr!=0 );
+    if( pExpr->op==TK_COLLATE ){
       nExtra += (1 + sqlite3Strlen30(pExpr->u.zToken));
     }
   }
@@ -10865,39 +10915,52 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
     sortOrderMask = 0;    /* Ignore DESC */
   }
 
-  /* Scan the names of the columns of the table to be indexed and
-  ** load the column indices into the Index structure.  Report an error
-  ** if any column is not found.
+  /* Analyze the list of expressions that form the terms of the index and
+  ** report any errors.  In the common case where the expression is exactly
+  ** a table column, store that column in aiColumn[].  For general expressions,
+  ** populate pIndex->aColExpr and store -2 in aiColumn[].
   **
-  ** TODO:  Add a test to make sure that the same column is not named
-  ** more than once within the same index.  Only the first instance of
-  ** the column will ever be used by the optimizer.  Note that using the
-  ** same column more than once cannot be an error because that would 
-  ** break backwards compatibility - it needs to be a warning.
+  ** TODO: Issue a warning if two or more columns of the index are identical.
+  ** TODO: Issue a warning if the table primary key is used as part of the
+  ** index key.
   */
   for(i=0, pListItem=pList->a; i<pList->nExpr; i++, pListItem++){
-    const char *zColName;
-    Expr *pCExpr;
-    int requestedSortOrder;
+    Expr *pCExpr;                  /* The i-th index expression */
+    int requestedSortOrder;        /* ASC or DESC on the i-th expression */
     char *zColl;                   /* Collation sequence name */
 
+    sqlite3StringToId(pListItem->pExpr);
+    sqlite3ResolveSelfReference(pParse, pTab, NC_IdxExpr, pListItem->pExpr, 0);
+    if( pParse->nErr ) goto exit_create_index;
     pCExpr = sqlite3ExprSkipCollate(pListItem->pExpr);
-    if( pCExpr->op!=TK_ID ){
-      sqlite3ErrorMsg(pParse, "indexes on expressions not yet supported");
-      continue;
+    if( pCExpr->op!=TK_COLUMN ){
+      if( pTab==pParse->pNewTable ){
+        sqlite3ErrorMsg(pParse, "expressions prohibited in PRIMARY KEY and "
+                                "UNIQUE constraints");
+        goto exit_create_index;
+      }
+      if( pIndex->aColExpr==0 ){
+        ExprList *pCopy = sqlite3ExprListDup(db, pList, 0);
+        pIndex->aColExpr = pCopy;
+        if( !db->mallocFailed ){
+          assert( pCopy!=0 );
+          pListItem = &pCopy->a[i];
+        }
+      }
+      j = -2;
+      pIndex->aiColumn[i] = -2;
+      pIndex->uniqNotNull = 0;
+    }else{
+      j = pCExpr->iColumn;
+      assert( j<=0x7fff );
+      if( j<0 ){
+        j = pTab->iPKey;
+      }else if( pTab->aCol[j].notNull==0 ){
+        pIndex->uniqNotNull = 0;
+      }
+      pIndex->aiColumn[i] = (i16)j;
     }
-    zColName = pCExpr->u.zToken;
-    for(j=0, pTabCol=pTab->aCol; j<pTab->nCol; j++, pTabCol++){
-      if( sqlite3StrICmp(zColName, pTabCol->zName)==0 ) break;
-    }
-    if( j>=pTab->nCol ){
-      sqlite3ErrorMsg(pParse, "table %s has no column named %s",
-        pTab->zName, zColName);
-      pParse->checkSchema = 1;
-      goto exit_create_index;
-    }
-    assert( j<=0x7fff );
-    pIndex->aiColumn[i] = (i16)j;
+    zColl = 0;
     if( pListItem->pExpr->op==TK_COLLATE ){
       int nColl;
       zColl = pListItem->pExpr->u.zToken;
@@ -10907,21 +10970,26 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
       zColl = zExtra;
       zExtra += nColl;
       nExtra -= nColl;
-    }else{
+    }else if( j>=0 ){
       zColl = pTab->aCol[j].zColl;
-      if( !zColl ) zColl = "BINARY";
     }
+    if( !zColl ) zColl = "BINARY";
     if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl) ){
       goto exit_create_index;
     }
     pIndex->azColl[i] = zColl;
     requestedSortOrder = pListItem->sortOrder & sortOrderMask;
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
-    if( pTab->aCol[j].notNull==0 ) pIndex->uniqNotNull = 0;
   }
+
+  /* Append the table key to the end of the index.  For WITHOUT ROWID
+  ** tables (when pPk!=0) this will be the declared PRIMARY KEY.  For
+  ** normal tables (when pPk==0) this will be the rowid.
+  */
   if( pPk ){
     for(j=0; j<pPk->nKeyCol; j++){
       int x = pPk->aiColumn[j];
+      assert( x>=0 );
       if( hasColumn(pIndex->aiColumn, pIndex->nKeyCol, x) ){
         pIndex->nColumn--; 
       }else{
@@ -10972,6 +11040,7 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
       for(k=0; k<pIdx->nKeyCol; k++){
         const char *z1;
         const char *z2;
+        assert( pIdx->aiColumn[k]>=0 );
         if( pIdx->aiColumn[k]!=pIndex->aiColumn[k] ) break;
         z1 = pIdx->azColl[k];
         z2 = pIndex->azColl[k];
@@ -11003,6 +11072,7 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
   /* Link the new Index structure to its table and to the other
   ** in-memory database structures. 
   */
+  assert( pParse->nErr==0 );
   if( db->init.busy ){
     Index *p;
     assert( sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
@@ -11032,7 +11102,7 @@ SQLITE_PRIVATE Index *sqlite3CreateIndex(
   ** has just been created, it contains no data and the index initialization
   ** step can be skipped.
   */
-  else if( pParse->nErr==0 && (HasRowid(pTab) || pTblName!=0) ){
+  else if( HasRowid(pTab) || pTblName!=0 ){
     Vdbe *v;
     char *zStmt;
     int iMem = ++pParse->nMem;
@@ -11862,12 +11932,16 @@ SQLITE_PRIVATE void sqlite3UniqueConstraint(
   Table *pTab = pIdx->pTable;
 
   sqlite3StrAccumInit(&errMsg, pParse->db, 0, 0, 200);
-  for(j=0; j<pIdx->nKeyCol; j++){
-    char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
-    if( j ) sqlite3StrAccumAppend(&errMsg, ", ", 2);
-    sqlite3StrAccumAppendAll(&errMsg, pTab->zName);
-    sqlite3StrAccumAppend(&errMsg, ".", 1);
-    sqlite3StrAccumAppendAll(&errMsg, zCol);
+  if( pIdx->aColExpr ){
+    sqlite3XPrintf(&errMsg, 0, "index '%q'", pIdx->zName);
+  }else{
+    for(j=0; j<pIdx->nKeyCol; j++){
+      char *zCol;
+      assert( pIdx->aiColumn[j]>=0 );
+      zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
+      if( j ) sqlite3StrAccumAppend(&errMsg, ", ", 2);
+      sqlite3XPrintf(&errMsg, 0, "%s.%s", pTab->zName, zCol);
+    }
   }
   zErr = sqlite3StrAccumFinish(&errMsg);
   sqlite3HaltConstraint(pParse, 
@@ -12855,7 +12929,7 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
   int iDb;               /* Database number */
   int memCnt = -1;       /* Memory cell used for change counting */
   int rcauth;            /* Value returned by authorization callback */
-  int okOnePass;         /* True for one-pass algorithm without the FIFO */
+  int eOnePass;          /* ONEPASS_OFF or _SINGLE or _MULTI */
   int aiCurOnePass[2];   /* The write cursors opened by WHERE_ONEPASS */
   u8 *aToOpen = 0;       /* Open cursor iTabCur+j if aToOpen[j] is true */
   Index *pPk;            /* The PRIMARY KEY index on the table */
@@ -12867,12 +12941,12 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
   int iRowSet = 0;       /* Register for rowset of rows to delete */
   int addrBypass = 0;    /* Address of jump over the delete logic */
   int addrLoop = 0;      /* Top of the delete loop */
-  int addrDelete = 0;    /* Jump directly to the delete logic */
   int addrEphOpen = 0;   /* Instruction to open the Ephemeral table */
  
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* True if attempting to delete from a view */
   Trigger *pTrigger;           /* List of table triggers, if required */
+  int bComplex;                /* True if there are either triggers or FKs */
 #endif
 
   memset(&sContext, 0, sizeof(sContext));
@@ -12896,9 +12970,11 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
 #ifndef SQLITE_OMIT_TRIGGER
   pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
   isView = pTab->pSelect!=0;
+  bComplex = pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0);
 #else
 # define pTrigger 0
 # define isView 0
+# define bComplex 0
 #endif
 #ifdef SQLITE_OMIT_VIEW
 # undef isView
@@ -12978,16 +13054,14 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
   /* Special case: A DELETE without a WHERE clause deletes everything.
   ** It is easier just to erase the whole table. Prior to version 3.6.5,
   ** this optimization caused the row change count (the value returned by 
-  ** API function sqlite3_count_changes) to be set incorrectly.
-  */
+  ** API function sqlite3_count_changes) to be set incorrectly.  */
   if( rcauth==SQLITE_OK
    && pWhere==0
-   && !pTrigger
-   && !IsVirtual(pTab) 
+   && !bComplex
+   && !IsVirtual(pTab)
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
    && db->xPreUpdateCallback==0
 #endif
-   && 0==sqlite3FkRequired(pParse, pTab, 0, 0)
   ){
     assert( !isView );
     sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
@@ -13002,6 +13076,8 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
   }else
 #endif /* SQLITE_OMIT_TRUNCATE_OPTIMIZATION */
   {
+    u16 wcf = WHERE_ONEPASS_DESIRED|WHERE_DUPLICATES_OK;
+    wcf |= (bComplex ? 0 : WHERE_ONEPASS_MULTIROW);
     if( HasRowid(pTab) ){
       /* For a rowid table, initialize the RowSet to an empty set */
       pPk = 0;
@@ -13022,13 +13098,17 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
     }
   
     /* Construct a query to find the rowid or primary key for every row
-    ** to be deleted, based on the WHERE clause.
+    ** to be deleted, based on the WHERE clause. Set variable eOnePass
+    ** to indicate the strategy used to implement this delete:
+    **
+    **  ONEPASS_OFF:    Two-pass approach - use a FIFO for rowids/PK values.
+    **  ONEPASS_SINGLE: One-pass approach - at most one row deleted.
+    **  ONEPASS_MULTI:  One-pass approach - any number of rows may be deleted.
     */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, 
-                               WHERE_ONEPASS_DESIRED|WHERE_DUPLICATES_OK,
-                               iTabCur+1);
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, wcf, iTabCur+1);
     if( pWInfo==0 ) goto delete_from_cleanup;
-    okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
+    eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
+    assert( IsVirtual(pTab)==0 || eOnePass==ONEPASS_OFF );
   
     /* Keep track of the number of rows to be deleted */
     if( db->flags & SQLITE_CountRows ){
@@ -13038,6 +13118,7 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
     /* Extract the rowid or primary key for the current row */
     if( pPk ){
       for(i=0; i<nPk; i++){
+        assert( pPk->aiColumn[i]>=(-1) );
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur,
                                         pPk->aiColumn[i], iPk+i);
       }
@@ -13048,11 +13129,10 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
       if( iKey>pParse->nMem ) pParse->nMem = iKey;
     }
   
-    if( okOnePass ){
-      /* For ONEPASS, no need to store the rowid/primary-key.  There is only
+    if( eOnePass!=ONEPASS_OFF ){
+      /* For ONEPASS, no need to store the rowid/primary-key. There is only
       ** one, so just keep it in its register(s) and fall through to the
-      ** delete code.
-      */
+      ** delete code.  */
       nKey = nPk; /* OP_Found will use an unpacked key */
       aToOpen = sqlite3DbMallocRaw(db, nIdx+2);
       if( aToOpen==0 ){
@@ -13064,27 +13144,27 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
       if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iTabCur] = 0;
       if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iTabCur] = 0;
       if( addrEphOpen ) sqlite3VdbeChangeToNoop(v, addrEphOpen);
-      addrDelete = sqlite3VdbeAddOp0(v, OP_Goto); /* Jump to DELETE logic */
-    }else if( pPk ){
-      /* Construct a composite key for the row to be deleted and remember it */
-      iKey = ++pParse->nMem;
-      nKey = 0;   /* Zero tells OP_Found to use a composite key */
-      sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, iKey,
-                        sqlite3IndexAffinityStr(pParse->db, pPk), nPk);
-      sqlite3VdbeAddOp2(v, OP_IdxInsert, iEphCur, iKey);
     }else{
-      /* Get the rowid of the row to be deleted and remember it in the RowSet */
-      nKey = 1;  /* OP_Seek always uses a single rowid */
-      sqlite3VdbeAddOp2(v, OP_RowSetAdd, iRowSet, iKey);
+      if( pPk ){
+        /* Add the PK key for this row to the temporary table */
+        iKey = ++pParse->nMem;
+        nKey = 0;   /* Zero tells OP_Found to use a composite key */
+        sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, iKey,
+            sqlite3IndexAffinityStr(pParse->db, pPk), nPk);
+        sqlite3VdbeAddOp2(v, OP_IdxInsert, iEphCur, iKey);
+      }else{
+        /* Add the rowid of the row to be deleted to the RowSet */
+        nKey = 1;  /* OP_Seek always uses a single rowid */
+        sqlite3VdbeAddOp2(v, OP_RowSetAdd, iRowSet, iKey);
+      }
     }
   
-    /* End of the WHERE loop */
-    sqlite3WhereEnd(pWInfo);
-    if( okOnePass ){
-      /* Bypass the delete logic below if the WHERE loop found zero rows */
+    /* If this DELETE cannot use the ONEPASS strategy, this is the 
+    ** end of the WHERE loop */
+    if( eOnePass!=ONEPASS_OFF ){
       addrBypass = sqlite3VdbeMakeLabel(v);
-      sqlite3VdbeGoto(v, addrBypass);
-      sqlite3VdbeJumpHere(v, addrDelete);
+    }else{
+      sqlite3WhereEnd(pWInfo);
     }
   
     /* Unless this is a view, open cursors for the table we are 
@@ -13093,20 +13173,23 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
     ** triggers.
     */
     if( !isView ){
+      int iAddrOnce = 0;
+      if( eOnePass==ONEPASS_MULTI ){
+        iAddrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+      }
       testcase( IsVirtual(pTab) );
       sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iTabCur, aToOpen,
                                  &iDataCur, &iIdxCur);
       assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
       assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
+      if( eOnePass==ONEPASS_MULTI ) sqlite3VdbeJumpHere(v, iAddrOnce);
     }
   
     /* Set up a loop over the rowids/primary-keys that were found in the
     ** where-clause loop above.
     */
-    if( okOnePass ){
-      /* Just one row.  Hence the top-of-loop is a no-op */
+    if( eOnePass!=ONEPASS_OFF ){
       assert( nKey==nPk );  /* OP_Found will use an unpacked key */
-      assert( !IsVirtual(pTab) );
       if( aToOpen[iDataCur-iTabCur] ){
         assert( pPk!=0 || pTab->pSelect!=0 );
         sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, addrBypass, iKey, nKey);
@@ -13134,13 +13217,18 @@ SQLITE_PRIVATE void sqlite3DeleteFrom(
 #endif
     {
       int count = (pParse->nested==0);    /* True to count changes */
+      int iIdxNoSeek = -1;
+      if( bComplex==0 && aiCurOnePass[1]!=iDataCur ){
+        iIdxNoSeek = aiCurOnePass[1];
+      }
       sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                               iKey, nKey, count, OE_Default, okOnePass);
+          iKey, nKey, count, OE_Default, eOnePass, iIdxNoSeek);
     }
   
     /* End of the loop over all rowids/primary-keys. */
-    if( okOnePass ){
+    if( eOnePass!=ONEPASS_OFF ){
       sqlite3VdbeResolveLabel(v, addrBypass);
+      sqlite3WhereEnd(pWInfo);
     }else if( pPk ){
       sqlite3VdbeAddOp2(v, OP_Next, iEphCur, addrLoop+1); VdbeCoverage(v);
       sqlite3VdbeJumpHere(v, addrLoop);
@@ -13212,6 +13300,25 @@ delete_from_cleanup:
 **       sequence of nPk memory cells starting at iPk.  If nPk==0 that means
 **       that a search record formed from OP_MakeRecord is contained in the
 **       single memory location iPk.
+**
+** eMode:
+**   Parameter eMode may be passed either ONEPASS_OFF (0), ONEPASS_SINGLE, or
+**   ONEPASS_MULTI.  If eMode is not ONEPASS_OFF, then the cursor
+**   iDataCur already points to the row to delete. If eMode is ONEPASS_OFF
+**   then this function must seek iDataCur to the entry identified by iPk
+**   and nPk before reading from it.
+**
+**   If eMode is ONEPASS_MULTI, then this call is being made as part
+**   of a ONEPASS delete that affects multiple rows. In this case, if 
+**   iIdxNoSeek is a valid cursor number (>=0), then its position should
+**   be preserved following the delete operation. Or, if iIdxNoSeek is not
+**   a valid cursor number, the position of iDataCur should be preserved
+**   instead.
+**
+** iIdxNoSeek:
+**   If iIdxNoSeek is a valid cursor number (>=0), then it identifies an
+**   index cursor (from within array of cursors starting at iIdxCur) that
+**   already points to the index entry to be deleted.
 */
 SQLITE_PRIVATE void sqlite3GenerateRowDelete(
   Parse *pParse,     /* Parsing context */
@@ -13223,7 +13330,8 @@ SQLITE_PRIVATE void sqlite3GenerateRowDelete(
   i16 nPk,           /* Number of PRIMARY KEY memory cells */
   u8 count,          /* If non-zero, increment the row change counter */
   u8 onconf,         /* Default ON CONFLICT policy for triggers */
-  u8 bNoSeek         /* iDataCur is already pointing to the row to delete */
+  u8 eMode,          /* ONEPASS_OFF, _SINGLE, or _MULTI.  See above */
+  int iIdxNoSeek     /* Cursor number of cursor that does not need seeking */
 ){
   Vdbe *v = pParse->pVdbe;        /* Vdbe */
   int iOld = 0;                   /* First register in OLD.* array */
@@ -13240,7 +13348,7 @@ SQLITE_PRIVATE void sqlite3GenerateRowDelete(
   ** not attempt to delete it or fire any DELETE triggers.  */
   iLabel = sqlite3VdbeMakeLabel(v);
   opSeek = HasRowid(pTab) ? OP_NotExists : OP_NotFound;
-  if( !bNoSeek ){
+  if( eMode==ONEPASS_OFF ){
     sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
     VdbeCoverageIf(v, opSeek==OP_NotExists);
     VdbeCoverageIf(v, opSeek==OP_NotFound);
@@ -13307,9 +13415,13 @@ SQLITE_PRIVATE void sqlite3GenerateRowDelete(
   ** pre-update-hook is.
   */ 
   if( pTab->pSelect==0 ){
-    sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, 0);
+    sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,iIdxNoSeek);
     sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, (count?OPFLAG_NCHANGE:0));
     sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
+    if( iIdxNoSeek>=0 ){
+      sqlite3VdbeAddOp1(v, OP_Delete, iIdxNoSeek);
+    }
+    sqlite3VdbeChangeP5(v, eMode==ONEPASS_MULTI);
   }
 
   /* Do any ON CASCADE, SET NULL or SET DEFAULT operations required to
@@ -13352,7 +13464,8 @@ SQLITE_PRIVATE void sqlite3GenerateRowIndexDelete(
   Table *pTab,       /* Table containing the row to be deleted */
   int iDataCur,      /* Cursor of table holding data. */
   int iIdxCur,       /* First index cursor */
-  int *aRegIdx       /* Only delete if aRegIdx!=0 && aRegIdx[i]>0 */
+  int *aRegIdx,      /* Only delete if aRegIdx!=0 && aRegIdx[i]>0 */
+  int iIdxNoSeek     /* Do not delete from this cursor */
 ){
   int i;             /* Index loop counter */
   int r1 = -1;       /* Register holding an index key */
@@ -13368,11 +13481,12 @@ SQLITE_PRIVATE void sqlite3GenerateRowIndexDelete(
     assert( iIdxCur+i!=iDataCur || pPk==pIdx );
     if( aRegIdx!=0 && aRegIdx[i]==0 ) continue;
     if( pIdx==pPk ) continue;
+    if( iIdxCur+i==iIdxNoSeek ) continue;
     VdbeModuleComment((v, "GenRowIdxDel for %s", pIdx->zName));
     r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 1,
-                                 &iPartIdxLabel, pPrior, r1);
+        &iPartIdxLabel, pPrior, r1);
     sqlite3VdbeAddOp3(v, OP_IdxDelete, iIdxCur+i, r1,
-                      pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
+        pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
     sqlite3ResolvePartIdxLabel(pParse, iPartIdxLabel);
     pPrior = pIdx;
   }
@@ -13421,14 +13535,13 @@ SQLITE_PRIVATE int sqlite3GenerateIndexKey(
 ){
   Vdbe *v = pParse->pVdbe;
   int j;
-  Table *pTab = pIdx->pTable;
   int regBase;
   int nCol;
 
   if( piPartIdxLabel ){
     if( pIdx->pPartIdxWhere ){
       *piPartIdxLabel = sqlite3VdbeMakeLabel(v);
-      pParse->iPartIdxTab = iDataCur;
+      pParse->iSelfTab = iDataCur;
       sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalseDup(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
                             SQLITE_JUMPIFNULL);
@@ -13440,9 +13553,14 @@ SQLITE_PRIVATE int sqlite3GenerateIndexKey(
   regBase = sqlite3GetTempRange(pParse, nCol);
   if( pPrior && (regBase!=regPrior || pPrior->pPartIdxWhere) ) pPrior = 0;
   for(j=0; j<nCol; j++){
-    if( pPrior && pPrior->aiColumn[j]==pIdx->aiColumn[j] ) continue;
-    sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pIdx->aiColumn[j],
-                                    regBase+j);
+    if( pPrior
+     && pPrior->aiColumn[j]==pIdx->aiColumn[j]
+     && pPrior->aiColumn[j]>=(-1)
+    ){
+      /* This column was already computed by the previous index */
+      continue;
+    }
+    sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iDataCur, j, regBase+j);
     /* If the column affinity is REAL but the number is an integer, then it
     ** might be stored in the table as an integer (using a compact
     ** representation) then converted to REAL by an OP_RealAffinity opcode.
@@ -15211,15 +15329,15 @@ SQLITE_PRIVATE void sqlite3RegisterGlobalFunctions(void){
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
-    FUNCTION(sqlite_version,     0, 0, 0, versionFunc      ),
-    FUNCTION(sqlite_source_id,   0, 0, 0, sourceidFunc     ),
+    DFUNCTION(sqlite_version,    0, 0, 0, versionFunc      ),
+    DFUNCTION(sqlite_source_id,  0, 0, 0, sourceidFunc     ),
     FUNCTION(sqlite_log,         2, 0, 0, errlogFunc       ),
 #if SQLITE_USER_AUTHENTICATION
     FUNCTION(sqlite_crypt,       2, 0, 0, sqlite3CryptFunc ),
 #endif
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
-    FUNCTION(sqlite_compileoption_used,1, 0, 0, compileoptionusedFunc  ),
-    FUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
+    DFUNCTION(sqlite_compileoption_used,1, 0, 0, compileoptionusedFunc  ),
+    DFUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     VFUNCTION(last_insert_rowid, 0, 0, 0, last_insert_rowid),
@@ -15231,8 +15349,8 @@ SQLITE_PRIVATE void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
   #endif
   #ifndef SQLITE_OMIT_LOAD_EXTENSION
-    FUNCTION(load_extension,     1, 0, 0, loadExt          ),
-    FUNCTION(load_extension,     2, 0, 0, loadExt          ),
+    VFUNCTION(load_extension,    1, 0, 0, loadExt          ),
+    VFUNCTION(load_extension,    2, 0, 0, loadExt          ),
   #endif
     AGGREGATE(sum,               1, 0, 0, sumStep,         sumFinalize    ),
     AGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
@@ -16765,7 +16883,18 @@ SQLITE_PRIVATE const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
     }
     for(n=0; n<pIdx->nColumn; n++){
       i16 x = pIdx->aiColumn[n];
-      pIdx->zColAff[n] = x<0 ? SQLITE_AFF_INTEGER : pTab->aCol[x].affinity;
+      if( x>=0 ){
+        pIdx->zColAff[n] = pTab->aCol[x].affinity;
+      }else if( x==(-1) ){
+        pIdx->zColAff[n] = SQLITE_AFF_INTEGER;
+      }else{
+        char aff;
+        assert( x==(-2) );
+        assert( pIdx->aColExpr!=0 );
+        aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
+        if( aff==0 ) aff = SQLITE_AFF_BLOB;
+        pIdx->zColAff[n] = aff;
+      }
     }
     pIdx->zColAff[n] = 0;
   }
@@ -18013,7 +18142,7 @@ SQLITE_PRIVATE void sqlite3GenerateConstraintChecks(
         if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
           sqlite3MultiWrite(pParse);
           sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                                   regNewData, 1, 0, OE_Replace, 1);
+                                   regNewData, 1, 0, OE_Replace, 1, -1);
         }else{
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
           if( HasRowid(pTab) ){
@@ -18027,7 +18156,7 @@ SQLITE_PRIVATE void sqlite3GenerateConstraintChecks(
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
           if( pTab->pIndex ){
             sqlite3MultiWrite(pParse);
-            sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, 0);
+            sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur,0,-1);
           }
         }
         seenReplace = 1;
@@ -18083,15 +18212,22 @@ SQLITE_PRIVATE void sqlite3GenerateConstraintChecks(
     for(i=0; i<pIdx->nColumn; i++){
       int iField = pIdx->aiColumn[i];
       int x;
-      if( iField<0 || iField==pTab->iPKey ){
-        if( regRowid==regIdx+i ) continue; /* ROWID already in regIdx+i */
-        x = regNewData;
-        regRowid =  pIdx->pPartIdxWhere ? -1 : regIdx+i;
+      if( iField==(-2) ){
+        pParse->ckBase = regNewData+1;
+        sqlite3ExprCode(pParse, pIdx->aColExpr->a[i].pExpr, regIdx+i);
+        pParse->ckBase = 0;
+        VdbeComment((v, "%s column %d", pIdx->zName, i));
       }else{
-        x = iField + regNewData + 1;
+        if( iField==(-1) || iField==pTab->iPKey ){
+          if( regRowid==regIdx+i ) continue; /* ROWID already in regIdx+i */
+          x = regNewData;
+          regRowid =  pIdx->pPartIdxWhere ? -1 : regIdx+i;
+        }else{
+          x = iField + regNewData + 1;
+        }
+        sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
+        VdbeComment((v, "%s", iField<0 ? "rowid" : pTab->aCol[iField].zName));
       }
-      sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
-      VdbeComment((v, "%s", iField<0 ? "rowid" : pTab->aCol[iField].zName));
     }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn, aRegIdx[ix]);
     VdbeComment((v, "for %s", pIdx->zName));
@@ -18199,7 +18335,8 @@ SQLITE_PRIVATE void sqlite3GenerateConstraintChecks(
           pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
         }
         sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                                 regR, nPkField, 0, OE_Replace, pIdx==pPk);
+            regR, nPkField, 0, OE_Replace,
+            (pIdx==pPk ? ONEPASS_SINGLE : ONEPASS_OFF), -1);
         seenReplace = 1;
         break;
       }
@@ -18411,6 +18548,13 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
   for(i=0; i<pSrc->nKeyCol; i++){
     if( pSrc->aiColumn[i]!=pDest->aiColumn[i] ){
       return 0;   /* Different columns indexed */
+    }
+    if( pSrc->aiColumn[i]==(-2) ){
+      assert( pSrc->aColExpr!=0 && pDest->aColExpr!=0 );
+      if( sqlite3ExprCompare(pSrc->aColExpr->a[i].pExpr,
+                             pDest->aColExpr->a[i].pExpr, -1)!=0 ){
+        return 0;   /* Different expressions in the index */
+      }
     }
     if( pSrc->aSortOrder[i]!=pDest->aSortOrder[i] ){
       return 0;   /* Different sort orders */
@@ -19192,6 +19336,9 @@ struct sqlite3_api_routines {
   void (*value_free)(sqlite3_value*);
   int (*result_zeroblob64)(sqlite3_context*,sqlite3_uint64);
   int (*bind_zeroblob64)(sqlite3_stmt*, int, sqlite3_uint64);
+  /* Version 3.8.12 and later */
+  unsigned int (*value_subtype)(sqlite3_value*);
+  void (*result_subtype)(sqlite3_context*,unsigned int);
 };
 
 /*
@@ -19205,7 +19352,7 @@ struct sqlite3_api_routines {
 ** the API.  So the redefinition macros are only valid if the
 ** SQLITE_CORE macros is undefined.
 */
-#ifndef SQLITE_CORE
+#if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
 #define sqlite3_aggregate_context      sqlite3_api->aggregate_context
 #ifndef SQLITE_OMIT_DEPRECATED
 #define sqlite3_aggregate_count        sqlite3_api->aggregate_count
@@ -19428,9 +19575,12 @@ struct sqlite3_api_routines {
 #define sqlite3_value_free             sqlite3_api->value_free
 #define sqlite3_result_zeroblob64      sqlite3_api->result_zeroblob64
 #define sqlite3_bind_zeroblob64        sqlite3_api->bind_zeroblob64
-#endif /* SQLITE_CORE */
+/* Version 3.8.12 and later */
+#define sqlite3_value_subtype          sqlite3_api->value_subtype
+#define sqlite3_result_subtype         sqlite3_api->result_subtype
+#endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
-#ifndef SQLITE_CORE
+#if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
   /* This case when the file really is being compiled as a loadable 
   ** extension */
 # define SQLITE_EXTENSION_INIT1     const sqlite3_api_routines *sqlite3_api=0;
@@ -19839,7 +19989,10 @@ static const sqlite3_api_routines sqlite3Apis = {
   (sqlite3_value*(*)(const sqlite3_value*))sqlite3_value_dup,
   sqlite3_value_free,
   sqlite3_result_zeroblob64,
-  sqlite3_bind_zeroblob64
+  sqlite3_bind_zeroblob64,
+  /* Version 3.8.12 and later */
+  sqlite3_value_subtype,
+  sqlite3_result_subtype
 };
 
 /*
@@ -30718,7 +30871,9 @@ SQLITE_PRIVATE void sqlite3Update(
 
   /* There is one entry in the aRegIdx[] array for each index on the table
   ** being updated.  Fill in aRegIdx[] with a register number that will hold
-  ** the key for accessing each index.  
+  ** the key for accessing each index.
+  **
+  ** FIXME:  Be smarter about omitting indexes that use expressions.
   */
   for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
     int reg;
@@ -30727,7 +30882,8 @@ SQLITE_PRIVATE void sqlite3Update(
     }else{
       reg = 0;
       for(i=0; i<pIdx->nKeyCol; i++){
-        if( aXRef[pIdx->aiColumn[i]]>=0 ){
+        i16 iIdxCol = pIdx->aiColumn[i];
+        if( iIdxCol<0 || aXRef[iIdxCol]>=0 ){
           reg = ++pParse->nMem;
           break;
         }
@@ -30827,6 +30983,7 @@ SQLITE_PRIVATE void sqlite3Update(
     if( pWInfo==0 ) goto update_cleanup;
     okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
     for(i=0; i<nPk; i++){
+      assert( pPk->aiColumn[i]>=(-1) );
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pPk->aiColumn[i],
                                       iPk+i);
     }
@@ -31029,7 +31186,7 @@ SQLITE_PRIVATE void sqlite3Update(
       }
       VdbeCoverageNeverTaken(v);
     }
-    sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, aRegIdx);
+    sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, aRegIdx, -1);
 
     /* If changing the rowid value, or if there are foreign key constraints
     ** to process, delete the old record. Otherwise, add a noop OP_Delete

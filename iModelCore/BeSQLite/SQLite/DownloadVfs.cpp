@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/DownloadAdmin.h>
-#include <BeSQLite/SQLiteAPI.h>
+#include "sqlite3.h"
 #include <Bentley/ScopedArray.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/BeThreadLocalStorage.h>

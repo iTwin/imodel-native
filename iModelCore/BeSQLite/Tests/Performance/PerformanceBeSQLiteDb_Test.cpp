@@ -9,9 +9,6 @@
 
 #include "BeSQLitePerformanceTests.h"
 #include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
-#ifdef WIP_PUBLISHED_API
-#include <BeSQLite/SQLiteAPI.h> //only needed for test to directly work with SQLite
-#endif
 
 #include <vector>
 
@@ -30,7 +27,7 @@ Db& db,
 size_t repositoryLocalKeyIndex
 )
     {
-    int64_t newValue = 0LL;
+    uint64_t newValue = 0LL;
     /*auto stat = */db.GetRLVCache().IncrementValue (newValue, repositoryLocalKeyIndex);
     //ASSERT_EQ (BE_SQLITE_OK, stat) << L"IncrementRepositoryLocalValueInt64 failed.";
     }

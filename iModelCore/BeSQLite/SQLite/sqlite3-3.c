@@ -592,6 +592,49 @@ static void btreeReleaseAllCursorPages(BtCursor *pCur){
   pCur->iPage = -1;
 }
 
+/*
+** The cursor passed as the only argument must point to a valid entry
+** when this function is called (i.e. have eState==CURSOR_VALID). This
+** function saves the current cursor key in variables pCur->nKey and
+** pCur->pKey. SQLITE_OK is returned if successful or an SQLite error 
+** code otherwise.
+**
+** If the cursor is open on an intkey table, then the integer key
+** (the rowid) is stored in pCur->nKey and pCur->pKey is left set to
+** NULL. If the cursor is open on a non-intkey table, then pCur->pKey is 
+** set to point to a malloced buffer pCur->nKey bytes in size containing 
+** the key.
+*/
+static int saveCursorKey(BtCursor *pCur){
+  int rc;
+  assert( CURSOR_VALID==pCur->eState );
+  assert( 0==pCur->pKey );
+  assert( cursorHoldsMutex(pCur) );
+
+  rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
+  assert( rc==SQLITE_OK );  /* KeySize() cannot fail */
+
+  /* If this is an intKey table, then the above call to BtreeKeySize()
+  ** stores the integer key in pCur->nKey. In this case this value is
+  ** all that is required. Otherwise, if pCur is not open on an intKey
+  ** table, then malloc space for and store the pCur->nKey bytes of key 
+  ** data.  */
+  if( 0==pCur->curIntKey ){
+    void *pKey = sqlite3Malloc( pCur->nKey );
+    if( pKey ){
+      rc = sqlite3BtreeKey(pCur, 0, (int)pCur->nKey, pKey);
+      if( rc==SQLITE_OK ){
+        pCur->pKey = pKey;
+      }else{
+        sqlite3_free(pKey);
+      }
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+  }
+  assert( !pCur->curIntKey || !pCur->pKey );
+  return rc;
+}
 
 /*
 ** Save the current cursor position in the variables BtCursor.nKey 
@@ -612,30 +655,8 @@ static int saveCursorPosition(BtCursor *pCur){
   }else{
     pCur->skipNext = 0;
   }
-  rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
-  assert( rc==SQLITE_OK );  /* KeySize() cannot fail */
 
-  /* If this is an intKey table, then the above call to BtreeKeySize()
-  ** stores the integer key in pCur->nKey. In this case this value is
-  ** all that is required. Otherwise, if pCur is not open on an intKey
-  ** table, then malloc space for and store the pCur->nKey bytes of key 
-  ** data.
-  */
-  if( 0==pCur->curIntKey ){
-    void *pKey = sqlite3Malloc( pCur->nKey );
-    if( pKey ){
-      rc = sqlite3BtreeKey(pCur, 0, (int)pCur->nKey, pKey);
-      if( rc==SQLITE_OK ){
-        pCur->pKey = pKey;
-      }else{
-        sqlite3_free(pKey);
-      }
-    }else{
-      rc = SQLITE_NOMEM;
-    }
-  }
-  assert( !pCur->curIntKey || !pCur->pKey );
-
+  rc = saveCursorKey(pCur);
   if( rc==SQLITE_OK ){
     btreeReleaseAllCursorPages(pCur);
     pCur->eState = CURSOR_REQUIRESEEK;
@@ -8027,10 +8048,15 @@ end_insert:
 }
 
 /*
-** Delete the entry that the cursor is pointing to.  The cursor
-** is left pointing at an arbitrary location.
+** Delete the entry that the cursor is pointing to. 
+**
+** If the second parameter is zero, then the cursor is left pointing at an
+** arbitrary location after the delete. If it is non-zero, then the cursor 
+** is left in a state such that the next call to BtreeNext() or BtreePrev()
+** moves it to the same row as it would if the call to BtreeDelete() had
+** been omitted.
 */
-SQLITE_PRIVATE int sqlite3BtreeDelete(BtCursor *pCur){
+SQLITE_PRIVATE int sqlite3BtreeDelete(BtCursor *pCur, int bPreserve){
   Btree *p = pCur->pBtree;
   BtShared *pBt = p->pBt;              
   int rc;                              /* Return code */
@@ -8039,6 +8065,7 @@ SQLITE_PRIVATE int sqlite3BtreeDelete(BtCursor *pCur){
   int iCellIdx;                        /* Index of cell to delete */
   int iCellDepth;                      /* Depth of node containing pCell */ 
   u16 szCell;                          /* Size of the cell being deleted */
+  int bSkipnext = 0;                   /* Leaf cursor in SKIPNEXT state */
 
   assert( cursorHoldsMutex(pCur) );
   assert( pBt->inTransaction==TRANS_WRITE );
@@ -8068,10 +8095,7 @@ SQLITE_PRIVATE int sqlite3BtreeDelete(BtCursor *pCur){
   }
 
   /* Save the positions of any other cursors open on this table before
-  ** making any modifications. Make the page containing the entry to be 
-  ** deleted writable. Then free any overflow pages associated with the 
-  ** entry and finally remove the cell itself from within the page.  
-  */
+  ** making any modifications.  */
   if( pCur->curFlags & BTCF_Multiple ){
     rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur);
     if( rc ) return rc;
@@ -8083,6 +8107,31 @@ SQLITE_PRIVATE int sqlite3BtreeDelete(BtCursor *pCur){
     invalidateIncrblobCursors(p, pCur->info.nKey, 0);
   }
 
+  /* If the bPreserve flag is set to true, then the cursor position must
+  ** be preserved following this delete operation. If the current delete
+  ** will cause a b-tree rebalance, then this is done by saving the cursor
+  ** key and leaving the cursor in CURSOR_REQUIRESEEK state before 
+  ** returning. 
+  **
+  ** Or, if the current delete will not cause a rebalance, then the cursor
+  ** will be left in CURSOR_SKIPNEXT state pointing to the entry immediately
+  ** before or after the deleted entry. In this case set bSkipnext to true.  */
+  if( bPreserve ){
+    if( !pPage->leaf 
+     || (pPage->nFree+cellSizePtr(pPage,pCell)+2)>(int)(pBt->usableSize*2/3)
+    ){
+      /* A b-tree rebalance will be required after deleting this entry.
+      ** Save the cursor key.  */
+      rc = saveCursorKey(pCur);
+      if( rc ) return rc;
+    }else{
+      bSkipnext = 1;
+    }
+  }
+
+  /* Make the page containing the entry to be deleted writable. Then free any
+  ** overflow pages associated with the entry and finally remove the cell
+  ** itself from within the page.  */
   rc = sqlite3PagerWrite(pPage->pDbPage);
   if( rc ) return rc;
   rc = clearCell(pPage, pCell, &szCell);
@@ -8136,7 +8185,22 @@ SQLITE_PRIVATE int sqlite3BtreeDelete(BtCursor *pCur){
   }
 
   if( rc==SQLITE_OK ){
-    moveToRoot(pCur);
+    if( bSkipnext ){
+      assert( bPreserve && pCur->iPage==iCellDepth );
+      assert( pPage->nCell>0 && iCellIdx<=pPage->nCell );
+      pCur->eState = CURSOR_SKIPNEXT;
+      if( iCellIdx>=pPage->nCell ){
+        pCur->skipNext = -1;
+        pCur->aiIdx[iCellDepth] = pPage->nCell-1;
+      }else{
+        pCur->skipNext = 1;
+      }
+    }else{
+      rc = moveToRoot(pCur);
+      if( bPreserve ){
+        pCur->eState = CURSOR_REQUIRESEEK;
+      }
+    }
   }
   return rc;
 }
@@ -11530,7 +11594,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
 ** to be a scalar SQL function. If
 **
 **   * all function arguments are SQL literals,
-**   * the SQLITE_FUNC_CONSTANT function flag is set, and
+**   * one of the SQLITE_FUNC_CONSTANT or _SLOCHNG function flags is set, and
 **   * the SQLITE_FUNC_NEEDCOLL function flag is not set,
 **
 ** then this routine attempts to invoke the SQL function. Assuming no
@@ -11571,7 +11635,7 @@ static int valueFromFunction(
   nName = sqlite3Strlen30(p->u.zToken);
   pFunc = sqlite3FindFunction(db, p->u.zToken, nName, nVal, enc, 0);
   assert( pFunc );
-  if( (pFunc->funcFlags & SQLITE_FUNC_CONSTANT)==0 
+  if( (pFunc->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG))==0 
    || (pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL)
   ){
     return SQLITE_OK;
@@ -16634,6 +16698,9 @@ SQLITE_API int SQLITE_STDCALL sqlite3_value_int(sqlite3_value *pVal){
 SQLITE_API sqlite_int64 SQLITE_STDCALL sqlite3_value_int64(sqlite3_value *pVal){
   return sqlite3VdbeIntValue((Mem*)pVal);
 }
+SQLITE_API unsigned int SQLITE_STDCALL sqlite3_value_subtype(sqlite3_value *pVal){
+  return ((Mem*)pVal)->eSubtype;
+}
 SQLITE_API const unsigned char *SQLITE_STDCALL sqlite3_value_text(sqlite3_value *pVal){
   return (const unsigned char *)sqlite3ValueText(pVal, SQLITE_UTF8);
 }
@@ -16811,6 +16878,10 @@ SQLITE_API void SQLITE_STDCALL sqlite3_result_int64(sqlite3_context *pCtx, i64 i
 SQLITE_API void SQLITE_STDCALL sqlite3_result_null(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetNull(pCtx->pOut);
+}
+SQLITE_API void SQLITE_STDCALL sqlite3_result_subtype(sqlite3_context *pCtx, unsigned int eSubtype){
+  assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
+  pCtx->pOut->eSubtype = eSubtype & 0xff;
 }
 SQLITE_API void SQLITE_STDCALL sqlite3_result_text(
   sqlite3_context *pCtx, 
@@ -17143,7 +17214,7 @@ SQLITE_API void *SQLITE_STDCALL sqlite3_user_data(sqlite3_context *p){
 ** application defined function.
 */
 SQLITE_API sqlite3 *SQLITE_STDCALL sqlite3_context_db_handle(sqlite3_context *p){
-  assert( p && p->pFunc );
+  assert( p && p->pOut );
   return p->pOut->db;
 }
 
@@ -22549,9 +22620,10 @@ case OP_Found: {        /* jump, in3 */
 **
 ** P1 is the index of a cursor open on an SQL table btree (with integer
 ** keys).  P3 is an integer rowid.  If P1 does not contain a record with
-** rowid P3 then jump immediately to P2.  If P1 does contain a record
-** with rowid P3 then leave the cursor pointing at that record and fall
-** through to the next instruction.
+** rowid P3 then jump immediately to P2.  Or, if P2 is 0, raise an
+** SQLITE_CORRUPT error. If P1 does contain a record with rowid P3 then 
+** leave the cursor pointing at that record and fall through to the next
+** instruction.
 **
 ** The OP_NotFound opcode performs the same operation on index btrees
 ** (with arbitrary multi-value keys).
@@ -22583,13 +22655,21 @@ case OP_NotExists: {        /* jump, in3 */
   res = 0;
   iKey = pIn3->u.i;
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, 0, iKey, 0, &res);
+  assert( rc==SQLITE_OK || res==0 );
   pC->movetoTarget = iKey;  /* Used by OP_Delete */
   pC->nullRow = 0;
   pC->cacheStatus = CACHE_STALE;
   pC->deferredMoveto = 0;
   VdbeBranchTaken(res!=0,2);
   pC->seekResult = res;
-  if( res!=0 ) goto jump_to_p2;
+  if( res!=0 ){
+    assert( rc==SQLITE_OK );
+    if( pOp->p2==0 ){
+      rc = SQLITE_CORRUPT_BKPT;
+    }else{
+      goto jump_to_p2;
+    }
+  }
   break;
 }
 
@@ -22870,14 +22950,15 @@ case OP_InsertInt: {
   break;
 }
 
-/* Opcode: Delete P1 P2 P3 P4 *
+/* Opcode: Delete P1 P2 P3 P4 P5
 **
 ** Delete the record at which the P1 cursor is currently pointing.
 **
-** The cursor will be left pointing at either the next or the previous
-** record in the table. If it is left pointing at the next record, then
-** the next Next instruction will be a no-op.  Hence it is OK to delete
-** a record from within a Next loop.
+** If the P5 parameter is non-zero, the cursor will be left pointing at 
+** either the next or the previous record in the table. If it is left 
+** pointing at the next record, then the next Next instruction will be a 
+** no-op. As a result, in this case it is OK to delete a record from within a
+** Next loop. If P5 is zero, then the cursor is left in an undefined state.
 **
 ** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
 ** incremented (otherwise not).
@@ -22909,29 +22990,35 @@ case OP_Delete: {
   assert( pC->pCursor!=0 );  /* Only valid for real tables, no pseudotables */
   assert( pC->deferredMoveto==0 );
 
+
 #ifdef SQLITE_DEBUG
-  if( pOp->p4type==P4_TABLE && HasRowid(pOp->p4.pTab) ){
-    /* The seek operation that positioned the cursor prior to OP_Delete will
-    ** have also set the pC->movetoTarget field to the rowid of the row that
-    ** is being deleted */
+  if( pOp->p4type==P4_TABLE && HasRowid(pOp->p4.pTab) && pOp->p5==0 ){
+    /* If p5 is zero, the seek operation that positioned the cursor prior to
+    ** OP_Delete will have also set the pC->movetoTarget field to the rowid of
+    ** the row that is being deleted */
     i64 iKey = 0;
     sqlite3BtreeKeySize(pC->pCursor, &iKey);
     assert( pC->movetoTarget==iKey );
   }
 #endif
 
-  /* If the update-hook or pre-update-hook will be invoked, set iKey to 
-  ** the rowid of the row being deleted. Set zDb and zTab as well.
-  */
-  if( pOp->p4.z && HAS_UPDATE_HOOK(db) ){
+  /* If the update-hook or pre-update-hook will be invoked, set zDb to
+  ** the name of the db to pass as to it. Also set local pTab to a copy
+  ** of p4.pTab. Finally, if p5 is true, indicating that this cursor was
+  ** last moved with OP_Next or OP_Prev, not Seek or NotFound, set 
+  ** VdbeCursor.movetoTarget to the current rowid.  */
+  if( pOp->p4.pTab && HAS_UPDATE_HOOK(db) ){
     assert( pC->iDb>=0 );
     zDb = db->aDb[pC->iDb].zName;
     pTab = pOp->p4.pTab;
+    if( pOp->p5 && pC->isTable ){
+      sqlite3BtreeKeySize(pC->pCursor, &pC->movetoTarget);
+    }
   }
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update-hook if required. */
-  if( db->xPreUpdateCallback && pOp->p4.z && HasRowid(pTab) ){
+  if( db->xPreUpdateCallback && pOp->p4.pTab && HasRowid(pTab) ){
     assert( !(opflags & OPFLAG_ISUPDATE) || (aMem[pOp->p3].flags & MEM_Int) );
     sqlite3VdbePreUpdateHook(p, pC,
         (opflags & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_DELETE, 
@@ -22943,18 +23030,19 @@ case OP_Delete: {
 
   if( opflags & OPFLAG_ISNOOP ) break;
  
-  rc = sqlite3BtreeDelete(pC->pCursor);
+  rc = sqlite3BtreeDelete(pC->pCursor, pOp->p5);
   pC->cacheStatus = CACHE_STALE;
 
-  /* Update the change-counter and invoke the update-hook if required. */
+  /* Invoke the update-hook if required. */
   if( opflags & OPFLAG_NCHANGE ){
     p->nChange++;
-    assert( pOp->p4.z );
     if( rc==SQLITE_OK && db->xUpdateCallback && HasRowid(pTab) ){
       db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, pTab->zName,
-                          pC->movetoTarget);
+          pC->movetoTarget);
+      assert( pC->iDb>=0 );
     }
   }
+
   break;
 }
 /* Opcode: ResetCount * * * * *
@@ -23488,7 +23576,7 @@ case OP_IdxDelete: {
 #endif
   rc = sqlite3BtreeMovetoUnpacked(pCrsr, &r, 0, 0, &res);
   if( rc==SQLITE_OK && res==0 ){
-    rc = sqlite3BtreeDelete(pCrsr);
+    rc = sqlite3BtreeDelete(pCrsr, 0);
   }
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
@@ -25560,7 +25648,8 @@ SQLITE_API int SQLITE_STDCALL sqlite3_blob_open(
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         int j;
         for(j=0; j<pIdx->nKeyCol; j++){
-          if( pIdx->aiColumn[j]==iCol ){
+          /* FIXME: Be smarter about indexes that use expressions */
+          if( pIdx->aiColumn[j]==iCol || pIdx->aiColumn[j]==(-2) ){
             zFault = "indexed";
           }
         }
@@ -29267,30 +29356,6 @@ static void incrAggFunctionDepth(Expr *pExpr, int N){
 ** Turn the pExpr expression into an alias for the iCol-th column of the
 ** result set in pEList.
 **
-** If the result set column is a simple column reference, then this routine
-** makes an exact copy.  But for any other kind of expression, this
-** routine make a copy of the result set column as the argument to the
-** TK_AS operator.  The TK_AS operator causes the expression to be
-** evaluated just once and then reused for each alias.
-**
-** The reason for suppressing the TK_AS term when the expression is a simple
-** column reference is so that the column reference will be recognized as
-** usable by indices within the WHERE clause processing logic. 
-**
-** The TK_AS operator is inhibited if zType[0]=='G'.  This means
-** that in a GROUP BY clause, the expression is evaluated twice.  Hence:
-**
-**     SELECT random()%5 AS x, count(*) FROM tab GROUP BY x
-**
-** Is equivalent to:
-**
-**     SELECT random()%5 AS x, count(*) FROM tab GROUP BY random()%5
-**
-** The result of random()%5 in the GROUP BY clause is probably different
-** from the result in the result-set.  On the other hand Standard SQL does
-** not allow the GROUP BY clause to contain references to result-set columns.
-** So this should never come up in well-formed queries.
-**
 ** If the reference is followed by a COLLATE operator, then make sure
 ** the COLLATE operator is preserved.  For example:
 **
@@ -29324,19 +29389,11 @@ static void resolveAlias(
   db = pParse->db;
   pDup = sqlite3ExprDup(db, pOrig, 0);
   if( pDup==0 ) return;
-  if( pOrig->op!=TK_COLUMN && zType[0]!='G' ){
-    incrAggFunctionDepth(pDup, nSubquery);
-    pDup = sqlite3PExpr(pParse, TK_AS, pDup, 0, 0);
-    if( pDup==0 ) return;
-    ExprSetProperty(pDup, EP_Skip);
-    if( pEList->a[iCol].u.x.iAlias==0 ){
-      pEList->a[iCol].u.x.iAlias = (u16)(++pParse->nAlias);
-    }
-    pDup->iTable = pEList->a[iCol].u.x.iAlias;
-  }
+  if( zType[0]!='G' ) incrAggFunctionDepth(pDup, nSubquery);
   if( pExpr->op==TK_COLLATE ){
     pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
   }
+  ExprSetProperty(pDup, EP_Alias);
 
   /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
   ** prevents ExprDelete() from deleting the Expr structure itself,
@@ -29728,7 +29785,7 @@ static int lookupName(
 lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
-    if( pExpr->op!=TK_AS ){
+    if( !ExprHasProperty(pExpr, EP_Alias) ){
       sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
     }
     /* Increment the nRef value on all name contexts from TopNC up to
@@ -29769,36 +29826,25 @@ SQLITE_PRIVATE Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSr
 }
 
 /*
-** Report an error that an expression is not valid for a partial index WHERE
-** clause.
+** Report an error that an expression is not valid for some set of
+** pNC->ncFlags values determined by validMask.
 */
-static void notValidPartIdxWhere(
+static void notValid(
   Parse *pParse,       /* Leave error message here */
   NameContext *pNC,    /* The name context */
-  const char *zMsg     /* Type of error */
+  const char *zMsg,    /* Type of error */
+  int validMask        /* Set of contexts for which prohibited */
 ){
-  if( (pNC->ncFlags & NC_PartIdx)!=0 ){
-    sqlite3ErrorMsg(pParse, "%s prohibited in partial index WHERE clauses",
-                    zMsg);
-  }
-}
-
+  assert( (validMask&~(NC_IsCheck|NC_PartIdx|NC_IdxExpr))==0 );
+  if( (pNC->ncFlags & validMask)!=0 ){
+    const char *zIn = "partial index WHERE clauses";
+    if( pNC->ncFlags & NC_IdxExpr )      zIn = "index expressions";
 #ifndef SQLITE_OMIT_CHECK
-/*
-** Report an error that an expression is not valid for a CHECK constraint.
-*/
-static void notValidCheckConstraint(
-  Parse *pParse,       /* Leave error message here */
-  NameContext *pNC,    /* The name context */
-  const char *zMsg     /* Type of error */
-){
-  if( (pNC->ncFlags & NC_IsCheck)!=0 ){
-    sqlite3ErrorMsg(pParse,"%s prohibited in CHECK constraints", zMsg);
+    else if( pNC->ncFlags & NC_IsCheck ) zIn = "CHECK constraints";
+#endif
+    sqlite3ErrorMsg(pParse, "%s prohibited in %s", zMsg, zIn);
   }
 }
-#else
-# define notValidCheckConstraint(P,N,M)
-#endif
 
 /*
 ** Expression p should encode a floating point value between 1.0 and 0.0.
@@ -29883,6 +29929,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       Expr *pRight;
 
       /* if( pSrcList==0 ) break; */
+      notValid(pParse, pNC, "the \".\" operator", NC_IdxExpr);
+      /*notValid(pParse, pNC, "the \".\" operator", NC_PartIdx|NC_IsCheck, 1);*/
       pRight = pExpr->pRight;
       if( pRight->op==TK_ID ){
         zDb = 0;
@@ -29912,7 +29960,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      notValidPartIdxWhere(pParse, pNC, "functions");
+      notValid(pParse, pNC, "functions", NC_PartIdx);
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
@@ -29960,8 +30008,17 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           return WRC_Prune;
         }
 #endif
-        if( pDef->funcFlags & SQLITE_FUNC_CONSTANT ){
+        if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG) ){
+          /* For the purposes of the EP_ConstFunc flag, date and time
+          ** functions and other functions that change slowly are considered
+          ** constant because they are constant for the duration of one query */
           ExprSetProperty(pExpr,EP_ConstFunc);
+        }
+        if( (pDef->funcFlags & SQLITE_FUNC_CONSTANT)==0 ){
+          /* Date/time functions that use 'now', and other functions like
+          ** sqlite_version() that might change over time cannot be used
+          ** in an index. */
+          notValid(pParse, pNC, "non-deterministic functions", NC_IdxExpr);
         }
       }
       if( is_agg && (pNC->ncFlags & NC_AllowAgg)==0 ){
@@ -30008,8 +30065,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_IN );
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         int nRef = pNC->nRef;
-        notValidCheckConstraint(pParse, pNC, "subqueries");
-        notValidPartIdxWhere(pParse, pNC, "subqueries");
+        notValid(pParse, pNC, "subqueries", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
         sqlite3WalkSelect(pWalker, pExpr->x.pSelect);
         assert( pNC->nRef>=nRef );
         if( nRef!=pNC->nRef ){
@@ -30019,8 +30075,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       break;
     }
     case TK_VARIABLE: {
-      notValidCheckConstraint(pParse, pNC, "parameters");
-      notValidPartIdxWhere(pParse, pNC, "parameters");
+      notValid(pParse, pNC, "parameters", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
       break;
     }
   }
@@ -30723,14 +30778,14 @@ SQLITE_PRIVATE void sqlite3ResolveSelectNames(
 SQLITE_PRIVATE void sqlite3ResolveSelfReference(
   Parse *pParse,      /* Parsing context */
   Table *pTab,        /* The table being referenced */
-  int type,           /* NC_IsCheck or NC_PartIdx */
+  int type,           /* NC_IsCheck or NC_PartIdx or NC_IdxExpr */
   Expr *pExpr,        /* Expression to resolve.  May be NULL. */
   ExprList *pList     /* Expression list to resolve.  May be NUL. */
 ){
   SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
 
-  assert( type==NC_IsCheck || type==NC_PartIdx );
+  assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr );
   memset(&sNC, 0, sizeof(sNC));
   memset(&sSrc, 0, sizeof(sSrc));
   sSrc.nSrc = 1;

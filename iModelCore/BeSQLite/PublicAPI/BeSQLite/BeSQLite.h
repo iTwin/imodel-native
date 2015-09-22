@@ -128,7 +128,7 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 #define TEMP_TABLE(name) TEMP_TABLE_Prefix name
 
 // the "unique temporary table" macros can be used for temporary tables that shadow a real table, but use a unique name.
-#define TEMP_TABLE_UniquePrefix TEMP_TABLE_Prefix "t_" 
+#define TEMP_TABLE_UniquePrefix TEMP_TABLE_Prefix "t_"
 #define TEMP_TABLE_UNIQUE(name) TEMP_TABLE_UniquePrefix name
 
 #define BEDB_TABLE_Local        "be_Local"
@@ -160,10 +160,11 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 
 #define BESQLITE_TYPEDEFS(_name_) BEGIN_BENTLEY_SQLITE_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_SQLITE_NAMESPACE
 
-BENTLEY_NAMESPACE_TYPEDEFS(BeGuid);
+BESQLITE_TYPEDEFS(BeGuid);
 BESQLITE_TYPEDEFS(Db);
 BESQLITE_TYPEDEFS(DbFile);
 BESQLITE_TYPEDEFS(Statement);
+BESQLITE_TYPEDEFS(NamedParams);
 
 #if !defined (DOCUMENTATION_GENERATOR)
 #ifndef GUID_DEFINED
@@ -179,11 +180,17 @@ typedef struct _GUID
 
 typedef struct _CLzma2EncProps CLzma2EncProps;
 typedef struct _CLzmaEncProps CLzmaEncProps;
+typedef struct sqlite3_blob* SqlDbBlobP;
+typedef struct sqlite3* SqlDbP;
+typedef struct sqlite3& SqlDbR;
+typedef struct sqlite3_stmt* SqlStatementP;
+typedef struct sqlite3_session* SqlSessionP;
+typedef struct sqlite3_changeset_iter* SqlChangesetIterP;
+typedef struct Mem* SqlValueP;
+
 #endif // DOCUMENTATION_GENERATOR
 
-BEGIN_BENTLEY_NAMESPACE
-typedef struct BeGuid BeDbGuid;
-typedef Byte const* ByteCP;
+BEGIN_BENTLEY_SQLITE_NAMESPACE
 
 //=======================================================================================
 //! A 16-byte Globally Unique Id. A value of all zeros means "Invalid Id".
@@ -238,15 +245,22 @@ struct BeGuid
 //=======================================================================================
 struct BeRepositoryId
 {
-    enum class SpecialValue : uint32_t {Master=0, Illegal=(uint32_t)0xffffffff};
+protected:
     uint32_t m_id;
+
+public:
+    static uint32_t const MaxRepo() {return 1L<<24;} 
+    static uint32_t const Master()  {return 0;} 
+    static uint32_t const Illegal() {return (uint32_t)0xffffffff;}
+
     BeRepositoryId GetNextRepositoryId() const {return BeRepositoryId(m_id+1);}
     BeRepositoryId() {Invalidate();}             //!< Construct an invalid BeRepositoryId.
-    explicit BeRepositoryId(int32_t u) {m_id=u;} //!< Construct a BeRepositoryId from a 32 bit value.
-    void Invalidate() {m_id = (uint32_t) SpecialValue::Illegal;}  //!< Set this BeRepositoryId to the invalid id value (-1).
-    bool IsValid() const {return (uint32_t) SpecialValue::Illegal != m_id;}  //!< Test to see whether this RepositoryId is valid. Negative Ids are not valid.
-    bool IsMasterId() const {return (uint32_t) SpecialValue::Master==m_id;}  //!< Determine whether this is the id of the master repository (special id==0).
-    uint32_t GetValue() const {BeAssert(IsValid()); return m_id;} //!< Get the repository id as an Int32
+    explicit BeRepositoryId(uint32_t u) {m_id=u;} //!< Construct a BeRepositoryId from a 32 bit value.
+    void Invalidate() {m_id = Illegal();}  //!< Set this BeRepositoryId to the invalid id value 
+    bool IsValid() const {return Illegal() != m_id;}  //!< Test to see whether this RepositoryId is valid.
+    bool IsMasterId() const {return Master()==m_id;}  //!< Determine whether this is the id of the master repository (special id==0).
+    uint32_t GetValue() const {BeAssert(IsValid()); BeAssert(m_id<MaxRepo()); return m_id;} //!< Get the repository id as a uint32_t
+    bool operator==(BeRepositoryId const& rhs) const {return rhs.m_id==m_id;}
 };
 
 //=======================================================================================
@@ -256,14 +270,14 @@ struct BeRepositoryId
 struct BeInt64Id
 {
 protected:
-    int64_t m_id;
+    uint64_t m_id;
 
 public:
     //! Construct an invalid BeInt64Id
     BeInt64Id() {Invalidate();}
 
     //! Construct a BeInt64Id from a 64 bit value.
-    explicit BeInt64Id(int64_t u) : m_id(u) {}
+    explicit BeInt64Id(uint64_t u) : m_id(u) {}
 
     //! Move constructor.
     BeInt64Id(BeInt64Id&& rhs) {m_id = rhs.m_id;}
@@ -288,13 +302,10 @@ public:
     bool operator>=(BeInt64Id const& rhs) const {return m_id>=rhs.m_id;}
 
     //! Get the 64 bit value of this BeInt64Id
-    int64_t GetValue() const {BeAssert(IsValid()); return m_id;}
-
-    //! Increment this BeInt64Id
-    void UseNext() {++m_id; BeAssert(IsValid());}
+    uint64_t GetValue() const {BeAssert(IsValid()); return m_id;}
 
     //! Get the 64 bit value of this BeGuid. Does not check for valid value in debug builds.
-    int64_t GetValueUnchecked() const {return m_id;}
+    uint64_t GetValueUnchecked() const {return m_id;}
 
     //! Test to see whether this BeInt64Id is valid. 0 is not a valid id.
     bool Validate() const {return m_id != 0;}
@@ -305,7 +316,7 @@ public:
 
 #define BEINT64_ID_DECLARE_MEMBERS(classname,superclass) \
     classname() {Invalidate();}\
-    explicit classname(int64_t v) : superclass(v) {} \
+    explicit classname(uint64_t v) : superclass(v) {} \
     classname(classname&& rhs) : superclass(std::move(rhs)) {} \
     classname(classname const& rhs) : superclass(rhs) {} \
     classname& operator=(classname const& rhs) {m_id = rhs.m_id; return *this;} \
@@ -321,21 +332,32 @@ struct BeRepositoryBasedId : BeInt64Id
     BEINT64_ID_DECLARE_MEMBERS(BeRepositoryBasedId,BeInt64Id)
 
 public:
-    //! Construct a BeInt64Id from a RepositoryId value and an id.
-    BeRepositoryBasedId(BeRepositoryId repositoryId, uint32_t id) { m_id = ((((int64_t) repositoryId.GetValue()) << 32 | id)); }
+    static uint64_t const MaxLocal() {return 1LL<<40;} // top 24 bits are BeRepositoryId, lower 40 bits are local id
 
-    BeRepositoryId GetRepositoryId() const {return BeRepositoryId(m_id >> 32);}
+    //! CONSTRUCT a BeInt64Id from a RepositoryId value and an id.
+    BeRepositoryBasedId(BeRepositoryId repositoryId, uint64_t id) {BeAssert(id<MaxLocal()); m_id = ((repositoryId.GetValue() * MaxLocal()) + id);}
 
-    //! @private
-    BE_SQLITE_EXPORT void CreateRandom(BeRepositoryId);
+    BeRepositoryId GetRepositoryId() const {return BeRepositoryId((uint32_t) (m_id / MaxLocal()));} //!< Get the BeRepositoryId of this BeRepositoryBasedId
+
+    //! Increment this BeRepositoryBasedId
+    //! @note If this BeRepositoryBasedId is not valid, this method does nothing.
+    BE_SQLITE_EXPORT void UseNext(Db&);
+
+    //! Construct a BeRepositoryBasedId with the value of the next available (unused) value for the supplied Table/Column.
+    //! @param[in] db the Db for this BeRepositoryBasedId
+    //! @param[in] tableName the name of the table for this BeRepositoryBasedId
+    //! @param[in] columnName the name of the column for this BeRepositoryBasedId
+    //! @note if the highest value of BeRepositoryBasedId is already used (i.e. the id column is "full" for this BeRepositoryId),
+    //! this value will be invalid on return.
+    BE_SQLITE_EXPORT BeRepositoryBasedId(Db& db, Utf8CP tableName, Utf8CP columnName);
 };
 
-
 #define BEREPOSITORYBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass { \
-    classname(BeRepositoryId repositoryId, uint32_t id) : superclass(repositoryId,id){} \
+    classname(BeSQLite::BeRepositoryId repositoryId, uint64_t id) : superclass(repositoryId,id){} \
+    classname(BeSQLite::Db& db, Utf8CP tableName, Utf8CP columnName) : superclass(db,tableName,columnName){} \
     BEINT64_ID_DECLARE_MEMBERS(classname,superclass) };
 
-#define BEREPOSITORYBASED_ID_CLASS(classname) BEREPOSITORYBASED_ID_SUBCLASS(classname,BeRepositoryBasedId)
+#define BEREPOSITORYBASED_ID_CLASS(classname) BEREPOSITORYBASED_ID_SUBCLASS(classname,BeSQLite::BeRepositoryBasedId)
 
 //=======================================================================================
 //! An 8-byte Id value that must be requested from an external authority that enforces uniqueness.
@@ -347,7 +369,7 @@ struct BeServerIssuedId : BeInt64Id
 };
 
 #define BESERVER_ISSUED_ID_SUBCLASS(classname,superclass) struct classname : superclass {BEINT64_ID_DECLARE_MEMBERS(classname,superclass)};
-#define BESERVER_ISSUED_ID_CLASS(classname) BESERVER_ISSUED_ID_SUBCLASS(classname,BeServerIssuedId)
+#define BESERVER_ISSUED_ID_CLASS(classname) BESERVER_ISSUED_ID_SUBCLASS(classname,BeSQLite::BeServerIssuedId)
 
 //=======================================================================================
 // Base class for 32 bit Ids. Subclasses must supply GetInvalidValue.
@@ -389,20 +411,6 @@ template <typename Derived, uint32_t s_invalidValue> struct BeUInt32Id
     //! only for internal callers that understand the semantics of invalid IDs.
     uint32_t GetValueUnchecked() const {return m_id;}
 };
-
-END_BENTLEY_NAMESPACE
-
-BEGIN_BENTLEY_SQLITE_NAMESPACE
-
-#if !defined (DOCUMENTATION_GENERATOR)
-typedef struct sqlite3_blob* SqlDbBlobP;
-typedef struct sqlite3* SqlDbP;
-typedef struct sqlite3& SqlDbR;
-typedef struct sqlite3_stmt* SqlStatementP;
-typedef struct sqlite3_session* SqlSessionP;
-typedef struct sqlite3_changeset_iter* SqlChangesetIterP;
-typedef struct Mem* SqlValueP;
-#endif
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/11
@@ -725,10 +733,16 @@ public:
     //! @see sqlite3_bind_int64
     BE_SQLITE_EXPORT DbResult BindInt64(int paramNum, int64_t value);
 
+    //! Bind a UInt64 value to a parameter of this (previously prepared) Statement
+    //! @param[in] paramNum the SQL parameter number to bind.
+    //! @param[in] value the value to bind.
+    //! @see sqlite3_bind_int64
+    DbResult BindUInt64(int paramNum, uint64_t value) {return BindInt64(paramNum, (int64_t) value);}
+
     //! Bind a BeRepositoryBasedId value to a parameter of this (previously prepared) Statement. Binds NULL if the id is not valid.
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
-    DbResult BindId(int paramNum, BeInt64Id value) {return value.IsValid() ? BindInt64(paramNum,value.GetValue()) : BindNull(paramNum);}
+    DbResult BindId(int paramNum, BeInt64Id value) {return value.IsValid() ? BindUInt64(paramNum,value.GetValue()) : BindNull(paramNum);}
 
     //! Bind a double value to a parameter of this (previously prepared) Statement
     //! @param[in] paramNum the SQL parameter number to bind.
@@ -833,6 +847,11 @@ public:
     //! @see sqlite3_column_int64
     BE_SQLITE_EXPORT int64_t GetValueInt64(int col);
 
+    //! Get a UInt64 value from a column returned from Step
+    //! @param[in] col The column of interest
+    //! @see sqlite3_column_int64
+    uint64_t GetValueUInt64(int col) {return (uint64_t) GetValueInt64(col);}
+
     //! Get a double value from a column returned from Step
     //! @param[in] col The column of interest
     //! @see sqlite3_column_double
@@ -840,7 +859,7 @@ public:
 
     //! Get a BeRepositoryBasedId value from a column returned from Step
     //! @param[in] col The column of interest
-    template <class T_Id> T_Id GetValueId(int col) {if (!IsColumnNull(col)) {return T_Id(GetValueInt64(col));} return T_Id();}
+    template <class T_Id> T_Id GetValueId(int col) {if (!IsColumnNull(col)) {return T_Id(GetValueUInt64(col));} return T_Id();}
 
     //! Get a BeGuid value from a column returned from Step
     //! @param[in] col The column of interest
@@ -941,7 +960,7 @@ protected:
 
 public:
     DbValue(SqlValueP val) : m_val(val) {}
-    
+
     bool IsValid() const {return nullptr != m_val;}                    //!< return true if this value is valid
     bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
     SqlValueP GetSqlValueP() const { return m_val; }  //!< for direct use of sqlite3 api
@@ -953,16 +972,17 @@ public:
     BE_SQLITE_EXPORT Utf8CP      GetValueText() const;      //!< see sqlite3_value_text
     BE_SQLITE_EXPORT int         GetValueInt() const;       //!< see sqlite3_value_int
     BE_SQLITE_EXPORT int64_t     GetValueInt64() const;     //!< see sqlite3_value_int64
+    uint64_t GetValueUInt64() const {return (uint64_t) GetValueInt64();}
     BE_SQLITE_EXPORT double      GetValueDouble() const;    //!< see sqlite3_value_double
     BE_SQLITE_EXPORT BeGuid      GetValueGuid() const;      //!< get the value as a GUID
-    template <class T_Id> T_Id   GetValueId() const {return T_Id(GetValueInt64());}
+    template <class T_Id> T_Id   GetValueId() const {return T_Id(GetValueUInt64());}
 
     BE_SQLITE_EXPORT Utf8String Format(int detailLevel) const; //!< for debugging purposes.
 };
 
 //=======================================================================================
 //! A duplicated "value" from a BeSQLite function
-//! @remarks Used when the sqlite value may refer to unprotected memory, and needs to 
+//! @remarks Used when the sqlite value may refer to unprotected memory, and needs to
 //! be protected by duplication. @see sqlite3_value_dup
 // @bsiclass                                             Ramanujam.Raman   08/15
 //=======================================================================================
@@ -1809,14 +1829,14 @@ private:
     Utf8String   m_name;
     bool         m_isUnset;
     mutable bool m_dirty;
-    int64_t      m_value;
+    uint64_t     m_value;
 
 public:
     explicit CachedRLV(Utf8CP name) : m_name(name) {BeAssert(!Utf8String::IsNullOrEmpty(name)); Reset();}
     Utf8CP GetName() const {return m_name.c_str();}
-    int64_t GetValue() const {BeAssert(!m_isUnset); return m_value;}
-    void ChangeValue(int64_t value, bool initializing = false) {m_isUnset=false; m_dirty=!initializing; m_value=value;}
-    int64_t Increment() {BeAssert(!m_isUnset); m_dirty = true; m_value++; return m_value;}
+    uint64_t GetValue() const {BeAssert(!m_isUnset); return m_value;}
+    void ChangeValue(uint64_t value, bool initializing = false) {m_isUnset=false; m_dirty=!initializing; m_value=value;}
+    uint64_t Increment() {BeAssert(!m_isUnset); m_dirty = true; m_value++; return m_value;}
     bool IsUnset() const { return m_isUnset; }
     bool IsDirty() const {BeAssert(!m_isUnset); return m_dirty;}
     void SetIsNotDirty() const {BeAssert(!m_isUnset); m_dirty = false;}
@@ -1864,14 +1884,14 @@ public:
     //! @param[in] value Value to save
     //! @return BE_SQLITE_OK if successful, error code otherwise.
     //! @see RegisterRepositoryLocalValue
-    BE_SQLITE_EXPORT DbResult SaveValue(size_t rlvIndex, int64_t value);
+    BE_SQLITE_EXPORT DbResult SaveValue(size_t rlvIndex, uint64_t value);
 
     //! Read a RepositoryLocalValue from BEDB_TABLE_Local table.
     //! @param[out] value Retrieved value
     //! @param[in] rlvIndex The index of the RepositoryLocalValue to query.
     //! @return BE_SQLITE_OK if the value exists, error code otherwise.
     //! @see RegisterRepositoryLocalValue
-    BE_SQLITE_EXPORT DbResult QueryValue(int64_t& value, size_t rlvIndex);
+    BE_SQLITE_EXPORT DbResult QueryValue(uint64_t& value, size_t rlvIndex);
 
     //! Increment the RepositoryLocalValue by one for the given @p rlvIndex.
     //! @param[out] newValue Incremented value
@@ -1879,7 +1899,7 @@ public:
     //! @return BE_SQLITE_OK in case of success. Error code otherwise. If initialValue is nullptr and
     //!         the RepositoryLocalValue does not exist, and error code is returned.
     //! @see RegisterRepositoryLocalValue
-    BE_SQLITE_EXPORT DbResult IncrementValue(int64_t& newValue, size_t rlvIndex);
+    BE_SQLITE_EXPORT DbResult IncrementValue(uint64_t& newValue, size_t rlvIndex);
     };
 
 //=======================================================================================
@@ -1908,7 +1928,7 @@ protected:
     RefCountedPtr<BusyRetry> m_retry;
     mutable void*   m_cachedProps;
     RepositoryLocalValueCache m_rlvCache;
-    BeDbGuid        m_dbGuid;
+    BeGuid          m_dbGuid;
     Savepoint       m_defaultTxn;
     BeRepositoryId  m_repositoryId;
     ChangeTrackerPtr m_tracker;
@@ -2269,9 +2289,9 @@ public:
     //! @param[in] params Parameters about how the database should be created.
     //! @return BE_SQLITE_OK if the database was successfully created, error code otherwise.
     //! @note If the database file exists before this call, its page size and encoding are not changed.
-    BE_SQLITE_EXPORT DbResult CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid=BeDbGuid(), CreateParams const& params=CreateParams());
+    BE_SQLITE_EXPORT DbResult CreateNewDb(Utf8CP dbName, BeGuid dbGuid=BeGuid(), CreateParams const& params=CreateParams());
 
-    DbResult CreateNewDb(BeFileNameCR dbName, BeDbGuid dbGuid=BeDbGuid(), CreateParams const& params=CreateParams())
+    DbResult CreateNewDb(BeFileNameCR dbName, BeGuid dbGuid=BeGuid(), CreateParams const& params=CreateParams())
                         {return CreateNewDb(dbName.GetNameUtf8().c_str(), dbGuid, params);}
 
     //! Determine whether this Db refers to a currently opened file.
@@ -2483,20 +2503,12 @@ public:
     BE_SQLITE_EXPORT SqlDbP GetSqlDb() const;
 
     //! Get the GUID of this Db.
-    BE_SQLITE_EXPORT BeDbGuid GetDbGuid() const;
+    BE_SQLITE_EXPORT BeGuid GetDbGuid() const;
 
     //! Get the (local) BeRepositoryId of this Db. Every copy of the Db must have a unique BeRepositoryId.
     BE_SQLITE_EXPORT BeRepositoryId GetRepositoryId() const;
 
-    //! Get the next available (unused) value for a BeRepositoryBasedId for the supplied Table/Column.
-    //! @param [in,out] value the next available value of the BeRepositoryBasedId
-    //! @param [in] tableName the name of the table holding the BeRepositoryBasedId
-    //! @param [in] columnName the name of the column holding the BeRepositoryBasedId
-    //! @param [in] whereParam optional additional where criteria. Supply both the additional where clause (do not include the WHERE keyword) and any
-    //! parameters to bind.
-    BE_SQLITE_EXPORT DbResult GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableName, Utf8CP columnName, NamedParams* whereParam=nullptr);
-
-    //! Get a new value for a BeServerIssuedId from the server 
+    //! Get a new value for a BeServerIssuedId from the server
     //! @param [in,out] value the new value of the BeServerIssuedId
     //! @param [in] tableName the name of the table holding the BeServerIssuedId
     //! @param [in] columnName the name of the column holding the BeServerIssuedId
@@ -2545,7 +2557,7 @@ public:
 
     BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& func) const;
 
-    BE_SQLITE_EXPORT void ChangeDbGuid(BeDbGuid);
+    BE_SQLITE_EXPORT void ChangeDbGuid(BeGuid);
 
     //! Change the BeRepositoryId of this Db.
     BE_SQLITE_EXPORT DbResult ChangeRepositoryId(BeRepositoryId);
@@ -2739,12 +2751,12 @@ public:
     //! Write data to be compressed into this object. This method can be called any number of times after #Init has been called until #Finish is called.
     //! @param[in] data the data to be written.
     //! @param[in] size number of bytes in data.
-    BE_SQLITE_EXPORT void Write(ByteCP data, uint32_t size);
+    BE_SQLITE_EXPORT void Write(Byte const* data, uint32_t size);
 
     //! Finish the compression. After this call, no additional data may be written to this blob until #Init is called.
     BE_SQLITE_EXPORT void Finish();
 
-    void DoSnappy(ByteCP data, uint32_t size) {Init(); Write(data,size); Finish();}
+    void DoSnappy(Byte const* data, uint32_t size) {Init(); Write(data,size); Finish();}
 
     //! Save this compressed value as a blob in a Db.
     //! @param[in] db the SQLite database to write

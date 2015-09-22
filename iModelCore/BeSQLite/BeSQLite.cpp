@@ -8,7 +8,7 @@
 #define ZLIB_INTERNAL
 
 #include <BeSQLite/ChangeSet.h>
-#include <BeSQLite/SQLiteAPI.h>
+#include "SQLite/sqlite3.h"
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeStringUtilities.h>
@@ -198,16 +198,6 @@ BentleyStatus BeGuid::FromString(Utf8CP uuid_str)
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BeRepositoryBasedId::CreateRandom(BeRepositoryId repo) 
-    {
-    uint32_t random;
-    sqlite3_randomness(sizeof(random), &random);
-    *this = BeRepositoryBasedId(repo,random);
-    }
-
 void        Statement::Finalize() {if (m_stmt){sqlite3_finalize(m_stmt);m_stmt=nullptr;}}
 DbResult    Statement::Step() {return m_stmt ? (DbResult) sqlite3_step(m_stmt) : BE_SQLITE_ERROR;}
 DbResult    Statement::Reset() {return (DbResult)sqlite3_reset(m_stmt);}
@@ -257,25 +247,12 @@ int64_t     DbValue::GetValueInt64() const            {return sqlite3_value_int6
 double      DbValue::GetValueDouble() const           {return sqlite3_value_double(m_val);}
 BeGuid      DbValue::GetValueGuid() const {BeGuid guid; memcpy(&guid, GetValueBlob(), sizeof(guid)); return guid;}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                  Ramanujam.Raman                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbDupValue::DbDupValue(SqlValueP val) : DbValue(nullptr) 
-    {
-    m_val = sqlite3_value_dup(val);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                  Ramanujam.Raman                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbDupValue::~DbDupValue() 
-    {
-    sqlite3_value_free(m_val);
-    }
+DbDupValue::DbDupValue(SqlValueP val) : DbValue(nullptr) {m_val = sqlite3_value_dup(val);}
+DbDupValue::~DbDupValue() {sqlite3_value_free(m_val);}
 
 SqlDbP   Db::GetSqlDb() const {return m_dbFile->m_sqlDb;}
 bool     Db::IsReadonly() const {return m_dbFile->m_flags.m_readonly;}
-BeDbGuid Db::GetDbGuid() const {return m_dbFile->m_dbGuid;}
+BeGuid   Db::GetDbGuid() const {return m_dbFile->m_dbGuid;}
 int32_t  Db::GetCurrentSavepointDepth() const {return (int32_t) m_dbFile->m_txns.size();}
 Utf8CP   Db::GetLastError(DbResult* lastResult) const { return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened"; }
 BeRepositoryId Db::GetRepositoryId() const {return m_dbFile->m_repositoryId;}
@@ -838,7 +815,7 @@ DbResult DbFile::SaveProperty(PropertySpecCR spec, Utf8CP stringData, void const
             {
             unsigned long compressedSize= (uint32_t) (size*1.01) + 12;
             compressed.resize(compressedSize);
-            if (Z_OK != compress2(compressed.data(), &compressedSize, (ByteCP) value, size, DefaultCompressionLevel) || (compressedSize >= size))
+            if (Z_OK != compress2(compressed.data(), &compressedSize, (Byte const*) value, size, DefaultCompressionLevel) || (compressedSize >= size))
                 doCompress = false;
             else
                 {
@@ -944,7 +921,7 @@ DbResult DbFile::QueryCachedProperty(Utf8String* strval, void** value, uint32_t 
         if (compressedBytes > 0)
             {
             unsigned long actuallyRead = size;
-            uncompress((Byte*)cachedProp->m_value.data(), &actuallyRead, (ByteCP) blobdata, blobsize);
+            uncompress((Byte*)cachedProp->m_value.data(), &actuallyRead, (Byte const*) blobdata, blobsize);
             if (actuallyRead != size)
                 return BE_SQLITE_MISMATCH;
             }
@@ -1008,7 +985,7 @@ DbResult DbFile::QueryProperty(void* value, uint32_t size, PropertySpecCR spec, 
     if (compressedBytes > 0)
         {
         unsigned long actuallyRead = size;
-        uncompress((Byte*)value, &actuallyRead, (ByteCP) blobdata, blobsize);
+        uncompress((Byte*)value, &actuallyRead, (Byte const*) blobdata, blobsize);
         if (actuallyRead != size)
             return BE_SQLITE_MISMATCH;
         }
@@ -1199,7 +1176,7 @@ DbResult Db::SaveBeDbGuid()
 DbResult Db::SaveRepositoryId()
     {
     if (!m_dbFile->m_repositoryId.IsValid())
-        m_dbFile->m_repositoryId = BeRepositoryId((uint32_t) BeRepositoryId::SpecialValue::Master);
+        m_dbFile->m_repositoryId = BeRepositoryId(BeRepositoryId::Master());
 
     return m_dbFile->m_rlvCache.SaveValue(m_dbFile->m_repositoryIdRlvIndex, m_dbFile->m_repositoryId.GetValue());
     }
@@ -1207,7 +1184,7 @@ DbResult Db::SaveRepositoryId()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Db::ChangeDbGuid(BeDbGuid id)
+void Db::ChangeDbGuid(BeGuid id)
     {
     m_dbFile->m_dbGuid = id;
     SaveBeDbGuid();
@@ -1250,38 +1227,42 @@ DbResult Db::ChangeRepositoryId(BeRepositoryId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableName, Utf8CP colName, NamedParams* whereParams)
+BeRepositoryBasedId::BeRepositoryBasedId(Db& db, Utf8CP tableName, Utf8CP colName)
     {
-    if (value.IsValid())
-        value.UseNext();
-    else
-        {
-        Utf8String sql(SqlPrintfString("SELECT max(%s) FROM %s WHERE %s<?", colName, tableName, colName));
-        if (whereParams)
-            {
-            sql.append(" AND ");
-            sql.append(whereParams->GetWhere());
-            }
+    SqlPrintfString sql("SELECT max(%s) FROM %s WHERE %s>=? AND %s<?", colName, tableName, colName, colName);
 
-        Statement stmt;
-        stmt.Prepare(*this, sql.c_str());
-        if (whereParams)
-            whereParams->Bind(stmt);
+    Statement stmt;
+    stmt.Prepare(db, sql);
 
-        BeRepositoryBasedId lastId(m_dbFile->m_repositoryId.GetNextRepositoryId(), 0);
-        stmt.BindInt64(1, lastId.GetValueUnchecked());
+    BeRepositoryId myRepo = db.GetRepositoryId();
+    BeRepositoryBasedId firstId(myRepo, 1);
+    BeRepositoryBasedId lastId(myRepo.GetNextRepositoryId(), 0);
 
-        DbResult result = stmt.Step();
-        BeAssert(result == BE_SQLITE_ROW);
-        if (result != BE_SQLITE_ROW)
-            return  result;
+    stmt.BindInt64(1, firstId.GetValueUnchecked());
+    stmt.BindInt64(2, lastId.GetValueUnchecked());
+    stmt.Step();
+    m_id = stmt.IsColumnNull(0) ? firstId.GetValueUnchecked() : stmt.GetValueInt64(0)+1;
+    BeAssert(m_id < lastId.GetValueUnchecked());
+    }
 
-        int64_t currMax = stmt.GetValueInt64(0);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeRepositoryBasedId::UseNext(Db& db)
+    {
+    if (!IsValid())
+        return;
 
-        BeRepositoryBasedId firstId(m_dbFile->m_repositoryId, 1);
-        value = ((currMax < firstId.GetValue()) ? firstId : BeRepositoryBasedId(currMax+1));
-        }
-    return  BE_SQLITE_OK;
+    BeRepositoryId myRepo = db.GetRepositoryId();
+    BeAssert(myRepo == GetRepositoryId());
+    ++m_id;
+
+    BeRepositoryBasedId lastId(myRepo.GetNextRepositoryId(), 0);
+    if (m_id < lastId.GetValueUnchecked())
+        return; // ok
+
+    BeAssert(false); // We're out of ids for this repositoryid!
+    Invalidate();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1293,7 +1274,7 @@ DbResult Db::GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP
     //!!!  NOTE: THIS IS ALL BOGUS AND NEEDS TO BE REPLACED BY SOMETHING THAT ACTUALLY CONNECTS TO A SERVER !!!!
     //!!!  NOTE: THIS IS ALL BOGUS AND NEEDS TO BE REPLACED BY SOMETHING THAT ACTUALLY CONNECTS TO A SERVER !!!!
     if (value.IsValid())
-        value.UseNext();
+        value = BeServerIssuedId(value.GetValue() + 1);
     else
         {
         Utf8String sql(SqlPrintfString("SELECT max(%s) FROM %s", colName, tableName, colName));
@@ -1306,7 +1287,7 @@ DbResult Db::GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP
         if (result != BE_SQLITE_ROW)
             return  result;
 
-        value = BeServerIssuedId(stmt.GetValueInt64(0) + 1);
+        value = BeServerIssuedId(stmt.GetValueUInt64(0) + 1);
         }
 
     return  BE_SQLITE_OK;
@@ -1371,7 +1352,7 @@ Db::OpenParams::OpenParams(OpenMode openMode, DefaultTxn defaultTxn, BusyRetry* 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& params)
+DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& params)
     {
     if (IsDbOpen())
         return BE_SQLITE_ERROR_AlreadyOpen;
@@ -1559,7 +1540,7 @@ void RepositoryLocalValueCache::Clear()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult RepositoryLocalValueCache::SaveValue(size_t rlvIndex, int64_t value)
+DbResult RepositoryLocalValueCache::SaveValue(size_t rlvIndex, uint64_t value)
     {
     if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
@@ -1571,7 +1552,7 @@ DbResult RepositoryLocalValueCache::SaveValue(size_t rlvIndex, int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult RepositoryLocalValueCache::QueryValue(int64_t& value, size_t rlvIndex)
+DbResult RepositoryLocalValueCache::QueryValue(uint64_t& value, size_t rlvIndex)
     {
     if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
@@ -1587,7 +1568,7 @@ DbResult RepositoryLocalValueCache::QueryValue(int64_t& value, size_t rlvIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult RepositoryLocalValueCache::IncrementValue(int64_t& newValue, size_t rlvIndex)
+DbResult RepositoryLocalValueCache::IncrementValue(uint64_t& newValue, size_t rlvIndex)
     {
     CachedRLV* cachedRlv = nullptr;
     if (!TryQuery(cachedRlv, rlvIndex))
@@ -2216,7 +2197,7 @@ DbResult Db::QueryDbIds()
     if (BE_SQLITE_ROW != rc)
         return  BE_SQLITE_ERROR_NoPropertyTable;
 
-    int64_t repoId;
+    uint64_t repoId;
     rc = m_dbFile->m_rlvCache.QueryValue(repoId, m_dbFile->m_repositoryIdRlvIndex);
     if (BE_SQLITE_OK != rc)
         return BE_SQLITE_ERROR_NoPropertyTable;
@@ -2798,7 +2779,7 @@ SnappyToBlob::~SnappyToBlob()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SnappyToBlob::Write(ByteCP data, uint32_t inSize)
+void SnappyToBlob::Write(Byte const* data, uint32_t inSize)
     {
     m_unsnappedSize += inSize;
     while (inSize>0)
@@ -3590,9 +3571,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::GetNextEmbedFileId() const
         return BeRepositoryBasedId();
 
     BeAssert(m_db.TableExists(BEDB_TABLE_EmbeddedFile));
-    BeRepositoryBasedId id;
-    m_db.GetNextRepositoryBasedId(id, BEDB_TABLE_EmbeddedFile, "Id");
-    return id;
+    return BeRepositoryBasedId(m_db, BEDB_TABLE_EmbeddedFile, "Id");
     }
 
 //---------------------------------------------------------------------------------------
@@ -3622,10 +3601,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::ImportWithoutCompressing(DbResult* stat
     if (stat != nullptr)
         *stat = rc;
 
-    if (rc == BE_SQLITE_OK)
-        return newId;
-    else
-        return BeRepositoryBasedId();
+    return rc == BE_SQLITE_OK ? newId : BeRepositoryBasedId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -3965,7 +3941,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::QueryFile(Utf8CP name, uint64_t* size, 
             }
         }
 
-    return BeRepositoryBasedId(stmt.GetValueInt64(2));
+    return BeRepositoryBasedId(stmt.GetValueUInt64(2));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4066,7 +4042,7 @@ DateTime DbEmbeddedFileTable::Iterator::Entry::GetLastModified() const
     return std::move(lastModified);
     }
 
-BeRepositoryBasedId DbEmbeddedFileTable::Iterator::Entry::GetId() const {return BeRepositoryBasedId(m_sql->GetValueInt64(3));}
+BeRepositoryBasedId DbEmbeddedFileTable::Iterator::Entry::GetId() const {return BeRepositoryBasedId(m_sql->GetValueUInt64(3));}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2012
@@ -4536,6 +4512,8 @@ static void logCallback(void *pArg, int iErrCode, Utf8CP zMsg)
     LOG.messagev(severity, "SQLITE_ERROR %x [%s]", iErrCode, zMsg);
     }
 
+extern "C" int sqlite3_json_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines *pApi);
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4549,6 +4527,7 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
 
     sqlite3_initialize();
     sqlite3_auto_extension((void(*)(void))&besqlite_db_init);
+    sqlite3_auto_extension((void(*)(void))sqlite3_json_init);
 
     Utf8String tempDirUtf8 = tempDir.GetNameUtf8();
     if (!tempDir.DoesPathExist())

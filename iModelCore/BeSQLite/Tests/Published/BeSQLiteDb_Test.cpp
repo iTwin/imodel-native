@@ -6,9 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
-#ifdef WIP_PUBLISHED_API
-#include <BeSQLite/SQLiteAPI.h> //only needed for test to directly work with SQLite
-#endif
 
 #include <vector>
 
@@ -261,12 +258,12 @@ TEST_F(BeSQLiteDbTests, SetGuids)
     EXPECT_TRUE (projGuidOut==projGuid);
 
     //get the BeGUID
-    BeDbGuid dbGuid = m_db.GetDbGuid();
+    BeSQLite::BeGuid dbGuid = m_db.GetDbGuid();
     EXPECT_TRUE (dbGuid.IsValid());
 
-    //create a new Db with explicit BeDbGuid value
+    //create a new Db with explicit BeSQLite::BeGuid value
     Db db2;
-    BeDbGuid dbGuid2(false), dbGuid3(false);
+    BeSQLite::BeGuid dbGuid2(false), dbGuid3(false);
     dbGuid2.Init(400, 100);
 
     BeFileName dbName2 = getDbFilePath(L"new.db");
@@ -560,7 +557,7 @@ TEST_F(BeSQLiteDbTests, RepositoryLocalValues)
     m_result = m_db.GetRLVCache().SaveValue(rlvIndex, val);
     EXPECT_EQ (BE_SQLITE_OK, m_result) << "SaveRepositoryLocalValue failed";
 
-    int64_t actualVal = -1LL;
+    uint64_t actualVal = -1LL;
     m_result = m_db.GetRLVCache().QueryValue(actualVal, rlvIndex);
     EXPECT_EQ (BE_SQLITE_OK, m_result);
     EXPECT_EQ (val, (int) actualVal);
@@ -663,7 +660,7 @@ TEST(BeSQLiteDbOpenTest, Expired2)
         BeSQLite::Db db;
         BeSQLite::Db::CreateParams createParms;
         createParms.SetExpirationDate(DateTime::GetCurrentTimeUtc());
-        ASSERT_EQ( BE_SQLITE_OK, db.CreateNewDb(dbFullName.GetNameUtf8().c_str(), BeDbGuid(), createParms) );
+        ASSERT_EQ( BE_SQLITE_OK, db.CreateNewDb(dbFullName.GetNameUtf8().c_str(), BeSQLite::BeGuid(), createParms) );
         ASSERT_TRUE( db.IsDbOpen() );
         ASSERT_TRUE( db.IsExpired() );
         expiredFileName.assign(db.GetDbFileName());
