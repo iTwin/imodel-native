@@ -332,49 +332,12 @@ void IssueReporter::Report(ECDbIssueSeverity severity, Utf8CP message, ...) cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void IssueReporter::ReportSqliteIssue(ECSqlStatus& mappedECSqlStatus, ECDbIssueSeverity sev, DbResult sqliteStat, Utf8CP messageHeader) const
+void IssueReporter::ReportSqliteIssue(ECDbIssueSeverity sev, DbResult sqliteStat, Utf8CP messageHeader) const
     {
-    mappedECSqlStatus = ToECSqlStatus(sqliteStat);
-
-    if (IsSeverityEnabled(sev))
+    if (BE_SQLITE_OK != sqliteStat && IsSeverityEnabled(sev))
         {
-        BeAssert(mappedECSqlStatus != ECSqlStatus::Success && "ECSqlStatusContext::SetError should not be called in case of success.");
         Report(sev, "%s %s: %s", Utf8String::IsNullOrEmpty(messageHeader) ? "SQLite error" : messageHeader,
                ECDb::InterpretDbResult(sqliteStat), m_ecdb.GetLastError());
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus IssueReporter::ToECSqlStatus(DbResult sqliteStatus)
-    {
-    if (BE_SQLITE_OK == sqliteStatus)
-        return ECSqlStatus::Success;
-
-    if (BE_SQLITE_CONSTRAINT_BASE == (sqliteStatus & BE_SQLITE_CONSTRAINT_BASE))
-        return ECSqlStatus::ConstraintViolation;
-
-    switch (sqliteStatus)
-        {
-            case BE_SQLITE_RANGE:
-                return ECSqlStatus::IndexOutOfBounds;
-
-                //These are considered programmer errors. We might refine this while seeing situations where a SQLite failure
-                //is not an internal programmer error
-            case BE_SQLITE_INTERNAL:
-            case BE_SQLITE_MISMATCH:
-            case BE_SQLITE_MISUSE:
-            case BE_SQLITE_NOLFS:
-            case BE_SQLITE_SCHEMA:
-                //these should never show up here as they are handled by the Step logic
-            case BE_SQLITE_DONE:
-            case BE_SQLITE_ROW:
-                return ECSqlStatus::ProgrammerError;
-
-            default:
-                return ECSqlStatus::InvalidECSql;
         }
     }
 

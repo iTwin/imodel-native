@@ -83,12 +83,12 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BuiltinFunctions)
         const ECSqlStatus expectedPrepareStat = expectedResult.m_isPrepareSupported ? ECSqlStatus::Success : ECSqlStatus::InvalidECSql;
 
         ECSqlStatement stmt;
-        ASSERT_EQ((int) expectedPrepareStat, (int) stmt.Prepare(ecdb, ecsql)) << ecsql;
+        ASSERT_EQ(expectedPrepareStat, stmt.Prepare(ecdb, ecsql)) << ecsql;
 
         if (!expectedResult.m_isStepSupported)
             continue;
 
-        ASSERT_EQ((int) ECSqlStepStatus::HasRow, (int) stmt.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
         ECN::ECTypeDescriptor const& actualColumnType = stmt.GetColumnInfo(0).GetDataType();
 

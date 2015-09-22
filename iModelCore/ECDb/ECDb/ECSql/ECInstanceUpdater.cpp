@@ -305,7 +305,7 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
     m_ecinstanceIdParameterIndex = parameterIndex;
 
     ECSqlStatus stat = m_statement.Prepare (m_ecdb, builder.ToString ().c_str ());
-    m_isValid = (stat == ECSqlStatus::Success);
+    m_isValid = (stat.IsSuccess());
     }
 
 //---------------------------------------------------------------------------------------
@@ -357,7 +357,7 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
     m_ecinstanceIdParameterIndex = parameterIndex;
 
     ECSqlStatus stat = m_statement.Prepare(m_ecdb, builder.ToString().c_str());
-    m_isValid = (stat == ECSqlStatus::Success);
+    m_isValid = (stat.IsSuccess());
     }
 
 //---------------------------------------------------------------------------------------
@@ -383,7 +383,7 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
         ecSql.append(ECSqlBuilder::ToECSqlSnippet (GetECClass())).append (" WHERE ECInstanceId = ?");
         ECSqlStatement statement;
         ECSqlStatus status = statement.Prepare (m_ecdb, ecSql.c_str ());
-        if (ECSqlStatus::Success != status)
+        if (!status.IsSuccess())
             return ERROR;
 
         ECInstanceId instanceId;
@@ -391,8 +391,7 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
             return ERROR;
 
         statement.BindId(1, instanceId);
-        ECSqlStepStatus result;
-        while ((result = statement.Step()) == ECSqlStepStatus::HasRow)
+        while (BE_SQLITE_ROW == statement.Step())
             {
             ECInstanceId oldSourceInstanceId = statement.GetValueId<ECInstanceId>(0);
             ECClassId oldSourceClassId = statement.GetValueId<ECClassId>(1);
@@ -441,18 +440,17 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
         }
 
     BeAssert(ecinstanceId.IsValid());
-    auto stat = m_statement.BindId(m_ecinstanceIdParameterIndex, ecinstanceId);
-    if (stat != ECSqlStatus::Success)
+    if (!m_statement.BindId(m_ecinstanceIdParameterIndex, ecinstanceId).IsSuccess())
         return ERROR;
 
     //now execute statement
-    ECSqlStepStatus stepStatus = m_statement.Step ();
+    const DbResult stepStatus = m_statement.Step ();
 
     //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
     m_statement.Reset();
     m_statement.ClearBindings();
 
-    return (stepStatus == ECSqlStepStatus::Done ) ? SUCCESS : ERROR;
+    return (stepStatus == BE_SQLITE_DONE ) ? SUCCESS : ERROR;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

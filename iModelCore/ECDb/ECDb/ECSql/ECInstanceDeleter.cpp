@@ -47,7 +47,7 @@ void ECInstanceDeleter::Initialize()
     ecsql.append (" WHERE ").append (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY).append (" = ?");
 
     ECSqlStatus stat = m_statement.Prepare (m_ecdb, ecsql.c_str ());
-    m_isValid = (stat == ECSqlStatus::Success);
+    m_isValid = (stat.IsSuccess());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -69,13 +69,13 @@ ECInstanceId const& ecInstanceId
 
     m_statement.BindId (1, ecInstanceId);
 
-    const ECSqlStepStatus stepStatus = m_statement.Step ();
+    const DbResult stepStatus = m_statement.Step ();
 
     //reset once we are done with executing the statement to put the statement in inactive state (less memory etc)
     m_statement.Reset();
     m_statement.ClearBindings();
 
-    return (stepStatus == ECSqlStepStatus::Done) ? SUCCESS : ERROR;
+    return (BE_SQLITE_DONE == stepStatus) ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

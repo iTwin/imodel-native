@@ -63,13 +63,13 @@ public:
     private:
         std::map<Utf8CP, std::unique_ptr<ECSqlStepTask>, CompareUtf8> m_stepTasks;
         std::unique_ptr<EmbeddedECSqlStatement> m_selector;
-        ECSqlStepStatus Execute (ExecutionCategory category, ECInstanceId const& instanceId);
+        DbResult Execute (ExecutionCategory category, ECInstanceId const& instanceId);
 
     public:
         Collection () {}
         virtual ~Collection (){}
-        ECSqlStepStatus ExecuteBeforeStepTaskList ();
-        ECSqlStepStatus ExecuteAfterStepTaskList (ECInstanceId const& instanceId);
+        DbResult ExecuteBeforeStepTaskList ();
+        DbResult ExecuteAfterStepTaskList (ECInstanceId const& instanceId);
 
         ECSqlStepTask const* Find (Utf8CP name) const;
         bool HasSelector () const { return m_selector != nullptr;  }
@@ -86,7 +86,7 @@ private:
     ExecutionCategory m_category;
     Utf8String m_name;
 
-    virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) = 0;
+    virtual DbResult _Execute (ECInstanceId const& instanceId) = 0;
 
 protected:
     ECSqlStepTask (ExecutionCategory category, Utf8CP name) : m_category(category), m_name(name) {}
@@ -97,7 +97,7 @@ public:
     Utf8StringCR GetName () const { return m_name; }
     ExecutionCategory GetExecutionCategory () const { return m_category; }
 
-    ECSqlStepStatus Execute (ECInstanceId const& instanceId) { return _Execute (instanceId); }
+    DbResult Execute (ECInstanceId const& instanceId) { return _Execute (instanceId); }
     };
 
 
@@ -185,7 +185,7 @@ private:
     ECPropertyId m_propertyPathId;
 private:
     InsertStructArrayStepTask (PropertyMapToTableCR property, IClassMap const& classMap);
-    virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) override;
+    virtual DbResult _Execute (ECInstanceId const& instanceId) override;
 
     virtual void _SetParameterSource (ECSqlParameterValue& parameterSource) override { m_parameterValue = &parameterSource; }
     virtual ECSqlParameterValue* _GetParameter () override { return m_parameterValue; }
@@ -209,7 +209,7 @@ private:
 
 private:
     DeleteStructArrayStepTask (PropertyMapToTableCR property, IClassMap const& classMap);
-    virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) override;
+    virtual DbResult _Execute (ECInstanceId const& instanceId) override;
 
     public:
     ~DeleteStructArrayStepTask (){}
@@ -230,7 +230,7 @@ private:
 
 private:
     UpdateStructArrayStepTask (std::unique_ptr<InsertStructArrayStepTask>& insertStepTask, std::unique_ptr<DeleteStructArrayStepTask>& deleteStepTask);
-    virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) override;
+    virtual DbResult _Execute (ECInstanceId const& instanceId) override;
     virtual void _SetParameterSource (ECSqlParameterValue& parameterSource) override { m_insertStepTask->SetParameterSource (parameterSource); }
     virtual ECSqlParameterValue* _GetParameter () override { return m_insertStepTask->GetParameter (); }
 public:

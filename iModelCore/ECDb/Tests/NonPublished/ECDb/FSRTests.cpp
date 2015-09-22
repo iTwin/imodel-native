@@ -118,7 +118,7 @@ struct FSRTests : public ::testing::Test
             ECSqlStatus status = ecStatement.Prepare(ecdb, ecSql.GetUtf8CP());
             ASSERT_TRUE(ECSqlStatus::Success == status);
             ECInstanceECSqlSelectAdapter adapter(ecStatement);
-            ASSERT_TRUE(ECSqlStepStatus::HasRow == ecStatement.Step());
+            ASSERT_TRUE(BE_SQLITE_ROW == ecStatement.Step());
             IECInstancePtr newInstance = adapter.GetInstance();
             ASSERT_TRUE(ECDbTestUtility::CompareECInstances(*newInstance, *instance)) << ecSql.GetUtf8CP() << "\n" << newInstance->GetInstanceId().c_str() << "!=" << instance->GetInstanceId().c_str();
 

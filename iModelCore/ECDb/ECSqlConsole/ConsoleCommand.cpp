@@ -937,7 +937,7 @@ void MetadataCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
 
     ECSqlStatement stmt;
     ECSqlStatus status = stmt.Prepare(session.GetECDbR (), ecsql.c_str());
-    if (status != ECSqlStatus::Success)
+    if (!status.IsSuccess())
         {
         if (session.GetIssues().HasIssue())
             Console::WriteErrorLine("Failed to prepare ECSQL statement. %s", session.GetIssues().GetIssue());
@@ -1010,8 +1010,8 @@ void SqlCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& ar
     Utf8String ecsql = ConcatArgs(1, args);
 
     ECSqlStatement stmt;
-    auto stat = stmt.Prepare(session.GetECDbR (), ecsql.c_str());
-    if (stat != ECSqlStatus::Success)
+    ECSqlStatus stat = stmt.Prepare(session.GetECDbR (), ecsql.c_str());
+    if (!stat.IsSuccess())
         {
         if (session.GetIssues().HasIssue())
             Console::WriteErrorLine("Failed to parse ECSQL: %s", session.GetIssues().GetIssue());

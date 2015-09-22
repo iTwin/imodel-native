@@ -32,7 +32,7 @@ ECSqlStatus PrimitiveMappedToSingleColumnECSqlField::_Init ()
         BeAssert (property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
         DateTimeInfo dateTimeInfo;
         if (StandardCustomAttributeHelper::GetDateTimeInfo (dateTimeInfo, *property) != ECOBJECTS_STATUS_Success)
-            return ReportError (ECSqlStatus::UserError, "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
+            return ReportError (ECSqlStatus::Error, "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
 
         m_datetimeMetadata = dateTimeInfo.GetInfo (true);
         }
@@ -163,7 +163,7 @@ IGeometryPtr PrimitiveMappedToSingleColumnECSqlField::_GetGeometry() const
     byteVec.assign(blob, blob + blobSizeU);
     if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(byteVec))
         {
-        ReportError(ECSqlStatus::UserError, "Cannot retrieve Geometry value. The geometry is not persisted in the Bentley Geometry FlatBuffer format.");
+        ReportError(ECSqlStatus::Error, "Cannot retrieve Geometry value. The geometry is not persisted in the Bentley Geometry FlatBuffer format.");
         return nullptr;
         }
 
@@ -194,7 +194,7 @@ void const* PrimitiveMappedToSingleColumnECSqlField::_GetGeometryBlob (int* blob
 //+---------------+---------------+---------------+---------------+---------------+------
 DPoint2d PrimitiveMappedToSingleColumnECSqlField::_GetPoint2D () const
     {
-    ReportError (ECSqlStatus::UserError, "GetPoint2D cannot be called for columns which are not of the Point2D type.");
+    ReportError (ECSqlStatus::Error, "GetPoint2D cannot be called for columns which are not of the Point2D type.");
     BeAssert (false && "GetPoint2D cannot be called for columns which are not of the Point2D type.");
     return NoopECSqlValue::GetSingleton ().GetPoint2D ();
     }
@@ -204,7 +204,7 @@ DPoint2d PrimitiveMappedToSingleColumnECSqlField::_GetPoint2D () const
 //+---------------+---------------+---------------+---------------+---------------+------
 DPoint3d PrimitiveMappedToSingleColumnECSqlField::_GetPoint3D () const
     {
-    ReportError (ECSqlStatus::UserError, "GetPoint3D cannot be called for columns which are not of the Point3D type.");
+    ReportError (ECSqlStatus::Error, "GetPoint3D cannot be called for columns which are not of the Point3D type.");
     BeAssert (false && "GetPoint3D cannot be called for columns which are not of the Point3D type."); 
     return NoopECSqlValue::GetSingleton ().GetPoint3D ();
     }
@@ -222,7 +222,7 @@ IECSqlPrimitiveValue const& PrimitiveMappedToSingleColumnECSqlField::_GetPrimiti
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlArrayValue const& PrimitiveMappedToSingleColumnECSqlField::_GetArray () const
     {
-    ReportError (ECSqlStatus::UserError, "GetArray cannot be called for primitive columns.");
+    ReportError (ECSqlStatus::Error, "GetArray cannot be called for primitive columns.");
     BeAssert (false && "GetArray cannot be called for primitive columns.");
     return NoopECSqlValue::GetSingleton ().GetArray ();
     }
@@ -232,7 +232,7 @@ IECSqlArrayValue const& PrimitiveMappedToSingleColumnECSqlField::_GetArray () co
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlStructValue const& PrimitiveMappedToSingleColumnECSqlField::_GetStruct () const
     {
-    ReportError (ECSqlStatus::UserError, "GetStruct cannot be called for primitive columns.");
+    ReportError (ECSqlStatus::Error, "GetStruct cannot be called for primitive columns.");
     BeAssert (false && "GetStruct cannot be called for primitive columns.");
     return NoopECSqlValue::GetSingleton ().GetStruct ();
     }
@@ -260,7 +260,7 @@ bool PrimitiveMappedToSingleColumnECSqlField::CanGetValue (PrimitiveType testTyp
         {
         Utf8String error;
         error.Sprintf ("Only %s can be called for a column of the %s type.", getValueMethodName, typeName);
-        ReportError (ECSqlStatus::UserError, error.c_str ());
+        ReportError (ECSqlStatus::Error, error.c_str ());
         return false;
         }
 
@@ -268,7 +268,7 @@ bool PrimitiveMappedToSingleColumnECSqlField::CanGetValue (PrimitiveType testTyp
         {
         Utf8String error;
         error.Sprintf ("%s cannot be called for a column which is not of the % type.", getValueMethodName, typeName);
-        ReportError (ECSqlStatus::UserError, error.c_str ());
+        ReportError (ECSqlStatus::Error, error.c_str ());
         return false;
         }
 

@@ -928,7 +928,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (ECDbTestProject& tes
             if (ECSqlStatus::Success != stmt.Prepare(testProject.GetECDb(), "SELECT ECInstanceId FROM ONLY ecsql.PSA"))
                 return dataset;
 
-            while (stmt.Step() == ECSqlStepStatus::HasRow)
+            while (stmt.Step() == BE_SQLITE_ROW)
                 psaIds.push_back(stmt.GetValueId<ECInstanceId>(0));
             }
 

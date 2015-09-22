@@ -27,37 +27,39 @@ EmbeddedECSqlStatement* ECSqlStepTask::Collection::GetSelector(bool create)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlStepTask::Collection::ExecuteBeforeStepTaskList()
+DbResult ECSqlStepTask::Collection::ExecuteBeforeStepTaskList()
     {
     //even if no tasks exist, but if event handlers are registered
     //we need to execute the selector so that event can return the correct instances affected.
     if ((!HasAnyTask() ) ||  m_selector == nullptr)
-        return ECSqlStepStatus::Done;
+        return BE_SQLITE_OK;
 
     auto stmt = m_selector->GetPreparedStatementP<ECSqlSelectPreparedStatement> ();
     BeAssert(stmt != nullptr && "m_selector statement is null");
-    while (m_selector->Step() == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == m_selector->Step())
         {
         ECInstanceId iId = stmt->GetValue(0).GetId<ECInstanceId>();
-        if (Execute(ExecutionCategory::ExecuteBeforeParentStep, iId) == ECSqlStepStatus::Error)
-            return ECSqlStepStatus::Error;
+        DbResult stat = Execute(ExecutionCategory::ExecuteBeforeParentStep, iId);
+        if (BE_SQLITE_OK != stat)
+            return stat;
         }
 
-    return ECSqlStepStatus::Done;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlStepTask::Collection::ExecuteAfterStepTaskList(ECInstanceId const& instanceId)
+DbResult ECSqlStepTask::Collection::ExecuteAfterStepTaskList(ECInstanceId const& instanceId)
     {
     if (HasAnyTask())
         {
-        if (Execute(ExecutionCategory::ExecuteAfterParentStep, instanceId) == ECSqlStepStatus::Error)
-            return ECSqlStepStatus::Error;
+        DbResult stat = Execute(ExecutionCategory::ExecuteAfterParentStep, instanceId);
+        if (BE_SQLITE_OK != stat)
+            return stat;
         }
 
-    return ECSqlStepStatus::Done;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -118,15 +120,15 @@ void ECSqlStepTask::Collection::Clear()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlStepTask::Collection::Execute(ExecutionCategory category, ECInstanceId const& instanceId)
+DbResult ECSqlStepTask::Collection::Execute(ExecutionCategory category, ECInstanceId const& instanceId)
     {
     for (auto& pair : m_stepTasks)
         {
         auto stepTask = pair.second.get();
         if (stepTask->GetExecutionCategory() == category)
             {
-            auto status = stepTask->Execute(instanceId);
-            if (status != ECSqlStepStatus::Done)
+            DbResult status = stepTask->Execute(instanceId);
+            if (BE_SQLITE_OK != status)
                 {
                 BeAssert(false && "Step failed");
                 return status;
@@ -134,7 +136,7 @@ ECSqlStepStatus ECSqlStepTask::Collection::Execute(ExecutionCategory category, E
             }
         }
 
-    return ECSqlStepStatus::Done;
+    return BE_SQLITE_OK;
     }
 
 //*************************************UpdateStructArrayECSqlStepTask********************************
@@ -150,10 +152,10 @@ UpdateStructArrayStepTask::UpdateStructArrayStepTask(unique_ptr<InsertStructArra
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus UpdateStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
+DbResult UpdateStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
     {
     auto deleteStatus = m_deleteStepTask->Execute(instanceId);
-    if (deleteStatus != ECSqlStepStatus::Done)
+    if (BE_SQLITE_OK != deleteStatus)
         return deleteStatus;
 
     return m_insertStepTask->Execute(instanceId);
@@ -194,19 +196,18 @@ InsertStructArrayStepTask::InsertStructArrayStepTask(PropertyMapToTableCR proper
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus InsertStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
+DbResult InsertStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
     {
-    ECSqlStepStatus stepStatus = ECSqlStepStatus::Error;
     ECSqlInsertPreparedStatement* preparedStmt = m_insertStmt->GetPreparedStatementP <ECSqlInsertPreparedStatement >();
     ECSqlParameterValue* structArrayParameterValue = GetParameter();
     if (structArrayParameterValue == nullptr)
         {
         BeAssert(false && "Struct array parameter value is nullptr.");
-        return ECSqlStepStatus::Error;
+        return BE_SQLITE_ERROR;
         }
     
     if (structArrayParameterValue->IsNull())
-        return ECSqlStepStatus::Done;
+        return BE_SQLITE_OK;
     
     ECClassCP structType = GetPropertyMapR ().GetProperty().GetAsArrayProperty()->GetStructElementType();
     ECDb const& ecdb = preparedStmt->GetECDb();
@@ -217,8 +218,9 @@ ECSqlStepStatus InsertStructArrayStepTask::_Execute(ECInstanceId const& instance
     for (IECSqlValue const* arrayElement : structArrayParameterValue->GetArray())
         {       
         ECInstanceId generatedECInstanceId;
-        if (BE_SQLITE_OK != ecdb.GetECDbImplR().GetECInstanceIdSequence().GetNextValue<ECInstanceId> (generatedECInstanceId))
-            return ECSqlStepStatus::Error;
+        DbResult stat = ecdb.GetECDbImplR().GetECInstanceIdSequence().GetNextValue<ECInstanceId>(generatedECInstanceId);
+        if (BE_SQLITE_OK != stat)
+            return stat;
        
         m_insertStmt->Reset();
         m_insertStmt->ClearBindings();
@@ -246,21 +248,21 @@ ECSqlStepStatus InsertStructArrayStepTask::_Execute(ECInstanceId const& instance
             if (value->BindTo(binder) != ECSqlStatus::Success)
                 {
                 BeAssert(false && "Failed to bind struct array element");
-                return ECSqlStepStatus::Error;
+                return BE_SQLITE_ERROR;
                 }
             }
             
         preparedStmt->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(structClassMap->GetClass().GetId(),
                                                                                             generatedECInstanceId));
-        stepStatus = m_insertStmt->Step();
-        if (stepStatus != ECSqlStepStatus::Done)
+        DbResult stepStatus = m_insertStmt->Step();
+        if (BE_SQLITE_DONE != stepStatus)
             {
             BeAssert(false && "Failed to insert struct array element");
             return stepStatus;
             }
         }
 
-    return stepStatus;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
@@ -340,14 +342,14 @@ DeleteStructArrayStepTask::DeleteStructArrayStepTask(PropertyMapToTableCR proper
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus DeleteStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
+DbResult DeleteStructArrayStepTask::_Execute(ECInstanceId const& instanceId)
     {
     m_deleteStmt->Reset();
     m_deleteStmt->ClearBindings();
     m_deleteStmt->GetBinder(PARAMETER_OWNERECINSTANCEID).BindId(instanceId);
 
-    auto status = m_deleteStmt->Step();
-    return status;
+    const DbResult status = m_deleteStmt->Step();
+    return status == BE_SQLITE_DONE ? BE_SQLITE_OK : status;
     }
 
 

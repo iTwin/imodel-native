@@ -91,9 +91,8 @@ ECDbCR ECSqlBinder::GetECDb() const
 ECSqlStatus ECSqlBinder::ReportError (DbResult sqliteStat, Utf8CP errorMessageHeader) const
     {
     BeAssert (m_ecsqlStatement.IsPrepared ());
-    ECSqlStatus stat = ECSqlStatus::Success;
-    GetECDb().GetECDbImplR().GetIssueReporter().ReportSqliteIssue(stat, ECDbIssueSeverity::Error, sqliteStat, errorMessageHeader);
-    return stat;
+    GetECDb().GetECDbImplR().GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, sqliteStat, errorMessageHeader);
+    return ECSqlStatus(sqliteStat);
     }
 
 //---------------------------------------------------------------------------------------
@@ -149,7 +148,7 @@ bool ECSqlParameterMap::TryGetBinder (ECSqlBinder*& binder, Utf8CP ecsqlParamete
 ECSqlStatus ECSqlParameterMap::TryGetBinder (ECSqlBinder*& binder, int ecsqlParameterIndex) const
     {
     if (ecsqlParameterIndex <= 0 || ecsqlParameterIndex > static_cast<int> (m_binders.size ()))
-        return ECSqlStatus::IndexOutOfBounds;
+        return ECSqlStatus::Error;
 
     //parameter indices are 1-based, but stored in a 0-based vector.
     binder = m_binders[static_cast<size_t> (ecsqlParameterIndex - 1)].get ();
@@ -162,7 +161,7 @@ ECSqlStatus ECSqlParameterMap::TryGetBinder (ECSqlBinder*& binder, int ecsqlPara
 ECSqlStatus ECSqlParameterMap::TryGetInternalBinder (ECSqlBinder*& binder, size_t internalBinderIndex) const
     {
     if (internalBinderIndex >= m_internalSqlParameterBinders.size ())
-        return ECSqlStatus::IndexOutOfBounds;
+        return ECSqlStatus::Error;
 
     binder = m_internalSqlParameterBinders[internalBinderIndex].get ();
     return ECSqlStatus::Success;
@@ -233,7 +232,7 @@ ECSqlStatus ECSqlParameterMap::OnBeforeStep ()
     for (auto& binder : m_binders)
         {
         auto stat = binder->OnBeforeStep ();
-        if (stat != ECSqlStatus::Success)
+        if (!stat.IsSuccess())
             return stat;
         }
 
@@ -263,7 +262,7 @@ ECSqlStatus ArrayConstraintValidator::Validate (ECDbCR ecdb, ECSqlTypeInfo const
     if (actualArrayLength < expectedMinOccurs)
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Array to be bound to the array parameter must at least have %d element(s) as defined in the respective ECProperty.", expectedMinOccurs);
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ValidateMaximum(ecdb, expected, actualArrayLength);
@@ -279,7 +278,7 @@ ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECDbCR ecdb, ECSqlTypeInfo
     if (actualArrayLength > expectedMaxOccurs)
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Array to be bound to the array parameter must at most have %d element(s) as defined in the respective ECProperty.", expectedMaxOccurs);
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;

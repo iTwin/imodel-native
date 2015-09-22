@@ -12,6 +12,7 @@
 #include <ECDb/ECSqlBuilder.h>
 #include <ECDb/ECInstanceId.h>
 
+#include <ECDb/ECSqlStatus.h>
 #include <ECDb/ECSqlStatement.h>
 #include <ECDb/ECInstanceAdapter.h>
 #include <ECDb/JsonAdapter.h>

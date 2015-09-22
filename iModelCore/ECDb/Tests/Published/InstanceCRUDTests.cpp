@@ -155,7 +155,7 @@ int InstanceCRUDTests::countECInstnacesAndCompare (bmap<ECN::ECClassCP, std::vec
             }
         bvector<IECInstancePtr> instances;
         ECInstanceECSqlSelectAdapter adapter (ecStatement);
-        while (ECSqlStepStatus::HasRow == ecStatement.Step ())
+        while (BE_SQLITE_ROW == ecStatement.Step ())
             {
             IECInstancePtr newInstance = adapter.GetInstance ();
             if (!newInstance.IsValid ())

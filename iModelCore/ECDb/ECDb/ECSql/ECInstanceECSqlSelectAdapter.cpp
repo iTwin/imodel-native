@@ -451,13 +451,12 @@ bool isSource
     ecsql.append (ECSqlBuilder::ToECSqlSnippet (*endpointClass)).append (" WHERE ECInstanceId = ?");
     ECSqlStatement statement;
     ECSqlStatus status = statement.Prepare (*(m_ecSqlStatement.GetECDb ()), ecsql.c_str ());
-    if (ECSqlStatus::Success != status)
+    if (!status.IsSuccess())
         return instance;
 
     statement.BindInt64(1, endpointInstanceId);
-    ECSqlStepStatus result;
     ECInstanceECSqlSelectAdapter endpointAdapter(statement);
-    while ((result = statement.Step()) == ECSqlStepStatus::HasRow)
+    while (BE_SQLITE_ROW == statement.Step())
         {
         instance = endpointAdapter.GetInstance();
         if (instance.IsValid())

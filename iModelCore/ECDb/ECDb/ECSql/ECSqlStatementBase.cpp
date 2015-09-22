@@ -36,7 +36,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
     if (IsPrepared())
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSQL statement has already been prepared.");
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     if (Utf8String::IsNullOrEmpty(ecsql))
@@ -59,7 +59,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
     //Step 2: translate into SQLite SQL and prepare SQLite statement
     ECSqlPreparedStatement& preparedStatement = CreatePreparedStatement (ecdb, *ecsqlParseTree);
     ECSqlStatus stat = preparedStatement.Prepare (prepareContext, *ecsqlParseTree, ecsql);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         Finalize ();
     
     return stat;
@@ -79,7 +79,7 @@ bool ECSqlStatementBase::IsPrepared () const
 IECSqlBinder& ECSqlStatementBase::GetBinder (int parameterIndex) const 
     {
     ECSqlStatus stat = FailIfNotPrepared ("Cannot call binding API on an unprepared ECSqlStatement.");
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return NoopECSqlBinderFactory::GetBinder (stat);
 
     //Reports errors (not prepared yet, index out of bounds) and uses no-op binder in case of error
@@ -93,7 +93,7 @@ IECSqlBinder& ECSqlStatementBase::GetBinder (int parameterIndex) const
 int ECSqlStatementBase::GetParameterIndex (Utf8CP parameterName) const 
     {
     ECSqlStatus stat = FailIfNotPrepared ("Cannot call binding API on an unprepared ECSqlStatement.");
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return -1;
 
     //Reports errors (not prepared yet, index out of bounds) and uses no-op binder in case of error
@@ -106,7 +106,7 @@ int ECSqlStatementBase::GetParameterIndex (Utf8CP parameterName) const
 ECSqlStatus ECSqlStatementBase::ClearBindings ()
     {
     ECSqlStatus stat = FailIfNotPrepared ("Cannot call ClearBindings on an unprepared ECSqlStatement.");
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     return GetPreparedStatementP ()->ClearBindings ();
@@ -115,10 +115,10 @@ ECSqlStatus ECSqlStatementBase::ClearBindings ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlStatementBase::Step ()
+DbResult ECSqlStatementBase::Step ()
     {
-    if (FailIfNotPrepared ("Cannot call Step on an unprepared ECSQL statement.") != ECSqlStatus::Success)
-        return ECSqlStepStatus::Error;
+    if (!FailIfNotPrepared ("Cannot call Step on an unprepared ECSQL statement.").IsSuccess())
+        return BE_SQLITE_ERROR;
     
     //for performance reasons ECSqlPreparedStatement::Step is not polymorphic (anymore). Cost
     //of virtual dispatch was eliminated by taking cost of caller having to downcast to each subclass type
@@ -143,17 +143,17 @@ ECSqlStepStatus ECSqlStatementBase::Step ()
 
             default:
                 BeAssert (false && "Unhandled ECSqlType in ECSqlStatement::Step.");
-                return ECSqlStepStatus::Error;
+                return BE_SQLITE_ERROR;
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        11/13
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus ECSqlStatementBase::Step (ECInstanceKey& ecInstanceKey)
+DbResult ECSqlStatementBase::Step (ECInstanceKey& ecInstanceKey)
     {
-    if (FailIfWrongType (ECSqlType::Insert, "Only call Step(ECInstanceKey&) on an ECSQL INSERT statement.") != ECSqlStatus::Success)
-        return ECSqlStepStatus::Error;
+    if (!FailIfWrongType (ECSqlType::Insert, "Only call Step(ECInstanceKey&) on an ECSQL INSERT statement.").IsSuccess())
+        return BE_SQLITE_ERROR;
 
     return GetPreparedStatementP<ECSqlInsertPreparedStatement> ()->Step (ecInstanceKey);
     }
@@ -164,7 +164,7 @@ ECSqlStepStatus ECSqlStatementBase::Step (ECInstanceKey& ecInstanceKey)
 ECSqlStatus ECSqlStatementBase::Reset ()
     {
     ECSqlStatus stat = FailIfNotPrepared ("Cannot call Reset on an unprepared ECSqlStatement.");
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     return GetPreparedStatementP ()->Reset ();
@@ -199,7 +199,7 @@ IECSqlValue const& ECSqlStatementBase::GetValue (int columnIndex) const
 Utf8CP ECSqlStatementBase::GetECSql () const
     {
     ECSqlStatus stat = FailIfNotPrepared ("Cannot call GetECSql on an unprepared ECSqlStatement.");
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return nullptr;
 
     return GetPreparedStatementP ()->GetECSql ();
@@ -211,7 +211,7 @@ Utf8CP ECSqlStatementBase::GetECSql () const
 Utf8CP ECSqlStatementBase::GetNativeSql() const
     {
     ECSqlStatus stat = FailIfNotPrepared ("Cannot call GetNativeSql on an unprepared ECSqlStatement.");
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return nullptr;
 
     return GetPreparedStatementP ()->GetNativeSql ();
@@ -223,7 +223,7 @@ Utf8CP ECSqlStatementBase::GetNativeSql() const
 ECDbCP ECSqlStatementBase::GetECDb () const
     {
     ECSqlStatus stat = FailIfNotPrepared ("Cannot call GetECDb on an unprepared ECSqlStatement.");
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return nullptr;
 
     return &GetPreparedStatementP ()->GetECDb ();
@@ -238,7 +238,7 @@ ECSqlStatus ECSqlStatementBase::FailIfNotPrepared (Utf8CP errorMessage) const
     if (!IsPrepared())
         {
         LOG.error(errorMessage);
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;
@@ -250,13 +250,13 @@ ECSqlStatus ECSqlStatementBase::FailIfNotPrepared (Utf8CP errorMessage) const
 ECSqlStatus ECSqlStatementBase::FailIfWrongType (ECSqlType expectedType, Utf8CP errorMessage) const
     {
     ECSqlStatus stat = FailIfNotPrepared (errorMessage);
-    if (stat != ECSqlStatus::Success)
+    if (!stat.IsSuccess())
         return stat;
 
     if (GetPreparedStatementP()->GetType() != expectedType)
         {
         GetECDb()->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, errorMessage);
-        return ECSqlStatus::UserError;
+        return ECSqlStatus::Error;
         }
 
     return ECSqlStatus::Success;

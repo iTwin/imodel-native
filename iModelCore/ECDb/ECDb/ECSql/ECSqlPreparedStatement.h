@@ -43,7 +43,7 @@ private:
 protected:
     ECSqlPreparedStatement (ECSqlType statementType, ECDbCR ecdb);
 
-    ECSqlStepStatus DoStep ();
+    DbResult DoStep ();
     ECSqlStatus DoReset ();
 
     ECSqlParameterMap const& GetParameterMap () const { return m_parameterMap; }
@@ -96,7 +96,7 @@ public:
     explicit ECSqlSelectPreparedStatement (ECDbCR ecdb) : ECSqlPreparedStatement (ECSqlType::Select, ecdb) {}
     ~ECSqlSelectPreparedStatement () {}
 
-    ECSqlStepStatus Step ();
+    DbResult Step ();
 
     int GetColumnCount () const;
     IECSqlValue const& GetValue (int columnIndex) const;
@@ -181,7 +181,7 @@ public:
     explicit ECSqlInsertPreparedStatement (ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Insert, ecdb) {}
     ~ECSqlInsertPreparedStatement () {}
 
-    ECSqlStepStatus Step (ECInstanceKey& instanceKey);
+    DbResult Step (ECInstanceKey& instanceKey);
 
     ECInstanceKeyInfo& GetECInstanceKeyInfo () {return m_ecInstanceKeyInfo;}
     void SetECInstanceKeyInfo (ECInstanceKeyInfo const& ecInstanceKeyInfo);
@@ -202,7 +202,7 @@ public:
     explicit ECSqlUpdatePreparedStatement (ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Update, ecdb) {}
     ~ECSqlUpdatePreparedStatement () {}
 
-    ECSqlStepStatus Step ();
+    DbResult Step ();
     };
 
 
@@ -217,7 +217,7 @@ public:
     explicit ECSqlDeletePreparedStatement (ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Delete, ecdb) {}
     ~ECSqlDeletePreparedStatement () {}
 
-    ECSqlStepStatus Step ();
+    DbResult Step ();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

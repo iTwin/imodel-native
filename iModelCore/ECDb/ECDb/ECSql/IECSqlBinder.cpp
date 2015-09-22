@@ -46,7 +46,7 @@ ECSqlStatus IECSqlBinder::BindDateTime(DateTimeCR value)
     if (SUCCESS != value.ToJulianDay(jd))
         {
         BeAssert(false && "ECSqlStatement::BindDateTime> Could not convert DateTime into Julian Day.");
-        return ECSqlStatus::ProgrammerError;
+        return ECSqlStatus::Error;
         }
 
     return BindDateTime(jd, &value.GetInfo());
@@ -87,7 +87,7 @@ ECSqlStatus IECSqlBinder::BindGeometry(IGeometryCR value)
         {
         LOG.error("Failed to serialize IGeometry to BentleyGeometryFlatBuffer.");
         BeAssert(false && "Failed to serialize IGeometry to BentleyGeometryFlatBuffer.");
-        return ECSqlStatus::ProgrammerError;
+        return ECSqlStatus::Error;
         }
 
     return BindGeometryBlob(geometryBlob.data(), (int) geometryBlob.size(), MakeCopy::Yes);
