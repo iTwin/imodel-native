@@ -433,7 +433,7 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
         }
     
     PRECONDITION(fbDocument.has_styleId(), ERROR);
-    document.SetStyleId(DgnStyleId(fbDocument.styleId()), SetAnnotationTextStyleOptions::Direct);
+    document.SetStyleId(DgnStyleId((uint64_t)fbDocument.styleId()), SetAnnotationTextStyleOptions::Direct);
     
     if (fbDocument.has_styleOverrides())
         POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::DecodeFromFlatBuf(document.m_styleOverrides, *fbDocument.styleOverrides()), ERROR);
@@ -444,7 +444,7 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
             {
             AnnotationParagraphPtr paragraph = AnnotationParagraph::Create(document.GetDbR());
             PRECONDITION(fbParagraph.has_styleId(), ERROR);
-            paragraph->SetStyleId(DgnStyleId(fbParagraph.styleId()), SetAnnotationTextStyleOptions::Direct);
+            paragraph->SetStyleId(DgnStyleId((uint64_t)fbParagraph.styleId()), SetAnnotationTextStyleOptions::Direct);
 
             if (fbParagraph.has_runs())
                 {
@@ -502,7 +502,7 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
                         continue;
 
                     PRECONDITION(fbRun.has_styleId(), ERROR);
-                    run->SetStyleId(DgnStyleId(fbRun.styleId()), SetAnnotationTextStyleOptions::Direct);
+                    run->SetStyleId(DgnStyleId((uint64_t)fbRun.styleId()), SetAnnotationTextStyleOptions::Direct);
                     
                     if (fbRun.has_styleOverrides())
                         POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::DecodeFromFlatBuf(run->m_styleOverrides, *fbRun.styleOverrides()), ERROR);

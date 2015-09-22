@@ -60,7 +60,7 @@ protected:
     Utf8String m_testItemProperty;
     Utf8String m_testElemProperty;
 
-    virtual DgnDbStatus _InsertSecondary() override;
+    virtual DgnDbStatus _InsertInDb() override;
     virtual DgnDbStatus _UpdateInDb() override;
     virtual DgnDbStatus _DeleteInDb() const override;
 

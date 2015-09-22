@@ -520,7 +520,7 @@ BentleyStatus       LsCache::Load ()
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        DgnStyleId  styleId ((int64_t)stmt.GetValueInt(0));
+        DgnStyleId  styleId (stmt.GetValueUInt64(0));
         Utf8String name(stmt.GetValueText(2));
         Utf8String  data ((Utf8CP)stmt.GetValueBlob(4));
 

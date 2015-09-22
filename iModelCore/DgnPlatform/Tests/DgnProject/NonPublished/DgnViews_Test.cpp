@@ -103,7 +103,7 @@ TEST_F(DgnViewsTest, DeleteView)
     //Get views
     DgnViews& viewTable = project->Views ();
 
-    DgnViewId viewId((int64_t)1);
+    DgnViewId viewId((uint64_t)1);
     DgnViews::View view = viewTable.QueryView(viewId);
     EXPECT_TRUE(view.IsValid());
 
@@ -124,7 +124,7 @@ TEST_F(DgnViewsTest, SetViewName)
     //Get views
     DgnViews& viewTable = project->Views ();
 
-    DgnViewId viewId((int64_t)1);
+    DgnViewId viewId((uint64_t)1);
     DgnViews::View view = viewTable.QueryView(viewId);
     EXPECT_TRUE(view.IsValid());
     
@@ -146,13 +146,13 @@ TEST_F(DgnViewsTest, ViewSaveAs)
     {
     SetupProject(L"3dMetricGeneral.idgndb", Db::OpenMode::ReadWrite);
 
-    ViewControllerPtr controller = project->Views().LoadViewController(DgnViewId((int64_t)1));
+    ViewControllerPtr controller = project->Views().LoadViewController(DgnViewId((uint64_t)1));
     EXPECT_EQ(BE_SQLITE_OK, controller->SaveAs("NewView2"));
-    EXPECT_TRUE(DgnViewId((int64_t)2) == controller->GetViewId());
+    EXPECT_TRUE(DgnViewId((uint64_t)2) == controller->GetViewId());
 
     DgnViewId view3Id;
     EXPECT_EQ(BE_SQLITE_OK, controller->SaveTo("NewView3", view3Id));
-    EXPECT_TRUE(DgnViewId((int64_t)2) == controller->GetViewId());
+    EXPECT_TRUE(DgnViewId((uint64_t)2) == controller->GetViewId());
 
     project->SaveChanges();
     }
@@ -168,11 +168,11 @@ TEST_F(DgnViewsTest, IteratorEntryProperties)
     //Get views
     DgnViews& viewTable = project->Views();
 
-    DgnViewId viewId((int64_t)1);
+    DgnViewId viewId((uint64_t)1);
     DgnViews::View view = viewTable.QueryView(viewId);
     EXPECT_TRUE(view.IsValid());
     
-    DgnModelId modelId((int64_t)1);
+    DgnModelId modelId((uint64_t)1);
     view.SetBaseModelId(modelId);
 
     EXPECT_EQ(BE_SQLITE_DONE, viewTable.Update(view));
@@ -194,20 +194,20 @@ TEST_F(DgnViewsTest, InsertView)
 
     // Get views
     DgnViews& viewTable = project->Views ();
-    DgnViewId viewId ((int64_t)4);
+    DgnViewId viewId ((uint64_t)4);
     // Create a new view
     DgnViews::View tempView = DgnViews::View (DgnViewType::Physical,
                                              DgnClassId(project->Schemas().GetECClassId("dgn","PhysicalView")),
-                                             DgnModelId ((int64_t)2),
+                                             DgnModelId ((uint64_t)2),
                                              "TestView",
                                              NULL,
                                              DgnViewSource::User,
-                                             DgnViewId ((int64_t)5)
+                                             DgnViewId ((uint64_t)5)
                                             );
 
     // Insert 
     ASSERT_EQ (BE_SQLITE_OK, viewTable.Insert(tempView)) << "Unable to insert View";
-    tempView = viewTable.QueryView (DgnViewId ((int64_t)5));
+    tempView = viewTable.QueryView (DgnViewId ((uint64_t)5));
     EXPECT_TRUE (tempView.IsValid ()) << "View not found";
     // Verify Properties
     TestViewProperties originalView, testView;
@@ -228,7 +228,7 @@ TEST_F(DgnViewsTest, InsertDeletedView)
 
     // Get views
     DgnViews& viewTable = project->Views ();
-    DgnViewId viewId ((int64_t)4);
+    DgnViewId viewId ((uint64_t)4);
     // Get an existing view
     DgnViews::View exisitingView = viewTable.QueryView(viewId);
     ASSERT_TRUE (exisitingView.IsValid ()) << "Unable to find the view";
@@ -261,25 +261,25 @@ TEST_F(DgnViewsTest, InsertExistingView)
 
     // Get views
     DgnViews& viewTable = project->Views ();
-    DgnViewId viewId ((int64_t)4);
+    DgnViewId viewId ((uint64_t)4);
     // Create a new view
     DgnViews::View tempView = DgnViews::View (DgnViewType::Physical,
                                              DgnClassId(project->Schemas().GetECClassId("dgn","PhysicalView")),
-                                             DgnModelId ((int64_t)2),
+                                             DgnModelId ((uint64_t)2),
                                              "TestView",
                                              0,
                                              DgnViewSource::User,
-                                             DgnViewId ((int64_t)5)
+                                             DgnViewId ((uint64_t)5)
                                             );
 
     // Insert 
     ASSERT_EQ (BE_SQLITE_OK, viewTable.Insert(tempView)) << "Unable to insert View";
-    tempView = viewTable.QueryView (DgnViewId ((int64_t)5));
+    tempView = viewTable.QueryView (DgnViewId ((uint64_t)5));
     EXPECT_TRUE (tempView.IsValid ()) << "View not found";
     EXPECT_STREQ ("TestView", tempView.GetName ()) << "View name does not match";
     // Verify second insertion fails
     ASSERT_EQ (BE_SQLITE_CONSTRAINT_UNIQUE, viewTable.Insert(tempView)) << "Second view should not be inserted";
-    tempView = viewTable.QueryView (DgnViewId ((int64_t)6));
+    tempView = viewTable.QueryView (DgnViewId ((uint64_t)6));
     EXPECT_FALSE (tempView.IsValid ()) << "View should not be found";
 
     }

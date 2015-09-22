@@ -159,7 +159,7 @@ BentleyStatus DgnLink::GetViewId(DgnViewId& value) const
     {
     PRECONDITION(DgnLinkType::View == m_type, ERROR);
 
-    value = DgnViewId(BeJsonUtilities::Int64FromValue(m_data[DATA_KEY_ViewId]));
+    value = DgnViewId(BeJsonUtilities::UInt64FromValue(m_data[DATA_KEY_ViewId]));
     return SUCCESS;
     }
 
@@ -362,8 +362,7 @@ BentleyStatus DgnLinks::InsertOnElement(DgnElementKey elementKey, DgnLinkR link)
     // Don't assert to ensure an invalid ID.
     Utf8String data = Json::FastWriter::ToString(link.m_data);
 
-    DgnLinkId nextId;
-    nextId.ToNextAvailable(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Link), "Id");
+    DgnLinkId nextId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Link), "Id");
 
     Statement insert;
     insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Link) " (Id,Type,DisplayLabel,Data) VALUES (?,?,?,?)");
@@ -387,8 +386,7 @@ BentleyStatus DgnLinks::InsertOnElement(DgnElementKey elementKey, DgnLinkId link
     PRECONDITION(elementKey.IsValid(), ERROR);
     PRECONDITION(linkId.IsValid(), ERROR);
 
-    DgnLinkId nextId;
-    nextId.ToNextAvailable(m_dgndb, DGN_TABLE(DGN_RELNAME_ElementHasLinks), "Id");
+    DgnLinkId nextId(m_dgndb, DGN_TABLE(DGN_RELNAME_ElementHasLinks), "Id");
 
     Statement insert;
     insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_RELNAME_ElementHasLinks) " (Id,ElementId,LinkId) VALUES (?,?,?)");
